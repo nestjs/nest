@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { empty } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientMqtt } from '../../client/client-mqtt';
@@ -10,13 +9,13 @@ describe('ClientMqtt', () => {
 
   describe('getRequestPattern', () => {
     it(`should leave pattern as it is`, () => {
-      expect(client.getRequestPattern(test)).to.equal(test);
+      expect(client.getRequestPattern(test)).toEqual(test);
     });
   });
   describe('getResponsePattern', () => {
     it(`should append "/reply" to string`, () => {
       const expectedResult = test + '/reply';
-      expect(client.getResponsePattern(test)).to.equal(expectedResult);
+      expect(client.getResponsePattern(test)).toEqual(expectedResult);
     });
   });
   describe('publish', () => {
@@ -59,15 +58,15 @@ describe('ClientMqtt', () => {
     });
     it('should subscribe to response pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`${pattern}/reply`)).to.be.true;
+      expect(subscribeSpy.calledWith(`${pattern}/reply`)).toBeTruthy();
     });
     it('should publish stringified message to request pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).to.be.true;
+      expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).toBeTruthy();
     });
     it('should add callback to routing map', async () => {
       await client['publish'](msg, () => {});
-      expect(client['routingMap'].has(id)).to.be.true;
+      expect(client['routingMap'].has(id)).toBeTruthy();
     });
     describe('on error', () => {
       beforeEach(() => {
@@ -80,8 +79,8 @@ describe('ClientMqtt', () => {
         const callback = sinon.spy();
         client['publish'](msg, callback);
 
-        expect(callback.called).to.be.true;
-        expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
+        expect(callback.called).toBeTruthy();
+        expect(callback.getCall(0).args[0].err).toBeInstanceOf(Error);
       });
     });
     describe('dispose callback', () => {
@@ -104,10 +103,10 @@ describe('ClientMqtt', () => {
       });
 
       it('should unsubscribe to response pattern name', () => {
-        expect(unsubscribeSpy.calledWith(channel)).to.be.true;
+        expect(unsubscribeSpy.calledWith(channel)).toBeTruthy();
       });
       it('should remove callback from routin map', () => {
-        expect(client['routingMap'].has(id)).to.be.false;
+        expect(client['routingMap'].has(id)).toBeFalsy();
       });
     });
   });
@@ -132,7 +131,7 @@ describe('ClientMqtt', () => {
             err: undefined,
             response: responseMessage.response,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('disposed and "id" is correct', () => {
@@ -153,14 +152,14 @@ describe('ClientMqtt', () => {
       });
 
       it('should call callback with dispose param', () => {
-        expect(callback.called).to.be.true;
+        expect(callback.called).toBeTruthy();
         expect(
           callback.calledWith({
             isDisposed: true,
             response: responseMessage.response,
             err: undefined,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('disposed and "id" is incorrect', () => {
@@ -173,7 +172,7 @@ describe('ClientMqtt', () => {
       });
 
       it('should not call callback', () => {
-        expect(callback.called).to.be.false;
+        expect(callback.called).toBeFalsy();
       });
     });
   });
@@ -185,12 +184,12 @@ describe('ClientMqtt', () => {
     });
     it('should close "pub" when it is not null', () => {
       client.close();
-      expect(endSpy.called).to.be.true;
+      expect(endSpy.called).toBeTruthy();
     });
     it('should not close "pub" when it is null', () => {
       (client as any).mqttClient = null;
       client.close();
-      expect(endSpy.called).to.be.false;
+      expect(endSpy.called).toBeFalsy();
     });
   });
   describe('connect', () => {
@@ -230,13 +229,13 @@ describe('ClientMqtt', () => {
         await client.connect();
       });
       it('should call "handleError" once', async () => {
-        expect(handleErrorsSpy.called).to.be.true;
+        expect(handleErrorsSpy.called).toBeTruthy();
       });
       it('should call "createClient" once', async () => {
-        expect(createClientStub.called).to.be.true;
+        expect(createClientStub.called).toBeTruthy();
       });
       it('should call "connect$" once', async () => {
-        expect(connect$Stub.called).to.be.true;
+        expect(connect$Stub.called).toBeTruthy();
       });
     });
     describe('when is connected', () => {
@@ -244,13 +243,13 @@ describe('ClientMqtt', () => {
         client['mqttClient'] = { test: true } as any;
       });
       it('should not call "createClient"', () => {
-        expect(createClientStub.called).to.be.false;
+        expect(createClientStub.called).toBeFalsy();
       });
       it('should not call "handleError"', () => {
-        expect(handleErrorsSpy.called).to.be.false;
+        expect(handleErrorsSpy.called).toBeFalsy();
       });
       it('should not call "connect$"', () => {
-        expect(connect$Stub.called).to.be.false;
+        expect(connect$Stub.called).toBeFalsy();
       });
     });
   });
@@ -263,7 +262,7 @@ describe('ClientMqtt', () => {
       };
       client
         .mergeCloseEvent(instance as any, empty())
-        .subscribe(null, (err: any) => expect(err).to.be.eql(error));
+        .subscribe(null, (err: any) => expect(err).toEqual(error));
     });
   });
   describe('handleError', () => {
@@ -273,7 +272,7 @@ describe('ClientMqtt', () => {
         addListener: callback,
       };
       client.handleError(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
+      expect(callback.getCall(0).args[0]).toEqual(ERROR_EVENT);
     });
   });
   describe('dispatchEvent', () => {
@@ -292,12 +291,12 @@ describe('ClientMqtt', () => {
       publishStub.callsFake((a, b, c) => c());
       await client['dispatchEvent'](msg);
 
-      expect(publishStub.called).to.be.true;
+      expect(publishStub.called).toBeTruthy();
     });
     it('should throw error', async () => {
       publishStub.callsFake((a, b, c) => c(new Error()));
       client['dispatchEvent'](msg).catch(err =>
-        expect(err).to.be.instanceOf(Error),
+        expect(err).toBeInstanceOf(Error),
       );
     });
   });

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
@@ -42,15 +41,15 @@ describe('ServerRMQ', () => {
     });
     it('should call "createClient"', () => {
       server.listen(callbackSpy);
-      expect(createClient.called).to.be.true;
+      expect(createClient.called).toBeTruthy();
     });
     it('should bind "connect" event to handler', () => {
       server.listen(callbackSpy);
-      expect(onStub.getCall(0).args[0]).to.be.equal('connect');
+      expect(onStub.getCall(0).args[0]).toEqual('connect');
     });
     it('should bind "disconnect" event to handler', () => {
       server.listen(callbackSpy);
-      expect(onStub.getCall(1).args[0]).to.be.equal('disconnect');
+      expect(onStub.getCall(1).args[0]).toEqual('disconnect');
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', () => {
@@ -60,7 +59,7 @@ describe('ServerRMQ', () => {
           throw error;
         });
         server.listen(callbackSpy);
-        expect(callbackSpy.calledWith(error)).to.be.true;
+        expect(callbackSpy.calledWith(error)).toBeTruthy();
       });
     });
   });
@@ -74,11 +73,11 @@ describe('ServerRMQ', () => {
     });
     it('should close server', () => {
       server.close();
-      expect(rmqServer.close.called).to.be.true;
+      expect(rmqServer.close.called).toBeTruthy();
     });
     it('should close channel', () => {
       server.close();
-      expect(rmqChannel.close.called).to.be.true;
+      expect(rmqChannel.close.called).toBeTruthy();
     });
   });
 
@@ -103,7 +102,7 @@ describe('ServerRMQ', () => {
     it('should call "handleEvent" if identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
       await server.handleMessage(createMessage({ pattern: '', data: '' }), '');
-      expect(handleEventSpy.called).to.be.true;
+      expect(handleEventSpy.called).toBeTruthy();
     });
     it('should send NO_MESSAGE_HANDLER error if key does not exists in handlers object', async () => {
       await server.handleMessage(msg, '');
@@ -113,7 +112,7 @@ describe('ServerRMQ', () => {
           status: 'error',
           err: NO_MESSAGE_HANDLER,
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     it('should call handler if exists in handlers object', async () => {
       const handler = sinon.spy();
@@ -121,7 +120,7 @@ describe('ServerRMQ', () => {
         [pattern]: handler as any,
       });
       await server.handleMessage(msg, '');
-      expect(handler.calledOnce).to.be.true;
+      expect(handler.calledOnce).toBeTruthy();
     });
   });
   describe('setupChannel', () => {
@@ -146,21 +145,22 @@ describe('ServerRMQ', () => {
     });
     it('should call "assertQueue" with queue and queue options', async () => {
       await server.setupChannel(channel, () => null);
-      expect(channel.assertQueue.calledWith(queue, queueOptions)).to.be.true;
+      expect(channel.assertQueue.calledWith(queue, queueOptions)).toBeTruthy();
     });
     it('should call "prefetch" with prefetchCount and "isGlobalPrefetchCount"', async () => {
       await server.setupChannel(channel, () => null);
-      expect(channel.prefetch.calledWith(prefetchCount, isGlobalPrefetchCount))
-        .to.be.true;
+      expect(
+        channel.prefetch.calledWith(prefetchCount, isGlobalPrefetchCount),
+      ).toBeTruthy();
     });
     it('should call "consumeChannel" method', async () => {
       await server.setupChannel(channel, () => null);
-      expect(channel.consume.called).to.be.true;
+      expect(channel.consume.called).toBeTruthy();
     });
     it('should call "resolve" function', async () => {
       const resolve = sinon.spy();
       await server.setupChannel(channel, resolve);
-      expect(resolve.called).to.be.true;
+      expect(resolve.called).toBeTruthy();
     });
   });
 
@@ -186,7 +186,7 @@ describe('ServerRMQ', () => {
           Buffer.from(JSON.stringify(message)),
           { correlationId },
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
 
@@ -205,7 +205,7 @@ describe('ServerRMQ', () => {
         { pattern: '', data },
         new BaseRpcContext([]),
       );
-      expect(handler.calledWith(data)).to.be.true;
+      expect(handler.calledWith(data)).toBeTruthy();
     });
   });
 });

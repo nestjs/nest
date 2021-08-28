@@ -1,5 +1,4 @@
 import { Logger } from '@nestjs/common';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaHeaders } from '../../enums';
@@ -120,11 +119,11 @@ describe('ServerKafka', () => {
         .stub(server, 'bindEvents')
         .callsFake(() => ({} as any));
       await server.listen(callback);
-      expect(bindEventsStub.called).to.be.true;
+      expect(bindEventsStub.called).toBeTruthy();
     });
     it('should call callback', async () => {
       await server.listen(callback);
-      expect(callback.called).to.be.true;
+      expect(callback.called).toBeTruthy();
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', () => {
@@ -135,7 +134,7 @@ describe('ServerKafka', () => {
           throw error;
         });
         server.listen(callbackSpy);
-        expect(callbackSpy.calledWith(error)).to.be.true;
+        expect(callbackSpy.calledWith(error)).toBeTruthy();
       });
     });
   });
@@ -150,11 +149,11 @@ describe('ServerKafka', () => {
     it('should close server', async () => {
       await server.close();
 
-      expect(consumer.disconnect.calledOnce).to.be.true;
-      expect(producer.disconnect.calledOnce).to.be.true;
-      expect((server as any).consumer).to.be.null;
-      expect((server as any).producer).to.be.null;
-      expect((server as any).client).to.be.null;
+      expect(consumer.disconnect.calledOnce).toBeTruthy()
+      expect(producer.disconnect.calledOnce).toBeTruthy();
+      expect((server as any).consumer).toBeNull();
+      expect((server as any).producer).toBeNull();
+      expect((server as any).client).toBeNull();
     });
   });
 
@@ -163,9 +162,9 @@ describe('ServerKafka', () => {
       (server as any).logger = new NoopLogger();
       await server.listen(callback);
       await server.bindEvents((server as any).consumer);
-      expect(subscribe.called).to.be.false;
-      expect(run.called).to.be.true;
-      expect(connect.called).to.be.true;
+      expect(subscribe.called).toBeFalsy();
+      expect(run.called).toBeTruthy()
+      expect(connect.called).toBeTruthy();
     });
     it('should call subscribe and run on consumer when there are messageHandlers', async () => {
       (server as any).logger = new NoopLogger();
@@ -179,15 +178,15 @@ describe('ServerKafka', () => {
 
       await server.bindEvents((server as any).consumer);
 
-      expect(subscribe.called).to.be.true;
+      expect(subscribe.called).toBeTruthy();
       expect(
         subscribe.calledWith({
           topic: pattern,
         }),
-      ).to.be.true;
+      ).toBeTruthy();
 
-      expect(run.called).to.be.true;
-      expect(connect.called).to.be.true;
+      expect(run.called).toBeTruthy()
+      expect(connect.called).toBeTruthy();
     });
     it('should call subscribe with options and run on consumer when there are messageHandlers', async () => {
       (server as any).logger = new NoopLogger();
@@ -203,22 +202,22 @@ describe('ServerKafka', () => {
 
       await server.bindEvents((server as any).consumer);
 
-      expect(subscribe.called).to.be.true;
+      expect(subscribe.called).toBeTruthy();
       expect(
         subscribe.calledWith({
           topic: pattern,
           fromBeginning: true,
         }),
-      ).to.be.true;
+      ).toBeTruthy();
 
-      expect(run.called).to.be.true;
-      expect(connect.called).to.be.true;
+      expect(run.called).toBeTruthy()
+      expect(connect.called).toBeTruthy();
     });
   });
 
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
-      expect(typeof server.getMessageHandler()).to.be.eql('function');
+      expect(typeof server.getMessageHandler()).toEqual('function');
     });
     describe('handler', () => {
       it('should call "handleMessage"', async () => {
@@ -226,7 +225,7 @@ describe('ServerKafka', () => {
           .stub(server, 'handleMessage')
           .callsFake(() => null);
         (await server.getMessageHandler())(null);
-        expect(handleMessageStub.called).to.be.true;
+        expect(handleMessageStub.called).toBeTruthy();
       });
     });
   });
@@ -246,7 +245,7 @@ describe('ServerKafka', () => {
         .callsFake(async () => []);
     });
     it(`should return function`, () => {
-      expect(typeof server.getPublisher(null, null, correlationId)).to.be.eql(
+      expect(typeof server.getPublisher(null, null, correlationId)).toEqual(
         'function',
       );
     });
@@ -264,7 +263,7 @@ describe('ServerKafka', () => {
           replyPartition,
           correlationId,
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
 
@@ -280,13 +279,13 @@ describe('ServerKafka', () => {
     it('should call "handleEvent" if correlation identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
       await server.handleMessage(eventPayload);
-      expect(handleEventSpy.called).to.be.true;
+      expect(handleEventSpy.called).toBeTruthy();
     });
 
     it('should call "handleEvent" if correlation identifier is present by the reply topic is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
       await server.handleMessage(eventWithCorrelationIdPayload);
-      expect(handleEventSpy.called).to.be.true;
+      expect(handleEventSpy.called).toBeTruthy();
     });
 
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
@@ -296,7 +295,7 @@ describe('ServerKafka', () => {
           id: payload.message.headers[KafkaHeaders.CORRELATION_ID].toString(),
           err: NO_MESSAGE_HANDLER,
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
@@ -305,7 +304,7 @@ describe('ServerKafka', () => {
       });
 
       await server.handleMessage(payload);
-      expect(handler.called).to.be.true;
+      expect(handler.called).toBeTruthy();
     });
   });
 
@@ -343,7 +342,7 @@ describe('ServerKafka', () => {
             },
           ],
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     it('should send message without reply partition', () => {
       server.sendMessage(
@@ -368,7 +367,7 @@ describe('ServerKafka', () => {
             },
           ],
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     it('should send error message', () => {
       server.sendMessage(
@@ -395,7 +394,7 @@ describe('ServerKafka', () => {
             },
           ],
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     it('should send `isDisposed` message', () => {
       server.sendMessage(
@@ -422,7 +421,7 @@ describe('ServerKafka', () => {
             },
           ],
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
 
@@ -442,7 +441,7 @@ describe('ServerKafka', () => {
 
       logger.info({ namespace: '', level: 1, log: 'test' });
 
-      expect(logCreatorSpy.called).to.be.true;
+      expect(logCreatorSpy.called).toBeTruthy();
     });
   });
 });

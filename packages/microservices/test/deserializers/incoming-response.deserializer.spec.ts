@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { IncomingResponseDeserializer } from '../../deserializers/incoming-response.deserializer';
 import { IncomingResponse } from '../../interfaces';
 
@@ -18,10 +17,10 @@ describe('IncomingResponseDeserializer', () => {
           id: '1',
           err: {},
         };
-        expect(instance.deserialize(incomingResponse)).to.be.equal(
+        expect(instance.deserialize(incomingResponse)).toEqual(
           incomingResponse,
         );
-        expect(instance.deserialize(errResponse)).to.be.equal(errResponse);
+        expect(instance.deserialize(errResponse)).toEqual(errResponse);
       });
     });
     describe('otherwise', () => {
@@ -30,7 +29,7 @@ describe('IncomingResponseDeserializer', () => {
           id: '1',
           array: [1, 2, 3],
         };
-        expect(instance.deserialize(externalResponse)).to.be.deep.equal({
+        expect(instance.deserialize(externalResponse)).toEqual({
           id: externalResponse.id,
           isDisposed: true,
           response: externalResponse,

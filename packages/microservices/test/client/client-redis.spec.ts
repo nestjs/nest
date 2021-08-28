@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientRedis } from '../../client/client-redis';
@@ -12,13 +11,13 @@ describe('ClientRedis', () => {
   describe('getRequestPattern', () => {
     it(`should leave pattern as it is`, () => {
       const expectedResult = test;
-      expect(client.getRequestPattern(test)).to.equal(expectedResult);
+      expect(client.getRequestPattern(test)).toEqual(expectedResult);
     });
   });
   describe('getReplyPattern', () => {
     it(`should append ".reply" to string`, () => {
       const expectedResult = test + '.reply';
-      expect(client.getReplyPattern(test)).to.equal(expectedResult);
+      expect(client.getReplyPattern(test)).toEqual(expectedResult);
     });
   });
   describe('publish', () => {
@@ -57,11 +56,11 @@ describe('ClientRedis', () => {
     });
     it('should subscribe to response pattern name', () => {
       client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`${pattern}.reply`)).to.be.true;
+      expect(subscribeSpy.calledWith(`${pattern}.reply`)).toBeTruthy();
     });
     it('should publish stringified message to request pattern name', async () => {
       await client['publish'](msg, () => {});
-      expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).to.be.true;
+      expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).toBeTruthy();
     });
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;
@@ -80,8 +79,8 @@ describe('ClientRedis', () => {
         const callback = sinon.spy();
         client['publish'](msg, callback);
 
-        expect(callback.called).to.be.true;
-        expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
+        expect(callback.called).toBeTruthy();
+        expect(callback.getCall(0).args[0].err).toBeInstanceOf(Error);
       });
     });
     describe('dispose callback', () => {
@@ -109,10 +108,10 @@ describe('ClientRedis', () => {
       });
 
       it('should unsubscribe to response pattern name', () => {
-        expect(unsubscribeSpy.calledWith(channel)).to.be.true;
+        expect(unsubscribeSpy.calledWith(channel)).toBeTruthy();
       });
       it('should clean routingMap', () => {
-        expect(client['routingMap'].has(id)).to.be.false;
+        expect(client['routingMap'].has(id)).toBeFalsy();
       });
     });
   });
@@ -140,7 +139,7 @@ describe('ClientRedis', () => {
             err: undefined,
             response: responseMessage.response,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('disposed and "id" is correct', () => {
@@ -160,14 +159,14 @@ describe('ClientRedis', () => {
       });
 
       it('should call callback with dispose param', () => {
-        expect(callback.called).to.be.true;
+        expect(callback.called).toBeTruthy();
         expect(
           callback.calledWith({
             isDisposed: true,
             response: responseMessage.response,
             err: undefined,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('disposed and "id" is incorrect', () => {
@@ -178,7 +177,7 @@ describe('ClientRedis', () => {
       });
 
       it('should not call callback', () => {
-        expect(callback.called).to.be.false;
+        expect(callback.called).toBeFalsy();
       });
     });
   });
@@ -196,21 +195,21 @@ describe('ClientRedis', () => {
     });
     it('should close "pub" when it is not null', () => {
       client.close();
-      expect(pubClose.called).to.be.true;
+      expect(pubClose.called).toBeTruthy();
     });
     it('should not close "pub" when it is null', () => {
       (client as any).pubClient = null;
       client.close();
-      expect(pubClose.called).to.be.false;
+      expect(pubClose.called).toBeFalsy();
     });
     it('should close "sub" when it is not null', () => {
       client.close();
-      expect(subClose.called).to.be.true;
+      expect(subClose.called).toBeTruthy();
     });
     it('should not close "sub" when it is null', () => {
       (client as any).subClient = null;
       client.close();
-      expect(subClose.called).to.be.false;
+      expect(subClose.called).toBeFalsy();
     });
   });
   describe('connect', () => {
@@ -235,10 +234,10 @@ describe('ClientRedis', () => {
       handleErrorsSpy.restore();
     });
     it('should call "createClient" twice', () => {
-      expect(createClientSpy.calledTwice).to.be.true;
+      expect(createClientSpy.calledTwice).toBeTruthy();
     });
     it('should call "handleError" twice', () => {
-      expect(handleErrorsSpy.calledTwice).to.be.true;
+      expect(handleErrorsSpy.calledTwice).toBeTruthy();
     });
   });
   describe('handleError', () => {
@@ -248,7 +247,7 @@ describe('ClientRedis', () => {
         addListener: callback,
       };
       client.handleError(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
+      expect(callback.getCall(0).args[0]).toEqual(ERROR_EVENT);
     });
   });
   describe('getClientOptions', () => {
@@ -258,7 +257,7 @@ describe('ClientRedis', () => {
       try {
         retry_strategy({} as any);
       } catch {}
-      expect(createSpy.called).to.be.true;
+      expect(createSpy.called).toBeTruthy();
     });
   });
   describe('createRetryStrategy', () => {
@@ -267,7 +266,7 @@ describe('ClientRedis', () => {
       it('should return undefined', () => {
         (client as any).isExplicitlyTerminated = true;
         const result = client.createRetryStrategy({} as any, subject);
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('when "retryAttempts" does not exist', () => {
@@ -276,7 +275,7 @@ describe('ClientRedis', () => {
         (client as any).options.options = {};
         (client as any).options.options.retryAttempts = undefined;
         const result = client.createRetryStrategy({} as any, subject);
-        expect(result).to.be.instanceOf(Error);
+        expect(result).toBeInstanceOf(Error);
       });
     });
     describe('when "attempts" count is max', () => {
@@ -288,7 +287,7 @@ describe('ClientRedis', () => {
           { attempt: 4 } as any,
           subject,
         );
-        expect(result).to.be.instanceOf(Error);
+        expect(result).toBeInstanceOf(Error);
       });
     });
     describe('when ECONNREFUSED', () => {
@@ -298,7 +297,7 @@ describe('ClientRedis', () => {
 
         const error = { code: 'ECONNREFUSED' };
         const result = client.createRetryStrategy({ error } as any, subject);
-        expect(result).to.be.instanceOf(Error);
+        expect(result).toBeInstanceOf(Error);
       });
     });
     describe('otherwise', () => {
@@ -311,7 +310,7 @@ describe('ClientRedis', () => {
           { attempt: 2 } as any,
           subject,
         );
-        expect(result).to.be.eql((client as any).options.retryDelay);
+        expect(result).toEqual((client as any).options.retryDelay);
       });
     });
   });
@@ -331,12 +330,12 @@ describe('ClientRedis', () => {
       publishStub.callsFake((a, b, c) => c());
       await client['dispatchEvent'](msg);
 
-      expect(publishStub.called).to.be.true;
+      expect(publishStub.called).toBeTruthy();
     });
     it('should throw error', async () => {
       publishStub.callsFake((a, b, c) => c(new Error()));
       client['dispatchEvent'](msg).catch(err =>
-        expect(err).to.be.instanceOf(Error),
+        expect(err).toBeInstanceOf(Error),
       );
     });
   });

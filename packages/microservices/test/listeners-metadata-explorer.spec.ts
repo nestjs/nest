@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { Client } from '../decorators/client.decorator';
@@ -50,8 +49,8 @@ describe('ListenerMetadataExplorer', () => {
       instance.explore(obj);
 
       const { args } = scanFromPrototype.getCall(0);
-      expect(args[0]).to.be.eql(obj);
-      expect(args[1]).to.be.eql(Object.getPrototypeOf(obj));
+      expect(args[0]).toEqual(obj);
+      expect(args[1]).toEqual(Object.getPrototypeOf(obj));
     });
   });
   describe('exploreMethodMetadata', () => {
@@ -64,21 +63,23 @@ describe('ListenerMetadataExplorer', () => {
         Object.getPrototypeOf(test),
         'noPattern',
       );
-      expect(metadata).to.eq(undefined);
+      expect(metadata).toEqual(undefined);
     });
     it(`should return pattern properties when "handlerType" metadata is not undefined`, () => {
       const metadata = instance.exploreMethodMetadata(
         Object.getPrototypeOf(test),
         'test',
       );
-      expect(metadata).to.have.keys([
-        'isEventHandler',
-        'methodKey',
-        'targetCallback',
-        'pattern',
-        'transport',
-      ]);
-      expect(metadata.pattern).to.eql(pattern);
+      expect(Object.keys(metadata)).toEqual(
+        expect.arrayContaining([
+          'isEventHandler',
+          'methodKey',
+          'targetCallback',
+          'pattern',
+          'transport',
+        ]),
+      );
+      expect(metadata.pattern).toEqual(pattern);
     });
   });
   describe('scanForClientHooks', () => {
@@ -86,12 +87,12 @@ describe('ListenerMetadataExplorer', () => {
       const obj = new Test();
       const hooks = [...instance.scanForClientHooks(obj)];
 
-      expect(hooks).to.have.length(2);
-      expect(hooks[0]).to.deep.eq({
+      expect(hooks.length).toBe(2);
+      expect(hooks[0]).toEqual({
         property: 'client',
         metadata: clientMetadata,
       });
-      expect(hooks[1]).to.deep.eq({
+      expect(hooks[1]).toEqual({
         property: 'redisClient',
         metadata: clientSecMetadata,
       });

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { ClientsContainer } from '../container';
 
 describe('ClientsContainer', () => {
@@ -10,14 +9,14 @@ describe('ClientsContainer', () => {
     it('should return array of clients', () => {
       const clients = [1, 2, 3];
       (instance as any).clients = clients;
-      expect(instance.getAllClients()).to.be.eql(clients);
+      expect(instance.getAllClients()).toEqual(clients);
     });
   });
   describe('addClient', () => {
     it('should push client into clients array', () => {
       const client = 'test';
       instance.addClient(client as any);
-      expect(instance.getAllClients()).to.be.deep.equal([client]);
+      expect(instance.getAllClients()).toEqual([client]);
     });
   });
   describe('clear', () => {
@@ -25,7 +24,7 @@ describe('ClientsContainer', () => {
       const clients = [1, 2, 3];
       (instance as any).clients = clients;
       instance.clear();
-      expect(instance.getAllClients()).to.be.deep.equal([]);
+      expect(instance.getAllClients()).toEqual([]);
     });
   });
 });

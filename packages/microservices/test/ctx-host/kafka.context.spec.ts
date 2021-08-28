@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { KafkaContext } from '../../ctx-host';
 import { KafkaMessage } from '../../external/kafka.interface';
 
@@ -11,17 +10,17 @@ describe('KafkaContext', () => {
   });
   describe('getTopic', () => {
     it('should return topic', () => {
-      expect(context.getTopic()).to.be.eql(args[2]);
+      expect(context.getTopic()).toEqual(args[2]);
     });
   });
   describe('getPartition', () => {
     it('should return partition', () => {
-      expect(context.getPartition()).to.be.eql(args[1]);
+      expect(context.getPartition()).toEqual(args[1]);
     });
   });
   describe('getMessage', () => {
     it('should return original message', () => {
-      expect(context.getMessage()).to.be.eql(args[0]);
+      expect(context.getMessage()).toEqual(args[0]);
     });
   });
 });

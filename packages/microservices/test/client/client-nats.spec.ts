@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { JSONCodec } from 'nats';
 import * as sinon from 'sinon';
 import { ClientNats } from '../../client/client-nats';
@@ -50,7 +49,7 @@ describe('ClientNats', () => {
     });
     it('should publish stringified message to pattern name', () => {
       client['publish'](msg, () => {});
-      expect(publishSpy.getCall(0).args[0]).to.be.eql(pattern);
+      expect(publishSpy.getCall(0).args[0]).toEqual(pattern);
     });
     describe('on error', () => {
       let assignPacketIdStub: sinon.SinonStub;
@@ -69,8 +68,8 @@ describe('ClientNats', () => {
         const callback = sinon.spy();
         client['publish'](msg, callback);
 
-        expect(callback.called).to.be.true;
-        expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
+        expect(callback.called).toBeTruthy();
+        expect(callback.getCall(0).args[0].err).toBeInstanceOf(Error);
       });
     });
     describe('dispose callback', () => {
@@ -91,7 +90,7 @@ describe('ClientNats', () => {
       });
 
       it('should unsubscribe', () => {
-        expect(unsubscribeSpy.called).to.be.true;
+        expect(unsubscribeSpy.called).toBeTruthy();
       });
     });
   });
@@ -121,7 +120,7 @@ describe('ClientNats', () => {
             err: undefined,
             response: responseMessage.response,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('disposed and "id" is correct', () => {
@@ -137,14 +136,14 @@ describe('ClientNats', () => {
       });
 
       it('should call callback with dispose param', () => {
-        expect(callback.called).to.be.true;
+        expect(callback.called).toBeTruthy();
         expect(
           callback.calledWith({
             isDisposed: true,
             response: responseMessage.response,
             err: undefined,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('disposed and "id" is incorrect', () => {
@@ -166,7 +165,7 @@ describe('ClientNats', () => {
       });
 
       it('should not call callback', () => {
-        expect(callback.called).to.be.false;
+        expect(callback.called).toBeFalsy();
       });
     });
   });
@@ -180,7 +179,7 @@ describe('ClientNats', () => {
     });
     it('should close "natsClient" when it is not null', () => {
       client.close();
-      expect(natsClose.called).to.be.true;
+      expect(natsClose.called).toBeTruthy();
     });
   });
   describe('connect', () => {
@@ -205,10 +204,10 @@ describe('ClientNats', () => {
         await client.connect();
       });
       it('should call "handleStatusUpdatesSpy" once', async () => {
-        expect(handleStatusUpdatesSpy.called).to.be.true;
+        expect(handleStatusUpdatesSpy.called).toBeTruthy();
       });
       it('should call "createClient" once', async () => {
-        expect(createClientSpy.called).to.be.true;
+        expect(createClientSpy.called).toBeTruthy();
       });
     });
     describe('when is connected', () => {
@@ -217,10 +216,10 @@ describe('ClientNats', () => {
         client['connection'] = Promise.resolve(true);
       });
       it('should not call "createClient"', () => {
-        expect(createClientSpy.called).to.be.false;
+        expect(createClientSpy.called).toBeFalsy();
       });
       it('should not call "handleStatusUpdatesSpy"', () => {
-        expect(handleStatusUpdatesSpy.called).to.be.false;
+        expect(handleStatusUpdatesSpy.called).toBeFalsy();
       });
     });
   });
@@ -232,7 +231,7 @@ describe('ClientNats', () => {
         }),
       };
       client.handleStatusUpdates(clientMock as any);
-      expect(clientMock.status.called).to.be.true;
+      expect(clientMock.status.called).toBeTruthy();
     });
 
     it('should log "disconnect" and "error" statuses as "errors"', async () => {
@@ -246,7 +245,7 @@ describe('ClientNats', () => {
         }),
       };
       await client.handleStatusUpdates(clientMock as any);
-      expect(logErrorSpy.calledTwice).to.be.true;
+      expect(logErrorSpy.calledTwice).toBeTruthy();
       expect(
         logErrorSpy.calledWith(
           `NatsError: type: "disconnect", data: "localhost".`,
@@ -267,7 +266,7 @@ describe('ClientNats', () => {
         }),
       };
       await client.handleStatusUpdates(clientMock as any);
-      expect(logSpy.calledTwice).to.be.true;
+      expect(logSpy.calledTwice).toBeTruthy();
       expect(
         logSpy.calledWith(
           `NatsStatus: type: "non-disconnect", data: "localhost".`,
@@ -294,14 +293,14 @@ describe('ClientNats', () => {
     it('should publish packet', async () => {
       await client['dispatchEvent'](msg);
 
-      expect(natsClient.publish.called).to.be.true;
+      expect(natsClient.publish.called).toBeTruthy();
     });
     it('should throw error', async () => {
       subscribeStub.callsFake((channel, options) =>
         options.callback(new Error()),
       );
       client['dispatchEvent'](msg).catch(err =>
-        expect(err).to.be.instanceOf(Error),
+        expect(err).toBeInstanceOf(Error),
       );
     });
   });

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { MqttContext } from '../../ctx-host';
 
 describe('MqttContext', () => {
@@ -10,12 +9,12 @@ describe('MqttContext', () => {
   });
   describe('getTopic', () => {
     it('should return topic', () => {
-      expect(context.getTopic()).to.be.eql(args[0]);
+      expect(context.getTopic()).toEqual(args[0]);
     });
   });
   describe('getPacket', () => {
     it('should return packet', () => {
-      expect(context.getPacket()).to.be.eql(args[1]);
+      expect(context.getPacket()).toEqual(args[1]);
     });
   });
 });

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ClientKafka } from '../../client/client-kafka';
 import { NO_MESSAGE_HANDLER } from '../../constants';
@@ -224,7 +223,7 @@ describe('ClientKafka', () => {
 
       logger.info({ namespace: '', level: 1, log: 'test' });
 
-      expect(logCreatorSpy.called).to.be.true;
+      expect(logCreatorSpy.called).toBeTruthy();
     });
   });
 
@@ -243,10 +242,10 @@ describe('ClientKafka', () => {
     it(`should create an array of response patterns`, () => {
       client.subscribeToResponseOf(topic);
 
-      expect(normalizePatternSpy.calledWith(topic)).to.be.true;
-      expect(getResponsePatternNameSpy.calledWith(topic)).to.be.true;
-      expect(client['responsePatterns']).to.not.be.empty;
-      expect(client['responsePatterns'][0]).to.eq(replyTopic);
+      expect(normalizePatternSpy.calledWith(topic)).toBeTruthy();
+      expect(getResponsePatternNameSpy.calledWith(topic)).toBeTruthy();
+      expect(client['responsePatterns']).not.toEqual([]);
+      expect(client['responsePatterns'][0]).toEqual(replyTopic);
     });
 
     afterEach(() => {
@@ -264,11 +263,11 @@ describe('ClientKafka', () => {
     it('should close server', async () => {
       await client.close();
 
-      expect(consumer.disconnect.calledOnce).to.be.true;
-      expect(producer.disconnect.calledOnce).to.be.true;
-      expect((client as any).consumer).to.be.null;
-      expect((client as any).producer).to.be.null;
-      expect((client as any).client).to.be.null;
+      expect(consumer.disconnect.calledOnce).toBeTruthy();
+      expect(producer.disconnect.calledOnce).toBeTruthy();
+      expect((client as any).consumer).toBeNull();
+      expect((client as any).producer).toBeNull();
+      expect((client as any).client).toBeNull();
     });
   });
 
@@ -290,34 +289,34 @@ describe('ClientKafka', () => {
     it('should expect the connection to be created', async () => {
       const connection = await client.connect();
 
-      expect(createClientStub.calledOnce).to.be.true;
-      expect(producerStub.calledOnce).to.be.true;
+      expect(createClientStub.calledOnce).toBeTruthy();
+      expect(producerStub.calledOnce).toBeTruthy();
 
-      expect(consumerStub.calledOnce).to.be.true;
+      expect(consumerStub.calledOnce).toBeTruthy();
 
-      expect(on.calledOnce).to.be.true;
-      expect(client['consumerAssignments']).to.be.empty;
+      expect(on.calledOnce).toBeTruthy();
+      expect(client['consumerAssignments']).toEqual([]);
 
-      expect(connect.calledTwice).to.be.true;
+      expect(connect.calledTwice).toBeTruthy();
 
-      expect(bindTopicsStub.calledOnce).to.be.true;
-      expect(connection).to.deep.equal(producerStub());
+      expect(bindTopicsStub.calledOnce).toBeTruthy();
+      expect(connection).toEqual(producerStub());
     });
 
     it('should expect the connection to be reused', async () => {
       (client as any).client = kafkaClient;
       await client.connect();
 
-      expect(createClientStub.calledOnce).to.be.false;
-      expect(producerStub.calledOnce).to.be.false;
-      expect(consumerStub.calledOnce).to.be.false;
+      expect(createClientStub.calledOnce).toBeFalsy();
+      expect(producerStub.calledOnce).toBeFalsy();
+      expect(consumerStub.calledOnce).toBeFalsy();
 
-      expect(on.calledOnce).to.be.false;
-      expect(client['consumerAssignments']).to.be.empty;
+      expect(on.calledOnce).toBeFalsy();
+      expect(client['consumerAssignments']).toEqual([]);
 
-      expect(connect.calledTwice).to.be.false;
+      expect(connect.calledTwice).toBeFalsy();
 
-      expect(bindTopicsStub.calledOnce).to.be.false;
+      expect(bindTopicsStub.calledOnce).toBeFalsy();
     });
   });
 
@@ -345,7 +344,7 @@ describe('ClientKafka', () => {
 
       client['setConsumerAssignments'](consumerAssignments);
 
-      expect(client['consumerAssignments']).to.deep.eq(
+      expect(client['consumerAssignments']).toEqual(
         // consumerAssignments.payload.memberAssignment,
         {
           'topic-a': 0,
@@ -362,13 +361,13 @@ describe('ClientKafka', () => {
 
       await client.bindTopics();
 
-      expect(subscribe.calledOnce).to.be.true;
+      expect(subscribe.calledOnce).toBeTruthy();
       expect(
         subscribe.calledWith({
           topic: replyTopic,
         }),
-      ).to.be.true;
-      expect(run.calledOnce).to.be.true;
+      ).toBeTruthy();
+      expect(run.calledOnce).toBeTruthy();
     });
 
     it('should bind topics from response patterns with options', async () => {
@@ -379,14 +378,14 @@ describe('ClientKafka', () => {
 
       await client.bindTopics();
 
-      expect(subscribe.calledOnce).to.be.true;
+      expect(subscribe.calledOnce).toBeTruthy();
       expect(
         subscribe.calledWith({
           topic: replyTopic,
           fromBeginning: true,
         }),
-      ).to.be.true;
-      expect(run.calledOnce).to.be.true;
+      ).toBeTruthy();
+      expect(run.calledOnce).toBeTruthy();
     });
   });
 
@@ -401,13 +400,13 @@ describe('ClientKafka', () => {
         subscription(payload);
       });
       it('should call callback with expected arguments', () => {
-        expect(callback.called).to.be.true;
+        expect(callback.called).toBeTruthy();
         expect(
           callback.calledWith({
             err: undefined,
             response: messageValue,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
 
@@ -420,14 +419,14 @@ describe('ClientKafka', () => {
       });
 
       it('should call callback with dispose param', () => {
-        expect(callback.called).to.be.true;
+        expect(callback.called).toBeTruthy();
         expect(
           callback.calledWith({
             isDisposed: true,
             response: payloadDisposed.message.value,
             err: undefined,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
 
@@ -440,14 +439,14 @@ describe('ClientKafka', () => {
       });
 
       it('should call callback with error param', () => {
-        expect(callback.called).to.be.true;
+        expect(callback.called).toBeTruthy();
         expect(
           callback.calledWith({
             isDisposed: true,
             response: undefined,
             err: NO_MESSAGE_HANDLER,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
 
@@ -460,7 +459,7 @@ describe('ClientKafka', () => {
       });
 
       it('should not call callback', () => {
-        expect(callback.called).to.be.false;
+        expect(callback.called).toBeFalsy();
       });
     });
 
@@ -474,7 +473,7 @@ describe('ClientKafka', () => {
       });
 
       it('should not call callback', () => {
-        expect(callback.called).to.be.false;
+        expect(callback.called).toBeFalsy();
       });
     });
   });
@@ -503,13 +502,13 @@ describe('ClientKafka', () => {
 
       await client['dispatchEvent'](eventMessage);
 
-      expect(sendSpy.calledOnce).to.be.true;
-      expect(sendSpy.args[0][0].topic).to.eq(topic);
-      expect(sendSpy.args[0][0].messages).to.not.be.empty;
+      expect(sendSpy.calledOnce).toBeTruthy();
+      expect(sendSpy.args[0][0].topic).toEqual(topic);
+      expect(sendSpy.args[0][0].messages).not.toEqual([]);
 
       const sentMessage = sendSpy.args[0][0].messages[0];
 
-      expect(sentMessage.value).to.eq(messageValue);
+      expect(sentMessage.value).toEqual(messageValue);
     });
 
     it('should throw error', async () => {
@@ -518,7 +517,7 @@ describe('ClientKafka', () => {
       });
 
       client['dispatchEvent'](eventMessage).catch(err =>
-        expect(err).to.be.instanceOf(Error),
+        expect(err).toBeInstanceOf(Error),
       );
     });
   });
@@ -531,7 +530,7 @@ describe('ClientKafka', () => {
 
       const result = client.getConsumerAssignments();
 
-      expect(result).to.deep.eq(client['consumerAssignments']);
+      expect(result).toEqual(client['consumerAssignments']);
     });
   });
 
@@ -543,13 +542,13 @@ describe('ClientKafka', () => {
 
       const result = client['getReplyTopicPartition'](replyTopic);
 
-      expect(result).to.eq('0');
+      expect(result).toEqual('0');
     });
 
     it('should throw error when the topic is not being consumed', () => {
       client['consumerAssignments'] = {};
 
-      expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
+      expect(() => client['getReplyTopicPartition'](replyTopic)).toThrow(
         InvalidKafkaClientTopicException,
       );
     });
@@ -559,7 +558,7 @@ describe('ClientKafka', () => {
         [topic]: undefined,
       };
 
-      expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
+      expect(() => client['getReplyTopicPartition'](replyTopic)).toThrow(
         InvalidKafkaClientTopicException,
       );
     });
@@ -614,47 +613,47 @@ describe('ClientKafka', () => {
 
     it('should assign a packet id', async () => {
       await client['publish'](readPacket, callback);
-      expect(assignPacketIdStub.calledWith(readPacket)).to.be.true;
+      expect(assignPacketIdStub.calledWith(readPacket)).toBeTruthy();
     });
 
     it('should normalize the pattern', async () => {
       await client['publish'](readPacket, callback);
-      expect(normalizePatternSpy.calledWith(topic)).to.be.true;
+      expect(normalizePatternSpy.calledWith(topic)).toBeTruthy();
     });
 
     it('should get the reply pattern', async () => {
       await client['publish'](readPacket, callback);
-      expect(getResponsePatternNameSpy.calledWith(topic)).to.be.true;
+      expect(getResponsePatternNameSpy.calledWith(topic)).toBeTruthy();
     });
 
     it('should get the reply partition', async () => {
       await client['publish'](readPacket, callback);
-      expect(getReplyTopicPartitionSpy.calledWith(replyTopic)).to.be.true;
+      expect(getReplyTopicPartitionSpy.calledWith(replyTopic)).toBeTruthy();
     });
 
     it('should add the callback to the routing map', async () => {
       await client['publish'](readPacket, callback);
-      expect(routingMapSetSpy.calledOnce).to.be.true;
-      expect(routingMapSetSpy.args[0][0]).to.eq(correlationId);
-      expect(routingMapSetSpy.args[0][1]).to.eq(callback);
+      expect(routingMapSetSpy.calledOnce).toBeTruthy();
+      expect(routingMapSetSpy.args[0][0]).toEqual(correlationId);
+      expect(routingMapSetSpy.args[0][1]).toEqual(callback);
     });
 
     it('should send the message with headers', async () => {
       await client['publish'](readPacket, callback);
 
-      expect(sendSpy.calledOnce).to.be.true;
-      expect(sendSpy.args[0][0].topic).to.eq(topic);
-      expect(sendSpy.args[0][0].messages).to.not.be.empty;
+      expect(sendSpy.calledOnce).toBeTruthy();
+      expect(sendSpy.args[0][0].topic).toEqual(topic);
+      expect(sendSpy.args[0][0].messages).not.toEqual([]);
 
       const sentMessage = sendSpy.args[0][0].messages[0];
 
-      expect(sentMessage.value).to.eq(messageValue);
-      expect(sentMessage.headers).to.not.be.empty;
-      expect(sentMessage.headers[KafkaHeaders.CORRELATION_ID]).to.eq(
+      expect(sentMessage.value).toEqual(messageValue);
+      expect(sentMessage.headers).not.toEqual([]);
+      expect(sentMessage.headers[KafkaHeaders.CORRELATION_ID]).toEqual(
         correlationId,
       );
-      expect(sentMessage.headers[KafkaHeaders.REPLY_TOPIC]).to.eq(replyTopic);
-      expect(sentMessage.headers[KafkaHeaders.REPLY_PARTITION]).to.eq(
+      expect(sentMessage.headers[KafkaHeaders.REPLY_TOPIC]).toEqual(replyTopic);
+      expect(sentMessage.headers[KafkaHeaders.REPLY_PARTITION]).toEqual(
         replyPartition,
       );
     });
@@ -680,8 +679,8 @@ describe('ClientKafka', () => {
       it('should call callback', async () => {
         await client['publish'](readPacket, callback);
 
-        expect(callback.called).to.be.true;
-        expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
+        expect(callback.called).toBeTruthy();
+        expect(callback.getCall(0).args[0].err).toBeInstanceOf(Error);
       });
     });
 
@@ -713,8 +712,8 @@ describe('ClientKafka', () => {
       });
 
       it('should remove callback from routing map', async () => {
-        expect(client['routingMap'].has(correlationId)).to.be.false;
-        expect(client['routingMap'].size).to.eq(0);
+        expect(client['routingMap'].has(correlationId)).toBeFalsy();
+        expect(client['routingMap'].size).toEqual(0);
       });
     });
   });

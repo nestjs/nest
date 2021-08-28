@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
@@ -28,15 +27,15 @@ describe('ServerMqtt', () => {
     });
     it('should bind "error" event to handler', () => {
       server.listen(callbackSpy);
-      expect(onSpy.getCall(0).args[0]).to.be.equal('error');
+      expect(onSpy.getCall(0).args[0]).toEqual('error');
     });
     it('should bind "message" event to handler', () => {
       server.listen(callbackSpy);
-      expect(onSpy.getCall(1).args[0]).to.be.equal('message');
+      expect(onSpy.getCall(1).args[0]).toEqual('message');
     });
     it('should bind "connect" event to handler', () => {
       server.listen(callbackSpy);
-      expect(onSpy.getCall(2).args[0]).to.be.equal('connect');
+      expect(onSpy.getCall(2).args[0]).toEqual('connect');
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', () => {
@@ -46,7 +45,7 @@ describe('ServerMqtt', () => {
           throw error;
         });
         server.listen(callbackSpy);
-        expect(callbackSpy.calledWith(error)).to.be.true;
+        expect(callbackSpy.calledWith(error)).toBeTruthy();
       });
     });
   });
@@ -57,7 +56,7 @@ describe('ServerMqtt', () => {
     });
     it('should end mqttClient', () => {
       server.close();
-      expect(mqttClient.end.called).to.be.true;
+      expect(mqttClient.end.called).toBeTruthy();
     });
   });
   describe('bindEvents', () => {
@@ -78,14 +77,14 @@ describe('ServerMqtt', () => {
         [pattern]: handler,
       });
       server.bindEvents(mqttClient);
-      expect(subscribeSpy.calledWith(pattern)).to.be.true;
+      expect(subscribeSpy.calledWith(pattern)).toBeTruthy();
     });
   });
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
       expect(
         typeof server.getMessageHandler((server as any).mqttClient),
-      ).to.be.eql('function');
+      ).toEqual('function');
     });
     describe('handler', () => {
       it('should call "handleMessage"', async () => {
@@ -93,7 +92,7 @@ describe('ServerMqtt', () => {
           .stub(server, 'handleMessage')
           .callsFake(() => null);
         (await server.getMessageHandler((server as any).mqttClient))(null);
-        expect(handleMessageStub.called).to.be.true;
+        expect(handleMessageStub.called).toBeTruthy();
       });
     });
   });
@@ -115,7 +114,7 @@ describe('ServerMqtt', () => {
         new Buffer(JSON.stringify({ pattern: '', data })),
         null,
       );
-      expect(handleEventSpy.called).to.be.true;
+      expect(handleEventSpy.called).toBeTruthy();
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
       await server.handleMessage(
@@ -129,7 +128,7 @@ describe('ServerMqtt', () => {
           status: 'error',
           err: NO_MESSAGE_HANDLER,
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
@@ -142,7 +141,7 @@ describe('ServerMqtt', () => {
         new Buffer(JSON.stringify({ pattern: '', data, id: '2' })),
         null,
       );
-      expect(handler.calledWith(data)).to.be.true;
+      expect(handler.calledWith(data)).toBeTruthy();
     });
   });
   describe('getPublisher', () => {
@@ -160,7 +159,7 @@ describe('ServerMqtt', () => {
       publisher = server.getPublisher(pub, pattern, id);
     });
     it(`should return function`, () => {
-      expect(typeof server.getPublisher(null, null, id)).to.be.eql('function');
+      expect(typeof server.getPublisher(null, null, id)).toEqual('function');
     });
     it(`should call "publish" with expected arguments`, () => {
       const respond = 'test';
@@ -170,32 +169,32 @@ describe('ServerMqtt', () => {
           `${pattern}/reply`,
           JSON.stringify({ respond, id }),
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
   describe('getRequestPattern', () => {
     const test = 'test';
     it(`should leave patern as it is`, () => {
-      expect(server.getRequestPattern(test)).to.equal(test);
+      expect(server.getRequestPattern(test)).toEqual(test);
     });
   });
   describe('getReplyPattern', () => {
     const test = 'test';
     it(`should append "/reply" to string`, () => {
       const expectedResult = test + '/reply';
-      expect(server.getReplyPattern(test)).to.equal(expectedResult);
+      expect(server.getReplyPattern(test)).toEqual(expectedResult);
     });
   });
   describe('parseMessage', () => {
     it(`should return parsed json`, () => {
       const obj = { test: 'test' };
-      expect(server.parseMessage(obj)).to.deep.equal(
+      expect(server.parseMessage(obj)).toEqual(
         JSON.parse(JSON.stringify(obj)),
       );
     });
     it(`should not parse argument if it is not an object`, () => {
       const content = 'test';
-      expect(server.parseMessage(content)).to.equal(content);
+      expect(server.parseMessage(content)).toEqual(content);
     });
   });
   describe('handleEvent', () => {
@@ -213,39 +212,34 @@ describe('ServerMqtt', () => {
         { pattern: '', data },
         new BaseRpcContext([]),
       );
-      expect(handler.calledWith(data)).to.be.true;
+      expect(handler.calledWith(data)).toBeTruthy();
     });
   });
   describe('matchMqttPattern', () => {
     it('should return true when topic matches with provided pattern', () => {
-      expect(server.matchMqttPattern('root/valid/+', 'root/valid/child')).to.be
-        .true;
-      expect(server.matchMqttPattern('root/valid/#', 'root/valid/child')).to.be
+      expect(server.matchMqttPattern('root/valid/+', 'root/valid/child')).toBeTruthy()server.matchMqttPattern('root/valid/#', 'root/valid/child')).to.be
         .true;
       expect(
         server.matchMqttPattern('root/valid/#', 'root/valid/child/grandchild'),
-      ).to.be.true;
-      expect(server.matchMqttPattern('root/+/child', 'root/valid/child')).to.be
+      ).toBeTruthy()server.matchMqttPattern('root/+/child', 'root/valid/child')).to.be
         .true;
     });
 
     it('should return false when topic does not matches with provided pattern', () => {
-      expect(server.matchMqttPattern('root/test/+', 'root/invalid/child')).to.be
-        .false;
-      expect(server.matchMqttPattern('root/test/#', 'root/invalid/child')).to.be
+      expect(server.matchMqttPattern('root/test/+', 'root/invalid/child')).toBeFalsy();.toBeFalsy()erver.matchMqttPattern('root/test/#', 'root/invalid/child')).to.be
         .false;
       expect(
         server.matchMqttPattern(
           'root/#/grandchild',
           'root/invalid/child/grandchild',
         ),
-      ).to.be.false;
+      ).toBeFalsy();
       expect(
         server.matchMqttPattern(
           'root/+/grandchild',
           'root/invalid/child/grandchild',
         ),
-      ).to.be.false;
+      ).toBeFalsy();
     });
   });
 });

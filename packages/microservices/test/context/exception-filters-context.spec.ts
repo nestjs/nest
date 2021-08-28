@@ -1,5 +1,4 @@
 import { NestContainer } from '@nestjs/core/injector/container';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
@@ -36,7 +35,7 @@ describe('ExceptionFiltersContext', () => {
           () => ({} as any),
           undefined,
         );
-        expect((filter as any).filters).to.be.empty;
+        expect((filter as any).filters).toEqual([]);
       });
     });
     describe('when filters metadata is not empty', () => {
@@ -49,7 +48,7 @@ describe('ExceptionFiltersContext', () => {
           () => ({} as any),
           undefined,
         );
-        expect((filter as any).filters).to.not.be.empty;
+        expect((filter as any).filters).not.toEqual([]);
       });
     });
   });
@@ -58,7 +57,7 @@ describe('ExceptionFiltersContext', () => {
     describe('when contextId is static and inquirerId is nil', () => {
       it('should return global filters', () => {
         const expectedResult = applicationConfig.getGlobalFilters();
-        expect(exceptionFilter.getGlobalMetadata()).to.be.equal(expectedResult);
+        expect(exceptionFilter.getGlobalMetadata()).toEqual(expectedResult);
       });
     });
     describe('otherwise', () => {
@@ -78,9 +77,8 @@ describe('ExceptionFiltersContext', () => {
           .stub(instanceWrapper, 'getInstanceByContextId')
           .callsFake(() => ({ instance } as any));
 
-        expect(exceptionFilter.getGlobalMetadata({ id: 3 })).to.contains(
-          instance,
-          ...globalFilters,
+        expect(exceptionFilter.getGlobalMetadata({ id: 3 })).toEqual(
+          expect.arrayContaining([instance, ...globalFilters]),
         );
       });
     });

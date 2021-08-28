@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { logLevel } from '../../external/kafka.interface';
 import { KafkaLogger } from '../../helpers/kafka-logger';
@@ -43,8 +42,8 @@ describe('KafkaLogger', () => {
       log: entry,
     });
 
-    expect(error.calledOnce).to.be.true;
-    expect(error.args[0][0]).to.eq(
+    expect(error.calledOnce).toBeTruthy();
+    expect(error.args[0][0]).toEqual(
       'label [namespace] message {"other":{"stuff":"here"}}',
     );
   });
@@ -57,7 +56,7 @@ describe('KafkaLogger', () => {
       log: entry,
     });
 
-    expect(error.calledOnce).to.be.true;
+    expect(error.calledOnce).toBeTruthy();
   });
 
   it('warn', () => {
@@ -68,7 +67,7 @@ describe('KafkaLogger', () => {
       log: entry,
     });
 
-    expect(warn.calledOnce).to.be.true;
+    expect(warn.calledOnce).toBeTruthy();
   });
 
   it('info', () => {
@@ -79,7 +78,7 @@ describe('KafkaLogger', () => {
       log: entry,
     });
 
-    expect(log.calledOnce).to.be.true;
+    expect(log.calledOnce).toBeTruthy();
   });
 
   it('debug', () => {
@@ -90,6 +89,6 @@ describe('KafkaLogger', () => {
       log: entry,
     });
 
-    expect(debug.calledOnce).to.be.true;
+    expect(debug.calledOnce).toBeTruthy();
   });
 });

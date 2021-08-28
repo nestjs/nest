@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { of, throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { RpcProxy } from '../../context/rpc-proxy';
@@ -19,7 +18,7 @@ describe('RpcProxy', () => {
   describe('create', () => {
     it('should method return thunk', async () => {
       const proxy = await routerProxy.create(async data => of(true), handler);
-      expect(typeof proxy === 'function').to.be.true;
+      expect(typeof proxy === 'function').toBeTruthy();
     });
 
     it('should method encapsulate callback passed as argument', async () => {
@@ -43,12 +42,12 @@ describe('RpcProxy', () => {
   describe('isObservable', () => {
     describe('when observable', () => {
       it('should return true', () => {
-        expect(routerProxy.isObservable(of('test'))).to.be.true;
+        expect(routerProxy.isObservable(of('test'))).toBeTruthy();
       });
     });
     describe('when not observable', () => {
       it('should return false', () => {
-        expect(routerProxy.isObservable({})).to.be.false;
+        expect(routerProxy.isObservable({})).toBeFalsy();
       });
     });
   });

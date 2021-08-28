@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { NatsContext } from '../../ctx-host';
 
 describe('NatsContext', () => {
@@ -10,12 +9,12 @@ describe('NatsContext', () => {
   });
   describe('getSubject', () => {
     it('should return subject', () => {
-      expect(context.getSubject()).to.be.eql(args[0]);
+      expect(context.getSubject()).toEqual(args[0]);
     });
   });
   describe('getHeaders', () => {
     it('should return headers', () => {
-      expect(context.getHeaders()).to.be.eql(args[1]);
+      expect(context.getHeaders()).toEqual(args[1]);
     });
   });
 });

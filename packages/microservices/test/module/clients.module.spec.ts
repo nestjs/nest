@@ -1,5 +1,4 @@
 import { DynamicModule, FactoryProvider, Injectable } from '@nestjs/common';
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ClientProxyFactory } from '../../client';
 import { Transport } from '../../enums';
@@ -18,10 +17,10 @@ describe('ClientsModule', () => {
       ]);
     });
     it('should return an expected module ref', () => {
-      expect(dynamicModule.module).to.be.eql(ClientsModule);
+      expect(dynamicModule.module).toEqual(ClientsModule);
     });
     it('should return an expected providers array', () => {
-      expect(dynamicModule.providers).to.be.deep.eq([
+      expect(dynamicModule.providers).toEqual([
         {
           provide: 'test',
           useValue: ClientsModule['assignOnAppShutdownHook'](
@@ -42,20 +41,20 @@ describe('ClientsModule', () => {
 
     it('should return an expected module ref', () => {
       dynamicModule = ClientsModule.registerAsync([registerOption]);
-      expect(dynamicModule.module).to.be.eql(ClientsModule);
+      expect(dynamicModule.module).toEqual(ClientsModule);
     });
 
     describe('when useFactory', () => {
       it('should return an expected providers array with useFactory', () => {
         dynamicModule = ClientsModule.registerAsync([registerOption]);
-        expect(dynamicModule.imports).to.be.deep.eq([]);
-        expect(dynamicModule.exports).to.be.eq(dynamicModule.providers);
-        expect(dynamicModule.providers).to.be.have.length(1);
+        expect(dynamicModule.imports).toEqual([]);
+        expect(dynamicModule.exports).toEqual(dynamicModule.providers);
+        expect(dynamicModule.providers.length).toBe(1);
 
         const provider = dynamicModule.providers[0] as FactoryProvider;
-        expect(provider.provide).to.be.eql('test');
-        expect(provider.inject).to.be.deep.eq([]);
-        expect(provider.useFactory).to.be.an.instanceOf(Function);
+        expect(provider.provide).toEqual('test');
+        expect(provider.inject).toEqual([]);
+        expect(provider.useFactory).toBeInstanceOf(Function);
       });
     });
 
@@ -75,13 +74,13 @@ describe('ClientsModule', () => {
           useClass: ClientOptionService,
         };
         dynamicModule = ClientsModule.registerAsync([useClassOption]);
-        expect(dynamicModule.imports).to.be.deep.eq([]);
-        expect(dynamicModule.providers).to.be.have.length(2);
+        expect(dynamicModule.imports).toEqual([]);
+        expect(dynamicModule.providers.length).toBe(2);
 
         const classTestProvider = dynamicModule.providers[0] as FactoryProvider;
-        expect(classTestProvider.provide).to.be.eql('classTest');
-        expect(classTestProvider.inject).to.be.deep.eq([ClientOptionService]);
-        expect(classTestProvider.useFactory).to.be.an.instanceOf(Function);
+        expect(classTestProvider.provide).toEqual('classTest');
+        expect(classTestProvider.inject).toEqual([ClientOptionService]);
+        expect(classTestProvider.useFactory).toBeInstanceOf(Function);
       });
       it('provider should call "createClientOptions"', async () => {
         const asyncOptions = {
@@ -100,7 +99,7 @@ describe('ClientsModule', () => {
         } catch (e) {
           console.log(e);
         }
-        expect(optionsFactory.createClientOptions.called).to.be.true;
+        expect(optionsFactory.createClientOptions.called).toBeTruthy();
       });
     });
 
@@ -110,10 +109,10 @@ describe('ClientsModule', () => {
           useExisting: Object,
         };
         dynamicModule = ClientsModule.registerAsync([asyncOptions as any]);
-        expect(dynamicModule.providers).to.have.length(1);
-        expect(dynamicModule.imports).to.be.deep.eq([]);
+        expect(dynamicModule.providers.length).toBe(1);
+        expect(dynamicModule.imports).toEqual([]);
         const classTestProvider = dynamicModule.providers[0] as FactoryProvider;
-        expect(classTestProvider.useFactory).to.be.an.instanceOf(Function);
+        expect(classTestProvider.useFactory).toBeInstanceOf(Function);
       });
     });
   });

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
@@ -29,15 +28,15 @@ describe('ServerRedis', () => {
     });
     it('should bind "error" event to handler', () => {
       server.listen(callbackSpy);
-      expect(onSpy.getCall(0).args[0]).to.be.equal('error');
+      expect(onSpy.getCall(0).args[0]).toEqual('error');
     });
     it('should bind "connect" event to handler', () => {
       server.listen(callbackSpy);
-      expect(onSpy.getCall(3).args[0]).to.be.equal('connect');
+      expect(onSpy.getCall(3).args[0]).toEqual('connect');
     });
     it('should bind "message" event to handler', () => {
       server.listen(callbackSpy);
-      expect(onSpy.getCall(2).args[0]).to.be.equal('message');
+      expect(onSpy.getCall(2).args[0]).toEqual('message');
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', () => {
@@ -48,7 +47,7 @@ describe('ServerRedis', () => {
           throw error;
         });
         server.listen(callbackSpy);
-        expect(callbackSpy.calledWith(error)).to.be.true;
+        expect(callbackSpy.calledWith(error)).toBeTruthy();
       });
     });
   });
@@ -62,8 +61,8 @@ describe('ServerRedis', () => {
     it('should close pub & sub server', () => {
       server.close();
 
-      expect(pub.quit.called).to.be.true;
-      expect(sub.quit.called).to.be.true;
+      expect(pub.quit.called).toBeTruthy()
+      expect(sub.quit.called).toBeTruthy();
     });
   });
   describe('handleConnection', () => {
@@ -79,7 +78,7 @@ describe('ServerRedis', () => {
     });
     it('should bind "message" event to handler', () => {
       server.bindEvents(sub, null);
-      expect(onSpy.getCall(0).args[0]).to.be.equal('message');
+      expect(onSpy.getCall(0).args[0]).toEqual('message');
     });
     it('should subscribe to each pattern', () => {
       const pattern = 'test';
@@ -88,12 +87,12 @@ describe('ServerRedis', () => {
         [pattern]: handler,
       });
       server.bindEvents(sub, null);
-      expect(subscribeSpy.calledWith(pattern)).to.be.true;
+      expect(subscribeSpy.calledWith(pattern)).toBeTruthy();
     });
   });
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
-      expect(typeof server.getMessageHandler(null)).to.be.eql('function');
+      expect(typeof server.getMessageHandler(null)).toEqual('function');
     });
   });
   describe('handleMessage', () => {
@@ -112,7 +111,7 @@ describe('ServerRedis', () => {
       sinon.stub(server, 'parseMessage').callsFake(() => ({ data } as any));
 
       await server.handleMessage(channel, JSON.stringify({}), null);
-      expect(handleEventSpy.called).to.be.true;
+      expect(handleEventSpy.called).toBeTruthy();
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
       sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data } as any));
@@ -123,7 +122,7 @@ describe('ServerRedis', () => {
           status: 'error',
           err: NO_MESSAGE_HANDLER,
         }),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
@@ -133,7 +132,7 @@ describe('ServerRedis', () => {
       sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data } as any));
 
       await server.handleMessage(channel, {}, null);
-      expect(handler.calledWith(data)).to.be.true;
+      expect(handler.calledWith(data)).toBeTruthy();
     });
   });
   describe('getPublisher', () => {
@@ -151,7 +150,7 @@ describe('ServerRedis', () => {
       publisher = server.getPublisher(pub, pattern, id);
     });
     it(`should return function`, () => {
-      expect(typeof server.getPublisher(null, null, id)).to.be.eql('function');
+      expect(typeof server.getPublisher(null, null, id)).toEqual('function');
     });
     it(`should call "publish" with expected arguments`, () => {
       const respond = 'test';
@@ -161,33 +160,33 @@ describe('ServerRedis', () => {
           `${pattern}.reply`,
           JSON.stringify({ respond, id }),
         ),
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
   describe('parseMessage', () => {
     it(`should return parsed json`, () => {
       const obj = { test: 'test' };
-      expect(server.parseMessage(obj)).to.deep.equal(
+      expect(server.parseMessage(obj)).toEqual(
         JSON.parse(JSON.stringify(obj)),
       );
     });
     it(`should not parse argument if it is not an object`, () => {
       const content = 'test';
-      expect(server.parseMessage(content)).to.equal(content);
+      expect(server.parseMessage(content)).toEqual(content);
     });
   });
   describe('getRequestPattern', () => {
     const test = 'test';
     it(`should leave pattern as it is`, () => {
       const expectedResult = test;
-      expect(server.getRequestPattern(test)).to.equal(expectedResult);
+      expect(server.getRequestPattern(test)).toEqual(expectedResult);
     });
   });
   describe('getReplyPattern', () => {
     const test = 'test';
     it(`should append ".reply" to string`, () => {
       const expectedResult = test + '.reply';
-      expect(server.getReplyPattern(test)).to.equal(expectedResult);
+      expect(server.getReplyPattern(test)).toEqual(expectedResult);
     });
   });
   describe('getClientOptions', () => {
@@ -197,7 +196,7 @@ describe('ServerRedis', () => {
       try {
         retry_strategy({} as any);
       } catch {}
-      expect(createSpy.called).to.be.true;
+      expect(createSpy.called).toBeTruthy();
     });
   });
   describe('createRetryStrategy', () => {
@@ -205,7 +204,7 @@ describe('ServerRedis', () => {
       it('should return undefined', () => {
         (server as any).isExplicitlyTerminated = true;
         const result = server.createRetryStrategy({} as any);
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('when "retryAttempts" does not exist', () => {
@@ -213,7 +212,7 @@ describe('ServerRedis', () => {
         (server as any).options.options = {};
         (server as any).options.options.retryAttempts = undefined;
 
-        expect(() => server.createRetryStrategy({} as any)).to.throw(Error);
+        expect(() => server.createRetryStrategy({} as any)).toThrow(Error);
       });
     });
     describe('when "attempts" count is max', () => {
@@ -223,7 +222,7 @@ describe('ServerRedis', () => {
 
         expect(() =>
           server.createRetryStrategy({ attempt: 4 } as any),
-        ).to.throw(Error);
+        ).toThrow(Error);
       });
     });
     describe('when ECONNREFUSED', () => {
@@ -234,7 +233,7 @@ describe('ServerRedis', () => {
             error: { code: 'ECONNREFUSED' },
           } as any);
         } catch {}
-        expect(loggerErrorSpy.called).to.be.true;
+        expect(loggerErrorSpy.called).toBeTruthy();
       });
     });
     describe('otherwise', () => {
@@ -244,7 +243,7 @@ describe('ServerRedis', () => {
         (server as any).options.retryAttempts = 3;
         (server as any).options.retryDelay = 3;
         const result = server.createRetryStrategy({ attempt: 2 } as any);
-        expect(result).to.be.eql((server as any).options.retryDelay);
+        expect(result).toEqual((server as any).options.retryDelay);
       });
     });
   });
@@ -263,7 +262,7 @@ describe('ServerRedis', () => {
         { pattern: '', data },
         new BaseRpcContext([]),
       );
-      expect(handler.calledWith(data)).to.be.true;
+      expect(handler.calledWith(data)).toBeTruthy();
     });
   });
 });

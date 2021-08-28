@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { ClientProxyFactory } from '../../client/client-proxy-factory';
 import { ClientTCP } from '../../client/client-tcp';
 import { Transport } from '../../enums/transport.enum';
@@ -14,22 +13,22 @@ describe('ClientProxyFactory', () => {
   describe('create', () => {
     it(`should create tcp client by default`, () => {
       const proxy = ClientProxyFactory.create({});
-      expect(proxy instanceof ClientTCP).to.be.true;
+      expect(proxy instanceof ClientTCP).toBeTruthy();
     });
 
     it(`should create redis client`, () => {
       const proxy = ClientProxyFactory.create({ transport: Transport.REDIS });
-      expect(proxy instanceof ClientRedis).to.be.true;
+      expect(proxy instanceof ClientRedis).toBeTruthy();
     });
 
     it(`should create nats client`, () => {
       const proxy = ClientProxyFactory.create({ transport: Transport.NATS });
-      expect(proxy instanceof ClientNats).to.be.true;
+      expect(proxy instanceof ClientNats).toBeTruthy();
     });
 
     it(`should create mqtt client`, () => {
       const proxy = ClientProxyFactory.create({ transport: Transport.MQTT });
-      expect(proxy instanceof ClientMqtt).to.be.true;
+      expect(proxy instanceof ClientMqtt).toBeTruthy();
     });
 
     it(`should create grpc client`, () => {
@@ -40,17 +39,17 @@ describe('ClientProxyFactory', () => {
           package: 'test',
         },
       });
-      expect(proxy instanceof ClientGrpcProxy).to.be.true;
+      expect(proxy instanceof ClientGrpcProxy).toBeTruthy();
     });
 
     it(`should create rmq client`, () => {
       const proxy = ClientProxyFactory.create({ transport: Transport.RMQ });
-      expect(proxy instanceof ClientRMQ).to.be.true;
+      expect(proxy instanceof ClientRMQ).toBeTruthy();
     });
 
     it(`should create kafka client`, () => {
       const proxy = ClientProxyFactory.create({ transport: Transport.KAFKA });
-      expect(proxy instanceof ClientKafka).to.be.true;
+      expect(proxy instanceof ClientKafka).toBeTruthy();
     });
   });
 });

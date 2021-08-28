@@ -1,5 +1,4 @@
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { Injectable, UseGuards, UsePipes } from '../../../common';
@@ -84,19 +83,18 @@ describe('RpcContextCreator', () => {
       contextCreator.create(instance, instance.test, module, 'test');
       expect(
         handlerCreateSpy.calledWith(instance, instance.test as any, module),
-      ).to.be.true;
+      ).toBeTruthy();
     });
     it('should create pipes context', () => {
       const pipesCreateSpy = sinon.spy(pipesCreator, 'create');
       contextCreator.create(instance, instance.test, module, 'test');
       expect(pipesCreateSpy.calledWith(instance, instance.test as any, module))
-        .to.be.true;
+        .toBeTruthy();
     });
     it('should create guards context', () => {
       const guardsCreateSpy = sinon.spy(guardsContextCreator, 'create');
       contextCreator.create(instance, instance.test, module, 'test');
-      expect(guardsCreateSpy.calledWith(instance, instance.test, module)).to.be
-        .true;
+      expect(guardsCreateSpy.calledWith(instance, instance.test, module)).toBeTruthy();
     });
     describe('when proxy called', () => {
       it('should call guards consumer `tryActivate`', async () => {
@@ -113,7 +111,7 @@ describe('RpcContextCreator', () => {
         const data = 'test';
         await proxy(data);
 
-        expect(tryActivateSpy.called).to.be.true;
+        expect(tryActivateSpy.called).toBeTruthy();
       });
       describe('when can not activate', () => {
         it('should throws forbidden exception', async () => {
@@ -130,7 +128,7 @@ describe('RpcContextCreator', () => {
           const data = 'test';
 
           proxy(null, data).catch(err =>
-            expect(err).to.be.instanceOf(RpcException),
+            expect(err).toBeInstanceOf(RpcException),
           );
         });
       });
@@ -143,7 +141,7 @@ describe('RpcContextCreator', () => {
         instance,
         instance.test,
       );
-      expect(paramtypes).to.be.eql([String]);
+      expect(paramtypes).toEqual([String]);
     });
   });
 
@@ -151,7 +149,7 @@ describe('RpcContextCreator', () => {
     it('should throw exception when "tryActivate" returns false', () => {
       const guardsFn = contextCreator.createGuardsFn([null], null, null);
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
-      guardsFn([]).catch(err => expect(err).to.not.be.undefined);
+      guardsFn([]).catch(err => expect(err).toBeDefined());
     });
   });
 
@@ -179,9 +177,9 @@ describe('RpcContextCreator', () => {
         { index: 2, type: RpcParamtype.CONTEXT, data: 'test' },
         { index: 3, type: `key${CUSTOM_ROUTE_AGRS_METADATA}`, data: 'custom' },
       ];
-      expect(values[0]).to.deep.include(expectedValues[0]);
-      expect(values[1]).to.deep.include(expectedValues[1]);
-      expect(values[2]).to.deep.include(expectedValues[2]);
+      expect(values[0]).toEqual(expect.objectContaining(expectedValues[0]));
+      expect(values[1]).toEqual(expect.objectContaining(expectedValues[1]));
+      expect(values[2]).toEqual(expect.objectContaining(expectedValues[2]));
     });
   });
   describe('getParamValue', () => {
@@ -199,14 +197,14 @@ describe('RpcContextCreator', () => {
         { metatype, type: RpcParamtype.PAYLOAD, data: null },
         transforms,
       );
-      expect(consumerApplySpy.called).to.be.true;
+      expect(consumerApplySpy.called).toBeTruthy();
     });
   });
   describe('createPipesFn', () => {
     describe('when "paramsOptions" is empty', () => {
       it('returns null', async () => {
         const pipesFn = contextCreator.createPipesFn([], []);
-        expect(pipesFn).to.be.null;
+        expect(pipesFn).toBeNull();
       });
     });
     describe('when "paramsOptions" is not empty', () => {
@@ -224,7 +222,7 @@ describe('RpcContextCreator', () => {
           ],
         );
         await pipesFn([]);
-        expect(pipesFn).to.be.a('function');
+        expect(typeof pipesFn).toBe('function');
       });
     });
   });

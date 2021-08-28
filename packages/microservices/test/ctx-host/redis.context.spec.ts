@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { RedisContext } from '../../ctx-host';
 
 describe('RedisContext', () => {
@@ -10,7 +9,7 @@ describe('RedisContext', () => {
   });
   describe('getChannel', () => {
     it('should return original channel', () => {
-      expect(context.getChannel()).to.be.eql(args[0]);
+      expect(context.getChannel()).toEqual(args[0]);
     });
   });
 });

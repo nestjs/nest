@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { PATTERN_METADATA } from '../../constants';
 import {
   GrpcMethod,
@@ -16,7 +15,7 @@ describe('@MessagePattern', () => {
   }
   it(`should enhance method with ${PATTERN_METADATA} metadata`, () => {
     const metadata = Reflect.getMetadata(PATTERN_METADATA, TestComponent.test);
-    expect(metadata).to.be.eql(pattern);
+    expect(metadata).toEqual(pattern);
   });
 });
 
@@ -35,7 +34,7 @@ describe('@GrpcMethod', () => {
   it('should derive method and service name', () => {
     const svc = new TestService();
     const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test);
-    expect(metadata).to.be.eql({
+    expect(metadata).toEqual({
       service: TestService.name,
       rpc: 'Test',
       streaming: GrpcMethodStreamingType.NO_STREAMING,
@@ -45,7 +44,7 @@ describe('@GrpcMethod', () => {
   it('should derive method', () => {
     const svc = new TestService();
     const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
-    expect(metadata).to.be.eql({
+    expect(metadata).toEqual({
       service: 'TestService2',
       rpc: 'Test2',
       streaming: GrpcMethodStreamingType.NO_STREAMING,
@@ -55,7 +54,7 @@ describe('@GrpcMethod', () => {
   it('should override both method and service', () => {
     const svc = new TestService();
     const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test3);
-    expect(metadata).to.be.eql({
+    expect(metadata).toEqual({
       service: 'TestService2',
       rpc: 'Test2',
       streaming: GrpcMethodStreamingType.NO_STREAMING,
@@ -78,7 +77,7 @@ describe('@GrpcStreamMethod', () => {
   it('should derive method and service name', () => {
     const svc = new TestService();
     const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test);
-    expect(metadata).to.be.eql({
+    expect(metadata).toEqual({
       service: TestService.name,
       rpc: 'Test',
       streaming: GrpcMethodStreamingType.RX_STREAMING,
@@ -88,7 +87,7 @@ describe('@GrpcStreamMethod', () => {
   it('should derive method', () => {
     const svc = new TestService();
     const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
-    expect(metadata).to.be.eql({
+    expect(metadata).toEqual({
       service: 'TestService2',
       rpc: 'Test2',
       streaming: GrpcMethodStreamingType.RX_STREAMING,
@@ -98,7 +97,7 @@ describe('@GrpcStreamMethod', () => {
   it('should override both method and service', () => {
     const svc = new TestService();
     const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test3);
-    expect(metadata).to.be.eql({
+    expect(metadata).toEqual({
       service: 'TestService2',
       rpc: 'Test2',
       streaming: GrpcMethodStreamingType.RX_STREAMING,
@@ -121,7 +120,7 @@ describe('@GrpcStreamCall', () => {
   it('should derive method and service name', () => {
     const svc = new TestService();
     const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test);
-    expect(metadata).to.be.eql({
+    expect(metadata).toEqual({
       service: TestService.name,
       rpc: 'Test',
       streaming: GrpcMethodStreamingType.PT_STREAMING,
@@ -131,7 +130,7 @@ describe('@GrpcStreamCall', () => {
   it('should derive method', () => {
     const svc = new TestService();
     const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
-    expect(metadata).to.be.eql({
+    expect(metadata).toEqual({
       service: 'TestService2',
       rpc: 'Test2',
       streaming: GrpcMethodStreamingType.PT_STREAMING,
@@ -141,7 +140,7 @@ describe('@GrpcStreamCall', () => {
   it('should override both method and service', () => {
     const svc = new TestService();
     const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test3);
-    expect(metadata).to.be.eql({
+    expect(metadata).toEqual({
       service: 'TestService2',
       rpc: 'Test2',
       streaming: GrpcMethodStreamingType.PT_STREAMING,

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { AddressInfo, createServer, Socket } from 'net';
 import { CONNECT_EVENT, MESSAGE_EVENT } from '../../constants';
 import { JsonSocket } from '../../helpers/json-socket';
@@ -14,8 +13,8 @@ describe('JsonSocket connection', () => {
           return done(error);
         }
 
-        expect(clientSocket['isClosed']).to.be.false;
-        expect(serverSocket['isClosed']).to.be.false;
+        expect(clientSocket['isClosed']).toBeFalsy();
+        expect(serverSocket['isClosed']).toBeFalsy();
 
         Promise.all([
           new Promise(callback => {
@@ -23,20 +22,20 @@ describe('JsonSocket connection', () => {
           }),
           new Promise<void>(callback => {
             clientSocket.on(MESSAGE_EVENT, (message: string) => {
-              expect(message).to.deep.equal({ type: 'pong' });
+              expect(message).toEqual({ type: 'pong' });
               callback();
             });
           }),
           new Promise(callback => {
             serverSocket.on(MESSAGE_EVENT, (message: string) => {
-              expect(message).to.deep.equal({ type: 'ping' });
+              expect(message).toEqual({ type: 'ping' });
               serverSocket.sendMessage({ type: 'pong' }, callback);
             });
           }),
         ])
           .then(() => {
-            expect(clientSocket['isClosed']).to.equal(false);
-            expect(serverSocket['isClosed']).to.equal(false);
+            expect(clientSocket['isClosed']).toEqual(false);
+            expect(serverSocket['isClosed']).toEqual(false);
             clientSocket.end();
             server.close(done);
           })
@@ -50,28 +49,28 @@ describe('JsonSocket connection', () => {
       if (err) {
         return done(err);
       }
-      expect(clientSocket['isClosed']).to.equal(false);
-      expect(serverSocket['isClosed']).to.equal(false);
+      expect(clientSocket['isClosed']).toEqual(false);
+      expect(serverSocket['isClosed']).toEqual(false);
       Promise.all([
         new Promise<void>(callback => {
           clientSocket.sendMessage(longPayload, callback);
         }),
         new Promise<void>(callback => {
           clientSocket.on(MESSAGE_EVENT, (message: { type: 'pong' }) => {
-            expect(message).to.deep.equal({ type: 'pong' });
+            expect(message).toEqual({ type: 'pong' });
             callback();
           });
         }),
         new Promise<void>(callback => {
           serverSocket.on(MESSAGE_EVENT, (message: { type: 'pong' }) => {
-            expect(message).to.deep.equal(longPayload);
+            expect(message).toEqual(longPayload);
             serverSocket.sendMessage({ type: 'pong' }, callback);
           });
         }),
       ])
         .then(() => {
-          expect(clientSocket['isClosed']).to.equal(false);
-          expect(serverSocket['isClosed']).to.equal(false);
+          expect(clientSocket['isClosed']).toEqual(false);
+          expect(serverSocket['isClosed']).toEqual(false);
           clientSocket.end();
           server.close(done);
         })
@@ -100,7 +99,7 @@ describe('JsonSocket connection', () => {
         new Promise<void>(callback => {
           let lastNumber = 0;
           serverSocket.on(MESSAGE_EVENT, (message: { number: number }) => {
-            expect(message.number).to.deep.equal(lastNumber + 1);
+            expect(message.number).toEqual(lastNumber + 1);
             lastNumber = message.number;
             if (lastNumber === 100) {
               callback();
@@ -129,8 +128,8 @@ describe('JsonSocket connection', () => {
         .then(
           () =>
             new Promise<void>(callback => {
-              expect(clientSocket['isClosed']).to.equal(true);
-              expect(serverSocket['isClosed']).to.equal(true);
+              expect(clientSocket['isClosed']).toEqual(true);
+              expect(serverSocket['isClosed']).toEqual(true);
               callback();
             }),
         )
@@ -155,8 +154,8 @@ describe('JsonSocket connection', () => {
         .then(
           () =>
             new Promise<void>(callback => {
-              expect(clientSocket['isClosed']).to.equal(true);
-              expect(serverSocket['isClosed']).to.equal(true);
+              expect(clientSocket['isClosed']).toEqual(true);
+              expect(serverSocket['isClosed']).toEqual(true);
               callback();
             }),
         )
@@ -176,12 +175,12 @@ describe('JsonSocket connection', () => {
 
         serverSocket.once('end', () => {
           setTimeout(() => {
-            expect(serverSocket['isClosed']).to.equal(true);
-            expect(clientSocket['isClosed']).to.equal(true);
+            expect(serverSocket['isClosed']).toEqual(true);
+            expect(clientSocket['isClosed']).toEqual(true);
 
             clientSocket.on(CONNECT_EVENT, () => {
               setTimeout(() => {
-                expect(clientSocket['isClosed']).to.equal(false);
+                expect(clientSocket['isClosed']).toEqual(false);
 
                 clientSocket.end();
                 server.close(done);

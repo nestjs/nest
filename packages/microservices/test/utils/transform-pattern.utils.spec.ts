@@ -1,11 +1,10 @@
-import { expect } from 'chai';
 import { MsPattern } from '../../interfaces';
 import { transformPatternToRoute } from '../../utils/transform-pattern.utils';
 
 function equalTest<R>(testPatterns: MsPattern[], expectedResults: R[]) {
   testPatterns.forEach((testPattern: MsPattern, index: number) => {
     const testData = transformPatternToRoute(testPattern);
-    expect(testData).to.be.equal(expectedResults[index]);
+    expect(testData).toEqual(expectedResults[index]);
   });
 }
 describe('transformPatternToRoute', () => {
@@ -116,7 +115,7 @@ describe('transformPatternToRoute', () => {
       const testPatterns = [null, undefined, Symbol(213)];
 
       testPatterns.forEach((testPattern: any) => {
-        expect(transformPatternToRoute(testPattern)).to.be.eq(testPattern);
+        expect(transformPatternToRoute(testPattern)).toEqual(testPattern);
       });
     });
   });

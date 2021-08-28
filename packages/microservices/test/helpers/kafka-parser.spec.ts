@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { KafkaHeaders } from '../../enums/kafka-headers.enum';
 import { KafkaParser } from '../../helpers/kafka-parser';
 
@@ -15,7 +14,7 @@ describe('KafkaParser', () => {
         kafkaParser.parse({
           value: undefined,
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {},
         value: null,
       });
@@ -26,7 +25,7 @@ describe('KafkaParser', () => {
         kafkaParser.parse({
           value: null,
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {},
         value: null,
       });
@@ -37,7 +36,7 @@ describe('KafkaParser', () => {
         kafkaParser.parse({
           value: Buffer.from('string'),
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {},
         value: 'string',
       });
@@ -49,7 +48,7 @@ describe('KafkaParser', () => {
         kafkaParser.parse({
           value: Buffer.from(kafkaSchemaPreambleWithSchemaId),
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {},
         value: Buffer.from(kafkaSchemaPreambleWithSchemaId),
       });
@@ -60,7 +59,7 @@ describe('KafkaParser', () => {
         kafkaParser.parse({
           value: Buffer.from('12345'),
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {},
         value: '12345',
       });
@@ -73,7 +72,7 @@ describe('KafkaParser', () => {
         kafkaParser.parse({
           value: Buffer.from(long),
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {},
         value: long,
       });
@@ -84,7 +83,7 @@ describe('KafkaParser', () => {
         kafkaParser.parse({
           value: Buffer.from(JSON.stringify({ prop: 'value' })),
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {},
         value: {
           prop: 'value',
@@ -98,7 +97,7 @@ describe('KafkaParser', () => {
           value: Buffer.from(JSON.stringify({ prop: 'value' })),
           key: Buffer.from('1'),
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {},
         key: '1',
         value: {
@@ -116,7 +115,7 @@ describe('KafkaParser', () => {
           value: Buffer.from(JSON.stringify({ prop: 'value' })),
           key: Buffer.from('1'),
         }),
-      ).to.deep.eq({
+      ).toEqual({
         key: '1',
         value: {
           prop: 'value',

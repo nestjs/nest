@@ -1,5 +1,4 @@
 import { Logger } from '@nestjs/common';
-import { expect } from 'chai';
 import { join } from 'path';
 import { Observable, Subject } from 'rxjs';
 import * as sinon from 'sinon';
@@ -42,7 +41,7 @@ describe('ClientGrpcProxy', () => {
     describe('when "grpcClient[name]" is nil', () => {
       it('should throw "InvalidGrpcServiceException"', () => {
         (client as any).grpcClient = {};
-        expect(() => client.getService('test')).to.throw(
+        expect(() => client.getService('test')).toThrow(
           InvalidGrpcServiceException,
         );
       });
@@ -50,11 +49,11 @@ describe('ClientGrpcProxy', () => {
       it('should throw "InvalidGrpcServiceException" (multiple proto)', () => {
         (clientMulti as any).grpcClient = {};
 
-        expect(() => clientMulti.getService('test')).to.throw(
+        expect(() => clientMulti.getService('test')).toThrow(
           InvalidGrpcServiceException,
         );
 
-        expect(() => clientMulti.getService('test2')).to.throw(
+        expect(() => clientMulti.getService('test2')).toThrow(
           InvalidGrpcServiceException,
         );
       });
@@ -64,7 +63,7 @@ describe('ClientGrpcProxy', () => {
         (client as any).grpcClients[0] = {
           test: GrpcService,
         };
-        expect(() => client.getService('test')).to.not.throw(
+        expect(() => client.getService('test')).not.toThrow(
           InvalidGrpcServiceException,
         );
       });
@@ -75,10 +74,10 @@ describe('ClientGrpcProxy', () => {
             test: GrpcService,
             test2: GrpcService,
           };
-          expect(() => clientMulti.getService('test')).to.not.throw(
+          expect(() => clientMulti.getService('test')).not.toThrow(
             InvalidGrpcServiceException,
           );
-          expect(() => clientMulti.getService('test2')).to.not.throw(
+          expect(() => clientMulti.getService('test2')).not.toThrow(
             InvalidGrpcServiceException,
           );
         });
@@ -94,7 +93,7 @@ describe('ClientGrpcProxy', () => {
         const spy = sinon.spy(client, 'createStreamServiceMethod');
         client.createServiceMethod(cln, methodName);
 
-        expect(spy.called).to.be.true;
+        expect(spy.called).toBeTruthy();
       });
     });
     describe('when method is not a response stream', () => {
@@ -103,7 +102,7 @@ describe('ClientGrpcProxy', () => {
         const spy = sinon.spy(client, 'createUnaryServiceMethod');
         client.createServiceMethod(cln, methodName);
 
-        expect(spy.called).to.be.true;
+        expect(spy.called).toBeTruthy();
       });
     });
   });
@@ -115,7 +114,7 @@ describe('ClientGrpcProxy', () => {
         { [methodKey]: {} },
         methodKey,
       );
-      expect(fn()).to.be.instanceof(Observable);
+      expect(fn()).toBeInstanceOf(Observable);
     });
     describe('on subscribe', () => {
       const methodName = 'm';
@@ -134,7 +133,7 @@ describe('ClientGrpcProxy', () => {
           () => ({}),
         );
 
-        expect(spy.called).to.be.true;
+        expect(spy.called).toBeTruthy();
       });
     });
 
@@ -162,8 +161,8 @@ describe('ClientGrpcProxy', () => {
         );
         upstream.next({ test: true });
 
-        expect(writeSpy.called).to.be.true;
-        expect(upstreamSubscribe.called).to.be.true;
+        expect(writeSpy.called).toBeTruthy();
+        expect(upstreamSubscribe.called).toBeTruthy()
       });
     });
 
@@ -208,11 +207,11 @@ describe('ClientGrpcProxy', () => {
         eventCallbacks.error(err);
         eventCallbacks.data('c');
 
-        expect(Object.keys(eventCallbacks).length).to.eq(3);
-        expect(dataSpy.args).to.eql([['a'], ['b']]);
-        expect(errorSpy.args[0][0]).to.eql(err);
-        expect(completeSpy.called).to.be.false;
-        expect(callMock.cancel.called).to.be.false;
+        expect(Object.keys(eventCallbacks).length).toEqual(3);
+        expect(dataSpy.args).toEqual([['a'], ['b']]);
+        expect(errorSpy.args[0][0]).toEqual(err);
+        expect(completeSpy.called).toBeFalsy();
+        expect(callMock.cancel.called).toBeFalsy();
       });
 
       it('handles client side cancel', () => {
@@ -227,12 +226,10 @@ describe('ClientGrpcProxy', () => {
         eventCallbacks.end();
         eventCallbacks.data('c');
 
-        expect(callMock.cancel.called, 'should call call.cancel()').to.be.true;
-        expect(callMock.destroy.called, 'should call call.destroy()').to.be
-          .true;
-        expect(dataSpy.args).to.eql([['a'], ['b']]);
-        expect(errorSpy.called, 'should not error if client canceled').to.be
-          .false;
+        expect(callMock.cancel.called).toBeTruthy()
+        expect(callMock.destroy.called).toBeTruthy()
+        expect(dataSpy.args).toEqual([['a'], ['b']]);
+        expect(errorSpy.called).toBeFalsy();
       });
     });
   });
@@ -244,7 +241,7 @@ describe('ClientGrpcProxy', () => {
         { [methodKey]: {} },
         methodKey,
       );
-      expect(fn()).to.be.instanceof(Observable);
+      expect(fn()).toBeInstanceOf(Observable);
     });
     describe('on subscribe', () => {
       const methodName = 'm';
@@ -263,7 +260,7 @@ describe('ClientGrpcProxy', () => {
           () => ({}),
         );
 
-        expect(spy.called).to.be.true;
+        expect(spy.called).toBeTruthy();
       });
     });
     describe('when stream request', () => {
@@ -304,8 +301,8 @@ describe('ClientGrpcProxy', () => {
         );
         upstream.next({ test: true });
 
-        expect(writeSpy.called).to.be.true;
-        expect(upstreamSubscribe.called).to.be.true;
+        expect(writeSpy.called).toBeTruthy();
+        expect(upstreamSubscribe.called).toBeTruthy()
       });
     });
   });
@@ -319,7 +316,7 @@ describe('ClientGrpcProxy', () => {
         try {
           client.createClients();
         } catch (err) {
-          expect(err).to.be.instanceof(InvalidGrpcPackageException);
+          expect(err).toBeInstanceOf(InvalidGrpcPackageException);
         }
       });
     });
@@ -332,7 +329,7 @@ describe('ClientGrpcProxy', () => {
           throw new Error();
         });
         (client as any).logger = new NoopLogger();
-        expect(() => client.loadProto()).to.throws(
+        expect(() => client.loadProto()).toThrow(
           InvalidProtoDefinitionException,
         );
       });
@@ -344,32 +341,32 @@ describe('ClientGrpcProxy', () => {
       (client as any).grpcClients[0] = grpcClient;
 
       client.close();
-      expect(grpcClient.close.called).to.be.true;
+      expect(grpcClient.close.called).toBeTruthy();
     });
   });
 
   describe('publish', () => {
     it('should throw exception', () => {
-      expect(() => client['publish'](null, null)).to.throws(Error);
+      expect(() => client['publish'](null, null)).toThrow(Error);
     });
   });
 
   describe('send', () => {
     it('should throw exception', () => {
-      expect(() => client.send(null, null)).to.throws(Error);
+      expect(() => client.send(null, null)).toThrow(Error);
     });
   });
 
   describe('connect', () => {
     it('should throw exception', () => {
-      client.connect().catch(error => expect(error).to.be.instanceof(Error));
+      client.connect().catch(error => expect(error).toBeInstanceOf(Error));
     });
   });
 
   describe('dispatchEvent', () => {
     it('should throw exception', () => {
       client['dispatchEvent'](null).catch(error =>
-        expect(error).to.be.instanceof(Error),
+        expect(error).toBeInstanceOf(Error),
       );
     });
   });

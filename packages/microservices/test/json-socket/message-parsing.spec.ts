@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Socket } from 'net';
 import * as sinon from 'sinon';
 import { ERROR_EVENT, MESSAGE_EVENT } from '../../constants';
@@ -20,89 +19,89 @@ describe('JsonSocket message parsing', () => {
 
   it('should parse JSON strings', () => {
     socket['handleData']('13#"Hello there"');
-    expect(messages.length).to.deep.equal(1);
-    expect(messages[0]).to.deep.equal('Hello there');
-    expect(socket['buffer']).to.deep.equal('');
+    expect(messages.length).toEqual(1);
+    expect(messages[0]).toEqual('Hello there');
+    expect(socket['buffer']).toEqual('');
   });
 
   it('should parse JSON numbers', () => {
     socket['handleData']('5#12.34');
-    expect(messages.length).to.deep.equal(1);
-    expect(messages[0]).to.deep.equal(12.34);
-    expect(socket['buffer']).to.deep.equal('');
+    expect(messages.length).toEqual(1);
+    expect(messages[0]).toEqual(12.34);
+    expect(socket['buffer']).toEqual('');
   });
 
   it('should parse JSON bools', () => {
     socket['handleData']('4#true');
-    expect(messages.length).to.deep.equal(1);
-    expect(messages[0]).to.deep.equal(true);
-    expect(socket['buffer']).to.deep.equal('');
+    expect(messages.length).toEqual(1);
+    expect(messages[0]).toEqual(true);
+    expect(socket['buffer']).toEqual('');
   });
 
   it('should parse JSON objects', () => {
     socket['handleData']('17#{"a":"yes","b":9}');
-    expect(messages.length).to.deep.equal(1);
-    expect(messages[0]).to.deep.equal({ a: 'yes', b: 9 });
-    expect(socket['buffer']).to.deep.equal('');
+    expect(messages.length).toEqual(1);
+    expect(messages[0]).toEqual({ a: 'yes', b: 9 });
+    expect(socket['buffer']).toEqual('');
   });
 
   it('should parse JSON arrays', () => {
     socket['handleData']('9#["yes",9]');
-    expect(messages.length).to.deep.equal(1);
-    expect(messages[0]).to.deep.equal(['yes', 9]);
-    expect(socket['buffer']).to.deep.equal('');
+    expect(messages.length).toEqual(1);
+    expect(messages[0]).toEqual(['yes', 9]);
+    expect(socket['buffer']).toEqual('');
   });
 
   it('should parse multiple messages in one packet', () => {
     socket['handleData']('5#"hey"4#true');
-    expect(messages.length).to.deep.equal(2);
-    expect(messages[0]).to.deep.equal('hey');
-    expect(messages[1]).to.deep.equal(true);
-    expect(socket['buffer']).to.deep.equal('');
+    expect(messages.length).toEqual(2);
+    expect(messages[0]).toEqual('hey');
+    expect(messages[1]).toEqual(true);
+    expect(socket['buffer']).toEqual('');
   });
 
   it('should parse chunked messages', () => {
     socket['handleData']('13#"Hel');
     socket['handleData']('lo there"');
-    expect(messages.length).to.deep.equal(1);
-    expect(messages[0]).to.deep.equal('Hello there');
-    expect(socket['buffer']).to.deep.equal('');
+    expect(messages.length).toEqual(1);
+    expect(messages[0]).toEqual('Hello there');
+    expect(socket['buffer']).toEqual('');
   });
 
   it('should parse chunked and multiple messages', () => {
     socket['handleData']('13#"Hel');
     socket['handleData']('lo there"4#true');
-    expect(messages.length).to.deep.equal(2);
-    expect(messages[0]).to.deep.equal('Hello there');
-    expect(messages[1]).to.deep.equal(true);
-    expect(socket['buffer']).to.deep.equal('');
+    expect(messages.length).toEqual(2);
+    expect(messages[0]).toEqual('Hello there');
+    expect(messages[1]).toEqual(true);
+    expect(socket['buffer']).toEqual('');
   });
 
   it('should parse chunked messages with multi-byte characters', () => {
     // 0x33 0x23 0xd8 0x22 0xa9 0x22 = 3#"ة" (U+00629)
     socket['onData'](Buffer.from([0x33, 0x23, 0x22, 0xd8]));
     socket['onData'](Buffer.from([0xa9, 0x22]));
-    expect(messages.length).to.deep.equal(1);
-    expect(messages[0]).to.deep.equal('ة');
+    expect(messages.length).toEqual(1);
+    expect(messages[0]).toEqual('ة');
   });
 
   it('should parse multiple messages with unicode correctly', () => {
     socket['handleData']('41#"Diese Zeile enthält das Unicode-Zeichen"4#true');
-    expect(messages[0]).to.deep.equal(
+    expect(messages[0]).toEqual(
       'Diese Zeile enthält das Unicode-Zeichen',
     );
-    expect(messages[1]).to.deep.equal(true);
-    expect(socket['buffer']).to.deep.equal('');
+    expect(messages[1]).toEqual(true);
+    expect(socket['buffer']).toEqual('');
   });
 
   it('should parse multiple and chunked messages with unicode correctly', () => {
     socket['handleData']('41#"Diese Zeile enthält ');
     socket['handleData']('das Unicode-Zeichen"4#true');
-    expect(messages[0]).to.deep.equal(
+    expect(messages[0]).toEqual(
       'Diese Zeile enthält das Unicode-Zeichen',
     );
-    expect(messages[1]).to.deep.equal(true);
-    expect(socket['buffer']).to.deep.equal('');
+    expect(messages[1]).toEqual(true);
+    expect(socket['buffer']).toEqual('');
   });
 
   describe('Error handling', () => {
@@ -115,10 +114,10 @@ describe('JsonSocket message parsing', () => {
         try {
           socket['handleData']('4#"Hel');
         } catch (err) {
-          expect(err.message).to.deep.equal(errorMsg);
+          expect(err.message).toEqual(errorMsg);
         }
-        expect(messages.length).to.deep.equal(0);
-        expect(socket['buffer']).to.deep.equal('');
+        expect(messages.length).toEqual(0);
+        expect(socket['buffer']).toEqual('');
       });
 
       it(`should emit ${ERROR_EVENT} event on socket`, () => {
@@ -129,8 +128,7 @@ describe('JsonSocket message parsing', () => {
 
         socket['onData'](packet);
 
-        expect(socketEmitSpy.calledOnceWithExactly(ERROR_EVENT, errorMsg)).to.be
-          .true;
+        expect(socketEmitSpy.calledOnceWithExactly(ERROR_EVENT, errorMsg)).toBeTruthy();
         socketEmitSpy.restore();
       });
 
@@ -139,7 +137,7 @@ describe('JsonSocket message parsing', () => {
 
         socket['onData'](packet);
 
-        expect(socketEndSpy.calledOnce).to.be.true;
+        expect(socketEndSpy.calledOnce).toBeTruthy();
         socketEndSpy.restore();
       });
     });
@@ -153,10 +151,10 @@ describe('JsonSocket message parsing', () => {
         try {
           socket['handleData'](packetStrin);
         } catch (err) {
-          expect(err.message).to.deep.equal(errorMsg);
+          expect(err.message).toEqual(errorMsg);
         }
-        expect(messages.length).to.deep.equal(0);
-        expect(socket['buffer']).to.deep.equal('');
+        expect(messages.length).toEqual(0);
+        expect(socket['buffer']).toEqual('');
       });
 
       it(`should emit ${ERROR_EVENT} event on socket`, () => {
@@ -167,8 +165,7 @@ describe('JsonSocket message parsing', () => {
 
         socket['onData'](packet);
 
-        expect(socketEmitSpy.calledOnceWithExactly(ERROR_EVENT, errorMsg)).to.be
-          .true;
+        expect(socketEmitSpy.calledOnceWithExactly(ERROR_EVENT, errorMsg)).toBeTruthy();
         socketEmitSpy.restore();
       });
 
@@ -177,7 +174,7 @@ describe('JsonSocket message parsing', () => {
 
         socket['onData'](packet);
 
-        expect(socketEndSpy.calledOnce).to.be.true;
+        expect(socketEndSpy.calledOnce).toBeTruthy();
         socketEndSpy.restore();
       });
     });

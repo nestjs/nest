@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Transport } from '../../enums/transport.enum';
 import { ServerFactory } from '../../server/server-factory';
 import { ServerGrpc } from '../../server/server-grpc';
@@ -12,48 +11,48 @@ import { ServerTCP } from '../../server/server-tcp';
 describe('ServerFactory', () => {
   describe('create', () => {
     it(`should return tcp server by default`, () => {
-      expect(ServerFactory.create({}) instanceof ServerTCP).to.be.true;
+      expect(ServerFactory.create({}) instanceof ServerTCP).toBeTruthy();
     });
 
     it(`should return redis server`, () => {
       expect(
         ServerFactory.create({ transport: Transport.REDIS }) instanceof
           ServerRedis,
-      ).to.be.true;
+      ).toBeTruthy();
     });
 
     it(`should return redis server`, () => {
       expect(
         ServerFactory.create({ transport: Transport.REDIS }) instanceof
           ServerRedis,
-      ).to.be.true;
+      ).toBeTruthy();
     });
 
     it(`should return mqtt server`, () => {
       expect(
         ServerFactory.create({ transport: Transport.MQTT }) instanceof
           ServerMqtt,
-      ).to.be.true;
+      ).toBeTruthy();
     });
 
     it(`should return nats server`, () => {
       expect(
         ServerFactory.create({ transport: Transport.NATS }) instanceof
           ServerNats,
-      ).to.be.true;
+      ).toBeTruthy();
     });
 
     it(`should return rmq server`, () => {
       expect(
         ServerFactory.create({ transport: Transport.RMQ }) instanceof ServerRMQ,
-      ).to.be.true;
+      ).toBeTruthy();
     });
 
     it(`should return kafka server`, () => {
       expect(
         ServerFactory.create({ transport: Transport.KAFKA }) instanceof
           ServerKafka,
-      ).to.be.true;
+      ).toBeTruthy();
     });
 
     it(`should return grpc server`, () => {
@@ -62,7 +61,7 @@ describe('ServerFactory', () => {
           transport: Transport.GRPC,
           options: { protoPath: '', package: '' },
         }) instanceof ServerGrpc,
-      ).to.be.true;
+      ).toBeTruthy();
     });
   });
 });

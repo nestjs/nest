@@ -1,5 +1,3 @@
-import 'mocha';
-import { expect } from 'chai';
 import {
   CLIENT_METADATA,
   CLIENT_CONFIGURATION_METADATA,
@@ -24,7 +22,7 @@ describe('@Client', () => {
       'instance',
     );
 
-    expect(isClient).to.be.true;
-    expect(config).to.be.eql(pattern);
+    expect(isClient).toBeTruthy();
+    expect(config).toEqual(pattern);
   });
 });

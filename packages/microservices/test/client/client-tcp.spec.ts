@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ClientTCP } from '../../client/client-tcp';
 import { ERROR_EVENT } from '../../constants';
@@ -45,7 +44,7 @@ describe('ClientTCP', () => {
       it('should remove listener from routing map', () => {
         client['publish'](msg, () => ({}))();
 
-        expect(client['routingMap'].size).to.be.eq(0);
+        expect(client['routingMap'].size).toEqual(0);
       });
     });
     describe('on error', () => {
@@ -55,8 +54,8 @@ describe('ClientTCP', () => {
           throw new Error();
         });
         client['publish'](msg, callback);
-        expect(callback.called).to.be.true;
-        expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
+        expect(callback.called).toBeTruthy();
+        expect(callback.getCall(0).args[0].err).toBeInstanceOf(Error);
       });
     });
   });
@@ -71,14 +70,14 @@ describe('ClientTCP', () => {
         await client.handleResponse({ id, isDisposed: true });
       });
       it('should emit disposed callback', () => {
-        expect(callback.called).to.be.true;
+        expect(callback.called).toBeTruthy();
         expect(
           callback.calledWith({
             err: undefined,
             response: undefined,
             isDisposed: true,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('when not disposed', () => {
@@ -90,16 +89,16 @@ describe('ClientTCP', () => {
         await client.handleResponse(buffer);
       });
       it('should not end server', () => {
-        expect(socket.end.called).to.be.false;
+        expect(socket.end.called).toBeFalsy();
       });
       it('should call callback with error and response data', () => {
-        expect(callback.called).to.be.true;
+        expect(callback.called).toBeTruthy();
         expect(
           callback.calledWith({
             err: buffer.err,
             response: buffer.response,
           }),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
   });
@@ -129,16 +128,16 @@ describe('ClientTCP', () => {
         connect$Stub.restore();
       });
       it('should call "bindEvents" once', async () => {
-        expect(bindEventsSpy.called).to.be.true;
+        expect(bindEventsSpy.called).toBeTruthy();
       });
       it('should call "createSocket" once', async () => {
-        expect(createSocketStub.called).to.be.true;
+        expect(createSocketStub.called).toBeTruthy();
       });
       it('should call "connect$" once', async () => {
-        expect(connect$Stub.called).to.be.true;
+        expect(connect$Stub.called).toBeTruthy();
       });
       it('should listen on messages', () => {
-        expect(socket.on.called).to.be.true;
+        expect(socket.on.called).toBeTruthy();
       });
     });
     describe('when is connected', () => {
@@ -146,10 +145,10 @@ describe('ClientTCP', () => {
         client['isConnected'] = true;
       });
       it('should not call "createSocket"', () => {
-        expect(createSocketStub.called).to.be.false;
+        expect(createSocketStub.called).toBeFalsy();
       });
       it('should not call "bindEvents"', () => {
-        expect(bindEventsSpy.called).to.be.false;
+        expect(bindEventsSpy.called).toBeFalsy();
       });
     });
   });
@@ -160,13 +159,13 @@ describe('ClientTCP', () => {
       client.close();
     });
     it('should end() socket', () => {
-      expect(socket.end.called).to.be.true;
+      expect(socket.end.called).toBeTruthy();
     });
     it('should set "isConnected" to false', () => {
-      expect((client as any).isConnected).to.be.false;
+      expect((client as any).isConnected).toBeFalsy();
     });
     it('should set "socket" to null', () => {
-      expect((client as any).socket).to.be.null;
+      expect((client as any).socket).toBeNull();
     });
   });
   describe('bindEvents', () => {
@@ -176,7 +175,7 @@ describe('ClientTCP', () => {
         on: callback,
       };
       client.bindEvents(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
+      expect(callback.getCall(0).args[0]).toEqual(ERROR_EVENT);
     });
   });
   describe('dispatchEvent', () => {
@@ -194,7 +193,7 @@ describe('ClientTCP', () => {
     it('should publish packet', async () => {
       await client['dispatchEvent'](msg);
 
-      expect(sendMessageStub.called).to.be.true;
+      expect(sendMessageStub.called).toBeTruthy();
     });
   });
 });

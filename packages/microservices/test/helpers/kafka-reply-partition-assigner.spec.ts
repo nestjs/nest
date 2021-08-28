@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import * as sinon from 'sinon';
 import * as Kafka from 'kafkajs';
 import { KafkaReplyPartitionAssigner } from '../../helpers/kafka-reply-partition-assigner';
@@ -87,7 +86,7 @@ describe('kafka reply partition assigner', () => {
 
       const assignment = await assigner.assign({ members, topics });
 
-      expect(assignment).to.deep.equal([
+      expect(assignment).toEqual([
         {
           memberId: 'member-1',
           memberAssignment: Kafka.AssignerProtocol.MemberAssignment.encode({
@@ -207,7 +206,7 @@ describe('kafka reply partition assigner', () => {
 
       const assignment = await assigner.assign({ members, topics });
 
-      expect(assignment).to.deep.equal([
+      expect(assignment).toEqual([
         {
           memberId: 'member-1',
           memberAssignment: Kafka.AssignerProtocol.MemberAssignment.encode({
@@ -266,10 +265,10 @@ describe('kafka reply partition assigner', () => {
 
       const protocol = assigner.protocol({ topics });
 
-      expect(getPreviousAssignment.calledOnce).to.be.true;
-      expect(getConsumerAssignments.calledOnce).to.be.true;
+      expect(getPreviousAssignment.calledOnce).toBeTruthy();
+      expect(getConsumerAssignments.calledOnce).toBeTruthy();
 
-      expect(protocol).to.deep.equal({
+      expect(protocol).toEqual({
         name: assigner.name,
         metadata: Kafka.AssignerProtocol.MemberMetadata.encode({
           version: assigner.version,

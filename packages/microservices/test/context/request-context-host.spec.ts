@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { RequestContextHost } from '../../context/request-context-host';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 
@@ -13,17 +12,17 @@ describe('RequestContextHost', () => {
   });
   describe('getData', () => {
     it('should return "data" property', () => {
-      expect(ctxHost.getData()).to.be.eql(data);
+      expect(ctxHost.getData()).toEqual(data);
     });
   });
   describe('getContext', () => {
     it('should return "context" property', () => {
-      expect(ctxHost.getContext()).to.be.eql(ctx);
+      expect(ctxHost.getContext()).toEqual(ctx);
     });
   });
   describe('getPattern', () => {
     it('should return "pattern" property', () => {
-      expect(ctxHost.getPattern()).to.be.eql(pattern);
+      expect(ctxHost.getPattern()).toEqual(pattern);
     });
   });
 });

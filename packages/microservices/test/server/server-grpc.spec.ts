@@ -1,5 +1,4 @@
 import { Logger } from '@nestjs/common';
-import { expect } from 'chai';
 import { join } from 'path';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
@@ -47,19 +46,19 @@ describe('ServerGrpc', () => {
     it('should call "bindEvents"', async () => {
       await server.listen(callback);
       server.close();
-      expect(bindEventsStub.called).to.be.true;
+      expect(bindEventsStub.called).toBeTruthy();
     });
     it('should call "client.start"', async () => {
       const client = { start: sinon.spy() };
       sinon.stub(server, 'createClient').callsFake(async () => client);
 
       await server.listen(callback);
-      expect(client.start.called).to.be.true;
+      expect(client.start.called).toBeTruthy();
     });
     it('should call callback', async () => {
       await server.listen(callback);
       server.close();
-      expect(callback.called).to.be.true;
+      expect(callback.called).toBeTruthy();
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
@@ -72,7 +71,7 @@ describe('ServerGrpc', () => {
           throw error;
         });
         await server.listen(callbackSpy);
-        expect(callbackSpy.calledWith(error)).to.be.true;
+        expect(callbackSpy.calledWith(error)).toBeTruthy();
       });
     });
   });
@@ -91,18 +90,18 @@ describe('ServerGrpc', () => {
     it('should call "bindEvents"', async () => {
       await serverMulti.listen(callback);
       serverMulti.close();
-      expect(bindEventsStub.called).to.be.true;
+      expect(bindEventsStub.called).toBeTruthy();
     });
     it('should call "client.start"', async () => {
       const client = { start: sinon.spy() };
       sinon.stub(serverMulti, 'createClient').callsFake(async () => client);
       await serverMulti.listen(callback);
-      expect(client.start.called).to.be.true;
+      expect(client.start.called).toBeTruthy();
     });
     it('should call callback', async () => {
       await serverMulti.listen(callback);
       serverMulti.close();
-      expect(callback.called).to.be.true;
+      expect(callback.called).toBeTruthy();
     });
   });
 
@@ -117,7 +116,7 @@ describe('ServerGrpc', () => {
         try {
           await server.bindEvents();
         } catch (err) {
-          expect(err).to.be.instanceOf(InvalidGrpcPackageException);
+          expect(err).toBeInstanceOf(InvalidGrpcPackageException);
         }
       });
     });
@@ -141,7 +140,7 @@ describe('ServerGrpc', () => {
         (server as any).grpcClient = { addService: sinon.spy() };
 
         await server.bindEvents();
-        expect((server as any).grpcClient.addService.calledTwice).to.be.true;
+        expect((server as any).grpcClient.addService.calledTwice).toBeTruthy();
       });
     });
   });
@@ -157,7 +156,7 @@ describe('ServerGrpc', () => {
         try {
           await serverMulti.bindEvents();
         } catch (err) {
-          expect(err).to.be.instanceOf(InvalidGrpcPackageException);
+          expect(err).toBeInstanceOf(InvalidGrpcPackageException);
         }
       });
     });
@@ -179,8 +178,7 @@ describe('ServerGrpc', () => {
         (serverMulti as any).grpcClient = { addService: sinon.spy() };
 
         await serverMulti.bindEvents();
-        expect((serverMulti as any).grpcClient.addService.calledTwice).to.be
-          .true;
+        expect((serverMulti as any).grpcClient.addService.calledTwice).toBeTruthy();
       });
     });
   });
@@ -202,7 +200,7 @@ describe('ServerGrpc', () => {
           service: { service: true },
         },
       ];
-      expect(server.getServiceNames(obj)).to.be.eql(expected);
+      expect(server.getServiceNames(obj)).toEqual(expected);
     });
   });
 
@@ -232,7 +230,7 @@ describe('ServerGrpc', () => {
         },
         'name',
       );
-      expect(spy.calledOnce).to.be.true;
+      expect(spy.calledOnce).toBeTruthy();
     });
     describe('when RX streaming', () => {
       it('should call "createPattern" with proper arguments', async () => {
@@ -264,7 +262,7 @@ describe('ServerGrpc', () => {
             'test2',
             GrpcMethodStreamingType.RX_STREAMING,
           ),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
     describe('when pass through streaming', () => {
@@ -299,7 +297,7 @@ describe('ServerGrpc', () => {
             'test2',
             GrpcMethodStreamingType.PT_STREAMING,
           ),
-        ).to.be.true;
+        ).toBeTruthy();
       });
     });
   });
@@ -314,7 +312,7 @@ describe('ServerGrpc', () => {
           method,
           GrpcMethodStreamingType.NO_STREAMING,
         ),
-      ).to.be.eql(
+      ).toEqual(
         JSON.stringify({
           service,
           rpc: method,
@@ -335,7 +333,7 @@ describe('ServerGrpc', () => {
           GrpcMethodStreamingType.NO_STREAMING,
         );
 
-        expect(spy.called).to.be.true;
+        expect(spy.called).toBeTruthy();
       });
     });
     describe('when method is not a response stream', () => {
@@ -348,7 +346,7 @@ describe('ServerGrpc', () => {
           GrpcMethodStreamingType.NO_STREAMING,
         );
 
-        expect(spy.called).to.be.true;
+        expect(spy.called).toBeTruthy();
       });
     });
     describe('when request is a stream', () => {
@@ -362,7 +360,7 @@ describe('ServerGrpc', () => {
             GrpcMethodStreamingType.RX_STREAMING,
           );
 
-          expect(spy.called).to.be.true;
+          expect(spy.called).toBeTruthy();
         });
       });
       describe('when stream type is PT_STREAMING', () => {
@@ -375,7 +373,7 @@ describe('ServerGrpc', () => {
             GrpcMethodStreamingType.PT_STREAMING,
           );
 
-          expect(spy.called).to.be.true;
+          expect(spy.called).toBeTruthy();
         });
       });
     });
@@ -384,7 +382,7 @@ describe('ServerGrpc', () => {
   describe('createStreamServiceMethod', () => {
     it('should return function', () => {
       const fn = server.createStreamServiceMethod(sinon.spy());
-      expect(fn).to.be.a('function');
+      expect(typeof fn).toBe('function');
     });
     describe('on call', () => {
       it('should call native method', async () => {
@@ -398,9 +396,9 @@ describe('ServerGrpc', () => {
         const native = sinon.spy();
 
         await server.createStreamServiceMethod(native)(call, callback);
-        expect(native.called).to.be.true;
-        expect(call.addListener.calledWith('cancelled')).to.be.true;
-        expect(call.removeListener.calledWith('cancelled')).to.be.true;
+        expect(native.called).toBeTruthy();
+        expect(call.addListener.calledWith('cancelled')).toBeTruthy()
+        expect(call.removeListener.calledWith('cancelled')).toBeTruthy()
       });
 
       it(`should close the result observable when receiving an 'cancelled' event from the client`, async () => {
@@ -421,8 +419,8 @@ describe('ServerGrpc', () => {
           .returns(new Promise((resolve, reject) => resolve(result$)));
 
         await server.createStreamServiceMethod(native)(call, callback);
-        expect(call.write.calledTwice).to.be.true;
-        expect(call.end.called).to.be.true;
+        expect(call.write.calledTwice).toBeTruthy();
+        expect(call.end.called).toBeTruthy()
       });
     });
   });
@@ -430,7 +428,7 @@ describe('ServerGrpc', () => {
   describe('createUnaryServiceMethod', () => {
     it('should return observable', () => {
       const fn = server.createUnaryServiceMethod(sinon.spy());
-      expect(fn).to.be.a('function');
+      expect(typeof fn).toBe('function');
     });
     describe('on call', () => {
       it('should call native & callback methods', async () => {
@@ -439,8 +437,8 @@ describe('ServerGrpc', () => {
         const native = sinon.spy();
 
         await server.createUnaryServiceMethod(native)(call, callback);
-        expect(native.called).to.be.true;
-        expect(callback.called).to.be.true;
+        expect(native.called).toBeTruthy();
+        expect(callback.called).toBeTruthy()
       });
     });
   });
@@ -457,7 +455,7 @@ describe('ServerGrpc', () => {
       };
       fn(call as any, sinon.spy());
 
-      expect(handler.called).to.be.true;
+      expect(handler.called).toBeTruthy();
     });
 
     it('should wrap call into Subject with metadata', () => {
@@ -474,8 +472,8 @@ describe('ServerGrpc', () => {
       };
       fn(call as any, sinon.spy());
 
-      expect(handler.called).to.be.true;
-      expect(handler.args[0][1]).to.eq(call.metadata);
+      expect(handler.called).toBeTruthy();
+      expect(handler.args[0][1]).toEqual(call.metadata);
     });
     describe('when response is not a stream', () => {
       it('should call callback', async () => {
@@ -495,7 +493,7 @@ describe('ServerGrpc', () => {
         const responseCallback = sinon.spy();
         await fn(call as any, responseCallback);
 
-        expect(responseCallback.called).to.be.true;
+        expect(responseCallback.called).toBeTruthy();
       });
       describe('when response is a stream', () => {
         it('should call write() and end()', async () => {
@@ -514,8 +512,8 @@ describe('ServerGrpc', () => {
 
           await fn(call as any, null);
 
-          expect(call.write.called).to.be.true;
-          expect(call.end.called).to.be.true;
+          expect(call.write.called).toBeTruthy()
+          expect(call.end.called).toBeTruthy()
         });
       });
     });
@@ -528,7 +526,7 @@ describe('ServerGrpc', () => {
       const args = [1, 2, 3];
       fn(args as any, sinon.spy());
 
-      expect(handler.calledWith(args)).to.be.true;
+      expect(handler.calledWith(args)).toBeTruthy();
     });
   });
 
@@ -537,20 +535,20 @@ describe('ServerGrpc', () => {
       const grpcClient = { forceShutdown: sinon.spy() };
       (server as any).grpcClient = grpcClient;
       server.close();
-      expect(grpcClient.forceShutdown.called).to.be.true;
+      expect(grpcClient.forceShutdown.called).toBeTruthy();
     });
   });
 
   describe('deserialize', () => {
     it(`should return parsed json`, () => {
       const obj = { test: 'test' };
-      expect(server.deserialize(obj)).to.deep.equal(
+      expect(server.deserialize(obj)).toEqual(
         JSON.parse(JSON.stringify(obj)),
       );
     });
     it(`should not parse argument if it is not an object`, () => {
       const content = 'test';
-      expect(server.deserialize(content)).to.equal(content);
+      expect(server.deserialize(content)).toEqual(content);
     });
   });
 
@@ -575,12 +573,11 @@ describe('ServerGrpc', () => {
         },
       };
       const svcs = server.getServiceNames(grpcPkg);
-      expect(svcs.length).to.be.equal(
+      expect(svcs.length).toEqual(
         2,
-        'Amount of services collected from namespace should be equal 2',
       );
-      expect(svcs[0].name).to.be.equal('A.C.E');
-      expect(svcs[1].name).to.be.equal('B.D');
+      expect(svcs[0].name).toEqual('A.C.E');
+      expect(svcs[1].name).toEqual('B.D');
     });
     it('should parse single level proto package tree"', () => {
       const grpcPkg = {
@@ -596,12 +593,11 @@ describe('ServerGrpc', () => {
         },
       };
       const services = server.getServiceNames(grpcPkg);
-      expect(services.length).to.be.equal(
+      expect(services.length).toEqual(
         2,
-        'Amount of services collected from namespace should be equal 2',
       );
-      expect(services[0].name).to.be.equal('A');
-      expect(services[1].name).to.be.equal('B');
+      expect(services[0].name).toEqual('A');
+      expect(services[1].name).toEqual('B');
     });
   });
 
@@ -618,8 +614,8 @@ describe('ServerGrpc', () => {
       );
       server.addHandler(pattern, callback as any);
 
-      expect(messageHandlersSetSpy.called).to.be.true;
-      expect(messageHandlersSetSpy.getCall(0).args[0]).to.be.equal(
+      expect(messageHandlersSetSpy.called).toBeTruthy();
+      expect(messageHandlersSetSpy.getCall(0).args[0]).toEqual(
         JSON.stringify(pattern),
       );
     });

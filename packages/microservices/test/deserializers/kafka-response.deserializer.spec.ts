@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { KafkaResponseDeserializer } from '../../deserializers/kafka-response.deserializer';
 import { KafkaHeaders } from '../../enums/kafka-headers.enum';
 
@@ -19,10 +18,10 @@ describe('KafkaResponseDeserializer', () => {
             [KafkaHeaders.NEST_ERR]: err,
           },
         });
-        expect(packet.id).to.be.equal(id);
-        expect(packet.err).to.be.equal(err);
-        expect(packet.isDisposed).to.be.true;
-        expect(packet.response).to.be.undefined;
+        expect(packet.id).toEqual(id);
+        expect(packet.err).toEqual(err);
+        expect(packet.isDisposed).toBeTruthy();
+        expect(packet.response).toBeUndefined();
       });
     });
     describe('when is disposed header is present', () => {
@@ -35,10 +34,10 @@ describe('KafkaResponseDeserializer', () => {
           },
           value,
         });
-        expect(packet.id).to.be.equal(id);
-        expect(packet.err).to.be.undefined;
-        expect(packet.isDisposed).to.be.true;
-        expect(packet.response).to.be.eql(value);
+        expect(packet.id).toEqual(id);
+        expect(packet.err).toBeUndefined();
+        expect(packet.isDisposed).toBeTruthy();
+        expect(packet.response).toEqual(value);
       });
     });
   });
