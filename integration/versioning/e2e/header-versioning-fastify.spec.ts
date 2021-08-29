@@ -10,7 +10,7 @@ import { AppModule } from '../src/app.module';
 describe('Versioning (fastify)', () => {
   let app: INestApplication;
 
-  before(async () => {
+  beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -285,7 +285,7 @@ describe('Versioning (fastify)', () => {
     });
   });
 
-  after(async () => {
+  afterAll(async () => {
     await app.close();
   });
 });
