@@ -1,7 +1,7 @@
 import { AxiosRequestConfig } from 'axios';
 import { expect } from 'chai';
 import { lastValueFrom } from 'rxjs';
-import { HttpService } from '../../http/http.service';
+import { HttpService } from '@nestjs/axios';
 
 describe('HttpService', () => {
   it('should not mutate user-given axios options object', done => {
