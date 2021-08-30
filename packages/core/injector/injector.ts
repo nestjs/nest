@@ -1,4 +1,4 @@
-import { LoggerService } from '@nestjs/common';
+import { Logger, LoggerService } from '@nestjs/common';
 import {
   OPTIONAL_DEPS_METADATA,
   OPTIONAL_PROPERTY_DEPS_METADATA,
@@ -22,7 +22,6 @@ import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
 import { STATIC_CONTEXT } from './constants';
-import { InjectorLogger } from './injector-logger';
 import { INQUIRER } from './inquirer';
 import {
   ContextId,
@@ -72,7 +71,7 @@ export interface InjectorDependencyContext {
 }
 
 export class Injector {
-  private logger: LoggerService = new InjectorLogger();
+  private logger: LoggerService = new Logger('InjectorLogger');
   public loadPrototype<T>(
     { token }: InstanceWrapper<T>,
     collection: Map<InstanceToken, InstanceWrapper<T>>,
@@ -801,7 +800,7 @@ export class Injector {
   ): void {
     const tokenName = this.getTokenName(token);
     const dependentName = inquirer?.name ?? 'unknown';
-    this.logger.log(
+    this.log(
       `Resolving dependency ${clc.cyanBright(tokenName)}${clc.green(
         ' in the ',
       )}${clc.yellow(dependentName)}${clc.green(' provider ')}`,
@@ -811,7 +810,7 @@ export class Injector {
   private lookingForLog(token: InstanceToken, moduleRef: Module): void {
     const tokenName = this.getTokenName(token);
     const moduleRefName = moduleRef?.metatype?.name ?? 'unknown';
-    this.logger.log(
+    this.log(
       `Looking for ${clc.cyanBright(tokenName)}${clc.green(' in ')}${clc.magentaBright(
         moduleRefName,
       )}`,
@@ -821,10 +820,16 @@ export class Injector {
   private foundInLog(token: InstanceToken, moduleRef: Module): void {
     const tokenName = this.getTokenName(token);
     const moduleRefName = moduleRef?.metatype?.name ?? 'unknown';
-    this.logger.log(
+    this.log(
       `Found ${clc.cyanBright(tokenName)}${clc.green(
         ' in ',
       )}${clc.magentaBright(moduleRefName)}`,
     );
+  }
+
+  private log(message: string): void {
+    if (process.env.NEST_DEBUG) {
+      this.logger.log(message);
+    }
   }
 }
