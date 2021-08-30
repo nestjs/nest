@@ -31,7 +31,7 @@
     "@babel/register": "7.15.3",
     "@babel/runtime": "7.15.3",
     "@nestjs/testing": "8.0.6",
-    "jest": "27.0.6",
+    "jest": "27.1.0",
     "nodemon": "2.0.12",
     "prettier": "2.3.2",
     "supertest": "6.1.6"
