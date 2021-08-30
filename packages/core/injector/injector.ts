@@ -10,6 +10,7 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import {
+  isFunction,
   isNil,
   isObject,
   isString,
@@ -789,7 +790,7 @@ export class Injector {
   }
 
   private getTokenName(token: InstanceToken): string {
-    return typeof token === 'function'
+    return isFunction(token)
       ? token.toString().split(' ')[1]
       : token.toString();
   }
