@@ -5,6 +5,7 @@ import { CallHandler, ExecutionContext, NestInterceptor } from '../interfaces';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
 import { loadPackage } from '../utils/load-package.util';
 import { isObject } from '../utils/shared.utils';
+import { StreamableFile } from '../file-stream';
 import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants';
 
 let classTransformer: any = {};
@@ -47,18 +48,19 @@ export class ClassSerializerInterceptor implements NestInterceptor {
       );
   }
 
+  /**
+   * Serializes responses that are non-null objects nor streamable files.
+   */
   serialize(
     response: PlainLiteralObject | Array<PlainLiteralObject>,
     options: ClassTransformOptions,
-  ): PlainLiteralObject | PlainLiteralObject[] {
-    const isArray = Array.isArray(response);
-    if (!isArray && !isObject(response)) {
+  ): PlainLiteralObject | Array<PlainLiteralObject> {
+    if (!isObject(response) || response instanceof StreamableFile) {
       return response;
     }
-    return isArray
-      ? (response as PlainLiteralObject[]).map(item =>
-          this.transformToPlain(item, options),
-        )
+
+    return Array.isArray(response)
+      ? response.map(item => this.transformToPlain(item, options))
       : this.transformToPlain(response, options);
   }
 

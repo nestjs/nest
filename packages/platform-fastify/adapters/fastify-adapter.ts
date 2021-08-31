@@ -3,7 +3,10 @@ import {
   Logger,
   RequestMethod,
   StreamableFile,
+  VersioningOptions,
+  VersioningType,
 } from '@nestjs/common';
+import { VersionValue, VERSION_NEUTRAL } from '@nestjs/common/interfaces';
 import {
   CorsOptions,
   CorsOptionsDelegate,
@@ -26,6 +29,7 @@ import {
   RequestGenericInterface,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
+import { RouteShorthandMethod } from 'fastify/types/route';
 import * as http2 from 'http2';
 import * as https from 'https';
 import {
@@ -61,6 +65,11 @@ type FastifyHttpsOptions<
   https: https.ServerOptions;
 };
 
+type VersionedRoute = Function & {
+  version: VersionValue;
+  versioningOptions: VersioningOptions;
+};
+
 /**
  * The following type assertion is valid as we enforce "middie" plugin registration
  * which enhances the FastifyRequest.RawRequest with the "originalUrl" property.
@@ -91,27 +100,101 @@ export class FastifyAdapter<
   > = FastifyInstance<TServer, TRawRequest, TRawResponse>,
 > extends AbstractHttpAdapter<TServer, TRequest, TReply> {
   protected readonly instance: TInstance;
+
   private _isParserRegistered: boolean;
   private isMiddieRegistered: boolean;
+  private versioningOptions: VersioningOptions;
+  private readonly versionConstraint = {
+    name: 'version',
+    validate(value: unknown) {
+      if (typeof value !== 'string' && !Array.isArray(value)) {
+        throw new Error(
+          'Version constraint should be a string or an array of strings.',
+        );
+      }
+    },
+    storage() {
+      const versions = new Map();
+      return {
+        get(version: string | Array<string>) {
+          return versions.get(version) || null;
+        },
+        set(
+          versionOrVersions: string | Array<string>,
+          store: Map<string, any>,
+        ) {
+          const storeVersionConstraint = version =>
+            versions.set(version, store);
+          if (Array.isArray(versionOrVersions))
+            versionOrVersions.forEach(storeVersionConstraint);
+          else storeVersionConstraint(versionOrVersions);
+        },
+        del(version: string | Array<string>) {
+          versions.delete(version);
+        },
+        empty() {
+          versions.clear();
+        },
+      };
+    },
+    deriveConstraint: (req: FastifyRequest) => {
+      // Media Type (Accept Header) Versioning Handler
+      if (this.versioningOptions.type === VersioningType.MEDIA_TYPE) {
+        const MEDIA_TYPE_HEADER = 'Accept';
+        const acceptHeaderValue: string | undefined = (req.headers?.[
+          MEDIA_TYPE_HEADER
+        ] || req.headers?.[MEDIA_TYPE_HEADER.toLowerCase()]) as string;
+
+        const acceptHeaderVersionParameter = acceptHeaderValue
+          ? acceptHeaderValue.split(';')[1]
+          : '';
+
+        if (acceptHeaderVersionParameter) {
+          const headerVersion = acceptHeaderVersionParameter.split(
+            this.versioningOptions.key,
+          )[1];
+          return headerVersion;
+        }
+      }
+      // Header Versioning Handler
+      else if (this.versioningOptions.type === VersioningType.HEADER) {
+        const customHeaderVersionParameter: string | string[] | undefined =
+          req.headers?.[this.versioningOptions.header] ||
+          req.headers?.[this.versioningOptions.header.toLowerCase()];
+
+        if (customHeaderVersionParameter) {
+          return customHeaderVersionParameter;
+        }
+      }
+      return undefined;
+    },
+    mustMatchWhenDerived: false,
+  };
 
   get isParserRegistered(): boolean {
     return !!this._isParserRegistered;
   }
 
   constructor(
-    instanceOrOptions:
+    instanceOrOptions?:
       | TInstance
       | FastifyHttp2Options<any>
       | FastifyHttp2SecureOptions<any>
       | FastifyHttpsOptions<any>
-      | FastifyServerOptions<TServer> = fastify() as any,
+      | FastifyServerOptions<TServer>,
   ) {
+    super();
+
     const instance =
       instanceOrOptions && (instanceOrOptions as TInstance).server
         ? instanceOrOptions
-        : fastify(instanceOrOptions as FastifyServerOptions);
-
-    super(instance);
+        : fastify({
+            constraints: {
+              version: this.versionConstraint as any,
+            },
+            ...(instanceOrOptions as FastifyServerOptions),
+          });
+    this.setInstance(instance);
   }
 
   public async init() {
@@ -129,6 +212,47 @@ export class FastifyAdapter<
   ): void;
   public listen(port: string | number, ...args: any[]): Promise<string> {
     return this.instance.listen(port, ...args);
+  }
+
+  public get(...args: any[]) {
+    return this.injectConstraintsIfVersioned('get', ...args);
+  }
+
+  public post(...args: any[]) {
+    return this.injectConstraintsIfVersioned('post', ...args);
+  }
+
+  public head(...args: any[]) {
+    return this.injectConstraintsIfVersioned('head', ...args);
+  }
+
+  public delete(...args: any[]) {
+    return this.injectConstraintsIfVersioned('delete', ...args);
+  }
+
+  public put(...args: any[]) {
+    return this.injectConstraintsIfVersioned('put', ...args);
+  }
+
+  public patch(...args: any[]) {
+    return this.injectConstraintsIfVersioned('patch', ...args);
+  }
+
+  public options(...args: any[]) {
+    return this.injectConstraintsIfVersioned('options', ...args);
+  }
+
+  public applyVersionFilter(
+    handler: Function,
+    version: VersionValue,
+    versioningOptions: VersioningOptions,
+  ) {
+    if (!this.versioningOptions) {
+      this.versioningOptions = versioningOptions;
+    }
+    const versionedRoute = handler as VersionedRoute;
+    versionedRoute.version = version;
+    return versionedRoute;
   }
 
   public reply(
@@ -331,5 +455,40 @@ export class FastifyAdapter<
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {
     return rawRequest.originalUrl || rawRequest.url;
+  }
+
+  private injectConstraintsIfVersioned(
+    routerMethodKey:
+      | 'get'
+      | 'post'
+      | 'put'
+      | 'delete'
+      | 'options'
+      | 'patch'
+      | 'head',
+    ...args: any[]
+  ) {
+    const handlerRef = args[args.length - 1];
+    const isVersioned =
+      typeof handlerRef.version !== 'undefined' &&
+      handlerRef.version !== VERSION_NEUTRAL;
+
+    if (isVersioned) {
+      const isPathAndRouteTuple = args.length === 2;
+      if (isPathAndRouteTuple) {
+        const options = {
+          constraints: {
+            version: handlerRef.version,
+          },
+        };
+        const path = args[0];
+        return this.instance[routerMethodKey](path, options, handlerRef);
+      }
+    }
+    return this.instance[routerMethodKey](
+      ...(args as Parameters<
+        RouteShorthandMethod<TServer, TRawRequest, TRawResponse>
+      >),
+    );
   }
 }
