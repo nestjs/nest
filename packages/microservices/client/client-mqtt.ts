@@ -11,7 +11,8 @@ import {
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
 import { MqttOptions, ReadPacket, WritePacket } from '../interfaces';
-import { MqttRecord, MqttRecordOptions } from '../records/mqtt.record';
+import { MqttRecord } from '../record-builders/mqtt.record-builder';
+import { MqttRequestSerializer } from '../serializers/mqtt-request.serializer';
 import { ClientProxy } from './client-proxy';
 
 let mqttPackage: any = {};
@@ -123,13 +124,11 @@ export class ClientMqtt extends ClientProxy {
     callback: (packet: WritePacket) => any,
   ): () => void {
     try {
-      const recordOptions = this.unwrapRecord<MqttRecordOptions>(
-        partialPacket,
-        MqttRecord,
-      );
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
-      const serializedPacket = this.serializer.serialize(packet);
+      const serializedPacket: ReadPacket & Partial<MqttRecord> =
+        this.serializer.serialize(packet);
+
       const responseChannel = this.getResponsePattern(pattern);
       let subscriptionsCount =
         this.subscriptionsCount.get(responseChannel) || 0;
@@ -142,7 +141,7 @@ export class ClientMqtt extends ClientProxy {
         this.mqttClient.publish(
           this.getRequestPattern(pattern),
           JSON.stringify(serializedPacket),
-          recordOptions,
+          serializedPacket.options,
         );
       };
 
@@ -165,18 +164,15 @@ export class ClientMqtt extends ClientProxy {
   }
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
-    const recordOptions = this.unwrapRecord<MqttRecordOptions>(
-      packet,
-      MqttRecord,
-    );
     const pattern = this.normalizePattern(packet.pattern);
-    const serializedPacket = this.serializer.serialize(packet);
+    const serializedPacket: ReadPacket & Partial<MqttRecord> =
+      this.serializer.serialize(packet);
 
     return new Promise<void>((resolve, reject) =>
       this.mqttClient.publish(
         pattern,
         JSON.stringify(serializedPacket),
-        recordOptions,
+        serializedPacket.options,
         (err: any) => (err ? reject(err) : resolve()),
       ),
     );
@@ -189,5 +185,9 @@ export class ClientMqtt extends ClientProxy {
     if (subscriptionCount - 1 <= 0) {
       this.mqttClient.unsubscribe(channel);
     }
+  }
+
+  protected initializeSerializer(options: MqttOptions['options']) {
+    this.serializer = options?.serializer ?? new MqttRequestSerializer();
   }
 }

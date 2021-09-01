@@ -8,10 +8,8 @@ import { Client, NatsMsg } from '../external/nats-client.interface';
 import { CustomTransportStrategy } from '../interfaces';
 import { NatsOptions } from '../interfaces/microservice-configuration.interface';
 import { IncomingRequest } from '../interfaces/packet.interface';
-import {
-  NatsRequest,
-  NatsRequestSerializer,
-} from '../serializers/nats-request.serializer';
+import { NatsRecord } from '../record-builders';
+import { NatsRequestSerializer } from '../serializers/nats-request.serializer';
 import { Server } from './server';
 
 let natsPackage = {} as any;
@@ -119,7 +117,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     if (natsMsg.reply) {
       return (response: any) => {
         Object.assign(response, { id });
-        const outgoingResponse: NatsRequest =
+        const outgoingResponse: NatsRecord =
           this.serializer.serialize(response);
         return natsMsg.respond(outgoingResponse.data, {
           headers: outgoingResponse.headers,

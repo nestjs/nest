@@ -4,11 +4,8 @@ import { NATS_DEFAULT_URL } from '../constants';
 import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-json.deserializer';
 import { Client, NatsMsg } from '../external/nats-client.interface';
 import { NatsOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
-import { NatsRecord, NatsRecordOptions } from '../records/nats.record';
-import {
-  NatsRequest,
-  NatsRequestSerializer,
-} from '../serializers/nats-request.serializer';
+import { NatsRecord } from '../record-builders';
+import { NatsRequestSerializer } from '../serializers/nats-request.serializer';
 import { ClientProxy } from './client-proxy';
 
 let natsPackage = {} as any;
@@ -103,13 +100,9 @@ export class ClientNats extends ClientProxy {
     callback: (packet: WritePacket) => any,
   ): () => void {
     try {
-      const recordOptions = this.unwrapRecord<NatsRecordOptions>(
-        partialPacket,
-        NatsRecord,
-      );
       const packet = this.assignPacketId(partialPacket);
       const channel = this.normalizePattern(partialPacket.pattern);
-      const serializedPacket: NatsRequest = this.serializer.serialize(packet);
+      const serializedPacket: NatsRecord = this.serializer.serialize(packet);
       const inbox = natsPackage.createInbox();
 
       const subscriptionHandler = this.createSubscriptionHandler(
@@ -133,12 +126,8 @@ export class ClientNats extends ClientProxy {
   }
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
-    const recordOptions = this.unwrapRecord<NatsRecordOptions>(
-      packet,
-      NatsRecord,
-    );
     const pattern = this.normalizePattern(packet.pattern);
-    const serializedPacket: NatsRequest = this.serializer.serialize(packet);
+    const serializedPacket: NatsRecord = this.serializer.serialize(packet);
 
     return new Promise<void>((resolve, reject) => {
       try {

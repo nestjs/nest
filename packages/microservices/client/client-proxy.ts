@@ -1,4 +1,3 @@
-import { Type } from '@nestjs/common';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import {
@@ -30,7 +29,6 @@ import {
 } from '../interfaces';
 import { ProducerDeserializer } from '../interfaces/deserializer.interface';
 import { ProducerSerializer } from '../interfaces/serializer.interface';
-import { RecordWrapper } from '../records/record-wrapper';
 import { IdentitySerializer } from '../serializers/identity.serializer';
 import { transformPatternToRoute } from '../utils';
 
@@ -167,20 +165,5 @@ export abstract class ClientProxy {
             | KafkaOptions['options']
         ).deserializer) ||
       new IncomingResponseDeserializer();
-  }
-
-  protected unwrapRecord<
-    TOptions,
-    TProto extends Type<RecordWrapper> = Type<RecordWrapper>,
-  >(packet: ReadPacket, recordTypeRef: TProto): TOptions {
-    const originalDataRef = packet.data;
-    if (
-      typeof originalDataRef === 'object' &&
-      originalDataRef instanceof recordTypeRef
-    ) {
-      packet.data = originalDataRef.data;
-      return originalDataRef.options;
-    }
-    return {} as TOptions;
   }
 }

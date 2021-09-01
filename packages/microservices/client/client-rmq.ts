@@ -18,7 +18,8 @@ import {
 } from '../constants';
 import { RmqUrl } from '../external/rmq-url.interface';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
-import { RmqRecord, RmqRecordOptions } from '../records/rmq.record';
+import { RmqRecord } from '../record-builders';
+import { RmqRequestSerializer } from '../serializers/rmq-request.serializer';
 import { ClientProxy } from './client-proxy';
 
 let rqmPackage: any = {};
@@ -186,17 +187,13 @@ export class ClientRMQ extends ClientProxy {
     callback: (packet: WritePacket) => any,
   ): () => void {
     try {
-      const recordOptions = this.unwrapRecord<RmqRecordOptions>(
-        message,
-        RmqRecord,
-      );
-
       const correlationId = randomStringGenerator();
       const listener = ({ content }: { content: any }) =>
         this.handleMessage(JSON.parse(content.toString()), callback);
 
       Object.assign(message, { id: correlationId });
-      const serializedPacket = this.serializer.serialize(message);
+      const serializedPacket: ReadPacket & Partial<RmqRecord> =
+        this.serializer.serialize(message);
 
       this.responseEmitter.on(correlationId, listener);
       this.channel.sendToQueue(
@@ -205,7 +202,7 @@ export class ClientRMQ extends ClientProxy {
         {
           replyTo: this.replyQueue,
           persistent: this.persistent,
-          ...recordOptions,
+          ...serializedPacket.options,
           correlationId,
         },
       );
@@ -216,11 +213,8 @@ export class ClientRMQ extends ClientProxy {
   }
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
-    const recordOptions = this.unwrapRecord<RmqRecordOptions>(
-      packet,
-      RmqRecord,
-    );
-    const serializedPacket = this.serializer.serialize(packet);
+    const serializedPacket: ReadPacket & Partial<RmqRecord> =
+      this.serializer.serialize(packet);
 
     return new Promise<void>((resolve, reject) =>
       this.channel.sendToQueue(
@@ -228,10 +222,14 @@ export class ClientRMQ extends ClientProxy {
         Buffer.from(JSON.stringify(serializedPacket)),
         {
           persistent: this.persistent,
-          ...recordOptions,
+          ...serializedPacket.options,
         },
         (err: unknown) => (err ? reject(err) : resolve()),
       ),
     );
+  }
+
+  protected initializeSerializer(options: RmqOptions['options']) {
+    this.serializer = options?.serializer ?? new RmqRequestSerializer();
   }
 }

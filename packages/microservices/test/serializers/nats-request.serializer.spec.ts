@@ -1,9 +1,7 @@
 import { expect } from 'chai';
-import {
-  NatsMessageBuilder,
-  NatsRequestSerializer,
-} from '../../serializers/nats-request.serializer';
 import * as nats from 'nats';
+import { NatsRecordBuilder } from '../../record-builders';
+import { NatsRequestSerializer } from '../../serializers/nats-request.serializer';
 
 const jsonCodec = nats.JSONCodec();
 
@@ -62,35 +60,12 @@ describe('NatsRequestSerializer', () => {
         data: jsonCodec.encode({ data: serObject }),
       });
     });
-  });
 
-  describe('serialize nats message', () => {
     it('nats message with data and nats headers', () => {
       const natsHeaders = nats.headers();
       natsHeaders.set('1', 'header_1');
-      const natsMessage = new NatsMessageBuilder()
+      const natsMessage = new NatsRecordBuilder()
         .setHeaders(natsHeaders)
-        .setData({ value: 'string' })
-        .build();
-      expect(
-        instance.serialize({
-          data: natsMessage,
-        }),
-      ).to.deep.eq({
-        headers: natsHeaders,
-        data: jsonCodec.encode({
-          data: {
-            value: 'string',
-          },
-        }),
-      });
-    });
-
-    it('nats message with data and plain headers', () => {
-      const natsHeaders = nats.headers();
-      natsHeaders.set('1', 'header_1');
-      const natsMessage = new NatsMessageBuilder()
-        .setPlainHeaders({ '1': 'header_1' })
         .setData({ value: 'string' })
         .build();
       expect(
