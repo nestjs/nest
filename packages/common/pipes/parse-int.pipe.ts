@@ -47,7 +47,6 @@ export class ParseIntPipe implements PipeTransform<string> {
     const isNumeric =
       ['string', 'number'].includes(typeof value) &&
       /^-?\d+$/.test(value) &&
-      !isNaN(parseFloat(value)) &&
       isFinite(value as any);
     if (!isNumeric) {
       throw this.exceptionFactory(
