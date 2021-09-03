@@ -90,6 +90,15 @@ describe('Global prefix', () => {
     await request(server).get('/hello/foo').expect(200);
   });
 
+  it(`should be applied middleware on globalPrefix exclude path`, async () => {
+    app.setGlobalPrefix('/api/v1', { exclude: ['/hello'] });
+
+    server = app.getHttpServer();
+    await app.init();
+
+    await request(server).get('/hello').expect('hello');
+  });
+
   afterEach(async () => {
     await app.close();
   });

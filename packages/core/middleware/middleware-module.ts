@@ -280,21 +280,23 @@ export class MiddlewareModule {
     }
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
+    const globalPrefixOptions = this.config.getGlobalPrefixOptions();
     const router = await applicationRef.createMiddlewareFactory(method);
-    router(
-      basePath + path,
-      isMethodAll
-        ? proxy
-        : <TRequest, TResponse>(
-            req: TRequest,
-            res: TResponse,
-            next: () => void,
-          ) => {
-            if (applicationRef.getRequestMethod(req) === requestMethod) {
-              return proxy(req, res, next);
-            }
-            return next();
-          },
-    );
+    const middlewareFunction = isMethodAll
+      ? proxy
+      : <TRequest, TResponse>(
+          req: TRequest,
+          res: TResponse,
+          next: () => void,
+        ) => {
+          if (applicationRef.getRequestMethod(req) === requestMethod) {
+            return proxy(req, res, next);
+          }
+          return next();
+        };
+    if (globalPrefixOptions && globalPrefixOptions.exclude) {
+      router(path, middlewareFunction);
+    }
+    router(basePath + path, middlewareFunction);
   }
 }
