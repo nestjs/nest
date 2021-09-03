@@ -46,7 +46,7 @@ export class ParseIntPipe implements PipeTransform<string> {
   async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
     const isNumeric =
       ['string', 'number'].includes(typeof value) &&
-      /^\d+$/.test(value) &&
+      /^-?\d+$/.test(value) &&
       !isNaN(parseFloat(value)) &&
       isFinite(value as any);
     if (!isNumeric) {

@@ -25,6 +25,10 @@ describe('ParseIntPipe', () => {
           parseInt(num, 10),
         );
       });
+      it('should return negative number', async () => {
+        const num = '-3';
+        expect(await target.transform(num, {} as ArgumentMetadata)).to.equal(-3);
+      });
     });
     describe('when validation fails', () => {
       it('should throw an error', async () => {
