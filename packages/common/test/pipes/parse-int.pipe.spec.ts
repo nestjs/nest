@@ -32,6 +32,11 @@ describe('ParseIntPipe', () => {
           target.transform('123abc', {} as ArgumentMetadata),
         ).to.be.rejectedWith(CustomTestError);
       });
+      it('should throw an error when number has wrong number encoding', async () => {
+        return expect(
+          target.transform('0xFF', {} as ArgumentMetadata),
+        ).to.be.rejectedWith(CustomTestError);
+      });
     });
   });
 });
