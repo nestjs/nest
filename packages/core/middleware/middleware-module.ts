@@ -296,7 +296,8 @@ export class MiddlewareModule {
         };
     if (globalPrefixOptions && globalPrefixOptions.exclude) {
       router(path, middlewareFunction);
+    } else {
+      router(basePath + path, middlewareFunction);
     }
-    router(basePath + path, middlewareFunction);
   }
 }
