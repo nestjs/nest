@@ -790,7 +790,7 @@ export class Injector {
 
   private getTokenName(token: InstanceToken): string {
     return isFunction(token)
-      ? token.name
+      ? (token as Function).name
       : token.toString();
   }
 
