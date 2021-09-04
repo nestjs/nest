@@ -8,7 +8,7 @@ const createUserDto: CreateUserDto = {
   lastName: 'lastName #1',
 };
 
-describe('AppController', () => {
+describe('UsersController', () => {
   let usersController: UsersController;
   let usersService: UsersService;
 
@@ -58,11 +58,6 @@ describe('AppController', () => {
 
   describe('create()', () => {
     it('should create an user', () => {
-      const createUserDto: CreateUserDto = {
-        firstName: 'firstName #1',
-        lastName: 'lastName #1',
-      };
-
       usersController.create(createUserDto);
       expect(usersService.create).toHaveBeenCalled();
       expect(usersService.create).toHaveBeenCalledWith(createUserDto);

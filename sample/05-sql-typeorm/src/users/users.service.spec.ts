@@ -34,6 +34,7 @@ describe('UserService', () => {
             find: jest.fn().mockResolvedValue(userArray),
             findOne: jest.fn().mockResolvedValue(oneUser),
             save: jest.fn(),
+            remove: jest.fn(),
             delete: jest.fn(),
           },
         },
@@ -75,8 +76,8 @@ describe('UserService', () => {
 
   describe('remove()', () => {
     it('should remove a user', async () => {
-      const removeUserSpy = jest.spyOn(service, 'delete');
-      service.delete('anyid');
+      const removeUserSpy = jest.spyOn(service, 'remove');
+      service.remove('anyid');
       expect(removeUserSpy).toHaveBeenCalledWith('anyid');
     });
   });
