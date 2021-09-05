@@ -10,7 +10,7 @@ const mockCat = {
   age: 4,
 };
 
-describe('CatService', () => {
+describe('CatsService', () => {
   let service: CatsService;
   let model: Model<Cat>;
 
