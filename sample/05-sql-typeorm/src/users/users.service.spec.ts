@@ -74,11 +74,12 @@ describe('UserService', () => {
     });
   });
 
-  describe('remove()', () => {
-    it('should remove a user', async () => {
-      const removeUserSpy = jest.spyOn(service, 'remove');
-      service.remove('anyid');
-      expect(removeUserSpy).toHaveBeenCalledWith('anyid');
+  describe('remove', () => {
+    it('should call remove with the passed value', async () => {
+      const removeSpy = jest.spyOn(repository, 'delete');
+      const retVal = await service.remove('some id');
+      expect(removeSpy).toBeCalledWith('some id');
+      expect(retVal).toBeUndefined();
     });
   });
 });
