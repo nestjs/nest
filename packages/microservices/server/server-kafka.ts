@@ -181,10 +181,11 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
         err: NO_MESSAGE_HANDLER,
       });
     }
-    Promise.all([handler(packet.data, kafkaContext)]).then(([result])=> {
+    // run handler into promise: this modification allow to make parallel kafka requests
+    Promise.all([handler(packet.data, kafkaContext)]).then(([result]) => {
       const response$ = this.transformToObservable(result) as Observable<any>;
       response$ && this.send(response$, publish);
-    })
+    });
   }
 
   public sendMessage(
