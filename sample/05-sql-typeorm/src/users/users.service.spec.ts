@@ -74,7 +74,7 @@ describe('UserService', () => {
     });
   });
 
-  describe('remove', () => {
+  describe('remove()', () => {
     it('should call remove with the passed value', async () => {
       const removeSpy = jest.spyOn(repository, 'delete');
       const retVal = await service.remove('some id');
