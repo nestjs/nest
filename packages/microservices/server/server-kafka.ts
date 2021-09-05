@@ -181,11 +181,10 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
         err: NO_MESSAGE_HANDLER,
       });
     }
-
-    const response$ = this.transformToObservable(
-      await handler(packet.data, kafkaContext),
-    ) as Observable<any>;
-    response$ && this.send(response$, publish);
+    Promise.all([handler(packet.data, kafkaContext)]).then(([result])=> {
+      const response$ = this.transformToObservable(result) as Observable<any>;
+      response$ && this.send(response$, publish);
+    })
   }
 
   public sendMessage(
