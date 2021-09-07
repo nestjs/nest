@@ -32,14 +32,20 @@
     "typescript": "4.3.5"
   },
   "devDependencies": {
-    "@types/sequelize": "4.28.10",
     "@nestjs/cli": "8.1.1",
     "@nestjs/schematics": "8.0.3",
     "@nestjs/testing": "8.0.6",
     "@types/express": "4.17.13",
+    "@types/jest": "^27.0.1",
     "@types/node": "14.17.14",
+    "@types/sequelize": "4.28.10",
     "@types/supertest": "2.0.11",
     "@types/ws": "7.4.7",
+    "@typescript-eslint/eslint-plugin": "4.29.3",
+    "@typescript-eslint/parser": "4.29.3",
+    "eslint": "7.32.0",
+    "eslint-config-prettier": "8.3.0",
+    "eslint-plugin-import": "2.24.2",
     "jest": "27.1.0",
     "prettier": "2.3.2",
     "supertest": "6.1.6",
@@ -47,11 +53,6 @@
     "ts-loader": "9.2.5",
     "ts-node": "10.2.1",
     "tsconfig-paths": "3.11.0",
-    "@typescript-eslint/eslint-plugin": "4.29.3",
-    "@typescript-eslint/parser": "4.29.3",
-    "eslint": "7.32.0",
-    "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-import": "2.24.2",
     "typescript": "4.3.5"
   },
   "jest": {
