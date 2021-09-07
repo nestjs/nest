@@ -2,8 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { User } from './user.model';
 import { UsersService } from './users.service';
 import { getModelToken } from '@nestjs/sequelize';
-import { Model } from 'sequelize-typescript';
-import { fn } from 'sequelize';
 
 const userArray = [
   {
@@ -43,7 +41,7 @@ describe('UserService', () => {
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    model = module.get<typeof User, any>(getModelToken(User));
+    model = module.get<typeof User>(getModelToken(User));
   });
 
   it('should be defined', () => {
