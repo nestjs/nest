@@ -102,6 +102,7 @@ export interface MqttOptions {
 export interface NatsOptions {
   transport?: Transport.NATS;
   options?: {
+    headers?: Record<string, string>;
     authenticator?: any;
     debug?: boolean;
     ignoreClusterUpdates?: boolean;
