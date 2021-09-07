@@ -157,6 +157,7 @@ export interface RmqOptions {
     deserializer?: Deserializer;
     replyQueue?: string;
     persistent?: boolean;
+    headers?: Record<string, string>;
   };
 }
 

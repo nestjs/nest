@@ -8,7 +8,7 @@ export interface RmqRecordOptions {
   BCC?: string | string[];
   contentType?: string;
   contentEncoding?: string;
-  headers?: any;
+  headers?: Record<string, string>;
   priority?: number;
   messageId?: string;
   timestamp?: number;
