@@ -197,7 +197,7 @@ export class ClientMqtt extends ClientProxy {
   protected mergeOptions(
     requestOptions?: MqttRecordOptions,
   ): MqttRecordOptions | undefined {
-    if (!requestOptions && !this.options.userProperties) {
+    if (!requestOptions && !this.options?.userProperties) {
       return undefined;
     }
 
@@ -206,7 +206,7 @@ export class ClientMqtt extends ClientProxy {
       properties: {
         ...requestOptions?.properties,
         userProperties: {
-          ...this.options.userProperties,
+          ...this.options?.userProperties,
           ...requestOptions?.properties?.userProperties,
         },
       },

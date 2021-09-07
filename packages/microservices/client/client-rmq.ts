@@ -238,12 +238,12 @@ export class ClientRMQ extends ClientProxy {
   protected mergeHeaders(
     requestHeaders?: Record<string, string>,
   ): Record<string, string> | undefined {
-    if (!requestHeaders && !this.options.headers) {
+    if (!requestHeaders && !this.options?.headers) {
       return undefined;
     }
 
     return {
-      ...this.options.headers,
+      ...this.options?.headers,
       ...requestHeaders,
     };
   }

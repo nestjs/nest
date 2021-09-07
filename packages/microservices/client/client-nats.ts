@@ -154,13 +154,13 @@ export class ClientNats extends ClientProxy {
   }
 
   protected mergeHeaders<THeaders = any>(requestHeaders?: THeaders) {
-    if (!requestHeaders && !this.options.headers) {
+    if (!requestHeaders && !this.options?.headers) {
       return undefined;
     }
 
     const headers = requestHeaders ?? natsPackage.headers();
 
-    for (const [key, value] of Object.entries(this.options.headers || {})) {
+    for (const [key, value] of Object.entries(this.options?.headers || {})) {
       if (!headers.has(key)) {
         headers.set(key, value);
       }
