@@ -11,7 +11,10 @@ import {
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
 import { MqttOptions, ReadPacket, WritePacket } from '../interfaces';
-import { MqttRecord } from '../record-builders/mqtt.record-builder';
+import {
+  MqttRecord,
+  MqttRecordOptions,
+} from '../record-builders/mqtt.record-builder';
 import { MqttRequestSerializer } from '../serializers/mqtt-request.serializer';
 import { ClientProxy } from './client-proxy';
 
@@ -141,7 +144,7 @@ export class ClientMqtt extends ClientProxy {
         this.mqttClient.publish(
           this.getRequestPattern(pattern),
           JSON.stringify(serializedPacket),
-          serializedPacket.options,
+          this.mergeOptions(serializedPacket.options),
         );
       };
 
@@ -172,7 +175,7 @@ export class ClientMqtt extends ClientProxy {
       this.mqttClient.publish(
         pattern,
         JSON.stringify(serializedPacket),
-        serializedPacket.options,
+        this.mergeOptions(serializedPacket.options),
         (err: any) => (err ? reject(err) : resolve()),
       ),
     );
@@ -189,5 +192,24 @@ export class ClientMqtt extends ClientProxy {
 
   protected initializeSerializer(options: MqttOptions['options']) {
     this.serializer = options?.serializer ?? new MqttRequestSerializer();
+  }
+
+  protected mergeOptions(
+    requestOptions?: MqttRecordOptions,
+  ): MqttRecordOptions | undefined {
+    if (!requestOptions && !this.options.userProperties) {
+      return undefined;
+    }
+
+    return {
+      ...requestOptions,
+      properties: {
+        ...requestOptions?.properties,
+        userProperties: {
+          ...this.options.userProperties,
+          ...requestOptions?.properties?.userProperties,
+        },
+      },
+    };
   }
 }

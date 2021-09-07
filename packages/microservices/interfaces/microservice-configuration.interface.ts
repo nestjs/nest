@@ -96,6 +96,7 @@ export interface MqttOptions {
     url?: string;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    userProperties?: Record<string, string | string[]>;
   };
 }
 
