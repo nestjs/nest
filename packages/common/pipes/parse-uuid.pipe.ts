@@ -38,8 +38,8 @@ export class ParseUUIDPipe implements PipeTransform<string> {
   async transform(value: string, metadata: ArgumentMetadata): Promise<string> {
     if (!isUUID(value, this.version)) {
       throw this.exceptionFactory(
-        `Validation failed (uuid ${
-          this.version ? 'v' + this.version : ''
+        `Validation failed (uuid${
+          this.version ? ` v ${this.version}` : ''
         } is expected)`,
       );
     }
