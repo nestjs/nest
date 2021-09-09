@@ -8,7 +8,7 @@ import { fromEvent, Observable } from 'rxjs';
 import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
 import { Server, ServerOptions, Socket } from 'socket.io';
 
-export class IoAdapter extends AbstractWsAdapter {
+export class IOAdapter extends AbstractWsAdapter {
   public create(
     port: number,
     options?: ServerOptions & { namespace?: string; server?: any },
