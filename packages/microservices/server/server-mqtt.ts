@@ -176,6 +176,10 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     return patternSegmentsLength === topicSegmentsLength;
   }
 
+  public removeHandlerKeySharedPrefix(handlerKey: string) {
+    return handlerKey && handlerKey.startsWith('$share') ? handlerKey.split('/').slice(2).join('/') : handlerKey;
+  }
+
   public getHandlerByPattern(pattern: string): MessageHandler | null {
     const route = this.getRouteFromPattern(pattern);
     if (this.messageHandlers.has(route)) {
@@ -189,7 +193,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
       ) {
         continue;
       }
-      if (this.matchMqttPattern(key, route)) {
+      if (this.matchMqttPattern(this.removeHandlerKeySharedPrefix(key), route)) {
         return value;
       }
     }
