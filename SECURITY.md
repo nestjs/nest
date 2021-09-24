@@ -2,4 +2,4 @@
 
 ## Reporting a Vulnerability
 
-Please report security issues to `jmcdo29@gmail.com`
+Please report security issues to `support@nestjs.com`.
