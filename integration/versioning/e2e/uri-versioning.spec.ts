@@ -3,7 +3,7 @@ import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 
-describe('Versioning', () => {
+describe('URI Versioning', () => {
   let app: INestApplication;
 
   // ======================================================================== //
