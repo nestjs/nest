@@ -30,6 +30,7 @@ export class CacheModule {
   static register(options: CacheModuleOptions = {}): DynamicModule {
     return {
       module: CacheModule,
+      global: options.isGlobal,
       providers: [{ provide: CACHE_MODULE_OPTIONS, useValue: options }],
     };
   }
@@ -45,6 +46,7 @@ export class CacheModule {
   static registerAsync(options: CacheModuleAsyncOptions): DynamicModule {
     return {
       module: CacheModule,
+      global: options.isGlobal,
       imports: options.imports,
       providers: [
         ...this.createAsyncProviders(options),
