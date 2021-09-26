@@ -32,7 +32,7 @@ describe('RouterExceptionFilters', () => {
       beforeEach(() => {
         sinon.stub(exceptionFilter, 'createContext').returns([]);
       });
-      it('should returns plain ExceptionHandler object', () => {
+      it('should return plain ExceptionHandler object', () => {
         const filter = exceptionFilter.create(
           new EmptyMetadata(),
           () => ({} as any),
@@ -45,7 +45,7 @@ describe('RouterExceptionFilters', () => {
       @UseFilters(new ExceptionFilter())
       class WithMetadata {}
 
-      it('should returns ExceptionHandler object with exception filters', () => {
+      it('should return ExceptionHandler object with exception filters', () => {
         const filter = exceptionFilter.create(
           new WithMetadata(),
           () => ({} as any),
@@ -56,7 +56,7 @@ describe('RouterExceptionFilters', () => {
     });
   });
   describe('reflectCatchExceptions', () => {
-    it('should returns FILTER_CATCH_EXCEPTIONS metadata', () => {
+    it('should return FILTER_CATCH_EXCEPTIONS metadata', () => {
       expect(
         exceptionFilter.reflectCatchExceptions(new ExceptionFilter()),
       ).to.be.eql([CustomException]);
@@ -66,7 +66,7 @@ describe('RouterExceptionFilters', () => {
     class InvalidFilter {}
     const filters = [new ExceptionFilter(), new InvalidFilter(), 'test'];
 
-    it('should returns expected exception filters metadata', () => {
+    it('should return expected exception filters metadata', () => {
       const resolved = exceptionFilter.createConcreteContext(filters as any);
       expect(resolved).to.have.length(1);
       expect(resolved[0].exceptionMetatypes).to.be.deep.equal([

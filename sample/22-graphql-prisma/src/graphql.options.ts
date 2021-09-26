@@ -1,5 +1,5 @@
-import { GqlOptionsFactory, GqlModuleOptions } from '@nestjs/graphql';
 import { Injectable } from '@nestjs/common';
+import { GqlModuleOptions, GqlOptionsFactory } from '@nestjs/graphql';
 import { join } from 'path';
 
 @Injectable()
@@ -10,7 +10,7 @@ export class GraphqlOptions implements GqlOptionsFactory {
       path: '/',
       installSubscriptionHandlers: true,
       resolverValidationOptions: {
-        requireResolversForResolveType: false,
+        requireResolversForResolveType: 'ignore',
       },
       definitions: {
         path: join(process.cwd(), 'src/graphql.schema.d.ts'),

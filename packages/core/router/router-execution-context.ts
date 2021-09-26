@@ -136,15 +136,17 @@ export class RouterExecutionContext {
     );
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
 
-    const handler = <TRequest, TResponse>(
-      args: any[],
-      req: TRequest,
-      res: TResponse,
-      next: Function,
-    ) => async () => {
-      fnApplyPipes && (await fnApplyPipes(args, req, res, next));
-      return callback.apply(instance, args);
-    };
+    const handler =
+      <TRequest, TResponse>(
+        args: any[],
+        req: TRequest,
+        res: TResponse,
+        next: Function,
+      ) =>
+      async () => {
+        fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+        return callback.apply(instance, args);
+      };
 
     return async <TRequest, TResponse>(
       req: TRequest,
@@ -215,9 +217,10 @@ export class RouterExecutionContext {
       );
 
     const paramsMetadata = getParamsMetadata(moduleKey);
-    const isResponseHandled = paramsMetadata.some(
-      ({ type }) =>
-        type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
+    const isResponseHandled = this.isResponseHandled(
+      instance,
+      methodName,
+      paramsMetadata,
     );
 
     const httpRedirectResponse = this.reflectRedirect(callback);
@@ -342,6 +345,8 @@ export class RouterExecutionContext {
       type === RouteParamtypes.BODY ||
       type === RouteParamtypes.QUERY ||
       type === RouteParamtypes.PARAM ||
+      type === RouteParamtypes.FILE ||
+      type === RouteParamtypes.FILES ||
       isString(type)
     );
   }
@@ -412,7 +417,11 @@ export class RouterExecutionContext {
     const renderTemplate = this.reflectRenderTemplate(callback);
     if (renderTemplate) {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
-        await this.responseController.render(result, res, renderTemplate);
+        return await this.responseController.render(
+          result,
+          res,
+          renderTemplate,
+        );
       };
     }
     if (redirectResponse && typeof redirectResponse.url === 'string') {
@@ -425,13 +434,17 @@ export class RouterExecutionContext {
       return async <
         TResult extends Observable<unknown> = any,
         TResponse extends HeaderStream = any,
-        TRequest extends IncomingMessage = any
+        TRequest extends IncomingMessage = any,
       >(
         result: TResult,
         res: TResponse,
         req: TRequest,
       ) => {
-        await this.responseController.sse(result, res, req);
+        await this.responseController.sse(
+          result,
+          (res as any).raw || res,
+          (req as any).raw || req,
+        );
       };
     }
     return async <TResult, TResponse>(result: TResult, res: TResponse) => {
@@ -439,5 +452,21 @@ export class RouterExecutionContext {
       !isResponseHandled &&
         (await this.responseController.apply(result, res, httpStatusCode));
     };
+  }
+
+  private isResponseHandled(
+    instance: Controller,
+    methodName: string,
+    paramsMetadata: ParamProperties[],
+  ): boolean {
+    const hasResponseOrNextDecorator = paramsMetadata.some(
+      ({ type }) =>
+        type === RouteParamtypes.RESPONSE || type === RouteParamtypes.NEXT,
+    );
+    const isPassthroughEnabled = this.contextUtils.reflectPassthrough(
+      instance,
+      methodName,
+    );
+    return hasResponseOrNextDecorator && !isPassthroughEnabled;
   }
 }

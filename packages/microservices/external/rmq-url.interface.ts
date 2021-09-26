@@ -9,3 +9,22 @@ export interface RmqUrl {
   heartbeat?: number;
   vhost?: string;
 }
+
+export interface AmqpConnectionManagerSocketOptions {
+  reconnectTimeInSeconds?: number;
+  heartbeatIntervalInSeconds?: number;
+  findServers?: () => string | string[];
+  connectionOptions?: any;
+}
+
+export interface AmqplibQueueOptions {
+  durable?: boolean;
+  autoDelete?: boolean;
+  arguments?: any;
+  messageTtl?: number;
+  expires?: number;
+  deadLetterExchange?: string;
+  deadLetterRoutingKey?: string;
+  maxLength?: number;
+  maxPriority?: number;
+}

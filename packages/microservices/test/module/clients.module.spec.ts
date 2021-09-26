@@ -2,9 +2,9 @@ import { DynamicModule, FactoryProvider, Injectable } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ClientProxyFactory } from '../../client';
-import { ClientsModule, ClientsModuleOptionsFactory } from '../../module';
-import { ClientOptions } from '../../interfaces';
 import { Transport } from '../../enums';
+import { ClientOptions } from '../../interfaces';
+import { ClientsModule, ClientsModuleOptionsFactory } from '../../module';
 
 describe('ClientsModule', () => {
   let dynamicModule: DynamicModule;
@@ -24,7 +24,9 @@ describe('ClientsModule', () => {
       expect(dynamicModule.providers).to.be.deep.eq([
         {
           provide: 'test',
-          useValue: ClientProxyFactory.create({}),
+          useValue: ClientsModule['assignOnAppShutdownHook'](
+            ClientProxyFactory.create({}),
+          ),
         },
       ]);
     });

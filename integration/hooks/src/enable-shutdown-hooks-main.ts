@@ -10,7 +10,8 @@ const SIGNAL_TO_LISTEN = process.argv[3];
 
 @Injectable()
 class TestInjectable
-  implements OnApplicationShutdown, BeforeApplicationShutdown {
+  implements OnApplicationShutdown, BeforeApplicationShutdown
+{
   beforeApplicationShutdown(signal: string) {
     console.log('beforeApplicationShutdown ' + signal);
   }
@@ -26,7 +27,7 @@ class TestInjectable
 class AppModule {}
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { logger: true });
+  const app = await NestFactory.create(AppModule, { logger: false });
 
   if (SIGNAL_TO_LISTEN && SIGNAL_TO_LISTEN !== 'NONE') {
     app.enableShutdownHooks([SIGNAL_TO_LISTEN]);

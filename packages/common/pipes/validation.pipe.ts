@@ -2,10 +2,13 @@ import { iterate } from 'iterare';
 import { Optional } from '../decorators';
 import { Injectable } from '../decorators/core';
 import { HttpStatus } from '../enums/http-status.enum';
-import { ArgumentMetadata, ValidationError } from '../index';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
+import { ValidationError } from '../interfaces/external/validation-error.interface';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
-import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import {
+  ArgumentMetadata,
+  PipeTransform,
+} from '../interfaces/features/pipe-transform.interface';
 import { Type } from '../interfaces/type.interface';
 import {
   ErrorHttpStatusCode,
@@ -113,7 +116,7 @@ export class ValidationPipe implements PipeTransform<any> {
 
     const errors = await classValidator.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
-      throw this.exceptionFactory(errors);
+      throw await this.exceptionFactory(errors);
     }
     if (isPrimitive) {
       // if the value is a primitive value and the validation process has been successfully completed
@@ -199,27 +202,35 @@ export class ValidationPipe implements PipeTransform<any> {
 
   protected mapChildrenToValidationErrors(
     error: ValidationError,
+    parentPath?: string,
   ): ValidationError[] {
     if (!(error.children && error.children.length)) {
       return [error];
     }
     const validationErrors = [];
+    parentPath = parentPath
+      ? `${parentPath}.${error.property}`
+      : error.property;
     for (const item of error.children) {
       if (item.children && item.children.length) {
-        validationErrors.push(...this.mapChildrenToValidationErrors(item));
+        validationErrors.push(
+          ...this.mapChildrenToValidationErrors(item, parentPath),
+        );
       }
-      validationErrors.push(this.prependConstraintsWithParentProp(error, item));
+      validationErrors.push(
+        this.prependConstraintsWithParentProp(parentPath, item),
+      );
     }
     return validationErrors;
   }
 
   protected prependConstraintsWithParentProp(
-    parentError: ValidationError,
+    parentPath: string,
     error: ValidationError,
   ): ValidationError {
     const constraints = {};
     for (const key in error.constraints) {
-      constraints[key] = `${parentError.property}.${error.constraints[key]}`;
+      constraints[key] = `${parentPath}.${error.constraints[key]}`;
     }
     return {
       ...error,

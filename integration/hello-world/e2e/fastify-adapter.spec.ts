@@ -63,6 +63,22 @@ describe('Hello world (fastify adapter)', () => {
       });
   });
 
+  it(`/GET { host: [":tenant.example1.com", ":tenant.example2.com"] } not matched`, () => {
+    return app
+      .inject({
+        method: 'GET',
+        url: '/host-array',
+      })
+      .then(({ payload }) => {
+        expect(JSON.parse(payload)).to.be.eql({
+          error: 'Internal Server Error',
+          message:
+            'HTTP adapter does not support filtering on hosts: [":tenant.example1.com", ":tenant.example2.com"]',
+          statusCode: 500,
+        });
+      });
+  });
+
   it(`/GET inject with LightMyRequest chaining API`, () => {
     return app
       .inject()

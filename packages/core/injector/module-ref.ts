@@ -81,7 +81,7 @@ export abstract class ModuleRef {
 
     const { wrapperRef, collection } = instanceLink;
     if (wrapperRef.isDependencyTreeStatic() && !wrapperRef.isTransient) {
-      return this.get(typeOrToken);
+      return this.get(typeOrToken, options);
     }
 
     const ctorHost = wrapperRef.instance || { constructor: typeOrToken };

@@ -14,6 +14,9 @@ import {
   HttpModuleOptionsFactory,
 } from './interfaces';
 
+/**
+ * @deprecated "HttpModule" (from the "@nestjs/common" package) is deprecated and will be removed in the next major release. Please, use the "@nestjs/axios" package instead.
+ */
 @Module({
   providers: [
     HttpService,

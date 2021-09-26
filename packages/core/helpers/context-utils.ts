@@ -1,5 +1,8 @@
 import { ParamData } from '@nestjs/common';
-import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
+import {
+  PARAMTYPES_METADATA,
+  RESPONSE_PASSTHROUGH_METADATA,
+} from '@nestjs/common/constants';
 import {
   ContextType,
   Controller,
@@ -36,6 +39,14 @@ export class ContextUtils {
     metadataKey: string,
   ): T {
     return Reflect.getMetadata(metadataKey, instance.constructor, methodName);
+  }
+
+  public reflectPassthrough(instance: Controller, methodName: string): boolean {
+    return Reflect.getMetadata(
+      RESPONSE_PASSTHROUGH_METADATA,
+      instance.constructor,
+      methodName,
+    );
   }
 
   public getArgumentsLength<T>(keys: string[], metadata: T): number {

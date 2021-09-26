@@ -34,7 +34,7 @@ describe('PipesConsumer', () => {
         done();
       });
     });
-    it('should returns expected result', done => {
+    it('should return expected result', done => {
       const expectedResult = 3;
       consumer
         .apply(value, { metatype, type, data }, transforms)

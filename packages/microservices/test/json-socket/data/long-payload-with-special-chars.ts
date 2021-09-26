@@ -8,8 +8,7 @@ export const longPayload = [
     picture: 'http://placehold.it/32x32',
     age: 26,
     eyeColor: 'green',
-    name:
-      'Wçêtson Aguilar [special characters in name that used to fail on long payloads]',
+    name: 'Wçêtson Aguilar [special characters in name that used to fail on long payloads]',
     gender: 'male',
     company: 'PROWASTE',
     email: 'watsonaguilar@prowaste.com',

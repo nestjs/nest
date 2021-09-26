@@ -262,6 +262,8 @@ describe('RouterExecutionContext', () => {
         expect(contextCreator.isPipeable(RouteParamtypes.BODY)).to.be.true;
         expect(contextCreator.isPipeable(RouteParamtypes.QUERY)).to.be.true;
         expect(contextCreator.isPipeable(RouteParamtypes.PARAM)).to.be.true;
+        expect(contextCreator.isPipeable(RouteParamtypes.FILE)).to.be.true;
+        expect(contextCreator.isPipeable(RouteParamtypes.FILES)).to.be.true;
         expect(contextCreator.isPipeable('custom')).to.be.true;
       });
     });

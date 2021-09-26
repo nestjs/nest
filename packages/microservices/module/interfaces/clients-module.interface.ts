@@ -1,21 +1,23 @@
-import { ClientOptions } from '../../interfaces';
+import { ClientOptions, CustomClientOptions } from '../../interfaces';
 import { Type, Provider, ModuleMetadata } from '@nestjs/common/interfaces';
 
-export type ClientProviderOptions = ClientOptions & {
+export type ClientProvider = ClientOptions | CustomClientOptions;
+
+export type ClientProviderOptions = ClientProvider & {
   name: string | symbol;
 };
 
 export type ClientsModuleOptions = Array<ClientProviderOptions>;
 
 export interface ClientsModuleOptionsFactory {
-  createClientOptions(): Promise<ClientOptions> | ClientOptions;
+  createClientOptions(): Promise<ClientProvider> | ClientProvider;
 }
 
 export interface ClientsProviderAsyncOptions
   extends Pick<ModuleMetadata, 'imports'> {
   useExisting?: Type<ClientsModuleOptionsFactory>;
   useClass?: Type<ClientsModuleOptionsFactory>;
-  useFactory?: (...args: any[]) => Promise<ClientOptions> | ClientOptions;
+  useFactory?: (...args: any[]) => Promise<ClientProvider> | ClientProvider;
   inject?: any[];
   extraProviders?: Provider[];
   name: string | symbol;

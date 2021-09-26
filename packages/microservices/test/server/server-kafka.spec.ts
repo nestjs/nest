@@ -126,6 +126,18 @@ describe('ServerKafka', () => {
       await server.listen(callback);
       expect(callback.called).to.be.true;
     });
+    describe('when "start" throws an exception', () => {
+      it('should call callback with a thrown error as an argument', () => {
+        const error = new Error('random error');
+
+        const callbackSpy = sinon.spy();
+        sinon.stub(server, 'start').callsFake(() => {
+          throw error;
+        });
+        server.listen(callbackSpy);
+        expect(callbackSpy.calledWith(error)).to.be.true;
+      });
+    });
   });
 
   describe('close', () => {
@@ -135,8 +147,8 @@ describe('ServerKafka', () => {
       (server as any).consumer = consumer;
       (server as any).producer = producer;
     });
-    it('should close server', () => {
-      server.close();
+    it('should close server', async () => {
+      await server.close();
 
       expect(consumer.disconnect.calledOnce).to.be.true;
       expect(producer.disconnect.calledOnce).to.be.true;
@@ -229,7 +241,9 @@ describe('ServerKafka', () => {
         replyPartition,
         correlationId,
       );
-      sendMessageStub = sinon.stub(server, 'sendMessage').callsFake(() => ({}));
+      sendMessageStub = sinon
+        .stub(server, 'sendMessage')
+        .callsFake(async () => []);
     });
     it(`should return function`, () => {
       expect(typeof server.getPublisher(null, null, correlationId)).to.be.eql(
@@ -258,25 +272,25 @@ describe('ServerKafka', () => {
     let getPublisherSpy: sinon.SinonSpy;
 
     beforeEach(() => {
-      sinon.stub(server, 'sendMessage').callsFake(() => ({}));
+      sinon.stub(server, 'sendMessage').callsFake(async () => []);
       getPublisherSpy = sinon.spy();
 
       sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
     });
-    it('should call "handleEvent" if correlation identifier is not present', () => {
+    it('should call "handleEvent" if correlation identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
-      server.handleMessage(eventPayload);
+      await server.handleMessage(eventPayload);
       expect(handleEventSpy.called).to.be.true;
     });
 
-    it('should call "handleEvent" if correlation identifier is present by the reply topic is not present', () => {
+    it('should call "handleEvent" if correlation identifier is present by the reply topic is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
-      server.handleMessage(eventWithCorrelationIdPayload);
+      await server.handleMessage(eventWithCorrelationIdPayload);
       expect(handleEventSpy.called).to.be.true;
     });
 
-    it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, () => {
-      server.handleMessage(payload);
+    it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
+      await server.handleMessage(payload);
       expect(
         getPublisherSpy.calledWith({
           id: payload.message.headers[KafkaHeaders.CORRELATION_ID].toString(),
@@ -284,13 +298,13 @@ describe('ServerKafka', () => {
         }),
       ).to.be.true;
     });
-    it(`should call handler with expected arguments`, () => {
+    it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
       (server as any).messageHandlers = objectToMap({
         [topic]: handler,
       });
 
-      server.handleMessage(payload);
+      await server.handleMessage(payload);
       expect(handler.called).to.be.true;
     });
   });
@@ -409,6 +423,26 @@ describe('ServerKafka', () => {
           ],
         }),
       ).to.be.true;
+    });
+  });
+
+  describe('createClient', () => {
+    it('should accept a custom logCreator in client options', () => {
+      const logCreatorSpy = sinon.spy(() => 'test');
+      const logCreator = () => logCreatorSpy;
+
+      server = new ServerKafka({
+        client: {
+          brokers: [],
+          logCreator,
+        },
+      });
+
+      const logger = server.createClient().logger();
+
+      logger.info({ namespace: '', level: 1, log: 'test' });
+
+      expect(logCreatorSpy.called).to.be.true;
     });
   });
 });

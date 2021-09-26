@@ -1,4 +1,8 @@
-import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isNil,
+  isString,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
@@ -14,13 +18,13 @@ import {
 } from '../constants';
 import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
+import { RmqUrl } from '../external/rmq-url.interface';
 import { CustomTransportStrategy, RmqOptions } from '../interfaces';
 import {
   IncomingRequest,
   OutgoingResponse,
 } from '../interfaces/packet.interface';
 import { Server } from './server';
-import { RmqUrl } from '../external/rmq-url.interface';
 
 let rqmPackage: any = {};
 
@@ -61,8 +65,14 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     this.initializeDeserializer(options);
   }
 
-  public async listen(callback: () => void): Promise<void> {
-    await this.start(callback);
+  public async listen(
+    callback: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ): Promise<void> {
+    try {
+      await this.start(callback);
+    } catch (err) {
+      callback(err);
+    }
   }
 
   public close(): void {
@@ -89,7 +99,11 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   public createClient<T = any>(): T {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    return rqmPackage.connect(this.urls, { connectionOptions: socketOptions });
+    return rqmPackage.connect(this.urls, {
+      connectionOptions: socketOptions,
+      heartbeatIntervalInSeconds: socketOptions?.heartbeatIntervalInSeconds,
+      reconnectTimeInSeconds: socketOptions?.reconnectTimeInSeconds,
+    });
   }
 
   public async setupChannel(channel: any, callback: Function) {
@@ -111,9 +125,12 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     message: Record<string, any>,
     channel: any,
   ): Promise<void> {
+    if (isNil(message)) {
+      return;
+    }
     const { content, properties } = message;
     const rawMessage = JSON.parse(content.toString());
-    const packet = this.deserializer.deserialize(rawMessage);
+    const packet = await this.deserializer.deserialize(rawMessage);
     const pattern = isString(packet.pattern)
       ? packet.pattern
       : JSON.stringify(packet.pattern);
@@ -153,7 +170,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     correlationId: string,
   ): void {
     const outgoingResponse = this.serializer.serialize(
-      (message as unknown) as OutgoingResponse,
+      message as unknown as OutgoingResponse,
     );
     const buffer = Buffer.from(JSON.stringify(outgoingResponse));
     this.channel.sendToQueue(replyTo, buffer, { correlationId });

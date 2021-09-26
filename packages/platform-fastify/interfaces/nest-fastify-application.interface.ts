@@ -55,16 +55,16 @@ export interface NestFastifyApplication extends INestApplication {
    * @returns A Promise that, when resolved, is a reference to the underlying HttpServer.
    */
   listen(
-    port: number,
+    port: number | string,
     callback?: (err: Error, address: string) => void,
   ): Promise<any>;
   listen(
-    port: number,
+    port: number | string,
     address: string,
     callback?: (err: Error, address: string) => void,
   ): Promise<any>;
   listen(
-    port: number,
+    port: number | string,
     address: string,
     backlog: number,
     callback?: (err: Error, address: string) => void,

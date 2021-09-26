@@ -30,7 +30,7 @@ describe('ExceptionFiltersContext', () => {
       beforeEach(() => {
         sinon.stub(exceptionFilter, 'createContext').returns([]);
       });
-      it('should returns plain ExceptionHandler object', () => {
+      it('should return plain ExceptionHandler object', () => {
         const filter = exceptionFilter.create(
           new EmptyMetadata(),
           () => ({} as any),
@@ -43,7 +43,7 @@ describe('ExceptionFiltersContext', () => {
       @UseFilters(new ExceptionFilter())
       class WithMetadata {}
 
-      it('should returns ExceptionHandler object with exception filters', () => {
+      it('should return ExceptionHandler object with exception filters', () => {
         const filter = exceptionFilter.create(
           new WithMetadata(),
           () => ({} as any),

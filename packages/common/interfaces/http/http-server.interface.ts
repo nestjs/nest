@@ -1,6 +1,10 @@
 import { RequestMethod } from '../../enums';
-import { CorsOptions } from '../../interfaces/external/cors-options.interface';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '../../interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '../../interfaces/nest-application-options.interface';
+import { VersioningOptions, VersionValue } from '../version-options.interface';
 
 export type ErrorHandler<TRequest = any, TResponse = any> = (
   error: any,
@@ -38,6 +42,8 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   put(path: string, handler: RequestHandler<TRequest, TResponse>): any;
   patch(handler: RequestHandler<TRequest, TResponse>): any;
   patch(path: string, handler: RequestHandler<TRequest, TResponse>): any;
+  all(path: string, handler: RequestHandler<TRequest, TResponse>): any;
+  all(handler: RequestHandler<TRequest, TResponse>): any;
   options(handler: RequestHandler<TRequest, TResponse>): any;
   options(path: string, handler: RequestHandler<TRequest, TResponse>): any;
   listen(port: number | string, callback?: () => void): any;
@@ -59,13 +65,22 @@ export interface HttpServer<TRequest = any, TResponse = any> {
     | Promise<(path: string, callback: Function) => any>;
   getRequestHostname?(request: TRequest): string;
   getRequestMethod?(request: TRequest): string;
-  getRequestUrl?(request: TResponse): string;
+  getRequestUrl?(request: TRequest): string;
   getInstance(): any;
   registerParserMiddleware(): any;
-  enableCors(options: CorsOptions): any;
+  enableCors(options: CorsOptions | CorsOptionsDelegate<TRequest>): any;
   getHttpServer(): any;
   initHttpServer(options: NestApplicationOptions): void;
   close(): any;
   getType(): string;
   init?(): Promise<void>;
+  applyVersionFilter?(
+    handler: Function,
+    version: VersionValue,
+    versioningOptions: VersioningOptions,
+  ): <TRequest extends Record<string, any> = any, TResponse = any>(
+    req: TRequest,
+    res: TResponse,
+    next: () => void,
+  ) => any;
 }

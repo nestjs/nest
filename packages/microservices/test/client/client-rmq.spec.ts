@@ -94,7 +94,6 @@ describe('ClientRMQ', function () {
   });
 
   describe('consumeChannel', () => {
-    let addSetupStub: sinon.SinonStub;
     let consumeStub: sinon.SinonStub;
     const channel: any = {};
 
@@ -103,17 +102,11 @@ describe('ClientRMQ', function () {
       consumeStub = sinon
         .stub()
         .callsFake((_, done) => done({ properties: { correlationId: 1 } }));
-      addSetupStub = sinon.stub().callsFake(fn => fn(channel));
 
       channel.consume = consumeStub;
-      client['channel'] = { addSetup: addSetupStub };
-    });
-    it('should call "addSetup" method of the channel instance', async () => {
-      await client.consumeChannel();
-      expect(addSetupStub.called).to.be.true;
     });
     it('should call "consume" method of the channel instance', async () => {
-      await client.consumeChannel();
+      await client.consumeChannel(channel);
       expect(consumeStub.called).to.be.true;
     });
   });
@@ -218,10 +211,10 @@ describe('ClientRMQ', function () {
 
       beforeEach(async () => {
         unsubscribeSpy = sinon.spy();
-        client['responseEmitter'] = ({
+        client['responseEmitter'] = {
           removeListener: unsubscribeSpy,
           on: sinon.spy(),
-        } as any) as EventEmitter;
+        } as any as EventEmitter;
 
         subscription = await client['publish'](msg, sinon.spy());
         subscription();
@@ -239,13 +232,13 @@ describe('ClientRMQ', function () {
       beforeEach(() => {
         callback = sinon.spy();
       });
-      it('should call callback with correct object', () => {
+      it('should call callback with correct object', async () => {
         const packet = {
           err: true,
           response: 'test',
           isDisposed: false,
         };
-        client.handleMessage(packet, callback);
+        await client.handleMessage(packet, callback);
         expect(
           callback.calledWith({
             err: packet.err,
@@ -261,12 +254,12 @@ describe('ClientRMQ', function () {
       beforeEach(() => {
         callback = sinon.spy();
       });
-      it('should call callback with correct object', () => {
+      it('should call callback with correct object', async () => {
         const packet = {
           response: 'test',
           isDisposed: true,
         };
-        client.handleMessage(packet, callback);
+        await client.handleMessage(packet, callback);
         expect(
           callback.calledWith({
             err: undefined,
@@ -283,12 +276,12 @@ describe('ClientRMQ', function () {
       beforeEach(() => {
         callback = sinon.spy();
       });
-      it('should call callback with correct object', () => {
+      it('should call callback with correct object', async () => {
         const packet = {
           response: 'test',
           isDisposed: false,
         };
-        client.handleMessage(packet, callback);
+        await client.handleMessage(packet, callback);
         expect(
           callback.calledWith({
             err: undefined,

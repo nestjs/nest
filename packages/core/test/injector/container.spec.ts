@@ -5,7 +5,6 @@ import { Global } from '../../../common/index';
 import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { NestContainer } from '../../injector/container';
-import { InternalCoreModule } from '../../injector/internal-core-module';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('NestContainer', () => {
@@ -207,12 +206,6 @@ describe('NestContainer', () => {
       container.getModules().set(key, value as any);
 
       expect(container.getModuleByKey(key)).to.be.eql(value);
-    });
-  });
-
-  describe('createCoreModule', () => {
-    it('should create InternalCoreModule', () => {
-      expect(container.createCoreModule().module).to.be.eql(InternalCoreModule);
     });
   });
 

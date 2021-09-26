@@ -28,6 +28,16 @@ describe('Hello world (default adapter)', () => {
       path: '/host',
       greeting: 'Host Greeting! tenant=acme',
     },
+    {
+      host: 'acme.example1.com',
+      path: '/host-array',
+      greeting: 'Host Greeting! tenant=acme',
+    },
+    {
+      host: 'acme.example2.com',
+      path: '/host-array',
+      greeting: 'Host Greeting! tenant=acme',
+    },
   ].forEach(({ host, path, greeting }) => {
     describe(`host=${host}`, () => {
       describe('/GET', () => {

@@ -10,6 +10,7 @@ export * from './cache';
 export * from './decorators';
 export * from './enums';
 export * from './exceptions';
+export * from './file-stream';
 export * from './http';
 export {
   Abstract,
@@ -52,6 +53,8 @@ export {
   Type,
   ValidationError,
   ValueProvider,
+  VersioningOptions,
+  VERSION_NEUTRAL,
   WebSocketAdapter,
   WsExceptionFilter,
   WsMessageHandler,

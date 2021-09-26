@@ -14,6 +14,7 @@ function toDataString(data: string | object): string {
 }
 
 interface WriteHeaders {
+  writableEnded?: boolean;
   writeHead?(
     statusCode: number,
     reasonPhrase?: string,
@@ -58,8 +59,7 @@ export class SseStream extends Transform {
         Connection: 'keep-alive',
         // Disable cache, even for old browsers and proxies
         'Cache-Control':
-          'private, no-cache, no-store, must-revalidate, max-age=0',
-        'Transfer-Encoding': 'identity',
+          'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
         Pragma: 'no-cache',
         Expire: '0',
         // NGINX support https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/#x-accel-buffering

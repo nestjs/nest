@@ -34,4 +34,32 @@ describe('RoutesMapper', () => {
       { path: '/test/another', method: RequestMethod.DELETE },
     ]);
   });
+  @Controller(['test', 'test2'])
+  class TestRouteWithMultiplePaths {
+    @RequestMapping({ path: 'test' })
+    public getTest() {}
+
+    @RequestMapping({ path: 'another', method: RequestMethod.DELETE })
+    public getAnother() {}
+  }
+
+  it('should map a controller with multiple paths to "ControllerMetadata" in forRoutes', () => {
+    const config = {
+      middleware: 'Test',
+      forRoutes: [
+        { path: 'test', method: RequestMethod.GET },
+        TestRouteWithMultiplePaths,
+      ],
+    };
+
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).to.deep.equal([
+      { path: '/test', method: RequestMethod.GET },
+    ]);
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
+      { path: '/test/test', method: RequestMethod.GET },
+      { path: '/test/another', method: RequestMethod.DELETE },
+      { path: '/test2/test', method: RequestMethod.GET },
+      { path: '/test2/another', method: RequestMethod.DELETE },
+    ]);
+  });
 });

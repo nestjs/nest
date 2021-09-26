@@ -24,7 +24,7 @@ describe('RPC transport', () => {
         host: '0.0.0.0',
       },
     });
-    await app.startAllMicroservicesAsync();
+    await app.startAllMicroservices();
     await app.init();
   });
 
@@ -103,6 +103,22 @@ describe('RPC transport', () => {
           done();
         }, 1000);
       });
+  });
+
+  it('/POST (custom client)', () => {
+    return request(server)
+      .post('/error?client=custom')
+      .send({})
+      .expect(200)
+      .expect('true');
+  });
+
+  it('/POST (standard client)', () => {
+    return request(server)
+      .post('/error?client=standard')
+      .send({})
+      .expect(200)
+      .expect('false');
   });
 
   afterEach(async () => {

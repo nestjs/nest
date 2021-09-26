@@ -1,70 +1,81 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { share } from 'rxjs/operators';
-import { ERROR_EVENT, NATS_DEFAULT_URL } from '../constants';
-import { Client } from '../external/nats-client.interface';
+import { NATS_DEFAULT_URL } from '../constants';
+import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-json.deserializer';
+import { Client, NatsMsg } from '../external/nats-client.interface';
 import { NatsOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
+import { NatsJSONSerializer } from '../serializers/nats-json.serializer';
 import { ClientProxy } from './client-proxy';
-import { CONN_ERR } from './constants';
 
-let natsPackage: any = {};
+let natsPackage = {} as any;
 
 export class ClientNats extends ClientProxy {
   protected readonly logger = new Logger(ClientProxy.name);
-  protected readonly url: string;
   protected natsClient: Client;
-  protected connection: Promise<any>;
 
   constructor(protected readonly options: NatsOptions['options']) {
     super();
-    this.url = this.getOptionsProp(this.options, 'url') || NATS_DEFAULT_URL;
     natsPackage = loadPackage('nats', ClientNats.name, () => require('nats'));
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
   }
 
-  public close() {
-    this.natsClient && this.natsClient.close();
+  public async close() {
+    await this.natsClient?.close();
     this.natsClient = null;
-    this.connection = null;
   }
 
   public async connect(): Promise<any> {
     if (this.natsClient) {
-      return this.connection;
+      return this.natsClient;
     }
-    this.natsClient = this.createClient();
-    this.handleError(this.natsClient);
-
-    this.connection = await this.connect$(this.natsClient)
-      .pipe(share())
-      .toPromise();
-    return this.connection;
+    this.natsClient = await this.createClient();
+    this.handleStatusUpdates(this.natsClient);
+    return this.natsClient;
   }
 
-  public createClient(): Client {
+  public createClient(): Promise<Client> {
     const options: any = this.options || ({} as NatsOptions);
     return natsPackage.connect({
+      servers: NATS_DEFAULT_URL,
       ...options,
-      url: this.url,
-      json: true,
     });
   }
 
-  public handleError(client: Client) {
-    client.addListener(
-      ERROR_EVENT,
-      (err: any) => err.code !== CONN_ERR && this.logger.error(err),
-    );
+  public async handleStatusUpdates(client: Client) {
+    for await (const status of client.status()) {
+      const data =
+        status.data && typeof status.data === 'object'
+          ? JSON.stringify(status.data)
+          : status.data;
+      if (status.type === 'disconnect' || status.type === 'error') {
+        this.logger.error(
+          `NatsError: type: "${status.type}", data: "${data}".`,
+        );
+      } else {
+        const message = `NatsStatus: type: "${status.type}", data: "${data}".`;
+        if (status.type === 'pingTimer') {
+          this.logger.debug(message);
+        } else {
+          this.logger.log(message);
+        }
+      }
+    }
   }
 
   public createSubscriptionHandler(
     packet: ReadPacket & PacketId,
     callback: (packet: WritePacket) => any,
-  ): Function {
-    return (rawPacket: unknown) => {
-      const message = this.deserializer.deserialize(rawPacket);
+  ) {
+    return async (error: unknown | undefined, natsMsg: NatsMsg) => {
+      if (error) {
+        return callback({
+          err: error,
+        });
+      }
+      const rawPacket = natsMsg.data;
+      const message = await this.deserializer.deserialize(rawPacket);
       if (message.id && message.id !== packet.id) {
         return undefined;
       }
@@ -86,22 +97,27 @@ export class ClientNats extends ClientProxy {
   protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Function {
+  ): () => void {
     try {
       const packet = this.assignPacketId(partialPacket);
       const channel = this.normalizePattern(partialPacket.pattern);
       const serializedPacket = this.serializer.serialize(packet);
+      const inbox = natsPackage.createInbox();
 
       const subscriptionHandler = this.createSubscriptionHandler(
         packet,
         callback,
       );
-      const subscriptionId = this.natsClient.request(
-        channel,
-        serializedPacket as any,
-        subscriptionHandler,
-      );
-      return () => this.natsClient.unsubscribe(subscriptionId);
+
+      const subscription = this.natsClient.subscribe(inbox, {
+        callback: subscriptionHandler,
+      });
+
+      this.natsClient.publish(channel, serializedPacket, {
+        reply: inbox,
+      });
+
+      return () => subscription.unsubscribe();
     } catch (err) {
       callback({ err });
     }
@@ -111,10 +127,22 @@ export class ClientNats extends ClientProxy {
     const pattern = this.normalizePattern(packet.pattern);
     const serializedPacket = this.serializer.serialize(packet);
 
-    return new Promise((resolve, reject) =>
-      this.natsClient.publish(pattern, serializedPacket as any, err =>
-        err ? reject(err) : resolve(),
-      ),
-    );
+    return new Promise<void>((resolve, reject) => {
+      try {
+        this.natsClient.publish(pattern, serializedPacket);
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  protected initializeSerializer(options: NatsOptions['options']) {
+    this.serializer = options?.serializer ?? new NatsJSONSerializer();
+  }
+
+  protected initializeDeserializer(options: NatsOptions['options']) {
+    this.deserializer =
+      options?.deserializer ?? new NatsResponseJSONDeserializer();
   }
 }

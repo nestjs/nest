@@ -9,81 +9,84 @@ import { Module } from './module';
 
 export class InstanceLoader {
   private readonly injector = new Injector();
-  private readonly logger = new Logger(InstanceLoader.name, true);
+  constructor(
+    private readonly container: NestContainer,
+    private readonly logger = new Logger(InstanceLoader.name, {
+      timestamp: true,
+    }),
+  ) {}
 
-  constructor(private readonly container: NestContainer) {}
-
-  public async createInstancesOfDependencies() {
-    const modules = this.container.getModules();
-
+  public async createInstancesOfDependencies(
+    modules: Map<string, Module> = this.container.getModules(),
+  ) {
     this.createPrototypes(modules);
     await this.createInstances(modules);
   }
 
   private createPrototypes(modules: Map<string, Module>) {
-    modules.forEach(module => {
-      this.createPrototypesOfProviders(module);
-      this.createPrototypesOfInjectables(module);
-      this.createPrototypesOfControllers(module);
+    modules.forEach(moduleRef => {
+      this.createPrototypesOfProviders(moduleRef);
+      this.createPrototypesOfInjectables(moduleRef);
+      this.createPrototypesOfControllers(moduleRef);
     });
   }
 
   private async createInstances(modules: Map<string, Module>) {
     await Promise.all(
-      [...modules.values()].map(async module => {
-        await this.createInstancesOfProviders(module);
-        await this.createInstancesOfInjectables(module);
-        await this.createInstancesOfControllers(module);
+      [...modules.values()].map(async moduleRef => {
+        await this.createInstancesOfProviders(moduleRef);
+        await this.createInstancesOfInjectables(moduleRef);
+        await this.createInstancesOfControllers(moduleRef);
 
-        const { name } = module.metatype;
+        const { name } = moduleRef.metatype;
         this.isModuleWhitelisted(name) &&
           this.logger.log(MODULE_INIT_MESSAGE`${name}`);
       }),
     );
   }
 
-  private createPrototypesOfProviders(module: Module) {
-    const { providers } = module;
+  private createPrototypesOfProviders(moduleRef: Module) {
+    const { providers } = moduleRef;
     providers.forEach(wrapper =>
       this.injector.loadPrototype<Injectable>(wrapper, providers),
     );
   }
 
-  private async createInstancesOfProviders(module: Module) {
-    const { providers } = module;
+  private async createInstancesOfProviders(moduleRef: Module) {
+    const { providers } = moduleRef;
     const wrappers = [...providers.values()];
     await Promise.all(
-      wrappers.map(item => this.injector.loadProvider(item, module)),
+      wrappers.map(item => this.injector.loadProvider(item, moduleRef)),
     );
   }
 
-  private createPrototypesOfControllers(module: Module) {
-    const { controllers } = module;
+  private createPrototypesOfControllers(moduleRef: Module) {
+    const { controllers } = moduleRef;
     controllers.forEach(wrapper =>
       this.injector.loadPrototype<Controller>(wrapper, controllers),
     );
   }
 
-  private async createInstancesOfControllers(module: Module) {
-    const { controllers } = module;
+  private async createInstancesOfControllers(moduleRef: Module) {
+    const { controllers } = moduleRef;
     const wrappers = [...controllers.values()];
     await Promise.all(
-      wrappers.map(item => this.injector.loadController(item, module)),
+      wrappers.map(item => this.injector.loadController(item, moduleRef)),
     );
   }
 
-  private createPrototypesOfInjectables(module: Module) {
-    const { injectables } = module;
+  private createPrototypesOfInjectables(moduleRef: Module) {
+    const { injectables } = moduleRef;
     injectables.forEach(wrapper =>
       this.injector.loadPrototype(wrapper, injectables),
     );
   }
 
-  private async createInstancesOfInjectables(module: Module) {
-    const { injectables } = module;
+  private async createInstancesOfInjectables(moduleRef: Module) {
+    const { injectables } = moduleRef;
     const wrappers = [...injectables.values()];
     await Promise.all(
-      wrappers.map(item => this.injector.loadInjectable(item, module)),
+      wrappers.map(item => this.injector.loadInjectable(item, moduleRef)),
     );
   }
 

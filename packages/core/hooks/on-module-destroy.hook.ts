@@ -27,7 +27,7 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
     .filter(instance => !isNil(instance))
     .filter(hasOnModuleDestroyHook)
     .map(async instance =>
-      ((instance as any) as OnModuleDestroy).onModuleDestroy(),
+      (instance as any as OnModuleDestroy).onModuleDestroy(),
     )
     .toArray();
 }

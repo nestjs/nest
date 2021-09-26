@@ -43,7 +43,7 @@ export function FileFieldsInterceptor(
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
 
-      await new Promise((resolve, reject) =>
+      await new Promise<void>((resolve, reject) =>
         this.multer.fields(uploadFields)(
           ctx.getRequest(),
           ctx.getResponse(),
@@ -60,5 +60,5 @@ export function FileFieldsInterceptor(
     }
   }
   const Interceptor = mixin(MixinInterceptor);
-  return Interceptor as Type<NestInterceptor>;
+  return Interceptor;
 }

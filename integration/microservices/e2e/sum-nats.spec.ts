@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
 import { NatsController } from '../src/nats/nats.controller';
+import { NatsService } from '../src/nats/nats.service';
 
 describe('NATS transport', () => {
   let server;
@@ -12,6 +13,7 @@ describe('NATS transport', () => {
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       controllers: [NatsController],
+      providers: [NatsService],
     }).compile();
 
     app = module.createNestApplication();
@@ -20,10 +22,10 @@ describe('NATS transport', () => {
     app.connectMicroservice({
       transport: Transport.NATS,
       options: {
-        url: 'nats://0.0.0.0:4222',
+        servers: 'nats://0.0.0.0:4222',
       },
     });
-    await app.startAllMicroservicesAsync();
+    await app.startAllMicroservices();
     await app.init();
   });
 
@@ -88,6 +90,7 @@ describe('NATS transport', () => {
       .end(() => {
         setTimeout(() => {
           expect(NatsController.IS_NOTIFIED).to.be.true;
+          expect(NatsController.IS_NOTIFIED2).to.be.true;
           done();
         }, 1000);
       });

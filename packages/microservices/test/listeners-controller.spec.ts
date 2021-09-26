@@ -66,7 +66,7 @@ describe('ListenersController', () => {
   describe('registerPatternHandlers', () => {
     const handlers = [
       { pattern: 'test', targetCallback: 'tt' },
-      { pattern: 'test2', targetCallback: '2' },
+      { pattern: 'test2', targetCallback: '2', isEventHandler: true },
     ];
 
     beforeEach(() => {

@@ -17,10 +17,11 @@ export class ExceptionInterceptor implements NestInterceptor {
       .pipe(
         catchError(err =>
           throwError(
-            new HttpException(
-              'Exception interceptor message',
-              HttpStatus.BAD_GATEWAY,
-            ),
+            () =>
+              new HttpException(
+                'Exception interceptor message',
+                HttpStatus.BAD_GATEWAY,
+              ),
           ),
         ),
       );

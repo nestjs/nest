@@ -1,7 +1,6 @@
-const webpack = require('webpack');
 const nodeExternals = require('webpack-node-externals');
 
-module.exports = function(options) {
+module.exports = function(options, webpack) {
   return {
     ...options,
     entry: ['webpack/hot/poll?100', options.entry],
@@ -12,6 +11,9 @@ module.exports = function(options) {
     ],
     plugins: [
       ...options.plugins,
+      new webpack.WatchIgnorePlugin({
+        paths: [/\.js$/, /\.d\.ts$/],
+      }),
       new webpack.HotModuleReplacementPlugin(),
     ],
   };

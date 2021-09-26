@@ -1,4 +1,8 @@
-import { ArgumentMetadata, Injectable, PipeTransform } from '../index';
+import { Injectable } from '../decorators/core/injectable.decorator';
+import {
+  ArgumentMetadata,
+  PipeTransform,
+} from '../interfaces/features/pipe-transform.interface';
 import { isNil } from '../utils/shared.utils';
 
 /**
@@ -10,13 +14,14 @@ import { isNil } from '../utils/shared.utils';
  */
 @Injectable()
 export class DefaultValuePipe<T = any, R = any>
-  implements PipeTransform<T, T | R> {
+  implements PipeTransform<T, T | R>
+{
   constructor(private readonly defaultValue: R) {}
 
   transform(value?: T, _metadata?: ArgumentMetadata): T | R {
     if (
       isNil(value) ||
-      (typeof value === 'number' && isNaN((value as unknown) as number))
+      (typeof value === 'number' && isNaN(value as unknown as number))
     ) {
       return this.defaultValue;
     }
