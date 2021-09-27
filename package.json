@@ -166,7 +166,7 @@
     "ts-morph": "12.0.0",
     "ts-node": "10.2.1",
     "typeorm": "0.2.37",
-    "typescript": "4.3.5",
+    "typescript": "4.4.3",
     "wrk": "1.2.1",
     "ws": "7.5.4"
   },
