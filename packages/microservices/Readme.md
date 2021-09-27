@@ -67,8 +67,11 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <table style="text-align:center;"><tr><td>
   <a href="https://careers.labster.com/departments/platform" target="_blank"><img src="https://nestjs.com/img/labster-logo.png" width="170" valign="middle" /></a></td><td>
-<a href="https://weld.so/" target="_blank"><img src="https://nestjs.com/img/weld-logo.svg" width="150" valign="middle" /></a></td><td>
-<a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td></tr></table>
+<a href="https://weld.app/" target="_blank"><img src="https://nestjs.com/img/weld-logo.svg" width="150" valign="middle" /></a></td>
+  <td>
+<a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td>
+<td>
+<a href="https://intrinsic.ventures/" target="_blank"><img src="https://nestjs.com/img/intrinisic-logo.png" width="210" valign="middle" /></a></td></</tr></table>
 
 #### Silver Sponsors
 
@@ -76,7 +79,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://neoteric.eu/" target="_blank"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" valign="middle" /></a> </td><td>
   <a href="http://gojob.com" target="_blank"><img src="http://nestjs.com/img/gojob-logo.png" valign="middle" width="100" /></a> </td><td>
 <a href="http://www.leogistics.com" target="_blank"><img src="https://nestjs.com/img/leogistics-logo.jpeg" width="150" valign="middle" /></td><td>
-<a href="http://www.meetdandy.com" target="_blank"><img src="https://nestjs.com/img/dandy-wide-logo.png" width="150" valign="middle" /></td><td>
+<a href="http://www.meetdandy.com" target="_blank"><img src="https://nestjs.com/img/dandy-roles-logo.svg" width="150" valign="middle" /></td><td>
 <a href="https://www.castlecraft.in" target="_blank"><img src="https://nestjs.com/img/castlecraft-logo.png" width="150" valign="middle" /></td></tr></table>
 
 #### Sponsors
