@@ -144,7 +144,7 @@ export class ClientMqtt extends ClientProxy {
         this.mqttClient.publish(
           this.getRequestPattern(pattern),
           JSON.stringify(serializedPacket),
-          this.mergeOptions(serializedPacket.options),
+          this.mergePacketOptions(serializedPacket.options),
         );
       };
 
@@ -175,7 +175,7 @@ export class ClientMqtt extends ClientProxy {
       this.mqttClient.publish(
         pattern,
         JSON.stringify(serializedPacket),
-        this.mergeOptions(serializedPacket.options),
+        this.mergePacketOptions(serializedPacket.options),
         (err: any) => (err ? reject(err) : resolve()),
       ),
     );
@@ -194,7 +194,7 @@ export class ClientMqtt extends ClientProxy {
     this.serializer = options?.serializer ?? new MqttRequestSerializer();
   }
 
-  protected mergeOptions(
+  protected mergePacketOptions(
     requestOptions?: MqttRecordOptions,
   ): MqttRecordOptions | undefined {
     if (!requestOptions && !this.options?.userProperties) {
