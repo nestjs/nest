@@ -24,7 +24,9 @@ type Cat {
   age: Int
   owner: Owner
 }
-
+"""
+Test comment
+"""
 input CreateCatInput {
   name: String
   age: Int
