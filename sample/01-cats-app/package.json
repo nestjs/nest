@@ -19,7 +19,7 @@
     "test:e2e": "jest --config ./e2e/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "8.0.6",
+    "@nestjs/common": "8.0.7",
     "@nestjs/core": "8.0.6",
     "@nestjs/platform-express": "8.0.6",
     "class-transformer": "0.4.0",
@@ -43,8 +43,8 @@
     "ts-loader": "9.2.5",
     "ts-node": "10.2.1",
     "tsconfig-paths": "3.11.0",
-    "@typescript-eslint/eslint-plugin": "4.29.3",
-    "@typescript-eslint/parser": "4.29.3",
+    "@typescript-eslint/eslint-plugin": "4.32.0",
+    "@typescript-eslint/parser": "4.32.0",
     "eslint": "7.32.0",
     "eslint-config-prettier": "8.3.0",
     "eslint-plugin-import": "2.24.2",

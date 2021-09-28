@@ -335,7 +335,7 @@ describe('WebSocketsController', () => {
     });
   });
   describe('pickResult', () => {
-    describe('when defferedResult contains value which', () => {
+    describe('when deferredResult contains value which', () => {
       describe('is a Promise', () => {
         it('should return Promise<Observable>', async () => {
           const value = 100;
