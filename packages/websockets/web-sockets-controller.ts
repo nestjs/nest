@@ -150,9 +150,9 @@ export class WebSocketsController {
   }
 
   public async pickResult(
-    defferedResult: Promise<any>,
+    deferredResult: Promise<any>,
   ): Promise<Observable<any>> {
-    const result = await defferedResult;
+    const result = await deferredResult;
     if (result && isFunction(result.subscribe)) {
       return result;
     }

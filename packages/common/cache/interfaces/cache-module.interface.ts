@@ -2,6 +2,10 @@ import { ModuleMetadata, Provider, Type } from '../../interfaces';
 import { CacheManagerOptions } from './cache-manager.interface';
 
 export interface CacheModuleOptions extends CacheManagerOptions {
+  /**
+   * If "true', register `CacheModule` as a global module.
+   */
+  isGlobal?: boolean;
   [key: string]: any;
 }
 
@@ -48,4 +52,8 @@ export interface CacheModuleAsyncOptions
    */
   inject?: any[];
   extraProviders?: Provider[];
+  /**
+   * If "true', register `CacheModule` as a global module.
+   */
+  isGlobal?: boolean;
 }
