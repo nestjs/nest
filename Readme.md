@@ -81,7 +81,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="http://www.leogistics.com" target="_blank"><img src="https://nestjs.com/img/leogistics-logo.jpeg" width="150" valign="middle" /></td><td>
 <a href="http://www.meetdandy.com" target="_blank"><img src="https://nestjs.com/img/dandy-roles-logo.svg" width="150" valign="middle" /></td><td>
 <a href="https://www.castlecraft.in" target="_blank"><img src="https://nestjs.com/img/castlecraft-logo.png" width="150" valign="middle" /></td>
-<td><a href="https://www.tinystacks.com" target="_blank"><img src="https://nestjs.com/img/tinystacks-logo.png" width="55" valign="middle" /></td></tr></table>
+<td><a href="https://www.tinystacks.com" target="_blank"><img src="https://nestjs.com/img/tinystacks-logo.png#1" width="140" valign="middle" /></td></tr></table>
 
 #### Sponsors
 
