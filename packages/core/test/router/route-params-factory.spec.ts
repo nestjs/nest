@@ -19,6 +19,9 @@ describe('RouteParamsFactory', () => {
       headers: {
         foo: 'bar',
       },
+      cookies: {
+        foo: 'bar',
+      },
       params: {
         foo: 'bar',
       },
@@ -75,6 +78,25 @@ describe('RouteParamsFactory', () => {
               ...args,
             ),
           ).to.be.eql(req.headers);
+        });
+      });
+      describe(`RouteParamtypes.COOKIES`, () => {
+        it('should return cookies object', () => {
+          expect(
+            (factory as any).exchangeKeyForValue(
+              RouteParamtypes.COOKIES,
+              ...args,
+            ),
+          ).to.be.eql(req.cookies);
+        });
+        it('should return foo cookie property', () => {
+          expect(
+            (factory as any).exchangeKeyForValue(
+              RouteParamtypes.COOKIES,
+              'foo',
+              { res, req, next },
+            ),
+          ).to.be.eql(req.cookies.foo);
         });
       });
       describe(`RouteParamtypes.IP`, () => {

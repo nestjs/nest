@@ -309,6 +309,20 @@ export function UploadedFiles(
 }
 
 /**
+ * Route handler parameter decorator. Extracts the `cookies`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `cookies`.
+ *
+ * @param property name of single cookie property to extract.
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ *
+ * @publicApi
+ */
+export const Cookies: (property?: string) => ParameterDecorator =
+  createRouteParamDecorator(RouteParamtypes.COOKIES);
+
+/**
  * Route handler parameter decorator. Extracts the `headers`
  * property from the `req` object and populates the decorated
  * parameter with the value of `headers`.
