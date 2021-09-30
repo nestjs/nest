@@ -139,7 +139,7 @@
     "imports-loader": "3.0.0",
     "json-loader": "0.5.7",
     "kafkajs": "1.15.0",
-    "lerna": "2.11.0",
+    "lerna": "4.0.0",
     "light-my-request": "4.4.4",
     "lint-staged": "11.1.2",
     "markdown-table": "2.0.0",
