@@ -3,6 +3,8 @@ import { EventEmitter } from 'events';
 import { empty } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientRMQ } from '../../client/client-rmq';
+import { ReadPacket } from '../../interfaces';
+import { RmqRecord } from '../../record-builders';
 
 describe('ClientRMQ', function () {
   this.retries(10);
@@ -169,12 +171,14 @@ describe('ClientRMQ', function () {
 
   describe('publish', () => {
     const pattern = 'test';
-    const msg = { pattern, data: 'data' };
+    let msg: ReadPacket;
     let connectSpy: sinon.SinonSpy,
       sendToQueueSpy: sinon.SinonSpy,
       eventSpy: sinon.SinonSpy;
 
     beforeEach(() => {
+      client = new ClientRMQ({});
+      msg = { pattern, data: 'data' };
       connectSpy = sinon.spy(client, 'connect');
       eventSpy = sinon.spy();
       sendToQueueSpy = sinon.spy();
@@ -221,6 +225,54 @@ describe('ClientRMQ', function () {
       });
       it('should unsubscribe', () => {
         expect(unsubscribeSpy.called).to.be.true;
+      });
+    });
+
+    describe('headers', () => {
+      it('should not generate headers if none are configured', () => {
+        client['publish'](msg, () => {
+          expect(sendToQueueSpy.getCall(0).args[2].headers).to.be.undefined;
+        });
+      });
+
+      it('should send packet headers', () => {
+        const requestHeaders = { '1': '123' };
+        msg.data = new RmqRecord('data', { headers: requestHeaders });
+
+        client['publish'](msg, () => {
+          expect(sendToQueueSpy.getCall(0).args[2].headers).to.eql(
+            requestHeaders,
+          );
+        });
+      });
+
+      it('should combine packet and static headers', () => {
+        const staticHeaders = { 'client-id': 'some-client-id' };
+        (client as any).options.headers = staticHeaders;
+
+        const requestHeaders = { '1': '123' };
+        msg.data = new RmqRecord('data', { headers: requestHeaders });
+
+        client['publish'](msg, () => {
+          expect(sendToQueueSpy.getCall(0).args[2].headers).to.eql({
+            ...staticHeaders,
+            ...requestHeaders,
+          });
+        });
+      });
+
+      it('should prefer packet headers over static headers', () => {
+        const staticHeaders = { 'client-id': 'some-client-id' };
+        (client as any).options.headers = staticHeaders;
+
+        const requestHeaders = { 'client-id': 'override-client-id' };
+        msg.data = new RmqRecord('data', { headers: requestHeaders });
+
+        client['publish'](msg, () => {
+          expect(sendToQueueSpy.getCall(0).args[2].headers).to.eql(
+            requestHeaders,
+          );
+        });
       });
     });
   });
@@ -313,10 +365,12 @@ describe('ClientRMQ', function () {
     });
   });
   describe('dispatchEvent', () => {
-    const msg = { pattern: 'pattern', data: 'data' };
+    let msg: ReadPacket;
     let sendToQueueStub: sinon.SinonStub, channel;
 
     beforeEach(() => {
+      client = new ClientRMQ({});
+      msg = { pattern: 'pattern', data: 'data' };
       sendToQueueStub = sinon.stub();
       channel = {
         sendToQueue: sendToQueueStub,
@@ -335,6 +389,54 @@ describe('ClientRMQ', function () {
       client['dispatchEvent'](msg).catch(err =>
         expect(err).to.be.instanceOf(Error),
       );
+    });
+
+    describe('headers', () => {
+      it('should not generate headers if none are configured', async () => {
+        sendToQueueStub.callsFake((a, b, c, d) => d());
+        await client['dispatchEvent'](msg);
+        expect(sendToQueueStub.getCall(0).args[2].headers).to.be.undefined;
+      });
+
+      it('should send packet headers', async () => {
+        sendToQueueStub.callsFake((a, b, c, d) => d());
+        const requestHeaders = { '1': '123' };
+        msg.data = new RmqRecord('data', { headers: requestHeaders });
+
+        await client['dispatchEvent'](msg);
+        expect(sendToQueueStub.getCall(0).args[2].headers).to.eql(
+          requestHeaders,
+        );
+      });
+
+      it('should combine packet and static headers', async () => {
+        sendToQueueStub.callsFake((a, b, c, d) => d());
+        const staticHeaders = { 'client-id': 'some-client-id' };
+        (client as any).options.headers = staticHeaders;
+
+        const requestHeaders = { '1': '123' };
+        msg.data = new RmqRecord('data', { headers: requestHeaders });
+
+        await client['dispatchEvent'](msg);
+        expect(sendToQueueStub.getCall(0).args[2].headers).to.eql({
+          ...staticHeaders,
+          ...requestHeaders,
+        });
+      });
+
+      it('should prefer packet headers over static headers', async () => {
+        sendToQueueStub.callsFake((a, b, c, d) => d());
+        const staticHeaders = { 'client-id': 'some-client-id' };
+        (client as any).options.headers = staticHeaders;
+
+        const requestHeaders = { 'client-id': 'override-client-id' };
+        msg.data = new RmqRecord('data', { headers: requestHeaders });
+
+        await client['dispatchEvent'](msg);
+        expect(sendToQueueStub.getCall(0).args[2].headers).to.eql(
+          requestHeaders,
+        );
+      });
     });
   });
 });

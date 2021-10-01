@@ -114,9 +114,11 @@ export class ClientNats extends ClientProxy {
         callback: subscriptionHandler,
       });
 
+      const headers = this.mergeHeaders(serializedPacket.headers);
+
       this.natsClient.publish(channel, serializedPacket.data, {
         reply: inbox,
-        headers: serializedPacket.headers,
+        headers,
       });
 
       return () => subscription.unsubscribe();
@@ -128,11 +130,12 @@ export class ClientNats extends ClientProxy {
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
     const serializedPacket: NatsRecord = this.serializer.serialize(packet);
+    const headers = this.mergeHeaders(serializedPacket.headers);
 
     return new Promise<void>((resolve, reject) => {
       try {
         this.natsClient.publish(pattern, serializedPacket.data, {
-          headers: serializedPacket.headers,
+          headers,
         });
         resolve();
       } catch (err) {
@@ -148,5 +151,21 @@ export class ClientNats extends ClientProxy {
   protected initializeDeserializer(options: NatsOptions['options']) {
     this.deserializer =
       options?.deserializer ?? new NatsResponseJSONDeserializer();
+  }
+
+  protected mergeHeaders<THeaders = any>(requestHeaders?: THeaders) {
+    if (!requestHeaders && !this.options?.headers) {
+      return undefined;
+    }
+
+    const headers = requestHeaders ?? natsPackage.headers();
+
+    for (const [key, value] of Object.entries(this.options?.headers || {})) {
+      if (!headers.has(key)) {
+        headers.set(key, value);
+      }
+    }
+
+    return headers;
   }
 }

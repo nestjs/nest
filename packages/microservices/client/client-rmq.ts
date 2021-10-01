@@ -201,6 +201,7 @@ export class ClientRMQ extends ClientProxy {
           replyTo: this.replyQueue,
           persistent: this.persistent,
           ...serializedPacket.options,
+          headers: this.mergeHeaders(serializedPacket.options?.headers),
           correlationId,
         },
       );
@@ -221,6 +222,7 @@ export class ClientRMQ extends ClientProxy {
         {
           persistent: this.persistent,
           ...serializedPacket.options,
+          headers: this.mergeHeaders(serializedPacket.options?.headers),
         },
         (err: unknown) => (err ? reject(err) : resolve()),
       ),
@@ -229,5 +231,18 @@ export class ClientRMQ extends ClientProxy {
 
   protected initializeSerializer(options: RmqOptions['options']) {
     this.serializer = options?.serializer ?? new RmqRequestSerializer();
+  }
+
+  protected mergeHeaders(
+    requestHeaders?: Record<string, string>,
+  ): Record<string, string> | undefined {
+    if (!requestHeaders && !this.options?.headers) {
+      return undefined;
+    }
+
+    return {
+      ...this.options?.headers,
+      ...requestHeaders,
+    };
   }
 }

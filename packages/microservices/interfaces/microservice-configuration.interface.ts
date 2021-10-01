@@ -114,12 +114,14 @@ export interface MqttOptions {
        * */
       rh?: number;
     };
+    userProperties?: Record<string, string | string[]>;
   };
 }
 
 export interface NatsOptions {
   transport?: Transport.NATS;
   options?: {
+    headers?: Record<string, string>;
     authenticator?: any;
     debug?: boolean;
     ignoreClusterUpdates?: boolean;
@@ -174,6 +176,7 @@ export interface RmqOptions {
     deserializer?: Deserializer;
     replyQueue?: string;
     persistent?: boolean;
+    headers?: Record<string, string>;
   };
 }
 
