@@ -8,7 +8,7 @@ import {
   ProducerConfig,
   ProducerRecord,
 } from '../external/kafka.interface';
-import { MqttClientOptions } from '../external/mqtt-options.interface';
+import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
 import { ClientOpts } from '../external/redis.interface';
 import { RmqUrl } from '../external/rmq-url.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
@@ -96,6 +96,24 @@ export interface MqttOptions {
     url?: string;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    subscribeOptions?: {
+      /**
+       * The QoS
+       */
+      qos: QoS;
+      /*
+       * No local flag
+       * */
+      nl?: boolean;
+      /*
+       * Retain as Published flag
+       * */
+      rap?: boolean;
+      /*
+       * Retain Handling option
+       * */
+      rh?: number;
+    };
   };
 }
 

@@ -70,6 +70,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
       const { isEventHandler } = this.messageHandlers.get(pattern);
       mqttClient.subscribe(
         isEventHandler ? pattern : this.getRequestPattern(pattern),
+        this.getOptionsProp(this.options, 'subscribeOptions'),
       );
     });
   }
