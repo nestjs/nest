@@ -1,5 +1,6 @@
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { from as fromPromise, Observable, of, Subject } from 'rxjs';
@@ -18,6 +19,9 @@ import { SocketServerProvider } from './socket-server-provider';
 import { compareElementAt } from './utils/compare-element.util';
 
 export class WebSocketsController {
+  private readonly logger = new Logger(WebSocketsController.name, {
+    timestamp: true,
+  });
   private readonly metadataExplorer = new GatewayMetadataExplorer(
     new MetadataScanner(),
   );
@@ -113,6 +117,8 @@ export class WebSocketsController {
   public subscribeInitEvent(instance: NestGateway, event: Subject<any>) {
     if (instance.afterInit) {
       event.subscribe(instance.afterInit.bind(instance));
+
+      this.logger.log(`Subscribe ${instance.constructor.name}.afterInit to init event.`);
     }
   }
 
@@ -123,6 +129,8 @@ export class WebSocketsController {
           distinctUntilChanged((prev, curr) => compareElementAt(prev, curr, 0)),
         )
         .subscribe((args: unknown[]) => instance.handleConnection(...args));
+
+      this.logger.log(`Subscribe ${instance.constructor.name}.handleConnection method to connection event.`);
     }
   }
 
@@ -131,6 +139,8 @@ export class WebSocketsController {
       event
         .pipe(distinctUntilChanged())
         .subscribe(instance.handleDisconnect.bind(instance));
+
+      this.logger.log(`Subscribe ${instance.constructor.name}.handleDisconnect to disconnect event.`);
     }
   }
 
@@ -147,6 +157,10 @@ export class WebSocketsController {
     adapter.bindMessageHandlers(client, handlers, data =>
       fromPromise(this.pickResult(data)).pipe(mergeAll()),
     );
+
+    subscribersMap.forEach(({ callback, message }) => {
+      this.logger.log(`Subscribe ${instance.constructor.name}.${callback.name} to ${message} message.`);
+    });
   }
 
   public async pickResult(
