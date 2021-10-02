@@ -9,7 +9,7 @@ import { CustomTransportStrategy } from '../interfaces';
 import { NatsOptions } from '../interfaces/microservice-configuration.interface';
 import { IncomingRequest } from '../interfaces/packet.interface';
 import { NatsRecord } from '../record-builders';
-import { NatsRequestSerializer } from '../serializers/nats-request.serializer';
+import { NatsRecordSerializer } from '../serializers/nats-record.serializer';
 import { Server } from './server';
 
 let natsPackage = {} as any;
@@ -153,7 +153,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   }
 
   protected initializeSerializer(options: NatsOptions['options']) {
-    this.serializer = options?.serializer ?? new NatsRequestSerializer();
+    this.serializer = options?.serializer ?? new NatsRecordSerializer();
   }
 
   protected initializeDeserializer(options: NatsOptions['options']) {

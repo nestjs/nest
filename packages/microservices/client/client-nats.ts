@@ -5,7 +5,7 @@ import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-jso
 import { Client, NatsMsg } from '../external/nats-client.interface';
 import { NatsOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { NatsRecord } from '../record-builders';
-import { NatsRequestSerializer } from '../serializers/nats-request.serializer';
+import { NatsRecordSerializer } from '../serializers/nats-record.serializer';
 import { ClientProxy } from './client-proxy';
 
 let natsPackage = {} as any;
@@ -115,7 +115,6 @@ export class ClientNats extends ClientProxy {
       });
 
       const headers = this.mergeHeaders(serializedPacket.headers);
-
       this.natsClient.publish(channel, serializedPacket.data, {
         reply: inbox,
         headers,
@@ -145,7 +144,7 @@ export class ClientNats extends ClientProxy {
   }
 
   protected initializeSerializer(options: NatsOptions['options']) {
-    this.serializer = options?.serializer ?? new NatsRequestSerializer();
+    this.serializer = options?.serializer ?? new NatsRecordSerializer();
   }
 
   protected initializeDeserializer(options: NatsOptions['options']) {

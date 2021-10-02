@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { MqttRecordBuilder } from '../../record-builders';
-import { MqttRequestSerializer } from '../../serializers/mqtt-request.serializer';
+import { MqttRecordSerializer } from '../../serializers/mqtt-record.serializer';
 
-describe('MqttRequestSerializer', () => {
-  let instance: MqttRequestSerializer;
+describe('MqttRecordSerializer', () => {
+  let instance: MqttRecordSerializer;
   beforeEach(() => {
-    instance = new MqttRequestSerializer();
+    instance = new MqttRecordSerializer();
   });
   describe('serialize', () => {
     it('should parse mqtt record instance', () => {

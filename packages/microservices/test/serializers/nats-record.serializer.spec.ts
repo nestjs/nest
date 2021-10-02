@@ -1,14 +1,14 @@
 import { expect } from 'chai';
 import * as nats from 'nats';
 import { NatsRecordBuilder } from '../../record-builders';
-import { NatsRequestSerializer } from '../../serializers/nats-request.serializer';
+import { NatsRecordSerializer } from '../../serializers/nats-record.serializer';
 
 const jsonCodec = nats.JSONCodec();
 
-describe('NatsRequestSerializer', () => {
-  let instance: NatsRequestSerializer;
+describe('NatsRecordSerializer', () => {
+  let instance: NatsRecordSerializer;
   beforeEach(() => {
-    instance = new NatsRequestSerializer();
+    instance = new NatsRecordSerializer();
   });
   describe('serialize', () => {
     it('undefined', () => {

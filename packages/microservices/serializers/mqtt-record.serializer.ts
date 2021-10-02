@@ -1,17 +1,17 @@
 import { ReadPacket } from '../interfaces';
 import { Serializer } from '../interfaces/serializer.interface';
-import { RmqRecord } from '../record-builders';
+import { MqttRecord } from '../record-builders';
 
-export class RmqRequestSerializer
-  implements Serializer<ReadPacket, ReadPacket & Partial<RmqRecord>>
+export class MqttRecordSerializer
+  implements Serializer<ReadPacket, ReadPacket & Partial<MqttRecord>>
 {
-  serialize(packet: ReadPacket | any): ReadPacket & Partial<RmqRecord> {
+  serialize(packet: ReadPacket | any): ReadPacket & Partial<MqttRecord> {
     if (
       packet?.data &&
       typeof packet.data === 'object' &&
-      packet.data instanceof RmqRecord
+      packet.data instanceof MqttRecord
     ) {
-      const record = packet.data as RmqRecord;
+      const record = packet.data as MqttRecord;
       return {
         ...packet,
         data: record.data,

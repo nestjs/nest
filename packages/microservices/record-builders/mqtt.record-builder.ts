@@ -29,7 +29,7 @@ export interface MqttRecordOptions {
 export class MqttRecord<TData = any> {
   constructor(
     public readonly data: TData,
-    public readonly options?: MqttRecordOptions,
+    public options?: MqttRecordOptions,
   ) {}
 }
 

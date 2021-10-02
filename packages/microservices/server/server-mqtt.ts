@@ -21,6 +21,8 @@ import {
   ReadPacket,
 } from '../interfaces';
 import { MqttOptions } from '../interfaces/microservice-configuration.interface';
+import { MqttRecord } from '../record-builders/mqtt.record-builder';
+import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer';
 import { Server } from './server';
 
 let mqttPackage: any = {};
@@ -128,11 +130,15 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   public getPublisher(client: MqttClient, pattern: any, id: string): any {
     return (response: any) => {
       Object.assign(response, { id });
-      const outgoingResponse = this.serializer.serialize(response);
+      const outgoingResponse: Partial<MqttRecord> =
+        this.serializer.serialize(response);
+      const options = outgoingResponse.options;
+      delete outgoingResponse.options;
 
       return client.publish(
         this.getReplyPattern(pattern),
         JSON.stringify(outgoingResponse),
+        options,
       );
     };
   }
@@ -207,5 +213,9 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
   public handleError(stream: any) {
     stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
+  }
+
+  protected initializeSerializer(options: MqttOptions['options']) {
+    this.serializer = options?.serializer ?? new MqttRecordSerializer();
   }
 }

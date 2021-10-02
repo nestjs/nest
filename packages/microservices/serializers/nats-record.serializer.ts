@@ -6,13 +6,13 @@ import { NatsRecord, NatsRecordBuilder } from '../record-builders';
 
 let natsPackage = {} as any;
 
-export class NatsRequestSerializer
+export class NatsRecordSerializer
   implements Serializer<ReadPacket, NatsRecord>
 {
   private readonly jsonCodec: NatsCodec<unknown>;
 
   constructor() {
-    natsPackage = loadPackage('nats', NatsRequestSerializer.name, () =>
+    natsPackage = loadPackage('nats', NatsRecordSerializer.name, () =>
       require('nats'),
     );
     this.jsonCodec = natsPackage.JSONCodec();

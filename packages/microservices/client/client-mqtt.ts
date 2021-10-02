@@ -15,7 +15,7 @@ import {
   MqttRecord,
   MqttRecordOptions,
 } from '../record-builders/mqtt.record-builder';
-import { MqttRequestSerializer } from '../serializers/mqtt-request.serializer';
+import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer';
 import { ClientProxy } from './client-proxy';
 
 let mqttPackage: any = {};
@@ -141,10 +141,13 @@ export class ClientMqtt extends ClientProxy {
         this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
         this.routingMap.set(packet.id, callback);
 
+        const options = serializedPacket.options;
+        delete serializedPacket.options;
+
         this.mqttClient.publish(
           this.getRequestPattern(pattern),
           JSON.stringify(serializedPacket),
-          this.mergePacketOptions(serializedPacket.options),
+          this.mergePacketOptions(options),
         );
       };
 
@@ -191,7 +194,7 @@ export class ClientMqtt extends ClientProxy {
   }
 
   protected initializeSerializer(options: MqttOptions['options']) {
-    this.serializer = options?.serializer ?? new MqttRequestSerializer();
+    this.serializer = options?.serializer ?? new MqttRecordSerializer();
   }
 
   protected mergePacketOptions(

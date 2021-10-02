@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { RmqRecordBuilder } from '../../record-builders';
-import { RmqRequestSerializer } from '../../serializers/rmq-request.serializer';
+import { RmqRecordSerializer } from '../../serializers/rmq-record.serializer';
 
-describe('RmqRequestSerializer', () => {
-  let instance: RmqRequestSerializer;
+describe('RmqRecordSerializer', () => {
+  let instance: RmqRecordSerializer;
   beforeEach(() => {
-    instance = new RmqRequestSerializer();
+    instance = new RmqRecordSerializer();
   });
   describe('serialize', () => {
     it('should parse rmq record instance', () => {

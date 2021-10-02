@@ -19,7 +19,7 @@ import {
 import { RmqUrl } from '../external/rmq-url.interface';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
 import { RmqRecord } from '../record-builders';
-import { RmqRequestSerializer } from '../serializers/rmq-request.serializer';
+import { RmqRecordSerializer } from '../serializers/rmq-record.serializer';
 import { ClientProxy } from './client-proxy';
 
 let rqmPackage: any = {};
@@ -193,6 +193,9 @@ export class ClientRMQ extends ClientProxy {
       const serializedPacket: ReadPacket & Partial<RmqRecord> =
         this.serializer.serialize(message);
 
+      const options = serializedPacket.options;
+      delete serializedPacket.options;
+
       this.responseEmitter.on(correlationId, listener);
       this.channel.sendToQueue(
         this.queue,
@@ -200,8 +203,8 @@ export class ClientRMQ extends ClientProxy {
         {
           replyTo: this.replyQueue,
           persistent: this.persistent,
-          ...serializedPacket.options,
-          headers: this.mergeHeaders(serializedPacket.options?.headers),
+          ...options,
+          headers: this.mergeHeaders(options?.headers),
           correlationId,
         },
       );
@@ -230,7 +233,7 @@ export class ClientRMQ extends ClientProxy {
   }
 
   protected initializeSerializer(options: RmqOptions['options']) {
-    this.serializer = options?.serializer ?? new RmqRequestSerializer();
+    this.serializer = options?.serializer ?? new RmqRecordSerializer();
   }
 
   protected mergeHeaders(
