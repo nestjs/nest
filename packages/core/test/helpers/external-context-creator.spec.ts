@@ -206,7 +206,7 @@ describe('ExternalContextCreator', () => {
   });
 
   describe('transformToResult', () => {
-    describe('when resultOrDeffered', () => {
+    describe('when resultOrDeferred', () => {
       describe('is Promise', () => {
         it('should return Promise', async () => {
           const value = 100;
