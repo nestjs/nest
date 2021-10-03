@@ -14,11 +14,11 @@ import {
 export class ComplexityPlugin implements ApolloServerPlugin {
   constructor(private gqlSchemaHost: GraphQLSchemaHost) {}
 
-  requestDidStart(): GraphQLRequestListener {
+  async requestDidStart(): Promise<GraphQLRequestListener> {
     const { schema } = this.gqlSchemaHost;
 
     return {
-      didResolveOperation({ request, document }) {
+      async didResolveOperation({ request, document }) {
         const complexity = getComplexity({
           schema,
           operationName: request.operationName,

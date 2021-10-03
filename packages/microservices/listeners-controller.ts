@@ -13,6 +13,7 @@ import {
 import { Module } from '@nestjs/core/injector/module';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants';
+import { connectable, Observable, Subject } from 'rxjs';
 import { IClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
@@ -89,8 +90,11 @@ export class ListenersController {
                 args = args.slice(1, args.length);
               }
               const originalReturnValue = proxy(...args);
-              eventHandler.next?.(
+              const returnedValueWrapper = eventHandler.next?.(
                 ...(originalArgs as Parameters<MessageHandler>),
+              );
+              returnedValueWrapper?.then(returnedValue =>
+                this.connectIfStream(returnedValue as Observable<unknown>),
               );
               return originalReturnValue;
             };
@@ -210,5 +214,16 @@ export class ListenersController {
       this.container.registerRequestProvider(request, contextId);
     }
     return contextId;
+  }
+
+  private connectIfStream(source: Observable<unknown>) {
+    if (!source) {
+      return;
+    }
+    const connectableSource = connectable(source, {
+      connector: () => new Subject(),
+      resetOnDisconnect: false,
+    });
+    connectableSource.connect();
   }
 }
