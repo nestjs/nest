@@ -1,4 +1,4 @@
-import { SchemaDirectiveVisitor } from 'apollo-server';
+import { SchemaDirectiveVisitor } from '@graphql-tools/utils';
 import { defaultFieldResolver, GraphQLField } from 'graphql';
 
 export class UpperCaseDirective extends SchemaDirectiveVisitor {
