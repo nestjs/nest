@@ -64,20 +64,6 @@ export class ClientRMQ extends ClientProxy {
     this.client = null;
   }
 
-  public consumeChannel() {
-    const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
-    this.channel.addSetup((channel: any) =>
-      channel.consume(
-        this.replyQueue,
-        (msg: any) =>
-          this.responseEmitter.emit(msg.properties.correlationId, msg),
-        {
-          noAck,
-        },
-      ),
-    );
-  }
-
   public connect(): Promise<any> {
     if (this.client) {
       return this.connection;
@@ -143,8 +129,20 @@ export class ClientRMQ extends ClientProxy {
 
     this.responseEmitter = new EventEmitter();
     this.responseEmitter.setMaxListeners(0);
-    this.consumeChannel();
+    await this.consumeChannel(channel);
     resolve();
+  }
+
+  public async consumeChannel(channel: any) {
+    const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
+    await channel.consume(
+      this.replyQueue,
+      (msg: any) =>
+        this.responseEmitter.emit(msg.properties.correlationId, msg),
+      {
+        noAck,
+      },
+    );
   }
 
   public handleError(client: any): void {

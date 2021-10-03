@@ -328,11 +328,11 @@ export class ExternalContextCreator {
       : this.pipesConsumer.apply(value, { metatype, type, data }, pipes);
   }
 
-  public async transformToResult(resultOrDeffered: any) {
-    if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
-      return lastValueFrom(resultOrDeffered);
+  public async transformToResult(resultOrDeferred: any) {
+    if (resultOrDeferred && isFunction(resultOrDeferred.subscribe)) {
+      return lastValueFrom(resultOrDeferred);
     }
-    return resultOrDeffered;
+    return resultOrDeferred;
   }
 
   public createGuardsFn<TContext extends string = ContextType>(

@@ -66,7 +66,7 @@ export class NestContainer {
       metatype,
     );
     if (this.modules.has(token)) {
-      return;
+      return this.modules.get(token);
     }
     const moduleRef = new Module(type, this);
     moduleRef.token = token;

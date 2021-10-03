@@ -119,7 +119,7 @@ describe('ListenersController', () => {
       expect(addSpyTCP.calledTwice).to.be.true;
     });
     describe('when request scoped', () => {
-      it(`should call "addHandler" with deffered proxy`, () => {
+      it(`should call "addHandler" with deferred proxy`, () => {
         explorer.expects('explore').returns(handlers);
         instance.registerPatternHandlers(
           new InstanceWrapper({ scope: Scope.REQUEST }),

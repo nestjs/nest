@@ -94,7 +94,6 @@ describe('ClientRMQ', function () {
   });
 
   describe('consumeChannel', () => {
-    let addSetupStub: sinon.SinonStub;
     let consumeStub: sinon.SinonStub;
     const channel: any = {};
 
@@ -103,17 +102,11 @@ describe('ClientRMQ', function () {
       consumeStub = sinon
         .stub()
         .callsFake((_, done) => done({ properties: { correlationId: 1 } }));
-      addSetupStub = sinon.stub().callsFake(fn => fn(channel));
 
       channel.consume = consumeStub;
-      client['channel'] = { addSetup: addSetupStub };
-    });
-    it('should call "addSetup" method of the channel instance', async () => {
-      await client.consumeChannel();
-      expect(addSetupStub.called).to.be.true;
     });
     it('should call "consume" method of the channel instance', async () => {
-      await client.consumeChannel();
+      await client.consumeChannel(channel);
       expect(consumeStub.called).to.be.true;
     });
   });
