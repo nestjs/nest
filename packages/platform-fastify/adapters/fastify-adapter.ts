@@ -37,6 +37,7 @@ import {
   InjectOptions,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
+import * as pathToRegexp from 'path-to-regexp';
 import {
   FastifyStaticOptions,
   PointOfViewOptions,
@@ -414,16 +415,18 @@ export class FastifyAdapter<
       await this.registerMiddie();
     }
     return (path: string, callback: Function) => {
-      const normalizedPath = path.endsWith('/*')
-        ? `${path.slice(0, -1)}(.*)`
-        : path;
+      if (path.endsWith('/*')) {
+        path = `${path.slice(0, -1)}(.*)`
+      } else if (path.endsWith('$')) {
+        path = pathToRegexp(path.slice(0, -1), [], {
+          end: true,
+          strict: false
+        }) as any
+      }
 
       // The following type assertion is valid as we use import('middie') rather than require('middie')
       // ref https://github.com/fastify/middie/pull/55
-      this.instance.use(
-        normalizedPath,
-        callback as Parameters<TInstance['use']>['1'],
-      );
+      this.instance.use(path, callback as Parameters<TInstance['use']>['1']);
     };
   }
 
