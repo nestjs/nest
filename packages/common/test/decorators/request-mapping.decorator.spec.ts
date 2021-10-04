@@ -44,7 +44,7 @@ describe('@RequestMapping', () => {
     expect(method).to.be.eql(RequestMethod.GET);
   });
 
-  it('should set path on "/" by default', () => {
+  it('should set path as name of the method by default', () => {
     class Test {
       @RequestMapping({})
       public static test() {}
@@ -56,7 +56,7 @@ describe('@RequestMapping', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).to.be.eql('test');
+    expect(pathUsingArray).to.be.eql('testUsingArray');
   });
 });

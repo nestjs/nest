@@ -28,13 +28,13 @@ describe('RoutesResolver', () => {
 
   @Controller({ host: 'api.example.com' })
   class TestHostRoute {
-    @Get()
+    @Get('/')
     public getTest() {}
   }
 
   @Controller({ version: '1' })
   class TestVersionRoute {
-    @Get()
+    @Get('/')
     public getTest() {}
   }
 

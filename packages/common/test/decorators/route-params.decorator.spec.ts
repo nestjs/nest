@@ -36,7 +36,7 @@ describe('@Get', () => {
     expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
   });
 
-  it('should set path on "/" by default', () => {
+  it('should set path as method name by default', () => {
     class Test {
       @Get()
       public static test() {}
@@ -48,8 +48,8 @@ describe('@Get', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).to.be.eql('test');
+    expect(pathUsingArray).to.be.eql('testUsingArray');
   });
 });
 
@@ -86,7 +86,7 @@ describe('@Post', () => {
     expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
   });
 
-  it('should set path on "/" by default', () => {
+  it('should set path as method name by default', () => {
     class Test {
       @Post()
       public static test(
@@ -106,8 +106,8 @@ describe('@Post', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).to.be.eql('test');
+    expect(pathUsingArray).to.be.eql('testUsingArray');
   });
 });
 
@@ -144,7 +144,7 @@ describe('@Delete', () => {
     expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
   });
 
-  it('should set path on "/" by default', () => {
+  it('should set path as method name by default', () => {
     class Test {
       @Delete()
       public static test() {}
@@ -156,8 +156,8 @@ describe('@Delete', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).to.be.eql('test');
+    expect(pathUsingArray).to.be.eql('testUsingArray');
   });
 });
 
@@ -194,7 +194,7 @@ describe('@All', () => {
     expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
   });
 
-  it('should set path on "/" by default', () => {
+  it('should set path as method name by default', () => {
     class Test {
       @All()
       public static test() {}
@@ -206,8 +206,8 @@ describe('@All', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).to.be.eql('test');
+    expect(pathUsingArray).to.be.eql('testUsingArray');
   });
 });
 
@@ -244,7 +244,7 @@ describe('@Put', () => {
     expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
   });
 
-  it('should set path on "/" by default', () => {
+  it('should set path as method name by default', () => {
     class Test {
       @Put()
       public static test() {}
@@ -256,8 +256,8 @@ describe('@Put', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).to.be.eql('test');
+    expect(pathUsingArray).to.be.eql('testUsingArray');
   });
 });
 
@@ -294,7 +294,7 @@ describe('@Patch', () => {
     expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
   });
 
-  it('should set path on "/" by default', () => {
+  it('should set path as method name by default', () => {
     class Test {
       @Patch()
       public static test() {}
@@ -306,8 +306,8 @@ describe('@Patch', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).to.be.eql('test');
+    expect(pathUsingArray).to.be.eql('testUsingArray');
   });
 });
 
