@@ -114,13 +114,19 @@ export class WebSocketsController {
     };
   }
 
-  public subscribeInitEvent(instance: NestGatewayInternal, event: Subject<any>) {
+  public subscribeInitEvent(
+    instance: NestGatewayInternal,
+    event: Subject<any>,
+  ) {
     if (instance.afterInit) {
       event.subscribe(instance.afterInit.bind(instance));
     }
   }
 
-  public subscribeConnectionEvent(instance: NestGatewayInternal, event: Subject<any>) {
+  public subscribeConnectionEvent(
+    instance: NestGatewayInternal,
+    event: Subject<any>,
+  ) {
     if (instance.handleConnection) {
       event
         .pipe(
@@ -130,7 +136,10 @@ export class WebSocketsController {
     }
   }
 
-  public subscribeDisconnectEvent(instance: NestGatewayInternal, event: Subject<any>) {
+  public subscribeDisconnectEvent(
+    instance: NestGatewayInternal,
+    event: Subject<any>,
+  ) {
     if (instance.handleDisconnect) {
       event
         .pipe(distinctUntilChanged())
