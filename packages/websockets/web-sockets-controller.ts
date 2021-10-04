@@ -117,10 +117,6 @@ export class WebSocketsController {
   public subscribeInitEvent(instance: NestGateway, event: Subject<any>) {
     if (instance.afterInit) {
       event.subscribe(instance.afterInit.bind(instance));
-
-      this.logger.log(
-        `Subscribe ${instance.constructor.name}.afterInit method to init event.`,
-      );
     }
   }
 
@@ -131,10 +127,6 @@ export class WebSocketsController {
           distinctUntilChanged((prev, curr) => compareElementAt(prev, curr, 0)),
         )
         .subscribe((args: unknown[]) => instance.handleConnection(...args));
-
-      this.logger.log(
-        `Subscribe ${instance.constructor.name}.handleConnection method to connection event.`,
-      );
     }
   }
 
@@ -143,10 +135,6 @@ export class WebSocketsController {
       event
         .pipe(distinctUntilChanged())
         .subscribe(instance.handleDisconnect.bind(instance));
-
-      this.logger.log(
-        `Subscribe ${instance.constructor.name}.handleDisconnect method to disconnect event.`,
-      );
     }
   }
 
