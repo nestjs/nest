@@ -13,7 +13,7 @@ import {
   MessageMappingProperties,
 } from './gateway-metadata-explorer';
 import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
-import { NestGateway } from './interfaces/nest-gateway.interface';
+import { NestGatewayInternal } from './interfaces/nest-gateway-internal.interface';
 import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams-host.interface';
 import { SocketServerProvider } from './socket-server-provider';
 import { compareElementAt } from './utils/compare-element.util';
@@ -33,7 +33,7 @@ export class WebSocketsController {
   ) {}
 
   public connectGatewayToServer(
-    instance: NestGateway,
+    instance: NestGatewayInternal,
     metatype: Type<unknown> | Function,
     moduleKey: string,
   ) {
@@ -47,7 +47,7 @@ export class WebSocketsController {
   }
 
   public subscribeToServerEvents<T extends GatewayMetadata>(
-    instance: NestGateway,
+    instance: NestGatewayInternal,
     options: T,
     port: number,
     moduleKey: string,
@@ -74,7 +74,7 @@ export class WebSocketsController {
   }
 
   public subscribeEvents(
-    instance: NestGateway,
+    instance: NestGatewayInternal,
     subscribersMap: MessageMappingProperties[],
     observableServer: ServerAndEventStreamsHost,
   ) {
@@ -97,7 +97,7 @@ export class WebSocketsController {
 
   public getConnectionHandler(
     context: WebSocketsController,
-    instance: NestGateway,
+    instance: NestGatewayInternal,
     subscribersMap: MessageMappingProperties[],
     disconnect: Subject<any>,
     connection: Subject<any>,
@@ -114,13 +114,13 @@ export class WebSocketsController {
     };
   }
 
-  public subscribeInitEvent(instance: NestGateway, event: Subject<any>) {
+  public subscribeInitEvent(instance: NestGatewayInternal, event: Subject<any>) {
     if (instance.afterInit) {
       event.subscribe(instance.afterInit.bind(instance));
     }
   }
 
-  public subscribeConnectionEvent(instance: NestGateway, event: Subject<any>) {
+  public subscribeConnectionEvent(instance: NestGatewayInternal, event: Subject<any>) {
     if (instance.handleConnection) {
       event
         .pipe(
@@ -130,7 +130,7 @@ export class WebSocketsController {
     }
   }
 
-  public subscribeDisconnectEvent(instance: NestGateway, event: Subject<any>) {
+  public subscribeDisconnectEvent(instance: NestGatewayInternal, event: Subject<any>) {
     if (instance.handleDisconnect) {
       event
         .pipe(distinctUntilChanged())
@@ -141,7 +141,7 @@ export class WebSocketsController {
   public subscribeMessages<T = any>(
     subscribersMap: MessageMappingProperties[],
     client: T,
-    instance: NestGateway,
+    instance: NestGatewayInternal,
   ) {
     const adapter = this.config.getIoAdapter();
     const handlers = subscribersMap.map(({ callback, message }) => ({
@@ -173,7 +173,7 @@ export class WebSocketsController {
   }
 
   private assignServerToProperties<T = any>(
-    instance: NestGateway,
+    instance: NestGatewayInternal,
     server: object,
   ) {
     for (const propertyKey of this.metadataExplorer.scanForServerHooks(
