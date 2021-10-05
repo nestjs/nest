@@ -114,19 +114,13 @@ export class WebSocketsController {
     };
   }
 
-  public subscribeInitEvent(
-    instance: NestGateway,
-    event: Subject<any>,
-  ) {
+  public subscribeInitEvent(instance: NestGateway, event: Subject<any>) {
     if (instance.afterInit) {
       event.subscribe(instance.afterInit.bind(instance));
     }
   }
 
-  public subscribeConnectionEvent(
-    instance: NestGateway,
-    event: Subject<any>,
-  ) {
+  public subscribeConnectionEvent(instance: NestGateway, event: Subject<any>) {
     if (instance.handleConnection) {
       event
         .pipe(
@@ -136,10 +130,7 @@ export class WebSocketsController {
     }
   }
 
-  public subscribeDisconnectEvent(
-    instance: NestGateway,
-    event: Subject<any>,
-  ) {
+  public subscribeDisconnectEvent(instance: NestGateway, event: Subject<any>) {
     if (instance.handleDisconnect) {
       event
         .pipe(distinctUntilChanged())
@@ -163,7 +154,9 @@ export class WebSocketsController {
 
     subscribersMap.forEach(({ callback, message }) => {
       this.logger.log(
-        `Subscribe ${(instance as Object).constructor.name}.${callback.name} method to ${message} message.`,
+        `Subscribe ${(instance as Object).constructor.name}.${
+          callback.name
+        } method to ${message} message.`,
       );
     });
   }
