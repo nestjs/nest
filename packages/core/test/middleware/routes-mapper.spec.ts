@@ -30,8 +30,8 @@ describe('RoutesMapper', () => {
       { path: '/test', method: RequestMethod.GET },
     ]);
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
-      { path: '/test/test', method: RequestMethod.GET },
-      { path: '/test/another', method: RequestMethod.DELETE },
+      { path: '/test/test$', method: RequestMethod.GET },
+      { path: '/test/another$', method: RequestMethod.DELETE },
     ]);
   });
   @Controller(['test', 'test2'])
@@ -56,10 +56,10 @@ describe('RoutesMapper', () => {
       { path: '/test', method: RequestMethod.GET },
     ]);
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
-      { path: '/test/test', method: RequestMethod.GET },
-      { path: '/test/another', method: RequestMethod.DELETE },
-      { path: '/test2/test', method: RequestMethod.GET },
-      { path: '/test2/another', method: RequestMethod.DELETE },
+      { path: '/test/test$', method: RequestMethod.GET },
+      { path: '/test/another$', method: RequestMethod.DELETE },
+      { path: '/test2/test$', method: RequestMethod.GET },
+      { path: '/test2/another$', method: RequestMethod.DELETE },
     ]);
   });
 });
