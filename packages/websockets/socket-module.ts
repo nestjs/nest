@@ -17,7 +17,6 @@ import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { WsContextCreator } from './context/ws-context-creator';
 import { WsProxy } from './context/ws-proxy';
 import { NestGateway } from './interfaces/nest-gateway.interface';
-import { NestGatewayInternal } from './interfaces/nest-gateway-internal.interface';
 import { SocketServerProvider } from './socket-server-provider';
 import { SocketsContainer } from './sockets-container';
 import { WebSocketsController } from './web-sockets-controller';
@@ -75,7 +74,7 @@ export class SocketModule<HttpServer = any> {
       this.initializeAdapter();
     }
     this.webSocketsController.connectGatewayToServer(
-      instance as NestGatewayInternal,
+      instance as NestGateway,
       metatype,
       moduleName,
     );
