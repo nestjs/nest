@@ -14,6 +14,7 @@ import { RmqUrl } from '../external/rmq-url.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
+import { Interceptor } from '@grpc/grpc-js';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -33,6 +34,7 @@ export interface CustomStrategy {
 export interface GrpcOptions {
   transport?: Transport.GRPC;
   options: {
+    interceptors: Interceptor[];
     url?: string;
     maxSendMessageLength?: number;
     maxReceiveMessageLength?: number;
