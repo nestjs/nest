@@ -21,12 +21,14 @@ export class RoutesMapper {
   public mapRouteToRouteInfo(
     route: Type<any> | RouteInfo | string,
   ): RouteInfo[] {
+    const defaultIsRequestMapping = true;
     if (isString(route)) {
       const defaultRequestMethod = -1;
       return [
         {
           path: addLeadingSlash(route),
           method: defaultRequestMethod,
+          isRequestMapping: defaultIsRequestMapping,
         },
       ];
     }
@@ -36,6 +38,10 @@ export class RoutesMapper {
         {
           path: addLeadingSlash(route.path),
           method: route.method,
+          isRequestMapping:
+            typeof route.isRequestMapping === 'boolean'
+              ? route.isRequestMapping
+              : defaultIsRequestMapping,
         },
       ];
     }
@@ -56,12 +62,12 @@ export class RoutesMapper {
           .map(item =>
             item.path?.map(p => {
               let path = modulePath ?? '';
-              path +=
-                this.normalizeGlobalPath(routePath) + addLeadingSlash(p) + '$';
+              path += this.normalizeGlobalPath(routePath) + addLeadingSlash(p);
 
               return {
                 path,
                 method: item.requestMethod,
+                isRequestMapping: defaultIsRequestMapping,
               };
             }),
           )

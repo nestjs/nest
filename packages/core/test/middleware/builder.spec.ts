@@ -42,10 +42,12 @@ describe('MiddlewareBuilder', () => {
                 {
                   method: 0,
                   path: route.path,
+                  isRequestMapping: true,
                 },
                 {
                   method: 0,
-                  path: '/path/route$',
+                  path: '/path/route',
+                  isRequestMapping: true,
                 },
               ],
             },
@@ -64,6 +66,7 @@ describe('MiddlewareBuilder', () => {
         {
           path,
           method: -1,
+          isRequestMapping: true,
         },
       ]);
     });

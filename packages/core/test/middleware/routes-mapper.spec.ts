@@ -27,11 +27,15 @@ describe('RoutesMapper', () => {
     };
 
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).to.deep.equal([
-      { path: '/test', method: RequestMethod.GET },
+      { path: '/test', method: RequestMethod.GET, isRequestMapping: true },
     ]);
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
-      { path: '/test/test$', method: RequestMethod.GET },
-      { path: '/test/another$', method: RequestMethod.DELETE },
+      { path: '/test/test', method: RequestMethod.GET, isRequestMapping: true },
+      {
+        path: '/test/another',
+        method: RequestMethod.DELETE,
+        isRequestMapping: true,
+      },
     ]);
   });
   @Controller(['test', 'test2'])
@@ -49,17 +53,53 @@ describe('RoutesMapper', () => {
       forRoutes: [
         { path: 'test', method: RequestMethod.GET },
         TestRouteWithMultiplePaths,
+        {
+          path: 'test/isRequestMapping/false',
+          method: RequestMethod.GET,
+          isRequestMapping: false,
+        },
+        {
+          path: 'test/isRequestMapping/true',
+          method: RequestMethod.GET,
+          isRequestMapping: true,
+        },
       ],
     };
 
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).to.deep.equal([
-      { path: '/test', method: RequestMethod.GET },
+      { path: '/test', method: RequestMethod.GET, isRequestMapping: true },
     ]);
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
-      { path: '/test/test$', method: RequestMethod.GET },
-      { path: '/test/another$', method: RequestMethod.DELETE },
-      { path: '/test2/test$', method: RequestMethod.GET },
-      { path: '/test2/another$', method: RequestMethod.DELETE },
+      { path: '/test/test', method: RequestMethod.GET, isRequestMapping: true },
+      {
+        path: '/test/another',
+        method: RequestMethod.DELETE,
+        isRequestMapping: true,
+      },
+      {
+        path: '/test2/test',
+        method: RequestMethod.GET,
+        isRequestMapping: true,
+      },
+      {
+        path: '/test2/another',
+        method: RequestMethod.DELETE,
+        isRequestMapping: true,
+      },
+    ]);
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[2])).to.deep.equal([
+      {
+        path: '/test/isRequestMapping/false',
+        method: RequestMethod.GET,
+        isRequestMapping: false,
+      },
+    ]);
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[3])).to.deep.equal([
+      {
+        path: '/test/isRequestMapping/true',
+        method: RequestMethod.GET,
+        isRequestMapping: true,
+      },
     ]);
   });
 });

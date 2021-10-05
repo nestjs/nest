@@ -4,6 +4,7 @@ import { Type } from '../type.interface';
 export interface RouteInfo {
   path: string;
   method: RequestMethod;
+  isRequestMapping?: boolean;
 }
 
 export interface MiddlewareConfiguration<T = any> {

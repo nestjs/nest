@@ -9,6 +9,7 @@ import {
   addLeadingSlash,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { IncomingMessage } from 'http';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
@@ -174,8 +175,7 @@ export class MiddlewareModule {
       await this.bindHandler(
         instanceWrapper,
         applicationRef,
-        routeInfo.method,
-        routeInfo.path,
+        routeInfo,
         moduleRef,
         collection,
       );
@@ -185,8 +185,7 @@ export class MiddlewareModule {
   private async bindHandler(
     wrapper: InstanceWrapper<NestMiddleware>,
     applicationRef: HttpServer,
-    method: RequestMethod,
-    path: string,
+    routeInfo: RouteInfo,
     moduleRef: Module,
     collection: Map<InstanceToken, InstanceWrapper>,
   ) {
@@ -197,12 +196,11 @@ export class MiddlewareModule {
     const isStatic = wrapper.isDependencyTreeStatic();
     if (isStatic) {
       const proxy = await this.createProxy(instance);
-      return this.registerHandler(applicationRef, method, path, proxy);
+      return this.registerHandler(applicationRef, routeInfo, proxy);
     }
     await this.registerHandler(
       applicationRef,
-      method,
-      path,
+      routeInfo,
       async <TRequest, TResponse>(
         req: TRequest,
         res: TResponse,
@@ -263,9 +261,8 @@ export class MiddlewareModule {
 
   private async registerHandler(
     applicationRef: HttpServer,
-    method: RequestMethod,
-    path: string,
-    proxy: <TRequest, TResponse>(
+    { path, method, isRequestMapping }: RouteInfo,
+    proxy: <TRequest extends IncomingMessage, TResponse>(
       req: TRequest,
       res: TResponse,
       next: () => void,
@@ -280,21 +277,52 @@ export class MiddlewareModule {
     }
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
+    let callback: Function = proxy;
+    if (isRequestMapping) {
+      if (isMethodAll) {
+        callback = <TRequest extends IncomingMessage, TResponse>(
+          req: TRequest,
+          res: TResponse,
+          next: () => void,
+        ) => {
+          if (this.isRequestMappingUrl(req.url)) {
+            return proxy(req, res, next);
+          }
+          return next();
+        };
+      } else {
+        callback = <TRequest extends IncomingMessage, TResponse>(
+          req: TRequest,
+          res: TResponse,
+          next: () => void,
+        ) => {
+          if (
+            this.isRequestMappingUrl(req.url) &&
+            applicationRef.getRequestMethod(req) === requestMethod
+          ) {
+            return proxy(req, res, next);
+          }
+          return next();
+        };
+      }
+    } else if (!isMethodAll) {
+      callback = <TRequest extends IncomingMessage, TResponse>(
+        req: TRequest,
+        res: TResponse,
+        next: () => void,
+      ) => {
+        if (applicationRef.getRequestMethod(req) === requestMethod) {
+          return proxy(req, res, next);
+        }
+        return next();
+      };
+    }
+
     const router = await applicationRef.createMiddlewareFactory(method);
-    router(
-      basePath + path,
-      isMethodAll
-        ? proxy
-        : <TRequest, TResponse>(
-            req: TRequest,
-            res: TResponse,
-            next: () => void,
-          ) => {
-            if (applicationRef.getRequestMethod(req) === requestMethod) {
-              return proxy(req, res, next);
-            }
-            return next();
-          },
-    );
+    router(basePath + path, callback);
+  }
+
+  private isRequestMappingUrl(url: string) {
+    return url === '/' || url.startsWith('/?');
   }
 }

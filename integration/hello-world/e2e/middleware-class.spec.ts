@@ -66,13 +66,23 @@ class TestModule {
       .apply((req, res: Response, next) => res.status(201).end(INCLUDED_VALUE))
       .forRoutes({ path: 'tests/included', method: RequestMethod.POST })
       .apply((req, res: Response, next) => res.end(FOR_ROUTE_PATH_VALUE))
-      .forRoutes({ path: 'for_route_path', method: RequestMethod.GET })
+      .forRoutes({
+        path: 'for_route_path',
+        method: RequestMethod.GET,
+        isRequestMapping: false,
+      })
       .apply((req, res: Response, next) => res.end(FOR_ROUTE_CONTROLLER_VALUE))
       .forRoutes(ForRouteController)
       .apply((req, res, next) => res.end(OPTIONAL_PARAM_VALUE))
-      .forRoutes({ path: `${OPTIONAL_PARAM_VALUE}/(:test)?`, method: RequestMethod.GET })
+      .forRoutes({
+        path: `${OPTIONAL_PARAM_VALUE}/(:test)?`,
+        method: RequestMethod.GET,
+      })
       .apply(Middleware)
-      .exclude({ path: `${OPTIONAL_PARAM_VALUE}/(.*)`, method: RequestMethod.ALL })
+      .exclude({
+        path: `${OPTIONAL_PARAM_VALUE}/(.*)`,
+        method: RequestMethod.ALL,
+      })
       .forRoutes('*');
   }
 }

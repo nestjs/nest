@@ -98,7 +98,11 @@ class TestModule {
       .apply((req, res, next) => res.end(INCLUDED_VALUE))
       .forRoutes({ path: 'tests/included', method: RequestMethod.POST })
       .apply((req, res, next) => res.end(`${REQ_URL_VALUE}${req.url}`))
-      .forRoutes('req/url/')
+      .forRoutes({
+        path: 'req/url/',
+        method: RequestMethod.ALL,
+        isRequestMapping: false,
+      })
       .apply((req, res, next) => res.end(WILDCARD_VALUE))
       .forRoutes('express_style_wildcard/*', 'tests/(.*)')
       .apply((req, res, next) => res.end(QUERY_VALUE))
@@ -108,11 +112,18 @@ class TestModule {
       .apply((req, res, next) => res.end(SCOPED_VALUE))
       .forRoutes(TestController)
       .apply((req, res, next) => res.end(FOR_ROUTE_PATH_VALUE))
-      .forRoutes({ path: 'for_route_path', method: RequestMethod.GET })
+      .forRoutes({
+        path: 'for_route_path',
+        method: RequestMethod.GET,
+        isRequestMapping: false,
+      })
       .apply((req, res, next) => res.end(FOR_ROUTE_CONTROLLER_VALUE))
       .forRoutes(ForRouteController)
       .apply((req, res, next) => res.end(OPTIONAL_PARAM_VALUE))
-      .forRoutes({ path: `${OPTIONAL_PARAM_VALUE}/:test?`, method: RequestMethod.GET })
+      .forRoutes({
+        path: `${OPTIONAL_PARAM_VALUE}/:test?`,
+        method: RequestMethod.GET,
+      })
       .apply((req, res, next) => res.end(CATCH_ALL_VALUE))
       .exclude(
         { path: QUERY_VALUE, method: RequestMethod.ALL },
