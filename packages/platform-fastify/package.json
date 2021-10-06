@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-fastify",
-  "version": "8.0.9",
+  "version": "8.0.10",
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-fastify)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -20,7 +20,7 @@
     "fastify": "3.22.0",
     "fastify-cors": "6.0.2",
     "fastify-formbody": "5.1.0",
-    "light-my-request": "4.4.4",
+    "light-my-request": "4.5.0",
     "middie": "5.3.0",
     "path-to-regexp": "3.2.0",
     "tslib": "2.3.1"
