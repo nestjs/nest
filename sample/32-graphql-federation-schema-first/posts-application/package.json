@@ -23,10 +23,10 @@
   "dependencies": {
     "@apollo/federation": "0.33.0",
     "@apollo/gateway": "0.42.0",
-    "@nestjs/common": "8.0.9",
-    "@nestjs/core": "8.0.9",
+    "@nestjs/common": "8.0.11",
+    "@nestjs/core": "8.0.11",
     "@nestjs/graphql": "8.0.2",
-    "@nestjs/platform-express": "8.0.9",
+    "@nestjs/platform-express": "8.0.11",
     "apollo-server-express": "2.25.2",
     "graphql": "15.6.0",
     "graphql-tools": "7.0.5",
@@ -38,7 +38,7 @@
   "devDependencies": {
     "@nestjs/cli": "8.1.2",
     "@nestjs/schematics": "8.0.3",
-    "@nestjs/testing": "8.0.9",
+    "@nestjs/testing": "8.0.11",
     "@types/express": "4.17.13",
     "@types/jest": "27.0.2",
     "@types/node": "16.0.1",
