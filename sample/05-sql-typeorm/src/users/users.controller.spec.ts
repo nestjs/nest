@@ -77,13 +77,12 @@ describe('UsersController', () => {
 
   describe('findOne()', () => {
     it('should find a user', () => {
-      usersController.findOne('anyid');
-      expect(usersService.findOne).toHaveBeenCalled();
       expect(usersController.findOne('a id')).resolves.toEqual({
         firstName: 'firstName #1',
         lastName: 'lastName #1',
         id: 'a id',
       });
+      expect(usersService.findOne).toHaveBeenCalled();
     });
   });
 
