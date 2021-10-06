@@ -66,8 +66,6 @@ describe('Cats Controller', () => {
 
   describe('findAll()', () => {
     it('should get an array of cats', async () => {
-      await controller.findAll();
-      expect(service.findAll).toHaveBeenCalled();
       expect(controller.findAll()).resolves.toEqual([
         {
           name: 'Cat #1',
@@ -85,6 +83,7 @@ describe('Cats Controller', () => {
           age: 2,
         },
       ]);
+      expect(service.findAll).toHaveBeenCalled();
     });
   });
 });
