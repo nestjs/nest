@@ -56,8 +56,7 @@ export class RoutesMapper {
           .map(item =>
             item.path?.map(p => {
               let path = modulePath ?? '';
-              path +=
-                this.normalizeGlobalPath(routePath) + addLeadingSlash(p) + '$';
+              path += this.normalizeGlobalPath(routePath) + addLeadingSlash(p);
 
               return {
                 path,

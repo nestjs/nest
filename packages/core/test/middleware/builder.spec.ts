@@ -45,7 +45,7 @@ describe('MiddlewareBuilder', () => {
                 },
                 {
                   method: 0,
-                  path: '/path/route$',
+                  path: '/path/route',
                 },
               ],
             },
