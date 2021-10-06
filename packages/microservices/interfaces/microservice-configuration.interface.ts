@@ -14,7 +14,7 @@ import { RmqUrl } from '../external/rmq-url.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
-import { Interceptor } from '@grpc/grpc-js';
+import { Interceptor } from '../external/grpc-interceptor.interface';
 
 export type MicroserviceOptions =
   | GrpcOptions
