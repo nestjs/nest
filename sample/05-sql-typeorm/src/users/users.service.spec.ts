@@ -51,11 +51,17 @@ describe('UserService', () => {
 
   describe('create()', () => {
     it('should successfully insert a user', () => {
-      const user = {
+      const oneUser = {
         firstName: 'firstName #1',
         lastName: 'lastName #1',
       };
-      expect(user).toEqual(user);
+
+      expect(
+        service.create({
+          firstName: 'firstName #1',
+          lastName: 'lastName #1',
+        }),
+      ).resolves.toEqual(oneUser);
     });
   });
 
