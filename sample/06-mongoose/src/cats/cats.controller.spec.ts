@@ -65,7 +65,7 @@ describe('Cats Controller', () => {
   });
 
   describe('findAll()', () => {
-    it('should get an array of cats', async () => {
+    it('should return an array of cats', async () => {
       expect(controller.findAll()).resolves.toEqual([
         {
           name: 'Cat #1',
