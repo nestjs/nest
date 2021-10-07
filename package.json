@@ -103,7 +103,6 @@
     "apollo-server-core": "3.3.0",
     "apollo-server-express": "3.3.0",
     "artillery": "1.7.9",
-    "awesome-typescript-loader": "5.2.1",
     "body-parser": "1.19.0",
     "bytes": "3.1.0",
     "cache-manager": "3.4.4",
@@ -167,7 +166,7 @@
     "ts-morph": "12.0.0",
     "ts-node": "10.2.1",
     "typeorm": "0.2.38",
-    "typescript": "4.3.5",
+    "typescript": "4.4.3",
     "wrk": "1.2.1",
     "ws": "7.5.5"
   },
