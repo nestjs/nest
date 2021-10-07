@@ -42,7 +42,7 @@ describe('Photo Controller', () => {
   });
 
   describe('findAll()', () => {
-    it('should get an array of photos', () => {
+    it('should return an array of photos', () => {
       expect(controller.findAll()).resolves.toEqual([
         {
           name: 'Photo #1',
