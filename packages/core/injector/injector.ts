@@ -356,7 +356,7 @@ export class Injector {
     keyOrIndex?: string | number,
   ): Promise<InstanceWrapper> {
     this.resolvingDependenciesLog(token, inquirer);
-    this.lookingForLog(token, moduleRef);
+    this.lookingForProviderLog(token, moduleRef);
     const providers = moduleRef.providers;
     const instanceWrapper = await this.lookupComponent(
       providers,
@@ -436,7 +436,7 @@ export class Injector {
     }
     if (providers.has(name)) {
       const instanceWrapper = providers.get(name);
-      this.foundInLog(name, moduleRef);
+      this.foundInModuleLog(name, moduleRef);
       this.addDependencyMetadata(keyOrIndex, wrapper, instanceWrapper);
       return instanceWrapper;
     }
@@ -502,7 +502,7 @@ export class Injector {
       if (moduleRegistry.includes(relatedModule.id)) {
         continue;
       }
-      this.lookingForLog(name, relatedModule);
+      this.lookingForProviderLog(name, relatedModule);
       moduleRegistry.push(relatedModule.id);
       const { providers, exports } = relatedModule;
       if (!exports.has(name) || !providers.has(name)) {
@@ -522,7 +522,7 @@ export class Injector {
         }
         continue;
       }
-      this.foundInLog(name, relatedModule);
+      this.foundInModuleLog(name, relatedModule);
       instanceWrapperRef = providers.get(name);
       this.addDependencyMetadata(keyOrIndex, wrapper, instanceWrapperRef);
 
@@ -789,47 +789,52 @@ export class Injector {
   }
 
   private getTokenName(token: InstanceToken): string {
-    return isFunction(token)
-      ? (token as Function).name
-      : token.toString();
+    return isFunction(token) ? (token as Function).name : token.toString();
   }
 
   private resolvingDependenciesLog(
     token: InstanceToken,
     inquirer?: InstanceWrapper,
   ): void {
+    if (!this.isDebugMode()) {
+      return;
+    }
     const tokenName = this.getTokenName(token);
     const dependentName = inquirer?.name ?? 'unknown';
-    this.log(
+    this.logger.log(
       `Resolving dependency ${clc.cyanBright(tokenName)}${clc.green(
         ' in the ',
       )}${clc.yellow(dependentName)}${clc.green(' provider ')}`,
     );
   }
 
-  private lookingForLog(token: InstanceToken, moduleRef: Module): void {
+  private lookingForProviderLog(token: InstanceToken, moduleRef: Module): void {
+    if (!this.isDebugMode()) {
+      return;
+    }
     const tokenName = this.getTokenName(token);
     const moduleRefName = moduleRef?.metatype?.name ?? 'unknown';
-    this.log(
-      `Looking for ${clc.cyanBright(tokenName)}${clc.green(' in ')}${clc.magentaBright(
-        moduleRefName,
-      )}`,
+    this.logger.log(
+      `Looking for ${clc.cyanBright(tokenName)}${clc.green(
+        ' in ',
+      )}${clc.magentaBright(moduleRefName)}`,
     );
   }
 
-  private foundInLog(token: InstanceToken, moduleRef: Module): void {
+  private foundInModuleLog(token: InstanceToken, moduleRef: Module): void {
+    if (!this.isDebugMode()) {
+      return;
+    }
     const tokenName = this.getTokenName(token);
     const moduleRefName = moduleRef?.metatype?.name ?? 'unknown';
-    this.log(
+    this.logger.log(
       `Found ${clc.cyanBright(tokenName)}${clc.green(
         ' in ',
       )}${clc.magentaBright(moduleRefName)}`,
     );
   }
 
-  private log(message: string): void {
-    if (process.env.NEST_DEBUG) {
-      this.logger.log(message);
-    }
+  private isDebugMode(): boolean {
+    return !!process.env.NEST_DEBUG;
   }
 }
