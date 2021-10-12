@@ -304,8 +304,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     /** Reference: https://github.com/kondi/rxjs-grpc */
     let pkg = root;
 
-    if (packageName && packageName.length > 0) {
-      for (const name of packageName.split(/\./)) {
+    if (packageName) {
+      for (const name of packageName.split('.')) {
         pkg = pkg[name];
       }
     }
