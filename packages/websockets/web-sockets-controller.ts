@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { Logger } from '@nestjs/common/services/logger.service';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { from as fromPromise, Observable, of, Subject } from 'rxjs';
@@ -93,6 +93,7 @@ export class WebSocketsController {
       connection,
     );
     adapter.bindClientConnect(server, handler);
+    this.printSubscriptionLogs(instance, subscribersMap);
   }
 
   public getConnectionHandler(
@@ -183,5 +184,20 @@ export class WebSocketsController {
     )) {
       Reflect.set(instance, propertyKey, server);
     }
+  }
+
+  private printSubscriptionLogs(
+    instance: NestGateway,
+    subscribersMap: MessageMappingProperties[],
+  ) {
+    const gatewayClassName = (instance as Object)?.constructor?.name;
+    if (!gatewayClassName) {
+      return;
+    }
+    subscribersMap.forEach(({ message }) =>
+      this.logger.log(
+        `${gatewayClassName} subscribed to the "${message}" message`,
+      ),
+    );
   }
 }
