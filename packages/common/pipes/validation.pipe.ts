@@ -145,13 +145,6 @@ export class ValidationPipe implements PipeTransform<any> {
     };
   }
 
-  protected validate(
-    object: object,
-    validatorOptions?: ValidatorOptions,
-  ): Promise<ValidationError[]> | ValidationError[] {
-    return classValidator.validate(object, validatorOptions);
-  }
-
   protected toValidate(metadata: ArgumentMetadata): boolean {
     const { metatype, type } = metadata;
     if (type === 'custom' && !this.validateCustomDecorators) {
@@ -193,6 +186,13 @@ export class ValidationPipe implements PipeTransform<any> {
 
   protected isPrimitive(value: unknown): boolean {
     return ['number', 'boolean', 'string'].includes(typeof value);
+  }
+
+  protected validate(
+    object: object,
+    validatorOptions?: ValidatorOptions,
+  ): Promise<ValidationError[]> | ValidationError[] {
+    return classValidator.validate(object, validatorOptions);
   }
 
   protected flattenValidationErrors(
