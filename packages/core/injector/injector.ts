@@ -1,3 +1,4 @@
+import { Logger, LoggerService } from '@nestjs/common';
 import {
   OPTIONAL_DEPS_METADATA,
   OPTIONAL_PROPERTY_DEPS_METADATA,
@@ -9,11 +10,13 @@ import { Controller } from '@nestjs/common/interfaces/controllers/controller.int
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import {
+  isFunction,
   isNil,
   isObject,
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { iterate } from 'iterare';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
@@ -68,6 +71,7 @@ export interface InjectorDependencyContext {
 }
 
 export class Injector {
+  private logger: LoggerService = new Logger('InjectorLogger');
   public loadPrototype<T>(
     { token }: InstanceWrapper<T>,
     collection: Map<InstanceToken, InstanceWrapper<T>>,
@@ -351,6 +355,8 @@ export class Injector {
     inquirer?: InstanceWrapper,
     keyOrIndex?: string | number,
   ): Promise<InstanceWrapper> {
+    this.resolvingDependenciesLog(token, inquirer);
+    this.lookingForProviderLog(token, moduleRef);
     const providers = moduleRef.providers;
     const instanceWrapper = await this.lookupComponent(
       providers,
@@ -430,6 +436,7 @@ export class Injector {
     }
     if (providers.has(name)) {
       const instanceWrapper = providers.get(name);
+      this.foundInModuleLog(name, moduleRef);
       this.addDependencyMetadata(keyOrIndex, wrapper, instanceWrapper);
       return instanceWrapper;
     }
@@ -481,7 +488,6 @@ export class Injector {
     isTraversing?: boolean,
   ): Promise<any> {
     let instanceWrapperRef: InstanceWrapper = null;
-
     const imports = moduleRef.imports || new Set<Module>();
     const identity = (item: any) => item;
 
@@ -496,6 +502,7 @@ export class Injector {
       if (moduleRegistry.includes(relatedModule.id)) {
         continue;
       }
+      this.lookingForProviderLog(name, relatedModule);
       moduleRegistry.push(relatedModule.id);
       const { providers, exports } = relatedModule;
       if (!exports.has(name) || !providers.has(name)) {
@@ -515,6 +522,7 @@ export class Injector {
         }
         continue;
       }
+      this.foundInModuleLog(name, relatedModule);
       instanceWrapperRef = providers.get(name);
       this.addDependencyMetadata(keyOrIndex, wrapper, instanceWrapperRef);
 
@@ -778,5 +786,55 @@ export class Injector {
     isString(keyOrIndex)
       ? hostWrapper.addPropertiesMetadata(keyOrIndex, instanceWrapper)
       : hostWrapper.addCtorMetadata(keyOrIndex, instanceWrapper);
+  }
+
+  private getTokenName(token: InstanceToken): string {
+    return isFunction(token) ? (token as Function).name : token.toString();
+  }
+
+  private resolvingDependenciesLog(
+    token: InstanceToken,
+    inquirer?: InstanceWrapper,
+  ): void {
+    if (!this.isDebugMode()) {
+      return;
+    }
+    const tokenName = this.getTokenName(token);
+    const dependentName = inquirer?.name ?? 'unknown';
+    this.logger.log(
+      `Resolving dependency ${clc.cyanBright(tokenName)}${clc.green(
+        ' in the ',
+      )}${clc.yellow(dependentName)}${clc.green(' provider ')}`,
+    );
+  }
+
+  private lookingForProviderLog(token: InstanceToken, moduleRef: Module): void {
+    if (!this.isDebugMode()) {
+      return;
+    }
+    const tokenName = this.getTokenName(token);
+    const moduleRefName = moduleRef?.metatype?.name ?? 'unknown';
+    this.logger.log(
+      `Looking for ${clc.cyanBright(tokenName)}${clc.green(
+        ' in ',
+      )}${clc.magentaBright(moduleRefName)}`,
+    );
+  }
+
+  private foundInModuleLog(token: InstanceToken, moduleRef: Module): void {
+    if (!this.isDebugMode()) {
+      return;
+    }
+    const tokenName = this.getTokenName(token);
+    const moduleRefName = moduleRef?.metatype?.name ?? 'unknown';
+    this.logger.log(
+      `Found ${clc.cyanBright(tokenName)}${clc.green(
+        ' in ',
+      )}${clc.magentaBright(moduleRefName)}`,
+    );
+  }
+
+  private isDebugMode(): boolean {
+    return !!process.env.NEST_DEBUG;
   }
 }
