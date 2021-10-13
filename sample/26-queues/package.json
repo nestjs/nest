@@ -23,7 +23,7 @@
     "@nestjs/common": "8.0.11",
     "@nestjs/core": "8.0.11",
     "@nestjs/platform-express": "8.0.11",
-    "bull": "3.29.2",
+    "bull": "3.29.3",
     "dotenv": "10.0.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
