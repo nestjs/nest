@@ -96,6 +96,19 @@ describe('NATS transport', () => {
       });
   });
 
+  it(`/POST (sending headers with "RecordBuilder")`, () => {
+    const payload = { items: [1, 2, 3] };
+    return request(server)
+      .post('/record-builder-duplex')
+      .send(payload)
+      .expect(200, {
+        data: payload,
+        headers: {
+          ['x-version']: '1.0.0',
+        },
+      });
+  });
+
   afterEach(async () => {
     await app.close();
   });

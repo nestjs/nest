@@ -6,10 +6,12 @@ import {
   EventPattern,
   MessagePattern,
   NatsContext,
+  NatsRecordBuilder,
   Payload,
   RpcException,
   Transport,
 } from '@nestjs/microservices';
+import * as nats from 'nats';
 import { from, lastValueFrom, Observable, of, throwError } from 'rxjs';
 import { catchError, scan } from 'rxjs/operators';
 import { NatsService } from './nats.service';
@@ -60,6 +62,28 @@ export class NatsController {
     return data
       .map(async tab => send(tab))
       .reduce(async (a, b) => (await a) && b);
+  }
+
+  @Post('record-builder-duplex')
+  @HttpCode(200)
+  useRecordBuilderDuplex(@Body() data: Record<string, any>) {
+    const headers = nats.headers();
+    headers.set('x-version', '1.0.0');
+    const record = new NatsRecordBuilder(data).setHeaders(headers).build();
+    return this.client.send('record-builder-duplex', record);
+  }
+
+  @MessagePattern('record-builder-duplex')
+  handleRecordBuilderDuplex(
+    @Payload() data: Record<string, any>,
+    @Ctx() context: NatsContext,
+  ) {
+    return {
+      data,
+      headers: {
+        ['x-version']: context.getHeaders().get('x-version'),
+      },
+    };
   }
 
   @MessagePattern('math.*')

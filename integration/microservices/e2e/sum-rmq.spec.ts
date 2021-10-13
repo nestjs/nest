@@ -89,6 +89,20 @@ describe('RabbitMQ transport', () => {
       });
   });
 
+  it(`/POST (sending options with "RecordBuilder")`, () => {
+    const payload = { items: [1, 2, 3] };
+    return request(server)
+      .post('/record-builder-duplex')
+      .send(payload)
+      .expect(200, {
+        data: payload,
+        headers: {
+          ['x-version']: '1.0.0',
+        },
+        priority: 3,
+      });
+  });
+
   afterEach(async () => {
     await app.close();
   });
