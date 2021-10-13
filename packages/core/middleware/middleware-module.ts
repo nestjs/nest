@@ -9,6 +9,7 @@ import {
   addLeadingSlash,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { isRouteExcluded, isRequestMethodAll } from '../router/utils';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
@@ -26,7 +27,6 @@ import { MiddlewareBuilder } from './builder';
 import { MiddlewareContainer } from './container';
 import { MiddlewareResolver } from './resolver';
 import { RoutesMapper } from './routes-mapper';
-import { isRequestMethodAll } from './utils';
 
 export class MiddlewareModule {
   private readonly routerProxy = new RouterProxy();
@@ -272,17 +272,26 @@ export class MiddlewareModule {
     ) => void,
   ) {
     const prefix = this.config.getGlobalPrefix();
-    const basePath = addLeadingSlash(prefix);
-    if (basePath?.endsWith('/') && path?.startsWith('/')) {
-      // strip slash when a wildcard is being used
-      // and global prefix has been set
-      path = path?.slice(1);
+    const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
+    if (
+      Array.isArray(excludedRoutes) &&
+      isRouteExcluded(excludedRoutes, path, method)
+    ) {
+      path = addLeadingSlash(path);
+    } else {
+      const basePath = addLeadingSlash(prefix);
+      if (basePath?.endsWith('/') && path?.startsWith('/')) {
+        // strip slash when a wildcard is being used
+        // and global prefix has been set
+        path = path?.slice(1);
+      }
+      path = basePath + path;
     }
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);
     router(
-      basePath + path,
+      path,
       isMethodAll
         ? proxy
         : <TRequest, TResponse>(
