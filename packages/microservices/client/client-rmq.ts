@@ -18,6 +18,8 @@ import {
 } from '../constants';
 import { RmqUrl } from '../external/rmq-url.interface';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
+import { RmqRecord } from '../record-builders';
+import { RmqRecordSerializer } from '../serializers/rmq-record.serializer';
 import { ClientProxy } from './client-proxy';
 
 let rqmPackage: any = {};
@@ -188,7 +190,11 @@ export class ClientRMQ extends ClientProxy {
         this.handleMessage(JSON.parse(content.toString()), callback);
 
       Object.assign(message, { id: correlationId });
-      const serializedPacket = this.serializer.serialize(message);
+      const serializedPacket: ReadPacket & Partial<RmqRecord> =
+        this.serializer.serialize(message);
+
+      const options = serializedPacket.options;
+      delete serializedPacket.options;
 
       this.responseEmitter.on(correlationId, listener);
       this.channel.sendToQueue(
@@ -196,8 +202,10 @@ export class ClientRMQ extends ClientProxy {
         Buffer.from(JSON.stringify(serializedPacket)),
         {
           replyTo: this.replyQueue,
-          correlationId,
           persistent: this.persistent,
+          ...options,
+          headers: this.mergeHeaders(options?.headers),
+          correlationId,
         },
       );
       return () => this.responseEmitter.removeListener(correlationId, listener);
@@ -207,7 +215,8 @@ export class ClientRMQ extends ClientProxy {
   }
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
-    const serializedPacket = this.serializer.serialize(packet);
+    const serializedPacket: ReadPacket & Partial<RmqRecord> =
+      this.serializer.serialize(packet);
 
     return new Promise<void>((resolve, reject) =>
       this.channel.sendToQueue(
@@ -215,9 +224,28 @@ export class ClientRMQ extends ClientProxy {
         Buffer.from(JSON.stringify(serializedPacket)),
         {
           persistent: this.persistent,
+          ...serializedPacket.options,
+          headers: this.mergeHeaders(serializedPacket.options?.headers),
         },
         (err: unknown) => (err ? reject(err) : resolve()),
       ),
     );
+  }
+
+  protected initializeSerializer(options: RmqOptions['options']) {
+    this.serializer = options?.serializer ?? new RmqRecordSerializer();
+  }
+
+  protected mergeHeaders(
+    requestHeaders?: Record<string, string>,
+  ): Record<string, string> | undefined {
+    if (!requestHeaders && !this.options?.headers) {
+      return undefined;
+    }
+
+    return {
+      ...this.options?.headers,
+      ...requestHeaders,
+    };
   }
 }

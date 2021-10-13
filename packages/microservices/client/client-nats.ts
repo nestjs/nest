@@ -4,13 +4,14 @@ import { NATS_DEFAULT_URL } from '../constants';
 import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-json.deserializer';
 import { Client, NatsMsg } from '../external/nats-client.interface';
 import { NatsOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
-import { NatsJSONSerializer } from '../serializers/nats-json.serializer';
+import { NatsRecord } from '../record-builders';
+import { NatsRecordSerializer } from '../serializers/nats-record.serializer';
 import { ClientProxy } from './client-proxy';
 
 let natsPackage = {} as any;
 
 export class ClientNats extends ClientProxy {
-  protected readonly logger = new Logger(ClientProxy.name);
+  protected readonly logger = new Logger(ClientNats.name);
   protected natsClient: Client;
 
   constructor(protected readonly options: NatsOptions['options']) {
@@ -101,7 +102,7 @@ export class ClientNats extends ClientProxy {
     try {
       const packet = this.assignPacketId(partialPacket);
       const channel = this.normalizePattern(partialPacket.pattern);
-      const serializedPacket = this.serializer.serialize(packet);
+      const serializedPacket: NatsRecord = this.serializer.serialize(packet);
       const inbox = natsPackage.createInbox();
 
       const subscriptionHandler = this.createSubscriptionHandler(
@@ -113,8 +114,10 @@ export class ClientNats extends ClientProxy {
         callback: subscriptionHandler,
       });
 
-      this.natsClient.publish(channel, serializedPacket, {
+      const headers = this.mergeHeaders(serializedPacket.headers);
+      this.natsClient.publish(channel, serializedPacket.data, {
         reply: inbox,
+        headers,
       });
 
       return () => subscription.unsubscribe();
@@ -125,11 +128,14 @@ export class ClientNats extends ClientProxy {
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
-    const serializedPacket = this.serializer.serialize(packet);
+    const serializedPacket: NatsRecord = this.serializer.serialize(packet);
+    const headers = this.mergeHeaders(serializedPacket.headers);
 
     return new Promise<void>((resolve, reject) => {
       try {
-        this.natsClient.publish(pattern, serializedPacket);
+        this.natsClient.publish(pattern, serializedPacket.data, {
+          headers,
+        });
         resolve();
       } catch (err) {
         reject(err);
@@ -138,11 +144,27 @@ export class ClientNats extends ClientProxy {
   }
 
   protected initializeSerializer(options: NatsOptions['options']) {
-    this.serializer = options?.serializer ?? new NatsJSONSerializer();
+    this.serializer = options?.serializer ?? new NatsRecordSerializer();
   }
 
   protected initializeDeserializer(options: NatsOptions['options']) {
     this.deserializer =
       options?.deserializer ?? new NatsResponseJSONDeserializer();
+  }
+
+  protected mergeHeaders<THeaders = any>(requestHeaders?: THeaders) {
+    if (!requestHeaders && !this.options?.headers) {
+      return undefined;
+    }
+
+    const headers = requestHeaders ?? natsPackage.headers();
+
+    for (const [key, value] of Object.entries(this.options?.headers || {})) {
+      if (!headers.has(key)) {
+        headers.set(key, value);
+      }
+    }
+
+    return headers;
   }
 }

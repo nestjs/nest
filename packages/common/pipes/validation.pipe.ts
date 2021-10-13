@@ -114,7 +114,7 @@ export class ValidationPipe implements PipeTransform<any> {
       entity = { constructor: metatype };
     }
 
-    const errors = await classValidator.validate(entity, this.validatorOptions);
+    const errors = await this.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
       throw await this.exceptionFactory(errors);
     }
@@ -186,6 +186,13 @@ export class ValidationPipe implements PipeTransform<any> {
 
   protected isPrimitive(value: unknown): boolean {
     return ['number', 'boolean', 'string'].includes(typeof value);
+  }
+
+  protected validate(
+    object: object,
+    validatorOptions?: ValidatorOptions,
+  ): Promise<ValidationError[]> | ValidationError[] {
+    return classValidator.validate(object, validatorOptions);
   }
 
   protected flattenValidationErrors(

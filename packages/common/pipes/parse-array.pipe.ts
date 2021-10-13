@@ -83,10 +83,15 @@ export class ParseArrayPipe implements PipeTransform {
         type: 'query',
       };
 
-      const toClassInstance = (item: any) => {
+      const isExpectedTypePrimitive = this.isExpectedTypePrimitive();
+      const toClassInstance = (item: any, index?: number) => {
         try {
           item = JSON.parse(item);
         } catch {}
+
+        if (isExpectedTypePrimitive) {
+          return this.validatePrimitive(item, index);
+        }
         return this.validationPipe.transform(item, validationMetadata);
       };
       if (this.options.stopAtFirstError === false) {
@@ -100,8 +105,8 @@ export class ParseArrayPipe implements PipeTransform {
             targetArray[i] = await toClassInstance(targetArray[i]);
           } catch (err) {
             let message: string[] | unknown;
-            if (err.getResponse) {
-              const response = err.getResponse();
+            if ((err as any).getResponse) {
+              const response = (err as any).getResponse();
               if (Array.isArray(response.message)) {
                 message = response.message.map(
                   (item: string) => `[${i}] ${item}`,
@@ -124,5 +129,37 @@ export class ParseArrayPipe implements PipeTransform {
       }
     }
     return value;
+  }
+
+  protected isExpectedTypePrimitive(): boolean {
+    return [Boolean, Number, String].includes(this.options.items as any);
+  }
+
+  protected validatePrimitive(originalValue: any, index?: number) {
+    if (this.options.items === Number) {
+      const value =
+        originalValue !== null && originalValue !== '' ? +originalValue : NaN;
+      if (isNaN(value)) {
+        throw this.exceptionFactory(
+          `${
+            typeof index !== 'undefined' ? `[${index}] ` : ''
+          }item must be a number`,
+        );
+      }
+      return value;
+    } else if (this.options.items === String) {
+      if (typeof originalValue !== 'string') {
+        return `${originalValue}`;
+      }
+    } else if (this.options.items === Boolean) {
+      if (typeof originalValue !== 'boolean') {
+        throw this.exceptionFactory(
+          `${
+            typeof index !== 'undefined' ? `[${index}] ` : ''
+          }item must be a boolean value`,
+        );
+      }
+    }
+    return originalValue;
   }
 }
