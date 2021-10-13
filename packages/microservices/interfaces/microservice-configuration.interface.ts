@@ -8,7 +8,7 @@ import {
   ProducerConfig,
   ProducerRecord,
 } from '../external/kafka.interface';
-import { MqttClientOptions } from '../external/mqtt-options.interface';
+import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
 import { ClientOpts } from '../external/redis.interface';
 import { RmqUrl } from '../external/rmq-url.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
@@ -33,6 +33,7 @@ export interface CustomStrategy {
 export interface GrpcOptions {
   transport?: Transport.GRPC;
   options: {
+    interceptors?: Array<(options: any, nextCall: (options: any) => any) => any>;
     url?: string;
     maxSendMessageLength?: number;
     maxReceiveMessageLength?: number;
@@ -96,12 +97,32 @@ export interface MqttOptions {
     url?: string;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    subscribeOptions?: {
+      /**
+       * The QoS
+       */
+      qos: QoS;
+      /*
+       * No local flag
+       * */
+      nl?: boolean;
+      /*
+       * Retain as Published flag
+       * */
+      rap?: boolean;
+      /*
+       * Retain Handling option
+       * */
+      rh?: number;
+    };
+    userProperties?: Record<string, string | string[]>;
   };
 }
 
 export interface NatsOptions {
   transport?: Transport.NATS;
   options?: {
+    headers?: Record<string, string>;
     authenticator?: any;
     debug?: boolean;
     ignoreClusterUpdates?: boolean;
@@ -156,6 +177,7 @@ export interface RmqOptions {
     deserializer?: Deserializer;
     replyQueue?: string;
     persistent?: boolean;
+    headers?: Record<string, string>;
   };
 }
 
