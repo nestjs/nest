@@ -173,7 +173,7 @@ $ npm i # (or yarn install)
 $ sh scripts/prepare.sh
 ```
 
-That will compile fresh packages and afterward, move them all to `sample` directories as well as run integration tests.
+That will compile fresh packages and afterward, move them all to `sample` directories.
 
 ### <a name="common-scripts"></a>Commonly used NPM scripts
 
