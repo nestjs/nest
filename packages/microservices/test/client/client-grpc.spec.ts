@@ -373,4 +373,13 @@ describe('ClientGrpcProxy', () => {
       );
     });
   });
+
+  describe('lookupPackage', () => {
+    it('should return root package in case package name is not defined', () => {
+      const root = {};
+
+      expect(client.lookupPackage(root, undefined)).to.be.equal(root);
+      expect(client.lookupPackage(root, '')).to.be.equal(root);
+    });
+  });
 });
