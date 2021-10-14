@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { User } from './user.model';
+import { User } from './models/user.model';
 import { UsersService } from './users.service';
 import { getModelToken } from '@nestjs/sequelize';
 
@@ -32,7 +32,7 @@ describe('UserService', () => {
           useValue: {
             findAll: jest.fn(() => userArray),
             findOne: jest.fn(),
-            save: jest.fn(),
+            create: jest.fn(() => oneUser),
             remove: jest.fn(),
             destroy: jest.fn(() => oneUser),
           },
@@ -50,11 +50,16 @@ describe('UserService', () => {
 
   describe('create()', () => {
     it('should successfully insert a user', () => {
-      const user = {
+      const oneUser = {
         firstName: 'firstName #1',
         lastName: 'lastName #1',
       };
-      expect(user).toEqual(user);
+      expect(
+        service.create({
+          firstName: 'firstName #1',
+          lastName: 'lastName #1',
+        }),
+      ).toEqual(oneUser);
     });
   });
 
