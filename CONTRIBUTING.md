@@ -173,7 +173,7 @@ $ npm i # (or yarn install)
 $ sh scripts/prepare.sh
 ```
 
-That will compile fresh packages and afterward, move them to all `sample` directories as well as integration tests.
+That will compile fresh packages and afterward, move them all to `sample` directories.
 
 ### <a name="common-scripts"></a>Commonly used NPM scripts
 
@@ -228,7 +228,7 @@ format that includes a **type**, a **scope** and a **subject**:
 
 The **header** is mandatory and the **scope** of the header is optional.
 
-Any line of the commit message cannot be longer 100 characters! This allows the message to be easier
+Any line of the commit message cannot be longer than 100 characters! This allows the message to be easier
 to read on GitHub as well as in various git tools.
 
 Footer should contain a [closing reference to an issue](https://help.github.com/articles/closing-issues-via-commit-messages/) if any.
