@@ -4,32 +4,34 @@ import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import * as pathToRegexp from 'path-to-regexp';
 import { v4 as uuid } from 'uuid';
+import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
+import { isRouteExcluded } from '../router/utils';
 
-type RouteInfoRegex = RouteInfo & { regex: RegExp };
-
-export const isRequestMethodAll = (method: RequestMethod) => {
-  return RequestMethod.ALL === method || (method as number) === -1;
+export const mapToExcludeRoute = (
+  routes: RouteInfo[],
+): ExcludeRouteMetadata[] => {
+  return routes.map(({ path, method }) => ({
+    pathRegex: pathToRegexp(path),
+    requestMethod: method,
+  }));
 };
 
 export const filterMiddleware = <T extends Function | Type<any> = any>(
   middleware: T[],
-  excludedRoutes: RouteInfo[],
+  routes: RouteInfo[],
   httpAdapter: HttpServer,
 ) => {
-  const excluded = excludedRoutes.map(route => ({
-    ...route,
-    regex: pathToRegexp(route.path),
-  }));
+  const excludedRoutes = mapToExcludeRoute(routes);
   return iterate([])
     .concat(middleware)
     .filter(isFunction)
-    .map((item: T) => mapToClass(item, excluded, httpAdapter))
+    .map((item: T) => mapToClass(item, excludedRoutes, httpAdapter))
     .toArray();
 };
 
 export const mapToClass = <T extends Function | Type<any>>(
   middleware: T,
-  excludedRoutes: RouteInfoRegex[],
+  excludedRoutes: ExcludeRouteMetadata[],
   httpAdapter: HttpServer,
 ) => {
   if (isMiddlewareClass(middleware)) {
@@ -39,7 +41,11 @@ export const mapToClass = <T extends Function | Type<any>>(
     const MiddlewareHost = class extends (middleware as Type<any>) {
       use(...params: unknown[]) {
         const [req, _, next] = params as [Record<string, any>, any, Function];
-        const isExcluded = isRouteExcluded(req, excludedRoutes, httpAdapter);
+        const isExcluded = isMiddlewareRouteExcluded(
+          req,
+          excludedRoutes,
+          httpAdapter,
+        );
         if (isExcluded) {
           return next();
         }
@@ -52,7 +58,11 @@ export const mapToClass = <T extends Function | Type<any>>(
     class {
       use = (...params: unknown[]) => {
         const [req, _, next] = params as [Record<string, any>, any, Function];
-        const isExcluded = isRouteExcluded(req, excludedRoutes, httpAdapter);
+        const isExcluded = isMiddlewareRouteExcluded(
+          req,
+          excludedRoutes,
+          httpAdapter,
+        );
         if (isExcluded) {
           return next();
         }
@@ -80,9 +90,9 @@ export function assignToken(metatype: Type<any>, token = uuid()): Type<any> {
   return metatype;
 }
 
-export function isRouteExcluded(
+export function isMiddlewareRouteExcluded(
   req: Record<string, any>,
-  excludedRoutes: RouteInfoRegex[],
+  excludedRoutes: ExcludeRouteMetadata[],
   httpAdapter: HttpServer,
 ): boolean {
   if (excludedRoutes.length <= 0) {
@@ -96,11 +106,5 @@ export function isRouteExcluded(
       ? originalUrl.slice(0, queryParamsIndex)
       : originalUrl;
 
-  const isExcluded = excludedRoutes.some(({ method, regex }) => {
-    if (isRequestMethodAll(method) || RequestMethod[method] === reqMethod) {
-      return regex.exec(pathname);
-    }
-    return false;
-  });
-  return isExcluded;
+  return isRouteExcluded(excludedRoutes, pathname, RequestMethod[reqMethod]);
 }

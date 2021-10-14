@@ -2,8 +2,12 @@ import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
   ClientProxy,
+  Ctx,
   EventPattern,
   MessagePattern,
+  MqttContext,
+  MqttRecordBuilder,
+  Payload,
   Transport,
 } from '@nestjs/microservices';
 import { from, lastValueFrom, Observable, of } from 'rxjs';
@@ -32,7 +36,7 @@ export class MqttController {
   @HttpCode(200)
   async stream(@Body() data: number[]) {
     const result = lastValueFrom(
-      await this.client
+      this.client
         .send<number>({ cmd: 'streaming' }, data)
         .pipe(scan((a, b) => a + b, 0)),
     );
@@ -84,6 +88,25 @@ export class MqttController {
   ): Promise<Observable<number>> {
     await this.client.connect();
     return this.client.send<number>('wildcard-message2/test/test', data);
+  }
+
+  @Post('record-builder-duplex')
+  @HttpCode(200)
+  useRecordBuilderDuplex(@Body() data: Record<string, any>) {
+    const record = new MqttRecordBuilder(data).setQoS(2).build();
+    return this.client.send('record-builder-duplex', record);
+  }
+
+  @MessagePattern('record-builder-duplex')
+  handleRecordBuilderDuplex(
+    @Payload() data: Record<string, any>,
+    @Ctx() context: MqttContext,
+  ) {
+    const { qos } = context.getPacket();
+    return {
+      data,
+      qos,
+    };
   }
 
   @MessagePattern('wildcard-message/#')

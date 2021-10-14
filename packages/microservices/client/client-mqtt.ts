@@ -11,6 +11,11 @@ import {
 } from '../constants';
 import { MqttClient } from '../external/mqtt-client.interface';
 import { MqttOptions, ReadPacket, WritePacket } from '../interfaces';
+import {
+  MqttRecord,
+  MqttRecordOptions,
+} from '../record-builders/mqtt.record-builder';
+import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer';
 import { ClientProxy } from './client-proxy';
 
 let mqttPackage: any = {};
@@ -124,7 +129,9 @@ export class ClientMqtt extends ClientProxy {
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
-      const serializedPacket = this.serializer.serialize(packet);
+      const serializedPacket: ReadPacket & Partial<MqttRecord> =
+        this.serializer.serialize(packet);
+
       const responseChannel = this.getResponsePattern(pattern);
       let subscriptionsCount =
         this.subscriptionsCount.get(responseChannel) || 0;
@@ -133,9 +140,14 @@ export class ClientMqtt extends ClientProxy {
         subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
         this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
         this.routingMap.set(packet.id, callback);
+
+        const options = serializedPacket.options;
+        delete serializedPacket.options;
+
         this.mqttClient.publish(
           this.getRequestPattern(pattern),
           JSON.stringify(serializedPacket),
+          this.mergePacketOptions(options),
         );
       };
 
@@ -159,11 +171,15 @@ export class ClientMqtt extends ClientProxy {
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
-    const serializedPacket = this.serializer.serialize(packet);
+    const serializedPacket: ReadPacket & Partial<MqttRecord> =
+      this.serializer.serialize(packet);
 
     return new Promise<void>((resolve, reject) =>
-      this.mqttClient.publish(pattern, JSON.stringify(serializedPacket), err =>
-        err ? reject(err) : resolve(),
+      this.mqttClient.publish(
+        pattern,
+        JSON.stringify(serializedPacket),
+        this.mergePacketOptions(serializedPacket.options),
+        (err: any) => (err ? reject(err) : resolve()),
       ),
     );
   }
@@ -175,5 +191,28 @@ export class ClientMqtt extends ClientProxy {
     if (subscriptionCount - 1 <= 0) {
       this.mqttClient.unsubscribe(channel);
     }
+  }
+
+  protected initializeSerializer(options: MqttOptions['options']) {
+    this.serializer = options?.serializer ?? new MqttRecordSerializer();
+  }
+
+  protected mergePacketOptions(
+    requestOptions?: MqttRecordOptions,
+  ): MqttRecordOptions | undefined {
+    if (!requestOptions && !this.options?.userProperties) {
+      return undefined;
+    }
+
+    return {
+      ...requestOptions,
+      properties: {
+        ...requestOptions?.properties,
+        userProperties: {
+          ...this.options?.userProperties,
+          ...requestOptions?.properties?.userProperties,
+        },
+      },
+    };
   }
 }
