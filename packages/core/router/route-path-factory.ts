@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { RoutePathMetadata } from './interfaces/route-path-metadata.interface';
+import { isRouteExcluded } from './utils';
 
 export class RoutePathFactory {
   constructor(private readonly applicationConfig: ApplicationConfig) {}
@@ -101,17 +102,10 @@ export class RoutePathFactory {
       return false;
     }
     const options = this.applicationConfig.getGlobalPrefixOptions();
-    if (!options.exclude) {
-      return false;
-    }
-    return options.exclude.some(route => {
-      if (!route.pathRegex.exec(path)) {
-        return false;
-      }
-      return (
-        route.requestMethod === RequestMethod.ALL ||
-        route.requestMethod === requestMethod
-      );
-    });
+    const excludedRoutes = options.exclude;
+    return (
+      Array.isArray(excludedRoutes) &&
+      isRouteExcluded(excludedRoutes, path, requestMethod)
+    );
   }
 }

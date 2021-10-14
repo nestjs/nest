@@ -1,4 +1,5 @@
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { Logger } from '@nestjs/common/services/logger.service';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
@@ -18,6 +19,9 @@ import { SocketServerProvider } from './socket-server-provider';
 import { compareElementAt } from './utils/compare-element.util';
 
 export class WebSocketsController {
+  private readonly logger = new Logger(WebSocketsController.name, {
+    timestamp: true,
+  });
   private readonly metadataExplorer = new GatewayMetadataExplorer(
     new MetadataScanner(),
   );
@@ -89,6 +93,7 @@ export class WebSocketsController {
       connection,
     );
     adapter.bindClientConnect(server, handler);
+    this.printSubscriptionLogs(instance, subscribersMap);
   }
 
   public getConnectionHandler(
@@ -147,6 +152,14 @@ export class WebSocketsController {
     adapter.bindMessageHandlers(client, handlers, data =>
       fromPromise(this.pickResult(data)).pipe(mergeAll()),
     );
+
+    subscribersMap.forEach(({ callback, message }) => {
+      this.logger.log(
+        `Subscribe ${(instance as Object).constructor.name}.${
+          callback.name
+        } method to ${message} message.`,
+      );
+    });
   }
 
   public async pickResult(
@@ -171,5 +184,20 @@ export class WebSocketsController {
     )) {
       Reflect.set(instance, propertyKey, server);
     }
+  }
+
+  private printSubscriptionLogs(
+    instance: NestGateway,
+    subscribersMap: MessageMappingProperties[],
+  ) {
+    const gatewayClassName = (instance as Object)?.constructor?.name;
+    if (!gatewayClassName) {
+      return;
+    }
+    subscribersMap.forEach(({ message }) =>
+      this.logger.log(
+        `${gatewayClassName} subscribed to the "${message}" message`,
+      ),
+    );
   }
 }

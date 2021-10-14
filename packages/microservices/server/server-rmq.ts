@@ -24,6 +24,7 @@ import {
   IncomingRequest,
   OutgoingResponse,
 } from '../interfaces/packet.interface';
+import { RmqRecordSerializer } from '../serializers/rmq-record.serializer';
 import { Server } from './server';
 
 let rqmPackage: any = {};
@@ -172,7 +173,14 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     const outgoingResponse = this.serializer.serialize(
       message as unknown as OutgoingResponse,
     );
+    const options = outgoingResponse.options;
+    delete outgoingResponse.options;
+
     const buffer = Buffer.from(JSON.stringify(outgoingResponse));
-    this.channel.sendToQueue(replyTo, buffer, { correlationId });
+    this.channel.sendToQueue(replyTo, buffer, { correlationId, ...options });
+  }
+
+  protected initializeSerializer(options: RmqOptions['options']) {
+    this.serializer = options?.serializer ?? new RmqRecordSerializer();
   }
 }

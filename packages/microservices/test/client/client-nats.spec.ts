@@ -1,14 +1,16 @@
 import { expect } from 'chai';
-import { JSONCodec } from 'nats';
+import { headers as createHeaders, JSONCodec } from 'nats';
 import * as sinon from 'sinon';
 import { ClientNats } from '../../client/client-nats';
+import { ReadPacket } from '../../interfaces';
+import { NatsRecord } from '../../record-builders';
 
 describe('ClientNats', () => {
-  const client = new ClientNats({});
+  let client: ClientNats;
 
   describe('publish', () => {
+    let msg: ReadPacket;
     const pattern = 'test';
-    const msg = { pattern, data: 'data' };
     const id = 3;
 
     let subscribeSpy: sinon.SinonSpy,
@@ -21,6 +23,8 @@ describe('ClientNats', () => {
       createClient: sinon.SinonStub;
 
     beforeEach(() => {
+      client = new ClientNats({});
+      msg = { pattern, data: 'data' };
       unsubscribeSpy = sinon.spy();
       subscription = {
         unsubscribe: unsubscribeSpy,
@@ -94,7 +98,54 @@ describe('ClientNats', () => {
         expect(unsubscribeSpy.called).to.be.true;
       });
     });
+
+    describe('headers', () => {
+      it('should not generate headers if none are configured', () => {
+        client['publish'](msg, () => {});
+        expect(natsClient.publish.getCall(0).args[2].headers).to.be.undefined;
+      });
+
+      it('should send packet headers', () => {
+        const requestHeaders = createHeaders();
+        requestHeaders.set('1', '123');
+        msg.data = new NatsRecord('data', requestHeaders);
+
+        client['publish'](msg, () => {});
+        expect(natsClient.publish.getCall(0).args[2].headers.get('1')).to.eql(
+          '123',
+        );
+      });
+      it('should combine packet and static headers', () => {
+        const staticHeaders = { 'client-id': 'some-client-id' };
+        (client as any).options.headers = staticHeaders;
+
+        const requestHeaders = createHeaders();
+        requestHeaders.set('1', '123');
+        msg.data = new NatsRecord('data', requestHeaders);
+
+        client['publish'](msg, () => {});
+        expect(publishSpy.getCall(0).args[2].headers.get('client-id')).to.eql(
+          'some-client-id',
+        );
+        expect(publishSpy.getCall(0).args[2].headers.get('1')).to.eql('123');
+      });
+
+      it('should prefer packet headers over static headers', () => {
+        const staticHeaders = { 'client-id': 'some-client-id' };
+        (client as any).options.headers = staticHeaders;
+
+        const requestHeaders = createHeaders();
+        requestHeaders.set('client-id', 'override-client-id');
+        msg.data = new NatsRecord('data', requestHeaders);
+
+        client['publish'](msg, () => {});
+        expect(publishSpy.getCall(0).args[2].headers.get('client-id')).to.eql(
+          'override-client-id',
+        );
+      });
+    });
   });
+
   describe('createSubscriptionHandler', () => {
     const pattern = 'test';
     const msg = { pattern, data: 'data', id: '1' };
@@ -277,10 +328,12 @@ describe('ClientNats', () => {
     });
   });
   describe('dispatchEvent', () => {
-    const msg = { pattern: 'pattern', data: 'data' };
+    let msg: ReadPacket;
     let subscribeStub: sinon.SinonStub, natsClient: any;
 
     beforeEach(() => {
+      client = new ClientNats({});
+      msg = { pattern: 'pattern', data: 'data' };
       subscribeStub = sinon
         .stub()
         .callsFake((channel, options) => options.callback());
@@ -296,6 +349,7 @@ describe('ClientNats', () => {
 
       expect(natsClient.publish.called).to.be.true;
     });
+
     it('should throw error', async () => {
       subscribeStub.callsFake((channel, options) =>
         options.callback(new Error()),
@@ -303,6 +357,55 @@ describe('ClientNats', () => {
       client['dispatchEvent'](msg).catch(err =>
         expect(err).to.be.instanceOf(Error),
       );
+    });
+
+    describe('headers', () => {
+      it('should not generate headers if none are configured', () => {
+        client['dispatchEvent'](msg);
+        expect(natsClient.publish.getCall(0).args[2].headers).to.be.undefined;
+      });
+
+      it('should send packet headers', () => {
+        const requestHeaders = createHeaders();
+        requestHeaders.set('1', '123');
+        msg.data = new NatsRecord('data', requestHeaders);
+
+        client['dispatchEvent'](msg);
+        expect(natsClient.publish.getCall(0).args[2].headers.get('1')).to.eql(
+          '123',
+        );
+      });
+
+      it('should combine packet and static headers', () => {
+        const staticHeaders = { 'client-id': 'some-client-id' };
+        (client as any).options.headers = staticHeaders;
+
+        const requestHeaders = createHeaders();
+        requestHeaders.set('1', '123');
+        msg.data = new NatsRecord('data', requestHeaders);
+
+        client['dispatchEvent'](msg);
+        expect(
+          natsClient.publish.getCall(0).args[2].headers.get('client-id'),
+        ).to.eql('some-client-id');
+        expect(natsClient.publish.getCall(0).args[2].headers.get('1')).to.eql(
+          '123',
+        );
+      });
+
+      it('should prefer packet headers over static headers', () => {
+        const staticHeaders = { 'client-id': 'some-client-id' };
+        (client as any).options.headers = staticHeaders;
+
+        const requestHeaders = createHeaders();
+        requestHeaders.set('client-id', 'override-client-id');
+        msg.data = new NatsRecord('data', requestHeaders);
+
+        client['dispatchEvent'](msg);
+        expect(
+          natsClient.publish.getCall(0).args[2].headers.get('client-id'),
+        ).to.eql('override-client-id');
+      });
     });
   });
 });

@@ -199,9 +199,12 @@ export class RoutesResolver implements Resolver {
   private getVersionMetadata(
     metatype: Type<unknown> | Function,
   ): VersionValue | undefined {
-    const isVersioningEnabled = this.applicationConfig.getVersioning();
-    return isVersioningEnabled
-      ? Reflect.getMetadata(VERSION_METADATA, metatype)
-      : undefined;
+    const versioningConfig = this.applicationConfig.getVersioning();
+    if (versioningConfig) {
+      return (
+        Reflect.getMetadata(VERSION_METADATA, metatype) ??
+        versioningConfig.defaultVersion
+      );
+    }
   }
 }
