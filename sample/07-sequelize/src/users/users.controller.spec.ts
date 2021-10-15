@@ -58,13 +58,12 @@ describe('UsersController', () => {
 
   describe('create()', () => {
     it('should create an user', () => {
-      usersController.create(createUserDto);
-      expect(usersService.create).toHaveBeenCalled();
-      expect(usersService.create).toHaveBeenCalledWith(createUserDto);
       expect(usersController.create(createUserDto)).resolves.toEqual({
         id: 'a id',
         ...createUserDto,
       });
+      expect(usersService.create).toHaveBeenCalled();
+      expect(usersService.create).toHaveBeenCalledWith(createUserDto);
     });
   });
 
