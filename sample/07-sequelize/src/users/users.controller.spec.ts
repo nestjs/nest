@@ -16,7 +16,6 @@ describe('UsersController', () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
       providers: [
-        UsersService,
         {
           provide: UsersService,
           useValue: {
