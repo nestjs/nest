@@ -20,12 +20,13 @@ describe('OnApplicationShutdown', () => {
     expect(instance.onApplicationShutdown.called).to.be.true;
   });
 
-  it('should sort modules by distance (topological sort) - DESC order', async () => {
+  it('should sort modules by distance (topological sort) - ASC order', async () => {
+    const order: string[] = [];
+
     @Injectable()
     class BB implements OnApplicationShutdown {
-      public field: string;
       async onApplicationShutdown() {
-        this.field = 'b-field';
+        order.push('BB');
       }
     }
 
@@ -37,11 +38,8 @@ describe('OnApplicationShutdown', () => {
 
     @Injectable()
     class AA implements OnApplicationShutdown {
-      public field: string;
-      constructor(private bb: BB) {}
-
       async onApplicationShutdown() {
-        this.field = this.bb.field + '_a-field';
+        order.push('AA');
       }
     }
     @Module({
@@ -58,7 +56,6 @@ describe('OnApplicationShutdown', () => {
     await app.init();
     await app.close();
 
-    const instance = module.get(AA);
-    expect(instance.field).to.equal('b-field_a-field');
+    expect(order).to.be.deep.equal(['AA', 'BB']);
   });
 });

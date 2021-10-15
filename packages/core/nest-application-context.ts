@@ -39,7 +39,8 @@ export class NestApplicationContext implements INestApplicationContext {
   private readonly moduleCompiler = new ModuleCompiler();
   private shutdownCleanupRef?: (...args: unknown[]) => unknown;
   private _instanceLinksHost: InstanceLinksHost;
-  private _moduleRefsByDistance?: Array<Module>;
+  private _moduleRefsByDistanceAsc?: Array<Module>;
+  private _moduleRefsByDistanceDesc?: Array<Module>;
 
   private get instanceLinksHost() {
     if (!this._instanceLinksHost) {
@@ -222,8 +223,8 @@ export class NestApplicationContext implements INestApplicationContext {
    * modules and its children.
    */
   protected async callInitHook(): Promise<void> {
-    const modulesSortedByDistance = this.getModulesSortedByDistance();
-    for (const module of modulesSortedByDistance) {
+    const modulesSortedByDistanceDesc = this.getModulesSortedByDistanceDesc();
+    for (const module of modulesSortedByDistanceDesc) {
       await callModuleInitHook(module);
     }
   }
@@ -233,8 +234,8 @@ export class NestApplicationContext implements INestApplicationContext {
    * modules and its children.
    */
   protected async callDestroyHook(): Promise<void> {
-    const modulesSortedByDistance = this.getModulesSortedByDistance();
-    for (const module of modulesSortedByDistance) {
+    const modulesSortedByDistanceAsc = this.getModulesSortedByDistanceAsc();
+    for (const module of modulesSortedByDistanceAsc) {
       await callModuleDestroyHook(module);
     }
   }
@@ -244,8 +245,8 @@ export class NestApplicationContext implements INestApplicationContext {
    * modules and its children.
    */
   protected async callBootstrapHook(): Promise<void> {
-    const modulesSortedByDistance = this.getModulesSortedByDistance();
-    for (const module of modulesSortedByDistance) {
+    const modulesSortedByDistanceDesc = this.getModulesSortedByDistanceDesc();
+    for (const module of modulesSortedByDistanceDesc) {
       await callModuleBootstrapHook(module);
     }
   }
@@ -255,8 +256,8 @@ export class NestApplicationContext implements INestApplicationContext {
    * modules and children.
    */
   protected async callShutdownHook(signal?: string): Promise<void> {
-    const modulesSortedByDistance = this.getModulesSortedByDistance();
-    for (const module of modulesSortedByDistance) {
+    const modulesSortedByDistanceAsc = this.getModulesSortedByDistanceAsc();
+    for (const module of modulesSortedByDistanceAsc) {
       await callAppShutdownHook(module, signal);
     }
   }
@@ -266,8 +267,8 @@ export class NestApplicationContext implements INestApplicationContext {
    * modules and children.
    */
   protected async callBeforeShutdownHook(signal?: string): Promise<void> {
-    const modulesSortedByDistance = this.getModulesSortedByDistance();
-    for (const module of modulesSortedByDistance) {
+    const modulesSortedByDistanceAsc = this.getModulesSortedByDistanceAsc();
+    for (const module of modulesSortedByDistanceAsc) {
       await callBeforeAppShutdownHook(module, signal);
     }
   }
@@ -319,16 +320,29 @@ export class NestApplicationContext implements INestApplicationContext {
     return instance;
   }
 
-  private getModulesSortedByDistance(): Module[] {
-    if (this._moduleRefsByDistance) {
-      return this._moduleRefsByDistance;
+  private getModulesSortedByDistanceDesc(): Module[] {
+    if (this._moduleRefsByDistanceDesc) {
+      return this._moduleRefsByDistanceDesc;
     }
     const modulesContainer = this.container.getModules();
     const compareFn = (a: Module, b: Module) => b.distance - a.distance;
 
-    this._moduleRefsByDistance = Array.from(modulesContainer.values()).sort(
+    this._moduleRefsByDistanceDesc = Array.from(modulesContainer.values()).sort(
       compareFn,
     );
-    return this._moduleRefsByDistance;
+    return this._moduleRefsByDistanceDesc;
+  }
+
+  private getModulesSortedByDistanceAsc(): Module[] {
+    if (this._moduleRefsByDistanceAsc) {
+      return this._moduleRefsByDistanceAsc;
+    }
+    const modulesContainer = this.container.getModules();
+    const compareFn = (a: Module, b: Module) => a.distance - b.distance;
+
+    this._moduleRefsByDistanceAsc = Array.from(modulesContainer.values()).sort(
+      compareFn,
+    );
+    return this._moduleRefsByDistanceAsc;
   }
 }

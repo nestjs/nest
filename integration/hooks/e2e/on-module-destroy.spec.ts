@@ -40,12 +40,13 @@ describe('OnModuleDestroy', () => {
     await app.init().then(obj => expect(obj).to.not.be.undefined);
   });
 
-  it('should sort modules by distance (topological sort) - DESC order', async () => {
+  it('should sort modules by distance (topological sort) - ASC order', async () => {
+    const order: string[] = [];
+
     @Injectable()
     class BB implements OnModuleDestroy {
-      public field: string;
       async onModuleDestroy() {
-        this.field = 'b-field';
+        order.push('BB');
       }
     }
 
@@ -57,11 +58,8 @@ describe('OnModuleDestroy', () => {
 
     @Injectable()
     class AA implements OnModuleDestroy {
-      public field: string;
-      constructor(private bb: BB) {}
-
       async onModuleDestroy() {
-        this.field = this.bb.field + '_a-field';
+        order.push('AA');
       }
     }
     @Module({
@@ -78,7 +76,6 @@ describe('OnModuleDestroy', () => {
     await app.init();
     await app.close();
 
-    const instance = module.get(AA);
-    expect(instance.field).to.equal('b-field_a-field');
+    expect(order).to.be.deep.equal(['AA', 'BB']);
   });
 });
