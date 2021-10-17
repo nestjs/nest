@@ -16,6 +16,7 @@ import {
   PreconditionFailedException,
   RequestTimeoutException,
   ServiceUnavailableException,
+  TooManyRequestsException,
   UnauthorizedException,
   UnprocessableEntityException,
   UnsupportedMediaTypeException,
@@ -39,6 +40,7 @@ export type ErrorHttpStatusCode =
   | HttpStatus.PRECONDITION_FAILED
   | HttpStatus.REQUEST_TIMEOUT
   | HttpStatus.SERVICE_UNAVAILABLE
+  | HttpStatus.TOO_MANY_REQUESTS
   | HttpStatus.UNAUTHORIZED
   | HttpStatus.UNPROCESSABLE_ENTITY
   | HttpStatus.UNSUPPORTED_MEDIA_TYPE;
@@ -60,6 +62,7 @@ export const HttpErrorByCode: Record<ErrorHttpStatusCode, Type<unknown>> = {
   [HttpStatus.PRECONDITION_FAILED]: PreconditionFailedException,
   [HttpStatus.REQUEST_TIMEOUT]: RequestTimeoutException,
   [HttpStatus.SERVICE_UNAVAILABLE]: ServiceUnavailableException,
+  [HttpStatus.TOO_MANY_REQUESTS]: TooManyRequestsException,
   [HttpStatus.UNAUTHORIZED]: UnauthorizedException,
   [HttpStatus.UNPROCESSABLE_ENTITY]: UnprocessableEntityException,
   [HttpStatus.UNSUPPORTED_MEDIA_TYPE]: UnsupportedMediaTypeException,
