@@ -1,8 +1,25 @@
-import { ROUTE_ARGS_METADATA } from '../../constants';
+import {
+  RESPONSE_PASSTHROUGH_METADATA,
+  ROUTE_ARGS_METADATA,
+} from '../../constants';
 import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
 import { PipeTransform } from '../../index';
 import { Type } from '../../interfaces';
 import { isNil, isString } from '../../utils/shared.utils';
+
+/**
+ * The `@Response()`/`@Res` parameter decorator options.
+ */
+export interface ResponseDecoratorOptions {
+  /**
+   * Determines whether the response will be sent manually within the route handler,
+   * with the use of native response handling methods exposed by the platform-specific response object,
+   * or if it should passthrough Nest response processing pipeline.
+   *
+   * @default false
+   */
+  passthrough: boolean;
+}
 
 export type ParamData = object | string | number;
 export interface RouteParamMetadata {
@@ -28,40 +45,44 @@ export function assignMetadata<TParamtype = any, TArgs = any>(
 }
 
 function createRouteParamDecorator(paramtype: RouteParamtypes) {
-  return (data?: ParamData): ParameterDecorator => (target, key, index) => {
+  return (data?: ParamData): ParameterDecorator =>
+    (target, key, index) => {
+      const args =
+        Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
+      Reflect.defineMetadata(
+        ROUTE_ARGS_METADATA,
+        assignMetadata<RouteParamtypes, Record<number, RouteParamMetadata>>(
+          args,
+          paramtype,
+          index,
+          data,
+        ),
+        target.constructor,
+        key,
+      );
+    };
+}
+
+const createPipesRouteParamDecorator =
+  (paramtype: RouteParamtypes) =>
+  (
+    data?: any,
+    ...pipes: (Type<PipeTransform> | PipeTransform)[]
+  ): ParameterDecorator =>
+  (target, key, index) => {
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
+    const hasParamData = isNil(data) || isString(data);
+    const paramData = hasParamData ? data : undefined;
+    const paramPipes = hasParamData ? pipes : [data, ...pipes];
+
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
-      assignMetadata<RouteParamtypes, Record<number, RouteParamMetadata>>(
-        args,
-        paramtype,
-        index,
-        data,
-      ),
+      assignMetadata(args, paramtype, index, paramData, ...paramPipes),
       target.constructor,
       key,
     );
   };
-}
-
-const createPipesRouteParamDecorator = (paramtype: RouteParamtypes) => (
-  data?: any,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
-): ParameterDecorator => (target, key, index) => {
-  const args =
-    Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
-  const hasParamData = isNil(data) || isString(data);
-  const paramData = hasParamData ? data : undefined;
-  const paramPipes = hasParamData ? pipes : [data, ...pipes];
-
-  Reflect.defineMetadata(
-    ROUTE_ARGS_METADATA,
-    assignMetadata(args, paramtype, index, paramData, ...paramPipes),
-    target.constructor,
-    key,
-  );
-};
 
 /**
  * Route handler parameter decorator. Extracts the `Request`
@@ -85,20 +106,31 @@ export const Request: () => ParameterDecorator = createRouteParamDecorator(
  *
  * Example: `logout(@Response() res)`
  *
- * @see [Request object](https://docs.nestjs.com/controllers#request-object)
- *
  * @publicApi
  */
-export const Response: () => ParameterDecorator = createRouteParamDecorator(
-  RouteParamtypes.RESPONSE,
-);
+export const Response: (
+  options?: ResponseDecoratorOptions,
+) => ParameterDecorator =
+  (options?: ResponseDecoratorOptions) => (target, key, index) => {
+    if (options?.passthrough) {
+      Reflect.defineMetadata(
+        RESPONSE_PASSTHROUGH_METADATA,
+        options?.passthrough,
+        target.constructor,
+        key,
+      );
+    }
+    return createRouteParamDecorator(RouteParamtypes.RESPONSE)()(
+      target,
+      key,
+      index,
+    );
+  };
 
 /**
  * Route handler parameter decorator. Extracts reference to the `Next` function
  * from the underlying platform and populates the decorated
  * parameter with the value of `Next`.
- *
- * @see [Request object](https://docs.nestjs.com/controllers#request-object)
  *
  * @publicApi
  */
@@ -136,7 +168,7 @@ export const Session: () => ParameterDecorator = createRouteParamDecorator(
  * Route handler parameter decorator. Extracts the `file` object
  * and populates the decorated parameter with the value of `file`.
  * Used in conjunction with
- * [multer middleware](https://github.com/expressjs/multer).
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
  *
  * For example:
  * ```typescript
@@ -148,15 +180,78 @@ export const Session: () => ParameterDecorator = createRouteParamDecorator(
  *
  * @publicApi
  */
-export const UploadedFile: (
+export function UploadedFile(): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `file` object
+ * and populates the decorated parameter with the value of `file`.
+ * Used in conjunction with
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
+ *
+ * For example:
+ * ```typescript
+ * uploadFile(@UploadedFile() file) {
+ *   console.log(file);
+ * }
+ * ```
+ * @see [Request object](https://docs.nestjs.com/techniques/file-upload)
+ *
+ * @publicApi
+ */
+export function UploadedFile(
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator;
+
+/**
+ * Route handler parameter decorator. Extracts the `file` object
+ * and populates the decorated parameter with the value of `file`.
+ * Used in conjunction with
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
+ *
+ * For example:
+ * ```typescript
+ * uploadFile(@UploadedFile() file) {
+ *   console.log(file);
+ * }
+ * ```
+ * @see [Request object](https://docs.nestjs.com/techniques/file-upload)
+ *
+ * @publicApi
+ */
+export function UploadedFile(
   fileKey?: string,
-) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.FILE);
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `file` object
+ * and populates the decorated parameter with the value of `file`.
+ * Used in conjunction with
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
+ *
+ * For example:
+ * ```typescript
+ * uploadFile(@UploadedFile() file) {
+ *   console.log(file);
+ * }
+ * ```
+ * @see [Request object](https://docs.nestjs.com/techniques/file-upload)
+ *
+ * @publicApi
+ */
+export function UploadedFile(
+  fileKey?: string | (Type<PipeTransform> | PipeTransform),
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator {
+  return createPipesRouteParamDecorator(RouteParamtypes.FILE)(
+    fileKey,
+    ...pipes,
+  );
+}
 
 /**
  * Route handler parameter decorator. Extracts the `files` object
  * and populates the decorated parameter with the value of `files`.
  * Used in conjunction with
- * [multer middleware](https://github.com/expressjs/multer).
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
  *
  * For example:
  * ```typescript
@@ -168,9 +263,51 @@ export const UploadedFile: (
  *
  * @publicApi
  */
-export const UploadedFiles: () => ParameterDecorator = createRouteParamDecorator(
-  RouteParamtypes.FILES,
-);
+export function UploadedFiles(): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `files` object
+ * and populates the decorated parameter with the value of `files`.
+ * Used in conjunction with
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
+ *
+ * For example:
+ * ```typescript
+ * uploadFile(@UploadedFiles() files) {
+ *   console.log(files);
+ * }
+ * ```
+ * @see [Request object](https://docs.nestjs.com/techniques/file-upload)
+ *
+ * @publicApi
+ */
+export function UploadedFiles(
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `files` object
+ * and populates the decorated parameter with the value of `files`.
+ * Used in conjunction with
+ * [multer middleware](https://github.com/expressjs/multer) for Express-based applications.
+ *
+ * For example:
+ * ```typescript
+ * uploadFile(@UploadedFiles() files) {
+ *   console.log(files);
+ * }
+ * ```
+ * @see [Request object](https://docs.nestjs.com/techniques/file-upload)
+ *
+ * @publicApi
+ */
+export function UploadedFiles(
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator {
+  return createPipesRouteParamDecorator(RouteParamtypes.FILES)(
+    undefined,
+    ...pipes,
+  );
+}
+
 /**
  * Route handler parameter decorator. Extracts the `headers`
  * property from the `req` object and populates the decorated
@@ -184,9 +321,8 @@ export const UploadedFiles: () => ParameterDecorator = createRouteParamDecorator
  *
  * @publicApi
  */
-export const Headers: (
-  property?: string,
-) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.HEADERS);
+export const Headers: (property?: string) => ParameterDecorator =
+  createRouteParamDecorator(RouteParamtypes.HEADERS);
 
 /**
  * Route handler parameter decorator. Extracts the `query`
@@ -285,7 +421,7 @@ export function Query(
  *
  * For example:
  * ```typescript
- * async create(@Body() cat: CreateCatDto)
+ * async create(@Body() createDto: CreateCatDto)
  * ```
  *
  * @see [Request object](https://docs.nestjs.com/controllers#request-object)
@@ -302,7 +438,7 @@ export function Body(): ParameterDecorator;
  *
  * For example:
  * ```typescript
- * async create(@Body(new ValidationPipe()) cat: CreateCatDto)
+ * async create(@Body(new ValidationPipe()) createDto: CreateCatDto)
  * ```
  *
  * @param pipes one or more pipes - either instances or classes - to apply to

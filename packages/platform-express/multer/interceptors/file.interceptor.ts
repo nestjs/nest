@@ -40,7 +40,7 @@ export function FileInterceptor(
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
 
-      await new Promise((resolve, reject) =>
+      await new Promise<void>((resolve, reject) =>
         this.multer.single(fieldName)(
           ctx.getRequest(),
           ctx.getResponse(),
@@ -57,5 +57,5 @@ export function FileInterceptor(
     }
   }
   const Interceptor = mixin(MixinInterceptor);
-  return Interceptor as Type<NestInterceptor>;
+  return Interceptor;
 }

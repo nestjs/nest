@@ -31,7 +31,7 @@ export interface CacheStore {
    *
    * @param key cache key
    */
-  del(key: string): void | Promise<void>;
+  del?(key: string): void | Promise<void>;
 }
 
 export interface CacheStoreSetOptions<T> {
@@ -52,7 +52,7 @@ export interface CacheStoreFactory {
    * Return a configured cache store.
    *
    * @param args Cache manager options received from `CacheModule.register()`
-   * or `CacheModule.registerAcync()`
+   * or `CacheModule.registerAsync()`
    */
   create(args: LiteralObject): CacheStore;
 }
@@ -68,7 +68,7 @@ export interface CacheManagerOptions {
    * [Different stores](https://docs.nestjs.com/techniques/caching#different-stores)
    * for more info.
    */
-  store?: string | CacheStoreFactory;
+  store?: string | CacheStoreFactory | CacheStore;
   /**
    * Time to live - amount of time in seconds that a response is cached before it
    * is deleted. Subsequent request will call through the route handler and refresh

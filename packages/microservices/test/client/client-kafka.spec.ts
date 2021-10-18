@@ -3,7 +3,6 @@ import * as sinon from 'sinon';
 import { ClientKafka } from '../../client/client-kafka';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaHeaders } from '../../enums';
-import { InvalidKafkaClientTopicPartitionException } from '../../errors/invalid-kafka-client-topic-partition.exception';
 import { InvalidKafkaClientTopicException } from '../../errors/invalid-kafka-client-topic.exception';
 import {
   ConsumerGroupJoinEvent,
@@ -205,6 +204,30 @@ describe('ClientKafka', () => {
       .callsFake(() => kafkaClient);
   });
 
+  describe('createClient', () => {
+    beforeEach(() => {
+      client = new ClientKafka({});
+    });
+
+    it(`should accept a custom logCreator in client options`, () => {
+      const logCreatorSpy = sinon.spy(() => 'test');
+      const logCreator = () => logCreatorSpy;
+
+      client = new ClientKafka({
+        client: {
+          brokers: [],
+          logCreator,
+        },
+      });
+
+      const logger = client.createClient().logger();
+
+      logger.info({ namespace: '', level: 1, log: 'test' });
+
+      expect(logCreatorSpy.called).to.be.true;
+    });
+  });
+
   describe('subscribeToResponseOf', () => {
     let normalizePatternSpy: sinon.SinonSpy;
     let getResponsePatternNameSpy: sinon.SinonSpy;
@@ -232,14 +255,14 @@ describe('ClientKafka', () => {
   });
 
   describe('close', () => {
-    const consumer = { disconnect: sinon.spy() };
-    const producer = { disconnect: sinon.spy() };
+    const consumer = { disconnect: sinon.stub().resolves() };
+    const producer = { disconnect: sinon.stub().resolves() };
     beforeEach(() => {
       (client as any).consumer = consumer;
       (client as any).producer = producer;
     });
-    it('should close server', () => {
-      client.close();
+    it('should close server', async () => {
+      await client.close();
 
       expect(consumer.disconnect.calledOnce).to.be.true;
       expect(producer.disconnect.calledOnce).to.be.true;
@@ -269,6 +292,7 @@ describe('ClientKafka', () => {
 
       expect(createClientStub.calledOnce).to.be.true;
       expect(producerStub.calledOnce).to.be.true;
+
       expect(consumerStub.calledOnce).to.be.true;
 
       expect(on.calledOnce).to.be.true;
@@ -314,13 +338,19 @@ describe('ClientKafka', () => {
           memberId: 'member-1',
           memberAssignment: {
             'topic-a': [0, 1, 2],
+            'topic-b': [3, 4, 5],
           },
         },
       };
 
       client['setConsumerAssignments'](consumerAssignments);
+
       expect(client['consumerAssignments']).to.deep.eq(
-        consumerAssignments.payload.memberAssignment,
+        // consumerAssignments.payload.memberAssignment,
+        {
+          'topic-a': 0,
+          'topic-b': 3,
+        },
       );
     });
   });
@@ -493,10 +523,22 @@ describe('ClientKafka', () => {
     });
   });
 
+  describe('getConsumerAssignments', () => {
+    it('should get consumer assignments', () => {
+      client['consumerAssignments'] = {
+        [replyTopic]: 0,
+      };
+
+      const result = client.getConsumerAssignments();
+
+      expect(result).to.deep.eq(client['consumerAssignments']);
+    });
+  });
+
   describe('getReplyTopicPartition', () => {
     it('should get reply partition', () => {
       client['consumerAssignments'] = {
-        [replyTopic]: [0],
+        [replyTopic]: 0,
       };
 
       const result = client['getReplyTopicPartition'](replyTopic);
@@ -504,19 +546,17 @@ describe('ClientKafka', () => {
       expect(result).to.eq('0');
     });
 
-    it('should throw error when the topic is being consumed but is not assigned partitions', () => {
-      client['consumerAssignments'] = {
-        [replyTopic]: [],
-      };
+    it('should throw error when the topic is not being consumed', () => {
+      client['consumerAssignments'] = {};
 
       expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
-        InvalidKafkaClientTopicPartitionException,
+        InvalidKafkaClientTopicException,
       );
     });
 
-    it('should throw error when the topic is not being consumer', () => {
+    it('should throw error when the topic is not being consumed', () => {
       client['consumerAssignments'] = {
-        [topic]: [],
+        [topic]: undefined,
       };
 
       expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
@@ -551,7 +591,7 @@ describe('ClientKafka', () => {
         'getReplyTopicPartition',
       );
       routingMapSetSpy = sinon.spy((client as any).routingMap, 'set');
-      sendSpy = sinon.spy();
+      sendSpy = sinon.spy(() => Promise.resolve());
 
       // stub
       assignPacketIdStub = sinon
@@ -568,7 +608,7 @@ describe('ClientKafka', () => {
 
       // set
       client['consumerAssignments'] = {
-        [replyTopic]: [parseFloat(replyPartition)],
+        [replyTopic]: parseFloat(replyPartition),
       };
     });
 

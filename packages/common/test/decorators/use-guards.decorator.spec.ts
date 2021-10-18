@@ -32,12 +32,12 @@ describe('@UseGuards', () => {
     expect(metadata).to.be.eql(guards);
   });
 
-  it('should enhance class with multiple guards array', () => {
+  it('should enhance method with multiple guards array', () => {
     const metadata = Reflect.getMetadata(GUARDS_METADATA, Test2.test);
     expect(metadata).to.be.eql(guards.concat(guards));
   });
 
-  it('when object is invalid should throw exception', () => {
+  it('should throw exception when object is invalid', () => {
     try {
       UseGuards('test' as any)(() => {});
     } catch (e) {

@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   ValidateNested,
+  IsArray,
 } from 'class-validator';
 import { HttpStatus } from '../../enums';
 import { UnprocessableEntityException } from '../../exceptions';
@@ -153,6 +154,32 @@ describe('ValidationPipe', () => {
             'prop must be a string',
             'test.prop1 must be a string',
             'test.prop2 must be a boolean value',
+          ]);
+        }
+      });
+
+      class TestModelForNestedArrayValidation {
+        @IsString()
+        public prop: string;
+
+        @IsArray()
+        @ValidateNested()
+        @Type(() => TestModel2)
+        public test: TestModel2[];
+      }
+      it('should provide complete path for nested errors', async () => {
+        try {
+          const model = new TestModelForNestedArrayValidation();
+          model.test = [new TestModel2()];
+          await target.transform(model, {
+            type: 'body',
+            metatype: TestModelForNestedArrayValidation,
+          });
+        } catch (err) {
+          expect(err.getResponse().message).to.be.eql([
+            'prop must be a string',
+            'test.0.prop1 must be a string',
+            'test.0.prop2 must be a boolean value',
           ]);
         }
       });
@@ -394,6 +421,46 @@ describe('ValidationPipe', () => {
           expect(err).to.be.instanceOf(UnprocessableEntityException);
         }
       });
+    });
+  });
+
+  describe('option: "expectedType"', () => {
+    class TestModel2 {
+      @IsString()
+      public prop1: string;
+
+      @IsBoolean()
+      public prop2: boolean;
+
+      @IsOptional()
+      @IsString()
+      public optionalProp: string;
+    }
+
+    it('should validate against the expected type if presented', async () => {
+      const m: ArgumentMetadata = {
+        type: 'body',
+        metatype: TestModel2,
+        data: '',
+      };
+
+      target = new ValidationPipe({ expectedType: TestModel });
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+
+      expect(await target.transform(testObj, m)).to.equal(testObj);
+    });
+
+    it('should validate against the expected type if presented and metatype is primitive type', async () => {
+      const m: ArgumentMetadata = {
+        type: 'body',
+        metatype: String,
+        data: '',
+      };
+
+      target = new ValidationPipe({ expectedType: TestModel });
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+
+      expect(await target.transform(testObj, m)).to.equal(testObj);
     });
   });
 });

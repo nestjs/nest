@@ -2,11 +2,15 @@ import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
 import {
   ClientProxy,
   ClientProxyFactory,
+  Ctx,
   EventPattern,
   MessagePattern,
+  Payload,
+  RmqContext,
+  RmqRecordBuilder,
   Transport,
 } from '@nestjs/microservices';
-import { from, Observable, of } from 'rxjs';
+import { from, lastValueFrom, Observable, of } from 'rxjs';
 import { scan } from 'rxjs/operators';
 
 @Controller()
@@ -46,15 +50,43 @@ export class RMQController {
   concurrent(@Body() data: number[][]): Promise<boolean> {
     const send = async (tab: number[]) => {
       const expected = tab.reduce((a, b) => a + b);
-      const result = await this.client
-        .send<number>({ cmd: 'sum' }, tab)
-        .toPromise();
+      const result = await lastValueFrom(
+        this.client.send<number>({ cmd: 'sum' }, tab),
+      );
 
       return result === expected;
     };
     return data
       .map(async tab => send(tab))
       .reduce(async (a, b) => (await a) && b);
+  }
+
+  @Post('record-builder-duplex')
+  @HttpCode(200)
+  useRecordBuilderDuplex(@Body() data: Record<string, any>) {
+    const record = new RmqRecordBuilder(data)
+      .setOptions({
+        headers: {
+          ['x-version']: '1.0.0',
+        },
+        priority: 3,
+      })
+      .build();
+
+    return this.client.send('record-builder-duplex', record);
+  }
+
+  @MessagePattern('record-builder-duplex')
+  handleRecordBuilderDuplex(
+    @Payload() data: Record<string, any>,
+    @Ctx() context: RmqContext,
+  ) {
+    const originalMessage = context.getMessage();
+    return {
+      data,
+      headers: originalMessage.properties.headers,
+      priority: originalMessage.properties.priority,
+    };
   }
 
   @MessagePattern({ cmd: 'sum' })

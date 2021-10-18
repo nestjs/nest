@@ -46,7 +46,7 @@ export function Injectable(options?: InjectableOptions): ClassDecorator {
   };
 }
 
-export function mixin(mixinClass: Type<any>) {
+export function mixin<T>(mixinClass: Type<T>) {
   Object.defineProperty(mixinClass, 'name', {
     value: uuid(),
   });

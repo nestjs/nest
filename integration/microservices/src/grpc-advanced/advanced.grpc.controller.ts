@@ -1,3 +1,4 @@
+import { Metadata } from '@grpc/grpc-js';
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import {
   Client,
@@ -84,7 +85,16 @@ export class AdvancedGrpcController {
    * @param messages
    */
   @GrpcStreamMethod('orders.OrderService')
-  async sync(messages: Observable<any>): Promise<any> {
+  async sync(
+    messages: Observable<any>,
+    metadata: Metadata,
+    call: any,
+  ): Promise<any> {
+    // Set Set-Cookie from Metadata
+    const srvMetadata = new Metadata();
+    srvMetadata.add('Set-Cookie', 'test_cookie=abcd');
+    call.sendMetadata(srvMetadata);
+
     const s = new Subject();
     const o = s.asObservable();
     messages.subscribe(msg => {

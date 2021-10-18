@@ -70,10 +70,15 @@ jobs:
     docker:
       - image: circleci/node:10
 
-  test_node_8:
+  test_node_14:
     <<: *unit-tests-template
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:14
+    
+  test_node_16:
+    <<: *unit-tests-template
+    docker:
+      - image: circleci/node:16
 
   lint:
     working_directory: ~/nest
@@ -160,13 +165,16 @@ workflows:
   build-and-test:
     jobs:
       - build
+      - test_node_16:
+          requires:
+            - build
+      - test_node_14:
+          requires:
+            - build
       - test_node_12:
           requires:
             - build
       - test_node_10:
-          requires:
-            - build
-      - test_node_8:
           requires:
             - build
       - lint:

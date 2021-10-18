@@ -1,5 +1,5 @@
 type Query {
-  getCats: [Cat]
+  cats: [Cat]
   cat(id: ID!): Cat
 }
 
@@ -11,12 +11,22 @@ type Subscription {
   catCreated: Cat
 }
 
+type Owner {
+  id: Int!
+  name: String!
+  age: Int
+  cats: [Cat!]
+}
+
 type Cat {
   id: Int
   name: String
   age: Int
+  owner: Owner
 }
-
+"""
+Test comment
+"""
 input CreateCatInput {
   name: String
   age: Int

@@ -65,10 +65,10 @@ describe('ClientTCP', () => {
     const id = '1';
 
     describe('when disposed', () => {
-      beforeEach(() => {
+      beforeEach(async () => {
         callback = sinon.spy();
         client['routingMap'].set(id, callback);
-        client.handleResponse({ id, isDisposed: true });
+        await client.handleResponse({ id, isDisposed: true });
       });
       it('should emit disposed callback', () => {
         expect(callback.called).to.be.true;
@@ -83,11 +83,11 @@ describe('ClientTCP', () => {
     });
     describe('when not disposed', () => {
       let buffer;
-      beforeEach(() => {
+      beforeEach(async () => {
         buffer = { id, err: undefined, response: 'res' };
         callback = sinon.spy();
         client['routingMap'].set(id, callback);
-        client.handleResponse(buffer);
+        await client.handleResponse(buffer);
       });
       it('should not end server', () => {
         expect(socket.end.called).to.be.false;
@@ -117,8 +117,7 @@ describe('ClientTCP', () => {
       beforeEach(async () => {
         client['isConnected'] = false;
         const source = {
-          subscribe: resolve => resolve(),
-          toPromise: () => source,
+          subscribe: ({ complete }) => complete(),
           pipe: () => source,
         };
         connect$Stub = sinon

@@ -23,7 +23,7 @@ describe('MQTT transport', () => {
         url: 'mqtt://0.0.0.0:1883',
       },
     });
-    await app.startAllMicroservicesAsync();
+    await app.startAllMicroservices();
     await app.init();
   });
 

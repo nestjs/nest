@@ -1,6 +1,9 @@
 import { HttpServer, RequestMethod } from '@nestjs/common';
 import { RequestHandler } from '@nestjs/common/interfaces';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 
 /**
@@ -9,11 +12,15 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 export abstract class AbstractHttpAdapter<
   TServer = any,
   TRequest = any,
-  TResponse = any
-> implements HttpServer<TRequest, TResponse> {
+  TResponse = any,
+> implements HttpServer<TRequest, TResponse>
+{
   protected httpServer: TServer;
 
-  constructor(protected readonly instance: any) {}
+  constructor(protected instance?: any) {}
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  public async init() {}
 
   public use(...args: any[]) {
     return this.instance.use(...args);
@@ -55,6 +62,12 @@ export abstract class AbstractHttpAdapter<
     return this.instance.patch(...args);
   }
 
+  public all(handler: RequestHandler);
+  public all(path: any, handler: RequestHandler);
+  public all(...args: any[]) {
+    return this.instance.all(...args);
+  }
+
   public options(handler: RequestHandler);
   public options(path: any, handler: RequestHandler);
   public options(...args: any[]) {
@@ -73,6 +86,10 @@ export abstract class AbstractHttpAdapter<
 
   public setHttpServer(httpServer: TServer) {
     this.httpServer = httpServer;
+  }
+
+  public setInstance<T = any>(instance: T) {
+    this.instance = instance;
   }
 
   public getInstance<T = any>(): T {
@@ -94,9 +111,14 @@ export abstract class AbstractHttpAdapter<
   abstract setNotFoundHandler(handler: Function, prefix?: string);
   abstract setHeader(response, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string);
-  abstract enableCors(options: CorsOptions, prefix?: string);
+  abstract enableCors(
+    options: CorsOptions | CorsOptionsDelegate<TRequest>,
+    prefix?: string,
+  );
   abstract createMiddlewareFactory(
     requestMethod: RequestMethod,
-  ): (path: string, callback: Function) => any;
+  ):
+    | ((path: string, callback: Function) => any)
+    | Promise<(path: string, callback: Function) => any>;
   abstract getType(): string;
 }

@@ -13,28 +13,28 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "7.0.11",
-    "@nestjs/core": "7.0.11",
-    "@nestjs/platform-express": "7.0.11",
-    "@nestjs/microservices": "7.0.11",
-    "@nestjs/websockets": "7.0.11",
+    "@nestjs/common": "8.1.1",
+    "@nestjs/core": "8.1.1",
+    "@nestjs/platform-express": "8.1.1",
+    "@nestjs/microservices": "8.1.1",
+    "@nestjs/websockets": "8.1.1",
     "reflect-metadata": "0.1.13",
-    "rxjs": "6.5.5"
+    "rxjs": "7.4.0"
   },
   "devDependencies": {
-    "@babel/cli": "7.8.4",
-    "@babel/core": "7.9.6",
-    "@babel/node": "7.8.7",
-    "@babel/plugin-proposal-decorators": "7.8.3",
-    "@babel/plugin-transform-runtime": "7.9.6",
-    "@babel/preset-env": "7.9.6",
-    "@babel/register": "7.9.0",
-    "@babel/runtime": "7.9.6",
-    "@nestjs/testing": "7.0.11",
-    "jest": "26.0.1",
-    "nodemon": "2.0.3",
-    "prettier": "2.0.5",
-    "supertest": "4.0.2"
+    "@babel/cli": "7.15.7",
+    "@babel/core": "7.15.8",
+    "@babel/node": "7.15.8",
+    "@babel/plugin-proposal-decorators": "7.15.8",
+    "@babel/plugin-transform-runtime": "7.15.8",
+    "@babel/preset-env": "7.15.8",
+    "@babel/register": "7.15.3",
+    "@babel/runtime": "7.15.4",
+    "@nestjs/testing": "8.1.1",
+    "jest": "27.2.5",
+    "nodemon": "2.0.13",
+    "prettier": "2.4.1",
+    "supertest": "6.1.6"
   },
   "jest": {
     "moduleFileExtensions": [
@@ -42,7 +42,7 @@
       "json"
     ],
     "rootDir": "src",
-    "testRegex": ".spec.js$",
+    "testRegex": ".*\\.spec\\.js$",
     "coverageDirectory": "../coverage"
   }
 }

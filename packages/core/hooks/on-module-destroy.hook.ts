@@ -1,12 +1,12 @@
 import { OnModuleDestroy } from '@nestjs/common';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
 import {
   getNonTransientInstances,
   getTransientInstances,
-} from '../injector/transient-instances';
+} from '../injector/helpers/transient-instances';
+import { InstanceWrapper } from '../injector/instance-wrapper';
+import { Module } from '../injector/module';
 
 /**
  * Returns true or false if the given instance has a `onModuleDestroy` function
@@ -27,7 +27,7 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
     .filter(instance => !isNil(instance))
     .filter(hasOnModuleDestroyHook)
     .map(async instance =>
-      ((instance as any) as OnModuleDestroy).onModuleDestroy(),
+      (instance as any as OnModuleDestroy).onModuleDestroy(),
     )
     .toArray();
 }

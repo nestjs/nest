@@ -41,7 +41,7 @@ export function FilesInterceptor(
     ): Promise<Observable<any>> {
       const ctx = context.switchToHttp();
 
-      await new Promise((resolve, reject) =>
+      await new Promise<void>((resolve, reject) =>
         this.multer.array(fieldName, maxCount)(
           ctx.getRequest(),
           ctx.getResponse(),
@@ -58,5 +58,5 @@ export function FilesInterceptor(
     }
   }
   const Interceptor = mixin(MixinInterceptor);
-  return Interceptor as Type<NestInterceptor>;
+  return Interceptor;
 }

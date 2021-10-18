@@ -1,12 +1,12 @@
 import { OnApplicationBootstrap } from '@nestjs/common';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
 import {
   getNonTransientInstances,
   getTransientInstances,
-} from '../injector/transient-instances';
+} from '../injector/helpers/transient-instances';
+import { InstanceWrapper } from '../injector/instance-wrapper';
+import { Module } from '../injector/module';
 
 /**
  * Checks if the given instance has the `onApplicationBootstrap` function
@@ -27,7 +27,7 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
     .filter(instance => !isNil(instance))
     .filter(hasOnAppBootstrapHook)
     .map(async instance =>
-      ((instance as any) as OnApplicationBootstrap).onApplicationBootstrap(),
+      (instance as any as OnApplicationBootstrap).onApplicationBootstrap(),
     )
     .toArray();
 }
@@ -62,6 +62,8 @@ export async function callModuleBootstrapHook(module: Module): Promise<any> {
     hasOnAppBootstrapHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    await (moduleClassInstance as OnApplicationBootstrap).onApplicationBootstrap();
+    await (
+      moduleClassInstance as OnApplicationBootstrap
+    ).onApplicationBootstrap();
   }
 }

@@ -1,6 +1,6 @@
 /*
  * Nest @common
- * Copyright(c) 2017 - 2020 Kamil Mysliwiec
+ * Copyright(c) 2017 - 2021 Kamil Mysliwiec
  * https://nestjs.com
  * MIT Licensed
  */
@@ -10,6 +10,7 @@ export * from './cache';
 export * from './decorators';
 export * from './enums';
 export * from './exceptions';
+export * from './file-stream';
 export * from './http';
 export {
   Abstract,
@@ -30,12 +31,15 @@ export {
   INestApplication,
   INestApplicationContext,
   INestMicroservice,
+  IntrospectionResult,
+  MessageEvent,
   MiddlewareConsumer,
+  ModuleMetadata,
   NestApplicationOptions,
+  NestHybridApplicationOptions,
   NestInterceptor,
   NestMiddleware,
   NestModule,
-  NestHybridApplicationOptions,
   OnApplicationBootstrap,
   OnApplicationShutdown,
   OnModuleDestroy,
@@ -49,6 +53,8 @@ export {
   Type,
   ValidationError,
   ValueProvider,
+  VersioningOptions,
+  VERSION_NEUTRAL,
   WebSocketAdapter,
   WsExceptionFilter,
   WsMessageHandler,

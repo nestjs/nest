@@ -1,5 +1,12 @@
 {
   "compilerOptions": {
-    "plugins": ["@nestjs/graphql/plugin"]
+    "plugins": [
+      {
+        "name": "@nestjs/graphql",
+        "options": {
+          "introspectComments": true
+        }
+      }
+    ]
   }
 }

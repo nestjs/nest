@@ -4,7 +4,8 @@ import { MESSAGES } from '@nestjs/core/constants';
 import { WsException } from '../errors/ws-exception';
 
 export class BaseWsExceptionFilter<TError = any>
-  implements WsExceptionFilter<TError> {
+  implements WsExceptionFilter<TError>
+{
   private static readonly logger = new Logger('WsExceptionsHandler');
 
   public catch(exception: TError, host: ArgumentsHost) {

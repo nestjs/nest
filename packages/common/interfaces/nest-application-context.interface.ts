@@ -1,6 +1,7 @@
 import { ShutdownSignal } from '../enums/shutdown-signal.enum';
-import { LoggerService } from '../services/logger.service';
+import { LoggerService, LogLevel } from '../services/logger.service';
 import { Abstract } from './abstract.interface';
+import { DynamicModule } from './modules';
 import { Type } from './type.interface';
 
 /**
@@ -13,7 +14,7 @@ export interface INestApplicationContext {
    * Allows navigating through the modules tree, for example, to pull out a specific instance from the selected module.
    * @returns {INestApplicationContext}
    */
-  select<T>(module: Type<T>): INestApplicationContext;
+  select<T>(module: Type<T> | DynamicModule): INestApplicationContext;
 
   /**
    * Retrieves an instance of either injectable or controller, otherwise, throws exception.
@@ -35,6 +36,15 @@ export interface INestApplicationContext {
   ): Promise<TResult>;
 
   /**
+   * Registers the request/context object for a given context ID (DI container sub-tree).
+   * @returns {void}
+   */
+  registerRequestByContextId<T = any>(
+    request: T,
+    contextId: { id: number },
+  ): void;
+
+  /**
    * Terminates the application
    * @returns {Promise<void>}
    */
@@ -44,7 +54,13 @@ export interface INestApplicationContext {
    * Sets custom logger service
    * @returns {void}
    */
-  useLogger(logger: LoggerService): void;
+  useLogger(logger: LoggerService | LogLevel[] | false): void;
+
+  /**
+   * Prints buffered logs and detaches buffer.
+   * @returns {void}
+   */
+  flushLogs(): void;
 
   /**
    * Enables the usage of shutdown hooks. Will call the

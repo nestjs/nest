@@ -1,6 +1,11 @@
-import { ArgumentMetadata, HttpStatus, Injectable, Optional } from '../index';
+import { Injectable } from '../decorators/core/injectable.decorator';
+import { Optional } from '../decorators/core/optional.decorator';
+import { HttpStatus } from '../enums/http-status.enum';
 import { Type } from '../interfaces';
-import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import {
+  ArgumentMetadata,
+  PipeTransform,
+} from '../interfaces/features/pipe-transform.interface';
 import { HttpErrorByCode } from '../utils/http-error-by-code.util';
 import { isNil, isString } from '../utils/shared.utils';
 import { ValidationPipe, ValidationPipeOptions } from './validation.pipe';
@@ -38,10 +43,8 @@ export class ParseArrayPipe implements PipeTransform {
       ...options,
     });
 
-    const {
-      exceptionFactory,
-      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
-    } = options;
+    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
+      options;
     this.exceptionFactory =
       exceptionFactory ||
       (error => new HttpErrorByCode[errorHttpStatusCode](error));
@@ -80,14 +83,83 @@ export class ParseArrayPipe implements PipeTransform {
         type: 'query',
       };
 
-      const toClassInstance = (item: any) => {
+      const isExpectedTypePrimitive = this.isExpectedTypePrimitive();
+      const toClassInstance = (item: any, index?: number) => {
         try {
           item = JSON.parse(item);
         } catch {}
+
+        if (isExpectedTypePrimitive) {
+          return this.validatePrimitive(item, index);
+        }
         return this.validationPipe.transform(item, validationMetadata);
       };
-      value = await Promise.all(value.map(toClassInstance));
+      if (this.options.stopAtFirstError === false) {
+        // strict compare to "false" to make sure
+        // that this option is disabled by default
+        let errors = [];
+
+        const targetArray = value as Array<unknown>;
+        for (let i = 0; i < targetArray.length; i++) {
+          try {
+            targetArray[i] = await toClassInstance(targetArray[i]);
+          } catch (err) {
+            let message: string[] | unknown;
+            if ((err as any).getResponse) {
+              const response = (err as any).getResponse();
+              if (Array.isArray(response.message)) {
+                message = response.message.map(
+                  (item: string) => `[${i}] ${item}`,
+                );
+              } else {
+                message = `[${i}] ${response.message}`;
+              }
+            } else {
+              message = err;
+            }
+            errors = errors.concat(message);
+          }
+        }
+        if (errors.length > 0) {
+          throw this.exceptionFactory(errors as any);
+        }
+        return targetArray;
+      } else {
+        value = await Promise.all(value.map(toClassInstance));
+      }
     }
     return value;
+  }
+
+  protected isExpectedTypePrimitive(): boolean {
+    return [Boolean, Number, String].includes(this.options.items as any);
+  }
+
+  protected validatePrimitive(originalValue: any, index?: number) {
+    if (this.options.items === Number) {
+      const value =
+        originalValue !== null && originalValue !== '' ? +originalValue : NaN;
+      if (isNaN(value)) {
+        throw this.exceptionFactory(
+          `${
+            typeof index !== 'undefined' ? `[${index}] ` : ''
+          }item must be a number`,
+        );
+      }
+      return value;
+    } else if (this.options.items === String) {
+      if (typeof originalValue !== 'string') {
+        return `${originalValue}`;
+      }
+    } else if (this.options.items === Boolean) {
+      if (typeof originalValue !== 'boolean') {
+        throw this.exceptionFactory(
+          `${
+            typeof index !== 'undefined' ? `[${index}] ` : ''
+          }item must be a boolean value`,
+        );
+      }
+    }
+    return originalValue;
   }
 }

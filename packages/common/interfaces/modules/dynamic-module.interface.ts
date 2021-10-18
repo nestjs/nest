@@ -21,7 +21,7 @@ export interface DynamicModule extends ModuleMetadata {
    * in all modules. Thereafter, modules that wish to inject a service exported
    * from a global module do not need to import the provider module.
    *
-   * Default: false
+   * @default false
    */
   global?: boolean;
 }

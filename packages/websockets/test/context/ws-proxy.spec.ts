@@ -35,7 +35,7 @@ describe('WsProxy', () => {
     it('should attach "catchError" operator when observable was returned', async () => {
       const expectation = handlerMock.expects('handle').once();
       const proxy = routerProxy.create(async (client, data) => {
-        return throwError(new WsException('test'));
+        return throwError(() => new WsException('test'));
       }, handler);
       (await proxy(null, null)).subscribe(null, () => expectation.verify());
     });

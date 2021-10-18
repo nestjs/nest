@@ -1,6 +1,6 @@
 /*
  * Nest @microservices
- * Copyright(c) 2017 - 2020 Kamil Mysliwiec
+ * Copyright(c) 2017 - 2021 Kamil Mysliwiec
  * https://nestjs.com
  * MIT Licensed
  */
@@ -15,5 +15,6 @@ export * from './helpers';
 export * from './interfaces';
 export * from './module';
 export * from './nest-microservice';
+export * from './record-builders';
 export * from './server';
 export * from './tokens';

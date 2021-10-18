@@ -6,6 +6,7 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
+import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MESSAGES } from '@nestjs/core/constants';
@@ -24,19 +25,23 @@ const { SocketModule } = optionalRequire(
   () => require('@nestjs/websockets/socket-module'),
 );
 
-export class NestMicroservice extends NestApplicationContext
-  implements INestMicroservice {
-  private readonly logger = new Logger(NestMicroservice.name, true);
+export class NestMicroservice
+  extends NestApplicationContext
+  implements INestMicroservice
+{
+  private readonly logger = new Logger(NestMicroservice.name, {
+    timestamp: true,
+  });
   private readonly microservicesModule = new MicroservicesModule();
   private readonly socketModule = SocketModule ? new SocketModule() : null;
-  private microserviceConfig: MicroserviceOptions;
+  private microserviceConfig: NestMicroserviceOptions & MicroserviceOptions;
   private server: Server & CustomTransportStrategy;
   private isTerminated = false;
   private isInitHookCalled = false;
 
   constructor(
     container: NestContainer,
-    config: MicroserviceOptions = {},
+    config: NestMicroserviceOptions & MicroserviceOptions = {},
     private readonly applicationConfig: ApplicationConfig,
   ) {
     super(container);
@@ -46,7 +51,7 @@ export class NestMicroservice extends NestApplicationContext
     this.selectContextModule();
   }
 
-  public createServer(config: MicroserviceOptions) {
+  public createServer(config: NestMicroserviceOptions & MicroserviceOptions) {
     try {
       this.microserviceConfig = {
         transport: Transport.TCP,
@@ -114,15 +119,28 @@ export class NestMicroservice extends NestApplicationContext
     return this;
   }
 
-  public listen(callback: () => void) {
-    !this.isInitialized && this.registerModules();
+  public async listen() {
+    !this.isInitialized && (await this.registerModules());
 
-    this.logger.log(MESSAGES.MICROSERVICE_READY);
-    this.server.listen(callback);
+    return new Promise<any>((resolve, reject) => {
+      this.server.listen((err, info) => {
+        if (this.microserviceConfig?.autoFlushLogs ?? true) {
+          this.flushLogs();
+        }
+        if (err) {
+          return reject(err);
+        }
+        this.logger.log(MESSAGES.MICROSERVICE_READY);
+        resolve(info);
+      });
+    });
   }
 
   public async listenAsync(): Promise<any> {
-    return new Promise(resolve => this.listen(resolve));
+    this.logger.warn(
+      'DEPRECATED! "listenAsync" method is deprecated and will be removed in the next major release. Please, use "listen" instead.',
+    );
+    return this.listen();
   }
 
   public async close(): Promise<any> {
@@ -148,7 +166,18 @@ export class NestMicroservice extends NestApplicationContext
 
   protected async closeApplication(): Promise<any> {
     this.socketModule && (await this.socketModule.close());
+    this.microservicesModule && (await this.microservicesModule.close());
+
     await super.close();
     this.setIsTerminated(true);
+  }
+
+  protected async dispose(): Promise<void> {
+    await this.server.close();
+    if (this.isTerminated) {
+      return;
+    }
+    this.socketModule && (await this.socketModule.close());
+    this.microservicesModule && (await this.microservicesModule.close());
   }
 }

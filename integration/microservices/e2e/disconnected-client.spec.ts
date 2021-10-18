@@ -46,7 +46,7 @@ describe('Disconnected client', () => {
       .send({
         transport: Transport.NATS,
         options: {
-          url: 'nats://localhost:4224',
+          servers: 'nats://localhost:4224',
         },
       })
       .expect(408);

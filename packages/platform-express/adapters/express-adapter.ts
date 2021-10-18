@@ -1,7 +1,25 @@
-import { RequestMethod } from '@nestjs/common';
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import {
+  InternalServerErrorException,
+  RequestMethod,
+  StreamableFile,
+  VersioningType,
+} from '@nestjs/common';
+import {
+  VersioningOptions,
+  VersionValue,
+  VERSION_NEUTRAL,
+} from '@nestjs/common/interfaces';
+import {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import { isFunction, isNil, isObject } from '@nestjs/common/utils/shared.utils';
+import {
+  isFunction,
+  isNil,
+  isObject,
+  isString,
+} from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
 import * as bodyParser from 'body-parser';
@@ -24,6 +42,12 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     }
     if (isNil(body)) {
       return response.send();
+    }
+    if (body instanceof StreamableFile) {
+      if (response.getHeader('Content-Type') === undefined) {
+        response.setHeader('Content-Type', 'application/octet-stream');
+      }
+      return body.getStream().pipe(response);
     }
     return isObject(body) ? response.json(body) : response.send(String(body));
   }
@@ -108,7 +132,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return request.originalUrl;
   }
 
-  public enableCors(options: CorsOptions) {
+  public enableCors(options: CorsOptions | CorsOptionsDelegate<any>) {
     return this.use(cors(options));
   }
 
@@ -142,8 +166,85 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       .forEach(parserKey => this.use(parserMiddleware[parserKey]));
   }
 
+  public setLocal(key: string, value: any) {
+    this.instance.locals[key] = value;
+    return this;
+  }
+
   public getType(): string {
     return 'express';
+  }
+
+  public applyVersionFilter(
+    handler: Function,
+    version: VersionValue,
+    versioningOptions: VersioningOptions,
+  ) {
+    return <TRequest extends Record<string, any> = any, TResponse = any>(
+      req: TRequest,
+      res: TResponse,
+      next: () => void,
+    ) => {
+      if (version === VERSION_NEUTRAL) {
+        return handler(req, res, next);
+      }
+      // URL Versioning is done via the path, so the filter continues forward
+      if (versioningOptions.type === VersioningType.URI) {
+        return handler(req, res, next);
+      }
+      // Media Type (Accept Header) Versioning Handler
+      if (versioningOptions.type === VersioningType.MEDIA_TYPE) {
+        const MEDIA_TYPE_HEADER = 'Accept';
+        const acceptHeaderValue: string | undefined =
+          req.headers?.[MEDIA_TYPE_HEADER] ||
+          req.headers?.[MEDIA_TYPE_HEADER.toLowerCase()];
+
+        const acceptHeaderVersionParameter = acceptHeaderValue
+          ? acceptHeaderValue.split(';')[1]
+          : '';
+
+        if (acceptHeaderVersionParameter) {
+          const headerVersion = acceptHeaderVersionParameter.split(
+            versioningOptions.key,
+          )[1];
+
+          if (Array.isArray(version)) {
+            if (version.includes(headerVersion)) {
+              return handler(req, res, next);
+            }
+          } else if (isString(version)) {
+            if (version === headerVersion) {
+              return handler(req, res, next);
+            }
+          }
+        }
+      }
+      // Header Versioning Handler
+      else if (versioningOptions.type === VersioningType.HEADER) {
+        const customHeaderVersionParameter: string | undefined =
+          req.headers?.[versioningOptions.header] ||
+          req.headers?.[versioningOptions.header.toLowerCase()];
+
+        if (customHeaderVersionParameter) {
+          if (Array.isArray(version)) {
+            if (version.includes(customHeaderVersionParameter)) {
+              return handler(req, res, next);
+            }
+          } else if (isString(version)) {
+            if (version === customHeaderVersionParameter) {
+              return handler(req, res, next);
+            }
+          }
+        }
+      }
+
+      if (!next) {
+        throw new InternalServerErrorException(
+          'HTTP adapter does not support filtering on version',
+        );
+      }
+      return next();
+    };
   }
 
   private isMiddlewareApplied(name: string): boolean {

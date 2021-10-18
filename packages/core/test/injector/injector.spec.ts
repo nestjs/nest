@@ -39,25 +39,28 @@ describe('Injector', () => {
       moduleDeps = new Module(DependencyTwo, new NestContainer());
       mainTest = new InstanceWrapper({
         name: 'MainTest',
+        token: 'MainTest',
         metatype: MainTest,
         instance: Object.create(MainTest.prototype),
         isResolved: false,
       });
       depOne = new InstanceWrapper({
-        name: 'DependencyOne',
+        name: DependencyOne,
+        token: DependencyOne,
         metatype: DependencyOne,
         instance: Object.create(DependencyOne.prototype),
         isResolved: false,
       });
       depTwo = new InstanceWrapper({
-        name: 'DependencyTwo',
+        name: DependencyTwo,
+        token: DependencyTwo,
         metatype: DependencyTwo,
         instance: Object.create(DependencyOne.prototype),
         isResolved: false,
       });
       moduleDeps.providers.set('MainTest', mainTest);
-      moduleDeps.providers.set('DependencyOne', depOne);
-      moduleDeps.providers.set('DependencyTwo', depTwo);
+      moduleDeps.providers.set(DependencyOne, depOne);
+      moduleDeps.providers.set(DependencyTwo, depTwo);
       moduleDeps.providers.set('MainTestResolved', {
         ...mainTest,
         isResolved: true,
@@ -77,9 +80,9 @@ describe('Injector', () => {
 
     it('should set "isResolved" property to true after instance initialization', async () => {
       await injector.loadInstance(mainTest, moduleDeps.providers, moduleDeps);
-      const { isResolved } = (moduleDeps.providers.get(
-        'MainTest',
-      ) as InstanceWrapper<MainTest>).getInstanceByContextId(STATIC_CONTEXT);
+      const { isResolved } = (
+        moduleDeps.providers.get('MainTest') as InstanceWrapper<MainTest>
+      ).getInstanceByContextId(STATIC_CONTEXT);
       expect(isResolved).to.be.true;
     });
 
@@ -110,7 +113,6 @@ describe('Injector', () => {
     });
 
     it('should return undefined when metatype is resolved', async () => {
-      const value = 'test';
       const result = await injector.loadInstance(
         new InstanceWrapper({
           name: 'MainTestResolved',
@@ -136,6 +138,7 @@ describe('Injector', () => {
       moduleDeps = new Module(Test, new NestContainer());
       test = new InstanceWrapper({
         name: 'Test',
+        token: 'Test',
         metatype: Test,
         instance: null,
         isResolved: false,
@@ -189,28 +192,28 @@ describe('Injector', () => {
   });
 
   describe('loadMiddleware', () => {
-    let resolveConstructorParams: sinon.SinonSpy;
+    let loadInstanceSpy: sinon.SinonSpy;
 
     beforeEach(() => {
-      resolveConstructorParams = sinon.spy();
-      injector.resolveConstructorParams = resolveConstructorParams;
+      loadInstanceSpy = sinon.spy();
+      injector.loadInstance = loadInstanceSpy;
     });
 
-    it('should call "resolveConstructorParams" when instance is not resolved', () => {
+    it('should call "loadInstance" when instance is not resolved', () => {
       const collection = {
         get: (...args) => ({}),
         set: (...args) => {},
       };
 
       injector.loadMiddleware(
-        { metatype: { name: '' } } as any,
+        { metatype: { name: '', prototype: {} } } as any,
         collection as any,
         null,
       );
-      expect(resolveConstructorParams.called).to.be.true;
+      expect(loadInstanceSpy.called).to.be.true;
     });
 
-    it('should not call "resolveConstructorParams" when instance is not resolved', () => {
+    it('should not call "loadInstanceSpy" when instance is not resolved', () => {
       const collection = {
         get: (...args) => ({
           instance: {},
@@ -223,7 +226,7 @@ describe('Injector', () => {
         collection as any,
         null,
       );
-      expect(resolveConstructorParams.called).to.be.false;
+      expect(loadInstanceSpy.called).to.be.false;
     });
   });
 
@@ -372,7 +375,7 @@ describe('Injector', () => {
     it('should return null when there is no related modules', async () => {
       const result = await injector.lookupComponentInImports(
         module as any,
-        null,
+        'testToken',
         new InstanceWrapper(),
       );
       expect(result).to.be.eq(null);
@@ -616,6 +619,7 @@ describe('Injector', () => {
       });
     });
   });
+
   describe('applyProperties', () => {
     describe('when instance is not an object', () => {
       it('should return undefined', () => {
@@ -693,10 +697,10 @@ describe('Injector', () => {
       const module = await container.addModule(moduleCtor, []);
 
       module.addProvider({
-        name: 'TestClass',
         provide: TestClass,
         useClass: TestClass,
       });
+
       const instance = await injector.loadPerContext(
         new TestClass(),
         module,

@@ -58,7 +58,10 @@ export class HeroController implements OnModuleInit {
       hero$.next(item);
     };
     const onComplete = () => hero$.complete();
-    data$.subscribe(onNext, null, onComplete);
+    data$.subscribe({
+      next: onNext,
+      complete: onComplete,
+    });
 
     return hero$.asObservable();
   }

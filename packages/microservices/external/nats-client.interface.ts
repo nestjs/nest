@@ -1,94 +1,91 @@
-import { EventEmitter } from 'events';
-
 /**
- * @see https://github.com/nats-io/node-nats
+ * @see https://github.com/nats-io/nats.js
  */
-export declare class Client extends EventEmitter {
-  /**
-   * Create a properly formatted inbox subject.
-   */
-  createInbox(): string;
+export interface NatsCodec<T> {
+  encode(d: T): Uint8Array;
+  decode(a: Uint8Array): T;
+}
 
-  /**
-   * Close the connection to the server.
-   */
-  close(): void;
+interface RequestOptions {
+  timeout: number;
+  headers?: any;
+  noMux?: boolean;
+  reply?: string;
+}
+interface PublishOptions {
+  reply?: string;
+  headers?: any;
+}
+interface SubOpts<T> {
+  queue?: string;
+  max?: number;
+  timeout?: number;
+  callback?: (err: object | null, msg: T) => void;
+}
 
-  /**
-   * Flush outbound queue to server and call optional callback when server has processed
-   * all data.
-   */
-  flush(callback?: Function): void;
+declare type SubscriptionOptions = SubOpts<NatsMsg>;
 
-  /**
-   * Publish a message to the given subject, with optional reply and callback.
-   */
-  publish(callback: Function): void;
-  publish(subject: string, callback: Function): void;
-  publish(subject: string, msg: string | Buffer, callback: Function): void;
-  publish(
-    subject: string,
-    msg?: string | Buffer,
-    reply?: string,
-    callback?: Function,
-  ): void;
+export interface NatsMsg {
+  subject: string;
+  sid: number;
+  reply?: string;
+  data: Uint8Array;
+  headers?: any;
+  respond(data?: Uint8Array, opts?: PublishOptions): boolean;
+}
 
-  /**
-   * Subscribe to a given subject, with optional options and callback. opts can be
-   * ommitted, even with a callback. The Subscriber Id is returned.
-   */
-  subscribe(subject: string, callback: Function): number;
-  subscribe(subject: string, opts: any, callback: Function): number;
+interface Sub<T> extends AsyncIterable<T> {
+  unsubscribe(max?: number): void;
+  drain(): Promise<void>;
+  isDraining(): boolean;
+  isClosed(): boolean;
+  callback(err: object | null, msg: NatsMsg): void;
+  getSubject(): string;
+  getReceived(): number;
+  getProcessed(): number;
+  getPending(): number;
+  getID(): number;
+  getMax(): number | undefined;
+}
 
-  /**
-   * Unsubscribe to a given Subscriber Id, with optional max parameter.
-   */
-  unsubscribe(sid: number, max?: number): void;
+declare type Subscription = Sub<NatsMsg>;
 
-  /**
-   * Set a timeout on a subscription.
-   */
-  timeout(
-    sid: number,
-    timeout: number,
-    expected: number,
-    callback: (sid: number) => void,
-  ): void;
+declare enum Events {
+  Disconnect = 'disconnect',
+  Reconnect = 'reconnect',
+  Update = 'update',
+  LDM = 'ldm',
+  Error = 'error',
+}
+interface Status {
+  type: Events | DebugEvents;
+  data: string | number;
+}
 
-  /**
-   * Publish a message with an implicit inbox listener as the reply. Message is optional.
-   * This should be treated as a subscription. You can optionally indicate how many
-   * messages you only want to receive using opt_options = {max:N}. Otherwise you
-   * will need to unsubscribe to stop the message stream.
-   * The Subscriber Id is returned.
-   */
-  request(subject: string, callback: Function): number;
-  request(subject: string, msg: string | Buffer, callback: Function): number;
+declare enum DebugEvents {
+  Reconnecting = 'reconnecting',
+  PingTimer = 'pingTimer',
+  StaleConnection = 'staleConnection',
+}
+
+export declare class Client {
+  info?: Record<string, any>;
+  closed(): Promise<void | Error>;
+  close(): Promise<void>;
+  publish(subject: string, data?: Uint8Array, options?: PublishOptions): void;
+  subscribe(subject: string, opts?: SubscriptionOptions): Subscription;
   request(
     subject: string,
-    msg?: string,
-    options?: any,
-    callback?: Function,
-  ): number;
-
-  /**
-   * Publish a message with an implicit inbox listener as the reply. Message is optional.
-   * This should be treated as a subscription. Request one, will terminate the subscription
-   * after the first response is received or the timeout is reached.
-   * The callback can be called with either a message payload or a NatsError to indicate
-   * a timeout has been reached.
-   * The Subscriber Id is returned.
-   */
-  requestOne(
-    subject: string,
-    msg: string | Buffer,
-    options?: any,
-    timeout?: number,
-    callback?: Function,
-  ): number;
-
-  /**
-   * Report number of outstanding subscriptions on this connection.
-   */
-  numSubscriptions(): number;
+    data?: Uint8Array,
+    opts?: RequestOptions,
+  ): Promise<NatsMsg>;
+  flush(): Promise<void>;
+  drain(): Promise<void>;
+  isClosed(): boolean;
+  isDraining(): boolean;
+  getServer(): string;
+  status(): AsyncIterable<Status>;
+  stats(): Record<string, any>;
+  jetstreamManager(opts?: Record<string, any>): Promise<any>;
+  jetstream(opts?: Record<string, any>): any;
 }

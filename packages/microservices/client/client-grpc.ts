@@ -31,8 +31,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     const protoLoader =
       this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
 
-    grpcPackage = loadPackage('grpc', ClientGrpcProxy.name, () =>
-      require('grpc'),
+    grpcPackage = loadPackage('@grpc/grpc-js', ClientGrpcProxy.name, () =>
+      require('@grpc/grpc-js'),
     );
     grpcProtoLoaderPackage = loadPackage(protoLoader, ClientGrpcProxy.name);
     this.grpcClients = this.createClients();
@@ -232,11 +232,17 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
             callArgs.unshift(maybeMetadata);
           }
           const call = client[methodName](...callArgs);
-          upstreamSubjectOrData.subscribe(
-            (val: unknown) => call.write(val),
-            (err: unknown) => call.emit('error', err),
-            () => call.end(),
-          );
+
+          const upstreamSubscription: Subscription =
+            upstreamSubjectOrData.subscribe(
+              (val: unknown) => call.write(val),
+              (err: unknown) => call.emit('error', err),
+              () => call.end(),
+            );
+
+          return () => {
+            upstreamSubscription.unsubscribe();
+          };
         });
       }
       return new Observable(observer => {
@@ -281,9 +287,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       const loader = this.getOptionsProp(this.options, 'loader');
 
       const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
-      const packageObject = grpcPackage.loadPackageDefinition(
-        packageDefinition,
-      );
+      const packageObject =
+        grpcPackage.loadPackageDefinition(packageDefinition);
       return packageObject;
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException();
@@ -298,14 +303,20 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   public lookupPackage(root: any, packageName: string) {
     /** Reference: https://github.com/kondi/rxjs-grpc */
     let pkg = root;
-    for (const name of packageName.split(/\./)) {
-      pkg = pkg[name];
+
+    if (packageName) {
+      for (const name of packageName.split('.')) {
+        pkg = pkg[name];
+      }
     }
+
     return pkg;
   }
 
   public close() {
-    this.grpcClients.forEach(client => client.close());
+    this.grpcClients
+      .filter(client => client && isFunction(client.close))
+      .forEach(client => client.close());
     this.grpcClients = [];
   }
 

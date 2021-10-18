@@ -1,4 +1,4 @@
-import { JsonSocket } from '../helpers';
+import { JsonSocket } from '../helpers/json-socket';
 import { BaseRpcContext } from './base-rpc.context';
 
 type TcpContextArgs = [JsonSocket, string];

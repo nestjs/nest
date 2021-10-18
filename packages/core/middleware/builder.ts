@@ -9,9 +9,9 @@ import {
   RouteInfo,
 } from '@nestjs/common/interfaces/middleware';
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
+import { iterate } from 'iterare';
 import { RoutesMapper } from './routes-mapper';
 import { filterMiddleware } from './utils';
-import { iterate } from 'iterare';
 
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();

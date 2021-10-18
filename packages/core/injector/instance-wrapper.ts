@@ -8,7 +8,7 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { STATIC_CONTEXT } from './constants';
-import { Module } from './module';
+import { InstanceToken, Module } from './module';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
@@ -36,6 +36,7 @@ interface InstanceMetadataStore {
 
 export class InstanceWrapper<T = any> {
   public readonly name: any;
+  public readonly token: InstanceToken;
   public readonly async?: boolean;
   public readonly host?: Module;
   public readonly isAlias: boolean = false;
@@ -183,9 +184,8 @@ export class InstanceWrapper<T = any> {
     }
     lookupRegistry = lookupRegistry.concat(this[INSTANCE_ID_SYMBOL]);
 
-    const { dependencies, properties, enhancers } = this[
-      INSTANCE_METADATA_SYMBOL
-    ];
+    const { dependencies, properties, enhancers } =
+      this[INSTANCE_METADATA_SYMBOL];
     let isStatic =
       (dependencies &&
         this.isWrapperListStatic(dependencies, lookupRegistry)) ||
@@ -318,7 +318,7 @@ export class InstanceWrapper<T = any> {
   }
 
   public mergeWith(provider: Provider) {
-    if ((provider as ValueProvider).useValue) {
+    if (!isUndefined((provider as ValueProvider).useValue)) {
       this.metatype = null;
       this.inject = null;
       this.scope = Scope.DEFAULT;

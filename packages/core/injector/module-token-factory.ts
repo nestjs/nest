@@ -47,7 +47,15 @@ export class ModuleTokenFactory {
 
   private replacer(key: string, value: any) {
     if (typeof value === 'function') {
-      return value.name;
+      const funcAsString = value.toString();
+      const isClass = /^class\s/.test(funcAsString);
+      if (isClass) {
+        return value.name;
+      }
+      return hash(funcAsString, { ignoreUnknown: true });
+    }
+    if (typeof value === 'symbol') {
+      return value.toString();
     }
     return value;
   }

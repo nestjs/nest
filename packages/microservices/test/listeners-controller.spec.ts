@@ -66,7 +66,7 @@ describe('ListenersController', () => {
   describe('registerPatternHandlers', () => {
     const handlers = [
       { pattern: 'test', targetCallback: 'tt' },
-      { pattern: 'test2', targetCallback: '2' },
+      { pattern: 'test2', targetCallback: '2', isEventHandler: true },
     ];
 
     beforeEach(() => {
@@ -119,7 +119,7 @@ describe('ListenersController', () => {
       expect(addSpyTCP.calledTwice).to.be.true;
     });
     describe('when request scoped', () => {
-      it(`should call "addHandler" with deffered proxy`, () => {
+      it(`should call "addHandler" with deferred proxy`, () => {
         explorer.expects('explore').returns(handlers);
         instance.registerPatternHandlers(
           new InstanceWrapper({ scope: Scope.REQUEST }),

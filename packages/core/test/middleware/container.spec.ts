@@ -64,7 +64,7 @@ describe('MiddlewareContainer', () => {
     container.insertConfig(config, key);
 
     const collection = container.getMiddlewareCollection(key);
-    const insertedMiddleware = collection.get('TestMiddleware');
+    const insertedMiddleware = collection.get(TestMiddleware);
 
     expect(collection.size).to.eql(config.length);
     expect(insertedMiddleware).to.be.instanceOf(InstanceWrapper);

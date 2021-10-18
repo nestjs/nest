@@ -6,8 +6,6 @@ import { ApplicationConfig } from '../application-config';
 import { CircularDependencyException } from '../errors/exceptions/circular-dependency.exception';
 import { UndefinedForwardRefException } from '../errors/exceptions/undefined-forwardref.exception';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
-import { ExternalContextCreator } from '../helpers/external-context-creator';
-import { HttpAdapterHost } from '../helpers/http-adapter-host';
 import { REQUEST } from '../router/request/request-constants';
 import { ModuleCompiler } from './compiler';
 import { ContextId } from './instance-wrapper';
@@ -51,12 +49,16 @@ export class NestContainer {
     return this.internalProvidersStorage.httpAdapter;
   }
 
+  public getHttpAdapterHostRef() {
+    return this.internalProvidersStorage.httpAdapterHost;
+  }
+
   public async addModule(
     metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
     scope: Type<any>[],
-  ): Promise<Module> {
+  ): Promise<Module | undefined> {
     // In DependenciesScanner#scanForModules we already check for undefined or invalid modules
-    // We sill need to catch the edge-case of `forwardRef(() => undefined)`
+    // We still need to catch the edge-case of `forwardRef(() => undefined)`
     if (!metatype) {
       throw new UndefinedForwardRefException(scope);
     }
@@ -64,11 +66,17 @@ export class NestContainer {
       metatype,
     );
     if (this.modules.has(token)) {
-      return;
+      return this.modules.get(token);
     }
     const moduleRef = new Module(type, this);
+    moduleRef.token = token;
     this.modules.set(token, moduleRef);
-    this.addDynamicMetadata(token, dynamicMetadata, [].concat(scope, type));
+
+    await this.addDynamicMetadata(
+      token,
+      dynamicMetadata,
+      [].concat(scope, type),
+    );
 
     if (this.isGlobalModule(type, dynamicMetadata)) {
       this.addGlobalModule(moduleRef);
@@ -76,7 +84,7 @@ export class NestContainer {
     return moduleRef;
   }
 
-  public addDynamicMetadata(
+  public async addDynamicMetadata(
     token: string,
     dynamicModuleMetadata: Partial<DynamicModule>,
     scope: Type<any>[],
@@ -87,14 +95,14 @@ export class NestContainer {
     this.dynamicModulesMetadata.set(token, dynamicModuleMetadata);
 
     const { imports } = dynamicModuleMetadata;
-    this.addDynamicModules(imports, scope);
+    await this.addDynamicModules(imports, scope);
   }
 
-  public addDynamicModules(modules: any[], scope: Type<any>[]) {
+  public async addDynamicModules(modules: any[], scope: Type<any>[]) {
     if (!modules) {
       return;
     }
-    modules.forEach(module => this.addModule(module, scope));
+    await Promise.all(modules.map(module => this.addModule(module, scope)));
   }
 
   public isGlobalModule(
@@ -113,6 +121,10 @@ export class NestContainer {
 
   public getModules(): ModulesContainer {
     return this.modules;
+  }
+
+  public getModuleCompiler(): ModuleCompiler {
+    return this.moduleCompiler;
   }
 
   public getModuleByKey(moduleKey: string): Module {
@@ -138,7 +150,10 @@ export class NestContainer {
     moduleRef.addRelatedModule(related);
   }
 
-  public addProvider(provider: Provider, token: string): string {
+  public addProvider(
+    provider: Provider,
+    token: string,
+  ): string | symbol | Function {
     if (!provider) {
       throw new CircularDependencyException();
     }
@@ -196,7 +211,7 @@ export class NestContainer {
   }
 
   public bindGlobalModuleToModule(target: Module, globalModule: Module) {
-    if (target === globalModule) {
+    if (target === globalModule || target === this.internalCoreModule) {
       return;
     }
     target.addRelatedModule(globalModule);
@@ -205,29 +220,12 @@ export class NestContainer {
   public getDynamicMetadataByToken(
     token: string,
     metadataKey: keyof DynamicModule,
-  ): any[] {
+  ) {
     const metadata = this.dynamicModulesMetadata.get(token);
     if (metadata && metadata[metadataKey]) {
       return metadata[metadataKey] as any[];
     }
     return [];
-  }
-
-  public createCoreModule(): DynamicModule {
-    return InternalCoreModule.register([
-      {
-        provide: ExternalContextCreator,
-        useValue: ExternalContextCreator.fromContainer(this),
-      },
-      {
-        provide: ModulesContainer,
-        useValue: this.modules,
-      },
-      {
-        provide: HttpAdapterHost,
-        useValue: this.internalProvidersStorage.httpAdapterHost,
-      },
-    ]);
   }
 
   public registerCoreModuleRef(moduleRef: Module) {

@@ -2,8 +2,22 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+"""recipe """
+type Recipe {
+  id: ID!
+  title: String!
+  description: String
+  creationDate: Date!
+  ingredients: [String!]!
+}
+
 """Date custom scalar type"""
 scalar Date
+
+type Query {
+  recipe(id: String!): Recipe!
+  recipes(skip: Int = 0, take: Int = 25): [Recipe!]!
+}
 
 type Mutation {
   addRecipe(newRecipeData: NewRecipeInput!): Recipe!
@@ -13,19 +27,6 @@ type Mutation {
 input NewRecipeInput {
   title: String!
   description: String
-  ingredients: [String!]!
-}
-
-type Query {
-  recipe(id: String!): Recipe!
-  recipes(skip: Int = 0, take: Int = 25): [Recipe!]!
-}
-
-type Recipe {
-  id: ID!
-  title: String!
-  description: String
-  creationDate: Date!
   ingredients: [String!]!
 }
 

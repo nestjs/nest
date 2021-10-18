@@ -33,6 +33,7 @@ export const RQM_DEFAULT_PREFETCH_COUNT = 0;
 export const RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT = false;
 export const RQM_DEFAULT_QUEUE_OPTIONS = {};
 export const RQM_DEFAULT_NOACK = true;
+export const RQM_DEFAULT_PERSISTENT = false;
 export const GRPC_DEFAULT_PROTO_LOADER = '@grpc/proto-loader';
 
 export const NO_MESSAGE_HANDLER = `There is no matching message handler defined in the remote service.`;
@@ -47,3 +48,7 @@ export const KAFKA_DEFAULT_GROUP = 'nestjs-group';
 export const MQTT_SEPARATOR = '/';
 export const MQTT_WILDCARD_SINGLE = '+';
 export const MQTT_WILDCARD_ALL = '#';
+
+export const ECONNREFUSED = 'ECONNREFUSED';
+export const CONN_ERR = 'CONN_ERR';
+export const EADDRINUSE = 'EADDRINUSE';

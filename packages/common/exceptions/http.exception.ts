@@ -40,6 +40,7 @@ export class HttpException extends Error {
   ) {
     super();
     this.initMessage();
+    this.initName();
   }
 
   public initMessage() {
@@ -57,6 +58,10 @@ export class HttpException extends Error {
     }
   }
 
+  public initName(): void {
+    this.name = this.constructor.name;
+  }
+
   public getResponse(): string | object {
     return this.response;
   }
@@ -67,14 +72,14 @@ export class HttpException extends Error {
 
   public static createBody(
     objectOrError: object | string,
-    message?: string,
+    description?: string,
     statusCode?: number,
   ) {
     if (!objectOrError) {
-      return { statusCode, message };
+      return { statusCode, message: description };
     }
     return isObject(objectOrError) && !Array.isArray(objectOrError)
       ? objectOrError
-      : { statusCode, message: objectOrError, error: message };
+      : { statusCode, message: objectOrError, error: description };
   }
 }

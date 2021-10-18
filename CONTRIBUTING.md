@@ -69,7 +69,7 @@ A minimal reproduce scenario using a repository or Gist allows us to quickly con
 
 <!-- We will be insisting on a minimal reproduce scenario in order to save maintainers time and ultimately be able to fix more bugs. Interestingly, from our experience users often find coding problems themselves while preparing a minimal plunk. We understand that sometimes it might be hard to extract essentials bits of code from a larger code-base but we really need to isolate the problem before we can fix it. -->
 
-Unfortunately, we are not able to investigate / fix bugs without a minimal reproduction, so if we don't hear back from you we are going to close an issue that don't have enough info to be reproduced.
+Unfortunately, we are not able to investigate / fix bugs without a minimal reproduction, so if we don't hear back from you we are going to close an issue that doesn't have enough info to be reproduced.
 
 You can file new issues by filling out our [new issue form](https://github.com/nestjs/nest/issues/new).
 
@@ -173,7 +173,7 @@ $ npm i # (or yarn install)
 $ sh scripts/prepare.sh
 ```
 
-That will compile fresh packages and afterward, move them to all `sample` directories as well as integration tests.
+That will compile fresh packages and afterward, move them all to `sample` directories.
 
 ### <a name="common-scripts"></a>Commonly used NPM scripts
 
@@ -228,7 +228,7 @@ format that includes a **type**, a **scope** and a **subject**:
 
 The **header** is mandatory and the **scope** of the header is optional.
 
-Any line of the commit message cannot be longer 100 characters! This allows the message to be easier
+Any line of the commit message cannot be longer than 100 characters! This allows the message to be easier
 to read on GitHub as well as in various git tools.
 
 Footer should contain a [closing reference to an issue](https://help.github.com/articles/closing-issues-via-commit-messages/) if any.
@@ -237,7 +237,7 @@ Samples: (even more [samples](https://github.com/nestjs/nest/commits/master))
 
 ```
 docs(changelog): update change log to beta.5
-bugfix(core): need to depend on latest rxjs and zone.js
+fix(core): need to depend on latest rxjs and zone.js
 ```
 
 ### Revert
@@ -249,14 +249,16 @@ If the commit reverts a previous commit, it should begin with `revert:`, followe
 Must be one of the following:
 
 - **build**: Changes that affect the build system or external dependencies (example scopes: gulp, broccoli, npm)
+- **chore**: Updating tasks etc; no production code change
 - **ci**: Changes to our CI configuration files and scripts (example scopes: Travis, Circle, BrowserStack, SauceLabs)
 - **docs**: Documentation only changes
-- **feature**: A new feature
+- **feat**: A new feature
 - **fix**: A bug fix
 - **perf**: A code change that improves performance
 - **refactor**: A code change that neither fixes a bug nor adds a feature
 - **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
 - **test**: Adding missing tests or correcting existing tests
+- **sample**: A change to the samples
 
 ### Scope
 

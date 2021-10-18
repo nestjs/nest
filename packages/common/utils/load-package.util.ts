@@ -14,6 +14,7 @@ export function loadPackage(
     return loaderFn ? loaderFn() : require(packageName);
   } catch (e) {
     logger.error(MISSING_REQUIRED_DEPENDENCY(packageName, context));
+    Logger.flush();
     process.exit(1);
   }
 }

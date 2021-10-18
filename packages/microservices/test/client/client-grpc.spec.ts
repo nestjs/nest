@@ -267,11 +267,15 @@ describe('ClientGrpcProxy', () => {
       });
     });
     describe('when stream request', () => {
+      let clientCallback: (
+        err: Error | null | undefined,
+        response: any,
+      ) => void;
       const writeSpy = sinon.spy();
       const methodName = 'm';
       const obj = {
         [methodName]: callback => {
-          callback(null, {});
+          clientCallback = callback;
           return {
             write: writeSpy,
           };
@@ -285,6 +289,11 @@ describe('ClientGrpcProxy', () => {
         upstream = new Subject();
         (obj[methodName] as any).requestStream = true;
         stream$ = client.createUnaryServiceMethod(obj, methodName)(upstream);
+      });
+
+      afterEach(() => {
+        // invoke client callback to allow resources to be cleaned up
+        clientCallback(null, {});
       });
 
       it('should subscribe to request upstream', () => {
@@ -362,6 +371,15 @@ describe('ClientGrpcProxy', () => {
       client['dispatchEvent'](null).catch(error =>
         expect(error).to.be.instanceof(Error),
       );
+    });
+  });
+
+  describe('lookupPackage', () => {
+    it('should return root package in case package name is not defined', () => {
+      const root = {};
+
+      expect(client.lookupPackage(root, undefined)).to.be.equal(root);
+      expect(client.lookupPackage(root, '')).to.be.equal(root);
     });
   });
 });

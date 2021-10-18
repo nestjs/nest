@@ -30,6 +30,7 @@ describe('ModuleTokenFactory', () => {
       const token = factory.create(type, {
         providers: [{}],
       } as any);
+
       expect(token).to.be.deep.eq(
         hash({
           id: moduleId,
@@ -60,6 +61,24 @@ describe('ModuleTokenFactory', () => {
         const metadata = { providers: [Provider], exports: [Provider] };
         expect(factory.getDynamicMetadataToken(metadata)).to.be.eql(
           '{"providers":["Provider"],"exports":["Provider"]}',
+        );
+      });
+      it('should serialize symbols in a dynamic metadata object', () => {
+        const metadata = {
+          providers: [
+            {
+              provide: Symbol('a'),
+              useValue: 'a',
+            },
+            {
+              provide: Symbol('b'),
+              useValue: 'b',
+            },
+          ],
+        };
+
+        expect(factory.getDynamicMetadataToken(metadata)).to.be.eql(
+          '{"providers":[{"provide":"Symbol(a)","useValue":"a"},{"provide":"Symbol(b)","useValue":"b"}]}',
         );
       });
     });

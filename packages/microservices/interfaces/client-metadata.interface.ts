@@ -1,3 +1,5 @@
+import { Type } from '@nestjs/common';
+import { ClientProxy } from '../client';
 import { Transport } from '../enums/transport.enum';
 import { Deserializer } from './deserializer.interface';
 import {
@@ -18,6 +20,11 @@ export type ClientOptions =
   | KafkaOptions
   | TcpClientOptions
   | RmqOptions;
+
+export interface CustomClientOptions {
+  customClass: Type<ClientProxy>;
+  options?: Record<string, any>;
+}
 
 export interface TcpClientOptions {
   transport: Transport.TCP;

@@ -1,6 +1,6 @@
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { expect } from 'chai';
-import { fromEvent, Observable, of } from 'rxjs';
+import { fromEvent, lastValueFrom, Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { AbstractWsAdapter } from '../adapters/ws-adapter';
@@ -50,7 +50,7 @@ describe('WebSocketsController', () => {
       contextCreator as any,
     );
   });
-  describe('mergeGatewayAndServer', () => {
+  describe('connectGatewayToServer', () => {
     let subscribeToServerEvents: sinon.SinonSpy;
 
     @WebSocketGateway('test' as any)
@@ -66,7 +66,7 @@ describe('WebSocketsController', () => {
     it('should throws "InvalidSocketPortException" when port is not a number', () => {
       Reflect.defineMetadata(PORT_METADATA, 'test', InvalidGateway);
       expect(() =>
-        instance.mergeGatewayAndServer(
+        instance.connectGatewayToServer(
           new InvalidGateway(),
           InvalidGateway,
           '',
@@ -75,12 +75,12 @@ describe('WebSocketsController', () => {
     });
     it('should call "subscribeToServerEvents" with default values when metadata is empty', () => {
       const gateway = new DefaultGateway();
-      instance.mergeGatewayAndServer(gateway, DefaultGateway, '');
+      instance.connectGatewayToServer(gateway, DefaultGateway, '');
       expect(subscribeToServerEvents.calledWith(gateway, {}, 0, '')).to.be.true;
     });
     it('should call "subscribeToServerEvents" when metadata is valid', () => {
       const gateway = new Test();
-      instance.mergeGatewayAndServer(gateway, Test, '');
+      instance.connectGatewayToServer(gateway, Test, '');
       expect(
         subscribeToServerEvents.calledWith(gateway, { namespace }, port, ''),
       ).to.be.true;
@@ -245,7 +245,7 @@ describe('WebSocketsController', () => {
       fn(client);
     });
 
-    it('should returns function', () => {
+    it('should return function', () => {
       expect(
         instance.getConnectionHandler(null, null, null, null, null),
       ).to.be.a('function');
@@ -335,36 +335,38 @@ describe('WebSocketsController', () => {
     });
   });
   describe('pickResult', () => {
-    describe('when defferedResult contains value which', () => {
+    describe('when deferredResult contains value which', () => {
       describe('is a Promise', () => {
-        it('should returns Promise<Observable>', async () => {
+        it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (
-              await instance.pickResult(Promise.resolve(Promise.resolve(value)))
-            ).toPromise(),
+            await lastValueFrom(
+              await instance.pickResult(
+                Promise.resolve(Promise.resolve(value)),
+              ),
+            ),
           ).to.be.eq(100);
         });
       });
 
       describe('is an Observable', () => {
-        it('should returns Promise<Observable>', async () => {
+        it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (
-              await instance.pickResult(Promise.resolve(of(value)))
-            ).toPromise(),
+            await lastValueFrom(
+              await instance.pickResult(Promise.resolve(of(value))),
+            ),
           ).to.be.eq(100);
         });
       });
 
       describe('is a value', () => {
-        it('should returns Promise<Observable>', async () => {
+        it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (
-              await instance.pickResult(Promise.resolve(value))
-            ).toPromise(),
+            await lastValueFrom(
+              await instance.pickResult(Promise.resolve(value)),
+            ),
           ).to.be.eq(100);
         });
       });

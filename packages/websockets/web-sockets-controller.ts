@@ -1,4 +1,5 @@
 import { Type } from '@nestjs/common/interfaces/type.interface';
+import { Logger } from '@nestjs/common/services/logger.service';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
@@ -13,11 +14,14 @@ import {
 } from './gateway-metadata-explorer';
 import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
 import { NestGateway } from './interfaces/nest-gateway.interface';
-import { SocketEventsHost } from './interfaces/socket-events-host.interface';
+import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams-host.interface';
 import { SocketServerProvider } from './socket-server-provider';
 import { compareElementAt } from './utils/compare-element.util';
 
 export class WebSocketsController {
+  private readonly logger = new Logger(WebSocketsController.name, {
+    timestamp: true,
+  });
   private readonly metadataExplorer = new GatewayMetadataExplorer(
     new MetadataScanner(),
   );
@@ -28,7 +32,7 @@ export class WebSocketsController {
     private readonly contextCreator: WsContextCreator,
   ) {}
 
-  public mergeGatewayAndServer(
+  public connectGatewayToServer(
     instance: NestGateway,
     metatype: Type<unknown> | Function,
     moduleKey: string,
@@ -72,7 +76,7 @@ export class WebSocketsController {
   public subscribeEvents(
     instance: NestGateway,
     subscribersMap: MessageMappingProperties[],
-    observableServer: SocketEventsHost,
+    observableServer: ServerAndEventStreamsHost,
   ) {
     const { init, disconnect, connection, server } = observableServer;
     const adapter = this.config.getIoAdapter();
@@ -89,6 +93,7 @@ export class WebSocketsController {
       connection,
     );
     adapter.bindClientConnect(server, handler);
+    this.printSubscriptionLogs(instance, subscribersMap);
   }
 
   public getConnectionHandler(
@@ -147,12 +152,20 @@ export class WebSocketsController {
     adapter.bindMessageHandlers(client, handlers, data =>
       fromPromise(this.pickResult(data)).pipe(mergeAll()),
     );
+
+    subscribersMap.forEach(({ callback, message }) => {
+      this.logger.log(
+        `Subscribe ${(instance as Object).constructor.name}.${
+          callback.name
+        } method to ${message} message.`,
+      );
+    });
   }
 
   public async pickResult(
-    defferedResult: Promise<any>,
+    deferredResult: Promise<any>,
   ): Promise<Observable<any>> {
-    const result = await defferedResult;
+    const result = await deferredResult;
     if (result && isFunction(result.subscribe)) {
       return result;
     }
@@ -171,5 +184,20 @@ export class WebSocketsController {
     )) {
       Reflect.set(instance, propertyKey, server);
     }
+  }
+
+  private printSubscriptionLogs(
+    instance: NestGateway,
+    subscribersMap: MessageMappingProperties[],
+  ) {
+    const gatewayClassName = (instance as Object)?.constructor?.name;
+    if (!gatewayClassName) {
+      return;
+    }
+    subscribersMap.forEach(({ message }) =>
+      this.logger.log(
+        `${gatewayClassName} subscribed to the "${message}" message`,
+      ),
+    );
   }
 }
