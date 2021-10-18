@@ -15,12 +15,12 @@ export class PostsResolver {
   constructor(private readonly postsService: PostsService) {}
 
   @Query((returns) => Post)
-  findPost(@Args({ name: 'id', type: () => ID }) id: number): Post {
+  post(@Args({ name: 'id', type: () => ID }) id: number): Post {
     return this.postsService.findOne(id);
   }
 
   @Query((returns) => [Post])
-  getPosts(): Post[] {
+  posts(): Post[] {
     return this.postsService.findAll();
   }
 

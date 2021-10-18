@@ -33,12 +33,12 @@ describe('PostsResolver', () => {
   });
 
   it('should query for a single post', () => {
-    const result = resolver.findPost(1);
+    const result = resolver.post(1);
     expect(result.id).toEqual(1);
   });
 
   it('should query all posts', () => {
-    const result = resolver.getPosts();
+    const result = resolver.posts();
     expect(Array.isArray(result)).toEqual(true);
   });
 

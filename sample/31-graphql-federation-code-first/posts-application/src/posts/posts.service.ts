@@ -10,15 +10,15 @@ export class PostsService {
     { authorId: 2, id: 4, title: 'Hello World' },
   ];
 
-  findOneByAuthorId(authorId: number) {
+  findAllByAuthorId(authorId: number): Post[] {
     return this.posts.filter((post) => post.authorId === Number(authorId));
   }
 
-  findOne(postId: number) {
+  findOne(postId: number): Post {
     return this.posts.find((post) => post.id === postId);
   }
 
-  findAll() {
+  findAll(): Post[] {
     return this.posts;
   }
 }
