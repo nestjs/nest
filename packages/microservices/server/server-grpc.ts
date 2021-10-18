@@ -19,6 +19,7 @@ import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definit
 import { CustomTransportStrategy, MessageHandler } from '../interfaces';
 import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import {ChannelOptions} from "../external/grpc-options.interface";
 
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
@@ -333,27 +334,17 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public async createClient(): Promise<any> {
-    const grpcOptions = {
-      'grpc.max_send_message_length': this.getOptionsProp(
-        this.options,
-        'maxSendMessageLength',
-        GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
-      ),
-      'grpc.max_receive_message_length': this.getOptionsProp(
-        this.options,
-        'maxReceiveMessageLength',
-        GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
-      ),
-    };
-    const maxMetadataSize = this.getOptionsProp(
-      this.options,
-      'maxMetadataSize',
-      -1,
-    );
-    if (maxMetadataSize > 0) {
-      grpcOptions['grpc.max_metadata_size'] = maxMetadataSize;
+    const channelOptions: ChannelOptions = this.options && this.options.channelOptions ? this.options.channelOptions : {};
+    if (this.options && this.options.maxSendMessageLength) {
+      channelOptions["grpc.max_send_message_length"] = this.options.maxSendMessageLength;
     }
-    const server = new grpcPackage.Server(grpcOptions);
+    if (this.options && this.options.maxReceiveMessageLength) {
+      channelOptions["grpc.max_receive_message_length"] = this.options.maxReceiveMessageLength;
+    }
+    if (this.options && this.options.maxMetadataSize) {
+      channelOptions["grpc.max_metadata_size"] = this.options.maxMetadataSize;
+    }
+    const server = new grpcPackage.Server(channelOptions);
     const credentials = this.getOptionsProp(this.options, 'credentials');
 
     await new Promise((resolve, reject) => {
