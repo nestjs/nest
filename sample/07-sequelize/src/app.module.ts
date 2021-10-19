@@ -14,7 +14,6 @@ import { UsersModule } from './users/users.module';
       database: 'test',
       autoLoadModels: true,
       synchronize: true,
-      models: [User],
     }),
     UsersModule,
   ],
