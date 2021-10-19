@@ -3,8 +3,6 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable, Subscription } from 'rxjs';
 import {
-  GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
-  GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
   GRPC_DEFAULT_PROTO_LOADER,
   GRPC_DEFAULT_URL,
 } from '../constants';
@@ -14,6 +12,7 @@ import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definit
 import { ClientGrpc, GrpcOptions } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 import { GRPC_CANCELLED } from './constants';
+import {ChannelOptions} from "../external/grpc-options.interface";
 
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
@@ -65,33 +64,20 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       throw new InvalidGrpcServiceException();
     }
 
-    const maxSendMessageLengthKey = 'grpc.max_send_message_length';
-    const maxReceiveMessageLengthKey = 'grpc.max_receive_message_length';
-    const maxMessageLengthOptions = {
-      [maxSendMessageLengthKey]: this.getOptionsProp(
-        this.options,
-        'maxSendMessageLength',
-        GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
-      ),
-      [maxReceiveMessageLengthKey]: this.getOptionsProp(
-        this.options,
-        'maxReceiveMessageLength',
-        GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
-      ),
-    };
-    const maxMetadataSize = this.getOptionsProp(
-      this.options,
-      'maxMetadataSize',
-      -1,
-    );
-    if (maxMetadataSize > 0) {
-      maxMessageLengthOptions['grpc.max_metadata_size'] = maxMetadataSize;
+    const channelOptions: ChannelOptions = this.options && this.options.channelOptions ? this.options.channelOptions : {};
+    if (this.options && this.options.maxSendMessageLength) {
+      channelOptions["grpc.max_send_message_length"] = this.options.maxSendMessageLength;
+    }
+    if (this.options && this.options.maxReceiveMessageLength) {
+      channelOptions["grpc.max_receive_message_length"] = this.options.maxReceiveMessageLength;
+    }
+    if (this.options && this.options.maxMetadataSize) {
+      channelOptions["grpc.max_metadata_size"] = this.options.maxMetadataSize;
     }
 
     const keepaliveOptions = this.getKeepaliveOptions();
     const options: Record<string, string | number> = {
-      ...(this.options.channelOptions || {}),
-      ...maxMessageLengthOptions,
+      ...channelOptions,
       ...keepaliveOptions,
     };
 
