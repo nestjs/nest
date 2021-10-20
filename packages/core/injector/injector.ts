@@ -640,15 +640,11 @@ export class Injector {
       contextId,
       inquirerId,
     );
-    const isStatic = wrapper.isStatic(contextId, inquirer);
-    const isInRequestScope = wrapper.isInRequestScope(contextId, inquirer);
-    const isLazyTransient = wrapper.isLazyTransient(contextId, inquirer);
-    const isExplicitlyRequested = wrapper.isExplicitlyRequested(
-      contextId,
-      inquirer,
-    );
     const isInContext =
-      isStatic || isInRequestScope || isLazyTransient || isExplicitlyRequested;
+      wrapper.isStatic(contextId, inquirer) ||
+      wrapper.isInRequestScope(contextId, inquirer) ||
+      wrapper.isLazyTransient(contextId, inquirer) ||
+      wrapper.isExplicitlyRequested(contextId, inquirer);
 
     if (isNil(inject) && isInContext) {
       instanceHost.instance = wrapper.forwardRef
