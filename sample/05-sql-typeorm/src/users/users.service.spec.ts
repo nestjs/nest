@@ -75,16 +75,16 @@ describe('UserService', () => {
   describe('findOne()', () => {
     it('should get a single user', () => {
       const repoSpy = jest.spyOn(repository, 'findOne');
-      expect(service.findOne('a id')).resolves.toEqual(oneUser);
-      expect(repoSpy).toBeCalledWith('a id');
+      expect(service.findOne('1')).resolves.toEqual(oneUser);
+      expect(repoSpy).toBeCalledWith('1');
     });
   });
 
   describe('remove()', () => {
     it('should call remove with the passed value', async () => {
       const removeSpy = jest.spyOn(repository, 'delete');
-      const retVal = await service.remove('some id');
-      expect(removeSpy).toBeCalledWith('some id');
+      const retVal = await service.remove('2');
+      expect(removeSpy).toBeCalledWith('2');
       expect(retVal).toBeUndefined();
     });
   });
