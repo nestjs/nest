@@ -19,7 +19,7 @@
     "typescript": "4.3.5"
   },
   "devDependencies": {
-    "@nestjs/cli": "8.1.2",
+    "@nestjs/cli": "8.1.4",
     "@nestjs/schematics": "8.0.4",
     "@types/node": "14.17.27",
     "@typescript-eslint/eslint-plugin": "4.33.0",
@@ -30,7 +30,7 @@
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "9.2.6",
     "ts-node": "10.3.0",
-    "webpack": "5.58.2",
+    "webpack": "5.59.1",
     "webpack-cli": "4.9.1",
     "webpack-node-externals": "3.0.0"
   }

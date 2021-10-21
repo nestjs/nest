@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "8.1.1",
     "@nestjs/core": "8.1.1",
-    "@nestjs/mongoose": "9.0.0",
+    "@nestjs/mongoose": "9.0.1",
     "@nestjs/platform-express": "8.1.1",
     "mongoose": "6.0.11",
     "reflect-metadata": "0.1.13",
@@ -29,7 +29,7 @@
     "rxjs": "7.4.0"
   },
   "devDependencies": {
-    "@nestjs/cli": "8.1.2",
+    "@nestjs/cli": "8.1.4",
     "@types/mongoose": "5.11.96",
     "@nestjs/schematics": "8.0.4",
     "@nestjs/testing": "8.1.1",
@@ -39,7 +39,7 @@
     "@types/node": "14.17.27",
     "@types/supertest": "2.0.11",
     "@types/ws": "7.4.7",
-    "jest": "27.2.5",
+    "jest": "27.3.1",
     "prettier": "2.4.1",
     "supertest": "6.1.6",
     "ts-jest": "27.0.7",
