@@ -57,7 +57,7 @@ describe('UsersController', () => {
   });
 
   describe('create()', () => {
-    it('should create an user', () => {
+    it('should create a user', () => {
       usersController.create(createUserDto);
       expect(usersController.create(createUserDto)).resolves.toEqual({
         id: 'a id',
