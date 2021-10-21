@@ -73,8 +73,8 @@ describe('UserService', () => {
   describe('findOne()', () => {
     it('should get a single user', () => {
       const findSpy = jest.spyOn(model, 'findOne');
-      expect(service.findOne('id'));
-      expect(findSpy).toBeCalledWith({ where: { id: 'id' } });
+      expect(service.findOne('1'));
+      expect(findSpy).toBeCalledWith({ where: { id: '1' } });
     });
   });
 
@@ -83,8 +83,8 @@ describe('UserService', () => {
       const findSpy = jest.spyOn(model, 'findOne').mockReturnValue({
         destroy: jest.fn(),
       } as any);
-      const retVal = await service.remove('id');
-      expect(findSpy).toBeCalledWith({ where: { id: 'id' } });
+      const retVal = await service.remove('2');
+      expect(findSpy).toBeCalledWith({ where: { id: '2' } });
       expect(retVal).toBeUndefined();
     });
   });
