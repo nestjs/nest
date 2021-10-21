@@ -21,7 +21,7 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@apollo/gateway": "0.42.0",
+    "@apollo/gateway": "0.42.3",
     "@nestjs/common": "8.1.1",
     "@nestjs/core": "8.1.1",
     "@nestjs/graphql": "9.1.1",
