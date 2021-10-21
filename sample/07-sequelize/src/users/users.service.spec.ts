@@ -3,7 +3,7 @@ import { User } from './models/user.model';
 import { UsersService } from './users.service';
 import { getModelToken } from '@nestjs/sequelize';
 
-const userArray = [
+const usersArray = [
   {
     firstName: 'firstName #1',
     lastName: 'lastName #1',
@@ -30,7 +30,7 @@ describe('UserService', () => {
         {
           provide: getModelToken(User),
           useValue: {
-            findAll: jest.fn(() => userArray),
+            findAll: jest.fn(() => usersArray),
             findOne: jest.fn(),
             create: jest.fn(() => oneUser),
             remove: jest.fn(),
@@ -66,7 +66,7 @@ describe('UserService', () => {
   describe('findAll()', () => {
     it('should return an array of users', async () => {
       const users = await service.findAll();
-      expect(users).toEqual(userArray);
+      expect(users).toEqual(usersArray);
     });
   });
 
