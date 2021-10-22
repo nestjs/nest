@@ -6,6 +6,7 @@ import { CatsService } from './cats.service';
 describe('CatsController', () => {
   let controller: CatsController;
   let service: CatsService;
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CatsController],
