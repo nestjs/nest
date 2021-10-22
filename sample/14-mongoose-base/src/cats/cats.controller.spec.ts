@@ -3,7 +3,7 @@ import { CatsController } from './cats.controller';
 import { CreateCatDto } from './dto/create-cat.dto';
 import { CatsService } from './cats.service';
 
-describe('Cats Controller', () => {
+describe('CatsController', () => {
   let controller: CatsController;
   let service: CatsService;
   beforeEach(async () => {
