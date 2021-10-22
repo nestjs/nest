@@ -282,6 +282,10 @@ export class NestApplication
           if (this.appOptions?.autoFlushLogs ?? true) {
             this.flushLogs();
           }
+          if (originalCallbackArgs[0] instanceof Error) {
+            return reject(originalCallbackArgs[0]);
+          }
+
           const address = this.httpServer.address();
           if (address) {
             this.httpServer.removeListener('error', errorHandler);
