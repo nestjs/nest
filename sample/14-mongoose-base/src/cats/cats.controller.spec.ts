@@ -34,7 +34,7 @@ describe('CatsController', () => {
             create: jest
               .fn()
               .mockImplementation((createCatDto: CreateCatDto) =>
-                Promise.resolve({ _id: 'a id', ...createCatDto }),
+                Promise.resolve({ _id: '1', ...createCatDto }),
               ),
           },
         },
@@ -58,7 +58,7 @@ describe('CatsController', () => {
       };
 
       expect(controller.create(createCatDto)).resolves.toEqual({
-        _id: 'a id',
+        _id: '1',
         ...createCatDto,
       });
     });
