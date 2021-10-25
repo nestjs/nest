@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { NATS_DEFAULT_URL } from '../constants';
 import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-json.deserializer';
+import { EmptyResponseException } from '../errors/empty-response.exception';
 import { Client, NatsMsg } from '../external/nats-client.interface';
 import { NatsOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { NatsRecord } from '../record-builders';
@@ -76,6 +77,14 @@ export class ClientNats extends ClientProxy {
         });
       }
       const rawPacket = natsMsg.data;
+      if (rawPacket?.length === 0) {
+        return callback({
+          err: new EmptyResponseException(
+            this.normalizePattern(packet.pattern),
+          ),
+          isDisposed: true,
+        });
+      }
       const message = await this.deserializer.deserialize(rawPacket);
       if (message.id && message.id !== packet.id) {
         return undefined;
