@@ -44,7 +44,7 @@ describe('CatService', () => {
       ],
     }).compile();
 
-    service = module.get<CatsService>(CatsService);
+    service = module.get(CatsService);
     model = module.get<Model<Cat>>('CAT_MODEL');
   });
 

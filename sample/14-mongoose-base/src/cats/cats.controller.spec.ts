@@ -41,8 +41,8 @@ describe('CatsController', () => {
       ],
     }).compile();
 
-    controller = module.get<CatsController>(CatsController);
-    service = module.get<CatsService>(CatsService);
+    controller = module.get(CatsController);
+    service = module.get(CatsService);
   });
 
   it('should be defined', () => {
