@@ -54,7 +54,7 @@ export class MicroservicesModule {
       injector,
       ClientProxyFactory,
       exceptionFiltersContext,
-      this.getPreRequestHandler(microservicesConfig.preRequest, container),
+      this.getPreRequestHandler(microservicesConfig?.preRequest, container),
     );
   }
 
