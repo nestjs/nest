@@ -5,7 +5,7 @@
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">Um framework <a href="http://nodejs.org" target="_blank">Node.js</a> progressivo para a construção aplicações do lado servidor de forma eficiente e escalável.</p>
+  <p align="center">Um framework <a href="https://nodejs.org/pt-br/" target="_blank">Node.js</a> progressivo para a construção aplicações do lado servidor de forma eficiente e escalável.</p>
       <p align="center">
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
@@ -24,9 +24,9 @@
 
 ## Descrição
 
-Nest é um framework <a href="http://nodejs.org" target="_blank">Node.js</a> para a construção aplicações do lado servidor de forma eficiente e escalável. Utilizando JavaScript moderno, é construído com  <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a> (preserva compatibilidade com JavaScript puro) e combina elementos de POO (Programação Orientada a Objetos), PF (Programação Funcional), and PFR (Programação Funcional Reativa).
+Nest é um framework <a href="https://nodejs.org/pt-br/" target="_blank">Node.js</a> para a construção aplicações do lado servidor de forma eficiente e escalável. Utilizando JavaScript moderno, é construído com  <a href="https://www.typescriptlang.org/pt/" target="_blank">TypeScript</a> (preserva compatibilidade com JavaScript puro) e combina elementos de POO (Programação Orientada a Objetos), PF (Programação Funcional), and PFR (Programação Funcional Reativa).
 
-<p>Por baixo dos panos, Nest faz uso do <a href="https://expressjs.com/" target="_blank">Express</a>, mas também, fornece compatibilidade com uma ampla gama de outras bibliotecas, como por exemplo o <a href="https://github.com/fastify/fastify" target="_blank">Fastify</a>, permitindo o fácil uso com a enorme quantidade de plugins de terceiros que estão disponíveis.</p>
+<p>Por baixo dos panos, Nest faz uso do <a href="https://expressjs.com/pt-br/" target="_blank">Express</a>, mas também, fornece compatibilidade com uma ampla gama de outras bibliotecas, como por exemplo o <a href="https://github.com/fastify/fastify" target="_blank">Fastify</a>, permitindo o fácil uso com a enorme quantidade de plugins de terceiros que estão disponíveis.</p>
 
 ## Filisofia
 
@@ -37,10 +37,11 @@ O objetivo do Nest é fornecer uma arquitetura de aplicação pronta para uso, q
 
 ## Iniciando
 
-* para acessar o [guia](https://docs.nestjs.com), visite [docs.nestjs.com](https://docs.nestjs.com). :books:
+* To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
 * 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
 * [가이드](readme_kr.md)를 확인하려면, [docs.nestjs.com](https://docs.nestjs.com)를 방문하세요.:books: 
 * チェックするには [ガイド](readme_jp.md), 詳しくは [docs.nestjs.com](https://docs.nestjs.com). :books: 
+* Para checar [guia](readme_pt.md), acesse [docs.nestjs.com](https://docs.nestjs.com). :books: 
 
 ## Questionamentos
 
