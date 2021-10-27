@@ -39,6 +39,7 @@ Nest is a framework for building efficient, scalable <a href="http://nodejs.org"
 * 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
 * [가이드](readme_kr.md)를 확인하려면, [docs.nestjs.com](https://docs.nestjs.com)를 방문하세요.:books: 
 * チェックするには [ガイド](readme_jp.md), 詳しくは [docs.nestjs.com](https://docs.nestjs.com). :books: 
+* Para checar [guia](readme_pt.md), acesse [docs.nestjs.com](https://docs.nestjs.com). :books: 
 
 ## Questions
 
