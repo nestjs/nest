@@ -147,7 +147,7 @@ describe('Fastify Cors', () => {
     after(async () => {
       await app.close();
     });
-    
+
     describe('Application Options', () => {
       before(async () => {
         const module = await Test.createTestingModule({

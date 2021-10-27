@@ -33,7 +33,9 @@ export interface CustomStrategy {
 export interface GrpcOptions {
   transport?: Transport.GRPC;
   options: {
-    interceptors?: Array<(options: any, nextCall: (options: any) => any) => any>;
+    interceptors?: Array<
+      (options: any, nextCall: (options: any) => any) => any
+    >;
     url?: string;
     maxSendMessageLength?: number;
     maxReceiveMessageLength?: number;

@@ -29,4 +29,11 @@ export class NestApplicationContextOptions {
    * @default true
    */
   autoFlushLogs?: boolean;
+
+  /**
+   * @desc A token for a Class, that will be called per each message received
+   * by the microservice, before the actual handler.
+   * @default null;
+   */
+  preRequest?: any;
 }

@@ -15,15 +15,21 @@ import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { RpcContextCreator } from './context/rpc-context-creator';
 import { RpcProxy } from './context/rpc-proxy';
-import { CustomTransportStrategy } from './interfaces';
+import { CustomTransportStrategy, MicroserviceOptions } from './interfaces';
 import { ListenersController } from './listeners-controller';
 import { Server } from './server/server';
+import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
+import { PreRequestHandler } from './interfaces/pre-request-handler';
 
 export class MicroservicesModule {
   private readonly clientsContainer = new ClientsContainer();
   private listenersController: ListenersController;
 
-  public register(container: NestContainer, config: ApplicationConfig) {
+  public register(
+    container: NestContainer,
+    config: ApplicationConfig,
+    microservicesConfig: NestMicroserviceOptions & MicroserviceOptions,
+  ) {
     const rpcProxy = new RpcProxy();
     const exceptionFiltersContext = new ExceptionFiltersContext(
       container,
@@ -48,6 +54,7 @@ export class MicroservicesModule {
       injector,
       ClientProxyFactory,
       exceptionFiltersContext,
+      this.getPreRequestHandler(microservicesConfig.preRequest, container),
     );
   }
 
@@ -102,5 +109,28 @@ export class MicroservicesModule {
     const clients = this.clientsContainer.getAllClients();
     await Promise.all(clients.map(client => client.close()));
     this.clientsContainer.clear();
+  }
+
+  private getPreRequestHandler(
+    preRequestToken,
+    container: NestContainer,
+  ): PreRequestHandler {
+    if (preRequestToken) {
+      const modules = container.getModules();
+
+      for (const module of modules.values()) {
+        const provider = module.getProviderByKey(preRequestToken);
+
+        if (provider) {
+          return provider.instance;
+        }
+      }
+
+      throw new RuntimeException(
+        'Cannot find preRequest instance! Please make sure that there is a corresponding provider for your token!',
+      );
+    }
+
+    return null;
   }
 }

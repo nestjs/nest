@@ -46,7 +46,11 @@ export class NestMicroservice
   ) {
     super(container);
 
-    this.microservicesModule.register(container, this.applicationConfig);
+    this.microservicesModule.register(
+      container,
+      this.applicationConfig,
+      config,
+    );
     this.createServer(config);
     this.selectContextModule();
   }

@@ -33,6 +33,7 @@ import {
 import { ListenerMetadataExplorer } from './listener-metadata-explorer';
 import { ServerGrpc } from './server';
 import { Server } from './server/server';
+import { PreRequestHandler } from './interfaces/pre-request-handler';
 
 export class ListenersController {
   private readonly metadataExplorer = new ListenerMetadataExplorer(
@@ -47,6 +48,7 @@ export class ListenersController {
     private readonly injector: Injector,
     private readonly clientFactory: IClientProxyFactory,
     private readonly exceptionFiltersContext: ExceptionFiltersContext,
+    private readonly preRequestHandler?: PreRequestHandler,
   ) {}
 
   public registerPatternHandlers(
@@ -98,11 +100,29 @@ export class ListenersController {
               );
               return originalReturnValue;
             };
+
+            if (this.preRequestHandler) {
+              const handler = (data, context) =>
+                this.preRequestHandler.handle(data, context, eventHandler);
+              return server.addHandler(pattern, handler, isEventHandler);
+            }
+
             return server.addHandler(pattern, eventHandler, isEventHandler);
           } else {
+            if (this.preRequestHandler) {
+              const handler = (data, context) =>
+                this.preRequestHandler.handle(data, context, proxy);
+              return server.addHandler(pattern, handler, isEventHandler);
+            }
+
             return server.addHandler(pattern, proxy, isEventHandler);
           }
         }
+
+        // Same stuff goes here. We should pass the preRequest token
+        // down the call, to create the Request Scoped Pre Request handler.
+        // Do we really need to creat the request-scope preRequest handler?
+        // Yes, if we are doing it, let's do it the right way.
         const asyncHandler = this.createRequestScopedHandler(
           instanceWrapper,
           pattern,

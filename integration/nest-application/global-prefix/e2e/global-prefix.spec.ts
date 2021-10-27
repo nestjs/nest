@@ -115,9 +115,7 @@ describe('Global prefix', () => {
       .get('/middleware/foo')
       .expect(200, MIDDLEWARE_PARAM_VALUE);
 
-    await request(server)
-      .get('/api/v1/middleware/foo')
-      .expect(404);
+    await request(server).get('/api/v1/middleware/foo').expect(404);
   });
 
   afterEach(async () => {
