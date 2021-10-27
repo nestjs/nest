@@ -119,10 +119,6 @@ export class ListenersController {
           }
         }
 
-        // Same stuff goes here. We should pass the preRequest token
-        // down the call, to create the Request Scoped Pre Request handler.
-        // Do we really need to creat the request-scope preRequest handler?
-        // Yes, if we are doing it, let's do it the right way.
         const asyncHandler = this.createRequestScopedHandler(
           instanceWrapper,
           pattern,
