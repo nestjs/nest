@@ -14,6 +14,6 @@ export class CatsController {
 
   @Get()
   async findAll(): Promise<Cat[]> {
-    return await this.catsService.findAll();
+    return this.catsService.findAll();
   }
 }
