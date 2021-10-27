@@ -2,17 +2,14 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable, Subscription } from 'rxjs';
-import {
-  GRPC_DEFAULT_PROTO_LOADER,
-  GRPC_DEFAULT_URL,
-} from '../constants';
+import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { ClientGrpc, GrpcOptions } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 import { GRPC_CANCELLED } from './constants';
-import {ChannelOptions} from "../external/grpc-options.interface";
+import { ChannelOptions } from '../external/grpc-options.interface';
 
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
@@ -64,15 +61,20 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       throw new InvalidGrpcServiceException();
     }
 
-    const channelOptions: ChannelOptions = this.options && this.options.channelOptions ? this.options.channelOptions : {};
+    const channelOptions: ChannelOptions =
+      this.options && this.options.channelOptions
+        ? this.options.channelOptions
+        : {};
     if (this.options && this.options.maxSendMessageLength) {
-      channelOptions["grpc.max_send_message_length"] = this.options.maxSendMessageLength;
+      channelOptions['grpc.max_send_message_length'] =
+        this.options.maxSendMessageLength;
     }
     if (this.options && this.options.maxReceiveMessageLength) {
-      channelOptions["grpc.max_receive_message_length"] = this.options.maxReceiveMessageLength;
+      channelOptions['grpc.max_receive_message_length'] =
+        this.options.maxReceiveMessageLength;
     }
     if (this.options && this.options.maxMetadataSize) {
-      channelOptions["grpc.max_metadata_size"] = this.options.maxMetadataSize;
+      channelOptions['grpc.max_metadata_size'] = this.options.maxMetadataSize;
     }
 
     const keepaliveOptions = this.getKeepaliveOptions();
