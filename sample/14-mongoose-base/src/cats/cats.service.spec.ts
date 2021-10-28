@@ -9,22 +9,22 @@ const mockCat = {
   age: 4,
 };
 
+const catsArray = [
+  {
+    name: 'Cat #1',
+    breed: 'Breed #1',
+    age: 4,
+  },
+  {
+    name: 'Cat #2',
+    breed: 'Breed #2',
+    age: 2,
+  },
+];
+
 describe('CatService', () => {
   let service: CatsService;
   let model: Model<Cat>;
-
-  const catsArray = [
-    {
-      name: 'Cat #1',
-      breed: 'Breed #1',
-      age: 4,
-    },
-    {
-      name: 'Cat #2',
-      breed: 'Breed #2',
-      age: 2,
-    },
-  ];
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
