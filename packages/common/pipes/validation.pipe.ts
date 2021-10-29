@@ -3,8 +3,10 @@ import { Optional } from '../decorators';
 import { Injectable } from '../decorators/core';
 import { HttpStatus } from '../enums/http-status.enum';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
+import { TransformerPackage } from '../interfaces/external/transformer-package.interface';
 import { ValidationError } from '../interfaces/external/validation-error.interface';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
+import { ValidatorPackage } from '../interfaces/external/validator-package.interface';
 import {
   ArgumentMetadata,
   PipeTransform,
@@ -25,10 +27,12 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   exceptionFactory?: (errors: ValidationError[]) => any;
   validateCustomDecorators?: boolean;
   expectedType?: Type<any>;
+  validatorPackage?: ValidatorPackage;
+  transformerPackage?: TransformerPackage;
 }
 
-let classValidator: any = {};
-let classTransformer: any = {};
+let classValidator: ValidatorPackage = {} as any;
+let classTransformer: TransformerPackage = {} as any;
 
 @Injectable()
 export class ValidationPipe implements PipeTransform<any> {
@@ -63,19 +67,29 @@ export class ValidationPipe implements PipeTransform<any> {
     this.exceptionFactory =
       options.exceptionFactory || this.createExceptionFactory();
 
-    classValidator = this.loadValidator();
-    classTransformer = this.loadTransformer();
+    classValidator = this.loadValidator(options.validatorPackage);
+    classTransformer = this.loadTransformer(options.transformerPackage);
   }
 
-  protected loadValidator() {
-    return loadPackage('class-validator', 'ValidationPipe', () =>
-      require('class-validator'),
+  protected loadValidator(
+    validatorPackage?: ValidatorPackage,
+  ): ValidatorPackage {
+    return (
+      validatorPackage ??
+      loadPackage('class-validator', 'ValidationPipe', () =>
+        require('class-validator'),
+      )
     );
   }
 
-  protected loadTransformer() {
-    return loadPackage('class-transformer', 'ValidationPipe', () =>
-      require('class-transformer'),
+  protected loadTransformer(
+    transformerPackage?: TransformerPackage,
+  ): TransformerPackage {
+    return (
+      transformerPackage ??
+      loadPackage('class-transformer', 'ValidationPipe', () =>
+        require('class-transformer'),
+      )
     );
   }
 
