@@ -14,7 +14,6 @@ import { RmqUrl } from '../external/rmq-url.interface';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
-import type { PackageDefinition } from '@grpc/proto-loader';
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -55,7 +54,7 @@ export interface GrpcOptions {
     protoPath: string | string[];
     package: string | string[];
     protoLoader?: string;
-    packageDefinition?: PackageDefinition;
+    packageDefinition?: any;
     loader?: {
       keepCase?: boolean;
       alternateCommentMode?: boolean;
