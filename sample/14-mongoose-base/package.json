@@ -19,9 +19,9 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "8.1.1",
-    "@nestjs/core": "8.1.1",
-    "@nestjs/platform-express": "8.1.1",
+    "@nestjs/common": "8.1.2",
+    "@nestjs/core": "8.1.2",
+    "@nestjs/platform-express": "8.1.2",
     "mongoose": "6.0.12",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
@@ -30,10 +30,16 @@
   "devDependencies": {
     "@nestjs/cli": "8.1.4",
     "@nestjs/schematics": "8.0.4",
-    "@nestjs/testing": "8.1.1",
+    "@nestjs/testing": "8.1.2",
     "@types/express": "4.17.13",
-    "@types/node": "14.17.29",
+    "@types/jest": "27.0.2",
+    "@types/node": "16.11.6",
     "@types/supertest": "2.0.11",
+    "@typescript-eslint/eslint-plugin": "4.33.0",
+    "@typescript-eslint/parser": "4.33.0",
+    "eslint": "7.32.0",
+    "eslint-config-prettier": "8.3.0",
+    "eslint-plugin-import": "2.25.2",
     "jest": "27.3.1",
     "prettier": "2.4.1",
     "supertest": "6.1.6",
@@ -41,11 +47,23 @@
     "ts-loader": "9.2.6",
     "ts-node": "10.4.0",
     "tsconfig-paths": "3.11.0",
-    "@typescript-eslint/eslint-plugin": "4.33.0",
-    "@typescript-eslint/parser": "4.33.0",
-    "eslint": "7.32.0",
-    "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-import": "2.25.2",
     "typescript": "4.3.5"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".spec.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
   }
 }
