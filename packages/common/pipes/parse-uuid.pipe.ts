@@ -10,13 +10,6 @@ import {
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
 
-const uuid = {
-  3: /^[0-9A-F]{8}-[0-9A-F]{4}-3[0-9A-F]{3}-[0-9A-F]{4}-[0-9A-F]{12}$/i,
-  4: /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
-  5: /^[0-9A-F]{8}-[0-9A-F]{4}-5[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
-  all: /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i,
-};
-
 export interface ParseUUIDPipeOptions {
   version?: '3' | '4' | '5';
   errorHttpStatusCode?: ErrorHttpStatusCode;
@@ -25,6 +18,12 @@ export interface ParseUUIDPipeOptions {
 
 @Injectable()
 export class ParseUUIDPipe implements PipeTransform<string> {
+  protected static uuidRegExps = {
+    3: /^[0-9A-F]{8}-[0-9A-F]{4}-3[0-9A-F]{3}-[0-9A-F]{4}-[0-9A-F]{12}$/i,
+    4: /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
+    5: /^[0-9A-F]{8}-[0-9A-F]{4}-5[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
+    all: /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i,
+  };
   private readonly version: '3' | '4' | '5';
   protected exceptionFactory: (errors: string) => any;
 
@@ -57,7 +56,7 @@ export class ParseUUIDPipe implements PipeTransform<string> {
     if (typeof str !== 'string') {
       throw this.exceptionFactory('The value passed as UUID is not a string');
     }
-    const pattern = uuid[version];
+    const pattern = ParseUUIDPipe.uuidRegExps[version];
     return pattern && pattern.test(str);
   }
 }
