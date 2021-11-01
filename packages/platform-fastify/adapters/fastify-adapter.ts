@@ -281,6 +281,13 @@ export class FastifyAdapter<
     }
     if (body instanceof StreamableFile) {
       body = body.getStream();
+      const streamHeaders = body.getHeaders();
+      if (fastifyReply.getHeader('Content-Type') === undefined) {
+        fastifyReply.header('Content-Type', streamHeaders.type);
+      }
+      if (fastifyReply.getHeader('Content-Disposition') === undefined) {
+        fastifyReply.header('Content-Disposition', streamHeaders.disposition);
+      }
     }
     return fastifyReply.send(body);
   }
