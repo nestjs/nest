@@ -67,6 +67,11 @@ Potential solutions:
   @Module({
     imports: [ /* the Module containing ${dependencyName} */ ]
   })
+- If ${dependencyName} imports from ${type.toString()}, was it injected using forwardRef() utility function to resolve the circular dependency?
+  constructor(
+    @Inject(forwardRef(() => ${dependencyName}))
+    private ${dependencyName}: ${dependencyName},
+  ) {}
 `;
 
   if (isNil(index)) {

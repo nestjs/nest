@@ -23,6 +23,11 @@ describe('Error Messages', () => {
       @Module({
         imports: [ /* the Module containing dependency */ ]
       })
+      - If dependency imports from CatService, was it injected using forwardRef() utility function to resolve the circular dependency?
+      constructor(
+        @Inject(forwardRef(() => dependency))
+        private dependency: dependency,
+      ) {}
       `);
 
       class CatService {}
@@ -46,6 +51,11 @@ describe('Error Messages', () => {
       @Module({
       imports: [ /* the Module containing dependency */ ]
       })
+      - If dependency imports from CatService, was it injected using forwardRef() utility function to resolve the circular dependency?
+        constructor(
+          @Inject(forwardRef(() => dependency))
+          private dependency: dependency,
+        ) {}
       `);
 
       const actualMessage = stringCleaner(
@@ -67,6 +77,11 @@ describe('Error Messages', () => {
       @Module({
         imports: [ /* the Module containing dependency */ ]
       })
+      - If dependency imports from CatService, was it injected using forwardRef() utility function to resolve the circular dependency?
+        constructor(
+          @Inject(forwardRef(() => dependency))
+          private dependency: dependency,
+        ) {}
       `);
 
       function CatFunction() {}
@@ -88,7 +103,12 @@ describe('Error Messages', () => {
         @Module({
           imports: [ /* the Module containing dependency */ ]
         })
-      `);
+      - If dependency imports from CatService, was it injected using forwardRef() utility function to resolve the circular dependency?
+        constructor(
+          @Inject(forwardRef(() => dependency))
+          private dependency: dependency,
+        ) {}
+        `);
 
       const actualMessage = stringCleaner(
         new UnknownDependenciesException('CatService', {
@@ -109,6 +129,11 @@ describe('Error Messages', () => {
         @Module({
           imports: [ /* the Module containing dependency */ ]
         })
+      - If dependency imports from CatService, was it injected using forwardRef() utility function to resolve the circular dependency?
+        constructor(
+          @Inject(forwardRef(() => dependency))
+          private dependency: dependency,
+        ) {}  
       `);
 
       class MetaType {
@@ -142,6 +167,11 @@ describe('Error Messages', () => {
         @Module({
           imports: [ /* the Module containing dependency */ ]
         })
+      - If dependency imports from Symbol(CatProvider), was it injected using forwardRef() utility function to resolve the circular dependency?
+        constructor(
+          @Inject(forwardRef(() => dependency))
+          private dependency: dependency,
+        ) {}  
       `);
 
       const actualMessage = stringCleaner(
@@ -163,6 +193,11 @@ describe('Error Messages', () => {
         @Module({
           imports: [ /* the Module containing dependency */ ]
         })
+      - If dependency imports from CatProvider, was it injected using forwardRef() utility function to resolve the circular dependency?
+        constructor(
+          @Inject(forwardRef(() => dependency))
+          private dependency: dependency,
+        ) {}  
       `);
 
       const actualMessage = stringCleaner(
