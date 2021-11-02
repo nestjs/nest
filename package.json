@@ -74,7 +74,7 @@
   "devDependencies": {
     "@codechecks/client": "0.1.12",
     "@commitlint/cli": "13.2.1",
-    "@commitlint/config-angular": "13.2.0",
+    "@commitlint/config-angular": "14.1.0",
     "@grpc/grpc-js": "1.4.2",
     "@grpc/proto-loader": "0.6.6",
     "@nestjs/graphql": "9.1.1",
