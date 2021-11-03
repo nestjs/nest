@@ -53,4 +53,14 @@ describe('Express FileSend', () => {
         expect(res.body.toString()).to.be.eq(readmeString);
       });
   });
+  it('should return a file with correct content type and disposition', async () => {
+    return request(app.getHttpServer())
+      .get('/file/with/headers')
+      .expect(200)
+      .expect('Content-Type', 'text/markdown')
+      .expect('Content-Disposition', 'attachment; filename="Readme.md"')
+      .expect(res => {
+        expect(res.text).to.be.eq(readmeString);
+      });
+  });
 });
