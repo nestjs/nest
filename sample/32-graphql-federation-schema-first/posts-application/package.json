@@ -34,7 +34,7 @@
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "7.4.0",
-    "ts-morph": "12.1.0"
+    "ts-morph": "12.2.0"
   },
   "devDependencies": {
     "@nestjs/cli": "8.1.4",
