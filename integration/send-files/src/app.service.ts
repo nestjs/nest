@@ -23,4 +23,14 @@ export class AppService {
   getRxJSFile(): Observable<StreamableFile> {
     return of(this.getReadStream());
   }
+
+  getFileWithHeaders(): StreamableFile {
+    return new StreamableFile(
+      createReadStream(join(process.cwd(), 'Readme.md')),
+      {
+        type: 'text/markdown',
+        disposition: 'attachment; filename="Readme.md"',
+      },
+    );
+  }
 }

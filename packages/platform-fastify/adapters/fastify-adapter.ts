@@ -280,6 +280,13 @@ export class FastifyAdapter<
       fastifyReply.status(statusCode);
     }
     if (body instanceof StreamableFile) {
+      const streamHeaders = body.getHeaders();
+      if (fastifyReply.getHeader('Content-Type') === undefined) {
+        fastifyReply.header('Content-Type', streamHeaders.type);
+      }
+      if (fastifyReply.getHeader('Content-Disposition') === undefined) {
+        fastifyReply.header('Content-Disposition', streamHeaders.disposition);
+      }
       body = body.getStream();
     }
     return fastifyReply.send(body);

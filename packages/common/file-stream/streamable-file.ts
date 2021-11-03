@@ -1,11 +1,15 @@
 import { Readable } from 'stream';
+import { StreamableFileOptions } from './streamable-options.interface';
 
 export class StreamableFile {
   private readonly stream: Readable;
 
-  constructor(buffer: Buffer);
-  constructor(readable: Readable);
-  constructor(bufferOrReadStream: Buffer | Readable) {
+  constructor(buffer: Buffer, options?: StreamableFileOptions);
+  constructor(readable: Readable, options?: StreamableFileOptions);
+  constructor(
+    bufferOrReadStream: Buffer | Readable,
+    readonly options: StreamableFileOptions = {},
+  ) {
     if (Buffer.isBuffer(bufferOrReadStream)) {
       this.stream = new Readable();
       this.stream.push(bufferOrReadStream);
@@ -20,5 +24,11 @@ export class StreamableFile {
 
   getStream(): Readable {
     return this.stream;
+  }
+
+  getHeaders() {
+    const { type = 'application/octet-stream', disposition = null } =
+      this.options;
+    return { type, disposition };
   }
 }
