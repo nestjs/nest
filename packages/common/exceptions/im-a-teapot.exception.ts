@@ -16,7 +16,7 @@ export class ImATeapotException extends HttpException {
    * Instantiate an `ImATeapotException` Exception.
    *
    * @example
-   * `throw new BadGatewayException()`
+   * `throw new ImATeapotException()`
    *
    * @usageNotes
    * The HTTP response status code will be 418.
