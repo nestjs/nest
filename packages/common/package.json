@@ -25,7 +25,7 @@
   "peerDependencies": {
     "cache-manager": "*",
     "class-transformer": "*",
-    "class-validator": "*",
+    "class-validator": "^0.13.1",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^7.1.0"
   },
