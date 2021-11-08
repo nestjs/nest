@@ -142,7 +142,7 @@
     "json-loader": "0.5.7",
     "kafkajs": "1.15.0",
     "lerna": "2.11.0",
-    "lerna-changelog": "^2.2.0",
+    "lerna-changelog": "2.2.0",
     "light-my-request": "4.6.0",
     "lint-staged": "11.2.6",
     "markdown-table": "2.0.0",
