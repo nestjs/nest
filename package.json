@@ -126,7 +126,7 @@
     "fastify-cors": "6.0.2",
     "fastify-formbody": "5.1.0",
     "fastify-multipart": "5.1.0",
-    "fastify-static": "4.4.2",
+    "fastify-static": "4.5.0",
     "graphql": "15.7.2",
     "graphql-tools": "7.0.5",
     "gulp": "4.0.2",
