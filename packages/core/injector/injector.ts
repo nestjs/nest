@@ -318,6 +318,9 @@ export class Injector {
     keyOrIndex?: string | number,
   ) {
     if (isUndefined(param)) {
+      this.logger.log(
+        'Nest encountered an undefined dependency. This may be due to a circular import or a missing dependency declaration.',
+      );
       throw new UndefinedDependencyException(
         wrapper.name,
         dependencyContext,
