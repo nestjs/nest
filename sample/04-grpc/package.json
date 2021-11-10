@@ -19,7 +19,7 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@grpc/grpc-js": "1.4.3",
+    "@grpc/grpc-js": "1.4.4",
     "@nestjs/common": "8.1.2",
     "@nestjs/core": "8.1.2",
     "@nestjs/microservices": "8.1.2",
