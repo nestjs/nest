@@ -62,7 +62,7 @@
     "express": "4.17.1",
     "fast-json-stringify": "2.7.11",
     "fast-safe-stringify": "2.1.1",
-    "graphql-subscriptions": "1.2.1",
+    "graphql-subscriptions": "2.0.0",
     "iterare": "1.2.1",
     "object-hash": "2.2.0",
     "path-to-regexp": "3.2.0",
