@@ -37,7 +37,7 @@ describe('Auto-Mocking with token in factory', () => {
       providers: [BarService],
     })
       .useMocker((token) => {
-        if (token === FooService as any) {
+        if (token === FooService) {
           return { foo: sinon.stub };
         }
       })
