@@ -55,9 +55,15 @@ export class TestingInjector extends Injector {
           host: moduleRef,
           metatype: wrapper.metatype,
         });
-        const internalCoreModule = this.container.getInternalCoreModuleRef() as any;
-        internalCoreModule._providers.set(name, newWrapper);
-        internalCoreModule._exports.add(name);
+        const internalCoreModule = this.container.getInternalCoreModuleRef();
+        internalCoreModule.addCustomProvider(
+          {
+            provide: name,
+            useValue: mockedInstance,
+          },
+          internalCoreModule.providers,
+        );
+        internalCoreModule.addExportedProvider(name);
         return newWrapper;
       } else {
         throw err;

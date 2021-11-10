@@ -37,13 +37,13 @@ describe('Auto-Mocking with token in factory', () => {
       providers: [BarService],
     })
       .useMocker((token) => {
-        if (token === FooService.name) {
+        if (token === FooService as any) {
           return { foo: sinon.stub };
         }
       })
       .compile();
     const service = moduleRef.get(BarService);
-    const fooServ = moduleRef.get<{ foo: sinon.SinonStub }>('FooService');
+    const fooServ = moduleRef.get<{ foo: sinon.SinonStub }>(FooService as any);
     service.bar();
     expect(fooServ.foo.called);
   });

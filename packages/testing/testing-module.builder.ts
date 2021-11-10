@@ -68,7 +68,7 @@ export class TestingModuleBuilder {
 
     this.applyOverloadsMap();
     await this.instanceLoader.createInstancesOfDependencies(
-      this.container,
+      this.container.getModules(),
       this.mocker,
     );
     this.scanner.applyApplicationProviders();
