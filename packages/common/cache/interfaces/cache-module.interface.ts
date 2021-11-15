@@ -1,7 +1,9 @@
 import { ModuleMetadata, Provider, Type } from '../../interfaces';
 import { CacheManagerOptions } from './cache-manager.interface';
 
-export type CacheModuleOptions<StoreConfig extends Record<any, any>> =
+export type CacheModuleOptions<
+  StoreConfig extends Record<any, any> = Record<string, any>,
+> =
   // Store-specfic configuration takes precedence over cache module options due
   // to how `createCacheManager` is implemented.
   CacheManagerOptions &
@@ -20,7 +22,9 @@ export type CacheModuleOptions<StoreConfig extends Record<any, any>> =
  *
  * @publicApi
  */
-export interface CacheOptionsFactory<StoreConfig extends Record<any, any>> {
+export interface CacheOptionsFactory<
+  StoreConfig extends Record<any, any> = Record<string, any>,
+> {
   createCacheOptions():
     | Promise<CacheModuleOptions<StoreConfig>>
     | CacheModuleOptions<StoreConfig>;
@@ -33,8 +37,9 @@ export interface CacheOptionsFactory<StoreConfig extends Record<any, any>> {
  *
  * @publicApi
  */
-export interface CacheModuleAsyncOptions<StoreConfig extends Record<any, any>>
-  extends Pick<ModuleMetadata, 'imports'> {
+export interface CacheModuleAsyncOptions<
+  StoreConfig extends Record<any, any> = Record<string, any>,
+> extends Pick<ModuleMetadata, 'imports'> {
   /**
    * Injection token resolving to an existing provider. The provider must implement
    * the `CacheOptionsFactory` interface.
