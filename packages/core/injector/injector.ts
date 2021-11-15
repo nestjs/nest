@@ -798,8 +798,7 @@ export class Injector {
     }
     const tokenName = this.getTokenName(token);
     const dependentName =
-      (inquirer?.name && (inquirer.name.name || inquirer.name.toString?.())) ??
-      'unknown';
+      (inquirer?.name && inquirer.name.toString?.()) ?? 'unknown';
     const isAlias = dependentName === tokenName;
 
     const messageToPrint = `Resolving dependency ${clc.cyanBright(
