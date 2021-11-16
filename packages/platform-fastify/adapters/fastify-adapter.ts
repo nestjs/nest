@@ -115,23 +115,24 @@ export class FastifyAdapter<
       }
     },
     storage() {
-      const versions = new Map();
+      const versions = new Map<string, unknown>();
       return {
         get(version: string | Array<string>) {
+          if (Array.isArray(version)) {
+            return versions.get(version.find(v => versions.has(v))) || null;
+          }
           return versions.get(version) || null;
         },
-        set(
-          versionOrVersions: string | Array<string>,
-          store: Map<string, any>,
-        ) {
-          const storeVersionConstraint = version =>
+        set(versionOrVersions: string | Array<string>, store: unknown) {
+          const storeVersionConstraint = (version: string) =>
             versions.set(version, store);
           if (Array.isArray(versionOrVersions))
             versionOrVersions.forEach(storeVersionConstraint);
           else storeVersionConstraint(versionOrVersions);
         },
         del(version: string | Array<string>) {
-          versions.delete(version);
+          if (Array.isArray(version)) version.forEach(v => versions.delete(v));
+          else versions.delete(version);
         },
         empty() {
           versions.clear();
@@ -166,6 +167,10 @@ export class FastifyAdapter<
         if (customHeaderVersionParameter) {
           return customHeaderVersionParameter;
         }
+      }
+      // Custom Versioning Handler
+      else if (this.versioningOptions.type === VersioningType.CUSTOM) {
+        return this.versioningOptions.extractor(req);
       }
       return undefined;
     },

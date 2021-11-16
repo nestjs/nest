@@ -353,6 +353,38 @@ export class RouterExplorer {
       if (versioningOptions.type === VersioningType.URI) {
         return handler(req, res, next);
       }
+
+      // Custom Extractor Versioning Handler
+      if (versioningOptions.type === VersioningType.CUSTOM) {
+        const extractedVersion = versioningOptions.extractor(req);
+
+        if (Array.isArray(version)) {
+          if (
+            Array.isArray(extractedVersion) &&
+            version.filter(extractedVersion.includes).length
+          ) {
+            return handler(req, res, next);
+          } else if (
+            isString(extractedVersion) &&
+            version.includes(extractedVersion)
+          ) {
+            return handler(req, res, next);
+          }
+        } else {
+          if (
+            Array.isArray(extractedVersion) &&
+            extractedVersion.includes(version)
+          ) {
+            return handler(req, res, next);
+          } else if (
+            isString(extractedVersion) &&
+            version === extractedVersion
+          ) {
+            return handler(req, res, next);
+          }
+        }
+      }
+
       // Media Type (Accept Header) Versioning Handler
       if (versioningOptions.type === VersioningType.MEDIA_TYPE) {
         const MEDIA_TYPE_HEADER = 'Accept';
