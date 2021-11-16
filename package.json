@@ -105,7 +105,7 @@
     "apollo-server-express": "3.5.0",
     "artillery": "1.7.9",
     "body-parser": "1.19.0",
-    "bytes": "3.1.0",
+    "bytes": "3.1.1",
     "cache-manager": "3.6.0",
     "cache-manager-redis-store": "2.0.0",
     "chai": "4.3.4",
