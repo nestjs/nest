@@ -1,5 +1,5 @@
 import { BeforeApplicationShutdown } from '@nestjs/common';
-import { isNil } from '@nestjs/common/utils/shared.utils';
+import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,
@@ -16,7 +16,7 @@ import { Module } from '../injector/module';
 function hasBeforeApplicationShutdownHook(
   instance: unknown,
 ): instance is BeforeApplicationShutdown {
-  return !isNil(
+  return isFunction(
     (instance as BeforeApplicationShutdown).beforeApplicationShutdown,
   );
 }

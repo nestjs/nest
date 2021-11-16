@@ -1,5 +1,5 @@
 import { OnApplicationShutdown } from '@nestjs/common';
-import { isNil } from '@nestjs/common/utils/shared.utils';
+import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,
@@ -16,7 +16,7 @@ import { Module } from '../injector/module';
 function hasOnAppShutdownHook(
   instance: unknown,
 ): instance is OnApplicationShutdown {
-  return !isNil((instance as OnApplicationShutdown).onApplicationShutdown);
+  return isFunction((instance as OnApplicationShutdown).onApplicationShutdown);
 }
 
 /**
