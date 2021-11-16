@@ -2,11 +2,11 @@ import {
   Body,
   Controller,
   HttpCode,
+  Logger,
   OnModuleDestroy,
   OnModuleInit,
   Post,
 } from '@nestjs/common';
-import { Logger } from '@nestjs/common/services/logger.service';
 import { Client, ClientKafka, Transport } from '@nestjs/microservices';
 import { PartitionerArgs } from 'kafkajs';
 import { Observable } from 'rxjs';

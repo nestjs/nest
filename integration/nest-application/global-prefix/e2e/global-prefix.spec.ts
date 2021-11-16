@@ -1,5 +1,4 @@
-import { INestApplication } from '@nestjs/common';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { INestApplication, RequestMethod } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import {

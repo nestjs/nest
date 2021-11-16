@@ -1,4 +1,4 @@
-import { Scalar } from '@nestjs/graphql/dist/decorators/resolvers.decorators';
+import { Scalar } from '@nestjs/graphql';
 import { Kind } from 'graphql';
 
 @Scalar('Date')
