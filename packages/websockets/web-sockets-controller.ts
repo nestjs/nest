@@ -152,14 +152,6 @@ export class WebSocketsController {
     adapter.bindMessageHandlers(client, handlers, data =>
       fromPromise(this.pickResult(data)).pipe(mergeAll()),
     );
-
-    subscribersMap.forEach(({ callback, message }) => {
-      this.logger.log(
-        `Subscribe ${(instance as Object).constructor.name}.${
-          callback.name
-        } method to ${message} message.`,
-      );
-    });
   }
 
   public async pickResult(
