@@ -48,7 +48,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     grpcPackage = this.loadPackage('@grpc/grpc-js', ServerGrpc.name, () =>
       require('@grpc/grpc-js'),
     );
-    grpcProtoLoaderPackage = this.loadPackage(protoLoader, ServerGrpc.name);
+    grpcProtoLoaderPackage = this.loadPackage(
+      protoLoader,
+      ServerGrpc.name,
+      () =>
+        protoLoader === GRPC_DEFAULT_PROTO_LOADER
+          ? require('@grpc/proto-loader')
+          : require(protoLoader),
+    );
   }
 
   public async listen(

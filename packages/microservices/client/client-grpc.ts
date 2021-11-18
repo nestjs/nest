@@ -31,7 +31,14 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       require('@grpc/grpc-js'),
     );
 
-    grpcProtoLoaderPackage = loadPackage(protoLoader, ClientGrpcProxy.name);
+    grpcProtoLoaderPackage = loadPackage(
+      protoLoader,
+      ClientGrpcProxy.name,
+      () =>
+        protoLoader === GRPC_DEFAULT_PROTO_LOADER
+          ? require('@grpc/proto-loader')
+          : require(protoLoader),
+    );
     this.grpcClients = this.createClients();
   }
 
@@ -278,7 +285,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       const packageDefinition =
         this.getOptionsProp(this.options, 'packageDefinition') ||
         grpcProtoLoaderPackage.loadSync(file, loader);
-      
+
       const packageObject =
         grpcPackage.loadPackageDefinition(packageDefinition);
       return packageObject;
