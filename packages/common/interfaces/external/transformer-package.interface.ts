@@ -2,12 +2,12 @@ import { Type } from '../type.interface';
 import { ClassTransformOptions } from './class-transform-options.interface';
 
 export interface TransformerPackage {
-  plainToClass<T>(
+  plainToInstance<T>(
     cls: Type<T>,
     plain: unknown,
     options?: ClassTransformOptions,
   ): T | T[];
-  classToPlain(
+  instanceToPlain(
     object: unknown,
     options?: ClassTransformOptions,
   ): Record<string, any> | Record<string, any>[];
