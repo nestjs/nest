@@ -23,7 +23,7 @@
     "@nestjs/core": "8.2.2",
     "@nestjs/platform-express": "8.2.2",
     "@nestjs/swagger": "5.1.4",
-    "class-transformer": "0.4.0",
+    "class-transformer": "0.5.0",
     "class-validator": "0.13.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
