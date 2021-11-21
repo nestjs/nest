@@ -145,7 +145,7 @@ export class ValidationPipe implements PipeTransform<any> {
       return originalValue;
     }
     return Object.keys(this.validatorOptions).length > 0
-      ? classTransformer.classToPlain(entity, this.transformOptions)
+      ? classTransformer.instanceToPlain(entity, this.transformOptions)
       : value;
   }
 

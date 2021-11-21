@@ -7,7 +7,7 @@ export interface TransformerPackage {
     plain: unknown,
     options?: ClassTransformOptions,
   ): T | T[];
-  classToPlain(
+  instanceToPlain(
     object: unknown,
     options?: ClassTransformOptions,
   ): Record<string, any> | Record<string, any>[];
