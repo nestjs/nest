@@ -778,7 +778,7 @@ export class Injector {
     return param === INQUIRER && parentInquirer;
   }
 
-  private addDependencyMetadata(
+  protected addDependencyMetadata(
     keyOrIndex: number | string,
     hostWrapper: InstanceWrapper,
     instanceWrapper: InstanceWrapper,
