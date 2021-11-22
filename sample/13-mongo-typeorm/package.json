@@ -27,7 +27,7 @@
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "7.4.0",
-    "typeorm": "0.2.40"
+    "typeorm": "0.2.41"
   },
   "devDependencies": {
     "@nestjs/cli": "8.1.5",
