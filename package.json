@@ -56,7 +56,7 @@
     "@nuxtjs/opencollective": "0.3.2",
     "axios": "0.24.0",
     "class-transformer": "0.4.0",
-    "class-validator": "0.13.1",
+    "class-validator": "0.13.2",
     "cli-color": "2.0.1",
     "cors": "2.8.5",
     "express": "4.17.1",
