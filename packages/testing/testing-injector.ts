@@ -1,26 +1,26 @@
+import { NestContainer } from '@nestjs/core';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
 import {
   Injector,
   InjectorDependencyContext,
 } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { Module } from '@nestjs/core/injector/module';
-import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
-import { NestContainer } from '@nestjs/core';
 import { MockFactory } from './interfaces';
 
 export class TestingInjector extends Injector {
   protected mocker?: MockFactory;
-
   protected container: NestContainer;
-  setMocker(mocker: MockFactory): void {
+
+  public setMocker(mocker: MockFactory) {
     this.mocker = mocker;
   }
 
-  setContainer(container: NestContainer) {
+  public setContainer(container: NestContainer) {
     this.container = container;
   }
 
-  async resolveComponentInstance<T>(
+  public async resolveComponentInstance<T>(
     moduleRef: Module,
     name: any,
     dependencyContext: InjectorDependencyContext,
@@ -30,7 +30,7 @@ export class TestingInjector extends Injector {
     keyOrIndex?: string | number,
   ): Promise<InstanceWrapper> {
     try {
-      const retWrapper = await super.resolveComponentInstance(
+      const existingProviderWrapper = await super.resolveComponentInstance(
         moduleRef,
         name,
         dependencyContext,
@@ -39,7 +39,7 @@ export class TestingInjector extends Injector {
         inquirer,
         keyOrIndex,
       );
-      return retWrapper;
+      return existingProviderWrapper;
     } catch (err) {
       if (this.mocker) {
         const mockedInstance = this.mocker(name);

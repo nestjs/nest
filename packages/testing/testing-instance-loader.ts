@@ -6,7 +6,7 @@ import { TestingInjector } from './testing-injector';
 export class TestingInstanceLoader extends InstanceLoader {
   protected injector = new TestingInjector();
 
-  async createInstancesOfDependencies(
+  public async createInstancesOfDependencies(
     modules: Map<string, Module> = this.container.getModules(),
     mocker?: MockFactory,
   ): Promise<void> {
