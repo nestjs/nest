@@ -22,11 +22,11 @@ export abstract class ModuleRef {
   constructor(protected readonly container: NestContainer) {}
 
   public abstract get<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | string | symbol,
+    typeOrToken: Type<TInput> | Function | string | symbol,
     options?: { strict: boolean },
   ): TResult;
   public abstract resolve<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | string | symbol,
+    typeOrToken: Type<TInput> | Function | string | symbol,
     contextId?: ContextId,
     options?: { strict: boolean },
   ): Promise<TResult>;
