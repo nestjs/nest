@@ -1,4 +1,4 @@
-import { FactoryProvider } from '@nestjs/common/interfaces';
+import { FactoryProvider } from '@nestjs/common';
 
 export const LOGGER_PROVIDER = 'LOGGER_PROVIDER';
 export const loggerProvider: FactoryProvider = {
