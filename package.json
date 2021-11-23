@@ -91,7 +91,7 @@
     "@types/gulp": "4.0.9",
     "@types/http-errors": "1.8.1",
     "@types/mocha": "9.0.0",
-    "@types/node": "16.11.8",
+    "@types/node": "16.11.9",
     "@types/redis": "2.8.32",
     "@types/reflect-metadata": "0.1.0",
     "@types/sinon": "10.0.6",
