@@ -79,7 +79,7 @@ export class ClassSerializerInterceptor implements NestInterceptor {
     options: ClassTransformOptions,
   ): PlainLiteralObject {
     return plainOrClass
-      ? classTransformer.classToPlain(plainOrClass, options)
+      ? classTransformer.instanceToPlain(plainOrClass, options)
       : plainOrClass;
   }
 
