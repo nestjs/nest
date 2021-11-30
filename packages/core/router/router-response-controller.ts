@@ -3,7 +3,11 @@ import { isFunction, isObject } from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage } from 'http';
 import { lastValueFrom, Observable } from 'rxjs';
 import { debounce } from 'rxjs/operators';
-import { HeaderStream, SseStream } from './sse-stream';
+import {
+  AdditionalHeaders,
+  WritableHeaderStream,
+  SseStream,
+} from './sse-stream';
 
 export interface CustomHeader {
   name: string;
@@ -85,9 +89,14 @@ export class RouterResponseController {
 
   public async sse<
     TInput extends Observable<unknown> = any,
-    TResponse extends HeaderStream = any,
+    TResponse extends WritableHeaderStream = any,
     TRequest extends IncomingMessage = any,
-  >(result: TInput, response: TResponse, request: TRequest) {
+  >(
+    result: TInput,
+    response: TResponse,
+    request: TRequest,
+    options?: { additionalHeaders: AdditionalHeaders },
+  ) {
     // It's possible that we sent headers already so don't use a stream
     if (response.writableEnded) {
       return;
@@ -96,7 +105,7 @@ export class RouterResponseController {
     this.assertObservable(result);
 
     const stream = new SseStream(request);
-    stream.pipe(response);
+    stream.pipe(response, options);
 
     const subscription = result
       .pipe(

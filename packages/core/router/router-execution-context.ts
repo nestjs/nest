@@ -444,6 +444,7 @@ export class RouterExecutionContext {
           result,
           (res as any).raw || res,
           (req as any).raw || req,
+          { additionalHeaders: res.getHeaders?.() },
         );
       };
     }
