@@ -16,6 +16,7 @@
     "allowJs": false,
     "strict": true,
     "strictNullChecks": false,
+    "esModuleInterop": true,
     "types": ["node"]
   },
   "exclude": ["../node_modules", "./**/*.spec.ts"]

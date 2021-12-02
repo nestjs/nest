@@ -3,7 +3,7 @@ import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isFunction, isSymbol } from '@nestjs/common/utils/shared.utils';
 import stringify from 'fast-safe-stringify';
-import * as hash from 'object-hash';
+import hash from 'object-hash';
 
 export class ModuleTokenFactory {
   private readonly moduleIdsCache = new WeakMap<Type<unknown>, string>();

@@ -4,12 +4,13 @@ import { AbstractWsAdapter } from '@nestjs/websockets';
 import {
   CLOSE_EVENT,
   CONNECTION_EVENT,
-  ERROR_EVENT,
+  ERROR_EVENT
 } from '@nestjs/websockets/constants';
 import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer';
-import * as http from 'http';
-import { EMPTY, fromEvent, Observable } from 'rxjs';
+import http from 'http';
+import { fromEvent, Observable } from 'rxjs';
 import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
+import { URL } from 'url';
 
 let wsPackage: any = {};
 

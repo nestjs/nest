@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import * as net from 'net';
+import net from 'net';
 import { EmptyError, lastValueFrom } from 'rxjs';
 import { share, tap } from 'rxjs/operators';
 import {

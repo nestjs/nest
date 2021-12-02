@@ -2,7 +2,7 @@ import { RequestMethod } from '@nestjs/common';
 import { HttpServer, RouteInfo, Type } from '@nestjs/common/interfaces';
 import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
-import * as pathToRegexp from 'path-to-regexp';
+import pathToRegexp from 'path-to-regexp';
 import { v4 as uuid } from 'uuid';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
 import { isRouteExcluded } from '../router/utils';
