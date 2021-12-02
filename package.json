@@ -19,6 +19,7 @@
     "changelog": "lerna-changelog",
     "prebuild:prod": "npm run clean",
     "build:prod": "gulp build",
+    "build:multi": "npx tsup --dts --sourcemap --format esm,cjs",
     "build:samples": "gulp install:samples && npm run build && gulp build:samples && gulp test:samples && gulp test:e2e:samples",
     "clean": "gulp clean:bundle",
     "codechecks:benchmarks": "codechecks ./tools/benchmarks/check-benchmarks.ts",
