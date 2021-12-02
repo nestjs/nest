@@ -23,18 +23,30 @@ export class RoutePathFactory {
   ): string[] {
     let paths = [''];
 
-    const version = this.getVersion(metadata);
-    if (version && metadata.versioningOptions?.type === VersioningType.URI) {
+    const versionOrVersions = this.getVersion(metadata);
+    if (
+      versionOrVersions &&
+      metadata.versioningOptions?.type === VersioningType.URI
+    ) {
       const versionPrefix = this.getVersionPrefix(metadata.versioningOptions);
 
-      // Version Neutral - Do not include version in URL
-      if (version !== VERSION_NEUTRAL) {
-        if (Array.isArray(version)) {
-          paths = flatten(
-            paths.map(path => version.map(v => path + `/${versionPrefix}${v}`)),
+      if (Array.isArray(versionOrVersions)) {
+        paths = flatten(
+          paths.map(path =>
+            versionOrVersions.map(version =>
+              // Version Neutral - Do not include version in URL
+              version === VERSION_NEUTRAL
+                ? path
+                : `${path}/${versionPrefix}${version}`,
+            ),
+          ),
+        );
+      } else {
+        // Version Neutral - Do not include version in URL
+        if (versionOrVersions !== VERSION_NEUTRAL) {
+          paths = paths.map(
+            path => `${path}/${versionPrefix}${versionOrVersions}`,
           );
-        } else {
-          paths = paths.map(path => path + `/${versionPrefix}${version}`);
         }
       }
     }
