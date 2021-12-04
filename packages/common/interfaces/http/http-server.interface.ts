@@ -53,6 +53,7 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   end(response: any, message?: string): any;
   render(response: any, view: string, options: any): any;
   redirect(response: any, statusCode: number, url: string): any;
+  isHeadersSent(response: any): boolean;
   setHeader(response: any, name: string, value: string): any;
   setErrorHandler?(handler: Function, prefix?: string): any;
   setNotFoundHandler?(handler: Function, prefix?: string): any;
