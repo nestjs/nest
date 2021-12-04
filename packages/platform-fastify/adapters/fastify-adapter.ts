@@ -388,6 +388,10 @@ export class FastifyAdapter<
     );
   }
 
+  public isHeadersSent(response: TReply): boolean {
+    return response.sent;
+  }
+
   public setHeader(response: TReply, name: string, value: string) {
     return response.header(name, value);
   }
