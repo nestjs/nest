@@ -110,6 +110,7 @@ export abstract class AbstractHttpAdapter<
   abstract redirect(response, statusCode: number, url: string);
   abstract setErrorHandler(handler: Function, prefix?: string);
   abstract setNotFoundHandler(handler: Function, prefix?: string);
+  abstract isHeadersSent(response);
   abstract setHeader(response, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string);
   abstract enableCors(
