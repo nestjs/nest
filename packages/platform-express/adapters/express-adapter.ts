@@ -60,6 +60,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return response.status(statusCode);
   }
 
+  public end(response: any, message?: string) {
+    return response.end(message !== undefined ? String(message) : undefined);
+  }
+
   public render(response: any, view: string, options: any) {
     return response.render(view, options);
   }
