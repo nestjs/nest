@@ -34,6 +34,7 @@ import { Module } from './injector/module';
 export class NestApplicationContext implements INestApplicationContext {
   protected isInitialized = false;
   protected readonly injector = new Injector();
+  private shouldFlushLogsOnOverride = false;
 
   private readonly activeShutdownSignals = new Array<string>();
   private readonly moduleCompiler = new ModuleCompiler();
@@ -131,10 +132,21 @@ export class NestApplicationContext implements INestApplicationContext {
 
   public useLogger(logger: LoggerService | LogLevel[] | false) {
     Logger.overrideLogger(logger);
+
+    if (this.shouldFlushLogsOnOverride) {
+      this.flushLogs();
+    }
   }
 
   public flushLogs() {
     Logger.flush();
+  }
+
+  /**
+   * Define that it must flush logs right after defining a custom logger.
+   */
+  public flushLogsOnOverride() {
+    this.shouldFlushLogsOnOverride = true;
   }
 
   /**
