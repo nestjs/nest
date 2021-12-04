@@ -13,6 +13,7 @@ export class NoopHttpAdapter extends AbstractHttpAdapter {
   getRequestMethod(request: any): any {}
   getRequestUrl(request: any): any {}
   reply(response: any, body: any): any {}
+  end(response: any, message?: any): any {}
   status(response: any, statusCode: number): any {}
   render(response: any, view: string, options: any): any {}
   redirect(response: any, statusCode: number, url: string) {}

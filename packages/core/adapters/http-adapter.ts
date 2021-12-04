@@ -105,6 +105,7 @@ export abstract class AbstractHttpAdapter<
   abstract getRequestUrl(request);
   abstract status(response, statusCode: number);
   abstract reply(response, body: any, statusCode?: number);
+  abstract end(response, message?: string);
   abstract render(response, view: string, options: any);
   abstract redirect(response, statusCode: number, url: string);
   abstract setErrorHandler(handler: Function, prefix?: string);
