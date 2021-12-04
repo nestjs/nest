@@ -300,6 +300,10 @@ export class FastifyAdapter<
     return (response as TReply).code(statusCode);
   }
 
+  public end(response: TReply, message?: string) {
+    response.raw.end(message !== undefined ? String(message) : undefined);
+  }
+
   public render(
     response: TReply & { view: Function },
     view: string,
