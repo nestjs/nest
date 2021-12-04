@@ -38,7 +38,12 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
           message: res,
         };
 
-    applicationRef.reply(host.getArgByIndex(1), message, exception.getStatus());
+    const response = host.getArgByIndex(1);
+    if (!applicationRef.isHeadersSent(response)) {
+      applicationRef.reply(response, message, exception.getStatus());
+    } else {
+      applicationRef.end(response);
+    }
   }
 
   public handleUnknownError(
@@ -55,7 +60,14 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
           message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
         };
-    applicationRef.reply(host.getArgByIndex(1), body, body.statusCode);
+
+    const response = host.getArgByIndex(1);
+    if (!applicationRef.isHeadersSent(response)) {
+      applicationRef.reply(response, body, body.statusCode);
+    } else {
+      applicationRef.end(response);
+    }
+
     if (this.isExceptionObject(exception)) {
       return BaseExceptionFilter.logger.error(
         exception.message,
