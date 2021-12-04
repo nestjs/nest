@@ -80,6 +80,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return this.use(handler);
   }
 
+  public isHeadersSent(response: any): boolean {
+    return response.headersSent;
+  }
+
   public setHeader(response: any, name: string, value: string) {
     return response.set(name, value);
   }
