@@ -13,6 +13,15 @@ function toDataString(data: string | object): string {
     .join('');
 }
 
+export type AdditionalHeaders = Record<
+  string,
+  string[] | string | number | undefined
+>;
+
+interface ReadHeaders {
+  getHeaders?(): AdditionalHeaders;
+}
+
 interface WriteHeaders {
   writableEnded?: boolean;
   writeHead?(
@@ -24,7 +33,8 @@ interface WriteHeaders {
   flushHeaders?(): void;
 }
 
-export type HeaderStream = NodeJS.WritableStream & WriteHeaders;
+export type WritableHeaderStream = NodeJS.WritableStream & WriteHeaders;
+export type HeaderStream = WritableHeaderStream & ReadHeaders;
 
 /**
  * Adapted from https://raw.githubusercontent.com/EventSource/node-ssestream
@@ -51,9 +61,16 @@ export class SseStream extends Transform {
     }
   }
 
-  pipe<T extends HeaderStream>(destination: T, options?: { end?: boolean }): T {
+  pipe<T extends WritableHeaderStream>(
+    destination: T,
+    options?: {
+      additionalHeaders?: AdditionalHeaders;
+      end?: boolean;
+    },
+  ): T {
     if (destination.writeHead) {
       destination.writeHead(200, {
+        ...options?.additionalHeaders,
         // See https://github.com/dunglas/mercure/blob/master/hub/subscribe.go#L124-L130
         'Content-Type': 'text/event-stream',
         Connection: 'keep-alive',
