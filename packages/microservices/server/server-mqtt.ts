@@ -191,8 +191,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
     for (const [key, value] of this.messageHandlers) {
       if (
-        key.indexOf(MQTT_WILDCARD_SINGLE) === -1 &&
-        key.indexOf(MQTT_WILDCARD_ALL) === -1
+        !key.includes(MQTT_WILDCARD_SINGLE) && !key.includes(MQTT_WILDCARD_ALL)
       ) {
         continue;
       }
