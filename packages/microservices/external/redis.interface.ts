@@ -35,6 +35,16 @@ export interface ClientOpts {
   string_numbers?: boolean;
   tls?: any;
   url?: string;
+
+  /**
+   * Introduced in Redis v4
+   */
+  socket?: {
+    connectTimeout?: number;
+    noDelay?: boolean;
+    keepAlive?: number | false;
+    reconnectStrategy?(retries: number): number | Error;
+  };
 }
 
 export interface RedisClient {
@@ -71,6 +81,11 @@ export interface RedisClient {
    * Resume and send the queued commands at once.
    */
   uncork(): void;
+
+  /**
+   * Introduced in Redis v4
+   */
+  connect?(): Promise<void>;
 
   // Low level command execution
   send_command(command: string, ...args: any[]): boolean;

@@ -1,26 +1,8 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import {
-  EmptyError,
-  fromEvent,
-  lastValueFrom,
-  merge,
-  Subject,
-  zip,
-} from 'rxjs';
-import { share, take, tap } from 'rxjs/operators';
-import {
-  CONNECT_EVENT,
-  ECONNREFUSED,
-  ERROR_EVENT,
-  MESSAGE_EVENT,
-  REDIS_DEFAULT_URL,
-} from '../constants';
-import {
-  ClientOpts,
-  RedisClient,
-  RetryStrategyOptions,
-} from '../external/redis.interface';
+import { createClient } from 'redis';
+import { ERROR_EVENT, REDIS_DEFAULT_URL } from '../constants';
+import { ClientOpts, RetryStrategyOptions } from '../external/redis.interface';
 import { ReadPacket, RedisOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
@@ -28,10 +10,9 @@ let redisPackage: any = {};
 
 export class ClientRedis extends ClientProxy {
   protected readonly logger = new Logger(ClientProxy.name);
-  protected readonly subscriptionsCount = new Map<string, number>();
   protected readonly url: string;
-  protected pubClient: RedisClient;
-  protected subClient: RedisClient;
+  protected pubClient: ReturnType<typeof createClient>;
+  protected subClient: ReturnType<typeof createClient>;
   protected connection: Promise<any>;
   protected isExplicitlyTerminated = false;
 
@@ -64,51 +45,40 @@ export class ClientRedis extends ClientProxy {
     this.isExplicitlyTerminated = true;
   }
 
-  public connect(): Promise<any> {
+  public async connect(): Promise<any> {
     if (this.pubClient && this.subClient) {
       return this.connection;
     }
-    const error$ = new Subject<Error>();
+    this.pubClient = this.createClient();
+    this.subClient = this.createClient();
 
-    this.pubClient = this.createClient(error$);
-    this.subClient = this.createClient(error$);
     this.handleError(this.pubClient);
     this.handleError(this.subClient);
 
-    const pubConnect$ = fromEvent(this.pubClient, CONNECT_EVENT);
-    const subClient$ = fromEvent(this.subClient, CONNECT_EVENT);
+    this.connection = Promise.all([
+      this.subClient.connect?.(),
+      this.pubClient.connect?.(),
+    ]);
+    await this.connection;
 
-    this.connection = lastValueFrom(
-      merge(error$, zip(pubConnect$, subClient$)).pipe(
-        take(1),
-        tap(() =>
-          this.subClient.on(MESSAGE_EVENT, this.createResponseCallback()),
-        ),
-        share(),
-      ),
-    ).catch(err => {
-      if (err instanceof EmptyError) {
-        return;
-      }
-      throw err;
-    });
+    await Promise.all([this.subClient.ping?.(), this.pubClient.ping?.()]);
     return this.connection;
   }
 
-  public createClient(error$: Subject<Error>): RedisClient {
+  public createClient() {
     return redisPackage.createClient({
-      ...this.getClientOptions(error$),
+      ...this.getClientOptions(),
       url: this.url,
     });
   }
 
-  public handleError(client: RedisClient) {
+  public handleError(client) {
     client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 
-  public getClientOptions(error$: Subject<Error>): Partial<ClientOpts> {
+  public getClientOptions(): Partial<ClientOpts> {
     const retry_strategy = (options: RetryStrategyOptions) =>
-      this.createRetryStrategy(options, error$);
+      this.createRetryStrategy(options);
 
     return {
       ...(this.options || {}),
@@ -118,11 +88,7 @@ export class ClientRedis extends ClientProxy {
 
   public createRetryStrategy(
     options: RetryStrategyOptions,
-    error$: Subject<Error>,
   ): undefined | number | Error {
-    if (options.error && (options.error as any).code === ECONNREFUSED) {
-      error$.error(options.error);
-    }
     if (this.isExplicitlyTerminated) {
       return undefined;
     }
@@ -135,19 +101,15 @@ export class ClientRedis extends ClientProxy {
     return this.getOptionsProp(this.options, 'retryDelay') || 0;
   }
 
-  public createResponseCallback(): (
-    channel: string,
-    buffer: string,
-  ) => Promise<void> {
-    return async (channel: string, buffer: string) => {
+  public createResponseCallback(
+    callback: (packet: WritePacket) => any,
+  ): (buffer: string, channel: string) => Promise<void> {
+    return async (buffer: string, channel: string) => {
       const packet = JSON.parse(buffer);
-      const { err, response, isDisposed, id } =
-        await this.deserializer.deserialize(packet);
+      const { err, response, isDisposed } = await this.deserializer.deserialize(
+        packet,
+      );
 
-      const callback = this.routingMap.get(id);
-      if (!callback) {
-        return;
-      }
       if (isDisposed || err) {
         return callback({
           err,
@@ -171,31 +133,20 @@ export class ClientRedis extends ClientProxy {
       const pattern = this.normalizePattern(partialPacket.pattern);
       const serializedPacket = this.serializer.serialize(packet);
       const responseChannel = this.getReplyPattern(pattern);
-      let subscriptionsCount =
-        this.subscriptionsCount.get(responseChannel) || 0;
+      const listener = this.createResponseCallback(callback);
 
-      const publishPacket = () => {
-        subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
-        this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
-        this.routingMap.set(packet.id, callback);
-        this.pubClient.publish(
-          this.getRequestPattern(pattern),
-          JSON.stringify(serializedPacket),
-        );
-      };
-
-      if (subscriptionsCount <= 0) {
-        this.subClient.subscribe(
-          responseChannel,
-          (err: any) => !err && publishPacket(),
-        );
-      } else {
-        publishPacket();
-      }
+      this.subClient
+        .subscribe(responseChannel, listener)
+        .then(() =>
+          this.pubClient.publish(
+            this.getRequestPattern(pattern),
+            JSON.stringify(serializedPacket),
+          ),
+        )
+        .catch(err => callback({ err }));
 
       return () => {
-        this.unsubscribeFromChannel(responseChannel);
-        this.routingMap.delete(packet.id);
+        this.subClient.unsubscribe(responseChannel, listener);
       };
     } catch (err) {
       callback({ err });
@@ -206,19 +157,6 @@ export class ClientRedis extends ClientProxy {
     const pattern = this.normalizePattern(packet.pattern);
     const serializedPacket = this.serializer.serialize(packet);
 
-    return new Promise<void>((resolve, reject) =>
-      this.pubClient.publish(pattern, JSON.stringify(serializedPacket), err =>
-        err ? reject(err) : resolve(),
-      ),
-    );
-  }
-
-  protected unsubscribeFromChannel(channel: string) {
-    const subscriptionCount = this.subscriptionsCount.get(channel);
-    this.subscriptionsCount.set(channel, subscriptionCount - 1);
-
-    if (subscriptionCount - 1 <= 0) {
-      this.subClient.unsubscribe(channel);
-    }
+    return this.pubClient.publish(pattern, JSON.stringify(serializedPacket));
   }
 }

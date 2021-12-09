@@ -1,9 +1,7 @@
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
-  CONNECT_EVENT,
   ERROR_EVENT,
-  MESSAGE_EVENT,
   NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_URL,
 } from '../constants';
@@ -42,7 +40,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     this.initializeDeserializer(options);
   }
 
-  public listen(
+  public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
     try {
@@ -51,6 +49,14 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
       this.handleError(this.pubClient);
       this.handleError(this.subClient);
+
+      await Promise.all([
+        this.subClient.connect?.(),
+        this.pubClient.connect?.(),
+      ]);
+
+      await Promise.all([this.subClient.ping?.(), this.pubClient.ping?.()]);
+
       this.start(callback);
     } catch (err) {
       callback(err);
@@ -59,16 +65,16 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
   public start(callback?: () => void) {
     this.bindEvents(this.subClient, this.pubClient);
-    this.subClient.on(CONNECT_EVENT, callback);
+    callback();
   }
 
   public bindEvents(subClient: RedisClient, pubClient: RedisClient) {
-    subClient.on(MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
     const subscribePatterns = [...this.messageHandlers.keys()];
     subscribePatterns.forEach(pattern => {
       const { isEventHandler } = this.messageHandlers.get(pattern);
       subClient.subscribe(
         isEventHandler ? pattern : this.getRequestPattern(pattern),
+        this.getMessageHandler(pubClient),
       );
     });
   }
@@ -87,7 +93,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(pub: RedisClient) {
-    return async (channel: string, buffer: string | any) =>
+    return async (buffer: string, channel: string | any) =>
       this.handleMessage(channel, buffer, pub);
   }
 
