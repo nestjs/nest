@@ -1,5 +1,6 @@
 import { SetMetadata } from '../../decorators';
 import { CACHE_KEY_METADATA } from '../cache.constants';
+import { ExecutionContext } from "../../interfaces";
 
 /**
  * Decorator that sets the caching key used to store/retrieve cached items for
@@ -14,4 +15,6 @@ import { CACHE_KEY_METADATA } from '../cache.constants';
  *
  * @publicApi
  */
-export const CacheKey = (key: string) => SetMetadata(CACHE_KEY_METADATA, key);
+type CacheKeyFactory = (ctx: ExecutionContext) => Promise<string> | string;
+
+export const CacheKey = (key: string | CacheKeyFactory) => SetMetadata(CACHE_KEY_METADATA, key);

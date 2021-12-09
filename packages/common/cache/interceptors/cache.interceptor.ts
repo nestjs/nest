@@ -37,7 +37,7 @@ export class CacheInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<any>> {
-    const key = this.trackBy(context);
+    const key = await this.trackBy(context);
     const ttlValueOrFactory =
       this.reflector.get(CACHE_TTL_METADATA, context.getHandler()) ?? null;
 
@@ -63,16 +63,20 @@ export class CacheInterceptor implements NestInterceptor {
     }
   }
 
-  protected trackBy(context: ExecutionContext): string | undefined {
+  protected async trackBy(context: ExecutionContext): Promise<string | undefined> {
     const httpAdapter = this.httpAdapterHost.httpAdapter;
     const isHttpApp = httpAdapter && !!httpAdapter.getRequestMethod;
-    const cacheMetadata = this.reflector.get(
+    const keyValueOrFactory = this.reflector.get(
       CACHE_KEY_METADATA,
       context.getHandler(),
     );
 
-    if (!isHttpApp || cacheMetadata) {
-      return cacheMetadata;
+    const key = isFunction(keyValueOrFactory)
+      ? await keyValueOrFactory(context)
+      : keyValueOrFactory;
+
+    if (!isHttpApp || key) {
+      return key;
     }
 
     const request = context.getArgByIndex(0);
