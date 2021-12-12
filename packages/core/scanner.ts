@@ -53,6 +53,24 @@ interface ApplicationProviderWrapper {
   scope?: Scope;
 }
 
+export type ModuleDefinition =
+  | ForwardReference
+  | Type<unknown>
+  | DynamicModule
+  | Promise<DynamicModule>;
+
+export interface ModuleToOverride {
+  moduleToReplace: ModuleDefinition;
+  newModule: ModuleDefinition;
+}
+
+interface ModulesScanParamaters {
+  moduleDefinition: ModuleDefinition;
+  scope?: Type<unknown>[];
+  ctxRegistry?: (ForwardReference | DynamicModule | Type<unknown>)[];
+  modulesToOverride?: ModuleToOverride[];
+}
+
 export class DependenciesScanner {
   private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] =
     [];
@@ -63,9 +81,9 @@ export class DependenciesScanner {
     private readonly applicationConfig = new ApplicationConfig(),
   ) {}
 
-  public async scan(module: Type<any>) {
+  public async scan(module: Type<any>, modulesToOverride?: ModuleToOverride[]) {
     await this.registerCoreModule();
-    await this.scanForModules(module);
+    await this.scanForModules({ moduleDefinition: module, modulesToOverride });
     await this.scanModulesForDependencies();
     this.calculateModulesDistance();
 
@@ -73,16 +91,20 @@ export class DependenciesScanner {
     this.container.bindGlobalScope();
   }
 
-  public async scanForModules(
-    moduleDefinition:
-      | ForwardReference
-      | Type<unknown>
-      | DynamicModule
-      | Promise<DynamicModule>,
-    scope: Type<unknown>[] = [],
-    ctxRegistry: (ForwardReference | DynamicModule | Type<unknown>)[] = [],
-  ): Promise<Module[]> {
-    const moduleInstance = await this.insertModule(moduleDefinition, scope);
+  public async scanForModules({
+    moduleDefinition,
+    scope = [],
+    ctxRegistry = [],
+    modulesToOverride = [],
+  }: ModulesScanParamaters): Promise<Module[]> {
+    const moduleInstance = await this.putModule(
+      moduleDefinition,
+      modulesToOverride,
+      scope,
+    );
+    moduleDefinition =
+      this.getOverrideModuleByModule(moduleDefinition, modulesToOverride)
+        ?.newModule ?? moduleDefinition;
     moduleDefinition =
       moduleDefinition instanceof Promise
         ? await moduleDefinition
@@ -119,11 +141,12 @@ export class DependenciesScanner {
       if (ctxRegistry.includes(innerModule)) {
         continue;
       }
-      const moduleRefs = await this.scanForModules(
-        innerModule,
-        [].concat(scope, moduleDefinition),
+      const moduleRefs = await this.scanForModules({
+        moduleDefinition: innerModule,
+        scope: [].concat(scope, moduleDefinition),
         ctxRegistry,
-      );
+        modulesToOverride,
+      });
       registeredModuleRefs = registeredModuleRefs.concat(moduleRefs);
     }
     if (!moduleInstance) {
@@ -409,7 +432,7 @@ export class DependenciesScanner {
       this.container.getModuleCompiler(),
       this.container.getHttpAdapterHostRef(),
     );
-    const [instance] = await this.scanForModules(moduleDefinition);
+    const [instance] = await this.scanForModules({ moduleDefinition });
     this.container.registerCoreModuleRef(instance);
   }
 
@@ -514,5 +537,50 @@ export class DependenciesScanner {
 
   private isRequestOrTransient(scope: Scope): boolean {
     return scope === Scope.REQUEST || scope === Scope.TRANSIENT;
+  }
+
+  private putModule(
+    moduleDefinition: ModuleDefinition,
+    modulesToOverride: ModuleToOverride[],
+    scope: Type<unknown>[],
+  ): Promise<Module | undefined> {
+    const overrideModule = this.getOverrideModuleByModule(
+      moduleDefinition,
+      modulesToOverride,
+    );
+    if (overrideModule !== undefined) {
+      return this.overrideModule(
+        moduleDefinition,
+        overrideModule.newModule,
+        scope,
+      );
+    }
+
+    return this.insertModule(moduleDefinition, scope);
+  }
+
+  private getOverrideModuleByModule(
+    module: ModuleDefinition,
+    modulesToOverride: ModuleToOverride[],
+  ): ModuleToOverride | undefined {
+    return modulesToOverride.find(
+      moduleToOverride => moduleToOverride.moduleToReplace === module,
+    );
+  }
+
+  private async overrideModule(
+    moduleToOverride: any,
+    newModule: any,
+    scope: Type<unknown>[],
+  ): Promise<Module | undefined> {
+    if (newModule && newModule.forwardRef && moduleToOverride.forwardRef) {
+      return this.container.replaceModule(
+        moduleToOverride.forwardRef(),
+        newModule.forwardRef(),
+        scope,
+      );
+    }
+
+    return this.container.replaceModule(moduleToOverride, newModule, scope);
   }
 }

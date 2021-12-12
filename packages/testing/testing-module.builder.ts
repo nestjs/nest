@@ -3,7 +3,11 @@ import { ModuleMetadata } from '@nestjs/common/interfaces';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { DependenciesScanner } from '@nestjs/core/scanner';
+import {
+  DependenciesScanner,
+  ModuleToOverride,
+  ModuleDefinition,
+} from '@nestjs/core/scanner';
 import {
   MockFactory,
   OverrideBy,
@@ -17,6 +21,10 @@ export class TestingModuleBuilder {
   private readonly applicationConfig = new ApplicationConfig();
   private readonly container = new NestContainer(this.applicationConfig);
   private readonly overloadsMap = new Map();
+  private readonly overloadsModuleMap = new Map<
+    ModuleDefinition,
+    ModuleDefinition
+  >();
   private readonly scanner: DependenciesScanner;
   private readonly instanceLoader = new TestingInstanceLoader(this.container);
   private readonly module: any;
@@ -62,9 +70,20 @@ export class TestingModuleBuilder {
     return this.override(typeOrToken, true);
   }
 
+  public overrideModule(moduleToOverride: ModuleDefinition): {
+    useModule: (newModule: ModuleDefinition) => TestingModuleBuilder;
+  } {
+    return {
+      useModule: newModule => {
+        this.overloadsModuleMap.set(moduleToOverride, newModule);
+        return this;
+      },
+    };
+  }
+
   public async compile(): Promise<TestingModule> {
     this.applyLogger();
-    await this.scanner.scan(this.module);
+    await this.scanner.scan(this.module, this.getModuleOverloads());
 
     this.applyOverloadsMap();
     await this.instanceLoader.createInstancesOfDependencies(
@@ -103,6 +122,15 @@ export class TestingModuleBuilder {
     [...this.overloadsMap.entries()].forEach(([item, options]) => {
       this.container.replace(item, options);
     });
+  }
+
+  private getModuleOverloads(): ModuleToOverride[] {
+    return [...this.overloadsModuleMap.entries()].map(
+      ([moduleToReplace, newModule]) => ({
+        moduleToReplace,
+        newModule,
+      }),
+    );
   }
 
   private getRootModule() {

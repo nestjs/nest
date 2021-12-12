@@ -13,9 +13,9 @@ import { UndefinedModuleException } from '../errors/exceptions/undefined-module.
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { MetadataScanner } from '../metadata-scanner';
-import { DependenciesScanner } from '../scanner';
+import { DependenciesScanner, ModuleToOverride } from '../scanner';
 
-describe('DependenciesScanner', () => {
+describe.only('DependenciesScanner', () => {
   class Guard {}
 
   @Injectable()
@@ -68,11 +68,17 @@ describe('DependenciesScanner', () => {
     mockContainer.restore();
   });
 
-  it('should "insertModule" call twice (2 modules) container method "addModule"', async () => {
-    const expectation = mockContainer.expects('addModule').twice();
+  it('should "putModule" call twice (2 modules) container method "addModule"', async () => {
+    const expectationCountAddModule = mockContainer
+      .expects('addModule')
+      .twice();
+    const expectationCountReplaceModule = mockContainer
+      .expects('replaceModule')
+      .never();
 
     await scanner.scan(TestModule as any);
-    expectation.verify();
+    expectationCountAddModule.verify();
+    expectationCountReplaceModule.verify();
   });
 
   it('should "insertProvider" call twice (2 components) container method "addProvider"', async () => {
@@ -94,6 +100,134 @@ describe('DependenciesScanner', () => {
     const expectation = mockContainer.expects('addExportedProvider').once();
     await scanner.scan(TestModule as any);
     expectation.verify();
+  });
+
+  describe('when there is modules overrides', () => {
+    @Injectable()
+    class OverwrittenTestComponent {}
+
+    @Controller('')
+    class OverwrittenControlerOne {}
+
+    @Controller('')
+    class OverwrittenControllerTwo {}
+
+    @Module({
+      controllers: [OverwrittenControlerOne],
+      providers: [OverwrittenTestComponent],
+    })
+    class OverwrittenModuleOne {}
+
+    @Module({
+      controllers: [OverwrittenControllerTwo],
+    })
+    class OverwrittenModuleTwo {}
+
+    @Module({
+      imports: [OverwrittenModuleOne, OverwrittenModuleTwo],
+    })
+    class OverrideTestModule {}
+
+    @Injectable()
+    class OverrideTestComponent {}
+
+    @Controller('')
+    class OverrideControllerOne {}
+
+    @Controller('')
+    class OverrideControllerTwo {}
+
+    @Module({
+      controllers: [OverwrittenControlerOne],
+      providers: [OverrideTestComponent],
+    })
+    class OverrideModuleOne {}
+
+    @Module({
+      controllers: [OverrideControllerTwo],
+    })
+    class OverrideModuleTwo {}
+
+    const modulesToOverride: ModuleToOverride[] = [
+      { moduleToReplace: OverwrittenModuleOne, newModule: OverrideModuleOne },
+      { moduleToReplace: OverwrittenModuleTwo, newModule: OverrideModuleTwo },
+    ];
+
+    it('should "putModule" call twice (2 modules) container method "replaceModule"', async () => {
+      const expectationReplaceModuleFirst = mockContainer
+        .expects('replaceModule')
+        .once()
+        .withArgs(OverwrittenModuleOne, OverrideModuleOne, sinon.match.array);
+      const expectationReplaceModuleSecond = mockContainer
+        .expects('replaceModule')
+        .once()
+        .withArgs(OverwrittenModuleTwo, OverrideModuleTwo, sinon.match.array);
+      const expectationCountAddModule = mockContainer
+        .expects('addModule')
+        .once();
+
+      await scanner.scan(OverrideTestModule as any, modulesToOverride);
+
+      expectationReplaceModuleFirst.verify();
+      expectationReplaceModuleSecond.verify();
+      expectationCountAddModule.verify();
+    });
+
+    it('should "insertProvider" call once container method "addProvider"', async () => {
+      const expectation = mockContainer.expects('addProvider').once();
+
+      await scanner.scan(OverrideTestModule as any);
+      expectation.verify();
+    });
+
+    it('should "insertController" call twice (2 components) container method "addController"', async () => {
+      const expectation = mockContainer.expects('addController').twice();
+      await scanner.scan(OverrideTestModule as any);
+      expectation.verify();
+    });
+
+    it('should "putModule" call container method "replaceModule" with forwardRef() when forwardRef property exists', async () => {
+      const overwrittenForwardRefSpy = sinon.spy();
+
+      @Module({})
+      class OverwrittenForwardRef {}
+
+      @Module({})
+      class Overwritten {
+        public static forwardRef() {
+          overwrittenForwardRefSpy();
+          return OverwrittenForwardRef;
+        }
+      }
+
+      const overrideForwardRefSpy = sinon.spy();
+
+      @Module({})
+      class OverrideForwardRef {}
+
+      @Module({})
+      class Override {
+        public static forwardRef() {
+          overrideForwardRefSpy();
+          return OverrideForwardRef;
+        }
+      }
+
+      @Module({
+        imports: [Overwritten],
+      })
+      class OverrideForwardRefTestModule {}
+
+      await scanner.scan(OverrideForwardRefTestModule as any, [
+        {
+          moduleToReplace: Overwritten,
+          newModule: Override,
+        },
+      ]);
+
+      expect(overwrittenForwardRefSpy.called).to.be.true;
+      expect(overrideForwardRefSpy.called).to.be.true;
+    });
   });
 
   describe('reflectDynamicMetadata', () => {
@@ -447,14 +581,20 @@ describe('DependenciesScanner', () => {
   describe('scanForModules', () => {
     it('should throw an exception when the imports array includes undefined', () => {
       try {
-        scanner.scanForModules(UndefinedModule, [UndefinedModule]);
+        scanner.scanForModules({
+          moduleDefinition: UndefinedModule,
+          scope: [UndefinedModule],
+        });
       } catch (exception) {
         expect(exception instanceof UndefinedModuleException).to.be.true;
       }
     });
     it('should throw an exception when the imports array includes an invalid value', () => {
       try {
-        scanner.scanForModules(InvalidModule, [InvalidModule]);
+        scanner.scanForModules({
+          moduleDefinition: InvalidModule,
+          scope: [InvalidModule],
+        });
       } catch (exception) {
         expect(exception instanceof InvalidModuleException).to.be.true;
       }

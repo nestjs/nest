@@ -84,6 +84,32 @@ export class NestContainer {
     return moduleRef;
   }
 
+  public async replaceModule(
+    metatypeToReplace: Type<any> | DynamicModule | Promise<DynamicModule>,
+    newMetatype: Type<any> | DynamicModule | Promise<DynamicModule>,
+    scope?: Type<any>[],
+  ): Promise<Module | undefined> {
+    const { token } = await this.moduleCompiler.compile(metatypeToReplace);
+    const { type, dynamicMetadata } = await this.moduleCompiler.compile(
+      newMetatype,
+    );
+    const moduleRef = new Module(type, this);
+    moduleRef.token = token;
+    this.modules.set(token, moduleRef);
+
+    await this.addDynamicMetadata(
+      token,
+      dynamicMetadata,
+      [].concat(scope, type),
+    );
+
+    if (this.isGlobalModule(type, dynamicMetadata)) {
+      this.addGlobalModule(moduleRef);
+    }
+
+    return moduleRef;
+  }
+
   public async addDynamicMetadata(
     token: string,
     dynamicModuleMetadata: Partial<DynamicModule>,
