@@ -7,13 +7,16 @@ import { CircularDependencyException } from '../errors/exceptions/circular-depen
 import { UndefinedForwardRefException } from '../errors/exceptions/undefined-forwardref.exception';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
 import { REQUEST } from '../router/request/request-constants';
-import { ModuleCompiler } from './compiler';
+import { ModuleCompiler, ModuleFactory } from './compiler';
 import { ContextId } from './instance-wrapper';
 import { InternalCoreModule } from './internal-core-module';
 import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
 import { ModuleTokenFactory } from './module-token-factory';
 import { ModulesContainer } from './modules-container';
+
+type ModuleMetatype = Type<any> | DynamicModule | Promise<DynamicModule>;
+type ModuleScope = Type<any>[];
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
@@ -54,8 +57,8 @@ export class NestContainer {
   }
 
   public async addModule(
-    metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
-    scope: Type<any>[],
+    metatype: ModuleMetatype,
+    scope: ModuleScope,
   ): Promise<Module | undefined> {
     // In DependenciesScanner#scanForModules we already check for undefined or invalid modules
     // We still need to catch the edge-case of `forwardRef(() => undefined)`
@@ -68,33 +71,44 @@ export class NestContainer {
     if (this.modules.has(token)) {
       return this.modules.get(token);
     }
-    const moduleRef = new Module(type, this);
-    moduleRef.token = token;
-    this.modules.set(token, moduleRef);
 
-    await this.addDynamicMetadata(
-      token,
-      dynamicMetadata,
-      [].concat(scope, type),
+    return this.setModule(
+      {
+        token,
+        type,
+        dynamicMetadata,
+      },
+      scope,
     );
-
-    if (this.isGlobalModule(type, dynamicMetadata)) {
-      this.addGlobalModule(moduleRef);
-    }
-    return moduleRef;
   }
 
   public async replaceModule(
-    metatypeToReplace: Type<any> | DynamicModule | Promise<DynamicModule>,
-    newMetatype: Type<any> | DynamicModule | Promise<DynamicModule>,
-    scope?: Type<any>[],
+    metatypeToReplace: ModuleMetatype,
+    newMetatype: ModuleMetatype,
+    scope: ModuleScope,
   ): Promise<Module | undefined> {
     const { token } = await this.moduleCompiler.compile(metatypeToReplace);
     const { type, dynamicMetadata } = await this.moduleCompiler.compile(
       newMetatype,
     );
+
+    return this.setModule(
+      {
+        token,
+        type,
+        dynamicMetadata,
+      },
+      scope,
+    );
+  }
+
+  private async setModule(
+    { token, dynamicMetadata, type }: ModuleFactory,
+    scope: ModuleScope,
+  ): Promise<Module | undefined> {
     const moduleRef = new Module(type, this);
     moduleRef.token = token;
+
     this.modules.set(token, moduleRef);
 
     await this.addDynamicMetadata(

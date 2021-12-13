@@ -15,7 +15,7 @@ import { InstanceWrapper } from '../injector/instance-wrapper';
 import { MetadataScanner } from '../metadata-scanner';
 import { DependenciesScanner, ModuleToOverride } from '../scanner';
 
-describe.only('DependenciesScanner', () => {
+describe('DependenciesScanner', () => {
   class Guard {}
 
   @Injectable()
