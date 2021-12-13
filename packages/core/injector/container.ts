@@ -87,6 +87,12 @@ export class NestContainer {
     newMetatype: ModuleMetatype,
     scope: ModuleScope,
   ): Promise<Module | undefined> {
+    // In DependenciesScanner#scanForModules we already check for undefined or invalid modules
+    // We still need to catch the edge-case of `forwardRef(() => undefined)`
+    if (!metatypeToReplace || !newMetatype) {
+      throw new UndefinedForwardRefException(scope);
+    }
+
     const { token } = await this.moduleCompiler.compile(metatypeToReplace);
     const { type, dynamicMetadata } = await this.moduleCompiler.compile(
       newMetatype,
