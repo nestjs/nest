@@ -1,4 +1,5 @@
 import {
+  CONTROLLER_WATERMARK,
   HOST_METADATA,
   PATH_METADATA,
   SCOPE_OPTIONS_METADATA,
@@ -167,6 +168,7 @@ export function Controller(
       ];
 
   return (target: object) => {
+    Reflect.defineMetadata(CONTROLLER_WATERMARK, true, target);
     Reflect.defineMetadata(PATH_METADATA, path, target);
     Reflect.defineMetadata(HOST_METADATA, host, target);
     Reflect.defineMetadata(SCOPE_OPTIONS_METADATA, scopeOptions, target);
