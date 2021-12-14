@@ -315,7 +315,7 @@ export class DependenciesScanner {
     if (isUndefined(related)) {
       throw new CircularDependencyException(context);
     }
-    if (related && related.forwardRef) {
+    if (this.isForwardReference(related)) {
       return this.container.addImport(related.forwardRef(), token);
     }
     await this.container.addImport(related, token);
@@ -502,7 +502,7 @@ export class DependenciesScanner {
     return module && !!(module as DynamicModule).module;
   }
 
-  public isForwardReference(
+  private isForwardReference(
     module: Type<any> | DynamicModule | ForwardReference,
   ): module is ForwardReference {
     return module && !!(module as ForwardReference).forwardRef;
