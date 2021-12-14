@@ -117,16 +117,15 @@ Received an unexpected value at index [${index}] of the ${parentModuleName} "imp
 Scope [${stringifyScope(scope)}]`;
 };
 
-export const USING_INJECTABLE_AS_A_MODULE_MESSAGE = (
-  injectableClassRefOrBadForwardModule: Type | ForwardReference,
+export const USING_INVALID_CLASS_AS_A_MODULE_MESSAGE = (
+  metatypeUsedAsAModule: Type | ForwardReference,
   scope: any[],
 ) => {
-  const injectableName =
-    getInstanceName(injectableClassRefOrBadForwardModule) || 'found';
+  const metatypeName = getInstanceName(metatypeUsedAsAModule) || 'found';
 
   // TODO(v9): Edit the message below:
-  return `In the next major release Nest will not allow classes annotated with @Injectable() to appear in the "imports" array of a module!
-Please remove ${injectableName} (including forwarded occurrences, if any) from all of "imports" arrays.
+  return `In the next major version Nest will not allow classes annotated with @Injectable()/@Catch()/@Controller() to appear in the "imports" array of a module!
+Please remove ${metatypeName} (including forwarded occurrences, if any) from all of "imports" arrays.
 
 Scope [${stringifyScope(scope)}]
 `;

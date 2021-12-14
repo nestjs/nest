@@ -11,6 +11,8 @@ import {
   GUARDS_METADATA,
   INTERCEPTORS_METADATA,
   INJECTABLE_WATERMARK,
+  CONTROLLER_WATERMARK,
+  CATCH_WATERMARK,
   MODULE_METADATA,
   PIPES_METADATA,
   ROUTE_ARGS_METADATA,
@@ -40,7 +42,7 @@ import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
 import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
-import { UsingInjectableAsAModuleException } from './errors/exceptions/using-injectable-as-a-module.exception';
+import { InvalidClassModuleException } from './errors/exceptions/invalid-class-module.exception';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 import { getClassScope } from './helpers/get-class-scope';
 import { NestContainer } from './injector/container';
@@ -145,11 +147,15 @@ export class DependenciesScanner {
       ? moduleDefinition.forwardRef()
       : moduleDefinition;
 
-    if (this.isInjectable(moduleToAdd)) {
+    if (
+      this.isInjectable(moduleToAdd) ||
+      this.isController(moduleToAdd) ||
+      this.isExceptionFilter(moduleToAdd)
+    ) {
       // TODO(v9): Throw the exception instead of just warning below, as well as
-      //           the return of `USING_INJECTABLE_AS_A_MODULE_MESSAGE`.
+      //           the return of `USING_INVALID_CLASS_AS_A_MODULE_MESSAGE`.
       this.logger.warn(
-        new UsingInjectableAsAModuleException(moduleDefinition, scope).message,
+        new InvalidClassModuleException(moduleDefinition, scope).message,
       );
     }
 
@@ -516,10 +522,28 @@ export class DependenciesScanner {
     return module && !!(module as DynamicModule).module;
   }
 
-  private isInjectable(
-    metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
-  ): boolean {
+  /**
+   * @param metatype
+   * @returns `true` if `metatype` is annotated with the `@Injectable()` decorator.
+   */
+  private isInjectable(metatype: Type<any>): boolean {
     return !!Reflect.getMetadata(INJECTABLE_WATERMARK, metatype);
+  }
+
+  /**
+   * @param metatype
+   * @returns `true` if `metatype` is annotated with the `@Controller()` decorator.
+   */
+  private isController(metatype: Type<any>): boolean {
+    return !!Reflect.getMetadata(CONTROLLER_WATERMARK, metatype);
+  }
+
+  /**
+   * @param metatype
+   * @returns `true` if `metatype` is annotated with the `@Catch()` decorator.
+   */
+  private isExceptionFilter(metatype: Type<any>): boolean {
+    return !!Reflect.getMetadata(CATCH_WATERMARK, metatype);
   }
 
   private isForwardReference(
