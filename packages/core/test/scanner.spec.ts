@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Catch, Injectable, Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { GUARDS_METADATA } from '../../common/constants';
@@ -20,6 +20,9 @@ describe('DependenciesScanner', () => {
 
   @Injectable()
   class TestComponent {}
+
+  @Catch()
+  class TestExceptionFilterWithoutInjectable {}
 
   @Controller('')
   class TestController {}
@@ -184,6 +187,20 @@ describe('DependenciesScanner', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
       scanner.insertModule(TestComponent, []);
+
+      expect(LoggerWarnSpy.calledOnce).to.be.true;
+    });
+    it('should logs an warning when passing a class annotated with `@Controller()` decorator', () => {
+      sinon.stub(container, 'addModule').returns({} as any);
+
+      scanner.insertModule(TestController, []);
+
+      expect(LoggerWarnSpy.calledOnce).to.be.true;
+    });
+    it('should logs an warning when passing a class annotated with `@Catch()` (only) decorator', () => {
+      sinon.stub(container, 'addModule').returns({} as any);
+
+      scanner.insertModule(TestExceptionFilterWithoutInjectable, []);
 
       expect(LoggerWarnSpy.calledOnce).to.be.true;
     });
