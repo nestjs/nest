@@ -4,11 +4,13 @@ import {
   flatten,
   ForwardReference,
   Provider,
+  Logger,
 } from '@nestjs/common';
 import {
   EXCEPTION_FILTERS_METADATA,
   GUARDS_METADATA,
   INTERCEPTORS_METADATA,
+  INJECTABLE_WATERMARK,
   MODULE_METADATA,
   PIPES_METADATA,
   ROUTE_ARGS_METADATA,
@@ -38,6 +40,7 @@ import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
 import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
+import { UsingInjectableAsAModuleException } from './errors/exceptions/using-injectable-as-a-module.exception';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 import { getClassScope } from './helpers/get-class-scope';
 import { NestContainer } from './injector/container';
@@ -54,6 +57,8 @@ interface ApplicationProviderWrapper {
 }
 
 export class DependenciesScanner {
+  private readonly logger = new Logger(DependenciesScanner.name);
+
   private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] =
     [];
 
@@ -133,13 +138,22 @@ export class DependenciesScanner {
   }
 
   public async insertModule(
-    module: any,
+    moduleDefinition: any,
     scope: Type<unknown>[],
   ): Promise<Module | undefined> {
-    if (module && module.forwardRef) {
-      return this.container.addModule(module.forwardRef(), scope);
+    const moduleToAdd = this.isForwardReference(moduleDefinition)
+      ? moduleDefinition.forwardRef()
+      : moduleDefinition;
+
+    if (this.isInjectable(moduleToAdd)) {
+      // TODO(v9): Throw the exception instead of just warning below, as well as
+      //           the return of `USING_INJECTABLE_AS_A_MODULE_MESSAGE`.
+      this.logger.warn(
+        new UsingInjectableAsAModuleException(moduleDefinition, scope).message,
+      );
     }
-    return this.container.addModule(module, scope);
+
+    return this.container.addModule(moduleToAdd, scope);
   }
 
   public async scanModulesForDependencies(
@@ -500,6 +514,12 @@ export class DependenciesScanner {
     module: Type<any> | DynamicModule,
   ): module is DynamicModule {
     return module && !!(module as DynamicModule).module;
+  }
+
+  private isInjectable(
+    metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
+  ): boolean {
+    return !!Reflect.getMetadata(INJECTABLE_WATERMARK, metatype);
   }
 
   private isForwardReference(
