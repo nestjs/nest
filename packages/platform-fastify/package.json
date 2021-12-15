@@ -17,7 +17,6 @@
     "access": "public"
   },
   "dependencies": {
-    "fastify": "3.24.1",
     "fastify-cors": "6.0.2",
     "fastify-formbody": "5.2.0",
     "light-my-request": "4.7.0",
@@ -26,6 +25,7 @@
     "tslib": "2.3.1"
   },
   "peerDependencies": {
+    "fastify": "3.24.1",
     "@nestjs/common": "^8.0.0",
     "@nestjs/core": "^8.0.0"
   }
