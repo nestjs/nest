@@ -151,8 +151,7 @@ export class DependenciesScanner {
       this.isController(moduleToAdd) ||
       this.isExceptionFilter(moduleToAdd)
     ) {
-      // TODO(v9): Throw the exception instead of just warning below, as well as
-      //           the return of `USING_INVALID_CLASS_AS_A_MODULE_MESSAGE`.
+      // TODO(v9): Throw the exception instead of printing a warning
       this.logger.warn(
         new InvalidClassModuleException(moduleDefinition, scope).message,
       );
