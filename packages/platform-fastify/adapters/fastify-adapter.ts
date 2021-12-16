@@ -12,6 +12,7 @@ import {
   CorsOptionsDelegate,
 } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { isUndefined, isString } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   fastify,
@@ -107,7 +108,7 @@ export class FastifyAdapter<
   private readonly versionConstraint = {
     name: 'version',
     validate(value: unknown) {
-      if (typeof value !== 'string' && !Array.isArray(value)) {
+      if (!isString(value) && !Array.isArray(value)) {
         throw new Error(
           'Version constraint should be a string or an array of strings.',
         );
@@ -370,7 +371,7 @@ export class FastifyAdapter<
   }
 
   public setViewEngine(options: PointOfViewOptions | string) {
-    if (typeof options === 'string') {
+    if (isString(options)) {
       new Logger('FastifyAdapter').error(
         "setViewEngine() doesn't support a string argument.",
       );
@@ -477,7 +478,7 @@ export class FastifyAdapter<
   ) {
     const handlerRef = args[args.length - 1];
     const isVersioned =
-      typeof handlerRef.version !== 'undefined' &&
+      !isUndefined(handlerRef.version) &&
       handlerRef.version !== VERSION_NEUTRAL;
 
     if (isVersioned) {

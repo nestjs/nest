@@ -1,9 +1,10 @@
 import { MessageEvent } from '@nestjs/common/interfaces';
+import { isObject } from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage, OutgoingHttpHeaders } from 'http';
 import { Transform } from 'stream';
 
 function toDataString(data: string | object): string {
-  if (typeof data === 'object') {
+  if (isObject(data)) {
     return toDataString(JSON.stringify(data));
   }
 

@@ -1,3 +1,4 @@
+import { isObject } from '@nestjs/common/utils/shared.utils';
 import { ReadPacket } from '../interfaces';
 import { Serializer } from '../interfaces/serializer.interface';
 import { RmqRecord } from '../record-builders';
@@ -8,7 +9,7 @@ export class RmqRecordSerializer
   serialize(packet: ReadPacket | any): ReadPacket & Partial<RmqRecord> {
     if (
       packet?.data &&
-      typeof packet.data === 'object' &&
+      isObject(packet.data) &&
       packet.data instanceof RmqRecord
     ) {
       const record = packet.data as RmqRecord;

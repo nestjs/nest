@@ -1,4 +1,4 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isUndefined, isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import { NATS_DEFAULT_URL, NO_MESSAGE_HANDLER } from '../constants';
 import { NatsContext } from '../ctx-host/nats.context';
@@ -134,7 +134,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   public async handleStatusUpdates(client: Client) {
     for await (const status of client.status()) {
       const data =
-        status.data && typeof status.data === 'object'
+        status.data && isObject(status.data)
           ? JSON.stringify(status.data)
           : status.data;
       if (status.type === 'disconnect' || status.type === 'error') {
