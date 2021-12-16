@@ -10,7 +10,7 @@ import {
   ProducerRecord,
 } from '../external/kafka.interface';
 import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
-import { ClientOpts } from '../external/redis.interface';
+import { IORedisOptions } from '../external/redis.interface';
 import { RmqUrl } from '../external/rmq-url.interface';
 import { TcpSocket } from '../helpers';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
@@ -91,7 +91,7 @@ export interface RedisOptions {
     retryDelay?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
-  } & ClientOpts;
+  } & IORedisOptions;
 }
 
 export interface MqttOptions {

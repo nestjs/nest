@@ -1,48 +1,31 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import {
-  EmptyError,
-  fromEvent,
-  lastValueFrom,
-  merge,
-  Subject,
-  zip,
-} from 'rxjs';
-import { share, take, tap } from 'rxjs/operators';
-import {
-  CONNECT_EVENT,
-  ECONNREFUSED,
   ERROR_EVENT,
   MESSAGE_EVENT,
-  REDIS_DEFAULT_URL,
+  REDIS_DEFAULT_HOST,
+  REDIS_DEFAULT_PORT,
 } from '../constants';
-import {
-  ClientOpts,
-  RedisClient,
-  RetryStrategyOptions,
-} from '../external/redis.interface';
 import { ReadPacket, RedisOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
-let redisPackage: any = {};
+type Redis = any;
+
+let redisPackage = {} as any;
 
 export class ClientRedis extends ClientProxy {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly subscriptionsCount = new Map<string, number>();
-  protected readonly url: string;
-  protected pubClient: RedisClient;
-  protected subClient: RedisClient;
+  protected pubClient: Redis;
+  protected subClient: Redis;
   protected connection: Promise<any>;
   protected isExplicitlyTerminated = false;
 
   constructor(protected readonly options: RedisOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp(options, 'url') ||
-      (!this.getOptionsProp(options, 'host') && REDIS_DEFAULT_URL);
 
-    redisPackage = loadPackage('redis', ClientRedis.name, () =>
-      require('redis'),
+    redisPackage = loadPackage('ioredis', ClientRedis.name, () =>
+      require('ioredis'),
     );
 
     this.initializeSerializer(options);
@@ -64,73 +47,57 @@ export class ClientRedis extends ClientProxy {
     this.isExplicitlyTerminated = true;
   }
 
-  public connect(): Promise<any> {
+  public async connect(): Promise<any> {
     if (this.pubClient && this.subClient) {
       return this.connection;
     }
-    const error$ = new Subject<Error>();
-
-    this.pubClient = this.createClient(error$);
-    this.subClient = this.createClient(error$);
+    this.pubClient = this.createClient();
+    this.subClient = this.createClient();
     this.handleError(this.pubClient);
     this.handleError(this.subClient);
 
-    const pubConnect$ = fromEvent(this.pubClient, CONNECT_EVENT);
-    const subClient$ = fromEvent(this.subClient, CONNECT_EVENT);
+    this.connection = Promise.all([
+      this.subClient.connect(),
+      this.pubClient.connect(),
+    ]);
+    await this.connection;
 
-    this.connection = lastValueFrom(
-      merge(error$, zip(pubConnect$, subClient$)).pipe(
-        take(1),
-        tap(() =>
-          this.subClient.on(MESSAGE_EVENT, this.createResponseCallback()),
-        ),
-        share(),
-      ),
-    ).catch(err => {
-      if (err instanceof EmptyError) {
-        return;
-      }
-      throw err;
-    });
+    this.subClient.on(MESSAGE_EVENT, this.createResponseCallback());
     return this.connection;
   }
 
-  public createClient(error$: Subject<Error>): RedisClient {
-    return redisPackage.createClient({
-      ...this.getClientOptions(error$),
-      url: this.url,
+  public createClient(): Redis {
+    return new redisPackage({
+      host: REDIS_DEFAULT_HOST,
+      port: REDIS_DEFAULT_PORT,
+      ...this.getClientOptions(),
+      lazyConnect: true,
     });
   }
 
-  public handleError(client: RedisClient) {
+  public handleError(client: Redis) {
     client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 
-  public getClientOptions(error$: Subject<Error>): Partial<ClientOpts> {
-    const retry_strategy = (options: RetryStrategyOptions) =>
-      this.createRetryStrategy(options, error$);
+  public getClientOptions(): Partial<RedisOptions['options']> {
+    const retryStrategy = (times: number) => this.createRetryStrategy(times);
 
     return {
       ...(this.options || {}),
-      retry_strategy,
+      retryStrategy,
     };
   }
 
-  public createRetryStrategy(
-    options: RetryStrategyOptions,
-    error$: Subject<Error>,
-  ): undefined | number | Error {
-    if (options.error && (options.error as any).code === ECONNREFUSED) {
-      error$.error(options.error);
-    }
+  public createRetryStrategy(times: number): undefined | number {
     if (this.isExplicitlyTerminated) {
       return undefined;
     }
     if (
       !this.getOptionsProp(this.options, 'retryAttempts') ||
-      options.attempt > this.getOptionsProp(this.options, 'retryAttempts')
+      times > this.getOptionsProp(this.options, 'retryAttempts')
     ) {
-      return new Error('Retry time exhausted');
+      this.logger.error('Retry time exhausted');
+      return;
     }
     return this.getOptionsProp(this.options, 'retryDelay') || 0;
   }

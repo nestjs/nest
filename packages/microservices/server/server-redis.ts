@@ -1,41 +1,37 @@
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
-  CONNECT_EVENT,
   ERROR_EVENT,
   MESSAGE_EVENT,
   NO_MESSAGE_HANDLER,
-  REDIS_DEFAULT_URL,
+  REDIS_DEFAULT_HOST,
+  REDIS_DEFAULT_PORT,
 } from '../constants';
 import { RedisContext } from '../ctx-host';
 import { Transport } from '../enums';
 import {
-  ClientOpts,
-  RedisClient,
-  RetryStrategyOptions,
-} from '../external/redis.interface';
-import { CustomTransportStrategy, IncomingRequest } from '../interfaces';
-import { RedisOptions } from '../interfaces/microservice-configuration.interface';
+  CustomTransportStrategy,
+  IncomingRequest,
+  RedisOptions,
+} from '../interfaces';
 import { Server } from './server';
 
-let redisPackage: any = {};
+type Redis = any;
+
+let redisPackage = {} as any;
 
 export class ServerRedis extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.REDIS;
 
-  private readonly url: string;
-  private subClient: RedisClient;
-  private pubClient: RedisClient;
+  private subClient: Redis;
+  private pubClient: Redis;
   private isExplicitlyTerminated = false;
 
   constructor(private readonly options: RedisOptions['options']) {
     super();
-    this.url =
-      this.getOptionsProp(options, 'url') ||
-      (!this.getOptionsProp(options, 'host') && REDIS_DEFAULT_URL);
 
-    redisPackage = this.loadPackage('redis', ServerRedis.name, () =>
-      require('redis'),
+    redisPackage = this.loadPackage('ioredis', ServerRedis.name, () =>
+      require('ioredis'),
     );
 
     this.initializeSerializer(options);
@@ -51,6 +47,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
       this.handleError(this.pubClient);
       this.handleError(this.subClient);
+
       this.start(callback);
     } catch (err) {
       callback(err);
@@ -58,11 +55,15 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public start(callback?: () => void) {
-    this.bindEvents(this.subClient, this.pubClient);
-    this.subClient.on(CONNECT_EVENT, callback);
+    Promise.all([this.subClient.connect(), this.pubClient.connect()])
+      .then(() => {
+        this.bindEvents(this.subClient, this.pubClient);
+        callback();
+      })
+      .catch(callback);
   }
 
-  public bindEvents(subClient: RedisClient, pubClient: RedisClient) {
+  public bindEvents(subClient: Redis, pubClient: Redis) {
     subClient.on(MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
     const subscribePatterns = [...this.messageHandlers.keys()];
     subscribePatterns.forEach(pattern => {
@@ -79,14 +80,16 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     this.subClient && this.subClient.quit();
   }
 
-  public createRedisClient(): RedisClient {
-    return redisPackage.createClient({
+  public createRedisClient(): Redis {
+    return new redisPackage({
+      port: REDIS_DEFAULT_PORT,
+      host: REDIS_DEFAULT_HOST,
       ...this.getClientOptions(),
-      url: this.url,
+      lazyConnect: true,
     });
   }
 
-  public getMessageHandler(pub: RedisClient) {
+  public getMessageHandler(pub: Redis) {
     return async (channel: string, buffer: string | any) =>
       this.handleMessage(channel, buffer, pub);
   }
@@ -94,7 +97,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   public async handleMessage(
     channel: string,
     buffer: string | any,
-    pub: RedisClient,
+    pub: Redis,
   ) {
     const rawMessage = this.parseMessage(buffer);
     const packet = await this.deserializer.deserialize(rawMessage, { channel });
@@ -125,7 +128,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     response$ && this.send(response$, publish);
   }
 
-  public getPublisher(pub: RedisClient, pattern: any, id: string) {
+  public getPublisher(pub: Redis, pattern: any, id: string) {
     return (response: any) => {
       Object.assign(response, { id });
       const outgoingResponse = this.serializer.serialize(response);
@@ -157,31 +160,25 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
   }
 
-  public getClientOptions(): Partial<ClientOpts> {
-    const retry_strategy = (options: RetryStrategyOptions) =>
-      this.createRetryStrategy(options);
+  public getClientOptions(): Partial<RedisOptions['options']> {
+    const retryStrategy = (times: number) => this.createRetryStrategy(times);
 
     return {
       ...(this.options || {}),
-      retry_strategy,
+      retryStrategy,
     };
   }
 
-  public createRetryStrategy(
-    options: RetryStrategyOptions,
-  ): undefined | number | void {
-    if (options.error && (options.error as any).code === 'ECONNREFUSED') {
-      this.logger.error(`Error ECONNREFUSED: ${this.url}`);
-    }
+  public createRetryStrategy(times: number): undefined | number | void {
     if (this.isExplicitlyTerminated) {
       return undefined;
     }
     if (
       !this.getOptionsProp(this.options, 'retryAttempts') ||
-      options.attempt > this.getOptionsProp(this.options, 'retryAttempts')
+      times > this.getOptionsProp(this.options, 'retryAttempts')
     ) {
-      this.logger.error(`Retry time exhausted: ${this.url}`);
-      throw new Error('Retry time exhausted');
+      this.logger.error(`Retry time exhausted`);
+      return;
     }
     return this.getOptionsProp(this.options, 'retryDelay') || 0;
   }

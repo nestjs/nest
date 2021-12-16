@@ -3,7 +3,7 @@ import {
   Controller,
   InternalServerErrorException,
   Post,
-  RequestTimeoutException,
+  RequestTimeoutException
 } from '@nestjs/common';
 import { ClientProxyFactory } from '@nestjs/microservices';
 import { Observable, throwError } from 'rxjs';
@@ -24,7 +24,8 @@ export class DisconnectedClientController {
         return throwError(() =>
           code === 'ECONNREFUSED' ||
           code === 'CONN_ERR' ||
-          code === 'CONNECTION_REFUSED'
+          code === 'CONNECTION_REFUSED' ||
+          error.message === 'Connection is closed.'
             ? new RequestTimeoutException('ECONNREFUSED')
             : new InternalServerErrorException(),
         );
