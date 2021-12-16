@@ -678,10 +678,11 @@ describe('ClientKafka', () => {
       });
 
       it('should call callback', async () => {
-        await client['publish'](readPacket, callback);
-
-        expect(callback.called).to.be.true;
-        expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
+        return new Promise(async resolve => {
+          return client['publish'](readPacket, ({ err }) => resolve(err));
+        }).then(err => {
+          expect(err).to.be.instanceof(Error);
+        });
       });
     });
 

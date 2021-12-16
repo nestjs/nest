@@ -189,9 +189,9 @@ export class ClientKafka extends ClientProxy {
     return this.consumerAssignments;
   }
 
-  protected dispatchEvent(packet: OutgoingEvent): Promise<any> {
+  protected async dispatchEvent(packet: OutgoingEvent): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
-    const outgoingEvent = this.serializer.serialize(packet.data);
+    const outgoingEvent = await this.serializer.serialize(packet.data);
     const message = Object.assign(
       {
         topic: pattern,
@@ -199,7 +199,8 @@ export class ClientKafka extends ClientProxy {
       },
       this.options.send || {},
     );
-    return this.producer.send(message);
+
+    return await this.producer.send(message);
   }
 
   protected getReplyTopicPartition(topic: string): string {
@@ -222,23 +223,27 @@ export class ClientKafka extends ClientProxy {
       const replyTopic = this.getResponsePatternName(pattern);
       const replyPartition = this.getReplyTopicPartition(replyTopic);
 
-      const serializedPacket: KafkaRequest = this.serializer.serialize(
-        packet.data,
-      );
-      serializedPacket.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
-      serializedPacket.headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
-      serializedPacket.headers[KafkaHeaders.REPLY_PARTITION] = replyPartition;
+      this.serializer
+        .serialize(packet.data)
+        .then((serializedPacket: KafkaRequest) => {
+          serializedPacket.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
+          serializedPacket.headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
+          serializedPacket.headers[KafkaHeaders.REPLY_PARTITION] =
+            replyPartition;
 
-      this.routingMap.set(packet.id, callback);
+          this.routingMap.set(packet.id, callback);
 
-      const message = Object.assign(
-        {
-          topic: pattern,
-          messages: [serializedPacket],
-        },
-        this.options.send || {},
-      );
-      this.producer.send(message).catch(err => callback({ err }));
+          const message = Object.assign(
+            {
+              topic: pattern,
+              messages: [serializedPacket],
+            },
+            this.options.send || {},
+          );
+
+          return this.producer.send(message);
+        })
+        .catch(err => callback({ err }));
 
       return () => this.routingMap.delete(packet.id);
     } catch (err) {

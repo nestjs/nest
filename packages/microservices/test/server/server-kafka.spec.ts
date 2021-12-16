@@ -319,8 +319,8 @@ describe('ServerKafka', () => {
       });
     });
 
-    it('should send message', () => {
-      server.sendMessage(
+    it('should send message', async () => {
+      await server.sendMessage(
         {
           id: correlationId,
           response: messageValue,
@@ -345,8 +345,8 @@ describe('ServerKafka', () => {
         }),
       ).to.be.true;
     });
-    it('should send message without reply partition', () => {
-      server.sendMessage(
+    it('should send message without reply partition', async () => {
+      await server.sendMessage(
         {
           id: correlationId,
           response: messageValue,
@@ -370,8 +370,8 @@ describe('ServerKafka', () => {
         }),
       ).to.be.true;
     });
-    it('should send error message', () => {
-      server.sendMessage(
+    it('should send error message', async () => {
+      await server.sendMessage(
         {
           id: correlationId,
           err: NO_MESSAGE_HANDLER,
@@ -397,8 +397,8 @@ describe('ServerKafka', () => {
         }),
       ).to.be.true;
     });
-    it('should send `isDisposed` message', () => {
-      server.sendMessage(
+    it('should send `isDisposed` message', async () => {
+      await server.sendMessage(
         {
           id: correlationId,
           isDisposed: true,

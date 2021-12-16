@@ -140,8 +140,8 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     replyPartition: string,
     correlationId: string,
   ): (data: any) => Promise<RecordMetadata[]> {
-    return (data: any) =>
-      this.sendMessage(data, replyTopic, replyPartition, correlationId);
+    return async (data: any) =>
+      await this.sendMessage(data, replyTopic, replyPartition, correlationId);
   }
 
   public async handleMessage(payload: EachMessagePayload) {
@@ -188,13 +188,13 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     response$ && this.send(response$, publish);
   }
 
-  public sendMessage(
+  public async sendMessage(
     message: OutgoingResponse,
     replyTopic: string,
     replyPartition: string,
     correlationId: string,
   ): Promise<RecordMetadata[]> {
-    const outgoingMessage = this.serializer.serialize(message.response);
+    const outgoingMessage = await this.serializer.serialize(message.response);
     this.assignReplyPartition(replyPartition, outgoingMessage);
     this.assignCorrelationIdHeader(correlationId, outgoingMessage);
     this.assignErrorHeader(message, outgoingMessage);
@@ -207,7 +207,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       },
       this.options.send || {},
     );
-    return this.producer.send(replyMessage);
+    return await this.producer.send(replyMessage);
   }
 
   public assignIsDisposedHeader(
