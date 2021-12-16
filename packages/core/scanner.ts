@@ -4,11 +4,15 @@ import {
   flatten,
   ForwardReference,
   Provider,
+  Logger,
 } from '@nestjs/common';
 import {
   EXCEPTION_FILTERS_METADATA,
   GUARDS_METADATA,
   INTERCEPTORS_METADATA,
+  INJECTABLE_WATERMARK,
+  CONTROLLER_WATERMARK,
+  CATCH_WATERMARK,
   MODULE_METADATA,
   PIPES_METADATA,
   ROUTE_ARGS_METADATA,
@@ -38,6 +42,7 @@ import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
 import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
+import { InvalidClassModuleException } from './errors/exceptions/invalid-class-module.exception';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 import { getClassScope } from './helpers/get-class-scope';
 import { NestContainer } from './injector/container';
@@ -54,6 +59,7 @@ interface ApplicationProviderWrapper {
 }
 
 export class DependenciesScanner {
+  private readonly logger = new Logger(DependenciesScanner.name);
   private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] =
     [];
 
@@ -133,13 +139,25 @@ export class DependenciesScanner {
   }
 
   public async insertModule(
-    module: any,
+    moduleDefinition: any,
     scope: Type<unknown>[],
   ): Promise<Module | undefined> {
-    if (module && module.forwardRef) {
-      return this.container.addModule(module.forwardRef(), scope);
+    const moduleToAdd = this.isForwardReference(moduleDefinition)
+      ? moduleDefinition.forwardRef()
+      : moduleDefinition;
+
+    if (
+      this.isInjectable(moduleToAdd) ||
+      this.isController(moduleToAdd) ||
+      this.isExceptionFilter(moduleToAdd)
+    ) {
+      // TODO(v9): Throw the exception instead of printing a warning
+      this.logger.warn(
+        new InvalidClassModuleException(moduleDefinition, scope).message,
+      );
     }
-    return this.container.addModule(module, scope);
+
+    return this.container.addModule(moduleToAdd, scope);
   }
 
   public async scanModulesForDependencies(
@@ -315,7 +333,7 @@ export class DependenciesScanner {
     if (isUndefined(related)) {
       throw new CircularDependencyException(context);
     }
-    if (related && related.forwardRef) {
+    if (this.isForwardReference(related)) {
       return this.container.addImport(related.forwardRef(), token);
     }
     await this.container.addImport(related, token);
@@ -502,7 +520,31 @@ export class DependenciesScanner {
     return module && !!(module as DynamicModule).module;
   }
 
-  public isForwardReference(
+  /**
+   * @param metatype
+   * @returns `true` if `metatype` is annotated with the `@Injectable()` decorator.
+   */
+  private isInjectable(metatype: Type<any>): boolean {
+    return !!Reflect.getMetadata(INJECTABLE_WATERMARK, metatype);
+  }
+
+  /**
+   * @param metatype
+   * @returns `true` if `metatype` is annotated with the `@Controller()` decorator.
+   */
+  private isController(metatype: Type<any>): boolean {
+    return !!Reflect.getMetadata(CONTROLLER_WATERMARK, metatype);
+  }
+
+  /**
+   * @param metatype
+   * @returns `true` if `metatype` is annotated with the `@Catch()` decorator.
+   */
+  private isExceptionFilter(metatype: Type<any>): boolean {
+    return !!Reflect.getMetadata(CATCH_WATERMARK, metatype);
+  }
+
+  private isForwardReference(
     module: Type<any> | DynamicModule | ForwardReference,
   ): module is ForwardReference {
     return module && !!(module as ForwardReference).forwardRef;

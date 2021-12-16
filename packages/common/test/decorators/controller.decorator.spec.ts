@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { VERSION_METADATA } from '../../constants';
+import { VERSION_METADATA, CONTROLLER_WATERMARK } from '../../constants';
 import { Controller } from '../../decorators/core/controller.decorator';
 
 describe('@Controller', () => {
@@ -8,11 +8,11 @@ describe('@Controller', () => {
   const reflectedHostArray = ['api1.example.com', 'api2.example.com'];
   const reflectedVersion = '1';
 
-  @Controller(reflectedPath)
-  class Test {}
-
   @Controller()
   class EmptyDecorator {}
+
+  @Controller(reflectedPath)
+  class Test {}
 
   @Controller({ path: reflectedPath, host: reflectedHost })
   class PathAndHostDecorator {}
@@ -32,6 +32,15 @@ describe('@Controller', () => {
 
   @Controller({ version: reflectedVersion })
   class VersionOnlyDecorator {}
+
+  it(`should enhance component with "${CONTROLLER_WATERMARK}" metadata`, () => {
+    const controllerWatermark = Reflect.getMetadata(
+      CONTROLLER_WATERMARK,
+      EmptyDecorator,
+    );
+
+    expect(controllerWatermark).to.be.true;
+  });
 
   it('should enhance controller with expected path metadata', () => {
     const path = Reflect.getMetadata('path', Test);
