@@ -60,7 +60,6 @@ interface ApplicationProviderWrapper {
 
 export class DependenciesScanner {
   private readonly logger = new Logger(DependenciesScanner.name);
-
   private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] =
     [];
 
