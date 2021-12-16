@@ -36,7 +36,6 @@ export class NestApplicationContext implements INestApplicationContext {
   protected readonly injector = new Injector();
 
   private shouldFlushLogsOnOverride = false;
-
   private readonly activeShutdownSignals = new Array<string>();
   private readonly moduleCompiler = new ModuleCompiler();
   private shutdownCleanupRef?: (...args: unknown[]) => unknown;
