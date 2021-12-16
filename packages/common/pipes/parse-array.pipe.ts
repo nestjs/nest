@@ -7,7 +7,7 @@ import {
   PipeTransform,
 } from '../interfaces/features/pipe-transform.interface';
 import { HttpErrorByCode } from '../utils/http-error-by-code.util';
-import { isNil, isString } from '../utils/shared.utils';
+import { isNil, isUndefined, isString } from '../utils/shared.utils';
 import { ValidationPipe, ValidationPipeOptions } from './validation.pipe';
 
 const VALIDATION_ERROR_MESSAGE = 'Validation failed (parsable array expected)';
@@ -141,21 +141,19 @@ export class ParseArrayPipe implements PipeTransform {
         originalValue !== null && originalValue !== '' ? +originalValue : NaN;
       if (isNaN(value)) {
         throw this.exceptionFactory(
-          `${
-            typeof index !== 'undefined' ? `[${index}] ` : ''
-          }item must be a number`,
+          `${isUndefined(index) ? '' : `[${index}] `}item must be a number`,
         );
       }
       return value;
     } else if (this.options.items === String) {
-      if (typeof originalValue !== 'string') {
+      if (!isString(originalValue)) {
         return `${originalValue}`;
       }
     } else if (this.options.items === Boolean) {
       if (typeof originalValue !== 'boolean') {
         throw this.exceptionFactory(
           `${
-            typeof index !== 'undefined' ? `[${index}] ` : ''
+            isUndefined(index) ? '' : `[${index}] `
           }item must be a boolean value`,
         );
       }

@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { isObject } from '@nestjs/common/utils/shared.utils';
 import { NATS_DEFAULT_URL } from '../constants';
 import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-json.deserializer';
 import { EmptyResponseException } from '../errors/empty-response.exception';
@@ -48,7 +49,7 @@ export class ClientNats extends ClientProxy {
   public async handleStatusUpdates(client: Client) {
     for await (const status of client.status()) {
       const data =
-        status.data && typeof status.data === 'object'
+        status.data && isObject(status.data)
           ? JSON.stringify(status.data)
           : status.data;
       if (status.type === 'disconnect' || status.type === 'error') {

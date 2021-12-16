@@ -292,7 +292,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
           ),
         );
 
-        if (typeof response !== 'undefined') {
+        if (!isUndefined(response)) {
           callback(null, response);
         }
       }

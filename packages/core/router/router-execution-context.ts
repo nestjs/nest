@@ -424,7 +424,7 @@ export class RouterExecutionContext {
         );
       };
     }
-    if (redirectResponse && typeof redirectResponse.url === 'string') {
+    if (redirectResponse && isString(redirectResponse.url)) {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
         await this.responseController.redirect(result, res, redirectResponse);
       };

@@ -17,7 +17,7 @@ import {
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
 import { loadPackage } from '../utils/load-package.util';
-import { isNil } from '../utils/shared.utils';
+import { isNil, isObject } from '../utils/shared.utils';
 
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
@@ -194,7 +194,7 @@ export class ValidationPipe implements PipeTransform<any> {
     delete value.__proto__;
     const keys = Object.keys(value);
     iterate(keys)
-      .filter(key => typeof value[key] === 'object' && value[key])
+      .filter(key => isObject(value[key]) && value[key])
       .forEach(key => this.stripProtoKeys(value[key]));
   }
 

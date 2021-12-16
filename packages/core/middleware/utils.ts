@@ -81,7 +81,7 @@ export function isMiddlewareClass(middleware: any): middleware is Type<any> {
   return (
     middlewareArr[0] === 'function' &&
     /[A-Z]/.test(middlewareArr[1]?.[0]) &&
-    typeof middleware.prototype?.use === 'function'
+    isFunction(middleware.prototype?.use)
   );
 }
 

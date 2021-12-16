@@ -1,4 +1,5 @@
 import { Readable } from 'stream';
+import { isFunction } from '../utils/shared.utils';
 import { StreamableFileOptions } from './streamable-options.interface';
 
 export class StreamableFile {
@@ -14,10 +15,7 @@ export class StreamableFile {
       this.stream = new Readable();
       this.stream.push(bufferOrReadStream);
       this.stream.push(null);
-    } else if (
-      bufferOrReadStream.pipe &&
-      typeof bufferOrReadStream.pipe === 'function'
-    ) {
+    } else if (bufferOrReadStream.pipe && isFunction(bufferOrReadStream.pipe)) {
       this.stream = bufferOrReadStream;
     }
   }

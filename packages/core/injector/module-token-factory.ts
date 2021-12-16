@@ -1,6 +1,7 @@
 import { DynamicModule } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import { isFunction, isSymbol } from '@nestjs/common/utils/shared.utils';
 import stringify from 'fast-safe-stringify';
 import * as hash from 'object-hash';
 
@@ -46,7 +47,7 @@ export class ModuleTokenFactory {
   }
 
   private replacer(key: string, value: any) {
-    if (typeof value === 'function') {
+    if (isFunction(value)) {
       const funcAsString = value.toString();
       const isClass = /^class\s/.test(funcAsString);
       if (isClass) {
@@ -54,7 +55,7 @@ export class ModuleTokenFactory {
       }
       return hash(funcAsString, { ignoreUnknown: true });
     }
-    if (typeof value === 'symbol') {
+    if (isSymbol(value)) {
       return value.toString();
     }
     return value;
