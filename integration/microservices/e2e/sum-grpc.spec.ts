@@ -78,7 +78,7 @@ describe('GRPC transport', () => {
     callHandler.on('error', (err: any) => {
       // We want to fail only on real errors while Cancellation error
       // is expected
-      if (String(err).toLowerCase().indexOf('cancelled') === -1) {
+      if (!String(err).toLowerCase().includes('cancelled')) {
         fail('gRPC Stream error happened, error: ' + err);
       }
     });
@@ -100,7 +100,7 @@ describe('GRPC transport', () => {
     callHandler.on('error', (err: any) => {
       // We want to fail only on real errors while Cancellation error
       // is expected
-      if (String(err).toLowerCase().indexOf('cancelled') === -1) {
+      if (!String(err).toLowerCase().includes('cancelled')) {
         fail('gRPC Stream error happened, error: ' + err);
       }
     });
