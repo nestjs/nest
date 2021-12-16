@@ -200,7 +200,7 @@ export class ClientKafka extends ClientProxy {
       this.options.send || {},
     );
 
-    return await this.producer.send(message);
+    return this.producer.send(message);
   }
 
   protected getReplyTopicPartition(topic: string): string {
