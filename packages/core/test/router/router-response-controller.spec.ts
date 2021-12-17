@@ -1,7 +1,7 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import { IncomingMessage, ServerResponse } from 'http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { PassThrough, Writable } from 'stream';
 import { HttpStatus, RequestMethod } from '../../../common';
@@ -349,14 +349,86 @@ data: test
       const request = new Writable();
       request._write = () => {};
 
-      routerResponseController.sse(
-        result as unknown as Observable<string>,
-        response as unknown as ServerResponse,
-        request as unknown as IncomingMessage,
-      );
+      try {
+        routerResponseController.sse(
+          result as unknown as Observable<string>,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+      } catch {
+        // Wether an error is thrown or not
+        // is not relevant, so long as
+        // result is not called
+      }
 
       sinon.assert.notCalled(result);
       done();
+    });
+
+    describe('when there is an error', () => {
+      it('should close the request', done => {
+        const result = new Subject();
+        const response = new Writable();
+        response.end = done;
+        response._write = () => {};
+
+        const request = new Writable();
+        request._write = () => {};
+
+        routerResponseController.sse(
+          result,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+
+        result.error(new Error('Some error'));
+      });
+
+      it('should write the error message to the stream', async () => {
+        class Sink extends Writable {
+          private readonly chunks: string[] = [];
+
+          _write(
+            chunk: any,
+            encoding: string,
+            callback: (error?: Error | null) => void,
+          ): void {
+            this.chunks.push(chunk);
+            callback();
+          }
+
+          get content() {
+            return this.chunks.join('');
+          }
+        }
+
+        const written = (stream: Writable) =>
+          new Promise((resolve, reject) =>
+            stream.on('error', reject).on('finish', resolve),
+          );
+
+        const result = new Subject();
+        const response = new Sink();
+        const request = new PassThrough();
+        routerResponseController.sse(
+          result,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+
+        result.error(new Error('Some error'));
+        request.destroy();
+
+        await written(response);
+        expect(response.content).to.eql(
+          `:
+event: error
+id: 1
+data: Some error
+
+`,
+        );
+      });
     });
   });
 });
