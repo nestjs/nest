@@ -164,7 +164,9 @@ export function Controller(
         prefixOrOptions.path || defaultPath,
         prefixOrOptions.host,
         { scope: prefixOrOptions.scope },
-        prefixOrOptions.version,
+        Array.isArray(prefixOrOptions.version)
+          ? Array.from(new Set(prefixOrOptions.version))
+          : prefixOrOptions.version,
       ];
 
   return (target: object) => {

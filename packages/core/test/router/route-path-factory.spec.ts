@@ -1,4 +1,4 @@
-import { RequestMethod, VersioningType } from '@nestjs/common';
+import { RequestMethod, VersioningType, VERSION_NEUTRAL } from '@nestjs/common';
 import { expect } from 'chai';
 import * as pathToRegexp from 'path-to-regexp';
 import * as sinon from 'sinon';
@@ -185,8 +185,45 @@ describe('RoutePathFactory', () => {
           ctrlPath: '',
           methodPath: '',
           globalPrefix: '',
+          controllerVersion: VERSION_NEUTRAL,
+          versioningOptions: {
+            type: VersioningType.URI,
+            defaultVersion: VERSION_NEUTRAL,
+          },
         }),
       ).to.deep.equal(['/']);
+
+      expect(
+        routePathFactory.create({
+          ctrlPath: '',
+          methodPath: '',
+          globalPrefix: '',
+          controllerVersion: ['1', VERSION_NEUTRAL],
+          versioningOptions: {
+            type: VersioningType.URI,
+            defaultVersion: ['1', VERSION_NEUTRAL],
+          },
+        }),
+      ).to.deep.equal(['/v1', '/']);
+
+      expect(
+        routePathFactory.create({
+          ctrlPath: '',
+          methodPath: '',
+          globalPrefix: '',
+        }),
+      ).to.deep.equal(['/']);
+
+      sinon.stub(routePathFactory, 'isExcludedFromGlobalPrefix').returns(true);
+      expect(
+        routePathFactory.create({
+          ctrlPath: '/ctrlPath/',
+          methodPath: '/',
+          modulePath: '/',
+          globalPrefix: '/api',
+        }),
+      ).to.deep.equal(['/ctrlPath']);
+      sinon.restore();
     });
   });
 

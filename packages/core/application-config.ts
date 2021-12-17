@@ -136,6 +136,11 @@ export class ApplicationConfig {
   }
 
   public enableVersioning(options: VersioningOptions): void {
+    if (Array.isArray(options.defaultVersion)) {
+      // Drop duplicated versions
+      options.defaultVersion = Array.from(new Set(options.defaultVersion));
+    }
+
     this.versioningOptions = options;
   }
 

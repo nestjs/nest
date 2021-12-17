@@ -7,7 +7,10 @@ import { VersioningType } from '../enums/version-type.enum';
  */
 export const VERSION_NEUTRAL = Symbol('VERSION_NEUTRAL');
 
-export type VersionValue = string | string[] | typeof VERSION_NEUTRAL;
+export type VersionValue =
+  | string
+  | typeof VERSION_NEUTRAL
+  | Array<string | typeof VERSION_NEUTRAL>;
 
 /**
  * @publicApi
