@@ -1,8 +1,14 @@
-import { HttpServer, HttpStatus, RequestMethod } from '@nestjs/common';
+import {
+  HttpServer,
+  HttpStatus,
+  Logger,
+  RequestMethod,
+  MessageEvent,
+} from '@nestjs/common';
 import { isFunction, isObject } from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage } from 'http';
-import { lastValueFrom, Observable } from 'rxjs';
-import { debounce } from 'rxjs/operators';
+import { EMPTY, lastValueFrom, Observable } from 'rxjs';
+import { catchError, debounce, map } from 'rxjs/operators';
 import {
   AdditionalHeaders,
   WritableHeaderStream,
@@ -20,6 +26,8 @@ export interface RedirectResponse {
 }
 
 export class RouterResponseController {
+  private readonly logger = new Logger(RouterResponseController.name);
+
   constructor(private readonly applicationRef: HttpServer) {}
 
   public async apply<TInput = any, TResponse = any>(
@@ -87,7 +95,7 @@ export class RouterResponseController {
     this.applicationRef.status(response, statusCode);
   }
 
-  public async sse<
+  public sse<
     TInput extends Observable<unknown> = any,
     TResponse extends WritableHeaderStream = any,
     TRequest extends IncomingMessage = any,
@@ -109,15 +117,29 @@ export class RouterResponseController {
 
     const subscription = result
       .pipe(
+        map((message): MessageEvent => {
+          if (isObject(message)) {
+            return message as MessageEvent;
+          }
+
+          return { data: message as object | string };
+        }),
         debounce(
-          (message: any) =>
-            new Promise(resolve => {
-              if (!isObject(message)) {
-                message = { data: message };
-              }
-              stream.writeMessage(message, resolve);
-            }),
+          message =>
+            new Promise<void>(resolve =>
+              stream.writeMessage(message, () => resolve()),
+            ),
         ),
+        catchError(err => {
+          const data = err instanceof Error ? err.message : err;
+          stream.writeMessage({ type: 'error', data }, writeError => {
+            if (writeError) {
+              this.logger.error(writeError);
+            }
+          });
+
+          return EMPTY;
+        }),
       )
       .subscribe({
         complete: () => {
