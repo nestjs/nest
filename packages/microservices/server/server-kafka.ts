@@ -140,7 +140,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     replyPartition: string,
     correlationId: string,
   ): (data: any) => Promise<RecordMetadata[]> {
-    return async (data: any) =>
+    return (data: any) =>
       this.sendMessage(data, replyTopic, replyPartition, correlationId);
   }
 

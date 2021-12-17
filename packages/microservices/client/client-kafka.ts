@@ -223,6 +223,7 @@ export class ClientKafka extends ClientProxy {
       const replyTopic = this.getResponsePatternName(pattern);
       const replyPartition = this.getReplyTopicPartition(replyTopic);
 
+      let hasUnsubscribed = false;
       this.serializer
         .serialize(packet.data)
         .then((serializedPacket: KafkaRequest) => {
@@ -231,7 +232,9 @@ export class ClientKafka extends ClientProxy {
           serializedPacket.headers[KafkaHeaders.REPLY_PARTITION] =
             replyPartition;
 
-          this.routingMap.set(packet.id, callback);
+          if (!hasUnsubscribed) {
+            this.routingMap.set(packet.id, callback);
+          }
 
           const message = Object.assign(
             {
@@ -245,7 +248,10 @@ export class ClientKafka extends ClientProxy {
         })
         .catch(err => callback({ err }));
 
-      return () => this.routingMap.delete(packet.id);
+      return () => {
+        hasUnsubscribed = true;
+        this.routingMap.delete(packet.id);
+      };
     } catch (err) {
       callback({ err });
     }
