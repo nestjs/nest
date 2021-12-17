@@ -59,6 +59,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 #### Principal Sponsors
 <table style="text-align:center;"><tr>
   <td><a href="https://trilon.io" target="_blank"><img src="https://nestjs.com/img/trilon.svg" width="200" valign="middle" /></a></td>
+  <td><a href="https://www.redhat.com" target="_blank"><img src="https://nestjs.com/img/red-hat-logo.svg" width="200" valign="middle" /></a></td>
 <td>
 <a href="https://github.com/Sanofi-IADC" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/sanofi.png" width="180" valign="middle" /></a></td>
 <td>
@@ -80,7 +81,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <table style="text-align:center;"><tr><td>
 <a href="https://neoteric.eu/" target="_blank"><img src="https://nestjs.com/img/neoteric-cut.png" width="120" valign="middle" /></a> </td><td>
   <a href="http://gojob.com" target="_blank"><img src="http://nestjs.com/img/gojob-logo.png" valign="middle" width="100" /></a> </td><td>
-<a href="http://www.leogistics.com" target="_blank"><img src="https://nestjs.com/img/leogistics-logo.jpeg" width="150" valign="middle" /></td><td>
+<a href="https://www.myleodsc.com/" target="_blank"><img src="https://nestjs.com/img/myleo-logo.png" width="180" valign="middle" /></td><td>
 <a href="https://careers.meetdandy.com/?gh_src=063ba61e3us" target="_blank"><img src="https://nestjs.com/img/dandy-roles-logo.svg" width="150" valign="middle" /></td><td>
 <a href="https://www.castlecraft.in" target="_blank"><img src="https://nestjs.com/img/castlecraft-logo.png" width="150" valign="middle" /></td>
 <td><a href="https://www.tinystacks.com" target="_blank"><img src="https://nestjs.com/img/tinystacks-logo.png#1" width="140" valign="middle" /></td></tr></table>
