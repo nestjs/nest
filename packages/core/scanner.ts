@@ -559,10 +559,22 @@ export class DependenciesScanner {
     return this.insertModule(moduleDefinition, scope);
   }
 
+  // The 'any' definition and castings is related to forward reference, there is a better way do this?
   private getOverrideModuleByModule(
-    module: ModuleDefinition,
+    module: ModuleDefinition | any,
     modulesToOverride: ModuleToOverride[],
   ): ModuleToOverride | undefined {
+    debugger;
+    if (this.isForwardReference(module)) {
+      return modulesToOverride.find(moduleToOverride => {
+        return (
+          moduleToOverride.moduleToReplace === module.forwardRef() ||
+          (moduleToOverride.moduleToReplace as any).forwardRef?.() ===
+            module.forwardRef()
+        );
+      });
+    }
+
     return modulesToOverride.find(
       moduleToOverride => moduleToOverride.moduleToReplace === module,
     );
@@ -573,14 +585,12 @@ export class DependenciesScanner {
     newModule: any,
     scope: Type<unknown>[],
   ): Promise<Module | undefined> {
-    if (newModule && newModule.forwardRef && moduleToOverride.forwardRef) {
-      return this.container.replaceModule(
-        moduleToOverride.forwardRef(),
-        newModule.forwardRef(),
-        scope,
-      );
-    }
-
-    return this.container.replaceModule(moduleToOverride, newModule, scope);
+    return this.container.replaceModule(
+      this.isForwardReference(moduleToOverride)
+        ? moduleToOverride.forwardRef()
+        : moduleToOverride,
+      this.isForwardReference(newModule) ? newModule.forwardRef() : newModule,
+      scope,
+    );
   }
 }
