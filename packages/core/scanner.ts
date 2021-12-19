@@ -568,7 +568,6 @@ export class DependenciesScanner {
     module: ModuleDefinition | any,
     modulesToOverride: ModuleToOverride[],
   ): ModuleToOverride | undefined {
-    debugger;
     if (this.isForwardReference(module)) {
       return modulesToOverride.find(moduleToOverride => {
         return (
