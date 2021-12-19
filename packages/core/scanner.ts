@@ -82,7 +82,7 @@ export class DependenciesScanner {
   ) {}
 
   public async scan(module: Type<any>, modulesToOverride?: ModuleToOverride[]) {
-    await this.registerCoreModule();
+    await this.registerCoreModule(modulesToOverride);
     await this.scanForModules({ moduleDefinition: module, modulesToOverride });
     await this.scanModulesForDependencies();
     this.calculateModulesDistance();
@@ -425,14 +425,18 @@ export class DependenciesScanner {
     return Reflect.getMetadata(metadataKey, metatype) || [];
   }
 
-  public async registerCoreModule() {
+  public async registerCoreModule(modulesToOverride?: ModuleToOverride[]) {
     const moduleDefinition = InternalCoreModuleFactory.create(
       this.container,
       this,
       this.container.getModuleCompiler(),
       this.container.getHttpAdapterHostRef(),
+      modulesToOverride,
     );
-    const [instance] = await this.scanForModules({ moduleDefinition });
+    const [instance] = await this.scanForModules({
+      moduleDefinition,
+      modulesToOverride,
+    });
     this.container.registerCoreModuleRef(instance);
   }
 

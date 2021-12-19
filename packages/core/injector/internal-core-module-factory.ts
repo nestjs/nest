@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
 import { HttpAdapterHost } from '../helpers/http-adapter-host';
-import { DependenciesScanner } from '../scanner';
+import { DependenciesScanner, ModuleToOverride } from '../scanner';
 import { ModuleCompiler } from './compiler';
 import { NestContainer } from './container';
 import { InstanceLoader } from './instance-loader';
@@ -15,6 +15,7 @@ export class InternalCoreModuleFactory {
     scanner: DependenciesScanner,
     moduleCompiler: ModuleCompiler,
     httpAdapterHost: HttpAdapterHost,
+    modulesToOverride?: ModuleToOverride[],
   ) {
     return InternalCoreModule.register([
       {
@@ -45,6 +46,7 @@ export class InternalCoreModuleFactory {
             instanceLoader,
             moduleCompiler,
             container.getModules(),
+            modulesToOverride,
           );
         },
       },
