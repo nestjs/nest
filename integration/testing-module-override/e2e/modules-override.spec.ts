@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { LazyModuleLoader } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
+import { expect } from 'chai';
 
 import { AModule, AProvider } from './circular-dependency/a.module';
 import { BModule, BProvider } from './circular-dependency/b.module';
@@ -44,10 +45,10 @@ describe('modules override', () => {
     it('should be possible to override top-level modules using testing module builder', () => {
       expect(() =>
         testingModule.get<ControllerOverwritten>(ControllerOverwritten),
-      ).toThrow();
+      ).to.throw();
       expect(
         testingModule.get<ControllerOverride>(ControllerOverride),
-      ).toBeInstanceOf(ControllerOverride);
+      ).to.be.an.instanceof(ControllerOverride);
     });
   });
 
@@ -88,10 +89,10 @@ describe('modules override', () => {
     it('should be possible to override dynamic modules using testing module builder', () => {
       expect(() =>
         testingModule.get<ControllerOverwritten>(ControllerOverwritten),
-      ).toThrow();
+      ).to.throw();
       expect(
         testingModule.get<ControllerOverride>(ControllerOverride),
-      ).toBeInstanceOf(ControllerOverride);
+      ).to.be.an.instanceof(ControllerOverride);
     });
   });
 
@@ -126,12 +127,16 @@ describe('modules override', () => {
     });
 
     it('should be possible to override top-level modules using testing module builder', () => {
-      expect(testingModule.get<AProvider>(AProvider)).toBeInstanceOf(AProvider);
-      expect(() => testingModule.get<BProvider>(BProvider)).toThrow();
-      expect(testingModule.get<CProvider>(CProvider)).toBeInstanceOf(CProvider);
+      expect(testingModule.get<AProvider>(AProvider)).to.be.an.instanceof(
+        AProvider,
+      );
+      expect(() => testingModule.get<BProvider>(BProvider)).to.throw();
+      expect(testingModule.get<CProvider>(CProvider)).to.be.an.instanceof(
+        CProvider,
+      );
       expect(
         testingModule.get<BProviderOverride>(BProviderOverride),
-      ).toBeInstanceOf(BProviderOverride);
+      ).to.be.an.instanceof(BProviderOverride);
     });
   });
 
@@ -173,12 +178,12 @@ describe('modules override', () => {
         testingModule.get<OverrideNestedModuleController>(
           OverrideNestedModuleController,
         ),
-      ).toBeInstanceOf(OverrideNestedModuleController);
+      ).to.be.an.instanceof(OverrideNestedModuleController);
       expect(() =>
         testingModule.get<OverwrittenNestedModuleController>(
           OverwrittenNestedModuleController,
         ),
-      ).toThrow();
+      ).to.throw();
     });
   });
 
@@ -247,9 +252,8 @@ describe('modules override', () => {
     });
 
     it('should be possible to override lazy loaded modules using testing module builder', async () => {
-      expect(await testingModule.get<AppService>(AppService).value()).toBe(
-        'override lazy',
-      );
+      const result = await testingModule.get<AppService>(AppService).value();
+      expect(result).to.be.equal('override lazy');
     });
   });
 
@@ -296,10 +300,10 @@ describe('modules override', () => {
     it('should be possible to override global modules using testing module builder', () => {
       expect(
         testingModule.get<OverrideProvider>(OverrideProvider),
-      ).toBeInstanceOf(OverrideProvider);
+      ).to.be.an.instanceof(OverrideProvider);
       expect(() =>
         testingModule.get<OverwrittenProvider>(OverwrittenProvider),
-      ).toThrow();
+      ).to.throw();
     });
   });
 });
