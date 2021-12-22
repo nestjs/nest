@@ -659,6 +659,12 @@ describe('ClientKafka', () => {
       );
     });
 
+    it('should remove callback from routing map when unsubscribe', async () => {
+      client['publish'](readPacket, callback)();
+      expect(client['routingMap'].has(correlationId)).to.be.false;
+      expect(client['routingMap'].size).to.eq(0);
+    });
+
     describe('on error', () => {
       let clientProducerStub: sinon.SinonStub;
       let sendStub: sinon.SinonStub;

@@ -217,13 +217,24 @@ export class ClientKafka extends ClientProxy {
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ): () => void {
+    const packet = this.assignPacketId(partialPacket);
+
+    this.routingMap.set(packet.id, callback);
+
+    const cleanup = () => {
+      this.routingMap.delete(packet.id);
+    };
+
+    const errorCallback = err => {
+      cleanup();
+      callback({ err });
+    };
+
     try {
-      const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
       const replyTopic = this.getResponsePatternName(pattern);
       const replyPartition = this.getReplyTopicPartition(replyTopic);
 
-      let hasUnsubscribed = false;
       this.serializer
         .serialize(packet.data)
         .then((serializedPacket: KafkaRequest) => {
@@ -231,10 +242,6 @@ export class ClientKafka extends ClientProxy {
           serializedPacket.headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
           serializedPacket.headers[KafkaHeaders.REPLY_PARTITION] =
             replyPartition;
-
-          if (!hasUnsubscribed) {
-            this.routingMap.set(packet.id, callback);
-          }
 
           const message = Object.assign(
             {
@@ -246,14 +253,11 @@ export class ClientKafka extends ClientProxy {
 
           return this.producer.send(message);
         })
-        .catch(err => callback({ err }));
+        .catch(err => errorCallback(err));
 
-      return () => {
-        hasUnsubscribed = true;
-        this.routingMap.delete(packet.id);
-      };
+      return cleanup;
     } catch (err) {
-      callback({ err });
+      errorCallback(err);
     }
   }
 
