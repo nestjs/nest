@@ -6,6 +6,7 @@ import {
   from as fromPromise,
   isObservable,
   Observable,
+  ObservedValueOf,
   of,
   Subject,
   Subscription,
@@ -122,13 +123,21 @@ export abstract class Server {
     }
   }
 
-  public transformToObservable<T = any>(resultOrDeferred: any): Observable<T> {
+  public transformToObservable<T>(
+    resultOrDeferred: Observable<T> | Promise<T>,
+  ): Observable<T>;
+  public transformToObservable<T>(
+    resultOrDeferred: T,
+  ): never extends Observable<ObservedValueOf<T>>
+    ? Observable<T>
+    : Observable<ObservedValueOf<T>>;
+  public transformToObservable(resultOrDeferred: any) {
     if (resultOrDeferred instanceof Promise) {
       return fromPromise(resultOrDeferred);
     }
 
     if (isObservable(resultOrDeferred)) {
-      return resultOrDeferred as Observable<T>;
+      return resultOrDeferred;
     }
 
     return of(resultOrDeferred);
