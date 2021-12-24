@@ -90,7 +90,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     }
     const response$ = this.transformToObservable(
       await handler(packet.data, tcpContext),
-    ) as Observable<any>;
+    );
 
     response$ &&
       this.send(response$, data => {

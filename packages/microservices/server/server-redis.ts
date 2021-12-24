@@ -121,7 +121,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     }
     const response$ = this.transformToObservable(
       await handler(packet.data, redisCtx),
-    ) as Observable<any>;
+    );
     response$ && this.send(response$, publish);
   }
 
