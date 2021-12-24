@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { of, throwError } from 'rxjs';
+import { throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { WsProxy } from '../../context/ws-proxy';
 import { WsException } from '../../errors/ws-exception';
@@ -38,19 +38,6 @@ describe('WsProxy', () => {
         return throwError(() => new WsException('test'));
       }, handler);
       (await proxy(null, null)).subscribe(null, () => expectation.verify());
-    });
-  });
-
-  describe('isObservable', () => {
-    describe('when observable', () => {
-      it('should return true', () => {
-        expect(routerProxy.isObservable(of('test'))).to.be.true;
-      });
-    });
-    describe('when not observable', () => {
-      it('should return false', () => {
-        expect(routerProxy.isObservable({})).to.be.false;
-      });
     });
   });
 });

@@ -1,10 +1,10 @@
 import { Logger, LoggerService } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
 import {
   connectable,
   EMPTY as empty,
   from as fromPromise,
+  isObservable,
   Observable,
   of,
   Subject,
@@ -113,7 +113,7 @@ export abstract class Server {
       );
     }
     const resultOrStream = await handler(packet.data, context);
-    if (this.isObservable(resultOrStream)) {
+    if (isObservable(resultOrStream)) {
       const connectableSource = connectable(resultOrStream, {
         connector: () => new Subject(),
         resetOnDisconnect: false,
@@ -125,10 +125,13 @@ export abstract class Server {
   public transformToObservable<T = any>(resultOrDeferred: any): Observable<T> {
     if (resultOrDeferred instanceof Promise) {
       return fromPromise(resultOrDeferred);
-    } else if (!this.isObservable(resultOrDeferred)) {
-      return of(resultOrDeferred);
     }
-    return resultOrDeferred;
+
+    if (isObservable(resultOrDeferred)) {
+      return resultOrDeferred as Observable<T>;
+    }
+
+    return of(resultOrDeferred);
   }
 
   public getOptionsProp<
@@ -178,10 +181,6 @@ export abstract class Server {
             | KafkaOptions['options']
         ).deserializer) ||
       new IncomingRequestDeserializer();
-  }
-
-  private isObservable(input: unknown): input is Observable<any> {
-    return input && isFunction((input as Observable<any>).subscribe);
   }
 
   /**

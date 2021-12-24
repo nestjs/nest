@@ -39,17 +39,4 @@ describe('RpcProxy', () => {
       (await proxy(null, null)).subscribe(null, () => expectation.verify());
     });
   });
-
-  describe('isObservable', () => {
-    describe('when observable', () => {
-      it('should return true', () => {
-        expect(routerProxy.isObservable(of('test'))).to.be.true;
-      });
-    });
-    describe('when not observable', () => {
-      it('should return false', () => {
-        expect(routerProxy.isObservable({})).to.be.false;
-      });
-    });
-  });
 });
