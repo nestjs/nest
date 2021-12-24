@@ -134,8 +134,8 @@ export class AdvancedGrpcController {
   async streamReq(messages: Observable<any>): Promise<any> {
     const s = new Subject();
     const o = s.asObservable();
-    messages.subscribe(
-      msg => {
+    messages.subscribe({
+      next: () => {
         s.next({
           id: 1,
           itemTypes: [1],
@@ -146,9 +146,8 @@ export class AdvancedGrpcController {
           },
         });
       },
-      null,
-      () => s.complete(),
-    );
+      complete: () => s.complete(),
+    });
     return o;
   }
 

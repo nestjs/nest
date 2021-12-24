@@ -116,7 +116,7 @@ describe('Server', () => {
       });
       describe('throws exception', () => {
         beforeEach(() => {
-          server.send(_throw('test') as any, sendSpy);
+          server.send(_throw(() => 'test') as any, sendSpy);
         });
         it('should send error and complete', () => {
           process.nextTick(() => {

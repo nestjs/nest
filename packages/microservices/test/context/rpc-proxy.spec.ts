@@ -36,7 +36,9 @@ describe('RpcProxy', () => {
       const proxy = routerProxy.create(async (client, data) => {
         return throwError(() => new RpcException('test'));
       }, handler);
-      (await proxy(null, null)).subscribe(null, () => expectation.verify());
+      (await proxy(null, null)).subscribe({
+        error: () => expectation.verify(),
+      });
     });
   });
 });

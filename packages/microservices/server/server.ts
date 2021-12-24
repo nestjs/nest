@@ -2,7 +2,7 @@ import { Logger, LoggerService } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import {
   connectable,
-  EMPTY as empty,
+  EMPTY,
   from as fromPromise,
   isObservable,
   Observable,
@@ -94,7 +94,7 @@ export abstract class Server {
       .pipe(
         catchError((err: any) => {
           scheduleOnNextTick({ err });
-          return empty;
+          return EMPTY;
         }),
         finalize(() => scheduleOnNextTick({ isDisposed: true })),
       )

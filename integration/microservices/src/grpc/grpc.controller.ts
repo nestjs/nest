@@ -50,16 +50,16 @@ export class GrpcController {
   @GrpcStreamMethod('Math')
   async sumStream(messages: Observable<any>): Promise<any> {
     return new Promise<any>((resolve, reject) => {
-      messages.subscribe(
-        msg => {
+      messages.subscribe({
+        next: msg => {
           resolve({
             result: msg.data.reduce((a, b) => a + b),
           });
         },
-        err => {
+        error: err => {
           reject(err);
         },
-      );
+      });
     });
   }
 

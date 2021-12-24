@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { empty } from 'rxjs';
+import { EMPTY } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientMqtt } from '../../client/client-mqtt';
 import { ERROR_EVENT } from '../../constants';
@@ -311,9 +311,9 @@ describe('ClientMqtt', () => {
         on: (ev, callback) => callback(error),
         off: () => ({}),
       };
-      client
-        .mergeCloseEvent(instance as any, empty())
-        .subscribe(null, (err: any) => expect(err).to.be.eql(error));
+      client.mergeCloseEvent(instance as any, EMPTY).subscribe({
+        error: (err: any) => expect(err).to.be.eql(error),
+      });
     });
   });
   describe('handleError', () => {

@@ -1,5 +1,5 @@
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { empty, isObservable } from 'rxjs';
+import { EMPTY, isObservable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
 
@@ -16,7 +16,7 @@ export class WsProxy {
           : result.pipe(
               catchError(error => {
                 this.handleError(exceptionsHandler, args, error);
-                return empty();
+                return EMPTY;
               }),
             );
       } catch (error) {

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/websockets/constants';
 import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer';
 import * as http from 'http';
-import { EMPTY as empty, fromEvent, Observable } from 'rxjs';
+import { EMPTY, fromEvent, Observable } from 'rxjs';
 import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
 
 let wsPackage: any = {};
@@ -133,7 +133,7 @@ export class WsAdapter extends AbstractWsAdapter {
       const { callback } = messageHandler;
       return transform(callback(message.data));
     } catch {
-      return empty;
+      return EMPTY;
     }
   }
 
