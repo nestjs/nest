@@ -3,7 +3,7 @@ import {
   ArgumentMetadata,
   PipeTransform,
 } from '../interfaces/features/pipe-transform.interface';
-import { isNil } from '../utils/shared.utils';
+import { isNil, isNumber } from '../utils/shared.utils';
 
 /**
  * Defines the built-in DefaultValue Pipe
@@ -21,7 +21,7 @@ export class DefaultValuePipe<T = any, R = any>
   transform(value?: T, _metadata?: ArgumentMetadata): T | R {
     if (
       isNil(value) ||
-      (typeof value === 'number' && isNaN(value as unknown as number))
+      (isNumber(value) && isNaN(value as unknown as number))
     ) {
       return this.defaultValue;
     }

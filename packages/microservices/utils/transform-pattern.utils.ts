@@ -1,4 +1,8 @@
-import { isObject, isString } from '@nestjs/common/utils/shared.utils';
+import {
+  isObject,
+  isString,
+  isNumber,
+} from '@nestjs/common/utils/shared.utils';
 import { MsPattern } from '../interfaces';
 
 /**
@@ -14,7 +18,7 @@ import { MsPattern } from '../interfaces';
  * @returns string
  */
 export function transformPatternToRoute(pattern: MsPattern): string {
-  if (isString(pattern) || typeof pattern === 'number') {
+  if (isString(pattern) || isNumber(pattern)) {
     return `${pattern}`;
   }
   if (!isObject(pattern)) {
