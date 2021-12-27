@@ -109,7 +109,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     }
     const response$ = this.transformToObservable(
       await handler(message.data, natsCtx),
-    ) as Observable<any>;
+    );
     response$ && this.send(response$, publish);
   }
 

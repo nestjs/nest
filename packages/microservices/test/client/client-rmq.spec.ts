@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { EventEmitter } from 'events';
-import { empty } from 'rxjs';
+import { EMPTY } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientRMQ } from '../../client/client-rmq';
 import { ReadPacket } from '../../interfaces';
@@ -164,8 +164,8 @@ describe('ClientRMQ', function () {
         off: () => ({}),
       };
       client
-        .mergeDisconnectEvent(instance as any, empty())
-        .subscribe(null, (err: any) => expect(err).to.be.eql(error));
+        .mergeDisconnectEvent(instance as any, EMPTY)
+        .subscribe({ error: (err: any) => expect(err).to.be.eql(error) });
     });
   });
 

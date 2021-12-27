@@ -123,7 +123,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     }
     const response$ = this.transformToObservable(
       await handler(packet.data, mqttContext),
-    ) as Observable<any>;
+    );
     response$ && this.send(response$, publish);
   }
 
@@ -191,7 +191,8 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
     for (const [key, value] of this.messageHandlers) {
       if (
-        !key.includes(MQTT_WILDCARD_SINGLE) && !key.includes(MQTT_WILDCARD_ALL)
+        !key.includes(MQTT_WILDCARD_SINGLE) &&
+        !key.includes(MQTT_WILDCARD_ALL)
       ) {
         continue;
       }

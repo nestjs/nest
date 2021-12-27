@@ -96,12 +96,12 @@ describe('ClientProxy', function () {
           throw new Error();
         });
         const stream$ = client.send({ test: 3 }, 'test');
-        stream$.subscribe(
-          () => {},
-          err => {
+        stream$.subscribe({
+          next: () => {},
+          error: err => {
             expect(err).to.be.instanceof(Error);
           },
-        );
+        });
       });
     });
     describe('when is connected', () => {
@@ -142,12 +142,12 @@ describe('ClientProxy', function () {
           throw new Error();
         });
         const stream$ = client.emit({ test: 3 }, 'test');
-        stream$.subscribe(
-          () => {},
-          err => {
+        stream$.subscribe({
+          next: () => {},
+          error: err => {
             expect(err).to.be.instanceof(Error);
           },
-        );
+        });
       });
     });
     describe('when is connected', () => {

@@ -157,7 +157,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     }
     const response$ = this.transformToObservable(
       await handler(packet.data, rmqContext),
-    ) as Observable<any>;
+    );
 
     const publish = <T>(data: T) =>
       this.sendMessage(data, properties.replyTo, properties.correlationId);

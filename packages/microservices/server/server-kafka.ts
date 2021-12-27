@@ -184,7 +184,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
 
     const response$ = this.transformToObservable(
       await handler(packet.data, kafkaContext),
-    ) as Observable<any>;
+    );
     response$ && this.send(response$, publish);
   }
 

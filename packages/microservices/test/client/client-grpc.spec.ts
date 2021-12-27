@@ -129,10 +129,10 @@ describe('ClientGrpcProxy', () => {
 
       it('should call native method', () => {
         const spy = sinon.spy(obj, methodName);
-        stream$.subscribe(
-          () => ({}),
-          () => ({}),
-        );
+        stream$.subscribe({
+          next: () => ({}),
+          error: () => ({}),
+        });
 
         expect(spy.called).to.be.true;
       });
@@ -156,10 +156,10 @@ describe('ClientGrpcProxy', () => {
 
       it('should subscribe to request upstream', () => {
         const upstreamSubscribe = sinon.spy(upstream, 'subscribe');
-        stream$.subscribe(
-          () => ({}),
-          () => ({}),
-        );
+        stream$.subscribe({
+          next: () => ({}),
+          error: () => ({}),
+        });
         upstream.next({ test: true });
 
         expect(writeSpy.called).to.be.true;
@@ -201,7 +201,12 @@ describe('ClientGrpcProxy', () => {
 
       it('propagates server errors', () => {
         const err = new Error('something happened');
-        stream$.subscribe(dataSpy, errorSpy, completeSpy);
+        stream$.subscribe({
+          next: dataSpy,
+          error: errorSpy,
+          complete: completeSpy,
+        });
+
         eventCallbacks.data('a');
         eventCallbacks.data('b');
         callMock.finished = true;
@@ -219,7 +224,11 @@ describe('ClientGrpcProxy', () => {
         const grpcServerCancelErrMock = {
           details: 'Cancelled',
         };
-        const subscription = stream$.subscribe(dataSpy, errorSpy);
+        const subscription = stream$.subscribe({
+          next: dataSpy,
+          error: errorSpy,
+        });
+
         eventCallbacks.data('a');
         eventCallbacks.data('b');
         subscription.unsubscribe();
@@ -258,10 +267,10 @@ describe('ClientGrpcProxy', () => {
 
       it('should call native method', () => {
         const spy = sinon.spy(obj, methodName);
-        stream$.subscribe(
-          () => ({}),
-          () => ({}),
-        );
+        stream$.subscribe({
+          next: () => ({}),
+          error: () => ({}),
+        });
 
         expect(spy.called).to.be.true;
       });
@@ -298,10 +307,10 @@ describe('ClientGrpcProxy', () => {
 
       it('should subscribe to request upstream', () => {
         const upstreamSubscribe = sinon.spy(upstream, 'subscribe');
-        stream$.subscribe(
-          () => ({}),
-          () => ({}),
-        );
+        stream$.subscribe({
+          next: () => ({}),
+          error: () => ({}),
+        });
         upstream.next({ test: true });
 
         expect(writeSpy.called).to.be.true;

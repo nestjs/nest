@@ -22,7 +22,10 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
-import * as bodyParser from 'body-parser';
+import {
+  json as bodyParserJson,
+  urlencoded as bodyParserUrlencoded,
+} from 'body-parser';
 import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
@@ -162,8 +165,8 @@ export class ExpressAdapter extends AbstractHttpAdapter {
 
   public registerParserMiddleware() {
     const parserMiddleware = {
-      jsonParser: bodyParser.json(),
-      urlencodedParser: bodyParser.urlencoded({ extended: true }),
+      jsonParser: bodyParserJson(),
+      urlencodedParser: bodyParserUrlencoded({ extended: true }),
     };
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))
