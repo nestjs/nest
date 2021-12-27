@@ -87,7 +87,7 @@
     "@types/http-errors": "1.8.1",
     "@types/mocha": "9.0.0",
     "@types/node": "16.11.17",
-    "@types/redis": "2.8.32",
+    "@types/redis": "4.0.11",
     "@types/reflect-metadata": "0.1.0",
     "@types/sinon": "10.0.6",
     "@types/socket.io": "3.0.2",
