@@ -102,7 +102,12 @@ describe('ExceptionsHandler', () => {
       beforeEach(() => {
         sinon.stub(handler, 'invokeCustomFilters').returns(true);
       });
-      it('should not call status and json stubs', () => {
+      it('should do nothing', () => {
+        handler.next(
+          new Error(),
+          sinon.createStubInstance(ExecutionContextHost),
+        );
+
         expect(statusStub.notCalled).to.be.true;
         expect(jsonStub.notCalled).to.be.true;
       });
