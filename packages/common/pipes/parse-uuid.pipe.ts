@@ -9,6 +9,7 @@ import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
+import { isString } from '../utils/shared.utils';
 
 export interface ParseUUIDPipeOptions {
   version?: '3' | '4' | '5';
@@ -53,7 +54,7 @@ export class ParseUUIDPipe implements PipeTransform<string> {
   }
 
   protected isUUID(str: unknown, version = 'all') {
-    if (typeof str !== 'string') {
+    if (!isString(str)) {
       throw this.exceptionFactory('The value passed as UUID is not a string');
     }
     const pattern = ParseUUIDPipe.uuidRegExps[version];
