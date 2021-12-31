@@ -9,6 +9,7 @@ import {
   isObject,
   isPlainObject,
   isString,
+  isSymbol,
   isUndefined,
   normalizePath,
   stripEndSlash,
@@ -75,6 +76,17 @@ describe('Shared utils', () => {
       expect(isString(false)).to.be.false;
       expect(isString(null)).to.be.false;
       expect(isString(undefined)).to.be.false;
+    });
+  });
+  describe('isSymbol', () => {
+    it('should return true when val is a Symbol', () => {
+      expect(isSymbol(Symbol())).to.be.true;
+    });
+    it('should return false when val is not a symbol', () => {
+      expect(isSymbol('Symbol()')).to.be.false;
+      expect(isSymbol(false)).to.be.false;
+      expect(isSymbol(null)).to.be.false;
+      expect(isSymbol(undefined)).to.be.false;
     });
   });
   describe('isNumber', () => {
