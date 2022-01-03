@@ -106,7 +106,7 @@ body:
     attributes:
       label: "Packages versions"
       description: |
-        You could leave your whole `package.json` dependencies list here, or just indicates which version of `@nestjs/*` you are using
+        You could leave your whole `package.json` dependencies list here, or just indicate which version of `@nestjs/*` you are using
         **Tip**: run _npx nest info_
       value: |
         ```json
