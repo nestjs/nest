@@ -9,6 +9,7 @@ body:
  
         If you are not sure that your issue is a bug, you could:
 
+        - read the [FAQ's common errors](https://docs.nestjs.com/faq/common-errors) page
         - use our [Discord community](https://discord.gg/NestJS)
         - use [StackOverflow using the tag `nestjs`](https://stackoverflow.com/questions/tagged/nestjs)
         - If it's just a quick question you can ping [our Twitter](https://twitter.com/nestframework)
@@ -20,7 +21,7 @@ body:
   - type: checkboxes
     attributes:
       label: "Is there an existing issue for this?"
-      description: "Please search [here](https://github.com/nestjs/nest/issues?q=is%3Aissue) to see if an issue already exists for the bug you encountered"
+      description: "Please search [here](../issues?q=is%3Aissue) to see if an issue already exists for the bug you encountered"
       options:
       - label: "I have searched the existing issues"
         required: true
@@ -37,7 +38,7 @@ body:
       required: true
     attributes:
       label: "Minimum reproduction code"
-      description: "An URL to some git repository that reproduces this issue. [Wtf is a minimum reproduction?](https://jmcdo29.github.io/wtf-is-a-minimum-reproduction)"
+      description: "An URL to some Git repository/[StackBlitz](https://stackblitz.com/fork/github/nestjs/typescript-starter)/[CodeSandbox](https://codesandbox.io/s/github/nestjs/typescript-starter/tree/master) project that reproduces your issue. [Wtf is a minimum reproduction?](https://jmcdo29.github.io/wtf-is-a-minimum-reproduction)"
       placeholder: "https://github.com/..."
 
   - type: textarea
@@ -47,7 +48,7 @@ body:
         How the issue manifests?
         You could leave this blank if you alread write this in your reproduction code
       placeholder: |
-        1. `npm i`
+        1. `npm ci`
         2. `npm start:dev`
         3. See error...
 
@@ -104,10 +105,13 @@ body:
       required: true
     attributes:
       label: "Packages versions"
-      description: "You could leave your whole `package.json` dependencies list here, or just indicates which version of `@nestjs/*` are you using"
-      placeholder: |
-        - `@nestjs/common`: 8.1.3
-        - `@nestjs/platform-express`: 8.1.3
+      description: |
+        You could leave your whole `package.json` dependencies list here, or just indicate which version of `@nestjs/*` you are using
+        **Tip**: run _npx nest info_
+      value: |
+        ```json
+
+        ```
 
   - type: input
     attributes:

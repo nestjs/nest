@@ -26,6 +26,10 @@ describe('Reflector', () => {
   });
 
   describe('getAllAndMerge', () => {
+    it('should return an empty array when there are no targets', () => {
+      const key = 'key';
+      expect(reflector.getAllAndMerge(key, [])).to.be.empty;
+    });
     it('should reflect metadata of all targets and concat arrays', () => {
       const key = 'key';
       const value = 'value';
