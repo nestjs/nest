@@ -112,9 +112,8 @@ export class ClientRMQ extends ClientProxy {
     instance: any,
     source$: Observable<T>,
   ): Observable<T> {
-    const connectFailedEvent = isUndefined(instance.connectionAttempts)
-      ? DISCONNECT_EVENT
-      : CONNECT_FAILED_EVENT;
+    const isV4 = !isUndefined(instance.connectionAttempts);
+    const connectFailedEvent = isV4 ? CONNECT_FAILED_EVENT : DISCONNECT_EVENT;
 
     const close$ = fromEvent(instance, connectFailedEvent).pipe(
       map((err: any) => {
