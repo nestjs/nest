@@ -131,7 +131,7 @@
     "gulp-sourcemaps": "3.0.0",
     "gulp-typescript": "5.0.1",
     "gulp-watch": "5.0.1",
-    "http-errors": "1.8.1",
+    "http-errors": "2.0.0",
     "husky": "7.0.4",
     "imports-loader": "3.1.1",
     "json-loader": "0.5.7",
