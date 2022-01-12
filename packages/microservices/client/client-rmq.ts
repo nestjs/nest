@@ -1,7 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { EventEmitter } from 'events';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
@@ -112,15 +111,15 @@ export class ClientRMQ extends ClientProxy {
     instance: any,
     source$: Observable<T>,
   ): Observable<T> {
-    const isV4 = !isUndefined(instance.connectionAttempts);
-    const connectFailedEvent = isV4 ? CONNECT_FAILED_EVENT : DISCONNECT_EVENT;
-
-    const close$ = fromEvent(instance, connectFailedEvent).pipe(
-      map((err: any) => {
-        throw err;
-      }),
-    );
-    return merge(source$, close$).pipe(first());
+    const eventToError = (eventType: string) =>
+      fromEvent(instance, eventType).pipe(
+        map((err: any) => {
+          throw err;
+        }),
+      );
+    const disconnect$ = eventToError(DISCONNECT_EVENT);
+    const connectFailed$ = eventToError(CONNECT_FAILED_EVENT);
+    return merge(source$, disconnect$, connectFailed$).pipe(first());
   }
 
   public async setupChannel(channel: any, resolve: Function) {
