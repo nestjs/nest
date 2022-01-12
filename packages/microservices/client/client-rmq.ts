@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, switchMap } from 'rxjs/operators';
 import {
+  CONNECT_FAILED_EVENT,
   DISCONNECTED_RMQ_MESSAGE,
   DISCONNECT_EVENT,
   ERROR_EVENT,
@@ -110,12 +111,15 @@ export class ClientRMQ extends ClientProxy {
     instance: any,
     source$: Observable<T>,
   ): Observable<T> {
-    const close$ = fromEvent(instance, DISCONNECT_EVENT).pipe(
-      map((err: any) => {
-        throw err;
-      }),
-    );
-    return merge(source$, close$).pipe(first());
+    const eventToError = (eventType: string) =>
+      fromEvent(instance, eventType).pipe(
+        map((err: any) => {
+          throw err;
+        }),
+      );
+    const disconnect$ = eventToError(DISCONNECT_EVENT);
+    const connectFailed$ = eventToError(CONNECT_FAILED_EVENT);
+    return merge(source$, disconnect$, connectFailed$).pipe(first());
   }
 
   public async setupChannel(channel: any, resolve: Function) {
