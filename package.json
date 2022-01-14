@@ -71,7 +71,7 @@
     "@codechecks/client": "0.1.12",
     "@commitlint/cli": "15.0.0",
     "@commitlint/config-angular": "15.0.0",
-    "@grpc/grpc-js": "1.4.4",
+    "@grpc/grpc-js": "1.5.0",
     "@grpc/proto-loader": "0.6.7",
     "@nestjs/graphql": "9.1.2",
     "@nestjs/mongoose": "9.0.1",
