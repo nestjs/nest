@@ -3,7 +3,6 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
   DISCONNECTED_RMQ_MESSAGE,
