@@ -1,5 +1,5 @@
 import { BeforeApplicationShutdown } from '@nestjs/common';
-import { isNil } from '@nestjs/common/utils/shared.utils';
+import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,
@@ -16,7 +16,7 @@ import { Module } from '../injector/module';
 function hasBeforeApplicationShutdownHook(
   instance: unknown,
 ): instance is BeforeApplicationShutdown {
-  return !isNil(
+  return isFunction(
     (instance as BeforeApplicationShutdown).beforeApplicationShutdown,
   );
 }
@@ -32,7 +32,7 @@ function callOperator(
     .filter(instance => !isNil(instance))
     .filter(hasBeforeApplicationShutdownHook)
     .map(async instance =>
-      ((instance as any) as BeforeApplicationShutdown).beforeApplicationShutdown(
+      (instance as any as BeforeApplicationShutdown).beforeApplicationShutdown(
         signal,
       ),
     )
@@ -52,7 +52,12 @@ export async function callBeforeAppShutdownHook(
 ): Promise<void> {
   const providers = module.getNonAliasProviders();
   const [_, moduleClassHost] = providers.shift();
-  const instances = [...module.controllers, ...providers];
+  const instances = [
+    ...module.controllers,
+    ...providers,
+    ...module.injectables,
+    ...module.middlewares,
+  ];
 
   const nonTransientInstances = getNonTransientInstances(instances);
   await Promise.all(callOperator(nonTransientInstances, signal));
@@ -65,8 +70,8 @@ export async function callBeforeAppShutdownHook(
     hasBeforeApplicationShutdownHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    await (moduleClassInstance as BeforeApplicationShutdown).beforeApplicationShutdown(
-      signal,
-    );
+    await (
+      moduleClassInstance as BeforeApplicationShutdown
+    ).beforeApplicationShutdown(signal);
   }
 }

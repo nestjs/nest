@@ -257,8 +257,9 @@ describe('Module', () => {
     });
     it('should store provider', () => {
       module.addCustomUseExisting(provider as any, (module as any)._providers);
-      const factoryFn = (module as any)._providers.get(provider.provide)
-        .metatype;
+      const factoryFn = (module as any)._providers.get(
+        provider.provide,
+      ).metatype;
 
       const token = provider.provide as any;
       expect(

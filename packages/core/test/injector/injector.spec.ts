@@ -80,9 +80,9 @@ describe('Injector', () => {
 
     it('should set "isResolved" property to true after instance initialization', async () => {
       await injector.loadInstance(mainTest, moduleDeps.providers, moduleDeps);
-      const { isResolved } = (moduleDeps.providers.get(
-        'MainTest',
-      ) as InstanceWrapper<MainTest>).getInstanceByContextId(STATIC_CONTEXT);
+      const { isResolved } = (
+        moduleDeps.providers.get('MainTest') as InstanceWrapper<MainTest>
+      ).getInstanceByContextId(STATIC_CONTEXT);
       expect(isResolved).to.be.true;
     });
 
@@ -375,7 +375,7 @@ describe('Injector', () => {
     it('should return null when there is no related modules', async () => {
       const result = await injector.lookupComponentInImports(
         module as any,
-        null,
+        'testToken',
         new InstanceWrapper(),
       );
       expect(result).to.be.eq(null);

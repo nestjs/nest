@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { EMPTY as empty, of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import * as sinon from 'sinon';
 import { RpcException } from '../../exceptions/rpc-exception';
@@ -23,7 +23,7 @@ describe('RpcExceptionsHandler', () => {
               message: 'Internal server error',
             });
             done();
-            return empty;
+            return EMPTY;
           }),
         )
         .subscribe(() => ({}));
@@ -39,7 +39,7 @@ describe('RpcExceptionsHandler', () => {
             catchError((err: any) => {
               expect(err).to.be.eql(message);
               done();
-              return empty;
+              return EMPTY;
             }),
           )
           .subscribe(() => ({}));
@@ -53,7 +53,7 @@ describe('RpcExceptionsHandler', () => {
             catchError((err: any) => {
               expect(err).to.be.eql({ message, status: 'error' });
               done();
-              return empty;
+              return EMPTY;
             }),
           )
           .subscribe(() => ({}));

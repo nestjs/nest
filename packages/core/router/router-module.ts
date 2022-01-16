@@ -3,7 +3,7 @@ import { MODULE_PATH } from '@nestjs/common/constants';
 import { normalizePath } from '@nestjs/common/utils/shared.utils';
 import { Module as ModuleClass } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
-import { Routes } from './interfaces';
+import { Routes, RouteTree } from './interfaces';
 import { flattenRoutePaths } from './utils';
 
 export const ROUTES = Symbol('ROUTES');
@@ -22,6 +22,7 @@ export class RouterModule {
     private readonly modulesContainer: ModulesContainer,
     @Inject(ROUTES) private readonly routes: Routes,
   ) {
+    this.routes = this.deepCloneRoutes(routes) as Routes;
     this.initialize();
   }
 
@@ -35,6 +36,23 @@ export class RouterModule {
         },
       ],
     };
+  }
+
+  private deepCloneRoutes(
+    routes: Routes | Type<any>[],
+  ): Routes | Array<Type<any>> {
+    return routes.map((routeOrType: Type<any> | RouteTree) => {
+      if (typeof routeOrType === 'function') {
+        return routeOrType;
+      }
+      if (routeOrType.children) {
+        return {
+          ...routeOrType,
+          children: this.deepCloneRoutes(routeOrType.children),
+        };
+      }
+      return { ...routeOrType };
+    }) as Routes | Array<Type<any>>;
   }
 
   private initialize() {

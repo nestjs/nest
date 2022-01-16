@@ -79,13 +79,13 @@ export class TestingModule extends NestApplicationContext {
   }
 
   private createAdapterProxy<T>(app: NestApplication, adapter: HttpServer): T {
-    return (new Proxy(app, {
+    return new Proxy(app, {
       get: (receiver: Record<string, any>, prop: string) => {
         if (!(prop in receiver) && prop in adapter) {
           return adapter[prop];
         }
         return receiver[prop];
       },
-    }) as any) as T;
+    }) as any as T;
   }
 }

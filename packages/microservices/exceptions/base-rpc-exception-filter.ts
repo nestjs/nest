@@ -6,7 +6,8 @@ import { Observable, throwError as _throw } from 'rxjs';
 import { RpcException } from './rpc-exception';
 
 export class BaseRpcExceptionFilter<T = any, R = any>
-  implements RpcExceptionFilter<T> {
+  implements RpcExceptionFilter<T>
+{
   private static readonly logger = new Logger('RpcExceptionsHandler');
 
   public catch(exception: T, host: ArgumentsHost): Observable<R> {
@@ -16,7 +17,7 @@ export class BaseRpcExceptionFilter<T = any, R = any>
     }
     const res = exception.getError();
     const message = isObject(res) ? res : { status, message: res };
-    return _throw(message);
+    return _throw(() => message);
   }
 
   public handleUnknownError(exception: T, status: string) {
@@ -28,7 +29,7 @@ export class BaseRpcExceptionFilter<T = any, R = any>
     const logger = BaseRpcExceptionFilter.logger;
     logger.error.apply(logger, loggerArgs as any);
 
-    return _throw({ status, message: errorMessage });
+    return _throw(() => ({ status, message: errorMessage }));
   }
 
   public isError(exception: any): exception is Error {

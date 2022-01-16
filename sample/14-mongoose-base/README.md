@@ -1,4 +1,4 @@
-### Mongoose base sample
+## Mongoose base sample
 
 ### Installation
 

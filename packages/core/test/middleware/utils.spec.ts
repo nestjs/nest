@@ -1,13 +1,13 @@
 import { RequestMethod, Type } from '@nestjs/common';
 import { expect } from 'chai';
-import * as pathToRegexp from 'path-to-regexp';
 import * as sinon from 'sinon';
 import {
   assignToken,
   filterMiddleware,
   isMiddlewareClass,
-  isRouteExcluded,
+  isMiddlewareRouteExcluded,
   mapToClass,
+  mapToExcludeRoute,
 } from '../../middleware/utils';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
@@ -38,7 +38,7 @@ describe('middleware utils', () => {
         it('should return a host class', () => {
           const type = mapToClass(
             Test,
-            [{ path: '*', method: RequestMethod.ALL, regex: /./ }],
+            mapToExcludeRoute([{ path: '*', method: RequestMethod.ALL }]),
             noopAdapter,
           );
           expect(type).to.not.eql(Test);
@@ -100,20 +100,20 @@ describe('middleware utils', () => {
     });
     describe('when route is excluded', () => {
       const path = '/cats/(.*)';
-      const exludedRoutes = [
+      const excludedRoutes = mapToExcludeRoute([
         {
           path,
           method: RequestMethod.GET,
-          regex: pathToRegexp(path),
         },
-      ];
+      ]);
       it('should return true', () => {
-        expect(isRouteExcluded({}, exludedRoutes, adapter)).to.be.true;
+        expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).to.be
+          .true;
       });
     });
     describe('when route is not excluded', () => {
       it('should return false', () => {
-        expect(isRouteExcluded({}, [], adapter)).to.be.false;
+        expect(isMiddlewareRouteExcluded({}, [], adapter)).to.be.false;
       });
     });
   });

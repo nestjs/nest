@@ -7,6 +7,11 @@ import { VersionValue } from '../../interfaces/version-options.interface';
  * @publicApi
  */
 export function Version(version: VersionValue): MethodDecorator {
+  if (Array.isArray(version)) {
+    // Drop duplicated versions
+    version = Array.from(new Set(version));
+  }
+
   return (
     target: any,
     key: string | symbol,

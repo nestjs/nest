@@ -7,7 +7,10 @@ import { VersioningType } from '../enums/version-type.enum';
  */
 export const VERSION_NEUTRAL = Symbol('VERSION_NEUTRAL');
 
-export type VersionValue = string | string[] | typeof VERSION_NEUTRAL;
+export type VersionValue =
+  | string
+  | typeof VERSION_NEUTRAL
+  | Array<string | typeof VERSION_NEUTRAL>;
 
 /**
  * @publicApi
@@ -55,10 +58,16 @@ export interface MediaTypeVersioningOptions {
   key: string;
 }
 
+interface VersioningCommonOptions {
+  /**
+   * The default version to be used as a fallback when you did not provide some
+   * version to `@Controller()` nor `@Version()`.
+   */
+  defaultVersion?: VersionOptions['version'];
+}
+
 /**
  * @publicApi
  */
-export type VersioningOptions =
-  | HeaderVersioningOptions
-  | UriVersioningOptions
-  | MediaTypeVersioningOptions;
+export type VersioningOptions = VersioningCommonOptions &
+  (HeaderVersioningOptions | UriVersioningOptions | MediaTypeVersioningOptions);

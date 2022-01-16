@@ -1,4 +1,7 @@
-import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { readFileSync } from 'fs';
@@ -20,20 +23,24 @@ describe('Fastify FileSend', () => {
   });
 
   it('should return a file from a stream', async () => {
-    return app.inject({
-      method: 'GET',
-      url: '/file/stream'
-    }).then(({ payload }) => {
-      expect(payload.toString()).to.be.eq(readmeString);
-    });
+    return app
+      .inject({
+        method: 'GET',
+        url: '/file/stream',
+      })
+      .then(({ payload }) => {
+        expect(payload.toString()).to.be.eq(readmeString);
+      });
   });
   it('should return a file from a buffer', async () => {
-    return app.inject({
-      method: 'GET',
-      url: '/file/buffer',
-    }).then(({ payload }) => {
-      expect(payload.toString()).to.be.eq(readmeString);
-    });
+    return app
+      .inject({
+        method: 'GET',
+        url: '/file/buffer',
+      })
+      .then(({ payload }) => {
+        expect(payload.toString()).to.be.eq(readmeString);
+      });
   });
   /**
    * It seems that Fastify has a similar issue as Kamil initially pointed out
@@ -41,19 +48,23 @@ describe('Fastify FileSend', () => {
    * that the `NonFile` test is a failed case for fastify, hence the skip.
    */
   it.skip('should not stream a non-file', async () => {
-    return app.inject({
-      url: '/non-file/pipe-method',
-      method: 'get'
-    }).then(({ payload }) => {
-      expect(payload).to.be.eq({ value: 'Hello world' });
-    });
+    return app
+      .inject({
+        url: '/non-file/pipe-method',
+        method: 'get',
+      })
+      .then(({ payload }) => {
+        expect(payload).to.be.eq({ value: 'Hello world' });
+      });
   });
   it('should return a file from an RxJS stream', async () => {
-    return app.inject({
-      method: 'GET',
-      url: '/file/rxjs/stream'
-    }).then(({ payload }) => {
-      expect(payload.toString()).to.be.eq(readmeString);
-    });
+    return app
+      .inject({
+        method: 'GET',
+        url: '/file/rxjs/stream',
+      })
+      .then(({ payload }) => {
+        expect(payload.toString()).to.be.eq(readmeString);
+      });
   });
 });

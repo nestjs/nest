@@ -26,4 +26,9 @@ export class AppController {
   getRxJSFile(): Observable<StreamableFile> {
     return this.appService.getRxJSFile();
   }
+
+  @Get('file/with/headers')
+  getFileWithHeaders(): StreamableFile {
+    return this.appService.getFileWithHeaders();
+  }
 }

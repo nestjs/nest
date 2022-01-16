@@ -1,11 +1,12 @@
 import { Logger, LoggerService } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
 import {
   connectable,
-  EMPTY as empty,
+  EMPTY,
   from as fromPromise,
+  isObservable,
   Observable,
+  ObservedValueOf,
   of,
   Subject,
   Subscription,
@@ -94,7 +95,7 @@ export abstract class Server {
       .pipe(
         catchError((err: any) => {
           scheduleOnNextTick({ err });
-          return empty;
+          return EMPTY;
         }),
         finalize(() => scheduleOnNextTick({ isDisposed: true })),
       )
@@ -113,7 +114,7 @@ export abstract class Server {
       );
     }
     const resultOrStream = await handler(packet.data, context);
-    if (this.isObservable(resultOrStream)) {
+    if (isObservable(resultOrStream)) {
       const connectableSource = connectable(resultOrStream, {
         connector: () => new Subject(),
         resetOnDisconnect: false,
@@ -122,18 +123,29 @@ export abstract class Server {
     }
   }
 
-  public transformToObservable<T = any>(resultOrDeferred: any): Observable<T> {
+  public transformToObservable<T>(
+    resultOrDeferred: Observable<T> | Promise<T>,
+  ): Observable<T>;
+  public transformToObservable<T>(
+    resultOrDeferred: T,
+  ): never extends Observable<ObservedValueOf<T>>
+    ? Observable<T>
+    : Observable<ObservedValueOf<T>>;
+  public transformToObservable(resultOrDeferred: any) {
     if (resultOrDeferred instanceof Promise) {
       return fromPromise(resultOrDeferred);
-    } else if (!this.isObservable(resultOrDeferred)) {
-      return of(resultOrDeferred);
     }
-    return resultOrDeferred;
+
+    if (isObservable(resultOrDeferred)) {
+      return resultOrDeferred;
+    }
+
+    return of(resultOrDeferred);
   }
 
   public getOptionsProp<
     T extends MicroserviceOptions['options'],
-    K extends keyof T
+    K extends keyof T,
   >(obj: T, prop: K, defaultValue: T[K] = undefined) {
     return obj && prop in obj ? obj[prop] : defaultValue;
   }
@@ -153,31 +165,31 @@ export abstract class Server {
   protected initializeSerializer(options: ClientOptions['options']) {
     this.serializer =
       (options &&
-        (options as
-          | RedisOptions['options']
-          | NatsOptions['options']
-          | MqttOptions['options']
-          | TcpOptions['options']
-          | RmqOptions['options']
-          | KafkaOptions['options']).serializer) ||
+        (
+          options as
+            | RedisOptions['options']
+            | NatsOptions['options']
+            | MqttOptions['options']
+            | TcpOptions['options']
+            | RmqOptions['options']
+            | KafkaOptions['options']
+        ).serializer) ||
       new IdentitySerializer();
   }
 
   protected initializeDeserializer(options: ClientOptions['options']) {
     this.deserializer =
       (options &&
-        (options as
-          | RedisOptions['options']
-          | NatsOptions['options']
-          | MqttOptions['options']
-          | TcpOptions['options']
-          | RmqOptions['options']
-          | KafkaOptions['options']).deserializer) ||
+        (
+          options as
+            | RedisOptions['options']
+            | NatsOptions['options']
+            | MqttOptions['options']
+            | TcpOptions['options']
+            | RmqOptions['options']
+            | KafkaOptions['options']
+        ).deserializer) ||
       new IncomingRequestDeserializer();
-  }
-
-  private isObservable(input: unknown): input is Observable<any> {
-    return input && isFunction((input as Observable<any>).subscribe);
   }
 
   /**

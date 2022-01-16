@@ -108,19 +108,19 @@ describe('ServerMqtt', () => {
       getPublisherSpy = sinon.spy();
       sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
     });
-    it('should call "handleEvent" if identifier is not present', () => {
+    it('should call "handleEvent" if identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
-      server.handleMessage(
+      await server.handleMessage(
         channel,
-        new Buffer(JSON.stringify({ pattern: '', data })),
+        Buffer.from(JSON.stringify({ pattern: '', data })),
         null,
       );
       expect(handleEventSpy.called).to.be.true;
     });
-    it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, () => {
-      server.handleMessage(
+    it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
+      await server.handleMessage(
         channel,
-        new Buffer(JSON.stringify({ id, pattern: '', data })),
+        Buffer.from(JSON.stringify({ id, pattern: '', data })),
         null,
       );
       expect(
@@ -131,15 +131,15 @@ describe('ServerMqtt', () => {
         }),
       ).to.be.true;
     });
-    it(`should call handler with expected arguments`, () => {
+    it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
       (server as any).messageHandlers = objectToMap({
         [channel]: handler,
       });
 
-      server.handleMessage(
+      await server.handleMessage(
         channel,
-        new Buffer(JSON.stringify({ pattern: '', data, id: '2' })),
+        Buffer.from(JSON.stringify({ pattern: '', data, id: '2' })),
         null,
       );
       expect(handler.calledWith(data)).to.be.true;

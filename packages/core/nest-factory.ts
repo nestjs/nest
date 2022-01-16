@@ -142,6 +142,9 @@ export class NestFactoryStatic {
     const context = this.createNestInstance<NestApplicationContext>(
       new NestApplicationContext(container, [], root),
     );
+    if (this.autoFlushLogs) {
+      context.flushLogsOnOverride();
+    }
     return context.init();
   }
 
@@ -233,13 +236,13 @@ export class NestFactoryStatic {
       return;
     }
     const { logger, bufferLogs, autoFlushLogs } = options;
-    if (logger !== true && !isNil(logger)) {
+    if ((logger as boolean) !== true && !isNil(logger)) {
       Logger.overrideLogger(logger);
     }
     if (bufferLogs) {
       Logger.attachBuffer();
     }
-    this.autoFlushLogs = autoFlushLogs;
+    this.autoFlushLogs = autoFlushLogs ?? true;
   }
 
   private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
@@ -294,7 +297,7 @@ export class NestFactoryStatic {
         return receiver[prop];
       },
     });
-    return (proxy as unknown) as T;
+    return proxy as unknown as T;
   }
 }
 

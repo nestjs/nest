@@ -31,10 +31,8 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
       );
     }
     options = options || {};
-    const {
-      exceptionFactory,
-      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
-    } = options;
+    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
+      options;
 
     this.exceptionFactory =
       exceptionFactory ||
@@ -61,6 +59,6 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
     const enumValues = Object.keys(this.enumType).map(
       item => this.enumType[item],
     );
-    return enumValues.indexOf(value) >= 0;
+    return enumValues.includes(value);
   }
 }

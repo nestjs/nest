@@ -29,14 +29,14 @@ export const RequestMapping = (
   };
 };
 
-const createMappingDecorator = (method: RequestMethod) => (
-  path?: string | string[],
-): MethodDecorator => {
-  return RequestMapping({
-    [PATH_METADATA]: path,
-    [METHOD_METADATA]: method,
-  });
-};
+const createMappingDecorator =
+  (method: RequestMethod) =>
+  (path?: string | string[]): MethodDecorator => {
+    return RequestMapping({
+      [PATH_METADATA]: path,
+      [METHOD_METADATA]: method,
+    });
+  };
 
 /**
  * Route handler (method) Decorator. Routes HTTP POST requests to the specified path.

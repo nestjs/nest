@@ -41,7 +41,8 @@ export interface RpcHandlerMetadata {
 export class RpcContextCreator {
   private readonly contextUtils = new ContextUtils();
   private readonly rpcParamsFactory = new RpcParamsFactory();
-  private readonly handlerMetadataStorage = new HandlerMetadataStorage<RpcHandlerMetadata>();
+  private readonly handlerMetadataStorage =
+    new HandlerMetadataStorage<RpcHandlerMetadata>();
 
   constructor(
     private readonly rpcProxy: RpcProxy,
@@ -220,9 +221,8 @@ export class RpcContextCreator {
 
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
-      const pipes = this.pipesContextCreator.createConcreteContext(
-        pipesCollection,
-      );
+      const pipes =
+        this.pipesContextCreator.createConcreteContext(pipesCollection);
       const type = this.contextUtils.mapParamType(key);
 
       if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {

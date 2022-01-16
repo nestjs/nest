@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Catch, Injectable, Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { GUARDS_METADATA } from '../../common/constants';
@@ -20,6 +20,9 @@ describe('DependenciesScanner', () => {
 
   @Injectable()
   class TestComponent {}
+
+  @Catch()
+  class TestExceptionFilterWithoutInjectable {}
 
   @Controller('')
   class TestController {}
@@ -162,12 +165,44 @@ describe('DependenciesScanner', () => {
   });
 
   describe('insertModule', () => {
-    it('should call forwardRef() when forwardRef property exists', () => {
-      const module = { forwardRef: sinon.spy() };
+    let LoggerWarnSpy: sinon.SinonSpy;
 
+    beforeEach(() => {
+      LoggerWarnSpy = sinon.stub(Logger.prototype, 'warn');
+    });
+
+    afterEach(() => {
+      LoggerWarnSpy.restore();
+    });
+
+    it('should call forwardRef() when forwardRef property exists', () => {
       sinon.stub(container, 'addModule').returns({} as any);
-      scanner.insertModule(module as any, [] as any);
+
+      const module = { forwardRef: sinon.spy() };
+      scanner.insertModule(module, []);
+
       expect(module.forwardRef.called).to.be.true;
+    });
+    it('should logs an warning when passing a class annotated with `@Injectable()` decorator', () => {
+      sinon.stub(container, 'addModule').returns({} as any);
+
+      scanner.insertModule(TestComponent, []);
+
+      expect(LoggerWarnSpy.calledOnce).to.be.true;
+    });
+    it('should logs an warning when passing a class annotated with `@Controller()` decorator', () => {
+      sinon.stub(container, 'addModule').returns({} as any);
+
+      scanner.insertModule(TestController, []);
+
+      expect(LoggerWarnSpy.calledOnce).to.be.true;
+    });
+    it('should logs an warning when passing a class annotated with `@Catch()` (only) decorator', () => {
+      sinon.stub(container, 'addModule').returns({} as any);
+
+      scanner.insertModule(TestExceptionFilterWithoutInjectable, []);
+
+      expect(LoggerWarnSpy.calledOnce).to.be.true;
     });
   });
 

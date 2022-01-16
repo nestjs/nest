@@ -6,7 +6,7 @@ import {
   PipeTransform,
 } from '@nestjs/common/interfaces';
 import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, isObservable } from 'rxjs';
 import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer } from '../guards/guards-consumer';
@@ -328,11 +328,11 @@ export class ExternalContextCreator {
       : this.pipesConsumer.apply(value, { metatype, type, data }, pipes);
   }
 
-  public async transformToResult(resultOrDeffered: any) {
-    if (resultOrDeffered && isFunction(resultOrDeffered.subscribe)) {
-      return lastValueFrom(resultOrDeffered);
+  public async transformToResult(resultOrDeferred: any) {
+    if (isObservable(resultOrDeferred)) {
+      return lastValueFrom(resultOrDeferred);
     }
-    return resultOrDeffered;
+    return resultOrDeferred;
   }
 
   public createGuardsFn<TContext extends string = ContextType>(

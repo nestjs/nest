@@ -1,6 +1,6 @@
 import { NotFoundException, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
-import { PubSub } from 'apollo-server-express';
+import { PubSub } from 'graphql-subscriptions';
 import { AuthGuard } from '../common/guards/auth.guard';
 import { DataInterceptor } from '../common/interceptors/data.interceptor';
 import { NewRecipeInput } from './dto/new-recipe.input';

@@ -3,7 +3,8 @@ import { KafkaHeaders } from '../enums/kafka-headers.enum';
 import { Deserializer, IncomingResponse } from '../interfaces';
 
 export class KafkaResponseDeserializer
-  implements Deserializer<any, IncomingResponse> {
+  implements Deserializer<any, IncomingResponse>
+{
   deserialize(message: any, options?: Record<string, any>): IncomingResponse {
     const id = message.headers[KafkaHeaders.CORRELATION_ID].toString();
     if (!isUndefined(message.headers[KafkaHeaders.NEST_ERR])) {

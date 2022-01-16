@@ -1,5 +1,5 @@
 import { OnModuleDestroy } from '@nestjs/common';
-import { isNil } from '@nestjs/common/utils/shared.utils';
+import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,
@@ -16,7 +16,7 @@ import { Module } from '../injector/module';
 function hasOnModuleDestroyHook(
   instance: unknown,
 ): instance is OnModuleDestroy {
-  return !isNil((instance as OnModuleDestroy).onModuleDestroy);
+  return isFunction((instance as OnModuleDestroy).onModuleDestroy);
 }
 
 /**
@@ -27,7 +27,7 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
     .filter(instance => !isNil(instance))
     .filter(hasOnModuleDestroyHook)
     .map(async instance =>
-      ((instance as any) as OnModuleDestroy).onModuleDestroy(),
+      (instance as any as OnModuleDestroy).onModuleDestroy(),
     )
     .toArray();
 }

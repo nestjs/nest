@@ -1,7 +1,7 @@
 import { Injectable } from '../decorators/core/injectable.decorator';
 import { Optional } from '../decorators/core/optional.decorator';
 import { clc, yellow } from '../utils/cli-colors.util';
-import { isPlainObject } from '../utils/shared.utils';
+import { isPlainObject, isString } from '../utils/shared.utils';
 import { LoggerService, LogLevel } from './logger.service';
 import { isLogLevelEnabled } from './utils';
 
@@ -27,6 +27,7 @@ const DEFAULT_LOG_LEVELS: LogLevel[] = [
 @Injectable()
 export class ConsoleLogger implements LoggerService {
   private static lastTimestampAt?: number;
+  private originalContext?: string;
 
   constructor();
   constructor(context: string);
@@ -39,6 +40,9 @@ export class ConsoleLogger implements LoggerService {
   ) {
     if (!options.logLevels) {
       options.logLevels = DEFAULT_LOG_LEVELS;
+    }
+    if (context) {
+      this.originalContext = context;
     }
   }
 
@@ -146,6 +150,13 @@ export class ConsoleLogger implements LoggerService {
     this.context = context;
   }
 
+  /**
+   * Resets the logger context to the value that was passed in the constructor.
+   */
+  resetContext() {
+    this.context = this.originalContext;
+  }
+
   isLevelEnabled(level: LogLevel): boolean {
     const logLevels = this.options?.logLevels;
     return isLogLevelEnabled(level, logLevels);
@@ -215,7 +226,7 @@ export class ConsoleLogger implements LoggerService {
       return { messages: args, context: this.context };
     }
     const lastElement = args[args.length - 1];
-    const isContext = typeof lastElement === 'string';
+    const isContext = isString(lastElement);
     if (!isContext) {
       return { messages: args, context: this.context };
     }
@@ -231,7 +242,7 @@ export class ConsoleLogger implements LoggerService {
       return { messages, context };
     }
     const lastElement = messages[messages.length - 1];
-    const isStack = typeof lastElement === 'string';
+    const isStack = isString(lastElement);
     if (!isStack) {
       return { messages, context };
     }

@@ -8,7 +8,7 @@ export interface WsMessageHandler<T = string> {
 export interface WebSocketAdapter<
   TServer = any,
   TClient = any,
-  TOptions = any
+  TOptions = any,
 > {
   create(port: number, options?: TOptions): TServer;
   bindClientConnect(server: TServer, callback: Function): any;

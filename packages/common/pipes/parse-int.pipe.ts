@@ -1,7 +1,10 @@
 import { Injectable } from '../decorators/core/injectable.decorator';
 import { Optional } from '../decorators/core/optional.decorator';
 import { HttpStatus } from '../enums/http-status.enum';
-import { ArgumentMetadata, PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import {
+  ArgumentMetadata,
+  PipeTransform,
+} from '../interfaces/features/pipe-transform.interface';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
@@ -25,10 +28,8 @@ export class ParseIntPipe implements PipeTransform<string> {
 
   constructor(@Optional() options?: ParseIntPipeOptions) {
     options = options || {};
-    const {
-      exceptionFactory,
-      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
-    } = options;
+    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
+      options;
 
     this.exceptionFactory =
       exceptionFactory ||
@@ -45,7 +46,7 @@ export class ParseIntPipe implements PipeTransform<string> {
   async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
     const isNumeric =
       ['string', 'number'].includes(typeof value) &&
-      !isNaN(parseFloat(value)) &&
+      /^-?\d+$/.test(value) &&
       isFinite(value as any);
     if (!isNumeric) {
       throw this.exceptionFactory(

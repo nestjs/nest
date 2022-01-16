@@ -25,6 +25,11 @@ class TestController {
     return RETURN_VALUE;
   }
 
+  @Get('test/test')
+  testTest() {
+    return RETURN_VALUE;
+  }
+
   @Get('test2')
   test2() {
     return RETURN_VALUE;
@@ -83,6 +88,12 @@ describe('Exclude middleware (fastify)', () => {
 
   it(`should exclude "/test" endpoint`, () => {
     return request(app.getHttpServer()).get('/test').expect(200, RETURN_VALUE);
+  });
+
+  it(`should not exclude "/test/test" endpoint`, () => {
+    return request(app.getHttpServer())
+      .get('/test/test')
+      .expect(200, MIDDLEWARE_VALUE);
   });
 
   it(`should not exclude "/test2" endpoint`, () => {

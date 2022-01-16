@@ -16,6 +16,8 @@ export class AppController {
 
   @Sse('sse')
   sse(): Observable<MessageEvent> {
-    return interval(1000).pipe(map((_) => ({ data: { hello: 'world' } })));
+    return interval(1000).pipe(
+      map((_) => ({ data: { hello: 'world' } } as MessageEvent)),
+    );
   }
 }

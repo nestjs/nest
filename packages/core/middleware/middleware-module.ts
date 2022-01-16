@@ -9,6 +9,7 @@ import {
   addLeadingSlash,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
+import { isRouteExcluded, isRequestMethodAll } from '../router/utils';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
@@ -193,14 +194,14 @@ export class MiddlewareModule {
     if (isUndefined(instance?.use)) {
       throw new InvalidMiddlewareException(metatype.name);
     }
-    const router = await applicationRef.createMiddlewareFactory(method);
     const isStatic = wrapper.isDependencyTreeStatic();
     if (isStatic) {
       const proxy = await this.createProxy(instance);
-      return this.registerHandler(router, path, proxy);
+      return this.registerHandler(applicationRef, method, path, proxy);
     }
-    this.registerHandler(
-      router,
+    await this.registerHandler(
+      applicationRef,
+      method,
       path,
       async <TRequest, TResponse>(
         req: TRequest,
@@ -260,8 +261,9 @@ export class MiddlewareModule {
     return this.routerProxy.createProxy(middleware, exceptionsHandler);
   }
 
-  private registerHandler(
-    router: (...args: any[]) => void,
+  private async registerHandler(
+    applicationRef: HttpServer,
+    method: RequestMethod,
     path: string,
     proxy: <TRequest, TResponse>(
       req: TRequest,
@@ -270,12 +272,38 @@ export class MiddlewareModule {
     ) => void,
   ) {
     const prefix = this.config.getGlobalPrefix();
-    const basePath = addLeadingSlash(prefix);
-    if (basePath && path === '/*') {
-      // strip slash when a wildcard is being used
-      // and global prefix has been set
-      path = '*';
+    const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
+    if (
+      Array.isArray(excludedRoutes) &&
+      isRouteExcluded(excludedRoutes, path, method)
+    ) {
+      path = addLeadingSlash(path);
+    } else {
+      const basePath = addLeadingSlash(prefix);
+      if (basePath?.endsWith('/') && path?.startsWith('/')) {
+        // strip slash when a wildcard is being used
+        // and global prefix has been set
+        path = path?.slice(1);
+      }
+      path = basePath + path;
     }
-    router(basePath + path, proxy);
+    const isMethodAll = isRequestMethodAll(method);
+    const requestMethod = RequestMethod[method];
+    const router = await applicationRef.createMiddlewareFactory(method);
+    router(
+      path,
+      isMethodAll
+        ? proxy
+        : <TRequest, TResponse>(
+            req: TRequest,
+            res: TResponse,
+            next: () => void,
+          ) => {
+            if (applicationRef.getRequestMethod(req) === requestMethod) {
+              return proxy(req, res, next);
+            }
+            return next();
+          },
+    );
   }
 }

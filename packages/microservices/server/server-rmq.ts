@@ -3,7 +3,6 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
   DISCONNECTED_RMQ_MESSAGE,
@@ -24,6 +23,7 @@ import {
   IncomingRequest,
   OutgoingResponse,
 } from '../interfaces/packet.interface';
+import { RmqRecordSerializer } from '../serializers/rmq-record.serializer';
 import { Server } from './server';
 
 let rqmPackage: any = {};
@@ -99,10 +99,10 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   public createClient<T = any>(): T {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    return rqmPackage.connect(this.urls, { 
-        connectionOptions: socketOptions,
-        heartbeatIntervalInSeconds: socketOptions?.heartbeatIntervalInSeconds,
-        reconnectTimeInSeconds: socketOptions?.reconnectTimeInSeconds
+    return rqmPackage.connect(this.urls, {
+      connectionOptions: socketOptions,
+      heartbeatIntervalInSeconds: socketOptions?.heartbeatIntervalInSeconds,
+      reconnectTimeInSeconds: socketOptions?.reconnectTimeInSeconds,
     });
   }
 
@@ -130,7 +130,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     }
     const { content, properties } = message;
     const rawMessage = JSON.parse(content.toString());
-    const packet = this.deserializer.deserialize(rawMessage);
+    const packet = await this.deserializer.deserialize(rawMessage);
     const pattern = isString(packet.pattern)
       ? packet.pattern
       : JSON.stringify(packet.pattern);
@@ -156,7 +156,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     }
     const response$ = this.transformToObservable(
       await handler(packet.data, rmqContext),
-    ) as Observable<any>;
+    );
 
     const publish = <T>(data: T) =>
       this.sendMessage(data, properties.replyTo, properties.correlationId);
@@ -170,9 +170,16 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     correlationId: string,
   ): void {
     const outgoingResponse = this.serializer.serialize(
-      (message as unknown) as OutgoingResponse,
+      message as unknown as OutgoingResponse,
     );
+    const options = outgoingResponse.options;
+    delete outgoingResponse.options;
+
     const buffer = Buffer.from(JSON.stringify(outgoingResponse));
-    this.channel.sendToQueue(replyTo, buffer, { correlationId });
+    this.channel.sendToQueue(replyTo, buffer, { correlationId, ...options });
+  }
+
+  protected initializeSerializer(options: RmqOptions['options']) {
+    this.serializer = options?.serializer ?? new RmqRecordSerializer();
   }
 }

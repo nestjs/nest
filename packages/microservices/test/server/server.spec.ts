@@ -116,7 +116,7 @@ describe('Server', () => {
       });
       describe('throws exception', () => {
         beforeEach(() => {
-          server.send(_throw('test') as any, sendSpy);
+          server.send(_throw(() => 'test') as any, sendSpy);
         });
         it('should send error and complete', () => {
           process.nextTick(() => {
@@ -149,7 +149,7 @@ describe('Server', () => {
   describe('transformToObservable', () => {
     describe('when resultOrDeferred', () => {
       describe('is Promise', () => {
-        it('should return Observable', async () => {
+        it('should return Observable that emits the resolved value of the supplied promise', async () => {
           const value = 100;
           expect(
             await lastValueFrom(
@@ -159,19 +159,27 @@ describe('Server', () => {
         });
       });
       describe('is Observable', () => {
-        it('should return Observable', async () => {
+        it('should return the observable itself', async () => {
           const value = 100;
           expect(
             await lastValueFrom(server.transformToObservable(of(value))),
           ).to.be.eq(100);
         });
       });
-      describe('is value', () => {
-        it('should return Observable', async () => {
+      describe('is any number', () => {
+        it('should return Observable that emits the supplied number', async () => {
           const value = 100;
           expect(
             await lastValueFrom(server.transformToObservable(value)),
           ).to.be.eq(100);
+        });
+      });
+      describe('is an array', () => {
+        it('should return Observable that emits the supplied array', async () => {
+          const value = [1, 2, 3];
+          expect(
+            await lastValueFrom(server.transformToObservable(value)),
+          ).to.be.eq(value);
         });
       });
     });

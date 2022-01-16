@@ -6,10 +6,10 @@ import {
 
 @Plugin()
 export class LoggingPlugin implements ApolloServerPlugin {
-  requestDidStart(): GraphQLRequestListener {
+  async requestDidStart(): Promise<GraphQLRequestListener> {
     console.log('Request started');
     return {
-      willSendResponse() {
+      async willSendResponse() {
         console.log('Will send response');
       },
     };

@@ -1,4 +1,4 @@
-import { FILTER_CATCH_EXCEPTIONS } from '../../constants';
+import { CATCH_WATERMARK, FILTER_CATCH_EXCEPTIONS } from '../../constants';
 import { Type } from '../../interfaces';
 
 /**
@@ -20,6 +20,7 @@ import { Type } from '../../interfaces';
  */
 export function Catch(...exceptions: Type<any>[]): ClassDecorator {
   return (target: object) => {
+    Reflect.defineMetadata(CATCH_WATERMARK, true, target);
     Reflect.defineMetadata(FILTER_CATCH_EXCEPTIONS, exceptions, target);
   };
 }

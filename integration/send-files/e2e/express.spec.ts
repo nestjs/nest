@@ -1,4 +1,7 @@
-import { ExpressAdapter, NestExpressApplication } from '@nestjs/platform-express';
+import {
+  ExpressAdapter,
+  NestExpressApplication,
+} from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { readFileSync } from 'fs';
@@ -24,7 +27,7 @@ describe('Express FileSend', () => {
     return request(app.getHttpServer())
       .get('/file/stream/')
       .expect(200)
-      .expect((res) => {
+      .expect(res => {
         expect(res.body.toString()).to.be.eq(readmeString);
       });
   });
@@ -32,7 +35,7 @@ describe('Express FileSend', () => {
     return request(app.getHttpServer())
       .get('/file/buffer')
       .expect(200)
-      .expect((res) => {
+      .expect(res => {
         expect(res.body.toString()).to.be.eq(readmeString);
       });
   });
@@ -46,8 +49,18 @@ describe('Express FileSend', () => {
     return request(app.getHttpServer())
       .get('/file/rxjs/stream/')
       .expect(200)
-      .expect((res) => {
+      .expect(res => {
         expect(res.body.toString()).to.be.eq(readmeString);
+      });
+  });
+  it('should return a file with correct content type and disposition', async () => {
+    return request(app.getHttpServer())
+      .get('/file/with/headers')
+      .expect(200)
+      .expect('Content-Type', 'text/markdown')
+      .expect('Content-Disposition', 'attachment; filename="Readme.md"')
+      .expect(res => {
+        expect(res.text).to.be.eq(readmeString);
       });
   });
 });

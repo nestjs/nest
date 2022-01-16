@@ -69,7 +69,7 @@ A minimal reproduce scenario using a repository or Gist allows us to quickly con
 
 <!-- We will be insisting on a minimal reproduce scenario in order to save maintainers time and ultimately be able to fix more bugs. Interestingly, from our experience users often find coding problems themselves while preparing a minimal plunk. We understand that sometimes it might be hard to extract essentials bits of code from a larger code-base but we really need to isolate the problem before we can fix it. -->
 
-Unfortunately, we are not able to investigate / fix bugs without a minimal reproduction, so if we don't hear back from you we are going to close an issue that don't have enough info to be reproduced.
+Unfortunately, we are not able to investigate / fix bugs without a minimal reproduction, so if we don't hear back from you we are going to close an issue that doesn't have enough info to be reproduced.
 
 You can file new issues by filling out our [new issue form](https://github.com/nestjs/nest/issues/new).
 
@@ -173,7 +173,7 @@ $ npm i # (or yarn install)
 $ sh scripts/prepare.sh
 ```
 
-That will compile fresh packages and afterward, move them to all `sample` directories as well as integration tests.
+That will compile fresh packages and afterward, move them all to `sample` directories.
 
 ### <a name="common-scripts"></a>Commonly used NPM scripts
 
@@ -228,7 +228,7 @@ format that includes a **type**, a **scope** and a **subject**:
 
 The **header** is mandatory and the **scope** of the header is optional.
 
-Any line of the commit message cannot be longer 100 characters! This allows the message to be easier
+Any line of the commit message cannot be longer than 100 characters! This allows the message to be easier
 to read on GitHub as well as in various git tools.
 
 Footer should contain a [closing reference to an issue](https://help.github.com/articles/closing-issues-via-commit-messages/) if any.

@@ -584,9 +584,7 @@ export type Broker = {
   apiVersions(): Promise<{
     [apiKey: number]: { minVersion: number; maxVersion: number };
   }>;
-  metadata(
-    topics: string[],
-  ): Promise<{
+  metadata(topics: string[]): Promise<{
     brokers: Array<{
       nodeId: number;
       host: string;
@@ -845,7 +843,8 @@ interface IBatchProcessEvent {
   firstOffset: string;
   lastOffset: string;
 }
-export type ConsumerStartBatchProcessEvent = InstrumentationEvent<IBatchProcessEvent>;
+export type ConsumerStartBatchProcessEvent =
+  InstrumentationEvent<IBatchProcessEvent>;
 export type ConsumerEndBatchProcessEvent = InstrumentationEvent<
   IBatchProcessEvent & { duration: number }
 >;

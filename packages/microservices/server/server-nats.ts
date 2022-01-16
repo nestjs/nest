@@ -1,4 +1,4 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isUndefined, isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import { NATS_DEFAULT_URL, NO_MESSAGE_HANDLER } from '../constants';
 import { NatsContext } from '../ctx-host/nats.context';
@@ -8,7 +8,8 @@ import { Client, NatsMsg } from '../external/nats-client.interface';
 import { CustomTransportStrategy } from '../interfaces';
 import { NatsOptions } from '../interfaces/microservice-configuration.interface';
 import { IncomingRequest } from '../interfaces/packet.interface';
-import { NatsJSONSerializer } from '../serializers/nats-json.serializer';
+import { NatsRecord } from '../record-builders';
+import { NatsRecordSerializer } from '../serializers/nats-record.serializer';
 import { Server } from './server';
 
 let natsPackage = {} as any;
@@ -88,7 +89,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     const replyTo = natsMsg.reply;
 
     const natsCtx = new NatsContext([callerSubject, natsMsg.headers]);
-    const message = this.deserializer.deserialize(rawMessage, {
+    const message = await this.deserializer.deserialize(rawMessage, {
       channel,
       replyTo,
     });
@@ -108,7 +109,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     }
     const response$ = this.transformToObservable(
       await handler(message.data, natsCtx),
-    ) as Observable<any>;
+    );
     response$ && this.send(response$, publish);
   }
 
@@ -116,8 +117,11 @@ export class ServerNats extends Server implements CustomTransportStrategy {
     if (natsMsg.reply) {
       return (response: any) => {
         Object.assign(response, { id });
-        const outgoingResponse = this.serializer.serialize(response);
-        return natsMsg.respond(outgoingResponse);
+        const outgoingResponse: NatsRecord =
+          this.serializer.serialize(response);
+        return natsMsg.respond(outgoingResponse.data, {
+          headers: outgoingResponse.headers,
+        });
       };
     }
 
@@ -130,7 +134,7 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   public async handleStatusUpdates(client: Client) {
     for await (const status of client.status()) {
       const data =
-        status.data && typeof status.data === 'object'
+        status.data && isObject(status.data)
           ? JSON.stringify(status.data)
           : status.data;
       if (status.type === 'disconnect' || status.type === 'error') {
@@ -138,13 +142,18 @@ export class ServerNats extends Server implements CustomTransportStrategy {
           `NatsError: type: "${status.type}", data: "${data}".`,
         );
       } else {
-        this.logger.log(`NatsStatus: type: "${status.type}", data: "${data}".`);
+        const message = `NatsStatus: type: "${status.type}", data: "${data}".`;
+        if (status.type === 'pingTimer') {
+          this.logger.debug(message);
+        } else {
+          this.logger.log(message);
+        }
       }
     }
   }
 
   protected initializeSerializer(options: NatsOptions['options']) {
-    this.serializer = options?.serializer ?? new NatsJSONSerializer();
+    this.serializer = options?.serializer ?? new NatsRecordSerializer();
   }
 
   protected initializeDeserializer(options: NatsOptions['options']) {

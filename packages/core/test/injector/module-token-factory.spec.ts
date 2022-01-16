@@ -63,6 +63,18 @@ describe('ModuleTokenFactory', () => {
           '{"providers":["Provider"],"exports":["Provider"]}',
         );
       });
+      it('should return hash with value provider with non-class function', () => {
+        const provider = {
+          provide: 'ProvideValue',
+          useValue: function Provider() {},
+        };
+        const metadata = { providers: [provider] };
+        expect(factory.getDynamicMetadataToken(metadata)).to.be.eql(
+          `{"providers":[{"provide":"ProvideValue","useValue":"${hash(
+            provider.useValue.toString(),
+          )}"}]}`,
+        );
+      });
       it('should serialize symbols in a dynamic metadata object', () => {
         const metadata = {
           providers: [

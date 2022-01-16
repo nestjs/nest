@@ -65,6 +65,19 @@ describe('Disconnected client', () => {
       .expect(408);
   });
 
+  it(`RMQ`, () => {
+    return request(server)
+      .post('/')
+      .send({
+        transport: Transport.RMQ,
+        options: {
+          urls: [`amqp://0.0.0.0:3333`],
+          queue: 'test',
+        },
+      })
+      .expect(408);
+  });
+
   afterEach(async () => {
     await app.close();
   });

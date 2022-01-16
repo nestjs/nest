@@ -27,9 +27,12 @@ export class CacheModule {
    *
    * @see [Customize caching](https://docs.nestjs.com/techniques/caching#customize-caching)
    */
-  static register(options: CacheModuleOptions = {}): DynamicModule {
+  static register<StoreConfig extends Record<any, any> = Record<string, any>>(
+    options: CacheModuleOptions<StoreConfig> = {} as any,
+  ): DynamicModule {
     return {
       module: CacheModule,
+      global: options.isGlobal,
       providers: [{ provide: CACHE_MODULE_OPTIONS, useValue: options }],
     };
   }
@@ -42,19 +45,22 @@ export class CacheModule {
    *
    * @see [Async configuration](https://docs.nestjs.com/techniques/caching#async-configuration)
    */
-  static registerAsync(options: CacheModuleAsyncOptions): DynamicModule {
+  static registerAsync<
+    StoreConfig extends Record<any, any> = Record<string, any>,
+  >(options: CacheModuleAsyncOptions<StoreConfig>): DynamicModule {
     return {
       module: CacheModule,
+      global: options.isGlobal,
       imports: options.imports,
       providers: [
-        ...this.createAsyncProviders(options),
+        ...this.createAsyncProviders<StoreConfig>(options),
         ...(options.extraProviders || []),
       ],
     };
   }
 
-  private static createAsyncProviders(
-    options: CacheModuleAsyncOptions,
+  private static createAsyncProviders<StoreConfig extends Record<any, any>>(
+    options: CacheModuleAsyncOptions<StoreConfig>,
   ): Provider[] {
     if (options.useExisting || options.useFactory) {
       return [this.createAsyncOptionsProvider(options)];
@@ -68,9 +74,9 @@ export class CacheModule {
     ];
   }
 
-  private static createAsyncOptionsProvider(
-    options: CacheModuleAsyncOptions,
-  ): Provider {
+  private static createAsyncOptionsProvider<
+    StoreConfig extends Record<any, any>,
+  >(options: CacheModuleAsyncOptions<StoreConfig>): Provider {
     if (options.useFactory) {
       return {
         provide: CACHE_MODULE_OPTIONS,
@@ -80,7 +86,7 @@ export class CacheModule {
     }
     return {
       provide: CACHE_MODULE_OPTIONS,
-      useFactory: async (optionsFactory: CacheOptionsFactory) =>
+      useFactory: async (optionsFactory: CacheOptionsFactory<StoreConfig>) =>
         optionsFactory.createCacheOptions(),
       inject: [options.useExisting || options.useClass],
     };

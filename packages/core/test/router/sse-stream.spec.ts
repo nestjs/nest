@@ -138,6 +138,21 @@ data: hello
     sse.pipe(sink);
   });
 
+  it('sets additional headers when provided', callback => {
+    const sse = new SseStream();
+    const sink = new Sink(
+      (status: number, headers: string | OutgoingHttpHeaders) => {
+        expect(headers).to.contain.keys('access-control-headers');
+        expect(headers['access-control-headers']).to.equal('some-cors-value');
+        callback();
+        return sink;
+      },
+    );
+    sse.pipe(sink, {
+      additionalHeaders: { 'access-control-headers': 'some-cors-value' },
+    });
+  });
+
   it('allows an eventsource to connect', callback => {
     let sse: SseStream;
     const server = createServer((req, res) => {

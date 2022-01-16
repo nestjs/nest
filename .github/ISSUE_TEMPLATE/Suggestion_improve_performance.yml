@@ -1,0 +1,48 @@
+title: "perf: "
+name: "\U0001F525 Suggestion for Improving Performance"
+description: "I have a suggestion that might improve the performance of Nest \U00002728"
+labels: ["type: enhancement :wolf:", "needs triage"]
+body:
+  - type: checkboxes
+    attributes:
+      label: "Is there an existing issue that is already proposing this?"
+      description: "Please search [here](../issues?q=is%3Aissue) to see if an issue already exists for this"
+      options:
+      - label: "I have searched the existing issues"
+        required: true
+
+  - type: input
+    validations:
+      required: true
+    attributes:
+      label: "NestJS version"
+      description: "Which version do you intend to improve?"
+      placeholder: "8.1.3"
+
+  - type: textarea
+    attributes:
+      label: "Is your performance suggestion related to a problem? Please describe it"
+      description: "A clear and concise description of what the problem is"
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: "Describe the performance enhancement you are proposing and how we can try it out"
+      placeholder: |
+        Cache `array.length` on the following lines ...
+
+  - type: textarea
+    validations:
+     required: true
+    attributes:
+      label: "Benchmarks result or another proof (eg: POC)"
+      description: |
+        If you've already prototyped a solution, share your results here
+        If not, what makes you believe there will be a performance improvement?
+      placeholder: |
+        ```
+        ```
+
+        MacBook Pro Mid 2014, 2.5 GHz Quad-Core Intel Core i7, 16 GB 1600 MHz DDR3, SSD
+

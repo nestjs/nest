@@ -21,6 +21,8 @@ import {
   ReadPacket,
 } from '../interfaces';
 import { MqttOptions } from '../interfaces/microservice-configuration.interface';
+import { MqttRecord } from '../record-builders/mqtt.record-builder';
+import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer';
 import { Server } from './server';
 
 let mqttPackage: any = {};
@@ -70,6 +72,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
       const { isEventHandler } = this.messageHandlers.get(pattern);
       mqttClient.subscribe(
         isEventHandler ? pattern : this.getRequestPattern(pattern),
+        this.getOptionsProp(this.options, 'subscribeOptions'),
       );
     });
   }
@@ -97,7 +100,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     originalPacket?: Record<string, any>,
   ): Promise<any> {
     const rawPacket = this.parseMessage(buffer.toString());
-    const packet = this.deserializer.deserialize(rawPacket, { channel });
+    const packet = await this.deserializer.deserialize(rawPacket, { channel });
     const mqttContext = new MqttContext([channel, originalPacket]);
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet, mqttContext);
@@ -120,18 +123,22 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     }
     const response$ = this.transformToObservable(
       await handler(packet.data, mqttContext),
-    ) as Observable<any>;
+    );
     response$ && this.send(response$, publish);
   }
 
   public getPublisher(client: MqttClient, pattern: any, id: string): any {
     return (response: any) => {
       Object.assign(response, { id });
-      const outgoingResponse = this.serializer.serialize(response);
+      const outgoingResponse: Partial<MqttRecord> =
+        this.serializer.serialize(response);
+      const options = outgoingResponse.options;
+      delete outgoingResponse.options;
 
       return client.publish(
         this.getReplyPattern(pattern),
         JSON.stringify(outgoingResponse),
+        options,
       );
     };
   }
@@ -184,8 +191,8 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
     for (const [key, value] of this.messageHandlers) {
       if (
-        key.indexOf(MQTT_WILDCARD_SINGLE) === -1 &&
-        key.indexOf(MQTT_WILDCARD_ALL) === -1
+        !key.includes(MQTT_WILDCARD_SINGLE) &&
+        !key.includes(MQTT_WILDCARD_ALL)
       ) {
         continue;
       }
@@ -206,5 +213,9 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
   public handleError(stream: any) {
     stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
+  }
+
+  protected initializeSerializer(options: MqttOptions['options']) {
+    this.serializer = options?.serializer ?? new MqttRecordSerializer();
   }
 }

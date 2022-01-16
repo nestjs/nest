@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import 'reflect-metadata';
 import * as sinon from 'sinon';
-import { Logger, LoggerService } from '../../services';
+import { ConsoleLogger, Logger, LoggerService } from '../../services';
 
 describe('Logger', () => {
   describe('[static methods]', () => {
@@ -134,6 +134,9 @@ describe('Logger', () => {
         expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
           stacktrace + '\n',
         );
+        expect(processStderrWriteSpy.secondCall.firstArg).to.not.include(
+          context,
+        );
       });
 
       it('should print multiple 2 errors and one stacktrace to the console', () => {
@@ -234,6 +237,24 @@ describe('Logger', () => {
         expect(customLoggerErrorSpy.called).to.be.true;
         expect(customLoggerErrorSpy.calledWith(message, context)).to.be.true;
       });
+    });
+  });
+
+  describe('ConsoleLogger', () => {
+    it('should allow setting and resetting of context', () => {
+      const logger = new ConsoleLogger();
+      expect(logger['context']).to.be.undefined;
+      logger.setContext('context');
+      expect(logger['context']).to.equal('context');
+      logger.resetContext();
+      expect(logger['context']).to.be.undefined;
+
+      const loggerWithContext = new ConsoleLogger('context');
+      expect(loggerWithContext['context']).to.equal('context');
+      loggerWithContext.setContext('other');
+      expect(loggerWithContext['context']).to.equal('other');
+      loggerWithContext.resetContext();
+      expect(loggerWithContext['context']).to.equal('context');
     });
   });
 

@@ -7,8 +7,6 @@ import { EMPTY, fromEvent, lastValueFrom, Subject } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
-  GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
-  GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
   GRPC_DEFAULT_PROTO_LOADER,
   GRPC_DEFAULT_URL,
 } from '../constants';
@@ -19,6 +17,7 @@ import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definit
 import { CustomTransportStrategy, MessageHandler } from '../interfaces';
 import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import { ChannelOptions } from '../external/grpc-options.interface';
 
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
@@ -49,7 +48,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     grpcPackage = this.loadPackage('@grpc/grpc-js', ServerGrpc.name, () =>
       require('@grpc/grpc-js'),
     );
-    grpcProtoLoaderPackage = this.loadPackage(protoLoader, ServerGrpc.name);
+    grpcProtoLoaderPackage = this.loadPackage(
+      protoLoader,
+      ServerGrpc.name,
+      () =>
+        protoLoader === GRPC_DEFAULT_PROTO_LOADER
+          ? require('@grpc/proto-loader')
+          : require(protoLoader),
+    );
   }
 
   public async listen(
@@ -214,10 +220,10 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   public createUnaryServiceMethod(methodHandler: Function): Function {
     return async (call: GrpcCall, callback: Function) => {
       const handler = methodHandler(call.request, call.metadata, call);
-      this.transformToObservable(await handler).subscribe(
-        data => callback(null, data),
-        (err: any) => callback(err),
-      );
+      this.transformToObservable(await handler).subscribe({
+        next: data => callback(null, data),
+        error: (err: any) => callback(err),
+      });
     };
   }
 
@@ -286,7 +292,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
           ),
         );
 
-        if (typeof response !== 'undefined') {
+        if (!isUndefined(response)) {
           callback(null, response);
         }
       }
@@ -333,27 +339,22 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public async createClient(): Promise<any> {
-    const grpcOptions = {
-      'grpc.max_send_message_length': this.getOptionsProp(
-        this.options,
-        'maxSendMessageLength',
-        GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
-      ),
-      'grpc.max_receive_message_length': this.getOptionsProp(
-        this.options,
-        'maxReceiveMessageLength',
-        GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
-      ),
-    };
-    const maxMetadataSize = this.getOptionsProp(
-      this.options,
-      'maxMetadataSize',
-      -1,
-    );
-    if (maxMetadataSize > 0) {
-      grpcOptions['grpc.max_metadata_size'] = maxMetadataSize;
+    const channelOptions: ChannelOptions =
+      this.options && this.options.channelOptions
+        ? this.options.channelOptions
+        : {};
+    if (this.options && this.options.maxSendMessageLength) {
+      channelOptions['grpc.max_send_message_length'] =
+        this.options.maxSendMessageLength;
     }
-    const server = new grpcPackage.Server(grpcOptions);
+    if (this.options && this.options.maxReceiveMessageLength) {
+      channelOptions['grpc.max_receive_message_length'] =
+        this.options.maxReceiveMessageLength;
+    }
+    if (this.options && this.options.maxMetadataSize) {
+      channelOptions['grpc.max_metadata_size'] = this.options.maxMetadataSize;
+    }
+    const server = new grpcPackage.Server(channelOptions);
     const credentials = this.getOptionsProp(this.options, 'credentials');
 
     await new Promise((resolve, reject) => {
@@ -383,9 +384,8 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const loader = this.getOptionsProp(this.options, 'loader');
 
       const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
-      const packageObject = grpcPackage.loadPackageDefinition(
-        packageDefinition,
-      );
+      const packageObject =
+        grpcPackage.loadPackageDefinition(packageDefinition);
       return packageObject;
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException();

@@ -89,12 +89,12 @@ describe('InterceptorsConsumer', () => {
       expect(context.getHandler()).to.be.eql(callback);
     });
   });
-  describe('transformDeffered', () => {
+  describe('transformDeferred', () => {
     describe('when next() result is plain value', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = async () => val;
-        expect(await lastValueFrom(consumer.transformDeffered(next))).to.be.eql(
+        expect(await lastValueFrom(consumer.transformDeferred(next))).to.be.eql(
           val,
         );
       });
@@ -103,7 +103,7 @@ describe('InterceptorsConsumer', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = async () => val;
-        expect(await lastValueFrom(consumer.transformDeffered(next))).to.be.eql(
+        expect(await lastValueFrom(consumer.transformDeferred(next))).to.be.eql(
           val,
         );
       });
@@ -113,7 +113,7 @@ describe('InterceptorsConsumer', () => {
         const val = 3;
         const next = async () => of(val);
         expect(
-          await await lastValueFrom(consumer.transformDeffered(next) as any),
+          await await lastValueFrom(consumer.transformDeferred(next) as any),
         ).to.be.eql(val);
       });
     });

@@ -43,7 +43,7 @@ describe('Express Cors', () => {
         await app.init();
       });
 
-      it(`Should add cors headers based on the first config`, async () => {
+      it(`should add cors headers based on the first config`, async () => {
         return request(app.getHttpServer())
           .get('/')
           .expect('access-control-allow-origin', 'example.com')
@@ -53,7 +53,7 @@ describe('Express Cors', () => {
           .expect('content-length', '0');
       });
 
-      it(`Should add cors headers based on the second config`, async () => {
+      it(`should add cors headers based on the second config`, async () => {
         return request(app.getHttpServer())
           .options('/')
           .expect('access-control-allow-origin', 'sample.com')
@@ -91,7 +91,7 @@ describe('Express Cors', () => {
         await app.init();
       });
 
-      it(`Should add cors headers based on the first config`, async () => {
+      it(`should add cors headers based on the first config`, async () => {
         return request(app.getHttpServer())
           .get('/')
           .expect('access-control-allow-origin', 'example.com')
@@ -101,7 +101,7 @@ describe('Express Cors', () => {
           .expect('content-length', '0');
       });
 
-      it(`Should add cors headers based on the second config`, async () => {
+      it(`should add cors headers based on the second config`, async () => {
         return request(app.getHttpServer())
           .options('/')
           .expect('access-control-allow-origin', 'sample.com')

@@ -3,6 +3,9 @@
  * This listing is incomplete. Full reference: https://grpc.github.io/grpc/core/group__grpc__arg__keys.html
  */
 export interface ChannelOptions {
+  'grpc.max_send_message_length'?: number;
+  'grpc.max_receive_message_length'?: number;
+  'grpc.max_metadata_size'?: number;
   'grpc.ssl_target_name_override'?: string;
   'grpc.primary_user_agent'?: string;
   'grpc.secondary_user_agent'?: string;
@@ -12,5 +15,6 @@ export interface ChannelOptions {
   'grpc.initial_reconnect_backoff_ms'?: number;
   'grpc.max_reconnect_backoff_ms'?: number;
   'grpc.use_local_subchannel_pool'?: number;
+  'grpc-node.max_session_memory'?: number;
   [key: string]: string | number | undefined;
 }

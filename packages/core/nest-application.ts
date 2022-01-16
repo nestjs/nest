@@ -46,10 +46,9 @@ const { SocketModule } = optionalRequire(
   '@nestjs/websockets/socket-module',
   () => require('@nestjs/websockets/socket-module'),
 );
-const {
-  MicroservicesModule,
-} = optionalRequire('@nestjs/microservices/microservices-module', () =>
-  require('@nestjs/microservices/microservices-module'),
+const { MicroservicesModule } = optionalRequire(
+  '@nestjs/microservices/microservices-module',
+  () => require('@nestjs/microservices/microservices-module'),
 );
 
 /**
@@ -57,7 +56,8 @@ const {
  */
 export class NestApplication
   extends NestApplicationContext
-  implements INestApplication {
+  implements INestApplication
+{
   private readonly logger = new Logger(NestApplication.name, {
     timestamp: true,
   });
@@ -121,8 +121,7 @@ export class NestApplication
       return undefined;
     }
     const passCustomOptions =
-      isObject(this.appOptions.cors) ||
-      typeof this.appOptions.cors === 'function';
+      isObject(this.appOptions.cors) || isFunction(this.appOptions.cors);
     if (!passCustomOptions) {
       return this.enableCors();
     }
@@ -279,9 +278,13 @@ export class NestApplication
         port,
         ...listenFnArgs,
         (...originalCallbackArgs: unknown[]) => {
-          if (this.appOptions?.autoFlushLogs) {
+          if (this.appOptions?.autoFlushLogs ?? true) {
             this.flushLogs();
           }
+          if (originalCallbackArgs[0] instanceof Error) {
+            return reject(originalCallbackArgs[0]);
+          }
+
           const address = this.httpServer.address();
           if (address) {
             this.httpServer.removeListener('error', errorHandler);
@@ -315,13 +318,14 @@ export class NestApplication
   }
 
   private formatAddress(address: any): string {
-    if (typeof address === 'string') {
+    if (isString(address)) {
       if (platform() === 'win32') {
         return address;
       }
       const basePath = encodeURIComponent(address);
       return `${this.getProtocol()}+unix://${basePath}`;
     }
+
     let host = this.host();
     if (address && address.family === 'IPv6') {
       if (host === '::') {
@@ -406,7 +410,7 @@ export class NestApplication
   }
   private host(): string | undefined {
     const address = this.httpServer.address();
-    if (typeof address === 'string') {
+    if (isString(address)) {
       return undefined;
     }
     return address && address.address;

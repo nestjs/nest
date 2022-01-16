@@ -46,7 +46,7 @@ export abstract class ClientProxy {
     data: TInput,
   ): Observable<TResult> {
     if (isNil(pattern) || isNil(data)) {
-      return _throw(new InvalidMessageException());
+      return _throw(() => new InvalidMessageException());
     }
     return defer(async () => this.connect()).pipe(
       mergeMap(
