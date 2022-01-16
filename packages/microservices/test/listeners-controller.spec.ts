@@ -118,6 +118,22 @@ describe('ListenersController', () => {
       instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
       expect(addSpyTCP.calledTwice).to.be.true;
     });
+    it(`should call "addHandler" method of server with extras data`, () => {
+      const serverHandlers = [
+        { pattern: 'test', targetCallback: 'tt', extras: { param: 'value' } },
+      ];
+      explorer.expects('explore').returns(serverHandlers);
+      instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
+      expect(addSpyTCP.calledOnce).to.be.true;
+      expect(
+        addSpyTCP.calledWith(
+          sinon.match.any,
+          sinon.match.any,
+          sinon.match.any,
+          sinon.match({ param: 'value' }),
+        ),
+      ).to.be.true;
+    });
     describe('when request scoped', () => {
       it(`should call "addHandler" with deferred proxy`, () => {
         explorer.expects('explore').returns(handlers);

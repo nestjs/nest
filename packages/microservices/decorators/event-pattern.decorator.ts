@@ -2,6 +2,7 @@ import {
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
+  PATTERN_EXTRAS_METADATA,
 } from '../constants';
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { Transport } from '../enums';
@@ -12,6 +13,7 @@ import { Transport } from '../enums';
 export const EventPattern = <T = string>(
   metadata?: T,
   transport?: Transport,
+  extras?: Record<string, any>,
 ): MethodDecorator => {
   return (
     target: object,
@@ -25,6 +27,7 @@ export const EventPattern = <T = string>(
       descriptor.value,
     );
     Reflect.defineMetadata(TRANSPORT_METADATA, transport, descriptor.value);
+    Reflect.defineMetadata(PATTERN_EXTRAS_METADATA, extras, descriptor.value);
     return descriptor;
   };
 };
