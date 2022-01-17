@@ -91,7 +91,7 @@
     "@types/reflect-metadata": "0.1.0",
     "@types/sinon": "10.0.6",
     "@types/socket.io": "3.0.2",
-    "@types/ws": "8.2.0",
+    "@types/ws": "8.2.2",
     "@typescript-eslint/eslint-plugin": "4.33.0",
     "@typescript-eslint/parser": "4.33.0",
     "amqp-connection-manager": "3.7.0",
