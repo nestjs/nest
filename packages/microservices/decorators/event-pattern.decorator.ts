@@ -6,6 +6,7 @@ import {
 } from '../constants';
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { Transport } from '../enums';
+import { isObject, isNumber, isNil } from '../../common/utils/shared.utils';
 
 /**
  * Subscribes to incoming events which fulfils chosen pattern.
@@ -26,9 +27,9 @@ export const EventPattern: {
 ): MethodDecorator => {
   let transport: Transport;
   let extras: Record<string, any>;
-  if (typeof arg1 === 'number' && !arg2) {
+  if (isNumber(arg1) && isNil(arg2)) {
     transport = arg1;
-  } else if (typeof arg1 === 'object' && arg1 !== null && !arg2) {
+  } else if (isObject(arg1) && isNil(arg2)) {
     extras = arg1;
   } else {
     transport = arg1 as Transport;

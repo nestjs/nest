@@ -8,6 +8,7 @@ import {
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 import { Transport } from '../enums';
+import { isObject, isNumber, isNil } from '../../common/utils/shared.utils';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',
@@ -40,9 +41,9 @@ export const MessagePattern: {
 ): MethodDecorator => {
   let transport: Transport;
   let extras: Record<string, any>;
-  if (typeof arg1 === 'number' && !arg2) {
+  if (isNumber(arg1) && isNil(arg2)) {
     transport = arg1;
-  } else if (typeof arg1 === 'object' && arg1 !== null && !arg2) {
+  } else if (isObject(arg1) && isNil(arg2)) {
     extras = arg1;
   } else {
     transport = arg1 as Transport;
