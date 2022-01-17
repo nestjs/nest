@@ -200,14 +200,14 @@ describe('ClientTCP', () => {
     });
   });
 
-  // describe('tls', () => {
-  //   it('should upgrade to TLS', () => {
-  //     const jsonSocket = new ClientTCP({ useTls: true }).createSocket();
-  //     expect(jsonSocket.socket).instanceOf(TLSSocket);
-  //   });
-  //   it('should not upgrade to TLS, if not requested', () => {
-  //     const jsonSocket = new ClientTCP({ useTls: false }).createSocket();
-  //     expect(jsonSocket.socket).instanceOf(NetSocket);
-  //   });
-  // });
+  describe('tls', () => {
+    it('should upgrade to TLS', () => {
+      const jsonSocket = new ClientTCP({ useTls: true }).createSocket();
+      expect(jsonSocket.socket).instanceOf(TLSSocket);
+    });
+    it('should not upgrade to TLS, if not requested', () => {
+      const jsonSocket = new ClientTCP({ useTls: false }).createSocket();
+      expect(jsonSocket.socket).instanceOf(NetSocket);
+    });
+  });
 });

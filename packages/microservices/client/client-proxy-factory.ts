@@ -57,17 +57,7 @@ export class ClientProxyFactory {
       case Transport.KAFKA:
         return new ClientKafka(options as KafkaOptions['options']);
       default:
-        const uncheckedOptions = options as
-          | TcpClientOptions['options']
-          | TcpTlsClientOptions['options']
-          | undefined;
-        if (uncheckedOptions && uncheckedOptions.useTls === true) {
-          return new ClientTCP(options as TcpTlsClientOptions['options']);
-        } else {
-          return new ClientTCP(
-            options as TcpClientOptions['options'] | undefined,
-          );
-        }
+        return new ClientTCP(options as TcpClientOptions['options']);
     }
   }
 

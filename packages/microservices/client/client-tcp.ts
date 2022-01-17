@@ -31,25 +31,29 @@ export class ClientTCP extends ClientProxy {
   private socket: JsonSocket;
 
   /**
+   * TLS Options, when TLS is being used
+   */
+  private tlsOptions?: TcpTlsClientOptions['options'];
+
+  /**
    * The underling netSocket used by the TLS Socket
    */
   private netSocket: net.Socket | null = null;
 
-  constructor();
-  constructor(options: TcpClientOptions['options']);
-  constructor(options: TcpTlsClientOptions['options']);
   constructor(
-    private readonly options?:
-      | TcpClientOptions['options']
-      | TcpTlsClientOptions['options'],
+    options: TcpClientOptions['options'] | TcpTlsClientOptions['options'],
   ) {
     super();
-    if (options === undefined) {
-      this.options = {};
-    }
     this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
     this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
     this.useTls = this.getOptionsProp(options, 'useTls') || TCP_DEFAULT_USE_TLS;
+
+    /**
+     * If TLS is being used, set the TLS Options
+     */
+    if (this.useTls) {
+      this.tlsOptions = options as TcpTlsClientOptions['options'];
+    }
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -131,7 +135,7 @@ export class ClientTCP extends ClientProxy {
       /**
        * Options are TcpTlsClientOptions
        */
-      const options = this.options as TcpTlsClientOptions['options'];
+      const options = this.tlsOptions as TcpTlsClientOptions['options'];
       this.netSocket = socket;
       socket = tls.connect({ ...options, socket });
     }
