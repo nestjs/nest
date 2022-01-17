@@ -84,7 +84,7 @@
     "@types/cors": "2.8.12",
     "@types/express": "4.17.13",
     "@types/gulp": "4.0.9",
-    "@types/http-errors": "1.8.1",
+    "@types/http-errors": "1.8.2",
     "@types/mocha": "9.0.0",
     "@types/node": "16.11.19",
     "@types/redis": "4.0.11",
