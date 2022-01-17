@@ -18,11 +18,36 @@ export enum GrpcMethodStreamingType {
 /**
  * Subscribes to incoming messages which fulfils chosen pattern.
  */
-export const MessagePattern = <T = PatternMetadata | string>(
+export const MessagePattern: {
+  <T = PatternMetadata | string>(metadata?: T): MethodDecorator;
+  <T = PatternMetadata | string>(
+    metadata?: T,
+    transport?: Transport,
+  ): MethodDecorator;
+  <T = PatternMetadata | string>(
+    metadata?: T,
+    extras?: Record<string, any>,
+  ): MethodDecorator;
+  <T = PatternMetadata | string>(
+    metadata?: T,
+    transport?: Transport,
+    extras?: Record<string, any>,
+  ): MethodDecorator;
+} = <T = PatternMetadata | string>(
   metadata?: T,
-  transport?: Transport,
-  extras?: Record<string, any>,
+  arg1?: Transport | Record<string, any>,
+  arg2?: Record<string, any>,
 ): MethodDecorator => {
+  let transport: Transport;
+  let extras: Record<string, any>;
+  if (typeof arg1 === 'number' && !arg2) {
+    transport = arg1;
+  } else if (typeof arg1 === 'object' && arg1 !== null && !arg2) {
+    extras = arg1;
+  } else {
+    transport = arg1 as Transport;
+    extras = arg2;
+  }
   return (
     target: object,
     key: string | symbol,
