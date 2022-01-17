@@ -1,3 +1,4 @@
+import { isObject, isNumber, isNil } from '@nestjs/common/utils/shared.utils';
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {
   PATTERN_HANDLER_METADATA,
@@ -8,7 +9,6 @@ import {
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 import { Transport } from '../enums';
-import { isObject, isNumber, isNil } from '../../common/utils/shared.utils';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',
