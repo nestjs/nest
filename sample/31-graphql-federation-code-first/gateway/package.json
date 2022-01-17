@@ -21,12 +21,12 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@apollo/gateway": "0.44.1",
+    "@apollo/gateway": "0.46.0",
     "@nestjs/common": "8.2.3",
     "@nestjs/core": "8.2.3",
     "@nestjs/graphql": "9.1.2",
     "@nestjs/platform-express": "8.2.3",
-    "apollo-server-express": "3.5.0",
+    "apollo-server-express": "3.6.1",
     "graphql": "15.7.2",
     "graphql-tools": "7.0.5",
     "reflect-metadata": "0.1.13",
