@@ -21,7 +21,9 @@ describe('ParseBoolPipe', () => {
     });
     describe('when validation fails', () => {
       it('should throw an error', async () => {
-        return expect(target.transform('123abc', {} as ArgumentMetadata)).to.be
+        await expect(target.transform('123abc', {} as ArgumentMetadata)).to.be
+          .rejected;
+        await expect(target.transform(undefined, {} as ArgumentMetadata)).to.be
           .rejected;
       });
     });

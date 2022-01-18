@@ -13,6 +13,16 @@ import {
 export interface ParseIntPipeOptions {
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (error: string) => any;
+
+  /**
+   * Minimum value allowed. If not provided, no min check is performed.
+   */
+  min?: number;
+
+  /**
+   * Maximum value allowed. If not provided, no max check is performed.
+   */
+  max?: number;
 }
 
 /**
@@ -25,15 +35,22 @@ export interface ParseIntPipeOptions {
 @Injectable()
 export class ParseIntPipe implements PipeTransform<string> {
   protected exceptionFactory: (error: string) => any;
+  protected min?: number;
+  protected max?: number;
 
   constructor(@Optional() options?: ParseIntPipeOptions) {
-    options = options || {};
-    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
-      options;
+    const {
+      exceptionFactory,
+      errorHttpStatusCode = HttpStatus.BAD_REQUEST,
+      min,
+      max,
+    } = options || {};
 
     this.exceptionFactory =
       exceptionFactory ||
       (error => new HttpErrorByCode[errorHttpStatusCode](error));
+    this.min = min;
+    this.max = max;
   }
 
   /**
@@ -53,6 +70,21 @@ export class ParseIntPipe implements PipeTransform<string> {
         'Validation failed (numeric string is expected)',
       );
     }
-    return parseInt(value, 10);
+
+    const int = parseInt(value, 10);
+
+    if (this.min != null && int < this.min) {
+      throw this.exceptionFactory(
+        `Validation failed (min value is ${this.min})`,
+      );
+    }
+
+    if (this.max != null && int > this.max) {
+      throw this.exceptionFactory(
+        `Validation failed (max value is ${this.max})`,
+      );
+    }
+
+    return int;
   }
 }
