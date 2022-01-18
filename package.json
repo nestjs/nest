@@ -75,7 +75,7 @@
     "@grpc/proto-loader": "0.6.9",
     "@nestjs/graphql": "9.1.2",
     "@nestjs/mongoose": "9.0.1",
-    "@nestjs/typeorm": "8.0.2",
+    "@nestjs/typeorm": "8.0.3",
     "@types/amqplib": "0.8.2",
     "@types/bytes": "3.1.1",
     "@types/cache-manager": "3.4.2",
