@@ -11,6 +11,9 @@
     "type": "opencollective",
     "url": "https://opencollective.com/nest"
   },
+  "workspaces": [
+    "packages/*"
+  ],
   "license": "MIT",
   "author": "Kamil Mysliwiec",
   "scripts": {

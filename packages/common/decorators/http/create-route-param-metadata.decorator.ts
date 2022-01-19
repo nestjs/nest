@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { v4 } from 'uuid';
 import { ROUTE_ARGS_METADATA } from '../../constants';
 import { PipeTransform } from '../../index';
 import { Type } from '../../interfaces';
@@ -7,6 +7,16 @@ import { assignCustomParameterMetadata } from '../../utils/assign-custom-metadat
 import { isFunction, isNil } from '../../utils/shared.utils';
 
 export type ParamDecoratorEnhancer = ParameterDecorator;
+
+const uuid = (function () {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('@napi-rs/uuid').v4;
+  } catch (e) {
+    // for non-supported platforms, fallback to JavaScript implementation
+    return v4;
+  }
+})();
 
 /**
  * Defines HTTP route param decorator

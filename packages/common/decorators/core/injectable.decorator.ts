@@ -1,7 +1,17 @@
-import { v4 as uuid } from 'uuid';
+import { v4 } from 'uuid';
 import { INJECTABLE_WATERMARK, SCOPE_OPTIONS_METADATA } from '../../constants';
 import { ScopeOptions } from '../../interfaces/scope-options.interface';
 import { Type } from '../../interfaces/type.interface';
+
+const uuid = (function () {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('@napi-rs/uuid').v4;
+  } catch (e) {
+    // for non-supported platforms, fallback to JavaScript implementation
+    return v4;
+  }
+})();
 
 /**
  * Defines the injection scope.
