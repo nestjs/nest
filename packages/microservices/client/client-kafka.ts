@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { resolve } from 'path/posix';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -235,8 +236,7 @@ export class ClientKafka extends ClientProxy {
       const replyTopic = this.getResponsePatternName(pattern);
       const replyPartition = this.getReplyTopicPartition(replyTopic);
 
-      this.serializer
-        .serialize(packet.data)
+      Promise.resolve(this.serializer.serialize(packet.data))
         .then((serializedPacket: KafkaRequest) => {
           serializedPacket.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
           serializedPacket.headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
