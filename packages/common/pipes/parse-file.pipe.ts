@@ -3,7 +3,7 @@ import { HttpStatus } from 'enums';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
-} from 'utils/http-error-by-code.util';
+} from '../utils/http-error-by-code.util';
 import {
   ArgumentMetadata,
   PipeTransform,
