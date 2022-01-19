@@ -1,5 +1,5 @@
-import { Injectable, Optional } from 'decorators/core';
-import { HttpStatus } from 'enums';
+import { Injectable, Optional } from '../decorators/core';
+import { HttpStatus } from '../enums';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
