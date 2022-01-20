@@ -172,6 +172,13 @@ describe('ServerMqtt', () => {
         ),
       ).to.be.true;
     });
+    it(`should call "publish" with expected raw arguments`, () => {
+      const respond = 'test';
+      server.rawOutputPackets = true;
+      publisher({ respond, id });
+      expect(publisherSpy.calledWith(`${pattern}/reply`, { respond, id })).to.be
+        .true;
+    });
   });
   describe('getRequestPattern', () => {
     const test = 'test';

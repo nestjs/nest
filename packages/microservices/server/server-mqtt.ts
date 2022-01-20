@@ -32,11 +32,12 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
   private readonly url: string;
   private mqttClient: MqttClient;
+  rawOutputPackets: boolean;
 
   constructor(private readonly options: MqttOptions['options']) {
     super();
     this.url = this.getOptionsProp(options, 'url') || MQTT_DEFAULT_URL;
-
+    this.rawOutputPackets = this.getOptionsProp(options, 'rawOutputPackets');
     mqttPackage = this.loadPackage('mqtt', ServerMqtt.name, () =>
       require('mqtt'),
     );
@@ -137,7 +138,9 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
       return client.publish(
         this.getReplyPattern(pattern),
-        JSON.stringify(outgoingResponse),
+        this.rawOutputPackets
+          ? (outgoingResponse as any)
+          : JSON.stringify(outgoingResponse),
         options,
       );
     };

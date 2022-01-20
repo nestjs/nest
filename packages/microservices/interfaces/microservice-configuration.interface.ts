@@ -119,6 +119,7 @@ export interface MqttOptions {
       rh?: number;
     };
     userProperties?: Record<string, string | string[]>;
+    rawOutputPackets?: boolean;
   };
 }
 
