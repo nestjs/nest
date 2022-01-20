@@ -110,7 +110,7 @@ export class ValidationPipe implements PipeTransform<any> {
     const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
     this.stripProtoKeys(value);
-    let entity = classTransformer.plainToClass(
+    let entity = classTransformer.(classTransformer.plainToClass ?? classTransformer.plainToInstance)(
       metatype,
       value,
       this.transformOptions,
@@ -145,7 +145,7 @@ export class ValidationPipe implements PipeTransform<any> {
       return originalValue;
     }
     return Object.keys(this.validatorOptions).length > 0
-      ? classTransformer.classToPlain(entity, this.transformOptions)
+      ? (classTransformer.classToPlain ?? classTransformer.instanceToPlain)(entity, this.transformOptions)
       : value;
   }
 
