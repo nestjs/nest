@@ -1,4 +1,4 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isUndefined, isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
@@ -32,12 +32,11 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
   private readonly url: string;
   private mqttClient: MqttClient;
-  rawOutputPackets: boolean;
 
   constructor(private readonly options: MqttOptions['options']) {
     super();
     this.url = this.getOptionsProp(options, 'url') || MQTT_DEFAULT_URL;
-    this.rawOutputPackets = this.getOptionsProp(options, 'rawOutputPackets');
+
     mqttPackage = this.loadPackage('mqtt', ServerMqtt.name, () =>
       require('mqtt'),
     );
@@ -131,16 +130,16 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   public getPublisher(client: MqttClient, pattern: any, id: string): any {
     return (response: any) => {
       Object.assign(response, { id });
-      const outgoingResponse: Partial<MqttRecord> =
+      const options =
+        isObject(response?.data) && response.data instanceof MqttRecord
+          ? (response.data as MqttRecord)?.options
+          : {};
+      delete response?.data?.options;
+      const outgoingResponse: string | Buffer =
         this.serializer.serialize(response);
-      const options = outgoingResponse.options;
-      delete outgoingResponse.options;
-
       return client.publish(
         this.getReplyPattern(pattern),
-        this.rawOutputPackets
-          ? (outgoingResponse as any)
-          : JSON.stringify(outgoingResponse),
+        outgoingResponse,
         options,
       );
     };
