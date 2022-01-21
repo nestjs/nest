@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { CatsService } from './cats.service';
 import { CreateCatDto } from './dto/create-cat.dto';
 import { Cat } from './schemas/cat.schema';
@@ -15,5 +15,15 @@ export class CatsController {
   @Get()
   async findAll(): Promise<Cat[]> {
     return this.catsService.findAll();
+  }
+
+  @Get(':id')
+  async findOne(@Param("_id") _id: string): Promise<Cat> {
+    return this.catsService.findOne(_id);
+  }
+
+  @Delete(':id')
+  async delete(@Param("_id") _id: string) {
+    return this.catsService.delete(_id);
   }
 }
