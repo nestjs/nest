@@ -86,7 +86,7 @@ export class SseStream extends Transform {
       destination.flushHeaders();
     }
 
-    destination.write(':\n');
+    destination.write('\n');
     return super.pipe(destination, options);
   }
 
