@@ -40,12 +40,10 @@ class Sink extends Writable implements HeaderStream {
 
 describe('SseStream', () => {
   it('writes multiple multiline messages', async () => {
-    // Arrange
     const sse = new SseStream();
     const sink = new Sink();
     sse.pipe(sink);
 
-    // Act
     sse.writeMessage(
       {
         data: 'hello\nworld',
@@ -61,7 +59,6 @@ describe('SseStream', () => {
     sse.end();
     await written(sink);
 
-    // Assert
     expect(sink.content).to.equal(
       `
 id: 1
@@ -77,12 +74,10 @@ data: monde
   });
 
   it('writes object messages as JSON', async () => {
-    // Arrange
     const sse = new SseStream();
     const sink = new Sink();
     sse.pipe(sink);
 
-    // Act
     sse.writeMessage(
       {
         data: { hello: 'world' },
@@ -92,7 +87,6 @@ data: monde
     sse.end();
     await written(sink);
 
-    // Assert
     expect(sink.content).to.equal(
       `
 id: 1
@@ -103,12 +97,10 @@ data: {"hello":"world"}
   });
 
   it('writes all message attributes', async () => {
-    // Arrange
     const sse = new SseStream();
     const sink = new Sink();
     sse.pipe(sink);
 
-    // Act
     sse.writeMessage(
       {
         type: 'tea-time',
@@ -121,7 +113,6 @@ data: {"hello":"world"}
     sse.end();
     await written(sink);
 
-    // Assert
     expect(sink.content).to.equal(
       `
 event: tea-time
@@ -134,11 +125,9 @@ data: hello
   });
 
   it('sets headers on destination when it looks like a HTTP Response', callback => {
-    // Arrange
     const sse = new SseStream();
     const sink = new Sink(
       (status: number, headers: string | OutgoingHttpHeaders) => {
-        // Assert
         expect(headers).to.deep.equal({
           'Content-Type': 'text/event-stream',
           Connection: 'keep-alive',
@@ -156,37 +145,33 @@ data: hello
   });
 
   it('sets additional headers when provided', callback => {
-    // Arrange
     const sse = new SseStream();
     const sink = new Sink(
       (status: number, headers: string | OutgoingHttpHeaders) => {
-        // Assert
         expect(headers).to.contain.keys('access-control-headers');
         expect(headers['access-control-headers']).to.equal('some-cors-value');
         callback();
         return sink;
       },
     );
+
     sse.pipe(sink, {
       additionalHeaders: { 'access-control-headers': 'some-cors-value' },
     });
   });
 
   it('allows an eventsource to connect', callback => {
-    // Arrange
     let sse: SseStream;
     const server = createServer((req, res) => {
       sse = new SseStream(req);
       sse.pipe(res);
     });
 
-    // Act
     server.listen(() => {
       const es = new EventSource(
         `http://localhost:${(server.address() as AddressInfo).port}`,
       );
       es.onmessage = e => {
-        // Assert
         expect(e.data).to.equal('hello');
         es.close();
         server.close(callback);
