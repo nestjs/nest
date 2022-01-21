@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common/services/logger.service';
+import { isObject } from '@nestjs/common/utils/shared.utils';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
@@ -129,10 +130,8 @@ export class ClientMqtt extends ClientProxy {
     try {
       const packet = this.assignPacketId(partialPacket);
       const pattern = this.normalizePattern(partialPacket.pattern);
-      const serializedPacket: ReadPacket & Partial<MqttRecord> =
-        this.serializer.serialize(packet);
-
       const responseChannel = this.getResponsePattern(pattern);
+
       let subscriptionsCount =
         this.subscriptionsCount.get(responseChannel) || 0;
 
@@ -140,13 +139,16 @@ export class ClientMqtt extends ClientProxy {
         subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
         this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
         this.routingMap.set(packet.id, callback);
-
-        const options = serializedPacket.options;
-        delete serializedPacket.options;
-
+        const options =
+          isObject(packet?.data) && packet.data instanceof MqttRecord
+            ? (packet.data as MqttRecord)?.options
+            : {};
+        delete packet?.data?.options;
+        const serializedPacket: string | Buffer =
+          this.serializer.serialize(packet);
         this.mqttClient.publish(
           this.getRequestPattern(pattern),
-          JSON.stringify(serializedPacket),
+          serializedPacket,
           this.mergePacketOptions(options),
         );
       };
@@ -171,14 +173,19 @@ export class ClientMqtt extends ClientProxy {
 
   protected dispatchEvent(packet: ReadPacket): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
-    const serializedPacket: ReadPacket & Partial<MqttRecord> =
-      this.serializer.serialize(packet);
+    const options =
+      isObject(packet?.data) && packet.data instanceof MqttRecord
+        ? (packet.data as MqttRecord)?.options
+        : {};
+    delete packet?.data?.options;
+
+    const serializedPacket: string | Buffer = this.serializer.serialize(packet);
 
     return new Promise<void>((resolve, reject) =>
       this.mqttClient.publish(
         pattern,
-        JSON.stringify(serializedPacket),
-        this.mergePacketOptions(serializedPacket.options),
+        serializedPacket,
+        this.mergePacketOptions(options),
         (err: any) => (err ? reject(err) : resolve()),
       ),
     );
