@@ -118,6 +118,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td align="center" valign="middle"><a href="https://www.naologic.com/" target="_blank"><img src="https://nestjs.com/img/naologic-logo.svg" width="125" valign="middle" /></a></td>
   <td align="center" valign="middle"><a href="https://messaged.com/" target="_blank"><img src="https://nestjs.com/img/messaged-logo.png" width="50" valign="middle" /></a></td>
   <td align="center" valign="middle"><a href="https://triplecore.io" target="_blank"><img src="https://nestjs.com/img/triplecore-logo.svg" width="50" valign="middle" /></a></td>
+   <td align="center" valign="middle"><a href="https://klqc.de" target="_blank"><img src="https://nestjs.com/img/klcqcl-logo.png" width="120" valign="middle" /></a></td>
   </tr></table>
 
 ## Backers
