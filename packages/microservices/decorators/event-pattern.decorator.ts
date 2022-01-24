@@ -22,18 +22,18 @@ export const EventPattern: {
   ): MethodDecorator;
 } = <T = string>(
   metadata?: T,
-  arg1?: Transport | Record<string, any>,
-  arg2?: Record<string, any>,
+  transportOrExtras?: Transport | Record<string, any>,
+  maybeExtras?: Record<string, any>,
 ): MethodDecorator => {
   let transport: Transport;
   let extras: Record<string, any>;
-  if (isNumber(arg1) && isNil(arg2)) {
-    transport = arg1;
-  } else if (isObject(arg1) && isNil(arg2)) {
-    extras = arg1;
+  if (isNumber(transportOrExtras) && isNil(maybeExtras)) {
+    transport = transportOrExtras;
+  } else if (isObject(transportOrExtras) && isNil(maybeExtras)) {
+    extras = transportOrExtras;
   } else {
-    transport = arg1 as Transport;
-    extras = arg2;
+    transport = transportOrExtras as Transport;
+    extras = maybeExtras;
   }
   return (
     target: object,
