@@ -18,8 +18,8 @@ export class CatsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') _id: string): Promise<Cat> {
-    return this.catsService.findOne(_id);
+  async findOne(@Param('id') id: string): Promise<Cat> {
+    return this.catsService.findOne(id);
   }
 
   @Delete(':id')
