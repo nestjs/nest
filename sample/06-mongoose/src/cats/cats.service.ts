@@ -19,14 +19,14 @@ export class CatsService {
     return this.catModel.find().exec();
   }
 
-  async findOne(_id: string): Promise<Cat> {
-    return this.catModel.findOne({ _id: _id }).exec();
+  async findOne(id: string): Promise<Cat> {
+    return this.catModel.findOne({ _id: id }).exec();
   }
 
-  async delete(_id: string) {
-    const deleteCat = await this.catModel
-      .findByIdAndRemove({ _id: _id })
+  async delete(id: string) {
+    const deletedCat = await this.catModel
+      .findByIdAndRemove({ _id: id })
       .exec();
-    return deleteCat;
+    return deletedCat;
   }
 }
