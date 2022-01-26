@@ -159,7 +159,7 @@
     "sinon-chai": "3.7.0",
     "socket.io-client": "4.4.1",
     "subscriptions-transport-ws": "0.11.0",
-    "supertest": "6.1.6",
+    "supertest": "6.2.2",
     "ts-morph": "13.0.2",
     "ts-node": "10.4.0",
     "typeorm": "0.2.41",
