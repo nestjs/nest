@@ -21,7 +21,7 @@
     "fastify-cors": "6.0.2",
     "fastify-formbody": "5.2.0",
     "light-my-request": "4.7.0",
-    "middie": "5.3.0",
+    "middie": "6.0.0",
     "path-to-regexp": "3.2.0",
     "tslib": "2.3.1"
   },
