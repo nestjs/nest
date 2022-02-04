@@ -228,7 +228,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       return;
     }
     outgoingMessage.headers[KafkaHeaders.NEST_ERR] = Buffer.from(
-      outgoingResponse.err.message || outgoingResponse.err.toString(),
+      outgoingResponse.err.message || outgoingResponse.err,
     );
   }
 
