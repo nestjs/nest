@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import {
   HttpStatus,
   Logger,
@@ -29,10 +30,10 @@ import {
   RawServerDefault,
   RequestGenericInterface,
 } from 'fastify';
-import * as Reply from 'fastify/lib/reply';
+import Reply from 'fastify/lib/reply';
 import { RouteShorthandMethod } from 'fastify/types/route';
-import * as http2 from 'http2';
-import * as https from 'https';
+import http2 from 'http2';
+import https from 'https';
 import {
   Chain as LightMyRequestChain,
   InjectOptions,
@@ -100,6 +101,7 @@ export class FastifyAdapter<
     TRawResponse
   > = FastifyInstance<TServer, TRawRequest, TRawResponse>,
 > extends AbstractHttpAdapter<TServer, TRequest, TReply> {
+  // @ts-ignore
   protected readonly instance: TInstance;
 
   private _isParserRegistered: boolean;
@@ -195,6 +197,7 @@ export class FastifyAdapter<
             },
             ...(instanceOrOptions as FastifyServerOptions),
           });
+    // @ts-ignore
     this.setInstance(instance);
   }
 
@@ -350,6 +353,7 @@ export class FastifyAdapter<
       return await this.instance.close();
     } catch (err) {
       // Check if server is still running
+      // @ts-ignore
       if (err.code !== 'ERR_SERVER_NOT_RUNNING') {
         throw err;
       }
@@ -358,6 +362,7 @@ export class FastifyAdapter<
   }
 
   public initHttpServer() {
+    // @ts-ignore
     this.httpServer = this.instance.server;
   }
 

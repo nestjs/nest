@@ -19,7 +19,7 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import * as pathToRegexp from 'path-to-regexp';
+import pathToRegexp from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer } from '../guards/guards-consumer';

@@ -29,7 +29,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { platform } from 'os';
-import * as pathToRegexp from 'path-to-regexp';
+import pathToRegexp from 'path-to-regexp';
 import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';

@@ -6,8 +6,8 @@
 
 /// <reference types="node" />
 
-import * as net from 'net';
-import * as tls from 'tls';
+import net from 'net';
+import tls from 'tls';
 
 type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
 type XOR<T, U> = T | U extends object

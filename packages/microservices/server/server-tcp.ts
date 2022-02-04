@@ -1,6 +1,5 @@
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
-import * as net from 'net';
-import { Server as NetSocket, Socket } from 'net';
+import net, { Server as NetSocket, Socket } from 'net';
 import { Observable } from 'rxjs';
 import {
   CLOSE_EVENT,

@@ -2,34 +2,34 @@ import {
   InternalServerErrorException,
   RequestMethod,
   StreamableFile,
-  VersioningType,
+  VersioningType
 } from '@nestjs/common';
 import {
   VersioningOptions,
   VersionValue,
-  VERSION_NEUTRAL,
+  VERSION_NEUTRAL
 } from '@nestjs/common/interfaces';
 import {
   CorsOptions,
-  CorsOptionsDelegate,
+  CorsOptionsDelegate
 } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import {
   isFunction,
   isNil,
   isObject,
-  isString,
+  isString
 } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
 import {
   json as bodyParserJson,
-  urlencoded as bodyParserUrlencoded,
+  urlencoded as bodyParserUrlencoded
 } from 'body-parser';
-import * as cors from 'cors';
-import * as express from 'express';
-import * as http from 'http';
-import * as https from 'https';
+import cors from 'cors';
+import express from 'express';
+import http from 'http';
+import https from 'https';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 
 export class ExpressAdapter extends AbstractHttpAdapter {
