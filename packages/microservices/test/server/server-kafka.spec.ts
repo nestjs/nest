@@ -397,6 +397,35 @@ describe('ServerKafka', () => {
         }),
       ).to.be.true;
     });
+    it('should send error message from typical error object', () => {
+      server.sendMessage(
+        {
+          id: correlationId,
+          err: {
+            message: NO_MESSAGE_HANDLER,
+          },
+        },
+        replyTopic,
+        replyPartition,
+        correlationId,
+      );
+
+      expect(
+        sendSpy.calledWith({
+          topic: replyTopic,
+          messages: [
+            {
+              value: null,
+              partition: parseFloat(replyPartition),
+              headers: {
+                [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+                [KafkaHeaders.NEST_ERR]: Buffer.from(NO_MESSAGE_HANDLER),
+              },
+            },
+          ],
+        }),
+      ).to.be.true;
+    });
     it('should send `isDisposed` message', () => {
       server.sendMessage(
         {
