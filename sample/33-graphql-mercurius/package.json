@@ -1,8 +1,7 @@
 {
-  "name": "users-application",
+  "name": "nest-typescript-starter",
   "version": "1.0.0",
-  "description": "",
-  "author": "Flusinerd",
+  "description": "Nest TypeScript starter repository",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",
@@ -12,7 +11,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint": "eslint '{src,apps,libs,test}/**/*.ts' --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -20,35 +19,25 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@apollo/federation": "0.33.9",
-    "@apollo/gateway": "0.46.0",
-    "@apollo/subgraph": "0.1.5",
-    "@nestjs/apollo": "^9.2.5",
     "@nestjs/common": "8.2.3",
     "@nestjs/core": "8.2.3",
-    "@nestjs/graphql": "^9.2.2",
-    "@nestjs/platform-express": "8.2.3",
-    "apollo-server-express": "3.6.2",
-    "graphql": "15.7.2",
-    "graphql-tools": "7.0.5",
+    "@nestjs/graphql": "9.2.5",
+    "@nestjs/mercurius": "9.2.7",
+    "@nestjs/platform-fastify": "8.2.6",
+    "class-transformer": "0.4.0",
+    "class-validator": "0.13.2",
+    "graphql": "16.3.0",
+    "mercurius": "9.2.0",
     "reflect-metadata": "0.1.13",
-    "rimraf": "3.0.2",
-    "rxjs": "7.4.0",
-    "ts-morph": "12.2.0"
+    "rxjs": "7.4.0"
   },
   "devDependencies": {
     "@nestjs/cli": "8.1.5",
     "@nestjs/schematics": "8.0.5",
     "@nestjs/testing": "8.2.3",
     "@types/express": "4.17.13",
-    "@types/jest": "27.0.3",
     "@types/node": "16.11.21",
     "@types/supertest": "2.0.11",
-    "@typescript-eslint/eslint-plugin": "4.33.0",
-    "@typescript-eslint/parser": "4.33.0",
-    "eslint": "7.32.0",
-    "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-prettier": "4.0.0",
     "jest": "27.3.1",
     "prettier": "2.5.1",
     "supertest": "6.1.6",
@@ -56,23 +45,11 @@
     "ts-loader": "9.2.6",
     "ts-node": "10.4.0",
     "tsconfig-paths": "3.11.0",
-    "typescript": "4.3.5"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "@typescript-eslint/eslint-plugin": "4.33.0",
+    "@typescript-eslint/parser": "4.33.0",
+    "eslint": "7.32.0",
+    "eslint-config-prettier": "8.3.0",
+    "eslint-plugin-import": "2.25.4",
+    "typescript": "4.4.2"
   }
 }
