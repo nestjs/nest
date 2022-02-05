@@ -31,7 +31,7 @@ describe('StreamableFile', () => {
         const buffer = Uint8Array.from([0xab, 0xcd, 0xef, 0x00]);
         const streamableFile = new StreamableFile(buffer);
         const stream = streamableFile.getStream();
-        expect(stream.read()).to.equal(buffer);
+        expect(stream.read()).to.deep.equal(Buffer.from(buffer));
       });
     });
   });
