@@ -1,16 +1,14 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
-import { GraphqlOptions } from './graphql.options';
-import { PostsModule } from './posts/posts.module';
-import { PrismaModule } from './prisma/prisma.module';
+import { PostModule } from './posts/posts.module';
 
 @Module({
   imports: [
-    GraphQLModule.forRootAsync({
-      useClass: GraphqlOptions,
+    PostModule,
+    GraphQLModule.forRoot({
+      typePaths: ['./**/*.graphql'],
+      installSubscriptionHandlers: true,
     }),
-    PrismaModule,
-    PostsModule,
   ],
 })
 export class AppModule {}
