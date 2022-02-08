@@ -2,10 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Post } from '@prisma/client';
 import { NewPost, UpdatePost } from 'src/graphql.schema';
 import { PrismaService } from '../prisma/prisma.service';
-import { PubSub } from 'graphql-subscriptions';
-import { Subscription } from '@nestjs/graphql';
-
-const pubSub = new PubSub();
 
 @Injectable()
 export class PostsService {
@@ -24,11 +20,9 @@ export class PostsService {
   }
 
   async create(input: NewPost): Promise<Post> {
-    const createdPost = await this.prisma.post.create({
+    return this.prisma.post.create({
       data: input,
     });
-    pubSub.publish('postCreated', { postCreated: createdPost });
-    return createdPost;
   }
 
   async update(params: UpdatePost): Promise<Post> {
@@ -50,10 +44,5 @@ export class PostsService {
         id,
       },
     });
-  }
-
-  @Subscription('postCreated')
-  postCreated() {
-    return pubSub.asyncIterator('postCreated');
   }
 }
