@@ -8,10 +8,10 @@ import { Subscription } from '@nestjs/graphql';
 const pubSub = new PubSub();
 
 @Injectable()
-export class PostService {
+export class PostsService {
   constructor(private prisma: PrismaService) {}
 
-  async post(id: string): Promise<Post | null> {
+  async findOne(id: string): Promise<Post | null> {
     return this.prisma.post.findUnique({
       where: {
         id,
@@ -19,11 +19,11 @@ export class PostService {
     });
   }
 
-  async posts(): Promise<Post[]> {
+  async findAll(): Promise<Post[]> {
     return this.prisma.post.findMany({});
   }
 
-  async createPost(input: NewPost): Promise<Post> {
+  async create(input: NewPost): Promise<Post> {
     const createdPost = await this.prisma.post.create({
       data: input,
     });
@@ -31,7 +31,7 @@ export class PostService {
     return createdPost;
   }
 
-  async updatePost(params: UpdatePost): Promise<Post> {
+  async update(params: UpdatePost): Promise<Post> {
     const { id, ...params_without_id } = params;
 
     return this.prisma.post.update({
@@ -44,7 +44,7 @@ export class PostService {
     });
   }
 
-  async deletePost(id: string): Promise<Post> {
+  async delete(id: string): Promise<Post> {
     return this.prisma.post.delete({
       where: {
         id,
@@ -53,7 +53,7 @@ export class PostService {
   }
 
   @Subscription('postCreated')
-  catCreated() {
+  postCreated() {
     return pubSub.asyncIterator('postCreated');
   }
 }
