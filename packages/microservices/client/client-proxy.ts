@@ -27,6 +27,7 @@ import {
   TcpClientOptions,
   WritePacket,
 } from '../interfaces';
+import { ClientProxySendOptions } from '../interfaces/client-options.interface';
 import { ProducerDeserializer } from '../interfaces/deserializer.interface';
 import { ProducerSerializer } from '../interfaces/serializer.interface';
 import { IdentitySerializer } from '../serializers/identity.serializer';
@@ -43,8 +44,9 @@ export abstract class ClientProxy {
   public send<TResult = any, TInput = any>(
     pattern: any,
     data: TInput,
+    options?: ClientProxySendOptions,
   ): Observable<TResult> {
-    if (isNil(pattern) || isNil(data)) {
+    if (!options.disablePatternChecks && (isNil(pattern) || isNil(data))) {
       return _throw(() => new InvalidMessageException());
     }
     return defer(async () => this.connect()).pipe(

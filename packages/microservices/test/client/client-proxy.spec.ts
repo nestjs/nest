@@ -90,6 +90,7 @@ describe('ClientProxy', function () {
       stream$.subscribe();
       expect(connectSpy.calledOnce).to.be.true;
     });
+
     describe('when "connect" throws', () => {
       it('should return Observable with error', () => {
         sinon.stub(client, 'connect').callsFake(() => {
@@ -123,6 +124,24 @@ describe('ClientProxy', function () {
     it('should return Observable with error', () => {
       const err$ = client.send(null, null);
       expect(err$).to.be.instanceOf(Observable);
+    });
+
+    it('should throw error when pattern is undefined', () => {
+      const stream$ = client.send(undefined, 'test');
+
+      stream$.subscribe({
+        next: () => {},
+        error: err => {
+          expect(err).to.be.instanceof(Error);
+        },
+      });
+    });
+
+    it('should not throw error when pattern is undefined and option disablePatternChecks is true', () => {
+      const stream$ = client.send(undefined, 'test', {
+        disablePatternChecks: true,
+      });
+      expect(stream$ instanceof Observable).to.be.true;
     });
   });
 
