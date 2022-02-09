@@ -89,7 +89,7 @@
     "@types/node": "16.11.21",
     "@types/redis": "4.0.11",
     "@types/reflect-metadata": "0.1.0",
-    "@types/sinon": "10.0.10",
+    "@types/sinon": "10.0.11",
     "@types/socket.io": "3.0.2",
     "@types/ws": "8.2.2",
     "@typescript-eslint/eslint-plugin": "4.33.0",
