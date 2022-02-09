@@ -1,8 +1,7 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import { HttpException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseIntPipe } from '../../pipes/parse-int.pipe';
-import { HttpException } from '../../exceptions';
 
 class CustomTestError extends HttpException {
   constructor() {
@@ -29,6 +28,12 @@ describe('ParseIntPipe', () => {
         const num = '-3';
         expect(await target.transform(num, {} as ArgumentMetadata)).to.equal(
           -3,
+        );
+      });
+      it('should truncate float numbers', async () => {
+        const num = '123.45';
+        expect(await target.transform(num, {} as ArgumentMetadata)).to.equal(
+          123,
         );
       });
     });
