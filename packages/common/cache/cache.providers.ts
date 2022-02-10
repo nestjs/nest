@@ -1,6 +1,7 @@
 import { Provider } from '../interfaces';
 import { loadPackage } from '../utils/load-package.util';
-import { CACHE_MANAGER, CACHE_MODULE_OPTIONS } from './cache.constants';
+import { CACHE_MANAGER } from './cache.constants';
+import { MODULE_OPTIONS_TOKEN } from './cache.module-definition';
 import { defaultCacheOptions } from './default-options';
 import { CacheManagerOptions } from './interfaces/cache-manager.interface';
 
@@ -31,6 +32,6 @@ export function createCacheManager(): Provider {
             ...(options || {}),
           });
     },
-    inject: [CACHE_MODULE_OPTIONS],
+    inject: [MODULE_OPTIONS_TOKEN],
   };
 }
