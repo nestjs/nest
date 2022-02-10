@@ -1,3 +1,4 @@
+import { ApolloDriver } from '@nestjs/apollo';
 import { INestApplication } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { Test } from '@nestjs/testing';
@@ -15,6 +16,7 @@ describe('GraphQL request scoped', () => {
       imports: [
         CatsModule.enableRequestScope(),
         GraphQLModule.forRoot({
+          driver: ApolloDriver,
           typePaths: [join(__dirname, '..', 'src', '**', '*.graphql')],
         }),
       ],
