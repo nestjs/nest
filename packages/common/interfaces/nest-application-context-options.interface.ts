@@ -10,6 +10,13 @@ export class NestApplicationContextOptions {
   logger?: LoggerService | LogLevel[] | false;
 
   /**
+   * If enabled, logs will be automatically flushed and buffer detached when
+   * application initialisation process either completes or fails.
+   * @default false
+   */
+  disableInstanceLoaderLogs?: boolean;
+
+  /**
    * Whether to abort the process on Error. By default, the process is exited.
    * Pass `false` to override the default behavior. If `false` is passed, Nest will not exit
    * the application and instead will rethrow the exception.

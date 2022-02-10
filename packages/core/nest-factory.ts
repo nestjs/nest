@@ -76,7 +76,13 @@ export class NestFactoryStatic {
     this.setAbortOnError(serverOrOptions, options);
     this.registerLoggerConfiguration(appOptions);
 
-    await this.initialize(module, container, applicationConfig, httpServer);
+    await this.initialize(
+      module,
+      container,
+      applicationConfig,
+      httpServer,
+      appOptions,
+    );
 
     const instance = new NestApplication(
       container,
@@ -157,8 +163,14 @@ export class NestFactoryStatic {
     container: NestContainer,
     config = new ApplicationConfig(),
     httpServer: HttpServer = null,
+    appOptions?: NestApplicationOptions,
   ) {
     const instanceLoader = new InstanceLoader(container);
+
+    if (appOptions && appOptions.disableInstanceLoaderLogs) {
+      instanceLoader.disableLogs();
+    }
+
     const metadataScanner = new MetadataScanner();
     const dependenciesScanner = new DependenciesScanner(
       container,

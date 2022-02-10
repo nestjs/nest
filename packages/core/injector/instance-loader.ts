@@ -16,6 +16,12 @@ export class InstanceLoader {
     }),
   ) {}
 
+  public enableLogs = true;
+
+  public disableLogs() {
+    this.enableLogs = false;
+  }
+
   public async createInstancesOfDependencies(
     modules: Map<string, Module> = this.container.getModules(),
   ) {
@@ -38,9 +44,11 @@ export class InstanceLoader {
         await this.createInstancesOfInjectables(moduleRef);
         await this.createInstancesOfControllers(moduleRef);
 
-        const { name } = moduleRef.metatype;
-        this.isModuleWhitelisted(name) &&
-          this.logger.log(MODULE_INIT_MESSAGE`${name}`);
+        if (this.enableLogs) {
+          const { name } = moduleRef.metatype;
+          this.isModuleWhitelisted(name) &&
+            this.logger.log(MODULE_INIT_MESSAGE`${name}`);
+        }
       }),
     );
   }
