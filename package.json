@@ -50,7 +50,7 @@
   "dependencies": {
     "@nuxtjs/opencollective": "0.3.2",
     "axios": "0.25.0",
-    "class-transformer": "0.4.0",
+    "class-transformer": "0.5.1",
     "class-validator": "0.13.2",
     "cli-color": "2.0.1",
     "cors": "2.8.5",
@@ -97,7 +97,7 @@
     "@typescript-eslint/parser": "4.33.0",
     "amqp-connection-manager": "4.1.1",
     "amqplib": "0.8.0",
-    "apollo-server-core": "3.6.2",
+    "apollo-server-core": "3.6.3",
     "apollo-server-express": "3.6.3",
     "artillery": "1.7.9",
     "body-parser": "1.19.1",
