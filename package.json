@@ -62,7 +62,7 @@
     "object-hash": "2.2.0",
     "path-to-regexp": "3.2.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "7.5.3",
+    "rxjs": "7.5.4",
     "socket.io": "4.4.1",
     "tslib": "2.3.1",
     "uuid": "8.3.2"
