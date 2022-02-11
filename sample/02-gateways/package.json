@@ -22,7 +22,7 @@
     "@nestjs/common": "8.2.3",
     "@nestjs/core": "8.2.3",
     "@nestjs/platform-express": "8.2.3",
-    "@nestjs/platform-socket.io": "8.2.3",
+    "@nestjs/platform-socket.io": "8.2.4",
     "@nestjs/websockets": "8.2.3",
     "@socket.io/redis-adapter": "7.1.0",
     "class-transformer": "0.4.0",
