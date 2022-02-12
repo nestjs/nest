@@ -222,7 +222,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(call.request, call.metadata, call);
       this.transformToObservable(await handler).subscribe({
         next: data => callback(null, data),
-        error: (err: any) => callback(err),
+        error: (err: any) => callback(err()),
       });
     };
   }
