@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "^8.2.3",
     "@nestjs/core": "^8.2.3",
-    "@nestjs/graphql": "^10.0.0",
+    "@nestjs/graphql": "^10.0.2",
     "@nestjs/mercurius": "^10.0.0",
     "@nestjs/platform-fastify": "^8.2.6",
     "class-transformer": "^0.4.0",
