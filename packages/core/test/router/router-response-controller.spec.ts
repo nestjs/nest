@@ -299,7 +299,7 @@ describe('RouterResponseController', () => {
       request.destroy();
       await written(response);
       expect(response.content).to.eql(
-        `:
+        `
 id: 1
 data: test
 
@@ -421,7 +421,7 @@ data: test
 
         await written(response);
         expect(response.content).to.eql(
-          `:
+          `
 event: error
 id: 1
 data: Some error
