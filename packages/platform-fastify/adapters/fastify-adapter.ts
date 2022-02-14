@@ -12,6 +12,7 @@ import {
   CorsOptionsDelegate,
 } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   fastify,
@@ -107,7 +108,7 @@ export class FastifyAdapter<
   private readonly versionConstraint = {
     name: 'version',
     validate(value: unknown) {
-      if (typeof value !== 'string' && !Array.isArray(value)) {
+      if (!isString(value) && !Array.isArray(value)) {
         throw new Error(
           'Version constraint should be a string or an array of strings.',
         );
@@ -370,7 +371,7 @@ export class FastifyAdapter<
   }
 
   public setViewEngine(options: PointOfViewOptions | string) {
-    if (typeof options === 'string') {
+    if (isString(options)) {
       new Logger('FastifyAdapter').error(
         "setViewEngine() doesn't support a string argument.",
       );
@@ -421,9 +422,12 @@ export class FastifyAdapter<
       await this.registerMiddie();
     }
     return (path: string, callback: Function) => {
-      const normalizedPath = path.endsWith('/*')
+      let normalizedPath = path.endsWith('/*')
         ? `${path.slice(0, -1)}(.*)`
         : path;
+
+      // Fallback to "(.*)" to support plugins like GraphQL
+      normalizedPath = normalizedPath === '/(.*)' ? '(.*)' : normalizedPath;
 
       // The following type assertion is valid as we use import('middie') rather than require('middie')
       // ref https://github.com/fastify/middie/pull/55
@@ -477,7 +481,7 @@ export class FastifyAdapter<
   ) {
     const handlerRef = args[args.length - 1];
     const isVersioned =
-      typeof handlerRef.version !== 'undefined' &&
+      !isUndefined(handlerRef.version) &&
       handlerRef.version !== VERSION_NEUTRAL;
 
     if (isVersioned) {

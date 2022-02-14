@@ -59,6 +59,6 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
     const enumValues = Object.keys(this.enumType).map(
       item => this.enumType[item],
     );
-    return enumValues.indexOf(value) >= 0;
+    return enumValues.includes(value);
   }
 }

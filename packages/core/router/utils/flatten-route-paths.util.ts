@@ -1,4 +1,4 @@
-import { normalizePath } from '@nestjs/common/utils/shared.utils';
+import { normalizePath, isString } from '@nestjs/common/utils/shared.utils';
 import { Routes } from '../interfaces/routes.interface';
 
 export function flattenRoutePaths(routes: Routes) {
@@ -10,7 +10,7 @@ export function flattenRoutePaths(routes: Routes) {
     if (item.children) {
       const childrenRef = item.children as Routes;
       childrenRef.forEach(child => {
-        if (typeof child !== 'string' && child.path) {
+        if (!isString(child) && child.path) {
           child.path = normalizePath(
             normalizePath(item.path) + normalizePath(child.path),
           );

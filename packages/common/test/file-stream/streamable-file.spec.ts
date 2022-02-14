@@ -18,11 +18,21 @@ describe('StreamableFile', () => {
     });
   });
   describe('otherwise', () => {
-    it('should create a readable straem and push the input buffer', () => {
-      const buffer = Buffer.from('test');
-      const streamableFile = new StreamableFile(buffer);
-      const stream = streamableFile.getStream();
-      expect(stream.read()).to.equal(buffer);
+    describe('when input is a Buffer instance', () => {
+      it('should create a readable stream and push the input buffer', () => {
+        const buffer = Buffer.from('test');
+        const streamableFile = new StreamableFile(buffer);
+        const stream = streamableFile.getStream();
+        expect(stream.read()).to.equal(buffer);
+      });
+    });
+    describe('when input is a Uint8Array', () => {
+      it('should create a readable stream and push the input buffer', () => {
+        const buffer = Uint8Array.from([0xab, 0xcd, 0xef, 0x00]);
+        const streamableFile = new StreamableFile(buffer);
+        const stream = streamableFile.getStream();
+        expect(stream.read()).to.deep.equal(Buffer.from(buffer));
+      });
     });
   });
 });

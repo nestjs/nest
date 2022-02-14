@@ -50,7 +50,8 @@ export interface INestApplicationContext {
   close(): Promise<void>;
 
   /**
-   * Sets custom logger service
+   * Sets custom logger service.
+   * Flushes buffered logs if auto flush is on.
    * @returns {void}
    */
   useLogger(logger: LoggerService | LogLevel[] | false): void;

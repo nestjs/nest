@@ -17,7 +17,7 @@ export class BaseRpcExceptionFilter<T = any, R = any>
     }
     const res = exception.getError();
     const message = isObject(res) ? res : { status, message: res };
-    return _throw(message);
+    return _throw(() => message);
   }
 
   public handleUnknownError(exception: T, status: string) {
@@ -29,7 +29,7 @@ export class BaseRpcExceptionFilter<T = any, R = any>
     const logger = BaseRpcExceptionFilter.logger;
     logger.error.apply(logger, loggerArgs as any);
 
-    return _throw({ status, message: errorMessage });
+    return _throw(() => ({ status, message: errorMessage }));
   }
 
   public isError(exception: any): exception is Error {

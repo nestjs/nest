@@ -1,4 +1,5 @@
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { isObject } from '@nestjs/common/utils/shared.utils';
 import { NatsCodec } from '../external/nats-client.interface';
 import { ReadPacket } from '../interfaces';
 import { Serializer } from '../interfaces/serializer.interface';
@@ -20,9 +21,7 @@ export class NatsRecordSerializer
 
   serialize(packet: ReadPacket | any): NatsRecord {
     const natsMessage =
-      packet?.data &&
-      typeof packet.data === 'object' &&
-      packet.data instanceof NatsRecord
+      packet?.data && isObject(packet.data) && packet.data instanceof NatsRecord
         ? (packet.data as NatsRecord)
         : new NatsRecordBuilder(packet?.data).build();
 

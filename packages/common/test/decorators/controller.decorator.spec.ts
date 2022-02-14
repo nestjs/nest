@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { VERSION_METADATA } from '../../constants';
+import { VERSION_METADATA, CONTROLLER_WATERMARK } from '../../constants';
 import { Controller } from '../../decorators/core/controller.decorator';
 
 describe('@Controller', () => {
@@ -7,12 +7,14 @@ describe('@Controller', () => {
   const reflectedHost = 'api.example.com';
   const reflectedHostArray = ['api1.example.com', 'api2.example.com'];
   const reflectedVersion = '1';
-
-  @Controller(reflectedPath)
-  class Test {}
+  const reflectedVersionWithDuplicates = ['1', '2', '2', '1', '2', '1'];
+  const reflectedVersionWithoutDuplicates = ['1', '2'];
 
   @Controller()
   class EmptyDecorator {}
+
+  @Controller(reflectedPath)
+  class Test {}
 
   @Controller({ path: reflectedPath, host: reflectedHost })
   class PathAndHostDecorator {}
@@ -32,6 +34,18 @@ describe('@Controller', () => {
 
   @Controller({ version: reflectedVersion })
   class VersionOnlyDecorator {}
+
+  @Controller({ version: reflectedVersionWithDuplicates })
+  class VersionOnlyArrayDecorator {}
+
+  it(`should enhance component with "${CONTROLLER_WATERMARK}" metadata`, () => {
+    const controllerWatermark = Reflect.getMetadata(
+      CONTROLLER_WATERMARK,
+      EmptyDecorator,
+    );
+
+    expect(controllerWatermark).to.be.true;
+  });
 
   it('should enhance controller with expected path metadata', () => {
     const path = Reflect.getMetadata('path', Test);
@@ -64,6 +78,11 @@ describe('@Controller', () => {
       VersionOnlyDecorator,
     );
     expect(version2).to.be.eql(reflectedVersion);
+    const version3 = Reflect.getMetadata(
+      VERSION_METADATA,
+      VersionOnlyArrayDecorator,
+    );
+    expect(version3).to.be.eql(reflectedVersionWithoutDuplicates);
   });
 
   it('should set default path when no object passed as param', () => {

@@ -5,9 +5,11 @@ import {
   isEmpty,
   isFunction,
   isNil,
+  isNumber,
   isObject,
   isPlainObject,
   isString,
+  isSymbol,
   isUndefined,
   normalizePath,
   stripEndSlash,
@@ -66,13 +68,42 @@ describe('Shared utils', () => {
     });
   });
   describe('isString', () => {
-    it('should return true when obj is a string', () => {
+    it('should return true when val is a string', () => {
       expect(isString('true')).to.be.true;
     });
-    it('should return false when object is not a string', () => {
+    it('should return false when val is not a string', () => {
+      expect(isString(new String('fine'))).to.be.false;
       expect(isString(false)).to.be.false;
       expect(isString(null)).to.be.false;
       expect(isString(undefined)).to.be.false;
+    });
+  });
+  describe('isSymbol', () => {
+    it('should return true when val is a Symbol', () => {
+      expect(isSymbol(Symbol())).to.be.true;
+    });
+    it('should return false when val is not a symbol', () => {
+      expect(isSymbol('Symbol()')).to.be.false;
+      expect(isSymbol(false)).to.be.false;
+      expect(isSymbol(null)).to.be.false;
+      expect(isSymbol(undefined)).to.be.false;
+    });
+  });
+  describe('isNumber', () => {
+    it('should return true when val is a number or NaN', () => {
+      expect(isNumber(1)).to.be.true;
+      expect(isNumber(1.23)).to.be.true; // with decimals
+      expect(isNumber(123e-5)).to.be.true; // scientific (exponent) notation
+      expect(isNumber(0o1)).to.be.true; // octal notation
+      expect(isNumber(0b1)).to.be.true; // binary notation
+      expect(isNumber(0x1)).to.be.true; // hexadecimal notation
+      expect(isNumber(NaN)).to.be.true;
+    });
+    it('should return false when val is not a number', () => {
+      // expect(isNumber(1n)).to.be.false; // big int (available on ES2020)
+      expect(isNumber('1')).to.be.false; // string
+      expect(isNumber(undefined)).to.be.false; // nullish
+      expect(isNumber(null)).to.be.false; // nullish
     });
   });
   describe('isConstructor', () => {

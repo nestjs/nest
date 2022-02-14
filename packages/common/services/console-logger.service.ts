@@ -1,7 +1,7 @@
 import { Injectable } from '../decorators/core/injectable.decorator';
 import { Optional } from '../decorators/core/optional.decorator';
 import { clc, yellow } from '../utils/cli-colors.util';
-import { isPlainObject } from '../utils/shared.utils';
+import { isPlainObject, isString } from '../utils/shared.utils';
 import { LoggerService, LogLevel } from './logger.service';
 import { isLogLevelEnabled } from './utils';
 
@@ -226,7 +226,7 @@ export class ConsoleLogger implements LoggerService {
       return { messages: args, context: this.context };
     }
     const lastElement = args[args.length - 1];
-    const isContext = typeof lastElement === 'string';
+    const isContext = isString(lastElement);
     if (!isContext) {
       return { messages: args, context: this.context };
     }
@@ -242,7 +242,7 @@ export class ConsoleLogger implements LoggerService {
       return { messages, context };
     }
     const lastElement = messages[messages.length - 1];
-    const isStack = typeof lastElement === 'string';
+    const isStack = isString(lastElement);
     if (!isStack) {
       return { messages, context };
     }

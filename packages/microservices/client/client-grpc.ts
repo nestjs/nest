@@ -53,8 +53,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     const grpcService = {} as T;
 
     protoMethods.forEach(m => {
-      const key = m[0].toLowerCase() + m.slice(1, m.length);
-      grpcService[key] = this.createServiceMethod(grpcClient, m);
+      grpcService[m] = this.createServiceMethod(grpcClient, m);
     });
     return grpcService;
   }

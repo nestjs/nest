@@ -1,3 +1,4 @@
+import { isObject } from '@nestjs/common/utils/shared.utils';
 import { ReadPacket } from '../interfaces';
 import { Serializer } from '../interfaces/serializer.interface';
 import { MqttRecord } from '../record-builders';
@@ -8,7 +9,7 @@ export class MqttRecordSerializer
   serialize(packet: ReadPacket | any): ReadPacket & Partial<MqttRecord> {
     if (
       packet?.data &&
-      typeof packet.data === 'object' &&
+      isObject(packet.data) &&
       packet.data instanceof MqttRecord
     ) {
       const record = packet.data as MqttRecord;

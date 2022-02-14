@@ -142,6 +142,9 @@ export class NestFactoryStatic {
     const context = this.createNestInstance<NestApplicationContext>(
       new NestApplicationContext(container, [], root),
     );
+    if (this.autoFlushLogs) {
+      context.flushLogsOnOverride();
+    }
     return context.init();
   }
 

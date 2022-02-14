@@ -220,10 +220,10 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   public createUnaryServiceMethod(methodHandler: Function): Function {
     return async (call: GrpcCall, callback: Function) => {
       const handler = methodHandler(call.request, call.metadata, call);
-      this.transformToObservable(await handler).subscribe(
-        data => callback(null, data),
-        (err: any) => callback(err),
-      );
+      this.transformToObservable(await handler).subscribe({
+        next: data => callback(null, data),
+        error: (err: any) => callback(err),
+      });
     };
   }
 
@@ -292,7 +292,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
           ),
         );
 
-        if (typeof response !== 'undefined') {
+        if (!isUndefined(response)) {
           callback(null, response);
         }
       }

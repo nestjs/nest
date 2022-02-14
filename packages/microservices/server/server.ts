@@ -1,11 +1,12 @@
 import { Logger, LoggerService } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
 import {
   connectable,
-  EMPTY as empty,
+  EMPTY,
   from as fromPromise,
+  isObservable,
   Observable,
+  ObservedValueOf,
   of,
   Subject,
   Subscription,
@@ -43,9 +44,11 @@ export abstract class Server {
     pattern: any,
     callback: MessageHandler,
     isEventHandler = false,
+    extras: Record<string, any> = {},
   ) {
     const normalizedPattern = this.normalizePattern(pattern);
     callback.isEventHandler = isEventHandler;
+    callback.extras = extras;
 
     if (this.messageHandlers.has(normalizedPattern) && isEventHandler) {
       const headRef = this.messageHandlers.get(normalizedPattern);
@@ -94,7 +97,7 @@ export abstract class Server {
       .pipe(
         catchError((err: any) => {
           scheduleOnNextTick({ err });
-          return empty;
+          return EMPTY;
         }),
         finalize(() => scheduleOnNextTick({ isDisposed: true })),
       )
@@ -113,7 +116,7 @@ export abstract class Server {
       );
     }
     const resultOrStream = await handler(packet.data, context);
-    if (this.isObservable(resultOrStream)) {
+    if (isObservable(resultOrStream)) {
       const connectableSource = connectable(resultOrStream, {
         connector: () => new Subject(),
         resetOnDisconnect: false,
@@ -122,13 +125,24 @@ export abstract class Server {
     }
   }
 
-  public transformToObservable<T = any>(resultOrDeferred: any): Observable<T> {
+  public transformToObservable<T>(
+    resultOrDeferred: Observable<T> | Promise<T>,
+  ): Observable<T>;
+  public transformToObservable<T>(
+    resultOrDeferred: T,
+  ): never extends Observable<ObservedValueOf<T>>
+    ? Observable<T>
+    : Observable<ObservedValueOf<T>>;
+  public transformToObservable(resultOrDeferred: any) {
     if (resultOrDeferred instanceof Promise) {
       return fromPromise(resultOrDeferred);
-    } else if (!this.isObservable(resultOrDeferred)) {
-      return of(resultOrDeferred);
     }
-    return resultOrDeferred;
+
+    if (isObservable(resultOrDeferred)) {
+      return resultOrDeferred;
+    }
+
+    return of(resultOrDeferred);
   }
 
   public getOptionsProp<
@@ -178,10 +192,6 @@ export abstract class Server {
             | KafkaOptions['options']
         ).deserializer) ||
       new IncomingRequestDeserializer();
-  }
-
-  private isObservable(input: unknown): input is Observable<any> {
-    return input && isFunction((input as Observable<any>).subscribe);
   }
 
   /**

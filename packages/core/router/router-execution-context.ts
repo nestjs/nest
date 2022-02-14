@@ -424,14 +424,14 @@ export class RouterExecutionContext {
         );
       };
     }
-    if (redirectResponse && typeof redirectResponse.url === 'string') {
+    if (redirectResponse && isString(redirectResponse.url)) {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
         await this.responseController.redirect(result, res, redirectResponse);
       };
     }
     const isSseHandler = !!this.reflectSse(callback);
     if (isSseHandler) {
-      return async <
+      return <
         TResult extends Observable<unknown> = any,
         TResponse extends HeaderStream = any,
         TRequest extends IncomingMessage = any,
@@ -440,7 +440,7 @@ export class RouterExecutionContext {
         res: TResponse,
         req: TRequest,
       ) => {
-        await this.responseController.sse(
+        this.responseController.sse(
           result,
           (res as any).raw || res,
           (req as any).raw || req,
