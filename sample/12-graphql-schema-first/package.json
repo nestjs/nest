@@ -19,11 +19,11 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@graphql-tools/utils": "^8.6.1",
-    "@nestjs/apollo": "^10.0.0",
+    "@graphql-tools/utils": "8.6.1",
+    "@nestjs/apollo": "10.0.0",
     "@nestjs/common": "8.2.3",
     "@nestjs/core": "8.2.3",
-    "@nestjs/graphql": "^10.0.0",
+    "@nestjs/graphql": "10.0.0",
     "@nestjs/platform-express": "8.2.3",
     "apollo-server": "3.6.2",
     "apollo-server-express": "3.6.2",
@@ -47,7 +47,7 @@
     "eslint": "7.32.0",
     "eslint-config-prettier": "8.3.0",
     "eslint-plugin-import": "2.25.4",
-    "jest": "27.3.1",
+    "jest": "27.5.1",
     "prettier": "2.5.1",
     "supertest": "6.1.6",
     "ts-jest": "27.0.7",
