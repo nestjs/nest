@@ -137,7 +137,7 @@
     "imports-loader": "3.1.1",
     "json-loader": "0.5.7",
     "kafkajs": "1.16.0",
-    "lerna": "3.0.0",
+    "lerna": "2.11.0",
     "lerna-changelog": "2.2.0",
     "light-my-request": "4.7.1",
     "lint-staged": "12.3.4",
