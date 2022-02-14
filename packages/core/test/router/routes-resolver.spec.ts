@@ -319,6 +319,13 @@ describe('RoutesResolver', () => {
           expect(outputErr).to.be.instanceof(BadRequestException);
         });
       });
+      describe('URIError', () => {
+        it('should map to BadRequestException', () => {
+          const err = new URIError();
+          const outputErr = routesResolver.mapExternalException(err);
+          expect(outputErr).to.be.instanceof(BadRequestException);
+        });
+      });
       describe('other', () => {
         it('should behave as an identity', () => {
           const err = new Error();
