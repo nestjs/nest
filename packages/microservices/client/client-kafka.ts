@@ -218,14 +218,10 @@ export class ClientKafka extends ClientProxy {
     callback: (packet: WritePacket) => any,
   ): () => void {
     const packet = this.assignPacketId(partialPacket);
-
     this.routingMap.set(packet.id, callback);
 
-    const cleanup = () => {
-      this.routingMap.delete(packet.id);
-    };
-
-    const errorCallback = err => {
+    const cleanup = () => this.routingMap.delete(packet.id);
+    const errorCallback = (err: unknown) => {
       cleanup();
       callback({ err });
     };
