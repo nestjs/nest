@@ -140,7 +140,7 @@
     "lerna": "3.0.0",
     "lerna-changelog": "2.2.0",
     "light-my-request": "4.7.1",
-    "lint-staged": "12.3.3",
+    "lint-staged": "12.3.4",
     "markdown-table": "2.0.0",
     "merge-graphql-schemas": "1.7.8",
     "middie": "6.0.0",
