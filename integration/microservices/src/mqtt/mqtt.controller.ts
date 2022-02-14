@@ -93,7 +93,7 @@ export class MqttController {
   @Post('record-builder-duplex')
   @HttpCode(200)
   useRecordBuilderDuplex(@Body() data: Record<string, any>) {
-    const record = new MqttRecordBuilder(data).setQoS(2).build();
+    const record = new MqttRecordBuilder(data).setQoS(1).build();
     return this.client.send('record-builder-duplex', record);
   }
 
