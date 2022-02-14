@@ -87,7 +87,7 @@
     "@types/gulp": "4.0.9",
     "@types/http-errors": "1.8.2",
     "@types/mocha": "9.1.0",
-    "@types/node": "16.11.21",
+    "@types/node": "17.0.17",
     "@types/redis": "4.0.11",
     "@types/reflect-metadata": "0.1.0",
     "@types/sinon": "10.0.11",
