@@ -20,6 +20,7 @@ export const SUBSCRIBE = 'subscribe';
 export const CANCEL_EVENT = 'cancelled';
 
 export const PATTERN_METADATA = 'microservices:pattern';
+export const PATTERN_EXTRAS_METADATA = 'microservices:pattern_extras';
 export const TRANSPORT_METADATA = 'microservices:transport';
 export const CLIENT_CONFIGURATION_METADATA = 'microservices:client';
 export const PATTERN_HANDLER_METADATA = 'microservices:handler_type';

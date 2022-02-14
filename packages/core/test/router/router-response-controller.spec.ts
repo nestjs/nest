@@ -310,7 +310,7 @@ data: test
     it('should close on request close', done => {
       const result = of('test');
       const response = new Writable();
-      response.end = () => done();
+      response.end = () => done() as any;
       response._write = () => {};
 
       const request = new Writable();
@@ -327,7 +327,7 @@ data: test
     it('should close the request when observable completes', done => {
       const result = of('test');
       const response = new Writable();
-      response.end = done;
+      response.end = done as any;
       response._write = () => {};
 
       const request = new Writable();
@@ -369,7 +369,7 @@ data: test
       it('should close the request', done => {
         const result = new Subject();
         const response = new Writable();
-        response.end = done;
+        response.end = done as any;
         response._write = () => {};
 
         const request = new Writable();
