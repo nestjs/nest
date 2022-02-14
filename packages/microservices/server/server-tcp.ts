@@ -1,7 +1,6 @@
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
-import { Observable } from 'rxjs';
 import {
   CLOSE_EVENT,
   EADDRINUSE,
@@ -57,6 +56,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
 
   public close() {
     this.isExplicitlyTerminated = true;
+
     this.server.close();
   }
 
@@ -113,7 +113,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     }
     ++this.retryAttemptsCount;
     return setTimeout(
-      () => this.server.listen(this.port),
+      () => this.server.listen(this.port, this.host),
       this.getOptionsProp(this.options, 'retryDelay') || 0,
     );
   }
