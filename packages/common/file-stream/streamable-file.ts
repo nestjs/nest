@@ -1,17 +1,18 @@
 import { Readable } from 'stream';
+import { types } from 'util';
 import { isFunction } from '../utils/shared.utils';
 import { StreamableFileOptions } from './streamable-options.interface';
 
 export class StreamableFile {
   private readonly stream: Readable;
 
-  constructor(buffer: Buffer, options?: StreamableFileOptions);
+  constructor(buffer: Uint8Array, options?: StreamableFileOptions);
   constructor(readable: Readable, options?: StreamableFileOptions);
   constructor(
-    bufferOrReadStream: Buffer | Readable,
+    bufferOrReadStream: Uint8Array | Readable,
     readonly options: StreamableFileOptions = {},
   ) {
-    if (Buffer.isBuffer(bufferOrReadStream)) {
+    if (types.isUint8Array(bufferOrReadStream)) {
       this.stream = new Readable();
       this.stream.push(bufferOrReadStream);
       this.stream.push(null);
