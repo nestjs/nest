@@ -188,13 +188,13 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     response$ && this.send(response$, publish);
   }
 
-  public sendMessage(
+  public async sendMessage(
     message: OutgoingResponse,
     replyTopic: string,
     replyPartition: string,
     correlationId: string,
   ): Promise<RecordMetadata[]> {
-    const outgoingMessage = this.serializer.serialize(message.response);
+    const outgoingMessage = await this.serializer.serialize(message.response);
     this.assignReplyPartition(replyPartition, outgoingMessage);
     this.assignCorrelationIdHeader(correlationId, outgoingMessage);
     this.assignErrorHeader(message, outgoingMessage);
