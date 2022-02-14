@@ -13,8 +13,10 @@ export interface KafkaRequest<T = any> {
   headers: Record<string, any>;
 }
 
-export class KafkaRequestSerializer implements Serializer<any, KafkaRequest> {
-  serialize(value: any): KafkaRequest {
+export class KafkaRequestSerializer
+  implements Serializer<any, KafkaRequest | Promise<KafkaRequest>>
+{
+  serialize(value: any) {
     const isNotKafkaMessage =
       isNil(value) ||
       !isObject(value) ||
