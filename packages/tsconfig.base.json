@@ -5,7 +5,6 @@
     "noImplicitAny": false,
     "skipLibCheck": true,
     "suppressImplicitAnyIndexErrors": true,
-    "useUnknownInCatchVariables": false,
     "noUnusedLocals": false,
     "importHelpers": true,
     "removeComments": false,
