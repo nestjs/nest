@@ -123,6 +123,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
    <td align="center" valign="middle"><a href="https://thecasinowizard.com/bonuses/no-deposit-bonuses/" target="_blank"><img src="https://nestjs.com/img/casinowizard-logo.png" width="120" valign="middle" /></a></td></tr><tr>
      <td align="center" valign="middle"><a href="https://polygon-software.ch/" target="_blank"><img src="https://nestjs.com/img/polygon-logo.svg" width="120" valign="middle" /></a></td>
    <td align="center" valign="middle"><a href="https://mobilereality.pl/" target="_blank"><img src="https://nestjs.com/img/mobile-reality-logo.png" width="45" valign="middle" /></a></td>
+     <td align="center" valign="middle"><a href="https://boringowl.io/" target="_blank"><img src="https://nestjs.com/img/boringowl-logo.svg" width="120" valign="middle" /></a></td>
   </tr></table>
 
 ## Backers
