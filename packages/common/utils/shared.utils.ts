@@ -3,7 +3,7 @@ export const isUndefined = (obj: any): obj is undefined =>
   typeof obj === 'undefined';
 
 export const isObject = (fn: any): fn is object =>
-  !isNil(fn) && typeof fn === 'object';
+  Object.prototype.toString.call(fn) === '[object Object]';
 
 export const isPlainObject = (fn: any): fn is object => {
   if (!isObject(fn)) {
