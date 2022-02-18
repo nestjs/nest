@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@babel/cli": "7.17.3",
-    "@babel/core": "7.17.4",
+    "@babel/core": "7.17.5",
     "@babel/node": "7.16.8",
     "@babel/plugin-proposal-decorators": "7.17.2",
     "@babel/plugin-transform-runtime": "7.17.0",
