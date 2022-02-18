@@ -47,7 +47,7 @@ describe('MQTT transport', () => {
       .post('/?command=streamSum')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
-  });
+  }).timeout(5000);
 
   it(`/POST (concurrent)`, function () {
     return request(server)
@@ -72,7 +72,7 @@ describe('MQTT transport', () => {
       .post('/stream')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
-  });
+  }).timeout(5000);
 
   it(`/POST (event notification)`, done => {
     request(server)
