@@ -16,7 +16,7 @@
   "scripts": {
     "build": "gulp build --dist node_modules/@nestjs",
     "postbuild": "gulp move",
-    "changelog": "lerna-changelog",
+    "changelog": "lerna-changelog --from=v8.2.3 --to=v8.3.1",
     "prebuild:prod": "npm run clean",
     "build:prod": "gulp build",
     "build:samples": "gulp install:samples && npm run build && gulp build:samples && gulp test:samples && gulp test:e2e:samples",
@@ -184,6 +184,7 @@
       "type: bug :sob:": "Bug fixes",
       "type: enhancement :wolf:": "Enhancements",
       "type: docs :page_facing_up:": "Docs",
+      "type: code style": "Code style tweaks",
       "dependencies": "Dependencies"
     }
   },
