@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "8.2.3",
+  "version": "8.3.1",
   "description": "Modern, fast, powerful node.js web framework",
   "homepage": "https://nestjs.com",
   "repository": {
@@ -16,7 +16,7 @@
   "scripts": {
     "build": "gulp build --dist node_modules/@nestjs",
     "postbuild": "gulp move",
-    "changelog": "lerna-changelog --from=v8.2.3 --to=v8.3.1",
+    "changelog": "lerna-changelog",
     "prebuild:prod": "npm run clean",
     "build:prod": "gulp build",
     "build:samples": "gulp install:samples && npm run build && gulp build:samples && gulp test:samples && gulp test:e2e:samples",
