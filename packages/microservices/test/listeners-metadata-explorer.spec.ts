@@ -8,7 +8,9 @@ import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 
 describe('ListenerMetadataExplorer', () => {
   const pattern = { pattern: 'test' };
-  const secPattern = { role: '2', cmd: 'm' };
+  const secondPattern = { role: '2', cmd: 'm' };
+  const thirdPattern = { pattern: 'test2' };
+  const fouthPattern = { pattern: 'test3' };
   const clientMetadata = {};
   const clientSecMetadata = { transport: Transport.REDIS };
 
@@ -28,8 +30,12 @@ describe('ListenerMetadataExplorer', () => {
     @MessagePattern(pattern)
     public test() {}
 
-    @MessagePattern(secPattern)
-    public testSec() {}
+    @MessagePattern(secondPattern)
+    public testSecond() {}
+
+    @MessagePattern(thirdPattern)
+    @MessagePattern(fouthPattern)
+    public testThirdAndFourth() {}
 
     public noPattern() {}
   }
@@ -75,11 +81,29 @@ describe('ListenerMetadataExplorer', () => {
         'isEventHandler',
         'methodKey',
         'targetCallback',
-        'pattern',
+        'patterns',
         'transport',
         'extras',
       ]);
-      expect(metadata.pattern).to.eql(pattern);
+      expect(metadata.patterns.length).to.eql(1);
+      expect(metadata.patterns[0]).to.eql(pattern);
+    });
+    it(`should return both pattern properties when "handlerType" metadata is defined for two patterns`, () => {
+      const metadata = instance.exploreMethodMetadata(
+        Object.getPrototypeOf(test),
+        'testThirdAndFourth',
+      );
+      expect(metadata).to.have.keys([
+        'isEventHandler',
+        'methodKey',
+        'targetCallback',
+        'patterns',
+        'transport',
+        'extras',
+      ]);
+      expect(metadata.patterns.length).to.eql(2);
+      expect(metadata.patterns[0]).to.eql(fouthPattern);
+      expect(metadata.patterns[1]).to.eql(thirdPattern);
     });
   });
   describe('scanForClientHooks', () => {

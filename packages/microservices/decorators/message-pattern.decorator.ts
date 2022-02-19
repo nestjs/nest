@@ -54,7 +54,13 @@ export const MessagePattern: {
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
-    Reflect.defineMetadata(PATTERN_METADATA, metadata, descriptor.value);
+    const patternsMetadata =
+      Reflect.getMetadata(PATTERN_METADATA, target[key]) || [];
+    Reflect.defineMetadata(
+      PATTERN_METADATA,
+      [...patternsMetadata, metadata],
+      descriptor.value,
+    );
     Reflect.defineMetadata(
       PATTERN_HANDLER_METADATA,
       PatternHandler.MESSAGE,

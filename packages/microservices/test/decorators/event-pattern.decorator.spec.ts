@@ -16,7 +16,8 @@ describe('@EventPattern', () => {
   }
   it(`should enhance method with ${PATTERN_METADATA} metadata`, () => {
     const metadata = Reflect.getMetadata(PATTERN_METADATA, TestComponent.test);
-    expect(metadata).to.be.eql(pattern);
+    expect(metadata.length).to.equal(1);
+    expect(metadata[0]).to.be.eql(pattern);
   });
   it(`should enhance method with ${PATTERN_EXTRAS_METADATA} metadata`, () => {
     const metadata = Reflect.getMetadata(
@@ -45,7 +46,7 @@ describe('@EventPattern', () => {
     }
 
     it(`should enhance method with ${PATTERN_METADATA} metadata`, () => {
-      const metadataArg = Reflect.getMetadata(
+      const [metadataArg] = Reflect.getMetadata(
         PATTERN_METADATA,
         TestComponent1.test,
       );
@@ -63,7 +64,7 @@ describe('@EventPattern', () => {
     });
 
     it(`should enhance method with ${PATTERN_METADATA}, ${TRANSPORT_METADATA} metadata`, () => {
-      const metadataArg = Reflect.getMetadata(
+      const [metadataArg] = Reflect.getMetadata(
         PATTERN_METADATA,
         TestComponent2.test,
       );
@@ -81,7 +82,7 @@ describe('@EventPattern', () => {
     });
 
     it(`should enhance method with ${PATTERN_METADATA}, ${PATTERN_EXTRAS_METADATA} metadata`, () => {
-      const metadataArg = Reflect.getMetadata(
+      const [metadataArg] = Reflect.getMetadata(
         PATTERN_METADATA,
         TestComponent3.test,
       );
@@ -100,7 +101,7 @@ describe('@EventPattern', () => {
 
     it(`should enhance method with ${PATTERN_METADATA}, ${TRANSPORT_METADATA} and \
 ${PATTERN_EXTRAS_METADATA} metadata`, () => {
-      const metadataArg = Reflect.getMetadata(
+      const [metadataArg] = Reflect.getMetadata(
         PATTERN_METADATA,
         TestComponent4.test,
       );
