@@ -9,10 +9,16 @@ import { EventPattern } from '../../decorators/event-pattern.decorator';
 
 describe('@EventPattern', () => {
   const pattern = { role: 'test' };
+  const patternSecond = { role: 'test2' };
+  const patternThird = { role: 'test3' };
   const extras = { param: 'value' };
   class TestComponent {
     @EventPattern(pattern, undefined, extras)
     public static test() {}
+
+    @EventPattern(patternSecond, undefined, extras)
+    @EventPattern(patternThird, undefined, extras)
+    public static testSecondAndThird() {}
   }
   it(`should enhance method with ${PATTERN_METADATA} metadata`, () => {
     const metadata = Reflect.getMetadata(PATTERN_METADATA, TestComponent.test);
@@ -25,6 +31,15 @@ describe('@EventPattern', () => {
       TestComponent.test,
     );
     expect(metadata).to.be.deep.equal(extras);
+  });
+  it(`should enhance method with both ${PATTERN_METADATA} metadata`, () => {
+    const metadata = Reflect.getMetadata(
+      PATTERN_METADATA,
+      TestComponent.testSecondAndThird,
+    );
+    expect(metadata.length).to.equal(2);
+    expect(metadata[0]).to.be.eql(patternThird);
+    expect(metadata[1]).to.be.eql(patternSecond);
   });
 
   describe('decorator overloads', () => {
