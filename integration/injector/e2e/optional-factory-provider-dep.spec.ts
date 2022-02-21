@@ -41,20 +41,55 @@ describe('Optional factory provider deps', () => {
     });
   });
   describe('otherwise', () => {
+    describe('and dependency is not registered', () => {
+      it('should error out', async () => {
+        try {
+          const builder = Test.createTestingModule({
+            providers: [
+              {
+                provide: 'FACTORY',
+                useFactory: () => 'RETURNED_VALUE',
+                inject: ['MISSING_DEP'],
+              },
+            ],
+          });
+          await builder.compile();
+        } catch (err) {
+          expect(err).to.be.instanceOf(UnknownDependenciesException);
+        }
+      });
+    });
+  });
+  describe('and dependency is registered but it cannot be instantiated', () => {
     it('should error out', async () => {
       try {
         const builder = Test.createTestingModule({
           providers: [
             {
+              provide: 'POSSIBLY_MISSING_DEP',
+              useFactory: () => null,
+              inject: ['MISSING_DEP'],
+            },
+            {
               provide: 'FACTORY',
               useFactory: () => 'RETURNED_VALUE',
-              inject: ['MISSING_DEP'],
+              inject: [{ token: 'POSSIBLY_MISSING_DEP', optional: false }],
             },
           ],
         });
         await builder.compile();
       } catch (err) {
         expect(err).to.be.instanceOf(UnknownDependenciesException);
+        expect(err.message).to
+          .equal(`Nest can't resolve dependencies of the POSSIBLY_MISSING_DEP (?). Please make sure that the argument MISSING_DEP at index [0] is available in the RootTestModule context.
+
+Potential solutions:
+- If MISSING_DEP is a provider, is it part of the current RootTestModule?
+- If MISSING_DEP is exported from a separate @Module, is that module imported within RootTestModule?
+  @Module({
+    imports: [ /* the Module containing MISSING_DEP */ ]
+  })
+`);
       }
     });
   });
