@@ -25,11 +25,15 @@ export class AppService {
   }
 
   getFileWithHeaders(): StreamableFile {
+    const file = readFileSync(join(process.cwd(), 'Readme.md'));
     return new StreamableFile(
       createReadStream(join(process.cwd(), 'Readme.md')),
       {
         type: 'text/markdown',
         disposition: 'attachment; filename="Readme.md"',
+        length: file.byteLength,
+        acceptRanges: 'bytes',
+        range: `bytes 0-${file.byteLength - 1}/${file.byteLength}`,
       },
     );
   }

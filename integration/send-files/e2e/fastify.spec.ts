@@ -4,11 +4,12 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { readFileSync } from 'fs';
+import { read, readFileSync } from 'fs';
 import { join } from 'path';
 import { AppModule } from '../src/app.module';
 
-const readmeString = readFileSync(join(process.cwd(), 'Readme.md')).toString();
+const readme = readFileSync(join(process.cwd(), 'Readme.md'));
+const readmeString = readme.toString();
 
 describe('Fastify FileSend', () => {
   let app: NestFastifyApplication;
@@ -65,6 +66,23 @@ describe('Fastify FileSend', () => {
       })
       .then(({ payload }) => {
         expect(payload.toString()).to.be.eq(readmeString);
+      });
+  });
+  it('should return a file with correct headers', async () => {
+    return app
+      .inject({ url: '/file/with/headers', method: 'get' })
+      .then(({ statusCode, headers, payload }) => {
+        expect(statusCode).to.equal(200);
+        expect(headers['content-type']).to.equal('text/markdown');
+        expect(headers['content-disposition']).to.equal(
+          'attachment; filename="Readme.md"',
+        );
+        expect(headers['content-length']).to.equal(readme.byteLength);
+        expect(headers['accept-ranges']).to.equal('bytes');
+        expect(headers['content-range']).to.equal(
+          `bytes 0-${readme.byteLength - 1}/${readme.byteLength}`,
+        );
+        expect(payload).to.equal(readmeString);
       });
   });
 });
