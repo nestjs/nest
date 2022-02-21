@@ -59,7 +59,7 @@
     "fast-safe-stringify": "2.1.1",
     "graphql-subscriptions": "2.0.0",
     "iterare": "1.2.1",
-    "object-hash": "2.2.0",
+    "object-hash": "3.0.0",
     "path-to-regexp": "3.2.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "7.5.4",
