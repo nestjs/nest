@@ -282,11 +282,35 @@ export class FastifyAdapter<
     }
     if (body instanceof StreamableFile) {
       const streamHeaders = body.getHeaders();
-      if (fastifyReply.getHeader('Content-Type') === undefined) {
+      if (
+        fastifyReply.getHeader('Content-Type') === undefined &&
+        streamHeaders.type
+      ) {
         fastifyReply.header('Content-Type', streamHeaders.type);
       }
-      if (fastifyReply.getHeader('Content-Disposition') === undefined) {
+      if (
+        fastifyReply.getHeader('Content-Disposition') === undefined &&
+        streamHeaders.disposition
+      ) {
         fastifyReply.header('Content-Disposition', streamHeaders.disposition);
+      }
+      if (
+        fastifyReply.getHeader('Content-Length') === undefined &&
+        streamHeaders.length
+      ) {
+        fastifyReply.header('Content-Length', streamHeaders.length);
+      }
+      if (
+        fastifyReply.getHeader('Content-Range') === undefined &&
+        streamHeaders.range
+      ) {
+        fastifyReply.header('Content-Range', streamHeaders.range);
+      }
+      if (
+        fastifyReply.getHeader('Accept-Ranges') === undefined &&
+        streamHeaders.acceptRanges
+      ) {
+        fastifyReply.header('Accept-Ranges', streamHeaders.acceptRanges);
       }
       body = body.getStream();
     }
