@@ -36,7 +36,7 @@ export interface GatewayMetadata {
   connectTimeout?: number;
   /**
    * How many ms without a pong packet to consider the connection closed
-   * @default 5000
+   * @default 20000
    */
   pingTimeout?: number;
   /**
