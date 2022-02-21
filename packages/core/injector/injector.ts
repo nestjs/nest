@@ -314,7 +314,7 @@ export class Injector {
       item: InjectionToken | OptionalFactoryDependency,
     ): item is OptionalFactoryDependency =>
       !isUndefined((item as OptionalFactoryDependency).token) &&
-      isUndefined((item as OptionalFactoryDependency).optional);
+      !isUndefined((item as OptionalFactoryDependency).optional);
 
     const mapFactoryProviderInjectArray = (
       item: InjectionToken | OptionalFactoryDependency,
