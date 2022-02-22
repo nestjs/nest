@@ -22,7 +22,7 @@
     "rxjs": "7.4.0"
   },
   "devDependencies": {
-    "@babel/cli": "7.17.3",
+    "@babel/cli": "7.17.6",
     "@babel/core": "7.17.5",
     "@babel/node": "7.16.8",
     "@babel/plugin-proposal-decorators": "7.17.2",
