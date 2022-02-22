@@ -31,22 +31,22 @@ export interface GatewayMetadata {
   parser?: any;
   /**
    * How many ms before a client without namespace is closed
-   * @default 45000
+   * @default 45_000
    */
   connectTimeout?: number;
   /**
    * How many ms without a pong packet to consider the connection closed
-   * @default 20000
+   * @default 20_000
    */
   pingTimeout?: number;
   /**
    * How many ms before sending a new ping packet
-   * @default 25000
+   * @default 25_000
    */
   pingInterval?: number;
   /**
    * How many ms before an uncompleted transport upgrade is cancelled
-   * @default 10000
+   * @default 10_000
    */
   upgradeTimeout?: number;
   /**
@@ -116,7 +116,7 @@ export interface GatewayMetadata {
   destroyUpgrade?: boolean;
   /**
    * Milliseconds after which unhandled requests are ended
-   * @default 1000
+   * @default 1_000
    */
   destroyUpgradeTimeout?: number;
 }
