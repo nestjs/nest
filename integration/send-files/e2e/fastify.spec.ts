@@ -4,7 +4,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { read, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { AppModule } from '../src/app.module';
 
@@ -78,10 +78,6 @@ describe('Fastify FileSend', () => {
           'attachment; filename="Readme.md"',
         );
         expect(headers['content-length']).to.equal(readme.byteLength);
-        expect(headers['accept-ranges']).to.equal('bytes');
-        expect(headers['content-range']).to.equal(
-          `bytes 0-${readme.byteLength - 1}/${readme.byteLength}`,
-        );
         expect(payload).to.equal(readmeString);
       });
   });

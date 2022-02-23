@@ -284,33 +284,21 @@ export class FastifyAdapter<
       const streamHeaders = body.getHeaders();
       if (
         fastifyReply.getHeader('Content-Type') === undefined &&
-        streamHeaders.type
+        streamHeaders.type !== undefined
       ) {
         fastifyReply.header('Content-Type', streamHeaders.type);
       }
       if (
         fastifyReply.getHeader('Content-Disposition') === undefined &&
-        streamHeaders.disposition
+        streamHeaders.disposition !== undefined
       ) {
         fastifyReply.header('Content-Disposition', streamHeaders.disposition);
       }
       if (
         fastifyReply.getHeader('Content-Length') === undefined &&
-        streamHeaders.length
+        streamHeaders.length !== undefined
       ) {
         fastifyReply.header('Content-Length', streamHeaders.length);
-      }
-      if (
-        fastifyReply.getHeader('Content-Range') === undefined &&
-        streamHeaders.range
-      ) {
-        fastifyReply.header('Content-Range', streamHeaders.range);
-      }
-      if (
-        fastifyReply.getHeader('Accept-Ranges') === undefined &&
-        streamHeaders.acceptRanges
-      ) {
-        fastifyReply.header('Accept-Ranges', streamHeaders.acceptRanges);
       }
       body = body.getStream();
     }

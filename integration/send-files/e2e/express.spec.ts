@@ -61,11 +61,6 @@ describe('Express FileSend', () => {
       .expect('Content-Type', 'text/markdown')
       .expect('Content-Disposition', 'attachment; filename="Readme.md"')
       .expect('Content-Length', readme.byteLength.toString())
-      .expect('Accept-Ranges', 'bytes')
-      .expect(
-        'Content-Range',
-        `bytes 0-${readme.byteLength - 1}/${readme.byteLength}`,
-      )
       .expect(res => {
         expect(res.text).to.be.eq(readmeString);
       });
