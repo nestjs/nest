@@ -32,8 +32,6 @@ export class AppService {
         type: 'text/markdown',
         disposition: 'attachment; filename="Readme.md"',
         length: file.byteLength,
-        acceptRanges: 'bytes',
-        range: `bytes 0-${file.byteLength - 1}/${file.byteLength}`,
       },
     );
   }

@@ -29,16 +29,12 @@ export class StreamableFile {
     const {
       type = 'application/octet-stream',
       disposition = undefined,
-      acceptRanges = undefined,
       length = undefined,
-      range = undefined,
     } = this.options;
     return {
       type,
       disposition,
-      acceptRanges,
       length,
-      range,
     };
   }
 }

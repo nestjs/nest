@@ -24,9 +24,7 @@ describe('StreamableFile', () => {
       expect(streamableFile.getHeaders()).to.deep.equal({
         type: 'application/octet-stream',
         disposition: undefined,
-        acceptRanges: undefined,
         length: undefined,
-        range: undefined,
       });
     });
   });
@@ -35,17 +33,13 @@ describe('StreamableFile', () => {
       const stream = new Readable();
       const streamableFile = new StreamableFile(stream, {
         type: 'application/pdf',
-        acceptRanges: '123',
         disposition: 'inline',
         length: 100,
-        range: '456',
       });
       expect(streamableFile.getHeaders()).to.deep.equal({
         type: 'application/pdf',
-        acceptRanges: '123',
         disposition: 'inline',
         length: 100,
-        range: '456',
       });
     });
   });

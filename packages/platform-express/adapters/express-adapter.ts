@@ -50,33 +50,21 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       const streamHeaders = body.getHeaders();
       if (
         response.getHeader('Content-Type') === undefined &&
-        streamHeaders.type
+        streamHeaders.type !== undefined
       ) {
         response.setHeader('Content-Type', streamHeaders.type);
       }
       if (
         response.getHeader('Content-Disposition') === undefined &&
-        streamHeaders.disposition
+        streamHeaders.disposition !== undefined
       ) {
         response.setHeader('Content-Disposition', streamHeaders.disposition);
       }
       if (
         response.getHeader('Content-Length') === undefined &&
-        streamHeaders.length
+        streamHeaders.length !== undefined
       ) {
         response.setHeader('Content-Length', streamHeaders.length);
-      }
-      if (
-        response.getHeader('Content-Range') === undefined &&
-        streamHeaders.range
-      ) {
-        response.setHeader('Content-Range', streamHeaders.range);
-      }
-      if (
-        response.getHeader('Accept-Ranges') === undefined &&
-        streamHeaders.acceptRanges
-      ) {
-        response.setHeader('Accept-Ranges', streamHeaders.acceptRanges);
       }
       return body.getStream().pipe(response);
     }
