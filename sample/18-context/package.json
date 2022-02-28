@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@nestjs/cli": "8.1.5",
-    "@nestjs/schematics": "8.0.6",
+    "@nestjs/schematics": "8.0.7",
     "@types/node": "16.11.25",
     "@types/supertest": "2.0.11",
     "jest": "27.5.1",
