@@ -19,6 +19,7 @@ import {
   KafkaConfig,
   KafkaMessage,
   Producer,
+  TopicPartitionOffsetAndMetadata,
 } from '../external/kafka.interface';
 import {
   KafkaLogger,
@@ -283,5 +284,15 @@ export class ClientKafka extends ClientProxy {
   protected initializeDeserializer(options: KafkaOptions['options']) {
     this.deserializer =
       (options && options.deserializer) || new KafkaResponseDeserializer();
+  }
+
+  public commitOffsets(
+    topicPartitions: TopicPartitionOffsetAndMetadata[],
+  ): Promise<void> {
+    if (this.consumer) {
+      return this.consumer.commitOffsets(topicPartitions);
+    } else {
+      throw new Error('No consumer initialized');
+    }
   }
 }
