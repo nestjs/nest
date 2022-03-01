@@ -229,10 +229,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
             return handler(req, res, next);
           }
         } else if (isString(version)) {
-          //Known bug here - if there are multiple versions supported across separate
-          //handlers/controllers, we can't select the highest matching handler.
-          //Since this code is evaluated per-handler, then we can't see if the highest
-          //specified version exists in a different handler.
+          // Known bug here - if there are multiple versions supported across separate
+          // handlers/controllers, we can't select the highest matching handler.
+          // Since this code is evaluated per-handler, then we can't see if the highest
+          // specified version exists in a different handler.
           if (
             Array.isArray(extractedVersion) &&
             extractedVersion.includes(version)
