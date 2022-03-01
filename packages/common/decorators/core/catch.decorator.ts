@@ -1,5 +1,5 @@
 import { CATCH_WATERMARK, FILTER_CATCH_EXCEPTIONS } from '../../constants';
-import { Type } from '../../interfaces';
+import { Type, Abstract } from '../../interfaces';
 
 /**
  * Decorator that marks a class as a Nest exception filter. An exception filter
@@ -18,7 +18,9 @@ import { Type } from '../../interfaces';
  *
  * @publicApi
  */
-export function Catch(...exceptions: Type<any>[]): ClassDecorator {
+export function Catch(
+  ...exceptions: Array<Type<any> | Abstract<any>>
+): ClassDecorator {
   return (target: object) => {
     Reflect.defineMetadata(CATCH_WATERMARK, true, target);
     Reflect.defineMetadata(FILTER_CATCH_EXCEPTIONS, exceptions, target);
