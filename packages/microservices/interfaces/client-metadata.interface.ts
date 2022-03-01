@@ -1,5 +1,6 @@
 import { Type } from '@nestjs/common';
 import { ClientProxy } from '../client';
+import { TcpSocket } from '../helpers';
 import { Transport } from '../enums/transport.enum';
 import { Deserializer } from './deserializer.interface';
 import {
@@ -33,5 +34,6 @@ export interface TcpClientOptions {
     port?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    socketClass?: Type<TcpSocket>;
   };
 }

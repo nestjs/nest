@@ -1,3 +1,5 @@
+import { Type } from '@nestjs/common';
+import { TcpSocket } from '../helpers';
 import { Transport } from '../enums/transport.enum';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import {
@@ -80,6 +82,7 @@ export interface TcpOptions {
     retryDelay?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    socketClass?: Type<TcpSocket>;
   };
 }
 
