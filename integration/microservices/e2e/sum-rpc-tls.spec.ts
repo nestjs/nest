@@ -16,7 +16,6 @@ describe('RPC TLS transport', () => {
 
   before(() => {
     // Generate a self-signed key pair
-    console.log(__dirname);
     key = fs
       .readFileSync(path.join(__dirname, '../src/tcp-tls/privkey.pem'), 'utf8')
       .toString();
