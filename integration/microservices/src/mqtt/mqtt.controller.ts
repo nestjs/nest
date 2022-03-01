@@ -92,7 +92,6 @@ export class MqttController {
     return this.client.send<number>('wildcard-message2/test/test', data);
   }
 
-<<<<<<< HEAD
   @Post('record-builder-duplex')
   @HttpCode(200)
   useRecordBuilderDuplex(@Body() data: Record<string, any>) {
@@ -110,7 +109,8 @@ export class MqttController {
       data,
       qos,
     };
-=======
+  }
+
   @Post('shared-wildcard-event')
   async sendSharedWildcardEvent(): Promise<any> {
     return this.client.emit<number>('shared-wildcard-event/test', true);
@@ -135,7 +135,6 @@ export class MqttController {
   ): Promise<Observable<number>> {
     await this.client.connect();
     return this.client.send<number>('shared-wildcard-message2/test/test', data);
->>>>>>> 111d84e25eb29e0ffccdab5cfa6272162cb979ab
   }
 
   @MessagePattern('wildcard-message/#')
