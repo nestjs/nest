@@ -17,7 +17,9 @@ services:
     restart: always
   mqtt:
     container_name: test-mqtt
-    image: toke/mosquitto
+    image: eclipse-mosquitto
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
     ports:
       - "1883:1883"
       - "9001:9001"

@@ -18,6 +18,8 @@ export class MqttController {
   static IS_NOTIFIED = false;
   static IS_WILDCARD_EVENT_RECEIVED = false;
   static IS_WILDCARD2_EVENT_RECEIVED = false;
+  static IS_SHARED_WILDCARD_EVENT_RECEIVED = false;
+  static IS_SHARED_WILDCARD2_EVENT_RECEIVED = false;
 
   @Client({ transport: Transport.MQTT })
   client: ClientProxy;
@@ -90,6 +92,7 @@ export class MqttController {
     return this.client.send<number>('wildcard-message2/test/test', data);
   }
 
+<<<<<<< HEAD
   @Post('record-builder-duplex')
   @HttpCode(200)
   useRecordBuilderDuplex(@Body() data: Record<string, any>) {
@@ -107,6 +110,32 @@ export class MqttController {
       data,
       qos,
     };
+=======
+  @Post('shared-wildcard-event')
+  async sendSharedWildcardEvent(): Promise<any> {
+    return this.client.emit<number>('shared-wildcard-event/test', true);
+  }
+
+  @Post('shared-wildcard-message')
+  async sendSharedWildcardMessage(
+    @Body() data: number[],
+  ): Promise<Observable<number>> {
+    await this.client.connect();
+    return this.client.send<number>('shared-wildcard-message/test', data);
+  }
+
+  @Post('shared-wildcard-event2')
+  async sendSharedWildcardEvent2(): Promise<any> {
+    return this.client.emit<number>('shared-wildcard-event2/test/test', true);
+  }
+
+  @Post('shared-wildcard-message2')
+  async sendSharedWildcardMessage2(
+    @Body() data: number[],
+  ): Promise<Observable<number>> {
+    await this.client.connect();
+    return this.client.send<number>('shared-wildcard-message2/test/test', data);
+>>>>>>> 111d84e25eb29e0ffccdab5cfa6272162cb979ab
   }
 
   @MessagePattern('wildcard-message/#')
@@ -155,5 +184,28 @@ export class MqttController {
   @MessagePattern({ cmd: 'streaming' })
   streaming(data: number[]): Observable<number> {
     return from(data);
+  }
+
+  @MessagePattern('$share/test-group/shared-wildcard-message/#')
+  sharedWildcardMessageHandler(data: number[]): number {
+    if ((data as any).response) {
+      return;
+    }
+    return (data || []).reduce((a, b) => a + b);
+  }
+
+  @EventPattern('$share/test-group/shared-wildcard-event/#')
+  sharedWildcardEventHandler(data: boolean) {
+    MqttController.IS_SHARED_WILDCARD_EVENT_RECEIVED = data;
+  }
+
+  @MessagePattern('$share/test-group/shared-wildcard-message2/+/test')
+  sharedWildcardMessageHandler2(data: number[]): number {
+    return (data || []).reduce((a, b) => a + b);
+  }
+
+  @EventPattern('$share/test-group/shared-wildcard-event2/+/test')
+  sharedWildcardEventHandler2(data: boolean) {
+    MqttController.IS_SHARED_WILDCARD2_EVENT_RECEIVED = data;
   }
 }
