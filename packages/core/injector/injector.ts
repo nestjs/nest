@@ -475,8 +475,9 @@ export class Injector {
     inquirer?: InstanceWrapper,
     keyOrIndex?: string | number,
   ): Promise<InstanceWrapper<T>> {
+    const token = wrapper.token || wrapper.name;
     const { name } = dependencyContext;
-    if (wrapper && wrapper.name === name) {
+    if (wrapper && token === name) {
       throw new UnknownDependenciesException(
         wrapper.name,
         dependencyContext,
