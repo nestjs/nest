@@ -3,23 +3,23 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { FastifyRequest } from 'fastify'
 import { Test } from '@nestjs/testing';
+import { FastifyRequest } from 'fastify';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 
 describe('Custom Versioning (fastify)', () => {
-  const extractor = (request: FastifyRequest): string | string[] => { 
+  const extractor = (request: FastifyRequest): string | string[] => {
     const versions = [request.headers['accept'] ?? '']
-                .flatMap(v => v.split(','))
-                .map(header => header.match(/v(\d+\.?\d*)\+json$/))
-                .filter(match => match && match.length)
-                .map( matchArray => matchArray[1])
-                .sort()
-                .reverse()
+      .flatMap(v => v.split(','))
+      .map(header => header.match(/v(\d+\.?\d*)\+json$/))
+      .filter(match => match && match.length)
+      .map(matchArray => matchArray[1])
+      .sort()
+      .reverse();
 
-    return versions
-  }
+    return versions;
+  };
   let app: INestApplication;
 
   // ======================================================================== //
@@ -34,7 +34,7 @@ describe('Custom Versioning (fastify)', () => {
       );
       app.enableVersioning({
         type: VersioningType.CUSTOM,
-        extractor
+        extractor,
       });
       await app.init();
       await app.getHttpAdapter().getInstance().ready();
@@ -75,7 +75,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Hello World V2!');
@@ -139,7 +140,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/param/hello')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Parameter V2!');
@@ -203,7 +205,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/multiple')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Multiple Versions 1 or 2');
@@ -267,7 +270,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/neutral')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Neutral');
@@ -326,7 +330,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/override')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Override Version 2');
@@ -390,7 +395,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/override-partial')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Override Partial Version 2');
@@ -456,7 +462,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/foo/bar')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Hello FooBar!');
@@ -549,7 +556,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Hello World V2!');
@@ -613,7 +621,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/param/hello')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Parameter V2!');
@@ -677,7 +686,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/multiple')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Multiple Versions 1 or 2');
@@ -741,7 +751,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/neutral')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Neutral');
@@ -800,7 +811,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/override')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Override Version 2');
@@ -864,7 +876,8 @@ describe('Custom Versioning (fastify)', () => {
         return request(app.getHttpServer())
           .get('/override-partial')
           .set({
-            Accept: 'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
+            Accept:
+              'application/foo.v1+json, application/foo.v2+json, application/foo.v3+json',
           })
           .expect(200)
           .expect('Override Partial Version 2');

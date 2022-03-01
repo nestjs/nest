@@ -1,21 +1,22 @@
 import { INestApplication, VersioningType } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { Request } from 'express';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { Request } from 'express'
 
 describe('Custom Versioning', () => {
-  const extractor = (request: Request): string | string[] => { 
-    const versions = request.header('Accept')
-                ?.split(",")
-                .map(header => header.match(/v(\d+\.?\d*)\+json$/))
-                .filter(match => match && match.length)
-                .map( matchArray => matchArray[1])
-                .sort()
-                .reverse()
+  const extractor = (request: Request): string | string[] => {
+    const versions = request
+      .header('Accept')
+      ?.split(',')
+      .map(header => header.match(/v(\d+\.?\d*)\+json$/))
+      .filter(match => match && match.length)
+      .map(matchArray => matchArray[1])
+      .sort()
+      .reverse();
 
-    return versions
-  }
+    return versions;
+  };
   let app: INestApplication;
 
   // ======================================================================== //
@@ -28,7 +29,7 @@ describe('Custom Versioning', () => {
       app = moduleRef.createNestApplication();
       app.enableVersioning({
         type: VersioningType.CUSTOM,
-        extractor
+        extractor,
       });
       await app.init();
     });

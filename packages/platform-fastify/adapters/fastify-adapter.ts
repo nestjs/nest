@@ -131,8 +131,11 @@ export class FastifyAdapter<
           else storeVersionConstraint(versionOrVersions);
         },
         del(version: string | Array<string>) {
-          if (Array.isArray(version)) version.forEach(v => versions.delete(v));
-          else versions.delete(version);
+          if (Array.isArray(version)) {
+            version.forEach(v => versions.delete(v));
+          } else {
+            versions.delete(version);
+          }
         },
         empty() {
           versions.clear();
