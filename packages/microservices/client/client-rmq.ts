@@ -222,14 +222,17 @@ export class ClientRMQ extends ClientProxy {
     const serializedPacket: ReadPacket & Partial<RmqRecord> =
       this.serializer.serialize(packet);
 
+    const options = serializedPacket.options;
+    delete serializedPacket.options;
+
     return new Promise<void>((resolve, reject) =>
       this.channel.sendToQueue(
         this.queue,
         Buffer.from(JSON.stringify(serializedPacket)),
         {
           persistent: this.persistent,
-          ...serializedPacket.options,
-          headers: this.mergeHeaders(serializedPacket.options?.headers),
+          ...options,
+          headers: this.mergeHeaders(options?.headers),
         },
         (err: unknown) => (err ? reject(err) : resolve()),
       ),
