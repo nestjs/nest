@@ -219,7 +219,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
         if (Array.isArray(version)) {
           if (
             Array.isArray(extractedVersion) &&
-            version.filter(v => extractedVersion.includes(v)).length
+            version.filter(v => extractedVersion.includes(v as string)).length
           ) {
             return handler(req, res, next);
           } else if (
