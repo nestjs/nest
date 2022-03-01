@@ -54,7 +54,7 @@ With official support, you can get expert help straight from Nest core team. We 
 
 ## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support from the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
 #### Principal Sponsors
 <table style="text-align:center;"><tr>
