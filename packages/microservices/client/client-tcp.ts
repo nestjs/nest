@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger, Type } from '@nestjs/common';
 import * as net from 'net';
 import { EmptyError, lastValueFrom } from 'rxjs';
 import { share, tap } from 'rxjs/operators';
@@ -10,7 +10,7 @@ import {
   TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
 } from '../constants';
-import { JsonSocket } from '../helpers/json-socket';
+import { JsonSocket, TcpSocket } from '../helpers';
 import { PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { TcpClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
@@ -20,13 +20,16 @@ export class ClientTCP extends ClientProxy {
   private readonly logger = new Logger(ClientTCP.name);
   private readonly port: number;
   private readonly host: string;
+  private readonly socketClass: Type<TcpSocket>;
   private isConnected = false;
-  private socket: JsonSocket;
+  private socket: TcpSocket;
 
   constructor(options: TcpClientOptions['options']) {
     super();
     this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
     this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
+    this.socketClass =
+      this.getOptionsProp(options, 'socketClass') || JsonSocket;
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -80,8 +83,8 @@ export class ClientTCP extends ClientProxy {
     });
   }
 
-  public createSocket(): JsonSocket {
-    return new JsonSocket(new net.Socket());
+  public createSocket(): TcpSocket {
+    return new this.socketClass(new net.Socket());
   }
 
   public close() {
@@ -89,7 +92,7 @@ export class ClientTCP extends ClientProxy {
     this.handleClose();
   }
 
-  public bindEvents(socket: JsonSocket) {
+  public bindEvents(socket: TcpSocket) {
     socket.on(
       ERROR_EVENT,
       (err: any) => err.code !== ECONNREFUSED && this.handleError(err),
