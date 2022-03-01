@@ -17,6 +17,32 @@ describe('StreamableFile', () => {
       expect(streamableFile.getStream()).to.equal(stream);
     });
   });
+  describe('when options is empty', () => {
+    it('should return application/octet-stream for type and undefined for others', () => {
+      const stream = new Readable();
+      const streamableFile = new StreamableFile(stream);
+      expect(streamableFile.getHeaders()).to.deep.equal({
+        type: 'application/octet-stream',
+        disposition: undefined,
+        length: undefined,
+      });
+    });
+  });
+  describe('when options is defined', () => {
+    it('should pass provided headers', () => {
+      const stream = new Readable();
+      const streamableFile = new StreamableFile(stream, {
+        type: 'application/pdf',
+        disposition: 'inline',
+        length: 100,
+      });
+      expect(streamableFile.getHeaders()).to.deep.equal({
+        type: 'application/pdf',
+        disposition: 'inline',
+        length: 100,
+      });
+    });
+  });
   describe('otherwise', () => {
     describe('when input is a Buffer instance', () => {
       it('should create a readable stream and push the input buffer', () => {

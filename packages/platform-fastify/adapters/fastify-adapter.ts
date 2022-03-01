@@ -282,11 +282,23 @@ export class FastifyAdapter<
     }
     if (body instanceof StreamableFile) {
       const streamHeaders = body.getHeaders();
-      if (fastifyReply.getHeader('Content-Type') === undefined) {
+      if (
+        fastifyReply.getHeader('Content-Type') === undefined &&
+        streamHeaders.type !== undefined
+      ) {
         fastifyReply.header('Content-Type', streamHeaders.type);
       }
-      if (fastifyReply.getHeader('Content-Disposition') === undefined) {
+      if (
+        fastifyReply.getHeader('Content-Disposition') === undefined &&
+        streamHeaders.disposition !== undefined
+      ) {
         fastifyReply.header('Content-Disposition', streamHeaders.disposition);
+      }
+      if (
+        fastifyReply.getHeader('Content-Length') === undefined &&
+        streamHeaders.length !== undefined
+      ) {
+        fastifyReply.header('Content-Length', streamHeaders.length);
       }
       body = body.getStream();
     }

@@ -26,8 +26,15 @@ export class StreamableFile {
   }
 
   getHeaders() {
-    const { type = 'application/octet-stream', disposition = null } =
-      this.options;
-    return { type, disposition };
+    const {
+      type = 'application/octet-stream',
+      disposition = undefined,
+      length = undefined,
+    } = this.options;
+    return {
+      type,
+      disposition,
+      length,
+    };
   }
 }

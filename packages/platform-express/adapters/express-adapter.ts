@@ -48,11 +48,23 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     }
     if (body instanceof StreamableFile) {
       const streamHeaders = body.getHeaders();
-      if (response.getHeader('Content-Type') === undefined) {
+      if (
+        response.getHeader('Content-Type') === undefined &&
+        streamHeaders.type !== undefined
+      ) {
         response.setHeader('Content-Type', streamHeaders.type);
       }
-      if (response.getHeader('Content-Disposition') === undefined) {
+      if (
+        response.getHeader('Content-Disposition') === undefined &&
+        streamHeaders.disposition !== undefined
+      ) {
         response.setHeader('Content-Disposition', streamHeaders.disposition);
+      }
+      if (
+        response.getHeader('Content-Length') === undefined &&
+        streamHeaders.length !== undefined
+      ) {
+        response.setHeader('Content-Length', streamHeaders.length);
       }
       return body.getStream().pipe(response);
     }
