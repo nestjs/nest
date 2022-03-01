@@ -1,6 +1,7 @@
-type ColorTextFn = (text: string) => string;
+import {WriteStream} from 'tty';
 
-const isColorAllowed = () => !process.env.NO_COLOR;
+type ColorTextFn = (text: string) => string;
+const isColorAllowed = () => !process.env.NO_COLOR || WriteStream.prototype.hasColors();
 const colorIfAllowed = (colorFn: ColorTextFn) => (text: string) =>
   isColorAllowed() ? colorFn(text) : text;
 
