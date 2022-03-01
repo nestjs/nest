@@ -1,5 +1,4 @@
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
   ERROR_EVENT,
@@ -196,11 +195,18 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
       ) {
         continue;
       }
-      if (this.matchMqttPattern(key, route)) {
+      const keyWithoutSharedPrefix = this.removeHandlerKeySharedPrefix(key);
+      if (this.matchMqttPattern(keyWithoutSharedPrefix, route)) {
         return value;
       }
     }
     return null;
+  }
+
+  public removeHandlerKeySharedPrefix(handlerKey: string) {
+    return handlerKey && handlerKey.startsWith('$share')
+      ? handlerKey.split('/').slice(2).join('/')
+      : handlerKey;
   }
 
   public getRequestPattern(pattern: string): string {
