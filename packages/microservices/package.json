@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/microservices",
-  "version": "8.3.1",
+  "version": "8.4.0",
   "description": "Nest - modern, fast, powerful node.js web framework (@microservices)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -22,8 +22,8 @@
     "tslib": "2.3.1"
   },
   "devDependencies": {
-    "@nestjs/common": "8.3.1",
-    "@nestjs/core": "8.3.1"
+    "@nestjs/common": "8.4.0",
+    "@nestjs/core": "8.4.0"
   },
   "peerDependencies": {
     "@grpc/grpc-js": "*",
