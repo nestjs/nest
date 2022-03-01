@@ -1,4 +1,4 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isUndefined, isObject } from '@nestjs/common/utils/shared.utils';
 import { Observable } from 'rxjs';
 import {
   CONNECT_EVENT,
@@ -130,14 +130,16 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   public getPublisher(client: MqttClient, pattern: any, id: string): any {
     return (response: any) => {
       Object.assign(response, { id });
-      const outgoingResponse: Partial<MqttRecord> =
+      const options =
+        isObject(response?.data) && response.data instanceof MqttRecord
+          ? (response.data as MqttRecord)?.options
+          : {};
+      delete response?.data?.options;
+      const outgoingResponse: string | Buffer =
         this.serializer.serialize(response);
-      const options = outgoingResponse.options;
-      delete outgoingResponse.options;
-
       return client.publish(
         this.getReplyPattern(pattern),
-        JSON.stringify(outgoingResponse),
+        outgoingResponse,
         options,
       );
     };
