@@ -1,6 +1,7 @@
-import { Abstract } from '../abstract.interface';
 import { Scope } from '../scope-options.interface';
 import { Type } from '../type.interface';
+import { InjectionToken } from './injection-token.interface';
+import { OptionalFactoryDependency } from './optional-factory-dependency.interface';
 
 /**
  *
@@ -36,7 +37,7 @@ export interface ClassProvider<T = any> {
   /**
    * Injection token
    */
-  provide: string | symbol | Type<any> | Abstract<any> | Function;
+  provide: InjectionToken;
   /**
    * Type (class name) of provider (instance to be injected).
    */
@@ -66,7 +67,7 @@ export interface ValueProvider<T = any> {
   /**
    * Injection token
    */
-  provide: string | symbol | Type<any> | Abstract<any> | Function;
+  provide: InjectionToken;
   /**
    * Instance of a provider to be injected.
    */
@@ -97,7 +98,7 @@ export interface FactoryProvider<T = any> {
   /**
    * Injection token
    */
-  provide: string | symbol | Type<any> | Abstract<any> | Function;
+  provide: InjectionToken;
   /**
    * Factory function that returns an instance of the provider to be injected.
    */
@@ -105,7 +106,7 @@ export interface FactoryProvider<T = any> {
   /**
    * Optional list of providers to be injected into the context of the Factory function.
    */
-  inject?: Array<Type<any> | string | symbol | Abstract<any> | Function>;
+  inject?: Array<InjectionToken | OptionalFactoryDependency>;
   /**
    * Optional enum defining lifetime of the provider that is returned by the Factory function.
    */
@@ -131,7 +132,7 @@ export interface ExistingProvider<T = any> {
   /**
    * Injection token
    */
-  provide: string | symbol | Type<any> | Abstract<any> | Function;
+  provide: InjectionToken;
   /**
    * Provider to be aliased by the Injection token.
    */

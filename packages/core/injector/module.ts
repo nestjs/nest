@@ -1,11 +1,11 @@
 import {
-  Abstract,
   ClassProvider,
   Controller,
   DynamicModule,
   ExistingProvider,
   FactoryProvider,
   Injectable,
+  InjectionToken,
   NestModule,
   Provider,
   ValueProvider,
@@ -31,12 +31,11 @@ import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
 import { ModuleRef } from './module-ref';
 
-export type InstanceToken =
-  | string
-  | symbol
-  | Type<any>
-  | Abstract<any>
-  | Function;
+/**
+ * @note
+ * Left for backward compatibility
+ */
+export type InstanceToken = InjectionToken;
 
 export class Module {
   private readonly _id: string;

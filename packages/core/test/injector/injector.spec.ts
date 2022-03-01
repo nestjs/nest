@@ -1,3 +1,4 @@
+import { Optional } from '@nestjs/common';
 import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
@@ -801,6 +802,54 @@ describe('Injector', () => {
       );
       await injector.resolveProperties(wrapper, null, null, { id: 2 });
       expect(loadPropertiesMetadataSpy.called).to.be.true;
+    });
+  });
+
+  describe('getClassDependencies', () => {
+    it('should return an array that consists of deps and optional dep ids', async () => {
+      class FixtureDep1 {}
+      class FixtureDep2 {}
+
+      @Injectable()
+      class FixtureClass {
+        constructor(
+          private dep1: FixtureDep1,
+          @Optional() private dep2: FixtureDep2,
+        ) {}
+      }
+
+      const wrapper = new InstanceWrapper({ metatype: FixtureClass });
+      const [dependencies, optionalDependenciesIds] =
+        injector.getClassDependencies(wrapper);
+
+      expect(dependencies).to.deep.eq([FixtureDep1, FixtureDep2]);
+      expect(optionalDependenciesIds).to.deep.eq([1]);
+    });
+  });
+
+  describe('getFactoryProviderDependencies', () => {
+    it('should return an array that consists of deps and optional dep ids', async () => {
+      class FixtureDep1 {}
+      class FixtureDep2 {}
+
+      const wrapper = new InstanceWrapper({
+        inject: [
+          FixtureDep1,
+          { token: FixtureDep2, optional: true },
+          { token: FixtureDep2, optional: false },
+          {} as any,
+        ],
+      });
+      const [dependencies, optionalDependenciesIds] =
+        injector.getFactoryProviderDependencies(wrapper);
+
+      expect(dependencies).to.deep.eq([
+        FixtureDep1,
+        FixtureDep2,
+        FixtureDep2,
+        {},
+      ]);
+      expect(optionalDependenciesIds).to.deep.eq([1]);
     });
   });
 });

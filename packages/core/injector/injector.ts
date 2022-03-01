@@ -1,4 +1,9 @@
-import { Logger, LoggerService } from '@nestjs/common';
+import {
+  InjectionToken,
+  Logger,
+  LoggerService,
+  OptionalFactoryDependency,
+} from '@nestjs/common';
 import {
   OPTIONAL_DEPS_METADATA,
   OPTIONAL_PROPERTY_DEPS_METADATA,
@@ -34,7 +39,7 @@ import { InstanceToken, Module } from './module';
 /**
  * The type of an injectable dependency
  */
-export type InjectorDependency = Type<any> | Function | string | symbol;
+export type InjectorDependency = InjectionToken;
 
 /**
  * The property-based dependency
@@ -119,7 +124,7 @@ export class Injector {
       const properties = await this.resolveProperties(
         wrapper,
         moduleRef,
-        inject,
+        inject as InjectionToken[],
         contextId,
         wrapper,
         inquirer,
@@ -137,7 +142,7 @@ export class Injector {
     await this.resolveConstructorParams<T>(
       wrapper,
       moduleRef,
-      inject,
+      inject as InjectionToken[],
       callback,
       contextId,
       wrapper,
@@ -246,12 +251,11 @@ export class Injector {
       );
       return callback(deps);
     }
-    const dependencies = isNil(inject)
-      ? this.reflectConstructorParams(wrapper.metatype as Type<any>)
-      : inject;
-    const optionalDependenciesIds = isNil(inject)
-      ? this.reflectOptionalParams(wrapper.metatype as Type<any>)
-      : [];
+
+    const isFactoryProvider = !isNil(inject);
+    const [dependencies, optionalDependenciesIds] = isFactoryProvider
+      ? this.getFactoryProviderDependencies(wrapper)
+      : this.getClassDependencies(wrapper);
 
     let isResolved = true;
     const resolveParam = async (param: unknown, index: number) => {
@@ -290,6 +294,47 @@ export class Injector {
     };
     const instances = await Promise.all(dependencies.map(resolveParam));
     isResolved && (await callback(instances));
+  }
+
+  public getClassDependencies<T>(
+    wrapper: InstanceWrapper<T>,
+  ): [InjectorDependency[], number[]] {
+    const ctorRef = wrapper.metatype as Type<any>;
+    return [
+      this.reflectConstructorParams(ctorRef),
+      this.reflectOptionalParams(ctorRef),
+    ];
+  }
+
+  public getFactoryProviderDependencies<T>(
+    wrapper: InstanceWrapper<T>,
+  ): [InjectorDependency[], number[]] {
+    const optionalDependenciesIds = [];
+    const isOptionalFactoryDep = (
+      item: InjectionToken | OptionalFactoryDependency,
+    ): item is OptionalFactoryDependency =>
+      !isUndefined((item as OptionalFactoryDependency).token) &&
+      !isUndefined((item as OptionalFactoryDependency).optional);
+
+    const mapFactoryProviderInjectArray = (
+      item: InjectionToken | OptionalFactoryDependency,
+      index: number,
+    ): InjectionToken => {
+      if (typeof item !== 'object') {
+        return item;
+      }
+      if (isOptionalFactoryDep(item)) {
+        if (item.optional) {
+          optionalDependenciesIds.push(index);
+        }
+        return item?.token;
+      }
+      return item;
+    };
+    return [
+      wrapper.inject?.map?.(mapFactoryProviderInjectArray),
+      optionalDependenciesIds,
+    ];
   }
 
   public reflectConstructorParams<T>(type: Type<T>): any[] {
