@@ -5,7 +5,7 @@ import {
 } from './packet.interface';
 
 export interface Serializer<TInput = any, TOutput = any> {
-  serialize(value: TInput): TOutput;
+  serialize(value: TInput, options?: Record<string, any>): TOutput;
 }
 
 export type ProducerSerializer = Serializer<

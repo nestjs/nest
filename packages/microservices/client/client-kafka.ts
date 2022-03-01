@@ -191,7 +191,9 @@ export class ClientKafka extends ClientProxy {
 
   protected async dispatchEvent(packet: OutgoingEvent): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
-    const outgoingEvent = await this.serializer.serialize(packet.data);
+    const outgoingEvent = await this.serializer.serialize(packet.data, {
+      pattern,
+    });
     const message = Object.assign(
       {
         topic: pattern,
@@ -231,7 +233,7 @@ export class ClientKafka extends ClientProxy {
       const replyTopic = this.getResponsePatternName(pattern);
       const replyPartition = this.getReplyTopicPartition(replyTopic);
 
-      Promise.resolve(this.serializer.serialize(packet.data))
+      Promise.resolve(this.serializer.serialize(packet.data, { pattern }))
         .then((serializedPacket: KafkaRequest) => {
           serializedPacket.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
           serializedPacket.headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
