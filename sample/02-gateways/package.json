@@ -29,7 +29,8 @@
     "class-validator": "0.13.2",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
-    "rxjs": "7.4.0"
+    "rxjs": "7.4.0",
+    "socket.io": "4.4.1"
   },
   "devDependencies": {
     "@nestjs/cli": "8.1.7",
