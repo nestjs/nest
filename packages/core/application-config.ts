@@ -7,8 +7,18 @@ import {
   WebSocketAdapter,
 } from '@nestjs/common';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
+import { LifeCycleType } from './enums';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
+
+export type ValidateLifeCycleOrder<T, U extends LifeCycleType> = Exclude<
+  LifeCycleType,
+  U
+> extends never
+  ? T
+  : 'all must be unique';
+
+export type LifeCycleOrder = [LifeCycleType, LifeCycleType, LifeCycleType];
 
 export class ApplicationConfig {
   private globalPrefix = '';
@@ -17,6 +27,11 @@ export class ApplicationConfig {
   private globalFilters: Array<ExceptionFilter> = [];
   private globalInterceptors: Array<NestInterceptor> = [];
   private globalGuards: Array<CanActivate> = [];
+  private lifecycleOrder: LifeCycleOrder = [
+    LifeCycleType.GUARDS,
+    LifeCycleType.PIPES,
+    LifeCycleType.INTERCEPTORS,
+  ];
   private versioningOptions: VersioningOptions;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
   private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] =
@@ -146,5 +161,26 @@ export class ApplicationConfig {
 
   public getVersioning(): VersioningOptions | undefined {
     return this.versioningOptions;
+  }
+
+  public setLifeCycleOrder<T extends LifeCycleOrder>(
+    newOrder: ValidateLifeCycleOrder<T, T[number]>,
+  ) {
+    const order = newOrder as LifeCycleOrder;
+
+    if (order.length !== 3) {
+      throw new Error('Needs to have all 3 life cycle types');
+    }
+
+    const isAllUnique = [...new Set(order)].length === 3;
+    if (!isAllUnique) {
+      throw new Error('All life cycle types needs to be unique');
+    }
+
+    this.lifecycleOrder = order;
+  }
+
+  public getLifeCycleOrder(): LifeCycleOrder {
+    return this.lifecycleOrder;
   }
 }
