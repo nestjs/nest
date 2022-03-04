@@ -1,5 +1,5 @@
-import { RpcExceptionsHandler } from 'exceptions/rpc-exceptions-handler';
 import { Observable } from 'rxjs';
+import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
 import { RpcProxy } from './rpc-proxy';
 
 export class KafkaRpcProxy extends RpcProxy {
