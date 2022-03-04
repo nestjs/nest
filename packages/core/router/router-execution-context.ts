@@ -37,7 +37,9 @@ import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
+import { ApplicationConfig } from '../application-config';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
+import { LifeCycleType } from '../enums';
 import {
   CustomHeader,
   RedirectResponse,
@@ -71,6 +73,7 @@ export class RouterExecutionContext {
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
     private readonly interceptorsConsumer: InterceptorsConsumer,
     readonly applicationRef: HttpServer,
+    private readonly config?: ApplicationConfig,
   ) {
     this.responseController = new RouterResponseController(applicationRef);
   }
@@ -135,6 +138,13 @@ export class RouterExecutionContext {
       contextType,
     );
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
+    const lifeCycleOrder = this.config?.getLifeCycleOrder();
+
+    const interceptorIndex = lifeCycleOrder.indexOf(LifeCycleType.INTERCEPTORS);
+    const guardIndex = lifeCycleOrder.indexOf(LifeCycleType.GUARDS);
+    const pipeIndex = lifeCycleOrder.indexOf(LifeCycleType.PIPES);
+    const isGuardInInterceptor = guardIndex > interceptorIndex;
+    const isPipeInInterceptor = pipeIndex > interceptorIndex;
 
     const handler =
       <TRequest, TResponse>(
@@ -144,7 +154,29 @@ export class RouterExecutionContext {
         next: Function,
       ) =>
       async () => {
-        fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+        const executeForInterceptor = [];
+
+        if (isGuardInInterceptor) {
+          executeForInterceptor.push(
+            async () =>
+              fnCanActivate && (await fnCanActivate([req, res, next])),
+          );
+        }
+        if (isPipeInInterceptor) {
+          const executePipe = async () =>
+            fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+          if (pipeIndex < guardIndex) {
+            executeForInterceptor.unshift(executePipe);
+          } else {
+            executeForInterceptor.push(executePipe);
+          }
+        }
+
+        for (let i = 0; i < executeForInterceptor.length; i++) {
+          const fn = executeForInterceptor[i];
+          await fn();
+        }
+
         return callback.apply(instance, args);
       };
 
@@ -154,7 +186,28 @@ export class RouterExecutionContext {
       next: Function,
     ) => {
       const args = this.contextUtils.createNullArray(argsLength);
-      fnCanActivate && (await fnCanActivate([req, res, next]));
+      const executeOuter = [];
+
+      if (!isGuardInInterceptor) {
+        executeOuter.push(
+          async () => fnCanActivate && (await fnCanActivate([req, res, next])),
+        );
+      }
+
+      if (!isPipeInInterceptor) {
+        const executePipe = async () =>
+          fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+        if (pipeIndex < guardIndex) {
+          executeOuter.unshift(executePipe);
+        } else {
+          executeOuter.push(executePipe);
+        }
+      }
+
+      for (let i = 0; i < executeOuter.length; i++) {
+        const fn = executeOuter[i];
+        await fn();
+      }
 
       this.responseController.setStatus(res, httpStatusCode);
       hasCustomHeaders &&

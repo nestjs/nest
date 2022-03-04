@@ -94,6 +94,7 @@ export class RouterExplorer {
       interceptorsContextCreator,
       interceptorsConsumer,
       container.getHttpAdapterRef(),
+      config,
     );
   }
 
