@@ -1,9 +1,9 @@
-import { Scope, Type } from '@nestjs/common';
-import { SCOPE_OPTIONS_METADATA } from '@nestjs/common/constants';
+import { Type } from '@nestjs/common';
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { InstanceToken } from '../injector/module';
+import { getClassScope } from '../helpers/get-class-scope';
 
 export class MiddlewareContainer {
   private readonly middleware = new Map<
@@ -44,7 +44,7 @@ export class MiddlewareContainer {
       middleware.set(
         token,
         new InstanceWrapper({
-          scope: this.getClassScope(metatype),
+          scope: getClassScope(metatype),
           name: token,
           metatype,
           token,
@@ -65,10 +65,5 @@ export class MiddlewareContainer {
       );
     }
     return this.configurationSets.get(moduleName);
-  }
-
-  private getClassScope<T = unknown>(type: Type<T>): Scope {
-    const metadata = Reflect.getMetadata(SCOPE_OPTIONS_METADATA, type);
-    return metadata && metadata.scope;
   }
 }

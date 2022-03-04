@@ -1,8 +1,10 @@
+import { isObject, isNumber, isNil } from '@nestjs/common/utils/shared.utils';
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
+  PATTERN_EXTRAS_METADATA,
 } from '../constants';
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
@@ -17,10 +19,36 @@ export enum GrpcMethodStreamingType {
 /**
  * Subscribes to incoming messages which fulfils chosen pattern.
  */
-export const MessagePattern = <T = PatternMetadata | string>(
+export const MessagePattern: {
+  <T = PatternMetadata | string>(metadata?: T): MethodDecorator;
+  <T = PatternMetadata | string>(
+    metadata?: T,
+    transport?: Transport,
+  ): MethodDecorator;
+  <T = PatternMetadata | string>(
+    metadata?: T,
+    extras?: Record<string, any>,
+  ): MethodDecorator;
+  <T = PatternMetadata | string>(
+    metadata?: T,
+    transport?: Transport,
+    extras?: Record<string, any>,
+  ): MethodDecorator;
+} = <T = PatternMetadata | string>(
   metadata?: T,
-  transport?: Transport,
+  transportOrExtras?: Transport | Record<string, any>,
+  maybeExtras?: Record<string, any>,
 ): MethodDecorator => {
+  let transport: Transport;
+  let extras: Record<string, any>;
+  if (isNumber(transportOrExtras) && isNil(maybeExtras)) {
+    transport = transportOrExtras;
+  } else if (isObject(transportOrExtras) && isNil(maybeExtras)) {
+    extras = transportOrExtras;
+  } else {
+    transport = transportOrExtras as Transport;
+    extras = maybeExtras;
+  }
   return (
     target: object,
     key: string | symbol,
@@ -33,6 +61,7 @@ export const MessagePattern = <T = PatternMetadata | string>(
       descriptor.value,
     );
     Reflect.defineMetadata(TRANSPORT_METADATA, transport, descriptor.value);
+    Reflect.defineMetadata(PATTERN_EXTRAS_METADATA, extras, descriptor.value);
     return descriptor;
   };
 };

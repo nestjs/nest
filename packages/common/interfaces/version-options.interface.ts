@@ -58,6 +58,20 @@ export interface MediaTypeVersioningOptions {
   key: string;
 }
 
+export interface CustomVersioningOptions {
+  type: VersioningType.CUSTOM;
+
+  /**
+   * A function that accepts a request object (specific to the underlying platform, ie Express or Fastify)
+   * and returns a single version value or an ordered array of versions, in order from HIGHEST to LOWEST.
+   *
+   * Ex. Returned version array = ['3.1', '3.0', '2.5', '2', '1.9']
+   *
+   * Use type assertion or narrowing to identify the specific request type.
+   */
+  extractor: (request: unknown) => string | string[];
+}
+
 interface VersioningCommonOptions {
   /**
    * The default version to be used as a fallback when you did not provide some
@@ -70,4 +84,9 @@ interface VersioningCommonOptions {
  * @publicApi
  */
 export type VersioningOptions = VersioningCommonOptions &
-  (HeaderVersioningOptions | UriVersioningOptions | MediaTypeVersioningOptions);
+  (
+    | HeaderVersioningOptions
+    | UriVersioningOptions
+    | MediaTypeVersioningOptions
+    | CustomVersioningOptions
+  );

@@ -11,6 +11,7 @@ export const KAFKA_DEFAULT_BROKER = 'localhost:9092';
 
 export const CONNECT_EVENT = 'connect';
 export const DISCONNECT_EVENT = 'disconnect';
+export const CONNECT_FAILED_EVENT = 'connectFailed';
 export const MESSAGE_EVENT = 'message';
 export const DATA_EVENT = 'data';
 export const ERROR_EVENT = 'error';
@@ -19,6 +20,7 @@ export const SUBSCRIBE = 'subscribe';
 export const CANCEL_EVENT = 'cancelled';
 
 export const PATTERN_METADATA = 'microservices:pattern';
+export const PATTERN_EXTRAS_METADATA = 'microservices:pattern_extras';
 export const TRANSPORT_METADATA = 'microservices:transport';
 export const CLIENT_CONFIGURATION_METADATA = 'microservices:client';
 export const PATTERN_HANDLER_METADATA = 'microservices:handler_type';

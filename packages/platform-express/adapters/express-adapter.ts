@@ -48,11 +48,23 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     }
     if (body instanceof StreamableFile) {
       const streamHeaders = body.getHeaders();
-      if (response.getHeader('Content-Type') === undefined) {
+      if (
+        response.getHeader('Content-Type') === undefined &&
+        streamHeaders.type !== undefined
+      ) {
         response.setHeader('Content-Type', streamHeaders.type);
       }
-      if (response.getHeader('Content-Disposition') === undefined) {
+      if (
+        response.getHeader('Content-Disposition') === undefined &&
+        streamHeaders.disposition !== undefined
+      ) {
         response.setHeader('Content-Disposition', streamHeaders.disposition);
+      }
+      if (
+        response.getHeader('Content-Length') === undefined &&
+        streamHeaders.length !== undefined
+      ) {
+        response.setHeader('Content-Length', streamHeaders.length);
       }
       return body.getStream().pipe(response);
     }
@@ -199,6 +211,42 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       if (versioningOptions.type === VersioningType.URI) {
         return handler(req, res, next);
       }
+
+      // Custom Extractor Versioning Handler
+      if (versioningOptions.type === VersioningType.CUSTOM) {
+        const extractedVersion = versioningOptions.extractor(req);
+
+        if (Array.isArray(version)) {
+          if (
+            Array.isArray(extractedVersion) &&
+            version.filter(v => extractedVersion.includes(v as string)).length
+          ) {
+            return handler(req, res, next);
+          } else if (
+            isString(extractedVersion) &&
+            version.includes(extractedVersion)
+          ) {
+            return handler(req, res, next);
+          }
+        } else if (isString(version)) {
+          // Known bug here - if there are multiple versions supported across separate
+          // handlers/controllers, we can't select the highest matching handler.
+          // Since this code is evaluated per-handler, then we can't see if the highest
+          // specified version exists in a different handler.
+          if (
+            Array.isArray(extractedVersion) &&
+            extractedVersion.includes(version)
+          ) {
+            return handler(req, res, next);
+          } else if (
+            isString(extractedVersion) &&
+            version === extractedVersion
+          ) {
+            return handler(req, res, next);
+          }
+        }
+      }
+
       // Media Type (Accept Header) Versioning Handler
       if (versioningOptions.type === VersioningType.MEDIA_TYPE) {
         const MEDIA_TYPE_HEADER = 'Accept';

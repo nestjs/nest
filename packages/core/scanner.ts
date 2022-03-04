@@ -1,18 +1,17 @@
 import {
-  Abstract,
   DynamicModule,
   flatten,
   ForwardReference,
-  Provider,
   Logger,
+  Provider,
 } from '@nestjs/common';
 import {
+  CATCH_WATERMARK,
+  CONTROLLER_WATERMARK,
   EXCEPTION_FILTERS_METADATA,
   GUARDS_METADATA,
-  INTERCEPTORS_METADATA,
   INJECTABLE_WATERMARK,
-  CONTROLLER_WATERMARK,
-  CATCH_WATERMARK,
+  INTERCEPTORS_METADATA,
   MODULE_METADATA,
   PIPES_METADATA,
   ROUTE_ARGS_METADATA,
@@ -23,6 +22,7 @@ import {
   ExceptionFilter,
   ExistingProvider,
   FactoryProvider,
+  InjectionToken,
   NestInterceptor,
   PipeTransform,
   Scope,
@@ -41,8 +41,8 @@ import { iterate } from 'iterare';
 import { ApplicationConfig } from './application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
-import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
 import { InvalidClassModuleException } from './errors/exceptions/invalid-class-module.exception';
+import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 import { getClassScope } from './helpers/get-class-scope';
 import { NestContainer } from './injector/container';
@@ -54,7 +54,7 @@ import { MetadataScanner } from './metadata-scanner';
 interface ApplicationProviderWrapper {
   moduleKey: string;
   providerKey: string;
-  type: string | symbol | Type<any> | Abstract<any> | Function;
+  type: InjectionToken;
   scope?: Scope;
 }
 

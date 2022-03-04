@@ -2,13 +2,15 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+directive @upper on FIELD_DEFINITION
+
 """recipe """
 type Recipe {
   id: ID!
-  title: String!
   description: String
   creationDate: Date!
   ingredients: [String!]!
+  title: String!
 }
 
 """Date custom scalar type"""

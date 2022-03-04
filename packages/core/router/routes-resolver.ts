@@ -174,7 +174,10 @@ export class RoutesResolver implements Resolver {
 
   public mapExternalException(err: any) {
     switch (true) {
-      case err instanceof SyntaxError:
+      // SyntaxError is thrown by Express body-parser when given invalid JSON (#422, #430)
+      // URIError is thrown by Express when given a path parameter with an invalid percentage
+      // encoding, e.g. '%FF' (#8915)
+      case err instanceof SyntaxError || err instanceof URIError:
         return new BadRequestException(err.message);
       default:
         return err;

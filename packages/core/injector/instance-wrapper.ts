@@ -43,7 +43,7 @@ export class InstanceWrapper<T = any> {
 
   public scope?: Scope = Scope.DEFAULT;
   public metatype: Type<T> | Function;
-  public inject?: (string | symbol | Function | Type<any>)[];
+  public inject?: FactoryProvider['inject'];
   public forwardRef?: boolean;
 
   private readonly values = new WeakMap<ContextId, InstancePerContext<T>>();
