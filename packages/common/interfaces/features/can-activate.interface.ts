@@ -22,4 +22,10 @@ export interface CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean>;
+
+  /**
+   * Defines if the guard should run before or after the pipes
+   * @default false
+   */
+  runAfterPipes?: boolean;
 }

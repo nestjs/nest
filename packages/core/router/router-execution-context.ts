@@ -130,9 +130,25 @@ export class RouterExecutionContext {
       contextId,
       inquirerId,
     );
+    const guardsToRunBeforePipes: CanActivate[] = [];
+    const guardsToRunAfterPipes: CanActivate[] = [];
 
-    const fnCanActivate = this.createGuardsFn(
-      guards,
+    guards.forEach(guard => {
+      if (guard.runAfterPipes) {
+        guardsToRunAfterPipes.push(guard);
+      } else {
+        guardsToRunBeforePipes.push(guard);
+      }
+    });
+
+    const fnCanActivateBeforePipes = this.createGuardsFn(
+      guardsToRunBeforePipes,
+      instance,
+      callback,
+      contextType,
+    );
+    const fnCanActivateAfterPipes = this.createGuardsFn(
+      guardsToRunAfterPipes,
       instance,
       callback,
       contextType,
@@ -159,9 +175,11 @@ export class RouterExecutionContext {
         if (isGuardInInterceptor) {
           executeForInterceptor.push(
             async () =>
-              fnCanActivate && (await fnCanActivate([req, res, next])),
+              fnCanActivateBeforePipes &&
+              (await fnCanActivateBeforePipes([req, res, next])),
           );
         }
+
         if (isPipeInInterceptor) {
           const executePipe = async () =>
             fnApplyPipes && (await fnApplyPipes(args, req, res, next));
@@ -170,6 +188,14 @@ export class RouterExecutionContext {
           } else {
             executeForInterceptor.push(executePipe);
           }
+        }
+
+        if (isGuardInInterceptor) {
+          executeForInterceptor.push(
+            async () =>
+              fnCanActivateAfterPipes &&
+              (await fnCanActivateAfterPipes([req, res, next])),
+          );
         }
 
         for (let i = 0; i < executeForInterceptor.length; i++) {
@@ -190,7 +216,9 @@ export class RouterExecutionContext {
 
       if (!isGuardInInterceptor) {
         executeOuter.push(
-          async () => fnCanActivate && (await fnCanActivate([req, res, next])),
+          async () =>
+            fnCanActivateBeforePipes &&
+            (await fnCanActivateBeforePipes([req, res, next])),
         );
       }
 
@@ -202,6 +230,14 @@ export class RouterExecutionContext {
         } else {
           executeOuter.push(executePipe);
         }
+      }
+
+      if (!isGuardInInterceptor) {
+        executeOuter.push(
+          async () =>
+            fnCanActivateAfterPipes &&
+            (await fnCanActivateAfterPipes([req, res, next])),
+        );
       }
 
       for (let i = 0; i < executeOuter.length; i++) {
