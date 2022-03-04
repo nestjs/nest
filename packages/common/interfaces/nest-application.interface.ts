@@ -1,3 +1,4 @@
+import { LifeCycleOrder, ValidateLifeCycleOrder } from '../enums';
 import {
   CorsOptions,
   CorsOptionsDelegate,
@@ -86,6 +87,21 @@ export interface INestApplication extends INestApplicationContext {
    * @returns {this}
    */
   setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this;
+
+  /**
+   * Sets a new order for the request lifecycle hooks
+   * 
+   * @param newOrder The new order of the lifecycle hooks
+   * 
+   * @default [
+    LifeCycleType.GUARDS,
+    LifeCycleType.INTERCEPTORS,
+    LifeCycleType.PIPES
+  ]
+   */
+  setLifeCycleOrder<T extends LifeCycleOrder>(
+    newOrder: ValidateLifeCycleOrder<T, T[number]>,
+  ): this;
 
   /**
    * Register Ws Adapter which will be used inside Gateways.
