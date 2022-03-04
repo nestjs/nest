@@ -11,6 +11,8 @@ import {
   VersioningOptions,
   VersioningType,
   WebSocketAdapter,
+  LifeCycleOrder,
+  ValidateLifeCycleOrder,
 } from '@nestjs/common';
 import { RouteInfo } from '@nestjs/common/interfaces';
 import {
@@ -31,11 +33,7 @@ import { iterate } from 'iterare';
 import { platform } from 'os';
 import * as pathToRegexp from 'path-to-regexp';
 import { AbstractHttpAdapter } from './adapters';
-import {
-  ApplicationConfig,
-  LifeCycleOrder,
-  ValidateLifeCycleOrder,
-} from './application-config';
+import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { optionalRequire } from './helpers/optional-require';
 import { NestContainer } from './injector/container';
