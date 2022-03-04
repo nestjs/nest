@@ -183,19 +183,18 @@ export class RouterExecutionContext {
         if (isPipeInInterceptor) {
           const executePipe = async () =>
             fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+
           if (pipeIndex < guardIndex) {
             executeForInterceptor.unshift(executePipe);
           } else {
             executeForInterceptor.push(executePipe);
           }
-        }
 
-        if (isGuardInInterceptor) {
-          executeForInterceptor.push(
-            async () =>
-              fnCanActivateAfterPipes &&
-              (await fnCanActivateAfterPipes([req, res, next])),
-          );
+          if (fnCanActivateAfterPipes) {
+            executeForInterceptor.push(
+              async () => await fnCanActivateAfterPipes([req, res, next]),
+            );
+          }
         }
 
         for (let i = 0; i < executeForInterceptor.length; i++) {
@@ -225,19 +224,18 @@ export class RouterExecutionContext {
       if (!isPipeInInterceptor) {
         const executePipe = async () =>
           fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+
         if (pipeIndex < guardIndex) {
           executeOuter.unshift(executePipe);
         } else {
           executeOuter.push(executePipe);
         }
-      }
 
-      if (!isGuardInInterceptor) {
-        executeOuter.push(
-          async () =>
-            fnCanActivateAfterPipes &&
-            (await fnCanActivateAfterPipes([req, res, next])),
-        );
+        if (fnCanActivateAfterPipes) {
+          executeOuter.push(
+            async () => await fnCanActivateAfterPipes([req, res, next]),
+          );
+        }
       }
 
       for (let i = 0; i < executeOuter.length; i++) {
