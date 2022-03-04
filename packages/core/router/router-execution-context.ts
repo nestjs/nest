@@ -5,6 +5,7 @@ import {
   ParamData,
   PipeTransform,
   RequestMethod,
+  LifeCycleType,
 } from '@nestjs/common';
 import {
   CUSTOM_ROUTE_AGRS_METADATA,
@@ -39,7 +40,6 @@ import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { ApplicationConfig } from '../application-config';
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
-import { LifeCycleType } from '../enums';
 import {
   CustomHeader,
   RedirectResponse,

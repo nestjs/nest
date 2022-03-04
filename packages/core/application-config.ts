@@ -5,20 +5,13 @@ import {
   PipeTransform,
   VersioningOptions,
   WebSocketAdapter,
+  LifeCycleType,
+  LifeCycleOrder,
+  ValidateLifeCycleOrder,
 } from '@nestjs/common';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
-import { LifeCycleType } from './enums';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
-
-export type ValidateLifeCycleOrder<T, U extends LifeCycleType> = Exclude<
-  LifeCycleType,
-  U
-> extends never
-  ? T
-  : 'all must be unique';
-
-export type LifeCycleOrder = [LifeCycleType, LifeCycleType, LifeCycleType];
 
 export class ApplicationConfig {
   private globalPrefix = '';
@@ -29,8 +22,8 @@ export class ApplicationConfig {
   private globalGuards: Array<CanActivate> = [];
   private lifecycleOrder: LifeCycleOrder = [
     LifeCycleType.GUARDS,
-    LifeCycleType.PIPES,
     LifeCycleType.INTERCEPTORS,
+    LifeCycleType.PIPES,
   ];
   private versioningOptions: VersioningOptions;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
