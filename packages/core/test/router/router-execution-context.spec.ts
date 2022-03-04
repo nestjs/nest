@@ -44,15 +44,17 @@ describe('RouterExecutionContext', () => {
     guardsConsumer = new GuardsConsumer();
     interceptorsConsumer = new InterceptorsConsumer();
     adapter = new NoopHttpAdapter({});
+    const applicationConfig = new ApplicationConfig();
     contextCreator = new RouterExecutionContext(
       factory,
-      new PipesContextCreator(new NestContainer(), new ApplicationConfig()),
+      new PipesContextCreator(new NestContainer(), applicationConfig),
       consumer,
       new GuardsContextCreator(new NestContainer()),
       guardsConsumer,
       new InterceptorsContextCreator(new NestContainer()),
       interceptorsConsumer,
       adapter,
+      applicationConfig,
     );
   });
   describe('create', () => {
