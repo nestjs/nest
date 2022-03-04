@@ -46,7 +46,12 @@ export class NestMicroservice
   ) {
     super(container);
 
-    this.microservicesModule.register(container, this.applicationConfig);
+    this.microservicesModule.register(
+      container,
+      this.applicationConfig,
+      // @ts-expect-error transport does not exist on type of config??
+      config.transport,
+    );
     this.createServer(config);
     this.selectContextModule();
   }

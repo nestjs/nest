@@ -13,8 +13,10 @@ import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
 import { ClientProxyFactory } from './client';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
+import { KafkaRpcProxy } from './context/kafka-rpc-proxy';
 import { RpcContextCreator } from './context/rpc-context-creator';
 import { RpcProxy } from './context/rpc-proxy';
+import { Transport } from './enums';
 import { CustomTransportStrategy } from './interfaces';
 import { ListenersController } from './listeners-controller';
 import { Server } from './server/server';
@@ -23,8 +25,13 @@ export class MicroservicesModule {
   private readonly clientsContainer = new ClientsContainer();
   private listenersController: ListenersController;
 
-  public register(container: NestContainer, config: ApplicationConfig) {
-    const rpcProxy = new RpcProxy();
+  public register(
+    container: NestContainer,
+    config: ApplicationConfig,
+    transport?: Transport,
+  ) {
+    const rpcProxy =
+      transport === Transport.KAFKA ? new KafkaRpcProxy() : new RpcProxy();
     const exceptionFiltersContext = new ExceptionFiltersContext(
       container,
       config,
