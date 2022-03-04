@@ -31,7 +31,11 @@ import { iterate } from 'iterare';
 import { platform } from 'os';
 import * as pathToRegexp from 'path-to-regexp';
 import { AbstractHttpAdapter } from './adapters';
-import { ApplicationConfig } from './application-config';
+import {
+  ApplicationConfig,
+  LifeCycleOrder,
+  ValidateLifeCycleOrder,
+} from './application-config';
 import { MESSAGES } from './constants';
 import { optionalRequire } from './helpers/optional-require';
 import { NestContainer } from './injector/container';
@@ -400,6 +404,13 @@ export class NestApplication
 
   public setBaseViewsDir(path: string | string[]): this {
     this.httpAdapter.setBaseViewsDir && this.httpAdapter.setBaseViewsDir(path);
+    return this;
+  }
+
+  public setLifeCycleOrder<T extends LifeCycleOrder>(
+    newOrder: ValidateLifeCycleOrder<T, T[number]>,
+  ) {
+    this.config.setLifeCycleOrder(newOrder);
     return this;
   }
 
