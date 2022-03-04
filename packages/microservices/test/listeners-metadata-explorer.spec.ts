@@ -40,8 +40,7 @@ describe('ListenerMetadataExplorer', () => {
     @EventPattern(evtPattern)
     public testEvent() {}
 
-    @EventPattern(firstMultipleEvtPattern)
-    @EventPattern(secondMultipleEvtPattern)
+    @EventPattern([firstMultipleEvtPattern, secondMultipleEvtPattern])
     public testMultipleEvent() {}
 
     public noPattern() {}
@@ -147,8 +146,8 @@ describe('ListenerMetadataExplorer', () => {
           'extras',
         ]);
         expect(metadata.patterns.length).to.eql(2);
-        expect(metadata.patterns[0]).to.eql(secondMultipleEvtPattern);
-        expect(metadata.patterns[1]).to.eql(firstMultipleEvtPattern);
+        expect(metadata.patterns[0]).to.eql(firstMultipleEvtPattern);
+        expect(metadata.patterns[1]).to.eql(secondMultipleEvtPattern);
       });
     });
   });

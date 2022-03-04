@@ -71,60 +71,65 @@ export class ListenersController {
           isUndefined(server.transportId) ||
           transport === server.transportId,
       )
+      .reduce((acc, handler) => {
+        handler.patterns.forEach(pattern =>
+          acc.push({ ...handler, patterns: [pattern] }),
+        );
+        return acc;
+      }, [])
       .forEach(
-        ({ patterns, targetCallback, methodKey, extras, isEventHandler }) => {
-          patterns.forEach(pattern => {
-            if (isStatic) {
-              const proxy = this.contextCreator.create(
-                instance as object,
-                targetCallback,
-                moduleKey,
-                methodKey,
-                STATIC_CONTEXT,
-                undefined,
-                defaultCallMetadata,
-              );
-              if (isEventHandler) {
-                const eventHandler: MessageHandler = (...args: unknown[]) => {
-                  const originalArgs = args;
-                  const [dataOrContextHost] = originalArgs;
-                  if (dataOrContextHost instanceof RequestContextHost) {
-                    args = args.slice(1, args.length);
-                  }
-                  const originalReturnValue = proxy(...args);
-                  const returnedValueWrapper = eventHandler.next?.(
-                    ...(originalArgs as Parameters<MessageHandler>),
-                  );
-                  returnedValueWrapper?.then(returnedValue =>
-                    this.connectIfStream(returnedValue as Observable<unknown>),
-                  );
-                  return originalReturnValue;
-                };
-                return server.addHandler(
-                  pattern,
-                  eventHandler,
-                  isEventHandler,
-                  extras,
-                );
-              } else {
-                return server.addHandler(
-                  pattern,
-                  proxy,
-                  isEventHandler,
-                  extras,
-                );
-              }
-            }
-            const asyncHandler = this.createRequestScopedHandler(
-              instanceWrapper,
-              pattern,
-              moduleRef,
+        ({
+          patterns: [pattern],
+          targetCallback,
+          methodKey,
+          extras,
+          isEventHandler,
+        }) => {
+          if (isStatic) {
+            const proxy = this.contextCreator.create(
+              instance as object,
+              targetCallback,
               moduleKey,
               methodKey,
+              STATIC_CONTEXT,
+              undefined,
               defaultCallMetadata,
             );
-            server.addHandler(pattern, asyncHandler, isEventHandler, extras);
-          });
+            if (isEventHandler) {
+              const eventHandler: MessageHandler = (...args: unknown[]) => {
+                const originalArgs = args;
+                const [dataOrContextHost] = originalArgs;
+                if (dataOrContextHost instanceof RequestContextHost) {
+                  args = args.slice(1, args.length);
+                }
+                const originalReturnValue = proxy(...args);
+                const returnedValueWrapper = eventHandler.next?.(
+                  ...(originalArgs as Parameters<MessageHandler>),
+                );
+                returnedValueWrapper?.then(returnedValue =>
+                  this.connectIfStream(returnedValue as Observable<unknown>),
+                );
+                return originalReturnValue;
+              };
+              return server.addHandler(
+                pattern,
+                eventHandler,
+                isEventHandler,
+                extras,
+              );
+            } else {
+              return server.addHandler(pattern, proxy, isEventHandler, extras);
+            }
+          }
+          const asyncHandler = this.createRequestScopedHandler(
+            instanceWrapper,
+            pattern,
+            moduleRef,
+            moduleKey,
+            methodKey,
+            defaultCallMetadata,
+          );
+          server.addHandler(pattern, asyncHandler, isEventHandler, extras);
         },
       );
   }

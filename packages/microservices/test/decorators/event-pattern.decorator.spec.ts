@@ -18,7 +18,10 @@ describe('@EventPattern', () => {
 
     @EventPattern(patternSecond, undefined, extras)
     @EventPattern(patternThird, undefined, extras)
-    public static testSecondAndThird() {}
+    public static testOnlyThird() {}
+
+    @EventPattern([patternSecond, patternThird], undefined, extras)
+    public static testBoth() {}
   }
   it(`should enhance method with ${PATTERN_METADATA} metadata`, () => {
     const metadata = Reflect.getMetadata(PATTERN_METADATA, TestComponent.test);
@@ -32,14 +35,22 @@ describe('@EventPattern', () => {
     );
     expect(metadata).to.be.deep.equal(extras);
   });
+  it(`should enhance method with last ${PATTERN_METADATA} metadata`, () => {
+    const metadata = Reflect.getMetadata(
+      PATTERN_METADATA,
+      TestComponent.testOnlyThird,
+    );
+    expect(metadata.length).to.equal(1);
+    expect(metadata[0]).to.be.eql(patternSecond);
+  });
   it(`should enhance method with both ${PATTERN_METADATA} metadata`, () => {
     const metadata = Reflect.getMetadata(
       PATTERN_METADATA,
-      TestComponent.testSecondAndThird,
+      TestComponent.testBoth,
     );
     expect(metadata.length).to.equal(2);
-    expect(metadata[0]).to.be.eql(patternThird);
-    expect(metadata[1]).to.be.eql(patternSecond);
+    expect(metadata[0]).to.be.eql(patternSecond);
+    expect(metadata[1]).to.be.eql(patternThird);
   });
 
   describe('decorator overloads', () => {
