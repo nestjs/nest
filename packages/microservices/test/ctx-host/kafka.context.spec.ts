@@ -1,13 +1,17 @@
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { KafkaContext } from '../../ctx-host';
 import { KafkaMessage } from '../../external/kafka.interface';
 
 describe('KafkaContext', () => {
-  const args = ['test', { test: true }];
+  const testFunc = sinon.spy();
+  const args = ['test', { test: true }, undefined, testFunc];
   let context: KafkaContext;
 
   beforeEach(() => {
-    context = new KafkaContext(args as [KafkaMessage, number, string]);
+    context = new KafkaContext(
+      args as [KafkaMessage, number, string, () => Promise<void>],
+    );
   });
   describe('getTopic', () => {
     it('should return topic', () => {
@@ -22,6 +26,12 @@ describe('KafkaContext', () => {
   describe('getMessage', () => {
     it('should return original message', () => {
       expect(context.getMessage()).to.be.eql(args[0]);
+    });
+  });
+  describe('commitOffset', () => {
+    it('should be called once', () => {
+      context.commitOffset();
+      expect(testFunc.called).to.be.true;
     });
   });
 });

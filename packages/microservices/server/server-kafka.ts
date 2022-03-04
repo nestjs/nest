@@ -1,6 +1,5 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil } from '@nestjs/common/utils/shared.utils';
-import { Observable } from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -162,6 +161,14 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       rawMessage,
       payload.partition,
       payload.topic,
+      () =>
+        this.consumer.commitOffsets([
+          {
+            offset: (parseInt(payload.message.offset, 10) + 1).toString(),
+            partition: payload.partition,
+            topic: payload.topic,
+          },
+        ]),
     ]);
     // if the correlation id or reply topic is not set
     // then this is an event (events could still have correlation id)
