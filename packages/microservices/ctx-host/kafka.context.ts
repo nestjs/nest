@@ -1,11 +1,11 @@
-import { KafkaMessage } from '../external/kafka.interface';
+import { Consumer, KafkaMessage } from '../external/kafka.interface';
 import { BaseRpcContext } from './base-rpc.context';
 
 type KafkaContextArgs = [
   message: KafkaMessage,
   partition: number,
   topic: string,
-  commitOffset: () => Promise<void>,
+  consumer: Consumer,
 ];
 
 export class KafkaContext extends BaseRpcContext<KafkaContextArgs> {
@@ -37,7 +37,7 @@ export class KafkaContext extends BaseRpcContext<KafkaContextArgs> {
   /**
    * Commit the offset of this message.
    */
-  commitOffset() {
-    return this.args[3]();
+  getConsumer() {
+    return this.args[3];
   }
 }

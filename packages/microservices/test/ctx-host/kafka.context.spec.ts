@@ -1,16 +1,14 @@
 import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { KafkaContext } from '../../ctx-host';
-import { KafkaMessage } from '../../external/kafka.interface';
+import { Consumer, KafkaMessage } from '../../external/kafka.interface';
 
 describe('KafkaContext', () => {
-  const testFunc = sinon.spy();
-  const args = ['test', { test: true }, undefined, testFunc];
+  const args = ['test', { test: true }, undefined, { test: 'consumer' }];
   let context: KafkaContext;
 
   beforeEach(() => {
     context = new KafkaContext(
-      args as [KafkaMessage, number, string, () => Promise<void>],
+      args as [KafkaMessage, number, string, Consumer],
     );
   });
   describe('getTopic', () => {
@@ -28,10 +26,9 @@ describe('KafkaContext', () => {
       expect(context.getMessage()).to.be.eql(args[0]);
     });
   });
-  describe('commitOffset', () => {
-    it('should be called once', () => {
-      context.commitOffset();
-      expect(testFunc.called).to.be.true;
+  describe('getConsumer', () => {
+    it('should return consumer instance', () => {
+      expect(context.getConsumer()).to.deep.eq({ test: 'consumer' });
     });
   });
 });
