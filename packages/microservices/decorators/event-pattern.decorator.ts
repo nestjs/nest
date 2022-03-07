@@ -40,10 +40,9 @@ export const EventPattern: {
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
-    const patternsMetadata = Array.isArray(metadata) ? metadata : [metadata];
     Reflect.defineMetadata(
       PATTERN_METADATA,
-      patternsMetadata,
+      [].concat(metadata),
       descriptor.value,
     );
     Reflect.defineMetadata(
