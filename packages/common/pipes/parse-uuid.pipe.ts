@@ -58,6 +58,6 @@ export class ParseUUIDPipe implements PipeTransform<string> {
       throw this.exceptionFactory('The value passed as UUID is not a string');
     }
     const pattern = ParseUUIDPipe.uuidRegExps[version];
-    return pattern && pattern.test(str);
+    return pattern?.test(str);
   }
 }
