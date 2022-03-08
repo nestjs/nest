@@ -33,8 +33,7 @@ describe('ListenerMetadataExplorer', () => {
     @MessagePattern(msgPattern)
     public testMessage() {}
 
-    @MessagePattern(firstMultipleMsgPattern)
-    @MessagePattern(secondMultipleMsgPattern)
+    @MessagePattern([firstMultipleMsgPattern, secondMultipleMsgPattern])
     public testMultipleMessage() {}
 
     @EventPattern(evtPattern)
@@ -110,8 +109,8 @@ describe('ListenerMetadataExplorer', () => {
           'extras',
         ]);
         expect(metadata.patterns.length).to.eql(2);
-        expect(metadata.patterns[0]).to.eql(secondMultipleMsgPattern);
-        expect(metadata.patterns[1]).to.eql(firstMultipleMsgPattern);
+        expect(metadata.patterns[0]).to.eql(firstMultipleMsgPattern);
+        expect(metadata.patterns[1]).to.eql(secondMultipleMsgPattern);
       });
     });
 
