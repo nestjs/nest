@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { expect } from 'chai';
+import { AssertionError, expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaHeaders } from '../../enums';
@@ -277,6 +277,7 @@ describe('ServerKafka', () => {
 
       sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
     });
+
     it('should call "handleEvent" if correlation identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
       await server.handleMessage(eventPayload);
@@ -287,6 +288,42 @@ describe('ServerKafka', () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
       await server.handleMessage(eventWithCorrelationIdPayload);
       expect(handleEventSpy.called).to.be.true;
+    });
+
+    it('should call event handler when "handleEvent" is called', async () => {
+      const messageHandler = sinon.mock();
+      const context = { test: true } as any;
+      const messageData = 'some data';
+      sinon.stub(server, 'getHandlerByPattern').callsFake(() => messageHandler);
+
+      await server.handleEvent(
+        topic,
+        { data: messageData, pattern: topic },
+        context,
+      );
+      expect(messageHandler.calledWith(messageData, context)).to.be.true;
+    });
+
+    it('should not catch error thrown by event handler as part of "handleEvent"', async () => {
+      const error = new Error('handler error');
+      const messageHandler = sinon.mock().throwsException(error);
+      sinon.stub(server, 'getHandlerByPattern').callsFake(() => messageHandler);
+
+      try {
+        await server.handleEvent(
+          topic,
+          { data: 'some data', pattern: topic },
+          {} as any,
+        );
+
+        // code should not be executed
+        expect(true).to.be.false;
+      } catch (e) {
+        if (e instanceof AssertionError) {
+          throw e;
+        }
+        expect(e).to.be.eq(error);
+      }
     });
 
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
