@@ -7,8 +7,6 @@ export class KafkaRpcProxy extends RpcProxy {
     targetCallback: (...args: unknown[]) => Promise<Observable<any>>,
     exceptionsHandler: RpcExceptionsHandler,
   ): (...args: unknown[]) => Promise<Observable<unknown>> {
-    return (...args: unknown[]) => {
-      return targetCallback(...args);
-    };
+    return targetCallback;
   }
 }
