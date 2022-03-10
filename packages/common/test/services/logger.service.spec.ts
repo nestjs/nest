@@ -520,4 +520,32 @@ describe('Logger', () => {
       });
     });
   });
+  describe('ConsoleLogger', () => {
+    let processStdoutWriteSpy: sinon.SinonSpy;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+    });
+
+    it('should support custom formatter', () => {
+      class CustomConsoleLogger extends ConsoleLogger {
+        protected formatMessage(
+          pidMessage: string,
+          formattedLogLevel: string,
+          contextMessage: string,
+          output: string,
+          timestampDiff: string,
+        ) {
+          return `Prefix: ${output}`;
+        }
+      }
+
+      const consoleLogger = new CustomConsoleLogger();
+      consoleLogger.debug('test');
+
+      expect(processStdoutWriteSpy.firstCall.firstArg).to.equal(
+        `Prefix: \u001b[95mtest\u001b[39m`,
+      );
+    });
+  });
 });

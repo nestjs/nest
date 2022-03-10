@@ -198,10 +198,26 @@ export class ConsoleLogger implements LoggerService {
       const contextMessage = context ? yellow(`[${context}] `) : '';
       const timestampDiff = this.updateAndGetTimestampDiff();
       const formattedLogLevel = color(logLevel.toUpperCase().padStart(7, ' '));
-      const computedMessage = `${pidMessage}${this.getTimestamp()} ${formattedLogLevel} ${contextMessage}${output}${timestampDiff}\n`;
+      const formatedMessage = this.formatMessage(
+        pidMessage,
+        formattedLogLevel,
+        contextMessage,
+        output,
+        timestampDiff,
+      );
 
-      process[writeStreamType ?? 'stdout'].write(computedMessage);
+      process[writeStreamType ?? 'stdout'].write(formatedMessage);
     });
+  }
+
+  protected formatMessage(
+    pidMessage: string,
+    formattedLogLevel: string,
+    contextMessage: string,
+    output: string,
+    timestampDiff: string,
+  ) {
+    return `${pidMessage}${this.getTimestamp()} ${formattedLogLevel} ${contextMessage}${output}${timestampDiff}\n`;
   }
 
   protected printStackTrace(stack: string) {
