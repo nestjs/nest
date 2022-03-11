@@ -184,7 +184,7 @@ export class ConsoleLogger implements LoggerService {
     writeStreamType?: 'stdout' | 'stderr',
   ) {
     messages.forEach(message => {
-      const pidMessage = `[Nest] ${process.pid}  - `;
+      const pidMessage = this.formatPid(process.pid);
       const contextMessage = context ? yellow(`[${context}] `) : '';
       const timestampDiff = this.updateAndGetTimestampDiff();
       const formattedLogLevel = logLevel.toUpperCase().padStart(7, ' ');
@@ -199,6 +199,10 @@ export class ConsoleLogger implements LoggerService {
 
       process[writeStreamType ?? 'stdout'].write(formatedMessage);
     });
+  }
+
+  protected formatPid(pid: number) {
+    return `[Nest] ${pid}  - `;
   }
 
   protected formatMessage(
