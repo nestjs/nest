@@ -183,26 +183,17 @@ export class ConsoleLogger implements LoggerService {
     logLevel: LogLevel = 'log',
     writeStreamType?: 'stdout' | 'stderr',
   ) {
-    const color = this.getColorByLogLevel(logLevel);
     messages.forEach(message => {
-      const output = isPlainObject(message)
-        ? `${color('Object:')}\n${JSON.stringify(
-            message,
-            (key, value) =>
-              typeof value === 'bigint' ? value.toString() : value,
-            2,
-          )}\n`
-        : color(message as string);
-
-      const pidMessage = color(`[Nest] ${process.pid}  - `);
+      const pidMessage = `[Nest] ${process.pid}  - `;
       const contextMessage = context ? yellow(`[${context}] `) : '';
       const timestampDiff = this.updateAndGetTimestampDiff();
-      const formattedLogLevel = color(logLevel.toUpperCase().padStart(7, ' '));
+      const formattedLogLevel = logLevel.toUpperCase().padStart(7, ' ');
       const formatedMessage = this.formatMessage(
+        logLevel,
+        message,
         pidMessage,
         formattedLogLevel,
         contextMessage,
-        output,
         timestampDiff,
       );
 
@@ -211,13 +202,33 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected formatMessage(
+    logLevel: LogLevel,
+    message: unknown,
     pidMessage: string,
     formattedLogLevel: string,
     contextMessage: string,
-    output: string,
     timestampDiff: string,
   ) {
+    const output = this.stringifyMessage(message, logLevel);
+    pidMessage = this.colorize(pidMessage, logLevel);
+    formattedLogLevel = this.colorize(formattedLogLevel, logLevel);
     return `${pidMessage}${this.getTimestamp()} ${formattedLogLevel} ${contextMessage}${output}${timestampDiff}\n`;
+  }
+
+  protected stringifyMessage(message: unknown, logLevel: LogLevel) {
+    return isPlainObject(message)
+      ? `${this.colorize('Object:', logLevel)}\n${JSON.stringify(
+          message,
+          (key, value) =>
+            typeof value === 'bigint' ? value.toString() : value,
+          2,
+        )}\n`
+      : this.colorize(message as string, logLevel);
+  }
+
+  protected colorize(message: string, logLevel: LogLevel) {
+    const color = this.getColorByLogLevel(logLevel);
+    return color(message);
   }
 
   protected printStackTrace(stack: string) {
