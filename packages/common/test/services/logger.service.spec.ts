@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import 'reflect-metadata';
 import * as sinon from 'sinon';
-import { ConsoleLogger, Logger, LoggerService } from '../../services';
+import { ConsoleLogger, Logger, LoggerService, LogLevel } from '../../services';
 
 describe('Logger', () => {
   describe('[static methods]', () => {
@@ -526,17 +526,46 @@ describe('Logger', () => {
     beforeEach(() => {
       processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
     });
+    afterEach(() => {
+      processStdoutWriteSpy.restore();
+    });
 
     it('should support custom formatter', () => {
       class CustomConsoleLogger extends ConsoleLogger {
         protected formatMessage(
+          logLevel: LogLevel,
+          message: unknown,
           pidMessage: string,
           formattedLogLevel: string,
           contextMessage: string,
-          output: string,
           timestampDiff: string,
         ) {
-          return `Prefix: ${output}`;
+          return `Prefix: ${message}`;
+        }
+      }
+
+      const consoleLogger = new CustomConsoleLogger();
+      consoleLogger.debug('test');
+
+      expect(processStdoutWriteSpy.firstCall.firstArg).to.equal(`Prefix: test`);
+    });
+
+    it('should support custom formatter and colorizer', () => {
+      class CustomConsoleLogger extends ConsoleLogger {
+        protected formatMessage(
+          logLevel: LogLevel,
+          message: unknown,
+          pidMessage: string,
+          formattedLogLevel: string,
+          contextMessage: string,
+          timestampDiff: string,
+        ) {
+          const strMessage = this.stringifyMessage(message, logLevel);
+          return `Prefix: ${strMessage}`;
+        }
+
+        protected colorize(message: string, logLevel: LogLevel): string {
+          return `~~~${message}~~~`;
         }
       }
 
@@ -544,7 +573,7 @@ describe('Logger', () => {
       consoleLogger.debug('test');
 
       expect(processStdoutWriteSpy.firstCall.firstArg).to.equal(
-        `Prefix: \u001b[95mtest\u001b[39m`,
+        `Prefix: ~~~test~~~`,
       );
     });
   });
