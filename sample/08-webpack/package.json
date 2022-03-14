@@ -28,7 +28,7 @@
     "eslint-config-prettier": "8.3.0",
     "eslint-plugin-import": "2.25.4",
     "start-server-webpack-plugin": "2.2.5",
-    "ts-loader": "9.2.6",
+    "ts-loader": "9.2.8",
     "ts-node": "10.4.0",
     "webpack": "5.64.4",
     "webpack-cli": "4.9.1",
