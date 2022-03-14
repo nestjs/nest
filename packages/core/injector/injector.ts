@@ -437,7 +437,12 @@ export class Injector {
       inquirerId,
     );
     if (!instanceHost.isResolved && !instanceWrapper.forwardRef) {
-      await this.loadProvider(instanceWrapper, moduleRef, contextId, inquirer);
+      await this.loadProvider(
+        instanceWrapper,
+        instanceWrapper.host ?? moduleRef,
+        contextId,
+        inquirer,
+      );
     } else if (
       !instanceHost.isResolved &&
       instanceWrapper.forwardRef &&
