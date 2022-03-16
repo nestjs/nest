@@ -25,12 +25,19 @@ import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory'
 import {
   json as bodyParserJson,
   urlencoded as bodyParserUrlencoded,
+  OptionsJson,
 } from 'body-parser';
 import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
+
+declare module 'express' {
+  export interface Request {
+    rawBody?: Buffer;
+  }
+}
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
@@ -175,9 +182,26 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     this.httpServer = http.createServer(this.getInstance());
   }
 
-  public registerParserMiddleware() {
+  public registerParserMiddleware(prefix?: string);
+  public registerParserMiddleware(options?: NestApplicationOptions);
+  public registerParserMiddleware(
+    prefixOrOptions?: string | NestApplicationOptions,
+  ) {
+    let bodyParserJsonOptions: OptionsJson;
+    if (isObject(prefixOrOptions) && prefixOrOptions.rawBody) {
+      bodyParserJsonOptions = {
+        verify: (req, _res, buffer) => {
+          if (Buffer.isBuffer(buffer)) {
+            req['rawBody'] = buffer;
+          }
+
+          return true;
+        },
+      };
+    }
+
     const parserMiddleware = {
-      jsonParser: bodyParserJson(),
+      jsonParser: bodyParserJson(bodyParserJsonOptions),
       urlencodedParser: bodyParserUrlencoded({ extended: true }),
     };
     Object.keys(parserMiddleware)
