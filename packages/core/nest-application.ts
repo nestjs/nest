@@ -178,7 +178,7 @@ export class NestApplication
   }
 
   public registerParserMiddleware() {
-    this.httpAdapter.registerParserMiddleware();
+    this.httpAdapter.registerParserMiddleware(this.appOptions);
   }
 
   public async registerRouter() {
