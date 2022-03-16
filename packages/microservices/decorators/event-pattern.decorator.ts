@@ -1,4 +1,9 @@
-import { isObject, isNumber, isNil } from '@nestjs/common/utils/shared.utils';
+import {
+  isObject,
+  isNumber,
+  isNil,
+  isSymbol,
+} from '@nestjs/common/utils/shared.utils';
 import {
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
@@ -13,26 +18,29 @@ import { Transport } from '../enums';
  */
 export const EventPattern: {
   <T = string>(metadata?: T): MethodDecorator;
-  <T = string>(metadata?: T, transport?: Transport): MethodDecorator;
+  <T = string>(metadata?: T, transport?: Transport | symbol): MethodDecorator;
   <T = string>(metadata?: T, extras?: Record<string, any>): MethodDecorator;
   <T = string>(
     metadata?: T,
-    transport?: Transport,
+    transport?: Transport | symbol,
     extras?: Record<string, any>,
   ): MethodDecorator;
 } = <T = string>(
   metadata?: T,
-  transportOrExtras?: Transport | Record<string, any>,
+  transportOrExtras?: Transport | symbol | Record<string, any>,
   maybeExtras?: Record<string, any>,
 ): MethodDecorator => {
-  let transport: Transport;
+  let transport: Transport | symbol;
   let extras: Record<string, any>;
-  if (isNumber(transportOrExtras) && isNil(maybeExtras)) {
+  if (
+    (isNumber(transportOrExtras) || isSymbol(transportOrExtras)) &&
+    isNil(maybeExtras)
+  ) {
     transport = transportOrExtras;
   } else if (isObject(transportOrExtras) && isNil(maybeExtras)) {
     extras = transportOrExtras;
   } else {
-    transport = transportOrExtras as Transport;
+    transport = transportOrExtras as Transport | symbol;
     extras = maybeExtras;
   }
   return (
