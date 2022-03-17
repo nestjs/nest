@@ -1,6 +1,7 @@
 import {
   HttpStatus,
   Logger,
+  NestApplicationOptions,
   RequestMethod,
   StreamableFile,
   VersioningOptions,
@@ -12,10 +13,15 @@ import {
   CorsOptionsDelegate,
 } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isObject,
+  isString,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   fastify,
+  FastifyBodyParser,
   FastifyInstance,
   FastifyLoggerInstance,
   FastifyPluginAsync,
@@ -42,6 +48,12 @@ import {
   FastifyStaticOptions,
   PointOfViewOptions,
 } from '../interfaces/external';
+
+declare module 'fastify' {
+  export interface FastifyRequest {
+    rawBody?: Buffer;
+  }
+}
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -427,11 +439,39 @@ export class FastifyAdapter<
     this.register(import('fastify-cors'), options);
   }
 
-  public registerParserMiddleware() {
+  public registerParserMiddleware(prefix?: string);
+  public registerParserMiddleware(options?: NestApplicationOptions);
+  public registerParserMiddleware(
+    prefixOrOptions?: string | NestApplicationOptions,
+  ) {
     if (this._isParserRegistered) {
       return;
     }
     this.register(import('fastify-formbody'));
+
+    if (isObject(prefixOrOptions) && prefixOrOptions.rawBody) {
+      this.getInstance().addContentTypeParser<string>(
+        'application/json',
+        { parseAs: 'string' },
+        (req, body, done) => {
+          req['rawBody'] = Buffer.from(body);
+
+          const { onProtoPoisoning, onConstructorPoisoning } =
+            this.instance.initialConfig;
+          const defaultJsonParser = this.instance.getDefaultJsonParser(
+            onProtoPoisoning || 'error',
+            onConstructorPoisoning || 'error',
+          ) as FastifyBodyParser<
+            string,
+            TServer,
+            TRawRequest,
+            RequestGenericInterface
+          >;
+          defaultJsonParser(req, body, done);
+        },
+      );
+    }
+
     this._isParserRegistered = true;
   }
 
