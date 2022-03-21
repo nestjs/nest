@@ -19,7 +19,7 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@graphql-tools/utils": "8.6.1",
+    "@graphql-tools/utils": "8.6.3",
     "@nestjs/apollo": "10.0.0",
     "@nestjs/common": "8.2.3",
     "@nestjs/core": "8.2.3",
