@@ -47,7 +47,7 @@ describe('MQTT transport', () => {
       .post('/?command=streamSum')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
-  });
+  }).timeout(5000);
 
   it(`/POST (concurrent)`, function () {
     return request(server)
@@ -72,7 +72,7 @@ describe('MQTT transport', () => {
       .post('/stream')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
-  });
+  }).timeout(5000);
 
   it(`/POST (event notification)`, done => {
     request(server)
@@ -120,6 +120,44 @@ describe('MQTT transport', () => {
   it(`/POST (wildcard MESSAGE +)`, () => {
     return request(server)
       .post('/wildcard-message2')
+      .send([1, 2, 3, 4, 5])
+      .expect(201, '15');
+  });
+
+  it(`/POST (shared wildcard EVENT #)`, done => {
+    request(server)
+      .post('/shared-wildcard-event')
+      .send([1, 2, 3, 4, 5])
+      .end(() => {
+        setTimeout(() => {
+          expect(MqttController.IS_SHARED_WILDCARD_EVENT_RECEIVED).to.be.true;
+          done();
+        }, 1000);
+      });
+  });
+
+  it(`/POST (shared wildcard MESSAGE #)`, () => {
+    return request(server)
+      .post('/shared-wildcard-message')
+      .send([1, 2, 3, 4, 5])
+      .expect(201, '15');
+  });
+
+  it(`/POST (shared wildcard EVENT +)`, done => {
+    request(server)
+      .post('/shared-wildcard-event2')
+      .send([1, 2, 3, 4, 5])
+      .end(() => {
+        setTimeout(() => {
+          expect(MqttController.IS_SHARED_WILDCARD2_EVENT_RECEIVED).to.be.true;
+          done();
+        }, 1000);
+      });
+  });
+
+  it(`/POST (shared wildcard MESSAGE +)`, () => {
+    return request(server)
+      .post('/shared-wildcard-message2')
       .send([1, 2, 3, 4, 5])
       .expect(201, '15');
   });

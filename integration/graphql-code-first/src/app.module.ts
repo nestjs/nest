@@ -1,3 +1,4 @@
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
@@ -6,7 +7,8 @@ import { RecipesModule } from './recipes/recipes.module';
 @Module({
   imports: [
     RecipesModule,
-    GraphQLModule.forRoot({
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
       debug: false,
       installSubscriptionHandlers: true,
       autoSchemaFile: join(

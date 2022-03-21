@@ -1,10 +1,10 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get, Post, Req } from '@nestjs/common';
 
 @Controller()
 export class AppController {
   @Get('hello/:name')
-  getHello(): string {
-    return 'hello';
+  getHello(@Req() req): string {
+    return 'Hello: ' + req.extras?.data;
   }
 
   @Get('health')

@@ -48,9 +48,14 @@ describe('GRPC transport', () => {
     );
   });
 
-  it(`GRPC Sending and Receiving HTTP POST`, () => {
-    return request(server)
+  it(`GRPC Sending and Receiving HTTP POST`, async () => {
+    await request(server)
       .post('/sum')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, { result: 15 });
+
+    await request(server)
+      .post('/upperMethod/sum')
       .send([1, 2, 3, 4, 5])
       .expect(200, { result: 15 });
   });

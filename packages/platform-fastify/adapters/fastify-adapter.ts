@@ -12,7 +12,7 @@ import {
   CorsOptionsDelegate,
 } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isUndefined, isString } from '@nestjs/common/utils/shared.utils';
+import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   fastify,
@@ -115,23 +115,27 @@ export class FastifyAdapter<
       }
     },
     storage() {
-      const versions = new Map();
+      const versions = new Map<string, unknown>();
       return {
         get(version: string | Array<string>) {
+          if (Array.isArray(version)) {
+            return versions.get(version.find(v => versions.has(v))) || null;
+          }
           return versions.get(version) || null;
         },
-        set(
-          versionOrVersions: string | Array<string>,
-          store: Map<string, any>,
-        ) {
-          const storeVersionConstraint = version =>
+        set(versionOrVersions: string | Array<string>, store: unknown) {
+          const storeVersionConstraint = (version: string) =>
             versions.set(version, store);
           if (Array.isArray(versionOrVersions))
             versionOrVersions.forEach(storeVersionConstraint);
           else storeVersionConstraint(versionOrVersions);
         },
         del(version: string | Array<string>) {
-          versions.delete(version);
+          if (Array.isArray(version)) {
+            version.forEach(v => versions.delete(v));
+          } else {
+            versions.delete(version);
+          }
         },
         empty() {
           versions.clear();
@@ -166,6 +170,10 @@ export class FastifyAdapter<
         if (customHeaderVersionParameter) {
           return customHeaderVersionParameter;
         }
+      }
+      // Custom Versioning Handler
+      else if (this.versioningOptions.type === VersioningType.CUSTOM) {
+        return this.versioningOptions.extractor(req);
       }
       return undefined;
     },
@@ -282,11 +290,23 @@ export class FastifyAdapter<
     }
     if (body instanceof StreamableFile) {
       const streamHeaders = body.getHeaders();
-      if (fastifyReply.getHeader('Content-Type') === undefined) {
+      if (
+        fastifyReply.getHeader('Content-Type') === undefined &&
+        streamHeaders.type !== undefined
+      ) {
         fastifyReply.header('Content-Type', streamHeaders.type);
       }
-      if (fastifyReply.getHeader('Content-Disposition') === undefined) {
+      if (
+        fastifyReply.getHeader('Content-Disposition') === undefined &&
+        streamHeaders.disposition !== undefined
+      ) {
         fastifyReply.header('Content-Disposition', streamHeaders.disposition);
+      }
+      if (
+        fastifyReply.getHeader('Content-Length') === undefined &&
+        streamHeaders.length !== undefined
+      ) {
+        fastifyReply.header('Content-Length', streamHeaders.length);
       }
       body = body.getStream();
     }
@@ -422,9 +442,12 @@ export class FastifyAdapter<
       await this.registerMiddie();
     }
     return (path: string, callback: Function) => {
-      const normalizedPath = path.endsWith('/*')
+      let normalizedPath = path.endsWith('/*')
         ? `${path.slice(0, -1)}(.*)`
         : path;
+
+      // Fallback to "(.*)" to support plugins like GraphQL
+      normalizedPath = normalizedPath === '/(.*)' ? '(.*)' : normalizedPath;
 
       // The following type assertion is valid as we use import('middie') rather than require('middie')
       // ref https://github.com/fastify/middie/pull/55

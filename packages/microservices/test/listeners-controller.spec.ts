@@ -21,8 +21,11 @@ describe('ListenersController', () => {
     metadataExplorer: ListenerMetadataExplorer,
     server: any,
     serverTCP: any,
+    serverCustom: any,
+    customTransport: Symbol,
     addSpy: sinon.SinonSpy,
     addSpyTCP: sinon.SinonSpy,
+    addSpyCustom: sinon.SinonSpy,
     proxySpy: sinon.SinonSpy,
     container: NestContainer,
     injector: Injector,
@@ -60,6 +63,12 @@ describe('ListenersController', () => {
     serverTCP = {
       addHandler: addSpyTCP,
       transportId: Transport.TCP,
+    };
+    addSpyCustom = sinon.spy();
+    customTransport = Symbol();
+    serverCustom = {
+      addHandler: addSpyCustom,
+      transportId: customTransport,
     };
   });
 
@@ -117,6 +126,36 @@ describe('ListenersController', () => {
       explorer.expects('explore').returns(handlers);
       instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
       expect(addSpyTCP.calledTwice).to.be.true;
+    });
+    it(`should call "addHandler" method of server with custom transportID for pattern handler with the same custom token`, () => {
+      const serverHandlers = [
+        {
+          pattern: { cmd: 'test' },
+          targetCallback: 'tt',
+          transport: customTransport,
+        },
+        { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
+      ];
+
+      explorer.expects('explore').returns(serverHandlers);
+      instance.registerPatternHandlers(new InstanceWrapper(), serverCustom, '');
+      expect(addSpyCustom.calledOnce).to.be.true;
+    });
+    it(`should call "addHandler" method of server with extras data`, () => {
+      const serverHandlers = [
+        { pattern: 'test', targetCallback: 'tt', extras: { param: 'value' } },
+      ];
+      explorer.expects('explore').returns(serverHandlers);
+      instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
+      expect(addSpyTCP.calledOnce).to.be.true;
+      expect(
+        addSpyTCP.calledWith(
+          sinon.match.any,
+          sinon.match.any,
+          sinon.match.any,
+          sinon.match({ param: 'value' }),
+        ),
+      ).to.be.true;
     });
     describe('when request scoped', () => {
       it(`should call "addHandler" with deferred proxy`, () => {

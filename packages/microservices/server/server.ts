@@ -44,9 +44,11 @@ export abstract class Server {
     pattern: any,
     callback: MessageHandler,
     isEventHandler = false,
+    extras: Record<string, any> = {},
   ) {
     const normalizedPattern = this.normalizePattern(pattern);
     callback.isEventHandler = isEventHandler;
+    callback.extras = extras;
 
     if (this.messageHandlers.has(normalizedPattern) && isEventHandler) {
       const headRef = this.messageHandlers.get(normalizedPattern);

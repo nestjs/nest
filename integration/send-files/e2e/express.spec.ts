@@ -9,7 +9,8 @@ import { join } from 'path';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 
-const readmeString = readFileSync(join(process.cwd(), 'Readme.md')).toString();
+const readme = readFileSync(join(process.cwd(), 'Readme.md'));
+const readmeString = readme.toString();
 
 describe('Express FileSend', () => {
   let app: NestExpressApplication;
@@ -53,12 +54,13 @@ describe('Express FileSend', () => {
         expect(res.body.toString()).to.be.eq(readmeString);
       });
   });
-  it('should return a file with correct content type and disposition', async () => {
+  it('should return a file with correct headers', async () => {
     return request(app.getHttpServer())
       .get('/file/with/headers')
       .expect(200)
       .expect('Content-Type', 'text/markdown')
       .expect('Content-Disposition', 'attachment; filename="Readme.md"')
+      .expect('Content-Length', readme.byteLength.toString())
       .expect(res => {
         expect(res.text).to.be.eq(readmeString);
       });
