@@ -107,6 +107,7 @@ export class ClientTCP extends ClientProxy {
   public handleClose() {
     this.isConnected = false;
     this.socket = null;
+    this.connection = undefined;
   }
 
   protected publish(
