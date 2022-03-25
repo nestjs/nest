@@ -1,4 +1,3 @@
-import { Type } from '../../interfaces';
 import { ConfigurableModuleAsyncOptions } from './configurable-module-async-options.interface';
 import { ConfigurableModuleCls } from './configurable-module-cls.interface';
 
@@ -39,19 +38,6 @@ export interface ConfigurableModuleHost<
    * providers registered within the host module.
    */
   MODULE_OPTIONS_TOKEN: string | symbol;
-  /**
-   * Module initializer function that must be called within the body of the host module class.
-   * The host module class reference must be passed in as an argument.
-   *
-   * @example
-   * ```typescript
-   * @Module({})
-   * class IntegrationModule extends ConfigurableModuleCls {
-   *  static module = initializer(IntegrationModule);
-   * }
-   * ```
-   */
-  initialize: (moduleClass: Type) => void;
   /**
    * Can be used to auto-infer the compound "async module options" type.
    * Note: this property is not supposed to be used as a value.

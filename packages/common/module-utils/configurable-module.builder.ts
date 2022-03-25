@@ -1,4 +1,4 @@
-import { DynamicModule, Provider, Type } from '../interfaces';
+import { DynamicModule, Provider } from '../interfaces';
 import { Logger } from '../services/logger.service';
 import { randomStringGenerator } from '../utils/random-string-generator.util';
 import {
@@ -14,12 +14,6 @@ import {
 } from './interfaces';
 import { ConfigurableModuleHost } from './interfaces/configurable-module-host.interface';
 import { generateOptionsInjectionToken } from './utils/generate-options-injection-token.util';
-
-type TargetModuleClsHost = {
-  moduleClass: Type;
-};
-
-const EMPTY_CLASS = class {};
 
 /**
  * @publicApi
@@ -180,14 +174,9 @@ export class ConfigurableModuleBuilder<
       : generateOptionsInjectionToken();
     this.transformModuleDefinition ??= definition => definition;
 
-    const targetModuleClsHost: TargetModuleClsHost = {
-      moduleClass: EMPTY_CLASS,
-    };
     return {
       ConfigurableModuleClass:
-        this.createConfigurableModuleCls<ModuleOptions>(targetModuleClsHost),
-      initialize: (moduleClass: Type) =>
-        (targetModuleClsHost.moduleClass = moduleClass),
+        this.createConfigurableModuleCls<ModuleOptions>(),
       MODULE_OPTIONS_TOKEN: this.options.optionsInjectionToken,
       ASYNC_OPTIONS_TYPE: this.createTypeProxy('ASYNC_OPTIONS_TYPE'),
       OPTIONS_TYPE: this.createTypeProxy('OPTIONS_TYPE'),
@@ -203,9 +192,7 @@ export class ConfigurableModuleBuilder<
     return `${moduleNameInSnakeCase}_MODULE_OPTIONS`;
   }
 
-  private createConfigurableModuleCls<ModuleOptions>(
-    targetModuleClsHost: TargetModuleClsHost,
-  ): ConfigurableModuleCls<
+  private createConfigurableModuleCls<ModuleOptions>(): ConfigurableModuleCls<
     ModuleOptions,
     StaticMethodKey,
     FactoryClassMethodKey
@@ -218,8 +205,6 @@ export class ConfigurableModuleBuilder<
       static [self.staticMethodKey](
         options: ModuleOptions & ExtraModuleDefinitionOptions,
       ): DynamicModule {
-        this.assertInitialize();
-
         const providers = [
           {
             provide: self.options.optionsInjectionToken,
@@ -234,7 +219,7 @@ export class ConfigurableModuleBuilder<
         }
         return self.transformModuleDefinition(
           {
-            module: targetModuleClsHost.moduleClass,
+            module: this,
             providers,
           },
           options,
@@ -245,8 +230,6 @@ export class ConfigurableModuleBuilder<
         options: ConfigurableModuleAsyncOptions<ModuleOptions> &
           ExtraModuleDefinitionOptions,
       ): DynamicModule {
-        this.assertInitialize();
-
         const providers = this.createAsyncProviders(options);
         if (self.options.alwaysTransient) {
           providers.push({
@@ -256,30 +239,12 @@ export class ConfigurableModuleBuilder<
         }
         return self.transformModuleDefinition(
           {
-            module: targetModuleClsHost.moduleClass,
+            module: this,
             imports: options.imports || [],
             providers,
           },
           options,
         );
-      }
-
-      private static assertInitialize() {
-        if (
-          !targetModuleClsHost.moduleClass ||
-          targetModuleClsHost.moduleClass === (EMPTY_CLASS as any)
-        ) {
-          const errorMessage = `Configurable module has not been initialized. "ConfigurableModuleBuilder.build()" returns the "initialize()" function that must be called within the body of the class and its returned value must be assigned to a static class member.
-
-Example: 
-
-@Module({})
-class CoreModule extends ConfigurableModuleClass {
-  static module = initialize(CoreModule);
-}`;
-          self.logger.error(errorMessage);
-          throw new Error(errorMessage);
-        }
       }
 
       private static omitExtras(

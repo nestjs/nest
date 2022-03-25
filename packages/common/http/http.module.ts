@@ -5,7 +5,6 @@ import { AXIOS_INSTANCE_TOKEN } from './http.constants';
 import {
   ASYNC_OPTIONS_TYPE,
   ConfigurableModuleClass,
-  initialize,
   MODULE_OPTIONS_TOKEN,
 } from './http.module-definition';
 import { HttpService } from './http.service';
@@ -25,8 +24,6 @@ import { HttpModuleOptions } from './interfaces';
   exports: [HttpService],
 })
 export class HttpModule extends ConfigurableModuleClass {
-  static module = initialize(HttpModule);
-
   static registerAsync(options: typeof ASYNC_OPTIONS_TYPE): DynamicModule {
     return {
       ...super.registerAsync(options),

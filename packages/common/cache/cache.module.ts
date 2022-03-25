@@ -1,7 +1,7 @@
 import { Module } from '../decorators';
 import { DynamicModule } from '../interfaces';
 import { CACHE_MANAGER } from './cache.constants';
-import { ConfigurableModuleClass, initialize } from './cache.module-definition';
+import { ConfigurableModuleClass } from './cache.module-definition';
 import { createCacheManager } from './cache.providers';
 import {
   CacheModuleAsyncOptions,
@@ -20,8 +20,6 @@ import {
   exports: [CACHE_MANAGER],
 })
 export class CacheModule extends ConfigurableModuleClass {
-  static module = initialize(CacheModule);
-
   /**
    * Configure the cache manager statically.
    *

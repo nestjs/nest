@@ -6,7 +6,6 @@ export const {
   ConfigurableModuleClass,
   MODULE_OPTIONS_TOKEN,
   ASYNC_OPTIONS_TYPE,
-  initialize,
 } = new ConfigurableModuleBuilder<HttpModuleOptions>({
   moduleName: 'Http',
   alwaysTransient: true,
