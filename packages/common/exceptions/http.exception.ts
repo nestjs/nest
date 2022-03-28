@@ -4,7 +4,7 @@ import { isObject, isString } from '../utils/shared.utils';
  * Defines the base Nest HTTP exception, which is handled by the default
  * Exceptions Handler.
  *
- * @see [Base Exceptions](https://docs.nestjs.com/exception-filters#base-exceptions)
+ * @see [Built-in HTTP exceptions](https://docs.nestjs.com/exception-filters#built-in-http-exceptions)
  *
  * @publicApi
  */
