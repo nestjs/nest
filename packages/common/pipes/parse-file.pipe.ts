@@ -26,8 +26,7 @@ export class ParseFile implements PipeTransform<any> {
   protected exceptionFactory: (error: string) => any;
   protected validationOptions: FileValidationOptions;
 
-  constructor(@Optional() options?: ParseFileOptions) {
-    options = options || {};
+  constructor(@Optional() options?: ParseFileOptions = {} ) {
     const {
       exceptionFactory,
       errorHttpStatusCode = HttpStatus.BAD_REQUEST,
