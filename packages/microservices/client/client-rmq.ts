@@ -119,7 +119,7 @@ export class ClientRMQ extends ClientProxy {
       );
     const disconnect$ = eventToError(DISCONNECT_EVENT);
 
-    const urls = this.getOptionsProp(this.options, 'urls');
+    const urls = this.getOptionsProp(this.options, 'urls', []);
     const connectFailed$ = eventToError(CONNECT_FAILED_EVENT).pipe(
       retryWhen(e =>
         e.pipe(
