@@ -53,7 +53,7 @@
     "axios": "0.26.1",
     "class-transformer": "0.5.1",
     "class-validator": "0.13.2",
-    "cli-color": "2.0.1",
+    "cli-color": "2.0.2",
     "cors": "2.8.5",
     "express": "4.17.3",
     "fast-json-stringify": "3.0.3",
