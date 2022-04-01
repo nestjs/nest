@@ -110,8 +110,7 @@ export abstract class AbstractHttpAdapter<
   abstract setErrorHandler(handler: Function, prefix?: string);
   abstract setNotFoundHandler(handler: Function, prefix?: string);
   abstract setHeader(response, name: string, value: string);
-  abstract registerParserMiddleware(prefix?: string);
-  abstract registerParserMiddleware(options?: NestApplicationOptions);
+  abstract registerParserMiddleware(prefix?: string, rawBody?: boolean);
   abstract enableCors(
     options: CorsOptions | CorsOptionsDelegate<TRequest>,
     prefix?: string,

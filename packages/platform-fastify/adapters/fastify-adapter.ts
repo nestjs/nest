@@ -439,17 +439,13 @@ export class FastifyAdapter<
     this.register(import('fastify-cors'), options);
   }
 
-  public registerParserMiddleware(prefix?: string);
-  public registerParserMiddleware(options?: NestApplicationOptions);
-  public registerParserMiddleware(
-    prefixOrOptions?: string | NestApplicationOptions,
-  ) {
+  public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
     if (this._isParserRegistered) {
       return;
     }
     this.register(import('fastify-formbody'));
 
-    if (isObject(prefixOrOptions) && prefixOrOptions.rawBody) {
+    if (rawBody === true) {
       this.getInstance().addContentTypeParser<string>(
         'application/json',
         { parseAs: 'string' },

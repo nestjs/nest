@@ -182,13 +182,9 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     this.httpServer = http.createServer(this.getInstance());
   }
 
-  public registerParserMiddleware(prefix?: string);
-  public registerParserMiddleware(options?: NestApplicationOptions);
-  public registerParserMiddleware(
-    prefixOrOptions?: string | NestApplicationOptions,
-  ) {
+  public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
     let bodyParserJsonOptions: OptionsJson;
-    if (isObject(prefixOrOptions) && prefixOrOptions.rawBody) {
+    if (rawBody === true) {
       bodyParserJsonOptions = {
         verify: (req, _res, buffer) => {
           if (Buffer.isBuffer(buffer)) {
