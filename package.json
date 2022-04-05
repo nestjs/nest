@@ -70,7 +70,7 @@
   },
   "devDependencies": {
     "@codechecks/client": "0.1.12",
-    "@commitlint/cli": "16.2.1",
+    "@commitlint/cli": "16.2.3",
     "@commitlint/config-angular": "16.2.3",
     "@grpc/grpc-js": "1.6.1",
     "@grpc/proto-loader": "0.6.9",
