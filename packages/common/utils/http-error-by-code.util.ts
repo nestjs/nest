@@ -8,6 +8,7 @@ import {
   GoneException,
   ImATeapotException,
   InternalServerErrorException,
+  LockedException,
   MethodNotAllowedException,
   NotAcceptableException,
   NotFoundException,
@@ -41,6 +42,7 @@ export type ErrorHttpStatusCode =
   | HttpStatus.SERVICE_UNAVAILABLE
   | HttpStatus.UNAUTHORIZED
   | HttpStatus.UNPROCESSABLE_ENTITY
+  | HttpStatus.LOCKED
   | HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
 export const HttpErrorByCode: Record<ErrorHttpStatusCode, Type<unknown>> = {
@@ -63,4 +65,5 @@ export const HttpErrorByCode: Record<ErrorHttpStatusCode, Type<unknown>> = {
   [HttpStatus.UNAUTHORIZED]: UnauthorizedException,
   [HttpStatus.UNPROCESSABLE_ENTITY]: UnprocessableEntityException,
   [HttpStatus.UNSUPPORTED_MEDIA_TYPE]: UnsupportedMediaTypeException,
+  [HttpStatus.LOCKED]: LockedException,
 };
