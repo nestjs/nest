@@ -3,7 +3,7 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { EventEmitter } from 'events';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
-import { first, map, share, switchMap } from 'rxjs/operators';
+import { first, map, retryWhen, scan, share, switchMap } from 'rxjs/operators';
 import {
   CONNECT_FAILED_EVENT,
   DISCONNECTED_RMQ_MESSAGE,
@@ -118,7 +118,20 @@ export class ClientRMQ extends ClientProxy {
         }),
       );
     const disconnect$ = eventToError(DISCONNECT_EVENT);
-    const connectFailed$ = eventToError(CONNECT_FAILED_EVENT);
+
+    const urls = this.getOptionsProp(this.options, 'urls', []);
+    const connectFailed$ = eventToError(CONNECT_FAILED_EVENT).pipe(
+      retryWhen(e =>
+        e.pipe(
+          scan((errorCount, error: any) => {
+            if (urls.indexOf(error.url) >= urls.length - 1) {
+              throw error;
+            }
+            return errorCount + 1;
+          }, 0),
+        ),
+      ),
+    );
     return merge(source$, disconnect$, connectFailed$).pipe(first());
   }
 
