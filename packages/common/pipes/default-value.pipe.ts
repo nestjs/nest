@@ -16,7 +16,7 @@ import { isNil, isNumber } from '../utils/shared.utils';
 export class DefaultValuePipe<T = any, R = any>
   implements PipeTransform<T, T | R>
 {
-  constructor(private readonly defaultValue: R) {}
+  constructor(protected readonly defaultValue: R) {}
 
   transform(value?: T, _metadata?: ArgumentMetadata): T | R {
     if (
