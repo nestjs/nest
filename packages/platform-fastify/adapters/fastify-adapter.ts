@@ -100,7 +100,7 @@ export class FastifyAdapter<
     TRawResponse
   > = FastifyInstance<TServer, TRawRequest, TRawResponse>,
 > extends AbstractHttpAdapter<TServer, TRequest, TReply> {
-  protected readonly instance: TInstance;
+  protected override readonly instance: TInstance;
 
   private _isParserRegistered: boolean;
   private isMiddieRegistered: boolean;
@@ -206,48 +206,51 @@ export class FastifyAdapter<
     this.setInstance(instance);
   }
 
-  public async init() {
+  public override async init() {
     if (this.isMiddieRegistered) {
       return;
     }
     await this.registerMiddie();
   }
 
-  public listen(port: string | number, callback?: () => void): void;
-  public listen(
+  public override listen(port: string | number, callback?: () => void): void;
+  public override listen(
     port: string | number,
     hostname: string,
     callback?: () => void,
   ): void;
-  public listen(port: string | number, ...args: any[]): Promise<string> {
+  public override listen(
+    port: string | number,
+    ...args: any[]
+  ): Promise<string> {
     return this.instance.listen(port, ...args);
   }
 
-  public get(...args: any[]) {
+  public override get(...args: any[]) {
     return this.injectConstraintsIfVersioned('get', ...args);
   }
 
-  public post(...args: any[]) {
+  public override post(...args: any[]) {
     return this.injectConstraintsIfVersioned('post', ...args);
   }
 
-  public head(...args: any[]) {
+  public override head(...args: any[]) {
     return this.injectConstraintsIfVersioned('head', ...args);
   }
 
-  public delete(...args: any[]) {
+  public override delete(...args: any[]) {
     return this.injectConstraintsIfVersioned('delete', ...args);
   }
 
-  public put(...args: any[]) {
+  public override put(...args: any[]) {
     return this.injectConstraintsIfVersioned('put', ...args);
   }
 
-  public patch(...args: any[]) {
+  public override patch(...args: any[]) {
     return this.injectConstraintsIfVersioned('patch', ...args);
   }
 
-  public options(...args: any[]) {
+  public override options(...args: any[]) {
     return this.injectConstraintsIfVersioned('options', ...args);
   }
 
@@ -264,7 +267,7 @@ export class FastifyAdapter<
     return versionedRoute;
   }
 
-  public reply(
+  public override reply(
     response: TRawResponse | TReply,
     body: any,
     statusCode?: number,
@@ -313,7 +316,7 @@ export class FastifyAdapter<
     return fastifyReply.send(body);
   }
 
-  public status(response: TRawResponse | TReply, statusCode: number) {
+  public override status(response: TRawResponse | TReply, statusCode: number) {
     if (this.isNativeResponse(response)) {
       response.statusCode = statusCode;
       return response;
@@ -321,7 +324,7 @@ export class FastifyAdapter<
     return (response as TReply).code(statusCode);
   }
 
-  public render(
+  public override render(
     response: TReply & { view: Function },
     view: string,
     options: any,
@@ -329,24 +332,26 @@ export class FastifyAdapter<
     return response && response.view(view, options);
   }
 
-  public redirect(response: TReply, statusCode: number, url: string) {
+  public override redirect(response: TReply, statusCode: number, url: string) {
     const code = statusCode ?? HttpStatus.FOUND;
     return response.status(code).redirect(url);
   }
 
-  public setErrorHandler(handler: Parameters<TInstance['setErrorHandler']>[0]) {
+  public override setErrorHandler(
+    handler: Parameters<TInstance['setErrorHandler']>[0],
+  ) {
     return this.instance.setErrorHandler(handler);
   }
 
-  public setNotFoundHandler(handler: Function) {
+  public override setNotFoundHandler(handler: Function) {
     return this.instance.setNotFoundHandler(handler as any);
   }
 
-  public getHttpServer<T = TServer>(): T {
+  public override getHttpServer<T = TServer>(): T {
     return this.instance.server as unknown as T;
   }
 
-  public getInstance<T = TInstance>(): T {
+  public override getInstance<T = TInstance>(): T {
     return this.instance as unknown as T;
   }
 
@@ -365,7 +370,7 @@ export class FastifyAdapter<
     return this.instance.inject(opts);
   }
 
-  public async close() {
+  public override async close() {
     try {
       return await this.instance.close();
     } catch (err) {
@@ -377,11 +382,11 @@ export class FastifyAdapter<
     }
   }
 
-  public initHttpServer() {
+  public override initHttpServer() {
     this.httpServer = this.instance.server;
   }
 
-  public useStaticAssets(options: FastifyStaticOptions) {
+  public override useStaticAssets(options: FastifyStaticOptions) {
     return this.register(
       loadPackage('fastify-static', 'FastifyAdapter.useStaticAssets()', () =>
         require('fastify-static'),
@@ -390,7 +395,7 @@ export class FastifyAdapter<
     );
   }
 
-  public setViewEngine(options: PointOfViewOptions | string) {
+  public override setViewEngine(options: PointOfViewOptions | string) {
     if (isString(options)) {
       new Logger('FastifyAdapter').error(
         "setViewEngine() doesn't support a string argument.",
@@ -405,29 +410,31 @@ export class FastifyAdapter<
     );
   }
 
-  public setHeader(response: TReply, name: string, value: string) {
+  public override setHeader(response: TReply, name: string, value: string) {
     return response.header(name, value);
   }
 
-  public getRequestHostname(request: TRequest): string {
+  public override getRequestHostname(request: TRequest): string {
     return request.hostname;
   }
 
-  public getRequestMethod(request: TRequest): string {
+  public override getRequestMethod(request: TRequest): string {
     return request.raw ? request.raw.method : request.method;
   }
 
-  public getRequestUrl(request: TRequest): string;
-  public getRequestUrl(request: TRawRequest): string;
-  public getRequestUrl(request: TRequest & TRawRequest): string {
+  public override getRequestUrl(request: TRequest): string;
+  public override getRequestUrl(request: TRawRequest): string;
+  public override getRequestUrl(request: TRequest & TRawRequest): string {
     return this.getRequestOriginalUrl(request.raw || request);
   }
 
-  public enableCors(options: CorsOptions | CorsOptionsDelegate<TRequest>) {
+  public override enableCors(
+    options: CorsOptions | CorsOptionsDelegate<TRequest>,
+  ) {
     this.register(import('fastify-cors'), options);
   }
 
-  public registerParserMiddleware() {
+  public override registerParserMiddleware() {
     if (this._isParserRegistered) {
       return;
     }
@@ -435,7 +442,7 @@ export class FastifyAdapter<
     this._isParserRegistered = true;
   }
 
-  public async createMiddlewareFactory(
+  public override async createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): Promise<(path: string, callback: Function) => any> {
     if (!this.isMiddieRegistered) {
@@ -458,7 +465,7 @@ export class FastifyAdapter<
     };
   }
 
-  public getType(): string {
+  public override getType(): string {
     return 'fastify';
   }
 

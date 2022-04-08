@@ -1,6 +1,7 @@
 {
   "extends": "./../tsconfig.base.json",
   "compilerOptions": {
+    "noImplicitOverride": true,
     "baseUrl": "./"
   },
   "include": ["*.ts", "**/*.ts"]
