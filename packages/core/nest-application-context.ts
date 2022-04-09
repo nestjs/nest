@@ -324,6 +324,7 @@ export class NestApplicationContext implements INestApplicationContext {
       wrapperRef.host,
       collection,
       contextId,
+      wrapperRef,
     );
     if (!instance) {
       throw new UnknownElementException();
