@@ -60,5 +60,5 @@ export function FileFieldsInterceptor(
     }
   }
   const Interceptor = mixin(MixinInterceptor);
-  return Interceptor as Type<NestInterceptor>;
+  return Interceptor;
 }

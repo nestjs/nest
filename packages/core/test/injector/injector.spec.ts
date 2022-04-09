@@ -1,3 +1,4 @@
+import { Optional } from '@nestjs/common';
 import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
@@ -39,25 +40,28 @@ describe('Injector', () => {
       moduleDeps = new Module(DependencyTwo, new NestContainer());
       mainTest = new InstanceWrapper({
         name: 'MainTest',
+        token: 'MainTest',
         metatype: MainTest,
         instance: Object.create(MainTest.prototype),
         isResolved: false,
       });
       depOne = new InstanceWrapper({
-        name: 'DependencyOne',
+        name: DependencyOne,
+        token: DependencyOne,
         metatype: DependencyOne,
         instance: Object.create(DependencyOne.prototype),
         isResolved: false,
       });
       depTwo = new InstanceWrapper({
-        name: 'DependencyTwo',
+        name: DependencyTwo,
+        token: DependencyTwo,
         metatype: DependencyTwo,
         instance: Object.create(DependencyOne.prototype),
         isResolved: false,
       });
       moduleDeps.providers.set('MainTest', mainTest);
-      moduleDeps.providers.set('DependencyOne', depOne);
-      moduleDeps.providers.set('DependencyTwo', depTwo);
+      moduleDeps.providers.set(DependencyOne, depOne);
+      moduleDeps.providers.set(DependencyTwo, depTwo);
       moduleDeps.providers.set('MainTestResolved', {
         ...mainTest,
         isResolved: true,
@@ -77,9 +81,9 @@ describe('Injector', () => {
 
     it('should set "isResolved" property to true after instance initialization', async () => {
       await injector.loadInstance(mainTest, moduleDeps.providers, moduleDeps);
-      const { isResolved } = (moduleDeps.providers.get(
-        'MainTest',
-      ) as InstanceWrapper<MainTest>).getInstanceByContextId(STATIC_CONTEXT);
+      const { isResolved } = (
+        moduleDeps.providers.get('MainTest') as InstanceWrapper<MainTest>
+      ).getInstanceByContextId(STATIC_CONTEXT);
       expect(isResolved).to.be.true;
     });
 
@@ -110,7 +114,6 @@ describe('Injector', () => {
     });
 
     it('should return undefined when metatype is resolved', async () => {
-      const value = 'test';
       const result = await injector.loadInstance(
         new InstanceWrapper({
           name: 'MainTestResolved',
@@ -136,6 +139,7 @@ describe('Injector', () => {
       moduleDeps = new Module(Test, new NestContainer());
       test = new InstanceWrapper({
         name: 'Test',
+        token: 'Test',
         metatype: Test,
         instance: null,
         isResolved: false,
@@ -372,7 +376,7 @@ describe('Injector', () => {
     it('should return null when there is no related modules', async () => {
       const result = await injector.lookupComponentInImports(
         module as any,
-        null,
+        'testToken',
         new InstanceWrapper(),
       );
       expect(result).to.be.eq(null);
@@ -616,6 +620,7 @@ describe('Injector', () => {
       });
     });
   });
+
   describe('applyProperties', () => {
     describe('when instance is not an object', () => {
       it('should return undefined', () => {
@@ -693,10 +698,10 @@ describe('Injector', () => {
       const module = await container.addModule(moduleCtor, []);
 
       module.addProvider({
-        name: 'TestClass',
         provide: TestClass,
         useClass: TestClass,
       });
+
       const instance = await injector.loadPerContext(
         new TestClass(),
         module,
@@ -797,6 +802,54 @@ describe('Injector', () => {
       );
       await injector.resolveProperties(wrapper, null, null, { id: 2 });
       expect(loadPropertiesMetadataSpy.called).to.be.true;
+    });
+  });
+
+  describe('getClassDependencies', () => {
+    it('should return an array that consists of deps and optional dep ids', async () => {
+      class FixtureDep1 {}
+      class FixtureDep2 {}
+
+      @Injectable()
+      class FixtureClass {
+        constructor(
+          private dep1: FixtureDep1,
+          @Optional() private dep2: FixtureDep2,
+        ) {}
+      }
+
+      const wrapper = new InstanceWrapper({ metatype: FixtureClass });
+      const [dependencies, optionalDependenciesIds] =
+        injector.getClassDependencies(wrapper);
+
+      expect(dependencies).to.deep.eq([FixtureDep1, FixtureDep2]);
+      expect(optionalDependenciesIds).to.deep.eq([1]);
+    });
+  });
+
+  describe('getFactoryProviderDependencies', () => {
+    it('should return an array that consists of deps and optional dep ids', async () => {
+      class FixtureDep1 {}
+      class FixtureDep2 {}
+
+      const wrapper = new InstanceWrapper({
+        inject: [
+          FixtureDep1,
+          { token: FixtureDep2, optional: true },
+          { token: FixtureDep2, optional: false },
+          {} as any,
+        ],
+      });
+      const [dependencies, optionalDependenciesIds] =
+        injector.getFactoryProviderDependencies(wrapper);
+
+      expect(dependencies).to.deep.eq([
+        FixtureDep1,
+        FixtureDep2,
+        FixtureDep2,
+        {},
+      ]);
+      expect(optionalDependenciesIds).to.deep.eq([1]);
     });
   });
 });

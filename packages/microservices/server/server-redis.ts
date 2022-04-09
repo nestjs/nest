@@ -30,7 +30,9 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
   constructor(private readonly options: RedisOptions['options']) {
     super();
-    this.url = this.getOptionsProp(this.options, 'url') || REDIS_DEFAULT_URL;
+    this.url =
+      this.getOptionsProp(options, 'url') ||
+      (!this.getOptionsProp(options, 'host') && REDIS_DEFAULT_URL);
 
     redisPackage = this.loadPackage('redis', ServerRedis.name, () =>
       require('redis'),
@@ -40,13 +42,19 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     this.initializeDeserializer(options);
   }
 
-  public listen(callback: () => void) {
-    this.subClient = this.createRedisClient();
-    this.pubClient = this.createRedisClient();
+  public listen(
+    callback: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ) {
+    try {
+      this.subClient = this.createRedisClient();
+      this.pubClient = this.createRedisClient();
 
-    this.handleError(this.pubClient);
-    this.handleError(this.subClient);
-    this.start(callback);
+      this.handleError(this.pubClient);
+      this.handleError(this.subClient);
+      this.start(callback);
+    } catch (err) {
+      callback(err);
+    }
   }
 
   public start(callback?: () => void) {
@@ -89,7 +97,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     pub: RedisClient,
   ) {
     const rawMessage = this.parseMessage(buffer);
-    const packet = this.deserializer.deserialize(rawMessage, { channel });
+    const packet = await this.deserializer.deserialize(rawMessage, { channel });
     const redisCtx = new RedisContext([channel]);
 
     if (isUndefined((packet as IncomingRequest).id)) {
@@ -113,7 +121,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
     }
     const response$ = this.transformToObservable(
       await handler(packet.data, redisCtx),
-    ) as Observable<any>;
+    );
     response$ && this.send(response$, publish);
   }
 

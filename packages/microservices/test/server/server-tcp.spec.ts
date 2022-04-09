@@ -15,12 +15,9 @@ describe('ServerTCP', () => {
   });
 
   describe('bindHandler', () => {
-    let getSocketInstance;
     const socket = { on: sinon.spy() };
     beforeEach(() => {
-      getSocketInstance = sinon
-        .stub(server, 'getSocketInstance' as any)
-        .callsFake(() => socket);
+      sinon.stub(server, 'getSocketInstance' as any).callsFake(() => socket);
     });
     it('should bind message and error events to handler', () => {
       server.bindHandler(null);
@@ -38,7 +35,7 @@ describe('ServerTCP', () => {
     });
   });
   describe('listen', () => {
-    const serverMock = { listen: sinon.spy() };
+    const serverMock = { listen: sinon.spy(), once: sinon.spy() };
     beforeEach(() => {
       (server as any).server = serverMock;
     });
@@ -66,8 +63,8 @@ describe('ServerTCP', () => {
         sendMessage: sinon.spy(),
       };
     });
-    it('should send NO_MESSAGE_HANDLER error if key does not exists in handlers object', () => {
-      server.handleMessage(socket, msg);
+    it('should send NO_MESSAGE_HANDLER error if key does not exists in handlers object', async () => {
+      await server.handleMessage(socket, msg);
       expect(
         socket.sendMessage.calledWith({
           id: msg.id,
@@ -76,12 +73,12 @@ describe('ServerTCP', () => {
         }),
       ).to.be.true;
     });
-    it('should call handler if exists in handlers object', () => {
+    it('should call handler if exists in handlers object', async () => {
       const handler = sinon.spy();
       (server as any).messageHandlers = objectToMap({
         [msg.pattern]: handler as any,
       });
-      server.handleMessage(socket, msg);
+      await server.handleMessage(socket, msg);
       expect(handler.calledOnce).to.be.true;
     });
   });

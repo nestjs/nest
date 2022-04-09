@@ -7,7 +7,7 @@ export class RouterMethodFactory {
       case RequestMethod.POST:
         return target.post;
       case RequestMethod.ALL:
-        return target.use;
+        return target.all;
       case RequestMethod.DELETE:
         return target.delete;
       case RequestMethod.PUT:
@@ -18,8 +18,10 @@ export class RouterMethodFactory {
         return target.options;
       case RequestMethod.HEAD:
         return target.head;
-      default: {
+      case RequestMethod.GET:
         return target.get;
+      default: {
+        return target.use;
       }
     }
   }

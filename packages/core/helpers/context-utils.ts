@@ -50,12 +50,15 @@ export class ContextUtils {
   }
 
   public getArgumentsLength<T>(keys: string[], metadata: T): number {
-    return Math.max(...keys.map(key => metadata[key].index)) + 1;
+    return keys.length
+      ? Math.max(...keys.map(key => metadata[key].index)) + 1
+      : 0;
   }
 
   public createNullArray(length: number): any[] {
-    // eslint-disable-next-line prefer-spread
-    return Array.apply(null, { length } as any).fill(undefined);
+    const a = new Array(length);
+    for (let i = 0; i < length; ++i) a[i] = undefined;
+    return a;
   }
 
   public mergeParamsMetatypes(

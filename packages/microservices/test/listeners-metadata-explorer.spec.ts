@@ -77,12 +77,13 @@ describe('ListenerMetadataExplorer', () => {
         'targetCallback',
         'pattern',
         'transport',
+        'extras',
       ]);
       expect(metadata.pattern).to.eql(pattern);
     });
   });
   describe('scanForClientHooks', () => {
-    it(`should returns properties with @Client decorator`, () => {
+    it(`should return properties with @Client decorator`, () => {
       const obj = new Test();
       const hooks = [...instance.scanForClientHooks(obj)];
 

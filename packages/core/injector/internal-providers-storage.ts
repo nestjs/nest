@@ -1,5 +1,5 @@
-import { HttpAdapterHost } from '../helpers';
 import { AbstractHttpAdapter } from '../adapters';
+import { HttpAdapterHost } from '../helpers/http-adapter-host';
 
 export class InternalProvidersStorage {
   private readonly _httpAdapterHost = new HttpAdapterHost();

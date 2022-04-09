@@ -6,13 +6,13 @@ import {
 import { DISCONNECT_EVENT } from '@nestjs/websockets/constants';
 import { fromEvent, Observable } from 'rxjs';
 import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
-import * as io from 'socket.io';
+import { Server, ServerOptions, Socket } from 'socket.io';
 
 export class IoAdapter extends AbstractWsAdapter {
   public create(
     port: number,
-    options?: any & { namespace?: string; server?: any },
-  ): any {
+    options?: ServerOptions & { namespace?: string; server?: any },
+  ): Server {
     if (!options) {
       return this.createIOServer(port);
     }
@@ -26,23 +26,23 @@ export class IoAdapter extends AbstractWsAdapter {
 
   public createIOServer(port: number, options?: any): any {
     if (this.httpServer && port === 0) {
-      return io(this.httpServer, options);
+      return new Server(this.httpServer, options);
     }
-    return io(port, options);
+    return new Server(port, options);
   }
 
   public bindMessageHandlers(
-    client: any,
+    socket: Socket,
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {
-    const disconnect$ = fromEvent(client, DISCONNECT_EVENT).pipe(
+    const disconnect$ = fromEvent(socket, DISCONNECT_EVENT).pipe(
       share(),
       first(),
     );
 
     handlers.forEach(({ message, callback }) => {
-      const source$ = fromEvent(client, message).pipe(
+      const source$ = fromEvent(socket, message).pipe(
         mergeMap((payload: any) => {
           const { data, ack } = this.mapPayload(payload);
           return transform(callback(data, ack)).pipe(
@@ -54,17 +54,17 @@ export class IoAdapter extends AbstractWsAdapter {
       );
       source$.subscribe(([response, ack]) => {
         if (response.event) {
-          return client.emit(response.event, response.data);
+          return socket.emit(response.event, response.data);
         }
         isFunction(ack) && ack(response);
       });
     });
   }
 
-  public mapPayload(payload: any): { data: any; ack?: Function } {
+  public mapPayload(payload: unknown): { data: any; ack?: Function } {
     if (!Array.isArray(payload)) {
       if (isFunction(payload)) {
-        return { data: undefined, ack: payload };
+        return { data: undefined, ack: payload as Function };
       }
       return { data: payload };
     }

@@ -11,6 +11,7 @@ export const KAFKA_DEFAULT_BROKER = 'localhost:9092';
 
 export const CONNECT_EVENT = 'connect';
 export const DISCONNECT_EVENT = 'disconnect';
+export const CONNECT_FAILED_EVENT = 'connectFailed';
 export const MESSAGE_EVENT = 'message';
 export const DATA_EVENT = 'data';
 export const ERROR_EVENT = 'error';
@@ -19,6 +20,7 @@ export const SUBSCRIBE = 'subscribe';
 export const CANCEL_EVENT = 'cancelled';
 
 export const PATTERN_METADATA = 'microservices:pattern';
+export const PATTERN_EXTRAS_METADATA = 'microservices:pattern_extras';
 export const TRANSPORT_METADATA = 'microservices:transport';
 export const CLIENT_CONFIGURATION_METADATA = 'microservices:client';
 export const PATTERN_HANDLER_METADATA = 'microservices:handler_type';
@@ -39,8 +41,6 @@ export const GRPC_DEFAULT_PROTO_LOADER = '@grpc/proto-loader';
 export const NO_MESSAGE_HANDLER = `There is no matching message handler defined in the remote service.`;
 export const NO_EVENT_HANDLER = `There is no matching event handler defined in the remote service.`;
 export const DISCONNECTED_RMQ_MESSAGE = `Disconnected from RMQ. Trying to reconnect.`;
-export const GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH = 4 * 1024 * 1024;
-export const GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH = 4 * 1024 * 1024;
 
 export const KAFKA_DEFAULT_CLIENT = 'nestjs-consumer';
 export const KAFKA_DEFAULT_GROUP = 'nestjs-group';
@@ -48,3 +48,7 @@ export const KAFKA_DEFAULT_GROUP = 'nestjs-group';
 export const MQTT_SEPARATOR = '/';
 export const MQTT_WILDCARD_SINGLE = '+';
 export const MQTT_WILDCARD_ALL = '#';
+
+export const ECONNREFUSED = 'ECONNREFUSED';
+export const CONN_ERR = 'CONN_ERR';
+export const EADDRINUSE = 'EADDRINUSE';

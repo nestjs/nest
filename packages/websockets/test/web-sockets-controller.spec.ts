@@ -1,6 +1,6 @@
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { expect } from 'chai';
-import { fromEvent, Observable, of } from 'rxjs';
+import { fromEvent, lastValueFrom, Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { AbstractWsAdapter } from '../adapters/ws-adapter';
@@ -245,7 +245,7 @@ describe('WebSocketsController', () => {
       fn(client);
     });
 
-    it('should returns function', () => {
+    it('should return function', () => {
       expect(
         instance.getConnectionHandler(null, null, null, null, null),
       ).to.be.a('function');
@@ -335,36 +335,38 @@ describe('WebSocketsController', () => {
     });
   });
   describe('pickResult', () => {
-    describe('when defferedResult contains value which', () => {
+    describe('when deferredResult contains value which', () => {
       describe('is a Promise', () => {
-        it('should returns Promise<Observable>', async () => {
+        it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (
-              await instance.pickResult(Promise.resolve(Promise.resolve(value)))
-            ).toPromise(),
+            await lastValueFrom(
+              await instance.pickResult(
+                Promise.resolve(Promise.resolve(value)),
+              ),
+            ),
           ).to.be.eq(100);
         });
       });
 
       describe('is an Observable', () => {
-        it('should returns Promise<Observable>', async () => {
+        it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (
-              await instance.pickResult(Promise.resolve(of(value)))
-            ).toPromise(),
+            await lastValueFrom(
+              await instance.pickResult(Promise.resolve(of(value))),
+            ),
           ).to.be.eq(100);
         });
       });
 
       describe('is a value', () => {
-        it('should returns Promise<Observable>', async () => {
+        it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
-            await (
-              await instance.pickResult(Promise.resolve(value))
-            ).toPromise(),
+            await lastValueFrom(
+              await instance.pickResult(Promise.resolve(value)),
+            ),
           ).to.be.eq(100);
         });
       });

@@ -27,8 +27,12 @@ import { DependenciesScanner } from './scanner';
  * @publicApi
  */
 export class NestFactoryStatic {
-  private readonly logger = new Logger('NestFactory', true);
+  private readonly logger = new Logger('NestFactory', {
+    timestamp: true,
+  });
   private abortOnError = true;
+  private autoFlushLogs = false;
+
   /**
    * Creates an instance of NestApplication.
    *
@@ -70,7 +74,8 @@ export class NestFactoryStatic {
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
     this.setAbortOnError(serverOrOptions, options);
-    this.applyLogger(appOptions);
+    this.registerLoggerConfiguration(appOptions);
+
     await this.initialize(module, container, applicationConfig, httpServer);
 
     const instance = new NestApplication(
@@ -104,7 +109,7 @@ export class NestFactoryStatic {
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
     this.setAbortOnError(options);
-    this.applyLogger(options);
+    this.registerLoggerConfiguration(options);
 
     await this.initialize(module, container, applicationConfig);
     return this.createNestInstance<INestMicroservice>(
@@ -127,13 +132,19 @@ export class NestFactoryStatic {
   ): Promise<INestApplicationContext> {
     const container = new NestContainer();
     this.setAbortOnError(options);
-    this.applyLogger(options);
+    this.registerLoggerConfiguration(options);
+
     await this.initialize(module, container);
+
     const modules = container.getModules().values();
     const root = modules.next().value;
+
     const context = this.createNestInstance<NestApplicationContext>(
       new NestApplicationContext(container, [], root),
     );
+    if (this.autoFlushLogs) {
+      context.flushLogsOnOverride();
+    }
     return context.init();
   }
 
@@ -161,11 +172,15 @@ export class NestFactoryStatic {
     try {
       this.logger.log(MESSAGES.APPLICATION_START);
 
-      await ExceptionsZone.asyncRun(async () => {
-        await dependenciesScanner.scan(module);
-        await instanceLoader.createInstancesOfDependencies();
-        dependenciesScanner.applyApplicationProviders();
-      }, teardown);
+      await ExceptionsZone.asyncRun(
+        async () => {
+          await dependenciesScanner.scan(module);
+          await instanceLoader.createInstancesOfDependencies();
+          dependenciesScanner.applyApplicationProviders();
+        },
+        teardown,
+        this.autoFlushLogs,
+      );
     } catch (e) {
       this.handleInitializationError(e);
     }
@@ -214,11 +229,20 @@ export class NestFactoryStatic {
     };
   }
 
-  private applyLogger(options: NestApplicationContextOptions | undefined) {
-    if (!options || options?.logger === true || isNil(options?.logger)) {
+  private registerLoggerConfiguration(
+    options: NestApplicationContextOptions | undefined,
+  ) {
+    if (!options) {
       return;
     }
-    Logger.overrideLogger(options.logger);
+    const { logger, bufferLogs, autoFlushLogs } = options;
+    if ((logger as boolean) !== true && !isNil(logger)) {
+      Logger.overrideLogger(logger);
+    }
+    if (bufferLogs) {
+      Logger.attachBuffer();
+    }
+    this.autoFlushLogs = autoFlushLogs ?? true;
   }
 
   private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
@@ -250,27 +274,30 @@ export class NestFactoryStatic {
   private createAdapterProxy<T>(app: NestApplication, adapter: HttpServer): T {
     const proxy = new Proxy(app, {
       get: (receiver: Record<string, any>, prop: string) => {
+        const mapToProxy = (result: unknown) => {
+          return result instanceof Promise
+            ? result.then(mapToProxy)
+            : result instanceof NestApplication
+            ? proxy
+            : result;
+        };
+
         if (!(prop in receiver) && prop in adapter) {
           return (...args: unknown[]) => {
-            this.createExceptionZone(adapter, prop)(...args);
-            return proxy;
+            const result = this.createExceptionZone(adapter, prop)(...args);
+            return mapToProxy(result);
           };
         }
         if (isFunction(receiver[prop])) {
-          const mapToProxy = (result: unknown) =>
-            result instanceof NestApplication ? proxy : result;
-
           return (...args: unknown[]) => {
             const result = receiver[prop](...args);
-            return result instanceof Promise
-              ? result.then(mapToProxy)
-              : mapToProxy(result);
+            return mapToProxy(result);
           };
         }
         return receiver[prop];
       },
     });
-    return (proxy as unknown) as T;
+    return proxy as unknown as T;
   }
 }
 

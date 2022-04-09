@@ -1,3 +1,5 @@
+import { Type } from '@nestjs/common';
+import { TcpSocket } from '../helpers';
 import { Transport } from '../enums/transport.enum';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import {
@@ -8,10 +10,9 @@ import {
   ProducerConfig,
   ProducerRecord,
 } from '../external/kafka.interface';
-import { MqttClientOptions } from '../external/mqtt-options.interface';
+import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
 import { ClientOpts } from '../external/redis.interface';
 import { RmqUrl } from '../external/rmq-url.interface';
-import { Server } from '../server/server';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
@@ -34,6 +35,9 @@ export interface CustomStrategy {
 export interface GrpcOptions {
   transport?: Transport.GRPC;
   options: {
+    interceptors?: Array<
+      (options: any, nextCall: (options: any) => any) => any
+    >;
     url?: string;
     maxSendMessageLength?: number;
     maxReceiveMessageLength?: number;
@@ -52,6 +56,7 @@ export interface GrpcOptions {
     protoPath: string | string[];
     package: string | string[];
     protoLoader?: string;
+    packageDefinition?: any;
     loader?: {
       keepCase?: boolean;
       alternateCommentMode?: boolean;
@@ -77,6 +82,7 @@ export interface TcpOptions {
     retryDelay?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    socketClass?: Type<TcpSocket>;
   };
 }
 
@@ -97,14 +103,37 @@ export interface MqttOptions {
     url?: string;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    subscribeOptions?: {
+      /**
+       * The QoS
+       */
+      qos: QoS;
+      /*
+       * No local flag
+       * */
+      nl?: boolean;
+      /*
+       * Retain as Published flag
+       * */
+      rap?: boolean;
+      /*
+       * Retain Handling option
+       * */
+      rh?: number;
+    };
+    userProperties?: Record<string, string | string[]>;
   };
 }
 
 export interface NatsOptions {
   transport?: Transport.NATS;
   options?: {
+    headers?: Record<string, string>;
+    authenticator?: any;
+    debug?: boolean;
+    ignoreClusterUpdates?: boolean;
+    inboxPrefix?: string;
     encoding?: string;
-    url?: string;
     name?: string;
     user?: string;
     pass?: string;
@@ -114,7 +143,7 @@ export interface NatsOptions {
     reconnectJitter?: number;
     reconnectJitterTLS?: number;
     reconnectDelayHandler?: any;
-    servers?: string[];
+    servers?: string[] | string;
     nkey?: any;
     reconnect?: boolean;
     pedantic?: boolean;
@@ -154,7 +183,12 @@ export interface RmqOptions {
     deserializer?: Deserializer;
     replyQueue?: string;
     persistent?: boolean;
+    headers?: Record<string, string>;
   };
+}
+
+export interface KafkaParserConfig {
+  keepBinary?: boolean;
 }
 
 export interface KafkaOptions {
@@ -169,5 +203,6 @@ export interface KafkaOptions {
     send?: Omit<ProducerRecord, 'topic' | 'messages'>;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    parser?: KafkaParserConfig;
   };
 }

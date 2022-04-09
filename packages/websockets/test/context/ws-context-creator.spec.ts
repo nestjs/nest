@@ -133,7 +133,7 @@ describe('WsContextCreator', () => {
   });
 
   describe('reflectCallbackParamtypes', () => {
-    it('should returns paramtypes array', () => {
+    it('should return paramtypes array', () => {
       const paramtypes = contextCreator.reflectCallbackParamtypes(
         instance,
         instance.test,

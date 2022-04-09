@@ -1,6 +1,5 @@
 import { ShutdownSignal } from '../enums/shutdown-signal.enum';
 import { LoggerService, LogLevel } from '../services/logger.service';
-import { Abstract } from './abstract.interface';
 import { DynamicModule } from './modules';
 import { Type } from './type.interface';
 
@@ -21,7 +20,7 @@ export interface INestApplicationContext {
    * @returns {TResult}
    */
   get<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
+    typeOrToken: Type<TInput> | Function | string | symbol,
     options?: { strict: boolean },
   ): TResult;
 
@@ -30,7 +29,7 @@ export interface INestApplicationContext {
    * @returns {Promise<TResult>}
    */
   resolve<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
+    typeOrToken: Type<TInput> | Function | string | symbol,
     contextId?: { id: number },
     options?: { strict: boolean },
   ): Promise<TResult>;
@@ -51,10 +50,17 @@ export interface INestApplicationContext {
   close(): Promise<void>;
 
   /**
-   * Sets custom logger service
+   * Sets custom logger service.
+   * Flushes buffered logs if auto flush is on.
    * @returns {void}
    */
   useLogger(logger: LoggerService | LogLevel[] | false): void;
+
+  /**
+   * Prints buffered logs and detaches buffer.
+   * @returns {void}
+   */
+  flushLogs(): void;
 
   /**
    * Enables the usage of shutdown hooks. Will call the

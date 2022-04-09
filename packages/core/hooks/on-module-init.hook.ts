@@ -1,5 +1,5 @@
 import { OnModuleInit } from '@nestjs/common';
-import { isNil } from '@nestjs/common/utils/shared.utils';
+import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,
@@ -14,7 +14,7 @@ import { Module } from '../injector/module';
  * @param instance The instance which should be checked
  */
 function hasOnModuleInitHook(instance: unknown): instance is OnModuleInit {
-  return !isNil((instance as OnModuleInit).onModuleInit);
+  return isFunction((instance as OnModuleInit).onModuleInit);
 }
 
 /**
@@ -24,7 +24,7 @@ function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
   return iterate(instances)
     .filter(instance => !isNil(instance))
     .filter(hasOnModuleInitHook)
-    .map(async instance => ((instance as any) as OnModuleInit).onModuleInit())
+    .map(async instance => (instance as any as OnModuleInit).onModuleInit())
     .toArray();
 }
 

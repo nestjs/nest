@@ -2,17 +2,22 @@ import { iterate } from 'iterare';
 import { Optional } from '../decorators';
 import { Injectable } from '../decorators/core';
 import { HttpStatus } from '../enums/http-status.enum';
-import { ArgumentMetadata, ValidationError } from '../index';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
+import { TransformerPackage } from '../interfaces/external/transformer-package.interface';
+import { ValidationError } from '../interfaces/external/validation-error.interface';
 import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
-import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import { ValidatorPackage } from '../interfaces/external/validator-package.interface';
+import {
+  ArgumentMetadata,
+  PipeTransform,
+} from '../interfaces/features/pipe-transform.interface';
 import { Type } from '../interfaces/type.interface';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
 import { loadPackage } from '../utils/load-package.util';
-import { isNil } from '../utils/shared.utils';
+import { isNil, isObject } from '../utils/shared.utils';
 
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
@@ -22,10 +27,12 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   exceptionFactory?: (errors: ValidationError[]) => any;
   validateCustomDecorators?: boolean;
   expectedType?: Type<any>;
+  validatorPackage?: ValidatorPackage;
+  transformerPackage?: TransformerPackage;
 }
 
-let classValidator: any = {};
-let classTransformer: any = {};
+let classValidator: ValidatorPackage = {} as any;
+let classTransformer: TransformerPackage = {} as any;
 
 @Injectable()
 export class ValidationPipe implements PipeTransform<any> {
@@ -60,19 +67,29 @@ export class ValidationPipe implements PipeTransform<any> {
     this.exceptionFactory =
       options.exceptionFactory || this.createExceptionFactory();
 
-    classValidator = this.loadValidator();
-    classTransformer = this.loadTransformer();
+    classValidator = this.loadValidator(options.validatorPackage);
+    classTransformer = this.loadTransformer(options.transformerPackage);
   }
 
-  protected loadValidator() {
-    return loadPackage('class-validator', 'ValidationPipe', () =>
-      require('class-validator'),
+  protected loadValidator(
+    validatorPackage?: ValidatorPackage,
+  ): ValidatorPackage {
+    return (
+      validatorPackage ??
+      loadPackage('class-validator', 'ValidationPipe', () =>
+        require('class-validator'),
+      )
     );
   }
 
-  protected loadTransformer() {
-    return loadPackage('class-transformer', 'ValidationPipe', () =>
-      require('class-transformer'),
+  protected loadTransformer(
+    transformerPackage?: TransformerPackage,
+  ): TransformerPackage {
+    return (
+      transformerPackage ??
+      loadPackage('class-transformer', 'ValidationPipe', () =>
+        require('class-transformer'),
+      )
     );
   }
 
@@ -111,7 +128,7 @@ export class ValidationPipe implements PipeTransform<any> {
       entity = { constructor: metatype };
     }
 
-    const errors = await classValidator.validate(entity, this.validatorOptions);
+    const errors = await this.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
       throw await this.exceptionFactory(errors);
     }
@@ -177,12 +194,19 @@ export class ValidationPipe implements PipeTransform<any> {
     delete value.__proto__;
     const keys = Object.keys(value);
     iterate(keys)
-      .filter(key => typeof value[key] === 'object' && value[key])
+      .filter(key => isObject(value[key]) && value[key])
       .forEach(key => this.stripProtoKeys(value[key]));
   }
 
   protected isPrimitive(value: unknown): boolean {
     return ['number', 'boolean', 'string'].includes(typeof value);
+  }
+
+  protected validate(
+    object: object,
+    validatorOptions?: ValidatorOptions,
+  ): Promise<ValidationError[]> | ValidationError[] {
+    return classValidator.validate(object, validatorOptions);
   }
 
   protected flattenValidationErrors(

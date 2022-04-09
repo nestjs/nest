@@ -23,7 +23,7 @@ describe('REDIS transport', () => {
         url: 'redis://0.0.0.0:6379',
       },
     });
-    await app.startAllMicroservicesAsync();
+    await app.startAllMicroservices();
     await app.init();
   });
 

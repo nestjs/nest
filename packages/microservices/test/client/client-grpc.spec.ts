@@ -129,10 +129,10 @@ describe('ClientGrpcProxy', () => {
 
       it('should call native method', () => {
         const spy = sinon.spy(obj, methodName);
-        stream$.subscribe(
-          () => ({}),
-          () => ({}),
-        );
+        stream$.subscribe({
+          next: () => ({}),
+          error: () => ({}),
+        });
 
         expect(spy.called).to.be.true;
       });
@@ -156,10 +156,10 @@ describe('ClientGrpcProxy', () => {
 
       it('should subscribe to request upstream', () => {
         const upstreamSubscribe = sinon.spy(upstream, 'subscribe');
-        stream$.subscribe(
-          () => ({}),
-          () => ({}),
-        );
+        stream$.subscribe({
+          next: () => ({}),
+          error: () => ({}),
+        });
         upstream.next({ test: true });
 
         expect(writeSpy.called).to.be.true;
@@ -201,7 +201,12 @@ describe('ClientGrpcProxy', () => {
 
       it('propagates server errors', () => {
         const err = new Error('something happened');
-        stream$.subscribe(dataSpy, errorSpy, completeSpy);
+        stream$.subscribe({
+          next: dataSpy,
+          error: errorSpy,
+          complete: completeSpy,
+        });
+
         eventCallbacks.data('a');
         eventCallbacks.data('b');
         callMock.finished = true;
@@ -219,7 +224,11 @@ describe('ClientGrpcProxy', () => {
         const grpcServerCancelErrMock = {
           details: 'Cancelled',
         };
-        const subscription = stream$.subscribe(dataSpy, errorSpy);
+        const subscription = stream$.subscribe({
+          next: dataSpy,
+          error: errorSpy,
+        });
+
         eventCallbacks.data('a');
         eventCallbacks.data('b');
         subscription.unsubscribe();
@@ -258,20 +267,24 @@ describe('ClientGrpcProxy', () => {
 
       it('should call native method', () => {
         const spy = sinon.spy(obj, methodName);
-        stream$.subscribe(
-          () => ({}),
-          () => ({}),
-        );
+        stream$.subscribe({
+          next: () => ({}),
+          error: () => ({}),
+        });
 
         expect(spy.called).to.be.true;
       });
     });
     describe('when stream request', () => {
+      let clientCallback: (
+        err: Error | null | undefined,
+        response: any,
+      ) => void;
       const writeSpy = sinon.spy();
       const methodName = 'm';
       const obj = {
         [methodName]: callback => {
-          callback(null, {});
+          clientCallback = callback;
           return {
             write: writeSpy,
           };
@@ -287,12 +300,17 @@ describe('ClientGrpcProxy', () => {
         stream$ = client.createUnaryServiceMethod(obj, methodName)(upstream);
       });
 
+      afterEach(() => {
+        // invoke client callback to allow resources to be cleaned up
+        clientCallback(null, {});
+      });
+
       it('should subscribe to request upstream', () => {
         const upstreamSubscribe = sinon.spy(upstream, 'subscribe');
-        stream$.subscribe(
-          () => ({}),
-          () => ({}),
-        );
+        stream$.subscribe({
+          next: () => ({}),
+          error: () => ({}),
+        });
         upstream.next({ test: true });
 
         expect(writeSpy.called).to.be.true;
@@ -362,6 +380,15 @@ describe('ClientGrpcProxy', () => {
       client['dispatchEvent'](null).catch(error =>
         expect(error).to.be.instanceof(Error),
       );
+    });
+  });
+
+  describe('lookupPackage', () => {
+    it('should return root package in case package name is not defined', () => {
+      const root = {};
+
+      expect(client.lookupPackage(root, undefined)).to.be.equal(root);
+      expect(client.lookupPackage(root, '')).to.be.equal(root);
     });
   });
 });

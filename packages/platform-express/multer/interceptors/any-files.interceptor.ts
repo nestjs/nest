@@ -52,5 +52,5 @@ export function AnyFilesInterceptor(
     }
   }
   const Interceptor = mixin(MixinInterceptor);
-  return Interceptor as Type<NestInterceptor>;
+  return Interceptor;
 }

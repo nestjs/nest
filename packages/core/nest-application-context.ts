@@ -13,7 +13,7 @@ import { MESSAGES } from './constants';
 import { InvalidClassScopeException } from './errors/exceptions/invalid-class-scope.exception';
 import { UnknownElementException } from './errors/exceptions/unknown-element.exception';
 import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
-import { createContextId } from './helpers';
+import { createContextId } from './helpers/context-id-factory';
 import {
   callAppShutdownHook,
   callBeforeAppShutdownHook,
@@ -21,11 +21,11 @@ import {
   callModuleDestroyHook,
   callModuleInitHook,
 } from './hooks';
-import { ContextId } from './injector';
 import { ModuleCompiler } from './injector/compiler';
 import { NestContainer } from './injector/container';
 import { Injector } from './injector/injector';
 import { InstanceLinksHost } from './injector/instance-links-host';
+import { ContextId } from './injector/instance-wrapper';
 import { Module } from './injector/module';
 
 /**
@@ -35,10 +35,12 @@ export class NestApplicationContext implements INestApplicationContext {
   protected isInitialized = false;
   protected readonly injector = new Injector();
 
+  private shouldFlushLogsOnOverride = false;
   private readonly activeShutdownSignals = new Array<string>();
   private readonly moduleCompiler = new ModuleCompiler();
   private shutdownCleanupRef?: (...args: unknown[]) => unknown;
   private _instanceLinksHost: InstanceLinksHost;
+  private _moduleRefsByDistance?: Array<Module>;
 
   private get instanceLinksHost() {
     if (!this._instanceLinksHost) {
@@ -66,9 +68,8 @@ export class NestApplicationContext implements INestApplicationContext {
     const scope = this.scope.concat(contextModuleCtor);
 
     const moduleTokenFactory = this.container.getModuleTokenFactory();
-    const { type, dynamicMetadata } = this.moduleCompiler.extractMetadata(
-      moduleType,
-    );
+    const { type, dynamicMetadata } =
+      this.moduleCompiler.extractMetadata(moduleType);
     const token = moduleTokenFactory.create(type, dynamicMetadata);
 
     const selectedModule = modulesContainer.get(token);
@@ -131,6 +132,21 @@ export class NestApplicationContext implements INestApplicationContext {
 
   public useLogger(logger: LoggerService | LogLevel[] | false) {
     Logger.overrideLogger(logger);
+
+    if (this.shouldFlushLogsOnOverride) {
+      this.flushLogs();
+    }
+  }
+
+  public flushLogs() {
+    Logger.flush();
+  }
+
+  /**
+   * Define that it must flush logs right after defining a custom logger.
+   */
+  public flushLogsOnOverride() {
+    this.shouldFlushLogsOnOverride = true;
   }
 
   /**
@@ -218,8 +234,8 @@ export class NestApplicationContext implements INestApplicationContext {
    * modules and its children.
    */
   protected async callInitHook(): Promise<void> {
-    const modulesContainer = this.container.getModules();
-    for (const module of [...modulesContainer.values()].reverse()) {
+    const modulesSortedByDistance = this.getModulesSortedByDistance();
+    for (const module of modulesSortedByDistance) {
       await callModuleInitHook(module);
     }
   }
@@ -229,8 +245,8 @@ export class NestApplicationContext implements INestApplicationContext {
    * modules and its children.
    */
   protected async callDestroyHook(): Promise<void> {
-    const modulesContainer = this.container.getModules();
-    for (const module of modulesContainer.values()) {
+    const modulesSortedByDistance = this.getModulesSortedByDistance();
+    for (const module of modulesSortedByDistance) {
       await callModuleDestroyHook(module);
     }
   }
@@ -240,8 +256,8 @@ export class NestApplicationContext implements INestApplicationContext {
    * modules and its children.
    */
   protected async callBootstrapHook(): Promise<void> {
-    const modulesContainer = this.container.getModules();
-    for (const module of [...modulesContainer.values()].reverse()) {
+    const modulesSortedByDistance = this.getModulesSortedByDistance();
+    for (const module of modulesSortedByDistance) {
       await callModuleBootstrapHook(module);
     }
   }
@@ -251,8 +267,8 @@ export class NestApplicationContext implements INestApplicationContext {
    * modules and children.
    */
   protected async callShutdownHook(signal?: string): Promise<void> {
-    const modulesContainer = this.container.getModules();
-    for (const module of [...modulesContainer.values()].reverse()) {
+    const modulesSortedByDistance = this.getModulesSortedByDistance();
+    for (const module of modulesSortedByDistance) {
       await callAppShutdownHook(module, signal);
     }
   }
@@ -262,8 +278,8 @@ export class NestApplicationContext implements INestApplicationContext {
    * modules and children.
    */
   protected async callBeforeShutdownHook(signal?: string): Promise<void> {
-    const modulesContainer = this.container.getModules();
-    for (const module of [...modulesContainer.values()].reverse()) {
+    const modulesSortedByDistance = this.getModulesSortedByDistance();
+    for (const module of modulesSortedByDistance) {
       await callBeforeAppShutdownHook(module, signal);
     }
   }
@@ -299,7 +315,7 @@ export class NestApplicationContext implements INestApplicationContext {
 
     const { wrapperRef, collection } = instanceLink;
     if (wrapperRef.isDependencyTreeStatic() && !wrapperRef.isTransient) {
-      return this.get(typeOrToken);
+      return this.get(typeOrToken, options);
     }
 
     const ctorHost = wrapperRef.instance || { constructor: typeOrToken };
@@ -313,5 +329,18 @@ export class NestApplicationContext implements INestApplicationContext {
       throw new UnknownElementException();
     }
     return instance;
+  }
+
+  private getModulesSortedByDistance(): Module[] {
+    if (this._moduleRefsByDistance) {
+      return this._moduleRefsByDistance;
+    }
+    const modulesContainer = this.container.getModules();
+    const compareFn = (a: Module, b: Module) => b.distance - a.distance;
+
+    this._moduleRefsByDistance = Array.from(modulesContainer.values()).sort(
+      compareFn,
+    );
+    return this._moduleRefsByDistance;
   }
 }

@@ -7,6 +7,7 @@ import {
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
+  PATTERN_EXTRAS_METADATA,
 } from './constants';
 import { Transport } from './enums';
 import { PatternHandler } from './enums/pattern-handler.enum';
@@ -18,12 +19,13 @@ export interface ClientProperties {
   metadata: ClientOptions;
 }
 
-export interface PatternProperties {
+export interface EventOrMessageListenerDefinition {
   pattern: PatternMetadata;
   methodKey: string;
   isEventHandler: boolean;
   targetCallback: (...args: any[]) => any;
   transport?: Transport;
+  extras?: Record<string, any>;
 }
 
 export interface MessageRequestProperties {
@@ -34,11 +36,11 @@ export interface MessageRequestProperties {
 export class ListenerMetadataExplorer {
   constructor(private readonly metadataScanner: MetadataScanner) {}
 
-  public explore(instance: Controller): PatternProperties[] {
+  public explore(instance: Controller): EventOrMessageListenerDefinition[] {
     const instancePrototype = Object.getPrototypeOf(instance);
     return this.metadataScanner.scanFromPrototype<
       Controller,
-      PatternProperties
+      EventOrMessageListenerDefinition
     >(instance, instancePrototype, method =>
       this.exploreMethodMetadata(instancePrototype, method),
     );
@@ -47,7 +49,7 @@ export class ListenerMetadataExplorer {
   public exploreMethodMetadata(
     instancePrototype: object,
     methodKey: string,
-  ): PatternProperties {
+  ): EventOrMessageListenerDefinition {
     const targetCallback = instancePrototype[methodKey];
     const handlerType = Reflect.getMetadata(
       PATTERN_HANDLER_METADATA,
@@ -58,11 +60,13 @@ export class ListenerMetadataExplorer {
     }
     const pattern = Reflect.getMetadata(PATTERN_METADATA, targetCallback);
     const transport = Reflect.getMetadata(TRANSPORT_METADATA, targetCallback);
+    const extras = Reflect.getMetadata(PATTERN_EXTRAS_METADATA, targetCallback);
     return {
       methodKey,
       targetCallback,
       pattern,
       transport,
+      extras,
       isEventHandler: handlerType === PatternHandler.EVENT,
     };
   }

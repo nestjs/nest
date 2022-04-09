@@ -1,7 +1,7 @@
-import { JsonSocket } from '../helpers';
+import { TcpSocket } from '../helpers';
 import { BaseRpcContext } from './base-rpc.context';
 
-type TcpContextArgs = [JsonSocket, string];
+type TcpContextArgs = [TcpSocket, string];
 
 export class TcpContext extends BaseRpcContext<TcpContextArgs> {
   constructor(args: TcpContextArgs) {

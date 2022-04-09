@@ -136,15 +136,17 @@ export class RouterExecutionContext {
     );
     const fnApplyPipes = this.createPipesFn(pipes, paramsOptions);
 
-    const handler = <TRequest, TResponse>(
-      args: any[],
-      req: TRequest,
-      res: TResponse,
-      next: Function,
-    ) => async () => {
-      fnApplyPipes && (await fnApplyPipes(args, req, res, next));
-      return callback.apply(instance, args);
-    };
+    const handler =
+      <TRequest, TResponse>(
+        args: any[],
+        req: TRequest,
+        res: TResponse,
+        next: Function,
+      ) =>
+      async () => {
+        fnApplyPipes && (await fnApplyPipes(args, req, res, next));
+        return callback.apply(instance, args);
+      };
 
     return async <TRequest, TResponse>(
       req: TRequest,
@@ -343,6 +345,8 @@ export class RouterExecutionContext {
       type === RouteParamtypes.BODY ||
       type === RouteParamtypes.QUERY ||
       type === RouteParamtypes.PARAM ||
+      type === RouteParamtypes.FILE ||
+      type === RouteParamtypes.FILES ||
       isString(type)
     );
   }
@@ -420,26 +424,27 @@ export class RouterExecutionContext {
         );
       };
     }
-    if (redirectResponse && typeof redirectResponse.url === 'string') {
+    if (redirectResponse && isString(redirectResponse.url)) {
       return async <TResult, TResponse>(result: TResult, res: TResponse) => {
         await this.responseController.redirect(result, res, redirectResponse);
       };
     }
     const isSseHandler = !!this.reflectSse(callback);
     if (isSseHandler) {
-      return async <
+      return <
         TResult extends Observable<unknown> = any,
         TResponse extends HeaderStream = any,
-        TRequest extends IncomingMessage = any
+        TRequest extends IncomingMessage = any,
       >(
         result: TResult,
         res: TResponse,
         req: TRequest,
       ) => {
-        await this.responseController.sse(
+        this.responseController.sse(
           result,
           (res as any).raw || res,
           (req as any).raw || req,
+          { additionalHeaders: res.getHeaders?.() },
         );
       };
     }

@@ -40,6 +40,14 @@ export class GrpcController {
     return svc.sum({ data });
   }
 
+  // Test that getService generate both lower and uppercase method
+  @Post('upperMethod/sum')
+  @HttpCode(200)
+  callWithOptions(@Body() data: number[]): Observable<number> {
+    const svc = this.client.getService<any>('Math');
+    return svc.Sum({ data });
+  }
+
   @GrpcMethod('Math')
   async sum({ data }: { data: number[] }): Promise<any> {
     return of({
@@ -50,16 +58,16 @@ export class GrpcController {
   @GrpcStreamMethod('Math')
   async sumStream(messages: Observable<any>): Promise<any> {
     return new Promise<any>((resolve, reject) => {
-      messages.subscribe(
-        msg => {
+      messages.subscribe({
+        next: msg => {
           resolve({
             result: msg.data.reduce((a, b) => a + b),
           });
         },
-        err => {
+        error: err => {
           reject(err);
         },
-      );
+      });
     });
   }
 

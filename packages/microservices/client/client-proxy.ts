@@ -1,15 +1,16 @@
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import {
-  ConnectableObservable,
+  connectable,
   defer,
   fromEvent,
   merge,
   Observable,
   Observer,
+  Subject,
   throwError as _throw,
 } from 'rxjs';
-import { map, mergeMap, publish, take } from 'rxjs/operators';
+import { map, mergeMap, take } from 'rxjs/operators';
 import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
 import { IncomingResponseDeserializer } from '../deserializers/incoming-response.deserializer';
 import { InvalidMessageException } from '../errors/invalid-message.exception';
@@ -44,7 +45,7 @@ export abstract class ClientProxy {
     data: TInput,
   ): Observable<TResult> {
     if (isNil(pattern) || isNil(data)) {
-      return _throw(new InvalidMessageException());
+      return _throw(() => new InvalidMessageException());
     }
     return defer(async () => this.connect()).pipe(
       mergeMap(
@@ -62,20 +63,23 @@ export abstract class ClientProxy {
     data: TInput,
   ): Observable<TResult> {
     if (isNil(pattern) || isNil(data)) {
-      return _throw(new InvalidMessageException());
+      return _throw(() => new InvalidMessageException());
     }
     const source = defer(async () => this.connect()).pipe(
       mergeMap(() => this.dispatchEvent({ pattern, data })),
-      publish(),
     );
-    (source as ConnectableObservable<TResult>).connect();
-    return source;
+    const connectableSource = connectable(source, {
+      connector: () => new Subject(),
+      resetOnDisconnect: false,
+    });
+    connectableSource.connect();
+    return connectableSource;
   }
 
   protected abstract publish(
     packet: ReadPacket,
     callback: (packet: WritePacket) => void,
-  ): Function;
+  ): () => void;
 
   protected abstract dispatchEvent<T = any>(packet: ReadPacket): Promise<T>;
 
@@ -124,7 +128,7 @@ export abstract class ClientProxy {
 
   protected getOptionsProp<
     T extends ClientOptions['options'],
-    K extends keyof T
+    K extends keyof T,
   >(obj: T, prop: K, defaultValue: T[K] = undefined) {
     return (obj && obj[prop]) || defaultValue;
   }
@@ -136,26 +140,30 @@ export abstract class ClientProxy {
   protected initializeSerializer(options: ClientOptions['options']) {
     this.serializer =
       (options &&
-        (options as
-          | RedisOptions['options']
-          | NatsOptions['options']
-          | MqttOptions['options']
-          | TcpClientOptions['options']
-          | RmqOptions['options']
-          | KafkaOptions['options']).serializer) ||
+        (
+          options as
+            | RedisOptions['options']
+            | NatsOptions['options']
+            | MqttOptions['options']
+            | TcpClientOptions['options']
+            | RmqOptions['options']
+            | KafkaOptions['options']
+        ).serializer) ||
       new IdentitySerializer();
   }
 
   protected initializeDeserializer(options: ClientOptions['options']) {
     this.deserializer =
       (options &&
-        (options as
-          | RedisOptions['options']
-          | NatsOptions['options']
-          | MqttOptions['options']
-          | TcpClientOptions['options']
-          | RmqOptions['options']
-          | KafkaOptions['options']).deserializer) ||
+        (
+          options as
+            | RedisOptions['options']
+            | NatsOptions['options']
+            | MqttOptions['options']
+            | TcpClientOptions['options']
+            | RmqOptions['options']
+            | KafkaOptions['options']
+        ).deserializer) ||
       new IncomingResponseDeserializer();
   }
 }

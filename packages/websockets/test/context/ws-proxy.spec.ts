@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { of, throwError } from 'rxjs';
+import { throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { WsProxy } from '../../context/ws-proxy';
 import { WsException } from '../../errors/ws-exception';
@@ -35,22 +35,9 @@ describe('WsProxy', () => {
     it('should attach "catchError" operator when observable was returned', async () => {
       const expectation = handlerMock.expects('handle').once();
       const proxy = routerProxy.create(async (client, data) => {
-        return throwError(new WsException('test'));
+        return throwError(() => new WsException('test'));
       }, handler);
       (await proxy(null, null)).subscribe(null, () => expectation.verify());
-    });
-  });
-
-  describe('isObservable', () => {
-    describe('when observable', () => {
-      it('should return true', () => {
-        expect(routerProxy.isObservable(of('test'))).to.be.true;
-      });
-    });
-    describe('when not observable', () => {
-      it('should return false', () => {
-        expect(routerProxy.isObservable({})).to.be.false;
-      });
     });
   });
 });

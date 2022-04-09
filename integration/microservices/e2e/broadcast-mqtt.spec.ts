@@ -28,7 +28,7 @@ describe('MQTT transport', () => {
         host: '0.0.0.0',
       },
     });
-    await app.startAllMicroservicesAsync();
+    await app.startAllMicroservices();
     await app.init();
   });
 

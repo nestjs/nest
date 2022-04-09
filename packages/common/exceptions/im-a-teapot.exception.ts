@@ -7,7 +7,7 @@ import { HttpException } from './http.exception';
  * Any attempt to brew coffee with a teapot should result in the error code
  * "418 I'm a teapot". The resulting entity body MAY be short and stout.
  *
- * @see [Base Exceptions](https://docs.nestjs.com/exception-filters#base-exceptions)
+ * @see [Built-in HTTP exceptions](https://docs.nestjs.com/exception-filters#built-in-http-exceptions)
  *
  * @publicApi
  */
@@ -16,7 +16,7 @@ export class ImATeapotException extends HttpException {
    * Instantiate an `ImATeapotException` Exception.
    *
    * @example
-   * `throw new BadGatewayException()`
+   * `throw new ImATeapotException()`
    *
    * @usageNotes
    * The HTTP response status code will be 418.

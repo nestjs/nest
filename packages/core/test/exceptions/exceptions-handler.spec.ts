@@ -1,6 +1,7 @@
 import { HttpException } from '@nestjs/common';
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
+import * as createHttpError from 'http-errors';
 import * as sinon from 'sinon';
 import { AbstractHttpAdapter } from '../../adapters';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
@@ -13,7 +14,7 @@ describe('ExceptionsHandler', () => {
   let handler: ExceptionsHandler;
   let statusStub: sinon.SinonStub;
   let jsonStub: sinon.SinonStub;
-  let response;
+  let response: any;
 
   beforeEach(() => {
     adapter = new NoopHttpAdapter({});
@@ -45,7 +46,7 @@ describe('ExceptionsHandler', () => {
             : responseRef.send(String(body));
         });
     });
-    it('should method send expected response status code and message when exception is unknown', () => {
+    it('should send expected response status code and message when exception is unknown', () => {
       handler.next(new Error(), new ExecutionContextHost([0, response]));
 
       expect(statusStub.calledWith(500)).to.be.true;
@@ -56,8 +57,22 @@ describe('ExceptionsHandler', () => {
         }),
       ).to.be.true;
     });
-    describe('when exception is instance of HttpException', () => {
-      it('should method send expected response status code and json object', () => {
+    describe('when exception is instantiated by "http-errors" library', () => {
+      it('should send expected response status code and message', () => {
+        const error = new createHttpError.NotFound('User does not exist');
+        handler.next(error, new ExecutionContextHost([0, response]));
+
+        expect(statusStub.calledWith(404)).to.be.true;
+        expect(
+          jsonStub.calledWith({
+            statusCode: 404,
+            message: 'User does not exist',
+          }),
+        ).to.be.true;
+      });
+    });
+    describe('when exception is an instance of HttpException', () => {
+      it('should send expected response status code and json object', () => {
         const status = 401;
         const message = {
           custom: 'Unauthorized',
@@ -70,7 +85,7 @@ describe('ExceptionsHandler', () => {
         expect(statusStub.calledWith(status)).to.be.true;
         expect(jsonStub.calledWith(message)).to.be.true;
       });
-      it('should method send expected response status code and transform message to json', () => {
+      it('should send expected response status code and transform message to json', () => {
         const status = 401;
         const message = 'Unauthorized';
 
@@ -87,7 +102,12 @@ describe('ExceptionsHandler', () => {
       beforeEach(() => {
         sinon.stub(handler, 'invokeCustomFilters').returns(true);
       });
-      it('should not call status and json stubs', () => {
+      it('should do nothing', () => {
+        handler.next(
+          new Error(),
+          sinon.createStubInstance(ExecutionContextHost),
+        );
+
         expect(statusStub.notCalled).to.be.true;
         expect(jsonStub.notCalled).to.be.true;
       });
@@ -107,7 +127,7 @@ describe('ExceptionsHandler', () => {
   });
   describe('invokeCustomFilters', () => {
     describe('when filters array is empty', () => {
-      it('should returns false', () => {
+      it('should return false', () => {
         expect(handler.invokeCustomFilters(null, null)).to.be.false;
       });
     });
@@ -134,7 +154,7 @@ describe('ExceptionsHandler', () => {
           handler.invokeCustomFilters(exception, res as any);
           expect(funcSpy.calledWith(exception, res)).to.be.true;
         });
-        it('should returns true', () => {
+        it('should return true', () => {
           expect(handler.invokeCustomFilters(new TestException(), null)).to.be
             .true;
         });
@@ -144,7 +164,7 @@ describe('ExceptionsHandler', () => {
           handler.invokeCustomFilters(new TestException(), null);
           expect(funcSpy.notCalled).to.be.true;
         });
-        it('should returns false', () => {
+        it('should return false', () => {
           expect(handler.invokeCustomFilters(new TestException(), null)).to.be
             .false;
         });

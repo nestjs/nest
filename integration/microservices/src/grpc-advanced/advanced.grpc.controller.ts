@@ -1,3 +1,4 @@
+import { Metadata } from '@grpc/grpc-js';
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import {
   Client,
@@ -9,7 +10,6 @@ import {
 } from '@nestjs/microservices';
 import { join } from 'path';
 import { Observable, of, ReplaySubject, Subject } from 'rxjs';
-import { Metadata } from 'grpc';
 
 @Controller()
 export class AdvancedGrpcController {
@@ -134,8 +134,8 @@ export class AdvancedGrpcController {
   async streamReq(messages: Observable<any>): Promise<any> {
     const s = new Subject();
     const o = s.asObservable();
-    messages.subscribe(
-      msg => {
+    messages.subscribe({
+      next: () => {
         s.next({
           id: 1,
           itemTypes: [1],
@@ -146,9 +146,8 @@ export class AdvancedGrpcController {
           },
         });
       },
-      null,
-      () => s.complete(),
-    );
+      complete: () => s.complete(),
+    });
     return o;
   }
 

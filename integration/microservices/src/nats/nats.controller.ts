@@ -1,29 +1,34 @@
 import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
 import {
-  Client,
   ClientProxy,
+  ClientProxyFactory,
   Ctx,
   EventPattern,
   MessagePattern,
   NatsContext,
+  NatsRecordBuilder,
   Payload,
   RpcException,
   Transport,
 } from '@nestjs/microservices';
-import { from, Observable, of, throwError } from 'rxjs';
+import * as nats from 'nats';
+import { from, lastValueFrom, Observable, of, throwError } from 'rxjs';
 import { catchError, scan } from 'rxjs/operators';
+import { NatsService } from './nats.service';
 
 @Controller()
 export class NatsController {
   static IS_NOTIFIED = false;
+  static IS_NOTIFIED2 = false;
 
-  @Client({
+  constructor(private readonly natsService: NatsService) {}
+
+  client: ClientProxy = ClientProxyFactory.create({
     transport: Transport.NATS,
     options: {
-      url: 'nats://localhost:4222',
+      servers: 'nats://localhost:4222',
     },
-  })
-  client: ClientProxy;
+  });
 
   @Post()
   @HttpCode(200)
@@ -48,15 +53,37 @@ export class NatsController {
   concurrent(@Body() data: number[][]): Promise<boolean> {
     const send = async (tab: number[]) => {
       const expected = tab.reduce((a, b) => a + b);
-      const result = await this.client
-        .send<number>('math.sum', tab)
-        .toPromise();
+      const result = await lastValueFrom(
+        this.client.send<number>('math.sum', tab),
+      );
 
       return result === expected;
     };
     return data
       .map(async tab => send(tab))
       .reduce(async (a, b) => (await a) && b);
+  }
+
+  @Post('record-builder-duplex')
+  @HttpCode(200)
+  useRecordBuilderDuplex(@Body() data: Record<string, any>) {
+    const headers = nats.headers();
+    headers.set('x-version', '1.0.0');
+    const record = new NatsRecordBuilder(data).setHeaders(headers).build();
+    return this.client.send('record-builder-duplex', record);
+  }
+
+  @MessagePattern('record-builder-duplex')
+  handleRecordBuilderDuplex(
+    @Payload() data: Record<string, any>,
+    @Ctx() context: NatsContext,
+  ) {
+    return {
+      data,
+      headers: {
+        ['x-version']: context.getHeaders().get('x-version'),
+      },
+    };
   }
 
   @MessagePattern('math.*')
@@ -88,7 +115,7 @@ export class NatsController {
 
   @MessagePattern('exception')
   throwError(): Observable<number> {
-    return throwError(new RpcException('test'));
+    return throwError(() => new RpcException('test'));
   }
 
   @Post('notify')
@@ -99,5 +126,10 @@ export class NatsController {
   @EventPattern('notification')
   eventHandler(@Payload() data: boolean) {
     NatsController.IS_NOTIFIED = data;
+  }
+
+  @EventPattern('notification')
+  eventHandler2(@Payload() data: boolean) {
+    NatsController.IS_NOTIFIED2 = data;
   }
 }

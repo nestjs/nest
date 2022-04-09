@@ -46,7 +46,7 @@ describe('Disconnected client', () => {
       .send({
         transport: Transport.NATS,
         options: {
-          url: 'nats://localhost:4224',
+          servers: 'nats://localhost:4224',
         },
       })
       .expect(408);
@@ -60,6 +60,19 @@ describe('Disconnected client', () => {
         options: {
           host: 'mqtt://broker.hivemq.com',
           port: 183,
+        },
+      })
+      .expect(408);
+  });
+
+  it(`RMQ`, () => {
+    return request(server)
+      .post('/')
+      .send({
+        transport: Transport.RMQ,
+        options: {
+          urls: [`amqp://0.0.0.0:3333`],
+          queue: 'test',
         },
       })
       .expect(408);

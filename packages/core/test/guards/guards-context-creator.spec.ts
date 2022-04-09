@@ -13,17 +13,24 @@ describe('GuardsContextCreator', () => {
   let container: any;
   let getSpy: sinon.SinonSpy;
 
+  class Guard1 {}
+  class Guard2 {}
+
   beforeEach(() => {
     guards = [
       {
-        name: 'test',
+        name: 'Guard1',
+        token: Guard1,
+        metatype: Guard1,
         instance: {
           canActivate: () => true,
         },
         getInstanceByContextId: () => guards[0],
       },
       {
-        name: 'test2',
+        name: 'Guard2',
+        token: Guard2,
+        metatype: Guard2,
         instance: {
           canActivate: () => true,
         },
@@ -34,8 +41,8 @@ describe('GuardsContextCreator', () => {
     ];
     getSpy = sinon.stub().returns({
       injectables: new Map([
-        ['test', guards[0]],
-        ['test2', guards[1]],
+        [Guard1, guards[0]],
+        [Guard2, guards[1]],
       ]),
     });
     container = {
@@ -51,7 +58,7 @@ describe('GuardsContextCreator', () => {
   });
   describe('createConcreteContext', () => {
     describe('when `moduleContext` is nil', () => {
-      it('should returns empty array', () => {
+      it('should return empty array', () => {
         const result = guardsContextCreator.createConcreteContext(guards);
         expect(result).to.be.empty;
       });
@@ -61,8 +68,9 @@ describe('GuardsContextCreator', () => {
         guardsContextCreator['moduleContext'] = 'test';
       });
       it('should filter metatypes', () => {
+        const guardTypeRefs = [guards[0].metatype, guards[1].instance];
         expect(
-          guardsContextCreator.createConcreteContext(guards),
+          guardsContextCreator.createConcreteContext(guardTypeRefs),
         ).to.have.length(2);
       });
     });
@@ -112,10 +120,11 @@ describe('GuardsContextCreator', () => {
         (guardsContextCreator as any).moduleContext = 'test';
       });
 
-      describe('and when module exists', () => {
+      describe('but module does not exist', () => {
         it('should return undefined', () => {
-          expect(guardsContextCreator.getInstanceByMetatype({})).to.be
-            .undefined;
+          expect(
+            guardsContextCreator.getInstanceByMetatype(class RandomModule {}),
+          ).to.be.undefined;
         });
       });
     });

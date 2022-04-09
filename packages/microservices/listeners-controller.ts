@@ -13,6 +13,7 @@ import {
 import { Module } from '@nestjs/core/injector/module';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants';
+import { connectable, Observable, Subject } from 'rxjs';
 import { IClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
@@ -25,6 +26,7 @@ import {
 import { BaseRpcContext } from './ctx-host/base-rpc.context';
 import {
   CustomTransportStrategy,
+  MessageHandler,
   PatternMetadata,
   RequestContext,
 } from './interfaces';
@@ -70,7 +72,7 @@ export class ListenersController {
           transport === server.transportId,
       )
       .forEach(
-        ({ pattern, targetCallback, methodKey, transport, isEventHandler }) => {
+        ({ pattern, targetCallback, methodKey, extras, isEventHandler }) => {
           if (isStatic) {
             const proxy = this.contextCreator.create(
               instance as object,
@@ -81,7 +83,31 @@ export class ListenersController {
               undefined,
               defaultCallMetadata,
             );
-            return server.addHandler(pattern, proxy, isEventHandler);
+            if (isEventHandler) {
+              const eventHandler: MessageHandler = (...args: unknown[]) => {
+                const originalArgs = args;
+                const [dataOrContextHost] = originalArgs;
+                if (dataOrContextHost instanceof RequestContextHost) {
+                  args = args.slice(1, args.length);
+                }
+                const originalReturnValue = proxy(...args);
+                const returnedValueWrapper = eventHandler.next?.(
+                  ...(originalArgs as Parameters<MessageHandler>),
+                );
+                returnedValueWrapper?.then(returnedValue =>
+                  this.connectIfStream(returnedValue as Observable<unknown>),
+                );
+                return originalReturnValue;
+              };
+              return server.addHandler(
+                pattern,
+                eventHandler,
+                isEventHandler,
+                extras,
+              );
+            } else {
+              return server.addHandler(pattern, proxy, isEventHandler, extras);
+            }
           }
           const asyncHandler = this.createRequestScopedHandler(
             instanceWrapper,
@@ -91,7 +117,7 @@ export class ListenersController {
             methodKey,
             defaultCallMetadata,
           );
-          server.addHandler(pattern, asyncHandler, isEventHandler);
+          server.addHandler(pattern, asyncHandler, isEventHandler, extras);
         },
       );
   }
@@ -126,17 +152,26 @@ export class ListenersController {
   ) {
     const collection = moduleRef.controllers;
     const { instance } = wrapper;
-    return async (...args: unknown[]) => {
-      try {
-        const [data, reqCtx] = args;
-        const request = RequestContextHost.create(
-          pattern,
-          data,
-          reqCtx as BaseRpcContext,
-        );
-        const contextId = this.getContextId(request);
-        this.container.registerRequestProvider(request, contextId);
 
+    const requestScopedHandler: MessageHandler = async (...args: unknown[]) => {
+      try {
+        let contextId: ContextId;
+
+        let [dataOrContextHost] = args;
+        if (dataOrContextHost instanceof RequestContextHost) {
+          contextId = this.getContextId(dataOrContextHost);
+          args.shift();
+        } else {
+          const [data, reqCtx] = args;
+          const request = RequestContextHost.create(
+            pattern,
+            data,
+            reqCtx as BaseRpcContext,
+          );
+          contextId = this.getContextId(request);
+          this.container.registerRequestProvider(request, contextId);
+          dataOrContextHost = request;
+        }
         const contextInstance = await this.injector.loadPerContext(
           instance,
           moduleRef,
@@ -152,6 +187,7 @@ export class ListenersController {
           wrapper.id,
           defaultCallMetadata,
         );
+        requestScopedHandler.next?.(dataOrContextHost, ...args);
         return proxy(...args);
       } catch (err) {
         let exceptionFilter = this.exceptionFiltersCache.get(
@@ -170,6 +206,7 @@ export class ListenersController {
         return exceptionFilter.handle(err, host);
       }
     };
+    return requestScopedHandler;
   }
 
   private getContextId<T extends RequestContext = any>(request: T): ContextId {
@@ -184,5 +221,16 @@ export class ListenersController {
       this.container.registerRequestProvider(request, contextId);
     }
     return contextId;
+  }
+
+  private connectIfStream(source: Observable<unknown>) {
+    if (!source) {
+      return;
+    }
+    const connectableSource = connectable(source, {
+      connector: () => new Subject(),
+      resetOnDisconnect: false,
+    });
+    connectableSource.connect();
   }
 }

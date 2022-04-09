@@ -1,0 +1,142 @@
+name: "\U0001F41B Bug Report"
+description: "If something isn't working as expected \U0001F914"
+labels: ["needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## :warning: We use GitHub Issues to track bug reports, feature requests and regressions
+ 
+        If you are not sure that your issue is a bug, you could:
+
+        - read the [FAQ's common errors](https://docs.nestjs.com/faq/common-errors) page
+        - use our [Discord community](https://discord.gg/NestJS)
+        - use [StackOverflow using the tag `nestjs`](https://stackoverflow.com/questions/tagged/nestjs)
+        - If it's just a quick question you can ping [our Twitter](https://twitter.com/nestframework)
+
+        **NOTE:** You don't need to answer questions that you know that aren't relevant.
+
+        ---
+
+  - type: checkboxes
+    attributes:
+      label: "Is there an existing issue for this?"
+      description: "Please search [here](../issues?q=is%3Aissue) to see if an issue already exists for the bug you encountered"
+      options:
+      - label: "I have searched the existing issues"
+        required: true
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: "Current behavior"
+      description: "How the issue manifests?"
+
+  - type: input
+    validations:
+      required: true
+    attributes:
+      label: "Minimum reproduction code"
+      description: "An URL to some Git repository/[StackBlitz](https://stackblitz.com/fork/github/nestjs/typescript-starter)/[CodeSandbox](https://codesandbox.io/s/github/nestjs/typescript-starter/tree/master) project that reproduces your issue. [Wtf is a minimum reproduction?](https://jmcdo29.github.io/wtf-is-a-minimum-reproduction)"
+      placeholder: "https://github.com/..."
+
+  - type: textarea
+    attributes:
+      label: "Steps to reproduce"
+      description: |
+        How the issue manifests?
+        You could leave this blank if you alread write this in your reproduction code
+      placeholder: |
+        1. `npm ci`
+        2. `npm start:dev`
+        3. See error...
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: "Expected behavior"
+      description: "A clear and concise description of what you expected to happend (or code)"
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+  - type: checkboxes
+    validations:
+      required: true
+    attributes:
+      label: "Package"
+      description: |
+        Which package (or packages) do you think your issue is related to?
+        **Tip**: The first line of the stack trace can help you to figure out this
+
+        The package isn't listed below? Try to find its repository [here](https://github.com/orgs/nestjs/repositories) and open the issue there instead
+      options:
+        - label: "I don't know. Or some 3rd-party package"
+        - label: "<code>@nestjs/common</code>"
+        - label: "<code>@nestjs/core</code>"
+        - label: "<code>@nestjs/microservices</code>"
+        - label: "<code>@nestjs/platform-express</code>"
+        - label: "<code>@nestjs/platform-fastify</code>"
+        - label: "<code>@nestjs/platform-socket.io</code>"
+        - label: "<code>@nestjs/platform-ws</code>"
+        - label: "<code>@nestjs/testing</code>"
+        - label: "<code>@nestjs/websockets</code>"
+        - label: "Other (see below)"
+
+  - type: input
+    attributes:
+      label: "Other package"
+      description: "If your issue is related to some package that is not listed above nor under @nestjs org, write its name here"
+
+  - type: input
+    attributes:
+      label: "NestJS version"
+      description: |
+        Which version of `@nestjs/core` are you using?
+        **Tip**: Make sure that all of yours `@nestjs/*` dependencies are in sync!
+      placeholder: "8.1.3"
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: "Packages versions"
+      description: |
+        You could leave your whole `package.json` dependencies list here, or just indicate which version of `@nestjs/*` you are using
+        **Tip**: run _npx nest info_
+      value: |
+        ```json
+
+        ```
+
+  - type: input
+    attributes:
+      label: "Node.js version"
+      description: "Which version of Node.js are you using?"
+      placeholder: "14.17.6"
+
+  - type: checkboxes
+    validations:
+      required: true
+    attributes:
+      label: "In which operating systems have you tested?"
+      options:
+        - label: macOS
+        - label: Windows
+        - label: Linux
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+  - type: textarea
+    attributes:
+      label: "Other"
+      description: |
+        Anything else relevant? eg: Logs, OS version, IDE, package manager, etc.
+        **Tip:** You can attach images, recordings or log files by clicking this area to highlight it and then dragging files in

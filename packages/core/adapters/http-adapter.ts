@@ -12,19 +12,12 @@ import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-applicati
 export abstract class AbstractHttpAdapter<
   TServer = any,
   TRequest = any,
-  TResponse = any
-> implements HttpServer<TRequest, TResponse> {
+  TResponse = any,
+> implements HttpServer<TRequest, TResponse>
+{
   protected httpServer: TServer;
 
-  constructor(protected readonly instance: any) {}
-  all(path: string, handler: RequestHandler<TRequest, TResponse>);
-  all(handler: RequestHandler<TRequest, TResponse>);
-  all(path: any, handler?: any) {
-    throw new Error('Method not implemented.');
-  }
-  setBaseViewsDir?(path: string | string[]): this {
-    throw new Error('Method not implemented.');
-  }
+  constructor(protected instance?: any) {}
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   public async init() {}
@@ -69,6 +62,12 @@ export abstract class AbstractHttpAdapter<
     return this.instance.patch(...args);
   }
 
+  public all(handler: RequestHandler);
+  public all(path: any, handler: RequestHandler);
+  public all(...args: any[]) {
+    return this.instance.all(...args);
+  }
+
   public options(handler: RequestHandler);
   public options(path: any, handler: RequestHandler);
   public options(...args: any[]) {
@@ -87,6 +86,10 @@ export abstract class AbstractHttpAdapter<
 
   public setHttpServer(httpServer: TServer) {
     this.httpServer = httpServer;
+  }
+
+  public setInstance<T = any>(instance: T) {
+    this.instance = instance;
   }
 
   public getInstance<T = any>(): T {

@@ -45,40 +45,44 @@ export function assignMetadata<TParamtype = any, TArgs = any>(
 }
 
 function createRouteParamDecorator(paramtype: RouteParamtypes) {
-  return (data?: ParamData): ParameterDecorator => (target, key, index) => {
+  return (data?: ParamData): ParameterDecorator =>
+    (target, key, index) => {
+      const args =
+        Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
+      Reflect.defineMetadata(
+        ROUTE_ARGS_METADATA,
+        assignMetadata<RouteParamtypes, Record<number, RouteParamMetadata>>(
+          args,
+          paramtype,
+          index,
+          data,
+        ),
+        target.constructor,
+        key,
+      );
+    };
+}
+
+const createPipesRouteParamDecorator =
+  (paramtype: RouteParamtypes) =>
+  (
+    data?: any,
+    ...pipes: (Type<PipeTransform> | PipeTransform)[]
+  ): ParameterDecorator =>
+  (target, key, index) => {
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
+    const hasParamData = isNil(data) || isString(data);
+    const paramData = hasParamData ? data : undefined;
+    const paramPipes = hasParamData ? pipes : [data, ...pipes];
+
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
-      assignMetadata<RouteParamtypes, Record<number, RouteParamMetadata>>(
-        args,
-        paramtype,
-        index,
-        data,
-      ),
+      assignMetadata(args, paramtype, index, paramData, ...paramPipes),
       target.constructor,
       key,
     );
   };
-}
-
-const createPipesRouteParamDecorator = (paramtype: RouteParamtypes) => (
-  data?: any,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
-): ParameterDecorator => (target, key, index) => {
-  const args =
-    Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
-  const hasParamData = isNil(data) || isString(data);
-  const paramData = hasParamData ? data : undefined;
-  const paramPipes = hasParamData ? pipes : [data, ...pipes];
-
-  Reflect.defineMetadata(
-    ROUTE_ARGS_METADATA,
-    assignMetadata(args, paramtype, index, paramData, ...paramPipes),
-    target.constructor,
-    key,
-  );
-};
 
 /**
  * Route handler parameter decorator. Extracts the `Request`
@@ -106,25 +110,22 @@ export const Request: () => ParameterDecorator = createRouteParamDecorator(
  */
 export const Response: (
   options?: ResponseDecoratorOptions,
-) => ParameterDecorator = (options?: ResponseDecoratorOptions) => (
-  target,
-  key,
-  index,
-) => {
-  if (options?.passthrough) {
-    Reflect.defineMetadata(
-      RESPONSE_PASSTHROUGH_METADATA,
-      options?.passthrough,
-      target.constructor,
+) => ParameterDecorator =
+  (options?: ResponseDecoratorOptions) => (target, key, index) => {
+    if (options?.passthrough) {
+      Reflect.defineMetadata(
+        RESPONSE_PASSTHROUGH_METADATA,
+        options?.passthrough,
+        target.constructor,
+        key,
+      );
+    }
+    return createRouteParamDecorator(RouteParamtypes.RESPONSE)()(
+      target,
       key,
+      index,
     );
-  }
-  return createRouteParamDecorator(RouteParamtypes.RESPONSE)()(
-    target,
-    key,
-    index,
-  );
-};
+  };
 
 /**
  * Route handler parameter decorator. Extracts reference to the `Next` function
@@ -320,9 +321,8 @@ export function UploadedFiles(
  *
  * @publicApi
  */
-export const Headers: (
-  property?: string,
-) => ParameterDecorator = createRouteParamDecorator(RouteParamtypes.HEADERS);
+export const Headers: (property?: string) => ParameterDecorator =
+  createRouteParamDecorator(RouteParamtypes.HEADERS);
 
 /**
  * Route handler parameter decorator. Extracts the `query`
@@ -421,7 +421,7 @@ export function Query(
  *
  * For example:
  * ```typescript
- * async create(@Body() cat: CreateCatDto)
+ * async create(@Body() createDto: CreateCatDto)
  * ```
  *
  * @see [Request object](https://docs.nestjs.com/controllers#request-object)
@@ -438,7 +438,7 @@ export function Body(): ParameterDecorator;
  *
  * For example:
  * ```typescript
- * async create(@Body(new ValidationPipe()) cat: CreateCatDto)
+ * async create(@Body(new ValidationPipe()) createDto: CreateCatDto)
  * ```
  *
  * @param pipes one or more pipes - either instances or classes - to apply to

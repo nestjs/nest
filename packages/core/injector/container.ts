@@ -6,8 +6,6 @@ import { ApplicationConfig } from '../application-config';
 import { CircularDependencyException } from '../errors/exceptions/circular-dependency.exception';
 import { UndefinedForwardRefException } from '../errors/exceptions/undefined-forwardref.exception';
 import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
-import { ExternalContextCreator } from '../helpers/external-context-creator';
-import { HttpAdapterHost } from '../helpers/http-adapter-host';
 import { REQUEST } from '../router/request/request-constants';
 import { ModuleCompiler } from './compiler';
 import { ContextId } from './instance-wrapper';
@@ -51,12 +49,16 @@ export class NestContainer {
     return this.internalProvidersStorage.httpAdapter;
   }
 
+  public getHttpAdapterHostRef() {
+    return this.internalProvidersStorage.httpAdapterHost;
+  }
+
   public async addModule(
     metatype: Type<any> | DynamicModule | Promise<DynamicModule>,
     scope: Type<any>[],
-  ): Promise<Module> {
+  ): Promise<Module | undefined> {
     // In DependenciesScanner#scanForModules we already check for undefined or invalid modules
-    // We sill need to catch the edge-case of `forwardRef(() => undefined)`
+    // We still need to catch the edge-case of `forwardRef(() => undefined)`
     if (!metatype) {
       throw new UndefinedForwardRefException(scope);
     }
@@ -64,9 +66,10 @@ export class NestContainer {
       metatype,
     );
     if (this.modules.has(token)) {
-      return;
+      return this.modules.get(token);
     }
     const moduleRef = new Module(type, this);
+    moduleRef.token = token;
     this.modules.set(token, moduleRef);
 
     await this.addDynamicMetadata(
@@ -120,6 +123,10 @@ export class NestContainer {
     return this.modules;
   }
 
+  public getModuleCompiler(): ModuleCompiler {
+    return this.moduleCompiler;
+  }
+
   public getModuleByKey(moduleKey: string): Module {
     return this.modules.get(moduleKey);
   }
@@ -143,7 +150,10 @@ export class NestContainer {
     moduleRef.addRelatedModule(related);
   }
 
-  public addProvider(provider: Provider, token: string): string {
+  public addProvider(
+    provider: Provider,
+    token: string,
+  ): string | symbol | Function {
     if (!provider) {
       throw new CircularDependencyException();
     }
@@ -216,23 +226,6 @@ export class NestContainer {
       return metadata[metadataKey] as any[];
     }
     return [];
-  }
-
-  public createCoreModule(): DynamicModule {
-    return InternalCoreModule.register([
-      {
-        provide: ExternalContextCreator,
-        useValue: ExternalContextCreator.fromContainer(this),
-      },
-      {
-        provide: ModulesContainer,
-        useValue: this.modules,
-      },
-      {
-        provide: HttpAdapterHost,
-        useValue: this.internalProvidersStorage.httpAdapterHost,
-      },
-    ]);
   }
 
   public registerCoreModuleRef(moduleRef: Module) {

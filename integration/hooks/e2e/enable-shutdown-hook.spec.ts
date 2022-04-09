@@ -15,7 +15,7 @@ describe('enableShutdownHooks', () => {
     expect(calls[0]).to.equal('beforeApplicationShutdown SIGHUP');
     expect(calls[1]).to.equal('onApplicationShutdown SIGHUP');
     done();
-  }).timeout(5000);
+  }).timeout(10000);
 
   it('should call the correct hooks if a specific shutdown signal gets invoked', done => {
     const result = spawnSync('ts-node', [
@@ -30,7 +30,7 @@ describe('enableShutdownHooks', () => {
     expect(calls[0]).to.equal('beforeApplicationShutdown SIGINT');
     expect(calls[1]).to.equal('onApplicationShutdown SIGINT');
     done();
-  }).timeout(5000);
+  }).timeout(10000);
 
   it('should ignore system signals which are not specified', done => {
     const result = spawnSync('ts-node', [
@@ -40,7 +40,7 @@ describe('enableShutdownHooks', () => {
     ]);
     expect(result.stdout.toString().trim()).to.be.eq('');
     done();
-  }).timeout(5000);
+  }).timeout(10000);
 
   it('should ignore system signals if "enableShutdownHooks" was not called', done => {
     const result = spawnSync('ts-node', [
@@ -50,5 +50,5 @@ describe('enableShutdownHooks', () => {
     ]);
     expect(result.stdout.toString().trim()).to.be.eq('');
     done();
-  }).timeout(5000);
+  }).timeout(10000);
 });

@@ -5,7 +5,6 @@ import {
   RouteInfo,
 } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middleware.interface';
-import { NestModule } from '@nestjs/common/interfaces/modules/nest-module.interface';
 import {
   addLeadingSlash,
   isUndefined,
@@ -19,10 +18,11 @@ import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
+import { InstanceToken, Module } from '../injector/module';
 import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
 import { RouterProxy } from '../router/router-proxy';
+import { isRequestMethodAll, isRouteExcluded } from '../router/utils';
 import { MiddlewareBuilder } from './builder';
 import { MiddlewareContainer } from './container';
 import { MiddlewareResolver } from './resolver';
@@ -70,22 +70,22 @@ export class MiddlewareModule {
     modules: Map<string, Module>,
   ) {
     const moduleEntries = [...modules.entries()];
-    const loadMiddlewareConfiguration = async ([name, module]: [
+    const loadMiddlewareConfiguration = async ([moduleName, moduleRef]: [
       string,
       Module,
     ]) => {
-      const instance = module.instance;
-      await this.loadConfiguration(middlewareContainer, instance, name);
-      await this.resolver.resolveInstances(module, name);
+      await this.loadConfiguration(middlewareContainer, moduleRef, moduleName);
+      await this.resolver.resolveInstances(moduleRef, moduleName);
     };
     await Promise.all(moduleEntries.map(loadMiddlewareConfiguration));
   }
 
   public async loadConfiguration(
     middlewareContainer: MiddlewareContainer,
-    instance: NestModule,
+    moduleRef: Module,
     moduleKey: string,
   ) {
+    const { instance } = moduleRef;
     if (!instance.configure) {
       return;
     }
@@ -164,7 +164,7 @@ export class MiddlewareModule {
 
     for (const metatype of middlewareCollection) {
       const collection = middlewareContainer.getMiddlewareCollection(moduleKey);
-      const instanceWrapper = collection.get(metatype.name);
+      const instanceWrapper = collection.get(metatype);
       if (isUndefined(instanceWrapper)) {
         throw new RuntimeException();
       }
@@ -188,20 +188,20 @@ export class MiddlewareModule {
     method: RequestMethod,
     path: string,
     moduleRef: Module,
-    collection: Map<string, InstanceWrapper>,
+    collection: Map<InstanceToken, InstanceWrapper>,
   ) {
     const { instance, metatype } = wrapper;
-    if (isUndefined(instance.use)) {
+    if (isUndefined(instance?.use)) {
       throw new InvalidMiddlewareException(metatype.name);
     }
-    const router = await applicationRef.createMiddlewareFactory(method);
     const isStatic = wrapper.isDependencyTreeStatic();
     if (isStatic) {
       const proxy = await this.createProxy(instance);
-      return this.registerHandler(router, path, proxy);
+      return this.registerHandler(applicationRef, method, path, proxy);
     }
-    this.registerHandler(
-      router,
+    await this.registerHandler(
+      applicationRef,
+      method,
       path,
       async <TRequest, TResponse>(
         req: TRequest,
@@ -261,8 +261,9 @@ export class MiddlewareModule {
     return this.routerProxy.createProxy(middleware, exceptionsHandler);
   }
 
-  private registerHandler(
-    router: (...args: any[]) => void,
+  private async registerHandler(
+    applicationRef: HttpServer,
+    method: RequestMethod,
     path: string,
     proxy: <TRequest, TResponse>(
       req: TRequest,
@@ -271,12 +272,39 @@ export class MiddlewareModule {
     ) => void,
   ) {
     const prefix = this.config.getGlobalPrefix();
-    const basePath = addLeadingSlash(prefix);
-    if (basePath && path === '/*') {
-      // strip slash when a wildcard is being used
-      // and global prefix has been set
-      path = '*';
+    const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
+    if (
+      (Array.isArray(excludedRoutes) &&
+        isRouteExcluded(excludedRoutes, path, method)) ||
+      ['*', '/*', '(.*)', '/(.*)'].includes(path)
+    ) {
+      path = addLeadingSlash(path);
+    } else {
+      const basePath = addLeadingSlash(prefix);
+      if (basePath?.endsWith('/') && path?.startsWith('/')) {
+        // strip slash when a wildcard is being used
+        // and global prefix has been set
+        path = path?.slice(1);
+      }
+      path = basePath + path;
     }
-    router(basePath + path, proxy);
+    const isMethodAll = isRequestMethodAll(method);
+    const requestMethod = RequestMethod[method];
+    const router = await applicationRef.createMiddlewareFactory(method);
+    router(
+      path,
+      isMethodAll
+        ? proxy
+        : <TRequest, TResponse>(
+            req: TRequest,
+            res: TResponse,
+            next: () => void,
+          ) => {
+            if (applicationRef.getRequestMethod(req) === requestMethod) {
+              return proxy(req, res, next);
+            }
+            return next();
+          },
+    );
   }
 }

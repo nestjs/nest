@@ -16,11 +16,20 @@ export function createCacheManager(): Provider {
       const cacheManager = loadPackage('cache-manager', 'CacheModule', () =>
         require('cache-manager'),
       );
-      const memoryCache = cacheManager.caching({
-        ...defaultCacheOptions,
-        ...(options || {}),
-      });
-      return memoryCache;
+
+      return Array.isArray(options)
+        ? cacheManager.multiCaching(
+            options.map(store =>
+              cacheManager.caching({
+                ...defaultCacheOptions,
+                ...(store || {}),
+              }),
+            ),
+          )
+        : cacheManager.caching({
+            ...defaultCacheOptions,
+            ...(options || {}),
+          });
     },
     inject: [CACHE_MODULE_OPTIONS],
   };

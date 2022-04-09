@@ -1,9 +1,10 @@
 import { MessageEvent } from '@nestjs/common/interfaces';
+import { isObject } from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage, OutgoingHttpHeaders } from 'http';
 import { Transform } from 'stream';
 
 function toDataString(data: string | object): string {
-  if (typeof data === 'object') {
+  if (isObject(data)) {
     return toDataString(JSON.stringify(data));
   }
 
@@ -13,7 +14,17 @@ function toDataString(data: string | object): string {
     .join('');
 }
 
+export type AdditionalHeaders = Record<
+  string,
+  string[] | string | number | undefined
+>;
+
+interface ReadHeaders {
+  getHeaders?(): AdditionalHeaders;
+}
+
 interface WriteHeaders {
+  writableEnded?: boolean;
   writeHead?(
     statusCode: number,
     reasonPhrase?: string,
@@ -23,7 +34,8 @@ interface WriteHeaders {
   flushHeaders?(): void;
 }
 
-export type HeaderStream = NodeJS.WritableStream & WriteHeaders;
+export type WritableHeaderStream = NodeJS.WritableStream & WriteHeaders;
+export type HeaderStream = WritableHeaderStream & ReadHeaders;
 
 /**
  * Adapted from https://raw.githubusercontent.com/EventSource/node-ssestream
@@ -50,16 +62,22 @@ export class SseStream extends Transform {
     }
   }
 
-  pipe<T extends HeaderStream>(destination: T, options?: { end?: boolean }): T {
+  pipe<T extends WritableHeaderStream>(
+    destination: T,
+    options?: {
+      additionalHeaders?: AdditionalHeaders;
+      end?: boolean;
+    },
+  ): T {
     if (destination.writeHead) {
       destination.writeHead(200, {
+        ...options?.additionalHeaders,
         // See https://github.com/dunglas/mercure/blob/master/hub/subscribe.go#L124-L130
         'Content-Type': 'text/event-stream',
         Connection: 'keep-alive',
         // Disable cache, even for old browsers and proxies
         'Cache-Control':
           'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
-        'Transfer-Encoding': 'identity',
         Pragma: 'no-cache',
         Expire: '0',
         // NGINX support https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/#x-accel-buffering
@@ -68,7 +86,7 @@ export class SseStream extends Transform {
       destination.flushHeaders();
     }
 
-    destination.write(':\n');
+    destination.write('\n');
     return super.pipe(destination, options);
   }
 

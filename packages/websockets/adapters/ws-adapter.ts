@@ -13,8 +13,9 @@ export interface BaseWsInstance {
 export abstract class AbstractWsAdapter<
   TServer extends BaseWsInstance = any,
   TClient extends BaseWsInstance = any,
-  TOptions = any
-> implements WebSocketAdapter<TServer, TClient, TOptions> {
+  TOptions = any,
+> implements WebSocketAdapter<TServer, TClient, TOptions>
+{
   protected readonly httpServer: any;
 
   constructor(appOrHttpServer?: INestApplicationContext | any) {
@@ -33,10 +34,13 @@ export abstract class AbstractWsAdapter<
     client.on(DISCONNECT_EVENT, callback);
   }
 
-  public close(server: TServer) {
+  public async close(server: TServer) {
     const isCallable = server && isFunction(server.close);
-    isCallable && server.close();
+    isCallable && (await new Promise(resolve => server.close(resolve)));
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  public async dispose() {}
 
   public abstract create(port: number, options?: TOptions): TServer;
   public abstract bindMessageHandlers(

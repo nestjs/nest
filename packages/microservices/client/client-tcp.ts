@@ -1,38 +1,42 @@
-import { Logger } from '@nestjs/common';
+import { Logger, Type } from '@nestjs/common';
 import * as net from 'net';
+import { EmptyError, lastValueFrom } from 'rxjs';
 import { share, tap } from 'rxjs/operators';
 import {
   CLOSE_EVENT,
+  ECONNREFUSED,
   ERROR_EVENT,
   MESSAGE_EVENT,
   TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
 } from '../constants';
-import { JsonSocket } from '../helpers/json-socket';
+import { JsonSocket, TcpSocket } from '../helpers';
 import { PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { TcpClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
-import { ECONNREFUSED } from './constants';
 
 export class ClientTCP extends ClientProxy {
   protected connection: Promise<any>;
   private readonly logger = new Logger(ClientTCP.name);
   private readonly port: number;
   private readonly host: string;
+  private readonly socketClass: Type<TcpSocket>;
   private isConnected = false;
-  private socket: JsonSocket;
+  private socket: TcpSocket;
 
   constructor(options: TcpClientOptions['options']) {
     super();
     this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
     this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
+    this.socketClass =
+      this.getOptionsProp(options, 'socketClass') || JsonSocket;
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
   }
 
   public connect(): Promise<any> {
-    if (this.isConnected && this.connection) {
+    if (this.connection) {
       return this.connection;
     }
     this.socket = this.createSocket();
@@ -49,14 +53,19 @@ export class ClientTCP extends ClientProxy {
     );
 
     this.socket.connect(this.port, this.host);
-    this.connection = source$.toPromise();
+    this.connection = lastValueFrom(source$).catch(err => {
+      if (err instanceof EmptyError) {
+        return;
+      }
+      throw err;
+    });
+
     return this.connection;
   }
 
-  public handleResponse(buffer: unknown): void {
-    const { err, response, isDisposed, id } = this.deserializer.deserialize(
-      buffer,
-    );
+  public async handleResponse(buffer: unknown): Promise<void> {
+    const { err, response, isDisposed, id } =
+      await this.deserializer.deserialize(buffer);
     const callback = this.routingMap.get(id);
     if (!callback) {
       return undefined;
@@ -74,8 +83,8 @@ export class ClientTCP extends ClientProxy {
     });
   }
 
-  public createSocket(): JsonSocket {
-    return new JsonSocket(new net.Socket());
+  public createSocket(): TcpSocket {
+    return new this.socketClass(new net.Socket());
   }
 
   public close() {
@@ -83,7 +92,7 @@ export class ClientTCP extends ClientProxy {
     this.handleClose();
   }
 
-  public bindEvents(socket: JsonSocket) {
+  public bindEvents(socket: TcpSocket) {
     socket.on(
       ERROR_EVENT,
       (err: any) => err.code !== ECONNREFUSED && this.handleError(err),
@@ -98,12 +107,13 @@ export class ClientTCP extends ClientProxy {
   public handleClose() {
     this.isConnected = false;
     this.socket = null;
+    this.connection = undefined;
   }
 
   protected publish(
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
-  ): Function {
+  ): () => void {
     try {
       const packet = this.assignPacketId(partialPacket);
       const serializedPacket = this.serializer.serialize(packet);

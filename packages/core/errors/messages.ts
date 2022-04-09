@@ -1,4 +1,4 @@
-import { ForwardReference, Type } from '@nestjs/common';
+import type { ForwardReference, Type, DynamicModule } from '@nestjs/common';
 import { isNil, isSymbol } from '@nestjs/common/utils/shared.utils';
 import {
   InjectorDependency,
@@ -7,14 +7,19 @@ import {
 import { Module } from '../injector/module';
 
 /**
- * Returns the name of an instance
+ * Returns the name of an instance or `undefined`
  * @param instance The instance which should get the name from
  */
 const getInstanceName = (instance: unknown): string => {
   if ((instance as ForwardReference)?.forwardRef) {
     return (instance as ForwardReference).forwardRef()?.name;
   }
-  return (instance as Type<any>)?.name;
+
+  if ((instance as DynamicModule)?.module) {
+    return (instance as DynamicModule).module?.name;
+  }
+
+  return (instance as Type)?.name;
 };
 
 /**
@@ -97,7 +102,7 @@ export const UNDEFINED_FORWARDREF_MESSAGE = (
 
 (Read more: https://docs.nestjs.com/fundamentals/circular-dependency)
 Scope [${stringifyScope(scope)}]
-  `;
+`;
 
 export const INVALID_MODULE_MESSAGE = (
   parentModule: any,
@@ -107,9 +112,23 @@ export const INVALID_MODULE_MESSAGE = (
   const parentModuleName = parentModule?.name || 'module';
 
   return `Nest cannot create the ${parentModuleName} instance.
-Received an unexpected value at index [${index}] of the ${parentModuleName} "imports" array. 
+Received an unexpected value at index [${index}] of the ${parentModuleName} "imports" array.
 
 Scope [${stringifyScope(scope)}]`;
+};
+
+export const USING_INVALID_CLASS_AS_A_MODULE_MESSAGE = (
+  metatypeUsedAsAModule: Type | ForwardReference,
+  scope: any[],
+) => {
+  const metatypeName = getInstanceName(metatypeUsedAsAModule) || 'found';
+
+  // TODO(v9): Edit the message below:
+  return `In the next major version, Nest will not allow classes annotated with @Injectable(), @Catch(), and @Controller() decorators to appear in the "imports" array of a module.
+Please remove "${metatypeName}" (including forwarded occurrences, if any) from all of the "imports" arrays.
+
+Scope [${stringifyScope(scope)}]
+`;
 };
 
 export const UNDEFINED_MODULE_MESSAGE = (

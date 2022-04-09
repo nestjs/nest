@@ -3,12 +3,10 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import { EMPTY, fromEvent, Subject } from 'rxjs';
+import { EMPTY, fromEvent, lastValueFrom, Subject } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
-  GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
-  GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
   GRPC_DEFAULT_PROTO_LOADER,
   GRPC_DEFAULT_URL,
 } from '../constants';
@@ -19,6 +17,7 @@ import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definit
 import { CustomTransportStrategy, MessageHandler } from '../interfaces';
 import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import { ChannelOptions } from '../external/grpc-options.interface';
 
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
@@ -46,15 +45,28 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     const protoLoader =
       this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
 
-    grpcPackage = this.loadPackage('grpc', ServerGrpc.name, () =>
-      require('grpc'),
+    grpcPackage = this.loadPackage('@grpc/grpc-js', ServerGrpc.name, () =>
+      require('@grpc/grpc-js'),
     );
-    grpcProtoLoaderPackage = this.loadPackage(protoLoader, ServerGrpc.name);
+    grpcProtoLoaderPackage = this.loadPackage(
+      protoLoader,
+      ServerGrpc.name,
+      () =>
+        protoLoader === GRPC_DEFAULT_PROTO_LOADER
+          ? require('@grpc/proto-loader')
+          : require(protoLoader),
+    );
   }
 
-  public async listen(callback: () => void) {
-    this.grpcClient = this.createClient();
-    await this.start(callback);
+  public async listen(
+    callback: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ) {
+    try {
+      this.grpcClient = await this.createClient();
+      await this.start(callback);
+    } catch (err) {
+      callback(err);
+    }
   }
 
   public async start(callback?: () => void) {
@@ -208,10 +220,10 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   public createUnaryServiceMethod(methodHandler: Function): Function {
     return async (call: GrpcCall, callback: Function) => {
       const handler = methodHandler(call.request, call.metadata, call);
-      this.transformToObservable(await handler).subscribe(
-        data => callback(null, data),
-        (err: any) => callback(err),
-      );
+      this.transformToObservable(await handler).subscribe({
+        next: data => callback(null, data),
+        error: (err: any) => callback(err),
+      });
     };
   }
 
@@ -270,17 +282,17 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
         call.end();
       } else {
-        const response = await res
-          .pipe(
+        const response = await lastValueFrom(
+          res.pipe(
             takeUntil(fromEvent(call as any, CANCEL_EVENT)),
             catchError(err => {
               callback(err, null);
               return EMPTY;
             }),
-          )
-          .toPromise();
+          ),
+        );
 
-        if (typeof response !== 'undefined') {
+        if (!isUndefined(response)) {
           callback(null, response);
         }
       }
@@ -317,7 +329,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   }
 
   public addHandler(
-    pattern: any,
+    pattern: unknown,
     callback: MessageHandler,
     isEventHandler = false,
   ) {
@@ -326,33 +338,34 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     this.messageHandlers.set(route, callback);
   }
 
-  public createClient(): any {
-    const grpcOptions = {
-      'grpc.max_send_message_length': this.getOptionsProp(
-        this.options,
-        'maxSendMessageLength',
-        GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH,
-      ),
-      'grpc.max_receive_message_length': this.getOptionsProp(
-        this.options,
-        'maxReceiveMessageLength',
-        GRPC_DEFAULT_MAX_RECEIVE_MESSAGE_LENGTH,
-      ),
-    };
-    const maxMetadataSize = this.getOptionsProp(
-      this.options,
-      'maxMetadataSize',
-      -1,
-    );
-    if (maxMetadataSize > 0) {
-      grpcOptions['grpc.max_metadata_size'] = maxMetadataSize;
+  public async createClient(): Promise<any> {
+    const channelOptions: ChannelOptions =
+      this.options && this.options.channelOptions
+        ? this.options.channelOptions
+        : {};
+    if (this.options && this.options.maxSendMessageLength) {
+      channelOptions['grpc.max_send_message_length'] =
+        this.options.maxSendMessageLength;
     }
-    const server = new grpcPackage.Server(grpcOptions);
+    if (this.options && this.options.maxReceiveMessageLength) {
+      channelOptions['grpc.max_receive_message_length'] =
+        this.options.maxReceiveMessageLength;
+    }
+    if (this.options && this.options.maxMetadataSize) {
+      channelOptions['grpc.max_metadata_size'] = this.options.maxMetadataSize;
+    }
+    const server = new grpcPackage.Server(channelOptions);
     const credentials = this.getOptionsProp(this.options, 'credentials');
-    server.bind(
-      this.url,
-      credentials || grpcPackage.ServerCredentials.createInsecure(),
-    );
+
+    await new Promise((resolve, reject) => {
+      server.bindAsync(
+        this.url,
+        credentials || grpcPackage.ServerCredentials.createInsecure(),
+        (error: Error | null, port: number) =>
+          error ? reject(error) : resolve(port),
+      );
+    });
+
     return server;
   }
 
@@ -371,9 +384,8 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const loader = this.getOptionsProp(this.options, 'loader');
 
       const packageDefinition = grpcProtoLoaderPackage.loadSync(file, loader);
-      const packageObject = grpcPackage.loadPackageDefinition(
-        packageDefinition,
-      );
+      const packageObject =
+        grpcPackage.loadPackageDefinition(packageDefinition);
       return packageObject;
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException();

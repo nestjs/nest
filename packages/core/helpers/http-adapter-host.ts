@@ -13,7 +13,7 @@ import { AbstractHttpAdapter } from '../adapters/http-adapter';
  * @publicApi
  */
 export class HttpAdapterHost<
-  T extends AbstractHttpAdapter = AbstractHttpAdapter
+  T extends AbstractHttpAdapter = AbstractHttpAdapter,
 > {
   private _httpAdapter?: T;
 

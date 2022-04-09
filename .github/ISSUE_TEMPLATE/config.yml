@@ -1,0 +1,10 @@
+## To encourage contributors to use issue templates, we don't allow blank issues
+blank_issues_enabled: false
+
+contact_links:
+  - name: "\u2049 FAQ"
+    url: "https://docs.nestjs.com/faq"
+    about: "Make sure you have read the Frequently Asked Questions page."
+  - name: "\u2753 Discord Community of NestJS"
+    url: "https://discord.gg/NestJS"
+    about: "Please ask support questions or discuss suggestions/enhancements here."

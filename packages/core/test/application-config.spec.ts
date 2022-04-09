@@ -1,5 +1,11 @@
+import { RequestMethod } from '@nestjs/common';
+import {
+  GlobalPrefixOptions,
+  VersioningOptions,
+} from '@nestjs/common/interfaces';
 import { expect } from 'chai';
 import { ApplicationConfig } from '../application-config';
+import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
 
 describe('ApplicationConfig', () => {
   let appConfig: ApplicationConfig;
@@ -14,8 +20,21 @@ describe('ApplicationConfig', () => {
 
       expect(appConfig.getGlobalPrefix()).to.be.eql(path);
     });
+    it('should set global path options', () => {
+      const options: GlobalPrefixOptions<ExcludeRouteMetadata> = {
+        exclude: [
+          { pathRegex: new RegExp(/health/), requestMethod: RequestMethod.GET },
+        ],
+      };
+      appConfig.setGlobalPrefixOptions(options);
+
+      expect(appConfig.getGlobalPrefixOptions()).to.be.eql(options);
+    });
     it('should has empty string as a global path by default', () => {
       expect(appConfig.getGlobalPrefix()).to.be.eql('');
+    });
+    it('should has empty string as a global path option by default', () => {
+      expect(appConfig.getGlobalPrefixOptions()).to.be.eql({});
     });
   });
   describe('IOAdapter', () => {
@@ -104,6 +123,25 @@ describe('ApplicationConfig', () => {
       appConfig.addGlobalRequestInterceptor(interceptor as any);
 
       expect(appConfig.getGlobalRequestInterceptors()).to.contain(interceptor);
+    });
+  });
+  describe('Versioning', () => {
+    it('should set versioning', () => {
+      const options = { type: 'test' };
+      appConfig.enableVersioning(options as any);
+
+      expect(appConfig.getVersioning()).to.be.eql(options);
+    });
+
+    it('should ignore duplicated versions on defaultVersion array', () => {
+      const options = { type: 'test', defaultVersion: ['1', '2', '2', '1'] };
+      appConfig.enableVersioning(options as any);
+
+      expect(appConfig.getVersioning().defaultVersion).to.be.eql(['1', '2']);
+    });
+
+    it('should have undefined as the versioning by default', () => {
+      expect(appConfig.getVersioning()).to.be.eql(undefined);
     });
   });
 });

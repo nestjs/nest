@@ -96,7 +96,7 @@ export class ClientsModule {
   }
 
   private static assignOnAppShutdownHook(client: ClientProxy & Closeable) {
-    ((client as unknown) as OnApplicationShutdown).onApplicationShutdown =
+    (client as unknown as OnApplicationShutdown).onApplicationShutdown =
       client.close;
     return client;
   }

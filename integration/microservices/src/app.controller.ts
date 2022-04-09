@@ -11,10 +11,10 @@ import {
   ClientProxy,
   EventPattern,
   MessagePattern,
-  Transport,
   RpcException,
+  Transport,
 } from '@nestjs/microservices';
-import { from, Observable, of, throwError } from 'rxjs';
+import { from, lastValueFrom, Observable, of, throwError } from 'rxjs';
 import { catchError, scan } from 'rxjs/operators';
 
 @Controller()
@@ -66,9 +66,9 @@ export class AppController {
   concurrent(@Body() data: number[][]): Promise<boolean> {
     const send = async (tab: number[]) => {
       const expected = tab.reduce((a, b) => a + b);
-      const result = await this.client
-        .send<number>({ cmd: 'sum' }, tab)
-        .toPromise();
+      const result = await lastValueFrom(
+        this.client.send<number>({ cmd: 'sum' }, tab),
+      );
 
       return result === expected;
     };
@@ -79,13 +79,16 @@ export class AppController {
 
   @Post('error')
   @HttpCode(200)
-  serializeError(@Query('client') query: 'custom' | 'standard' = 'standard', @Body() body: Record<string, any>): Observable<boolean> {
+  serializeError(
+    @Query('client') query: 'custom' | 'standard' = 'standard',
+    @Body() body: Record<string, any>,
+  ): Observable<boolean> {
     const client = query === 'custom' ? this.customClient : this.client;
     return client.send({ cmd: 'err' }, {}).pipe(
-      catchError((err) => {
+      catchError(err => {
         return of(err instanceof RpcException);
-      })
-    )
+      }),
+    );
   }
 
   @MessagePattern({ cmd: 'sum' })
@@ -110,7 +113,7 @@ export class AppController {
 
   @MessagePattern({ cmd: 'err' })
   throwAnError() {
-    return throwError(new Error('err'));
+    return throwError(() => new Error('err'));
   }
 
   @Post('notify')

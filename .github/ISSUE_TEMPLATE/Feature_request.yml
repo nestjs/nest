@@ -1,0 +1,55 @@
+name: "\U0001F680 Feature Request"
+description: "I have a suggestion \U0001F63B!"
+labels: ["type: enhancement :wolf:", "needs triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## :warning: We use GitHub Issues to track bug reports, feature requests and regressions
+ 
+        If you are not sure that your issue is a bug, you could:
+
+        - read the [FAQ's common errors](https://docs.nestjs.com/faq/common-errors) page
+        - use our [Discord community](https://discord.gg/NestJS)
+        - use [StackOverflow using the tag `nestjs`](https://stackoverflow.com/questions/tagged/nestjs)
+        - If it's just a quick question you can ping [our Twitter](https://twitter.com/nestframework)
+
+        ---
+
+  - type: checkboxes
+    attributes:
+      label: "Is there an existing issue that is already proposing this?"
+      description: "Please search [here](../issues?q=is%3Aissue) to see if an issue already exists for the feature you are requesting"
+      options:
+      - label: "I have searched the existing issues"
+        required: true
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: "Is your feature request related to a problem? Please describe it"
+      description: "A clear and concise description of what the problem is"
+      placeholder: |
+        I have an issue when ...
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: "Describe the solution you'd like"
+      description: "A clear and concise description of what you want to happen. Add any considered drawbacks"
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: "Teachability, documentation, adoption, migration strategy"
+      description: "If you can, explain how users will be able to use this and possibly write out a version the docs. Maybe a screenshot or design?"
+
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: "What is the motivation / use case for changing the behavior?"
+      description: "Describe the motivation or the concrete use case"

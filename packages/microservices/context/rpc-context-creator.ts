@@ -41,7 +41,8 @@ export interface RpcHandlerMetadata {
 export class RpcContextCreator {
   private readonly contextUtils = new ContextUtils();
   private readonly rpcParamsFactory = new RpcParamsFactory();
-  private readonly handlerMetadataStorage = new HandlerMetadataStorage<RpcHandlerMetadata>();
+  private readonly handlerMetadataStorage =
+    new HandlerMetadataStorage<RpcHandlerMetadata>();
 
   constructor(
     private readonly rpcProxy: RpcProxy,
@@ -57,7 +58,7 @@ export class RpcContextCreator {
   public create<T extends ParamsMetadata = ParamsMetadata>(
     instance: Controller,
     callback: (...args: unknown[]) => Observable<any>,
-    module: string,
+    moduleKey: string,
     methodName: string,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
@@ -74,33 +75,33 @@ export class RpcContextCreator {
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
     const guards = this.guardsContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
 
-    const paramsMetadata = getParamsMetadata(module);
+    const paramsMetadata = getParamsMetadata(moduleKey);
     const paramsOptions = paramsMetadata
       ? this.contextUtils.mergeParamsMetatypes(paramsMetadata, paramtypes)
       : [];
@@ -220,9 +221,8 @@ export class RpcContextCreator {
 
     return keys.map(key => {
       const { index, data, pipes: pipesCollection } = metadata[key];
-      const pipes = this.pipesContextCreator.createConcreteContext(
-        pipesCollection,
-      );
+      const pipes =
+        this.pipesContextCreator.createConcreteContext(pipesCollection);
       const type = this.contextUtils.mapParamType(key);
 
       if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {
@@ -236,7 +236,7 @@ export class RpcContextCreator {
       }
       const numericType = Number(type);
       const extractValue = (...args: unknown[]) =>
-        paramsFactory.exchangeKeyForValue(numericType, args);
+        paramsFactory.exchangeKeyForValue(numericType, data, args);
 
       return { index, extractValue, type: numericType, data, pipes };
     });

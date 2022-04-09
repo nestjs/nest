@@ -24,7 +24,7 @@ describe('ExternalExceptionsHandler', () => {
       beforeEach(() => {
         sinon.stub(handler, 'invokeCustomFilters').returns(observable$ as any);
       });
-      it('should returns observable', () => {
+      it('should return observable', () => {
         const result = handler.next(new Error(), null);
         expect(result).to.be.eql(observable$);
       });
@@ -42,7 +42,7 @@ describe('ExternalExceptionsHandler', () => {
   });
   describe('invokeCustomFilters', () => {
     describe('when filters array is empty', () => {
-      it('should returns identity', () => {
+      it('should return identity', () => {
         expect(handler.invokeCustomFilters(null, null)).to.be.null;
       });
     });
@@ -67,7 +67,7 @@ describe('ExternalExceptionsHandler', () => {
           handler.invokeCustomFilters(exception, null);
           expect(funcSpy.calledWith(exception)).to.be.true;
         });
-        it('should returns stream', () => {
+        it('should return stream', () => {
           expect(handler.invokeCustomFilters(new TestException(), null)).to.be
             .not.null;
         });
@@ -77,7 +77,7 @@ describe('ExternalExceptionsHandler', () => {
           handler.invokeCustomFilters(new TestException(), null);
           expect(funcSpy.notCalled).to.be.true;
         });
-        it('should returns null', () => {
+        it('should return null', () => {
           expect(handler.invokeCustomFilters(new TestException(), null)).to.be
             .null;
         });

@@ -76,16 +76,22 @@ export class MicroservicesModule {
   }
 
   public bindListeners(
-    controllers: Map<string, InstanceWrapper<Controller>>,
+    controllers: Map<string | symbol | Function, InstanceWrapper<Controller>>,
     server: Server & CustomTransportStrategy,
-    module: string,
+    moduleName: string,
   ) {
     controllers.forEach(wrapper =>
-      this.listenersController.registerPatternHandlers(wrapper, server, module),
+      this.listenersController.registerPatternHandlers(
+        wrapper,
+        server,
+        moduleName,
+      ),
     );
   }
 
-  public bindClients(items: Map<string, InstanceWrapper<unknown>>) {
+  public bindClients(
+    items: Map<string | symbol | Function, InstanceWrapper<unknown>>,
+  ) {
     items.forEach(({ instance, isNotMetatype }) => {
       !isNotMetatype &&
         this.listenersController.assignClientsToProperties(instance);

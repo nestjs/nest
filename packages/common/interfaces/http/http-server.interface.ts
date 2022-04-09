@@ -4,6 +4,7 @@ import {
   CorsOptionsDelegate,
 } from '../../interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '../../interfaces/nest-application-options.interface';
+import { VersioningOptions, VersionValue } from '../version-options.interface';
 
 export type ErrorHandler<TRequest = any, TResponse = any> = (
   error: any,
@@ -41,6 +42,8 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   put(path: string, handler: RequestHandler<TRequest, TResponse>): any;
   patch(handler: RequestHandler<TRequest, TResponse>): any;
   patch(path: string, handler: RequestHandler<TRequest, TResponse>): any;
+  all(path: string, handler: RequestHandler<TRequest, TResponse>): any;
+  all(handler: RequestHandler<TRequest, TResponse>): any;
   options(handler: RequestHandler<TRequest, TResponse>): any;
   options(path: string, handler: RequestHandler<TRequest, TResponse>): any;
   listen(port: number | string, callback?: () => void): any;
@@ -71,4 +74,13 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   close(): any;
   getType(): string;
   init?(): Promise<void>;
+  applyVersionFilter?(
+    handler: Function,
+    version: VersionValue,
+    versioningOptions: VersioningOptions,
+  ): <TRequest extends Record<string, any> = any, TResponse = any>(
+    req: TRequest,
+    res: TResponse,
+    next: () => void,
+  ) => any;
 }

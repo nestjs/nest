@@ -14,29 +14,42 @@ describe('ServerRedis', () => {
     server = new ServerRedis({});
   });
   describe('listen', () => {
-    let createRedisClient;
     let onSpy: sinon.SinonSpy;
-    let client;
+    let client: any;
+    let callbackSpy: sinon.SinonSpy;
 
     beforeEach(() => {
       onSpy = sinon.spy();
       client = {
         on: onSpy,
       };
-      createRedisClient = sinon
-        .stub(server, 'createRedisClient')
-        .callsFake(() => client);
+      sinon.stub(server, 'createRedisClient').callsFake(() => client);
 
-      server.listen(null);
+      callbackSpy = sinon.spy();
     });
     it('should bind "error" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onSpy.getCall(0).args[0]).to.be.equal('error');
     });
     it('should bind "connect" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onSpy.getCall(3).args[0]).to.be.equal('connect');
     });
     it('should bind "message" event to handler', () => {
+      server.listen(callbackSpy);
       expect(onSpy.getCall(2).args[0]).to.be.equal('message');
+    });
+    describe('when "start" throws an exception', () => {
+      it('should call callback with a thrown error as an argument', () => {
+        const error = new Error('random error');
+
+        const callbackSpy = sinon.spy();
+        sinon.stub(server, 'start').callsFake(() => {
+          throw error;
+        });
+        server.listen(callbackSpy);
+        expect(callbackSpy.calledWith(error)).to.be.true;
+      });
     });
   });
   describe('close', () => {
@@ -94,16 +107,16 @@ describe('ServerRedis', () => {
       getPublisherSpy = sinon.spy();
       sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
     });
-    it('should call "handleEvent" if identifier is not present', () => {
+    it('should call "handleEvent" if identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
       sinon.stub(server, 'parseMessage').callsFake(() => ({ data } as any));
 
-      server.handleMessage(channel, JSON.stringify({}), null);
+      await server.handleMessage(channel, JSON.stringify({}), null);
       expect(handleEventSpy.called).to.be.true;
     });
-    it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, () => {
+    it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
       sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data } as any));
-      server.handleMessage(channel, JSON.stringify({ id }), null);
+      await server.handleMessage(channel, JSON.stringify({ id }), null);
       expect(
         getPublisherSpy.calledWith({
           id,
@@ -112,14 +125,14 @@ describe('ServerRedis', () => {
         }),
       ).to.be.true;
     });
-    it(`should call handler with expected arguments`, () => {
+    it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
       (server as any).messageHandlers = objectToMap({
         [channel]: handler,
       });
       sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data } as any));
 
-      server.handleMessage(channel, {}, null);
+      await server.handleMessage(channel, {}, null);
       expect(handler.calledWith(data)).to.be.true;
     });
   });

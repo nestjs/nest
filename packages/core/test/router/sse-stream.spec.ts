@@ -43,6 +43,7 @@ describe('SseStream', () => {
     const sse = new SseStream();
     const sink = new Sink();
     sse.pipe(sink);
+
     sse.writeMessage(
       {
         data: 'hello\nworld',
@@ -57,8 +58,9 @@ describe('SseStream', () => {
     );
     sse.end();
     await written(sink);
+
     expect(sink.content).to.equal(
-      `:
+      `
 id: 1
 data: hello
 data: world
@@ -75,6 +77,7 @@ data: monde
     const sse = new SseStream();
     const sink = new Sink();
     sse.pipe(sink);
+
     sse.writeMessage(
       {
         data: { hello: 'world' },
@@ -83,8 +86,9 @@ data: monde
     );
     sse.end();
     await written(sink);
+
     expect(sink.content).to.equal(
-      `:
+      `
 id: 1
 data: {"hello":"world"}
 
@@ -96,6 +100,7 @@ data: {"hello":"world"}
     const sse = new SseStream();
     const sink = new Sink();
     sse.pipe(sink);
+
     sse.writeMessage(
       {
         type: 'tea-time',
@@ -107,8 +112,9 @@ data: {"hello":"world"}
     );
     sse.end();
     await written(sink);
+
     expect(sink.content).to.equal(
-      `:
+      `
 event: tea-time
 id: the-id
 retry: 222
@@ -120,21 +126,38 @@ data: hello
 
   it('sets headers on destination when it looks like a HTTP Response', callback => {
     const sse = new SseStream();
-    const sink = new Sink((status: number, headers: OutgoingHttpHeaders) => {
-      expect(headers).to.deep.equal({
-        'Content-Type': 'text/event-stream',
-        Connection: 'keep-alive',
-        'Cache-Control':
-          'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
-        'Transfer-Encoding': 'identity',
-        Pragma: 'no-cache',
-        Expire: '0',
-        'X-Accel-Buffering': 'no',
-      });
-      callback();
-      return sink;
-    });
+    const sink = new Sink(
+      (status: number, headers: string | OutgoingHttpHeaders) => {
+        expect(headers).to.deep.equal({
+          'Content-Type': 'text/event-stream',
+          Connection: 'keep-alive',
+          'Cache-Control':
+            'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
+          Pragma: 'no-cache',
+          Expire: '0',
+          'X-Accel-Buffering': 'no',
+        });
+        callback();
+        return sink;
+      },
+    );
     sse.pipe(sink);
+  });
+
+  it('sets additional headers when provided', callback => {
+    const sse = new SseStream();
+    const sink = new Sink(
+      (status: number, headers: string | OutgoingHttpHeaders) => {
+        expect(headers).to.contain.keys('access-control-headers');
+        expect(headers['access-control-headers']).to.equal('some-cors-value');
+        callback();
+        return sink;
+      },
+    );
+
+    sse.pipe(sink, {
+      additionalHeaders: { 'access-control-headers': 'some-cors-value' },
+    });
   });
 
   it('allows an eventsource to connect', callback => {
@@ -143,6 +166,7 @@ data: hello
       sse = new SseStream(req);
       sse.pipe(res);
     });
+
     server.listen(() => {
       const es = new EventSource(
         `http://localhost:${(server.address() as AddressInfo).port}`,

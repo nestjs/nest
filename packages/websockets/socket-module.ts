@@ -5,11 +5,13 @@ import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator
 import { loadAdapter } from '@nestjs/core/helpers/load-adapter';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
+import { InstanceToken } from '@nestjs/core/injector/module';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
 import { iterate } from 'iterare';
+import { AbstractWsAdapter } from './adapters';
 import { GATEWAY_METADATA } from './constants';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { WsContextCreator } from './context/ws-context-creator';
@@ -51,7 +53,7 @@ export class SocketModule<HttpServer = any> {
   }
 
   public connectAllGateways(
-    providers: Map<string, InstanceWrapper<Injectable>>,
+    providers: Map<InstanceToken, InstanceWrapper<Injectable>>,
     moduleName: string,
   ) {
     iterate(providers.values())
@@ -86,12 +88,14 @@ export class SocketModule<HttpServer = any> {
     if (!adapter) {
       return;
     }
-    const servers = this.socketsContainer.getAllSocketEventHosts();
+    const servers = this.socketsContainer.getAll();
     await Promise.all(
       iterate(servers.values())
         .filter(({ server }) => server)
         .map(async ({ server }) => adapter.close(server)),
     );
+    await (adapter as AbstractWsAdapter)?.dispose();
+
     this.socketsContainer.clear();
   }
 
@@ -104,6 +108,7 @@ export class SocketModule<HttpServer = any> {
     const { IoAdapter } = loadAdapter(
       '@nestjs/platform-socket.io',
       'WebSockets',
+      () => require('@nestjs/platform-socket.io'),
     );
     const ioAdapter = new IoAdapter(this.httpServer);
     this.applicationConfig.setIoAdapter(ioAdapter);

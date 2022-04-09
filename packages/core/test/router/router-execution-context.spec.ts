@@ -19,6 +19,7 @@ import { PipesConsumer } from '../../pipes/pipes-consumer';
 import { PipesContextCreator } from '../../pipes/pipes-context-creator';
 import { RouteParamsFactory } from '../../router/route-params-factory';
 import { RouterExecutionContext } from '../../router/router-execution-context';
+import { HeaderStream } from '../../router/sse-stream';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('RouterExecutionContext', () => {
@@ -262,6 +263,8 @@ describe('RouterExecutionContext', () => {
         expect(contextCreator.isPipeable(RouteParamtypes.BODY)).to.be.true;
         expect(contextCreator.isPipeable(RouteParamtypes.QUERY)).to.be.true;
         expect(contextCreator.isPipeable(RouteParamtypes.PARAM)).to.be.true;
+        expect(contextCreator.isPipeable(RouteParamtypes.FILE)).to.be.true;
+        expect(contextCreator.isPipeable(RouteParamtypes.FILES)).to.be.true;
         expect(contextCreator.isPipeable('custom')).to.be.true;
       });
     });
@@ -467,6 +470,38 @@ describe('RouterExecutionContext', () => {
             'You must return an Observable stream to use Server-Sent Events (SSE).',
           );
         }
+      });
+
+      it('should apply any headers that exists on the response', async () => {
+        const result = of('test');
+        const response = new PassThrough() as HeaderStream;
+        response.write = sinon.spy();
+        response.writeHead = sinon.spy();
+        response.flushHeaders = sinon.spy();
+        response.getHeaders = sinon
+          .stub()
+          .returns({ 'access-control-headers': 'some-cors-value' });
+
+        const request = new PassThrough();
+        request.on = sinon.spy();
+
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectSse').returns('/');
+
+        const handler = contextCreator.createHandleResponseFn(
+          null,
+          true,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        await handler(result, response, request);
+
+        expect(
+          (response.writeHead as sinon.SinonSpy).calledWith(
+            200,
+            sinon.match.hasNested('access-control-headers', 'some-cors-value'),
+          ),
+        ).to.be.true;
       });
     });
   });

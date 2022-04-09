@@ -20,7 +20,7 @@ export class NatsStrategy extends ServerNats {
       client.subscribe(
         value.pattern,
         { queue: value.queue },
-        this.getMessageHandler(key, client).bind(this),
+        this.getMessageHandler(key).bind(this),
       ),
     );
   }

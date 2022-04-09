@@ -26,7 +26,7 @@ describe('RabbitMQ transport', () => {
         socketOptions: { noDelay: true },
       },
     });
-    await app.startAllMicroservicesAsync();
+    await app.startAllMicroservices();
     await app.init();
   });
 
@@ -77,6 +77,13 @@ describe('RabbitMQ transport', () => {
       .expect(200, '15');
   });
 
+  it(`/POST (multiple-urls)`, () => {
+    return request(server)
+      .post('/multiple-urls')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, '15');
+  }).timeout(10000);
+
   it(`/POST (event notification)`, done => {
     request(server)
       .post('/notify')
@@ -86,6 +93,20 @@ describe('RabbitMQ transport', () => {
           expect(RMQController.IS_NOTIFIED).to.be.true;
           done();
         }, 1000);
+      });
+  });
+
+  it(`/POST (sending options with "RecordBuilder")`, () => {
+    const payload = { items: [1, 2, 3] };
+    return request(server)
+      .post('/record-builder-duplex')
+      .send(payload)
+      .expect(200, {
+        data: payload,
+        headers: {
+          ['x-version']: '1.0.0',
+        },
+        priority: 3,
       });
   });
 
