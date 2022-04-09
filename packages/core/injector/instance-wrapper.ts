@@ -24,7 +24,7 @@ export interface InstancePerContext<T> {
   donePromise?: Promise<void>;
 }
 export interface PropertyMetadata {
-  key: string;
+  key: symbol | string;
   wrapper: InstanceWrapper;
 }
 
@@ -146,7 +146,7 @@ export class InstanceWrapper<T = any> {
     return this[INSTANCE_METADATA_SYMBOL].dependencies;
   }
 
-  public addPropertiesMetadata(key: string, wrapper: InstanceWrapper) {
+  public addPropertiesMetadata(key: symbol | string, wrapper: InstanceWrapper) {
     if (!this[INSTANCE_METADATA_SYMBOL].properties) {
       this[INSTANCE_METADATA_SYMBOL].properties = [];
     }
