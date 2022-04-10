@@ -1,585 +1,263 @@
-import { Scope } from '@nestjs/common';
-import { expect, assert } from 'chai';
+import { expect } from 'chai';
+import { InjectionToken, Logger, Scope } from '@nestjs/common';
+import { ContextIdFactory } from '../helpers/context-id-factory';
+import { InstanceLoader } from '../injector/instance-loader';
 import { NestContainer } from '../injector/container';
 import { NestApplicationContext } from '../nest-application-context';
-import { InstanceLoader } from '../injector/instance-loader';
-
-class A {}
-class B {}
-class C {}
 
 describe('NestApplicationContext', () => {
+  class A {}
+
+  async function testHelper(
+    injectionKey: InjectionToken,
+    scope: Scope,
+  ): Promise<NestApplicationContext> {
+    const nestContainer = new NestContainer();
+    const instanceLoader = new InstanceLoader(nestContainer);
+    const module = await nestContainer.addModule(class T {}, []);
+
+    nestContainer.addProvider(
+      {
+        provide: injectionKey,
+        useClass: A,
+        scope,
+      },
+      module.token,
+    );
+
+    nestContainer.addInjectable(
+      {
+        provide: injectionKey,
+        useClass: A,
+        scope,
+      },
+      module.token,
+    );
+
+    const modules = nestContainer.getModules();
+    await instanceLoader.createInstancesOfDependencies(modules);
+
+    const applicationContext = new NestApplicationContext(nestContainer, []);
+    return applicationContext;
+  }
+
   describe('get', () => {
-    it('should get value with function injection key when scope is DEFAULT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
+    describe('when scope = DEFAULT', () => {
+      it('should get value with function injection key', async () => {
+        const key = A;
+        const applicationContext = await testHelper(key, Scope.DEFAULT);
 
-      const key = A;
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
+        const a1: A = await applicationContext.get(key);
+        const a2: A = await applicationContext.get(key);
 
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.get(key);
-      const a2: A = await applicationContext.get(key);
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).equal(a2);
+      });
 
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).equal(a2);
+      it('should get value with string injection key', async () => {
+        const key = 'KEY_A';
+        const applicationContext = await testHelper(key, Scope.DEFAULT);
+
+        const a1: A = await applicationContext.get(key);
+        const a2: A = await applicationContext.get(key);
+
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).equal(a2);
+      });
+
+      it('should get value with symbol injection key', async () => {
+        const key = Symbol('KEY_A');
+        const applicationContext = await testHelper(key, Scope.DEFAULT);
+
+        const a1: A = await applicationContext.get(key);
+        const a2: A = await applicationContext.get(key);
+
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).equal(a2);
+      });
     });
 
-    it('should get value with string injection key when scope is DEFAULT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
+    describe('when scope = REQUEST', () => {
+      it('should throw error when use function injection key', async () => {
+        const key = A;
+        const applicationContext = await testHelper(key, Scope.REQUEST);
 
-      const key = 'KEY_A';
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
+        expect(() => applicationContext.get(key)).to.be.throw;
+      });
 
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.get(key);
-      const a2: A = await applicationContext.get(key);
+      it('should throw error when use string injection key', async () => {
+        const key = 'KEY_A';
+        const applicationContext = await testHelper(key, Scope.REQUEST);
 
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).equal(a2);
+        expect(() => applicationContext.get(key)).to.be.throw;
+      });
+
+      it('should throw error when use symbol injection key', async () => {
+        const key = Symbol('KEY_A');
+        const applicationContext = await testHelper(key, Scope.REQUEST);
+
+        expect(() => applicationContext.get(key)).to.be.throw;
+      });
     });
 
-    it('should get value with symbol injection key when scope is DEFAULT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
+    describe('when scope = TRANSIENT', () => {
+      it('should throw error when use function injection key', async () => {
+        const key = A;
+        const applicationContext = await testHelper(key, Scope.TRANSIENT);
 
-      const key = Symbol('KEY_A');
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
+        expect(() => applicationContext.get(key)).to.be.throw;
+      });
 
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.get(key);
-      const a2: A = await applicationContext.get(key);
+      it('should throw error when use string injection key', async () => {
+        const key = 'KEY_A';
+        const applicationContext = await testHelper(key, Scope.TRANSIENT);
 
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).equal(a2);
-    });
+        expect(() => applicationContext.get(key)).to.be.throw;
+      });
 
-    it('should throw error when use function injection key and scope is REQUEST', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
+      it('should throw error when use symbol injection key', async () => {
+        const key = Symbol('KEY_A');
+        const applicationContext = await testHelper(key, Scope.TRANSIENT);
 
-      const key = A;
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
-
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-
-      expect(() => applicationContext.get(key)).to.be.throw;
-    });
-
-    it('should throw error when use string injection key and scope is REQUEST', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
-
-      const key = 'KEY_A';
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
-
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-
-      expect(() => applicationContext.get(key)).to.be.throw;
-    });
-
-    it('should throw error when use symbol injection key and scope is REQUEST', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
-
-      const key = Symbol('KEY_A');
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
-
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-
-      expect(() => applicationContext.get(key)).to.be.throw;
-    });
-
-    it('should throw error when use function injection key and scope is TRANSIENT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
-
-      const key = A;
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-
-      expect(() => applicationContext.get(key)).to.be.throw;
-    });
-
-    it('should throw error when use string injection key and scope is TRANSIENT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
-
-      const key = 'KEY_A';
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-
-      expect(() => applicationContext.get(key)).to.be.throw;
-    });
-
-    it('should throw error when use symbol injection key and scope is TRANSIENT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
-
-      const key = Symbol('KEY_A');
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-
-      expect(() => applicationContext.get(key)).to.be.throw;
+        expect(() => applicationContext.get(key)).to.be.throw;
+      });
     });
   });
 
   describe('resolve', () => {
-    it('should resolve value with function injection key when scope is DEFAULT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
+    describe('when scope = DEFAULT', () => {
+      it('should resolve value with function injection key', async () => {
+        const key = A;
+        const applicationContext = await testHelper(key, Scope.DEFAULT);
 
-      const key = A;
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
+        const a1: A = await applicationContext.resolve(key);
+        const a2: A = await applicationContext.resolve(key);
 
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.resolve(key);
-      const a2: A = await applicationContext.resolve(key);
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).equal(a2);
+      });
 
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).equal(a2);
+      it('should resolve value with string injection key', async () => {
+        const key = 'KEY_A';
+        const applicationContext = await testHelper(key, Scope.DEFAULT);
+
+        const a1: A = await applicationContext.resolve(key);
+        const a2: A = await applicationContext.resolve(key);
+
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).equal(a2);
+      });
+
+      it('should resolve value with symbol injection key', async () => {
+        const key = Symbol('KEY_A');
+        const applicationContext = await testHelper(key, Scope.DEFAULT);
+
+        const a1: A = await applicationContext.resolve(key);
+        const a2: A = await applicationContext.resolve(key);
+
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).equal(a2);
+      });
     });
 
-    it('should resolve value with string injection key when scope is DEFAULT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
+    describe('when scope = REQUEST', () => {
+      it('should resolve value with function injection key', async () => {
+        const key = A;
+        const applicationContext = await testHelper(key, Scope.REQUEST);
 
-      const key = 'KEY_A';
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
+        const contextId = ContextIdFactory.create();
+        const a1: A = await applicationContext.resolve(key);
+        const a2: A = await applicationContext.resolve(key, contextId);
+        const a3: A = await applicationContext.resolve(key, contextId);
 
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.resolve(key);
-      const a2: A = await applicationContext.resolve(key);
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).not.equal(a2);
+        expect(a2).equal(a3);
+      });
 
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).equal(a2);
+      it('should resolve value with string injection key', async () => {
+        const key = 'KEY_A';
+        const applicationContext = await testHelper(key, Scope.REQUEST);
+
+        const contextId = ContextIdFactory.create();
+        const a1: A = await applicationContext.resolve(key);
+        const a2: A = await applicationContext.resolve(key, contextId);
+        const a3: A = await applicationContext.resolve(key, contextId);
+
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).not.equal(a2);
+        expect(a2).equal(a3);
+      });
+
+      it('should resolve value with symbol injection key', async () => {
+        const key = Symbol('KEY_A');
+        const applicationContext = await testHelper(key, Scope.REQUEST);
+
+        const contextId = ContextIdFactory.create();
+        const a1: A = await applicationContext.resolve(key);
+        const a2: A = await applicationContext.resolve(key, contextId);
+        const a3: A = await applicationContext.resolve(key, contextId);
+
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).not.equal(a2);
+        expect(a2).equal(a3);
+      });
     });
 
-    it('should resolve value with symbol injection key when scope is DEFAULT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
+    describe('when scope = TRANSIENT', () => {
+      it('should resolve value with function injection key', async () => {
+        const key = A;
+        const applicationContext = await testHelper(key, Scope.TRANSIENT);
 
-      const key = Symbol('KEY_A');
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.DEFAULT,
-        },
-        module.token,
-      );
+        const contextId = ContextIdFactory.create();
+        const a1: A = await applicationContext.resolve(key);
+        const a2: A = await applicationContext.resolve(key, contextId);
+        const a3: A = await applicationContext.resolve(key, contextId);
 
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.resolve(key);
-      const a2: A = await applicationContext.resolve(key);
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).not.equal(a2);
+        expect(a2).equal(a3);
+      });
 
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).equal(a2);
-    });
+      it('should resolve value with string injection key', async () => {
+        const key = 'KEY_A';
+        const applicationContext = await testHelper(key, Scope.TRANSIENT);
 
-    it('should resolve value with function injection key when scope is REQUEST', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
+        const contextId = ContextIdFactory.create();
+        const a1: A = await applicationContext.resolve(key);
+        const a2: A = await applicationContext.resolve(key, contextId);
+        const a3: A = await applicationContext.resolve(key, contextId);
 
-      const key = A;
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).not.equal(a2);
+        expect(a2).equal(a3);
+      });
 
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.resolve(key);
-      const a2: A = await applicationContext.resolve(key);
+      it('should resolve value with symbol injection key', async () => {
+        const key = Symbol('KEY_A');
+        const applicationContext = await testHelper(key, Scope.TRANSIENT);
 
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).not.equal(a2);
-    });
+        const contextId = ContextIdFactory.create();
+        const a1: A = await applicationContext.resolve(key);
+        const a2: A = await applicationContext.resolve(key, contextId);
+        const a3: A = await applicationContext.resolve(key, contextId);
 
-    it('should resolve value with string injection key when scope is REQUEST', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
-
-      const key = 'KEY_A';
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
-
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.resolve(key);
-      const a2: A = await applicationContext.resolve(key);
-
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).not.equal(a2);
-    });
-
-    it('should resolve value with symbol injection key when scope is REQUEST', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
-
-      const key = Symbol('KEY_A');
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.REQUEST,
-        },
-        module.token,
-      );
-
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.resolve(key);
-      const a2: A = await applicationContext.resolve(key);
-
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).not.equal(a2);
-    });
-
-    it('should resolve value with function injection key when scope is TRANSIENT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
-
-      const key = A;
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.resolve(key);
-      const a2: A = await applicationContext.resolve(key);
-
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).not.equal(a2);
-    });
-
-    it('should resolve value with string injection key when scope is TRANSIENT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
-
-      const key = 'KEY_A';
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.resolve(key);
-      const a2: A = await applicationContext.resolve(key);
-
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).not.equal(a2);
-    });
-
-    it('should resolve value with symbol injection key when scope is TRANSIENT', async () => {
-      const nestContainer = new NestContainer();
-      const instanceLoader = new InstanceLoader(nestContainer);
-      const module = await nestContainer.addModule(class T {}, []);
-
-      const key = Symbol('KEY_A');
-      nestContainer.addProvider(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-      nestContainer.addInjectable(
-        {
-          provide: key,
-          useClass: A,
-          scope: Scope.TRANSIENT,
-        },
-        module.token,
-      );
-
-      instanceLoader.createInstancesOfDependencies(nestContainer.getModules());
-      const applicationContext = new NestApplicationContext(nestContainer, []);
-      const a1: A = await applicationContext.resolve(key);
-      const a2: A = await applicationContext.resolve(key);
-
-      expect(a1).instanceOf(A);
-      expect(a2).instanceOf(A);
-      expect(a1).not.equal(a2);
+        expect(a1).instanceOf(A);
+        expect(a2).instanceOf(A);
+        expect(a1).not.equal(a2);
+        expect(a2).equal(a3);
+      });
     });
   });
 });
