@@ -4,5 +4,5 @@ import { Injectable } from '@nestjs/common';
 export class UsersService {
   findById(id: string) {
     return { id };
-  }
+  };
 }
