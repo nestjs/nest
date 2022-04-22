@@ -1,10 +1,13 @@
-import { Controller, Post, Req } from '@nestjs/common';
+import { Controller, Post, Req, RawBodyRequest } from '@nestjs/common';
 import { Request } from 'express';
 
 @Controller()
 export class ExpressController {
   @Post()
-  getRawBody(@Req() req: Request) {
-    return { raw: req.rawBody.toString() };
+  getRawBody(@Req() req: RawBodyRequest<Request>) {
+    return {
+      parsed: req.body,
+      raw: req.rawBody.toString(),
+    };
   }
 }

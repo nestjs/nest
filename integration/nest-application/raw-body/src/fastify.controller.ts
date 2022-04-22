@@ -1,10 +1,13 @@
-import { Controller, Post, Req } from '@nestjs/common';
-import { FastifyRequest } from 'fastify';
+import { Controller, Post, Req, RawBodyRequest } from '@nestjs/common';
+import type { FastifyRequest } from 'fastify';
 
 @Controller()
 export class FastifyController {
   @Post()
-  getRawBody(@Req() req: FastifyRequest) {
-    return { raw: req.rawBody.toString() };
+  getRawBody(@Req() req: RawBodyRequest<FastifyRequest>) {
+    return {
+      parsed: req.body,
+      raw: req.rawBody.toString(),
+    };
   }
 }

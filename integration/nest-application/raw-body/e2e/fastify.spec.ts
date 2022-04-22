@@ -27,7 +27,20 @@ describe('Raw body (Fastify Application)', () => {
       .send(body)
       .expect(201);
 
-    expect(response.body).to.eql({ raw: '{ "amount":0.0 }' });
+    expect(response.body).to.eql({
+      parsed: {
+        amount: 0,
+      },
+      raw: '{ "amount":0.0 }',
+    });
+  });
+
+  it('should work if post body is empty', async () => {
+    await app.init();
+    await request(app.getHttpServer())
+      .post('/')
+      .set('Content-Type', 'application/json')
+      .expect(201);
   });
 
   afterEach(async () => {
