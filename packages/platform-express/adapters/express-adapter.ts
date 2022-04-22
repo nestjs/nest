@@ -1,5 +1,6 @@
 import {
   InternalServerErrorException,
+  RawBodyRequest,
   RequestMethod,
   StreamableFile,
   VersioningType,
@@ -32,12 +33,6 @@ import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
-
-declare module 'express' {
-  export interface Request {
-    rawBody?: Buffer;
-  }
-}
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
@@ -186,9 +181,9 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     let bodyParserJsonOptions: OptionsJson | undefined;
     if (rawBody === true) {
       bodyParserJsonOptions = {
-        verify: (req, _res, buffer) => {
+        verify: (req: RawBodyRequest<http.IncomingMessage>, _res, buffer) => {
           if (Buffer.isBuffer(buffer)) {
-            req['rawBody'] = buffer;
+            req.rawBody = buffer;
           }
 
           return true;

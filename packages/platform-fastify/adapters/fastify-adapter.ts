@@ -1,7 +1,7 @@
 import {
   HttpStatus,
   Logger,
-  NestApplicationOptions,
+  RawBodyRequest,
   RequestMethod,
   StreamableFile,
   VersioningOptions,
@@ -13,11 +13,7 @@ import {
   CorsOptionsDelegate,
 } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import {
-  isObject,
-  isString,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   fastify,
@@ -48,12 +44,6 @@ import {
   FastifyStaticOptions,
   PointOfViewOptions,
 } from '../interfaces/external';
-
-declare module 'fastify' {
-  export interface FastifyRequest {
-    rawBody?: Buffer;
-  }
-}
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -446,26 +436,7 @@ export class FastifyAdapter<
     this.register(import('fastify-formbody'));
 
     if (rawBody === true) {
-      this.getInstance().addContentTypeParser<string>(
-        'application/json',
-        { parseAs: 'string' },
-        (req, body, done) => {
-          req['rawBody'] = Buffer.from(body);
-
-          const { onProtoPoisoning, onConstructorPoisoning } =
-            this.instance.initialConfig;
-          const defaultJsonParser = this.instance.getDefaultJsonParser(
-            onProtoPoisoning || 'error',
-            onConstructorPoisoning || 'error',
-          ) as FastifyBodyParser<
-            string,
-            TServer,
-            TRawRequest,
-            RequestGenericInterface
-          >;
-          defaultJsonParser(req, body, done);
-        },
-      );
+      this.registerContentParserWithRawBody();
     }
 
     this._isParserRegistered = true;
@@ -513,6 +484,30 @@ export class FastifyAdapter<
     response: TRawResponse | TReply,
   ): response is TRawResponse {
     return !('status' in response);
+  }
+
+  private registerContentParserWithRawBody() {
+    this.getInstance().addContentTypeParser<Buffer>(
+      'application/json',
+      { parseAs: 'buffer' },
+      (
+        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
+        body: Buffer,
+        done,
+      ) => {
+        if (Buffer.isBuffer(body)) {
+          req.rawBody = body;
+        }
+
+        const { onProtoPoisoning, onConstructorPoisoning } =
+          this.instance.initialConfig;
+        const defaultJsonParser = this.instance.getDefaultJsonParser(
+          onProtoPoisoning || 'error',
+          onConstructorPoisoning || 'error',
+        ) as FastifyBodyParser<string | Buffer, TServer>;
+        defaultJsonParser(req, body, done);
+      },
+    );
   }
 
   private async registerMiddie() {
