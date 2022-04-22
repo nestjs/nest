@@ -1,9 +1,14 @@
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { from as fromPromise, Observable, of, Subject } from 'rxjs';
+import {
+  from as fromPromise,
+  Observable,
+  isObservable,
+  of,
+  Subject,
+} from 'rxjs';
 import { distinctUntilChanged, mergeAll } from 'rxjs/operators';
 import { GATEWAY_OPTIONS, PORT_METADATA } from './constants';
 import { WsContextCreator } from './context/ws-context-creator';
@@ -158,7 +163,7 @@ export class WebSocketsController {
     deferredResult: Promise<any>,
   ): Promise<Observable<any>> {
     const result = await deferredResult;
-    if (result && isFunction(result.subscribe)) {
+    if (isObservable(result)) {
       return result;
     }
     if (result instanceof Promise) {
