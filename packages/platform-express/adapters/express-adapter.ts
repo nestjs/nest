@@ -183,7 +183,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
-    let bodyParserJsonOptions: OptionsJson;
+    let bodyParserJsonOptions: OptionsJson | undefined;
     if (rawBody === true) {
       bodyParserJsonOptions = {
         verify: (req, _res, buffer) => {
