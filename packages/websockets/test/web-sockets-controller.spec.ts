@@ -345,7 +345,7 @@ describe('WebSocketsController', () => {
                 Promise.resolve(Promise.resolve(value)),
               ),
             ),
-          ).to.be.eq(100);
+          ).to.be.eq(value);
         });
       });
 
@@ -356,18 +356,29 @@ describe('WebSocketsController', () => {
             await lastValueFrom(
               await instance.pickResult(Promise.resolve(of(value))),
             ),
-          ).to.be.eq(100);
+          ).to.be.eq(value);
         });
       });
 
-      describe('is a value', () => {
+      describe('is an object that has the method `subscribe`', () => {
+        it('should return Promise<Observable>', async () => {
+          const value = { subscribe() {} };
+          expect(
+            await lastValueFrom(
+              await instance.pickResult(Promise.resolve(value)),
+            ),
+          ).to.equal(value);
+        });
+      });
+
+      describe('is an ordinary value', () => {
         it('should return Promise<Observable>', async () => {
           const value = 100;
           expect(
             await lastValueFrom(
               await instance.pickResult(Promise.resolve(value)),
             ),
-          ).to.be.eq(100);
+          ).to.be.eq(value);
         });
       });
     });
