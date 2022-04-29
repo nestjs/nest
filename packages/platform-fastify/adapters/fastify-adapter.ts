@@ -383,8 +383,8 @@ export class FastifyAdapter<
 
   public useStaticAssets(options: FastifyStaticOptions) {
     return this.register(
-      loadPackage('fastify-static', 'FastifyAdapter.useStaticAssets()', () =>
-        require('fastify-static'),
+      loadPackage('@fastify/static', 'FastifyAdapter.useStaticAssets()', () =>
+        require('@fastify/static'),
       ),
       options,
     );
@@ -424,14 +424,14 @@ export class FastifyAdapter<
   }
 
   public enableCors(options: CorsOptions | CorsOptionsDelegate<TRequest>) {
-    this.register(import('fastify-cors'), options);
+    this.register(import('@fastify/cors'), options);
   }
 
   public registerParserMiddleware() {
     if (this._isParserRegistered) {
       return;
     }
-    this.register(import('fastify-formbody'));
+    this.register(import('@fastify/formbody'));
     this._isParserRegistered = true;
   }
 
