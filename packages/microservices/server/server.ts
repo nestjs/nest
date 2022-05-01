@@ -5,6 +5,7 @@ import {
   EMPTY,
   from as fromPromise,
   isObservable,
+  lastValueFrom,
   Observable,
   ObservedValueOf,
   of,
@@ -117,11 +118,7 @@ export abstract class Server {
     }
     const resultOrStream = await handler(packet.data, context);
     if (isObservable(resultOrStream)) {
-      const connectableSource = connectable(resultOrStream, {
-        connector: () => new Subject(),
-        resetOnDisconnect: false,
-      });
-      connectableSource.connect();
+      await lastValueFrom(resultOrStream);
     }
   }
 
