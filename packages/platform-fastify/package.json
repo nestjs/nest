@@ -27,6 +27,8 @@
   },
   "peerDependencies": {
     "@nestjs/common": "^8.0.0",
-    "@nestjs/core": "^8.0.0"
+    "@nestjs/core": "^8.0.0",
+    "@fastify/static": "^5.0.0",
+    "point-of-view": "^5.0.0"
   }
 }
