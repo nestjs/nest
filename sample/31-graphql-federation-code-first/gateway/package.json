@@ -29,7 +29,7 @@
     "@nestjs/platform-express": "8.2.3",
     "apollo-server-express": "3.6.2",
     "graphql": "15.7.2",
-    "graphql-tools": "7.0.5",
+    "graphql-tools": "8.0.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",
     "rxjs": "7.4.0",
