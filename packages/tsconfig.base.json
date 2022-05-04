@@ -17,7 +17,7 @@
     "allowJs": false,
     "strict": true,
     "strictNullChecks": false,
-    "types": ["node"]
+    "types": ["reflect-metadata", "node"]
   },
   "exclude": ["../node_modules", "./**/*.spec.ts"]
 }
