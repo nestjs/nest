@@ -21,7 +21,7 @@
     "cors": "2.8.5",
     "express": "4.17.3",
     "multer": "1.4.4",
-    "tslib": "2.3.1"
+    "tslib": "2.4.0"
   },
   "devDependencies": {
     "@nestjs/common": "8.4.4",
