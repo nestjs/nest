@@ -1,7 +1,7 @@
 import { ConfigurableModuleBuilder } from '@nestjs/common';
 import { IntegrationModuleOptions } from './interfaces/integration-module-options.interface';
 
-export const { ConfigurableModuleClass, initialize, MODULE_OPTIONS_TOKEN } =
+export const { ConfigurableModuleClass, MODULE_OPTIONS_TOKEN } =
   new ConfigurableModuleBuilder<IntegrationModuleOptions>()
     .setClassMethodName('forRoot')
     .setFactoryMethodName('construct')

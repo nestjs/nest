@@ -5,18 +5,15 @@ import { ConfigurableModuleBuilder } from '../../module-utils';
 describe('ConfigurableModuleBuilder', () => {
   describe('setExtras', () => {
     it('should apply module definition transformer function and return typed builder', () => {
-      const { ConfigurableModuleClass, initialize } =
-        new ConfigurableModuleBuilder()
-          .setExtras(
-            { isGlobal: false },
-            (definition, extras: { isGlobal: boolean }) => ({
-              ...definition,
-              global: extras.isGlobal,
-            }),
-          )
-          .build();
-
-      initialize(class {});
+      const { ConfigurableModuleClass } = new ConfigurableModuleBuilder()
+        .setExtras(
+          { isGlobal: false },
+          (definition, extras: { isGlobal: boolean }) => ({
+            ...definition,
+            global: extras.isGlobal,
+          }),
+        )
+        .build();
 
       expect(
         ConfigurableModuleClass.register({
@@ -30,10 +27,9 @@ describe('ConfigurableModuleBuilder', () => {
   });
   describe('setClassMethodName', () => {
     it('should set static class method name and return typed builder', () => {
-      const { ConfigurableModuleClass, initialize } =
-        new ConfigurableModuleBuilder().setClassMethodName('forRoot').build();
-
-      initialize(class {});
+      const { ConfigurableModuleClass } = new ConfigurableModuleBuilder()
+        .setClassMethodName('forRoot')
+        .build();
 
       expect(ConfigurableModuleClass.forRoot).to.not.be.undefined;
       expect(ConfigurableModuleClass.forRootAsync).to.not.be.undefined;
@@ -42,12 +38,9 @@ describe('ConfigurableModuleBuilder', () => {
   });
   describe('setFactoryMethodName', () => {
     it('should set configuration factory class method name and return typed builder', () => {
-      const { ConfigurableModuleClass, initialize } =
-        new ConfigurableModuleBuilder()
-          .setFactoryMethodName('createOptions')
-          .build();
-
-      initialize(class {});
+      const { ConfigurableModuleClass } = new ConfigurableModuleBuilder()
+        .setFactoryMethodName('createOptions')
+        .build();
 
       expect(
         ConfigurableModuleClass.registerAsync({
@@ -65,7 +58,6 @@ describe('ConfigurableModuleBuilder', () => {
 
       const {
         ConfigurableModuleClass,
-        initialize,
         OPTIONS_TYPE,
         ASYNC_OPTIONS_TYPE,
         MODULE_OPTIONS_TOKEN,
@@ -84,8 +76,6 @@ describe('ConfigurableModuleBuilder', () => {
           }),
         )
         .build();
-
-      initialize(class {});
 
       const definition = ConfigurableModuleClass.forFeatureAsync({
         useFactory: () => {},
