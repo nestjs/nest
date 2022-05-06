@@ -65,7 +65,7 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "7.5.5",
     "socket.io": "4.4.1",
-    "tslib": "2.3.1",
+    "tslib": "2.4.0",
     "uuid": "8.3.2"
   },
   "devDependencies": {
@@ -122,7 +122,7 @@
     "eventsource": "2.0.0",
     "fancy-log": "2.0.0",
     "fastify": "3.29.0",
-    "fastify-cors": "6.0.3",
+    "fastify-cors": "6.1.0",
     "fastify-formbody": "5.2.0",
     "fastify-multipart": "5.3.1",
     "fastify-static": "4.6.1",
@@ -152,7 +152,7 @@
     "multer": "1.4.4",
     "mysql2": "2.3.3",
     "nats": "2.6.1",
-    "nodemon": "2.0.15",
+    "nodemon": "2.0.16",
     "nyc": "15.1.0",
     "point-of-view": "5.2.0",
     "prettier": "2.6.2",
