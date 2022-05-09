@@ -122,7 +122,7 @@
     "eventsource": "2.0.0",
     "fancy-log": "2.0.0",
     "fastify": "3.29.0",
-    "fastify-cors": "6.0.3",
+    "fastify-cors": "6.1.0",
     "fastify-formbody": "5.2.0",
     "fastify-multipart": "5.4.0",
     "fastify-static": "4.6.1",
