@@ -44,15 +44,23 @@ export class ParseIntPipe implements PipeTransform<string> {
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
-    const isNumeric =
-      ['string', 'number'].includes(typeof value) &&
-      /^-?\d+$/.test(value) &&
-      isFinite(value as any);
-    if (!isNumeric) {
+    if (!this.isNumeric(value)) {
       throw this.exceptionFactory(
         'Validation failed (numeric string is expected)',
       );
     }
     return parseInt(value, 10);
+  }
+
+  /**
+   * @param value currently processed route argument
+   * @returns `true` if `value` is a valid integer number
+   */
+  protected isNumeric(value: string): boolean {
+    return (
+      ['string', 'number'].includes(typeof value) &&
+      /^-?\d+$/.test(value) &&
+      isFinite(value as any)
+    );
   }
 }
