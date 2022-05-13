@@ -227,7 +227,7 @@
     "instrument": true
   },
   "mocha": {
-    "require": ["ts-node/register", "node_modules/reflect-metadata/Reflect.js", "rootHook.ts"],
+    "require": ["ts-node/register", "node_modules/reflect-metadata/Reflect.js", "hooks/mocha-init-hook.ts"],
     "exit": true
   }
 }
