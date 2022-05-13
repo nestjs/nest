@@ -17,7 +17,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "axios": "0.26.1",
+    "axios": "0.27.2",
     "iterare": "1.2.1",
     "tslib": "2.4.0",
     "uuid": "8.3.2"
