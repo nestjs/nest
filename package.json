@@ -73,7 +73,7 @@
     "@commitlint/cli": "16.2.3",
     "@commitlint/config-angular": "16.2.4",
     "@grpc/grpc-js": "1.6.7",
-    "@grpc/proto-loader": "0.6.9",
+    "@grpc/proto-loader": "0.6.12",
     "@nestjs/apollo": "10.0.8",
     "@nestjs/graphql": "10.0.8",
     "@nestjs/mongoose": "9.0.3",
