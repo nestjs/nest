@@ -435,7 +435,7 @@ export class FastifyAdapter<
     }
     this.register(import('fastify-formbody'));
 
-    if (rawBody === true) {
+    if (rawBody) {
       this.registerContentParserWithRawBody();
     }
 
