@@ -9,3 +9,11 @@ services:
       MYSQL_DATABASE: test
     ports:
       - "3306:3306"
+  db-test:
+    image: mysql:8
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test
+    ports:
+      - "3307:3306"
