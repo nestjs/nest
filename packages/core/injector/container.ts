@@ -154,13 +154,13 @@ export class NestContainer {
     provider: Provider,
     token: string,
   ): string | symbol | Function {
+    const moduleRef = this.modules.get(token);
     if (!provider) {
-      throw new CircularDependencyException();
+      throw new CircularDependencyException(moduleRef?.metatype.name);
     }
-    if (!this.modules.has(token)) {
+    if (!moduleRef) {
       throw new UnknownModuleException();
     }
-    const moduleRef = this.modules.get(token);
     return moduleRef.addProvider(provider);
   }
 
