@@ -19,7 +19,7 @@
   "dependencies": {
     "fastify": "3.29.0",
     "fastify-cors": "6.1.0",
-    "fastify-formbody": "5.2.0",
+    "fastify-formbody": "5.3.0",
     "light-my-request": "4.10.1",
     "middie": "6.1.0",
     "path-to-regexp": "3.2.0",
