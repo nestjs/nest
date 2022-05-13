@@ -20,6 +20,7 @@ import {
   isNil,
   isObject,
   isString,
+  isSymbol,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
@@ -45,7 +46,7 @@ export type InjectorDependency = InjectionToken;
  * The property-based dependency
  */
 export interface PropertyDependency {
-  key: string;
+  key: symbol | string;
   name: InjectorDependency;
   isOptional?: boolean;
   instance?: any;
@@ -360,7 +361,7 @@ export class Injector {
     moduleRef: Module,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
-    keyOrIndex?: string | number,
+    keyOrIndex?: symbol | string | number,
   ) {
     if (isUndefined(param)) {
       this.logger.log(
@@ -402,7 +403,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
-    keyOrIndex?: string | number,
+    keyOrIndex?: symbol | string | number,
   ): Promise<InstanceWrapper> {
     this.printResolvingDependenciesLog(token, inquirer);
     this.printLookingForProviderLog(token, moduleRef);
@@ -478,7 +479,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
-    keyOrIndex?: string | number,
+    keyOrIndex?: symbol | string | number,
   ): Promise<InstanceWrapper<T>> {
     const token = wrapper.token || wrapper.name;
     const { name } = dependencyContext;
@@ -511,7 +512,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
-    keyOrIndex?: string | number,
+    keyOrIndex?: symbol | string | number,
   ) {
     const instanceWrapper = await this.lookupComponentInImports(
       moduleRef,
@@ -539,7 +540,7 @@ export class Injector {
     moduleRegistry: any[] = [],
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
-    keyOrIndex?: string | number,
+    keyOrIndex?: symbol | string | number,
     isTraversing?: boolean,
   ): Promise<any> {
     let instanceWrapperRef: InstanceWrapper = null;
@@ -830,13 +831,15 @@ export class Injector {
   }
 
   protected addDependencyMetadata(
-    keyOrIndex: number | string,
+    keyOrIndex: symbol | string | number,
     hostWrapper: InstanceWrapper,
     instanceWrapper: InstanceWrapper,
   ) {
-    isString(keyOrIndex)
-      ? hostWrapper.addPropertiesMetadata(keyOrIndex, instanceWrapper)
-      : hostWrapper.addCtorMetadata(keyOrIndex, instanceWrapper);
+    if (isSymbol(keyOrIndex) || isString(keyOrIndex)) {
+      hostWrapper.addPropertiesMetadata(keyOrIndex, instanceWrapper);
+    } else {
+      hostWrapper.addCtorMetadata(keyOrIndex, instanceWrapper);
+    }
   }
 
   private getTokenName(token: InstanceToken): string {
