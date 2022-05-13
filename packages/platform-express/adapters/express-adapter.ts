@@ -61,7 +61,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public end(response: any, message?: string) {
-    return response.end(message !== undefined ? String(message) : undefined);
+    return response.end(message);
   }
 
   public render(response: any, view: string, options: any) {
