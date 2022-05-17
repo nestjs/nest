@@ -1,13 +1,15 @@
 import { expect } from 'chai';
 import { KafkaContext } from '../../ctx-host';
-import { KafkaMessage } from '../../external/kafka.interface';
+import { Consumer, KafkaMessage } from '../../external/kafka.interface';
 
 describe('KafkaContext', () => {
-  const args = ['test', { test: true }];
+  const args = ['test', { test: true }, undefined, { test: 'consumer' }];
   let context: KafkaContext;
 
   beforeEach(() => {
-    context = new KafkaContext(args as [KafkaMessage, number, string]);
+    context = new KafkaContext(
+      args as [KafkaMessage, number, string, Consumer],
+    );
   });
   describe('getTopic', () => {
     it('should return topic', () => {
@@ -22,6 +24,11 @@ describe('KafkaContext', () => {
   describe('getMessage', () => {
     it('should return original message', () => {
       expect(context.getMessage()).to.be.eql(args[0]);
+    });
+  });
+  describe('getConsumer', () => {
+    it('should return consumer instance', () => {
+      expect(context.getConsumer()).to.deep.eq({ test: 'consumer' });
     });
   });
 });

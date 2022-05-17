@@ -38,8 +38,10 @@ export const RQM_DEFAULT_NOACK = true;
 export const RQM_DEFAULT_PERSISTENT = false;
 export const GRPC_DEFAULT_PROTO_LOADER = '@grpc/proto-loader';
 
+export const NO_EVENT_HANDLER = (text: TemplateStringsArray, pattern: string) =>
+  `There is no matching event handler defined in the remote service. Event pattern: ${pattern}`;
 export const NO_MESSAGE_HANDLER = `There is no matching message handler defined in the remote service.`;
-export const NO_EVENT_HANDLER = `There is no matching event handler defined in the remote service.`;
+
 export const DISCONNECTED_RMQ_MESSAGE = `Disconnected from RMQ. Trying to reconnect.`;
 
 export const KAFKA_DEFAULT_CLIENT = 'nestjs-consumer';

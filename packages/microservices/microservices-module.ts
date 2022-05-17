@@ -24,13 +24,12 @@ export class MicroservicesModule {
   private listenersController: ListenersController;
 
   public register(container: NestContainer, config: ApplicationConfig) {
-    const rpcProxy = new RpcProxy();
     const exceptionFiltersContext = new ExceptionFiltersContext(
       container,
       config,
     );
     const contextCreator = new RpcContextCreator(
-      rpcProxy,
+      new RpcProxy(),
       exceptionFiltersContext,
       new PipesContextCreator(container, config),
       new PipesConsumer(),
