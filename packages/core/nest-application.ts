@@ -178,7 +178,9 @@ export class NestApplication
   }
 
   public registerParserMiddleware() {
-    this.httpAdapter.registerParserMiddleware();
+    const prefix = this.config.getGlobalPrefix();
+    const rawBody = !!this.appOptions?.rawBody;
+    this.httpAdapter.registerParserMiddleware(prefix, rawBody);
   }
 
   public async registerRouter() {
