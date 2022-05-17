@@ -34,7 +34,7 @@ describe('Disconnected client', () => {
       .send({
         transport: Transport.REDIS,
         options: {
-          url: 'redis://localhost:3333',
+          port: '3333',
         },
       })
       .expect(408);

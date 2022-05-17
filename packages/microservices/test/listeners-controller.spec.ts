@@ -138,11 +138,15 @@ describe('ListenersController', () => {
     it(`should call "addHandler" method of server with custom transportID for pattern handler with the same custom token`, () => {
       const serverHandlers = [
         {
-          pattern: { cmd: 'test' },
+          patterns: [{ cmd: 'test' }],
           targetCallback: 'tt',
           transport: customTransport,
         },
-        { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
+        {
+          patterns: ['test2'],
+          targetCallback: '2',
+          transport: Transport.KAFKA,
+        },
       ];
 
       explorer.expects('explore').returns(serverHandlers);

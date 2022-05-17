@@ -15,13 +15,17 @@ describe('ServerRedis', () => {
   });
   describe('listen', () => {
     let onSpy: sinon.SinonSpy;
+    let connectSpy: sinon.SinonSpy;
     let client: any;
     let callbackSpy: sinon.SinonSpy;
 
     beforeEach(() => {
       onSpy = sinon.spy();
+      connectSpy = sinon.spy();
+
       client = {
         on: onSpy,
+        connect: connectSpy,
       };
       sinon.stub(server, 'createRedisClient').callsFake(() => client);
 
@@ -31,13 +35,9 @@ describe('ServerRedis', () => {
       server.listen(callbackSpy);
       expect(onSpy.getCall(0).args[0]).to.be.equal('error');
     });
-    it('should bind "connect" event to handler', () => {
+    it('should call "RedisClient#connect()"', () => {
       server.listen(callbackSpy);
-      expect(onSpy.getCall(3).args[0]).to.be.equal('connect');
-    });
-    it('should bind "message" event to handler', () => {
-      server.listen(callbackSpy);
-      expect(onSpy.getCall(2).args[0]).to.be.equal('message');
+      expect(connectSpy.called).to.be.true;
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', () => {
@@ -191,11 +191,11 @@ describe('ServerRedis', () => {
     });
   });
   describe('getClientOptions', () => {
-    it('should return options object with "retry_strategy" and call "createRetryStrategy"', () => {
+    it('should return options object with "retryStrategy" and call "createRetryStrategy"', () => {
       const createSpy = sinon.spy(server, 'createRetryStrategy');
-      const { retry_strategy } = server.getClientOptions();
+      const { retryStrategy } = server.getClientOptions();
       try {
-        retry_strategy({} as any);
+        retryStrategy(0);
       } catch {}
       expect(createSpy.called).to.be.true;
     });
@@ -204,37 +204,24 @@ describe('ServerRedis', () => {
     describe('when is terminated', () => {
       it('should return undefined', () => {
         (server as any).isExplicitlyTerminated = true;
-        const result = server.createRetryStrategy({} as any);
+        const result = server.createRetryStrategy(0);
         expect(result).to.be.undefined;
       });
     });
     describe('when "retryAttempts" does not exist', () => {
-      it('should throw an exception', () => {
+      it('should return undefined', () => {
         (server as any).options.options = {};
         (server as any).options.options.retryAttempts = undefined;
 
-        expect(() => server.createRetryStrategy({} as any)).to.throw(Error);
+        expect(server.createRetryStrategy(4)).to.be.undefined;
       });
     });
     describe('when "attempts" count is max', () => {
-      it('should throw an exception', () => {
+      it('should return undefined', () => {
         (server as any).options.options = {};
         (server as any).options.options.retryAttempts = 3;
 
-        expect(() =>
-          server.createRetryStrategy({ attempt: 4 } as any),
-        ).to.throw(Error);
-      });
-    });
-    describe('when ECONNREFUSED', () => {
-      it('should call logger', () => {
-        const loggerErrorSpy = sinon.spy((server as any).logger, 'error');
-        try {
-          server.createRetryStrategy({
-            error: { code: 'ECONNREFUSED' },
-          } as any);
-        } catch {}
-        expect(loggerErrorSpy.called).to.be.true;
+        expect(server.createRetryStrategy(4)).to.be.undefined;
       });
     });
     describe('otherwise', () => {
@@ -243,7 +230,7 @@ describe('ServerRedis', () => {
         (server as any).isExplicitlyTerminated = false;
         (server as any).options.retryAttempts = 3;
         (server as any).options.retryDelay = 3;
-        const result = server.createRetryStrategy({ attempt: 2 } as any);
+        const result = server.createRetryStrategy(2);
         expect(result).to.be.eql((server as any).options.retryDelay);
       });
     });
