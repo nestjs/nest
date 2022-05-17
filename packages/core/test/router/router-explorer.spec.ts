@@ -476,6 +476,61 @@ describe('RouterExplorer', () => {
       });
 
       describe('when the handler version is an array', () => {
+        describe('and the version has VERSION_NEUTRAL', () => {
+          it('should return the handler if there is no version in the Media Type header', () => {
+            const version: VersionValue = [VERSION_NEUTRAL];
+            const versioningOptions: RoutePathMetadata['versioningOptions'] = {
+              type: VersioningType.MEDIA_TYPE,
+              key: 'v=',
+            };
+            const handler = sinon.stub();
+
+            const routePathMetadata: RoutePathMetadata = {
+              methodVersion: version,
+              versioningOptions,
+            };
+            const versionFilter = (routerBuilder as any).applyVersionFilter(
+              null,
+              routePathMetadata,
+              handler,
+            );
+
+            const req = {};
+            const res = {};
+            const next = sinon.stub();
+
+            versionFilter(req, res, next);
+
+            expect(handler.calledWith(req, res, next)).to.be.true;
+          });
+          it('should return next if the version in the Media Type header does not match the handler version', () => {
+            const version: VersionValue = ['1', '2', VERSION_NEUTRAL];
+            const versioningOptions: RoutePathMetadata['versioningOptions'] = {
+              type: VersioningType.MEDIA_TYPE,
+              key: 'v=',
+            };
+            const handler = sinon.stub();
+
+            const routePathMetadata: RoutePathMetadata = {
+              methodVersion: version,
+              versioningOptions,
+            };
+            const versionFilter = (routerBuilder as any).applyVersionFilter(
+              null,
+              routePathMetadata,
+              handler,
+            );
+
+            const req = { headers: { accept: 'application/json;v=3' } };
+            const res = {};
+            const next = sinon.stub();
+
+            versionFilter(req, res, next);
+
+            expect(next.called).to.be.true;
+          });
+        });
+
         it('should return next if the version in the Media Type header does not match the handler version', () => {
           const version = ['1', '2'];
           const versioningOptions: RoutePathMetadata['versioningOptions'] = {
@@ -820,6 +875,61 @@ describe('RouterExplorer', () => {
       });
 
       describe('when the handler version is an array', () => {
+        describe('and the version has VERSION_NEUTRAL', () => {
+          it('should return the handler if there is no version in the Custom Header', () => {
+            const version: VersionValue = [VERSION_NEUTRAL];
+            const versioningOptions: RoutePathMetadata['versioningOptions'] = {
+              type: VersioningType.HEADER,
+              header: 'X-API-Version',
+            };
+            const handler = sinon.stub();
+
+            const routePathMetadata: RoutePathMetadata = {
+              methodVersion: version,
+              versioningOptions,
+            };
+            const versionFilter = (routerBuilder as any).applyVersionFilter(
+              null,
+              routePathMetadata,
+              handler,
+            );
+
+            const req = {};
+            const res = {};
+            const next = sinon.stub();
+
+            versionFilter(req, res, next);
+
+            expect(handler.calledWith(req, res, next)).to.be.true;
+          });
+          it('should return next if the version in the Custom Header does not match the handler version', () => {
+            const version: VersionValue = ['1', '2', VERSION_NEUTRAL];
+            const versioningOptions: RoutePathMetadata['versioningOptions'] = {
+              type: VersioningType.HEADER,
+              header: 'X-API-Version',
+            };
+            const handler = sinon.stub();
+
+            const routePathMetadata: RoutePathMetadata = {
+              methodVersion: version,
+              versioningOptions,
+            };
+            const versionFilter = (routerBuilder as any).applyVersionFilter(
+              null,
+              routePathMetadata,
+              handler,
+            );
+
+            const req = { headers: { 'X-API-Version': '3' } };
+            const res = {};
+            const next = sinon.stub();
+
+            versionFilter(req, res, next);
+
+            expect(next.called).to.be.true;
+          });
+        });
+
         it('should return next if the version in the Custom Header does not match the handler version', () => {
           const version = ['1', '2'];
           const versioningOptions: RoutePathMetadata['versioningOptions'] = {
