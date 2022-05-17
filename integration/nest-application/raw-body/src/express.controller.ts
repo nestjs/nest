@@ -1,4 +1,4 @@
-import { Controller, Post, Req, RawBodyRequest } from '@nestjs/common';
+import { Controller, Post, RawBodyRequest, Req } from '@nestjs/common';
 import { Request } from 'express';
 
 @Controller()

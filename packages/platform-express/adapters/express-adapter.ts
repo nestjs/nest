@@ -26,8 +26,8 @@ import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
 import {
   json as bodyParserJson,
-  urlencoded as bodyParserUrlencoded,
   OptionsJson,
+  urlencoded as bodyParserUrlencoded,
 } from 'body-parser';
 import * as cors from 'cors';
 import * as express from 'express';
@@ -186,7 +186,6 @@ export class ExpressAdapter extends AbstractHttpAdapter {
           if (Buffer.isBuffer(buffer)) {
             req.rawBody = buffer;
           }
-
           return true;
         },
       };
