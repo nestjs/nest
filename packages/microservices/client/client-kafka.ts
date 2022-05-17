@@ -137,7 +137,9 @@ export class ClientKafka extends ClientProxy {
   }
 
   public async bindTopics(): Promise<void> {
-    if (!this.consumer) throw Error('No consumer initialized');
+    if (!this.consumer) {
+       throw Error('No consumer initialized');
+    }
 
     const consumerSubscribeOptions = this.options.subscribe || {};
     const subscribeTo = async (responsePattern: string) =>
