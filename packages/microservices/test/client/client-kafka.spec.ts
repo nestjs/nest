@@ -277,47 +277,95 @@ describe('ClientKafka', () => {
     let bindTopicsStub: sinon.SinonStub;
     // let handleErrorsSpy: sinon.SinonSpy;
 
-    beforeEach(() => {
-      consumerAssignmentsStub = sinon.stub(
-        client as any,
-        'consumerAssignments',
-      );
-      bindTopicsStub = sinon
-        .stub(client, 'bindTopics')
-        .callsFake(async () => {});
+    describe('consumer and producer', () => {
+      beforeEach(() => {
+        consumerAssignmentsStub = sinon.stub(
+          client as any,
+          'consumerAssignments',
+        );
+        bindTopicsStub = sinon
+          .stub(client, 'bindTopics')
+          .callsFake(async () => {});
+      });
+
+      it('should expect the connection to be created', async () => {
+        const connection = await client.connect();
+
+        expect(createClientStub.calledOnce).to.be.true;
+        expect(producerStub.calledOnce).to.be.true;
+
+        expect(consumerStub.calledOnce).to.be.true;
+
+        expect(on.calledOnce).to.be.true;
+        expect(client['consumerAssignments']).to.be.empty;
+
+        expect(connect.calledTwice).to.be.true;
+
+        expect(bindTopicsStub.calledOnce).to.be.true;
+        expect(connection).to.deep.equal(producerStub());
+      });
+
+      it('should expect the connection to be reused', async () => {
+        (client as any).client = kafkaClient;
+        await client.connect();
+
+        expect(createClientStub.calledOnce).to.be.false;
+        expect(producerStub.calledOnce).to.be.false;
+        expect(consumerStub.calledOnce).to.be.false;
+
+        expect(on.calledOnce).to.be.false;
+        expect(client['consumerAssignments']).to.be.empty;
+
+        expect(connect.calledTwice).to.be.false;
+
+        expect(bindTopicsStub.calledOnce).to.be.false;
+      });
     });
 
-    it('should expect the connection to be created', async () => {
-      const connection = await client.connect();
+    describe('producer only mode', () => {
+      beforeEach(() => {
+        consumerAssignmentsStub = sinon.stub(
+          client as any,
+          'consumerAssignments',
+        );
+        bindTopicsStub = sinon
+          .stub(client, 'bindTopics')
+          .callsFake(async () => {});
+        client['producerOnlyMode'] = true;
+      });
 
-      expect(createClientStub.calledOnce).to.be.true;
-      expect(producerStub.calledOnce).to.be.true;
+      it('should expect the connection to be created', async () => {
+        const connection = await client.connect();
 
-      expect(consumerStub.calledOnce).to.be.true;
+        expect(createClientStub.calledOnce).to.be.true;
+        expect(producerStub.calledOnce).to.be.true;
 
-      expect(on.calledOnce).to.be.true;
-      expect(client['consumerAssignments']).to.be.empty;
+        expect(consumerStub.calledOnce).to.be.false;
 
-      expect(connect.calledTwice).to.be.true;
+        expect(on.calledOnce).to.be.false;
+        expect(client['consumerAssignments']).to.be.empty;
 
-      expect(bindTopicsStub.calledOnce).to.be.true;
-      expect(connection).to.deep.equal(producerStub());
-    });
+        expect(connect.calledOnce).to.be.true;
 
-    it('should expect the connection to be reused', async () => {
-      (client as any).client = kafkaClient;
-      await client.connect();
+        expect(bindTopicsStub.calledOnce).to.be.false;
+        expect(connection).to.deep.equal(producerStub());
+      });
 
-      expect(createClientStub.calledOnce).to.be.false;
-      expect(producerStub.calledOnce).to.be.false;
-      expect(consumerStub.calledOnce).to.be.false;
+      it('should expect the connection to be reused', async () => {
+        (client as any).client = kafkaClient;
+        await client.connect();
 
-      expect(on.calledOnce).to.be.false;
-      expect(client['consumerAssignments']).to.be.empty;
+        expect(createClientStub.calledOnce).to.be.false;
+        expect(producerStub.calledOnce).to.be.false;
+        expect(consumerStub.calledOnce).to.be.false;
 
-      expect(connect.calledTwice).to.be.false;
+        expect(on.calledOnce).to.be.false;
+        expect(client['consumerAssignments']).to.be.empty;
 
-      expect(bindTopicsStub.calledOnce).to.be.false;
+        expect(connect.calledTwice).to.be.false;
+
+        expect(bindTopicsStub.calledOnce).to.be.false;
+      });
     });
   });
 
