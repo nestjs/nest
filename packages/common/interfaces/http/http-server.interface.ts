@@ -74,13 +74,9 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   close(): any;
   getType(): string;
   init?(): Promise<void>;
-  applyVersionFilter?(
+  applyVersionFilter(
     handler: Function,
     version: VersionValue,
     versioningOptions: VersioningOptions,
-  ): <TRequest extends Record<string, any> = any, TResponse = any>(
-    req: TRequest,
-    res: TResponse,
-    next: () => void,
-  ) => any;
+  ): (req: TRequest, res: TResponse, next: () => void) => Function;
 }

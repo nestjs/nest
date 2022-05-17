@@ -1,4 +1,5 @@
-import { RequestMethod } from '@nestjs/common';
+import { RequestMethod, VersioningOptions } from '@nestjs/common';
+import { VersionValue } from '@nestjs/common/interfaces';
 import { AbstractHttpAdapter } from '../../adapters';
 
 export class NoopHttpAdapter extends AbstractHttpAdapter {
@@ -24,5 +25,14 @@ export class NoopHttpAdapter extends AbstractHttpAdapter {
   createMiddlewareFactory(requestMethod: RequestMethod): any {}
   getType() {
     return '';
+  }
+  applyVersionFilter(
+    handler: Function,
+    version: VersionValue,
+    versioningOptions: VersioningOptions,
+  ) {
+    return (req, res, next) => {
+      return () => {};
+    };
   }
 }
