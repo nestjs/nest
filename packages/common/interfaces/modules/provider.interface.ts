@@ -46,6 +46,12 @@ export interface ClassProvider<T = any> {
    * Optional enum defining lifetime of the provider that is injected.
    */
   scope?: Scope;
+  /**
+   * This option is only available on factory providers!
+   *
+   * @see [Use factory](https://docs.nestjs.com/fundamentals/custom-providers#factory-providers-usefactory)
+   */
+  inject?: never;
 }
 
 /**
@@ -72,6 +78,12 @@ export interface ValueProvider<T = any> {
    * Instance of a provider to be injected.
    */
   useValue: T;
+  /**
+   * This option is only available on factory providers!
+   *
+   * @see [Use factory](https://docs.nestjs.com/fundamentals/custom-providers#factory-providers-usefactory)
+   */
+  inject?: never;
 }
 
 /**
