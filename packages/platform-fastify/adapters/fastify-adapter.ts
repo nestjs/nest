@@ -154,12 +154,9 @@ export class FastifyAdapter<
           ? acceptHeaderValue.split(';')[1]
           : '';
 
-        if (acceptHeaderVersionParameter) {
-          const headerVersion = acceptHeaderVersionParameter.split(
-            this.versioningOptions.key,
-          )[1];
-          return headerVersion;
-        }
+        return isUndefined(acceptHeaderVersionParameter)
+          ? VERSION_NEUTRAL // No version was supplied
+          : acceptHeaderVersionParameter.split(this.versioningOptions.key)[1];
       }
       // Header Versioning Handler
       else if (this.versioningOptions.type === VersioningType.HEADER) {
@@ -167,9 +164,9 @@ export class FastifyAdapter<
           req.headers?.[this.versioningOptions.header] ||
           req.headers?.[this.versioningOptions.header.toLowerCase()];
 
-        if (customHeaderVersionParameter) {
-          return customHeaderVersionParameter;
-        }
+        return isUndefined(customHeaderVersionParameter)
+          ? VERSION_NEUTRAL // No version was supplied
+          : customHeaderVersionParameter;
       }
       // Custom Versioning Handler
       else if (this.versioningOptions.type === VersioningType.CUSTOM) {
