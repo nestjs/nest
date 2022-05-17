@@ -1,10 +1,19 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil } from '@nestjs/common/utils/shared.utils';
-import { concat, firstValueFrom, of, skip, throwError } from 'rxjs';
+import {
+  concat,
+  firstValueFrom,
+  isObservable,
+  lastValueFrom,
+  of,
+  skip,
+  throwError,
+} from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
   KAFKA_DEFAULT_GROUP,
+  NO_EVENT_HANDLER,
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { KafkaContext } from '../ctx-host';
@@ -28,6 +37,7 @@ import {
   CustomTransportStrategy,
   KafkaOptions,
   OutgoingResponse,
+  ReadPacket,
 } from '../interfaces';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
 import { Server } from './server';
@@ -270,6 +280,21 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       return;
     }
     outgoingMessage.partition = parseFloat(replyPartition);
+  }
+
+  public async handleEvent(
+    pattern: string,
+    packet: ReadPacket,
+    context: KafkaContext,
+  ): Promise<any> {
+    const handler = this.getHandlerByPattern(pattern);
+    if (!handler) {
+      return this.logger.error(NO_EVENT_HANDLER`${pattern}`);
+    }
+    const resultOrStream = await handler(packet.data, context);
+    if (isObservable(resultOrStream)) {
+      await lastValueFrom(resultOrStream);
+    }
   }
 
   protected initializeSerializer(options: KafkaOptions['options']) {
