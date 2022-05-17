@@ -72,7 +72,8 @@ export class ListenersController {
           transport === server.transportId,
       )
       .reduce((acc, handler) => {
-        handler.patterns.forEach(pattern =>
+        // Optional chaining for backward-compatibility
+        handler.patterns?.forEach(pattern =>
           acc.push({ ...handler, patterns: [pattern] }),
         );
         return acc;
