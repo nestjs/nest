@@ -19,6 +19,7 @@ import {
   isNil,
   isObject,
   isString,
+  isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
@@ -256,9 +257,16 @@ export class ExpressAdapter extends AbstractHttpAdapter {
 
         const acceptHeaderVersionParameter = acceptHeaderValue
           ? acceptHeaderValue.split(';')[1]
-          : '';
+          : undefined;
 
-        if (acceptHeaderVersionParameter) {
+        // No version was supplied
+        if (isUndefined(acceptHeaderVersionParameter)) {
+          if (Array.isArray(version)) {
+            if (version.includes(VERSION_NEUTRAL)) {
+              return handler(req, res, next);
+            }
+          }
+        } else {
           const headerVersion = acceptHeaderVersionParameter.split(
             versioningOptions.key,
           )[1];
@@ -280,7 +288,14 @@ export class ExpressAdapter extends AbstractHttpAdapter {
           req.headers?.[versioningOptions.header] ||
           req.headers?.[versioningOptions.header.toLowerCase()];
 
-        if (customHeaderVersionParameter) {
+        // No version was supplied
+        if (isUndefined(customHeaderVersionParameter)) {
+          if (Array.isArray(version)) {
+            if (version.includes(VERSION_NEUTRAL)) {
+              return handler(req, res, next);
+            }
+          }
+        } else {
           if (Array.isArray(version)) {
             if (version.includes(customHeaderVersionParameter)) {
               return handler(req, res, next);
