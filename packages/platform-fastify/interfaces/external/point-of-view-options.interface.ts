@@ -9,7 +9,6 @@ export interface PointOfViewOptions {
     nunjucks?: any;
     pug?: any;
     handlebars?: any;
-    marko?: any;
     mustache?: any;
     'art-template'?: any;
     twig?: any;

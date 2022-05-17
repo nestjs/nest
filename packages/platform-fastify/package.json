@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "fastify": "3.29.0",
-    "fastify-cors": "6.1.0",
-    "fastify-formbody": "5.3.0",
+    "@fastify/cors": "7.0.0",
+    "@fastify/formbody": "6.0.0",
     "light-my-request": "4.10.1",
     "middie": "6.1.0",
     "path-to-regexp": "3.2.0",
@@ -27,6 +27,16 @@
   },
   "peerDependencies": {
     "@nestjs/common": "^8.0.0",
-    "@nestjs/core": "^8.0.0"
+    "@nestjs/core": "^8.0.0",
+    "@fastify/static": "^5.0.0",
+    "point-of-view": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@fastify/static": {
+      "optional": true
+    },
+    "point-of-view": {
+      "optional": true
+    }
   }
 }

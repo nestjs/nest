@@ -16,7 +16,7 @@ import { FastifyStaticOptions, PointOfViewOptions } from './external';
 export interface NestFastifyApplication extends INestApplication {
   /**
    * A wrapper function around native `fastify.register()` method.
-   * Example `app.register(require('fastify-formbody'))
+   * Example `app.register(require('@fastify/formbody'))
    * @returns {Promise<FastifyInstance>}
    */
   register<Options extends FastifyPluginOptions = any>(
