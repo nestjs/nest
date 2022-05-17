@@ -71,13 +71,13 @@ describe('RouterResponseController', () => {
   describe('transformToResult', () => {
     describe('when resultOrDeferred', () => {
       describe('is Promise', () => {
-        it('should return Promise', async () => {
+        it('should return Promise that resolves to the value resolved by the input Promise', async () => {
           const value = 100;
           expect(
             await routerResponseController.transformToResult(
               Promise.resolve(value),
             ),
-          ).to.be.eq(100);
+          ).to.be.eq(value);
         });
       });
 
@@ -88,16 +88,25 @@ describe('RouterResponseController', () => {
             await routerResponseController.transformToResult(
               of(1, 2, 3, lastValue),
             ),
-          ).to.be.eq(100);
+          ).to.be.eq(lastValue);
         });
       });
 
-      describe('is value', () => {
-        it('should return Promise', async () => {
+      describe('is an object that has the method `subscribe`', () => {
+        it('should return a Promise that resolves to the input value', async () => {
+          const value = { subscribe() {} };
+          expect(
+            await routerResponseController.transformToResult(value),
+          ).to.equal(value);
+        });
+      });
+
+      describe('is an ordinary value', () => {
+        it('should return a Promise that resolves to the input value', async () => {
           const value = 100;
           expect(
             await routerResponseController.transformToResult(value),
-          ).to.be.eq(100);
+          ).to.be.eq(value);
         });
       });
     });
