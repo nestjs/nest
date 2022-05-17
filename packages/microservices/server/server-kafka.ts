@@ -192,12 +192,12 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     );
 
     const replayStream$ = new ReplaySubject();
-    await this.combineAndThrowIfRetriable(response$, replayStream$);
+    await this.combineStreamsAndThrowIfRetriable(response$, replayStream$);
 
     this.send(replayStream$, publish);
   }
 
-  private combineAndThrowIfRetriable(
+  private combineStreamsAndThrowIfRetriable(
     response$: Observable<any>,
     replayStream$: ReplaySubject<unknown>,
   ) {
