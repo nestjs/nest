@@ -21,7 +21,10 @@ describe('@MessagePattern', () => {
     public static test() {}
   }
   it(`should enhance method with ${PATTERN_METADATA} metadata`, () => {
-    const metadata = Reflect.getMetadata(PATTERN_METADATA, TestComponent.test);
+    const [metadata] = Reflect.getMetadata(
+      PATTERN_METADATA,
+      TestComponent.test,
+    );
     expect(metadata).to.be.eql(pattern);
   });
   it(`should enhance method with ${PATTERN_EXTRAS_METADATA} metadata`, () => {
@@ -51,7 +54,7 @@ describe('@MessagePattern', () => {
     }
 
     it(`should enhance method with ${PATTERN_METADATA} metadata`, () => {
-      const metadataArg = Reflect.getMetadata(
+      const [metadataArg] = Reflect.getMetadata(
         PATTERN_METADATA,
         TestComponent1.test,
       );
@@ -69,7 +72,7 @@ describe('@MessagePattern', () => {
     });
 
     it(`should enhance method with ${PATTERN_METADATA}, ${TRANSPORT_METADATA} metadata`, () => {
-      const metadataArg = Reflect.getMetadata(
+      const [metadataArg] = Reflect.getMetadata(
         PATTERN_METADATA,
         TestComponent2.test,
       );
@@ -87,7 +90,7 @@ describe('@MessagePattern', () => {
     });
 
     it(`should enhance method with ${PATTERN_METADATA}, ${PATTERN_EXTRAS_METADATA} metadata`, () => {
-      const metadataArg = Reflect.getMetadata(
+      const [metadataArg] = Reflect.getMetadata(
         PATTERN_METADATA,
         TestComponent3.test,
       );
@@ -106,7 +109,7 @@ describe('@MessagePattern', () => {
 
     it(`should enhance method with ${PATTERN_METADATA}, ${TRANSPORT_METADATA} and \
 ${PATTERN_EXTRAS_METADATA} metadata`, () => {
-      const metadataArg = Reflect.getMetadata(
+      const [metadataArg] = Reflect.getMetadata(
         PATTERN_METADATA,
         TestComponent4.test,
       );
@@ -139,7 +142,7 @@ describe('@GrpcMethod', () => {
 
   it('should derive method and service name', () => {
     const svc = new TestService();
-    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test);
+    const [metadata] = Reflect.getMetadata(PATTERN_METADATA, svc.test);
     expect(metadata).to.be.eql({
       service: TestService.name,
       rpc: 'Test',
@@ -149,7 +152,7 @@ describe('@GrpcMethod', () => {
 
   it('should derive method', () => {
     const svc = new TestService();
-    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
+    const [metadata] = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
@@ -159,7 +162,7 @@ describe('@GrpcMethod', () => {
 
   it('should override both method and service', () => {
     const svc = new TestService();
-    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test3);
+    const [metadata] = Reflect.getMetadata(PATTERN_METADATA, svc.test3);
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
@@ -182,7 +185,7 @@ describe('@GrpcStreamMethod', () => {
 
   it('should derive method and service name', () => {
     const svc = new TestService();
-    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test);
+    const [metadata] = Reflect.getMetadata(PATTERN_METADATA, svc.test);
     expect(metadata).to.be.eql({
       service: TestService.name,
       rpc: 'Test',
@@ -192,7 +195,7 @@ describe('@GrpcStreamMethod', () => {
 
   it('should derive method', () => {
     const svc = new TestService();
-    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
+    const [metadata] = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
@@ -202,7 +205,7 @@ describe('@GrpcStreamMethod', () => {
 
   it('should override both method and service', () => {
     const svc = new TestService();
-    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test3);
+    const [metadata] = Reflect.getMetadata(PATTERN_METADATA, svc.test3);
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
@@ -225,7 +228,7 @@ describe('@GrpcStreamCall', () => {
 
   it('should derive method and service name', () => {
     const svc = new TestService();
-    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test);
+    const [metadata] = Reflect.getMetadata(PATTERN_METADATA, svc.test);
     expect(metadata).to.be.eql({
       service: TestService.name,
       rpc: 'Test',
@@ -235,7 +238,7 @@ describe('@GrpcStreamCall', () => {
 
   it('should derive method', () => {
     const svc = new TestService();
-    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
+    const [metadata] = Reflect.getMetadata(PATTERN_METADATA, svc.test2);
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
@@ -245,7 +248,7 @@ describe('@GrpcStreamCall', () => {
 
   it('should override both method and service', () => {
     const svc = new TestService();
-    const metadata = Reflect.getMetadata(PATTERN_METADATA, svc.test3);
+    const [metadata] = Reflect.getMetadata(PATTERN_METADATA, svc.test3);
     expect(metadata).to.be.eql({
       service: 'TestService2',
       rpc: 'Test2',
