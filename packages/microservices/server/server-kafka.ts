@@ -1,14 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil } from '@nestjs/common/utils/shared.utils';
-import {
-  concat,
-  firstValueFrom,
-  isObservable,
-  lastValueFrom,
-  of,
-  skip,
-  throwError,
-} from 'rxjs';
+import { isObservable, lastValueFrom, Observable, ReplaySubject } from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -199,22 +191,36 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       await handler(packet.data, kafkaContext),
     );
 
-    const [isError, valueOrError] = await firstValueFrom(response$)
-      .then(value => [false, value])
-      .catch(error => {
-        if (error instanceof KafkaRetriableException) {
-          throw error;
-        }
-        return [true, error];
-      });
+    const replayStream$ = new ReplaySubject();
+    await this.combineAndThrowIfRetriable(response$, replayStream$);
 
-    this.send(
-      concat(
-        isError ? throwError(() => valueOrError) : of(valueOrError),
-        response$.pipe(skip(1)),
-      ),
-      publish,
-    );
+    this.send(replayStream$, publish);
+  }
+
+  private combineAndThrowIfRetriable(
+    response$: Observable<any>,
+    replayStream$: ReplaySubject<unknown>,
+  ) {
+    return new Promise<void>((resolve, reject) => {
+      let isPromiseResolved = false;
+      response$.subscribe({
+        next: val => {
+          replayStream$.next(val);
+          if (!isPromiseResolved) {
+            isPromiseResolved = true;
+            resolve();
+          }
+        },
+        error: err => {
+          if (err instanceof KafkaRetriableException && !isPromiseResolved) {
+            isPromiseResolved = true;
+            reject(err);
+          }
+          replayStream$.error(err);
+        },
+        complete: () => replayStream$.complete(),
+      });
+    });
   }
 
   public async sendMessage(
