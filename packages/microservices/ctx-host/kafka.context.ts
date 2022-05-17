@@ -35,7 +35,7 @@ export class KafkaContext extends BaseRpcContext<KafkaContextArgs> {
   }
 
   /**
-   * Commit the offset of this message.
+   * Returns the Kafka consumer reference.
    */
   getConsumer() {
     return this.args[3];

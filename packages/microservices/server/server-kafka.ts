@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil } from '@nestjs/common/utils/shared.utils';
+import { concat, firstValueFrom, of, skip, throwError } from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -8,6 +9,7 @@ import {
 } from '../constants';
 import { KafkaContext } from '../ctx-host';
 import { KafkaHeaders, Transport } from '../enums';
+import { KafkaRetriableException } from '../exceptions';
 import {
   BrokersFunction,
   Consumer,
@@ -182,10 +184,27 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       });
     }
 
+    // @TODO pass packet.data.value (overide deserializer)
     const response$ = this.transformToObservable(
       await handler(packet.data, kafkaContext),
     );
-    response$ && this.send(response$, publish);
+
+    const [isError, valueOrError] = await firstValueFrom(response$)
+      .then(value => [false, value])
+      .catch(error => {
+        if (error instanceof KafkaRetriableException) {
+          throw error;
+        }
+        return [true, error];
+      });
+
+    this.send(
+      concat(
+        isError ? throwError(() => valueOrError) : of(valueOrError),
+        response$.pipe(skip(1)),
+      ),
+      publish,
+    );
   }
 
   public async sendMessage(
@@ -227,9 +246,12 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     if (!outgoingResponse.err) {
       return;
     }
-    outgoingMessage.headers[KafkaHeaders.NEST_ERR] = Buffer.from(
-      outgoingResponse.err,
-    );
+    const stringifiedError =
+      typeof outgoingResponse.err === 'object'
+        ? JSON.stringify(outgoingResponse.err)
+        : outgoingResponse.err;
+    outgoingMessage.headers[KafkaHeaders.NEST_ERR] =
+      Buffer.from(stringifiedError);
   }
 
   public assignCorrelationIdHeader(
