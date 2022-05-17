@@ -39,15 +39,23 @@ export class ParseFloatPipe implements PipeTransform<string> {
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
-    const isNumeric =
-      ['string', 'number'].includes(typeof value) &&
-      !isNaN(parseFloat(value)) &&
-      isFinite(value as any);
-    if (!isNumeric) {
+    if (!this.isNumeric(value)) {
       throw this.exceptionFactory(
         'Validation failed (numeric string is expected)',
       );
     }
     return parseFloat(value);
+  }
+
+  /**
+   * @param value currently processed route argument
+   * @returns `true` if `value` is a valid float number
+   */
+  protected isNumeric(value: string): boolean {
+    return (
+      ['string', 'number'].includes(typeof value) &&
+      !isNaN(parseFloat(value)) &&
+      isFinite(value as any)
+    );
   }
 }

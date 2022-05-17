@@ -4,7 +4,7 @@ import { HttpException } from './http.exception';
 /**
  * Defines an HTTP exception for *Forbidden* type errors.
  *
- * @see [Base Exceptions](https://docs.nestjs.com/exception-filters#base-exceptions)
+ * @see [Built-in HTTP exceptions](https://docs.nestjs.com/exception-filters#built-in-http-exceptions)
  *
  * @publicApi
  */

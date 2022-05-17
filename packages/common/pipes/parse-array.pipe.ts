@@ -36,7 +36,7 @@ export class ParseArrayPipe implements PipeTransform {
   protected readonly validationPipe: ValidationPipe;
   protected exceptionFactory: (error: string) => any;
 
-  constructor(@Optional() private readonly options: ParseArrayOptions = {}) {
+  constructor(@Optional() protected readonly options: ParseArrayOptions = {}) {
     this.validationPipe = new ValidationPipe({
       transform: true,
       validateCustomDecorators: true,

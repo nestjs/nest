@@ -14,7 +14,7 @@ async function createNestApp(...gateways): Promise<INestApplication> {
   const testingModule = await Test.createTestingModule({
     providers: gateways,
   }).compile();
-  const app = await testingModule.createNestApplication();
+  const app = testingModule.createNestApplication();
   app.useWebSocketAdapter(new WsAdapter(app) as any);
   return app;
 }
@@ -40,6 +40,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     await new Promise<void>(resolve =>
       ws.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
+        ws.close();
         resolve();
       }),
     );
@@ -63,6 +64,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     await new Promise<void>(resolve =>
       ws.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
+        ws.close();
         resolve();
       }),
     );
@@ -89,6 +91,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
       await new Promise<void>(resolve =>
         ws.on('message', data => {
           expect(JSON.parse(data).data.test).to.be.eql('test');
+          ws.close();
           resolve();
         }),
       );
@@ -113,6 +116,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
       ws.on('open', () => {
         ws.on('message', data => {
           expect(JSON.parse(data).data.test).to.be.eql('test');
+          ws.close();
           resolve();
         });
         ws.send(
@@ -129,6 +133,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     await new Promise<void>(resolve => {
       ws2.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
+        ws2.close();
         resolve();
       });
       ws2.send(
@@ -158,6 +163,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
       ws.on('open', () => {
         ws.on('message', data => {
           expect(JSON.parse(data).data.test).to.be.eql('test');
+          ws.close();
           resolve();
         });
         ws.send(
@@ -174,6 +180,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     await new Promise<void>(resolve => {
       ws2.on('message', data => {
         expect(JSON.parse(data).data.test).to.be.eql('test');
+        ws2.close();
         resolve();
       });
       ws2.send(
@@ -187,5 +194,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     });
   });
 
-  afterEach(() => app.close());
+  afterEach(async function () {
+    await app.close();
+  });
 });

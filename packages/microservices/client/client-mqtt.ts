@@ -174,11 +174,14 @@ export class ClientMqtt extends ClientProxy {
     const serializedPacket: ReadPacket & Partial<MqttRecord> =
       this.serializer.serialize(packet);
 
+    const options = serializedPacket.options;
+    delete serializedPacket.options;
+
     return new Promise<void>((resolve, reject) =>
       this.mqttClient.publish(
         pattern,
         JSON.stringify(serializedPacket),
-        this.mergePacketOptions(serializedPacket.options),
+        this.mergePacketOptions(options),
         (err: any) => (err ? reject(err) : resolve()),
       ),
     );

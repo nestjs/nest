@@ -77,6 +77,13 @@ describe('RabbitMQ transport', () => {
       .expect(200, '15');
   });
 
+  it(`/POST (multiple-urls)`, () => {
+    return request(server)
+      .post('/multiple-urls')
+      .send([1, 2, 3, 4, 5])
+      .expect(200, '15');
+  }).timeout(10000);
+
   it(`/POST (event notification)`, done => {
     request(server)
       .post('/notify')

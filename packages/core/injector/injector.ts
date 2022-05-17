@@ -1,4 +1,9 @@
-import { Logger, LoggerService } from '@nestjs/common';
+import {
+  InjectionToken,
+  Logger,
+  LoggerService,
+  OptionalFactoryDependency,
+} from '@nestjs/common';
 import {
   OPTIONAL_DEPS_METADATA,
   OPTIONAL_PROPERTY_DEPS_METADATA,
@@ -15,6 +20,7 @@ import {
   isNil,
   isObject,
   isString,
+  isSymbol,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
@@ -34,13 +40,13 @@ import { InstanceToken, Module } from './module';
 /**
  * The type of an injectable dependency
  */
-export type InjectorDependency = Type<any> | Function | string | symbol;
+export type InjectorDependency = InjectionToken;
 
 /**
  * The property-based dependency
  */
 export interface PropertyDependency {
-  key: string;
+  key: symbol | string;
   name: InjectorDependency;
   isOptional?: boolean;
   instance?: any;
@@ -119,7 +125,7 @@ export class Injector {
       const properties = await this.resolveProperties(
         wrapper,
         moduleRef,
-        inject,
+        inject as InjectionToken[],
         contextId,
         wrapper,
         inquirer,
@@ -137,7 +143,7 @@ export class Injector {
     await this.resolveConstructorParams<T>(
       wrapper,
       moduleRef,
-      inject,
+      inject as InjectionToken[],
       callback,
       contextId,
       wrapper,
@@ -246,12 +252,11 @@ export class Injector {
       );
       return callback(deps);
     }
-    const dependencies = isNil(inject)
-      ? this.reflectConstructorParams(wrapper.metatype as Type<any>)
-      : inject;
-    const optionalDependenciesIds = isNil(inject)
-      ? this.reflectOptionalParams(wrapper.metatype as Type<any>)
-      : [];
+
+    const isFactoryProvider = !isNil(inject);
+    const [dependencies, optionalDependenciesIds] = isFactoryProvider
+      ? this.getFactoryProviderDependencies(wrapper)
+      : this.getClassDependencies(wrapper);
 
     let isResolved = true;
     const resolveParam = async (param: unknown, index: number) => {
@@ -292,6 +297,47 @@ export class Injector {
     isResolved && (await callback(instances));
   }
 
+  public getClassDependencies<T>(
+    wrapper: InstanceWrapper<T>,
+  ): [InjectorDependency[], number[]] {
+    const ctorRef = wrapper.metatype as Type<any>;
+    return [
+      this.reflectConstructorParams(ctorRef),
+      this.reflectOptionalParams(ctorRef),
+    ];
+  }
+
+  public getFactoryProviderDependencies<T>(
+    wrapper: InstanceWrapper<T>,
+  ): [InjectorDependency[], number[]] {
+    const optionalDependenciesIds = [];
+    const isOptionalFactoryDep = (
+      item: InjectionToken | OptionalFactoryDependency,
+    ): item is OptionalFactoryDependency =>
+      !isUndefined((item as OptionalFactoryDependency).token) &&
+      !isUndefined((item as OptionalFactoryDependency).optional);
+
+    const mapFactoryProviderInjectArray = (
+      item: InjectionToken | OptionalFactoryDependency,
+      index: number,
+    ): InjectionToken => {
+      if (typeof item !== 'object') {
+        return item;
+      }
+      if (isOptionalFactoryDep(item)) {
+        if (item.optional) {
+          optionalDependenciesIds.push(index);
+        }
+        return item?.token;
+      }
+      return item;
+    };
+    return [
+      wrapper.inject?.map?.(mapFactoryProviderInjectArray),
+      optionalDependenciesIds,
+    ];
+  }
+
   public reflectConstructorParams<T>(type: Type<T>): any[] {
     const paramtypes = Reflect.getMetadata(PARAMTYPES_METADATA, type) || [];
     const selfParams = this.reflectSelfParams<T>(type);
@@ -315,7 +361,7 @@ export class Injector {
     moduleRef: Module,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
-    keyOrIndex?: string | number,
+    keyOrIndex?: symbol | string | number,
   ) {
     if (isUndefined(param)) {
       this.logger.log(
@@ -357,7 +403,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
-    keyOrIndex?: string | number,
+    keyOrIndex?: symbol | string | number,
   ): Promise<InstanceWrapper> {
     this.printResolvingDependenciesLog(token, inquirer);
     this.printLookingForProviderLog(token, moduleRef);
@@ -392,7 +438,12 @@ export class Injector {
       inquirerId,
     );
     if (!instanceHost.isResolved && !instanceWrapper.forwardRef) {
-      await this.loadProvider(instanceWrapper, moduleRef, contextId, inquirer);
+      await this.loadProvider(
+        instanceWrapper,
+        instanceWrapper.host ?? moduleRef,
+        contextId,
+        inquirer,
+      );
     } else if (
       !instanceHost.isResolved &&
       instanceWrapper.forwardRef &&
@@ -428,10 +479,11 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
-    keyOrIndex?: string | number,
+    keyOrIndex?: symbol | string | number,
   ): Promise<InstanceWrapper<T>> {
+    const token = wrapper.token || wrapper.name;
     const { name } = dependencyContext;
-    if (wrapper && wrapper.name === name) {
+    if (wrapper && token === name) {
       throw new UnknownDependenciesException(
         wrapper.name,
         dependencyContext,
@@ -460,7 +512,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
-    keyOrIndex?: string | number,
+    keyOrIndex?: symbol | string | number,
   ) {
     const instanceWrapper = await this.lookupComponentInImports(
       moduleRef,
@@ -488,7 +540,7 @@ export class Injector {
     moduleRegistry: any[] = [],
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
-    keyOrIndex?: string | number,
+    keyOrIndex?: symbol | string | number,
     isTraversing?: boolean,
   ): Promise<any> {
     let instanceWrapperRef: InstanceWrapper = null;
@@ -779,13 +831,15 @@ export class Injector {
   }
 
   protected addDependencyMetadata(
-    keyOrIndex: number | string,
+    keyOrIndex: symbol | string | number,
     hostWrapper: InstanceWrapper,
     instanceWrapper: InstanceWrapper,
   ) {
-    isString(keyOrIndex)
-      ? hostWrapper.addPropertiesMetadata(keyOrIndex, instanceWrapper)
-      : hostWrapper.addCtorMetadata(keyOrIndex, instanceWrapper);
+    if (isSymbol(keyOrIndex) || isString(keyOrIndex)) {
+      hostWrapper.addPropertiesMetadata(keyOrIndex, instanceWrapper);
+    } else {
+      hostWrapper.addCtorMetadata(keyOrIndex, instanceWrapper);
+    }
   }
 
   private getTokenName(token: InstanceToken): string {

@@ -1,6 +1,6 @@
 /*
  * Nest @microservices
- * Copyright(c) 2017 - 2021 Kamil Mysliwiec
+ * Copyright(c) 2017 - 2022 Kamil Mysliwiec
  * https://nestjs.com
  * MIT Licensed
  */

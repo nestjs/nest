@@ -1,6 +1,6 @@
 /*
  * Nest @common
- * Copyright(c) 2017 - 2021 Kamil Mysliwiec
+ * Copyright(c) 2017 - 2022 Kamil Mysliwiec
  * https://nestjs.com
  * MIT Licensed
  */
@@ -31,6 +31,7 @@ export {
   INestApplication,
   INestApplicationContext,
   INestMicroservice,
+  InjectionToken,
   IntrospectionResult,
   MessageEvent,
   MiddlewareConsumer,
@@ -44,6 +45,7 @@ export {
   OnApplicationShutdown,
   OnModuleDestroy,
   OnModuleInit,
+  OptionalFactoryDependency,
   Paramtype,
   PipeTransform,
   Provider,

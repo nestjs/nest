@@ -168,9 +168,10 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       payload.topic,
       this.consumer,
     ]);
+    const handler = this.getHandlerByPattern(packet.pattern);
     // if the correlation id or reply topic is not set
     // then this is an event (events could still have correlation id)
-    if (!correlationId || !replyTopic) {
+    if (handler?.isEventHandler || !correlationId || !replyTopic) {
       return this.handleEvent(packet.pattern, packet, kafkaContext);
     }
 
@@ -179,7 +180,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       replyPartition,
       correlationId,
     );
-    const handler = this.getHandlerByPattern(packet.pattern);
+
     if (!handler) {
       return publish({
         id: correlationId,

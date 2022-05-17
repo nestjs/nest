@@ -108,15 +108,15 @@ describe('Global prefix', () => {
     server = app.getHttpServer();
     await app.init();
 
-    await request(server).get('/hello/foo').expect(200);
+    await request(server)
+      .get('/hello/foo')
+      .expect(200, 'Hello: Data attached in middleware');
 
     await request(server)
       .get('/middleware/foo')
       .expect(200, MIDDLEWARE_PARAM_VALUE);
 
-    await request(server)
-      .get('/api/v1/middleware/foo')
-      .expect(404);
+    await request(server).get('/api/v1/middleware/foo').expect(404);
   });
 
   afterEach(async () => {

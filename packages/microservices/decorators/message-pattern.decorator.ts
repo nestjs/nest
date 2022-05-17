@@ -1,4 +1,9 @@
-import { isObject, isNumber, isNil } from '@nestjs/common/utils/shared.utils';
+import {
+  isObject,
+  isNumber,
+  isNil,
+  isSymbol,
+} from '@nestjs/common/utils/shared.utils';
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {
   PATTERN_HANDLER_METADATA,
@@ -23,7 +28,7 @@ export const MessagePattern: {
   <T = PatternMetadata | string>(metadata?: T): MethodDecorator;
   <T = PatternMetadata | string>(
     metadata?: T,
-    transport?: Transport,
+    transport?: Transport | symbol,
   ): MethodDecorator;
   <T = PatternMetadata | string>(
     metadata?: T,
@@ -31,22 +36,25 @@ export const MessagePattern: {
   ): MethodDecorator;
   <T = PatternMetadata | string>(
     metadata?: T,
-    transport?: Transport,
+    transport?: Transport | symbol,
     extras?: Record<string, any>,
   ): MethodDecorator;
 } = <T = PatternMetadata | string>(
   metadata?: T,
-  transportOrExtras?: Transport | Record<string, any>,
+  transportOrExtras?: Transport | symbol | Record<string, any>,
   maybeExtras?: Record<string, any>,
 ): MethodDecorator => {
-  let transport: Transport;
+  let transport: Transport | symbol;
   let extras: Record<string, any>;
-  if (isNumber(transportOrExtras) && isNil(maybeExtras)) {
+  if (
+    (isNumber(transportOrExtras) || isSymbol(transportOrExtras)) &&
+    isNil(maybeExtras)
+  ) {
     transport = transportOrExtras;
   } else if (isObject(transportOrExtras) && isNil(maybeExtras)) {
     extras = transportOrExtras;
   } else {
-    transport = transportOrExtras as Transport;
+    transport = transportOrExtras as Transport | symbol;
     extras = maybeExtras;
   }
   return (

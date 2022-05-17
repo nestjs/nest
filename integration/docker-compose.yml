@@ -17,13 +17,15 @@ services:
     restart: always
   mqtt:
     container_name: test-mqtt
-    image: toke/mosquitto
+    image: eclipse-mosquitto
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
     ports:
       - "1883:1883"
       - "9001:9001"
     restart: always
   mysql:
-    image: mysql:8.0.27
+    image: mysql:8.0.28
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: test
