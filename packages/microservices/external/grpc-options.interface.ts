@@ -16,5 +16,5 @@ export interface ChannelOptions {
   'grpc.max_reconnect_backoff_ms'?: number;
   'grpc.use_local_subchannel_pool'?: number;
   'grpc-node.max_session_memory'?: number;
-  [key: string]: string | number | undefined;
+  [key: string]: any;
 }

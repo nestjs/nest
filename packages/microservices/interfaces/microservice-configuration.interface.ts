@@ -1,5 +1,4 @@
 import { Type } from '@nestjs/common';
-import { TcpSocket } from '../helpers';
 import { Transport } from '../enums/transport.enum';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import {
@@ -13,6 +12,7 @@ import {
 import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
 import { ClientOpts } from '../external/redis.interface';
 import { RmqUrl } from '../external/rmq-url.interface';
+import { TcpSocket } from '../helpers';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
@@ -35,9 +35,6 @@ export interface CustomStrategy {
 export interface GrpcOptions {
   transport?: Transport.GRPC;
   options: {
-    interceptors?: Array<
-      (options: any, nextCall: (options: any) => any) => any
-    >;
     url?: string;
     maxSendMessageLength?: number;
     maxReceiveMessageLength?: number;
