@@ -21,4 +21,8 @@ export interface NestApplicationOptions extends NestApplicationContextOptions {
    * Set of configurable HTTPS options
    */
   httpsOptions?: HttpsOptions;
+  /**
+   * Whether to register the raw request body on the request. Use `req.rawBody`.
+   */
+  rawBody?: boolean;
 }

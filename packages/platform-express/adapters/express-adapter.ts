@@ -1,5 +1,6 @@
 import {
   InternalServerErrorException,
+  RawBodyRequest,
   RequestMethod,
   StreamableFile,
   VersioningType,
@@ -25,6 +26,7 @@ import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
 import {
   json as bodyParserJson,
+  OptionsJson,
   urlencoded as bodyParserUrlencoded,
 } from 'body-parser';
 import * as cors from 'cors';
@@ -176,9 +178,21 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     this.httpServer = http.createServer(this.getInstance());
   }
 
-  public registerParserMiddleware() {
+  public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
+    let bodyParserJsonOptions: OptionsJson | undefined;
+    if (rawBody === true) {
+      bodyParserJsonOptions = {
+        verify: (req: RawBodyRequest<http.IncomingMessage>, _res, buffer) => {
+          if (Buffer.isBuffer(buffer)) {
+            req.rawBody = buffer;
+          }
+          return true;
+        },
+      };
+    }
+
     const parserMiddleware = {
-      jsonParser: bodyParserJson(),
+      jsonParser: bodyParserJson(bodyParserJsonOptions),
       urlencodedParser: bodyParserUrlencoded({ extended: true }),
     };
     Object.keys(parserMiddleware)

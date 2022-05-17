@@ -1,6 +1,7 @@
 import {
   HttpStatus,
   Logger,
+  RawBodyRequest,
   RequestMethod,
   StreamableFile,
   VersioningOptions,
@@ -16,6 +17,7 @@ import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   fastify,
+  FastifyBodyParser,
   FastifyInstance,
   FastifyLoggerInstance,
   FastifyPluginAsync,
@@ -424,11 +426,16 @@ export class FastifyAdapter<
     this.register(import('@fastify/cors'), options);
   }
 
-  public registerParserMiddleware() {
+  public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
     if (this._isParserRegistered) {
       return;
     }
     this.register(import('@fastify/formbody'));
+
+    if (rawBody) {
+      this.registerContentParserWithRawBody();
+    }
+
     this._isParserRegistered = true;
   }
 
@@ -474,6 +481,30 @@ export class FastifyAdapter<
     response: TRawResponse | TReply,
   ): response is TRawResponse {
     return !('status' in response);
+  }
+
+  private registerContentParserWithRawBody() {
+    this.getInstance().addContentTypeParser<Buffer>(
+      'application/json',
+      { parseAs: 'buffer' },
+      (
+        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
+        body: Buffer,
+        done,
+      ) => {
+        if (Buffer.isBuffer(body)) {
+          req.rawBody = body;
+        }
+
+        const { onProtoPoisoning, onConstructorPoisoning } =
+          this.instance.initialConfig;
+        const defaultJsonParser = this.instance.getDefaultJsonParser(
+          onProtoPoisoning || 'error',
+          onConstructorPoisoning || 'error',
+        ) as FastifyBodyParser<string | Buffer, TServer>;
+        defaultJsonParser(req, body, done);
+      },
+    );
   }
 
   private async registerMiddie() {

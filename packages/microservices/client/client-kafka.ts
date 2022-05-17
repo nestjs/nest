@@ -52,6 +52,7 @@ export class ClientKafka extends ClientProxy {
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
+  protected producerOnlyMode: boolean;
 
   constructor(protected readonly options: KafkaOptions['options']) {
     super();
@@ -62,6 +63,8 @@ export class ClientKafka extends ClientProxy {
       this.getOptionsProp(this.options, 'consumer') || ({} as ConsumerConfig);
     const postfixId =
       this.getOptionsProp(this.options, 'postfixId') || '-client';
+    this.producerOnlyMode =
+      this.getOptionsProp(this.options, 'producerOnlyMode') || false;
 
     this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
 
@@ -100,36 +103,44 @@ export class ClientKafka extends ClientProxy {
     }
     this.client = this.createClient();
 
-    const partitionAssigners = [
-      (config: ConstructorParameters<typeof KafkaReplyPartitionAssigner>[1]) =>
-        new KafkaReplyPartitionAssigner(this, config),
-    ] as any[];
+    if (!this.producerOnlyMode) {
+      const partitionAssigners = [
+        (
+          config: ConstructorParameters<typeof KafkaReplyPartitionAssigner>[1],
+        ) => new KafkaReplyPartitionAssigner(this, config),
+      ] as any[];
 
-    const consumerOptions = Object.assign(
-      {
-        partitionAssigners,
-      },
-      this.options.consumer || {},
-      {
-        groupId: this.groupId,
-      },
-    );
+      const consumerOptions = Object.assign(
+        {
+          partitionAssigners,
+        },
+        this.options.consumer || {},
+        {
+          groupId: this.groupId,
+        },
+      );
+
+      this.consumer = this.client.consumer(consumerOptions);
+      // set member assignments on join and rebalance
+      this.consumer.on(
+        this.consumer.events.GROUP_JOIN,
+        this.setConsumerAssignments.bind(this),
+      );
+      await this.consumer.connect();
+      await this.bindTopics();
+    }
+
     this.producer = this.client.producer(this.options.producer || {});
-    this.consumer = this.client.consumer(consumerOptions);
-
-    // set member assignments on join and rebalance
-    this.consumer.on(
-      this.consumer.events.GROUP_JOIN,
-      this.setConsumerAssignments.bind(this),
-    );
-
     await this.producer.connect();
-    await this.consumer.connect();
-    await this.bindTopics();
+
     return this.producer;
   }
 
   public async bindTopics(): Promise<void> {
+    if (!this.consumer) {
+      throw Error('No consumer initialized');
+    }
+
     const consumerSubscribeOptions = this.options.subscribe || {};
     const subscribeTo = async (responsePattern: string) =>
       this.consumer.subscribe({

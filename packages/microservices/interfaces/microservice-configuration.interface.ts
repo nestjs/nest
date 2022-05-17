@@ -201,5 +201,6 @@ export interface KafkaOptions {
     serializer?: Serializer;
     deserializer?: Deserializer;
     parser?: KafkaParserConfig;
+    producerOnlyMode?: boolean;
   };
 }
