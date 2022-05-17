@@ -8,6 +8,7 @@ import {
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { KafkaContext } from '../ctx-host';
+import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer';
 import { KafkaHeaders, Transport } from '../enums';
 import { KafkaRetriableException } from '../exceptions';
 import {
@@ -184,7 +185,6 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       });
     }
 
-    // @TODO pass packet.data.value (overide deserializer)
     const response$ = this.transformToObservable(
       await handler(packet.data, kafkaContext),
     );
@@ -275,5 +275,9 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   protected initializeSerializer(options: KafkaOptions['options']) {
     this.serializer =
       (options && options.serializer) || new KafkaRequestSerializer();
+  }
+
+  protected initializeDeserializer(options: KafkaOptions['options']) {
+    this.deserializer = options?.deserializer ?? new KafkaRequestDeserializer();
   }
 }
