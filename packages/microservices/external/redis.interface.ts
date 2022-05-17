@@ -1,167 +1,213 @@
+import { ConnectionOptions } from 'tls';
+
 /**
- * @see https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/ioredis/index.d.ts
+ * @see https://github.dev/luin/ioredis/blob/df04dd8d87a44d3b64b385c86581915248554508/lib/redis/RedisOptions.ts#L184
  */
 export interface IORedisOptions {
-  port?: number | undefined;
-  host?: string | undefined;
+  Connector?: any;
+  retryStrategy?: (times: number) => number | void | null;
+
   /**
-   * 4 (IPv4) or 6 (IPv6), Defaults to 4.
+   * If a command does not return a reply within a set number of milliseconds,
+   * a "Command timed out" error will be thrown.
    */
-  family?: number | undefined;
+  commandTimeout?: number;
   /**
-   * Local domain socket path. If set the port, host and family will be ignored.
+   * Enable/disable keep-alive functionality.
+   * @link https://nodejs.org/api/net.html#socketsetkeepaliveenable-initialdelay
+   * @default 0
    */
-  path?: string | undefined;
+  keepAlive?: number;
+
   /**
-   * TCP KeepAlive on the socket with a X ms delay before start. Set to a non-number value to disable keepAlive.
+   * Enable/disable the use of Nagle's algorithm.
+   * @link https://nodejs.org/api/net.html#socketsetnodelaynodelay
+   * @default true
    */
-  keepAlive?: number | undefined;
+  noDelay?: boolean;
+
   /**
-   * Whether to disable the Nagle's Algorithm.
+   * Set the name of the connection to make it easier to identity the connection
+   * in client list.
+   * @link https://redis.io/commands/client-setname
    */
-  noDelay?: boolean | undefined;
+  connectionName?: string;
+
   /**
-   * Force numbers to be always returned as JavaScript strings. This option is necessary when dealing with big numbers (exceed the [-2^53, +2^53] range).
+   * If set, client will send AUTH command with the value of this option as the first argument when connected.
+   * This is supported since Redis 6.
    */
-  stringNumbers?: boolean | undefined;
-  /**
-   * Default script definition caching time.
-   */
-  maxScriptsCachingTime?: number | undefined;
-  connectionName?: string | undefined;
-  /**
-   * If set, client will send AUTH command with the value of this option as the first argument when connected. The `password` option must be set too. Username should only be set for Redis >=6.
-   */
-  username?: string | undefined;
+  username?: string;
+
   /**
    * If set, client will send AUTH command with the value of this option when connected.
    */
-  password?: string | undefined;
+  password?: string;
+
   /**
    * Database index to use.
-   */
-  db?: number | undefined;
-  /**
-   * When a connection is established to the Redis server, the server might still be loading
-   * the database from disk. While loading, the server not respond to any commands.
-   * To work around this, when this option is true, ioredis will check the status of the Redis server,
-   * and when the Redis server is able to process commands, a ready event will be emitted.
-   */
-  enableReadyCheck?: boolean | undefined;
-  keyPrefix?: string | undefined;
-  /**
-   * When the return value isn't a number, ioredis will stop trying to reconnect.
-   * Fixed in: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/15858
-   */
-  retryStrategy?(times: number): number | void | null;
-  /**
-   * By default, all pending commands will be flushed with an error every
-   * 20 retry attempts. That makes sure commands won't wait forever when
-   * the connection is down. You can change this behavior by setting
-   * `maxRetriesPerRequest`.
    *
-   * Set maxRetriesPerRequest to `null` to disable this behavior, and
-   * every command will wait forever until the connection is alive again
-   * (which is the default behavior before ioredis v4).
+   * @default 0
    */
-  maxRetriesPerRequest?: number | null | undefined;
+  db?: number;
+
   /**
-   * The milliseconds before a timeout occurs when executing a single
-   * command. By default, there is no timeout and the client will wait
-   * indefinitely. The timeout is enforced only on the client side, not
-   * server side. The server may still complete the operation after a
-   * timeout error occurs on the client side.
+   * When the client reconnects, channels subscribed in the previous connection will be
+   * resubscribed automatically if `autoResubscribe` is `true`.
+   * @default true
    */
-  commandTimeout?: number | undefined;
+  autoResubscribe?: boolean;
+
   /**
-   * 1/true means reconnect, 2 means reconnect and resend failed command. Returning false will ignore
-   * the error and do nothing.
+   * Whether or not to resend unfulfilled commands on reconnect.
+   * Unfulfilled commands are most likely to be blocking commands such as `brpop` or `blpop`.
+   * @default true
    */
-  reconnectOnError?(error: Error): boolean | 1 | 2;
+  autoResendUnfulfilledCommands?: boolean;
   /**
-   * By default, if there is no active connection to the Redis server, commands are added to a queue
-   * and are executed once the connection is "ready" (when enableReadyCheck is true, "ready" means
+   * Whether or not to reconnect on certain Redis errors.
+   * This options by default is `null`, which means it should never reconnect on Redis errors.
+   * You can pass a function that accepts an Redis error, and returns:
+   * - `true` or `1` to trigger a reconnection.
+   * - `false` or `0` to not reconnect.
+   * - `2` to reconnect and resend the failed command (who triggered the error) after reconnection.
+   * @example
+   * ```js
+   * const redis = new Redis({
+   *   reconnectOnError(err) {
+   *     const targetError = "READONLY";
+   *     if (err.message.includes(targetError)) {
+   *       // Only reconnect when the error contains "READONLY"
+   *       return true; // or `return 1;`
+   *     }
+   *   },
+   * });
+   * ```
+   * @default null
+   */
+  reconnectOnError?: ((err: Error) => boolean | 1 | 2) | null;
+
+  /**
+   * @default false
+   */
+  readOnly?: boolean;
+  /**
+   * When enabled, numbers returned by Redis will be converted to JavaScript strings instead of numbers.
+   * This is necessary if you want to handle big numbers (above `Number.MAX_SAFE_INTEGER` === 2^53).
+   * @default false
+   */
+  stringNumbers?: boolean;
+
+  /**
+   * How long the client will wait before killing a socket due to inactivity during initial connection.
+   * @default 10000
+   */
+  connectTimeout?: number;
+
+  /**
+   * This option is used internally when you call `redis.monitor()` to tell Redis
+   * to enter the monitor mode when the connection is established.
+   *
+   * @default false
+   */
+  monitor?: boolean;
+
+  /**
+   * The commands that don't get a reply due to the connection to the server is lost are
+   * put into a queue and will be resent on reconnect (if allowed by the `retryStrategy` option).
+   * This option is used to configure how many reconnection attempts should be allowed before
+   * the queue is flushed with a `MaxRetriesPerRequestError` error.
+   * Set this options to `null` instead of a number to let commands wait forever
+   * until the connection is alive again.
+   *
+   * @default 20
+   */
+  maxRetriesPerRequest?: number | null;
+
+  /**
+   * @default 10000
+   */
+  maxLoadingRetryTime?: number;
+  /**
+   * @default false
+   */
+  enableAutoPipelining?: boolean;
+  /**
+   * @default []
+   */
+  autoPipeliningIgnoredCommands?: string[];
+  offlineQueue?: boolean;
+  commandQueue?: boolean;
+
+  /**
+   *
+   * By default, if the connection to Redis server has not been established, commands are added to a queue
+   * and are executed once the connection is "ready" (when `enableReadyCheck` is true, "ready" means
    * the Redis server has loaded the database from disk, otherwise means the connection to the Redis
    * server has been established). If this option is false, when execute the command when the connection
    * isn't ready, an error will be returned.
+   *
+   * @default true
    */
-  enableOfflineQueue?: boolean | undefined;
+  enableOfflineQueue?: boolean;
+
   /**
-   * The milliseconds before a timeout occurs during the initial connection to the Redis server.
-   * default: 10000.
+   * The client will sent an INFO command to check whether the server is still loading data from the disk (
+   * which happens when the server is just launched) when the connection is established, and only wait until
+   * the loading process is finished before emitting the `ready` event.
+   *
+   * @default true
    */
-  connectTimeout?: number | undefined;
+  enableReadyCheck?: boolean;
+
   /**
-   * The milliseconds before socket.destroy() is called after socket.end() if the connection remains half-open during disconnection.
-   * default: 2000
+   * When a Redis instance is initialized, a connection to the server is immediately established. Set this to
+   * true will delay the connection to the server until the first command is sent or `redis.connect()` is called
+   * explicitly.
+   *
+   * @default false
    */
-  disconnectTimeout?: number | undefined;
+
+  lazyConnect?: boolean;
+
   /**
-   * After reconnected, if the previous connection was in the subscriber mode, client will auto re-subscribe these channels.
-   * default: true.
+   * @default undefined
    */
-  autoResubscribe?: boolean | undefined;
+  scripts?: Record<
+    string,
+    { lua: string; numberOfKeys?: number; readOnly?: boolean }
+  >;
+
+  keyPrefix?: string;
+  showFriendlyErrorStack?: boolean;
+
+  // StandaloneConnectionOptions
+  disconnectTimeout?: number;
+  tls?: ConnectionOptions;
+
+  // SentinelConnectionOptions
   /**
-   * If true, client will resend unfulfilled commands(e.g. block commands) in the previous connection when reconnected.
-   * default: true.
+   * Master group name of the Sentinel
    */
-  autoResendUnfulfilledCommands?: boolean | undefined;
-  lazyConnect?: boolean | undefined;
-  tls?: any | undefined;
+  name?: string;
   /**
-   * default: "master".
+   * @default "master"
    */
-  role?: 'master' | 'slave' | undefined;
+  role?: 'master' | 'slave';
+  sentinelUsername?: string;
+  sentinelPassword?: string;
+  sentinels?: Array<Partial<any>>;
+  sentinelRetryStrategy?: (retryAttempts: number) => number | void | null;
+  sentinelReconnectStrategy?: (retryAttempts: number) => number | void | null;
+  preferredSlaves?: any;
+  sentinelCommandTimeout?: number;
+  enableTLSForSentinelMode?: boolean;
+  sentinelTLS?: ConnectionOptions;
+  natMap?: any;
+  updateSentinels?: boolean;
   /**
-   * default: null.
+   * @default 10
    */
-  name?: string | undefined;
-  sentinelUsername?: string | undefined;
-  sentinelPassword?: string | undefined;
-  sentinels?: Array<{ host: string; port: number }> | undefined;
-  /**
-   * If `sentinelRetryStrategy` returns a valid delay time, ioredis will try to reconnect from scratch.
-   * default: function(times) { return Math.min(times * 10, 1000); }
-   */
-  sentinelRetryStrategy?(times: number): number | void | null;
-  /**
-   * Can be used to prefer a particular slave or set of slaves based on priority.
-   */
-  preferredSlaves?: any | undefined;
-  /**
-   * Whether to support the `tls` option when connecting to Redis via sentinel mode.
-   * default: false.
-   */
-  enableTLSForSentinelMode?: boolean | undefined;
-  sentinelTLS?: any | undefined;
-  /**
-   * NAT map for sentinel connector.
-   * default: null.
-   */
-  natMap?: any | undefined;
-  /**
-   * Update the given `sentinels` list with new IP addresses when communicating with existing sentinels.
-   * default: true.
-   */
-  updateSentinels?: boolean | undefined;
-  /**
-   * Enable READONLY mode for the connection. Only available for cluster mode.
-   * default: false.
-   */
-  readOnly?: boolean | undefined;
-  /**
-   * If you are using the hiredis parser, it's highly recommended to enable this option.
-   * Create another instance with dropBufferSupport disabled for other commands that you want to return binary instead of string
-   */
-  dropBufferSupport?: boolean | undefined;
-  /**
-   * Whether to show a friendly error stack. Will decrease the performance significantly.
-   */
-  showFriendlyErrorStack?: boolean | undefined;
-  /**
-   * When enabled, all commands issued during an event loop iteration are automatically wrapped in a
-   * pipeline and sent to the server at the same time. This can improve performance by 30-50%.
-   * default: false.
-   */
-  enableAutoPipelining?: boolean | undefined;
+  sentinelMaxConnections?: number;
+  failoverDetector?: boolean;
 }
