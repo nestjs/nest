@@ -365,38 +365,38 @@ describe('RouterExplorer', () => {
   });
 
   describe('applyVersionFilter', () => {
-    describe('when the version is VERSION_NEUTRAL', () => {
-      it('should return the handler', () => {
-        const version = VERSION_NEUTRAL as VersionValue;
-        const versioningOptions: VersioningOptions = {
-          type: VersioningType.URI,
-        };
-        const handler = sinon.stub();
-
-        const routePathMetadata: RoutePathMetadata = {
-          methodVersion: version,
-          versioningOptions,
-        };
-        const versionFilter = (routerBuilder as any).applyVersionFilter(
-          null,
-          routePathMetadata,
-          handler,
-        );
-
-        const req = {};
-        const res = {};
-        const next = sinon.stub();
-
-        versionFilter(req, res, next);
-
-        expect(handler.calledWith(req, res, next)).to.be.true;
-      });
-    });
-
     describe('when the versioning type is URI', () => {
+      describe('and the version is VERSION_NEUTRAL', () => {
+        it('should return the handler', () => {
+          const version: VersionValue = VERSION_NEUTRAL;
+          const versioningOptions: RoutePathMetadata['versioningOptions'] = {
+            type: VersioningType.URI,
+          };
+          const handler = sinon.stub();
+
+          const routePathMetadata: RoutePathMetadata = {
+            methodVersion: version,
+            versioningOptions,
+          };
+          const versionFilter = (routerBuilder as any).applyVersionFilter(
+            null,
+            routePathMetadata,
+            handler,
+          );
+
+          const req = {};
+          const res = {};
+          const next = sinon.stub();
+
+          versionFilter(req, res, next);
+
+          expect(handler.calledWith(req, res, next)).to.be.true;
+        });
+      });
+
       it('should return the handler', () => {
         const version = '1';
-        const versioningOptions: VersioningOptions = {
+        const versioningOptions: RoutePathMetadata['versioningOptions'] = {
           type: VersioningType.URI,
         };
         const handler = sinon.stub();
@@ -423,7 +423,7 @@ describe('RouterExplorer', () => {
     describe('when the versioning type is MEDIA_TYPE', () => {
       it('should return next if there is no Media Type header', () => {
         const version = '1';
-        const versioningOptions: VersioningOptions = {
+        const versioningOptions: RoutePathMetadata['versioningOptions'] = {
           type: VersioningType.MEDIA_TYPE,
           key: 'v=',
         };
@@ -450,7 +450,7 @@ describe('RouterExplorer', () => {
 
       it('should return next if there is no version in the Media Type header', () => {
         const version = '1';
-        const versioningOptions: VersioningOptions = {
+        const versioningOptions: RoutePathMetadata['versioningOptions'] = {
           type: VersioningType.MEDIA_TYPE,
           key: 'v=',
         };
@@ -478,7 +478,7 @@ describe('RouterExplorer', () => {
       describe('when the handler version is an array', () => {
         it('should return next if the version in the Media Type header does not match the handler version', () => {
           const version = ['1', '2'];
-          const versioningOptions: VersioningOptions = {
+          const versioningOptions: RoutePathMetadata['versioningOptions'] = {
             type: VersioningType.MEDIA_TYPE,
             key: 'v=',
           };
@@ -505,7 +505,7 @@ describe('RouterExplorer', () => {
 
         it('should return the handler if the version in the Media Type header matches the handler version', () => {
           const version = ['1', '2'];
-          const versioningOptions: VersioningOptions = {
+          const versioningOptions: RoutePathMetadata['versioningOptions'] = {
             type: VersioningType.MEDIA_TYPE,
             key: 'v=',
           };
@@ -534,7 +534,7 @@ describe('RouterExplorer', () => {
       describe('when the handler version is a string', () => {
         it('should return next if the version in the Media Type header does not match the handler version', () => {
           const version = '1';
-          const versioningOptions: VersioningOptions = {
+          const versioningOptions: RoutePathMetadata['versioningOptions'] = {
             type: VersioningType.MEDIA_TYPE,
             key: 'v=',
           };
@@ -561,7 +561,7 @@ describe('RouterExplorer', () => {
 
         it('should return the handler if the version in the Media Type header matches the handler version', () => {
           const version = '1';
-          const versioningOptions: VersioningOptions = {
+          const versioningOptions: RoutePathMetadata['versioningOptions'] = {
             type: VersioningType.MEDIA_TYPE,
             key: 'v=',
           };
@@ -767,7 +767,7 @@ describe('RouterExplorer', () => {
     describe('when the versioning type is HEADER', () => {
       it('should return next if there is no Custom Header', () => {
         const version = '1';
-        const versioningOptions: VersioningOptions = {
+        const versioningOptions: RoutePathMetadata['versioningOptions'] = {
           type: VersioningType.HEADER,
           header: 'X-API-Version',
         };
@@ -794,7 +794,7 @@ describe('RouterExplorer', () => {
 
       it('should return next if there is no version in the Custom Header', () => {
         const version = '1';
-        const versioningOptions: VersioningOptions = {
+        const versioningOptions: RoutePathMetadata['versioningOptions'] = {
           type: VersioningType.HEADER,
           header: 'X-API-Version',
         };
@@ -822,7 +822,7 @@ describe('RouterExplorer', () => {
       describe('when the handler version is an array', () => {
         it('should return next if the version in the Custom Header does not match the handler version', () => {
           const version = ['1', '2'];
-          const versioningOptions: VersioningOptions = {
+          const versioningOptions: RoutePathMetadata['versioningOptions'] = {
             type: VersioningType.HEADER,
             header: 'X-API-Version',
           };
@@ -849,7 +849,7 @@ describe('RouterExplorer', () => {
 
         it('should return the handler if the version in the Custom Header matches the handler version', () => {
           const version = ['1', '2'];
-          const versioningOptions: VersioningOptions = {
+          const versioningOptions: RoutePathMetadata['versioningOptions'] = {
             type: VersioningType.HEADER,
             header: 'X-API-Version',
           };
@@ -878,7 +878,7 @@ describe('RouterExplorer', () => {
       describe('when the handler version is a string', () => {
         it('should return next if the version in the Custom Header does not match the handler version', () => {
           const version = '1';
-          const versioningOptions: VersioningOptions = {
+          const versioningOptions: RoutePathMetadata['versioningOptions'] = {
             type: VersioningType.HEADER,
             header: 'X-API-Version',
           };
@@ -905,7 +905,7 @@ describe('RouterExplorer', () => {
 
         it('should return the handler if the version in the Custom Header matches the handler version', () => {
           const version = '1';
-          const versioningOptions: VersioningOptions = {
+          const versioningOptions: RoutePathMetadata['versioningOptions'] = {
             type: VersioningType.HEADER,
             header: 'X-API-Version',
           };
