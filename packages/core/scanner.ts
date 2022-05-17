@@ -102,13 +102,13 @@ export class DependenciesScanner {
       moduleDefinition as Type<any> | DynamicModule,
     )
       ? this.reflectMetadata(
-          moduleDefinition as Type<any>,
           MODULE_METADATA.IMPORTS,
+          moduleDefinition as Type<any>,
         )
       : [
           ...this.reflectMetadata(
-            (moduleDefinition as DynamicModule).module,
             MODULE_METADATA.IMPORTS,
+            (moduleDefinition as DynamicModule).module,
           ),
           ...((moduleDefinition as DynamicModule).imports || []),
         ];
@@ -177,7 +177,7 @@ export class DependenciesScanner {
     context: string,
   ) {
     const modules = [
-      ...this.reflectMetadata(module, MODULE_METADATA.IMPORTS),
+      ...this.reflectMetadata(MODULE_METADATA.IMPORTS, module),
       ...this.container.getDynamicMetadataByToken(
         token,
         MODULE_METADATA.IMPORTS as 'imports',
@@ -190,7 +190,7 @@ export class DependenciesScanner {
 
   public reflectProviders(module: Type<any>, token: string) {
     const providers = [
-      ...this.reflectMetadata(module, MODULE_METADATA.PROVIDERS),
+      ...this.reflectMetadata(MODULE_METADATA.PROVIDERS, module),
       ...this.container.getDynamicMetadataByToken(
         token,
         MODULE_METADATA.PROVIDERS as 'providers',
@@ -204,7 +204,7 @@ export class DependenciesScanner {
 
   public reflectControllers(module: Type<any>, token: string) {
     const controllers = [
-      ...this.reflectMetadata(module, MODULE_METADATA.CONTROLLERS),
+      ...this.reflectMetadata(MODULE_METADATA.CONTROLLERS, module),
       ...this.container.getDynamicMetadataByToken(
         token,
         MODULE_METADATA.CONTROLLERS as 'controllers',
@@ -229,7 +229,7 @@ export class DependenciesScanner {
 
   public reflectExports(module: Type<unknown>, token: string) {
     const exports = [
-      ...this.reflectMetadata(module, MODULE_METADATA.EXPORTS),
+      ...this.reflectMetadata(MODULE_METADATA.EXPORTS, module),
       ...this.container.getDynamicMetadataByToken(
         token,
         MODULE_METADATA.EXPORTS as 'exports',
@@ -245,7 +245,7 @@ export class DependenciesScanner {
     token: string,
     metadataKey: string,
   ) {
-    const controllerInjectables = this.reflectMetadata(component, metadataKey);
+    const controllerInjectables = this.reflectMetadata(metadataKey, component);
     const methodsInjectables = this.metadataScanner.scanFromPrototype(
       null,
       component.prototype,
@@ -416,7 +416,7 @@ export class DependenciesScanner {
     this.container.addController(controller, token);
   }
 
-  public reflectMetadata(metatype: Type<any>, metadataKey: string) {
+  public reflectMetadata(metadataKey: string, metatype: Type<any>) {
     return Reflect.getMetadata(metadataKey, metatype) || [];
   }
 
