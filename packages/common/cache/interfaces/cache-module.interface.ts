@@ -1,4 +1,5 @@
-import { ModuleMetadata, Provider, Type } from '../../interfaces';
+import { Provider, Type } from '../../interfaces';
+import { ConfigurableModuleAsyncOptions } from '../../module-utils';
 import { CacheManagerOptions } from './cache-manager.interface';
 
 export type CacheModuleOptions<
@@ -39,7 +40,10 @@ export interface CacheOptionsFactory<
  */
 export interface CacheModuleAsyncOptions<
   StoreConfig extends Record<any, any> = Record<string, any>,
-> extends Pick<ModuleMetadata, 'imports'> {
+> extends ConfigurableModuleAsyncOptions<
+    CacheModuleOptions<StoreConfig>,
+    keyof CacheOptionsFactory
+  > {
   /**
    * Injection token resolving to an existing provider. The provider must implement
    * the `CacheOptionsFactory` interface.
@@ -63,6 +67,9 @@ export interface CacheModuleAsyncOptions<
    * Dependencies that a Factory may inject.
    */
   inject?: any[];
+  /**
+   * Extra providers to be registered within a scope of this module.
+   */
   extraProviders?: Provider[];
   /**
    * If "true', register `CacheModule` as a global module.

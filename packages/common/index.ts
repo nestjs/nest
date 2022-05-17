@@ -61,6 +61,7 @@ export {
   WsExceptionFilter,
   WsMessageHandler,
 } from './interfaces';
+export * from './module-utils';
 export * from './pipes';
 export * from './serializer';
 export * from './services';
