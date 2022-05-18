@@ -6,8 +6,9 @@ import {
   StreamableFile,
   VersioningOptions,
   VersioningType,
+  VERSION_NEUTRAL,
 } from '@nestjs/common';
-import { VersionValue, VERSION_NEUTRAL } from '@nestjs/common/interfaces';
+import { VersionValue } from '@nestjs/common/interfaces';
 import {
   CorsOptions,
   CorsOptionsDelegate,
@@ -68,7 +69,11 @@ type FastifyHttpsOptions<
   https: https.ServerOptions;
 };
 
-type VersionedRoute = Function & {
+type VersionedRoute<TRequest, TResponse> = ((
+  req: TRequest,
+  res: TResponse,
+  next: Function,
+) => Function) & {
   version: VersionValue;
   versioningOptions: VersioningOptions;
 };
@@ -254,11 +259,11 @@ export class FastifyAdapter<
     handler: Function,
     version: VersionValue,
     versioningOptions: VersioningOptions,
-  ) {
+  ): VersionedRoute<TRequest, TReply> {
     if (!this.versioningOptions) {
       this.versioningOptions = versioningOptions;
     }
-    const versionedRoute = handler as VersionedRoute;
+    const versionedRoute = handler as VersionedRoute<TRequest, TReply>;
     versionedRoute.version = version;
     return versionedRoute;
   }

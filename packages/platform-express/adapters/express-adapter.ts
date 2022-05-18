@@ -4,12 +4,10 @@ import {
   RequestMethod,
   StreamableFile,
   VersioningType,
-} from '@nestjs/common';
-import {
   VersioningOptions,
-  VersionValue,
   VERSION_NEUTRAL,
-} from '@nestjs/common/interfaces';
+} from '@nestjs/common';
+import { VersionValue } from '@nestjs/common/interfaces';
 import {
   CorsOptions,
   CorsOptionsDelegate,
