@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "iterare": "1.2.1",
-    "json-socket": "0.3.0",
     "tslib": "2.4.0"
   },
   "devDependencies": {
