@@ -72,7 +72,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
 
   it(`should handle message on a different path`, async () => {
     app = await createNestApp(WsPathGateway);
-    await app.listenAsync(3000);
+    await app.listen(3000);
     try {
       ws = new WebSocket('ws://localhost:3000/ws-path');
       await new Promise((resolve, reject) => {
@@ -104,7 +104,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     this.retries(10);
 
     app = await createNestApp(ExamplePathGateway, WsPathGateway2);
-    await app.listenAsync(3000);
+    await app.listen(3000);
 
     // open websockets delay
     await new Promise(resolve => setTimeout(resolve, 1000));

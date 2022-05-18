@@ -236,13 +236,6 @@ export class NestApplication
     return this;
   }
 
-  public startAllMicroservicesAsync(): Promise<this> {
-    this.logger.warn(
-      'DEPRECATED! "startAllMicroservicesAsync" method is deprecated and will be removed in the next major release. Please, use "startAllMicroservices" instead.',
-    );
-    return this.startAllMicroservices();
-  }
-
   public use(...args: [any, any?]): this {
     this.httpAdapter.use(...args);
     return this;
@@ -299,13 +292,6 @@ export class NestApplication
         },
       );
     });
-  }
-
-  public listenAsync(port: number | string, ...args: any[]): Promise<any> {
-    this.logger.warn(
-      'DEPRECATED! "listenAsync" method is deprecated and will be removed in the next major release. Please, use "listen" instead.',
-    );
-    return this.listen(port, ...(args as [any]));
   }
 
   public async getUrl(): Promise<string> {
