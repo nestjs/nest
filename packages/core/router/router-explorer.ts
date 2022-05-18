@@ -332,9 +332,12 @@ export class RouterExplorer {
     routePathMetadata: RoutePathMetadata,
     handler: Function,
   ) {
-    const { versioningOptions } = routePathMetadata;
     const version = this.routePathFactory.getVersion(routePathMetadata);
-    return router.applyVersionFilter(handler, version, versioningOptions);
+    return router.applyVersionFilter(
+      handler,
+      version,
+      routePathMetadata.versioningOptions,
+    );
   }
 
   private createCallbackProxy(
