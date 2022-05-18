@@ -2,7 +2,6 @@ import {
   DynamicModule,
   flatten,
   ForwardReference,
-  Logger,
   Provider,
 } from '@nestjs/common';
 import {
@@ -59,7 +58,6 @@ interface ApplicationProviderWrapper {
 }
 
 export class DependenciesScanner {
-  private readonly logger = new Logger(DependenciesScanner.name);
   private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] =
     [];
 
@@ -151,10 +149,7 @@ export class DependenciesScanner {
       this.isController(moduleToAdd) ||
       this.isExceptionFilter(moduleToAdd)
     ) {
-      // TODO(v9): Throw the exception instead of printing a warning
-      this.logger.warn(
-        new InvalidClassModuleException(moduleDefinition, scope).message,
-      );
+      throw new InvalidClassModuleException(moduleDefinition, scope);
     }
 
     return this.container.addModule(moduleToAdd, scope);

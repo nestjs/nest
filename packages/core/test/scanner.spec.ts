@@ -9,6 +9,7 @@ import { Scope } from '../../common/interfaces';
 import { ApplicationConfig } from '../application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '../constants';
 import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
+import { InvalidClassModuleException } from '../errors/exceptions/invalid-class-module.exception';
 import { UndefinedModuleException } from '../errors/exceptions/undefined-module.exception';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
@@ -165,16 +166,6 @@ describe('DependenciesScanner', () => {
   });
 
   describe('insertModule', () => {
-    let LoggerWarnSpy: sinon.SinonSpy;
-
-    beforeEach(() => {
-      LoggerWarnSpy = sinon.stub(Logger.prototype, 'warn');
-    });
-
-    afterEach(() => {
-      LoggerWarnSpy.restore();
-    });
-
     it('should call forwardRef() when forwardRef property exists', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
@@ -183,26 +174,26 @@ describe('DependenciesScanner', () => {
 
       expect(module.forwardRef.called).to.be.true;
     });
-    it('should logs an warning when passing a class annotated with `@Injectable()` decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when suppling a class annotated with `@Injectable()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
-      scanner.insertModule(TestComponent, []);
-
-      expect(LoggerWarnSpy.calledOnce).to.be.true;
+      expect(scanner.insertModule(TestComponent, [])).to.be.rejectedWith(
+        InvalidClassModuleException,
+      );
     });
-    it('should logs an warning when passing a class annotated with `@Controller()` decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when suppling a class annotated with `@Controller()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
-      scanner.insertModule(TestController, []);
-
-      expect(LoggerWarnSpy.calledOnce).to.be.true;
+      expect(scanner.insertModule(TestController, [])).to.be.rejectedWith(
+        InvalidClassModuleException,
+      );
     });
-    it('should logs an warning when passing a class annotated with `@Catch()` (only) decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when suppling a class annotated with (only) `@Catch()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
-      scanner.insertModule(TestExceptionFilterWithoutInjectable, []);
-
-      expect(LoggerWarnSpy.calledOnce).to.be.true;
+      expect(
+        scanner.insertModule(TestExceptionFilterWithoutInjectable, []),
+      ).to.be.rejectedWith(InvalidClassModuleException);
     });
   });
 
