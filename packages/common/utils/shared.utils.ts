@@ -31,12 +31,6 @@ export const addLeadingSlash = (path?: string): string =>
       : path
     : '';
 
-/**
- * Deprecated. Use the "addLeadingSlash" function instead.
- * @deprecated
- */
-export const validatePath = addLeadingSlash;
-
 export const normalizePath = (path?: string): string =>
   path
     ? path.startsWith('/')
