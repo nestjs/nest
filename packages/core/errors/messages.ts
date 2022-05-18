@@ -121,11 +121,11 @@ export const USING_INVALID_CLASS_AS_A_MODULE_MESSAGE = (
   metatypeUsedAsAModule: Type | ForwardReference,
   scope: any[],
 ) => {
-  const metatypeName = getInstanceName(metatypeUsedAsAModule) || 'found';
+  const metatypeNameQuote =
+    `"${getInstanceName(metatypeUsedAsAModule)}"` || 'that class';
 
-  // TODO(v9): Edit the message below:
-  return `In the next major version, Nest will not allow classes annotated with @Injectable(), @Catch(), and @Controller() decorators to appear in the "imports" array of a module.
-Please remove "${metatypeName}" (including forwarded occurrences, if any) from all of the "imports" arrays.
+  return `Classes annotated with @Injectable(), @Catch(), and @Controller() decorators must not appear in the "imports" array of a module.
+Please remove ${metatypeNameQuote} (including forwarded occurrences, if any) from all of the "imports" arrays.
 
 Scope [${stringifyScope(scope)}]
 `;
