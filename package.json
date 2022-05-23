@@ -138,7 +138,7 @@
     "husky": "8.0.1",
     "imports-loader": "4.0.0",
     "json-loader": "0.5.7",
-    "kafkajs": "2.0.0",
+    "kafkajs": "2.0.1",
     "lerna": "3.0.0",
     "lerna-changelog": "2.2.0",
     "light-my-request": "5.0.0",
