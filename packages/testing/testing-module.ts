@@ -9,6 +9,7 @@ import {
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import {
   AbstractHttpAdapter,
   NestApplication,
@@ -72,7 +73,7 @@ export class TestingModule extends NestApplicationContext {
   }
 
   private applyLogger(options: NestApplicationContextOptions | undefined) {
-    if (!options || !options.logger) {
+    if (!options || isUndefined(options.logger)) {
       return;
     }
     Logger.overrideLogger(options.logger);
