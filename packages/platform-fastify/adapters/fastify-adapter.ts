@@ -301,7 +301,7 @@ export class FastifyAdapter<
   }
 
   public end(response: TReply, message?: string) {
-    response.raw.end(message !== undefined ? String(message) : undefined);
+    response.raw.end(message);
   }
 
   public render(
