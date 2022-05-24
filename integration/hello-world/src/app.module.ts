@@ -6,4 +6,4 @@ import { HostModule } from './host/host.module';
 @Module({
   imports: [HelloModule, HostModule, HostArrayModule],
 })
-export class ApplicationModule {}
+export class AppModule {}

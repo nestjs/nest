@@ -72,4 +72,4 @@ class ClientOptionService implements ClientsModuleOptionsFactory {
   ],
   controllers: [AppController],
 })
-export class ApplicationModule {}
+export class AppModule {}

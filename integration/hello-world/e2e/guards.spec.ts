@@ -6,7 +6,7 @@ import {
 import { APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
-import { ApplicationModule } from '../src/app.module';
+import { AppModule } from '../src/app.module';
 
 @Injectable()
 export class AuthGuard {
@@ -20,7 +20,7 @@ export class AuthGuard {
 
 function createTestModule(guard) {
   return Test.createTestingModule({
-    imports: [ApplicationModule],
+    imports: [AppModule],
     providers: [
       {
         provide: APP_GUARD,
