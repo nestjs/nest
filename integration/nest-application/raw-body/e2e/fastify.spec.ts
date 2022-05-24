@@ -1,4 +1,4 @@
-import { NestFastifyApplication } from '@nestjs/platform-fastify';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
@@ -13,7 +13,7 @@ describe('Raw body (Fastify Application)', () => {
       imports: [FastifyModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication<NestFastifyApplication>(null, {
+    app = moduleFixture.createNestApplication<NestFastifyApplication>(new FastifyAdapter(), {
       rawBody: true,
     });
   });
