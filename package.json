@@ -100,7 +100,7 @@
     "amqp-connection-manager": "4.1.3",
     "amqplib": "0.9.1",
     "apollo-server-core": "3.7.0",
-    "apollo-server-express": "3.7.0",
+    "apollo-server-express": "3.8.1",
     "artillery": "1.7.9",
     "body-parser": "1.20.0",
     "bytes": "3.1.2",
