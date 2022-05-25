@@ -13,4 +13,4 @@ import { CatsModule } from './cats/cats.module';
     }),
   ],
 })
-export class ApplicationModule {}
+export class AppModule {}

@@ -12,7 +12,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { ApplicationModule } from '../src/app.module';
+import { AppModule } from '../src/app.module';
 
 const INCLUDED_VALUE = 'test_included';
 const QUERY_VALUE = 'test_query';
@@ -58,7 +58,7 @@ class TestQueryController {
 }
 
 @Module({
-  imports: [ApplicationModule],
+  imports: [AppModule],
   controllers: [TestController, TestQueryController],
 })
 class TestModule {
