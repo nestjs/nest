@@ -3,7 +3,7 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import * as express from 'express';
 import * as request from 'supertest';
-import { ApplicationModule } from '../src/app.module';
+import { AppModule } from '../src/app.module';
 
 describe('Hello world (express instance with multiple applications)', () => {
   let server;
@@ -11,10 +11,10 @@ describe('Hello world (express instance with multiple applications)', () => {
 
   beforeEach(async () => {
     const module1 = await Test.createTestingModule({
-      imports: [ApplicationModule],
+      imports: [AppModule],
     }).compile();
     const module2 = await Test.createTestingModule({
-      imports: [ApplicationModule],
+      imports: [AppModule],
     }).compile();
 
     const adapter = new ExpressAdapter(express());

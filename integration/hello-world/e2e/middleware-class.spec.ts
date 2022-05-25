@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
-import { ApplicationModule } from '../src/app.module';
+import { AppModule } from '../src/app.module';
 import { Response } from 'express';
 
 const INCLUDED_VALUE = 'test_included';
@@ -32,7 +32,7 @@ class TestController {
 }
 
 @Module({
-  imports: [ApplicationModule],
+  imports: [AppModule],
   controllers: [TestController],
 })
 class TestModule {
