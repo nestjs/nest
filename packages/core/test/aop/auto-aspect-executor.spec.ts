@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { ASPECT, Aspect, Decorator, LazyDecorator } from '../../aop';
+import { Aspect, Decorator, LazyDecorator } from '../../aop';
 import { Reflector } from '../../services';
-import { Controller, Logger, Scope, SetMetadata } from '@nestjs/common';
+import { Controller, Logger, SetMetadata } from '@nestjs/common';
 import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator';
 import { DiscoveryService } from '../../discovery';
 import { AutoAspectExecutor } from '../../aop/auto-aspect-executor';
