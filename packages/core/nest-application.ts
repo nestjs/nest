@@ -167,8 +167,8 @@ export class NestApplication
     useBodyParser && this.registerParserMiddleware();
 
     await this.registerModules();
-    await this.registerRouter();
     await this.callInitHook();
+    await this.registerRouter();
     await this.registerRouterHooks();
     await this.callBootstrapHook();
 

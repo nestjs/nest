@@ -20,3 +20,4 @@ export * from './nest-application-context';
 export { NestFactory } from './nest-factory';
 export * from './router';
 export * from './services';
+export * from './aop';

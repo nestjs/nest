@@ -1,8 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import is from '@sindresorhus/is';
 
 import { ASPECT } from './Aspect';
-import { LazyDecorator } from './lazy-decorator';
+import { LazyDecorator } from './lazy-decorator.interface';
 import { DiscoveryService } from '../discovery';
 import { MetadataScanner } from '../metadata-scanner';
 import { Reflector } from '../services';
@@ -59,13 +58,11 @@ export class AutoAspectExecutor implements OnModuleInit {
 
         const aspect = reflector.get<string>(ASPECT, metatype);
 
-        if (!is.nonEmptyString(aspect)) {
+        if (!aspect) {
           return false;
         }
 
-        return (
-          !is.nullOrUndefined(instance.wrap) && is.boundFunction(instance.wrap)
-        );
+        return instance.wrap && typeof instance.wrap === 'function';
       })
       .map(({ instance }) => instance);
   }
