@@ -1,6 +1,9 @@
-import { NestFastifyApplication } from '@nestjs/platform-fastify';
+import {
+  NestFastifyApplication,
+  FastifyAdapter,
+} from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
+import { expect } from 'chai';
 import { AppModule } from '../src/app.module';
 
 describe('Fastify Cors', () => {
@@ -25,12 +28,14 @@ describe('Fastify Cors', () => {
   ];
   describe('Dynamic config', () => {
     describe('enableCors', () => {
-      before(async () => {
+      beforeEach(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
 
-        app = module.createNestApplication<NestFastifyApplication>();
+        app = module.createNestApplication<NestFastifyApplication>(
+          new FastifyAdapter(),
+        );
 
         let requestId = 0;
         const configDelegation = function (req, cb) {
@@ -44,35 +49,41 @@ describe('Fastify Cors', () => {
       });
 
       it(`should add cors headers based on the first config`, async () => {
-        return request(app.getHttpServer())
-          .get('/')
-          .expect('access-control-allow-origin', 'example.com')
-          .expect('vary', 'Origin')
-          .expect('access-control-allow-credentials', 'true')
-          .expect('access-control-expose-headers', 'foo,bar')
-          .expect('content-length', '0');
+        const response = await app.inject({
+          method: 'GET',
+          url: '/',
+        });
+
+        expect(response.headers['access-control-allow-origin'], 'example.com');
+        expect(response.headers['vary'], 'Origin');
+        expect(response.headers['access-control-allow-credentials'], 'true');
+        expect(response.headers['access-control-expose-headers'], 'foo,bar');
+        expect(response.headers['content-length'], '0');
       });
 
       it(`should add cors headers based on the second config`, async () => {
-        return request(app.getHttpServer())
-          .options('/')
-          .expect('access-control-allow-origin', 'sample.com')
-          .expect('vary', 'Origin')
-          .expect('access-control-allow-credentials', 'true')
-          .expect('access-control-expose-headers', 'zoo,bar')
-          .expect('access-control-allow-methods', 'GET')
-          .expect('access-control-allow-headers', 'baz,foo')
-          .expect('access-control-max-age', '321')
-          .expect('content-length', '0');
+        const response = await app.inject({
+          method: 'GET',
+          url: '/',
+        });
+
+        expect(response.headers['access-control-allow-origin'], 'sample.com');
+        expect(response.headers['vary'], 'Origin');
+        expect(response.headers['access-control-allow-credentials'], 'true');
+        expect(response.headers['access-control-expose-headers'], 'zoo,bar');
+        expect(response.headers['access-control-allow-methods'], 'GET');
+        expect(response.headers['access-control-allow-headers'], 'baz,foo');
+        expect(response.headers['access-control-max-age'], '321');
+        expect(response.headers['content-length'], '0');
       });
 
-      after(async () => {
+      afterEach(async () => {
         await app.close();
       });
     });
 
     describe('Application Options', () => {
-      before(async () => {
+      beforeEach(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -84,37 +95,46 @@ describe('Fastify Cors', () => {
           cb(null, config);
         };
 
-        app = module.createNestApplication<NestFastifyApplication>(null, {
-          cors: configDelegation,
-        });
+        app = module.createNestApplication<NestFastifyApplication>(
+          new FastifyAdapter(),
+          {
+            cors: configDelegation,
+          },
+        );
 
         await app.init();
       });
 
       it(`should add cors headers based on the first config`, async () => {
-        return request(app.getHttpServer())
-          .get('/')
-          .expect('access-control-allow-origin', 'example.com')
-          .expect('vary', 'Origin')
-          .expect('access-control-allow-credentials', 'true')
-          .expect('access-control-expose-headers', 'foo,bar')
-          .expect('content-length', '0');
+        const response = await app.inject({
+          method: 'GET',
+          url: '/',
+        });
+
+        expect(response.headers['access-control-allow-origin'], 'example.com');
+        expect(response.headers['vary'], 'Origin');
+        expect(response.headers['access-control-allow-credentials'], 'true');
+        expect(response.headers['access-control-expose-headers'], 'foo,bar');
+        expect(response.headers['content-length'], '0');
       });
 
       it(`should add cors headers based on the second config`, async () => {
-        return request(app.getHttpServer())
-          .options('/')
-          .expect('access-control-allow-origin', 'sample.com')
-          .expect('vary', 'Origin')
-          .expect('access-control-allow-credentials', 'true')
-          .expect('access-control-expose-headers', 'zoo,bar')
-          .expect('access-control-allow-methods', 'GET')
-          .expect('access-control-allow-headers', 'baz,foo')
-          .expect('access-control-max-age', '321')
-          .expect('content-length', '0');
+        const response = await app.inject({
+          method: 'GET',
+          url: '/',
+        });
+
+        expect(response.headers['access-control-allow-origin'], 'sample.com');
+        expect(response.headers['vary'], 'Origin');
+        expect(response.headers['access-control-allow-credentials'], 'true');
+        expect(response.headers['access-control-expose-headers'], 'zoo,bar');
+        expect(response.headers['access-control-allow-methods'], 'GET');
+        expect(response.headers['access-control-allow-headers'], 'baz,foo');
+        expect(response.headers['access-control-max-age'], '321');
+        expect(response.headers['content-length'], '0');
       });
 
-      after(async () => {
+      afterEach(async () => {
         await app.close();
       });
     });
@@ -122,56 +142,67 @@ describe('Fastify Cors', () => {
 
   describe('Static config', () => {
     describe('enableCors', () => {
-      before(async () => {
+      beforeEach(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
 
-        app = module.createNestApplication<NestFastifyApplication>();
+        app = module.createNestApplication<NestFastifyApplication>(
+          new FastifyAdapter(),
+        );
         app.enableCors(configs[0]);
 
         await app.init();
       });
 
       it(`CORS headers`, async () => {
-        return request(app.getHttpServer())
-          .get('/')
-          .expect('access-control-allow-origin', 'example.com')
-          .expect('vary', 'Origin')
-          .expect('access-control-allow-credentials', 'true')
-          .expect('access-control-expose-headers', 'foo,bar')
-          .expect('content-length', '0');
+        const response = await app.inject({
+          method: 'GET',
+          url: '/',
+        });
+
+        expect(response.headers['access-control-allow-origin'], 'example.com');
+        expect(response.headers['vary'], 'Origin');
+        expect(response.headers['access-control-allow-credentials'], 'true');
+        expect(response.headers['access-control-expose-headers'], 'foo,bar');
+        expect(response.headers['content-length'], '0');
       });
     });
 
-    after(async () => {
+    afterEach(async () => {
       await app.close();
     });
-    
+
     describe('Application Options', () => {
-      before(async () => {
+      beforeEach(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
 
-        app = module.createNestApplication<NestFastifyApplication>(null, {
-          cors: configs[0],
-        });
+        app = module.createNestApplication<NestFastifyApplication>(
+          new FastifyAdapter(),
+          {
+            cors: configs[0],
+          },
+        );
         await app.init();
       });
 
       it(`CORS headers`, async () => {
-        return request(app.getHttpServer())
-          .get('/')
-          .expect('access-control-allow-origin', 'example.com')
-          .expect('vary', 'Origin')
-          .expect('access-control-allow-credentials', 'true')
-          .expect('access-control-expose-headers', 'foo,bar')
-          .expect('content-length', '0');
+        const response = await app.inject({
+          method: 'GET',
+          url: '/',
+        });
+
+        expect(response.headers['access-control-allow-origin'], 'example.com');
+        expect(response.headers['vary'], 'Origin');
+        expect(response.headers['access-control-allow-credentials'], 'true');
+        expect(response.headers['access-control-expose-headers'], 'foo,bar');
+        expect(response.headers['content-length'], '0');
       });
     });
 
-    after(async () => {
+    afterEach(async () => {
       await app.close();
     });
   });
