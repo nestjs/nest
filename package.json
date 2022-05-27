@@ -23,7 +23,7 @@
     "clean": "gulp clean:bundle",
     "codechecks:benchmarks": "codechecks ./tools/benchmarks/check-benchmarks.ts",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "format": "prettier \"**/*.ts\" --ignore-path ./.prettierignore --write && git status",
+    "format": "prettier \"**/*.ts\" \"packages/**/*.json\" --ignore-path ./.prettierignore --write && git status",
     "postinstall": "opencollective",
     "test": "nyc mocha packages/**/*.spec.ts --reporter spec",
     "test:integration": "mocha \"integration/*/{,!(node_modules)/**/}/*.spec.ts\" --reporter spec",
@@ -44,7 +44,10 @@
     "prepare": "husky install"
   },
   "lint-staged": {
-    "packages/**/*.{ts,json}": [
+    "**/*.ts": [
+      "prettier --ignore-path ./.prettierignore --write"
+    ],
+    "packages/**/*.json": [
       "prettier --ignore-path ./.prettierignore --write"
     ]
   },
