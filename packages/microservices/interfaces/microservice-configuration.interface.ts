@@ -194,6 +194,9 @@ export interface KafkaParserConfig {
 export interface KafkaOptions {
   transport?: Transport.KAFKA;
   options?: {
+    /**
+     * Defaults to `"-server"` on server side and `"-client"` on client side.
+     */
     postfixId?: string;
     client?: KafkaConfig;
     consumer?: ConsumerConfig;
