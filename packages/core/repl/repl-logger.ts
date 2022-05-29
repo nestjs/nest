@@ -13,6 +13,7 @@ export class ReplLogger extends ConsoleLogger {
     if (ReplLogger.ignoredContexts.includes(context)) {
       return;
     }
+    // eslint-disable-next-line
     return super.log.apply(this, Array.from(arguments) as [any, string?]);
   }
 }

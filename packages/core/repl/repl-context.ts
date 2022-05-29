@@ -109,7 +109,7 @@ export class ReplContext {
     moduleKey: ModuleKey,
     collection: keyof ModuleDebugEntry,
   ) {
-    let moduleDebugEntry = {};
+    const moduleDebugEntry = {};
     moduleRef[collection].forEach(({ token }) => {
       const stringifiedToken = this.stringifyToken(token);
       if (
