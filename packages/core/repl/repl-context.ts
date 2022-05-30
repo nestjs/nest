@@ -1,6 +1,7 @@
 import {
   DynamicModule,
   INestApplication,
+  INestApplicationContext,
   InjectionToken,
   Logger,
   Type,
@@ -11,6 +12,7 @@ import { ModuleRef, NestContainer } from '../injector';
 import { InternalCoreModule } from '../injector/internal-core-module';
 import { Module } from '../injector/module';
 import { MetadataScanner } from '../metadata-scanner';
+import { makeReplFnOpt, ReplFn } from './repl-fn.decorator';
 
 type ModuleKey = string;
 type ModuleDebugEntry = {
@@ -29,23 +31,46 @@ export class ReplContext {
     this.initialize();
   }
 
-  $(token: string | symbol | Function | Type<any>) {
-    return this.get(token);
-  }
-
-  get(token: string | symbol | Function | Type<any>) {
+  @ReplFn(
+    makeReplFnOpt(
+      'Retrieves an instance of either injectable or controller, otherwise, throws exception.',
+      '(token: InjectionToken) => any',
+    ),
+  )
+  get(token: string | symbol | Function | Type<any>): any {
     return this.app.get(token);
   }
 
-  resolve(token: string | symbol | Function | Type<any>, contextId: any) {
+  @ReplFn({ aliasOf: 'get' })
+  $(...args: Parameters<ReplContext['get']>) {
+    return this.get(...args);
+  }
+
+  @ReplFn(
+    makeReplFnOpt(
+      'Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception',
+      '(token: InjectionToken, contextId: any) => Promise<any>',
+    ),
+  )
+  resolve(
+    token: string | symbol | Function | Type<any>,
+    contextId: any,
+  ): Promise<any> {
     return this.app.resolve(token, contextId);
   }
 
-  select(token: DynamicModule | Type<unknown>) {
+  @ReplFn(
+    makeReplFnOpt(
+      'Allows navigating through the modules tree, for example, to pull out a specific instance from the selected module.',
+      '(token: DynamicModule | ClassRef) => INestApplicationContext',
+    ),
+  )
+  select(token: DynamicModule | Type<unknown>): INestApplicationContext {
     return this.app.select(token);
   }
 
-  debug(moduleCls?: Type | string) {
+  @ReplFn(makeReplFnOpt('', '(moduleCls?: ClassRef | string) => void'))
+  debug(moduleCls?: Type | string): void {
     this.writeToStdout('\n');
 
     if (moduleCls) {
@@ -66,6 +91,12 @@ export class ReplContext {
     this.writeToStdout('\n');
   }
 
+  @ReplFn(
+    makeReplFnOpt(
+      'Display all public methods available on a given provider.',
+      '(token: ClassRef | string) => void',
+    ),
+  )
   methods(token: Type | string) {
     const proto =
       typeof token !== 'function'
@@ -82,6 +113,10 @@ export class ReplContext {
       this.writeToStdout(` ${clc.yellow('◻')} ${methodName}\n`),
     );
     this.writeToStdout('\n');
+  }
+
+  writeToStdout(text: string) {
+    process.stdout.write(text);
   }
 
   private initialize() {
@@ -159,9 +194,5 @@ export class ReplContext {
     this.writeToStdout(`${clc.green(moduleName)}: \n`);
     printCollection('controllers');
     printCollection('providers');
-  }
-
-  private writeToStdout(text: string) {
-    process.stdout.write(text);
   }
 }
