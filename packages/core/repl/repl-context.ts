@@ -13,6 +13,11 @@ import { InternalCoreModule } from '../injector/internal-core-module';
 import { Module } from '../injector/module';
 import { MetadataScanner } from '../metadata-scanner';
 import { makeReplFnOpt, ReplFn } from './repl-fn.decorator';
+import { REPL_METADATA_KEY } from './constants';
+import type {
+  ReplMetadata,
+  ReplNativeFunctionMetadata,
+} from './repl.interfaces';
 
 type ModuleKey = string;
 type ModuleDebugEntry = {
@@ -29,6 +34,34 @@ export class ReplContext {
   constructor(private readonly app: INestApplication) {
     this.container = (app as any).container;
     this.initialize();
+  }
+
+  @ReplFn(
+    makeReplFnOpt('Display all available REPL native functions.', '() => void'),
+  )
+  help(): void {
+    const buildHelpMessage = ({
+      name,
+      description,
+    }: ReplNativeFunctionMetadata) =>
+      clc.cyanBright(name) +
+      (description ? ` ${clc.bold('-')} ${description}` : '');
+
+    const replMetadata: ReplMetadata = Reflect.getMetadata(
+      REPL_METADATA_KEY,
+      ReplContext,
+    );
+    const sortedNativeFunctions = replMetadata.nativeFunctions.sort((a, b) =>
+      a.name < b.name ? -1 : 1,
+    );
+    this.writeToStdout(
+      `You can call ${clc.bold(
+        '.help',
+      )} on any function listed below (e.g.: ${clc.bold('help.help')}):\n\n` +
+        sortedNativeFunctions.map(buildHelpMessage).join('\n') +
+        // Without the following LF the last item won't be displayed
+        '\n',
+    );
   }
 
   @ReplFn(
