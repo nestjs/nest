@@ -20,10 +20,10 @@ export type ModuleDebugEntry = {
 };
 
 export class ReplContext {
-  public nativeFunctions: InstanceType<ReplFunctionClass>[];
+  private readonly container: NestContainer;
 
+  public nativeFunctions: InstanceType<ReplFunctionClass>[];
   public debugRegistry: Record<ModuleKey, ModuleDebugEntry> = {};
-  public readonly container: NestContainer;
   public readonly logger = new Logger(ReplContext.name);
 
   constructor(
@@ -33,6 +33,10 @@ export class ReplContext {
     this.container = (app as any).container;
     this.initializeContext();
     this.initializeNativeFunctions(nativeFunctionsClassRefs || []);
+  }
+
+  public writeToStdout(text: string) {
+    process.stdout.write(text);
   }
 
   private initializeContext() {
@@ -107,9 +111,5 @@ export class ReplContext {
     this.nativeFunctions = builtInFunctionsClassRefs
       .concat(nativeFunctionsClassRefs)
       .map(NativeFn => new NativeFn(this));
-  }
-
-  public writeToStdout(text: string) {
-    process.stdout.write(text);
   }
 }
