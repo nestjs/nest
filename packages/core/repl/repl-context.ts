@@ -6,6 +6,7 @@ import { Module } from '../injector/module';
 import {
   DebugReplFn,
   GetReplFn,
+  HelpReplFn,
   MethodsReplFn,
   ResolveReplFn,
   SelectReplFn,
@@ -95,6 +96,7 @@ export class ReplContext {
     nativeFunctionsClassRefs: ReplFunctionClass[],
   ): void {
     const builtInFunctionsClassRefs: ReplFunctionClass[] = [
+      HelpReplFn,
       GetReplFn,
       ResolveReplFn,
       SelectReplFn,
