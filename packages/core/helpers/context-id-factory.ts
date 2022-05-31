@@ -70,5 +70,7 @@ export class ContextIdFactory {
    */
   public static apply(strategy: ContextIdStrategy) {
     this.strategy = strategy;
+
+    return ContextIdFactory.create();
   }
 }
