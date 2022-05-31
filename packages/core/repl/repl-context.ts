@@ -1,87 +1,37 @@
-import {
-  DynamicModule,
-  INestApplication,
-  InjectionToken,
-  Logger,
-  Type,
-} from '@nestjs/common';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
+import { INestApplication, InjectionToken, Logger } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config';
 import { ModuleRef, NestContainer } from '../injector';
 import { InternalCoreModule } from '../injector/internal-core-module';
 import { Module } from '../injector/module';
-import { MetadataScanner } from '../metadata-scanner';
+import {
+  DebugReplFn,
+  GetReplFn,
+  MethodsReplFn,
+  ResolveReplFn,
+  SelectReplFn,
+} from './native-functions';
+import type { ReplFunctionClass } from './repl.interfaces';
 
 type ModuleKey = string;
-type ModuleDebugEntry = {
+export type ModuleDebugEntry = {
   controllers: Record<string, InjectionToken>;
   providers: Record<string, InjectionToken>;
 };
 
 export class ReplContext {
-  private debugRegistry: Record<ModuleKey, ModuleDebugEntry> = {};
-  private readonly container: NestContainer;
-  private readonly logger = new Logger(ReplContext.name);
-  private readonly metadataScanner = new MetadataScanner();
+  public nativeFunctions: InstanceType<ReplFunctionClass>[];
 
-  constructor(private readonly app: INestApplication) {
+  public debugRegistry: Record<ModuleKey, ModuleDebugEntry> = {};
+  public readonly container: NestContainer;
+  public readonly logger = new Logger(ReplContext.name);
+
+  constructor(
+    public readonly app: INestApplication,
+    nativeFunctionsClassRefs?: ReplFunctionClass[],
+  ) {
     this.container = (app as any).container;
     this.initialize();
-  }
-
-  $(token: string | symbol | Function | Type<any>) {
-    return this.get(token);
-  }
-
-  get(token: string | symbol | Function | Type<any>) {
-    return this.app.get(token);
-  }
-
-  resolve(token: string | symbol | Function | Type<any>, contextId: any) {
-    return this.app.resolve(token, contextId);
-  }
-
-  select(token: DynamicModule | Type<unknown>) {
-    return this.app.select(token);
-  }
-
-  debug(moduleCls?: Type | string) {
-    this.writeToStdout('\n');
-
-    if (moduleCls) {
-      const token =
-        typeof moduleCls === 'function' ? moduleCls.name : moduleCls;
-      const moduleEntry = this.debugRegistry[token];
-      if (!moduleEntry) {
-        return this.logger.error(
-          `"${token}" has not been found in the modules registry`,
-        );
-      }
-      this.printCtrlsAndProviders(token, moduleEntry);
-    } else {
-      Object.keys(this.debugRegistry).forEach(moduleKey => {
-        this.printCtrlsAndProviders(moduleKey, this.debugRegistry[moduleKey]);
-      });
-    }
-    this.writeToStdout('\n');
-  }
-
-  methods(token: Type | string) {
-    const proto =
-      typeof token !== 'function'
-        ? Object.getPrototypeOf(this.app.get(token))
-        : token?.prototype;
-
-    const methods = new Set(
-      this.metadataScanner.getAllFilteredMethodNames(proto),
-    );
-
-    this.writeToStdout('\n');
-    this.writeToStdout(`${clc.green('Methods')}: \n`);
-    methods.forEach(methodName =>
-      this.writeToStdout(` ${clc.yellow('◻')} ${methodName}\n`),
-    );
-    this.writeToStdout('\n');
+    this.initializeNativeFunctions(nativeFunctionsClassRefs || []);
   }
 
   private initialize() {
@@ -141,27 +91,23 @@ export class ReplContext {
       : token;
   }
 
-  private printCtrlsAndProviders(
-    moduleName: string,
-    moduleDebugEntry: ModuleDebugEntry,
-  ) {
-    const printCollection = (collection: keyof ModuleDebugEntry) => {
-      const collectionEntries = Object.keys(moduleDebugEntry[collection]);
-      if (collectionEntries.length <= 0) {
-        return;
-      }
-      this.writeToStdout(` ${clc.yellow(`- ${collection}`)}: \n`);
-      collectionEntries.forEach(provider =>
-        this.writeToStdout(`  ${clc.green('◻')} ${provider}\n`),
-      );
-    };
+  private initializeNativeFunctions(
+    nativeFunctionsClassRefs: ReplFunctionClass[],
+  ): void {
+    const builtInFunctionsClassRefs: ReplFunctionClass[] = [
+      GetReplFn,
+      ResolveReplFn,
+      SelectReplFn,
+      DebugReplFn,
+      MethodsReplFn,
+    ];
 
-    this.writeToStdout(`${clc.green(moduleName)}: \n`);
-    printCollection('controllers');
-    printCollection('providers');
+    this.nativeFunctions = builtInFunctionsClassRefs
+      .concat(nativeFunctionsClassRefs)
+      .map(NativeFn => new NativeFn(this));
   }
 
-  private writeToStdout(text: string) {
+  public writeToStdout(text: string) {
     process.stdout.write(text);
   }
 }
