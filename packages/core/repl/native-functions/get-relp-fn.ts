@@ -12,6 +12,6 @@ export class GetReplFn extends ReplFunction {
   };
 
   action(token: string | symbol | Function | Type<any>): any {
-    this.ctx.app.get(token);
+    return this.ctx.app.get(token);
   }
 }
