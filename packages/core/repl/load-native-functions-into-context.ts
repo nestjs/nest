@@ -7,7 +7,7 @@ export function loadNativeFunctionsIntoContext(
   replServerContext: _repl.REPLServer['context'],
   replContext: ReplContext,
 ) {
-  const registerFunction = (
+  const registerFunctionToReplServerContext = (
     nativeFunction: InstanceType<ReplFunctionClass>,
   ): void => {
     // Bind the method to REPL's context:
@@ -27,23 +27,7 @@ export function loadNativeFunctionsIntoContext(
     });
   };
 
-  const aliasesNativeFunctions = replContext.nativeFunctions
-    .filter(nativeFunction => nativeFunction.fnDefinition.aliases)
-    .flatMap(nativeFunction =>
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      nativeFunction.fnDefinition.aliases!.map(aliasFnName => {
-        const aliasNativeFunction: InstanceType<ReplFunctionClass> =
-          Object.create(nativeFunction);
-        aliasNativeFunction.fnDefinition = {
-          name: aliasFnName,
-          description: aliasNativeFunction.fnDefinition.description,
-          signature: aliasNativeFunction.fnDefinition.signature,
-        };
-
-        return aliasNativeFunction;
-      }),
-    );
-
-  replContext.nativeFunctions.push(...aliasesNativeFunctions);
-  replContext.nativeFunctions.forEach(registerFunction);
+  for (const [, nativeFunction] of replContext.nativeFunctions) {
+    registerFunctionToReplServerContext(nativeFunction);
+  }
 }

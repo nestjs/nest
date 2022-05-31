@@ -20,23 +20,42 @@ export type ModuleDebugEntry = {
 };
 
 export class ReplContext {
-  private readonly container: NestContainer;
-
-  public nativeFunctions: InstanceType<ReplFunctionClass>[];
-  public debugRegistry: Record<ModuleKey, ModuleDebugEntry> = {};
   public readonly logger = new Logger(ReplContext.name);
+  public debugRegistry: Record<ModuleKey, ModuleDebugEntry> = {};
+  public readonly nativeFunctions = new Map<
+    string,
+    InstanceType<ReplFunctionClass>
+  >();
+  private readonly container: NestContainer;
 
   constructor(
     public readonly app: INestApplication,
     nativeFunctionsClassRefs?: ReplFunctionClass[],
   ) {
-    this.container = (app as any).container;
+    this.container = (app as any).container; // Using `any` because `app.container` is not public.
     this.initializeContext();
     this.initializeNativeFunctions(nativeFunctionsClassRefs || []);
   }
 
   public writeToStdout(text: string) {
     process.stdout.write(text);
+  }
+
+  public addNativeFunction(NativeFunction: ReplFunctionClass): void {
+    const nativeFunction = new NativeFunction(this);
+
+    this.nativeFunctions.set(nativeFunction.fnDefinition.name, nativeFunction);
+
+    nativeFunction.fnDefinition.aliases?.forEach(aliaseName => {
+      const aliasNativeFunction: InstanceType<ReplFunctionClass> =
+        Object.create(nativeFunction);
+      aliasNativeFunction.fnDefinition = {
+        name: aliaseName,
+        description: aliasNativeFunction.fnDefinition.description,
+        signature: aliasNativeFunction.fnDefinition.signature,
+      };
+      this.nativeFunctions.set(aliaseName, aliasNativeFunction);
+    });
   }
 
   private initializeContext() {
@@ -108,8 +127,10 @@ export class ReplContext {
       MethodsReplFn,
     ];
 
-    this.nativeFunctions = builtInFunctionsClassRefs
+    builtInFunctionsClassRefs
       .concat(nativeFunctionsClassRefs)
-      .map(NativeFn => new NativeFn(this));
+      .forEach(NativeFunction => {
+        this.addNativeFunction(NativeFunction);
+      });
   }
 }
