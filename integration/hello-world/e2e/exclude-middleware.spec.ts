@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
-import { ApplicationModule } from '../src/app.module';
+import { AppModule } from '../src/app.module';
 
 const RETURN_VALUE = 'test';
 const MIDDLEWARE_VALUE = 'middleware';
@@ -48,7 +48,7 @@ class TestController {
 }
 
 @Module({
-  imports: [ApplicationModule],
+  imports: [AppModule],
   controllers: [TestController],
 })
 class TestModule {

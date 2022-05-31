@@ -23,6 +23,22 @@
         "test",
         "sample"
       ]
+    ],
+    "scope-enum": [
+      1,
+      "always",
+      [
+        "common",
+        "core",
+        "sample",
+        "microservices",
+        "express",
+        "fastify",
+        "socket.io",
+        "ws",
+        "testing",
+        "websockets"
+      ]
     ]
   }
 }

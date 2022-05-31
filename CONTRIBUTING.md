@@ -19,7 +19,7 @@ Help us keep Nest open and inclusive. Please read and follow our [Code of Conduc
 
 ## <a name="question"></a> Got a Question or Problem?
 
-**Do not open issues for general support questions as we want to keep GitHub issues for bug reports and feature requests.** You've got much better chances of getting your question answered on [Stack Overflow](https://stackoverflow.com/questions/tagged/nestjs) where the questions should be tagged with tag `nestjs`.
+**Do not open issues for general support questions as we want to keep GitHub issues for bug reports and feature requests.** You've got much better chances of getting your question answered on [Stack Overflow][stackoverflow] where the questions should be tagged with tag `nestjs`.
 
 Stack Overflow is a much better place to ask questions since:
 
@@ -71,7 +71,7 @@ A minimal reproduce scenario using a repository or Gist allows us to quickly con
 
 Unfortunately, we are not able to investigate / fix bugs without a minimal reproduction, so if we don't hear back from you we are going to close an issue that doesn't have enough info to be reproduced.
 
-You can file new issues by filling out our [new issue form](https://github.com/nestjs/nest/issues/new).
+You can file new issues by filling out our [new issue form][new_issue].
 
 ### <a name="submit-pr"></a> Submitting a Pull Request (PR)
 
@@ -84,9 +84,9 @@ To the first point
 We cannot accept code without this.
 -->
 
-1. Search [GitHub](https://github.com/nestjs/nest/pulls) for an open or closed PR
+1. Search [GitHub Pull Requests][gh_prs] for an open or closed PR
    that relates to your submission. You don't want to duplicate effort.
-1. Fork the nestjs/nest repo.
+1. Fork this repository.
 1. Make your changes in a new git branch:
 
    ```shell
@@ -159,12 +159,12 @@ from the main (upstream) repository:
 
 ## <a name="development"></a> Development Setup
 
-You will need Node.js version 8.9.0+.
+You will need [Node.js](https://nodejs.org) version >= 10.13.0 (except for v13).
 
 1. After cloning the repo, run:
 
 ```bash
-$ npm i # (or yarn install)
+$ npm ci # (or yarn install)
 ```
 
 2. In order to prepare your environment run `prepare.sh` shell script:
@@ -233,7 +233,7 @@ to read on GitHub as well as in various git tools.
 
 Footer should contain a [closing reference to an issue](https://help.github.com/articles/closing-issues-via-commit-messages/) if any.
 
-Samples: (even more [samples](https://github.com/nestjs/nest/commits/master))
+Samples: (even more [samples][commits_samples])
 
 ```
 docs(changelog): update change log to beta.5
@@ -262,16 +262,22 @@ Must be one of the following:
 
 ### Scope
 
-The scope should be the name of the npm package affected (as perceived by person reading changelog generated from commit messages.
+The scope should have the name of the npm package affected (as perceived by person reading changelog generated from commit messages).
 
 The following is the list of supported scopes:
 
-- **common**
-- **core**
-- **sample**
-- **microservices**
-- **testing**
-- **websockets**
+- **common**: for changes made on `packages/common` directory
+- **core**: for changes made on `packages/core` directory
+- **sample**: for changes made on `packages/sample` directory
+- **microservices**: for changes made on `packages/microservices` directory
+- **express**: for changes made on `packages/platform-express` directory
+- **fastify**: for changes made on `packages/platform-fastify` directory
+- **socket.io**: for changes made on `packages/platform-socket.io` directory
+- **ws**: for changes made on `packages/platform-ws` directory
+- **testing**: for changes made on `packages/testing` directory
+- **websockets**: for changes made on `packages/websockets` directory
+
+If your change affect more than one package, separate the scopes with a comma (e.g. `common,core`).
 
 There are currently a few exceptions to the "use package name" rule:
 
@@ -279,7 +285,6 @@ There are currently a few exceptions to the "use package name" rule:
 - **changelog**: used for updating the release notes in CHANGELOG.md
 - **sample/#**: for the example apps directory, replacing # with the example app number
 - none/empty string: useful for `style`, `test` and `refactor` changes that are done across all packages (e.g. `style: add missing semicolons`)
-  <!-- * **aio**: used for docs-app (angular.io) related changes within the /aio directory of the repo -->
 
 ### Subject
 
@@ -317,14 +322,13 @@ changes to be accepted, the CLA must be signed. It's a quick process, we promise
 <!-- [coc]: https://github.com/angular/code-of-conduct/blob/master/CODE_OF_CONDUCT.md -->
 
 [commit-message-format]: https://docs.google.com/document/d/1QrDFcIiPjSLDn3EL15IJygNPiHORgU1_OOAqWjiDU5Y/edit#
-[corporate-cla]: http://code.google.com/legal/corporate-cla-v1.0.html
+<!-- [individual-cla]: http://code.google.com/legal/individual-cla-v1.0.html -->
+<!-- [corporate-cla]: http://code.google.com/legal/corporate-cla-v1.0.html -->
 [dev-doc]: https://github.com/nestjs/nest/blob/master/docs/DEVELOPER.md
 [github]: https://github.com/nestjs/nest
+[stackoverflow]: https://stackoverflow.com/questions/tagged/nestjs
 [discord]: https://discordapp.com/invite/G7Qnnhy
-[individual-cla]: http://code.google.com/legal/individual-cla-v1.0.html
 [js-style-guide]: https://google.github.io/styleguide/jsguide.html
-[jsfiddle]: http://jsfiddle.net
-[plunker]: http://plnkr.co/edit
-[runnable]: http://runnable.com
-
-<!-- [stackoverflow]: http://stackoverflow.com/questions/tagged/angular -->
+[new_issue]: https://github.com/nestjs/nest/issues/new
+[gh_prs]: https://github.com/nestjs/nest/pulls
+[commits_samples]: https://github.com/nestjs/nest/commits/master

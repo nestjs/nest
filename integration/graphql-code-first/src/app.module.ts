@@ -18,4 +18,4 @@ import { RecipesModule } from './recipes/recipes.module';
     }),
   ],
 })
-export class ApplicationModule {}
+export class AppModule {}

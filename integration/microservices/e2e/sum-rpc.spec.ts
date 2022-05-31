@@ -4,7 +4,7 @@ import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
 import { AppController } from '../src/app.controller';
-import { ApplicationModule } from '../src/app.module';
+import { AppModule } from '../src/app.module';
 
 describe('RPC transport', () => {
   let server;
@@ -12,7 +12,7 @@ describe('RPC transport', () => {
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
-      imports: [ApplicationModule],
+      imports: [AppModule],
     }).compile();
 
     app = module.createNestApplication();
