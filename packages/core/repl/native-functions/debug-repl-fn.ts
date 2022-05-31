@@ -7,7 +7,8 @@ import type { ReplFnDefinition } from '../repl.interfaces';
 export class DebugReplFn extends ReplFunction {
   public fnDefinition: ReplFnDefinition = {
     name: 'debug',
-    description: '',
+    description:
+      'Allows you to process the identification of the problem in stages, isolating the source of the problem and then correcting the problem or determining a way to solve it.',
     signature: '(moduleCls?: ClassRef | string) => void',
   };
 
