@@ -27,16 +27,19 @@ export class ContextIdFactory {
    */
   public static getByRequest<T extends Record<any, any> = any>(
     request: T,
+    propsToInspect: string[] = ['raw'],
   ): ContextId {
     if (!request) {
-      return createContextId();
+      return ContextIdFactory.create();
     }
     if (request[REQUEST_CONTEXT_ID as any]) {
       return request[REQUEST_CONTEXT_ID as any];
     }
-    if (request.raw && request.raw[REQUEST_CONTEXT_ID]) {
-      return request.raw[REQUEST_CONTEXT_ID];
+    for (const key of propsToInspect) {
+      if (request[key]?.[REQUEST_CONTEXT_ID]) {
+        return request[key][REQUEST_CONTEXT_ID];
+      }
     }
-    return createContextId();
+    return ContextIdFactory.create();
   }
 }
