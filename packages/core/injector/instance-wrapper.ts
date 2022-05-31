@@ -1,11 +1,16 @@
-import { Provider, Scope, Type } from '@nestjs/common';
+import { Logger, LoggerService, Provider, Scope, Type } from '@nestjs/common';
 import {
   ClassProvider,
   FactoryProvider,
   ValueProvider,
 } from '@nestjs/common/interfaces';
+import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  isNil,
+  isString,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { STATIC_CONTEXT } from './constants';
 import { InstanceToken, Module } from './module';
@@ -13,8 +18,20 @@ import { InstanceToken, Module } from './module';
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
 
+export interface ChildContextIdInfo {
+  /**
+   * Injection token (or class reference)
+   */
+  token: InstanceToken;
+  /**
+   * Flag that indicates whether DI subtree is durable
+   */
+  isTreeDurable: boolean;
+}
+
 export interface ContextId {
   readonly id: number;
+  getParent?(info: ChildContextIdInfo): ContextId;
 }
 
 export interface InstancePerContext<T> {
@@ -45,6 +62,9 @@ export class InstanceWrapper<T = any> {
   public metatype: Type<T> | Function;
   public inject?: FactoryProvider['inject'];
   public forwardRef?: boolean;
+  public durable?: boolean;
+
+  private static logger: LoggerService = new Logger(InstanceWrapper.name);
 
   private readonly values = new WeakMap<ContextId, InstancePerContext<T>>();
   private readonly [INSTANCE_METADATA_SYMBOL]: InstanceMetadataStore = {};
@@ -53,6 +73,7 @@ export class InstanceWrapper<T = any> {
     | Map<string, WeakMap<ContextId, InstancePerContext<T>>>
     | undefined;
   private isTreeStatic: boolean | undefined;
+  private isTreeDurable: boolean | undefined;
 
   constructor(
     metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>> = {},
@@ -171,14 +192,40 @@ export class InstanceWrapper<T = any> {
     return this[INSTANCE_METADATA_SYMBOL].enhancers;
   }
 
-  public isDependencyTreeStatic(lookupRegistry: string[] = []): boolean {
-    if (!isUndefined(this.isTreeStatic)) {
-      return this.isTreeStatic;
+  public isDependencyTreeDurable(lookupRegistry: string[] = []): boolean {
+    if (!isUndefined(this.isTreeDurable)) {
+      return this.isTreeDurable;
     }
-    if (this.scope === Scope.REQUEST) {
-      this.isTreeStatic = false;
-      return this.isTreeStatic;
+    if (this.durable === true) {
+      this.isTreeDurable = true;
+      this.printIntrospectedAsDurable();
+      return this.isTreeDurable;
     }
+    const isStatic = this.isDependencyTreeStatic();
+    if (isStatic) {
+      return false;
+    }
+    const isTreeNonDurable = this.introspectDepsAttribute(
+      (collection, registry) =>
+        collection.every(
+          (item: InstanceWrapper) => !item.isDependencyTreeDurable(registry),
+        ),
+      lookupRegistry,
+    );
+    this.isTreeDurable = !isTreeNonDurable && this.durable !== false;
+    if (this.isTreeDurable) {
+      this.printIntrospectedAsDurable();
+    }
+    return this.isTreeDurable;
+  }
+
+  public introspectDepsAttribute(
+    callback: (
+      collection: InstanceWrapper[],
+      lookupRegistry: string[],
+    ) => boolean,
+    lookupRegistry: string[] = [],
+  ): boolean {
     if (lookupRegistry.includes(this[INSTANCE_ID_SYMBOL])) {
       return true;
     }
@@ -186,23 +233,41 @@ export class InstanceWrapper<T = any> {
 
     const { dependencies, properties, enhancers } =
       this[INSTANCE_METADATA_SYMBOL];
-    let isStatic =
-      (dependencies &&
-        this.isWrapperListStatic(dependencies, lookupRegistry)) ||
-      !dependencies;
 
-    if (!isStatic || !(properties || enhancers)) {
-      this.isTreeStatic = isStatic;
-      return this.isTreeStatic;
+    let introspectionResult =
+      (dependencies && callback(dependencies, lookupRegistry)) || !dependencies;
+
+    if (!introspectionResult || !(properties || enhancers)) {
+      return introspectionResult;
     }
     const propertiesHosts = (properties || []).map(item => item.wrapper);
-    isStatic =
-      isStatic && this.isWrapperListStatic(propertiesHosts, lookupRegistry);
-    if (!isStatic || !enhancers) {
-      this.isTreeStatic = isStatic;
+    introspectionResult =
+      introspectionResult && callback(propertiesHosts, lookupRegistry);
+    if (!introspectionResult || !enhancers) {
+      return introspectionResult;
+    }
+    return callback(enhancers, lookupRegistry);
+  }
+
+  public isDependencyTreeStatic(lookupRegistry: string[] = []): boolean {
+    if (!isUndefined(this.isTreeStatic)) {
       return this.isTreeStatic;
     }
-    this.isTreeStatic = this.isWrapperListStatic(enhancers, lookupRegistry);
+    if (this.scope === Scope.REQUEST) {
+      this.isTreeStatic = false;
+      this.printIntrospectedAsRequestScoped();
+      return this.isTreeStatic;
+    }
+    this.isTreeStatic = this.introspectDepsAttribute(
+      (collection, registry) =>
+        collection.every((item: InstanceWrapper) =>
+          item.isDependencyTreeStatic(registry),
+        ),
+      lookupRegistry,
+    );
+    if (!this.isTreeStatic) {
+      this.printIntrospectedAsRequestScoped();
+    }
     return this.isTreeStatic;
   }
 
@@ -341,15 +406,6 @@ export class InstanceWrapper<T = any> {
     return isNil(this.inject) && this.metatype && this.metatype.prototype;
   }
 
-  private isWrapperListStatic(
-    tree: InstanceWrapper[],
-    lookupRegistry: string[],
-  ): boolean {
-    return tree.every((item: InstanceWrapper) =>
-      item.isDependencyTreeStatic(lookupRegistry),
-    );
-  }
-
   private initialize(
     metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>>,
   ) {
@@ -361,5 +417,35 @@ export class InstanceWrapper<T = any> {
       isResolved,
     });
     this.scope === Scope.TRANSIENT && (this.transientMap = new Map());
+  }
+
+  private printIntrospectedAsRequestScoped() {
+    if (!this.isDebugMode() || this.name === 'REQUEST') {
+      return;
+    }
+    if (isString(this.name)) {
+      InstanceWrapper.logger.log(
+        `${clc.cyanBright(this.name)}${clc.green(
+          ' introspected as ',
+        )}${clc.magentaBright('request-scoped')}`,
+      );
+    }
+  }
+
+  private printIntrospectedAsDurable() {
+    if (!this.isDebugMode()) {
+      return;
+    }
+    if (isString(this.name)) {
+      InstanceWrapper.logger.log(
+        `${clc.cyanBright(this.name)}${clc.green(
+          ' introspected as ',
+        )}${clc.magentaBright('durable')}`,
+      );
+    }
+  }
+
+  private isDebugMode(): boolean {
+    return !!process.env.NEST_DEBUG;
   }
 }

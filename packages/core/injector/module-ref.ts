@@ -2,6 +2,7 @@ import { IntrospectionResult, Scope, Type } from '@nestjs/common';
 import { InvalidClassScopeException } from '../errors/exceptions/invalid-class-scope.exception';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
 import { getClassScope } from '../helpers/get-class-scope';
+import { isDurable } from '../helpers/is-durable';
 import { NestContainer } from './container';
 import { Injector } from './injector';
 import { InstanceLinksHost } from './instance-links-host';
@@ -107,6 +108,7 @@ export abstract class ModuleRef {
       metatype: type,
       isResolved: false,
       scope: getClassScope(type),
+      durable: isDurable(type),
       host: moduleRef,
     });
     return new Promise<T>(async (resolve, reject) => {

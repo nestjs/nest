@@ -26,6 +26,7 @@ import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
 import { createContextId } from '../helpers/context-id-factory';
 import { getClassScope } from '../helpers/get-class-scope';
+import { isDurable } from '../helpers/is-durable';
 import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
@@ -209,6 +210,7 @@ export class Module {
         instance: null,
         isResolved: false,
         scope: getClassScope(injectable),
+        durable: isDurable(injectable),
         host: this,
       });
       this._injectables.set(injectable, instanceWrapper);
@@ -233,6 +235,7 @@ export class Module {
         instance: null,
         isResolved: false,
         scope: getClassScope(provider),
+        durable: isDurable(provider),
         host: this,
       }),
     );
@@ -301,11 +304,14 @@ export class Module {
     provider: ClassProvider,
     collection: Map<InstanceToken, InstanceWrapper>,
   ) {
-    let { scope } = provider;
+    let { scope, durable } = provider;
 
     const { useClass } = provider;
     if (isUndefined(scope)) {
       scope = getClassScope(useClass);
+    }
+    if (isUndefined(durable)) {
+      durable = isDurable(useClass);
     }
     collection.set(
       provider.provide,
@@ -316,6 +322,7 @@ export class Module {
         instance: null,
         isResolved: false,
         scope,
+        durable,
         host: this,
       }),
     );
@@ -348,6 +355,7 @@ export class Module {
       useFactory: factory,
       inject,
       scope,
+      durable,
       provide: providerToken,
     } = provider;
 
@@ -361,6 +369,7 @@ export class Module {
         isResolved: false,
         inject: inject || [],
         scope,
+        durable,
         host: this,
       }),
     );
@@ -445,6 +454,7 @@ export class Module {
         instance: null,
         isResolved: false,
         scope: getClassScope(controller),
+        durable: isDurable(controller),
         host: this,
       }),
     );
