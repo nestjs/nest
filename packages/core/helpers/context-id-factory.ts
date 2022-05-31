@@ -55,6 +55,7 @@ export class ContextIdFactory {
         return request[key][REQUEST_CONTEXT_ID];
       }
     }
+<<<<<<< HEAD
     if (!this.strategy) {
       return ContextIdFactory.create();
     }
@@ -70,5 +71,8 @@ export class ContextIdFactory {
    */
   public static apply(strategy: ContextIdStrategy) {
     this.strategy = strategy;
+=======
+    return ContextIdFactory.create();
+>>>>>>> ac1c06682 (feat(core): make context id factory getter configurable)
   }
 }
