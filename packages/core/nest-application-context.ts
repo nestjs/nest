@@ -106,7 +106,7 @@ export class NestApplicationContext implements INestApplicationContext {
   }
 
   /**
-   * Initalizes the Nest application.
+   * Initializes the Nest application.
    * Calls the Nest lifecycle events.
    *
    * @returns {Promise<this>} The NestApplicationContext instance as Promise
