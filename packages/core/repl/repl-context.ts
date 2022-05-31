@@ -31,11 +31,11 @@ export class ReplContext {
     nativeFunctionsClassRefs?: ReplFunctionClass[],
   ) {
     this.container = (app as any).container;
-    this.initialize();
+    this.initializeContext();
     this.initializeNativeFunctions(nativeFunctionsClassRefs || []);
   }
 
-  private initialize() {
+  private initializeContext() {
     const globalRef = globalThis;
     const modules = this.container.getModules();
 
