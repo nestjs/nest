@@ -70,7 +70,7 @@ describe('Durable providers', () => {
   });
 
   after(async () => {
-    //ContextIdFactory['strategy'] = undefined;
+    ContextIdFactory['strategy'] = undefined;
     await app.close();
   });
 });
