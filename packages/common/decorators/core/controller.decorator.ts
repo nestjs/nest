@@ -163,7 +163,7 @@ export function Controller(
     : [
         prefixOrOptions.path || defaultPath,
         prefixOrOptions.host,
-        { scope: prefixOrOptions.scope },
+        { scope: prefixOrOptions.scope, durable: prefixOrOptions.durable },
         Array.isArray(prefixOrOptions.version)
           ? Array.from(new Set(prefixOrOptions.version))
           : prefixOrOptions.version,

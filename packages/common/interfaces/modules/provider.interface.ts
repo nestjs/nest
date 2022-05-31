@@ -52,6 +52,13 @@ export interface ClassProvider<T = any> {
    * @see [Use factory](https://docs.nestjs.com/fundamentals/custom-providers#factory-providers-usefactory)
    */
   inject?: never;
+  /**
+   * Flags provider as durable. This flag can be used in combination with custom context id
+   * factory strategy to construct lazy DI subtrees.
+   *
+   * This flag can be used only in conjunction with scope = Scope.REQUEST.
+   */
+  durable?: boolean;
 }
 
 /**
@@ -123,6 +130,13 @@ export interface FactoryProvider<T = any> {
    * Optional enum defining lifetime of the provider that is returned by the Factory function.
    */
   scope?: Scope;
+  /**
+   * Flags provider as durable. This flag can be used in combination with custom context id
+   * factory strategy to construct lazy DI subtrees.
+   *
+   * This flag can be used only in conjunction with scope = Scope.REQUEST.
+   */
+  durable?: boolean;
 }
 
 /**

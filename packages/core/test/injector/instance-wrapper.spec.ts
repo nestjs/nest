@@ -106,6 +106,118 @@ describe('InstanceWrapper', () => {
     });
   });
 
+  describe('isDependencyTreeDurable', () => {
+    describe('when request scoped and durable', () => {
+      it('should return true', () => {
+        const wrapper = new InstanceWrapper({
+          scope: Scope.REQUEST,
+          durable: true,
+        });
+        expect(wrapper.isDependencyTreeDurable()).to.be.true;
+      });
+    });
+    describe('when statically scoped', () => {
+      describe('dependencies', () => {
+        describe('when each is static', () => {
+          it('should return false', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addCtorMetadata(0, new InstanceWrapper());
+            expect(wrapper.isDependencyTreeDurable()).to.be.false;
+          });
+        });
+        describe('when one is not static and non-durable', () => {
+          it('should return false', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addCtorMetadata(0, new InstanceWrapper());
+            wrapper.addCtorMetadata(
+              1,
+              new InstanceWrapper({
+                scope: Scope.REQUEST,
+              }),
+            );
+            expect(wrapper.isDependencyTreeDurable()).to.be.false;
+          });
+        });
+        describe('when one is not static and durable', () => {
+          it('should return true', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addCtorMetadata(0, new InstanceWrapper());
+            wrapper.addCtorMetadata(
+              1,
+              new InstanceWrapper({
+                scope: Scope.REQUEST,
+                durable: true,
+              }),
+            );
+            expect(wrapper.isDependencyTreeDurable()).to.be.true;
+          });
+        });
+      });
+      describe('properties', () => {
+        describe('when each is static', () => {
+          it('should return false', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addPropertiesMetadata('key1', new InstanceWrapper());
+            wrapper.addPropertiesMetadata('key2', new InstanceWrapper());
+            expect(wrapper.isDependencyTreeDurable()).to.be.false;
+          });
+        });
+        describe('when one is not static and non-durable', () => {
+          it('should return false', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addPropertiesMetadata(
+              'key1',
+              new InstanceWrapper({ scope: Scope.REQUEST }),
+            );
+            wrapper.addPropertiesMetadata('key2', new InstanceWrapper());
+            expect(wrapper.isDependencyTreeDurable()).to.be.false;
+          });
+        });
+        describe('when one is not static and durable', () => {
+          it('should return true', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addPropertiesMetadata(
+              'key1',
+              new InstanceWrapper({ scope: Scope.REQUEST, durable: true }),
+            );
+            wrapper.addPropertiesMetadata('key2', new InstanceWrapper());
+            expect(wrapper.isDependencyTreeDurable()).to.be.true;
+          });
+        });
+      });
+      describe('enhancers', () => {
+        describe('when each is static', () => {
+          it('should return false', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addEnhancerMetadata(new InstanceWrapper());
+            wrapper.addEnhancerMetadata(new InstanceWrapper());
+            expect(wrapper.isDependencyTreeDurable()).to.be.false;
+          });
+        });
+        describe('when one is not static and non-durable', () => {
+          it('should return false', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addEnhancerMetadata(
+              new InstanceWrapper({ scope: Scope.REQUEST }),
+            );
+            wrapper.addEnhancerMetadata(new InstanceWrapper());
+            expect(wrapper.isDependencyTreeDurable()).to.be.false;
+          });
+        });
+        describe('when one is not static and durable', () => {
+          it('should return true', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addEnhancerMetadata(
+              new InstanceWrapper({ scope: Scope.REQUEST, durable: true }),
+            );
+            wrapper.addEnhancerMetadata(new InstanceWrapper());
+            expect(wrapper.isDependencyTreeDurable()).to.be.true;
+          });
+        });
+      });
+    });
+  });
+
   describe('isNotMetatype', () => {
     describe('when metatype is nil', () => {
       it('should return true', () => {
