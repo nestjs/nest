@@ -1,4 +1,4 @@
-import type { Type } from '@nestjs/common';
+import type { Type, InjectionToken } from '@nestjs/common';
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { ReplFunction } from '../repl-function';
 import type { ModuleDebugEntry } from '../repl-context';
@@ -40,19 +40,23 @@ export class DebugReplFn extends ReplFunction {
     moduleName: string,
     moduleDebugEntry: ModuleDebugEntry,
   ) {
-    const printCollection = (collection: keyof ModuleDebugEntry) => {
-      const collectionEntries = Object.keys(moduleDebugEntry[collection]);
-      if (collectionEntries.length <= 0) {
-        return;
-      }
-      this.ctx.writeToStdout(` ${clc.yellow(`- ${collection}`)}: \n`);
-      collectionEntries.forEach(provider =>
-        this.ctx.writeToStdout(`  ${clc.green('◻')} ${provider}\n`),
-      );
-    };
+    this.ctx.writeToStdout(`${clc.green(moduleName)}:\n`);
+    this.printCollection('controllers', moduleDebugEntry['controllers']);
+    this.printCollection('providers', moduleDebugEntry['providers']);
+  }
 
-    this.ctx.writeToStdout(`${clc.green(moduleName)}: \n`);
-    printCollection('controllers');
-    printCollection('providers');
+  private printCollection(
+    title: string,
+    collectionValue: Record<string, InjectionToken>,
+  ) {
+    const collectionEntries = Object.keys(collectionValue);
+    if (collectionEntries.length <= 0) {
+      return;
+    }
+
+    this.ctx.writeToStdout(` ${clc.yellow(`- ${title}`)}:\n`);
+    collectionEntries.forEach(provider =>
+      this.ctx.writeToStdout(`  ${clc.green('◻')} ${provider}\n`),
+    );
   }
 }

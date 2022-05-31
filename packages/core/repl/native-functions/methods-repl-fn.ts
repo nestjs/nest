@@ -24,7 +24,7 @@ export class MethodsReplFn extends ReplFunction {
     );
 
     this.ctx.writeToStdout('\n');
-    this.ctx.writeToStdout(`${clc.green('Methods')}: \n`);
+    this.ctx.writeToStdout(`${clc.green('Methods')}:\n`);
     methods.forEach(methodName =>
       this.ctx.writeToStdout(` ${clc.yellow('◻')} ${methodName}\n`),
     );

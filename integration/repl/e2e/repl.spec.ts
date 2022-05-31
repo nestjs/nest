@@ -59,10 +59,10 @@ ${prompt}`);
 
     expect(outputText).to.equal(
       `
-UsersModule: 
- - controllers: 
+UsersModule:
+ - controllers:
   ◻ UsersController
- - providers: 
+ - providers:
   ◻ UsersService
   ◻ UsersRepository
 
@@ -82,7 +82,7 @@ ${prompt}`,
 
     expect(outputText).to.equal(
       `
-Methods: 
+Methods:
  ◻ find
 
 ${prompt}`,
@@ -93,7 +93,7 @@ ${prompt}`,
 
     expect(outputText).to.equal(
       `
-Methods: 
+Methods:
  ◻ create
  ◻ findAll
  ◻ findOne
