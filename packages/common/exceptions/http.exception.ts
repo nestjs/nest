@@ -44,6 +44,8 @@ export class HttpException extends Error {
     this.initCause();
   }
 
+  public cause: Error | undefined;
+
   /**
    * Configures error chaining support
    *
@@ -53,7 +55,6 @@ export class HttpException extends Error {
    */
   public initCause() {
     if (this.response instanceof Error) {
-      // @ts-ignore
       this.cause = this.response;
     }
   }
