@@ -8,7 +8,7 @@ describe('FileTypeValidator', () => {
         fileType: 'image/jpeg',
       });
 
-      const requestFile: Partial<Express.Multer.File> = {
+      const requestFile = {
         mimetype: 'image/jpeg',
       };
 
@@ -20,7 +20,7 @@ describe('FileTypeValidator', () => {
         fileType: 'image/jpeg',
       });
 
-      const requestFile: Partial<Express.Multer.File> = {
+      const requestFile = {
         mimetype: 'image/png',
       };
 
@@ -32,7 +32,7 @@ describe('FileTypeValidator', () => {
         fileType: 'image/jpeg',
       });
 
-      const requestFile: Partial<Express.Multer.File> = {};
+      const requestFile = {};
 
       expect(fileTypeValidator.isValid(requestFile)).to.equal(false);
     });

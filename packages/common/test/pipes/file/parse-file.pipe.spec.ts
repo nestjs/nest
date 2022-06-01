@@ -37,7 +37,7 @@ describe('ParseFilePipe', () => {
       });
 
       it('should return the file object', async () => {
-        const requestFile: Partial<Express.Multer.File> = {
+        const requestFile = {
           path: 'some-path',
         };
 
@@ -53,7 +53,7 @@ describe('ParseFilePipe', () => {
       });
 
       it('should return the file object', async () => {
-        const requestFile: Partial<Express.Multer.File> = {
+        const requestFile = {
           path: 'some-path',
         };
 
@@ -71,7 +71,7 @@ describe('ParseFilePipe', () => {
       });
 
       it('should return the file object', async () => {
-        const requestFile: Partial<Express.Multer.File> = {
+        const requestFile = {
           path: 'some-path',
         };
 
@@ -90,7 +90,7 @@ describe('ParseFilePipe', () => {
         });
 
         it('should throw a BadRequestException', async () => {
-          const requestFile: Partial<Express.Multer.File> = {
+          const requestFile = {
             path: 'some-path',
           };
 
@@ -109,7 +109,7 @@ describe('ParseFilePipe', () => {
         });
 
         it('should throw this custom Error', async () => {
-          const requestFile: Partial<Express.Multer.File> = {
+          const requestFile = {
             path: 'some-path',
           };
 
