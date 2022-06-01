@@ -58,7 +58,7 @@ $ - Retrieves an instance of either injectable or controller, otherwise, throws 
 debug - Print all registered modules as a list together with their controllers and providers. If the argument is passed in, for example, "debug(MyModule)" then it will only print components of this specific module.
 get - Retrieves an instance of either injectable or controller, otherwise, throws exception.
 help - Display all available REPL native functions.
-methods - Display all public methods available on a given provider.
+methods - Display all public methods available on a given provider or controller.
 resolve - Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception
 select - Allows navigating through the modules tree, for example, to pull out a specific instance from the selected module.
 `);
