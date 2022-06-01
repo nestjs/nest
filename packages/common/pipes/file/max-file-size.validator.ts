@@ -4,6 +4,13 @@ export type MaxFileSizeValidatorOptions = {
   maxSize: number;
 };
 
+/**
+ * Defines the built-in MaxSize File Validator
+ *
+ * @see [File Validators](https://docs.nestjs.com/techniques/file-upload#validators)
+ *
+ * @publicApi
+ */
 export class MaxFileSizeValidator extends FileValidator<MaxFileSizeValidatorOptions> {
   buildErrorMessage(): string {
     return `Validation failed (expected size is less than ${this.validationOptions.maxSize})`;

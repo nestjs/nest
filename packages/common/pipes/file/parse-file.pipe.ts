@@ -5,6 +5,16 @@ import { PipeTransform } from '../../interfaces/features/pipe-transform.interfac
 import { ParseFileOptions } from './parse-file-options.interface';
 import { FileValidator } from './file-validator.interface';
 
+/**
+ * Defines the built-in ParseFile Pipe. This pipe can be used to validate incoming files
+ * with `@UploadedFile()` decorator. You can use either other specific built-in validators
+ * or provide one of your own, simply implementing it through {@link FileValidator}
+ * interface and adding it to ParseFilePipe's constructor.
+ *
+ * @see [Built-in Pipes](https://docs.nestjs.com/pipes#built-in-pipes)
+ *
+ * @publicApi
+ */
 @Injectable()
 export class ParseFilePipe implements PipeTransform<any> {
   protected exceptionFactory: (error: string) => any;
@@ -43,6 +53,9 @@ export class ParseFilePipe implements PipeTransform<any> {
     return file;
   }
 
+  /**
+   * @returns list of validators used in this pipe.
+   */
   getValidators() {
     return this.validators;
   }
