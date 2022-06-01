@@ -10,7 +10,9 @@ export class FileTypeValidator extends FileValidator<FileTypeValidatorOptions> {
   }
 
   isValid(file: any): boolean {
-    if (!this.validationOptions) return true;
+    if (!this.validationOptions) {
+      return true;
+    }
 
     return file.mimetype === this.validationOptions.fileType;
   }
