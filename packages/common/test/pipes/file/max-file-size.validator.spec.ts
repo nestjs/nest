@@ -10,7 +10,7 @@ describe('MaxFileSizeValidator', () => {
         maxSize: oneKb,
       });
 
-      const requestFile: Partial<Express.Multer.File> = {
+      const requestFile = {
         size: 100,
       };
 
@@ -22,7 +22,7 @@ describe('MaxFileSizeValidator', () => {
         maxSize: oneKb,
       });
 
-      const requestFile: Partial<Express.Multer.File> = {
+      const requestFile = {
         size: oneKb + 1,
       };
 
@@ -34,7 +34,7 @@ describe('MaxFileSizeValidator', () => {
         maxSize: oneKb,
       });
 
-      const requestFile: Partial<Express.Multer.File> = {
+      const requestFile = {
         size: oneKb,
       };
 
