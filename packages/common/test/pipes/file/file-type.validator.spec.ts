@@ -1,4 +1,4 @@
-import { FileTypeValidator } from '@nestjs/common/pipes';
+import { FileTypeValidator } from '../../../pipes';
 import { expect } from 'chai';
 
 describe('FileTypeValidator', () => {

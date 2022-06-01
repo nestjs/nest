@@ -1,9 +1,6 @@
-import { HttpStatus } from '@nestjs/common/enums';
-import {
-  BadRequestException,
-  ConflictException,
-} from '@nestjs/common/exceptions';
-import { FileValidator, ParseFilePipe } from '@nestjs/common/pipes';
+import { HttpStatus } from '../../../enums';
+import { BadRequestException, ConflictException } from '../../../exceptions';
+import { FileValidator, ParseFilePipe } from '../../../pipes';
 import { expect } from 'chai';
 
 class AlwaysValidValidator extends FileValidator {
