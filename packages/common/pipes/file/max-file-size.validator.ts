@@ -10,7 +10,9 @@ export class MaxFileSizeValidator extends FileValidator<MaxFileSizeValidatorOpti
   }
 
   public isValid(file: any): boolean {
-    if (!this.validationOptions) return true;
+    if (!this.validationOptions) {
+      return true;
+    }
 
     return file.size < this.validationOptions.maxSize;
   }
