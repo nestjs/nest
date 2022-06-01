@@ -11,7 +11,7 @@ import { ParseFileOptions } from './parse-file-options.interface';
 import { ParseFilePipe } from './parse-file.pipe';
 
 export class ParseFilePipeBuilder {
-  private validators: FileValidator[];
+  private validators: FileValidator[] = [];
 
   addMaxSizeValidator(options: MaxFileSizeValidatorOptions) {
     this.validators.push(new MaxFileSizeValidator(options));
