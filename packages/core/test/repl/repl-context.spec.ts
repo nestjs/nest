@@ -1,3 +1,4 @@
+import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NestContainer } from '../../injector/container';
 import { ReplContext } from '../../repl/repl-context';
@@ -24,4 +25,14 @@ describe('ReplContext', () => {
   });
 
   afterEach(() => sinon.restore());
+
+  it('writeToStdout', () => {
+    const stdOutWrite = sinon.stub(process.stdout, 'write');
+    const text = sinon.stub() as unknown as string;
+
+    replContext.writeToStdout(text);
+
+    expect(stdOutWrite.calledOnce).to.be.true;
+    expect(stdOutWrite.calledWith(text)).to.be.true;
+  });
 });
