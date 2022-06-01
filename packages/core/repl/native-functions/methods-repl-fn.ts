@@ -7,7 +7,7 @@ import type { ReplFnDefinition } from '../repl.interfaces';
 export class MethodsReplFn extends ReplFunction {
   public fnDefinition: ReplFnDefinition = {
     name: 'methods',
-    description: 'Display all public methods available on a given provider.',
+    description: 'Display all public methods available on a given provider or controller.',
     signature: '(token: ClassRef | string) => void',
   };
 
