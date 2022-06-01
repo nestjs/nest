@@ -2,6 +2,7 @@ import { Logger, Type } from '@nestjs/common';
 import * as _repl from 'repl';
 import { NestFactory } from '../nest-factory';
 import { REPL_INITIALIZED_MESSAGE } from './constants';
+import { loadNativeFunctionsIntoContext } from './load-native-functions-into-context';
 import { ReplContext } from './repl-context';
 import { ReplLogger } from './repl-logger';
 
@@ -20,12 +21,7 @@ export async function repl(module: Type) {
     ignoreUndefined: true,
   });
 
-  replServer.context.$ = replContext.$.bind(replContext);
-  replServer.context.get = replContext.get.bind(replContext);
-  replServer.context.resolve = replContext.resolve.bind(replContext);
-  replServer.context.select = replContext.select.bind(replContext);
-  replServer.context.debug = replContext.debug.bind(replContext);
-  replServer.context.methods = replContext.methods.bind(replContext);
+  loadNativeFunctionsIntoContext(replServer.context, replContext);
 
   return replServer;
 }
