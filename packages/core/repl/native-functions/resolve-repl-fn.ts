@@ -6,7 +6,7 @@ export class ResolveReplFn extends ReplFunction {
   public fnDefinition: ReplFnDefinition = {
     name: 'resolve',
     description:
-      'Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception',
+      'Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.',
     signature: '(token: InjectionToken, contextId: any) => Promise<any>',
   };
 
