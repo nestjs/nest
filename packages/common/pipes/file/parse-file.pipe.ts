@@ -42,4 +42,8 @@ export class ParseFilePipe implements PipeTransform<any> {
     }
     return file;
   }
+
+  getValidators() {
+    return this.validators;
+  }
 }
