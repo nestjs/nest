@@ -14,7 +14,7 @@ import * as sinon from 'sinon';
 import { AppModule } from '../src/app.module';
 import { UsersModule } from '../src/users/users.module';
 
-const prompt = '\u001b[1G\u001b[0J\u001b[32m>\u001b[0m \u001b[3G';
+const PROMPT = '\u001b[1G\u001b[0J> \u001b[3G';
 
 describe('REPL', () => {
   beforeEach(() => {
@@ -44,7 +44,7 @@ describe('REPL', () => {
 
     expect(outputText).to.equal(
       `UsersService { usersRepository: UsersRepository {} }
-${prompt}`,
+${PROMPT}`,
     );
 
     outputText = '';
@@ -52,13 +52,13 @@ ${prompt}`,
 
     expect(outputText).to
       .equal(`\u001b[32m'This action returns all users'\u001b[39m
-${prompt}`);
+${PROMPT}`);
 
     outputText = '';
     server.emit('line', 'get(UsersRepository)');
 
     expect(outputText).to.equal(`UsersRepository {}
-${prompt}`);
+${PROMPT}`);
   });
 
   it('debug()', async () => {
@@ -80,7 +80,7 @@ UsersModule:
   ◻ UsersService
   ◻ UsersRepository
 
-${prompt}`,
+${PROMPT}`,
     );
   });
 
@@ -99,7 +99,7 @@ ${prompt}`,
 Methods:
  ◻ find
 
-${prompt}`,
+${PROMPT}`,
     );
 
     outputText = '';
@@ -114,7 +114,7 @@ Methods:
  ◻ update
  ◻ remove
 
-${prompt}`,
+${PROMPT}`,
     );
   });
 
@@ -135,7 +135,7 @@ ${prompt}`,
 
       expect(outputText).to.equal(`${description}
 Interface: help${signature}
-${prompt}`);
+${PROMPT}`);
     });
 
     it(`Typing "get.help" should print function's description and interface`, async () => {
@@ -154,7 +154,7 @@ ${prompt}`);
 
       expect(outputText).to.equal(`${description}
 Interface: get${signature}
-${prompt}`);
+${PROMPT}`);
     });
 
     it(`Typing "resolve.help" should print function's description and interface`, async () => {
@@ -173,7 +173,7 @@ ${prompt}`);
 
       expect(outputText).to.equal(`${description}
 Interface: resolve${signature}
-${prompt}`);
+${PROMPT}`);
     });
 
     it(`Typing "select.help" should print function's description and interface`, async () => {
@@ -192,7 +192,7 @@ ${prompt}`);
 
       expect(outputText).to.equal(`${description}
 Interface: select${signature}
-${prompt}`);
+${PROMPT}`);
     });
 
     it(`Typing "debug.help" should print function's description and interface`, async () => {
@@ -211,7 +211,7 @@ ${prompt}`);
 
       expect(outputText).to.equal(`${description}
 Interface: debug${signature}
-${prompt}`);
+${PROMPT}`);
     });
 
     it(`Typing "methods.help" should print function's description and interface`, async () => {
@@ -230,7 +230,7 @@ ${prompt}`);
 
       expect(outputText).to.equal(`${description}
 Interface: methods${signature}
-${prompt}`);
+${PROMPT}`);
     });
   });
 });

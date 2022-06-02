@@ -1,5 +1,6 @@
 import { Logger, Type } from '@nestjs/common';
 import * as _repl from 'repl';
+import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { NestFactory } from '../nest-factory';
 import { REPL_INITIALIZED_MESSAGE } from './constants';
 import { loadNativeFunctionsIntoContext } from './load-native-functions-into-context';
@@ -17,7 +18,7 @@ export async function repl(module: Type) {
   Logger.log(REPL_INITIALIZED_MESSAGE);
 
   const replServer = _repl.start({
-    prompt: '\x1b[32m>\x1b[0m ',
+    prompt: clc.green('> '),
     ignoreUndefined: true,
   });
 
