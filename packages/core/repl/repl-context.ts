@@ -59,7 +59,6 @@ export class ReplContext {
   }
 
   private initializeContext() {
-    const globalRef = globalThis;
     const modules = this.container.getModules();
 
     modules.forEach(moduleRef => {
@@ -67,14 +66,18 @@ export class ReplContext {
       if (moduleName === InternalCoreModule.name) {
         return;
       }
-      if (globalRef[moduleName]) {
+      if (globalThis[moduleName]) {
         moduleName += ` (${moduleRef.token})`;
       }
 
       this.introspectCollection(moduleRef, moduleName, 'providers');
       this.introspectCollection(moduleRef, moduleName, 'controllers');
 
-      globalRef[moduleName] = moduleRef.metatype;
+      // For in REPL auto-complete functionality
+      Object.defineProperty(globalThis, moduleName, {
+        value: moduleRef.metatype,
+        configurable: false,
+      });
     });
   }
 
@@ -88,12 +91,16 @@ export class ReplContext {
       const stringifiedToken = this.stringifyToken(token);
       if (
         stringifiedToken === ApplicationConfig.name ||
-        stringifiedToken === moduleRef.metatype.name
+        stringifiedToken === moduleRef.metatype.name ||
+        globalThis[stringifiedToken]
       ) {
         return;
       }
       // For in REPL auto-complete functionality
-      globalThis[stringifiedToken] = token;
+      Object.defineProperty(globalThis, stringifiedToken, {
+        value: token,
+        configurable: false,
+      });
 
       if (stringifiedToken === ModuleRef.name) {
         return;
