@@ -23,8 +23,8 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
-  findOne(id: string): Promise<User> {
-    return this.usersRepository.findOne(id);
+  findOne(id: string): Promise<User[]> {
+    return this.usersRepository.findBy({ id: +id });
   }
 
   async remove(id: string): Promise<void> {
