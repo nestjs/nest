@@ -11,6 +11,7 @@ import {
   ResolveReplFn,
   SelectReplFn,
 } from './native-functions';
+import { ReplFunction } from './repl-function';
 import type { ReplFunctionClass } from './repl.interfaces';
 
 type ModuleKey = string;
@@ -19,9 +20,12 @@ export type ModuleDebugEntry = {
   providers: Record<string, InjectionToken>;
 };
 
+type ReplScope = Record<string, any>;
+
 export class ReplContext {
   public readonly logger = new Logger(ReplContext.name);
   public debugRegistry: Record<ModuleKey, ModuleDebugEntry> = {};
+  public readonly globalScope: ReplScope = Object.create(null);
   public readonly nativeFunctions = new Map<
     string,
     InstanceType<ReplFunctionClass>
@@ -33,29 +37,13 @@ export class ReplContext {
     nativeFunctionsClassRefs?: ReplFunctionClass[],
   ) {
     this.container = (app as any).container; // Using `any` because `app.container` is not public.
+
     this.initializeContext();
     this.initializeNativeFunctions(nativeFunctionsClassRefs || []);
   }
 
   public writeToStdout(text: string) {
     process.stdout.write(text);
-  }
-
-  public addNativeFunction(NativeFunction: ReplFunctionClass): void {
-    const nativeFunction = new NativeFunction(this);
-
-    this.nativeFunctions.set(nativeFunction.fnDefinition.name, nativeFunction);
-
-    nativeFunction.fnDefinition.aliases?.forEach(aliaseName => {
-      const aliasNativeFunction: InstanceType<ReplFunctionClass> =
-        Object.create(nativeFunction);
-      aliasNativeFunction.fnDefinition = {
-        name: aliaseName,
-        description: aliasNativeFunction.fnDefinition.description,
-        signature: aliasNativeFunction.fnDefinition.signature,
-      };
-      this.nativeFunctions.set(aliaseName, aliasNativeFunction);
-    });
   }
 
   private initializeContext() {
@@ -66,7 +54,7 @@ export class ReplContext {
       if (moduleName === InternalCoreModule.name) {
         return;
       }
-      if (globalThis[moduleName]) {
+      if (this.globalScope[moduleName]) {
         moduleName += ` (${moduleRef.token})`;
       }
 
@@ -74,9 +62,10 @@ export class ReplContext {
       this.introspectCollection(moduleRef, moduleName, 'controllers');
 
       // For in REPL auto-complete functionality
-      Object.defineProperty(globalThis, moduleName, {
+      Object.defineProperty(this.globalScope, moduleName, {
         value: moduleRef.metatype,
         configurable: false,
+        enumerable: true,
       });
     });
   }
@@ -92,14 +81,15 @@ export class ReplContext {
       if (
         stringifiedToken === ApplicationConfig.name ||
         stringifiedToken === moduleRef.metatype.name ||
-        globalThis[stringifiedToken]
+        this.globalScope[stringifiedToken]
       ) {
         return;
       }
       // For in REPL auto-complete functionality
-      Object.defineProperty(globalThis, stringifiedToken, {
+      Object.defineProperty(this.globalScope, stringifiedToken, {
         value: token,
         configurable: false,
+        enumerable: true,
       });
 
       if (stringifiedToken === ModuleRef.name) {
@@ -122,6 +112,47 @@ export class ReplContext {
       : token;
   }
 
+  private addNativeFunction(
+    NativeFunctionRef: ReplFunctionClass,
+  ): InstanceType<ReplFunctionClass> {
+    const nativeFunction = new NativeFunctionRef(this);
+
+    this.nativeFunctions.set(nativeFunction.fnDefinition.name, nativeFunction);
+
+    nativeFunction.fnDefinition.aliases?.forEach(aliaseName => {
+      const aliasNativeFunction: InstanceType<ReplFunctionClass> =
+        Object.create(nativeFunction);
+      aliasNativeFunction.fnDefinition = {
+        name: aliaseName,
+        description: aliasNativeFunction.fnDefinition.description,
+        signature: aliasNativeFunction.fnDefinition.signature,
+      };
+      this.nativeFunctions.set(aliaseName, aliasNativeFunction);
+    });
+
+    return nativeFunction;
+  }
+
+  private registerFunctionIntoGlobalScope(
+    nativeFunction: InstanceType<ReplFunctionClass>,
+  ) {
+    // Bind the method to REPL's context:
+    this.globalScope[nativeFunction.fnDefinition.name] =
+      nativeFunction.action.bind(nativeFunction);
+
+    // Load the help trigger as a `help` getter on each native function:
+    const functionBoundRef: ReplFunction['action'] =
+      this.globalScope[nativeFunction.fnDefinition.name];
+    Object.defineProperty(functionBoundRef, 'help', {
+      enumerable: false,
+      configurable: false,
+      get: () =>
+        // Dynamically builds the help message as will unlikely to be called
+        // several times.
+        this.writeToStdout(nativeFunction.makeHelpMessage()),
+    });
+  }
+
   private initializeNativeFunctions(
     nativeFunctionsClassRefs: ReplFunctionClass[],
   ): void {
@@ -137,7 +168,8 @@ export class ReplContext {
     builtInFunctionsClassRefs
       .concat(nativeFunctionsClassRefs)
       .forEach(NativeFunction => {
-        this.addNativeFunction(NativeFunction);
+        const nativeFunction = this.addNativeFunction(NativeFunction);
+        this.registerFunctionIntoGlobalScope(nativeFunction);
       });
   }
 }

@@ -12,7 +12,6 @@ import {
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { AppModule } from '../src/app.module';
-import { UsersModule } from '../src/users/users.module';
 
 const PROMPT = '\u001b[1G\u001b[0J> \u001b[3G';
 
@@ -28,13 +27,11 @@ describe('REPL', () => {
   });
   afterEach(() => {
     sinon.restore();
-    delete globalThis[AppModule.name];
-    delete globalThis[UsersModule.name];
   });
 
   it('get()', async () => {
     const server = await repl(AppModule);
-
+    server.context
     let outputText = '';
     sinon.stub(process.stdout, 'write').callsFake(text => {
       outputText += text;
