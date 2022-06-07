@@ -1,4 +1,5 @@
 import { iterate } from 'iterare';
+import { types } from 'util';
 import { Optional } from '../decorators';
 import { Injectable } from '../decorators/core';
 import { HttpStatus } from '../enums/http-status.enum';
@@ -190,12 +191,24 @@ export class ValidationPipe implements PipeTransform<any> {
     return isNil(value) ? {} : value;
   }
 
-  protected stripProtoKeys(value: Record<string, any>) {
+  protected stripProtoKeys(value: any) {
+    if (
+      value == null ||
+      typeof value !== 'object' ||
+      types.isTypedArray(value)
+    ) {
+      return;
+    }
+    if (Array.isArray(value)) {
+      for (const v of value) {
+        this.stripProtoKeys(v);
+      }
+      return;
+    }
     delete value.__proto__;
-    const keys = Object.keys(value);
-    iterate(keys)
-      .filter(key => isObject(value[key]) && value[key])
-      .forEach(key => this.stripProtoKeys(value[key]));
+    for (const key in value) {
+      this.stripProtoKeys(value[key]);
+    }
   }
 
   protected isPrimitive(value: unknown): boolean {
