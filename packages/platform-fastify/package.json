@@ -17,9 +17,15 @@
     "access": "public"
   },
   "dependencies": {
+<<<<<<< HEAD
     "fastify": "3.29.0",
     "@fastify/cors": "7.0.0",
     "@fastify/formbody": "6.0.0",
+=======
+    "fastify": "4.0.0",
+    "fastify-cors": "6.1.0",
+    "fastify-formbody": "5.3.0",
+>>>>>>> 1d55a14e9 (chore(): upgrade version fastify 4.x)
     "light-my-request": "5.0.0",
     "middie": "6.1.0",
     "path-to-regexp": "3.2.0",
