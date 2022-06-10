@@ -52,6 +52,10 @@ describe('ServerRMQ', () => {
       server.listen(callbackSpy);
       expect(onStub.getCall(1).args[0]).to.be.equal('disconnect');
     });
+    it('should bind "connectFailed" event to handler', () => {
+      server.listen(callbackSpy);
+      expect(onStub.getCall(2).args[0]).to.be.equal('connectFailed');
+    });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', () => {
         const error = new Error('random error');
