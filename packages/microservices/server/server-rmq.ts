@@ -5,8 +5,10 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import {
   CONNECT_EVENT,
-  DISCONNECTED_RMQ_MESSAGE,
+  CONNECT_FAILED_EVENT,
+  CONNECTION_FAILED_MESSAGE,
   DISCONNECT_EVENT,
+  DISCONNECTED_RMQ_MESSAGE,
   NO_MESSAGE_HANDLER,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
   RQM_DEFAULT_NOACK,
@@ -93,6 +95,10 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     });
     this.server.on(DISCONNECT_EVENT, (err: any) => {
       this.logger.error(DISCONNECTED_RMQ_MESSAGE);
+      this.logger.error(err);
+    });
+    this.server.on(CONNECT_FAILED_EVENT, (err: any) => {
+      this.logger.error(CONNECTION_FAILED_MESSAGE);
       this.logger.error(err);
     });
   }
