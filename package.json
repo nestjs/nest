@@ -168,7 +168,7 @@
     "ts-morph": "15.1.0",
     "ts-node": "10.8.0",
     "typeorm": "0.2.45",
-    "typescript": "4.7.2",
+    "typescript": "4.7.3",
     "wrk": "1.2.1",
     "ws": "8.7.0"
   },
