@@ -32,7 +32,7 @@ describe('UserService', () => {
           provide: getRepositoryToken(User),
           useValue: {
             find: jest.fn().mockResolvedValue(userArray),
-            findBy: jest.fn().mockResolvedValue(oneUser),
+            findOneBy: jest.fn().mockResolvedValue(oneUser),
             save: jest.fn().mockResolvedValue(oneUser),
             remove: jest.fn(),
             delete: jest.fn(),
@@ -74,8 +74,8 @@ describe('UserService', () => {
 
   describe('findOne()', () => {
     it('should get a single user', () => {
-      const repoSpy = jest.spyOn(repository, 'findBy');
-      expect(service.findOne('1')).resolves.toEqual(oneUser);
+      const repoSpy = jest.spyOn(repository, 'findOneBy');
+      expect(service.findOne(1)).resolves.toEqual(oneUser);
       expect(repoSpy).toBeCalledWith({ id: 1 });
     });
   });
