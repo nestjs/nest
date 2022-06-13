@@ -166,7 +166,7 @@
     "subscriptions-transport-ws": "0.11.0",
     "supertest": "6.2.3",
     "ts-morph": "15.1.0",
-    "ts-node": "10.8.0",
+    "ts-node": "10.8.1",
     "typeorm": "0.2.45",
     "typescript": "4.7.3",
     "wrk": "1.2.1",
