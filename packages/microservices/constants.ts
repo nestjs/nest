@@ -52,3 +52,6 @@ export const MQTT_WILDCARD_ALL = '#';
 export const ECONNREFUSED = 'ECONNREFUSED';
 export const CONN_ERR = 'CONN_ERR';
 export const EADDRINUSE = 'EADDRINUSE';
+
+export const CONNECTION_FAILED_MESSAGE =
+  'Connection to transport failed. Trying to reconnect...';
