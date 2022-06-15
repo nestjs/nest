@@ -65,19 +65,20 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td>
 <a href="https://nx.dev" target="_blank"><img src="https://nestjs.com/img/nx-logo.png" height="45" valign="middle" /></a></td>
     <td>
-<a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td>
+<a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td><td>
+<a href="https://amplication.com/" target="_blank"><img src="https://nestjs.com/img/amplication-logo.svg" width="190" valign="middle" /></a></td>
 </tr></table>
 
 #### Gold Sponsors
 
 <table style="text-align:center;"><tr><td>
-  <a href="https://careers.labster.com/departments/platform" target="_blank"><img src="https://nestjs.com/img/labster-logo.png" width="170" valign="middle" /></a></td><td>
 <a href="https://weld.app/" target="_blank"><img src="https://nestjs.com/img/weld-logo.svg" width="140" valign="middle" /></a></td>
 <td>
 <a href="https://intrinsic.ventures/" target="_blank"><img src="https://nestjs.com/img/intrinisic-logo.png" width="210" valign="middle" /></a></td>
  <td>
 <a href="https://jetbrains.com/" target="_blank"><img src="https://nestjs.com/img/jetbrains-logo.svg" width="110" valign="middle" /></a></td><td>
-<a href="https://snyk.co/nestjs" target="_blank"><img src="https://nestjs.com/img/snyk-logo-black.png" width="185" valign="middle" /></a></td></</tr></table>
+<a href="https://snyk.co/nestjs" target="_blank"><img src="https://nestjs.com/img/snyk-logo-black.png" width="185" valign="middle" /></a></td><td>
+<a href="https://fuseautotech.com/" target="_blank"><img src="https://nestjs.com/img/fuse-logo.svg" width="105" valign="middle" /></a></td></</tr></table>
 
 #### Silver Sponsors
 
