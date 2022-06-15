@@ -458,7 +458,7 @@ export class FastifyAdapter<
       // Fallback to "(.*)" to support plugins like GraphQL
       normalizedPath = normalizedPath === '/(.*)' ? '(.*)' : normalizedPath;
 
-      // The following type assertion is valid as we use import('middie') rather than require('middie')
+      // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
       // ref https://github.com/fastify/middie/pull/55
       this.instance.use(
         normalizedPath,
@@ -514,7 +514,7 @@ export class FastifyAdapter<
 
   private async registerMiddie() {
     this.isMiddieRegistered = true;
-    await this.register(import('middie'));
+    await this.register(import('@fastify/middie'));
   }
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {

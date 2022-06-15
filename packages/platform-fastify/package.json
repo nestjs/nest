@@ -17,11 +17,11 @@
     "access": "public"
   },
   "dependencies": {
-    "fastify": "3.29.0",
     "@fastify/cors": "7.0.0",
     "@fastify/formbody": "6.0.0",
+    "@fastify/middie": "8.0.0",
+    "fastify": "4.0.2",
     "light-my-request": "5.0.0",
-    "middie": "6.1.0",
     "path-to-regexp": "3.2.0",
     "tslib": "2.4.0"
   },
