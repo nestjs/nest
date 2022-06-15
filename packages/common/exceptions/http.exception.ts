@@ -41,6 +41,22 @@ export class HttpException extends Error {
     super();
     this.initMessage();
     this.initName();
+    this.initCause();
+  }
+
+  public cause: Error | undefined;
+
+  /**
+   * Configures error chaining support
+   *
+   * See:
+   * - https://nodejs.org/en/blog/release/v16.9.0/#error-cause
+   * - https://github.com/microsoft/TypeScript/issues/45167
+   */
+  public initCause() {
+    if (this.response instanceof Error) {
+      this.cause = this.response;
+    }
   }
 
   public initMessage() {
