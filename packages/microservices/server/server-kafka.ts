@@ -57,7 +57,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     const consumerOptions =
       this.getOptionsProp(this.options, 'consumer') || ({} as ConsumerConfig);
     const postfixId =
-      this.getOptionsProp(this.options, 'postfixId') || '-server';
+      this.getOptionsProp(this.options, 'postfixId') ?? '-server';
 
     this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
 
