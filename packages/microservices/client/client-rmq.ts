@@ -16,6 +16,7 @@ import {
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
+  RQM_DEFAULT_NO_ASSERT,
 } from '../constants';
 import { RmqUrl } from '../external/rmq-url.interface';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
@@ -38,6 +39,7 @@ export class ClientRMQ extends ClientProxy {
   protected responseEmitter: EventEmitter;
   protected replyQueue: string;
   protected persistent: boolean;
+  protected noAssert: boolean;
 
   constructor(protected readonly options: RmqOptions['options']) {
     super();
@@ -51,6 +53,9 @@ export class ClientRMQ extends ClientProxy {
       this.getOptionsProp(this.options, 'replyQueue') || REPLY_QUEUE;
     this.persistent =
       this.getOptionsProp(this.options, 'persistent') || RQM_DEFAULT_PERSISTENT;
+    this.noAssert =
+      this.getOptionsProp(this.options, 'noAssert') || RQM_DEFAULT_NO_ASSERT;
+
     loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
     rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
       require('amqp-connection-manager'),
@@ -143,7 +148,9 @@ export class ClientRMQ extends ClientProxy {
       this.getOptionsProp(this.options, 'isGlobalPrefetchCount') ||
       RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
 
-    await channel.assertQueue(this.queue, this.queueOptions);
+    if (!this.queueOptions.noAssert) {
+      await channel.assertQueue(this.queue, this.queueOptions);
+    }
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
 
     this.responseEmitter = new EventEmitter();
