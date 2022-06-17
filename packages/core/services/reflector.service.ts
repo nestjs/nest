@@ -86,9 +86,6 @@ export class Reflector {
     metadataKey: TKey,
     targets: (Type<any> | Function)[],
   ): TResult {
-    const metadataCollection = this.getAll(metadataKey, targets).filter(
-      item => item !== undefined,
-    );
-    return metadataCollection[0];
+    return this.getAll(metadataKey, targets).find(item => item !== undefined);
   }
 }
