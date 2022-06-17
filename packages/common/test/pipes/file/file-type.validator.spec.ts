@@ -15,6 +15,18 @@ describe('FileTypeValidator', () => {
       expect(fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
 
+    it('should return true when the file mimetype ends with the specified option type', () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'jpeg',
+      });
+
+      const requestFile = {
+        mimetype: 'image/jpeg',
+      };
+
+      expect(fileTypeValidator.isValid(requestFile)).to.equal(true);
+    });
+
     it('should return false when the file mimetype is different from the specified', () => {
       const fileTypeValidator = new FileTypeValidator({
         fileType: 'image/jpeg',

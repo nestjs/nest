@@ -21,6 +21,10 @@ export class FileTypeValidator extends FileValidator<FileTypeValidatorOptions> {
       return true;
     }
 
-    return file.mimetype === this.validationOptions.fileType;
+    if (!file.mimetype) {
+      return false;
+    }
+
+    return (file.mimetype as string).endsWith(this.validationOptions.fileType);
   }
 }
