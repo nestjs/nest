@@ -78,7 +78,7 @@ describe('ParseFilePipe', () => {
       });
     });
 
-    describe('when some the validator invalidates the file', () => {
+    describe('when some validator invalidates the file', () => {
       describe('and the pipe has the default error', () => {
         beforeEach(() => {
           parseFilePipe = new ParseFilePipe({

@@ -4,6 +4,7 @@ import { HttpErrorByCode } from '../../utils/http-error-by-code.util';
 import { PipeTransform } from '../../interfaces/features/pipe-transform.interface';
 import { ParseFileOptions } from './parse-file-options.interface';
 import { FileValidator } from './file-validator.interface';
+import { throws } from 'assert';
 
 /**
  * Defines the built-in ParseFile Pipe. This pipe can be used to validate incoming files
@@ -36,21 +37,26 @@ export class ParseFilePipe implements PipeTransform<any> {
 
   async transform(value: any): Promise<any> {
     if (this.validators.length) {
-      this.validate(value);
+      await this.validate(value);
     }
     return value;
   }
 
-  protected validate(file: any): any {
-    const failingValidator = this.validators.find(
-      validator => !validator.isValid(file),
-    );
+  protected async validate(file: any): Promise<any> {
+    for (const validator of this.validators) {
+      await this.validateOrThrow(file, validator);
+    }
 
-    if (failingValidator) {
-      const errorMessage = failingValidator.buildErrorMessage(file);
+    return file;
+  }
+
+  private async validateOrThrow(file: any, validator: FileValidator) {
+    const isValid = await validator.isValid(file);
+
+    if (!isValid) {
+      const errorMessage = validator.buildErrorMessage(file);
       throw this.exceptionFactory(errorMessage);
     }
-    return file;
   }
 
   /**
