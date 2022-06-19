@@ -4,7 +4,7 @@ import { CacheManagerOptions } from './cache-manager.interface';
 export type CacheModuleOptions<
   StoreConfig extends Record<any, any> = Record<string, any>,
 > =
-  // Store-specfic configuration takes precedence over cache module options due
+  // Store-specific configuration takes precedence over cache module options due
   // to how `createCacheManager` is implemented.
   CacheManagerOptions &
     StoreConfig & {

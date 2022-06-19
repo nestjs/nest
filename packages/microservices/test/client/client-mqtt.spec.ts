@@ -110,7 +110,7 @@ describe('ClientMqtt', () => {
       it('should unsubscribe to response pattern name', () => {
         expect(unsubscribeSpy.calledWith(channel)).to.be.true;
       });
-      it('should remove callback from routin map', () => {
+      it('should remove callback from routing map', () => {
         expect(client['routingMap'].has(id)).to.be.false;
       });
     });

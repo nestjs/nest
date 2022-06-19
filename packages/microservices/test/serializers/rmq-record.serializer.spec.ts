@@ -24,7 +24,7 @@ describe('RmqRecordSerializer', () => {
       });
     });
 
-    it('should act as an indentity function if msg is not an instance of RmqRecord class', () => {
+    it('should act as an identity function if msg is not an instance of RmqRecord class', () => {
       const packet = {
         data: { random: true },
       };

@@ -247,7 +247,7 @@ describe('ListenersController', () => {
   });
 
   describe('assignClientToInstance', () => {
-    it('should assing client to instance', () => {
+    it('should assign client to instance', () => {
       const propertyKey = 'key';
       const object = {};
       const client = { test: true };

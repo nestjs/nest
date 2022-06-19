@@ -356,7 +356,7 @@ data: test
           request as unknown as IncomingMessage,
         );
       } catch {
-        // Wether an error is thrown or not
+        // Whether an error is thrown or not
         // is not relevant, so long as
         // result is not called
       }

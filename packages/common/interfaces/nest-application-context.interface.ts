@@ -72,7 +72,7 @@ export interface INestApplicationContext {
   enableShutdownHooks(signals?: ShutdownSignal[] | string[]): this;
 
   /**
-   * Initalizes the Nest application.
+   * Initializes the Nest application.
    * Calls the Nest lifecycle events.
    * It isn't mandatory to call this method directly.
    *

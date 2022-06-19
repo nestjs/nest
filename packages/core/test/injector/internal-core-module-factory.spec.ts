@@ -8,7 +8,7 @@ import { InternalCoreModule } from '../../injector/internal-core-module';
 import { InternalCoreModuleFactory } from '../../injector/internal-core-module-factory';
 
 describe('InternalCoreModuleFactory', () => {
-  it('should return the interal core module definition', () => {
+  it('should return the internal core module definition', () => {
     const moduleDefinition = InternalCoreModuleFactory.create(
       new NestContainer(),
       null,

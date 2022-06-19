@@ -175,7 +175,7 @@ describe('ServerMqtt', () => {
   });
   describe('getRequestPattern', () => {
     const test = 'test';
-    it(`should leave patern as it is`, () => {
+    it(`should leave pattern as it is`, () => {
       expect(server.getRequestPattern(test)).to.equal(test);
     });
   });
