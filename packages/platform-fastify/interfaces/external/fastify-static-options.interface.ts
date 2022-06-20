@@ -1,5 +1,5 @@
 /**
- * "fastify-static" interfaces
+ * "@fastify/static" interfaces
  * @see https://github.com/fastify/fastify-static/blob/master/index.d.ts
  */
 
