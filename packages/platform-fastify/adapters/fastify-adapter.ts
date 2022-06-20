@@ -325,6 +325,10 @@ export class FastifyAdapter<
     return (response as TReply).code(statusCode);
   }
 
+  public end(response: TReply, message?: string) {
+    response.raw.end(message);
+  }
+
   public render(
     response: TReply & { view: Function },
     view: string,
@@ -407,6 +411,10 @@ export class FastifyAdapter<
       ),
       options,
     );
+  }
+
+  public isHeadersSent(response: TReply): boolean {
+    return response.sent;
   }
 
   public setHeader(response: TReply, name: string, value: string) {
