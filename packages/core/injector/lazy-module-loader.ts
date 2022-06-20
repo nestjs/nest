@@ -26,7 +26,7 @@ export class LazyModuleLoader {
     );
     if (moduleInstances.length === 0) {
       // The module has been loaded already. In this case, we must
-      // retrieve a module reference from the exising container.
+      // retrieve a module reference from the existing container.
       const { token } = await this.moduleCompiler.compile(
         moduleClassOrDynamicDefinition,
       );

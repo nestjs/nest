@@ -26,7 +26,7 @@ describe('KafkaResponseDeserializer', () => {
       });
     });
     describe('when is disposed header is present', () => {
-      it('should return an objet with "isDisposed"', () => {
+      it('should return an object with "isDisposed"', () => {
         const value = 'test';
         const packet = instance.deserialize({
           headers: {

@@ -26,7 +26,7 @@ describe('MqttRecordSerializer', () => {
         data: { value: 'string' },
       });
     });
-    it('should act as an indentity function if msg is not an instance of MqttRecord class', () => {
+    it('should act as an identity function if msg is not an instance of MqttRecord class', () => {
       const packet = {
         data: { random: true },
       };
