@@ -59,7 +59,8 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     ): MiddlewareConsumer {
       const { middlewareCollection } = this.builder;
 
-      const forRoutes = this.getRoutesFlatList(routes);
+      const flattedRoutes = this.getRoutesFlatList(routes);
+      const forRoutes = this.removeOverlappedRoutes(flattedRoutes);
       const configuration = {
         middleware: filterMiddleware(
           this.middleware,
@@ -81,6 +82,26 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
         .map(route => routesMapper.mapRouteToRouteInfo(route))
         .flatten()
         .toArray();
+    }
+
+    private removeOverlappedRoutes(routes: RouteInfo[]) {
+      const regexMatchParams = /(:[^\/]*)/g;
+      const wildcard = '([^/]*)';
+      const routesWithRegex = routes
+        .filter(route => route.path.indexOf(':') >= 0)
+        .map(route => ({
+          path: route.path,
+          regex: new RegExp(
+            '^(' + route.path.replace(regexMatchParams, wildcard) + ')$',
+            'g',
+          ),
+        }));
+      return routes.filter(route => {
+        const routeMatch = routesWithRegex.find(
+          v => route.path !== v.path && route.path.match(v.regex),
+        );
+        if (routeMatch === undefined) return route;
+      });
     }
   };
 }
