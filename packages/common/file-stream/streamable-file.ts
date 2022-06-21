@@ -3,8 +3,21 @@ import { types } from 'util';
 import { isFunction } from '../utils/shared.utils';
 import { StreamableFileOptions } from './streamable-options.interface';
 
+interface StreamableHandlerResponse {
+  statusCode: number;
+  send: (msg: string) => void;
+}
+
 export class StreamableFile {
   private readonly stream: Readable;
+
+  private handler: (err: Error, response: StreamableHandlerResponse) => void = (
+    err: Error,
+    res,
+  ) => {
+    res.statusCode = 400;
+    res.send(err.message);
+  };
 
   constructor(buffer: Uint8Array, options?: StreamableFileOptions);
   constructor(readable: Readable, options?: StreamableFileOptions);
@@ -37,5 +50,19 @@ export class StreamableFile {
       disposition,
       length,
     };
+  }
+
+  get errorHandler(): (
+    err: Error,
+    response: StreamableHandlerResponse,
+  ) => void {
+    return this.handler;
+  }
+
+  setErrorHandler(
+    handler: (err: Error, response: StreamableHandlerResponse) => void,
+  ) {
+    this.handler = handler;
+    return this;
   }
 }

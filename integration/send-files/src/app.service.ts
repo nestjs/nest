@@ -35,4 +35,8 @@ export class AppService {
       },
     );
   }
+
+  getFileThatDoesNotExist(): StreamableFile {
+    return new StreamableFile(createReadStream('does-not-exist.txt'));
+  }
 }
