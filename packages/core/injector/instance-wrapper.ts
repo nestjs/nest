@@ -18,7 +18,7 @@ import { InstanceToken, Module } from './module';
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
 
-export interface ChildContextIdInfo {
+export interface HostComponentInfo {
   /**
    * Injection token (or class reference)
    */
@@ -31,7 +31,7 @@ export interface ChildContextIdInfo {
 
 export interface ContextId {
   readonly id: number;
-  getParent?(info: ChildContextIdInfo): ContextId;
+  getParent?(info: HostComponentInfo): ContextId;
 }
 
 export interface InstancePerContext<T> {

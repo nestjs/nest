@@ -1,4 +1,4 @@
-import { ChildContextIdInfo, ContextId } from '../injector/instance-wrapper';
+import { ContextId, HostComponentInfo } from '../injector/instance-wrapper';
 import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
 
 export function createContextId(): ContextId {
@@ -19,11 +19,12 @@ export interface ContextIdStrategy<T = any> {
    * This lets you construct durable DI sub-trees that can be shared between contexts.
    * @param contextId auto-generated child context id
    * @param request request object
+   * @returns a context id resolver function
    */
   attach(
     contextId: ContextId,
     request: T,
-  ): ((info: ChildContextIdInfo) => ContextId) | undefined;
+  ): ((info: HostComponentInfo) => ContextId) | undefined;
 }
 
 export class ContextIdFactory {

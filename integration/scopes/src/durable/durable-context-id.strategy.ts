@@ -1,4 +1,4 @@
-import { ChildContextIdInfo, ContextId, ContextIdStrategy } from '@nestjs/core';
+import { ContextId, ContextIdStrategy, HostComponentInfo } from '@nestjs/core';
 import { Request } from 'express';
 
 const tenants = new Map<string, ContextId>();
@@ -15,7 +15,7 @@ export class DurableContextIdStrategy implements ContextIdStrategy {
       tenants.set(tenantId, tenantSubTreeId);
     }
 
-    return (info: ChildContextIdInfo) =>
+    return (info: HostComponentInfo) =>
       info.isTreeDurable ? tenantSubTreeId : contextId;
   }
 }
