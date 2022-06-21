@@ -223,8 +223,9 @@ export class FastifyAdapter<
     hostname: string,
     callback?: () => void,
   ): void;
-  public listen(port: string | number, ...args: any[]): Promise<string> {
-    return this.instance.listen(port, ...args);
+  public listen(port: string | number, ...args: any[]): void {
+    const options = { port: +port, host: args[0] };
+    return this.instance.listen(options, args[1]);
   }
 
   public get(...args: any[]) {
