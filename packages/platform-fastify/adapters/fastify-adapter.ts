@@ -224,8 +224,9 @@ export class FastifyAdapter<
     callback?: () => void,
   ): void;
   public listen(port: string | number, ...args: any[]): void {
-    const options = { port: +port, host: args[0] };
-    return this.instance.listen(options, args[1]);
+    const callback = typeof args[0] === 'function' ? args[0] : args[1];
+    const options = { port: +port, host: callback ? undefined : args[0] };
+    return this.instance.listen(options, callback);
   }
 
   public get(...args: any[]) {
