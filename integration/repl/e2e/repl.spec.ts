@@ -31,7 +31,7 @@ describe('REPL', () => {
 
   it('get()', async () => {
     const server = await repl(AppModule);
-    server.context
+    server.context;
     let outputText = '';
     sinon.stub(process.stdout, 'write').callsFake(text => {
       outputText += text;
@@ -53,6 +53,35 @@ ${PROMPT}`);
 
     outputText = '';
     server.emit('line', 'get(UsersRepository)');
+
+    expect(outputText).to.equal(`UsersRepository {}
+${PROMPT}`);
+  });
+
+  it('$()', async () => {
+    const server = await repl(AppModule);
+    server.context;
+    let outputText = '';
+    sinon.stub(process.stdout, 'write').callsFake(text => {
+      outputText += text;
+      return true;
+    });
+    server.emit('line', '$(UsersService)');
+
+    expect(outputText).to.equal(
+      `UsersService { usersRepository: UsersRepository {} }
+${PROMPT}`,
+    );
+
+    outputText = '';
+    server.emit('line', '$(UsersService).findAll()');
+
+    expect(outputText).to
+      .equal(`\u001b[32m'This action returns all users'\u001b[39m
+${PROMPT}`);
+
+    outputText = '';
+    server.emit('line', '$(UsersRepository)');
 
     expect(outputText).to.equal(`UsersRepository {}
 ${PROMPT}`);

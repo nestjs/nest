@@ -114,8 +114,9 @@ export class ReplContext {
 
   private addNativeFunction(
     NativeFunctionRef: ReplFunctionClass,
-  ): InstanceType<ReplFunctionClass> {
+  ): InstanceType<ReplFunctionClass>[] {
     const nativeFunction = new NativeFunctionRef(this);
+    const nativeFunctions = [nativeFunction];
 
     this.nativeFunctions.set(nativeFunction.fnDefinition.name, nativeFunction);
 
@@ -128,9 +129,10 @@ export class ReplContext {
         signature: aliasNativeFunction.fnDefinition.signature,
       };
       this.nativeFunctions.set(aliaseName, aliasNativeFunction);
+      nativeFunctions.push(aliasNativeFunction);
     });
 
-    return nativeFunction;
+    return nativeFunctions;
   }
 
   private registerFunctionIntoGlobalScope(
@@ -168,8 +170,10 @@ export class ReplContext {
     builtInFunctionsClassRefs
       .concat(nativeFunctionsClassRefs)
       .forEach(NativeFunction => {
-        const nativeFunction = this.addNativeFunction(NativeFunction);
-        this.registerFunctionIntoGlobalScope(nativeFunction);
+        const nativeFunctions = this.addNativeFunction(NativeFunction);
+        nativeFunctions.forEach(nativeFunction => {
+          this.registerFunctionIntoGlobalScope(nativeFunction);
+        });
       });
   }
 }
