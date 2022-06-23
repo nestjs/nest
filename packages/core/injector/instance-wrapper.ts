@@ -38,8 +38,9 @@ export interface InstancePerContext<T> {
   instance: T;
   isResolved?: boolean;
   isPending?: boolean;
-  donePromise?: Promise<void>;
+  donePromise?: Promise<unknown>;
 }
+
 export interface PropertyMetadata {
   key: symbol | string;
   wrapper: InstanceWrapper;

@@ -237,8 +237,8 @@ export class Injector {
   public applyDoneHook<T>(
     wrapper: InstancePerContext<T>,
   ): (err?: unknown) => void {
-    let done: () => void;
-    wrapper.donePromise = new Promise<void>((resolve, reject) => {
+    let done: (err?: unknown) => void;
+    wrapper.donePromise = new Promise<unknown>((resolve, reject) => {
       done = resolve;
     });
     wrapper.isPending = true;
