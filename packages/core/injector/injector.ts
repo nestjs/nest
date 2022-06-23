@@ -111,7 +111,11 @@ export class Injector {
       inquirerId,
     );
     if (instanceHost.isPending) {
-      return instanceHost.donePromise;
+      return instanceHost.donePromise.then((err?: unknown) => {
+        if (err) {
+          throw err;
+        }
+      });
     }
     const done = this.applyDoneHook(instanceHost);
     const token = wrapper.token || wrapper.name;
@@ -124,34 +128,39 @@ export class Injector {
     if (instanceHost.isResolved) {
       return done();
     }
-    const callback = async (instances: unknown[]) => {
-      const properties = await this.resolveProperties(
+    try {
+      const callback = async (instances: unknown[]) => {
+        const properties = await this.resolveProperties(
+          wrapper,
+          moduleRef,
+          inject as InjectionToken[],
+          contextId,
+          wrapper,
+          inquirer,
+        );
+        const instance = await this.instantiateClass(
+          instances,
+          wrapper,
+          targetWrapper,
+          contextId,
+          inquirer,
+        );
+        this.applyProperties(instance, properties);
+        done();
+      };
+      await this.resolveConstructorParams<T>(
         wrapper,
         moduleRef,
         inject as InjectionToken[],
+        callback,
         contextId,
         wrapper,
         inquirer,
       );
-      const instance = await this.instantiateClass(
-        instances,
-        wrapper,
-        targetWrapper,
-        contextId,
-        inquirer,
-      );
-      this.applyProperties(instance, properties);
-      done();
-    };
-    await this.resolveConstructorParams<T>(
-      wrapper,
-      moduleRef,
-      inject as InjectionToken[],
-      callback,
-      contextId,
-      wrapper,
-      inquirer,
-    );
+    } catch (err) {
+      done(err);
+      throw err;
+    }
   }
 
   public async loadMiddleware(
@@ -225,7 +234,9 @@ export class Injector {
     await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
   }
 
-  public applyDoneHook<T>(wrapper: InstancePerContext<T>): () => void {
+  public applyDoneHook<T>(
+    wrapper: InstancePerContext<T>,
+  ): (err?: unknown) => void {
     let done: () => void;
     wrapper.donePromise = new Promise<void>((resolve, reject) => {
       done = resolve;
