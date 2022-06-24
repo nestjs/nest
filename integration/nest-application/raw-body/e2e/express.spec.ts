@@ -13,10 +13,9 @@ describe('Raw body (Express Application)', () => {
       imports: [ExpressModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication<NestExpressApplication>(
-      undefined,
-      { rawBody: true },
-    );
+    app = moduleFixture.createNestApplication<NestExpressApplication>({
+      rawBody: true,
+    });
   });
 
   it('should return exact post body', async () => {
