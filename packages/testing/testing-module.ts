@@ -29,20 +29,43 @@ export class TestingModule extends NestApplicationContext {
     super(container, scope, contextModule);
   }
 
+  private isHttpServer(
+    serverOrOptions:
+      | HttpServer
+      | AbstractHttpAdapter
+      | NestApplicationOptions
+      | undefined,
+  ): serverOrOptions is HttpServer | AbstractHttpAdapter {
+    return !!(serverOrOptions && (serverOrOptions as HttpServer).patch);
+  }
+
   public createNestApplication<T extends INestApplication = INestApplication>(
-    httpAdapter?: HttpServer | AbstractHttpAdapter,
+    httpAdapter: HttpServer | AbstractHttpAdapter,
+    options?: NestApplicationOptions,
+  ): T;
+  public createNestApplication<T extends INestApplication = INestApplication>(
+    options?: NestApplicationOptions,
+  ): T;
+  public createNestApplication<T extends INestApplication = INestApplication>(
+    serverOrOptions:
+      | HttpServer
+      | AbstractHttpAdapter
+      | NestApplicationOptions
+      | undefined,
     options?: NestApplicationOptions,
   ): T {
-    httpAdapter = httpAdapter || this.createHttpAdapter();
+    const [httpAdapter, appOptions] = this.isHttpServer(serverOrOptions)
+      ? [serverOrOptions, options]
+      : [this.createHttpAdapter(), serverOrOptions];
 
-    this.applyLogger(options);
+    this.applyLogger(appOptions);
     this.container.setHttpAdapter(httpAdapter);
 
     const instance = new NestApplication(
       this.container,
       httpAdapter,
       this.applicationConfig,
-      options,
+      appOptions,
     );
     return this.createAdapterProxy<T>(instance, httpAdapter);
   }
