@@ -154,7 +154,7 @@
     "multer": "1.4.4",
     "mysql2": "2.3.3",
     "nats": "2.7.1",
-    "nodemon": "2.0.16",
+    "nodemon": "2.0.18",
     "nyc": "15.1.0",
     "point-of-view": "6.3.0",
     "prettier": "2.7.1",
