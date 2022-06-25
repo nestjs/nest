@@ -88,7 +88,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
       const regexMatchParams = /(:[^\/]*)/g;
       const wildcard = '([^/]*)';
       const routesWithRegex = routes
-        .filter(route => route.path.indexOf(':') >= 0)
+        .filter(route => route.path.includes(':'))
         .map(route => ({
           path: route.path,
           regex: new RegExp(
@@ -97,9 +97,11 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
           ),
         }));
       return routes.filter(route => {
-        const routeMatch = routesWithRegex.find(
-          v => route.path !== v.path && route.path.match(v.regex),
-        );
+        const isOverlapped = (v: { path: string; regex: RegExp }) => {
+          return route.path !== v.path && route.path.match(v.regex);
+        };
+        const routeMatch = routesWithRegex.find(isOverlapped);
+
         if (routeMatch === undefined) return route;
       });
     }
