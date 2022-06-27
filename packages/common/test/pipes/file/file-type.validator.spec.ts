@@ -27,9 +27,33 @@ describe('FileTypeValidator', () => {
       expect(fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
 
+    it('should return true when the file mimetype matches the specified regexp', () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: /word/,
+      });
+
+      const requestFile = {
+        mimetype: 'application/msword',
+      };
+
+      expect(fileTypeValidator.isValid(requestFile)).to.equal(true);
+    });
+
     it('should return false when the file mimetype is different from the specified', () => {
       const fileTypeValidator = new FileTypeValidator({
         fileType: 'image/jpeg',
+      });
+
+      const requestFile = {
+        mimetype: 'image/png',
+      };
+
+      expect(fileTypeValidator.isValid(requestFile)).to.equal(false);
+    });
+
+    it('should return false when the file mimetype does not match the provided regexp', () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: /mp4/,
       });
 
       const requestFile = {
