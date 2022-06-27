@@ -123,7 +123,7 @@
     "eslint-plugin-import": "2.26.0",
     "eventsource": "2.0.2",
     "fancy-log": "2.0.0",
-    "fastify": "3.29.0",
+    "fastify": "4.1.0",
     "fastify-cors": "6.1.0",
     "fastify-formbody": "5.3.0",
     "fastify-multipart": "5.4.0",
