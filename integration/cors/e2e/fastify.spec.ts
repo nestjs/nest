@@ -1,12 +1,12 @@
 import {
-  NestFastifyApplication,
   FastifyAdapter,
+  NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 
-describe('Fastify Cors', () => {
+describe.skip('Fastify Cors', () => {
   let app: NestFastifyApplication;
   const configs = [
     {
