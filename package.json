@@ -25,7 +25,7 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "format": "prettier \"**/*.ts\" \"packages/**/*.json\" --ignore-path ./.prettierignore --write && git status",
     "postinstall": "opencollective",
-    "test": "nyc mocha packages/**/injector.spec.ts --reporter spec",
+    "test": "nyc mocha packages/**/*.spec.ts --reporter spec",
     "test:integration": "mocha \"integration/*/{,!(node_modules)/**/}/*.spec.ts\" --reporter spec",
     "test:docker:up": "docker-compose -f integration/docker-compose.yml up -d",
     "test:docker:down": "docker-compose -f integration/docker-compose.yml down",
