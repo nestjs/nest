@@ -68,6 +68,61 @@ export interface MqttClientOptions extends ISecureClientOptions {
    */
   resubscribe?: boolean;
   /**
+   * MQTT 5.0 properties.
+   * @type {object}
+   */
+  properties?: {
+    /**
+     * Representing the Session Expiry Interval in seconds.
+     * @type {number}
+     */
+    sessionExpiryInterval?: number;
+    /**
+     * Representing the Receive Maximum value.
+     * @type {number}
+     */
+    receiveMaximum?: number;
+    /**
+     * Representing the Maximum Packet Size the Client is willing to accept.
+     * @type {number}
+     */
+    maximumPacketSize?: number;
+    /**
+     * Representing the Topic Alias Maximum value indicates the highest value that
+     * the Client will accept as a Topic Alias sent by the Server.
+     * @type {number}
+     */
+    topicAliasMaximum?: number;
+    /**
+     * The Client uses this value to request the Server to return Response Information in the CONNACK.
+     * @type {boolean}
+     */
+    requestResponseInformation?: boolean;
+    /**
+     * The Client uses this value to indicate whether the Reason String or User Properties are sent
+     * in the case of failures.
+     * @type {boolean}
+     */
+    requestProblemInformation?: boolean;
+    /**
+     * The User Property is allowed to appear multiple times to represent multiple name, value pairs.
+     * @type {object}
+     */
+    userProperties?: {
+      [x: string]: any;
+    };
+    /**
+     * The name of the authentication method used for extended authentication.
+     * @type {string}
+     */
+    authenticationMethod?: string;
+    /**
+     * Binary Data containing authentication data.
+     * @type {any}
+     */
+    authenticationData?: any;
+  };
+  /**
    * a message that will sent by the broker automatically when the client disconnect badly.
    */
   will?: {
