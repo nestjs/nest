@@ -9,7 +9,11 @@ import {
   ProducerConfig,
   ProducerRecord,
 } from '../external/kafka.interface';
-import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
+import {
+  MqttClientOptions,
+  QoS,
+  UserProperties,
+} from '../external/mqtt-options.interface';
 import { ClientOpts } from '../external/redis.interface';
 import { RmqUrl } from '../external/rmq-url.interface';
 import { TcpSocket } from '../helpers';
@@ -108,19 +112,41 @@ export interface MqttOptions {
        * The QoS
        */
       qos: QoS;
-      /*
+      /**
        * No local flag
-       * */
+       */
       nl?: boolean;
-      /*
+      /**
        * Retain as Published flag
-       * */
+       */
       rap?: boolean;
-      /*
+      /**
        * Retain Handling option
-       * */
+       */
       rh?: number;
+      /**
+       *  MQTT 5.0 properties object of subscribe.
+       * @type {object}
+       */
+      properties?: {
+        /**
+         * Representing the identifier of the subscription.
+         * @type {number}
+         */
+        subscriptionIdentifier?: number;
+        /**
+         * The User Property is allowed to appear multiple times to represent multiple name, value pairs.
+         * @type {object}
+         */
+        userProperties?: UserProperties;
+      };
     };
+
+    /**
+     * Question: Should "userProperties" added below be marked for removal?
+     */
+
+    /** */
     userProperties?: Record<string, string | string[]>;
   };
 }

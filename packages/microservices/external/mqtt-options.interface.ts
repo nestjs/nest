@@ -3,6 +3,8 @@
  */
 export declare type QoS = 0 | 1 | 2;
 
+export declare type UserProperties = { [index: string]: string | string[] };
+
 export interface MqttClientOptions extends ISecureClientOptions {
   port?: number; // port is made into a number subsequently
   host?: string; // host does NOT include port
@@ -108,9 +110,7 @@ export interface MqttClientOptions extends ISecureClientOptions {
      * The User Property is allowed to appear multiple times to represent multiple name, value pairs.
      * @type {object}
      */
-    userProperties?: {
-      [x: string]: any;
-    };
+    userProperties?: UserProperties;
     /**
      * The name of the authentication method used for extended authentication.
      * @type {string}
@@ -118,9 +118,9 @@ export interface MqttClientOptions extends ISecureClientOptions {
     authenticationMethod?: string;
     /**
      * Binary Data containing authentication data.
-     * @type {any}
+     * @type {Buffer}
      */
-    authenticationData?: any;
+    authenticationData?: Buffer;
   };
   /**
    * a message that will sent by the broker automatically when the client disconnect badly.
@@ -142,6 +142,49 @@ export interface MqttClientOptions extends ISecureClientOptions {
      * the retain flag
      */
     retain: boolean;
+    /**
+     * MQTT 5.0 properties.
+     * @type {object}
+     */
+    properties?: {
+      /**
+       * Representing the Will Delay Interval in seconds.
+       * @type {number}
+       */
+      willDelayInterval?: number;
+      /**
+       *  Will Message is UTF-8 Encoded Character Data or not.
+       * @type {boolean}
+       */
+      payloadFormatIndicator?: boolean;
+      /**
+       * Value is the lifetime of the Will Message in seconds and is sent as the Publication
+       * Expiry Interval when the Server publishes the Will Message.
+       * @type {number}
+       */
+      messageExpiryInterval?: number;
+      /**
+       * Describing the content of the Will Message.
+       * @type {string}
+       */
+      contentType?: string;
+      /**
+       * String which is used as the Topic Name for a response message.
+       * @type {string}
+       */
+      responseTopic?: string;
+      /**
+       * The Correlation Data is used by the sender of the Request Message to identify
+       * which request the Response Message is for when it is received.
+       * @type {Buffer}
+       */
+      correlationData?: Buffer;
+      /**
+       * The User Property is allowed to appear multiple times to represent multiple name, value pairs.
+       * @type {object}
+       */
+      userProperties?: UserProperties;
+    };
   };
   transformWsUrl?: (url: string, options: any, client: any) => string;
 }
