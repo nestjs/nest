@@ -563,7 +563,7 @@ export interface LogEntry {
 }
 
 export interface LoggerEntryContent {
-  readonly timestamp: Date;
+  readonly timestamp: string;
   readonly message: string;
   [key: string]: any;
 }
