@@ -226,7 +226,7 @@ export class FastifyAdapter<
   public listen(port: string | number, ...args: any[]): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
     const callback = isFirstArgTypeofFunction ? args[0] : args[1];
-    let options: Record<string, any> = {
+    const options: Record<string, any> = {
       port: +port,
     };
     if (!isFirstArgTypeofFunction) {
