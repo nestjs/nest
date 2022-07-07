@@ -34,8 +34,9 @@ async function runBenchmarkOfLib(lib: string): Promise<WrkResults> {
     threads: 8,
     duraton: '10s',
     connections: 1024,
-    url: 'http://localhost:3000',
+    url: 'http://0.0.0.0:3000',
   });
+  console.log(lib);
 
   process.kill();
   return result;
