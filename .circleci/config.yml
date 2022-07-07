@@ -50,9 +50,19 @@ jobs:
           command: npm run build
         
   test_node_12:
-    working_directory: ~/nest
+    <<: *unit-tests-template
     docker:
       - image: circleci/node:12
+
+  test_node_14:
+    <<: *unit-tests-template
+    docker:
+      - image: circleci/node:14
+    
+  test_node_16:
+    working_directory: ~/nest
+    docker:
+      - image: circleci/node:16
     steps:
       - checkout
       - *restore-cache
@@ -65,20 +75,10 @@ jobs:
       - store_artifacts:
           path: coverage
 
-  test_node_14:
-    <<: *unit-tests-template
-    docker:
-      - image: circleci/node:14
-    
-  test_node_16:
-    <<: *unit-tests-template
-    docker:
-      - image: circleci/node:16
-
   lint:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:16
     steps:
       - checkout
       - *restore-cache
@@ -144,7 +144,7 @@ jobs:
   samples:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:16
     environment:
       - DISABLE_OPENCOLLECTIVE: true
     steps:
