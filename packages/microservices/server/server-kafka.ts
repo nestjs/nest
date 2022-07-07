@@ -1,14 +1,17 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil } from '@nestjs/common/utils/shared.utils';
-import { Observable } from 'rxjs';
+import { isObservable, lastValueFrom, Observable, ReplaySubject } from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
   KAFKA_DEFAULT_GROUP,
+  NO_EVENT_HANDLER,
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { KafkaContext } from '../ctx-host';
+import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer';
 import { KafkaHeaders, Transport } from '../enums';
+import { KafkaRetriableException } from '../exceptions';
 import {
   BrokersFunction,
   Consumer,
@@ -26,6 +29,7 @@ import {
   CustomTransportStrategy,
   KafkaOptions,
   OutgoingResponse,
+  ReadPacket,
 } from '../interfaces';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
 import { Server } from './server';
@@ -53,7 +57,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     const consumerOptions =
       this.getOptionsProp(this.options, 'consumer') || ({} as ConsumerConfig);
     const postfixId =
-      this.getOptionsProp(this.options, 'postfixId') || '-server';
+      this.getOptionsProp(this.options, 'postfixId') ?? '-server';
 
     this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
 
@@ -162,6 +166,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       rawMessage,
       payload.partition,
       payload.topic,
+      this.consumer,
     ]);
     const handler = this.getHandlerByPattern(packet.pattern);
     // if the correlation id or reply topic is not set
@@ -186,7 +191,37 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     const response$ = this.transformToObservable(
       await handler(packet.data, kafkaContext),
     );
-    response$ && this.send(response$, publish);
+
+    const replayStream$ = new ReplaySubject();
+    await this.combineStreamsAndThrowIfRetriable(response$, replayStream$);
+
+    this.send(replayStream$, publish);
+  }
+
+  private combineStreamsAndThrowIfRetriable(
+    response$: Observable<any>,
+    replayStream$: ReplaySubject<unknown>,
+  ) {
+    return new Promise<void>((resolve, reject) => {
+      let isPromiseResolved = false;
+      response$.subscribe({
+        next: val => {
+          replayStream$.next(val);
+          if (!isPromiseResolved) {
+            isPromiseResolved = true;
+            resolve();
+          }
+        },
+        error: err => {
+          if (err instanceof KafkaRetriableException && !isPromiseResolved) {
+            isPromiseResolved = true;
+            reject(err);
+          }
+          replayStream$.error(err);
+        },
+        complete: () => replayStream$.complete(),
+      });
+    });
   }
 
   public async sendMessage(
@@ -228,9 +263,12 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     if (!outgoingResponse.err) {
       return;
     }
-    outgoingMessage.headers[KafkaHeaders.NEST_ERR] = Buffer.from(
-      outgoingResponse.err,
-    );
+    const stringifiedError =
+      typeof outgoingResponse.err === 'object'
+        ? JSON.stringify(outgoingResponse.err)
+        : outgoingResponse.err;
+    outgoingMessage.headers[KafkaHeaders.NEST_ERR] =
+      Buffer.from(stringifiedError);
   }
 
   public assignCorrelationIdHeader(
@@ -251,8 +289,27 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     outgoingMessage.partition = parseFloat(replyPartition);
   }
 
+  public async handleEvent(
+    pattern: string,
+    packet: ReadPacket,
+    context: KafkaContext,
+  ): Promise<any> {
+    const handler = this.getHandlerByPattern(pattern);
+    if (!handler) {
+      return this.logger.error(NO_EVENT_HANDLER`${pattern}`);
+    }
+    const resultOrStream = await handler(packet.data, context);
+    if (isObservable(resultOrStream)) {
+      await lastValueFrom(resultOrStream);
+    }
+  }
+
   protected initializeSerializer(options: KafkaOptions['options']) {
     this.serializer =
       (options && options.serializer) || new KafkaRequestSerializer();
+  }
+
+  protected initializeDeserializer(options: KafkaOptions['options']) {
+    this.deserializer = options?.deserializer ?? new KafkaRequestDeserializer();
   }
 }

@@ -11,7 +11,6 @@ export * from './decorators';
 export * from './enums';
 export * from './exceptions';
 export * from './file-stream';
-export * from './http';
 export {
   Abstract,
   ArgumentMetadata,
@@ -49,6 +48,7 @@ export {
   Paramtype,
   PipeTransform,
   Provider,
+  RawBodyRequest,
   RpcExceptionFilter,
   Scope,
   ScopeOptions,
@@ -61,6 +61,7 @@ export {
   WsExceptionFilter,
   WsMessageHandler,
 } from './interfaces';
+export * from './module-utils';
 export * from './pipes';
 export * from './serializer';
 export * from './services';

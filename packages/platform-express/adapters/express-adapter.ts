@@ -4,12 +4,10 @@ import {
   RequestMethod,
   StreamableFile,
   VersioningType,
-} from '@nestjs/common';
-import {
   VersioningOptions,
-  VersionValue,
   VERSION_NEUTRAL,
-} from '@nestjs/common/interfaces';
+} from '@nestjs/common';
+import { VersionValue } from '@nestjs/common/interfaces';
 import {
   CorsOptions,
   CorsOptionsDelegate,
@@ -87,6 +85,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return response.status(statusCode);
   }
 
+  public end(response: any, message?: string) {
+    return response.end(message);
+  }
+
   public render(response: any, view: string, options: any) {
     return response.render(view, options);
   }
@@ -101,6 +103,10 @@ export class ExpressAdapter extends AbstractHttpAdapter {
 
   public setNotFoundHandler(handler: Function, prefix?: string) {
     return this.use(handler);
+  }
+
+  public isHeadersSent(response: any): boolean {
+    return response.headersSent;
   }
 
   public setHeader(response: any, name: string, value: string) {

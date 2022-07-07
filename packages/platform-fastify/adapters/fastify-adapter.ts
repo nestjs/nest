@@ -6,8 +6,9 @@ import {
   StreamableFile,
   VersioningOptions,
   VersioningType,
+  VERSION_NEUTRAL,
 } from '@nestjs/common';
-import { VersionValue, VERSION_NEUTRAL } from '@nestjs/common/interfaces';
+import { VersionValue } from '@nestjs/common/interfaces';
 import {
   CorsOptions,
   CorsOptionsDelegate,
@@ -68,7 +69,11 @@ type FastifyHttpsOptions<
   https: https.ServerOptions;
 };
 
-type VersionedRoute = Function & {
+type VersionedRoute<TRequest, TResponse> = ((
+  req: TRequest,
+  res: TResponse,
+  next: Function,
+) => Function) & {
   version: VersionValue;
   versioningOptions: VersioningOptions;
 };
@@ -218,8 +223,14 @@ export class FastifyAdapter<
     hostname: string,
     callback?: () => void,
   ): void;
-  public listen(port: string | number, ...args: any[]): Promise<string> {
-    return this.instance.listen(port, ...args);
+  public listen(port: string | number, ...args: any[]): void {
+    const isFirstArgTypeofFunction = typeof args[0] === 'function';
+    const callback = isFirstArgTypeofFunction ? args[0] : args[1];
+    const options = {
+      port: +port,
+      host: isFirstArgTypeofFunction ? undefined : args[0],
+    };
+    return this.instance.listen(options, callback);
   }
 
   public get(...args: any[]) {
@@ -254,11 +265,11 @@ export class FastifyAdapter<
     handler: Function,
     version: VersionValue,
     versioningOptions: VersioningOptions,
-  ) {
+  ): VersionedRoute<TRequest, TReply> {
     if (!this.versioningOptions) {
       this.versioningOptions = versioningOptions;
     }
-    const versionedRoute = handler as VersionedRoute;
+    const versionedRoute = handler as VersionedRoute<TRequest, TReply>;
     versionedRoute.version = version;
     return versionedRoute;
   }
@@ -318,6 +329,10 @@ export class FastifyAdapter<
       return response;
     }
     return (response as TReply).code(statusCode);
+  }
+
+  public end(response: TReply, message?: string) {
+    response.raw.end(message);
   }
 
   public render(
@@ -382,8 +397,8 @@ export class FastifyAdapter<
 
   public useStaticAssets(options: FastifyStaticOptions) {
     return this.register(
-      loadPackage('fastify-static', 'FastifyAdapter.useStaticAssets()', () =>
-        require('fastify-static'),
+      loadPackage('@fastify/static', 'FastifyAdapter.useStaticAssets()', () =>
+        require('@fastify/static'),
       ),
       options,
     );
@@ -402,6 +417,10 @@ export class FastifyAdapter<
       ),
       options,
     );
+  }
+
+  public isHeadersSent(response: TReply): boolean {
+    return response.sent;
   }
 
   public setHeader(response: TReply, name: string, value: string) {
@@ -423,14 +442,14 @@ export class FastifyAdapter<
   }
 
   public enableCors(options: CorsOptions | CorsOptionsDelegate<TRequest>) {
-    this.register(import('fastify-cors'), options);
+    this.register(import('@fastify/cors'), options);
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
     if (this._isParserRegistered) {
       return;
     }
-    this.register(import('fastify-formbody'));
+    this.register(import('@fastify/formbody'));
 
     if (rawBody) {
       this.registerContentParserWithRawBody();
@@ -453,7 +472,7 @@ export class FastifyAdapter<
       // Fallback to "(.*)" to support plugins like GraphQL
       normalizedPath = normalizedPath === '/(.*)' ? '(.*)' : normalizedPath;
 
-      // The following type assertion is valid as we use import('middie') rather than require('middie')
+      // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
       // ref https://github.com/fastify/middie/pull/55
       this.instance.use(
         normalizedPath,
@@ -509,7 +528,7 @@ export class FastifyAdapter<
 
   private async registerMiddie() {
     this.isMiddieRegistered = true;
-    await this.register(import('middie'));
+    await this.register(import('@fastify/middie'));
   }
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {

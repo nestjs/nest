@@ -93,8 +93,7 @@ describe('Injector', () => {
       ).to.eventually.be.rejected;
     });
 
-    it('should await done$ when "isPending"', async () => {
-      const value = 'test';
+    it('should await done$ when "isPending"', () => {
       const wrapper = new InstanceWrapper({
         name: 'MainTest',
         metatype: MainTest,
@@ -102,15 +101,29 @@ describe('Injector', () => {
         isResolved: false,
       });
       const host = wrapper.getInstanceByContextId(STATIC_CONTEXT);
-      host.donePromise = Promise.resolve(value) as any;
+      host.donePromise = Promise.resolve();
       host.isPending = true;
 
-      const result = await injector.loadInstance(
-        wrapper,
-        moduleDeps.providers,
-        moduleDeps,
-      );
-      expect(result).to.be.eql(value);
+      expect(
+        injector.loadInstance(wrapper, moduleDeps.providers, moduleDeps),
+      ).to.eventually.not.throw();
+    });
+
+    it('should await done$ when "isPending" and rethrow an exception (if thrown)', () => {
+      const error = new Error('Test error');
+      const wrapper = new InstanceWrapper({
+        name: 'MainTest',
+        metatype: MainTest,
+        instance: Object.create(MainTest.prototype),
+        isResolved: false,
+      });
+      const host = wrapper.getInstanceByContextId(STATIC_CONTEXT);
+      host.donePromise = Promise.resolve(error);
+      host.isPending = true;
+
+      expect(
+        injector.loadInstance(wrapper, moduleDeps.providers, moduleDeps),
+      ).to.eventually.throw(error);
     });
 
     it('should return undefined when metatype is resolved', async () => {

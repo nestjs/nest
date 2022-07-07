@@ -106,9 +106,16 @@ export class Injector {
     inquirer?: InstanceWrapper,
   ) {
     const inquirerId = this.getInquirerId(inquirer);
-    const instanceHost = wrapper.getInstanceByContextId(contextId, inquirerId);
+    const instanceHost = wrapper.getInstanceByContextId(
+      this.getContextId(contextId, wrapper),
+      inquirerId,
+    );
     if (instanceHost.isPending) {
-      return instanceHost.donePromise;
+      return instanceHost.donePromise.then((err?: unknown) => {
+        if (err) {
+          throw err;
+        }
+      });
     }
     const done = this.applyDoneHook(instanceHost);
     const token = wrapper.token || wrapper.name;
@@ -121,34 +128,39 @@ export class Injector {
     if (instanceHost.isResolved) {
       return done();
     }
-    const callback = async (instances: unknown[]) => {
-      const properties = await this.resolveProperties(
+    try {
+      const callback = async (instances: unknown[]) => {
+        const properties = await this.resolveProperties(
+          wrapper,
+          moduleRef,
+          inject as InjectionToken[],
+          contextId,
+          wrapper,
+          inquirer,
+        );
+        const instance = await this.instantiateClass(
+          instances,
+          wrapper,
+          targetWrapper,
+          contextId,
+          inquirer,
+        );
+        this.applyProperties(instance, properties);
+        done();
+      };
+      await this.resolveConstructorParams<T>(
         wrapper,
         moduleRef,
         inject as InjectionToken[],
+        callback,
         contextId,
         wrapper,
         inquirer,
       );
-      const instance = await this.instantiateClass(
-        instances,
-        wrapper,
-        targetWrapper,
-        contextId,
-        inquirer,
-      );
-      this.applyProperties(instance, properties);
-      done();
-    };
-    await this.resolveConstructorParams<T>(
-      wrapper,
-      moduleRef,
-      inject as InjectionToken[],
-      callback,
-      contextId,
-      wrapper,
-      inquirer,
-    );
+    } catch (err) {
+      done(err);
+      throw err;
+    }
   }
 
   public async loadMiddleware(
@@ -222,9 +234,11 @@ export class Injector {
     await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
   }
 
-  public applyDoneHook<T>(wrapper: InstancePerContext<T>): () => void {
-    let done: () => void;
-    wrapper.donePromise = new Promise<void>((resolve, reject) => {
+  public applyDoneHook<T>(
+    wrapper: InstancePerContext<T>,
+  ): (err?: unknown) => void {
+    let done: (err?: unknown) => void;
+    wrapper.donePromise = new Promise<unknown>((resolve, reject) => {
       done = resolve;
     });
     wrapper.isPending = true;
@@ -278,7 +292,7 @@ export class Injector {
           index,
         );
         const instanceHost = paramWrapper.getInstanceByContextId(
-          contextId,
+          this.getContextId(contextId, paramWrapper),
           inquirerId,
         );
         if (!instanceHost.isResolved && !paramWrapper.forwardRef) {
@@ -434,7 +448,7 @@ export class Injector {
   ): Promise<InstanceWrapper> {
     const inquirerId = this.getInquirerId(inquirer);
     const instanceHost = instanceWrapper.getInstanceByContextId(
-      contextId,
+      this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
     if (!instanceHost.isResolved && !instanceWrapper.forwardRef) {
@@ -463,7 +477,7 @@ export class Injector {
     }
     if (instanceWrapper.async) {
       const host = instanceWrapper.getInstanceByContextId(
-        contextId,
+        this.getContextId(contextId, instanceWrapper),
         inquirerId,
       );
       host.instance = await host.instance;
@@ -584,7 +598,7 @@ export class Injector {
 
       const inquirerId = this.getInquirerId(inquirer);
       const instanceHost = instanceWrapperRef.getInstanceByContextId(
-        contextId,
+        this.getContextId(contextId, instanceWrapperRef),
         inquirerId,
       );
       if (!instanceHost.isResolved && !instanceWrapperRef.forwardRef) {
@@ -640,7 +654,7 @@ export class Injector {
           }
           const inquirerId = this.getInquirerId(inquirer);
           const instanceHost = paramWrapper.getInstanceByContextId(
-            contextId,
+            this.getContextId(contextId, paramWrapper),
             inquirerId,
           );
           return instanceHost.instance;
@@ -692,7 +706,7 @@ export class Injector {
     const { metatype, inject } = wrapper;
     const inquirerId = this.getInquirerId(inquirer);
     const instanceHost = targetMetatype.getInstanceByContextId(
-      contextId,
+      this.getContextId(contextId, targetMetatype),
       inquirerId,
     );
     const isInContext =
@@ -732,7 +746,10 @@ export class Injector {
     await this.loadInstance(wrapper, collection, moduleRef, ctx, wrapper);
     await this.loadEnhancersPerContext(wrapper, ctx, wrapper);
 
-    const host = wrapper.getInstanceByContextId(ctx, wrapper.id);
+    const host = wrapper.getInstanceByContextId(
+      this.getContextId(ctx, wrapper),
+      wrapper.id,
+    );
     return host && (host.instance as T);
   }
 
@@ -773,7 +790,11 @@ export class Injector {
     );
     const inquirerId = this.getInquirerId(inquirer);
     return hosts.map(
-      item => item.getInstanceByContextId(contextId, inquirerId).instance,
+      item =>
+        item.getInstanceByContextId(
+          this.getContextId(contextId, item),
+          inquirerId,
+        ).instance,
     );
   }
 
@@ -797,7 +818,10 @@ export class Injector {
     return dependenciesHosts.map(({ key, host }) => ({
       key,
       name: key,
-      instance: host.getInstanceByContextId(contextId, inquirerId).instance,
+      instance: host.getInstanceByContextId(
+        this.getContextId(contextId, host),
+        inquirerId,
+      ).instance,
     }));
   }
 
@@ -898,5 +922,17 @@ export class Injector {
 
   private isDebugMode(): boolean {
     return !!process.env.NEST_DEBUG;
+  }
+
+  private getContextId(
+    contextId: ContextId,
+    instanceWrapper: InstanceWrapper,
+  ): ContextId {
+    return contextId.getParent
+      ? contextId.getParent({
+          token: instanceWrapper.token,
+          isTreeDurable: instanceWrapper.isDependencyTreeDurable(),
+        })
+      : contextId;
   }
 }

@@ -2,15 +2,20 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { Client } from '../decorators/client.decorator';
+import { EventPattern } from '../decorators/event-pattern.decorator';
 import { MessagePattern } from '../decorators/message-pattern.decorator';
 import { Transport } from '../enums/transport.enum';
 import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
 
 describe('ListenerMetadataExplorer', () => {
-  const pattern = { pattern: 'test' };
-  const secPattern = { role: '2', cmd: 'm' };
+  const msgPattern = { pattern: 'testMsg' };
+  const firstMultipleMsgPattern = { pattern: 'testMultipleMsg1' };
+  const secondMultipleMsgPattern = { pattern: 'testMultipleMsg2' };
   const clientMetadata = {};
   const clientSecMetadata = { transport: Transport.REDIS };
+  const evtPattern = { role: 'testEvt' };
+  const firstMultipleEvtPattern = { role: 'testMultipleEvt1' };
+  const secondMultipleEvtPattern = { role: 'testMultipleEvt2' };
 
   class Test {
     @Client(clientMetadata as any)
@@ -25,11 +30,17 @@ describe('ListenerMetadataExplorer', () => {
 
     constructor() {}
 
-    @MessagePattern(pattern)
-    public test() {}
+    @MessagePattern(msgPattern)
+    public testMessage() {}
 
-    @MessagePattern(secPattern)
-    public testSec() {}
+    @MessagePattern([firstMultipleMsgPattern, secondMultipleMsgPattern])
+    public testMultipleMessage() {}
+
+    @EventPattern(evtPattern)
+    public testEvent() {}
+
+    @EventPattern([firstMultipleEvtPattern, secondMultipleEvtPattern])
+    public testMultipleEvent() {}
 
     public noPattern() {}
   }
@@ -66,20 +77,77 @@ describe('ListenerMetadataExplorer', () => {
       );
       expect(metadata).to.eq(undefined);
     });
-    it(`should return pattern properties when "handlerType" metadata is not undefined`, () => {
-      const metadata = instance.exploreMethodMetadata(
-        Object.getPrototypeOf(test),
-        'test',
-      );
-      expect(metadata).to.have.keys([
-        'isEventHandler',
-        'methodKey',
-        'targetCallback',
-        'pattern',
-        'transport',
-        'extras',
-      ]);
-      expect(metadata.pattern).to.eql(pattern);
+
+    describe('@MessagePattern', () => {
+      it(`should return pattern properties when "handlerType" metadata is not undefined`, () => {
+        const metadata = instance.exploreMethodMetadata(
+          Object.getPrototypeOf(test),
+          'testMessage',
+        );
+        expect(metadata).to.have.keys([
+          'isEventHandler',
+          'methodKey',
+          'targetCallback',
+          'patterns',
+          'transport',
+          'extras',
+        ]);
+        expect(metadata.patterns.length).to.eql(1);
+        expect(metadata.patterns[0]).to.eql(msgPattern);
+      });
+      it(`should return multiple patterns when more than one is declared`, () => {
+        const metadata = instance.exploreMethodMetadata(
+          Object.getPrototypeOf(test),
+          'testMultipleMessage',
+        );
+        expect(metadata).to.have.keys([
+          'isEventHandler',
+          'methodKey',
+          'targetCallback',
+          'patterns',
+          'transport',
+          'extras',
+        ]);
+        expect(metadata.patterns.length).to.eql(2);
+        expect(metadata.patterns[0]).to.eql(firstMultipleMsgPattern);
+        expect(metadata.patterns[1]).to.eql(secondMultipleMsgPattern);
+      });
+    });
+
+    describe('@EventPattern', () => {
+      it(`should return pattern properties when "handlerType" metadata is not undefined`, () => {
+        const metadata = instance.exploreMethodMetadata(
+          Object.getPrototypeOf(test),
+          'testEvent',
+        );
+        expect(metadata).to.have.keys([
+          'isEventHandler',
+          'methodKey',
+          'targetCallback',
+          'patterns',
+          'transport',
+          'extras',
+        ]);
+        expect(metadata.patterns.length).to.eql(1);
+        expect(metadata.patterns[0]).to.eql(evtPattern);
+      });
+      it(`should return multiple patterns when more than one is declared`, () => {
+        const metadata = instance.exploreMethodMetadata(
+          Object.getPrototypeOf(test),
+          'testMultipleEvent',
+        );
+        expect(metadata).to.have.keys([
+          'isEventHandler',
+          'methodKey',
+          'targetCallback',
+          'patterns',
+          'transport',
+          'extras',
+        ]);
+        expect(metadata.patterns.length).to.eql(2);
+        expect(metadata.patterns[0]).to.eql(firstMultipleEvtPattern);
+        expect(metadata.patterns[1]).to.eql(secondMultipleEvtPattern);
+      });
     });
   });
   describe('scanForClientHooks', () => {

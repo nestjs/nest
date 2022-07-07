@@ -30,7 +30,7 @@ describe('Module', () => {
     const setSpy = sinon.spy(collection, 'set');
     (module as any)._controllers = collection;
 
-    @Controller({ scope: Scope.REQUEST })
+    @Controller({ scope: Scope.REQUEST, durable: true })
     class Test {}
 
     module.addController(Test);
@@ -43,6 +43,7 @@ describe('Module', () => {
           name: 'Test',
           scope: Scope.REQUEST,
           metatype: Test,
+          durable: true,
           instance: null,
           isResolved: false,
         }),
@@ -66,6 +67,7 @@ describe('Module', () => {
           scope: undefined,
           metatype: TestProvider,
           instance: null,
+          durable: undefined,
           isResolved: false,
         }),
       ),
@@ -96,6 +98,7 @@ describe('Module', () => {
           token: TestProvider,
           scope: undefined,
           metatype: TestProvider,
+          durable: undefined,
           instance: null,
           isResolved: false,
         }),
@@ -155,7 +158,7 @@ describe('Module', () => {
 
   describe('addCustomClass', () => {
     const type = { name: 'TypeTest' };
-    const provider = { provide: type, useClass: type };
+    const provider = { provide: type, useClass: type, durable: true };
     let setSpy;
 
     beforeEach(() => {
@@ -174,6 +177,7 @@ describe('Module', () => {
             name: provider.provide.name,
             scope: undefined,
             metatype: type as any,
+            durable: true,
             instance: null,
             isResolved: false,
           }),
@@ -216,7 +220,7 @@ describe('Module', () => {
   describe('addCustomFactory', () => {
     const type = { name: 'TypeTest' };
     const inject = [1, 2, 3];
-    const provider = { provide: type, useFactory: type, inject };
+    const provider = { provide: type, useFactory: type, inject, durable: true };
 
     let setSpy;
     beforeEach(() => {
@@ -236,6 +240,7 @@ describe('Module', () => {
             name: provider.provide.name,
             scope: undefined,
             metatype: type as any,
+            durable: true,
             instance: null,
             isResolved: false,
             inject: inject as any,

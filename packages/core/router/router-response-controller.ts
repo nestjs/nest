@@ -5,9 +5,9 @@ import {
   RequestMethod,
   MessageEvent,
 } from '@nestjs/common';
-import { isFunction, isObject } from '@nestjs/common/utils/shared.utils';
+import { isObject } from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage } from 'http';
-import { EMPTY, lastValueFrom, Observable } from 'rxjs';
+import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
 import { catchError, debounce, map } from 'rxjs/operators';
 import {
   AdditionalHeaders,
@@ -64,7 +64,7 @@ export class RouterResponseController {
   }
 
   public async transformToResult(resultOrDeferred: any) {
-    if (resultOrDeferred && isFunction(resultOrDeferred.subscribe)) {
+    if (isObservable(resultOrDeferred)) {
       return lastValueFrom(resultOrDeferred);
     }
     return resultOrDeferred;
@@ -152,8 +152,8 @@ export class RouterResponseController {
     });
   }
 
-  private assertObservable(result: any) {
-    if (!isFunction(result.subscribe)) {
+  private assertObservable(value: any) {
+    if (!isObservable(value)) {
       throw new ReferenceError(
         'You must return an Observable stream to use Server-Sent Events (SSE).',
       );

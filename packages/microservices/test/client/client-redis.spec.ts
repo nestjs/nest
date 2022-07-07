@@ -1,9 +1,7 @@
 import { expect } from 'chai';
-import { Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientRedis } from '../../client/client-redis';
 import { ERROR_EVENT } from '../../constants';
-import { Client } from '../../external/nats-client.interface';
 
 describe('ClientRedis', () => {
   const test = 'test';
@@ -252,53 +250,39 @@ describe('ClientRedis', () => {
     });
   });
   describe('getClientOptions', () => {
-    it('should return options object with "retry_strategy" and call "createRetryStrategy"', () => {
+    it('should return options object with "retryStrategy" and call "createRetryStrategy"', () => {
       const createSpy = sinon.spy(client, 'createRetryStrategy');
-      const { retry_strategy } = client.getClientOptions(new Subject());
+      const { retryStrategy } = client.getClientOptions();
       try {
-        retry_strategy({} as any);
+        retryStrategy({} as any);
       } catch {}
       expect(createSpy.called).to.be.true;
     });
   });
   describe('createRetryStrategy', () => {
-    const subject = new Subject<Error>();
     describe('when is terminated', () => {
       it('should return undefined', () => {
         (client as any).isExplicitlyTerminated = true;
-        const result = client.createRetryStrategy({} as any, subject);
+        const result = client.createRetryStrategy(0);
         expect(result).to.be.undefined;
       });
     });
     describe('when "retryAttempts" does not exist', () => {
-      it('should return an error', () => {
+      it('should return undefined', () => {
         (client as any).isExplicitlyTerminated = false;
         (client as any).options.options = {};
         (client as any).options.options.retryAttempts = undefined;
-        const result = client.createRetryStrategy({} as any, subject);
-        expect(result).to.be.instanceOf(Error);
+        const result = client.createRetryStrategy(1);
+        expect(result).to.be.undefined;
       });
     });
     describe('when "attempts" count is max', () => {
-      it('should return an error', () => {
+      it('should return undefined', () => {
         (client as any).isExplicitlyTerminated = false;
         (client as any).options.options = {};
         (client as any).options.options.retryAttempts = 3;
-        const result = client.createRetryStrategy(
-          { attempt: 4 } as any,
-          subject,
-        );
-        expect(result).to.be.instanceOf(Error);
-      });
-    });
-    describe('when ECONNREFUSED', () => {
-      it('should return error', () => {
-        (client as any).options.options = {};
-        (client as any).options.options.retryAttempts = 10;
-
-        const error = { code: 'ECONNREFUSED' };
-        const result = client.createRetryStrategy({ error } as any, subject);
-        expect(result).to.be.instanceOf(Error);
+        const result = client.createRetryStrategy(4);
+        expect(result).to.be.undefined;
       });
     });
     describe('otherwise', () => {
@@ -307,10 +291,7 @@ describe('ClientRedis', () => {
         (client as any).isExplicitlyTerminated = false;
         (client as any).options.retryAttempts = 3;
         (client as any).options.retryDelay = 3;
-        const result = client.createRetryStrategy(
-          { attempt: 2 } as any,
-          subject,
-        );
+        const result = client.createRetryStrategy(2);
         expect(result).to.be.eql((client as any).options.retryDelay);
       });
     });

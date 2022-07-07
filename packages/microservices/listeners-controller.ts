@@ -71,8 +71,21 @@ export class ListenersController {
           isUndefined(server.transportId) ||
           transport === server.transportId,
       )
+      .reduce((acc, handler) => {
+        // Optional chaining for backward-compatibility
+        handler.patterns?.forEach(pattern =>
+          acc.push({ ...handler, patterns: [pattern] }),
+        );
+        return acc;
+      }, [])
       .forEach(
-        ({ pattern, targetCallback, methodKey, extras, isEventHandler }) => {
+        ({
+          patterns: [pattern],
+          targetCallback,
+          methodKey,
+          extras,
+          isEventHandler,
+        }) => {
           if (isStatic) {
             const proxy = this.contextCreator.create(
               instance as object,

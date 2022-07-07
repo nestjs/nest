@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "8.4.4",
+  "version": "9.0.0-next.1",
   "description": "Modern, fast, powerful node.js web framework",
   "homepage": "https://nestjs.com",
   "repository": {
@@ -53,7 +53,6 @@
   },
   "dependencies": {
     "@nuxtjs/opencollective": "0.3.2",
-    "axios": "0.27.2",
     "class-transformer": "0.5.1",
     "class-validator": "0.13.2",
     "cli-color": "2.0.2",
@@ -75,6 +74,11 @@
     "@codechecks/client": "0.1.12",
     "@commitlint/cli": "17.0.3",
     "@commitlint/config-angular": "17.0.0",
+    "@fastify/cors": "^8.0.0",
+    "@fastify/formbody": "7.0.1",
+    "@fastify/middie": "8.0.0",
+    "@fastify/multipart": "6.0.0",
+    "@fastify/static": "5.0.0",
     "@grpc/grpc-js": "1.6.7",
     "@grpc/proto-loader": "0.6.13",
     "@nestjs/apollo": "10.0.16",
@@ -123,11 +127,7 @@
     "eslint-plugin-import": "2.26.0",
     "eventsource": "2.0.2",
     "fancy-log": "2.0.0",
-    "fastify": "3.29.0",
-    "fastify-cors": "6.1.0",
-    "fastify-formbody": "5.3.0",
-    "fastify-multipart": "5.4.0",
-    "fastify-static": "4.7.0",
+    "fastify": "4.0.2",
     "graphql": "15.8.0",
     "graphql-tools": "8.2.13",
     "gulp": "4.0.2",
@@ -139,6 +139,7 @@
     "http-errors": "2.0.0",
     "husky": "8.0.1",
     "imports-loader": "4.0.0",
+    "ioredis": "5.0.4",
     "json-loader": "0.5.7",
     "kafkajs": "2.0.2",
     "lerna": "2.11.0",
@@ -148,7 +149,7 @@
     "markdown-table": "2.0.0",
     "merge-graphql-schemas": "1.7.8",
     "middie": "6.1.0",
-    "mocha": "9.2.2",
+    "mocha": "10.0.0",
     "mongoose": "6.4.0",
     "mqtt": "4.3.7",
     "multer": "1.4.4",
@@ -173,7 +174,7 @@
     "ws": "8.8.0"
   },
   "engines": {
-    "node": ">= 10.13.0"
+    "node": ">= 12.9.0"
   },
   "collective": {
     "type": "opencollective",

@@ -50,8 +50,10 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   listen(port: number | string, hostname: string, callback?: () => void): any;
   reply(response: any, body: any, statusCode?: number): any;
   status(response: any, statusCode: number): any;
+  end(response: any, message?: string): any;
   render(response: any, view: string, options: any): any;
   redirect(response: any, statusCode: number, url: string): any;
+  isHeadersSent(response: any): boolean;
   setHeader(response: any, name: string, value: string): any;
   setErrorHandler?(handler: Function, prefix?: string): any;
   setNotFoundHandler?(handler: Function, prefix?: string): any;
@@ -74,13 +76,9 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   close(): any;
   getType(): string;
   init?(): Promise<void>;
-  applyVersionFilter?(
+  applyVersionFilter(
     handler: Function,
     version: VersionValue,
     versioningOptions: VersioningOptions,
-  ): <TRequest extends Record<string, any> = any, TResponse = any>(
-    req: TRequest,
-    res: TResponse,
-    next: () => void,
-  ) => any;
+  ): (req: TRequest, res: TResponse, next: () => void) => Function;
 }

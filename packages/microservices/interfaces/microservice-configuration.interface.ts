@@ -10,7 +10,7 @@ import {
   ProducerRecord,
 } from '../external/kafka.interface';
 import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
-import { ClientOpts } from '../external/redis.interface';
+import { IORedisOptions } from '../external/redis.interface';
 import { RmqUrl } from '../external/rmq-url.interface';
 import { TcpSocket } from '../helpers';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
@@ -35,9 +35,6 @@ export interface CustomStrategy {
 export interface GrpcOptions {
   transport?: Transport.GRPC;
   options: {
-    interceptors?: Array<
-      (options: any, nextCall: (options: any) => any) => any
-    >;
     url?: string;
     maxSendMessageLength?: number;
     maxReceiveMessageLength?: number;
@@ -94,7 +91,7 @@ export interface RedisOptions {
     retryDelay?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
-  } & ClientOpts;
+  } & IORedisOptions;
 }
 
 export interface MqttOptions {
@@ -194,6 +191,9 @@ export interface KafkaParserConfig {
 export interface KafkaOptions {
   transport?: Transport.KAFKA;
   options?: {
+    /**
+     * Defaults to `"-server"` on server side and `"-client"` on client side.
+     */
     postfixId?: string;
     client?: KafkaConfig;
     consumer?: ConsumerConfig;

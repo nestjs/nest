@@ -136,13 +136,6 @@ export class NestMicroservice
     });
   }
 
-  public async listenAsync(): Promise<any> {
-    this.logger.warn(
-      'DEPRECATED! "listenAsync" method is deprecated and will be removed in the next major release. Please, use "listen" instead.',
-    );
-    return this.listen();
-  }
-
   public async close(): Promise<any> {
     await this.server.close();
     if (this.isTerminated) {

@@ -1,11 +1,11 @@
 import { Module } from '../decorators';
-import { DynamicModule, Provider } from '../interfaces';
-import { CACHE_MANAGER, CACHE_MODULE_OPTIONS } from './cache.constants';
+import { DynamicModule } from '../interfaces';
+import { CACHE_MANAGER } from './cache.constants';
+import { ConfigurableModuleClass } from './cache.module-definition';
 import { createCacheManager } from './cache.providers';
 import {
   CacheModuleAsyncOptions,
   CacheModuleOptions,
-  CacheOptionsFactory,
 } from './interfaces/cache-module.interface';
 
 /**
@@ -19,7 +19,7 @@ import {
   providers: [createCacheManager()],
   exports: [CACHE_MANAGER],
 })
-export class CacheModule {
+export class CacheModule extends ConfigurableModuleClass {
   /**
    * Configure the cache manager statically.
    *
@@ -31,9 +31,8 @@ export class CacheModule {
     options: CacheModuleOptions<StoreConfig> = {} as any,
   ): DynamicModule {
     return {
-      module: CacheModule,
       global: options.isGlobal,
-      providers: [{ provide: CACHE_MODULE_OPTIONS, useValue: options }],
+      ...super.register(options),
     };
   }
 
@@ -48,47 +47,11 @@ export class CacheModule {
   static registerAsync<
     StoreConfig extends Record<any, any> = Record<string, any>,
   >(options: CacheModuleAsyncOptions<StoreConfig>): DynamicModule {
+    const moduleDefinition = super.registerAsync(options);
     return {
-      module: CacheModule,
       global: options.isGlobal,
-      imports: options.imports,
-      providers: [
-        ...this.createAsyncProviders<StoreConfig>(options),
-        ...(options.extraProviders || []),
-      ],
-    };
-  }
-
-  private static createAsyncProviders<StoreConfig extends Record<any, any>>(
-    options: CacheModuleAsyncOptions<StoreConfig>,
-  ): Provider[] {
-    if (options.useExisting || options.useFactory) {
-      return [this.createAsyncOptionsProvider(options)];
-    }
-    return [
-      this.createAsyncOptionsProvider(options),
-      {
-        provide: options.useClass,
-        useClass: options.useClass,
-      },
-    ];
-  }
-
-  private static createAsyncOptionsProvider<
-    StoreConfig extends Record<any, any>,
-  >(options: CacheModuleAsyncOptions<StoreConfig>): Provider {
-    if (options.useFactory) {
-      return {
-        provide: CACHE_MODULE_OPTIONS,
-        useFactory: options.useFactory,
-        inject: options.inject || [],
-      };
-    }
-    return {
-      provide: CACHE_MODULE_OPTIONS,
-      useFactory: async (optionsFactory: CacheOptionsFactory<StoreConfig>) =>
-        optionsFactory.createCacheOptions(),
-      inject: [options.useExisting || options.useClass],
+      ...moduleDefinition,
+      providers: moduleDefinition.providers.concat(options.extraProviders),
     };
   }
 }

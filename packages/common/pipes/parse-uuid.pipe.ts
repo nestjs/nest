@@ -9,7 +9,7 @@ import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
-import { isUUID } from '../utils/is-uuid';
+import { isString } from '../utils/shared.utils';
 
 export interface ParseUUIDPipeOptions {
   version?: '3' | '4' | '5';
@@ -19,6 +19,12 @@ export interface ParseUUIDPipeOptions {
 
 @Injectable()
 export class ParseUUIDPipe implements PipeTransform<string> {
+  protected static uuidRegExps = {
+    3: /^[0-9A-F]{8}-[0-9A-F]{4}-3[0-9A-F]{3}-[0-9A-F]{4}-[0-9A-F]{12}$/i,
+    4: /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
+    5: /^[0-9A-F]{8}-[0-9A-F]{4}-5[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
+    all: /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i,
+  };
   private readonly version: '3' | '4' | '5';
   protected exceptionFactory: (errors: string) => any;
 
@@ -35,14 +41,23 @@ export class ParseUUIDPipe implements PipeTransform<string> {
       exceptionFactory ||
       (error => new HttpErrorByCode[errorHttpStatusCode](error));
   }
+
   async transform(value: string, metadata: ArgumentMetadata): Promise<string> {
-    if (!isUUID(value, this.version)) {
+    if (!this.isUUID(value, this.version)) {
       throw this.exceptionFactory(
-        `Validation failed (uuid ${
-          this.version ? 'v' + this.version : ''
+        `Validation failed (uuid${
+          this.version ? ` v ${this.version}` : ''
         } is expected)`,
       );
     }
     return value;
+  }
+
+  protected isUUID(str: unknown, version = 'all') {
+    if (!isString(str)) {
+      throw this.exceptionFactory('The value passed as UUID is not a string');
+    }
+    const pattern = ParseUUIDPipe.uuidRegExps[version];
+    return pattern?.test(str);
   }
 }

@@ -65,11 +65,6 @@ jobs:
       - store_artifacts:
           path: coverage
 
-  test_node_10:
-    <<: *unit-tests-template
-    docker:
-      - image: circleci/node:10
-
   test_node_14:
     <<: *unit-tests-template
     docker:
@@ -172,9 +167,6 @@ workflows:
           requires:
             - build
       - test_node_12:
-          requires:
-            - build
-      - test_node_10:
           requires:
             - build
       - lint:

@@ -74,8 +74,8 @@ describe('ListenersController', () => {
 
   describe('registerPatternHandlers', () => {
     const handlers = [
-      { pattern: 'test', targetCallback: 'tt' },
-      { pattern: 'test2', targetCallback: '2', isEventHandler: true },
+      { patterns: ['test'], targetCallback: 'tt' },
+      { patterns: ['test2'], targetCallback: '2', isEventHandler: true },
     ];
 
     beforeEach(() => {
@@ -89,7 +89,7 @@ describe('ListenersController', () => {
     it(`should call "addHandler" method of server for each pattern handler with same transport`, () => {
       const serverHandlers = [
         {
-          pattern: { cmd: 'test' },
+          patterns: [{ cmd: 'test' }],
           targetCallback: 'tt',
           transport: Transport.TCP,
         },
@@ -101,8 +101,12 @@ describe('ListenersController', () => {
     });
     it(`should call "addHandler" method of server without transportID for each pattern handler with any transport value`, () => {
       const serverHandlers = [
-        { pattern: { cmd: 'test' }, targetCallback: 'tt' },
-        { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
+        { patterns: [{ cmd: 'test' }], targetCallback: 'tt' },
+        {
+          patterns: ['test2'],
+          targetCallback: '2',
+          transport: Transport.KAFKA,
+        },
       ];
       explorer.expects('explore').returns(serverHandlers);
       instance.registerPatternHandlers(new InstanceWrapper(), server, '');
@@ -110,10 +114,14 @@ describe('ListenersController', () => {
     });
     it(`should call "addHandler" method of server with transportID for each pattern handler with self transport and without transport`, () => {
       const serverHandlers = [
-        { pattern: 'test', targetCallback: 'tt' },
-        { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
+        { patterns: ['test'], targetCallback: 'tt' },
         {
-          pattern: { cmd: 'test3' },
+          patterns: ['test2'],
+          targetCallback: '2',
+          transport: Transport.KAFKA,
+        },
+        {
+          patterns: [{ cmd: 'test3' }],
           targetCallback: '3',
           transport: Transport.TCP,
         },
@@ -130,11 +138,15 @@ describe('ListenersController', () => {
     it(`should call "addHandler" method of server with custom transportID for pattern handler with the same custom token`, () => {
       const serverHandlers = [
         {
-          pattern: { cmd: 'test' },
+          patterns: [{ cmd: 'test' }],
           targetCallback: 'tt',
           transport: customTransport,
         },
-        { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
+        {
+          patterns: ['test2'],
+          targetCallback: '2',
+          transport: Transport.KAFKA,
+        },
       ];
 
       explorer.expects('explore').returns(serverHandlers);
@@ -143,7 +155,11 @@ describe('ListenersController', () => {
     });
     it(`should call "addHandler" method of server with extras data`, () => {
       const serverHandlers = [
-        { pattern: 'test', targetCallback: 'tt', extras: { param: 'value' } },
+        {
+          patterns: ['test'],
+          targetCallback: 'tt',
+          extras: { param: 'value' },
+        },
       ];
       explorer.expects('explore').returns(serverHandlers);
       instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
@@ -193,7 +209,7 @@ describe('ListenersController', () => {
       const module = {
         controllers: new Map(),
       } as any;
-      const pattern = {};
+      const patterns = [{}];
       const wrapper = new InstanceWrapper({ instance: { [methodKey]: {} } });
 
       it('should pass all arguments to the proxy chain', async () => {
@@ -202,7 +218,7 @@ describe('ListenersController', () => {
           .callsFake(() => Promise.resolve({}));
         const handler = instance.createRequestScopedHandler(
           wrapper,
-          pattern,
+          patterns,
           module,
           moduleKey,
           methodKey,
@@ -221,7 +237,7 @@ describe('ListenersController', () => {
       const module = {
         controllers: new Map(),
       } as any;
-      const pattern = {};
+      const patterns = [{}];
       const wrapper = new InstanceWrapper({ instance: { [methodKey]: {} } });
 
       it('should delegete error to exception filters', async () => {
@@ -230,7 +246,7 @@ describe('ListenersController', () => {
         });
         const handler = instance.createRequestScopedHandler(
           wrapper,
-          pattern,
+          patterns,
           module,
           moduleKey,
           methodKey,

@@ -1,4 +1,4 @@
-import { ContextId } from '../injector/instance-wrapper';
+import { ContextId, HostComponentInfo } from '../injector/instance-wrapper';
 import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
 
 export function createContextId(): ContextId {
@@ -13,7 +13,23 @@ export function createContextId(): ContextId {
   return { id: Math.random() };
 }
 
+export interface ContextIdStrategy<T = any> {
+  /**
+   * Allows to attach a parent context id to the existing child context id.
+   * This lets you construct durable DI sub-trees that can be shared between contexts.
+   * @param contextId auto-generated child context id
+   * @param request request object
+   * @returns a context id resolver function
+   */
+  attach(
+    contextId: ContextId,
+    request: T,
+  ): ((info: HostComponentInfo) => ContextId) | undefined;
+}
+
 export class ContextIdFactory {
+  private static strategy?: ContextIdStrategy;
+
   /**
    * Generates a context identifier based on the request object.
    */
@@ -40,6 +56,20 @@ export class ContextIdFactory {
         return request[key][REQUEST_CONTEXT_ID];
       }
     }
-    return ContextIdFactory.create();
+    if (!this.strategy) {
+      return ContextIdFactory.create();
+    }
+    const contextId = createContextId();
+    contextId.getParent = this.strategy.attach(contextId, request);
+    return contextId;
+  }
+
+  /**
+   * Registers a custom context id strategy that lets you attach
+   * a parent context id to the existing context id object.
+   * @param strategy strategy instance
+   */
+  public static apply(strategy: ContextIdStrategy) {
+    this.strategy = strategy;
   }
 }

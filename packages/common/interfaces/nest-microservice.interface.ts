@@ -19,14 +19,6 @@ export interface INestMicroservice extends INestApplicationContext {
   listen(): Promise<any>;
 
   /**
-   * Starts the microservice (can be awaited).
-   * @deprecated use "listen" instead.
-   *
-   * @returns {Promise}
-   */
-  listenAsync(): Promise<any>;
-
-  /**
    * Register Ws Adapter which will be used inside Gateways.
    * Use when you want to override default `socket.io` library.
    *

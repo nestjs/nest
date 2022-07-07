@@ -1,5 +1,5 @@
-import { HttpServer, RequestMethod } from '@nestjs/common';
-import { RequestHandler } from '@nestjs/common/interfaces';
+import { HttpServer, RequestMethod, VersioningOptions } from '@nestjs/common';
+import { RequestHandler, VersionValue } from '@nestjs/common/interfaces';
 import {
   CorsOptions,
   CorsOptionsDelegate,
@@ -105,10 +105,12 @@ export abstract class AbstractHttpAdapter<
   abstract getRequestUrl(request);
   abstract status(response, statusCode: number);
   abstract reply(response, body: any, statusCode?: number);
+  abstract end(response, message?: string);
   abstract render(response, view: string, options: any);
   abstract redirect(response, statusCode: number, url: string);
   abstract setErrorHandler(handler: Function, prefix?: string);
   abstract setNotFoundHandler(handler: Function, prefix?: string);
+  abstract isHeadersSent(response);
   abstract setHeader(response, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string, rawBody?: boolean);
   abstract enableCors(
@@ -121,4 +123,9 @@ export abstract class AbstractHttpAdapter<
     | ((path: string, callback: Function) => any)
     | Promise<(path: string, callback: Function) => any>;
   abstract getType(): string;
+  abstract applyVersionFilter(
+    handler: Function,
+    version: VersionValue,
+    versioningOptions: VersioningOptions,
+  ): (req: TRequest, res: TResponse, next: () => void) => Function;
 }

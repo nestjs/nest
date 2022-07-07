@@ -18,5 +18,6 @@ export * from './middleware';
 export * from './nest-application';
 export * from './nest-application-context';
 export { NestFactory } from './nest-factory';
+export * from './repl';
 export * from './router';
 export * from './services';

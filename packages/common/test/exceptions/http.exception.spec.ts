@@ -129,4 +129,15 @@ describe('HttpException', () => {
       });
     });
   });
+
+  describe('initCause', () => {
+    it('configures a cause when message is an instance of error', () => {
+      const message = new Error('Some Error');
+      const error = new HttpException(message, 400);
+      expect(`${error}`).to.be.eql(`HttpException: ${message.message}`);
+      const { cause } = error;
+
+      expect(cause).to.be.eql(message);
+    });
+  });
 });
