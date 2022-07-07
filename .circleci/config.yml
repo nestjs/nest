@@ -128,7 +128,7 @@ jobs:
   codechecks_benchmarks:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:16
     steps:
       - checkout
       - *restore-cache
