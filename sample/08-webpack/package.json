@@ -8,6 +8,7 @@
     "build:dev": "nest build --watch --webpack --webpackPath webpack-hmr.config.js",
     "start": "node dist/main",
     "lint": "eslint '{src,apps,libs,test}/**/*.ts' --fix",
+    "test": "echo 'No tests implemented yet.'",
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
