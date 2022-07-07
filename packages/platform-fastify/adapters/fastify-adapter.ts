@@ -226,10 +226,12 @@ export class FastifyAdapter<
   public listen(port: string | number, ...args: any[]): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
     const callback = isFirstArgTypeofFunction ? args[0] : args[1];
-    const options = {
+    let options: Record<string, any> = {
       port: +port,
-      host: isFirstArgTypeofFunction ? undefined : args[0],
     };
+    if (!isFirstArgTypeofFunction) {
+      options.host = args[0];
+    }
     return this.instance.listen(options, callback);
   }
 
