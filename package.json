@@ -98,7 +98,7 @@
     "@types/node": "18.0.0",
     "@types/redis": "4.0.11",
     "@types/reflect-metadata": "0.1.0",
-    "@types/sinon": "10.0.11",
+    "@types/sinon": "10.0.12",
     "@types/supertest": "2.0.12",
     "@types/ws": "8.5.3",
     "@typescript-eslint/eslint-plugin": "4.33.0",
