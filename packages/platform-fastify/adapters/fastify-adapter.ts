@@ -444,14 +444,19 @@ export class FastifyAdapter<
   }
 
   public enableCors(options: CorsOptions | CorsOptionsDelegate<TRequest>) {
-    this.register(import('@fastify/cors'), options);
+    this.register(
+      import('@fastify/cors') as Parameters<TInstance['register']>[0],
+      options,
+    );
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
     if (this._isParserRegistered) {
       return;
     }
-    this.register(import('@fastify/formbody'));
+    this.register(
+      import('@fastify/formbody') as Parameters<TInstance['register']>[0],
+    );
 
     if (rawBody) {
       this.registerContentParserWithRawBody();
@@ -530,7 +535,9 @@ export class FastifyAdapter<
 
   private async registerMiddie() {
     this.isMiddieRegistered = true;
-    await this.register(import('@fastify/middie'));
+    await this.register(
+      import('@fastify/middie') as Parameters<TInstance['register']>[0],
+    );
   }
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {
