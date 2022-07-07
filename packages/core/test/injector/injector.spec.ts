@@ -608,7 +608,7 @@ describe('Injector', () => {
       });
     });
 
-    describe('when instanceWraper has async property', () => {
+    describe('when instanceWrapper has async property', () => {
       it('should await instance', async () => {
         sinon.stub(injector, 'loadProvider').callsFake(() => null);
 

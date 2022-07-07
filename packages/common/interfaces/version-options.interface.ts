@@ -18,7 +18,7 @@ export type VersionValue =
 export interface VersionOptions {
   /**
    * Specifies an optional API Version. When configured, methods
-   * withing the controller will only be routed if the request version
+   * within the controller will only be routed if the request version
    * matches the specified value.
    *
    * Supported only by HTTP-based applications (does not apply to non-HTTP microservices).
