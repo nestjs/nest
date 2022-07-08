@@ -17,13 +17,13 @@
     "tslib": "2.4.0"
   },
   "devDependencies": {
-    "@nestjs/common": "8.4.7",
-    "@nestjs/core": "8.4.7"
+    "@nestjs/common": "9.0.0",
+    "@nestjs/core": "9.0.0"
   },
   "peerDependencies": {
-    "@nestjs/common": "^8.0.0",
-    "@nestjs/core": "^8.0.0",
-    "@nestjs/platform-socket.io": "^8.0.0",
+    "@nestjs/common": "^9.0.0",
+    "@nestjs/core": "^9.0.0",
+    "@nestjs/platform-socket.io": "^9.0.0",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^7.1.0"
   },

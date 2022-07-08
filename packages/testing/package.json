@@ -20,10 +20,10 @@
     "tslib": "2.4.0"
   },
   "peerDependencies": {
-    "@nestjs/common": "^8.0.0",
-    "@nestjs/core": "^8.0.0",
-    "@nestjs/microservices": "^8.0.0",
-    "@nestjs/platform-express": "^8.0.0"
+    "@nestjs/common": "^9.0.0",
+    "@nestjs/core": "^9.0.0",
+    "@nestjs/microservices": "^9.0.0",
+    "@nestjs/platform-express": "^9.0.0"
   },
   "peerDependenciesMeta": {
     "@nestjs/microservices": {

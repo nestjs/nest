@@ -21,8 +21,8 @@
     "tslib": "2.4.0"
   },
   "peerDependencies": {
-    "@nestjs/common": "^8.0.0",
-    "@nestjs/websockets": "^8.0.0",
+    "@nestjs/common": "^9.0.0",
+    "@nestjs/websockets": "^9.0.0",
     "rxjs": "^7.1.0"
   }
 }
