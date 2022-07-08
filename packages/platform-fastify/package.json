@@ -26,7 +26,7 @@
     "tslib": "2.4.0"
   },
   "peerDependencies": {
-    "@fastify/static": "^5.0.0",
+    "@fastify/static": "^6.0.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/core": "^9.0.0",
     "point-of-view": "^5.0.0"
