@@ -51,7 +51,7 @@ export interface GatewayMetadata {
   upgradeTimeout?: number;
   /**
    * How many bytes or characters a message can be, before closing the session (to avoid DoS).
-   * @default 1e5 (100 KB)
+   * @default 1e6 (1 MB)
    */
   maxHttpBufferSize?: number;
   /**
