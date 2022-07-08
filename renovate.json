@@ -1,7 +1,5 @@
 {
-  "extends": [
-    "config:base"
-  ],
+  "extends": ["config:base"],
   "labels": ["dependencies"],
   "packageRules": [
     {
