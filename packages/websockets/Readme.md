@@ -128,6 +128,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
      <td align="center" valign="middle"><a href="https://polygon-software.ch/" target="_blank"><img src="https://nestjs.com/img/polygon-logo.svg" width="120" valign="middle" /></a></td>
    <td align="center" valign="middle"><a href="https://mobilereality.pl/" target="_blank"><img src="https://nestjs.com/img/mobile-reality-logo.png" width="45" valign="middle" /></a></td>
      <td align="center" valign="middle"><a href="https://boringowl.io/" target="_blank"><img src="https://nestjs.com/img/boringowl-logo.svg" width="120" valign="middle" /></a></td>
+ <td align="center" valign="middle"><a href="https://www.mobilefactory.jp/" target="_blank"><img src="https://nestjs.com/img/mobilefactory-logo.png" width="100" valign="middle" /></a></td>
+ <td align="center" valign="middle"><a href="https://db.nordbot.app/" target="_blank"><img src="https://nestjs.com/img/nord-logo.png" width="50" valign="middle" /></a></td>
   </tr></table>
 
 ## Backers
