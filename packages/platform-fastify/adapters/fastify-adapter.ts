@@ -414,8 +414,8 @@ export class FastifyAdapter<
       process.exit(1);
     }
     return this.register(
-      loadPackage('point-of-view', 'FastifyAdapter.setViewEngine()', () =>
-        require('point-of-view'),
+      loadPackage('@fastify/view', 'FastifyAdapter.setViewEngine()', () =>
+        require('@fastify/view'),
       ),
       options,
     );
