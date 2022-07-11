@@ -462,5 +462,25 @@ describe('InstanceWrapper', () => {
         expect(wrapper.metatype).to.be.eql(TestClass);
       });
     });
+
+    describe('when provider is a FactoryProvider', () => {
+      describe('and it has injected dependencies', () => {
+        it('should alter the instance wrapper metatype and inject attributes with the given values', () => {
+          const wrapper = new InstanceWrapper();
+
+          const factory = (_dependency1, _dependency2) => {};
+          const injectedDependencies = ['dependency1', 'dependency2'];
+
+          wrapper.mergeWith({
+            provide: 'token',
+            useFactory: factory,
+            inject: injectedDependencies,
+          });
+
+          expect(wrapper.metatype).to.be.eql(factory);
+          expect(wrapper.inject).to.be.eq(injectedDependencies);
+        });
+      });
+    });
   });
 });
