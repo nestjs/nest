@@ -434,4 +434,20 @@ describe('InstanceWrapper', () => {
       });
     });
   });
+
+  describe('mergeWith', () => {
+    describe('when provider is a ValueProvider', () => {
+      it('should provide the given value in the STATIC_CONTEXT', () => {
+        const wrapper = new InstanceWrapper();
+        wrapper.mergeWith({
+          useValue: 'value',
+          provide: 'token',
+        });
+
+        expect(
+          wrapper.getInstanceByContextId(STATIC_CONTEXT).instance,
+        ).to.be.equal('value');
+      });
+    });
+  });
 });
