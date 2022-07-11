@@ -48,10 +48,13 @@ export class CacheModule extends ConfigurableModuleClass {
     StoreConfig extends Record<any, any> = Record<string, any>,
   >(options: CacheModuleAsyncOptions<StoreConfig>): DynamicModule {
     const moduleDefinition = super.registerAsync(options);
+
     return {
       global: options.isGlobal,
       ...moduleDefinition,
-      providers: moduleDefinition.providers.concat(options.extraProviders),
+      providers: options.extraProviders
+        ? moduleDefinition.providers.concat(options.extraProviders)
+        : moduleDefinition.providers,
     };
   }
 }
