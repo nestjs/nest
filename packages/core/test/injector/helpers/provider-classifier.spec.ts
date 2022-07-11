@@ -84,5 +84,13 @@ describe('provider classifier', () => {
 
       expect(isFactoryProvider(factoryProvider)).to.be.true;
     });
+
+    it('should return false if useFactory is not present', () => {
+      const factoryProvider = {
+        provide: 'token',
+      };
+
+      expect(isFactoryProvider(factoryProvider as FactoryProvider)).to.be.false;
+    });
   });
 });
