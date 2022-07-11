@@ -468,7 +468,7 @@ describe('InstanceWrapper', () => {
         it('should alter the instance wrapper metatype and inject attributes with the given values', () => {
           const wrapper = new InstanceWrapper();
 
-          const factory = (_dependency1, _dependency2) => {};
+          const factory = (_dependency1: any, _dependency2: any) => {};
           const injectedDependencies = ['dependency1', 'dependency2'];
 
           wrapper.mergeWith({
@@ -479,6 +479,21 @@ describe('InstanceWrapper', () => {
 
           expect(wrapper.metatype).to.be.eql(factory);
           expect(wrapper.inject).to.be.eq(injectedDependencies);
+        });
+      });
+
+      describe('and it has no injected dependencies', () => {
+        it('should alter the instance wrapper metatype with the given values', () => {
+          const wrapper = new InstanceWrapper();
+          const factory = (_dependency1: any, _dependency2: any) => {};
+
+          wrapper.mergeWith({
+            provide: 'token',
+            useFactory: factory,
+          });
+
+          expect(wrapper.metatype).to.be.eql(factory);
+          expect(wrapper.inject).to.be.eql([]);
         });
       });
     });
