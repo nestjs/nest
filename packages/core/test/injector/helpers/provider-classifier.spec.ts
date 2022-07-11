@@ -1,7 +1,8 @@
-import { ClassProvider, ValueProvider } from '@nestjs/common';
+import { ClassProvider, FactoryProvider, ValueProvider } from '@nestjs/common';
 import { expect } from 'chai';
 import {
   isClassProvider,
+  isFactoryProvider,
   isValueProvider,
 } from '../../../injector/helpers/provider-classifier';
 
@@ -71,6 +72,17 @@ describe('provider classifier', () => {
       const valueProvider = undefined;
 
       expect(isValueProvider(valueProvider as ValueProvider)).to.be.false;
+    });
+  });
+
+  describe('isFactoryProvider', () => {
+    it('should return true if useFactory is present', () => {
+      const factoryProvider: FactoryProvider = {
+        provide: 'token',
+        useFactory: () => {},
+      };
+
+      expect(isFactoryProvider(factoryProvider)).to.be.true;
     });
   });
 });
