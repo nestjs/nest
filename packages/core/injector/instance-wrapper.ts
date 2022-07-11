@@ -13,6 +13,11 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { STATIC_CONTEXT } from './constants';
+import {
+  isClassProvider,
+  isFactoryProvider,
+  isValueProvider,
+} from './helpers/provider-classifier';
 import { InstanceToken, Module } from './module';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
@@ -384,7 +389,7 @@ export class InstanceWrapper<T = any> {
   }
 
   public mergeWith(provider: Provider) {
-    if (!isUndefined((provider as ValueProvider).useValue)) {
+    if (isValueProvider(provider)) {
       this.metatype = null;
       this.inject = null;
       this.scope = Scope.DEFAULT;
@@ -394,10 +399,10 @@ export class InstanceWrapper<T = any> {
         isResolved: true,
         isPending: false,
       });
-    } else if ((provider as ClassProvider).useClass) {
+    } else if (isClassProvider(provider)) {
       this.inject = null;
       this.metatype = (provider as ClassProvider).useClass;
-    } else if ((provider as FactoryProvider).useFactory) {
+    } else if (isFactoryProvider(provider)) {
       this.metatype = (provider as FactoryProvider).useFactory;
       this.inject = (provider as FactoryProvider).inject || [];
     }
