@@ -1,11 +1,10 @@
 import { Logger, Type } from '@nestjs/common';
-import * as _repl from 'repl';
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { NestFactory } from '../nest-factory';
+import { assignToObject } from './assign-to-object.util';
 import { REPL_INITIALIZED_MESSAGE } from './constants';
 import { ReplContext } from './repl-context';
 import { ReplLogger } from './repl-logger';
-import { assignToObject } from './assign-to-object.util';
 
 export async function repl(module: Type) {
   const app = await NestFactory.create(module, {
@@ -17,6 +16,7 @@ export async function repl(module: Type) {
   const replContext = new ReplContext(app);
   Logger.log(REPL_INITIALIZED_MESSAGE);
 
+  const _repl = await import('repl');
   const replServer = _repl.start({
     prompt: clc.green('> '),
     ignoreUndefined: true,
