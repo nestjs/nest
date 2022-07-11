@@ -49,5 +49,14 @@ describe('provider classifier', () => {
 
       expect(isValueProvider(valueProvider)).to.be.true;
     });
+
+    it('should return false if useValue is undefined', () => {
+      const valueProvider: ValueProvider = {
+        useValue: undefined,
+        provide: 'token',
+      };
+
+      expect(isValueProvider(valueProvider)).to.be.false;
+    });
   });
 });
