@@ -66,5 +66,11 @@ describe('provider classifier', () => {
 
       expect(isValueProvider(valueProvider as ValueProvider)).to.be.false;
     });
+
+    it('should return false if provider is undefined', () => {
+      const valueProvider = undefined;
+
+      expect(isValueProvider(valueProvider as ValueProvider)).to.be.false;
+    });
   });
 });

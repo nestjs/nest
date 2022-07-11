@@ -5,5 +5,5 @@ export function isClassProvider(provider: Provider): boolean {
 }
 
 export function isValueProvider(provider: Provider): boolean {
-  return Boolean((provider as ValueProvider).useValue);
+  return Boolean((provider as ValueProvider)?.useValue);
 }
