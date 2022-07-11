@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-fastify",
-  "version": "9.0.1",
+  "version": "9.0.2",
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-fastify)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -27,9 +27,9 @@
   },
   "peerDependencies": {
     "@fastify/static": "^6.0.0",
+    "@fastify/view": "^7.0.0",
     "@nestjs/common": "^9.0.0",
-    "@nestjs/core": "^9.0.0",
-    "@fastify/view": "^7.0.0"
+    "@nestjs/core": "^9.0.0"
   },
   "peerDependenciesMeta": {
     "@fastify/static": {
