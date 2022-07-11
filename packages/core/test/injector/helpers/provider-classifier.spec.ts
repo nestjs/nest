@@ -1,6 +1,9 @@
-import { ClassProvider } from '@nestjs/common';
+import { ClassProvider, ValueProvider } from '@nestjs/common';
 import { expect } from 'chai';
-import { isClassProvider } from '../../../injector/helpers/provider-classifier';
+import {
+  isClassProvider,
+  isValueProvider,
+} from '../../../injector/helpers/provider-classifier';
 
 describe('provider classifier', () => {
   describe('isClassProvider', () => {
@@ -34,6 +37,17 @@ describe('provider classifier', () => {
       const classProvider = undefined;
 
       expect(isClassProvider(classProvider as ClassProvider)).to.be.false;
+    });
+  });
+
+  describe('isValueProvider', () => {
+    it('should return true if useValue is not undefined', () => {
+      const valueProvider: ValueProvider = {
+        useValue: 'value',
+        provide: 'token',
+      };
+
+      expect(isValueProvider(valueProvider)).to.be.true;
     });
   });
 });
