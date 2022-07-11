@@ -29,13 +29,13 @@
     "@fastify/static": "^6.0.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/core": "^9.0.0",
-    "point-of-view": "^5.0.0"
+    "@fastify/view": "^7.0.0"
   },
   "peerDependenciesMeta": {
     "@fastify/static": {
       "optional": true
     },
-    "point-of-view": {
+    "@fastify/view": {
       "optional": true
     }
   }
