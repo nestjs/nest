@@ -546,7 +546,7 @@ export class DependenciesScanner {
   }
 
   private flatten<T = any>(arr: T[][]): T[] {
-    return arr.reduce((a: T[], b: T[]) => a.concat(b), []);
+    return arr.flat(1);
   }
 
   private isRequestOrTransient(scope: Scope): boolean {
