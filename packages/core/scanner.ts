@@ -192,8 +192,10 @@ export class DependenciesScanner {
       ),
     ];
     providers.forEach(provider => {
-      this.insertProvider(provider, token);
-      this.reflectDynamicMetadata(provider, token);
+      if (provider) {
+        this.insertProvider(provider, token);
+        this.reflectDynamicMetadata(provider, token);
+      }
     });
   }
 
