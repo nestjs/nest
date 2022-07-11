@@ -51,6 +51,33 @@ describe('provider classifier', () => {
       expect(isValueProvider(valueProvider)).to.be.true;
     });
 
+    it('should return true if useValue is "false"', () => {
+      const valueProvider: ValueProvider = {
+        useValue: false,
+        provide: 'token',
+      };
+
+      expect(isValueProvider(valueProvider)).to.be.true;
+    });
+
+    it('should return true if useValue is "null"', () => {
+      const valueProvider: ValueProvider = {
+        useValue: null,
+        provide: 'token',
+      };
+
+      expect(isValueProvider(valueProvider)).to.be.true;
+    });
+
+    it('should return true if useValue is an empty string', () => {
+      const valueProvider: ValueProvider = {
+        useValue: null,
+        provide: '',
+      };
+
+      expect(isValueProvider(valueProvider)).to.be.true;
+    });
+
     it('should return false if useValue is undefined', () => {
       const valueProvider: ValueProvider = {
         useValue: undefined,
