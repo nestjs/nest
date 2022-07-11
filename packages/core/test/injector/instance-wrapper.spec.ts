@@ -449,5 +449,18 @@ describe('InstanceWrapper', () => {
         ).to.be.equal('value');
       });
     });
+
+    describe('when provider is a ClassProvider', () => {
+      it('should alter the instance wrapper metatype with the given class', () => {
+        const wrapper = new InstanceWrapper();
+
+        wrapper.mergeWith({
+          useClass: TestClass,
+          provide: 'token',
+        });
+
+        expect(wrapper.metatype).to.be.eql(TestClass);
+      });
+    });
   });
 });
