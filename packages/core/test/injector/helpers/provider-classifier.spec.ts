@@ -92,5 +92,14 @@ describe('provider classifier', () => {
 
       expect(isFactoryProvider(factoryProvider as FactoryProvider)).to.be.false;
     });
+
+    it('should return false if useFactory is undefined', () => {
+      const factoryProvider: FactoryProvider = {
+        provide: 'token',
+        useFactory: undefined,
+      };
+
+      expect(isFactoryProvider(factoryProvider as FactoryProvider)).to.be.false;
+    });
   });
 });
