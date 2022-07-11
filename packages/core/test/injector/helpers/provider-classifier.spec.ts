@@ -58,5 +58,13 @@ describe('provider classifier', () => {
 
       expect(isValueProvider(valueProvider)).to.be.false;
     });
+
+    it('should return false if useValue is not present', () => {
+      const valueProvider = {
+        provide: 'token',
+      };
+
+      expect(isValueProvider(valueProvider as ValueProvider)).to.be.false;
+    });
   });
 });
