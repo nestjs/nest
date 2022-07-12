@@ -47,8 +47,8 @@ describe('Optional factory provider deps', () => {
         const module = await Test.createTestingModule({
           providers: [
             {
-              provide: FIRST_OPTIONAL_DEPENDENCY,
-              useValue: 'first',
+              provide: SECOND_OPTIONAL_DEPENDENCY,
+              useValue: 'second',
             },
             {
               provide: MY_PROVIDER,
@@ -71,8 +71,8 @@ describe('Optional factory provider deps', () => {
         }).compile();
 
         expect(await module.resolve(MY_PROVIDER)).to.deep.equal({
-          first: 'first',
-          second: undefined,
+          first: undefined,
+          second: 'second',
         });
       });
     });
