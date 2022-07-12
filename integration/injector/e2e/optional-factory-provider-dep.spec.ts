@@ -1,3 +1,4 @@
+import { Scope } from '@nestjs/common';
 import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
@@ -37,6 +38,42 @@ describe('Optional factory provider deps', () => {
 
         const factoryProvider = moduleRef.get('FACTORY');
         expect(factoryProvider).to.equal(defaultValue);
+      });
+      it('"undefined" should be injected into the factory function (scoped provider)', async () => {
+        const MY_PROVIDER = 'MY_PROVIDER';
+        const FIRST_OPTIONAL_DEPENDENCY = 'FIRST_OPTIONAL_DEPENDENCY';
+        const SECOND_OPTIONAL_DEPENDENCY = 'SECOND_OPTIONAL_DEPENDENCY';
+
+        const module = await Test.createTestingModule({
+          providers: [
+            {
+              provide: FIRST_OPTIONAL_DEPENDENCY,
+              useValue: 'first',
+            },
+            {
+              provide: MY_PROVIDER,
+              scope: Scope.REQUEST,
+              inject: [
+                {
+                  token: FIRST_OPTIONAL_DEPENDENCY,
+                  optional: true,
+                },
+                {
+                  token: SECOND_OPTIONAL_DEPENDENCY,
+                  optional: true,
+                },
+              ],
+              useFactory: (first?: string, second?: string) => {
+                return { first, second };
+              },
+            },
+          ],
+        }).compile();
+
+        expect(await module.resolve(MY_PROVIDER)).to.deep.equal({
+          first: 'first',
+          second: undefined,
+        });
       });
     });
   });
