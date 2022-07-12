@@ -392,19 +392,20 @@ export class InstanceWrapper<T = any> {
     if (isValueProvider(provider)) {
       this.metatype = null;
       this.inject = null;
+
       this.scope = Scope.DEFAULT;
 
       this.setInstanceByContextId(STATIC_CONTEXT, {
-        instance: (provider as ValueProvider).useValue,
+        instance: provider.useValue,
         isResolved: true,
         isPending: false,
       });
     } else if (isClassProvider(provider)) {
       this.inject = null;
-      this.metatype = (provider as ClassProvider).useClass;
+      this.metatype = provider.useClass;
     } else if (isFactoryProvider(provider)) {
-      this.metatype = (provider as FactoryProvider).useFactory;
-      this.inject = (provider as FactoryProvider).inject || [];
+      this.metatype = provider.useFactory;
+      this.inject = provider.inject || [];
     }
   }
 
