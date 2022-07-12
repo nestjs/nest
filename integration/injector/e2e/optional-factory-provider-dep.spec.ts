@@ -70,7 +70,7 @@ describe('Optional factory provider deps', () => {
           ],
         }).compile();
 
-        expect(await module.resolve(MY_PROVIDER)).to.equal({
+        expect(await module.resolve(MY_PROVIDER)).to.deep.equal({
           first: 'first',
           second: undefined,
         });
