@@ -778,7 +778,7 @@ export class Injector {
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
   ): Promise<any[]> {
-    const hosts = await Promise.all(
+    const hosts: Array<InstanceWrapper<any> | undefined> = await Promise.all(
       metadata.map(async item =>
         this.resolveScopedComponentHost(
           item,
@@ -791,7 +791,7 @@ export class Injector {
     const inquirerId = this.getInquirerId(inquirer);
     return hosts.map(
       item =>
-        item.getInstanceByContextId(
+        item?.getInstanceByContextId(
           this.getContextId(contextId, item),
           inquirerId,
         ).instance,
