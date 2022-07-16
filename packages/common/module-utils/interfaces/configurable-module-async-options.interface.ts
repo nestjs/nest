@@ -1,4 +1,9 @@
-import { FactoryProvider, ModuleMetadata, Type } from '../../interfaces';
+import {
+  FactoryProvider,
+  ModuleMetadata,
+  Provider,
+  Type,
+} from '../../interfaces';
 import { DEFAULT_FACTORY_CLASS_METHOD_KEY } from '../constants';
 
 /**
@@ -48,4 +53,10 @@ export interface ConfigurableModuleAsyncOptions<
    * Dependencies that a Factory may inject.
    */
   inject?: FactoryProvider['inject'];
+  /**
+   * List of parent module's providers that will be filtered to only provide necessary
+   * providers for the 'inject' array
+   * useful to pass options to nested async modules
+   */
+  provideInjectionTokensFrom?: Provider[];
 }

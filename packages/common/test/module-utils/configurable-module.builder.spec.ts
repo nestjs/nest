@@ -77,15 +77,41 @@ describe('ConfigurableModuleBuilder', () => {
         )
         .build();
 
+      const provideInjectionTokensFrom: Provider[] = [
+        {
+          provide: 'a',
+          useFactory: () => {},
+          inject: ['b'],
+        },
+        {
+          provide: 'b',
+          useFactory: () => {},
+          inject: ['x'],
+        },
+        {
+          provide: 'c',
+          useFactory: () => {},
+          inject: ['y'],
+        },
+      ];
       const definition = ConfigurableModuleClass.forFeatureAsync({
         useFactory: () => {},
+        inject: ['a'],
+        provideInjectionTokensFrom,
         isGlobal: true,
         extraProviders: ['test' as any],
       });
 
       expect(definition.global).to.equal(true);
-      expect(definition.providers).to.have.length(3);
+      expect(definition.providers).to.have.length(5);
+      console.log(definition.providers);
       expect(definition.providers).to.deep.contain('test');
+      expect(definition.providers).to.include.members(
+        provideInjectionTokensFrom.slice(0, 2),
+      );
+      expect(definition.providers).not.to.include(
+        provideInjectionTokensFrom[2],
+      );
       expect(MODULE_OPTIONS_TOKEN).to.equal('RANDOM_TEST_MODULE_OPTIONS');
       expect((definition.providers[0] as any).provide).to.equal(
         'RANDOM_TEST_MODULE_OPTIONS',
