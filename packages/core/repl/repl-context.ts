@@ -109,7 +109,7 @@ export class ReplContext {
       ? typeof token === 'function'
         ? token.name
         : token?.toString()
-      : token;
+      : `"${token}"`;
   }
 
   private addNativeFunction(

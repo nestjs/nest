@@ -52,7 +52,7 @@ ${PROMPT}`,
 ${PROMPT}`);
 
     outputText = '';
-    server.emit('line', 'get(UsersRepository)');
+    server.emit('line', 'get("UsersRepository")');
 
     expect(outputText).to.equal(`UsersRepository {}
 ${PROMPT}`);
@@ -81,7 +81,7 @@ ${PROMPT}`,
 ${PROMPT}`);
 
     outputText = '';
-    server.emit('line', '$(UsersRepository)');
+    server.emit('line', '$("UsersRepository")');
 
     expect(outputText).to.equal(`UsersRepository {}
 ${PROMPT}`);
@@ -104,7 +104,7 @@ UsersModule:
   ◻ UsersController
  - providers:
   ◻ UsersService
-  ◻ UsersRepository
+  ◻ "UsersRepository"
 
 ${PROMPT}`,
     );
@@ -118,7 +118,7 @@ ${PROMPT}`,
       outputText += text;
       return true;
     });
-    server.emit('line', 'methods(UsersRepository)');
+    server.emit('line', 'methods("UsersRepository")');
 
     expect(outputText).to.equal(
       `
