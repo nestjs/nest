@@ -81,7 +81,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
         response.setHeader('Content-Length', streamHeaders.length);
       }
       return pipeline(
-        body.getStream().on('error', (err: Error) => {
+        body.getStream().once('error', (err: Error) => {
           body.errorHandler(err, response);
         }),
         response,
