@@ -11,11 +11,13 @@ export interface StreamableHandlerResponse {
 export class StreamableFile {
   private readonly stream: Readable;
 
-  protected handler: (err: Error, response: StreamableHandlerResponse) => void =
-    (err: Error, res) => {
-      res.statusCode = 400;
-      res.send(err.message);
-    };
+  protected handleError: (
+    err: Error,
+    response: StreamableHandlerResponse,
+  ) => void = (err: Error, res) => {
+    res.statusCode = 400;
+    res.send(err.message);
+  };
 
   constructor(buffer: Uint8Array, options?: StreamableFileOptions);
   constructor(readable: Readable, options?: StreamableFileOptions);
@@ -54,13 +56,13 @@ export class StreamableFile {
     err: Error,
     response: StreamableHandlerResponse,
   ) => void {
-    return this.handler;
+    return this.handleError;
   }
 
   setErrorHandler(
     handler: (err: Error, response: StreamableHandlerResponse) => void,
   ) {
-    this.handler = handler;
+    this.handleError = handler;
     return this;
   }
 }
