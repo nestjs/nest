@@ -48,6 +48,7 @@ type VersionedRoute = <
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
+  private readonly logger = new Logger(ExpressAdapter.name);
 
   constructor(instance?: any) {
     super(instance || express());
@@ -87,7 +88,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
         response,
         (err: Error) => {
           if (err) {
-            new Logger('ExpressAdapter').error(err.message, err.stack);
+            this.logger.error(err.message, err.stack);
           }
         },
       );
