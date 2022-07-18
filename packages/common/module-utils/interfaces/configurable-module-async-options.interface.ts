@@ -43,7 +43,7 @@ export interface ConfigurableModuleAsyncOptions<
    * Function returning options (or a Promise resolving to options) to configure the
    * cache module.
    */
-  useFactory?: (...args: unknown[]) => Promise<ModuleOptions> | ModuleOptions;
+  useFactory?: (...args: any[]) => Promise<ModuleOptions> | ModuleOptions;
   /**
    * Dependencies that a Factory may inject.
    */
