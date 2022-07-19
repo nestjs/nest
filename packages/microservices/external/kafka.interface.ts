@@ -870,6 +870,8 @@ export interface EachMessagePayload {
   topic: string;
   partition: number;
   message: KafkaMessage;
+  heartbeat(): Promise<void>;
+  pause(): () => void;
 }
 
 export interface EachBatchPayload {

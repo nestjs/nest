@@ -3,12 +3,12 @@ import { KafkaContext } from '../../ctx-host';
 import { Consumer, KafkaMessage } from '../../external/kafka.interface';
 
 describe('KafkaContext', () => {
-  const args = ['test', { test: true }, undefined, { test: 'consumer' }];
+  const args = ['test', { test: true }, undefined, { test: 'consumer' }, () => {}];
   let context: KafkaContext;
 
   beforeEach(() => {
     context = new KafkaContext(
-      args as [KafkaMessage, number, string, Consumer],
+      args as [KafkaMessage, number, string, Consumer, () => Promise<void>],
     );
   });
   describe('getTopic', () => {
@@ -29,6 +29,11 @@ describe('KafkaContext', () => {
   describe('getConsumer', () => {
     it('should return consumer instance', () => {
       expect(context.getConsumer()).to.deep.eq({ test: 'consumer' });
+    });
+  });
+  describe('getHeartbeat', () => {
+    it('should return heartbeat callback', () => {
+      expect(context.getHeartbeat()).to.be.eql(args[4]);
     });
   });
 });
