@@ -1136,7 +1136,7 @@ export enum CompressionTypes {
   ZSTD = 4,
 }
 
-export var CompressionCodecs: {
+export let CompressionCodecs: {
   [CompressionTypes.GZIP]: () => any;
   [CompressionTypes.Snappy]: () => any;
   [CompressionTypes.LZ4]: () => any;
