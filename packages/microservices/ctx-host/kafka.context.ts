@@ -6,6 +6,7 @@ type KafkaContextArgs = [
   partition: number,
   topic: string,
   consumer: Consumer,
+  heartbeat: () => Promise<void>,
 ];
 
 export class KafkaContext extends BaseRpcContext<KafkaContextArgs> {
@@ -40,4 +41,11 @@ export class KafkaContext extends BaseRpcContext<KafkaContextArgs> {
   getConsumer() {
     return this.args[3];
   }
+
+  /**
+   * Returns the Kafka heartbeat callback.
+   */
+   getHeartbeat() {
+    return this.args[4];
+  } 
 }

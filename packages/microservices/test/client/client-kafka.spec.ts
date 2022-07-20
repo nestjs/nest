@@ -22,6 +22,8 @@ describe('ClientKafka', () => {
   const timestamp = new Date().toISOString();
   const attributes = 1;
   const messageValue = 'test-message';
+  const heartbeat = async () => {};
+  const pause = () => () => {};
 
   // message
   const message: KafkaMessage = {
@@ -57,6 +59,8 @@ describe('ClientKafka', () => {
       },
       message,
     ),
+    heartbeat,
+    pause,
   };
 
   const payloadDisposed: EachMessagePayload = {
@@ -75,6 +79,8 @@ describe('ClientKafka', () => {
         value: { test: true },
       },
     ),
+    heartbeat,
+    pause,
   };
 
   const payloadError: EachMessagePayload = {
@@ -93,6 +99,8 @@ describe('ClientKafka', () => {
         value: null,
       },
     ),
+    heartbeat,
+    pause,
   };
 
   const payloadWithoutCorrelation: EachMessagePayload = {
@@ -104,6 +112,8 @@ describe('ClientKafka', () => {
       },
       message,
     ),
+    heartbeat,
+    pause,
   };
 
   // deserialized payload
@@ -118,6 +128,8 @@ describe('ClientKafka', () => {
       },
       deserializedMessage,
     ),
+    heartbeat,
+    pause,
   };
 
   const deserializedPayloadDisposed: EachMessagePayload = {
@@ -136,6 +148,8 @@ describe('ClientKafka', () => {
         value: { test: true },
       },
     ),
+    heartbeat,
+    pause,
   };
 
   const deserializedPayloadError: EachMessagePayload = {
@@ -154,6 +168,8 @@ describe('ClientKafka', () => {
         value: null,
       },
     ),
+    heartbeat,
+    pause,
   };
 
   let client: ClientKafka;

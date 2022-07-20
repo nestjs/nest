@@ -26,6 +26,8 @@ describe('ServerKafka', () => {
   const key = '1';
   const timestamp = new Date().toISOString();
   const messageValue = 'test-message';
+  const heartbeat = async () => {};
+  const pause = () => () => {};
 
   const eventMessage: KafkaMessage = {
     key: Buffer.from(key),
@@ -44,6 +46,8 @@ describe('ServerKafka', () => {
       },
       eventMessage,
     ),
+    heartbeat,
+    pause,
   };
 
   const eventWithCorrelationIdPayload: EachMessagePayload = {
@@ -57,6 +61,8 @@ describe('ServerKafka', () => {
       },
       eventMessage,
     ),
+    heartbeat,
+    pause,
   };
 
   const message: KafkaMessage = Object.assign(
@@ -73,6 +79,8 @@ describe('ServerKafka', () => {
     topic,
     partition: 0,
     message,
+    heartbeat,
+    pause,
   };
 
   let server: ServerKafka;
