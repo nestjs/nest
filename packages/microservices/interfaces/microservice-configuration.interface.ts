@@ -86,7 +86,8 @@ export interface TcpOptions {
 export interface RedisOptions {
   transport?: Transport.REDIS;
   options?: {
-    url?: string;
+    host?: string;
+    port?: number;
     retryAttempts?: number;
     retryDelay?: number;
     serializer?: Serializer;
