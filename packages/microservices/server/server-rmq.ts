@@ -16,6 +16,7 @@ import {
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
+  RQM_DEFAULT_NO_ASSERT,
 } from '../constants';
 import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
@@ -40,6 +41,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   protected readonly prefetchCount: number;
   protected readonly queueOptions: any;
   protected readonly isGlobalPrefetchCount: boolean;
+  protected readonly noAssert: boolean;
 
   constructor(protected readonly options: RmqOptions['options']) {
     super();
@@ -55,6 +57,8 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     this.queueOptions =
       this.getOptionsProp(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
+    this.noAssert =
+      this.getOptionsProp(this.options, 'noAssert') || RQM_DEFAULT_NO_ASSERT;
 
     this.loadPackage('amqplib', ServerRMQ.name, () => require('amqplib'));
     rqmPackage = this.loadPackage(
@@ -115,7 +119,9 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   public async setupChannel(channel: any, callback: Function) {
     const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
 
-    await channel.assertQueue(this.queue, this.queueOptions);
+    if (!this.queueOptions.noAssert) {
+      await channel.assertQueue(this.queue, this.queueOptions);
+    }
     await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
     channel.consume(
       this.queue,

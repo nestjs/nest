@@ -181,6 +181,7 @@ export interface RmqOptions {
     replyQueue?: string;
     persistent?: boolean;
     headers?: Record<string, string>;
+    noAssert?: boolean;
   };
 }
 
