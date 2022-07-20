@@ -25,6 +25,7 @@ import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory'
 import {
   json as bodyParserJson,
   OptionsJson,
+  OptionsUrlencoded,
   urlencoded as bodyParserUrlencoded,
 } from 'body-parser';
 import * as cors from 'cors';
@@ -32,6 +33,7 @@ import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
+import { getBodyParserOptions } from './utils/get-body-parser-options.util';
 
 type VersionedRoute = <
   TRequest extends Record<string, any> = any,
@@ -194,21 +196,15 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
-    let bodyParserJsonOptions: OptionsJson | undefined;
-    if (rawBody === true) {
-      bodyParserJsonOptions = {
-        verify: (req: RawBodyRequest<http.IncomingMessage>, _res, buffer) => {
-          if (Buffer.isBuffer(buffer)) {
-            req.rawBody = buffer;
-          }
-          return true;
-        },
-      };
-    }
+    const bodyParserJsonOptions = getBodyParserOptions<OptionsJson>(rawBody);
+    const bodyParserUrlencodedOptions = getBodyParserOptions<OptionsUrlencoded>(
+      rawBody,
+      { extended: true },
+    );
 
     const parserMiddleware = {
       jsonParser: bodyParserJson(bodyParserJsonOptions),
-      urlencodedParser: bodyParserUrlencoded({ extended: true }),
+      urlencodedParser: bodyParserUrlencoded(bodyParserUrlencodedOptions),
     };
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))

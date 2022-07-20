@@ -41,6 +41,8 @@ import {
   InjectOptions,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
+// `querystring` is used internally in fastify for registering urlencoded body parser.
+import { parse as querystringParse } from 'querystring';
 import {
   FastifyStaticOptions,
   PointOfViewOptions,
@@ -454,13 +456,9 @@ export class FastifyAdapter<
     if (this._isParserRegistered) {
       return;
     }
-    this.register(
-      import('@fastify/formbody') as Parameters<TInstance['register']>[0],
-    );
 
-    if (rawBody) {
-      this.registerContentParserWithRawBody();
-    }
+    this.registerUrlencodedContentParser(rawBody);
+    this.registerJsonContentParser(rawBody);
 
     this._isParserRegistered = true;
   }
@@ -509,16 +507,18 @@ export class FastifyAdapter<
     return !('status' in response);
   }
 
-  private registerContentParserWithRawBody() {
+  private registerJsonContentParser(rawBody?: boolean) {
+    const { bodyLimit } = this.getInstance().initialConfig;
+
     this.getInstance().addContentTypeParser<Buffer>(
       'application/json',
-      { parseAs: 'buffer' },
+      { parseAs: 'buffer', bodyLimit },
       (
         req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
         body: Buffer,
         done,
       ) => {
-        if (Buffer.isBuffer(body)) {
+        if (rawBody === true && Buffer.isBuffer(body)) {
           req.rawBody = body;
         }
 
@@ -529,6 +529,26 @@ export class FastifyAdapter<
           onConstructorPoisoning || 'error',
         ) as FastifyBodyParser<string | Buffer, TServer>;
         defaultJsonParser(req, body, done);
+      },
+    );
+  }
+
+  private registerUrlencodedContentParser(rawBody?: boolean) {
+    const { bodyLimit } = this.getInstance().initialConfig;
+
+    this.getInstance().addContentTypeParser<Buffer>(
+      'application/x-www-form-urlencoded',
+      { parseAs: 'buffer', bodyLimit },
+      (
+        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
+        body: Buffer,
+        done,
+      ) => {
+        if (rawBody === true && Buffer.isBuffer(body)) {
+          req.rawBody = body;
+        }
+
+        done(null, querystringParse(body.toString()));
       },
     );
   }

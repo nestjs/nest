@@ -6,7 +6,6 @@ import { ExpressModule } from '../src/express.module';
 
 describe('Raw body (Express Application)', () => {
   let app: NestExpressApplication;
-  const body = '{ "amount":0.0 }';
 
   beforeEach(async () => {
     const moduleFixture = await Test.createTestingModule({
@@ -16,33 +15,63 @@ describe('Raw body (Express Application)', () => {
     app = moduleFixture.createNestApplication<NestExpressApplication>({
       rawBody: true,
     });
-  });
 
-  it('should return exact post body', async () => {
     await app.init();
-    const response = await request(app.getHttpServer())
-      .post('/')
-      .set('Content-Type', 'application/json')
-      .send(body)
-      .expect(201);
-
-    expect(response.body).to.eql({
-      parsed: {
-        amount: 0,
-      },
-      raw: '{ "amount":0.0 }',
-    });
-  });
-
-  it('should work if post body is empty', async () => {
-    await app.init();
-    await request(app.getHttpServer())
-      .post('/')
-      .set('Content-Type', 'application/json')
-      .expect(201);
   });
 
   afterEach(async () => {
     await app.close();
+  });
+
+  describe('application/json', () => {
+    const body = '{ "amount":0.0 }';
+
+    it('should return exact post body', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/')
+        .set('Content-Type', 'application/json')
+        .send(body)
+        .expect(201);
+
+      expect(response.body).to.eql({
+        parsed: {
+          amount: 0,
+        },
+        raw: body,
+      });
+    });
+
+    it('should work if post body is empty', async () => {
+      await request(app.getHttpServer())
+        .post('/')
+        .set('Content-Type', 'application/json')
+        .expect(201);
+    });
+  });
+
+  describe('application/x-www-form-urlencoded', () => {
+    const body = 'content=this is a post\'s content by "Nest"';
+
+    it('should return exact post body', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/')
+        .set('Content-Type', 'application/x-www-form-urlencoded')
+        .send(body)
+        .expect(201);
+
+      expect(response.body).to.eql({
+        parsed: {
+          content: 'this is a post\'s content by "Nest"',
+        },
+        raw: body,
+      });
+    });
+
+    it('should work if post body is empty', async () => {
+      await request(app.getHttpServer())
+        .post('/')
+        .set('Content-Type', 'application/x-www-form-urlencoded')
+        .expect(201);
+    });
   });
 });
