@@ -65,4 +65,7 @@ describe('Express FileSend', () => {
         expect(res.text).to.be.eq(readmeString);
       });
   });
+  it('should return an error if the file does not exist', async () => {
+    return request(app.getHttpServer()).get('/file/not/exist').expect(400);
+  });
 });

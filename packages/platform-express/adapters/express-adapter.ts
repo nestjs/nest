@@ -1,5 +1,6 @@
 import {
   InternalServerErrorException,
+  Logger,
   RawBodyRequest,
   RequestMethod,
   StreamableFile,
@@ -32,6 +33,7 @@ import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
+import { PassThrough, pipeline } from 'stream';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util';
 
@@ -46,6 +48,7 @@ type VersionedRoute = <
 
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
+  private readonly logger = new Logger(ExpressAdapter.name);
 
   constructor(instance?: any) {
     super(instance || express());
@@ -78,7 +81,17 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       ) {
         response.setHeader('Content-Length', streamHeaders.length);
       }
-      return body.getStream().pipe(response);
+      return pipeline(
+        body.getStream().once('error', (err: Error) => {
+          body.errorHandler(err, response);
+        }),
+        response,
+        (err: Error) => {
+          if (err) {
+            this.logger.error(err.message, err.stack);
+          }
+        },
+      );
     }
     return isObject(body) ? response.json(body) : response.send(String(body));
   }
