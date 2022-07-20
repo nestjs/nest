@@ -51,7 +51,7 @@ export class LazyModuleLoader {
   }
 
   private registerLoggerConfiguration(loadOpts?: LazyModuleLoaderLoadOptions) {
-    if (loadOpts?.disableLogs) {
+    if (loadOpts?.logger === false) {
       this.instanceLoader.setLogger(new SilentLogger());
     }
   }
