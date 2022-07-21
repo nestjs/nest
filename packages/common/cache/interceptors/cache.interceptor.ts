@@ -9,6 +9,7 @@ import {
 } from '../../interfaces';
 import { isFunction, isNil } from '../../utils/shared.utils';
 import {
+  CACHE_EXCLUDE_METADATA,
   CACHE_KEY_METADATA,
   CACHE_MANAGER,
   CACHE_TTL_METADATA,
@@ -64,15 +65,23 @@ export class CacheInterceptor implements NestInterceptor {
   }
 
   protected trackBy(context: ExecutionContext): string | undefined {
+    const cacheExcludeMetadata = this.reflector.get(
+      CACHE_EXCLUDE_METADATA,
+      context.getHandler(),
+    );
+    if (cacheExcludeMetadata === true) {
+      return undefined;
+    }
+
     const httpAdapter = this.httpAdapterHost.httpAdapter;
     const isHttpApp = httpAdapter && !!httpAdapter.getRequestMethod;
-    const cacheMetadata = this.reflector.get(
+    const cacheKeyMetadata = this.reflector.get(
       CACHE_KEY_METADATA,
       context.getHandler(),
     );
 
-    if (!isHttpApp || cacheMetadata) {
-      return cacheMetadata;
+    if (!isHttpApp || cacheKeyMetadata) {
+      return cacheKeyMetadata;
     }
 
     const request = context.getArgByIndex(0);

@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import { CacheKey, CacheInterceptor, CacheTTL } from '../../cache';
+import { CacheKey, CacheInterceptor, CacheExclude, CacheTTL } from '../../cache';
 import {
+  CACHE_EXCLUDE_METADATA,
   CACHE_KEY_METADATA,
   CACHE_TTL_METADATA,
 } from '../../cache/cache.constants';
@@ -13,6 +14,11 @@ describe('@Cache', () => {
   @CacheTTL(99999)
   @UseInterceptors(CacheInterceptor)
   class TestAll {}
+
+  @Controller()
+  @UseInterceptors(CacheInterceptor)
+  @CacheExclude()
+  class TestExclude {}
 
   @Controller()
   @UseInterceptors(CacheInterceptor)
@@ -32,6 +38,12 @@ describe('@Cache', () => {
       9999,
     );
   });
+
+  it('should apply the exclusion', () => {
+    expect(Reflect.getMetadata(CACHE_EXCLUDE_METADATA, TestExclude)).to.be.eql(
+      true,
+    );
+  })
 
   it('should override only the TTL', () => {
     expect(Reflect.getMetadata(CACHE_TTL_METADATA, TestTTL)).to.be.greaterThan(
