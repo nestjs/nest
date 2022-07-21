@@ -126,5 +126,35 @@ describe('KafkaParser', () => {
         },
       });
     });
+
+    it('parse message multiple times (simulate retry)', () => {
+      const message = {
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: Buffer.from('correlation-id'),
+        },
+        value: Buffer.from(JSON.stringify({ prop: 'value' })),
+        key: Buffer.from('1'),
+      };
+      const expectedParsedMessage = {
+        key: '1',
+        value: {
+          prop: 'value',
+        },
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: 'correlation-id',
+        },
+      };
+      expect(kafkaParser.parse(message)).to.deep.eq(expectedParsedMessage);
+      // Parse message again and verify it still works correctly
+      expect(kafkaParser.parse(message)).to.deep.eq(expectedParsedMessage);
+      // Verify message was not modified
+      expect(message).to.deep.eq({
+        headers: {
+          [KafkaHeaders.CORRELATION_ID]: Buffer.from('correlation-id'),
+        },
+        value: Buffer.from(JSON.stringify({ prop: 'value' })),
+        key: Buffer.from('1'),
+      });
+    });
   });
 });
