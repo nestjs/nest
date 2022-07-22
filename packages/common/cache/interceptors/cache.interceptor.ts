@@ -65,8 +65,9 @@ export class CacheInterceptor implements NestInterceptor {
   }
 
   protected trackBy(context: ExecutionContext): string | undefined {
-    const cacheExcludeMetadata = this.reflector.get(
+    const cacheExcludeMetadata = this.reflector.getAllAndMerge(
       CACHE_EXCLUDE_METADATA,
+      context.getClass(),
       context.getHandler(),
     );
     if (cacheExcludeMetadata === true) {
