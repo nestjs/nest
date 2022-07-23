@@ -21,9 +21,10 @@ export class LazyModuleLoader {
       | DynamicModule,
   ): Promise<ModuleRef> {
     const moduleClassOrDynamicDefinition = await loaderFn();
-    const moduleInstances = await this.dependenciesScanner.scanForModules(
-      moduleClassOrDynamicDefinition,
-    );
+    const moduleInstances =
+      await this.dependenciesScanner.scanForModulesForLazyModules(
+        moduleClassOrDynamicDefinition,
+      );
     if (moduleInstances.length === 0) {
       // The module has been loaded already. In this case, we must
       // retrieve a module reference from the existing container.

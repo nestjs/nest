@@ -77,6 +77,18 @@ export class DependenciesScanner {
     this.container.bindGlobalScope();
   }
 
+  public async scanForModulesForLazyModules(
+    moduleDefinition: Type<unknown> | DynamicModule,
+  ): Promise<Module[]> {
+    const modules = await this.scanForModules(moduleDefinition);
+    // We need to bind global scope to the lazy module because the bind phase happens before it was created
+    // The only one we need to bind is the actual module we are scanning the dependencies for,
+    // this modules is the first element in the modules list comming from the scan
+    this.container.bindGlobalsToImports(modules[0]);
+
+    return modules;
+  }
+
   public async scanForModules(
     moduleDefinition:
       | ForwardReference
