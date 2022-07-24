@@ -18,7 +18,7 @@ import {
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
 import { loadPackage } from '../utils/load-package.util';
-import { isNil, isObject } from '../utils/shared.utils';
+import { isNil } from '../utils/shared.utils';
 
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
