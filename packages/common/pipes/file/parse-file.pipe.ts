@@ -4,7 +4,6 @@ import { HttpErrorByCode } from '../../utils/http-error-by-code.util';
 import { PipeTransform } from '../../interfaces/features/pipe-transform.interface';
 import { ParseFileOptions } from './parse-file-options.interface';
 import { FileValidator } from './file-validator.interface';
-import { throws } from 'assert';
 
 /**
  * Defines the built-in ParseFile Pipe. This pipe can be used to validate incoming files
