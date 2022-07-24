@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { Injectable, UseGuards, UsePipes } from '../../../common';
-import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
 import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
 import { NestContainer } from '../../../core/injector/container';
@@ -155,7 +155,7 @@ describe('WsContextCreator', () => {
       const metadata = {
         [WsParamtype.SOCKET]: { index: 0, data: 'test', pipes: [] },
         [WsParamtype.PAYLOAD]: { index: 2, data: 'test', pipes: [] },
-        [`key${CUSTOM_ROUTE_AGRS_METADATA}`]: {
+        [`key${CUSTOM_ROUTE_ARGS_METADATA}`]: {
           index: 3,
           data: 'custom',
           pipes: [],
@@ -172,7 +172,7 @@ describe('WsContextCreator', () => {
       const expectedValues = [
         { index: 0, type: WsParamtype.SOCKET, data: 'test' },
         { index: 2, type: WsParamtype.PAYLOAD, data: 'test' },
-        { index: 3, type: `key${CUSTOM_ROUTE_AGRS_METADATA}`, data: 'custom' },
+        { index: 3, type: `key${CUSTOM_ROUTE_ARGS_METADATA}`, data: 'custom' },
       ];
       expect(values[0]).to.deep.include(expectedValues[0]);
       expect(values[1]).to.deep.include(expectedValues[1]);

@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { Injectable, UseGuards, UsePipes } from '../../../common';
-import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
 import { ApplicationConfig } from '../../../core/application-config';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer';
 import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
@@ -160,7 +160,7 @@ describe('RpcContextCreator', () => {
       const metadata = {
         [RpcParamtype.PAYLOAD]: { index: 0, data: 'test', pipes: [] },
         [RpcParamtype.CONTEXT]: { index: 2, data: 'test', pipes: [] },
-        [`key${CUSTOM_ROUTE_AGRS_METADATA}`]: {
+        [`key${CUSTOM_ROUTE_ARGS_METADATA}`]: {
           index: 3,
           data: 'custom',
           pipes: [],
@@ -177,7 +177,7 @@ describe('RpcContextCreator', () => {
       const expectedValues = [
         { index: 0, type: RpcParamtype.PAYLOAD, data: 'test' },
         { index: 2, type: RpcParamtype.CONTEXT, data: 'test' },
-        { index: 3, type: `key${CUSTOM_ROUTE_AGRS_METADATA}`, data: 'custom' },
+        { index: 3, type: `key${CUSTOM_ROUTE_ARGS_METADATA}`, data: 'custom' },
       ];
       expect(values[0]).to.deep.include(expectedValues[0]);
       expect(values[1]).to.deep.include(expectedValues[1]);

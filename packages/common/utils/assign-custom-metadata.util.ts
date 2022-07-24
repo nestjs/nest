@@ -1,4 +1,4 @@
-import { CUSTOM_ROUTE_AGRS_METADATA } from '../constants';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../constants';
 import {
   ParamData,
   RouteParamMetadata,
@@ -16,7 +16,7 @@ export function assignCustomParameterMetadata(
 ) {
   return {
     ...args,
-    [`${paramtype}${CUSTOM_ROUTE_AGRS_METADATA}:${index}`]: {
+    [`${paramtype}${CUSTOM_ROUTE_ARGS_METADATA}:${index}`]: {
       index,
       factory,
       data,
