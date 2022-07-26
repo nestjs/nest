@@ -5,4 +5,5 @@ export interface ParseFileOptions {
   validators?: FileValidator[];
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (error: string) => any;
+  fileIsOptional?: boolean;
 }

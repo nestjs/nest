@@ -116,5 +116,22 @@ describe('ParseFilePipe', () => {
         });
       });
     });
+
+    describe('when file is optional', () => {
+      beforeEach(() => {
+        parseFilePipe = new ParseFilePipe({
+          validators: [new AlwaysInvalidValidator({})],
+          fileIsOptional: true,
+        });
+      });
+
+      it('should pass validation if no file is provided', async () => {
+        const requestFile = undefined;
+
+        await expect(parseFilePipe.transform(requestFile)).to.eventually.eql(
+          requestFile,
+        );
+      });
+    });
   });
 });

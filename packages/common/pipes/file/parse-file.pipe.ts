@@ -1,9 +1,10 @@
+import { isUndefined } from '../../utils/shared.utils';
 import { Injectable, Optional } from '../../decorators/core';
 import { HttpStatus } from '../../enums';
-import { HttpErrorByCode } from '../../utils/http-error-by-code.util';
 import { PipeTransform } from '../../interfaces/features/pipe-transform.interface';
-import { ParseFileOptions } from './parse-file-options.interface';
+import { HttpErrorByCode } from '../../utils/http-error-by-code.util';
 import { FileValidator } from './file-validator.interface';
+import { ParseFileOptions } from './parse-file-options.interface';
 
 /**
  * Defines the built-in ParseFile Pipe. This pipe can be used to validate incoming files
@@ -35,6 +36,10 @@ export class ParseFilePipe implements PipeTransform<any> {
   }
 
   async transform(value: any): Promise<any> {
+    if (isUndefined(value)) {
+      return value;
+    }
+
     if (this.validators.length) {
       await this.validate(value);
     }
