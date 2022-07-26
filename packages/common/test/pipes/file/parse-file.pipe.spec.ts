@@ -117,7 +117,7 @@ describe('ParseFilePipe', () => {
       });
     });
 
-    describe('when isFileOptional is true', () => {
+    describe('when fileIsOptional is true', () => {
       beforeEach(() => {
         parseFilePipe = new ParseFilePipe({
           validators: [new AlwaysInvalidValidator({})],
@@ -134,7 +134,7 @@ describe('ParseFilePipe', () => {
       });
     });
 
-    describe('when isFileOptional is false', () => {
+    describe('when fileIsOptional is false', () => {
       beforeEach(() => {
         parseFilePipe = new ParseFilePipe({
           validators: [new AlwaysInvalidValidator({})],
@@ -151,7 +151,7 @@ describe('ParseFilePipe', () => {
       });
     });
 
-    describe('when isFileOptional is not explicitly provided', () => {
+    describe('when fileIsOptional is not explicitly provided', () => {
       beforeEach(() => {
         parseFilePipe = new ParseFilePipe({
           validators: [new AlwaysInvalidValidator({})],
