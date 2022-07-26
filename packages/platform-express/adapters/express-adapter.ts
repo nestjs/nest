@@ -1,7 +1,6 @@
 import {
   InternalServerErrorException,
   Logger,
-  RawBodyRequest,
   RequestMethod,
   StreamableFile,
   VersioningType,
@@ -33,7 +32,7 @@ import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
-import { PassThrough, pipeline } from 'stream';
+import { pipeline } from 'stream';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util';
 
