@@ -117,7 +117,7 @@ describe('ParseFilePipe', () => {
       });
     });
 
-    describe('when file is optional', () => {
+    describe('when isFileOptional is true', () => {
       beforeEach(() => {
         parseFilePipe = new ParseFilePipe({
           validators: [new AlwaysInvalidValidator({})],
@@ -134,11 +134,27 @@ describe('ParseFilePipe', () => {
       });
     });
 
-    describe('when file is not optional', () => {
+    describe('when isFileOptional is false', () => {
       beforeEach(() => {
         parseFilePipe = new ParseFilePipe({
           validators: [new AlwaysInvalidValidator({})],
           fileIsOptional: false,
+        });
+      });
+
+      it('should throw an error if no file is provided', async () => {
+        const requestFile = undefined;
+
+        await expect(parseFilePipe.transform(requestFile)).to.be.rejectedWith(
+          BadRequestException,
+        );
+      });
+    });
+
+    describe('when isFileOptional is not explicitly provided', () => {
+      beforeEach(() => {
+        parseFilePipe = new ParseFilePipe({
+          validators: [new AlwaysInvalidValidator({})],
         });
       });
 
