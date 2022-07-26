@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { PassThrough } from 'stream';
 import { HttpException, HttpStatus, RouteParamMetadata } from '../../../common';
-import { CUSTOM_ROUTE_AGRS_METADATA } from '../../../common/constants';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
 import { AbstractHttpAdapter } from '../../adapters';
 import { ApplicationConfig } from '../../application-config';
@@ -183,7 +183,7 @@ describe('RouterExecutionContext', () => {
       const metadata = {
         [RouteParamtypes.REQUEST]: { index: 0, data: 'test', pipes: [] },
         [RouteParamtypes.BODY]: { index: 2, data: 'test', pipes: [] },
-        [`key${CUSTOM_ROUTE_AGRS_METADATA}`]: {
+        [`key${CUSTOM_ROUTE_ARGS_METADATA}`]: {
           index: 3,
           data: 'custom',
           pipes: [],
@@ -194,7 +194,7 @@ describe('RouterExecutionContext', () => {
       const expectedValues = [
         { index: 0, type: RouteParamtypes.REQUEST, data: 'test' },
         { index: 2, type: RouteParamtypes.BODY, data: 'test' },
-        { index: 3, type: `key${CUSTOM_ROUTE_AGRS_METADATA}`, data: 'custom' },
+        { index: 3, type: `key${CUSTOM_ROUTE_ARGS_METADATA}`, data: 'custom' },
       ];
       expect(values[0]).to.deep.include(expectedValues[0]);
       expect(values[1]).to.deep.include(expectedValues[1]);

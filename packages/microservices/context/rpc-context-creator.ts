@@ -1,5 +1,5 @@
 import {
-  CUSTOM_ROUTE_AGRS_METADATA,
+  CUSTOM_ROUTE_ARGS_METADATA,
   PARAMTYPES_METADATA,
 } from '@nestjs/common/constants';
 import {
@@ -225,7 +225,7 @@ export class RpcContextCreator {
         this.pipesContextCreator.createConcreteContext(pipesCollection);
       const type = this.contextUtils.mapParamType(key);
 
-      if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {
+      if (key.includes(CUSTOM_ROUTE_ARGS_METADATA)) {
         const { factory } = metadata[key];
         const customExtractValue = this.contextUtils.getCustomFactory(
           factory,

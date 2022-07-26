@@ -7,7 +7,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import {
-  CUSTOM_ROUTE_AGRS_METADATA,
+  CUSTOM_ROUTE_ARGS_METADATA,
   HEADERS_METADATA,
   HTTP_CODE_METADATA,
   REDIRECT_METADATA,
@@ -297,7 +297,7 @@ export class RouterExecutionContext {
       );
       const type = this.contextUtils.mapParamType(key);
 
-      if (key.includes(CUSTOM_ROUTE_AGRS_METADATA)) {
+      if (key.includes(CUSTOM_ROUTE_ARGS_METADATA)) {
         const { factory } = metadata[key];
         const customExtractValue = this.contextUtils.getCustomFactory(
           factory,
