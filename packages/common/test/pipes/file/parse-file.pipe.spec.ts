@@ -133,5 +133,22 @@ describe('ParseFilePipe', () => {
         );
       });
     });
+
+    describe('when file is not optional', () => {
+      beforeEach(() => {
+        parseFilePipe = new ParseFilePipe({
+          validators: [new AlwaysInvalidValidator({})],
+          fileIsOptional: false,
+        });
+      });
+
+      it('should throw an error if no file is provided', async () => {
+        const requestFile = undefined;
+
+        await expect(parseFilePipe.transform(requestFile)).to.be.rejectedWith(
+          BadRequestException,
+        );
+      });
+    });
   });
 });
