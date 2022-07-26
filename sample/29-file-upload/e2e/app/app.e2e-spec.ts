@@ -51,6 +51,12 @@ describe('E2E FileTest', () => {
       .expect(400);
   });
 
+  it('should allow for optional file uploads with validation enabled (fixes #10017)', () => {
+    return request(app.getHttpServer())
+      .post('/file/pass-validation')
+      .expect(201);
+  });
+
   afterAll(async () => {
     await app.close();
   });

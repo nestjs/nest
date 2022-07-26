@@ -42,13 +42,15 @@ export class AppController {
         .addFileTypeValidator({
           fileType: 'json',
         })
-        .build(),
+        .build({
+          fileIsOptional: true,
+        }),
     )
-    file: Express.Multer.File,
+    file?: Express.Multer.File,
   ) {
     return {
       body,
-      file: file.buffer.toString(),
+      file: file?.buffer.toString(),
     };
   }
 
