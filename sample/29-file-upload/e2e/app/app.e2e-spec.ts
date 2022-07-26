@@ -54,7 +54,6 @@ describe('E2E FileTest', () => {
   it('should throw when file is required but no file is uploaded', async () => {
     return request(app.getHttpServer())
       .post('/file/fail-validation')
-      .send()
       .expect(400);
   });
 
