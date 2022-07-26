@@ -186,10 +186,17 @@ export class ClientRMQ extends ClientProxy {
 
   public async handleMessage(
     packet: unknown,
+    options: Record<string, unknown>,
     callback: (packet: WritePacket) => any,
   ) {
+    if (typeof options === 'function') {
+      callback = options;
+      options = undefined;
+    }
+
     const { err, response, isDisposed } = await this.deserializer.deserialize(
       packet,
+      options,
     );
     if (isDisposed || err) {
       callback({
@@ -210,8 +217,14 @@ export class ClientRMQ extends ClientProxy {
   ): () => void {
     try {
       const correlationId = randomStringGenerator();
-      const listener = ({ content }: { content: any }) =>
-        this.handleMessage(JSON.parse(content.toString()), callback);
+      const listener = ({
+        content,
+        options,
+      }: {
+        content: any;
+        options: Record<string, unknown>;
+      }) =>
+        this.handleMessage(JSON.parse(content.toString()), options, callback);
 
       Object.assign(message, { id: correlationId });
       const serializedPacket: ReadPacket & Partial<RmqRecord> =
