@@ -7,7 +7,8 @@ export interface ParseFileOptions {
   exceptionFactory?: (error: string) => any;
 
   /**
-   * Defines if file parameter is optional. Default is false.
+   * Defines if file parameter is required.
+   * @default true
    */
-  fileIsOptional?: boolean;
+  fileIsRequired?: boolean;
 }

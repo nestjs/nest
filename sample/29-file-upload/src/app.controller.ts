@@ -43,7 +43,7 @@ export class AppController {
           fileType: 'json',
         })
         .build({
-          fileIsOptional: true,
+          fileIsRequired: false,
         }),
     )
     file?: Express.Multer.File,

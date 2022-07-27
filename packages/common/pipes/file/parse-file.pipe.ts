@@ -20,14 +20,14 @@ import { ParseFileOptions } from './parse-file-options.interface';
 export class ParseFilePipe implements PipeTransform<any> {
   protected exceptionFactory: (error: string) => any;
   private readonly validators: FileValidator[];
-  private readonly fileIsOptional: boolean;
+  private readonly fileIsRequired: boolean;
 
   constructor(@Optional() options: ParseFileOptions = {}) {
     const {
       exceptionFactory,
       errorHttpStatusCode = HttpStatus.BAD_REQUEST,
       validators = [],
-      fileIsOptional,
+      fileIsRequired,
     } = options;
 
     this.exceptionFactory =
@@ -35,16 +35,16 @@ export class ParseFilePipe implements PipeTransform<any> {
       (error => new HttpErrorByCode[errorHttpStatusCode](error));
 
     this.validators = validators;
-    this.fileIsOptional = fileIsOptional ?? false;
+    this.fileIsRequired = fileIsRequired ?? true;
   }
 
   async transform(value: any): Promise<any> {
     if (isUndefined(value)) {
-      if (this.fileIsOptional) {
-        return value;
+      if (this.fileIsRequired) {
+        throw this.exceptionFactory('File is required');
       }
 
-      throw this.exceptionFactory('File is required');
+      return value;
     }
 
     if (this.validators.length) {
