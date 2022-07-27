@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { EventEmitter } from 'events';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, retryWhen, scan, share, switchMap } from 'rxjs/operators';
@@ -186,11 +187,20 @@ export class ClientRMQ extends ClientProxy {
 
   public async handleMessage(
     packet: unknown,
+    callback: (packet: WritePacket) => any,
+  );
+  public async handleMessage(
+    packet: unknown,
     options: Record<string, unknown>,
     callback: (packet: WritePacket) => any,
+  );
+  public async handleMessage(
+    packet: unknown,
+    options: Record<string, unknown> | ((packet: WritePacket) => any),
+    callback?: (packet: WritePacket) => any,
   ) {
-    if (typeof options === 'function') {
-      callback = options;
+    if (isFunction(options)) {
+      callback = options as (packet: WritePacket) => any;
       options = undefined;
     }
 

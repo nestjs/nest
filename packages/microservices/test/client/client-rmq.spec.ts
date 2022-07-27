@@ -290,7 +290,7 @@ describe('ClientRMQ', function () {
           response: 'test',
           isDisposed: false,
         };
-        await client.handleMessage(packet, undefined, callback);
+        await client.handleMessage(packet, callback);
         expect(
           callback.calledWith({
             err: packet.err,
