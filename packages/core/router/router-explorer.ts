@@ -9,10 +9,7 @@ import { VersioningType } from '@nestjs/common/enums/version-type.enum';
 import { InternalServerErrorException } from '@nestjs/common/exceptions';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import {
-  VersionValue,
-  VERSION_NEUTRAL,
-} from '@nestjs/common/interfaces/version-options.interface';
+import { VersionValue } from '@nestjs/common/interfaces/version-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import {
   addLeadingSlash,
