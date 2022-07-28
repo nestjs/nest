@@ -1,4 +1,4 @@
-import { source, packagePaths } from '../config';
+import { source } from '../config';
 import { task, watch, series, dest } from 'gulp';
 import { createProject } from 'gulp-typescript';
 import * as sourcemaps from 'gulp-sourcemaps';
