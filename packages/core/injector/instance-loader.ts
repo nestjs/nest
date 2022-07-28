@@ -11,10 +11,14 @@ export class InstanceLoader {
   protected readonly injector = new Injector();
   constructor(
     protected readonly container: NestContainer,
-    private readonly logger = new Logger(InstanceLoader.name, {
+    private logger = new Logger(InstanceLoader.name, {
       timestamp: true,
     }),
   ) {}
+
+  public setLogger(logger: Logger) {
+    this.logger = logger;
+  }
 
   public async createInstancesOfDependencies(
     modules: Map<string, Module> = this.container.getModules(),

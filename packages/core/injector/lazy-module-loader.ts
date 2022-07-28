@@ -2,6 +2,8 @@ import { DynamicModule, Type } from '@nestjs/common';
 import { DependenciesScanner } from '../scanner';
 import { ModuleCompiler } from './compiler';
 import { InstanceLoader } from './instance-loader';
+import { SilentLogger } from './silent-logger';
+import { LazyModuleLoaderLoadOptions } from './lazy-module-loader-options.interface';
 import { Module } from './module';
 import { ModuleRef } from './module-ref';
 import { ModulesContainer } from './modules-container';
@@ -19,7 +21,10 @@ export class LazyModuleLoader {
       | Promise<Type<unknown> | DynamicModule>
       | Type<unknown>
       | DynamicModule,
+    loadOpts?: LazyModuleLoaderLoadOptions,
   ): Promise<ModuleRef> {
+    this.registerLoggerConfiguration(loadOpts);
+
     const moduleClassOrDynamicDefinition = await loaderFn();
     const moduleInstances = await this.dependenciesScanner.scanForModules(
       moduleClassOrDynamicDefinition,
@@ -43,6 +48,12 @@ export class LazyModuleLoader {
     );
     const [targetModule] = moduleInstances;
     return this.getTargetModuleRef(targetModule);
+  }
+
+  private registerLoggerConfiguration(loadOpts?: LazyModuleLoaderLoadOptions) {
+    if (loadOpts?.logger === false) {
+      this.instanceLoader.setLogger(new SilentLogger());
+    }
   }
 
   private createLazyModulesContainer(
