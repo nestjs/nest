@@ -19,7 +19,7 @@ describe('Lazy imports', () => {
     server = app.getHttpAdapter().getInstance();
   });
 
-  it(`Should allow imports of global modules`, async () => {
+  it(`should allow imports of global modules`, async () => {
     await expect(app.init()).to.eventually.be.fulfilled;
   });
 
