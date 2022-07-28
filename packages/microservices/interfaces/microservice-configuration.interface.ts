@@ -183,6 +183,13 @@ export interface RmqOptions {
     persistent?: boolean;
     headers?: Record<string, string>;
     noAssert?: boolean;
+    /**
+     * Maximum number of connection attempts.
+     * Applies only to the consumer configuration.
+     * -1 === infinite
+     * @default -1
+     */
+    maxConnectionAttempts?: number;
   };
 }
 
