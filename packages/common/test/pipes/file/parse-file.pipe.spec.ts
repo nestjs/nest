@@ -116,5 +116,65 @@ describe('ParseFilePipe', () => {
         });
       });
     });
+
+    describe('when fileIsRequired is false', () => {
+      beforeEach(() => {
+        parseFilePipe = new ParseFilePipe({
+          validators: [],
+          fileIsRequired: false,
+        });
+      });
+
+      it('should pass validation if no file is provided', async () => {
+        const requestFile = undefined;
+
+        await expect(parseFilePipe.transform(requestFile)).to.eventually.eql(
+          requestFile,
+        );
+      });
+    });
+
+    describe('when fileIsRequired is true', () => {
+      beforeEach(() => {
+        parseFilePipe = new ParseFilePipe({
+          validators: [],
+          fileIsRequired: true,
+        });
+      });
+
+      it('should throw an error if no file is provided', async () => {
+        const requestFile = undefined;
+
+        await expect(parseFilePipe.transform(requestFile)).to.be.rejectedWith(
+          BadRequestException,
+        );
+      });
+
+      it('should pass validation if a file is provided', async () => {
+        const requestFile = {
+          path: 'some-path',
+        };
+
+        await expect(parseFilePipe.transform(requestFile)).to.eventually.eql(
+          requestFile,
+        );
+      });
+    });
+
+    describe('when fileIsRequired is not explicitly provided', () => {
+      beforeEach(() => {
+        parseFilePipe = new ParseFilePipe({
+          validators: [new AlwaysInvalidValidator({})],
+        });
+      });
+
+      it('should throw an error if no file is provided', async () => {
+        const requestFile = undefined;
+
+        await expect(parseFilePipe.transform(requestFile)).to.be.rejectedWith(
+          BadRequestException,
+        );
+      });
+    });
   });
 });
