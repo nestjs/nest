@@ -76,7 +76,7 @@ describe('ClientKafka', () => {
       message,
       {
         size: 0,
-        value: { test: true },
+        value: Buffer.from(JSON.stringify({ test: true })),
       },
     ),
     heartbeat,
@@ -488,7 +488,7 @@ describe('ClientKafka', () => {
         expect(
           callback.calledWith({
             isDisposed: true,
-            response: payloadDisposed.message.value,
+            response: deserializedPayloadDisposed.message.value,
             err: undefined,
           }),
         ).to.be.true;
