@@ -9,7 +9,7 @@ export class KafkaParser {
   }
 
   public parse<T = any>(data: any): T {
-    // Duplicate the object to not modify the original one (would break KafkaJS retries)
+    // Clone object to as modifying the original one would break KafkaJS retries
     const result = {
       ...data,
       headers: { ...data.headers },
