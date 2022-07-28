@@ -14,6 +14,7 @@ import {
 } from './interfaces';
 import { ConfigurableModuleHost } from './interfaces/configurable-module-host.interface';
 import { generateOptionsInjectionToken } from './utils/generate-options-injection-token.util';
+import { getInjectionProviders } from './utils/get-injection-providers.util';
 
 /**
  * @publicApi
@@ -269,6 +270,15 @@ export class ConfigurableModuleBuilder<
         options: ConfigurableModuleAsyncOptions<ModuleOptions>,
       ): Provider[] {
         if (options.useExisting || options.useFactory) {
+          if (options.inject && options.provideInjectionTokensFrom) {
+            return [
+              this.createAsyncOptionsProvider(options),
+              ...getInjectionProviders(
+                options.provideInjectionTokensFrom,
+                options.inject,
+              ),
+            ];
+          }
           return [this.createAsyncOptionsProvider(options)];
         }
         return [
