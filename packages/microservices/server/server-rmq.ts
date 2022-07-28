@@ -11,12 +11,12 @@ import {
   DISCONNECTED_RMQ_MESSAGE,
   NO_MESSAGE_HANDLER,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
+  RQM_DEFAULT_NO_ASSERT,
   RQM_DEFAULT_NOACK,
   RQM_DEFAULT_PREFETCH_COUNT,
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
-  RQM_DEFAULT_NO_ASSERT,
 } from '../constants';
 import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
@@ -142,7 +142,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     }
     const { content, properties } = message;
     const rawMessage = JSON.parse(content.toString());
-    const packet = await this.deserializer.deserialize(rawMessage);
+    const packet = await this.deserializer.deserialize(rawMessage, properties);
     const pattern = isString(packet.pattern)
       ? packet.pattern
       : JSON.stringify(packet.pattern);

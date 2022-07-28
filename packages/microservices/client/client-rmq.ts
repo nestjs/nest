@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { EventEmitter } from 'events';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, retryWhen, scan, share, switchMap } from 'rxjs/operators';
@@ -187,9 +188,25 @@ export class ClientRMQ extends ClientProxy {
   public async handleMessage(
     packet: unknown,
     callback: (packet: WritePacket) => any,
+  );
+  public async handleMessage(
+    packet: unknown,
+    options: Record<string, unknown>,
+    callback: (packet: WritePacket) => any,
+  );
+  public async handleMessage(
+    packet: unknown,
+    options: Record<string, unknown> | ((packet: WritePacket) => any),
+    callback?: (packet: WritePacket) => any,
   ) {
+    if (isFunction(options)) {
+      callback = options as (packet: WritePacket) => any;
+      options = undefined;
+    }
+
     const { err, response, isDisposed } = await this.deserializer.deserialize(
       packet,
+      options,
     );
     if (isDisposed || err) {
       callback({
@@ -210,8 +227,14 @@ export class ClientRMQ extends ClientProxy {
   ): () => void {
     try {
       const correlationId = randomStringGenerator();
-      const listener = ({ content }: { content: any }) =>
-        this.handleMessage(JSON.parse(content.toString()), callback);
+      const listener = ({
+        content,
+        options,
+      }: {
+        content: any;
+        options: Record<string, unknown>;
+      }) =>
+        this.handleMessage(JSON.parse(content.toString()), options, callback);
 
       Object.assign(message, { id: correlationId });
       const serializedPacket: ReadPacket & Partial<RmqRecord> =
