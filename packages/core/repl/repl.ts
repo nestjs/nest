@@ -7,8 +7,8 @@ import { ReplContext } from './repl-context';
 import { ReplLogger } from './repl-logger';
 import { AbstractHttpAdapter } from '../adapters/http-adapter';
 
-export async function repl(module: Type, httpAdapter?: AbstractHttpAdapter) {
-  const app = await NestFactory.create(module, httpAdapter, {
+export async function repl(module: Type) {
+  const app = await NestFactory.createApplicationContext(module, {
     abortOnError: false,
     logger: new ReplLogger(),
   });

@@ -1,4 +1,4 @@
-import { INestApplication, InjectionToken, Logger } from '@nestjs/common';
+import { INestApplicationContext, InjectionToken, Logger } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config';
 import { ModuleRef, NestContainer } from '../injector';
 import { InternalCoreModule } from '../injector/internal-core-module';
@@ -33,7 +33,7 @@ export class ReplContext {
   private readonly container: NestContainer;
 
   constructor(
-    public readonly app: INestApplication,
+    public readonly app: INestApplicationContext,
     nativeFunctionsClassRefs?: ReplFunctionClass[],
   ) {
     this.container = (app as any).container; // Using `any` because `app.container` is not public.
