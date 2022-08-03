@@ -1,3 +1,7 @@
+import {
+  HttpExceptionBodyMessage,
+  HttpExceptionBody,
+} from '../interfaces/http/http-exception-body.interface';
 import { Logger } from '../services';
 import { isObject, isString } from '../utils/shared.utils';
 
@@ -118,17 +122,42 @@ export class HttpException extends Error {
   }
 
   public static createBody(
-    objectOrErrorMessage: object | string,
-    description?: string,
+    nil: null | '',
+    message: HttpExceptionBodyMessage,
+    statusCode: number,
+  ): HttpExceptionBody;
+
+  public static createBody(
+    message: HttpExceptionBodyMessage,
+    error: string,
+    statusCode: number,
+  ): HttpExceptionBody;
+
+  public static createBody<Body extends Record<string, unknown>>(
+    custom: Body,
+  ): Body;
+
+  public static createBody<Body extends Record<string, unknown>>(
+    arg0: null | HttpExceptionBodyMessage | Body,
+    arg1?: HttpExceptionBodyMessage | string,
     statusCode?: number,
-  ) {
-    if (!objectOrErrorMessage) {
-      return { statusCode, message: description };
+  ): HttpExceptionBody | Body {
+    if (!arg0) {
+      return {
+        message: arg1,
+        statusCode: statusCode,
+      };
     }
-    return isObject(objectOrErrorMessage) &&
-      !Array.isArray(objectOrErrorMessage)
-      ? objectOrErrorMessage
-      : { statusCode, message: objectOrErrorMessage, error: description };
+
+    if (isString(arg0) || Array.isArray(arg0)) {
+      return {
+        message: arg0,
+        error: arg1 as string,
+        statusCode: statusCode,
+      };
+    }
+
+    return arg0;
   }
 
   public static getDescriptionFrom(
