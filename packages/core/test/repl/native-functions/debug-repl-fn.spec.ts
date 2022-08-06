@@ -24,9 +24,15 @@ describe('DebugReplFn', () => {
     container.addController(class ControllerA {}, aModuleRef.token);
     container.addProvider(class ProviderA1 {}, aModuleRef.token);
     container.addProvider(class ProviderA2 {}, aModuleRef.token);
+    container.addProvider(class SharedProvider {}, aModuleRef.token);
+    container.addProvider(
+      { provide: 'StringToken', useValue: 123 },
+      aModuleRef.token,
+    );
 
     container.addProvider(class ProviderB1 {}, bModuleRef.token);
     container.addProvider(class ProviderB2 {}, bModuleRef.token);
+    container.addProvider(class SharedProvider {}, bModuleRef.token);
 
     mockApp = {
       container,
@@ -68,10 +74,13 @@ ModuleA:
  - providers:
   ◻ ProviderA1
   ◻ ProviderA2
+  ◻ SharedProvider
+  ◻ "StringToken"
 ModuleB:
  - providers:
   ◻ ProviderB1
   ◻ ProviderB2
+  ◻ SharedProvider
 
 `);
     });
@@ -93,6 +102,8 @@ ModuleA:
  - providers:
   ◻ ProviderA1
   ◻ ProviderA2
+  ◻ SharedProvider
+  ◻ "StringToken"
 
 `);
       });
@@ -114,6 +125,8 @@ ModuleA:
  - providers:
   ◻ ProviderA1
   ◻ ProviderA2
+  ◻ SharedProvider
+  ◻ "StringToken"
 
 `);
       });
