@@ -86,15 +86,9 @@ export class ClassSerializerInterceptor implements NestInterceptor {
   protected getContextOptions(
     context: ExecutionContext,
   ): ClassTransformOptions | undefined {
-    return (
-      this.reflectSerializeMetadata(context.getHandler()) ||
-      this.reflectSerializeMetadata(context.getClass())
-    );
-  }
-
-  private reflectSerializeMetadata(
-    obj: object | Function,
-  ): ClassTransformOptions | undefined {
-    return this.reflector.get(CLASS_SERIALIZER_OPTIONS, obj);
+    return this.reflector.getAllAndOverride(CLASS_SERIALIZER_OPTIONS, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
   }
 }
