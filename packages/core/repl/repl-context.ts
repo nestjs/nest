@@ -80,21 +80,24 @@ export class ReplContext {
       const stringifiedToken = this.stringifyToken(token);
       if (
         stringifiedToken === ApplicationConfig.name ||
-        stringifiedToken === moduleRef.metatype.name ||
-        this.globalScope[stringifiedToken]
+        stringifiedToken === moduleRef.metatype.name
       ) {
         return;
       }
-      // For in REPL auto-complete functionality
-      Object.defineProperty(this.globalScope, stringifiedToken, {
-        value: token,
-        configurable: false,
-        enumerable: true,
-      });
+
+      if (!this.globalScope[stringifiedToken]) {
+        // For in REPL auto-complete functionality
+        Object.defineProperty(this.globalScope, stringifiedToken, {
+          value: token,
+          configurable: false,
+          enumerable: true,
+        });
+      }
 
       if (stringifiedToken === ModuleRef.name) {
         return;
       }
+
       moduleDebugEntry[stringifiedToken] = token;
     });
 
@@ -109,7 +112,7 @@ export class ReplContext {
       ? typeof token === 'function'
         ? token.name
         : token?.toString()
-      : token;
+      : `"${token}"`;
   }
 
   private addNativeFunction(
