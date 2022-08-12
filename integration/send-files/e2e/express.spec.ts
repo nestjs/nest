@@ -5,10 +5,14 @@ import {
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { readFileSync } from 'fs';
-import * as http from 'http';
 import { join } from 'path';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
+import {
+  getHttpBaseOptions,
+  sendCanceledHttpRequest,
+  sendHttpRequest,
+} from './utils';
 
 const readme = readFileSync(join(process.cwd(), 'Readme.md'));
 const readmeString = readme.toString();
@@ -71,42 +75,9 @@ describe('Express FileSend', () => {
   });
   it('should allow for the client to end the response and be able to make another', async () => {
     await app.listen(0);
-    const url = await app.getUrl();
-    const [protocol, host, port] = url.replace('[::1]', 'localhost').split(':');
-    const httpOptions = {
-      host: host.replace('//', ''),
-      protocol: `${protocol}:`,
-      port,
-      path: '/file/slow',
-      method: 'GET',
-    };
-    await new Promise<void>(resolve => {
-      const req = http.request(httpOptions, res => {
-        res.on('data', () => {
-          req.destroy();
-        });
-        /* no op */
-        res.on('close', resolve);
-      });
-      req.end();
-    });
-    await new Promise<void>((resolve, reject) => {
-      const req = http.request(
-        { ...httpOptions, path: '/file/stream' },
-        res => {
-          res.on('data', chunk => {
-            /* no op */
-          });
-          res.on('error', err => {
-            reject(err);
-          });
-          res.on('end', () => {
-            expect(res.statusCode).to.be.eq(200);
-            resolve();
-          });
-        },
-      );
-      req.end();
-    });
+    const httpOptions = await getHttpBaseOptions(app);
+    await sendCanceledHttpRequest(httpOptions, '/file/slow');
+    const res = await sendHttpRequest(httpOptions, '/file/stream');
+    expect(res.statusCode).to.be.eq(200);
   }).timeout(5000);
 });
