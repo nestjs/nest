@@ -25,7 +25,7 @@ export class NestApplicationContextOptions {
 
   /**
    * If enabled, logs will be automatically flushed and buffer detached when
-   * application initialisation process either completes or fails.
+   * application initialization process either completes or fails.
    * @default true
    */
   autoFlushLogs?: boolean;
