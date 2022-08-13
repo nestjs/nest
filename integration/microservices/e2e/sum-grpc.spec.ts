@@ -60,6 +60,18 @@ describe('GRPC transport', () => {
       .expect(200, { result: 15 });
   });
 
+  it(`GRPC Receiving serialized Error`, async () => {
+    await request(server)
+      .post('/error?client=standard')
+      .expect(200)
+      .expect('false');
+
+    await request(server)
+      .post('/error?client=custom')
+      .expect(200)
+      .expect('true');
+  });
+
   it(`GRPC Sending and Receiving HTTP POST (multiple proto)`, async () => {
     await request(server)
       .post('/multi/sum')

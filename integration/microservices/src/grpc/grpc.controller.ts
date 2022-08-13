@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
   ClientGrpc,
@@ -6,12 +6,28 @@ import {
   GrpcStreamCall,
   GrpcStreamMethod,
   Transport,
+  ClientGrpcProxy,
+  RpcException,
 } from '@nestjs/microservices';
 import { join } from 'path';
-import { Observable, of } from 'rxjs';
+import { Observable, of, catchError } from 'rxjs';
+
+class ErrorHandlingProxy extends ClientGrpcProxy {
+  serializeError(err) {
+    return new RpcException(err);
+  }
+}
 
 @Controller()
 export class GrpcController {
+  private readonly customClient: ClientGrpc;
+  constructor() {
+    this.customClient = new ErrorHandlingProxy({
+      package: 'math',
+      protoPath: join(__dirname, 'math.proto'),
+    });
+  }
+
   @Client({
     transport: Transport.GRPC,
     options: {
@@ -78,6 +94,19 @@ export class GrpcController {
     });
   }
 
+  @GrpcMethod('Math')
+  async divide(request: { dividend: number; divisor: number }): Promise<any> {
+    if (request.divisor === 0) {
+      throw new RpcException({
+        code: 3,
+        message: 'dividing by 0 is not possible',
+      });
+    }
+    return {
+      result: request.dividend / request.divisor,
+    };
+  }
+
   @GrpcMethod('Math2')
   async sum2({ data }: { data: number[] }): Promise<any> {
     return of({
@@ -97,5 +126,25 @@ export class GrpcController {
   callMultiSum2(@Body() data: number[]): Observable<number> {
     const svc = this.clientMulti.getService<any>('Math2');
     return svc.sum2({ data });
+  }
+
+  @Post('error')
+  @HttpCode(200)
+  serializeError(
+    @Query('client') query: 'custom' | 'standard' = 'standard',
+    @Body() body: Record<string, any>,
+  ): Observable<boolean> {
+    const client = query === 'custom' ? this.customClient : this.client;
+    const svc = client.getService<any>('Math');
+
+    const errorDivideRequest = {
+      dividend: 1,
+      divisor: 0,
+    };
+    return svc.divide(errorDivideRequest).pipe(
+      catchError(err => {
+        return of(err instanceof RpcException);
+      }),
+    );
   }
 }

@@ -6,6 +6,7 @@ service Math {
   rpc Sum (RequestSum) returns (SumResult);
   rpc SumStream(stream RequestSum) returns(stream SumResult);
   rpc SumStreamPass(stream RequestSum) returns(stream SumResult);
+  rpc Divide (RequestDivide) returns (DivideResult);
 }
 
 message SumResult {
@@ -14,4 +15,13 @@ message SumResult {
 
 message RequestSum {
   repeated int32 data = 1;
+}
+
+message RequestDivide {
+  int32 dividend = 1;
+  int32 divisor = 2 ;
+}
+
+message DivideResult {
+  int32 result = 1;
 }
