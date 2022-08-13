@@ -51,7 +51,7 @@ export interface ClassProvider<T = any> {
    *
    * @see [Use factory](https://docs.nestjs.com/fundamentals/custom-providers#factory-providers-usefactory)
    */
-  inject?: never;
+  inject?: 'The `inject` option is only for factory providers!';
   /**
    * Flags provider as durable. This flag can be used in combination with custom context id
    * factory strategy to construct lazy DI subtrees.
@@ -90,7 +90,7 @@ export interface ValueProvider<T = any> {
    *
    * @see [Use factory](https://docs.nestjs.com/fundamentals/custom-providers#factory-providers-usefactory)
    */
-  inject?: never;
+  inject?: 'The `inject` option is only for factory providers!';
 }
 
 /**
