@@ -30,7 +30,7 @@ export const sendHttpRequest = async (url: URL) => {
       // this makes sure that the response actually starts and is read. We could verify this value against the same
       // that is in an earlier test, but all we care about in _this_ test is that the status code is 200
       res.on('data', chunk => {
-        /* no op */
+        // no op
       });
       // fail the test if somethin goes wrong
       res.on('error', err => {
