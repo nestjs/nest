@@ -75,9 +75,9 @@ describe('Express FileSend', () => {
   });
   it('should allow for the client to end the response and be able to make another', async () => {
     await app.listen(0);
-    const httpOptions = await getHttpBaseOptions(app);
-    await sendCanceledHttpRequest(httpOptions, '/file/slow');
-    const res = await sendHttpRequest(httpOptions, '/file/stream');
+    const url = await getHttpBaseOptions(app);
+    await sendCanceledHttpRequest(new URL('/file/slow', url));
+    const res = await sendHttpRequest(new URL('/file/stream', url));
     expect(res.statusCode).to.be.eq(200);
   }).timeout(5000);
 });
