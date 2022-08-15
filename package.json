@@ -139,7 +139,7 @@
     "gulp-watch": "5.0.1",
     "http-errors": "2.0.0",
     "husky": "8.0.1",
-    "imports-loader": "4.0.0",
+    "imports-loader": "4.0.1",
     "ioredis": "5.2.2",
     "json-loader": "0.5.7",
     "kafkajs": "2.1.0",
