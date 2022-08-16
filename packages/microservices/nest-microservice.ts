@@ -166,10 +166,10 @@ export class NestMicroservice
   }
 
   protected async dispose(): Promise<void> {
-    await this.server.close();
     if (this.isTerminated) {
       return;
     }
+    await this.server.close();
     this.socketModule && (await this.socketModule.close());
     this.microservicesModule && (await this.microservicesModule.close());
   }
