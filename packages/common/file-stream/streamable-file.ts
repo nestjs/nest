@@ -4,6 +4,7 @@ import { isFunction } from '../utils/shared.utils';
 import { StreamableFileOptions } from './streamable-options.interface';
 
 export interface StreamableHandlerResponse {
+  destroyed: boolean;
   statusCode: number;
   send: (msg: string) => void;
 }
@@ -15,8 +16,10 @@ export class StreamableFile {
     err: Error,
     response: StreamableHandlerResponse,
   ) => void = (err: Error, res) => {
-    res.statusCode = 400;
-    res.send(err.message);
+    if (!res.destroyed) {
+      res.statusCode = 400;
+      res.send(err.message);
+    }
   };
 
   constructor(buffer: Uint8Array, options?: StreamableFileOptions);

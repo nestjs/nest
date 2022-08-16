@@ -36,4 +36,9 @@ export class AppController {
   getNonExistantFile(): StreamableFile {
     return this.appService.getFileThatDoesNotExist();
   }
+
+  @Get('/file/slow')
+  getSlowFile(): StreamableFile {
+    return this.appService.getSlowStream();
+  }
 }
