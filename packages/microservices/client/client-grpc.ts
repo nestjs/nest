@@ -174,7 +174,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
               return;
             }
           }
-          observer.error(error);
+          observer.error(this.serializeError(error));
         });
         call.on('end', () => {
           if (upstreamSubscription) {
@@ -216,7 +216,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
           const callArgs = [
             (error: unknown, data: unknown) => {
               if (error) {
-                return observer.error(error);
+                return observer.error(this.serializeError(error));
               }
               observer.next(data);
               observer.complete();
@@ -243,7 +243,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       return new Observable(observer => {
         client[methodName](...args, (error: any, data: any) => {
           if (error) {
-            return observer.error(error);
+            return observer.error(this.serializeError(error));
           }
           observer.next(data);
           observer.complete();
