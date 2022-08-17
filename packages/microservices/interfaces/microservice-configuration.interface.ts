@@ -174,6 +174,7 @@ export interface RmqOptions {
     queue?: string;
     prefetchCount?: number;
     isGlobalPrefetchCount?: boolean;
+    consumerOptions?: any; // AmqplibConsumerOptions;
     queueOptions?: any; // AmqplibQueueOptions;
     socketOptions?: any; // AmqpConnectionManagerSocketOptions;
     noAck?: boolean;

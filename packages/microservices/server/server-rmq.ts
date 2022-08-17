@@ -16,6 +16,7 @@ import {
   RQM_DEFAULT_PREFETCH_COUNT,
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
+  RQM_DEFAULT_CONSUMER_OPTIONS,
   RQM_DEFAULT_URL,
 } from '../constants';
 import { RmqContext } from '../ctx-host';
@@ -43,6 +44,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   protected readonly queue: string;
   protected readonly prefetchCount: number;
   protected readonly queueOptions: any;
+  protected readonly consumerOptions: any;
   protected readonly isGlobalPrefetchCount: boolean;
   protected readonly noAssert: boolean;
 
@@ -60,6 +62,9 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     this.queueOptions =
       this.getOptionsProp(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
+    this.consumerOptions =
+      this.getOptionsProp(this.options, 'consumerOptions') ||
+      RQM_DEFAULT_CONSUMER_OPTIONS;
     this.noAssert =
       this.getOptionsProp(this.options, 'noAssert') || RQM_DEFAULT_NO_ASSERT;
 
@@ -152,6 +157,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       (msg: Record<string, any>) => this.handleMessage(msg, channel),
       {
         noAck,
+        ...this.consumerOptions,
       },
     );
     callback();

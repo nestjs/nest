@@ -28,3 +28,11 @@ export interface AmqplibQueueOptions {
   maxLength?: number;
   maxPriority?: number;
 }
+
+export interface AmqplibConsumerOptions {
+  noAck?: boolean;
+  consumerTag?: string,
+  noLocal?: string,
+  exclusive?: string,
+  arguments?: any;
+}
