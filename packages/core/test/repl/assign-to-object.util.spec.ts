@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { assignToObject } from '@nestjs/core/repl/assign-to-object.util';
+import { assignToObject } from '../../repl/assign-to-object.util';
 
 describe('assignToObject', () => {
   it('should copy all enumerable properties and their descriptors', () => {
