@@ -3,7 +3,13 @@ import { KafkaContext } from '../../ctx-host';
 import { Consumer, KafkaMessage } from '../../external/kafka.interface';
 
 describe('KafkaContext', () => {
-  const args = ['test', { test: true }, undefined, { test: 'consumer' }, () => {}];
+  const args = [
+    'test',
+    { test: true },
+    undefined,
+    { test: 'consumer' },
+    () => {},
+  ];
   let context: KafkaContext;
 
   beforeEach(() => {

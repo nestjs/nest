@@ -3,7 +3,7 @@ import {
   Controller,
   InternalServerErrorException,
   Post,
-  RequestTimeoutException
+  RequestTimeoutException,
 } from '@nestjs/common';
 import { ClientProxyFactory } from '@nestjs/microservices';
 import { Observable, throwError } from 'rxjs';

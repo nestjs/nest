@@ -1,4 +1,8 @@
-import { INestApplicationContext, InjectionToken, Logger } from '@nestjs/common';
+import {
+  INestApplicationContext,
+  InjectionToken,
+  Logger,
+} from '@nestjs/common';
 import { ApplicationConfig } from '../application-config';
 import { ModuleRef, NestContainer } from '../injector';
 import { InternalCoreModule } from '../injector/internal-core-module';
