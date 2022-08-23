@@ -36,7 +36,8 @@
     "uuid": "8.3.2"
   },
   "devDependencies": {
-    "@nestjs/common": "9.0.11"
+    "@nestjs/common": "9.0.11",
+    "@nestjs/microservices": "9.0.11"
   },
   "peerDependencies": {
     "@nestjs/common": "^9.0.0",
