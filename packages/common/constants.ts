@@ -17,8 +17,8 @@ export const METHOD_METADATA = 'method';
 export const ROUTE_ARGS_METADATA = '__routeArguments__';
 export const CUSTOM_ROUTE_ARGS_METADATA = '__customRouteArgs__';
 /**
-  * @deprecated Use `CUSTOM_ROUTE_ARGS_METADATA` instead
-  */
+ * @deprecated Use `CUSTOM_ROUTE_ARGS_METADATA` instead
+ */
 export const CUSTOM_ROUTE_AGRS_METADATA = CUSTOM_ROUTE_ARGS_METADATA;
 export const EXCEPTION_FILTERS_METADATA = '__exceptionFilters__';
 export const FILTER_CATCH_EXCEPTIONS = '__filterCatchExceptions__';

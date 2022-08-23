@@ -45,7 +45,7 @@ export class KafkaContext extends BaseRpcContext<KafkaContextArgs> {
   /**
    * Returns the Kafka heartbeat callback.
    */
-   getHeartbeat() {
+  getHeartbeat() {
     return this.args[4];
-  } 
+  }
 }
