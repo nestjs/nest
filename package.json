@@ -82,7 +82,7 @@
     "@fastify/view": "7.1.0",
     "@grpc/grpc-js": "1.6.10",
     "@grpc/proto-loader": "0.7.0",
-    "@nestjs/apollo": "10.0.19",
+    "@nestjs/apollo": "10.0.22",
     "@nestjs/graphql": "10.0.21",
     "@nestjs/mongoose": "9.2.0",
     "@nestjs/typeorm": "9.0.1",
