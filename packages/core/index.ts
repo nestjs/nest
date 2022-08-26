@@ -21,3 +21,4 @@ export { NestFactory } from './nest-factory';
 export * from './repl';
 export * from './router';
 export * from './services';
+export * from './url';
