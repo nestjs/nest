@@ -3,8 +3,9 @@
  */
 
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { ScopeOptions } from '@nestjs/common';
 
-export interface GatewayMetadata {
+export interface GatewayMetadata extends ScopeOptions {
   /**
    * The name of a namespace
    */

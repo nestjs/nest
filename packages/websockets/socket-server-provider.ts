@@ -41,8 +41,10 @@ export class SocketServerProvider {
       unknown
     >;
     const ioServer = adapter.create(port, partialOptions);
-    const serverAndEventStreamsHost =
-      ServerAndEventStreamsFactory.create(ioServer);
+    const serverAndEventStreamsHost = ServerAndEventStreamsFactory.create(
+      adapter,
+      ioServer,
+    );
 
     this.socketsContainer.addOne(
       { port, path: options.path },
@@ -59,13 +61,17 @@ export class SocketServerProvider {
     port: number,
     targetServer: unknown,
   ): ServerAndEventStreamsHost {
+    const adapter = this.applicationConfig.getIoAdapter();
+
     const namespaceServer = this.getServerOfNamespace(
       options,
       port,
       targetServer,
     );
-    const serverAndEventStreamsHost =
-      ServerAndEventStreamsFactory.create(namespaceServer);
+    const serverAndEventStreamsHost = ServerAndEventStreamsFactory.create(
+      adapter,
+      namespaceServer,
+    );
     this.socketsContainer.addOne(
       { port, path: options.path, namespace: options.namespace },
       serverAndEventStreamsHost,

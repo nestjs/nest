@@ -16,10 +16,10 @@ import { GATEWAY_METADATA } from './constants';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { WsContextCreator } from './context/ws-context-creator';
 import { WsProxy } from './context/ws-proxy';
-import { NestGateway } from './interfaces/nest-gateway.interface';
 import { SocketServerProvider } from './socket-server-provider';
 import { SocketsContainer } from './sockets-container';
 import { WebSocketsController } from './web-sockets-controller';
+import { Injector } from '@nestjs/core/injector/injector';
 
 export class SocketModule<HttpServer = any> {
   private readonly socketsContainer = new SocketsContainer();
@@ -31,6 +31,7 @@ export class SocketModule<HttpServer = any> {
   public register(
     container: NestContainer,
     config: ApplicationConfig,
+    injector: Injector,
     httpServer?: HttpServer,
   ) {
     this.applicationConfig = config;
@@ -42,6 +43,8 @@ export class SocketModule<HttpServer = any> {
       config,
     );
     this.webSocketsController = new WebSocketsController(
+      container,
+      injector,
       serverProvider,
       config,
       contextCreator,
@@ -65,7 +68,7 @@ export class SocketModule<HttpServer = any> {
     wrapper: InstanceWrapper<Injectable>,
     moduleName: string,
   ) {
-    const { instance, metatype } = wrapper;
+    const { metatype } = wrapper;
     const metadataKeys = Reflect.getMetadataKeys(metatype);
     if (!metadataKeys.includes(GATEWAY_METADATA)) {
       return;
@@ -74,7 +77,7 @@ export class SocketModule<HttpServer = any> {
       this.initializeAdapter();
     }
     this.webSocketsController.connectGatewayToServer(
-      instance as NestGateway,
+      wrapper,
       metatype,
       moduleName,
     );

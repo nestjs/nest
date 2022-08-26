@@ -155,7 +155,12 @@ export class NestApplication
     if (!this.socketModule) {
       return;
     }
-    this.socketModule.register(this.container, this.config, this.httpServer);
+    this.socketModule.register(
+      this.container,
+      this.config,
+      this.injector,
+      this.httpServer,
+    );
   }
 
   public async init(): Promise<this> {

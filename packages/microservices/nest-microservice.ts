@@ -12,6 +12,7 @@ import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MESSAGES } from '@nestjs/core/constants';
 import { optionalRequire } from '@nestjs/core/helpers/optional-require';
 import { NestContainer } from '@nestjs/core/injector/container';
+import { Injector } from '@nestjs/core/injector/injector';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
 import { Transport } from './enums/transport.enum';
 import { CustomTransportStrategy } from './interfaces/custom-transport-strategy.interface';
@@ -68,8 +69,13 @@ export class NestMicroservice
   }
 
   public async registerModules(): Promise<any> {
+    const injector = new Injector();
     this.socketModule &&
-      this.socketModule.register(this.container, this.applicationConfig);
+      this.socketModule.register(
+        this.container,
+        this.applicationConfig,
+        injector,
+      );
     this.microservicesModule.setupClients(this.container);
 
     this.registerListeners();
