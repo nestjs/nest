@@ -1,14 +1,16 @@
-import { METHOD_METADATA, PATH_METADATA } from '../../constants';
+import { METHOD_METADATA, NAME_METADATA, PATH_METADATA } from '../../constants';
 import { RequestMethod } from '../../enums/request-method.enum';
 
 export interface RequestMappingMetadata {
   path?: string | string[];
   method?: RequestMethod;
+  name?: string;
 }
 
 const defaultMetadata = {
   [PATH_METADATA]: '/',
   [METHOD_METADATA]: RequestMethod.GET,
+  [NAME_METADATA]: null,
 };
 
 export const RequestMapping = (
@@ -17,6 +19,7 @@ export const RequestMapping = (
   const pathMetadata = metadata[PATH_METADATA];
   const path = pathMetadata && pathMetadata.length ? pathMetadata : '/';
   const requestMethod = metadata[METHOD_METADATA] || RequestMethod.GET;
+  const name = metadata[NAME_METADATA] || null;
 
   return (
     target: object,
@@ -25,16 +28,18 @@ export const RequestMapping = (
   ) => {
     Reflect.defineMetadata(PATH_METADATA, path, descriptor.value);
     Reflect.defineMetadata(METHOD_METADATA, requestMethod, descriptor.value);
+    Reflect.defineMetadata(NAME_METADATA, name, descriptor.value);
     return descriptor;
   };
 };
 
 const createMappingDecorator =
   (method: RequestMethod) =>
-  (path?: string | string[]): MethodDecorator => {
+  (path?: string | string[], name?: string): MethodDecorator => {
     return RequestMapping({
       [PATH_METADATA]: path,
       [METHOD_METADATA]: method,
+      [NAME_METADATA]: name,
     });
   };
 

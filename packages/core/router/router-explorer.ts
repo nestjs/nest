@@ -1,6 +1,7 @@
 import { HttpServer } from '@nestjs/common';
 import {
   METHOD_METADATA,
+  NAME_METADATA,
   PATH_METADATA,
   VERSION_METADATA,
 } from '@nestjs/common/constants';
@@ -48,6 +49,7 @@ import { RouterProxy, RouterProxyCallback } from './router-proxy';
 
 export interface RouteDefinition {
   path: string[];
+  name?: string;
   requestMethod: RequestMethod;
   targetCallback: RouterProxyCallback;
   methodName: string;
@@ -162,9 +164,11 @@ export class RouterExplorer {
     const path = isString(routePath)
       ? [addLeadingSlash(routePath)]
       : routePath.map((p: string) => addLeadingSlash(p));
+    const name = Reflect.getMetadata(NAME_METADATA, prototypeCallback);
 
     return {
       path,
+      name,
       requestMethod,
       targetCallback: instanceCallback,
       methodName,
