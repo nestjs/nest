@@ -4,6 +4,7 @@ import {
   FactoryProvider,
   ValueProvider,
 } from '@nestjs/common/interfaces';
+import { RoutingTable } from '../router/routing-table';
 import { requestProvider } from '../router/request/request-providers';
 import { Reflector } from '../services';
 import { inquirerProvider } from './inquirer/inquirer-providers';
@@ -20,12 +21,14 @@ const ReflectorAliasProvider = {
     ReflectorAliasProvider,
     requestProvider,
     inquirerProvider,
+    RoutingTable,
   ],
   exports: [
     Reflector,
     ReflectorAliasProvider,
     requestProvider,
     inquirerProvider,
+    RoutingTable,
   ],
 })
 export class InternalCoreModule {

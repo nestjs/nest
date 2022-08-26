@@ -16,6 +16,7 @@ import {
   addLeadingSlash,
   isString,
   isUndefined,
+  getSlugs,
 } from '@nestjs/common/utils/shared.utils';
 import * as pathToRegexp from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config';
@@ -46,6 +47,7 @@ import { RouteParamsFactory } from './route-params-factory';
 import { RoutePathFactory } from './route-path-factory';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
+import { RoutingTable } from './routing-table';
 
 export interface RouteDefinition {
   path: string[];
@@ -63,6 +65,7 @@ export class RouterExplorer {
     timestamp: true,
   });
   private readonly exceptionFiltersCache = new WeakMap();
+  private readonly routingTable: RoutingTable;
 
   constructor(
     private readonly metadataScanner: MetadataScanner,
@@ -94,6 +97,9 @@ export class RouterExplorer {
       interceptorsConsumer,
       container.getHttpAdapterRef(),
     );
+    this.routingTable = this.container
+      .getInternalCoreModuleRef()
+      .providers.get(RoutingTable).instance as RoutingTable;
   }
 
   public explore<T extends HttpServer = any>(
@@ -260,7 +266,16 @@ export class RouterExplorer {
         routePathMetadata,
         requestMethod,
       );
-      pathsToRegister.forEach(path => routerMethodRef(path, routeHandler));
+      pathsToRegister.forEach(path => {
+        routerMethodRef(path, routeHandler);
+        this.routingTable.addEntry({
+          ...routePathMetadata,
+          fullUrl: path,
+          requestMethod: requestMethod,
+          routeName: routeDefinition.name,
+          slugs: getSlugs(path),
+        });
+      });
 
       const pathsToLog = this.routePathFactory.create(
         {
