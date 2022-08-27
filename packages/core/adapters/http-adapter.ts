@@ -100,18 +100,18 @@ export abstract class AbstractHttpAdapter<
   abstract initHttpServer(options: NestApplicationOptions);
   abstract useStaticAssets(...args: any[]);
   abstract setViewEngine(engine: string);
-  abstract getRequestHostname(request);
-  abstract getRequestMethod(request);
-  abstract getRequestUrl(request);
-  abstract status(response, statusCode: number);
-  abstract reply(response, body: any, statusCode?: number);
-  abstract end(response, message?: string);
-  abstract render(response, view: string, options: any);
-  abstract redirect(response, statusCode: number, url: string);
+  abstract getRequestHostname(request: any);
+  abstract getRequestMethod(request: any);
+  abstract getRequestUrl(request: any);
+  abstract status(response: any, statusCode: number);
+  abstract reply(response: any, body: any, statusCode?: number);
+  abstract end(response: any, message?: string);
+  abstract render(response: any, view: string, options: any);
+  abstract redirect(response: any, statusCode: number, url: string);
   abstract setErrorHandler(handler: Function, prefix?: string);
   abstract setNotFoundHandler(handler: Function, prefix?: string);
-  abstract isHeadersSent(response);
-  abstract setHeader(response, name: string, value: string);
+  abstract isHeadersSent(response: any);
+  abstract setHeader(response: any, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string, rawBody?: boolean);
   abstract enableCors(
     options: CorsOptions | CorsOptionsDelegate<TRequest>,
