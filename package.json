@@ -75,7 +75,7 @@
     "@commitlint/cli": "17.0.3",
     "@commitlint/config-angular": "17.0.3",
     "@fastify/cors": "^8.0.0",
-    "@fastify/formbody": "7.0.1",
+    "@fastify/formbody": "7.1.0",
     "@fastify/middie": "8.0.0",
     "@fastify/multipart": "7.1.1",
     "@fastify/static": "6.5.0",
