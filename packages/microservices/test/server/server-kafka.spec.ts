@@ -1,5 +1,7 @@
 import { Logger } from '@nestjs/common';
+import { KafkaRetriableException } from '@nestjs/microservices/exceptions';
 import { AssertionError, expect } from 'chai';
+import { throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaHeaders } from '../../enums';
@@ -8,6 +10,8 @@ import {
   KafkaMessage,
 } from '../../external/kafka.interface';
 import { ServerKafka } from '../../server';
+import { MessageHandler, ReadPacket } from '../../interfaces';
+import { KafkaContext } from '../../ctx-host';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -511,6 +515,32 @@ describe('ServerKafka', () => {
       logger.info({ namespace: '', level: 1, log: 'test' });
 
       expect(logCreatorSpy.called).to.be.true;
+    });
+  });
+
+  describe('handle event pattern', () => {
+    it('should rethrow exception if instanceof KafkaRetriableException', async () => {
+      const handler: MessageHandler = function () {
+        return Promise.resolve(
+          throwError(() => new KafkaRetriableException('Kafka error')),
+        );
+      };
+
+      sinon.stub(server, 'getHandlerByPattern').callsFake(() => handler);
+
+      await expect(
+        server.handleEvent('some', {} as ReadPacket, {} as KafkaContext),
+      ).rejectedWith('Kafka error');
+    });
+
+    it('should no reject if instanceof any exception', async () => {
+      const handler: MessageHandler = function () {
+        return Promise.resolve(throwError(() => new Error('Not Kafka error')));
+      };
+
+      sinon.stub(server, 'getHandlerByPattern').callsFake(() => handler);
+
+      await server.handleEvent('some', {} as ReadPacket, {} as KafkaContext);
     });
   });
 });
