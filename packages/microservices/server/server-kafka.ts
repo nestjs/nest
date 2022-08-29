@@ -1,6 +1,13 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil } from '@nestjs/common/utils/shared.utils';
-import { isObservable, lastValueFrom, Observable, ReplaySubject } from 'rxjs';
+import {
+  isObservable,
+  lastValueFrom,
+  Observable,
+  of,
+  ReplaySubject,
+  throwError,
+} from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -11,7 +18,7 @@ import {
 import { KafkaContext } from '../ctx-host';
 import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer';
 import { KafkaHeaders, Transport } from '../enums';
-import { KafkaRetriableException } from '../exceptions';
+import { KafkaRetriableException } from '@nestjs/microservices/exceptions';
 import {
   BrokersFunction,
   Consumer,
@@ -33,6 +40,7 @@ import {
 } from '../interfaces';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
 import { Server } from './server';
+import { catchError } from 'rxjs/operators';
 
 let kafkaPackage: any = {};
 
@@ -300,9 +308,20 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       return this.logger.error(NO_EVENT_HANDLER`${pattern}`);
     }
     const resultOrStream = await handler(packet.data, context);
-    if (isObservable(resultOrStream)) {
-      await lastValueFrom(resultOrStream);
-    }
+    const stream$ = isObservable(resultOrStream)
+      ? resultOrStream
+      : this.transformToObservable(resultOrStream);
+
+    await lastValueFrom(
+      stream$.pipe(
+        catchError(err => {
+          if (err instanceof KafkaRetriableException)
+            return throwError(() => err);
+
+          return of(void 0);
+        }),
+      ),
+    );
   }
 
   protected initializeSerializer(options: KafkaOptions['options']) {
