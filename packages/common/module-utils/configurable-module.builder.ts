@@ -11,10 +11,9 @@ import {
   ConfigurableModuleAsyncOptions,
   ConfigurableModuleCls,
   ConfigurableModuleOptionsFactory,
+  ConfigurableModuleHost,
 } from './interfaces';
-import { ConfigurableModuleHost } from './interfaces/configurable-module-host.interface';
-import { generateOptionsInjectionToken } from './utils/generate-options-injection-token.util';
-import { getInjectionProviders } from './utils/get-injection-providers.util';
+import { generateOptionsInjectionToken, getInjectionProviders } from './utils';
 
 /**
  * @publicApi
