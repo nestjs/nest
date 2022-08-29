@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { KafkaRetriableException } from '@nestjs/microservices/exceptions';
+import { KafkaRetriableException } from '../../exceptions';
 import { AssertionError, expect } from 'chai';
 import { throwError } from 'rxjs';
 import * as sinon from 'sinon';

@@ -18,7 +18,7 @@ import {
 import { KafkaContext } from '../ctx-host';
 import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer';
 import { KafkaHeaders, Transport } from '../enums';
-import { KafkaRetriableException } from '@nestjs/microservices/exceptions';
+import { KafkaRetriableException } from '../exceptions';
 import {
   BrokersFunction,
   Consumer,
