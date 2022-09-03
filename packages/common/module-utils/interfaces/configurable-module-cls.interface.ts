@@ -21,7 +21,9 @@ export type ConfigurableModuleCls<
   new (): any;
 } & Record<
   `${MethodKey}`,
-  (options: ModuleOptions & ExtraModuleDefinitionOptions) => DynamicModule
+  (
+    options: ModuleOptions & ExtraModuleDefinitionOptions,
+  ) => DynamicModule | Promise<DynamicModule>
 > &
   Record<
     `${MethodKey}Async`,
@@ -31,5 +33,5 @@ export type ConfigurableModuleCls<
         FactoryClassMethodKey
       > &
         ExtraModuleDefinitionOptions,
-    ) => DynamicModule
+    ) => DynamicModule | Promise<DynamicModule>
   >;
