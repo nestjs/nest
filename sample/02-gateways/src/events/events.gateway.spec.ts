@@ -18,7 +18,7 @@ describe('EventsGateway', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of items', done => {
+    it('should return 3 numbers', done => {
       gateway
         .findAll({})
         .pipe(reduce((acc, item) => [...acc, item], []))
