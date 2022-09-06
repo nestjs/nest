@@ -20,6 +20,7 @@
     "@fastify/cors": "8.1.0",
     "@fastify/formbody": "7.1.0",
     "@fastify/middie": "8.0.0",
+    "fast-querystring": "0.6.4",
     "fastify": "4.5.3",
     "light-my-request": "5.5.1",
     "path-to-regexp": "3.2.0",

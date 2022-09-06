@@ -42,7 +42,7 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 // `querystring` is used internally in fastify for registering urlencoded body parser.
-import { parse as querystringParse } from 'querystring';
+import { parse as querystringParse } from 'fast-querystring';
 import {
   FastifyStaticOptions,
   PointOfViewOptions,
