@@ -117,7 +117,7 @@
     "chai-as-promised": "7.1.1",
     "clang-format": "1.8.0",
     "commitlint-circle": "1.0.0",
-    "concurrently": "7.3.0",
+    "concurrently": "7.4.0",
     "conventional-changelog": "3.1.25",
     "core-js": "3.25.0",
     "coveralls": "3.1.1",
