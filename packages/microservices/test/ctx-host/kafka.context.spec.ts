@@ -1,6 +1,10 @@
 import { expect } from 'chai';
 import { KafkaContext } from '../../ctx-host';
-import { Consumer, KafkaMessage } from '../../external/kafka.interface';
+import {
+  Consumer,
+  KafkaMessage,
+  Producer,
+} from '../../external/kafka.interface';
 
 describe('KafkaContext', () => {
   const args = [
@@ -9,12 +13,20 @@ describe('KafkaContext', () => {
     undefined,
     { test: 'consumer' },
     () => {},
+    { test: 'producer' },
   ];
   let context: KafkaContext;
 
   beforeEach(() => {
     context = new KafkaContext(
-      args as [KafkaMessage, number, string, Consumer, () => Promise<void>],
+      args as [
+        KafkaMessage,
+        number,
+        string,
+        Consumer,
+        () => Promise<void>,
+        Producer,
+      ],
     );
   });
   describe('getTopic', () => {
@@ -40,6 +52,11 @@ describe('KafkaContext', () => {
   describe('getHeartbeat', () => {
     it('should return heartbeat callback', () => {
       expect(context.getHeartbeat()).to.be.eql(args[4]);
+    });
+  });
+  describe('getProducer', () => {
+    it('should return producer instance', () => {
+      expect(context.getProducer()).to.deep.eq({ test: 'producer' });
     });
   });
 });
