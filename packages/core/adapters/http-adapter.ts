@@ -62,6 +62,48 @@ export abstract class AbstractHttpAdapter<
     return this.instance.patch(...args);
   }
 
+  public propfind(handler: RequestHandler);
+  public propfind(path: any, handler: RequestHandler);
+  public propfind(...args: any[]) {
+    return this.instance.propfind(...args);
+  }
+
+  public proppatch(handler: RequestHandler);
+  public proppatch(path: any, handler: RequestHandler);
+  public proppatch(...args: any[]) {
+    return this.instance.propfind(...args);
+  }
+
+  public mkcol(handler: RequestHandler);
+  public mkcol(path: any, handler: RequestHandler);
+  public mkcol(...args: any[]) {
+    return this.instance.propfind(...args);
+  }
+
+  public copy(handler: RequestHandler);
+  public copy(path: any, handler: RequestHandler);
+  public copy(...args: any[]) {
+    return this.instance.propfind(...args);
+  }
+
+  public move(handler: RequestHandler);
+  public move(path: any, handler: RequestHandler);
+  public move(...args: any[]) {
+    return this.instance.propfind(...args);
+  }
+
+  public lock(handler: RequestHandler);
+  public lock(path: any, handler: RequestHandler);
+  public lock(...args: any[]) {
+    return this.instance.propfind(...args);
+  }
+
+  public unlock(handler: RequestHandler);
+  public unlock(path: any, handler: RequestHandler);
+  public unlock(...args: any[]) {
+    return this.instance.propfind(...args);
+  }
+
   public all(handler: RequestHandler);
   public all(path: any, handler: RequestHandler);
   public all(...args: any[]) {

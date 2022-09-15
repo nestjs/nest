@@ -20,6 +20,20 @@ export class RouterMethodFactory {
         return target.head;
       case RequestMethod.GET:
         return target.get;
+      case RequestMethod.PROPFIND:
+        return target.propfind;
+      case RequestMethod.PROPPATCH:
+        return target.proppatch;
+      case RequestMethod.MKCOL:
+        return target.mkcol;
+      case RequestMethod.COPY:
+        return target.copy;
+      case RequestMethod.MOVE:
+        return target.move;
+      case RequestMethod.LOCK:
+        return target.lock;
+      case RequestMethod.UNLOCK:
+        return target.unlock;
       default: {
         return target.use;
       }
