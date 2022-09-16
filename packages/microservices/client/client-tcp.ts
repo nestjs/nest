@@ -108,6 +108,13 @@ export class ClientTCP extends ClientProxy {
     this.isConnected = false;
     this.socket = null;
     this.connection = undefined;
+    if (this.routingMap.size > 0) {
+      const err = new Error('connection to server closed');
+      for (const callback of this.routingMap.values()) {
+        callback({ err });
+      }
+      this.routingMap.clear();
+    }
   }
 
   protected publish(
