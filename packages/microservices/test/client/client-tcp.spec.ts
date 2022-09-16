@@ -160,7 +160,8 @@ describe('ClientTCP', () => {
     beforeEach(() => {
       routingMap = new Map<string, Function>();
       callback = sinon.spy();
-      routingMap.set('some id', callback)(client as any).socket = socket;
+      routingMap.set('some id', callback);
+      (client as any).socket = socket;
       (client as any).isConnected = true;
       (client as any).routingMap = routingMap;
       client.close();
@@ -180,7 +181,7 @@ describe('ClientTCP', () => {
     it('should call callbacks', () => {
       expect(
         callback.calledWith({
-          err: new Error('connection to server closed'),
+          err: sinon.match({ message: 'connection to server closed' }),
         }),
       ).to.be.true;
     });
