@@ -220,7 +220,7 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected stringifyMessage(message: unknown, logLevel: LogLevel) {
-    return isPlainObject(message)
+    return isPlainObject(message) || Array.isArray(message)
       ? `${this.colorize('Object:', logLevel)}\n${JSON.stringify(
           message,
           (key, value) =>
