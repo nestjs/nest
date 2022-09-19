@@ -14,10 +14,10 @@ import { GrpcMethodStreamingType } from '../decorators';
 import { Transport } from '../enums';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
+import { ChannelOptions } from '../external/grpc-options.interface';
 import { CustomTransportStrategy, MessageHandler } from '../interfaces';
 import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
-import { ChannelOptions } from '../external/grpc-options.interface';
 
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
