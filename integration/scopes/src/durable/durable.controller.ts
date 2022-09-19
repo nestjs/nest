@@ -9,4 +9,9 @@ export class DurableController {
   greeting(): string {
     return this.durableService.greeting();
   }
+
+  @Get('echo')
+  echo() {
+    return this.durableService.requestPayload;
+  }
 }
