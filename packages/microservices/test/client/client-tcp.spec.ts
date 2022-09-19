@@ -181,7 +181,7 @@ describe('ClientTCP', () => {
     it('should call callbacks', () => {
       expect(
         callback.calledWith({
-          err: sinon.match({ message: 'connection to server closed' }),
+          err: sinon.match({ message: 'Connection closed' }),
         }),
       ).to.be.true;
     });
