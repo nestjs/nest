@@ -168,6 +168,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       payload.topic,
       this.consumer,
       payload.heartbeat,
+      this.producer,
     ]);
     const handler = this.getHandlerByPattern(packet.pattern);
     // if the correlation id or reply topic is not set
