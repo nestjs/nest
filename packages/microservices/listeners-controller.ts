@@ -182,7 +182,10 @@ export class ListenersController {
             reqCtx as BaseRpcContext,
           );
           contextId = this.getContextId(request);
-          this.container.registerRequestProvider(request, contextId);
+          this.container.registerRequestProvider(
+            contextId.getParent ? contextId.payload : request,
+            contextId,
+          );
           dataOrContextHost = request;
         }
         const contextInstance = await this.injector.loadPerContext(
@@ -237,7 +240,10 @@ export class ListenersController {
         writable: false,
         configurable: false,
       });
-      this.container.registerRequestProvider(request, contextId);
+      this.container.registerRequestProvider(
+        contextId.getParent ? contextId.payload : request,
+        contextId,
+      );
     }
     return contextId;
   }
