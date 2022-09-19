@@ -241,13 +241,19 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
         });
       }
       return new Observable(observer => {
-        client[methodName](...args, (error: any, data: any) => {
+        const call = client[methodName](...args, (error: any, data: any) => {
           if (error) {
             return observer.error(this.serializeError(error));
           }
           observer.next(data);
           observer.complete();
         });
+
+        return () => {
+          if (!call.finished) {
+            call.cancel();
+          }
+        };
       });
     };
   }
