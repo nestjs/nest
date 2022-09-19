@@ -1,9 +1,5 @@
 import { Logger, LoggerService, Provider, Scope, Type } from '@nestjs/common';
-import {
-  ClassProvider,
-  FactoryProvider,
-  ValueProvider,
-} from '@nestjs/common/interfaces';
+import { FactoryProvider } from '@nestjs/common/interfaces';
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import {
@@ -36,6 +32,7 @@ export interface HostComponentInfo {
 
 export interface ContextId {
   readonly id: number;
+  payload?: unknown;
   getParent?(info: HostComponentInfo): ContextId;
 }
 

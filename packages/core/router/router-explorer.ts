@@ -425,7 +425,10 @@ export class RouterExplorer {
         writable: false,
         configurable: false,
       });
-      this.container.registerRequestProvider(request, contextId);
+      this.container.registerRequestProvider(
+        contextId.getParent ? contextId.payload : request,
+        contextId,
+      );
     }
     return contextId;
   }

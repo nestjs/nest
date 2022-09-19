@@ -217,7 +217,10 @@ export class MiddlewareModule {
               writable: false,
               configurable: false,
             });
-            this.container.registerRequestProvider(req, contextId);
+            this.container.registerRequestProvider(
+              contextId.getParent ? contextId.payload : req,
+              contextId,
+            );
           }
           const contextInstance = await this.injector.loadPerContext(
             instance,
