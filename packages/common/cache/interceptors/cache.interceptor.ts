@@ -1,5 +1,6 @@
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { Logger } from '../../services/logger.service';
 import { Inject, Injectable, Optional } from '../../decorators';
 import {
   CallHandler,
@@ -53,9 +54,15 @@ export class CacheInterceptor implements NestInterceptor {
         ? await ttlValueOrFactory(context)
         : ttlValueOrFactory;
       return next.handle().pipe(
-        tap(response => {
+        tap(async response => {
           const args = isNil(ttl) ? [key, response] : [key, response, { ttl }];
-          this.cacheManager.set(...args);
+
+          try {
+            await this.cacheManager.set(...args);
+          } catch (err) {
+            Logger.error(`key: ${key} value: ${response}`, 'CacheInterceptor');
+            console.error(err);
+          }
         }),
       );
     } catch {
