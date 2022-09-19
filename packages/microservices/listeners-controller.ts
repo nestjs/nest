@@ -200,7 +200,13 @@ export class ListenersController {
           wrapper.id,
           defaultCallMetadata,
         );
-        requestScopedHandler.next?.(dataOrContextHost, ...args);
+        const returnedValueWrapper = requestScopedHandler.next?.(
+          dataOrContextHost,
+          ...args,
+        );
+        returnedValueWrapper?.then(returnedValue =>
+          this.connectIfStream(returnedValue as Observable<unknown>),
+        );
         return proxy(...args);
       } catch (err) {
         let exceptionFilter = this.exceptionFiltersCache.get(
