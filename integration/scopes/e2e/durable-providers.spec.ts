@@ -23,9 +23,13 @@ describe('Durable providers', () => {
   });
 
   describe('when service is durable', () => {
-    const performHttpCall = (tenantId: number, end: (err?: any) => void) =>
+    const performHttpCall = (
+      tenantId: number,
+      end: (err?: any) => void,
+      endpoint = '/durable',
+    ) =>
       request(server)
-        .get('/durable')
+        .get(endpoint)
         .set({ ['x-tenant-id']: tenantId })
         .end((err, res) => {
           if (err) return end(err);
@@ -66,6 +70,19 @@ describe('Durable providers', () => {
         performHttpCall(6, resolve),
       );
       expect(result.text).equal('Hello world! Counter: 1');
+    });
+
+    it(`should register a custom per-tenant request payload`, async () => {
+      let result: request.Response;
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(1, resolve, '/durable/echo'),
+      );
+      expect(result.body).deep.equal({ tenantId: '1' });
+
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(3, resolve, '/durable/echo'),
+      );
+      expect(result.body).deep.equal({ tenantId: '3' });
     });
   });
 
