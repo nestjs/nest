@@ -1,6 +1,5 @@
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { Logger } from '../../services/logger.service';
 import { Inject, Injectable, Optional } from '../../decorators';
 import {
   CallHandler,
@@ -8,6 +7,7 @@ import {
   HttpServer,
   NestInterceptor,
 } from '../../interfaces';
+import { Logger } from '../../services/logger.service';
 import { isFunction, isNil } from '../../utils/shared.utils';
 import {
   CACHE_KEY_METADATA,
@@ -60,8 +60,10 @@ export class CacheInterceptor implements NestInterceptor {
           try {
             await this.cacheManager.set(...args);
           } catch (err) {
-            Logger.error(`key: ${key} value: ${response}`, 'CacheInterceptor');
-            console.error(err);
+            Logger.error(
+              `An error has occured when inserting "key: ${key}", "value: ${response}"`,
+              'CacheInterceptor',
+            );
           }
         }),
       );
