@@ -10,8 +10,8 @@ import {
 import {
   ConfigurableModuleAsyncOptions,
   ConfigurableModuleCls,
-  ConfigurableModuleOptionsFactory,
   ConfigurableModuleHost,
+  ConfigurableModuleOptionsFactory,
 } from './interfaces';
 import { generateOptionsInjectionToken, getInjectionProviders } from './utils';
 
@@ -222,7 +222,10 @@ export class ConfigurableModuleBuilder<
             module: this,
             providers,
           },
-          options,
+          {
+            ...self.extras,
+            ...options,
+          },
         );
       }
 
@@ -243,7 +246,10 @@ export class ConfigurableModuleBuilder<
             imports: options.imports || [],
             providers,
           },
-          options,
+          {
+            ...self.extras,
+            ...options,
+          },
         );
       }
 
