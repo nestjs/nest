@@ -97,7 +97,7 @@ export class ConfigurableModuleBuilder<
     transformDefinition: (
       definition: DynamicModule,
       extras: ExtraModuleDefinitionOptions,
-    ) => DynamicModule,
+    ) => DynamicModule = def => def,
   ) {
     const builder = new ConfigurableModuleBuilder<
       ModuleOptions,
