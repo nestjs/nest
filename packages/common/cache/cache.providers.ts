@@ -30,7 +30,10 @@ export function createCacheManager(): Provider {
             ...{ ...options, store },
           });
         }
-        return cacheManager.caching(store ?? 'memory', options);
+        return cacheManager.caching(store ?? 'memory', {
+          ...defaultCacheOptions,
+          ...options,
+        });
       };
 
       return Array.isArray(options)
