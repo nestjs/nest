@@ -1,4 +1,4 @@
-import { isUndefined } from '../../utils/shared.utils';
+import { isEmpty, isUndefined } from '../../utils/shared.utils';
 import { Injectable, Optional } from '../../decorators/core';
 import { HttpStatus } from '../../enums';
 import { PipeTransform } from '../../interfaces/features/pipe-transform.interface';
@@ -39,7 +39,7 @@ export class ParseFilePipe implements PipeTransform<any> {
   }
 
   async transform(value: any): Promise<any> {
-    if (isUndefined(value)) {
+    if (isUndefined(value) || (Array.isArray(value) && isEmpty(value))) {
       if (this.fileIsRequired) {
         throw this.exceptionFactory('File is required');
       }
@@ -48,7 +48,11 @@ export class ParseFilePipe implements PipeTransform<any> {
     }
 
     if (this.validators.length) {
-      await this.validate(value);
+      if (Array.isArray(value)) {
+        await Promise.all(value.map((v) => this.validate(v)));
+      } else {
+        await this.validate(value);
+      }
     }
     return value;
   }
