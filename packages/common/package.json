@@ -22,7 +22,7 @@
     "uuid": "9.0.0"
   },
   "peerDependencies": {
-    "cache-manager": "<=4",
+    "cache-manager": "<=5",
     "class-transformer": "*",
     "class-validator": "*",
     "reflect-metadata": "^0.1.12",

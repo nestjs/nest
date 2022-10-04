@@ -17,20 +17,30 @@ export function createCacheManager(): Provider {
       const cacheManager = loadPackage('cache-manager', 'CacheModule', () =>
         require('cache-manager'),
       );
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const cacheManagerVersion = require('cache-manager/package.json').version;
+      const cacheManagerMajor = cacheManagerVersion.split('.')[0];
+      const cachingFactory = (
+        store: CacheManagerOptions['store'],
+        options: Omit<CacheManagerOptions, 'store'>,
+      ): Record<string, any> => {
+        if (cacheManagerMajor < 5) {
+          return cacheManager.caching({
+            ...defaultCacheOptions,
+            ...{ ...options, store },
+          });
+        }
+        return cacheManager.caching(store ?? 'memory', {
+          ...defaultCacheOptions,
+          ...options,
+        });
+      };
 
       return Array.isArray(options)
         ? cacheManager.multiCaching(
-            options.map(store =>
-              cacheManager.caching({
-                ...defaultCacheOptions,
-                ...(store || {}),
-              }),
-            ),
+            options.map(option => cachingFactory(options.store, option)),
           )
-        : cacheManager.caching({
-            ...defaultCacheOptions,
-            ...(options || {}),
-          });
+        : cachingFactory(options.store, options);
     },
     inject: [MODULE_OPTIONS_TOKEN],
   };
