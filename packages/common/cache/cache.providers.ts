@@ -18,7 +18,7 @@ export function createCacheManager(): Provider {
         require('cache-manager'),
       );
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const cmVersion = require('cache-manager/package.json').version;
+      const cacheManagerVersion = require('cache-manager/package.json').version;
       const cacheManagerMajor = cacheManagerVersion.split('.')[0];
       const cachingFactory = (
         store: CacheManagerOptions['store'],
