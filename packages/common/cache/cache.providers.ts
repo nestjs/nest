@@ -19,12 +19,12 @@ export function createCacheManager(): Provider {
       );
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const cmVersion = require('cache-manager/package.json').version;
-      const cmMajor = cmVersion.split('.')[0];
+      const cacheManagerMajor = cacheManagerVersion.split('.')[0];
       const cachingFactory = (
         store: CacheManagerOptions['store'],
         options: Omit<CacheManagerOptions, 'store'>,
       ): Record<string, any> => {
-        if (cmMajor < 5) {
+        if (cacheManagerMajor < 5) {
           return cacheManager.caching({
             ...defaultCacheOptions,
             ...{ ...options, store },
