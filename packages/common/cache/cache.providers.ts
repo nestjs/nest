@@ -13,30 +13,24 @@ import { CacheManagerOptions } from './interfaces/cache-manager.interface';
 export function createCacheManager(): Provider {
   return {
     provide: CACHE_MANAGER,
-    useFactory: async (options: CacheManagerOptions) => {
+    useFactory: (options: CacheManagerOptions) => {
       const cacheManager = loadPackage('cache-manager', 'CacheModule', () =>
         require('cache-manager'),
       );
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const cacheManagerVersion = require('cache-manager/package.json').version;
       const cacheManagerMajor = cacheManagerVersion.split('.')[0];
-      const cachingFactory = async (
+      const cachingFactory = (
         store: CacheManagerOptions['store'],
         options: Omit<CacheManagerOptions, 'store'>,
-      ): Promise<Record<string, any>> => {
+      ): Record<string, any> => {
         if (cacheManagerMajor < 5) {
           return cacheManager.caching({
             ...defaultCacheOptions,
             ...{ ...options, store },
           });
         }
-        let cache: string | Function = 'memory';
-        if (typeof store === 'object' && 'create' in store) {
-          cache = store.create;
-        } else if (typeof store === 'function') {
-          cache = store;
-        }
-        return cacheManager.caching(cache, {
+        return cacheManager.caching(store ?? 'memory', {
           ...defaultCacheOptions,
           ...options,
         });
@@ -44,9 +38,7 @@ export function createCacheManager(): Provider {
 
       return Array.isArray(options)
         ? cacheManager.multiCaching(
-            await Promise.all(
-              options.map(option => cachingFactory(option.store, option)),
-            ),
+            options.map(option => cachingFactory(options.store, option)),
           )
         : cachingFactory(options.store, options);
     },
