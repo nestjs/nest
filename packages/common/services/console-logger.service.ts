@@ -185,7 +185,7 @@ export class ConsoleLogger implements LoggerService {
   ) {
     messages.forEach(message => {
       const pidMessage = this.formatPid(process.pid);
-      const contextMessage = context ? yellow(`[${context}] `) : '';
+      const contextMessage = this.formatContext(context);
       const timestampDiff = this.updateAndGetTimestampDiff();
       const formattedLogLevel = logLevel.toUpperCase().padStart(7, ' ');
       const formattedMessage = this.formatMessage(
@@ -203,6 +203,10 @@ export class ConsoleLogger implements LoggerService {
 
   protected formatPid(pid: number) {
     return `[Nest] ${pid}  - `;
+  }
+
+  protected formatContext(context: string): string {
+    return context ? yellow(`[${context}] `) : '';
   }
 
   protected formatMessage(
