@@ -31,6 +31,7 @@ export function createCacheManager(): Provider {
           });
         }
         let cache: string | Function = 'memory';
+        defaultCacheOptions.ttl *= 1000;
         if (typeof store === 'object' && 'create' in store) {
           cache = store.create;
         } else if (typeof store === 'function') {
