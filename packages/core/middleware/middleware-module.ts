@@ -279,7 +279,7 @@ export class MiddlewareModule {
     if (
       (Array.isArray(excludedRoutes) &&
         isRouteExcluded(excludedRoutes, path, method)) ||
-      ['*', '/*', '(.*)', '/(.*)'].includes(path)
+      (['*', '/*', '(.*)', '/(.*)'].includes(path) && !prefix.includes(':'))
     ) {
       path = addLeadingSlash(path);
     } else {
