@@ -200,31 +200,24 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     this.send(replayStream$, publish);
   }
 
-  private combineStreamsAndThrowIfRetriable(
-    response$: Observable<any>,
-    replayStream$: ReplaySubject<unknown>,
-  ) {
-    return new Promise<void>((resolve, reject) => {
-      let isPromiseResolved = false;
-      response$.subscribe({
-        next: val => {
-          replayStream$.next(val);
-          if (!isPromiseResolved) {
-            isPromiseResolved = true;
-            resolve();
-          }
-        },
-        error: err => {
-          if (err instanceof KafkaRetriableException && !isPromiseResolved) {
-            isPromiseResolved = true;
-            reject(err);
-          }
-          replayStream$.error(err);
-        },
-        complete: () => replayStream$.complete(),
-      });
+  private combineStreamsAndThrowIfRetriable(response$: Observable<any>, replayStream$: ReplaySubject<unknown>) {
+  return new Promise<void>((resolve, reject) => {
+    response$.subscribe({
+      next: (val) => {
+        replayStream$.next(val);
+        resolve();
+      },
+      error: (err) => {
+        if (err instanceof KafkaRetriableException) {
+          reject(err);
+        }
+        replayStream$.error(err);
+        resolve();
+      },
+      complete: () => replayStream$.complete(),
     });
-  }
+  });
+}
 
   public async sendMessage(
     message: OutgoingResponse,
