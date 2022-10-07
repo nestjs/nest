@@ -1,4 +1,4 @@
-import { isEmpty, isUndefined } from '../../utils/shared.utils';
+import { isEmpty, isObject, isUndefined } from '../../utils/shared.utils';
 import { Injectable, Optional } from '../../decorators/core';
 import { HttpStatus } from '../../enums';
 import { PipeTransform } from '../../interfaces/features/pipe-transform.interface';
@@ -39,7 +39,7 @@ export class ParseFilePipe implements PipeTransform<any> {
   }
 
   async transform(value: any): Promise<any> {
-    if (isUndefined(value) || (Array.isArray(value) && isEmpty(value))) {
+    if (this.thereAreNoFilesIn(value)) {
       if (this.fileIsRequired) {
         throw this.exceptionFactory('File is required');
       }
@@ -48,11 +48,7 @@ export class ParseFilePipe implements PipeTransform<any> {
     }
 
     if (this.validators.length) {
-      if (Array.isArray(value)) {
-        await Promise.all(value.map((v) => this.validate(v)));
-      } else {
-        await this.validate(value);
-      }
+      this.validateAllFrom(value)
     }
     return value;
   }
@@ -65,6 +61,21 @@ export class ParseFilePipe implements PipeTransform<any> {
     return file;
   }
 
+  private async validateAllFrom(value: any) {
+    if (Array.isArray(value)) {
+      await this.validateFiles(value)
+    } else if (isObject(value)) {
+      const files = [].concat(...Object.values(value))
+      await this.validateFiles(files)
+    } else {
+      await this.validate(value);
+    }
+  }
+
+  private validateFiles(files: any[]): Promise<any[]> {
+    return Promise.all(files.map(f => this.validate(f)))
+  } 
+
   private async validateOrThrow(file: any, validator: FileValidator) {
     const isValid = await validator.isValid(file);
 
@@ -73,6 +84,13 @@ export class ParseFilePipe implements PipeTransform<any> {
       throw this.exceptionFactory(errorMessage);
     }
   }
+
+  private thereAreNoFilesIn(value: any): boolean {
+    const isEmptyArray = (Array.isArray(value) && isEmpty(value))
+    const isEmptyObject = isObject(value) && isEmpty(Object.keys(value))
+    return isUndefined(value) || isEmptyArray || isEmptyObject
+  }
+
 
   /**
    * @returns list of validators used in this pipe.
