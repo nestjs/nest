@@ -36,7 +36,7 @@ export interface CacheStore {
 
 export interface CacheStoreSetOptions<T> {
   /**
-   * Time to live - amount of time in seconds that a response is cached before it
+   * Time to live - amount of time in milliseconds that a response is cached before it
    * is deleted. Defaults based on your cache manager settings.
    */
   ttl?: ((value: T) => number) | number;
@@ -70,7 +70,7 @@ export interface CacheManagerOptions {
    */
   store?: string | CacheStoreFactory | CacheStore;
   /**
-   * Time to live - amount of time in seconds that a response is cached before it
+   * Time to live - amount of time in milliseconds that a response is cached before it
    * is deleted. Subsequent request will call through the route handler and refresh
    * the cache.  Defaults to 5 seconds.
    */
