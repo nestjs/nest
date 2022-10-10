@@ -335,11 +335,13 @@ export class NestApplication
         (route: string | RouteInfo): ExcludeRouteMetadata => {
           if (isString(route)) {
             return {
+              path: route,
               requestMethod: RequestMethod.ALL,
               pathRegex: pathToRegexp(addLeadingSlash(route)),
             };
           }
           return {
+            path: route.path,
             requestMethod: route.method,
             pathRegex: pathToRegexp(addLeadingSlash(route.path)),
           };

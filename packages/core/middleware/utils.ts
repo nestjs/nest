@@ -11,6 +11,7 @@ export const mapToExcludeRoute = (
   routes: RouteInfo[],
 ): ExcludeRouteMetadata[] => {
   return routes.map(({ path, method }) => ({
+    path,
     pathRegex: pathToRegexp(path),
     requestMethod: method,
   }));

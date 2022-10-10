@@ -8,6 +8,7 @@ import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middle
 import {
   addLeadingSlash,
   isUndefined,
+  stripEndSlash,
 } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
@@ -276,38 +277,41 @@ export class MiddlewareModule {
   ) {
     const prefix = this.config.getGlobalPrefix();
     const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
-    if (
-      (Array.isArray(excludedRoutes) &&
-        isRouteExcluded(excludedRoutes, path, method)) ||
-      ['*', '/*', '(.*)', '/(.*)'].includes(path)
-    ) {
-      path = addLeadingSlash(path);
-    } else {
-      const basePath = addLeadingSlash(prefix);
-      if (basePath?.endsWith('/') && path?.startsWith('/')) {
-        // strip slash when a wildcard is being used
-        // and global prefix has been set
-        path = path?.slice(1);
+    let paths: string[];
+    if (['*', '/*', '/*/', '(.*)', '/(.*)'].includes(path)) {
+      const basePath = stripEndSlash(addLeadingSlash(prefix));
+      paths = [basePath + addLeadingSlash(path)];
+      if (Array.isArray(excludedRoutes)) {
+        paths.push(...excludedRoutes.map(route => route.path));
       }
-      path = basePath + path;
+    } else if (
+      Array.isArray(excludedRoutes) &&
+      isRouteExcluded(excludedRoutes, path, method)
+    ) {
+      paths = [addLeadingSlash(path)];
+    } else {
+      const basePath = stripEndSlash(addLeadingSlash(prefix));
+      paths = [basePath + addLeadingSlash(path)];
     }
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);
-    router(
-      path,
-      isMethodAll
-        ? proxy
-        : <TRequest, TResponse>(
-            req: TRequest,
-            res: TResponse,
-            next: () => void,
-          ) => {
-            if (applicationRef.getRequestMethod(req) === requestMethod) {
-              return proxy(req, res, next);
-            }
-            return next();
-          },
+    paths.forEach(path =>
+      router(
+        path,
+        isMethodAll
+          ? proxy
+          : <TRequest, TResponse>(
+              req: TRequest,
+              res: TResponse,
+              next: () => void,
+            ) => {
+              if (applicationRef.getRequestMethod(req) === requestMethod) {
+                return proxy(req, res, next);
+              }
+              return next();
+            },
+      ),
     );
   }
 }
