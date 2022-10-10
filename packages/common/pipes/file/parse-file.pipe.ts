@@ -48,7 +48,7 @@ export class ParseFilePipe implements PipeTransform<any> {
     }
 
     if (this.validators.length) {
-      this.validateAllFrom(value)
+      this.validateAllFrom(value);
     }
     return value;
   }
@@ -63,17 +63,17 @@ export class ParseFilePipe implements PipeTransform<any> {
 
   private async validateAllFrom(value: any) {
     if (Array.isArray(value)) {
-      await this.validateFiles(value)
+      await this.validateFiles(value);
     } else if (isObject(value)) {
-      const files = [].concat(...Object.values(value))
-      await this.validateFiles(files)
+      const files = [].concat(...Object.values(value));
+      await this.validateFiles(files);
     } else {
       await this.validate(value);
     }
   }
 
   private validateFiles(files: any[]): Promise<any[]> {
-    return Promise.all(files.map(f => this.validate(f)))
+    return Promise.all(files.map(f => this.validate(f)));
   } 
 
   private async validateOrThrow(file: any, validator: FileValidator) {
@@ -86,9 +86,9 @@ export class ParseFilePipe implements PipeTransform<any> {
   }
 
   private thereAreNoFilesIn(value: any): boolean {
-    const isEmptyArray = (Array.isArray(value) && isEmpty(value))
-    const isEmptyObject = isObject(value) && isEmpty(Object.keys(value))
-    return isUndefined(value) || isEmptyArray || isEmptyObject
+    const isEmptyArray = (Array.isArray(value) && isEmpty(value));
+    const isEmptyObject = isObject(value) && isEmpty(Object.keys(value));
+    return isUndefined(value) || isEmptyArray || isEmptyObject;
   }
 
 
