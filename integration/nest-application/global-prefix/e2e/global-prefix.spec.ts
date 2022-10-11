@@ -119,6 +119,23 @@ describe('Global prefix', () => {
     await request(server).get('/api/v1/middleware/foo').expect(404);
   });
 
+  it(`should get the params in the global prefix`, async () => {
+    app.setGlobalPrefix('/api/:version', {
+      exclude: ['/hello/:name'],
+    });
+
+    server = app.getHttpServer();
+    await app.init();
+
+    await request(server)
+      .get('/api/v1/middlewareParam')
+      .expect(200, { '0': 'middlewareParam', version: 'v1' });
+
+    await request(server)
+      .get('/hello/foo')
+      .expect(200, 'Hello: Data attached in middleware');
+  });
+
   afterEach(async () => {
     await app.close();
   });

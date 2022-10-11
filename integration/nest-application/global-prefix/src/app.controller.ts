@@ -21,4 +21,9 @@ export class AppController {
   postTest(): string {
     return 'test';
   }
+
+  @Get('middlewareParam')
+  getMiddlewareParam(@Req() req): string {
+    return req.extras?.param;
+  }
 }
