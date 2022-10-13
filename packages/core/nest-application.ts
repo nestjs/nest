@@ -342,6 +342,13 @@ export class NestApplication
           this.flushLogs();
         }
 
+        const address = this.httpServer.address();
+        if (address) {
+          this.httpServer.removeListener('error', errorHandler);
+          this.isListening = true;
+          resolve(this.httpServer);
+        }
+
         options?.onStart?.call(null, currentPort);
       });
     });
