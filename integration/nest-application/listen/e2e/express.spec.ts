@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as express from 'express';
 import { AppModule } from '../src/app.module';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, INestFreePortListener } from '@nestjs/common';
 
 describe('Listen (Express Application)', () => {
   let testModule: TestingModule;
@@ -34,6 +34,19 @@ describe('Listen (Express Application)', () => {
       await secondApp.listen(3000);
     } catch (error) {
       expect(error.code).to.equal('EADDRINUSE');
+    }
+  });
+
+  it('should find free port if the it is not available and resolve with httpServer on success', async () => {
+    await app.listen(3000);
+    const secondApp = testModule.createNestApplication<INestFreePortListener>(
+      new ExpressAdapter(express()),
+    );
+    try {
+      const response = await secondApp.listenFreePort({ port: 3000 });
+      expect(response).to.eql(app.getHttpServer());
+    } catch (error) {
+      expect(false).true;
     }
   });
 

@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, INestFreePortListener } from '@nestjs/common';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
@@ -31,6 +31,21 @@ describe('Listen (Fastify Application)', () => {
       await secondApp.listen(3000);
     } catch (error) {
       expect(error.code).to.equal('EADDRINUSE');
+    }
+
+    await secondApp.close();
+  });
+
+  it('should find free port if the it is not available and resolve with httpServer on success', async () => {
+    await app.listen(3000);
+    const secondApp = testModule.createNestApplication<INestFreePortListener>(
+      new FastifyAdapter(),
+    );
+    try {
+      const response = await secondApp.listenFreePort({ port: 3000 });
+      expect(response).to.eql(app.getHttpServer());
+    } catch (error) {
+      expect(false).true;
     }
 
     await secondApp.close();
