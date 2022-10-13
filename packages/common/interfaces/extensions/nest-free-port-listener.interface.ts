@@ -9,5 +9,5 @@ export interface INestFreePortListener extends INestApplication {
    * @param {Object} options Server listening options.
    * @returns {Promise} A Promise that, when resolved, is a reference to the underlying HttpServer.
    */
-  listenFreePort(options: INestListenFreePortOptions): Promise<any>;
+  listenFreePort(options?: INestListenFreePortOptions): Promise<any>;
 }
