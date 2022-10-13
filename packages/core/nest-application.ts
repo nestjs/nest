@@ -338,6 +338,10 @@ export class NestApplication
       this.httpServer.once('error', errorHandler);
 
       this.httpAdapter.listen(currentPort, () => {
+        if (this.appOptions?.autoFlushLogs ?? true) {
+          this.flushLogs();
+        }
+
         options?.onStart?.call(null, currentPort);
       });
     });

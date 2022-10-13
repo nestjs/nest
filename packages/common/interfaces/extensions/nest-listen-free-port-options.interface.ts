@@ -1,4 +1,5 @@
 export interface INestListenFreePortOptions {
+  // TODO make fields readonly
   /**
    * Port.
    * */
