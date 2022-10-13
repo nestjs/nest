@@ -3,7 +3,9 @@ import {
   ExceptionFilter,
   HttpServer,
   INestApplication,
+  INestFreePortListener,
   INestMicroservice,
+  INestListenFreePortOptions,
   NestHybridApplicationOptions,
   NestInterceptor,
   PipeTransform,
@@ -29,12 +31,13 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { platform } from 'os';
+import { Socket } from 'net';
 import * as pathToRegexp from 'path-to-regexp';
 import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { optionalRequire } from './helpers/optional-require';
-import { NestContainer } from './injector/container';
+import { NestContainer } from './injector';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
@@ -56,7 +59,7 @@ const { MicroservicesModule } = optionalRequire(
  */
 export class NestApplication
   extends NestApplicationContext
-  implements INestApplication
+  implements INestApplication, INestFreePortListener
 {
   private readonly logger = new Logger(NestApplication.name, {
     timestamp: true,
@@ -294,6 +297,52 @@ export class NestApplication
     });
   }
 
+  public async listenFreePort(
+    options: INestListenFreePortOptions,
+  ): Promise<any> {
+    !this.isInitialized && (await this.init());
+
+    return new Promise(async (resolve, reject) => {
+      let isIncreasing = true;
+      let currentPort = parseInt(options?.port.toString()) ?? 3000;
+      const firstPort = currentPort;
+
+      if (currentPort < 0 || currentPort > 65536) {
+        reject(
+          new Error(
+            `Port out of range 0-65536 is available. Your current port: ${currentPort}`,
+          ),
+        );
+      }
+
+      while (await this.isPortBusy(currentPort)) {
+        options?.onSkip?.call(null, currentPort) ||
+          reject(new Error('Skip callback rejected'));
+
+        if (currentPort === 65536) {
+          isIncreasing = false;
+          currentPort = firstPort;
+        } else {
+          currentPort = isIncreasing ? currentPort++ : currentPort--;
+        }
+
+        if (currentPort === -1) {
+          reject(new Error(`All ports are busy. Out of range`));
+        }
+      }
+
+      const errorHandler = (e: any) => {
+        this.logger.error(e?.toString?.());
+        reject(e);
+      };
+      this.httpServer.once('error', errorHandler);
+
+      this.httpAdapter.listen(currentPort, () => {
+        options?.onStart?.call(null, currentPort);
+      });
+    });
+  }
+
   public async getUrl(): Promise<string> {
     return new Promise((resolve, reject) => {
       if (!this.isListening) {
@@ -413,5 +462,33 @@ export class NestApplication
       this.middlewareContainer,
       instance,
     );
+  }
+
+  private async isPortBusy(port: number): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      const socket = new Socket();
+
+      const timeout = () => {
+        resolve(true);
+        socket.destroy();
+      };
+
+      const next = () => {
+        socket.destroy();
+        resolve(false);
+      };
+
+      setTimeout(timeout, 100);
+      socket.on('timeout', timeout);
+
+      socket.on('connect', () => next());
+
+      socket.on('error', error => {
+        if (error.name !== 'ECONNREFUSED') reject(error);
+        else resolve(true);
+      });
+
+      socket.connect(port, '0.0.0.0');
+    });
   }
 }

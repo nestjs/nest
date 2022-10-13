@@ -60,6 +60,8 @@ export {
   WebSocketAdapter,
   WsExceptionFilter,
   WsMessageHandler,
+  INestFreePortListener,
+  INestListenFreePortOptions,
 } from './interfaces';
 export * from './module-utils';
 export * from './pipes';
