@@ -5,6 +5,10 @@ export interface INestListenFreePortOptions {
    * */
   port: string | number;
   /**
+   * Hostname.
+   * */
+  hostname: string;
+  /**
    * Callback function that call when port was busy.
    *
    * @param {number} port Busy port.

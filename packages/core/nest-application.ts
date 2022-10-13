@@ -307,6 +307,7 @@ export class NestApplication
       let currentPort = parseInt(options?.port.toString()) ?? 3000;
       const firstPort = currentPort;
 
+      // Check port range
       if (currentPort < 0 || currentPort > 65536) {
         reject(
           new Error(
@@ -315,6 +316,7 @@ export class NestApplication
         );
       }
 
+      // Increment port value while free will not found
       while (await this.isPortBusy(currentPort)) {
         options?.onSkip?.call(null, currentPort) ||
           reject(new Error('Skip callback rejected'));
@@ -337,7 +339,7 @@ export class NestApplication
       };
       this.httpServer.once('error', errorHandler);
 
-      this.httpAdapter.listen(currentPort, () => {
+      const serverCallback = () => {
         if (this.appOptions?.autoFlushLogs ?? true) {
           this.flushLogs();
         }
@@ -350,7 +352,15 @@ export class NestApplication
         }
 
         options?.onStart?.call(null, currentPort);
-      });
+      };
+
+      options?.hostname
+        ? this.httpAdapter.listen(
+            currentPort,
+            options?.hostname,
+            serverCallback,
+          )
+        : this.httpAdapter.listen(currentPort, serverCallback);
     });
   }
 
