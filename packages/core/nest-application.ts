@@ -31,7 +31,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { platform } from 'os';
-import { Socket } from 'net';
+import { createServer } from 'net';
 import * as pathToRegexp from 'path-to-regexp';
 import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
@@ -318,7 +318,7 @@ export class NestApplication
 
       // Increment port value while free will not found
       while (await this.isPortBusy(currentPort)) {
-        if (options?.onSkip?.call(null, currentPort) === false) {
+        if (options?.onSkip?.(currentPort) === false) {
           reject(new Error('Skip callback rejected'));
         }
 
@@ -326,7 +326,7 @@ export class NestApplication
           isIncreasing = false;
           currentPort = firstPort;
         } else {
-          currentPort = isIncreasing ? currentPort++ : currentPort--;
+          currentPort = isIncreasing ? currentPort + 1 : currentPort - 1;
         }
 
         if (currentPort === -1) {
@@ -352,7 +352,7 @@ export class NestApplication
           resolve(this.httpServer);
         }
 
-        options?.onStart?.call(null, currentPort);
+        options?.onStart?.(currentPort);
       };
 
       options?.hostname
@@ -488,29 +488,30 @@ export class NestApplication
 
   private async isPortBusy(port: number): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      const socket = new Socket();
+      const server = createServer();
 
-      const timeout = () => {
-        resolve(true);
-        socket.destroy();
-      };
+      server.once('error', function (err: any) {
+        if (err.code === 'EADDRINUSE') {
+          resolve(true);
+        }
 
-      const next = () => {
-        socket.destroy();
-        resolve(false);
-      };
-
-      setTimeout(timeout, 100);
-      socket.on('timeout', timeout);
-
-      socket.on('connect', () => next());
-
-      socket.on('error', error => {
-        if (error.name !== 'ECONNREFUSED') reject(error);
-        else resolve(true);
+        reject(err);
       });
 
-      socket.connect(port, '0.0.0.0');
+      server.once('listening', function () {
+        server.close();
+        resolve(false);
+      });
+
+      try {
+        server.listen(port);
+      } catch (err) {
+        if (err.code === 'EADDRINUSE') {
+          resolve(true);
+        }
+
+        reject(err);
+      }
     });
   }
 }
