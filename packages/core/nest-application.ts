@@ -318,8 +318,9 @@ export class NestApplication
 
       // Increment port value while free will not found
       while (await this.isPortBusy(currentPort)) {
-        options?.onSkip?.call(null, currentPort) ||
+        if (options?.onSkip?.call(null, currentPort) === false) {
           reject(new Error('Skip callback rejected'));
+        }
 
         if (currentPort === 65536) {
           isIncreasing = false;
