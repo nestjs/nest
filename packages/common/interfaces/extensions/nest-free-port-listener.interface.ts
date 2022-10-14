@@ -3,6 +3,8 @@ import { INestListenFreePortOptions } from './nest-listen-free-port-options.inte
 
 /**
  * INestApplication extension with methods to listen free port.
+ * <br>
+ * <b>NOT AVAILABLE for Fastify servers.</b>
  *
  * @example
  *   const app = await NestFactory.create<INestFreePortListener>(AppModule);

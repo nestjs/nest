@@ -43,10 +43,18 @@ describe('Listen (Express Application)', () => {
       new ExpressAdapter(express()),
     );
     try {
-      const response = await secondApp.listenFreePort({ port: 3000 });
-      expect(response).to.eql(app.getHttpServer());
+      let currentPort = 3000;
+      await secondApp.listenFreePort({
+        port: 3000,
+        onStart: port => (currentPort = port),
+      });
+
+      expect(currentPort).to.eql(3001);
     } catch (error) {
-      expect(false).true;
+      console.trace(error);
+      expect(error).to.eql(undefined);
+    } finally {
+      await secondApp.close();
     }
   });
 

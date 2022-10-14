@@ -1,4 +1,4 @@
-import { INestApplication, INestFreePortListener } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
@@ -36,20 +36,27 @@ describe('Listen (Fastify Application)', () => {
     await secondApp.close();
   });
 
-  it('should find free port if the it is not available and resolve with httpServer on success', async () => {
-    await app.listen(3000);
-    const secondApp = testModule.createNestApplication<INestFreePortListener>(
-      new FastifyAdapter(),
-    );
-    try {
-      const response = await secondApp.listenFreePort({ port: 3000 });
-      expect(response).to.eql(app.getHttpServer());
-    } catch (error) {
-      expect(false).true;
-    }
-
-    await secondApp.close();
-  });
+  // Add Fastify support in future
+  // it('should find free port if the it is not available and resolve with httpServer on success', async () => {
+  //   await app.listen(4000);
+  //   const secondApp = testModule.createNestApplication<INestFreePortListener>(
+  //     new FastifyAdapter(),
+  //   );
+  //   try {
+  //     let currentPort = 4000;
+  //     await secondApp.listenFreePort({
+  //       port: 4000,
+  //       onStart: port => (currentPort = port),
+  //     });
+  //
+  //     expect(currentPort).to.eql(4001);
+  //   } catch (error) {
+  //     console.trace(error);
+  //     expect(error).to.eql(undefined);
+  //   } finally {
+  //     await secondApp.close();
+  //   }
+  // });
 
   it('should reject if there is an invalid host', async () => {
     try {

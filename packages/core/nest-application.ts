@@ -303,6 +303,12 @@ export class NestApplication
     !this.isInitialized && (await this.init());
 
     return new Promise(async (resolve, reject) => {
+      // Using Fastify app server thinks that port is free, but on 2nd with similar app launch it breaks.
+      // Port checking is independent on httpAdapter. Fastify works in core strange with ports.
+      if (this.httpAdapter.constructor.name === 'FastifyAdapter') {
+        reject('Free port listener is not available for Fastify.');
+      }
+
       let isIncreasing = true;
       let currentPort = parseInt(options?.port.toString()) ?? 3000;
       const firstPort = currentPort;
@@ -504,7 +510,7 @@ export class NestApplication
       });
 
       try {
-        server.listen(port);
+        server.listen(port, '0.0.0.0');
       } catch (err) {
         if (err.code === 'EADDRINUSE') {
           resolve(true);
