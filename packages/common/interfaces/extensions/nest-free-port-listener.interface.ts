@@ -1,6 +1,13 @@
 import { INestApplication } from '../nest-application.interface';
 import { INestListenFreePortOptions } from './nest-listen-free-port-options.interface';
 
+/**
+ * INestApplication extension with methods to listen free port.
+ *
+ * @example
+ *   const app = await NestFactory.create<INestFreePortListener>(AppModule);
+ *   await app.listenFreePort({ port: 3000 });
+ */
 export interface INestFreePortListener extends INestApplication {
   /**
    * Starts the application on free port.
