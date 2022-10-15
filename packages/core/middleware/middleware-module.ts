@@ -282,7 +282,7 @@ export class MiddlewareModule {
       const basePath = stripEndSlash(addLeadingSlash(prefix));
       paths = [basePath + addLeadingSlash(path)];
       if (Array.isArray(excludedRoutes)) {
-        paths.push(...excludedRoutes.map(route => route.path));
+        paths.push(...excludedRoutes.map(route => addLeadingSlash(route.path)));
       }
     } else if (
       Array.isArray(excludedRoutes) &&
