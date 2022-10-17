@@ -222,7 +222,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   private parseMessageContent(content: Buffer) {
     try {
       return JSON.parse(content.toString());
-    } catch (err) {
+    } catch {
       return content.toString();
     }
   }
