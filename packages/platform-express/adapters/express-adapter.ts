@@ -205,11 +205,13 @@ export class ExpressAdapter extends AbstractHttpAdapter {
         options.httpsOptions,
         this.getInstance(),
       );
-      this.trackOpenConnections();
-      return;
+    } else {
+      this.httpServer = http.createServer(this.getInstance());
     }
-    this.httpServer = http.createServer(this.getInstance());
-    this.trackOpenConnections();
+
+    if (options?.forceCloseConnections === true) {
+      this.trackOpenConnections();
+    }
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {

@@ -25,4 +25,9 @@ export interface NestApplicationOptions extends NestApplicationContextOptions {
    * Whether to register the raw request body on the request. Use `req.rawBody`.
    */
   rawBody?: boolean;
+  /**
+   * Force close open HTTP connections. Useful if restarting your application hangs due to
+   * keep-alive connections in the HTTP adapter.
+   */
+  forceCloseConnections?: boolean;
 }
