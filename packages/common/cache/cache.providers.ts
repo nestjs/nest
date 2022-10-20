@@ -13,7 +13,7 @@ import { CacheManagerOptions } from './interfaces/cache-manager.interface';
 export function createCacheManager(): Provider {
   return {
     provide: CACHE_MANAGER,
-    useFactory: (options: CacheManagerOptions) => {
+    useFactory: async (options: CacheManagerOptions) => {
       const cacheManager = loadPackage('cache-manager', 'CacheModule', () =>
         require('cache-manager'),
       );
@@ -37,9 +37,9 @@ export function createCacheManager(): Provider {
       };
 
       return Array.isArray(options)
-        ? cacheManager.multiCaching(
-            options.map(option => cachingFactory(options.store, option)),
-          )
+        ? cacheManager.multiCaching(await Promise.all(
+            options.map(option => cachingFactory(option.store, option)),
+          ))
         : cachingFactory(options.store, options);
     },
     inject: [MODULE_OPTIONS_TOKEN],
