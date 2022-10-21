@@ -3,8 +3,8 @@ import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import {
   MiddlewareConfiguration,
   RouteInfo,
-} from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
-import { NestMiddleware } from '@nestjs/common/interfaces/middleware/nest-middleware.interface';
+  NestMiddleware,
+} from '@nestjs/common/interfaces/middleware';
 import {
   addLeadingSlash,
   isUndefined,

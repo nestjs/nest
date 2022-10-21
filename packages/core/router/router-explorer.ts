@@ -4,8 +4,7 @@ import {
   PATH_METADATA,
   VERSION_METADATA,
 } from '@nestjs/common/constants';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
-import { VersioningType } from '@nestjs/common/enums/version-type.enum';
+import { RequestMethod, VersioningType } from '@nestjs/common/enums';
 import { InternalServerErrorException } from '@nestjs/common/exceptions';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
