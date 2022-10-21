@@ -299,6 +299,7 @@ export class NestApplication
       if (!this.isListening) {
         this.logger.error(MESSAGES.CALL_LISTEN_FIRST);
         reject(MESSAGES.CALL_LISTEN_FIRST);
+        return;
       }
       const address = this.httpServer.address();
       resolve(this.formatAddress(address));
