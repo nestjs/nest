@@ -29,8 +29,9 @@ let mqttPackage: any = {};
 export class ServerMqtt extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.MQTT;
 
+  protected mqttClient: MqttClient;
+
   private readonly url: string;
-  private mqttClient: MqttClient;
 
   constructor(private readonly options: MqttOptions['options']) {
     super();
