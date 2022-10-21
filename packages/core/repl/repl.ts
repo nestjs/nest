@@ -5,7 +5,6 @@ import { assignToObject } from './assign-to-object.util';
 import { REPL_INITIALIZED_MESSAGE } from './constants';
 import { ReplContext } from './repl-context';
 import { ReplLogger } from './repl-logger';
-import { AbstractHttpAdapter } from '../adapters/http-adapter';
 
 export async function repl(module: Type) {
   const app = await NestFactory.createApplicationContext(module, {
