@@ -21,9 +21,11 @@ import { ContextType, Controller } from '@nestjs/common/interfaces';
 import { isEmpty, isString } from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage } from 'http';
 import { Observable } from 'rxjs';
-import { FORBIDDEN_MESSAGE } from '../guards/constants';
-import { GuardsConsumer } from '../guards/guards-consumer';
-import { GuardsContextCreator } from '../guards/guards-context-creator';
+import {
+  FORBIDDEN_MESSAGE,
+  GuardsConsumer,
+  GuardsContextCreator,
+} from '../guards';
 import { ContextUtils } from '../helpers/context-utils';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 import {
