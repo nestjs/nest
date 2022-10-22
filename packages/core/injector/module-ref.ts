@@ -1,6 +1,8 @@
 import { IntrospectionResult, Scope, Type } from '@nestjs/common';
-import { InvalidClassScopeException } from '../errors/exceptions/invalid-class-scope.exception';
-import { UnknownElementException } from '../errors/exceptions/unknown-element.exception';
+import {
+  InvalidClassScopeException,
+  UnknownElementException,
+} from '../errors/exceptions';
 import { getClassScope } from '../helpers/get-class-scope';
 import { isDurable } from '../helpers/is-durable';
 import { NestContainer } from './container';

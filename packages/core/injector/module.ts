@@ -21,9 +21,11 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
-import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import {
+  InvalidClassException,
+  RuntimeException,
+  UnknownExportException,
+} from '../errors/exceptions';
 import { createContextId } from '../helpers/context-id-factory';
 import { getClassScope } from '../helpers/get-class-scope';
 import { isDurable } from '../helpers/is-durable';
