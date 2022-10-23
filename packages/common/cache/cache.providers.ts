@@ -17,14 +17,14 @@ export function createCacheManager(): Provider {
       const cacheManager = loadPackage('cache-manager', 'CacheModule', () =>
         require('cache-manager'),
       );
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const cacheManagerVersion = require('cache-manager/package.json').version;
-      const cacheManagerMajor = cacheManagerVersion.split('.')[0];
+      console.log(Object.keys(cacheManager));
+      const cacheManagerIsv5 = 'memoryStore' in Object.keys(cacheManager);
+      console.log(cacheManagerIsv5);
       const cachingFactory = async (
         store: CacheManagerOptions['store'],
         options: Omit<CacheManagerOptions, 'store'>,
       ): Promise<Record<string, any>> => {
-        if (cacheManagerMajor < 5) {
+        if (cacheManagerIsv5) {
           return cacheManager.caching({
             ...defaultCacheOptions,
             ...{ ...options, store },
