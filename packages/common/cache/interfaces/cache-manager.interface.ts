@@ -18,7 +18,7 @@ export interface CacheStore {
   set<T>(
     key: string,
     value: T,
-    options?: CacheStoreSetOptions<T>,
+    options?: CacheStoreSetOptions<T> | number,
   ): Promise<void> | void;
   /**
    * Retrieve a key/value pair from the cache.
