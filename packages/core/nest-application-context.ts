@@ -10,9 +10,11 @@ import { Type } from '@nestjs/common/interfaces/type.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { MESSAGES } from './constants';
-import { InvalidClassScopeException } from './errors/exceptions/invalid-class-scope.exception';
-import { UnknownElementException } from './errors/exceptions/unknown-element.exception';
-import { UnknownModuleException } from './errors/exceptions/unknown-module.exception';
+import {
+  InvalidClassScopeException,
+  UnknownElementException,
+  UnknownModuleException,
+} from './errors/exceptions';
 import { createContextId } from './helpers/context-id-factory';
 import {
   callAppShutdownHook,
