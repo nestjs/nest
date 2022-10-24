@@ -246,10 +246,14 @@ export class ConsoleLogger implements LoggerService {
     const includeTimestamp =
       ConsoleLogger.lastTimestampAt && this.options?.timestamp;
     const result = includeTimestamp
-      ? yellow(` +${Date.now() - ConsoleLogger.lastTimestampAt}ms`)
+      ? this.formatTimestampDiff(Date.now() - ConsoleLogger.lastTimestampAt)
       : '';
     ConsoleLogger.lastTimestampAt = Date.now();
     return result;
+  }
+
+  protected formatTimestampDiff(timestampDiff: number) {
+    return yellow(` +${timestampDiff}ms`);
   }
 
   private getContextAndMessagesToPrint(args: unknown[]) {
