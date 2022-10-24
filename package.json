@@ -149,7 +149,7 @@
     "lint-staged": "13.0.3",
     "markdown-table": "2.0.0",
     "merge-graphql-schemas": "1.7.8",
-    "mocha": "10.0.0",
+    "mocha": "10.1.0",
     "mongoose": "6.6.7",
     "mqtt": "4.3.7",
     "multer": "1.4.4",
