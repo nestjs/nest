@@ -13,24 +13,29 @@ import { CacheManagerOptions } from './interfaces/cache-manager.interface';
 export function createCacheManager(): Provider {
   return {
     provide: CACHE_MANAGER,
-    useFactory: (options: CacheManagerOptions) => {
+    useFactory: async (options: CacheManagerOptions) => {
       const cacheManager = loadPackage('cache-manager', 'CacheModule', () =>
         require('cache-manager'),
       );
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const cacheManagerVersion = require('cache-manager/package.json').version;
-      const cacheManagerMajor = cacheManagerVersion.split('.')[0];
-      const cachingFactory = (
+      const cacheManagerIsv5OrGreater = 'memoryStore' in cacheManager;
+      const cachingFactory = async (
         store: CacheManagerOptions['store'],
         options: Omit<CacheManagerOptions, 'store'>,
-      ): Record<string, any> => {
-        if (cacheManagerMajor < 5) {
+      ): Promise<Record<string, any>> => {
+        if (!cacheManagerIsv5OrGreater) {
           return cacheManager.caching({
             ...defaultCacheOptions,
             ...{ ...options, store },
           });
         }
-        return cacheManager.caching(store ?? 'memory', {
+        let cache: string | Function = 'memory';
+        defaultCacheOptions.ttl *= 1000;
+        if (typeof store === 'object' && 'create' in store) {
+          cache = store.create;
+        } else if (typeof store === 'function') {
+          cache = store;
+        }
+        return cacheManager.caching(cache, {
           ...defaultCacheOptions,
           ...options,
         });
@@ -38,7 +43,9 @@ export function createCacheManager(): Provider {
 
       return Array.isArray(options)
         ? cacheManager.multiCaching(
-            options.map(option => cachingFactory(options.store, option)),
+            await Promise.all(
+              options.map(option => cachingFactory(option.store, option)),
+            ),
           )
         : cachingFactory(options.store, options);
     },
