@@ -454,6 +454,7 @@ export class RouterExecutionContext {
       result = await this.responseController.transformToResult(result);
       !isResponseHandled &&
         (await this.responseController.apply(result, res, httpStatusCode));
+      return res;
     };
   }
 
