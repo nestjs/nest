@@ -139,5 +139,19 @@ describe('HttpException', () => {
 
       expect(cause).to.be.eql(message);
     });
+
+    it('configures a cause when message is a string and the options object is passed', () => {
+      const causeError = new Error('Some Error');
+
+      const customDescription = 'custom description';
+      const error = new HttpException(customDescription, 400, {
+        cause: causeError,
+      });
+
+      expect(`${error}`).to.be.eql(`HttpException: ${customDescription}`);
+      const { cause } = error;
+
+      expect(cause).to.be.eql(causeError);
+    });
   });
 });
