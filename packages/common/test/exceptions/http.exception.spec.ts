@@ -6,51 +6,59 @@ import {
 } from '../../exceptions';
 
 describe('HttpException', () => {
-  it('should return a response as a string when input is a string', () => {
-    const message = 'My error message';
-    expect(new HttpException(message, 404).getResponse()).to.be.eql(
-      'My error message',
-    );
-  });
+  describe('getResponse', () => {
+    it('should return a response as a string when input is a string', () => {
+      const message = 'My error message';
+      expect(new HttpException(message, 404).getResponse()).to.be.eql(
+        'My error message',
+      );
+    });
 
-  it('should return a response as an object when input is an object', () => {
-    const message = {
-      msg: 'My error message',
-      reason: 'this can be a human readable reason',
-      anything: 'else',
-    };
-    expect(new HttpException(message, 404).getResponse()).to.be.eql(message);
-  });
+    it('should return a response as an object when input is an object', () => {
+      const message = {
+        msg: 'My error message',
+        reason: 'this can be a human readable reason',
+        anything: 'else',
+      };
+      expect(new HttpException(message, 404).getResponse()).to.be.eql(message);
+    });
 
-  it('should return a message from a built-in exception as an object', () => {
-    const message = 'My error message';
-    expect(new BadRequestException(message).getResponse()).to.be.eql({
-      statusCode: 400,
-      error: 'Bad Request',
-      message: 'My error message',
+    it('should return a message from a built-in exception as an object', () => {
+      const message = 'My error message';
+      expect(new BadRequestException(message).getResponse()).to.be.eql({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'My error message',
+      });
+    });
+
+    it('should return an object even when the message is undefined', () => {
+      expect(new BadRequestException().getResponse()).to.be.eql({
+        statusCode: 400,
+        message: 'Bad Request',
+      });
     });
   });
 
-  it('should return an object even when the message is undefined', () => {
-    expect(new BadRequestException().getResponse()).to.be.eql({
-      statusCode: 400,
-      message: 'Bad Request',
+  describe('built-in exceptions', () => {
+    describe('getStatus', () => {
+      it('should return given status code', () => {
+        expect(new BadRequestException().getStatus()).to.be.eql(400);
+        expect(new NotFoundException().getStatus()).to.be.eql(404);
+      });
     });
-  });
 
-  it('should return a status code', () => {
-    expect(new BadRequestException().getStatus()).to.be.eql(400);
-    expect(new NotFoundException().getStatus()).to.be.eql(404);
-  });
-
-  it('should return a response', () => {
-    expect(new BadRequestException().getResponse()).to.be.eql({
-      message: 'Bad Request',
-      statusCode: 400,
-    });
-    expect(new NotFoundException().getResponse()).to.be.eql({
-      message: 'Not Found',
-      statusCode: 404,
+    describe('getResponse', () => {
+      it('should return a response with default message and status code', () => {
+        expect(new BadRequestException().getResponse()).to.be.eql({
+          message: 'Bad Request',
+          statusCode: 400,
+        });
+        expect(new NotFoundException().getResponse()).to.be.eql({
+          message: 'Not Found',
+          statusCode: 404,
+        });
+      });
     });
   });
 
@@ -59,31 +67,28 @@ describe('HttpException', () => {
     expect(error instanceof Error).to.be.true;
   });
 
-  it('should be serializable', () => {
-    const message = 'Some Error';
-    const error = new HttpException(message, 400);
-    expect(`${error}`).to.be.eql(`HttpException: ${message}`);
-  });
-
-  describe('when "response" is an object', () => {
-    it('should use default message', () => {
-      const obj = { foo: 'bar' };
-      const error = new HttpException(obj, 400);
-      const badRequestError = new BadRequestException(obj);
-
-      expect(`${error}`).to.be.eql(`HttpException: Http Exception`);
-      expect(`${badRequestError}`).to.be.eql(
-        `BadRequestException: Bad Request Exception`,
-      );
-      expect(`${error}`.includes('[object Object]')).to.not.be.true;
-      expect(`${badRequestError}`.includes('[object Object]')).to.not.be.true;
-    });
-    describe('otherwise', () => {
-      it('should concat strings', () => {
-        const test = 'test message';
-        const error = new HttpException(test, 400);
-        expect(`${error}`).to.be.eql(`HttpException: ${test}`);
+  describe('when serializing', () => {
+    describe('and "response" parameter is a string', () => {
+      it('should concatenate HttpException with the given message', () => {
+        const responseAsString = 'Some Error';
+        const error = new HttpException(responseAsString, 400);
+        expect(`${error}`).to.be.eql(`HttpException: ${responseAsString}`);
         expect(`${error}`.includes('[object Object]')).to.not.be.true;
+      });
+    });
+
+    describe('and "response" parameter is an object', () => {
+      it('should use default message', () => {
+        const responseAsObject = { foo: 'bar' };
+        const error = new HttpException(responseAsObject, 400);
+        const badRequestError = new BadRequestException(responseAsObject);
+
+        expect(`${error}`).to.be.eql(`HttpException: Http Exception`);
+        expect(`${badRequestError}`).to.be.eql(
+          `BadRequestException: Bad Request Exception`,
+        );
+        expect(`${error}`.includes('[object Object]')).to.not.be.true;
+        expect(`${badRequestError}`.includes('[object Object]')).to.not.be.true;
       });
     });
   });
