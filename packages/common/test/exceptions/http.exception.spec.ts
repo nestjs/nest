@@ -59,6 +59,18 @@ describe('HttpException', () => {
           statusCode: 404,
         });
       });
+
+      it('should return a response with an "error" attribute when description was provided as the "option" object', () => {
+        const badRequestError = new BadRequestException('ErrorMessage', {
+          description: 'Some error description',
+        });
+
+        expect(badRequestError.getResponse()).to.be.eql({
+          message: 'ErrorMessage',
+          error: 'Some error description',
+          statusCode: 400,
+        });
+      });
     });
   });
 
