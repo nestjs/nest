@@ -40,13 +40,16 @@ export class BadRequestException extends HttpException {
       | string
       | (HttpExceptionOptions & { description?: string }) = 'Bad Request',
   ) {
-    const description = isString(descriptionOrOptions)
-      ? descriptionOrOptions
-      : descriptionOrOptions.description;
+    let description: string;
+    let httpExceptionOptions: HttpExceptionOptions;
 
-    const httpExceptionOptions = isString(descriptionOrOptions)
-      ? {}
-      : descriptionOrOptions;
+    if (isString(descriptionOrOptions)) {
+      description = descriptionOrOptions;
+      httpExceptionOptions = {};
+    } else {
+      description = descriptionOrOptions.description;
+      httpExceptionOptions = descriptionOrOptions;
+    }
 
     super(
       HttpException.createBody(
