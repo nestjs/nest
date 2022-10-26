@@ -1,5 +1,6 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException } from './http.exception';
+import { isString } from '../utils/shared.utils';
+import { HttpException, HttpExceptionOptions } from './http.exception';
 
 /**
  * Defines an HTTP exception for *Bad Request* type errors.
@@ -31,12 +32,22 @@ export class BadRequestException extends HttpException {
    * and return it as the JSON response body.
    *
    * @param objectOrError string or object describing the error condition.
-   * @param description a short description of the HTTP error.
+   * @param descriptionOrOptions a short description of the HTTP error.
    */
   constructor(
     objectOrError?: string | object | any,
-    description = 'Bad Request',
+    descriptionOrOptions:
+      | string
+      | (HttpExceptionOptions & { description?: string }) = 'Bad Request',
   ) {
+    const description = isString(descriptionOrOptions)
+      ? descriptionOrOptions
+      : descriptionOrOptions.description;
+
+    const httpExceptionOptions = isString(descriptionOrOptions)
+      ? {}
+      : descriptionOrOptions;
+
     super(
       HttpException.createBody(
         objectOrError,
@@ -44,6 +55,7 @@ export class BadRequestException extends HttpException {
         HttpStatus.BAD_REQUEST,
       ),
       HttpStatus.BAD_REQUEST,
+      httpExceptionOptions,
     );
   }
 }

@@ -153,5 +153,18 @@ describe('HttpException', () => {
 
       expect(cause).to.be.eql(causeError);
     });
+
+    it('configures a cause when using a built-in exception with options', () => {
+      const causeError = new Error('Some Error');
+
+      const customDescription = 'custom description';
+      const error = new BadRequestException(customDescription, {
+        cause: causeError,
+      });
+
+      const { cause } = error;
+
+      expect(cause).to.be.eql(causeError);
+    });
   });
 });
