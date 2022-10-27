@@ -63,8 +63,33 @@ describe('HttpException', () => {
   describe('built-in exceptions', () => {
     describe('getStatus', () => {
       it('should return given status code', () => {
-        expect(new BadRequestException().getStatus()).to.be.eql(400);
-        expect(new NotFoundException().getStatus()).to.be.eql(404);
+        const testCases: [Type<HttpException>, number][] = [
+          [BadRequestException, 400],
+          [UnauthorizedException, 401],
+          [ForbiddenException, 403],
+          [NotFoundException, 404],
+          [MethodNotAllowedException, 405],
+          [NotAcceptableException, 406],
+          [RequestTimeoutException, 408],
+          [ConflictException, 409],
+          [GoneException, 410],
+          [PreconditionFailedException, 412],
+          [PayloadTooLargeException, 413],
+          [UnsupportedMediaTypeException, 415],
+          [ImATeapotException, 418],
+          [MisdirectedException, 421],
+          [UnprocessableEntityException, 422],
+          [InternalServerErrorException, 500],
+          [NotImplementedException, 501],
+          [BadGatewayException, 502],
+          [ServiceUnavailableException, 503],
+          [GatewayTimeoutException, 504],
+          [HttpVersionNotSupportedException, 505],
+        ];
+
+        testCases.forEach(([ExceptionClass, expectedStatus]) => {
+          expect(new ExceptionClass().getStatus()).to.be.eql(expectedStatus);
+        });
       });
     });
 
