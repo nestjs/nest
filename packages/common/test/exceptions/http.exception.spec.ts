@@ -20,6 +20,7 @@ import {
   RequestTimeoutException,
   ServiceUnavailableException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '../../exceptions';
 
 describe('HttpException', () => {
@@ -212,6 +213,7 @@ describe('HttpException', () => {
         RequestTimeoutException,
         ServiceUnavailableException,
         UnauthorizedException,
+        UnprocessableEntityException,
       ];
 
       builtInErrorClasses.forEach(ExceptionClass => {
