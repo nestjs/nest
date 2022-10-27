@@ -199,6 +199,7 @@ describe('HttpException', () => {
         MethodNotAllowedException,
         MisdirectedException,
         NotAcceptableException,
+        NotFoundException,
       ];
 
       builtInErrorClasses.forEach(ExceptionClass => {
