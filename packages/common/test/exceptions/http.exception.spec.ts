@@ -11,6 +11,7 @@ import {
   ImATeapotException,
   InternalServerErrorException,
   MethodNotAllowedException,
+  MisdirectedException,
   NotFoundException,
 } from '../../exceptions';
 
@@ -195,6 +196,7 @@ describe('HttpException', () => {
         ImATeapotException,
         InternalServerErrorException,
         MethodNotAllowedException,
+        MisdirectedException,
       ];
 
       builtInErrorClasses.forEach(ExceptionClass => {
