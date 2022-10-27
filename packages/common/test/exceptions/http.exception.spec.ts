@@ -10,6 +10,7 @@ import {
   HttpVersionNotSupportedException,
   ImATeapotException,
   InternalServerErrorException,
+  MethodNotAllowedException,
   NotFoundException,
 } from '../../exceptions';
 
@@ -193,6 +194,7 @@ describe('HttpException', () => {
         HttpVersionNotSupportedException,
         ImATeapotException,
         InternalServerErrorException,
+        MethodNotAllowedException,
       ];
 
       builtInErrorClasses.forEach(ExceptionClass => {
