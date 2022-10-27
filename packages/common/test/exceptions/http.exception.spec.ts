@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import {
+  BadGatewayException,
   BadRequestException,
   HttpException,
   NotFoundException,
@@ -148,6 +149,9 @@ describe('HttpException', () => {
   });
 
   describe('initCause', () => {
+    const errorCause = new Error('An internal error cause');
+    const customDescription = 'custom description';
+
     it('configures a cause when message is an instance of error', () => {
       const message = new Error('Some Error');
       const error = new HttpException(message, 400);
@@ -171,17 +175,14 @@ describe('HttpException', () => {
       expect(cause).to.be.eql(causeError);
     });
 
-    it('configures a cause when using a built-in exception with options', () => {
-      const causeError = new Error('Some Error');
-
-      const customDescription = 'custom description';
-      const error = new BadRequestException(customDescription, {
-        cause: causeError,
+    it('configures a cause when using a BadGatewayException with options', () => {
+      const error = new BadGatewayException(customDescription, {
+        cause: errorCause,
       });
 
       const { cause } = error;
 
-      expect(cause).to.be.eql(causeError);
+      expect(cause).to.be.eql(errorCause);
     });
   });
 });

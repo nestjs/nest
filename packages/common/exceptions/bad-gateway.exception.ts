@@ -1,5 +1,6 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException } from './http.exception';
+import { isString } from '../utils/shared.utils';
+import { HttpException, HttpExceptionOptions } from './http.exception';
 
 /**
  * Defines an HTTP exception for *Bad Gateway* type errors.
@@ -31,12 +32,22 @@ export class BadGatewayException extends HttpException {
    * and return it as the JSON response body.
    *
    * @param objectOrError string or object describing the error condition.
-   * @param description a short description of the HTTP error.
+   * @param descriptionOrOptions a short description of the HTTP error.
    */
   constructor(
     objectOrError?: string | object | any,
-    description = 'Bad Gateway',
+    descriptionOrOptions: string | HttpExceptionOptions = 'Bad Gateway',
   ) {
+    let description: string;
+    let httpExceptionOptions: HttpExceptionOptions;
+
+    if (isString(descriptionOrOptions)) {
+      description = descriptionOrOptions;
+      httpExceptionOptions = {};
+    } else {
+      description = descriptionOrOptions.description;
+      httpExceptionOptions = descriptionOrOptions;
+    }
     super(
       HttpException.createBody(
         objectOrError,
@@ -44,6 +55,7 @@ export class BadGatewayException extends HttpException {
         HttpStatus.BAD_GATEWAY,
       ),
       HttpStatus.BAD_GATEWAY,
+      httpExceptionOptions,
     );
   }
 }
