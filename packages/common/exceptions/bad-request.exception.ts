@@ -36,9 +36,7 @@ export class BadRequestException extends HttpException {
    */
   constructor(
     objectOrError?: string | object | any,
-    descriptionOrOptions:
-      | string
-      | (HttpExceptionOptions & { description?: string }) = 'Bad Request',
+    descriptionOrOptions: string | HttpExceptionOptions = 'Bad Request',
   ) {
     let description: string;
     let httpExceptionOptions: HttpExceptionOptions;

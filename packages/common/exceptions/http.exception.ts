@@ -1,9 +1,10 @@
 import { Logger } from '../services';
 import { isObject, isString } from '../utils/shared.utils';
 
-export type HttpExceptionOptions = {
+export interface HttpExceptionOptions {
   cause?: Error;
-};
+  description?: string;
+}
 
 /**
  * Defines the base Nest HTTP exception, which is handled by the default
