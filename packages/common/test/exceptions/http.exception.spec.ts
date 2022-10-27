@@ -17,6 +17,7 @@ import {
   NotImplementedException,
   PayloadTooLargeException,
   PreconditionFailedException,
+  RequestTimeoutException,
 } from '../../exceptions';
 
 describe('HttpException', () => {
@@ -206,6 +207,7 @@ describe('HttpException', () => {
         NotImplementedException,
         PayloadTooLargeException,
         PreconditionFailedException,
+        RequestTimeoutException,
       ];
 
       builtInErrorClasses.forEach(ExceptionClass => {
