@@ -1,3 +1,4 @@
+import { Type } from '../../../common';
 import { expect } from 'chai';
 import {
   BadGatewayException,
@@ -69,14 +70,38 @@ describe('HttpException', () => {
 
     describe('getResponse', () => {
       it('should return a response with default message and status code', () => {
-        expect(new BadRequestException().getResponse()).to.be.eql({
-          message: 'Bad Request',
-          statusCode: 400,
-        });
-        expect(new NotFoundException().getResponse()).to.be.eql({
-          message: 'Not Found',
-          statusCode: 404,
-        });
+        const testCases: [Type<HttpException>, number, string][] = [
+          [BadRequestException, 400, 'Bad Request'],
+          [UnauthorizedException, 401, 'Unauthorized'],
+          [ForbiddenException, 403, 'Forbidden'],
+          [NotFoundException, 404, 'Not Found'],
+          [MethodNotAllowedException, 405, 'Method Not Allowed'],
+          [NotAcceptableException, 406, 'Not Acceptable'],
+          [RequestTimeoutException, 408, 'Request Timeout'],
+          [ConflictException, 409, 'Conflict'],
+          [GoneException, 410, 'Gone'],
+          [PreconditionFailedException, 412, 'Precondition Failed'],
+          [PayloadTooLargeException, 413, 'Payload Too Large'],
+          [UnsupportedMediaTypeException, 415, 'Unsupported Media Type'],
+          [ImATeapotException, 418, "I'm a teapot"],
+          [MisdirectedException, 421, 'Misdirected'],
+          [UnprocessableEntityException, 422, 'Unprocessable Entity'],
+          [InternalServerErrorException, 500, 'Internal Server Error'],
+          [NotImplementedException, 501, 'Not Implemented'],
+          [BadGatewayException, 502, 'Bad Gateway'],
+          [ServiceUnavailableException, 503, 'Service Unavailable'],
+          [GatewayTimeoutException, 504, 'Gateway Timeout'],
+          [HttpVersionNotSupportedException, 505, 'HTTP Version Not Supported'],
+        ];
+
+        testCases.forEach(
+          ([ExceptionClass, expectedStatus, expectedMessage]) => {
+            expect(new ExceptionClass().getResponse()).to.be.eql({
+              message: expectedMessage,
+              statusCode: expectedStatus,
+            });
+          },
+        );
       });
 
       it('should return a response with an "error" attribute when description was provided as the "option" object', () => {

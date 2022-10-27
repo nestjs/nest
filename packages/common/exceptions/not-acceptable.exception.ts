@@ -41,8 +41,12 @@ export class NotAcceptableException extends HttpException {
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
-      HttpException.createBody(objectOrError, description, HttpStatus.CONFLICT),
-      HttpStatus.CONFLICT,
+      HttpException.createBody(
+        objectOrError,
+        description,
+        HttpStatus.NOT_ACCEPTABLE,
+      ),
+      HttpStatus.NOT_ACCEPTABLE,
       httpExceptionOptions,
     );
   }
