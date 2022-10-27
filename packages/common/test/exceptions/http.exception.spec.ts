@@ -18,6 +18,7 @@ import {
   PayloadTooLargeException,
   PreconditionFailedException,
   RequestTimeoutException,
+  ServiceUnavailableException,
 } from '../../exceptions';
 
 describe('HttpException', () => {
@@ -208,6 +209,7 @@ describe('HttpException', () => {
         PayloadTooLargeException,
         PreconditionFailedException,
         RequestTimeoutException,
+        ServiceUnavailableException,
       ];
 
       builtInErrorClasses.forEach(ExceptionClass => {
