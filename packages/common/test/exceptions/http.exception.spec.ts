@@ -3,6 +3,7 @@ import {
   BadGatewayException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpException,
   NotFoundException,
 } from '../../exceptions';
@@ -181,6 +182,7 @@ describe('HttpException', () => {
         BadGatewayException,
         BadRequestException,
         ConflictException,
+        ForbiddenException,
       ];
 
       builInErrorClasses.forEach(ExceptionClass => {
