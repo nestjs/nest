@@ -5,6 +5,7 @@ import {
   ConflictException,
   ForbiddenException,
   GatewayTimeoutException,
+  GoneException,
   HttpException,
   NotFoundException,
 } from '../../exceptions';
@@ -185,6 +186,7 @@ describe('HttpException', () => {
         ConflictException,
         ForbiddenException,
         GatewayTimeoutException,
+        GoneException,
       ];
 
       builInErrorClasses.forEach(ExceptionClass => {

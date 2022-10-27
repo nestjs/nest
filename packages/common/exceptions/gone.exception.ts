@@ -1,5 +1,5 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException } from './http.exception';
+import { HttpException, HttpExceptionOptions } from './http.exception';
 
 /**
  * Defines an HTTP exception for *Gone* type errors.
@@ -18,7 +18,7 @@ export class GoneException extends HttpException {
    * @usageNotes
    * The HTTP response status code will be 410.
    * - The `objectOrError` argument defines the JSON response body or the message string.
-   * - The `description` argument contains a short description of the HTTP error.
+   * - The `descriptionOrOptions` argument contains either a short description of the HTTP error or an options object used to provide an underlying error cause.
    *
    * By default, the JSON response body contains two properties:
    * - `statusCode`: this will be the value 410.
@@ -31,12 +31,19 @@ export class GoneException extends HttpException {
    * and return it as the JSON response body.
    *
    * @param objectOrError string or object describing the error condition.
-   * @param description a short description of the HTTP error.
+   * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
    */
-  constructor(objectOrError?: string | object | any, description = 'Gone') {
+  constructor(
+    objectOrError?: string | object | any,
+    descriptionOrOptions: string | HttpExceptionOptions = 'Gone',
+  ) {
+    const { description, httpExceptionOptions } =
+      HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
+
     super(
       HttpException.createBody(objectOrError, description, HttpStatus.GONE),
       HttpStatus.GONE,
+      httpExceptionOptions,
     );
   }
 }
