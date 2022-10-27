@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import {
   BadGatewayException,
   BadRequestException,
+  ConflictException,
   HttpException,
   NotFoundException,
 } from '../../exceptions';
@@ -176,7 +177,11 @@ describe('HttpException', () => {
     });
 
     it('configures a cause when using a bult-in exception with options', () => {
-      const builInErrorClasses = [BadGatewayException, BadRequestException];
+      const builInErrorClasses = [
+        BadGatewayException,
+        BadRequestException,
+        ConflictException,
+      ];
 
       builInErrorClasses.forEach(ExceptionClass => {
         const error = new ExceptionClass(customDescription, {
