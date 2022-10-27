@@ -19,6 +19,7 @@ import {
   PreconditionFailedException,
   RequestTimeoutException,
   ServiceUnavailableException,
+  UnauthorizedException,
 } from '../../exceptions';
 
 describe('HttpException', () => {
@@ -210,6 +211,7 @@ describe('HttpException', () => {
         PreconditionFailedException,
         RequestTimeoutException,
         ServiceUnavailableException,
+        UnauthorizedException,
       ];
 
       builtInErrorClasses.forEach(ExceptionClass => {
