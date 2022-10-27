@@ -7,6 +7,7 @@ import {
   GatewayTimeoutException,
   GoneException,
   HttpException,
+  HttpVersionNotSupportedException,
   NotFoundException,
 } from '../../exceptions';
 
@@ -180,16 +181,17 @@ describe('HttpException', () => {
     });
 
     it('configures a cause when using a bult-in exception with options', () => {
-      const builInErrorClasses = [
+      const builtInErrorClasses = [
         BadGatewayException,
         BadRequestException,
         ConflictException,
         ForbiddenException,
         GatewayTimeoutException,
         GoneException,
+        HttpVersionNotSupportedException,
       ];
 
-      builInErrorClasses.forEach(ExceptionClass => {
+      builtInErrorClasses.forEach(ExceptionClass => {
         const error = new ExceptionClass(customDescription, {
           cause: errorCause,
         });

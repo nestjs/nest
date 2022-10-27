@@ -1,5 +1,5 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException } from './http.exception';
+import { HttpException, HttpExceptionOptions } from './http.exception';
 
 /**
  * Defines an HTTP exception for *Http Version Not Supported* type errors.
@@ -18,7 +18,7 @@ export class HttpVersionNotSupportedException extends HttpException {
    * @usageNotes
    * The HTTP response status code will be 505.
    * - The `objectOrError` argument defines the JSON response body or the message string.
-   * - The `description` argument contains a short description of the HTTP error.
+   * - The `descriptionOrOptions` argument contains either a short description of the HTTP error or an options object used to provide an underlying error cause.
    *
    * By default, the JSON response body contains two properties:
    * - `statusCode`: this will be the value 505.
@@ -31,12 +31,17 @@ export class HttpVersionNotSupportedException extends HttpException {
    * and return it as the JSON response body.
    *
    * @param objectOrError string or object describing the error condition.
-   * @param description a short description of the HTTP error.
+   * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
    */
   constructor(
     objectOrError?: string | object | any,
-    description = 'HTTP Version Not Supported',
+    descriptionOrOptions:
+      | string
+      | HttpExceptionOptions = 'HTTP Version Not Supported',
   ) {
+    const { description, httpExceptionOptions } =
+      HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
+
     super(
       HttpException.createBody(
         objectOrError,
@@ -44,6 +49,7 @@ export class HttpVersionNotSupportedException extends HttpException {
         HttpStatus.HTTP_VERSION_NOT_SUPPORTED,
       ),
       HttpStatus.HTTP_VERSION_NOT_SUPPORTED,
+      httpExceptionOptions,
     );
   }
 }
