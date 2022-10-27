@@ -12,6 +12,7 @@ import {
   InternalServerErrorException,
   MethodNotAllowedException,
   MisdirectedException,
+  NotAcceptableException,
   NotFoundException,
 } from '../../exceptions';
 
@@ -197,6 +198,7 @@ describe('HttpException', () => {
         InternalServerErrorException,
         MethodNotAllowedException,
         MisdirectedException,
+        NotAcceptableException,
       ];
 
       builtInErrorClasses.forEach(ExceptionClass => {
