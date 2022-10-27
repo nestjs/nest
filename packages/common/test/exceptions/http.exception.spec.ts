@@ -21,6 +21,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
   UnprocessableEntityException,
+  UnsupportedMediaTypeException,
 } from '../../exceptions';
 
 describe('HttpException', () => {
@@ -214,6 +215,7 @@ describe('HttpException', () => {
         ServiceUnavailableException,
         UnauthorizedException,
         UnprocessableEntityException,
+        UnsupportedMediaTypeException,
       ];
 
       builtInErrorClasses.forEach(ExceptionClass => {
