@@ -14,6 +14,7 @@ import {
   MisdirectedException,
   NotAcceptableException,
   NotFoundException,
+  NotImplementedException,
 } from '../../exceptions';
 
 describe('HttpException', () => {
@@ -200,6 +201,7 @@ describe('HttpException', () => {
         MisdirectedException,
         NotAcceptableException,
         NotFoundException,
+        NotImplementedException,
       ];
 
       builtInErrorClasses.forEach(ExceptionClass => {
