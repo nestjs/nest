@@ -38,9 +38,8 @@ export class BadRequestException extends HttpException {
     objectOrError?: string | object | any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Bad Request',
   ) {
-    const description = HttpException.getDescriptionFrom(descriptionOrOptions);
-    const httpExceptionOptions =
-      HttpException.getHttpExceptionOptionsFrom(descriptionOrOptions);
+    const { description, httpExceptionOptions } =
+      HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(

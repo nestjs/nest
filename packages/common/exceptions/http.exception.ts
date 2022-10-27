@@ -6,6 +6,11 @@ export interface HttpExceptionOptions {
   description?: string;
 }
 
+export interface DescriptionAndOptions {
+  description?: string;
+  httpExceptionOptions?: HttpExceptionOptions;
+}
+
 /**
  * Defines the base Nest HTTP exception, which is handled by the default
  * Exceptions Handler.
@@ -138,5 +143,22 @@ export class HttpException extends Error {
     descriptionOrOptions: string | HttpExceptionOptions,
   ): HttpExceptionOptions {
     return isString(descriptionOrOptions) ? {} : descriptionOrOptions;
+  }
+
+  public static extractDescriptionAndOptionsFrom(
+    descriptionOrOptions: string | HttpExceptionOptions,
+  ): DescriptionAndOptions {
+    const description = isString(descriptionOrOptions)
+      ? descriptionOrOptions
+      : descriptionOrOptions?.description;
+
+    const httpExceptionOptions = isString(descriptionOrOptions)
+      ? {}
+      : descriptionOrOptions;
+
+    return {
+      description,
+      httpExceptionOptions,
+    };
   }
 }
