@@ -175,24 +175,18 @@ describe('HttpException', () => {
       expect(cause).to.be.eql(causeError);
     });
 
-    it('configures a cause when using a BadGatewayException with options', () => {
-      const error = new BadGatewayException(customDescription, {
-        cause: errorCause,
+    it('configures a cause when using a bult-in exception with options', () => {
+      const builInErrorClasses = [BadGatewayException, BadRequestException];
+
+      builInErrorClasses.forEach(ExceptionClass => {
+        const error = new ExceptionClass(customDescription, {
+          cause: errorCause,
+        });
+
+        const { cause } = error;
+
+        expect(cause).to.be.eql(errorCause);
       });
-
-      const { cause } = error;
-
-      expect(cause).to.be.eql(errorCause);
-    });
-
-    it('configures a cause when using a BadRequestException with options', () => {
-      const error = new BadRequestException(customDescription, {
-        cause: errorCause,
-      });
-
-      const { cause } = error;
-
-      expect(cause).to.be.eql(errorCause);
     });
   });
 });
