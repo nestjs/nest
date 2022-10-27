@@ -1,5 +1,5 @@
+import { isString } from 'class-validator';
 import { HttpStatus } from '../enums/http-status.enum';
-import { isString } from '../utils/shared.utils';
 import { HttpException, HttpExceptionOptions } from './http.exception';
 
 /**
@@ -38,16 +38,9 @@ export class BadRequestException extends HttpException {
     objectOrError?: string | object | any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Bad Request',
   ) {
-    let description: string;
-    let httpExceptionOptions: HttpExceptionOptions;
-
-    if (isString(descriptionOrOptions)) {
-      description = descriptionOrOptions;
-      httpExceptionOptions = {};
-    } else {
-      description = descriptionOrOptions.description;
-      httpExceptionOptions = descriptionOrOptions;
-    }
+    const description = HttpException.getDescriptionFrom(descriptionOrOptions);
+    const httpExceptionOptions =
+      HttpException.getHttpExceptionOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(

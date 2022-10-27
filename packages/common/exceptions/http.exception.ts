@@ -125,4 +125,18 @@ export class HttpException extends Error {
       ? objectOrErrorMessage
       : { statusCode, message: objectOrErrorMessage, error: description };
   }
+
+  public static getDescriptionFrom(
+    descriptionOrOptions: string | HttpExceptionOptions,
+  ): string {
+    return isString(descriptionOrOptions)
+      ? descriptionOrOptions
+      : descriptionOrOptions?.description;
+  }
+
+  public static getHttpExceptionOptionsFrom(
+    descriptionOrOptions: string | HttpExceptionOptions,
+  ): HttpExceptionOptions {
+    return isString(descriptionOrOptions) ? {} : descriptionOrOptions;
+  }
 }
