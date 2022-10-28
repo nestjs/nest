@@ -1,10 +1,10 @@
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { ErrorsController } from '../src/errors/errors.controller';
 
 describe('Error messages', () => {
-  let server;
+  let server: HttpServer;
   let app: INestApplication;
 
   beforeEach(async () => {
@@ -31,6 +31,16 @@ describe('Error messages', () => {
       error: 'Bad Request',
       message: 'Integration test',
     });
+  });
+
+  it(`/GET (InternalServerError despite custom content-type)`, async () => {
+    return request(server)
+      .get('/unexpected-error')
+      .expect(HttpStatus.INTERNAL_SERVER_ERROR)
+      .expect({
+        statusCode: 500,
+        message: 'Internal server error',
+      });
   });
 
   afterEach(async () => {
