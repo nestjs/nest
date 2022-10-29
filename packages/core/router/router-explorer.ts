@@ -116,7 +116,7 @@ export class RouterExplorer {
     const path = Reflect.getMetadata(PATH_METADATA, metatype);
 
     if (isUndefined(path)) {
-      throw new UnknownRequestMappingException();
+      throw new UnknownRequestMappingException(metatype);
     }
     if (Array.isArray(path)) {
       return path.map(p => addLeadingSlash(p));
