@@ -11,9 +11,7 @@ import {
   PROPERTY_DEPS_METADATA,
   SELF_DECLARED_DEPS_METADATA,
 } from '@nestjs/common/constants';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { Type } from '@nestjs/common/interfaces/type.interface';
+import { Controller, Injectable, Type } from '@nestjs/common/interfaces';
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import {
   isFunction,
