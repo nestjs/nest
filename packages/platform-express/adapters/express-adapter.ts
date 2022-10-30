@@ -1,3 +1,4 @@
+import type { Server } from 'net';
 import {
   InternalServerErrorException,
   Logger,
@@ -127,9 +128,13 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return response.set(name, value);
   }
 
-  public listen(port: string | number, callback?: () => void);
-  public listen(port: string | number, hostname: string, callback?: () => void);
-  public listen(port: any, ...args: any[]) {
+  public listen(port: string | number, callback?: () => void): Server;
+  public listen(
+    port: string | number,
+    hostname: string,
+    callback?: () => void,
+  ): Server;
+  public listen(port: any, ...args: any[]): Server {
     return this.httpServer.listen(port, ...args);
   }
 
