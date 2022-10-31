@@ -1,5 +1,5 @@
 import { MODULE_PATH, PATH_METADATA } from '@nestjs/common/constants';
-import { RouteInfo, Type } from '@nestjs/common/interfaces';
+import { RouteInfo, Type, VersionValue } from '@nestjs/common/interfaces';
 import {
   addLeadingSlash,
   isString,
@@ -58,10 +58,16 @@ export class RoutesMapper {
               let path = modulePath ?? '';
               path += this.normalizeGlobalPath(routePath) + addLeadingSlash(p);
 
-              return {
+              const routeInfo: RouteInfo = {
                 path,
                 method: item.requestMethod,
               };
+
+              if (item.version) {
+                routeInfo.version = item.version;
+              }
+
+              return routeInfo;
             }),
           )
           .reduce(concatPaths, []),
