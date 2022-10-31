@@ -50,9 +50,21 @@ describe('Middleware', () => {
       app = await createAppWithVersioningType(VersioningType.URI);
     });
 
-    it(`forRoutes({ path: 'tests/versioned', version: '1', method: RequestMethod.ALL })`, () => {
+    it(`forRoutes({ path: ';versioned', version: '1', method: RequestMethod.ALL })`, () => {
       return request(app.getHttpServer())
         .get('/v1/versioned')
+        .expect(200, VERSIONED_VALUE);
+    });
+  });
+
+  describe('when using HEADER versioning', () => {
+    beforeEach(async () => {
+      app = await createAppWithVersioningType(VersioningType.HEADER);
+    });
+
+    it(`forRoutes({ path: 'tests/versioned', version: '1', method: RequestMethod.ALL })`, () => {
+      return request(app.getHttpServer())
+        .get('/versioned')
         .expect(200, VERSIONED_VALUE);
     });
   });

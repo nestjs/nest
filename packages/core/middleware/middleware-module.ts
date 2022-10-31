@@ -1,4 +1,4 @@
-import { HttpServer } from '@nestjs/common';
+import { HttpServer, VersioningType } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import {
   MiddlewareConfiguration,
@@ -288,7 +288,7 @@ export class MiddlewareModule {
       path = basePath + path;
     }
 
-    if (version) {
+    if (version && this.config.getVersioning().type === VersioningType.URI) {
       path = `/v${version.toString()}${path}`;
     }
 
