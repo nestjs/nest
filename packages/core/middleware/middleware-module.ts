@@ -20,6 +20,7 @@ import { Injector } from '../injector/injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { InstanceToken, Module } from '../injector/module';
 import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
+import { RoutePathFactory } from '../router/route-path-factory';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
 import { RouterProxy } from '../router/router-proxy';
 import { isRequestMethodAll, isRouteExcluded } from '../router/utils';
@@ -39,6 +40,8 @@ export class MiddlewareModule {
   private config: ApplicationConfig;
   private container: NestContainer;
   private httpAdapter: HttpServer;
+
+  constructor(private readonly routePathFactory: RoutePathFactory) {}
 
   public async register(
     middlewareContainer: MiddlewareContainer,
@@ -288,8 +291,12 @@ export class MiddlewareModule {
       path = basePath + path;
     }
 
-    if (version && this.config.getVersioning().type === VersioningType.URI) {
-      path = `/v${version.toString()}${path}`;
+    const applicationVersioningConfig = this.config.getVersioning();
+    if (version && applicationVersioningConfig.type === VersioningType.URI) {
+      const versionPrefix = this.routePathFactory.getVersionPrefix(
+        applicationVersioningConfig,
+      );
+      path = `/${versionPrefix}${version.toString()}${path}`;
     }
 
     const isMethodAll = isRequestMethodAll(method);

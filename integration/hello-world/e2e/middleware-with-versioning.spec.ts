@@ -46,7 +46,7 @@ class TestModule {
 describe('Middleware', () => {
   let app: INestApplication;
 
-  describe('when using URI versioning', () => {
+  describe('when using default URI versioning', () => {
     beforeEach(async () => {
       app = await createAppWithVersioning({
         type: VersioningType.URI,
@@ -57,6 +57,22 @@ describe('Middleware', () => {
     it(`forRoutes({ path: '/versioned', version: '1', method: RequestMethod.ALL })`, () => {
       return request(app.getHttpServer())
         .get('/v1/versioned')
+        .expect(200, VERSIONED_VALUE);
+    });
+  });
+
+  describe('when default URI versioning with an alternative prefix', () => {
+    beforeEach(async () => {
+      app = await createAppWithVersioning({
+        type: VersioningType.URI,
+        defaultVersion: VERSION_NEUTRAL,
+        prefix: 'version',
+      });
+    });
+
+    it(`forRoutes({ path: '/versioned', version: '1', method: RequestMethod.ALL })`, () => {
+      return request(app.getHttpServer())
+        .get('/version1/versioned')
         .expect(200, VERSIONED_VALUE);
     });
   });

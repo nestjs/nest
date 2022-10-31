@@ -42,6 +42,7 @@ import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
 import { Resolver } from './router/interfaces/resolver.interface';
+import { RoutePathFactory } from './router/route-path-factory';
 import { RoutesResolver } from './router/routes-resolver';
 
 const { SocketModule } = optionalRequire(
@@ -63,7 +64,7 @@ export class NestApplication
   private readonly logger = new Logger(NestApplication.name, {
     timestamp: true,
   });
-  private readonly middlewareModule = new MiddlewareModule();
+  private readonly middlewareModule: MiddlewareModule;
   private readonly middlewareContainer = new MiddlewareContainer(
     this.container,
   );
@@ -85,6 +86,7 @@ export class NestApplication
 
     this.selectContextModule();
     this.registerHttpServer();
+    this.middlewareModule = new MiddlewareModule(new RoutePathFactory(config));
 
     this.routesResolver = new RoutesResolver(
       this.container,
