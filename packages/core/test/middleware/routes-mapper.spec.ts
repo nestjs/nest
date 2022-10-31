@@ -1,4 +1,5 @@
-import { Version } from '@nestjs/common';
+import { Version } from '../../../common';
+import { MiddlewareConfiguration } from '../../../common/interfaces';
 import { expect } from 'chai';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import {
@@ -29,15 +30,24 @@ describe('RoutesMapper', () => {
   });
 
   it('should map @Controller() to "ControllerMetadata" in forRoutes', () => {
-    const config = {
+    const config: MiddlewareConfiguration = {
       middleware: 'Test',
-      forRoutes: [{ path: 'test', method: RequestMethod.GET }, TestRoute],
+      forRoutes: [
+        { path: 'test', method: RequestMethod.GET },
+        { path: 'versioned', version: '1', method: RequestMethod.GET },
+        TestRoute,
+      ],
     };
 
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).to.deep.equal([
       { path: '/test', method: RequestMethod.GET },
     ]);
+
     expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
+      { path: '/versioned', version: '1', method: RequestMethod.GET },
+    ]);
+
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[2])).to.deep.equal([
       { path: '/test/test', method: RequestMethod.GET },
       { path: '/test/another', method: RequestMethod.DELETE },
       { path: '/test/versioned', method: RequestMethod.GET, version: '1' },
