@@ -8,6 +8,7 @@ import {
   RequestMethod,
   VersioningType,
   VERSION_NEUTRAL,
+  VersioningOptions,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
@@ -44,27 +45,37 @@ class TestModule {
 describe('Middleware', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
-    app = (
-      await Test.createTestingModule({
-        imports: [TestModule],
-      }).compile()
-    ).createNestApplication();
-
-    app.enableVersioning({
-      type: VersioningType.URI,
-      defaultVersion: VERSION_NEUTRAL,
+  describe('when using URI versioning', () => {
+    beforeEach(async () => {
+      app = await createAppWithVersioningType(VersioningType.URI);
     });
-    await app.init();
-  });
 
-  it(`forRoutes({ path: 'tests/versioned', version: '1', method: RequestMethod.ALL })`, () => {
-    return request(app.getHttpServer())
-      .get('/v1/versioned')
-      .expect(200, VERSIONED_VALUE);
+    it(`forRoutes({ path: 'tests/versioned', version: '1', method: RequestMethod.ALL })`, () => {
+      return request(app.getHttpServer())
+        .get('/v1/versioned')
+        .expect(200, VERSIONED_VALUE);
+    });
   });
 
   afterEach(async () => {
     await app.close();
   });
 });
+
+async function createAppWithVersioningType(
+  versioningType: VersioningType,
+): Promise<INestApplication> {
+  const app = (
+    await Test.createTestingModule({
+      imports: [TestModule],
+    }).compile()
+  ).createNestApplication();
+
+  app.enableVersioning({
+    type: versioningType,
+    defaultVersion: VERSION_NEUTRAL,
+  } as VersioningOptions);
+  await app.init();
+
+  return app;
+}
