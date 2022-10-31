@@ -4,12 +4,13 @@ import {
   INestApplication,
   MiddlewareConsumer,
   Module,
-  Version,
   RequestMethod,
+  Version,
+  VersioningOptions,
   VersioningType,
   VERSION_NEUTRAL,
-  VersioningOptions,
 } from '@nestjs/common';
+import { CustomVersioningOptions } from '@nestjs/common/interfaces';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -81,6 +82,23 @@ describe('Middleware', () => {
     });
   });
 
+  describe('when using CUSTOM TYPE versioning', () => {
+    beforeEach(async () => {
+      const extractor: CustomVersioningOptions['extractor'] = () => '1';
+
+      app = await createAppWithVersioningType(
+        VersioningType.MEDIA_TYPE,
+        extractor,
+      );
+    });
+
+    it(`forRoutes({ path: '/versioned', version: '1', method: RequestMethod.ALL })`, () => {
+      return request(app.getHttpServer())
+        .get('/versioned')
+        .expect(200, VERSIONED_VALUE);
+    });
+  });
+
   afterEach(async () => {
     await app.close();
   });
@@ -88,6 +106,7 @@ describe('Middleware', () => {
 
 async function createAppWithVersioningType(
   versioningType: VersioningType,
+  extractor?: CustomVersioningOptions['extractor'],
 ): Promise<INestApplication> {
   const app = (
     await Test.createTestingModule({
@@ -98,6 +117,7 @@ async function createAppWithVersioningType(
   app.enableVersioning({
     type: versioningType,
     defaultVersion: VERSION_NEUTRAL,
+    extractor,
   } as VersioningOptions);
   await app.init();
 
