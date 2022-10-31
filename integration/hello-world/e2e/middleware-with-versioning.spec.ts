@@ -48,7 +48,10 @@ describe('Middleware', () => {
 
   describe('when using URI versioning', () => {
     beforeEach(async () => {
-      app = await createAppWithVersioningType(VersioningType.URI);
+      app = await createAppWithVersioning({
+        type: VersioningType.URI,
+        defaultVersion: VERSION_NEUTRAL,
+      });
     });
 
     it(`forRoutes({ path: '/versioned', version: '1', method: RequestMethod.ALL })`, () => {
@@ -60,19 +63,27 @@ describe('Middleware', () => {
 
   describe('when using HEADER versioning', () => {
     beforeEach(async () => {
-      app = await createAppWithVersioningType(VersioningType.HEADER);
+      app = await createAppWithVersioning({
+        type: VersioningType.HEADER,
+        header: 'version',
+      });
     });
 
     it(`forRoutes({ path: '/versioned', version: '1', method: RequestMethod.ALL })`, () => {
       return request(app.getHttpServer())
         .get('/versioned')
+        .set('version', '1')
         .expect(200, VERSIONED_VALUE);
     });
   });
 
   describe('when using MEDIA TYPE versioning', () => {
     beforeEach(async () => {
-      app = await createAppWithVersioningType(VersioningType.MEDIA_TYPE);
+      app = await createAppWithVersioning({
+        type: VersioningType.MEDIA_TYPE,
+        key: 'v',
+        defaultVersion: VERSION_NEUTRAL,
+      });
     });
 
     it(`forRoutes({ path: '/versioned', version: '1', method: RequestMethod.ALL })`, () => {
@@ -86,10 +97,10 @@ describe('Middleware', () => {
     beforeEach(async () => {
       const extractor: CustomVersioningOptions['extractor'] = () => '1';
 
-      app = await createAppWithVersioningType(
-        VersioningType.MEDIA_TYPE,
+      app = await createAppWithVersioning({
+        type: VersioningType.CUSTOM,
         extractor,
-      );
+      });
     });
 
     it(`forRoutes({ path: '/versioned', version: '1', method: RequestMethod.ALL })`, () => {
@@ -104,9 +115,8 @@ describe('Middleware', () => {
   });
 });
 
-async function createAppWithVersioningType(
-  versioningType: VersioningType,
-  extractor?: CustomVersioningOptions['extractor'],
+async function createAppWithVersioning(
+  versioningOptions: VersioningOptions,
 ): Promise<INestApplication> {
   const app = (
     await Test.createTestingModule({
@@ -114,11 +124,7 @@ async function createAppWithVersioningType(
     }).compile()
   ).createNestApplication();
 
-  app.enableVersioning({
-    type: versioningType,
-    defaultVersion: VERSION_NEUTRAL,
-    extractor,
-  } as VersioningOptions);
+  app.enableVersioning(versioningOptions);
   await app.init();
 
   return app;
