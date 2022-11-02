@@ -72,7 +72,7 @@
   },
   "devDependencies": {
     "@codechecks/client": "0.1.12",
-    "@commitlint/cli": "17.1.2",
+    "@commitlint/cli": "17.2.0",
     "@commitlint/config-angular": "17.1.0",
     "@fastify/cors": "^8.0.0",
     "@fastify/formbody": "7.3.0",
