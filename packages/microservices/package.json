@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "iterare": "1.2.1",
-    "tslib": "2.4.0"
+    "tslib": "2.4.1"
   },
   "devDependencies": {
     "@nestjs/common": "9.1.6",

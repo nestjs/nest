@@ -23,7 +23,7 @@
     "fastify": "4.9.2",
     "light-my-request": "5.6.1",
     "path-to-regexp": "3.2.0",
-    "tslib": "2.4.0"
+    "tslib": "2.4.1"
   },
   "peerDependencies": {
     "@fastify/static": "^6.0.0",
