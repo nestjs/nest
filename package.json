@@ -106,7 +106,7 @@
     "@typescript-eslint/parser": "4.33.0",
     "amqp-connection-manager": "4.1.9",
     "amqplib": "0.10.3",
-    "apollo-server-core": "3.10.4",
+    "apollo-server-core": "3.11.0",
     "apollo-server-express": "3.10.4",
     "artillery": "1.7.9",
     "body-parser": "1.20.1",
