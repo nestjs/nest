@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import {
   FileTypeValidator,
+  FileTypeValidatorOptions,
+  FileValidator,
   MaxFileSizeValidator,
   ParseFilePipeBuilder,
 } from '../../../pipes';
@@ -46,6 +48,32 @@ describe('ParseFilePipeBuilder', () => {
 
         expect(parseFilePipe.getValidators()).to.deep.include(
           new FileTypeValidator(options),
+        );
+      });
+    });
+
+    describe('when custom validator was chained', () => {
+      it('should return a ParseFilePipe with TestFileValidator and given options', () => {
+        class TestFileValidator extends FileValidator<{ name: string }> {
+          buildErrorMessage(file: any): string {
+            return 'TestFileValidator failed';
+          }
+
+          isValid(file: any): boolean | Promise<boolean> {
+            return true;
+          }
+        }
+
+        const options = {
+          name: 'test',
+        };
+
+        const parseFilePipe = parseFilePipeBuilder
+          .addValidator(new TestFileValidator(options))
+          .build();
+
+        expect(parseFilePipe.getValidators()).to.deep.include(
+          new TestFileValidator(options),
         );
       });
     });
