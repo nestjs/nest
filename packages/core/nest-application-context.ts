@@ -5,8 +5,12 @@ import {
   LogLevel,
   ShutdownSignal,
 } from '@nestjs/common';
-import { Abstract, DynamicModule, Scope } from '@nestjs/common/interfaces';
-import { Type } from '@nestjs/common/interfaces/type.interface';
+import {
+  Abstract,
+  DynamicModule,
+  Scope,
+  Type,
+} from '@nestjs/common/interfaces';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { MESSAGES } from './constants';

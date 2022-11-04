@@ -9,8 +9,8 @@ import {
   NestModule,
   Provider,
   ValueProvider,
+  Type,
 } from '@nestjs/common/interfaces';
-import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import {
   isFunction,

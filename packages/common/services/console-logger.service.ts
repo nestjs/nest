@@ -1,5 +1,4 @@
-import { Injectable } from '../decorators/core/injectable.decorator';
-import { Optional } from '../decorators/core/optional.decorator';
+import { Injectable, Optional } from '../decorators/core';
 import { clc, yellow } from '../utils/cli-colors.util';
 import { isPlainObject, isString } from '../utils/shared.utils';
 import { LoggerService, LogLevel } from './logger.service';
