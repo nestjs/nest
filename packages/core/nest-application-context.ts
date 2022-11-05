@@ -8,17 +8,13 @@ import {
 import {
   Abstract,
   DynamicModule,
-  Scope,
+  GetOrResolveOptions,
   Type,
 } from '@nestjs/common/interfaces';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { MESSAGES } from './constants';
-import {
-  InvalidClassScopeException,
-  UnknownElementException,
-  UnknownModuleException,
-} from './errors/exceptions';
+import { UnknownModuleException } from './errors/exceptions';
 import { createContextId } from './helpers/context-id-factory';
 import {
   callAppShutdownHook,
@@ -27,6 +23,7 @@ import {
   callModuleDestroyHook,
   callModuleInitHook,
 } from './hooks';
+import { AbstractInstanceResolver } from './injector/abstract-instance-resolver';
 import { ModuleCompiler } from './injector/compiler';
 import { NestContainer } from './injector/container';
 import { Injector } from './injector/injector';
@@ -37,7 +34,10 @@ import { Module } from './injector/module';
 /**
  * @publicApi
  */
-export class NestApplicationContext implements INestApplicationContext {
+export class NestApplicationContext
+  extends AbstractInstanceResolver
+  implements INestApplicationContext
+{
   protected isInitialized = false;
   protected readonly injector = new Injector();
 
@@ -48,7 +48,7 @@ export class NestApplicationContext implements INestApplicationContext {
   private _instanceLinksHost: InstanceLinksHost;
   private _moduleRefsByDistance?: Array<Module>;
 
-  private get instanceLinksHost() {
+  protected get instanceLinksHost() {
     if (!this._instanceLinksHost) {
       this._instanceLinksHost = new InstanceLinksHost(this.container);
     }
@@ -59,7 +59,9 @@ export class NestApplicationContext implements INestApplicationContext {
     protected readonly container: NestContainer,
     private readonly scope = new Array<Type<any>>(),
     private contextModule: Module = null,
-  ) {}
+  ) {
+    super();
+  }
 
   public selectContextModule() {
     const modules = this.container.getModules().values();
@@ -87,19 +89,22 @@ export class NestApplicationContext implements INestApplicationContext {
 
   public get<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
-    options: { strict: boolean } = { strict: false },
-  ): TResult {
+    options: GetOrResolveOptions = { strict: false },
+  ): TResult | Array<TResult> {
     return !(options && options.strict)
-      ? this.find<TInput, TResult>(typeOrToken)
-      : this.find<TInput, TResult>(typeOrToken, this.contextModule);
+      ? this.find<TInput, TResult>(typeOrToken, options)
+      : this.find<TInput, TResult>(typeOrToken, {
+          moduleId: this.contextModule?.id,
+          each: options.each,
+        });
   }
 
   public resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextId = createContextId(),
-    options: { strict: boolean } = { strict: false },
-  ): Promise<TResult> {
-    return this.resolvePerContext(
+    options: GetOrResolveOptions = { strict: false },
+  ): Promise<TResult | Array<TResult>> {
+    return this.resolvePerContext<TInput, TResult>(
       typeOrToken,
       this.contextModule,
       contextId,
@@ -288,54 +293,6 @@ export class NestApplicationContext implements INestApplicationContext {
     for (const module of modulesSortedByDistance) {
       await callBeforeAppShutdownHook(module, signal);
     }
-  }
-
-  protected find<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
-    contextModule?: Module,
-  ): TResult {
-    const moduleId = contextModule && contextModule.id;
-    const { wrapperRef } = this.instanceLinksHost.get<TResult>(
-      typeOrToken,
-      moduleId,
-    );
-    if (
-      wrapperRef.scope === Scope.REQUEST ||
-      wrapperRef.scope === Scope.TRANSIENT
-    ) {
-      throw new InvalidClassScopeException(typeOrToken);
-    }
-    return wrapperRef.instance;
-  }
-
-  protected async resolvePerContext<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
-    contextModule: Module,
-    contextId: ContextId,
-    options?: { strict: boolean },
-  ): Promise<TResult> {
-    const isStrictModeEnabled = options && options.strict;
-    const instanceLink = isStrictModeEnabled
-      ? this.instanceLinksHost.get(typeOrToken, contextModule.id)
-      : this.instanceLinksHost.get(typeOrToken);
-
-    const { wrapperRef, collection } = instanceLink;
-    if (wrapperRef.isDependencyTreeStatic() && !wrapperRef.isTransient) {
-      return this.get(typeOrToken, options);
-    }
-
-    const ctorHost = wrapperRef.instance || { constructor: typeOrToken };
-    const instance = await this.injector.loadPerContext(
-      ctorHost,
-      wrapperRef.host,
-      collection,
-      contextId,
-      wrapperRef,
-    );
-    if (!instance) {
-      throw new UnknownElementException();
-    }
-    return instance;
   }
 
   private getModulesSortedByDistance(): Module[] {
