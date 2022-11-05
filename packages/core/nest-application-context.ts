@@ -68,6 +68,10 @@ export class NestApplicationContext
     this.contextModule = modules.next().value;
   }
 
+  /**
+   * Allows navigating through the modules tree, for example, to pull out a specific instance from the selected module.
+   * @returns {INestApplicationContext}
+   */
   public select<T>(
     moduleType: Type<T> | DynamicModule,
   ): INestApplicationContext {
@@ -87,6 +91,39 @@ export class NestApplicationContext
     return new NestApplicationContext(this.container, scope, selectedModule);
   }
 
+  /**
+   * Retrieves an instance of either injectable or controller, otherwise, throws exception.
+   * @returns {TResult}
+   */
+  public get<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+  ): TResult;
+  /**
+   * Retrieves an instance of either injectable or controller, otherwise, throws exception.
+   * @returns {TResult}
+   */
+  public get<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+    options: {
+      strict?: boolean;
+      each?: undefined | false;
+    },
+  ): TResult;
+  /**
+   * Retrieves a list of instances of either injectables or controllers, otherwise, throws exception.
+   * @returns {Array<TResult>}
+   */
+  public get<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+    options: {
+      strict?: boolean;
+      each: true;
+    },
+  ): Array<TResult>;
+  /**
+   * Retrieves an instance (or a list of instances) of either injectable or controller, otherwise, throws exception.
+   * @returns {TResult | Array<TResult>}
+   */
   public get<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     options: GetOrResolveOptions = { strict: false },
@@ -99,6 +136,55 @@ export class NestApplicationContext
         });
   }
 
+  /**
+   * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
+   * @returns {Array<TResult>}
+   */
+  public resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+  ): Promise<TResult>;
+  /**
+   * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
+   * @returns {Array<TResult>}
+   */
+  public resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+    contextId?: {
+      id: number;
+    },
+  ): Promise<TResult>;
+  /**
+   * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
+   * @returns {Array<TResult>}
+   */
+  public resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+    contextId?: {
+      id: number;
+    },
+    options?: {
+      strict?: boolean;
+      each?: undefined | false;
+    },
+  ): Promise<TResult>;
+  /**
+   * Resolves transient or request-scoped instances of either injectables or controllers, otherwise, throws exception.
+   * @returns {Array<TResult>}
+   */
+  public resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+    contextId?: {
+      id: number;
+    },
+    options?: {
+      strict?: boolean;
+      each: true;
+    },
+  ): Promise<Array<TResult>>;
+  /**
+   * Resolves transient or request-scoped instance (or a list of instances) of either injectable or controller, otherwise, throws exception.
+   * @returns {Promise<TResult | Array<TResult>>}
+   */
   public resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextId = createContextId(),
@@ -112,6 +198,10 @@ export class NestApplicationContext
     );
   }
 
+  /**
+   * Registers the request/context object for a given context ID (DI container sub-tree).
+   * @returns {void}
+   */
   public registerRequestByContextId<T = any>(request: T, contextId: ContextId) {
     this.container.registerRequestProvider(request, contextId);
   }
@@ -133,6 +223,10 @@ export class NestApplicationContext
     return this;
   }
 
+  /**
+   * Terminates the application
+   * @returns {Promise<void>}
+   */
   public async close(): Promise<void> {
     await this.callDestroyHook();
     await this.callBeforeShutdownHook();
@@ -141,6 +235,11 @@ export class NestApplicationContext
     this.unsubscribeFromProcessSignals();
   }
 
+  /**
+   * Sets custom logger service.
+   * Flushes buffered logs if auto flush is on.
+   * @returns {void}
+   */
   public useLogger(logger: LoggerService | LogLevel[] | false) {
     Logger.overrideLogger(logger);
 
@@ -149,6 +248,10 @@ export class NestApplicationContext
     }
   }
 
+  /**
+   * Prints buffered logs and detaches buffer.
+   * @returns {void}
+   */
   public flushLogs() {
     Logger.flush();
   }
