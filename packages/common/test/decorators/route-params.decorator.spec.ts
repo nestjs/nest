@@ -363,7 +363,6 @@ describe('@Search', () => {
 
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
-
     expect(path).to.be.eql('/');
     expect(pathUsingArray).to.be.eql('/');
   });
