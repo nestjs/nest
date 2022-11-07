@@ -1,0 +1,21 @@
+{
+  "extends": "../tsconfig.build.json",
+  "compilerOptions": {
+    "outDir": ".",
+    "rootDir": ".",
+    "paths": {
+      "@nestjs/common": ["../common"],
+      "@nestjs/common/*": ["../common/*"],
+      "@nestjs/microservices": ["../microservices"],
+      "@nestjs/microservices/*": ["../microservices/*"],
+      "@nestjs/websockets": ["../websockets"],
+      "@nestjs/websockets/*": ["../websockets/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "test/**/*", "*.spec.ts"],
+  "references": [
+    {
+      "path": "../common/tsconfig.build.json"
+    }
+  ]
+}
