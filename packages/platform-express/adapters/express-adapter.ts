@@ -209,7 +209,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       this.httpServer = http.createServer(this.getInstance());
     }
 
-    if (options?.forceCloseConnections === true) {
+    if (options?.forceCloseConnections) {
       this.trackOpenConnections();
     }
   }
