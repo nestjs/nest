@@ -5,10 +5,10 @@ import {
   ModuleRef,
   ModulesContainer,
   NestContainer,
-} from '../../injector';
-import { InstanceLoader } from '../../injector/instance-loader';
-import { MetadataScanner } from '../../metadata-scanner';
-import { DependenciesScanner } from '../../scanner';
+} from '../../../injector';
+import { InstanceLoader } from '../../../injector/instance-loader';
+import { MetadataScanner } from '../../../metadata-scanner';
+import { DependenciesScanner } from '../../../scanner';
 
 describe('LazyModuleLoader', () => {
   let lazyModuleLoader: LazyModuleLoader;

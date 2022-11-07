@@ -8,17 +8,13 @@ import {
 import {
   Abstract,
   DynamicModule,
-  Scope,
+  GetOrResolveOptions,
   Type,
 } from '@nestjs/common/interfaces';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { MESSAGES } from './constants';
-import {
-  InvalidClassScopeException,
-  UnknownElementException,
-  UnknownModuleException,
-} from './errors/exceptions';
+import { UnknownModuleException } from './errors/exceptions';
 import { createContextId } from './helpers/context-id-factory';
 import {
   callAppShutdownHook,
@@ -27,6 +23,7 @@ import {
   callModuleDestroyHook,
   callModuleInitHook,
 } from './hooks';
+import { AbstractInstanceResolver } from './injector/abstract-instance-resolver';
 import { ModuleCompiler } from './injector/compiler';
 import { NestContainer } from './injector/container';
 import { Injector } from './injector/injector';
@@ -37,7 +34,10 @@ import { Module } from './injector/module';
 /**
  * @publicApi
  */
-export class NestApplicationContext implements INestApplicationContext {
+export class NestApplicationContext
+  extends AbstractInstanceResolver
+  implements INestApplicationContext
+{
   protected isInitialized = false;
   protected readonly injector = new Injector();
 
@@ -48,7 +48,7 @@ export class NestApplicationContext implements INestApplicationContext {
   private _instanceLinksHost: InstanceLinksHost;
   private _moduleRefsByDistance?: Array<Module>;
 
-  private get instanceLinksHost() {
+  protected get instanceLinksHost() {
     if (!this._instanceLinksHost) {
       this._instanceLinksHost = new InstanceLinksHost(this.container);
     }
@@ -59,13 +59,19 @@ export class NestApplicationContext implements INestApplicationContext {
     protected readonly container: NestContainer,
     private readonly scope = new Array<Type<any>>(),
     private contextModule: Module = null,
-  ) {}
+  ) {
+    super();
+  }
 
   public selectContextModule() {
     const modules = this.container.getModules().values();
     this.contextModule = modules.next().value;
   }
 
+  /**
+   * Allows navigating through the modules tree, for example, to pull out a specific instance from the selected module.
+   * @returns {INestApplicationContext}
+   */
   public select<T>(
     moduleType: Type<T> | DynamicModule,
   ): INestApplicationContext {
@@ -85,21 +91,106 @@ export class NestApplicationContext implements INestApplicationContext {
     return new NestApplicationContext(this.container, scope, selectedModule);
   }
 
+  /**
+   * Retrieves an instance of either injectable or controller, otherwise, throws exception.
+   * @returns {TResult}
+   */
+  public get<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+  ): TResult;
+  /**
+   * Retrieves an instance of either injectable or controller, otherwise, throws exception.
+   * @returns {TResult}
+   */
+  public get<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+    options: {
+      strict?: boolean;
+      each?: undefined | false;
+    },
+  ): TResult;
+  /**
+   * Retrieves a list of instances of either injectables or controllers, otherwise, throws exception.
+   * @returns {Array<TResult>}
+   */
+  public get<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+    options: {
+      strict?: boolean;
+      each: true;
+    },
+  ): Array<TResult>;
+  /**
+   * Retrieves an instance (or a list of instances) of either injectable or controller, otherwise, throws exception.
+   * @returns {TResult | Array<TResult>}
+   */
   public get<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
-    options: { strict: boolean } = { strict: false },
-  ): TResult {
+    options: GetOrResolveOptions = { strict: false },
+  ): TResult | Array<TResult> {
     return !(options && options.strict)
-      ? this.find<TInput, TResult>(typeOrToken)
-      : this.find<TInput, TResult>(typeOrToken, this.contextModule);
+      ? this.find<TInput, TResult>(typeOrToken, options)
+      : this.find<TInput, TResult>(typeOrToken, {
+          moduleId: this.contextModule?.id,
+          each: options.each,
+        });
   }
 
+  /**
+   * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
+   * @returns {Array<TResult>}
+   */
+  public resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+  ): Promise<TResult>;
+  /**
+   * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
+   * @returns {Array<TResult>}
+   */
+  public resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+    contextId?: {
+      id: number;
+    },
+  ): Promise<TResult>;
+  /**
+   * Resolves transient or request-scoped instance of either injectable or controller, otherwise, throws exception.
+   * @returns {Array<TResult>}
+   */
+  public resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+    contextId?: {
+      id: number;
+    },
+    options?: {
+      strict?: boolean;
+      each?: undefined | false;
+    },
+  ): Promise<TResult>;
+  /**
+   * Resolves transient or request-scoped instances of either injectables or controllers, otherwise, throws exception.
+   * @returns {Array<TResult>}
+   */
+  public resolve<TInput = any, TResult = TInput>(
+    typeOrToken: Type<TInput> | Function | string | symbol,
+    contextId?: {
+      id: number;
+    },
+    options?: {
+      strict?: boolean;
+      each: true;
+    },
+  ): Promise<Array<TResult>>;
+  /**
+   * Resolves transient or request-scoped instance (or a list of instances) of either injectable or controller, otherwise, throws exception.
+   * @returns {Promise<TResult | Array<TResult>>}
+   */
   public resolve<TInput = any, TResult = TInput>(
     typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
     contextId = createContextId(),
-    options: { strict: boolean } = { strict: false },
-  ): Promise<TResult> {
-    return this.resolvePerContext(
+    options: GetOrResolveOptions = { strict: false },
+  ): Promise<TResult | Array<TResult>> {
+    return this.resolvePerContext<TInput, TResult>(
       typeOrToken,
       this.contextModule,
       contextId,
@@ -107,6 +198,10 @@ export class NestApplicationContext implements INestApplicationContext {
     );
   }
 
+  /**
+   * Registers the request/context object for a given context ID (DI container sub-tree).
+   * @returns {void}
+   */
   public registerRequestByContextId<T = any>(request: T, contextId: ContextId) {
     this.container.registerRequestProvider(request, contextId);
   }
@@ -128,6 +223,10 @@ export class NestApplicationContext implements INestApplicationContext {
     return this;
   }
 
+  /**
+   * Terminates the application
+   * @returns {Promise<void>}
+   */
   public async close(): Promise<void> {
     await this.callDestroyHook();
     await this.callBeforeShutdownHook();
@@ -136,6 +235,11 @@ export class NestApplicationContext implements INestApplicationContext {
     this.unsubscribeFromProcessSignals();
   }
 
+  /**
+   * Sets custom logger service.
+   * Flushes buffered logs if auto flush is on.
+   * @returns {void}
+   */
   public useLogger(logger: LoggerService | LogLevel[] | false) {
     Logger.overrideLogger(logger);
 
@@ -144,6 +248,10 @@ export class NestApplicationContext implements INestApplicationContext {
     }
   }
 
+  /**
+   * Prints buffered logs and detaches buffer.
+   * @returns {void}
+   */
   public flushLogs() {
     Logger.flush();
   }
@@ -288,54 +396,6 @@ export class NestApplicationContext implements INestApplicationContext {
     for (const module of modulesSortedByDistance) {
       await callBeforeAppShutdownHook(module, signal);
     }
-  }
-
-  protected find<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
-    contextModule?: Module,
-  ): TResult {
-    const moduleId = contextModule && contextModule.id;
-    const { wrapperRef } = this.instanceLinksHost.get<TResult>(
-      typeOrToken,
-      moduleId,
-    );
-    if (
-      wrapperRef.scope === Scope.REQUEST ||
-      wrapperRef.scope === Scope.TRANSIENT
-    ) {
-      throw new InvalidClassScopeException(typeOrToken);
-    }
-    return wrapperRef.instance;
-  }
-
-  protected async resolvePerContext<TInput = any, TResult = TInput>(
-    typeOrToken: Type<TInput> | Abstract<TInput> | string | symbol,
-    contextModule: Module,
-    contextId: ContextId,
-    options?: { strict: boolean },
-  ): Promise<TResult> {
-    const isStrictModeEnabled = options && options.strict;
-    const instanceLink = isStrictModeEnabled
-      ? this.instanceLinksHost.get(typeOrToken, contextModule.id)
-      : this.instanceLinksHost.get(typeOrToken);
-
-    const { wrapperRef, collection } = instanceLink;
-    if (wrapperRef.isDependencyTreeStatic() && !wrapperRef.isTransient) {
-      return this.get(typeOrToken, options);
-    }
-
-    const ctorHost = wrapperRef.instance || { constructor: typeOrToken };
-    const instance = await this.injector.loadPerContext(
-      ctorHost,
-      wrapperRef.host,
-      collection,
-      contextId,
-      wrapperRef,
-    );
-    if (!instance) {
-      throw new UnknownElementException();
-    }
-    return instance;
   }
 
   private getModulesSortedByDistance(): Module[] {

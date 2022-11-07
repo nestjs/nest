@@ -20,15 +20,30 @@ export class InstanceLinksHost {
     this.initialize();
   }
 
-  get<T = any>(token: InstanceToken, moduleId?: string): InstanceLink<T> {
-    const modulesMap = this.instanceLinks.get(token);
+  get<T = any>(token: InstanceToken): InstanceLink<T>;
+  get<T = any>(
+    token: InstanceToken,
+    options?: { moduleId?: string; each?: boolean },
+  ): InstanceLink<T> | Array<InstanceLink<T>>;
+  get<T = any>(
+    token: InstanceToken,
+    options: { moduleId?: string; each?: boolean } = {},
+  ): InstanceLink<T> | Array<InstanceLink<T>> {
+    const instanceLinksForGivenToken = this.instanceLinks.get(token);
 
-    if (!modulesMap) {
+    if (!instanceLinksForGivenToken) {
       throw new UnknownElementException(this.getInstanceNameByToken(token));
     }
-    const instanceLink = moduleId
-      ? modulesMap.find(item => item.moduleId === moduleId)
-      : modulesMap[modulesMap.length - 1];
+
+    if (options.each) {
+      return instanceLinksForGivenToken;
+    }
+
+    const instanceLink = options.moduleId
+      ? instanceLinksForGivenToken.find(
+          item => item.moduleId === options.moduleId,
+        )
+      : instanceLinksForGivenToken[instanceLinksForGivenToken.length - 1];
 
     if (!instanceLink) {
       throw new UnknownElementException(this.getInstanceNameByToken(token));

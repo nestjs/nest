@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { MODULE_INIT_MESSAGE } from '../helpers/messages';
 import { NestContainer } from './container';
 import { Injector } from './injector';
-import { InternalCoreModule } from './internal-core-module';
+import { InternalCoreModule } from './internal-core-module/internal-core-module';
 import { Module } from './module';
 
 export class InstanceLoader {
