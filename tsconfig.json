@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "declaration": false,
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "removeComments": true,
@@ -11,7 +10,7 @@
     "useUnknownInCatchVariables": false,
     "target": "es6",
     "sourceMap": true,
-    "allowJs": true,
+    "allowJs": false,
     "outDir": "dist",
     "lib": ["es7"],
     "paths": {
