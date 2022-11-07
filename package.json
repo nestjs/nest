@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsc -b -v packages",
     "build:dev": "tsc -b -v packages --watch",
-    "postbuild": "npm run move:nove_modules",
+    "postbuild": "npm run move:node_modules",
     "changelog": "lerna-changelog",
     "clean": "tsc -b --clean packages",
     "prebuild:prod": "npm run clean",
