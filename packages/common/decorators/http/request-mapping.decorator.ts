@@ -109,3 +109,12 @@ export const Head = createMappingDecorator(RequestMethod.HEAD);
  * @publicApi
  */
 export const All = createMappingDecorator(RequestMethod.ALL);
+
+/**
+ * Route handler (method) Decorator. Routes all HTTP requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const Search = createMappingDecorator(RequestMethod.SEARCH);
