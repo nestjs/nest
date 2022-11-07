@@ -17,8 +17,7 @@ describe('Multiple providers under the same token ("each" feature)', () => {
         },
       );
 
-      // make sure "multiProviderInstances" is string[] not string
-      // @ts-expect-error
+      // @ts-expect-error: make sure "multiProviderInstances" is string[] not string
       multiProviderInstances.charAt;
 
       expect(multiProviderInstances).to.be.eql(['A', 'B', 'C']);
@@ -39,8 +38,7 @@ describe('Multiple providers under the same token ("each" feature)', () => {
         },
       );
 
-      // make sure "multiProviderInstances" is string[] not string
-      // @ts-expect-error
+      // @ts-expect-error: make sure "multiProviderInstances" is string[] not string
       multiProviderInstances.charAt;
 
       expect(multiProviderInstances).to.be.eql(['A', 'B', 'C']);
