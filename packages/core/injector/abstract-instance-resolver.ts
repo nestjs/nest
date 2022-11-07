@@ -77,8 +77,9 @@ export abstract class AbstractInstanceResolver {
     };
 
     if (Array.isArray(instanceLinkOrArray)) {
-      // todo
-      return;
+      return Promise.all(
+        instanceLinkOrArray.map(instanceLink => pluckInstance(instanceLink)),
+      );
     }
     return pluckInstance(instanceLinkOrArray);
   }

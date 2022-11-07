@@ -19,6 +19,7 @@ import { RoutePathFactory } from '../../router/route-path-factory';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { RouterExplorer } from '../../router/router-explorer';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception';
 
 describe('RouterExplorer', () => {
   @Controller('global')
@@ -50,6 +51,8 @@ describe('RouterExplorer', () => {
     @Get(['foo', 'bar'])
     public getTestUsingArray() {}
   }
+
+  class ClassWithMissingControllerDecorator {}
 
   let routerBuilder: RouterExplorer;
   let injector: Injector;
@@ -314,6 +317,15 @@ describe('RouterExplorer', () => {
         '/global',
         '/global-alias',
       ]);
+    });
+
+    it("should throw UnknownRequestMappingException when missing the `@Controller()` decorator in the class, displaying class's name", () => {
+      expect(() =>
+        routerBuilder.extractRouterPath(ClassWithMissingControllerDecorator),
+      ).to.throw(
+        UnknownRequestMappingException,
+        /ClassWithMissingControllerDecorator/,
+      );
     });
   });
 

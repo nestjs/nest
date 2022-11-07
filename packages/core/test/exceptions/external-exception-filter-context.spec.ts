@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { ExceptionFilter } from '../../../common';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
 import { ApplicationConfig } from '../../application-config';
@@ -13,7 +14,10 @@ describe('ExternalExceptionFilterContext', () => {
 
   class CustomException {}
   @Catch(CustomException)
-  class ExceptionFilter {
+  class ExceptionFilter implements ExceptionFilter {
+    public catch(exc, res) {}
+  }
+  class ClassWithNoMetadata implements ExceptionFilter {
     public catch(exc, res) {}
   }
 
@@ -58,6 +62,11 @@ describe('ExternalExceptionFilterContext', () => {
       expect(
         exceptionFilter.reflectCatchExceptions(new ExceptionFilter()),
       ).to.be.eql([CustomException]);
+    });
+    it('should return an empty array when metadata was found', () => {
+      expect(
+        exceptionFilter.reflectCatchExceptions(new ClassWithNoMetadata()),
+      ).to.be.eql([]);
     });
   });
   describe('createConcreteContext', () => {

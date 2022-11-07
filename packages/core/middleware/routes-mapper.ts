@@ -1,5 +1,5 @@
 import { MODULE_PATH, PATH_METADATA } from '@nestjs/common/constants';
-import { RouteInfo, Type } from '@nestjs/common/interfaces';
+import { RouteInfo, Type, VersionValue } from '@nestjs/common/interfaces';
 import {
   addLeadingSlash,
   isString,
@@ -22,35 +22,54 @@ export class RoutesMapper {
     route: Type<any> | RouteInfo | string,
   ): RouteInfo[] {
     if (isString(route)) {
-      const defaultRequestMethod = -1;
-      return [
-        {
-          path: addLeadingSlash(route),
-          method: defaultRequestMethod,
-        },
-      ];
+      return this.getRouteInfoFromPath(route);
     }
     const routePathOrPaths = this.getRoutePath(route);
     if (this.isRouteInfo(routePathOrPaths, route)) {
-      return [
-        {
-          path: addLeadingSlash(route.path),
-          method: route.method,
-        },
-      ];
+      return this.getRouteInfoFromObject(route);
     }
+
+    return this.getRouteInfoFromController(route, routePathOrPaths);
+  }
+
+  private getRouteInfoFromPath(routePath: string): RouteInfo[] {
+    const defaultRequestMethod = -1;
+    return [
+      {
+        path: addLeadingSlash(routePath),
+        method: defaultRequestMethod,
+      },
+    ];
+  }
+
+  private getRouteInfoFromObject(routeInfoObject: RouteInfo): RouteInfo[] {
+    const routeInfo: RouteInfo = {
+      path: addLeadingSlash(routeInfoObject.path),
+      method: routeInfoObject.method,
+    };
+
+    if (routeInfoObject.version) {
+      routeInfo.version = routeInfoObject.version;
+    }
+    return [routeInfo];
+  }
+
+  private getRouteInfoFromController(
+    controller: Type<any>,
+    routePath: string,
+  ): RouteInfo[] {
     const controllerPaths = this.routerExplorer.scanForPaths(
-      Object.create(route),
-      route.prototype,
+      Object.create(controller),
+      controller.prototype,
     );
-    const moduleRef = this.getHostModuleOfController(route);
+    const moduleRef = this.getHostModuleOfController(controller);
     const modulePath = this.getModulePath(moduleRef?.metatype);
 
     const concatPaths = <T>(acc: T[], currentValue: T[]) =>
       acc.concat(currentValue);
 
     return []
-      .concat(routePathOrPaths)
+      .concat(routePath)
       .map(routePath =>
         controllerPaths
           .map(item =>
@@ -58,10 +77,16 @@ export class RoutesMapper {
               let path = modulePath ?? '';
               path += this.normalizeGlobalPath(routePath) + addLeadingSlash(p);
 
-              return {
+              const routeInfo: RouteInfo = {
                 path,
                 method: item.requestMethod,
               };
+
+              if (item.version) {
+                routeInfo.version = item.version;
+              }
+
+              return routeInfo;
             }),
           )
           .reduce(concatPaths, []),

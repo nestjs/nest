@@ -1,3 +1,4 @@
+import type { Server } from 'net';
 import {
   InternalServerErrorException,
   Logger,
@@ -32,7 +33,7 @@ import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
-import { pipeline } from 'stream';
+import { Duplex, pipeline } from 'stream';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util';
 
@@ -48,6 +49,7 @@ type VersionedRoute = <
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(ExpressAdapter.name);
+  private readonly openConnections = new Set<Duplex>();
 
   constructor(instance?: any) {
     super(instance || express());
@@ -127,13 +129,19 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     return response.set(name, value);
   }
 
-  public listen(port: string | number, callback?: () => void);
-  public listen(port: string | number, hostname: string, callback?: () => void);
-  public listen(port: any, ...args: any[]) {
+  public listen(port: string | number, callback?: () => void): Server;
+  public listen(
+    port: string | number,
+    hostname: string,
+    callback?: () => void,
+  ): Server;
+  public listen(port: any, ...args: any[]): Server {
     return this.httpServer.listen(port, ...args);
   }
 
   public close() {
+    this.closeOpenConnections();
+
     if (!this.httpServer) {
       return undefined;
     }
@@ -202,9 +210,13 @@ export class ExpressAdapter extends AbstractHttpAdapter {
         options.httpsOptions,
         this.getInstance(),
       );
-      return;
+    } else {
+      this.httpServer = http.createServer(this.getInstance());
     }
-    this.httpServer = http.createServer(this.getInstance());
+
+    if (options?.forceCloseConnections) {
+      this.trackOpenConnections();
+    }
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
@@ -374,6 +386,21 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       };
 
       return handlerForHeaderVersioning;
+    }
+  }
+
+  private trackOpenConnections() {
+    this.httpServer.on('connection', (socket: Duplex) => {
+      this.openConnections.add(socket);
+
+      socket.on('close', () => this.openConnections.delete(socket));
+    });
+  }
+
+  private closeOpenConnections() {
+    for (const socket of this.openConnections) {
+      socket.destroy();
+      this.openConnections.delete(socket);
     }
   }
 

@@ -82,7 +82,7 @@
     "@fastify/middie": "8.0.0",
     "@fastify/multipart": "7.3.0",
     "@fastify/static": "6.5.0",
-    "@fastify/view": "7.1.1",
+    "@fastify/view": "7.1.2",
     "@grpc/grpc-js": "1.7.3",
     "@grpc/proto-loader": "0.7.3",
     "@nestjs/apollo": "10.1.4",
@@ -109,7 +109,7 @@
     "@typescript-eslint/parser": "4.33.0",
     "amqp-connection-manager": "4.1.9",
     "amqplib": "0.10.3",
-    "apollo-server-core": "3.11.0",
+    "apollo-server-core": "3.11.1",
     "apollo-server-express": "3.11.1",
     "artillery": "1.7.9",
     "body-parser": "1.20.1",
@@ -173,7 +173,7 @@
     "typeorm": "0.3.10",
     "typescript": "4.8.4",
     "wrk": "1.2.1",
-    "ws": "8.10.0"
+    "ws": "8.11.0"
   },
   "engines": {
     "node": ">= 12.9.0"
