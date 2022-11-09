@@ -194,6 +194,30 @@ describe('WebSocketGateway (WsAdapter)', () => {
     });
   });
 
+  it('should let the execution context have a getPattern() method on getClient()', async () => {
+    app = await createNestApp(ApplicationGateway);
+    await app.listen(3000);
+
+    ws = new WebSocket('ws://localhost:8080');
+    await new Promise(resolve => ws.on('open', resolve));
+
+    ws.send(
+      JSON.stringify({
+        event: 'getClient',
+        data: {
+          test: 'test',
+        },
+      }),
+    );
+    await new Promise<void>(resolve =>
+      ws.on('message', data => {
+        expect(JSON.parse(data).data.path).to.be.eql('getClient');
+        ws.close();
+        resolve();
+      }),
+    );
+  });
+
   afterEach(async function () {
     await app.close();
   });

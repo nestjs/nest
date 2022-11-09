@@ -66,5 +66,21 @@ describe('WebSocketGateway', () => {
     );
   });
 
+  it(`should be ableto get the pattern in an interceptor`, async () => {
+    app = await createNestApp(ApplicationGateway);
+    await app.listen(3000);
+
+    ws = io('http://localhost:8080');
+    ws.emit('getClient', {
+      test: 'test',
+    });
+    await new Promise<void>(resolve =>
+      ws.on('popClient', data => {
+        expect(data.path).to.be.eql('getClient');
+        resolve();
+      }),
+    );
+  });
+
   afterEach(() => app.close());
 });
