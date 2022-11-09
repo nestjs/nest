@@ -109,6 +109,7 @@ export class WsContextCreator {
     };
 
     return this.wsProxy.create(async (...args: unknown[]) => {
+      console.log(args);
       args.push(this.reflectCallbackPattern(callback));
       const initialArgs = this.contextUtils.createNullArray(argsLength);
       fnCanActivate && (await fnCanActivate(args));
