@@ -13,6 +13,7 @@
     "allowJs": false,
     "outDir": "dist",
     "lib": ["es7"],
+    "baseUrl": ".",
     "paths": {
       "@nestjs/common": ["./packages/common"],
       "@nestjs/common/*": ["./packages/common/*"],

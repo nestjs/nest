@@ -29,6 +29,7 @@
     "format": "prettier \"**/*.ts\" \"packages/**/*.json\" --ignore-path ./.prettierignore --write && git status",
     "postinstall": "opencollective",
     "test": "mocha packages/**/*.spec.ts",
+    "test:dev": "mocha -w --watch-files \"packages\" packages/**/*.spec.ts",
     "pretest:cov": "npm run clean",
     "test:cov": "nyc mocha packages/**/*.spec.ts --reporter spec",
     "test:integration": "mocha \"integration/*/{,!(node_modules)/**/}/*.spec.ts\"",
@@ -238,6 +239,7 @@
   "mocha": {
     "require": [
       "ts-node/register",
+      "tsconfig-paths/register",
       "node_modules/reflect-metadata/Reflect.js",
       "hooks/mocha-init-hook.ts"
     ],
