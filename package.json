@@ -206,6 +206,7 @@
       "**/*.js",
       "**/*.d.ts",
       "**/*.spec.ts",
+      "packages/**/*.spec.ts",
       "packages/**/adapters/*.ts",
       "packages/**/nest-*.ts",
       "packages/**/test/**/*.ts",
