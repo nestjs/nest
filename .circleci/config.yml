@@ -68,7 +68,9 @@ jobs:
       - *restore-cache
       - *install-deps
       - *build-packages
-      - *run-unit-tests
+      - run:
+          name: Test (coverage)
+          command: npm run test:cov
       - run:
           name: Collect coverage
           command: npm run coverage
