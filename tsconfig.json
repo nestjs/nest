@@ -31,7 +31,7 @@
       "@nestjs/platform-ws/*": ["./packages/platform-ws/*"],
       "@nestjs/platform-fastify": ["./packages/platform-fastify"],
       "@nestjs/platform-fastify/*": ["./packages/platform-fastify/*"],
-      "@nestjs/platform-socket.io": ["./packages/platform-ws"],
+      "@nestjs/platform-socket.io": ["./packages/platform-socket.io"],
       "@nestjs/platform-socket.io/*": ["./packages/platform-socket.io/*"],
     }
   },
