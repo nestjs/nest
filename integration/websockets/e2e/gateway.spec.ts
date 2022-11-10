@@ -66,7 +66,7 @@ describe('WebSocketGateway', () => {
     );
   });
 
-  it(`should be ableto get the pattern in an interceptor`, async () => {
+  it(`should be able to get the pattern in an interceptor`, async () => {
     app = await createNestApp(ApplicationGateway);
     await app.listen(3000);
 
