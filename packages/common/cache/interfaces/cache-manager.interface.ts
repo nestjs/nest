@@ -47,15 +47,17 @@ export interface CacheStoreSetOptions<T> {
  *
  * @publicApi
  */
-export interface CacheStoreFactory {
-  /**
-   * Return a configured cache store.
-   *
-   * @param args Cache manager options received from `CacheModule.register()`
-   * or `CacheModule.registerAsync()`
-   */
-  create(args: LiteralObject): CacheStore;
-}
+export type CacheStoreFactory =
+  | {
+      /**
+       * Return a configured cache store.
+       *
+       * @param args Cache manager options received from `CacheModule.register()`
+       * or `CacheModule.registerAsync()`
+       */
+      create(args: LiteralObject): CacheStore;
+    }
+  | ((args: LiteralObject) => CacheStore | Promise<CacheStore>);
 
 /**
  * Interface defining Cache Manager configuration options.
