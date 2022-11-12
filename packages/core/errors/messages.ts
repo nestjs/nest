@@ -60,19 +60,31 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
     dependencies,
     key,
   } = unknownDependencyContext;
-  const moduleName = getModuleName(module) || 'Module';
+  const moduleName = getModuleName(module);
   const dependencyName = getDependencyName(name);
 
-  let message = `Nest can't resolve dependencies of the ${type.toString()}`;
-
-  const potentialSolutions = `\n
+  const potentialSolutions =
+    // If module's name is well defined
+    moduleName !== 'current'
+      ? `\n
 Potential solutions:
+- Is ${moduleName} a valid NestJS module?
 - If ${dependencyName} is a provider, is it part of the current ${moduleName}?
 - If ${dependencyName} is exported from a separate @Module, is that module imported within ${moduleName}?
   @Module({
     imports: [ /* the Module containing ${dependencyName} */ ]
   })
+`
+      : `\n
+Potential solutions:
+- If ${dependencyName} is a provider, is it part of the current Module?
+- If ${dependencyName} is exported from a separate @Module, is that module imported within Module?
+  @Module({
+    imports: [ /* the Module containing ${dependencyName} */ ]
+  })
 `;
+
+  let message = `Nest can't resolve dependencies of the ${type.toString()}`;
 
   if (isNil(index)) {
     message += `. Please make sure that the "${key.toString()}" property is available in the current context.${potentialSolutions}`;
@@ -83,9 +95,7 @@ Potential solutions:
 
   message += ` (`;
   message += dependenciesName.join(', ');
-  message += `). Please make sure that the argument ${dependencyName} at index [${index}] is available in the ${getModuleName(
-    module,
-  )} context.`;
+  message += `). Please make sure that the argument ${dependencyName} at index [${index}] is available in the ${moduleName} context.`;
   message += potentialSolutions;
 
   return message;
