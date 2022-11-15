@@ -4,9 +4,9 @@ import {
   FactoryProvider,
   ValueProvider,
 } from '@nestjs/common/interfaces';
-import { requestProvider } from '../router/request/request-providers';
-import { Reflector } from '../services';
-import { inquirerProvider } from './inquirer/inquirer-providers';
+import { requestProvider } from '../../router/request/request-providers';
+import { Reflector } from '../../services';
+import { inquirerProvider } from '../inquirer/inquirer-providers';
 
 const ReflectorAliasProvider = {
   provide: Reflector.name,

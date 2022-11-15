@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Controller, Get } from '../../../common';
+import { Controller, Get, RequestMethod, Version } from '../../../common';
 import { NestContainer } from '../../injector/container';
 import { MiddlewareBuilder } from '../../middleware/builder';
 import { RoutesMapper } from '../../middleware/routes-mapper';
@@ -30,8 +30,12 @@ describe('MiddlewareBuilder', () => {
         class Test {
           @Get('route')
           public getAll() {}
+
+          @Version('1')
+          @Get('versioned')
+          public getAllVersioned() {}
         }
-        const route = { path: '/test', method: 0 };
+        const route = { path: '/test', method: RequestMethod.GET };
         it('should store configuration passed as argument', () => {
           configProxy.forRoutes(route, Test);
 
@@ -40,12 +44,17 @@ describe('MiddlewareBuilder', () => {
               middleware: [],
               forRoutes: [
                 {
-                  method: 0,
+                  method: RequestMethod.GET,
                   path: route.path,
                 },
                 {
-                  method: 0,
+                  method: RequestMethod.GET,
                   path: '/path/route',
+                },
+                {
+                  method: RequestMethod.GET,
+                  path: '/path/versioned',
+                  version: '1',
                 },
               ],
             },

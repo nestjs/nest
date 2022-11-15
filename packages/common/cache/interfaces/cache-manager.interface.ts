@@ -18,7 +18,7 @@ export interface CacheStore {
   set<T>(
     key: string,
     value: T,
-    options?: CacheStoreSetOptions<T>,
+    options?: CacheStoreSetOptions<T> | number,
   ): Promise<void> | void;
   /**
    * Retrieve a key/value pair from the cache.
@@ -70,9 +70,10 @@ export interface CacheManagerOptions {
    */
   store?: string | CacheStoreFactory | CacheStore;
   /**
-   * Time to live - amount of time in seconds that a response is cached before it
+   * Time to live - amount of time that a response is cached before it
    * is deleted. Subsequent request will call through the route handler and refresh
-   * the cache.  Defaults to 5 seconds.
+   * the cache.  Defaults to 5 seconds. In `cache-manager@^4` this value is in seconds.
+   * In `cache-manager@^5` this value is in milliseconds.
    */
   ttl?: number;
   /**

@@ -1,5 +1,4 @@
-import { Injectable } from '../decorators/core/injectable.decorator';
-import { Optional } from '../decorators/core/optional.decorator';
+import { Injectable, Optional } from '../decorators/core';
 import { clc, yellow } from '../utils/cli-colors.util';
 import { isPlainObject, isString } from '../utils/shared.utils';
 import { LoggerService, LogLevel } from './logger.service';
@@ -185,7 +184,7 @@ export class ConsoleLogger implements LoggerService {
   ) {
     messages.forEach(message => {
       const pidMessage = this.formatPid(process.pid);
-      const contextMessage = context ? yellow(`[${context}] `) : '';
+      const contextMessage = this.formatContext(context);
       const timestampDiff = this.updateAndGetTimestampDiff();
       const formattedLogLevel = logLevel.toUpperCase().padStart(7, ' ');
       const formattedMessage = this.formatMessage(
@@ -203,6 +202,10 @@ export class ConsoleLogger implements LoggerService {
 
   protected formatPid(pid: number) {
     return `[Nest] ${pid}  - `;
+  }
+
+  protected formatContext(context: string): string {
+    return context ? yellow(`[${context}] `) : '';
   }
 
   protected formatMessage(
@@ -246,10 +249,14 @@ export class ConsoleLogger implements LoggerService {
     const includeTimestamp =
       ConsoleLogger.lastTimestampAt && this.options?.timestamp;
     const result = includeTimestamp
-      ? yellow(` +${Date.now() - ConsoleLogger.lastTimestampAt}ms`)
+      ? this.formatTimestampDiff(Date.now() - ConsoleLogger.lastTimestampAt)
       : '';
     ConsoleLogger.lastTimestampAt = Date.now();
     return result;
+  }
+
+  protected formatTimestampDiff(timestampDiff: number) {
+    return yellow(` +${timestampDiff}ms`);
   }
 
   private getContextAndMessagesToPrint(args: unknown[]) {

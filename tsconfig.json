@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "declaration": false,
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "removeComments": true,
@@ -11,9 +10,10 @@
     "useUnknownInCatchVariables": false,
     "target": "es6",
     "sourceMap": true,
-    "allowJs": true,
+    "allowJs": false,
     "outDir": "dist",
     "lib": ["es7"],
+    "baseUrl": ".",
     "paths": {
       "@nestjs/common": ["./packages/common"],
       "@nestjs/common/*": ["./packages/common/*"],
@@ -31,7 +31,7 @@
       "@nestjs/platform-ws/*": ["./packages/platform-ws/*"],
       "@nestjs/platform-fastify": ["./packages/platform-fastify"],
       "@nestjs/platform-fastify/*": ["./packages/platform-fastify/*"],
-      "@nestjs/platform-socket.io": ["./packages/platform-ws"],
+      "@nestjs/platform-socket.io": ["./packages/platform-socket.io"],
       "@nestjs/platform-socket.io/*": ["./packages/platform-socket.io/*"],
     }
   },

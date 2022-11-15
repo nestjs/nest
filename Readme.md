@@ -78,7 +78,9 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
  <td>
 <a href="https://jetbrains.com/" target="_blank"><img src="https://nestjs.com/img/jetbrains-logo.svg" width="110" valign="middle" /></a></td><td>
 <a href="https://snyk.co/nestjs" target="_blank"><img src="https://nestjs.com/img/snyk-logo-black.png" width="185" valign="middle" /></a></td><td>
-<a href="https://fuseautotech.com/" target="_blank"><img src="https://nestjs.com/img/fuse-logo.svg" width="105" valign="middle" /></a></td></</tr></table>
+<a href="https://fuseautotech.com/" target="_blank"><img src="https://nestjs.com/img/fuse-logo.svg" width="105" valign="middle" /></a></td>
+<td>
+<a href="https://ridicorp.com/career/" target="_blank"><img src="https://nestjs.com/img/ridi-logo.svg" width="105" valign="middle" /></a></td></</tr></table>
 
 #### Silver Sponsors
 
@@ -90,7 +92,9 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://www.castlecraft.in" target="_blank"><img src="https://nestjs.com/img/castlecraft-logo.png" width="150" valign="middle" /></td>
 <td><a href="https://www.tinystacks.com" target="_blank"><img src="https://nestjs.com/img/tinystacks-logo.png#1" width="140" valign="middle" /></td>
 <td><a href="https://n.inc" target="_blank"><img src="https://nestjs.com/img/n-inc-logo.svg" width="120" valign="middle" /></td></tr><tr>
-<td><a href="https://bilberrry.com/" target="_blank"><img src="https://nestjs.com/img/bilberrry-logo.svg" width="180" valign="middle" /></td></tr></table>
+<td><a href="https://bilberrry.com/" target="_blank"><img src="https://nestjs.com/img/bilberrry-logo.svg" width="180" valign="middle" /></td>
+<td><a href="https://ipinfo.ai/" target="_blank"><img src="https://nestjs.com/img/ipinfo-logo.png" width="130" valign="middle" /></td></tr>
+</table>
 
 #### Sponsors
 

@@ -28,10 +28,11 @@ import { Server } from './server';
 export class ServerTCP extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.TCP;
 
+  protected server: NetSocket;
+
   private readonly port: number;
   private readonly host: string;
   private readonly socketClass: Type<TcpSocket>;
-  private server: NetSocket;
   private isExplicitlyTerminated = false;
   private retryAttemptsCount = 0;
 

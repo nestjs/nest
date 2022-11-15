@@ -7,8 +7,8 @@ import {
 import {
   MiddlewareConfigProxy,
   RouteInfo,
+  MiddlewareConfiguration,
 } from '@nestjs/common/interfaces/middleware';
-import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { iterate } from 'iterare';
 import { RoutesMapper } from './routes-mapper';
 import { filterMiddleware } from './utils';

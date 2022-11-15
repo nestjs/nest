@@ -165,7 +165,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       return;
     }
     const { content, properties } = message;
-    const rawMessage = JSON.parse(content.toString());
+    const rawMessage = this.parseMessageContent(content);
     const packet = await this.deserializer.deserialize(rawMessage, properties);
     const pattern = isString(packet.pattern)
       ? packet.pattern
@@ -217,5 +217,13 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   protected initializeSerializer(options: RmqOptions['options']) {
     this.serializer = options?.serializer ?? new RmqRecordSerializer();
+  }
+
+  private parseMessageContent(content: Buffer) {
+    try {
+      return JSON.parse(content.toString());
+    } catch {
+      return content.toString();
+    }
   }
 }

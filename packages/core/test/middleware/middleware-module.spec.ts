@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { RoutePathFactory } from '@nestjs/core/router/route-path-factory';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
@@ -39,7 +40,7 @@ describe('MiddlewareModule', () => {
 
   beforeEach(() => {
     const appConfig = new ApplicationConfig();
-    middlewareModule = new MiddlewareModule();
+    middlewareModule = new MiddlewareModule(new RoutePathFactory(appConfig));
     (middlewareModule as any).routerExceptionFilter =
       new RouterExceptionFilters(
         new NestContainer(),

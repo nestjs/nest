@@ -1,7 +1,13 @@
 {
-  "extends": "./../tsconfig.base.json",
+  "extends": "../tsconfig.build.json",
   "compilerOptions": {
-    "baseUrl": "./"
+    "types": ["node"]
   },
-  "include": ["*.ts", "**/*.ts"]
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "./tsconfig.build.json"
+    }
+  ]
 }

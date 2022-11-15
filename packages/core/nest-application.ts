@@ -12,13 +12,15 @@ import {
   VersioningType,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { RouteInfo } from '@nestjs/common/interfaces';
+import {
+  RouteInfo,
+  GlobalPrefixOptions,
+  NestApplicationOptions,
+} from '@nestjs/common/interfaces';
 import {
   CorsOptions,
   CorsOptionsDelegate,
 } from '@nestjs/common/interfaces/external/cors-options.interface';
-import { GlobalPrefixOptions } from '@nestjs/common/interfaces/global-prefix-options.interface';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import {
@@ -40,6 +42,7 @@ import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
 import { Resolver } from './router/interfaces/resolver.interface';
+import { RoutePathFactory } from './router/route-path-factory';
 import { RoutesResolver } from './router/routes-resolver';
 
 const { SocketModule } = optionalRequire(
@@ -61,7 +64,7 @@ export class NestApplication
   private readonly logger = new Logger(NestApplication.name, {
     timestamp: true,
   });
-  private readonly middlewareModule = new MiddlewareModule();
+  private readonly middlewareModule: MiddlewareModule;
   private readonly middlewareContainer = new MiddlewareContainer(
     this.container,
   );
@@ -83,6 +86,7 @@ export class NestApplication
 
     this.selectContextModule();
     this.registerHttpServer();
+    this.middlewareModule = new MiddlewareModule(new RoutePathFactory(config));
 
     this.routesResolver = new RoutesResolver(
       this.container,
@@ -299,6 +303,7 @@ export class NestApplication
       if (!this.isListening) {
         this.logger.error(MESSAGES.CALL_LISTEN_FIRST);
         reject(MESSAGES.CALL_LISTEN_FIRST);
+        return;
       }
       const address = this.httpServer.address();
       resolve(this.formatAddress(address));

@@ -1,3 +1,4 @@
+import { Server } from 'net';
 import { INestApplication } from '@nestjs/common';
 import { ServeStaticOptions } from './serve-static-options.interface';
 
@@ -9,6 +10,21 @@ import { ServeStaticOptions } from './serve-static-options.interface';
  * @publicApi
  */
 export interface NestExpressApplication extends INestApplication {
+  /**
+   * Starts the application.
+   *
+   * @param {number|string} port
+   * @param {string} [hostname]
+   * @param {Function} [callback] Optional callback
+   * @returns {Promise} A Promise that, when resolved, is a reference to the underlying HttpServer.
+   */
+  listen(port: number | string, callback?: () => void): Promise<Server>;
+  listen(
+    port: number | string,
+    hostname: string,
+    callback?: () => void,
+  ): Promise<Server>;
+
   /**
    * A wrapper function around native `express.set()` method.
    *
