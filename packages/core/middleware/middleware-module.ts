@@ -274,31 +274,35 @@ export class MiddlewareModule {
       next: () => void,
     ) => void,
   ) {
-    const prefix = this.config.getGlobalPrefix();
+    const prefixPath = stripEndSlash(
+      addLeadingSlash(this.config.getGlobalPrefix()),
+    );
+    const applicationVersioningConfig = this.config.getVersioning();
+    let versionPath = '';
+    if (version && applicationVersioningConfig?.type === VersioningType.URI) {
+      const versionPrefix = this.routePathFactory.getVersionPrefix(
+        applicationVersioningConfig,
+      );
+      versionPath = addLeadingSlash(versionPrefix + version.toString());
+    }
     const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
     let paths: string[];
     if (['*', '/*', '/*/', '(.*)', '/(.*)'].includes(path)) {
-      const basePath = stripEndSlash(addLeadingSlash(prefix));
-      paths = [basePath + addLeadingSlash(path)];
+      paths = [prefixPath + versionPath + addLeadingSlash(path)];
       if (Array.isArray(excludedRoutes)) {
-        paths.push(...excludedRoutes.map(route => addLeadingSlash(route.path)));
+        paths.push(
+          ...excludedRoutes.map(
+            route => versionPath + addLeadingSlash(route.path),
+          ),
+        );
       }
     } else if (
       Array.isArray(excludedRoutes) &&
       isRouteExcluded(excludedRoutes, path, method)
     ) {
-      paths = [addLeadingSlash(path)];
+      paths = [versionPath + addLeadingSlash(path)];
     } else {
-      const basePath = stripEndSlash(addLeadingSlash(prefix));
-      paths = [basePath + addLeadingSlash(path)];
-    }
-
-    const applicationVersioningConfig = this.config.getVersioning();
-    if (version && applicationVersioningConfig.type === VersioningType.URI) {
-      const versionPrefix = this.routePathFactory.getVersionPrefix(
-        applicationVersioningConfig,
-      );
-      path = `/${versionPrefix}${version.toString()}${path}`;
+      paths = [prefixPath + versionPath + addLeadingSlash(path)];
     }
 
     const isMethodAll = isRequestMethodAll(method);
