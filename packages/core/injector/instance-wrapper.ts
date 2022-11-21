@@ -8,6 +8,7 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
+import { EnhancerSubtype } from '../../common/constants';
 import { STATIC_CONTEXT } from './constants';
 import {
   isClassProvider,
@@ -60,6 +61,7 @@ export class InstanceWrapper<T = any> {
   public readonly async?: boolean;
   public readonly host?: Module;
   public readonly isAlias: boolean = false;
+  public readonly subtype?: EnhancerSubtype;
 
   public scope?: Scope = Scope.DEFAULT;
   public metatype: Type<T> | Function;

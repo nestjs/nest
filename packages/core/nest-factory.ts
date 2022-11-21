@@ -18,6 +18,7 @@ import { loadAdapter } from './helpers/load-adapter';
 import { rethrow } from './helpers/rethrow';
 import { NestContainer } from './injector/container';
 import { InstanceLoader } from './injector/instance-loader';
+import { GraphInspector } from './inspector/graph-inspector';
 import { MetadataScanner } from './metadata-scanner';
 import { NestApplication } from './nest-application';
 import { NestApplicationContext } from './nest-application-context';
@@ -73,15 +74,24 @@ export class NestFactoryStatic {
 
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
+    const graphInspector = new GraphInspector(container);
+
     this.setAbortOnError(serverOrOptions, options);
     this.registerLoggerConfiguration(appOptions);
 
-    await this.initialize(module, container, applicationConfig, httpServer);
+    await this.initialize(
+      module,
+      container,
+      graphInspector,
+      applicationConfig,
+      httpServer,
+    );
 
     const instance = new NestApplication(
       container,
       httpServer,
       applicationConfig,
+      graphInspector,
       appOptions,
     );
     const target = this.createNestInstance(instance);
@@ -108,12 +118,19 @@ export class NestFactoryStatic {
     );
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
+    const graphInspector = new GraphInspector(container);
+
     this.setAbortOnError(options);
     this.registerLoggerConfiguration(options);
 
-    await this.initialize(module, container, applicationConfig);
+    await this.initialize(module, container, graphInspector, applicationConfig);
     return this.createNestInstance<INestMicroservice>(
-      new NestMicroservice(container, options, applicationConfig),
+      new NestMicroservice(
+        container,
+        options,
+        graphInspector,
+        applicationConfig,
+      ),
     );
   }
 
@@ -131,10 +148,12 @@ export class NestFactoryStatic {
     options?: NestApplicationContextOptions,
   ): Promise<INestApplicationContext> {
     const container = new NestContainer();
+    const graphInspector = new GraphInspector(container);
+
     this.setAbortOnError(options);
     this.registerLoggerConfiguration(options);
 
-    await this.initialize(module, container);
+    await this.initialize(module, container, graphInspector);
 
     const modules = container.getModules().values();
     const root = modules.next().value;
@@ -155,14 +174,16 @@ export class NestFactoryStatic {
   private async initialize(
     module: any,
     container: NestContainer,
+    graphInspector: GraphInspector,
     config = new ApplicationConfig(),
     httpServer: HttpServer = null,
   ) {
-    const instanceLoader = new InstanceLoader(container);
+    const instanceLoader = new InstanceLoader(container, graphInspector);
     const metadataScanner = new MetadataScanner();
     const dependenciesScanner = new DependenciesScanner(
       container,
       metadataScanner,
+      graphInspector,
       config,
     );
     container.setHttpAdapter(httpServer);

@@ -2,8 +2,8 @@ import { HttpServer, VersioningType } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import {
   MiddlewareConfiguration,
-  RouteInfo,
   NestMiddleware,
+  RouteInfo,
 } from '@nestjs/common/interfaces/middleware';
 import {
   addLeadingSlash,
@@ -19,6 +19,11 @@ import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { InstanceToken, Module } from '../injector/module';
+import { GraphInspector } from '../inspector/graph-inspector';
+import {
+  Entrypoint,
+  MiddlewareEntrypointMetadata,
+} from '../inspector/interfaces/entrypoint.interface';
 import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
 import { RoutePathFactory } from '../router/route-path-factory';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
@@ -40,6 +45,7 @@ export class MiddlewareModule {
   private config: ApplicationConfig;
   private container: NestContainer;
   private httpAdapter: HttpServer;
+  private graphInspector: GraphInspector;
 
   constructor(private readonly routePathFactory: RoutePathFactory) {}
 
@@ -49,6 +55,7 @@ export class MiddlewareModule {
     config: ApplicationConfig,
     injector: Injector,
     httpAdapter: HttpServer,
+    graphInspector: GraphInspector,
   ) {
     const appRef = container.getHttpAdapterRef();
     this.routerExceptionFilter = new RouterExceptionFilters(
@@ -63,6 +70,7 @@ export class MiddlewareModule {
     this.injector = injector;
     this.container = container;
     this.httpAdapter = httpAdapter;
+    this.graphInspector = graphInspector;
 
     const modules = container.getModules();
     await this.resolveMiddleware(middlewareContainer, modules);
@@ -174,6 +182,21 @@ export class MiddlewareModule {
       if (instanceWrapper.isTransient) {
         return;
       }
+      const middlewareDefinition: Entrypoint<MiddlewareEntrypointMetadata> = {
+        type: 'middleware',
+        methodName: 'use',
+        className: instanceWrapper.name,
+        classNodeId: instanceWrapper.id,
+        metadata: {
+          path: routeInfo.path,
+          requestMethod: RequestMethod[
+            routeInfo.method
+          ] as keyof typeof RequestMethod,
+          version: routeInfo.version,
+        },
+      };
+      this.graphInspector.insertEntrypointDefinition(middlewareDefinition);
+
       await this.bindHandler(
         instanceWrapper,
         applicationRef,

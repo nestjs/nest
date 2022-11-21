@@ -5,10 +5,10 @@ import {
   VERSION_METADATA,
 } from '@nestjs/common/constants';
 import {
+  Controller,
   HttpServer,
   Type,
   VersionValue,
-  Controller,
 } from '@nestjs/common/interfaces';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '../application-config';
@@ -19,6 +19,7 @@ import {
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
+import { GraphInspector } from '../inspector/graph-inspector';
 import { MetadataScanner } from '../metadata-scanner';
 import { Resolver } from './interfaces/resolver.interface';
 import { RoutePathMetadata } from './interfaces/route-path-metadata.interface';
@@ -40,6 +41,7 @@ export class RoutesResolver implements Resolver {
     private readonly container: NestContainer,
     private readonly applicationConfig: ApplicationConfig,
     private readonly injector: Injector,
+    graphInspector: GraphInspector,
   ) {
     const httpAdapterRef = container.getHttpAdapterRef();
     this.routerExceptionsFilter = new RouterExceptionFilters(
@@ -58,6 +60,7 @@ export class RoutesResolver implements Resolver {
       this.routerExceptionsFilter,
       this.applicationConfig,
       this.routePathFactory,
+      graphInspector,
     );
   }
 

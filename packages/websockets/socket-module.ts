@@ -6,6 +6,7 @@ import { loadAdapter } from '@nestjs/core/helpers/load-adapter';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { InstanceToken } from '@nestjs/core/injector/module';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
@@ -30,21 +31,23 @@ export class SocketModule<HttpServer = any> {
 
   public register(
     container: NestContainer,
-    config: ApplicationConfig,
+    applicationConfig: ApplicationConfig,
+    graphInspector: GraphInspector,
     httpServer?: HttpServer,
   ) {
-    this.applicationConfig = config;
+    this.applicationConfig = applicationConfig;
     this.httpServer = httpServer;
 
     const contextCreator = this.getContextCreator(container);
     const serverProvider = new SocketServerProvider(
       this.socketsContainer,
-      config,
+      applicationConfig,
     );
     this.webSocketsController = new WebSocketsController(
       serverProvider,
-      config,
+      applicationConfig,
       contextCreator,
+      graphInspector,
     );
     const modules = container.getModules();
     modules.forEach(({ providers }, moduleName: string) =>
@@ -77,6 +80,7 @@ export class SocketModule<HttpServer = any> {
       instance as NestGateway,
       metatype,
       moduleName,
+      wrapper.id,
     );
   }
 

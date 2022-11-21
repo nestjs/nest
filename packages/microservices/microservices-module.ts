@@ -6,6 +6,7 @@ import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
@@ -23,7 +24,11 @@ export class MicroservicesModule {
   private readonly clientsContainer = new ClientsContainer();
   private listenersController: ListenersController;
 
-  public register(container: NestContainer, config: ApplicationConfig) {
+  public register(
+    container: NestContainer,
+    graphInspector: GraphInspector,
+    config: ApplicationConfig,
+  ) {
     const exceptionFiltersContext = new ExceptionFiltersContext(
       container,
       config,
@@ -47,6 +52,7 @@ export class MicroservicesModule {
       injector,
       ClientProxyFactory,
       exceptionFiltersContext,
+      graphInspector,
     );
   }
 

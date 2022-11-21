@@ -1,5 +1,5 @@
 import { MODULE_PATH, PATH_METADATA } from '@nestjs/common/constants';
-import { RouteInfo, Type, VersionValue } from '@nestjs/common/interfaces';
+import { RouteInfo, Type } from '@nestjs/common/interfaces';
 import {
   addLeadingSlash,
   isString,
@@ -8,14 +8,14 @@ import {
 import { NestContainer } from '../injector/container';
 import { Module } from '../injector/module';
 import { MetadataScanner } from '../metadata-scanner';
-import { RouterExplorer } from '../router/router-explorer';
+import { PathsExplorer } from '../router/paths-explorer';
 import { targetModulesByContainer } from '../router/router-module';
 
 export class RoutesMapper {
-  private readonly routerExplorer: RouterExplorer;
+  private readonly pathsExplorer: PathsExplorer;
 
   constructor(private readonly container: NestContainer) {
-    this.routerExplorer = new RouterExplorer(new MetadataScanner(), container);
+    this.pathsExplorer = new PathsExplorer(new MetadataScanner());
   }
 
   public mapRouteToRouteInfo(
@@ -58,7 +58,7 @@ export class RoutesMapper {
     controller: Type<any>,
     routePath: string,
   ): RouteInfo[] {
-    const controllerPaths = this.routerExplorer.scanForPaths(
+    const controllerPaths = this.pathsExplorer.scanForPaths(
       Object.create(controller),
       controller.prototype,
     );

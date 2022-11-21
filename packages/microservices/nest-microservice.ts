@@ -12,6 +12,7 @@ import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MESSAGES } from '@nestjs/core/constants';
 import { optionalRequire } from '@nestjs/core/helpers/optional-require';
 import { NestContainer } from '@nestjs/core/injector/container';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
 import { Transport } from './enums/transport.enum';
 import { CustomTransportStrategy } from './interfaces/custom-transport-strategy.interface';
@@ -42,11 +43,16 @@ export class NestMicroservice
   constructor(
     container: NestContainer,
     config: NestMicroserviceOptions & MicroserviceOptions = {},
+    private readonly graphInspector: GraphInspector,
     private readonly applicationConfig: ApplicationConfig,
   ) {
     super(container);
 
-    this.microservicesModule.register(container, this.applicationConfig);
+    this.microservicesModule.register(
+      container,
+      this.graphInspector,
+      this.applicationConfig,
+    );
     this.createServer(config);
     this.selectContextModule();
   }
@@ -92,21 +98,45 @@ export class NestMicroservice
 
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
     this.applicationConfig.useGlobalFilters(...filters);
+    filters.forEach(item =>
+      this.graphInspector.insertStaticEnhancer({
+        subtype: 'filter',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
     this.applicationConfig.useGlobalPipes(...pipes);
+    pipes.forEach(item =>
+      this.graphInspector.insertStaticEnhancer({
+        subtype: 'pipe',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
     this.applicationConfig.useGlobalInterceptors(...interceptors);
+    interceptors.forEach(item =>
+      this.graphInspector.insertStaticEnhancer({
+        subtype: 'interceptor',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalGuards(...guards: CanActivate[]): this {
     this.applicationConfig.useGlobalGuards(...guards);
+    guards.forEach(item =>
+      this.graphInspector.insertStaticEnhancer({
+        subtype: 'guard',
+        ref: item,
+      }),
+    );
     return this;
   }
 

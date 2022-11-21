@@ -2,6 +2,7 @@ import { Logger, LoggerService, Module } from '@nestjs/common';
 import { ModuleMetadata } from '@nestjs/common/interfaces';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
 import {
@@ -16,9 +17,13 @@ import { TestingModule } from './testing-module';
 export class TestingModuleBuilder {
   private readonly applicationConfig = new ApplicationConfig();
   private readonly container = new NestContainer(this.applicationConfig);
+  private readonly graphInspector = new GraphInspector(this.container);
   private readonly overloadsMap = new Map();
+  private readonly instanceLoader = new TestingInstanceLoader(
+    this.container,
+    this.graphInspector,
+  );
   private readonly scanner: DependenciesScanner;
-  private readonly instanceLoader = new TestingInstanceLoader(this.container);
   private readonly module: any;
   private testingLogger: LoggerService;
   private mocker?: MockFactory;
@@ -27,6 +32,7 @@ export class TestingModuleBuilder {
     this.scanner = new DependenciesScanner(
       this.container,
       metadataScanner,
+      this.graphInspector,
       this.applicationConfig,
     );
     this.module = this.createModule(metadata);

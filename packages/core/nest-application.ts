@@ -13,9 +13,9 @@ import {
   WebSocketAdapter,
 } from '@nestjs/common';
 import {
-  RouteInfo,
   GlobalPrefixOptions,
   NestApplicationOptions,
+  RouteInfo,
 } from '@nestjs/common/interfaces';
 import {
   CorsOptions,
@@ -37,6 +37,7 @@ import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { optionalRequire } from './helpers/optional-require';
 import { NestContainer } from './injector/container';
+import { GraphInspector } from './inspector/graph-inspector';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
@@ -80,6 +81,7 @@ export class NestApplication
     container: NestContainer,
     private readonly httpAdapter: HttpServer,
     private readonly config: ApplicationConfig,
+    private readonly graphInspector: GraphInspector,
     private readonly appOptions: NestApplicationOptions = {},
   ) {
     super(container);
@@ -92,6 +94,7 @@ export class NestApplication
       this.container,
       this.config,
       this.injector,
+      this.graphInspector,
     );
   }
 
@@ -152,6 +155,7 @@ export class NestApplication
       this.config,
       this.injector,
       this.httpAdapter,
+      this.graphInspector,
     );
   }
 
@@ -217,6 +221,7 @@ export class NestApplication
     const instance = new NestMicroservice(
       this.container,
       microserviceOptions,
+      this.graphInspector,
       applicationConfig,
     );
     instance.registerListeners();
@@ -365,21 +370,45 @@ export class NestApplication
 
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
     this.config.useGlobalFilters(...filters);
+    filters.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'filter',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
     this.config.useGlobalPipes(...pipes);
+    pipes.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'pipe',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
     this.config.useGlobalInterceptors(...interceptors);
+    interceptors.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'interceptor',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalGuards(...guards: CanActivate[]): this {
     this.config.useGlobalGuards(...guards);
+    guards.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'guard',
+        ref: item,
+      }),
+    );
     return this;
   }
 

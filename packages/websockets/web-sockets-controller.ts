@@ -1,11 +1,12 @@
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import {
   from as fromPromise,
-  Observable,
   isObservable,
+  Observable,
   of,
   Subject,
 } from 'rxjs';
@@ -20,6 +21,7 @@ import {
 import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams-host.interface';
+import { WebsocketEntrypointMetadata } from './interfaces/websockets-entrypoint-metadata.interface';
 import { SocketServerProvider } from './socket-server-provider';
 import { compareElementAt } from './utils/compare-element.util';
 
@@ -35,12 +37,14 @@ export class WebSocketsController {
     private readonly socketServerProvider: SocketServerProvider,
     private readonly config: ApplicationConfig,
     private readonly contextCreator: WsContextCreator,
+    private readonly graphInspector: GraphInspector,
   ) {}
 
   public connectGatewayToServer(
     instance: NestGateway,
     metatype: Type<unknown> | Function,
     moduleKey: string,
+    instanceWrapperId: string,
   ) {
     const options = Reflect.getMetadata(GATEWAY_OPTIONS, metatype) || {};
     const port = Reflect.getMetadata(PORT_METADATA, metatype) || 0;
@@ -48,7 +52,13 @@ export class WebSocketsController {
     if (!Number.isInteger(port)) {
       throw new InvalidSocketPortException(port, metatype);
     }
-    this.subscribeToServerEvents(instance, options, port, moduleKey);
+    this.subscribeToServerEvents(
+      instance,
+      options,
+      port,
+      moduleKey,
+      instanceWrapperId,
+    );
   }
 
   public subscribeToServerEvents<T extends GatewayMetadata>(
@@ -56,6 +66,7 @@ export class WebSocketsController {
     options: T,
     port: number,
     moduleKey: string,
+    instanceWrapperId: string,
   ) {
     const nativeMessageHandlers = this.metadataExplorer.explore(instance);
     const messageHandlers = nativeMessageHandlers.map(
@@ -76,6 +87,13 @@ export class WebSocketsController {
     );
     this.assignServerToProperties(instance, observableServer.server);
     this.subscribeEvents(instance, messageHandlers, observableServer);
+
+    this.inspectEntrypointDefinitions(
+      instance,
+      port,
+      messageHandlers,
+      instanceWrapperId,
+    );
   }
 
   public subscribeEvents(
@@ -170,6 +188,28 @@ export class WebSocketsController {
       return fromPromise(result);
     }
     return of(result);
+  }
+
+  public inspectEntrypointDefinitions(
+    instance: NestGateway,
+    port: number,
+    messageHandlers: MessageMappingProperties[],
+    instanceWrapperId: string,
+  ) {
+    messageHandlers.forEach(handler => {
+      this.graphInspector.insertEntrypointDefinition<WebsocketEntrypointMetadata>(
+        {
+          type: 'websocket',
+          methodName: handler.methodName,
+          className: instance.constructor?.name,
+          classNodeId: instanceWrapperId,
+          metadata: {
+            port,
+            message: handler.message,
+          },
+        },
+      );
+    });
   }
 
   private assignServerToProperties<T = any>(

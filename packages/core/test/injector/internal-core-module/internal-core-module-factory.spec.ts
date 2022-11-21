@@ -14,6 +14,7 @@ describe('InternalCoreModuleFactory', () => {
       null,
       null,
       null,
+      null,
     );
 
     expect(moduleDefinition.module).to.equal(InternalCoreModule);

@@ -21,6 +21,7 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
+import { EnhancerSubtype } from '../../common/constants';
 import { ApplicationConfig } from '../application-config';
 import {
   InvalidClassException,
@@ -62,6 +63,7 @@ export class Module {
   >();
   private readonly _exports = new Set<InstanceToken>();
   private _distance = 0;
+  private _isGlobal = false;
   private _token: string;
 
   constructor(
@@ -82,6 +84,18 @@ export class Module {
 
   set token(token: string) {
     this._token = token;
+  }
+
+  get name() {
+    return this.metatype.name;
+  }
+
+  get isGlobal() {
+    return this._isGlobal;
+  }
+
+  set isGlobal(global: boolean) {
+    this._isGlobal = global;
   }
 
   get providers(): Map<InstanceToken, InstanceWrapper<Injectable>> {
@@ -199,6 +213,7 @@ export class Module {
 
   public addInjectable<T extends Injectable>(
     injectable: Provider,
+    enhancerSubtype: EnhancerSubtype,
     host?: Type<T>,
   ) {
     if (this.isCustomProvider(injectable)) {
@@ -214,6 +229,7 @@ export class Module {
         isResolved: false,
         scope: getClassScope(injectable),
         durable: isDurable(injectable),
+        subtype: enhancerSubtype,
         host: this,
       });
       this._injectables.set(injectable, instanceWrapper);
@@ -223,11 +239,17 @@ export class Module {
         this._controllers.get(host) || this._providers.get(host);
       hostWrapper && hostWrapper.addEnhancerMetadata(instanceWrapper);
     }
+    return instanceWrapper;
   }
 
-  public addProvider(provider: Provider) {
+  public addProvider(provider: Provider): Provider | InjectionToken;
+  public addProvider(
+    provider: Provider,
+    enhancerSubtype: EnhancerSubtype,
+  ): Provider | InjectionToken;
+  public addProvider(provider: Provider, enhancerSubtype?: EnhancerSubtype) {
     if (this.isCustomProvider(provider)) {
-      return this.addCustomProvider(provider, this._providers);
+      return this.addCustomProvider(provider, this._providers, enhancerSubtype);
     }
     this._providers.set(
       provider,
@@ -270,15 +292,16 @@ export class Module {
       | ValueProvider
       | ExistingProvider,
     collection: Map<Function | string | symbol, any>,
+    enhancerSubtype?: EnhancerSubtype,
   ) {
     if (this.isCustomClass(provider)) {
-      this.addCustomClass(provider, collection);
+      this.addCustomClass(provider, collection, enhancerSubtype);
     } else if (this.isCustomValue(provider)) {
-      this.addCustomValue(provider, collection);
+      this.addCustomValue(provider, collection, enhancerSubtype);
     } else if (this.isCustomFactory(provider)) {
-      this.addCustomFactory(provider, collection);
+      this.addCustomFactory(provider, collection, enhancerSubtype);
     } else if (this.isCustomUseExisting(provider)) {
-      this.addCustomUseExisting(provider, collection);
+      this.addCustomUseExisting(provider, collection, enhancerSubtype);
     }
     return provider.provide;
   }
@@ -306,6 +329,7 @@ export class Module {
   public addCustomClass(
     provider: ClassProvider,
     collection: Map<InstanceToken, InstanceWrapper>,
+    enhancerSubtype?: EnhancerSubtype,
   ) {
     let { scope, durable } = provider;
 
@@ -327,6 +351,7 @@ export class Module {
         scope,
         durable,
         host: this,
+        subtype: enhancerSubtype,
       }),
     );
   }
@@ -334,6 +359,7 @@ export class Module {
   public addCustomValue(
     provider: ValueProvider,
     collection: Map<Function | string | symbol, InstanceWrapper>,
+    enhancerSubtype?: EnhancerSubtype,
   ) {
     const { useValue: value, provide: providerToken } = provider;
     collection.set(
@@ -346,6 +372,7 @@ export class Module {
         isResolved: true,
         async: value instanceof Promise,
         host: this,
+        subtype: enhancerSubtype,
       }),
     );
   }
@@ -353,6 +380,7 @@ export class Module {
   public addCustomFactory(
     provider: FactoryProvider,
     collection: Map<Function | string | symbol, InstanceWrapper>,
+    enhancerSubtype?: EnhancerSubtype,
   ) {
     const {
       useFactory: factory,
@@ -374,6 +402,7 @@ export class Module {
         scope,
         durable,
         host: this,
+        subtype: enhancerSubtype,
       }),
     );
   }
@@ -381,6 +410,7 @@ export class Module {
   public addCustomUseExisting(
     provider: ExistingProvider,
     collection: Map<Function | string | symbol, InstanceWrapper>,
+    enhancerSubtype?: EnhancerSubtype,
   ) {
     const { useExisting, provide: providerToken } = provider;
     collection.set(
@@ -394,6 +424,7 @@ export class Module {
         inject: [useExisting],
         host: this,
         isAlias: true,
+        subtype: enhancerSubtype,
       }),
     );
   }

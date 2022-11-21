@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { ExternalContextCreator } from '../../helpers/external-context-creator';
 import { HttpAdapterHost } from '../../helpers/http-adapter-host';
+import { GraphInspector } from '../../inspector/graph-inspector';
 import { DependenciesScanner } from '../../scanner';
 import { ModuleCompiler } from '../compiler';
 import { NestContainer } from '../container';
@@ -15,7 +16,25 @@ export class InternalCoreModuleFactory {
     scanner: DependenciesScanner,
     moduleCompiler: ModuleCompiler,
     httpAdapterHost: HttpAdapterHost,
+    graphInspector: GraphInspector,
   ) {
+    const lazyModuleLoaderFactory = () => {
+      const logger = new Logger(LazyModuleLoader.name, {
+        timestamp: false,
+      });
+      const instanceLoader = new InstanceLoader(
+        container,
+        graphInspector,
+        logger,
+      );
+      return new LazyModuleLoader(
+        scanner,
+        instanceLoader,
+        moduleCompiler,
+        container.getModules(),
+      );
+    };
+
     return InternalCoreModule.register([
       {
         provide: ExternalContextCreator,
@@ -35,18 +54,7 @@ export class InternalCoreModuleFactory {
       },
       {
         provide: LazyModuleLoader,
-        useFactory: () => {
-          const logger = new Logger(LazyModuleLoader.name, {
-            timestamp: false,
-          });
-          const instanceLoader = new InstanceLoader(container, logger);
-          return new LazyModuleLoader(
-            scanner,
-            instanceLoader,
-            moduleCompiler,
-            container.getModules(),
-          );
-        },
+        useFactory: lazyModuleLoaderFactory,
       },
     ]);
   }
