@@ -15,6 +15,7 @@ import {
 import { TcpContext } from '../ctx-host/tcp.context';
 import { Transport } from '../enums';
 import { JsonSocket, TcpSocket } from '../helpers';
+import { createServer as tlsCreateServer } from 'tls';
 import {
   CustomTransportStrategy,
   IncomingRequest,
@@ -35,6 +36,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   private readonly socketClass: Type<TcpSocket>;
   private isExplicitlyTerminated = false;
   private retryAttemptsCount = 0;
+  private tlsOptions?;
 
   constructor(private readonly options: TcpOptions['options']) {
     super();
@@ -42,6 +44,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
     this.socketClass =
       this.getOptionsProp(options, 'socketClass') || JsonSocket;
+    this.tlsOptions = this.getOptionsProp(options, 'tlsOptions');
 
     this.init();
     this.initializeSerializer(options);
@@ -124,7 +127,16 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   }
 
   private init() {
-    this.server = net.createServer(this.bindHandler.bind(this));
+    if (this.tlsOptions) {
+      // TLS enabled, use tls server
+      this.server = tlsCreateServer(
+        this.tlsOptions,
+        this.bindHandler.bind(this),
+      );
+    } else {
+      // TLS disabled, use net server
+      this.server = net.createServer(this.bindHandler.bind(this));
+    }
     this.server.on(ERROR_EVENT, this.handleError.bind(this));
     this.server.on(CLOSE_EVENT, this.handleClose.bind(this));
   }

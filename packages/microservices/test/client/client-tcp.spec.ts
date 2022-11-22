@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { TLSSocket } from 'tls';
+import { Socket as NetSocket } from 'net';
 import { ClientTCP } from '../../client/client-tcp';
 import { ERROR_EVENT } from '../../constants';
 
@@ -212,6 +214,19 @@ describe('ClientTCP', () => {
       await client['dispatchEvent'](msg);
 
       expect(sendMessageStub.called).to.be.true;
+    });
+  });
+
+  describe('tls', () => {
+    it('should upgrade to TLS', () => {
+      const client = new ClientTCP({ tlsOptions: {} });
+      console.log(client);
+      const jsonSocket = client.createSocket();
+      expect(jsonSocket.socket).instanceOf(TLSSocket);
+    });
+    it('should not upgrade to TLS, if not requested', () => {
+      const jsonSocket = new ClientTCP({}).createSocket();
+      expect(jsonSocket.socket).instanceOf(NetSocket);
     });
   });
 });
