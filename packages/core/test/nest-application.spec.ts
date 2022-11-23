@@ -1,4 +1,7 @@
+import { RequestMethod } from '@nestjs/common';
+import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
+import pathToRegexp = require('path-to-regexp');
 import { ApplicationConfig } from '../application-config';
 import { NestContainer } from '../injector/container';
 import { NestApplication } from '../nest-application';
@@ -49,6 +52,35 @@ describe('NestApplication', () => {
       expect(
         (microservice as any).applicationConfig.getGlobalInterceptors().length,
       ).to.equal(1);
+    });
+  });
+  describe('Global Prefix', () => {
+    it('should get correct global prefix options', () => {
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const instance = new NestApplication(
+        container,
+        new NoopHttpAdapter({}),
+        applicationConfig,
+        {},
+      );
+      instance.setGlobalPrefix('api', {
+        exclude: ['foo', { path: 'bar', method: RequestMethod.GET }],
+      });
+      expect((instance as any).config.getGlobalPrefixOptions()).to.eql({
+        exclude: [
+          {
+            path: 'foo',
+            requestMethod: RequestMethod.ALL,
+            pathRegex: pathToRegexp(addLeadingSlash('foo')),
+          },
+          {
+            path: 'bar',
+            requestMethod: RequestMethod.GET,
+            pathRegex: pathToRegexp(addLeadingSlash('bar')),
+          },
+        ],
+      });
     });
   });
 });
