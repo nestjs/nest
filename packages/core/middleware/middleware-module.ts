@@ -267,44 +267,15 @@ export class MiddlewareModule {
 
   private async registerHandler(
     applicationRef: HttpServer,
-    { path, method, version }: RouteInfo,
+    routeInfo: RouteInfo,
     proxy: <TRequest, TResponse>(
       req: TRequest,
       res: TResponse,
       next: () => void,
     ) => void,
   ) {
-    const prefixPath = stripEndSlash(
-      addLeadingSlash(this.config.getGlobalPrefix()),
-    );
-    const applicationVersioningConfig = this.config.getVersioning();
-    let versionPath = '';
-    if (version && applicationVersioningConfig?.type === VersioningType.URI) {
-      const versionPrefix = this.routePathFactory.getVersionPrefix(
-        applicationVersioningConfig,
-      );
-      versionPath = addLeadingSlash(versionPrefix + version.toString());
-    }
-    const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
-    let paths: string[];
-    if (['*', '/*', '/*/', '(.*)', '/(.*)'].includes(path)) {
-      paths = [prefixPath + versionPath + addLeadingSlash(path)];
-      if (Array.isArray(excludedRoutes)) {
-        paths.push(
-          ...excludedRoutes.map(
-            route => versionPath + addLeadingSlash(route.path),
-          ),
-        );
-      }
-    } else if (
-      Array.isArray(excludedRoutes) &&
-      isRouteExcluded(excludedRoutes, path, method)
-    ) {
-      paths = [versionPath + addLeadingSlash(path)];
-    } else {
-      paths = [prefixPath + versionPath + addLeadingSlash(path)];
-    }
-
+    const { method } = routeInfo;
+    const paths = this.getPaths(routeInfo);
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);
@@ -325,5 +296,41 @@ export class MiddlewareModule {
             },
       ),
     );
+  }
+
+  private getPaths({ path, method, version }: RouteInfo) {
+    const prefixPath = stripEndSlash(
+      addLeadingSlash(this.config.getGlobalPrefix()),
+    );
+    const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
+
+    const applicationVersioningConfig = this.config.getVersioning();
+    let versionPath = '';
+    if (version && applicationVersioningConfig?.type === VersioningType.URI) {
+      const versionPrefix = this.routePathFactory.getVersionPrefix(
+        applicationVersioningConfig,
+      );
+      versionPath = addLeadingSlash(versionPrefix + version.toString());
+    }
+
+    if (['*', '/*', '/*/', '(.*)', '/(.*)'].includes(path)) {
+      return Array.isArray(excludedRoutes)
+        ? [
+            prefixPath + versionPath + addLeadingSlash(path),
+            ...excludedRoutes.map(
+              route => versionPath + addLeadingSlash(route.path),
+            ),
+          ]
+        : [prefixPath + versionPath + addLeadingSlash(path)];
+    }
+
+    if (
+      Array.isArray(excludedRoutes) &&
+      isRouteExcluded(excludedRoutes, path, method)
+    ) {
+      return [versionPath + addLeadingSlash(path)];
+    }
+
+    return [prefixPath + versionPath + addLeadingSlash(path)];
   }
 }

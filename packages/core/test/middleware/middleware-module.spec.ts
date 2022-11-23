@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, VersioningType } from '@nestjs/common';
+import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
 import { RoutePathFactory } from '@nestjs/core/router/route-path-factory';
 import { expect } from 'chai';
+import pathToRegexp = require('path-to-regexp');
 import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
@@ -194,6 +196,87 @@ describe('MiddlewareModule', () => {
         app,
       );
       expect(createMiddlewareFactoryStub.calledOnce).to.be.true;
+    });
+  });
+  describe('getPaths', () => {
+    it(`should return correct paths`, () => {
+      (middlewareModule as any).config.enableVersioning({
+        type: VersioningType.URI,
+      });
+
+      const paths = (middlewareModule as any).getPaths({
+        path: '*',
+        method: RequestMethod.ALL,
+      });
+      expect(paths).to.eql(['/*']);
+
+      const versioningPaths = (middlewareModule as any).getPaths({
+        path: '*',
+        method: RequestMethod.ALL,
+        version: '1',
+      });
+      expect(versioningPaths).to.eql(['/v1/*']);
+    });
+    it(`should return correct paths when set global prefix`, () => {
+      (middlewareModule as any).config.enableVersioning({
+        type: VersioningType.URI,
+      });
+      (middlewareModule as any).config.setGlobalPrefix('api');
+
+      const paths = (middlewareModule as any).getPaths({
+        path: '*',
+        method: RequestMethod.ALL,
+      });
+      expect(paths).to.eql(['/api/*']);
+
+      const versioningPaths = (middlewareModule as any).getPaths({
+        path: '*',
+        method: RequestMethod.ALL,
+        version: '1',
+      });
+      expect(versioningPaths).to.eql(['/api/v1/*']);
+    });
+    it(`should return correct paths when set global prefix and global prefix options`, () => {
+      (middlewareModule as any).config.enableVersioning({
+        type: VersioningType.URI,
+      });
+      (middlewareModule as any).config.setGlobalPrefix('api');
+      (middlewareModule as any).config.setGlobalPrefixOptions({
+        exclude: [
+          {
+            path: 'foo',
+            requestMethod: RequestMethod.ALL,
+            pathRegex: pathToRegexp(addLeadingSlash('foo')),
+          },
+        ],
+      });
+
+      const allPaths = (middlewareModule as any).getPaths({
+        path: '*',
+        method: RequestMethod.ALL,
+      });
+      expect(allPaths).to.eql(['/api/*', '/foo']);
+
+      const allVersioningPaths = (middlewareModule as any).getPaths({
+        path: '*',
+        method: RequestMethod.ALL,
+        version: '1',
+      });
+      expect(allVersioningPaths).to.eql(['/api/v1/*', '/v1/foo']);
+
+      const excludedPaths = (middlewareModule as any).getPaths({
+        path: 'foo',
+        method: RequestMethod.ALL,
+        version: '1',
+      });
+      expect(excludedPaths).to.eql(['/v1/foo']);
+
+      const normalPaths = (middlewareModule as any).getPaths({
+        path: 'bar',
+        method: RequestMethod.ALL,
+        version: '1',
+      });
+      expect(normalPaths).to.eql(['/api/v1/bar']);
     });
   });
 });

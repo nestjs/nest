@@ -1,4 +1,5 @@
 import { RequestMethod } from '@nestjs/common';
+import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
 import { ExcludeRouteMetadata } from '../interfaces/exclude-route-metadata.interface';
 
 export const isRequestMethodAll = (method: RequestMethod) => {
@@ -15,7 +16,7 @@ export function isRouteExcluded(
       isRequestMethodAll(route.requestMethod) ||
       route.requestMethod === requestMethod
     ) {
-      return route.pathRegex.exec(path);
+      return route.pathRegex.exec(addLeadingSlash(path));
     }
     return false;
   });
