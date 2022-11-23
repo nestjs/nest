@@ -7,6 +7,11 @@ export class AppController {
     return 'Hello: ' + req.extras?.data;
   }
 
+  @Get('params')
+  getParams(@Req() req): any {
+    return req.middlewareParams;
+  }
+
   @Get('health')
   getHealth(): string {
     return 'up';

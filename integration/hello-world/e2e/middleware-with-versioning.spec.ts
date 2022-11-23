@@ -77,6 +77,26 @@ describe('Middleware', () => {
     });
   });
 
+  describe('when using default URI versioning with the global prefix', () => {
+    beforeEach(async () => {
+      app = await createAppWithVersioning(
+        {
+          type: VersioningType.URI,
+          defaultVersion: VERSION_NEUTRAL,
+        },
+        async (app: INestApplication) => {
+          app.setGlobalPrefix('api');
+        },
+      );
+    });
+
+    it(`forRoutes({ path: '/versioned', version: '1', method: RequestMethod.ALL })`, () => {
+      return request(app.getHttpServer())
+        .get('/api/v1/versioned')
+        .expect(200, VERSIONED_VALUE);
+    });
+  });
+
   describe('when using HEADER versioning', () => {
     beforeEach(async () => {
       app = await createAppWithVersioning({
@@ -133,6 +153,7 @@ describe('Middleware', () => {
 
 async function createAppWithVersioning(
   versioningOptions: VersioningOptions,
+  beforeInit?: (app: INestApplication) => Promise<void>,
 ): Promise<INestApplication> {
   const app = (
     await Test.createTestingModule({
@@ -141,6 +162,9 @@ async function createAppWithVersioning(
   ).createNestApplication();
 
   app.enableVersioning(versioningOptions);
+  if (beforeInit) {
+    await beforeInit(app);
+  }
   await app.init();
 
   return app;
