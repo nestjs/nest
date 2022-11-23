@@ -1,8 +1,6 @@
 import { Injectable, VersioningType } from '@nestjs/common';
-import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
 import { RoutePathFactory } from '@nestjs/core/router/route-path-factory';
 import { expect } from 'chai';
-import pathToRegexp = require('path-to-regexp');
 import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
@@ -19,6 +17,7 @@ import { MiddlewareContainer } from '../../middleware/container';
 import { MiddlewareModule } from '../../middleware/middleware-module';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { mapToExcludeRoute } from './../../middleware/utils';
 
 describe('MiddlewareModule', () => {
   let middlewareModule: MiddlewareModule;
@@ -242,13 +241,7 @@ describe('MiddlewareModule', () => {
       });
       (middlewareModule as any).config.setGlobalPrefix('api');
       (middlewareModule as any).config.setGlobalPrefixOptions({
-        exclude: [
-          {
-            path: 'foo',
-            requestMethod: RequestMethod.ALL,
-            pathRegex: pathToRegexp(addLeadingSlash('foo')),
-          },
-        ],
+        exclude: mapToExcludeRoute(['foo']),
       });
 
       const allPaths = (middlewareModule as any).getPaths({

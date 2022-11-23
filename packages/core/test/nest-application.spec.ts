@@ -1,10 +1,9 @@
 import { RequestMethod } from '@nestjs/common';
-import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
-import pathToRegexp = require('path-to-regexp');
 import { ApplicationConfig } from '../application-config';
 import { NestContainer } from '../injector/container';
 import { NestApplication } from '../nest-application';
+import { mapToExcludeRoute } from './../middleware/utils';
 import { NoopHttpAdapter } from './utils/noop-adapter.spec';
 
 describe('NestApplication', () => {
@@ -68,18 +67,13 @@ describe('NestApplication', () => {
         exclude: ['foo', { path: 'bar', method: RequestMethod.GET }],
       });
       expect((instance as any).config.getGlobalPrefixOptions()).to.eql({
-        exclude: [
-          {
-            path: 'foo',
-            requestMethod: RequestMethod.ALL,
-            pathRegex: pathToRegexp(addLeadingSlash('foo')),
-          },
+        exclude: mapToExcludeRoute([
+          'foo',
           {
             path: 'bar',
-            requestMethod: RequestMethod.GET,
-            pathRegex: pathToRegexp(addLeadingSlash('bar')),
+            method: RequestMethod.GET,
           },
-        ],
+        ]),
       });
     });
   });

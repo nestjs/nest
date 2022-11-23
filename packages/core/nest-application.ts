@@ -7,13 +7,11 @@ import {
   NestHybridApplicationOptions,
   NestInterceptor,
   PipeTransform,
-  RequestMethod,
   VersioningOptions,
   VersioningType,
   WebSocketAdapter,
 } from '@nestjs/common';
 import {
-  RouteInfo,
   GlobalPrefixOptions,
   NestApplicationOptions,
 } from '@nestjs/common/interfaces';
@@ -31,7 +29,6 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { platform } from 'os';
-import * as pathToRegexp from 'path-to-regexp';
 import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
@@ -39,8 +36,8 @@ import { optionalRequire } from './helpers/optional-require';
 import { NestContainer } from './injector/container';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
+import { mapToExcludeRoute } from './middleware/utils';
 import { NestApplicationContext } from './nest-application-context';
-import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
 import { Resolver } from './router/interfaces/resolver.interface';
 import { RoutePathFactory } from './router/route-path-factory';
 import { RoutesResolver } from './router/routes-resolver';
@@ -336,22 +333,9 @@ export class NestApplication
   public setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this {
     this.config.setGlobalPrefix(prefix);
     if (options) {
-      const exclude = options?.exclude.map(
-        (route: string | RouteInfo): ExcludeRouteMetadata => {
-          if (isString(route)) {
-            return {
-              path: route,
-              requestMethod: RequestMethod.ALL,
-              pathRegex: pathToRegexp(addLeadingSlash(route)),
-            };
-          }
-          return {
-            path: route.path,
-            requestMethod: route.method,
-            pathRegex: pathToRegexp(addLeadingSlash(route.path)),
-          };
-        },
-      );
+      const exclude = options?.exclude
+        ? mapToExcludeRoute(options.exclude)
+        : [];
       this.config.setGlobalPrefixOptions({
         ...options,
         exclude,
