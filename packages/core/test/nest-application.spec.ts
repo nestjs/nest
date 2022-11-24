@@ -63,17 +63,12 @@ describe('NestApplication', () => {
         applicationConfig,
         {},
       );
+      const excludeRoute = ['foo', { path: 'bar', method: RequestMethod.GET }];
       instance.setGlobalPrefix('api', {
-        exclude: ['foo', { path: 'bar', method: RequestMethod.GET }],
+        exclude: excludeRoute,
       });
-      expect((instance as any).config.getGlobalPrefixOptions()).to.eql({
-        exclude: mapToExcludeRoute([
-          'foo',
-          {
-            path: 'bar',
-            method: RequestMethod.GET,
-          },
-        ]),
+      expect(applicationConfig.getGlobalPrefixOptions()).to.eql({
+        exclude: mapToExcludeRoute(excludeRoute),
       });
     });
   });
