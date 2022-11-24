@@ -269,7 +269,7 @@ export class MiddlewareModule {
     ) => void,
   ) {
     const { method } = routeInfo;
-    const paths = this.routeInfoPathExtractor.getPaths(routeInfo);
+    const paths = this.routeInfoPathExtractor.extractPathsFrom(routeInfo);
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);

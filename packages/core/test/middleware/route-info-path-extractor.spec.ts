@@ -18,14 +18,14 @@ describe('RouteInfoPathExtractor', () => {
 
     it(`should return correct paths`, () => {
       expect(
-        routeInfoPathExtractor.getPaths({
+        routeInfoPathExtractor.extractPathsFrom({
           path: '*',
           method: RequestMethod.ALL,
         }),
       ).to.eql(['/*']);
 
       expect(
-        routeInfoPathExtractor.getPaths({
+        routeInfoPathExtractor.extractPathsFrom({
           path: '*',
           method: RequestMethod.ALL,
           version: '1',
@@ -37,14 +37,14 @@ describe('RouteInfoPathExtractor', () => {
       appConfig.setGlobalPrefix('api');
 
       expect(
-        routeInfoPathExtractor.getPaths({
+        routeInfoPathExtractor.extractPathsFrom({
           path: '*',
           method: RequestMethod.ALL,
         }),
       ).to.eql(['/api/*']);
 
       expect(
-        routeInfoPathExtractor.getPaths({
+        routeInfoPathExtractor.extractPathsFrom({
           path: '*',
           method: RequestMethod.ALL,
           version: '1',
@@ -59,14 +59,14 @@ describe('RouteInfoPathExtractor', () => {
       });
 
       expect(
-        routeInfoPathExtractor.getPaths({
+        routeInfoPathExtractor.extractPathsFrom({
           path: '*',
           method: RequestMethod.ALL,
         }),
       ).to.eql(['/api/*', '/foo']);
 
       expect(
-        routeInfoPathExtractor.getPaths({
+        routeInfoPathExtractor.extractPathsFrom({
           path: '*',
           method: RequestMethod.ALL,
           version: '1',
@@ -74,7 +74,7 @@ describe('RouteInfoPathExtractor', () => {
       ).to.eql(['/api/v1/*', '/v1/foo']);
 
       expect(
-        routeInfoPathExtractor.getPaths({
+        routeInfoPathExtractor.extractPathsFrom({
           path: 'foo',
           method: RequestMethod.ALL,
           version: '1',
@@ -82,7 +82,7 @@ describe('RouteInfoPathExtractor', () => {
       ).to.eql(['/v1/foo']);
 
       expect(
-        routeInfoPathExtractor.getPaths({
+        routeInfoPathExtractor.extractPathsFrom({
           path: 'bar',
           method: RequestMethod.ALL,
           version: '1',

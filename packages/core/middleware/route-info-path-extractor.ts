@@ -15,7 +15,7 @@ export class RouteInfoPathExtractor {
     this.routePathFactory = new RoutePathFactory(applicationConfig);
   }
 
-  public getPaths({ path, method, version }: RouteInfo) {
+  public extractPathsFrom({ path, method, version }: RouteInfo) {
     const prefixPath = stripEndSlash(
       addLeadingSlash(this.applicationConfig.getGlobalPrefix()),
     );
