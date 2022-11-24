@@ -11,7 +11,7 @@ import {
   mapToExcludeRoute,
 } from '../../middleware/utils';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
-import pathToRegexp = require('path-to-regexp');
+import * as pathToRegexp from 'path-to-regexp';
 
 describe('middleware utils', () => {
   const noopAdapter = new NoopHttpAdapter({});
