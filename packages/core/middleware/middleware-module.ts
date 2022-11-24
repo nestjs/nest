@@ -1,15 +1,11 @@
-import { HttpServer, VersioningType } from '@nestjs/common';
+import { HttpServer } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import {
   MiddlewareConfiguration,
-  RouteInfo,
   NestMiddleware,
+  RouteInfo,
 } from '@nestjs/common/interfaces/middleware';
-import {
-  addLeadingSlash,
-  isUndefined,
-  stripEndSlash,
-} from '@nestjs/common/utils/shared.utils';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
@@ -21,13 +17,13 @@ import { Injector } from '../injector/injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { InstanceToken, Module } from '../injector/module';
 import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
-import { RoutePathFactory } from '../router/route-path-factory';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
 import { RouterProxy } from '../router/router-proxy';
-import { isRequestMethodAll, isRouteExcluded } from '../router/utils';
+import { isRequestMethodAll } from '../router/utils';
 import { MiddlewareBuilder } from './builder';
 import { MiddlewareContainer } from './container';
 import { MiddlewareResolver } from './resolver';
+import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
 
 export class MiddlewareModule {
@@ -38,11 +34,10 @@ export class MiddlewareModule {
   private routerExceptionFilter: RouterExceptionFilters;
   private routesMapper: RoutesMapper;
   private resolver: MiddlewareResolver;
-  private config: ApplicationConfig;
   private container: NestContainer;
   private httpAdapter: HttpServer;
 
-  constructor(private readonly routePathFactory: RoutePathFactory) {}
+  constructor(private routeInfoPathExtractor: RouteInfoPathExtractor) {}
 
   public async register(
     middlewareContainer: MiddlewareContainer,
@@ -60,7 +55,6 @@ export class MiddlewareModule {
     this.routesMapper = new RoutesMapper(container);
     this.resolver = new MiddlewareResolver(middlewareContainer);
 
-    this.config = config;
     this.injector = injector;
     this.container = container;
     this.httpAdapter = httpAdapter;
@@ -275,7 +269,7 @@ export class MiddlewareModule {
     ) => void,
   ) {
     const { method } = routeInfo;
-    const paths = this.getPaths(routeInfo);
+    const paths = this.routeInfoPathExtractor.getPaths(routeInfo);
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);
@@ -296,41 +290,5 @@ export class MiddlewareModule {
             },
       ),
     );
-  }
-
-  private getPaths({ path, method, version }: RouteInfo) {
-    const prefixPath = stripEndSlash(
-      addLeadingSlash(this.config.getGlobalPrefix()),
-    );
-    const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
-
-    const applicationVersioningConfig = this.config.getVersioning();
-    let versionPath = '';
-    if (version && applicationVersioningConfig?.type === VersioningType.URI) {
-      const versionPrefix = this.routePathFactory.getVersionPrefix(
-        applicationVersioningConfig,
-      );
-      versionPath = addLeadingSlash(versionPrefix + version.toString());
-    }
-
-    if (['*', '/*', '/*/', '(.*)', '/(.*)'].includes(path)) {
-      return Array.isArray(excludedRoutes)
-        ? [
-            prefixPath + versionPath + addLeadingSlash(path),
-            ...excludedRoutes.map(
-              route => versionPath + addLeadingSlash(route.path),
-            ),
-          ]
-        : [prefixPath + versionPath + addLeadingSlash(path)];
-    }
-
-    if (
-      Array.isArray(excludedRoutes) &&
-      isRouteExcluded(excludedRoutes, path, method)
-    ) {
-      return [versionPath + addLeadingSlash(path)];
-    }
-
-    return [prefixPath + versionPath + addLeadingSlash(path)];
   }
 }

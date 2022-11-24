@@ -1,5 +1,5 @@
-import { Injectable, VersioningType } from '@nestjs/common';
-import { RoutePathFactory } from '@nestjs/core/router/route-path-factory';
+import { Injectable } from '@nestjs/common';
+import { RouteInfoPathExtractor } from '@nestjs/core/middleware/route-info-path-extractor';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
@@ -17,7 +17,6 @@ import { MiddlewareContainer } from '../../middleware/container';
 import { MiddlewareModule } from '../../middleware/middleware-module';
 import { RouterExceptionFilters } from '../../router/router-exception-filters';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
-import { mapToExcludeRoute } from './../../middleware/utils';
 
 describe('MiddlewareModule', () => {
   let middlewareModule: MiddlewareModule;
@@ -41,7 +40,9 @@ describe('MiddlewareModule', () => {
 
   beforeEach(() => {
     const appConfig = new ApplicationConfig();
-    middlewareModule = new MiddlewareModule(new RoutePathFactory(appConfig));
+    middlewareModule = new MiddlewareModule(
+      new RouteInfoPathExtractor(appConfig),
+    );
     (middlewareModule as any).routerExceptionFilter =
       new RouterExceptionFilters(
         new NestContainer(),
@@ -195,81 +196,6 @@ describe('MiddlewareModule', () => {
         app,
       );
       expect(createMiddlewareFactoryStub.calledOnce).to.be.true;
-    });
-  });
-  describe('getPaths', () => {
-    it(`should return correct paths`, () => {
-      (middlewareModule as any).config.enableVersioning({
-        type: VersioningType.URI,
-      });
-
-      const paths = (middlewareModule as any).getPaths({
-        path: '*',
-        method: RequestMethod.ALL,
-      });
-      expect(paths).to.eql(['/*']);
-
-      const versioningPaths = (middlewareModule as any).getPaths({
-        path: '*',
-        method: RequestMethod.ALL,
-        version: '1',
-      });
-      expect(versioningPaths).to.eql(['/v1/*']);
-    });
-    it(`should return correct paths when set global prefix`, () => {
-      (middlewareModule as any).config.enableVersioning({
-        type: VersioningType.URI,
-      });
-      (middlewareModule as any).config.setGlobalPrefix('api');
-
-      const paths = (middlewareModule as any).getPaths({
-        path: '*',
-        method: RequestMethod.ALL,
-      });
-      expect(paths).to.eql(['/api/*']);
-
-      const versioningPaths = (middlewareModule as any).getPaths({
-        path: '*',
-        method: RequestMethod.ALL,
-        version: '1',
-      });
-      expect(versioningPaths).to.eql(['/api/v1/*']);
-    });
-    it(`should return correct paths when set global prefix and global prefix options`, () => {
-      (middlewareModule as any).config.enableVersioning({
-        type: VersioningType.URI,
-      });
-      (middlewareModule as any).config.setGlobalPrefix('api');
-      (middlewareModule as any).config.setGlobalPrefixOptions({
-        exclude: mapToExcludeRoute(['foo']),
-      });
-
-      const allPaths = (middlewareModule as any).getPaths({
-        path: '*',
-        method: RequestMethod.ALL,
-      });
-      expect(allPaths).to.eql(['/api/*', '/foo']);
-
-      const allVersioningPaths = (middlewareModule as any).getPaths({
-        path: '*',
-        method: RequestMethod.ALL,
-        version: '1',
-      });
-      expect(allVersioningPaths).to.eql(['/api/v1/*', '/v1/foo']);
-
-      const excludedPaths = (middlewareModule as any).getPaths({
-        path: 'foo',
-        method: RequestMethod.ALL,
-        version: '1',
-      });
-      expect(excludedPaths).to.eql(['/v1/foo']);
-
-      const normalPaths = (middlewareModule as any).getPaths({
-        path: 'bar',
-        method: RequestMethod.ALL,
-        version: '1',
-      });
-      expect(normalPaths).to.eql(['/api/v1/bar']);
     });
   });
 });

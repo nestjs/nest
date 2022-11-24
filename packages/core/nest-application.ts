@@ -36,10 +36,10 @@ import { optionalRequire } from './helpers/optional-require';
 import { NestContainer } from './injector/container';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
+import { RouteInfoPathExtractor } from './middleware/route-info-path-extractor';
 import { mapToExcludeRoute } from './middleware/utils';
 import { NestApplicationContext } from './nest-application-context';
 import { Resolver } from './router/interfaces/resolver.interface';
-import { RoutePathFactory } from './router/route-path-factory';
 import { RoutesResolver } from './router/routes-resolver';
 
 const { SocketModule } = optionalRequire(
@@ -83,7 +83,9 @@ export class NestApplication
 
     this.selectContextModule();
     this.registerHttpServer();
-    this.middlewareModule = new MiddlewareModule(new RoutePathFactory(config));
+    this.middlewareModule = new MiddlewareModule(
+      new RouteInfoPathExtractor(config),
+    );
 
     this.routesResolver = new RoutesResolver(
       this.container,
