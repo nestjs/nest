@@ -15,6 +15,7 @@ export class SocketServerProvider {
     options: T,
     port: number,
   ): ServerAndEventStreamsHost {
+    options = this.mergePathOptions(options) as T;
     const serverAndStreamsHost = this.socketsContainer.getOneByConfig({
       port,
       path: options.path,
@@ -35,6 +36,7 @@ export class SocketServerProvider {
     options: T,
     port: number,
   ): ServerAndEventStreamsHost {
+    options = this.mergePathOptions(options) as T;
     const adapter = this.applicationConfig.getIoAdapter();
     const { namespace, server, ...partialOptions } = options as Record<
       string,
@@ -64,10 +66,15 @@ export class SocketServerProvider {
       port,
       targetServer,
     );
+    options = this.mergePathOptions(options) as T;
     const serverAndEventStreamsHost =
       ServerAndEventStreamsFactory.create(namespaceServer);
     this.socketsContainer.addOne(
-      { port, path: options.path, namespace: options.namespace },
+      {
+        port,
+        path: options.path,
+        namespace: options.namespace,
+      },
       serverAndEventStreamsHost,
     );
     return serverAndEventStreamsHost;
@@ -83,6 +90,12 @@ export class SocketServerProvider {
       namespace: this.validateNamespace(options.namespace || ''),
       server,
     });
+  }
+  private mergePathOptions<TOptions extends GatewayMetadata = any>(
+    options: TOptions,
+  ) {
+    const { path = '', prefix = '', ...passthrough } = options;
+    return { path: prefix + path, ...passthrough };
   }
 
   private validateNamespace(namespace: string | RegExp): string | RegExp {
