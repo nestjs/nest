@@ -23,6 +23,7 @@ import {
   FastifyLoggerInstance,
   FastifyPluginAsync,
   FastifyPluginCallback,
+  FastifyRegister,
   FastifyReply,
   FastifyRequest,
   FastifyServerOptions,
@@ -368,7 +369,7 @@ export class FastifyAdapter<
     return this.instance as unknown as T;
   }
 
-  public register<TRegister extends Parameters<TInstance['register']>>(
+  public register<TRegister extends Parameters<FastifyRegister<TInstance>>>(
     plugin: TRegister['0'],
     opts?: TRegister['1'],
   ) {
