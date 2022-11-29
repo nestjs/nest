@@ -31,6 +31,7 @@ import {
 import { createContextId } from '../helpers/context-id-factory';
 import { getClassScope } from '../helpers/get-class-scope';
 import { isDurable } from '../helpers/is-durable';
+import { DeterministicUuidRegistry } from '../inspector/deterministic-uuid-registry';
 import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
@@ -71,7 +72,7 @@ export class Module {
     private readonly container: NestContainer,
   ) {
     this.addCoreProviders();
-    this._id = randomStringGenerator();
+    this._id = this.generateUuid();
   }
 
   get id(): string {
@@ -582,5 +583,13 @@ export class Module {
         return this.instantiateClass<T>(type, self);
       }
     };
+  }
+
+  private generateUuid(): string {
+    const UUID_NAMESPACE = 'fb848993-0c82-4b9e-ae95-3c3c1dbe3d6b';
+    const key = this.name?.toString() ?? this.token?.toString();
+    return key
+      ? DeterministicUuidRegistry.get(key, UUID_NAMESPACE)
+      : randomStringGenerator();
   }
 }

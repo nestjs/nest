@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { ExternalContextCreator } from '../../helpers/external-context-creator';
 import { HttpAdapterHost } from '../../helpers/http-adapter-host';
 import { GraphInspector } from '../../inspector/graph-inspector';
+import { SerializedGraph } from '../../inspector/serialized-graph';
 import { DependenciesScanner } from '../../scanner';
 import { ModuleCompiler } from '../compiler';
 import { NestContainer } from '../container';
@@ -55,6 +56,10 @@ export class InternalCoreModuleFactory {
       {
         provide: LazyModuleLoader,
         useFactory: lazyModuleLoaderFactory,
+      },
+      {
+        provide: SerializedGraph,
+        useValue: container.serializedGraph,
       },
     ]);
   }

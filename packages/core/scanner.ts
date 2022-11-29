@@ -27,7 +27,6 @@ import {
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import {
   isFunction,
   isNil,
@@ -51,6 +50,7 @@ import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { InternalCoreModuleFactory } from './injector/internal-core-module/internal-core-module-factory';
 import { Module } from './injector/module';
+import { DeterministicUuidRegistry } from './inspector/deterministic-uuid-registry';
 import { GraphInspector } from './inspector/graph-inspector';
 import { MetadataScanner } from './metadata-scanner';
 
@@ -412,9 +412,8 @@ export class DependenciesScanner {
     if (!providersKeys.includes(type as string)) {
       return this.container.addProvider(provider as any, token);
     }
-    const providerToken = `${
-      type as string
-    } (UUID: ${randomStringGenerator()})`;
+    const uuid = DeterministicUuidRegistry.get(type.toString());
+    const providerToken = `${type as string} (UUID: ${uuid})`;
 
     let scope = (provider as ClassProvider | FactoryProvider).scope;
     if (isNil(scope) && (provider as ClassProvider).useClass) {

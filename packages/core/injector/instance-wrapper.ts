@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { EnhancerSubtype } from '../../common/constants';
+import { DeterministicUuidRegistry } from '../inspector/deterministic-uuid-registry';
 import { STATIC_CONTEXT } from './constants';
 import {
   isClassProvider,
@@ -83,8 +84,8 @@ export class InstanceWrapper<T = any> {
   constructor(
     metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>> = {},
   ) {
-    this[INSTANCE_ID_SYMBOL] = randomStringGenerator();
     this.initialize(metadata);
+    this[INSTANCE_ID_SYMBOL] = this.generateUuid();
   }
 
   get id(): string {
@@ -453,5 +454,12 @@ export class InstanceWrapper<T = any> {
 
   private isDebugMode(): boolean {
     return !!process.env.NEST_DEBUG;
+  }
+
+  private generateUuid(): string {
+    let key = this.name?.toString() ?? this.token?.toString();
+    key += this.host?.name ?? '';
+
+    return key ? DeterministicUuidRegistry.get(key) : randomStringGenerator();
   }
 }

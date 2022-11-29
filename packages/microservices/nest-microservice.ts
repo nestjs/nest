@@ -75,7 +75,11 @@ export class NestMicroservice
 
   public async registerModules(): Promise<any> {
     this.socketModule &&
-      this.socketModule.register(this.container, this.applicationConfig);
+      this.socketModule.register(
+        this.container,
+        this.applicationConfig,
+        this.graphInspector,
+      );
     this.microservicesModule.setupClients(this.container);
 
     this.registerListeners();
@@ -99,7 +103,7 @@ export class NestMicroservice
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
     this.applicationConfig.useGlobalFilters(...filters);
     filters.forEach(item =>
-      this.graphInspector.insertStaticEnhancer({
+      this.graphInspector.insertOrphanedEnhancer({
         subtype: 'filter',
         ref: item,
       }),
@@ -110,7 +114,7 @@ export class NestMicroservice
   public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
     this.applicationConfig.useGlobalPipes(...pipes);
     pipes.forEach(item =>
-      this.graphInspector.insertStaticEnhancer({
+      this.graphInspector.insertOrphanedEnhancer({
         subtype: 'pipe',
         ref: item,
       }),
@@ -121,7 +125,7 @@ export class NestMicroservice
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
     this.applicationConfig.useGlobalInterceptors(...interceptors);
     interceptors.forEach(item =>
-      this.graphInspector.insertStaticEnhancer({
+      this.graphInspector.insertOrphanedEnhancer({
         subtype: 'interceptor',
         ref: item,
       }),
@@ -132,7 +136,7 @@ export class NestMicroservice
   public useGlobalGuards(...guards: CanActivate[]): this {
     this.applicationConfig.useGlobalGuards(...guards);
     guards.forEach(item =>
-      this.graphInspector.insertStaticEnhancer({
+      this.graphInspector.insertOrphanedEnhancer({
         subtype: 'guard',
         ref: item,
       }),

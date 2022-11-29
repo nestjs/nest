@@ -1,6 +1,7 @@
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
+import { DeterministicUuidRegistry } from './deterministic-uuid-registry';
 import { EnhancerMetadataCacheEntry } from './interfaces/enhancer-metadata-cache-entry.interface';
 import { Entrypoint } from './interfaces/entrypoint.interface';
 import { OrphanedEnhancerDefinition } from './interfaces/extras.interface';
@@ -28,6 +29,8 @@ export class GraphInspector {
     this.enhancersMetadataCache.forEach(entry =>
       this.insertEnhancerEdge(entry),
     );
+
+    DeterministicUuidRegistry.clear();
   }
 
   public inspectInstanceWrapper<T = any>(
@@ -56,7 +59,10 @@ export class GraphInspector {
   }
 
   public insertOrphanedEnhancer(entry: OrphanedEnhancerDefinition) {
-    this.graph.insertOrphanedEnhancer(entry);
+    this.graph.insertOrphanedEnhancer({
+      ...entry,
+      ref: entry.ref?.constructor?.name ?? 'Object',
+    });
   }
 
   public insertAttachedEnhancer(wrapper: InstanceWrapper) {
@@ -180,21 +186,20 @@ export class GraphInspector {
     wrapper: InstanceWrapper,
     type: Exclude<Node['metadata']['type'], 'module'>,
   ) {
-    if (wrapper.metatype === moduleRef.metatype) {
-      return;
-    }
     this.graph.insertNode({
       id: wrapper.id,
       label: wrapper.name,
       parent: moduleRef.id,
       metadata: {
         type,
+        internal: wrapper.metatype === moduleRef.metatype,
         sourceModuleName: moduleRef.name,
         durable: wrapper.isDependencyTreeDurable(),
         static: wrapper.isDependencyTreeStatic(),
         scope: wrapper.scope,
         transient: wrapper.isTransient,
         token: wrapper.token,
+        subtype: wrapper.subtype,
       },
     });
   }

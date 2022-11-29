@@ -1,4 +1,5 @@
 import { InjectionToken, Scope } from '@nestjs/common';
+import { EnhancerSubtype } from '@nestjs/common/constants';
 
 export type ModuleNode = {
   metadata: {
@@ -12,6 +13,7 @@ export type ClassNode = {
   parent: string;
   metadata: {
     type: 'provider' | 'controller' | 'middleware' | 'injectable';
+    subtype?: EnhancerSubtype;
     sourceModuleName: string;
     durable: boolean;
     static: boolean;

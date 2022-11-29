@@ -1,5 +1,4 @@
 import { InjectionToken } from '@nestjs/common';
-import { randomUUID } from 'crypto';
 import { ApplicationConfig } from '../application-config';
 import { ExternalContextCreator } from '../helpers/external-context-creator';
 import { HttpAdapterHost } from '../helpers/http-adapter-host';
@@ -9,6 +8,7 @@ import { ModuleRef } from '../injector/module-ref';
 import { ModulesContainer } from '../injector/modules-container';
 import { REQUEST } from '../router/request/request-constants';
 import { Reflector } from '../services/reflector.service';
+import { DeterministicUuidRegistry } from './deterministic-uuid-registry';
 import { Edge } from './interfaces/edge.interface';
 import { Entrypoint } from './interfaces/entrypoint.interface';
 import {
@@ -16,20 +16,6 @@ import {
   OrphanedEnhancerDefinition,
 } from './interfaces/extras.interface';
 import { Node } from './interfaces/node.interface';
-
-const INTERNAL_PROVIDERS: Array<InjectionToken> = [
-  ApplicationConfig,
-  ModuleRef,
-  HttpAdapterHost,
-  LazyModuleLoader,
-  ExternalContextCreator,
-  ModulesContainer,
-  Reflector,
-  HttpAdapterHost.name,
-  Reflector.name,
-  REQUEST,
-  INQUIRER,
-];
 
 type WithOptionalId<T extends Record<'id', string>> = Omit<T, 'id'> &
   Partial<Pick<T, 'id'>>;
@@ -43,10 +29,25 @@ export class SerializedGraph {
     attachedEnhancers: [],
   };
 
+  private static readonly INTERNAL_PROVIDERS: Array<InjectionToken> = [
+    ApplicationConfig,
+    ModuleRef,
+    HttpAdapterHost,
+    LazyModuleLoader,
+    ExternalContextCreator,
+    ModulesContainer,
+    Reflector,
+    SerializedGraph,
+    HttpAdapterHost.name,
+    Reflector.name,
+    REQUEST,
+    INQUIRER,
+  ];
+
   public insertNode(nodeDefinition: Node) {
     if (
       nodeDefinition.metadata.type === 'provider' &&
-      INTERNAL_PROVIDERS.includes(nodeDefinition.metadata.token)
+      SerializedGraph.INTERNAL_PROVIDERS.includes(nodeDefinition.metadata.token)
     ) {
       nodeDefinition.metadata = {
         ...nodeDefinition.metadata,
@@ -60,15 +61,20 @@ export class SerializedGraph {
   public insertEdge(edgeDefinition: WithOptionalId<Edge>) {
     if (
       edgeDefinition.metadata.type === 'class-to-class' &&
-      (INTERNAL_PROVIDERS.includes(edgeDefinition.metadata.sourceClassToken) ||
-        INTERNAL_PROVIDERS.includes(edgeDefinition.metadata.targetClassToken))
+      (SerializedGraph.INTERNAL_PROVIDERS.includes(
+        edgeDefinition.metadata.sourceClassToken,
+      ) ||
+        SerializedGraph.INTERNAL_PROVIDERS.includes(
+          edgeDefinition.metadata.targetClassToken,
+        ))
     ) {
       edgeDefinition.metadata = {
         ...edgeDefinition.metadata,
         internal: true,
       };
     }
-    const id = edgeDefinition.id ?? randomUUID();
+    const id =
+      edgeDefinition.id ?? this.generateUuidByEdgeDefinition(edgeDefinition);
     const edge = {
       ...edgeDefinition,
       id,
@@ -93,5 +99,34 @@ export class SerializedGraph {
 
   public getNodeById(id: string) {
     return this.nodes.get(id);
+  }
+
+  public toJSON() {
+    return {
+      nodes: Object.fromEntries(this.nodes),
+      edges: Object.fromEntries(this.edges),
+      entrypoints: Array.from(this.entrypoints.values()),
+      extras: this.extras,
+    };
+  }
+
+  public toString() {
+    const replacer = (key: string, value: unknown) => {
+      if (typeof value === 'symbol') {
+        return value.toString();
+      }
+      return typeof value === 'function' ? value.name ?? 'Function' : value;
+    };
+    return JSON.stringify(this.toJSON(), replacer, 2);
+  }
+
+  private generateUuidByEdgeDefinition(
+    edgeDefinition: WithOptionalId<Edge>,
+  ): string {
+    const UUID_NAMESPACE = '7a6d19ab-ec88-419f-a833-062532c468a7';
+    return DeterministicUuidRegistry.get(
+      JSON.stringify(edgeDefinition),
+      UUID_NAMESPACE,
+    );
   }
 }
