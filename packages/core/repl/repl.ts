@@ -6,7 +6,14 @@ import { REPL_INITIALIZED_MESSAGE } from './constants';
 import { ReplContext } from './repl-context';
 import { ReplLogger } from './repl-logger';
 
-export async function repl(module: Type | DynamicModule) {
+export interface REPLOptions {
+  historyPath: string;
+}
+
+export async function repl(
+  module: Type | DynamicModule,
+  options?: REPLOptions | undefined,
+) {
   const app = await NestFactory.createApplicationContext(module, {
     abortOnError: false,
     logger: new ReplLogger(),
@@ -21,6 +28,14 @@ export async function repl(module: Type | DynamicModule) {
     prompt: clc.green('> '),
     ignoreUndefined: true,
   });
+  if (options?.historyPath) {
+    replServer.setupHistory(options.historyPath, (err: any) => {
+      if (err) {
+        console.error({ err }, 'error setting up repl history');
+        process.exit(1);
+      }
+    });
+  }
   assignToObject(replServer.context, replContext.globalScope);
 
   return replServer;
