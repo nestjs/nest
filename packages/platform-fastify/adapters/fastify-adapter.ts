@@ -226,17 +226,17 @@ export class FastifyAdapter<
     hostname: string,
     callback?: () => void,
   ): void;
-  public listen(port: string | number | FastifyListenOptions, ...args: any[]): void {
+  public listen(listenOptions: string | number | FastifyListenOptions, ...args: any[]): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
     const callback = isFirstArgTypeofFunction ? args[0] : args[1];
     let options: Record<string, any> = {}
-    if (typeof(port) == 'object' && (port.host || port.port || port.path)) {
+    if (typeof(listenOptions) == 'object' && (listenOptions.host || listenOptions.port || listenOptions.path)) {
         // Handle new function signature : first parameter is an object with path, port and/or host attributes
-        options = port as any;
+        options = listenOptions;
     } else {
         // Old signature - first parameter MUST be an integer (port number)
         options = {
-            port: +port
+            port: +listenOptions
         };
     }
     if (!isFirstArgTypeofFunction) {
