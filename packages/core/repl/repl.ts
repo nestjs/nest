@@ -7,16 +7,17 @@ import { ReplContext } from './repl-context';
 import { ReplLogger } from './repl-logger';
 
 export interface REPLOptions {
-  historyPath: string;
+  historyPath?: string;
 }
 
 export async function repl(
   module: Type | DynamicModule,
-  options?: REPLOptions | undefined,
+  options?: REPLOptions,
 ) {
+  const logger = new ReplLogger();
   const app = await NestFactory.createApplicationContext(module, {
     abortOnError: false,
-    logger: new ReplLogger(),
+    logger,
   });
   await app.init();
 
@@ -29,9 +30,9 @@ export async function repl(
     ignoreUndefined: true,
   });
   if (options?.historyPath) {
-    replServer.setupHistory(options.historyPath, (err: any) => {
+    replServer.setupHistory(options.historyPath, (err: Error | null) => {
       if (err) {
-        console.error({ err }, 'error setting up repl history');
+        logger.error({ err }, 'error setting up repl history');
         process.exit(1);
       }
     });
