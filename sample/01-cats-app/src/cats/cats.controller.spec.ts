@@ -26,7 +26,8 @@ describe('CatsController', () => {
           name: 'Pixel',
         },
       ];
-      jest.spyOn(catsService, 'findAll').mockImplementation(() => result);
+      //@ts-ignore
+      catsService.cats = result;
 
       expect(await catsController.findAll()).toBe(result);
     });
@@ -41,11 +42,13 @@ describe('CatsController', () => {
       };
       const expectedCatArray = [cat];
 
-      expect(await catsController.findAll()).toStrictEqual([]);
+      //@ts-ignore
+      expect(catsService.cats).toStrictEqual([]);
 
       await catsController.create(cat);
 
-      expect(await catsController.findAll()).toStrictEqual(expectedCatArray);
+      //@ts-ignore
+      expect(catsService.cats).toStrictEqual(expectedCatArray);
     });
   });
 });

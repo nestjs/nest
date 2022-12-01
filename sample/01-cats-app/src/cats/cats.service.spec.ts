@@ -22,11 +22,13 @@ describe('CatsService', () => {
           breed: 'Stray',
         },
       ];
-      jest.spyOn(catsService, 'findAll').mockImplementation(() => result);
+      //@ts-ignore
+      catsService.cats = result;
 
-      expect(await catsService.findAll()).toBe(result);
+      await expect(catsService.findAll()).resolves.toBe(result);
     });
   });
+
   describe('create', () => {
     it('should add a new cat', async () => {
       const cat: Cat = {
@@ -35,12 +37,12 @@ describe('CatsService', () => {
         breed: 'Stray',
       };
       const expectedCatArray = [cat];
-
-      expect(await catsService.findAll()).toStrictEqual([]);
+      //@ts-ignore
+      expect(catsService.cats).toStrictEqual([]);
 
       await catsService.create(cat);
-
-      expect(await catsService.findAll()).toStrictEqual(expectedCatArray);
+      //@ts-ignore
+      expect(catsService.cats).toStrictEqual(expectedCatArray);
     });
   });
 });
