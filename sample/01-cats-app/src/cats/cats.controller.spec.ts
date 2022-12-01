@@ -31,4 +31,21 @@ describe('CatsController', () => {
       expect(await catsController.findAll()).toBe(result);
     });
   });
+
+  describe('create', () => {
+    it('should add a new cat', async () => {
+      const cat: Cat = {
+        age: 2,
+        breed: 'Bombay',
+        name: 'Pixel',
+      };
+      const expectedCatArray = [cat];
+
+      expect(await catsController.findAll()).toStrictEqual([]);
+
+      await catsController.create(cat);
+
+      expect(await catsController.findAll()).toStrictEqual(expectedCatArray);
+    });
+  });
 });
