@@ -32,6 +32,7 @@ import {
   RawServerBase,
   RawServerDefault,
   RequestGenericInterface,
+  FastifyListenOptions,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
 import { RouteShorthandMethod } from 'fastify/types/route';
@@ -226,12 +227,19 @@ export class FastifyAdapter<
     hostname: string,
     callback?: () => void,
   ): void;
-  public listen(port: string | number, ...args: any[]): void {
+  public listen(listenOptions: string | number | FastifyListenOptions, ...args: any[]): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
     const callback = isFirstArgTypeofFunction ? args[0] : args[1];
-    const options: Record<string, any> = {
-      port: +port,
-    };
+    let options: Record<string, any> = {}
+    if (typeof(listenOptions) == 'object' && (listenOptions.host || listenOptions.port || listenOptions.path)) {
+        // Handle new function signature : first parameter is an object with path, port and/or host attributes
+        options = listenOptions;
+    } else {
+        // Old signature - first parameter MUST be an integer (port number)
+        options = {
+            port: +listenOptions
+        };
+    }
     if (!isFirstArgTypeofFunction) {
       options.host = args[0];
     }
