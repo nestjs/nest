@@ -1,7 +1,8 @@
-import { INestApplication } from '@nestjs/common';
-import type { Server as HttpServer } from 'http';
-import type { Server as HttpsServer } from 'https';
+import { INestApplication, HttpServer } from '@nestjs/common';
+import type { Server as CoreHttpServer } from 'http';
+import type { Server as CoreHttpsServer } from 'https';
 import type { Server } from 'net';
+import type { Express } from 'express';
 import { NestExpressBodyParserOptions } from './nest-express-body-parser-options.interface';
 import { NestExpressBodyParserType } from './nest-express-body-parser.interface';
 import { ServeStaticOptions } from './serve-static-options.interface';
@@ -14,8 +15,15 @@ import { ServeStaticOptions } from './serve-static-options.interface';
  * @publicApi
  */
 export interface NestExpressApplication<
-  TServer extends HttpServer | HttpsServer = HttpServer,
+  TServer extends CoreHttpServer | CoreHttpsServer = CoreHttpServer,
 > extends INestApplication<TServer> {
+  /**
+   * Returns the underlying HTTP adapter bounded to the Express.js app.
+   *
+   * @returns {HttpServer}
+   */
+  getHttpAdapter(): HttpServer<Express.Request, Express.Response, Express>;
+
   /**
    * Starts the application.
    *
