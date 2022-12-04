@@ -96,6 +96,9 @@ export abstract class AbstractHttpAdapter<
     return this.instance as T;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  public useBodyParser(..._args: any[]) {}
+
   abstract close();
   abstract initHttpServer(options: NestApplicationOptions);
   abstract useStaticAssets(...args: any[]);

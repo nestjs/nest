@@ -30,6 +30,7 @@ export interface HttpServer<TRequest = any, TResponse = any> {
       | RequestHandler<TRequest, TResponse>
       | ErrorHandler<TRequest, TResponse>,
   ): any;
+  useBodyParser?(...args: any[]): any;
   get(handler: RequestHandler<TRequest, TResponse>): any;
   get(path: string, handler: RequestHandler<TRequest, TResponse>): any;
   post(handler: RequestHandler<TRequest, TResponse>): any;

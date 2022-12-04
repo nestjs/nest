@@ -1,10 +1,13 @@
 import { INestApplication } from '@nestjs/common';
 import {
+  AddContentTypeParser,
+  FastifyBodyParser,
   FastifyInstance,
   FastifyPluginAsync,
   FastifyPluginCallback,
   FastifyPluginOptions,
   FastifyRegisterOptions,
+  RawServerBase,
 } from 'fastify';
 import {
   Chain as LightMyRequestChain,
@@ -27,6 +30,22 @@ export interface NestFastifyApplication extends INestApplication {
       | Promise<{ default: FastifyPluginAsync<Options> }>,
     opts?: FastifyRegisterOptions<Options>,
   ): Promise<FastifyInstance>;
+
+  /**
+   * Register Fastify body parsers on the fly. Will respect
+   * the `rawBody` option.
+   * @returns {this}
+   */
+  useBodyParser(type: string | string[] | RegExp): this;
+  useBodyParser(
+    type: string | string[] | RegExp,
+    options: Omit<Parameters<AddContentTypeParser>[1], 'parseAs'>,
+  ): this;
+  useBodyParser<TServer extends RawServerBase = RawServerBase>(
+    type: string | string[] | RegExp,
+    options?: Omit<Parameters<AddContentTypeParser>[1], 'parseAs'>,
+    parser?: FastifyBodyParser<Buffer, TServer>,
+  ): this;
 
   /**
    * Sets a base directory for public assets.

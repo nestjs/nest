@@ -1,5 +1,6 @@
 import { Server } from 'net';
 import { INestApplication } from '@nestjs/common';
+import * as bodyparser from 'body-parser';
 import { ServeStaticOptions } from './serve-static-options.interface';
 
 /**
@@ -72,6 +73,17 @@ export interface NestExpressApplication extends INestApplication {
    * @returns {this}
    */
   useStaticAssets(path: string, options?: ServeStaticOptions): this;
+
+  /**
+   * Register Express body parsers on the fly. Will respect
+   * the `rawBody` option.
+   * @returns {this}
+   */
+  useBodyParser(parser: keyof bodyparser.BodyParser): this;
+  useBodyParser<Options extends bodyparser.Options = bodyparser.Options>(
+    parser: keyof bodyparser.BodyParser,
+    options: Omit<Options, 'verify'>,
+  ): this;
 
   /**
    * Sets one or multiple base directories for templates (views).

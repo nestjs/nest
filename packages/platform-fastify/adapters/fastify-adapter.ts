@@ -17,6 +17,7 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
+  AddContentTypeParser,
   fastify,
   FastifyBodyParser,
   FastifyInstance,
@@ -462,6 +463,39 @@ export class FastifyAdapter<
     this.registerJsonContentParser(rawBody);
 
     this._isParserRegistered = true;
+  }
+
+  public useBodyParser(
+    type: string | string[] | RegExp,
+    rawBody: boolean,
+    options?: Omit<Parameters<AddContentTypeParser>[1], 'parseAs'>,
+    parser?: FastifyBodyParser<Buffer, TServer>,
+  ) {
+    const parserOptions = {
+      ...(options || {}),
+      parseAs: 'buffer' as const,
+    };
+
+    this.getInstance().addContentTypeParser<Buffer>(
+      type,
+      parserOptions,
+      (
+        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
+        body: Buffer,
+        done,
+      ) => {
+        if (rawBody === true && Buffer.isBuffer(body)) {
+          req.rawBody = body;
+        }
+
+        if (parser) {
+          parser(req, body, done);
+          return;
+        }
+
+        done(null, body);
+      },
+    );
   }
 
   public async createMiddlewareFactory(
