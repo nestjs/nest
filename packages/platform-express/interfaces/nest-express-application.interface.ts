@@ -1,6 +1,7 @@
 import { Server } from 'net';
 import { INestApplication } from '@nestjs/common';
 import * as bodyparser from 'body-parser';
+import { NestExpressBodyParserOptions } from './nest-express-body-parser-options.interface';
 import { ServeStaticOptions } from './serve-static-options.interface';
 
 /**
@@ -82,7 +83,7 @@ export interface NestExpressApplication extends INestApplication {
   useBodyParser(parser: keyof bodyparser.BodyParser): this;
   useBodyParser<Options extends bodyparser.Options = bodyparser.Options>(
     parser: keyof bodyparser.BodyParser,
-    options: Omit<Options, 'verify'>,
+    options?: NestExpressBodyParserOptions<Options>,
   ): this;
 
   /**

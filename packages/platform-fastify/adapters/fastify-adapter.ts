@@ -17,7 +17,6 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
-  AddContentTypeParser,
   fastify,
   FastifyBodyParser,
   FastifyInstance,
@@ -45,6 +44,7 @@ import {
 } from 'light-my-request';
 // `querystring` is used internally in fastify for registering urlencoded body parser.
 import { parse as querystringParse } from 'querystring';
+import { NestFastifyBodyParserOptions } from '../interfaces';
 import {
   FastifyStaticOptions,
   PointOfViewOptions,
@@ -468,7 +468,7 @@ export class FastifyAdapter<
   public useBodyParser(
     type: string | string[] | RegExp,
     rawBody: boolean,
-    options?: Omit<Parameters<AddContentTypeParser>[1], 'parseAs'>,
+    options?: NestFastifyBodyParserOptions,
     parser?: FastifyBodyParser<Buffer, TServer>,
   ) {
     const parserOptions = {

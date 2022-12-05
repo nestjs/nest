@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import {
-  AddContentTypeParser,
   FastifyBodyParser,
   FastifyInstance,
   FastifyPluginAsync,
@@ -15,6 +14,7 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { FastifyStaticOptions, PointOfViewOptions } from './external';
+import { NestFastifyBodyParserOptions } from './nest-fastify-body-parser-options.interface';
 
 export interface NestFastifyApplication extends INestApplication {
   /**
@@ -39,11 +39,11 @@ export interface NestFastifyApplication extends INestApplication {
   useBodyParser(type: string | string[] | RegExp): this;
   useBodyParser(
     type: string | string[] | RegExp,
-    options: Omit<Parameters<AddContentTypeParser>[1], 'parseAs'>,
+    options: NestFastifyBodyParserOptions,
   ): this;
   useBodyParser<TServer extends RawServerBase = RawServerBase>(
     type: string | string[] | RegExp,
-    options?: Omit<Parameters<AddContentTypeParser>[1], 'parseAs'>,
+    options?: NestFastifyBodyParserOptions,
     parser?: FastifyBodyParser<Buffer, TServer>,
   ): this;
 
