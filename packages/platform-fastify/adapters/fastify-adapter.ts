@@ -496,6 +496,10 @@ export class FastifyAdapter<
         done(null, body);
       },
     );
+
+    // To avoid the Nest application init to override our custom
+    // body parser, we mark the parsers as registered.
+    this._isParserRegistered = true;
   }
 
   public async createMiddlewareFactory(
@@ -543,20 +547,15 @@ export class FastifyAdapter<
   }
 
   private registerJsonContentParser(rawBody?: boolean) {
+    const contentType = 'application/json';
+    const withRawBody = !!rawBody;
     const { bodyLimit } = this.getInstance().initialConfig;
 
-    this.getInstance().addContentTypeParser<Buffer>(
-      'application/json',
-      { parseAs: 'buffer', bodyLimit },
-      (
-        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
-        body: Buffer,
-        done,
-      ) => {
-        if (rawBody === true && Buffer.isBuffer(body)) {
-          req.rawBody = body;
-        }
-
+    this.useBodyParser(
+      contentType,
+      withRawBody,
+      { bodyLimit },
+      (req, body, done) => {
         const { onProtoPoisoning, onConstructorPoisoning } =
           this.instance.initialConfig;
         const defaultJsonParser = this.instance.getDefaultJsonParser(
@@ -569,20 +568,15 @@ export class FastifyAdapter<
   }
 
   private registerUrlencodedContentParser(rawBody?: boolean) {
+    const contentType = 'application/x-www-form-urlencoded';
+    const withRawBody = !!rawBody;
     const { bodyLimit } = this.getInstance().initialConfig;
 
-    this.getInstance().addContentTypeParser<Buffer>(
-      'application/x-www-form-urlencoded',
-      { parseAs: 'buffer', bodyLimit },
-      (
-        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
-        body: Buffer,
-        done,
-      ) => {
-        if (rawBody === true && Buffer.isBuffer(body)) {
-          req.rawBody = body;
-        }
-
+    this.useBodyParser(
+      contentType,
+      withRawBody,
+      { bodyLimit },
+      (_req, body, done) => {
         done(null, querystringParse(body.toString()));
       },
     );
