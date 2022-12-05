@@ -11,6 +11,7 @@ import { Injector, PropertyDependency } from '../../injector/injector';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { Module } from '../../injector/module';
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
+
 chai.use(chaiAsPromised);
 
 describe('Injector', () => {
