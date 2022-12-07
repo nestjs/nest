@@ -1,4 +1,4 @@
-import { AddContentTypeParser } from 'fastify';
+import type { AddContentTypeParser } from 'fastify';
 
 export type NestFastifyBodyParserOptions = Omit<
   Parameters<AddContentTypeParser>[1],
