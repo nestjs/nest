@@ -61,7 +61,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
       return response.send();
     }
     if (body instanceof StreamableFile) {
-      const streamHeaders = body.getHeaders();
+      const streamHeaders = !!body.getHeaders ? body.getHeaders() : response.getHeader();
       if (
         response.getHeader('Content-Type') === undefined &&
         streamHeaders.type !== undefined
