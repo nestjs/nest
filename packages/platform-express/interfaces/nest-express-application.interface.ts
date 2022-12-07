@@ -77,10 +77,17 @@ export interface NestExpressApplication extends INestApplication {
 
   /**
    * Register Express body parsers on the fly. Will respect
-   * the `rawBody` option.
+   * the application's `rawBody` option.
+   *
+   * @example
+   * const app = await NestFactory.create<NestExpressApplication>(
+   *   AppModule,
+   *   { rawBody: true }
+   * );
+   * app.useBodyParser('json', { limit: '50mb' });
+   *
    * @returns {this}
    */
-  useBodyParser(parser: keyof bodyparser.BodyParser): this;
   useBodyParser<Options extends bodyparser.Options = bodyparser.Options>(
     parser: keyof bodyparser.BodyParser,
     options?: NestExpressBodyParserOptions<Options>,

@@ -33,14 +33,19 @@ export interface NestFastifyApplication extends INestApplication {
 
   /**
    * Register Fastify body parsers on the fly. Will respect
-   * the `rawBody` option.
+   * the application's `rawBody` option.
+   *
+   * @example
+   * const app = await NestFactory.create<NestFastifyApplication>(
+   *   AppModule,
+   *   new FastifyAdapter(),
+   *   { rawBody: true }
+   * );
+   * // enable the json parser with a parser limit of 50mb
+   * app.useBodyParser('application/json', { bodyLimit: 50 * 1000 * 1024 });
+   *
    * @returns {this}
    */
-  useBodyParser(type: string | string[] | RegExp): this;
-  useBodyParser(
-    type: string | string[] | RegExp,
-    options: NestFastifyBodyParserOptions,
-  ): this;
   useBodyParser<TServer extends RawServerBase = RawServerBase>(
     type: string | string[] | RegExp,
     options?: NestFastifyBodyParserOptions,
