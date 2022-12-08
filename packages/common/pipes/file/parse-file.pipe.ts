@@ -49,9 +49,6 @@ export class ParseFilePipe implements PipeTransform<any> {
     if (this.validators.length) {
       if (Array.isArray(value)) {
         await this.validateFiles(value);
-      } else if (isObject(value)) {
-        const files = [].concat(...Object.values(value));
-        await this.validateFiles(files);
       } else {
         await this.validate(value);
       }
@@ -67,8 +64,6 @@ export class ParseFilePipe implements PipeTransform<any> {
   private thereAreNoFilesIn(value: any): boolean {
     if (Array.isArray(value)) {
       return value.length === 0;
-    } else if (isObject(value)) {
-      return Object.keys(value).length === 0;
     } else {
       return isEmpty(value);
     }
