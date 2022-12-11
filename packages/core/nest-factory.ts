@@ -84,6 +84,11 @@ export class NestFactoryStatic {
       applicationConfig,
       appOptions,
     );
+
+    if (this.autoFlushLogs) {
+      instance.flushLogsOnOverride();
+    }
+
     const target = this.createNestInstance(instance);
     return this.createAdapterProxy<T>(target, httpServer);
   }
