@@ -210,8 +210,10 @@ export class InstanceWrapper<T = any> {
     }
     const isTreeNonDurable = this.introspectDepsAttribute(
       (collection, registry) =>
-        collection.every(
-          (item: InstanceWrapper) => !item.isDependencyTreeDurable(registry),
+        collection.some(
+          (item: InstanceWrapper) =>
+            !item.isDependencyTreeStatic() &&
+            !item.isDependencyTreeDurable(registry),
         ),
       lookupRegistry,
     );
