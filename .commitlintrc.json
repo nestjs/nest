@@ -37,8 +37,9 @@
         "socket.io",
         "ws",
         "testing",
-        "websockets"
       ]
     ]
   }
 }
+
+# just for learning & testing purpose
