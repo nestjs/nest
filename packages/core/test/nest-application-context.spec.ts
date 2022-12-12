@@ -4,6 +4,7 @@ import { ContextIdFactory } from '../helpers/context-id-factory';
 import { InstanceLoader } from '../injector/instance-loader';
 import { NestContainer } from '../injector/container';
 import { NestApplicationContext } from '../nest-application-context';
+import * as sinon from 'sinon';
 
 describe('NestApplicationContext', () => {
   class A {}
@@ -40,6 +41,54 @@ describe('NestApplicationContext', () => {
     const applicationContext = new NestApplicationContext(nestContainer, []);
     return applicationContext;
   }
+
+  describe('listenToShutdownSignals', () => {
+    it('shutdown process should not be interrupted by another handler', async () => {
+      const signal = 'SIGTERM';
+      let processUp = true;
+      let promisesResolved = false;
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+      applicationContext.enableShutdownHooks([signal]);
+
+      const waitProcessDown = new Promise(resolve => {
+        const shutdownCleanupRef = applicationContext['shutdownCleanupRef'];
+        const handler = () => {
+          if (
+            !process
+              .listeners(signal)
+              .find(handler => handler == shutdownCleanupRef)
+          ) {
+            processUp = false;
+            process.removeListener(signal, handler);
+            resolve(undefined);
+          }
+          return undefined;
+        };
+        process.on(signal, handler);
+      });
+
+      // add some third party handler
+      process.on(signal, signal => {
+        // do some work
+        process.kill(process.pid, signal);
+      });
+
+      const hookStub = sinon
+        .stub(applicationContext as any, 'callShutdownHook')
+        .callsFake(async () => {
+          // run some async code
+          await new Promise(resolve => setImmediate(() => resolve(undefined)));
+          if (processUp) {
+            promisesResolved = true;
+          }
+        });
+      process.kill(process.pid, signal);
+      await waitProcessDown;
+      hookStub.restore();
+      expect(processUp).to.be.false;
+      expect(promisesResolved).to.be.true;
+    });
+  });
 
   describe('get', () => {
     describe('when scope = DEFAULT', () => {
