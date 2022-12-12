@@ -166,7 +166,7 @@ export class ValidationPipe implements PipeTransform<any> {
       return false;
     }
     const types = [String, Boolean, Number, Array, Object, Buffer];
-    return !types.some(t => metatype === t) && !isNil(metatype);
+    return types.some(t => metatype === t) && !isNil(metatype);
   }
 
   protected transformPrimitive(value: any, metadata: ArgumentMetadata) {
