@@ -231,7 +231,7 @@ export class FastifyAdapter<
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
     const callback = isFirstArgTypeofFunction ? args[0] : args[1];
     let options: Record<string, any> = {}
-    if (typeof(listenOptions) == 'object' && (listenOptions.host || listenOptions.port || listenOptions.path)) {
+    if (typeof(listenOptions) == 'object' && (listenOptions.host !== undefined || listenOptions.port !== undefined || listenOptions.path !== undefined)) {
         // Handle new function signature : first parameter is an object with path, port and/or host attributes
         options = listenOptions;
     } else {
