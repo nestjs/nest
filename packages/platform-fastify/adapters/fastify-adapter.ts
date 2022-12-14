@@ -230,7 +230,7 @@ export class FastifyAdapter<
   public listen(listenOptions: string | number | FastifyListenOptions, ...args: any[]): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
     const callback = isFirstArgTypeofFunction ? args[0] : args[1];
-    let options: Record<string, any> = {}
+    let options: Record<string, any>;
     if (typeof(listenOptions) == 'object' && (listenOptions.host !== undefined || listenOptions.port !== undefined || listenOptions.path !== undefined)) {
         // Handle new function signature : first parameter is an object with path, port and/or host attributes
         options = listenOptions;
