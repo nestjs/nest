@@ -80,7 +80,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://snyk.co/nestjs" target="_blank"><img src="https://nestjs.com/img/snyk-logo-black.png" width="185" valign="middle" /></a></td><td>
 <a href="https://fuseautotech.com/" target="_blank"><img src="https://nestjs.com/img/fuse-logo.svg" width="105" valign="middle" /></a></td>
 <td>
-<a href="https://ridicorp.com/career/" target="_blank"><img src="https://nestjs.com/img/ridi-logo.svg" width="105" valign="middle" /></a></td></</tr></table>
+<a href="https://ridicorp.com/career/" target="_blank"><img src="https://nestjs.com/img/ridi-logo.svg" width="105" valign="middle" /></a></td><td>
+<a href="https://www.movavi.com/imovie-for-windows.html" target="_blank"><img src="https://nestjs.com/img/movavi-logo.svg" width="105" valign="middle" /></a></td></</tr></table>
 
 #### Silver Sponsors
 
@@ -134,7 +135,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
    <td align="center" valign="middle"><a href="https://mobilereality.pl/" target="_blank"><img src="https://nestjs.com/img/mobile-reality-logo.png" width="45" valign="middle" /></a></td>
      <td align="center" valign="middle"><a href="https://boringowl.io/" target="_blank"><img src="https://nestjs.com/img/boringowl-logo.svg" width="120" valign="middle" /></a></td>
  <td align="center" valign="middle"><a href="https://www.mobilefactory.jp/" target="_blank"><img src="https://nestjs.com/img/mobilefactory-logo.png" width="100" valign="middle" /></a></td>
- <td align="center" valign="middle"><a href="https://db.nordbot.app/" target="_blank"><img src="https://nestjs.com/img/nord-logo.png" width="50" valign="middle" /></a></td>
+ <td align="center" valign="middle"><a href="https://nordbot.app/" target="_blank"><img src="https://nestjs.com/img/nordbot-logo.png" width="120" valign="middle" /></a></td>
+ <td align="center" valign="middle"><a href="https://doppio.sh/" target="_blank"><img src="https://nestjs.com/img/dopiosh-logo.png" width="50" valign="middle" /></a></td>
   </tr></table>
 
 ## Backers
