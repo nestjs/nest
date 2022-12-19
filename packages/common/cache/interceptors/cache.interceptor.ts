@@ -60,7 +60,7 @@ export class CacheInterceptor implements NestInterceptor {
           try {
             await this.cacheManager.set(...args);
           } catch (err) {
-            Logger.error(
+            Logger.warn(
               `An error has occured when inserting "key: ${key}", "value: ${response}"`,
               'CacheInterceptor',
             );
