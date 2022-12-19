@@ -384,7 +384,7 @@ describe('ValidationPipe', () => {
       });
       describe('otherwise', () => {
         it('should not reject', async () => {
-          target = new ValidationPipe();
+          target = new ValidationPipe({ forbidUnknownValues: false });
           const testObj = [
             { prop1: 'value1', prop2: 'value2', prop3: 'value3' },
           ];
