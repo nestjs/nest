@@ -61,6 +61,15 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
           message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
         };
 
+    if (!applicationRef.isHeadersSent || !applicationRef.end) {
+      // In the case of the uncaughtException error
+      // isHeadersSent and end are not available
+      return BaseExceptionFilter.logger.error(
+          exception.message,
+          exception.stack,
+      );
+    }
+
     const response = host.getArgByIndex(1);
     if (!applicationRef.isHeadersSent(response)) {
       applicationRef.reply(response, body, body.statusCode);
