@@ -15,7 +15,7 @@ import { validateModuleKeys } from '../../utils/validate-module-keys.util';
  *
  * @publicApi
  */
-export function Module(metadata: ModuleMetadata): ClassDecorator {
+export function Module(metadata: ModuleMetadata = {}): ClassDecorator {
   const propsKeys = Object.keys(metadata);
   validateModuleKeys(propsKeys);
 
