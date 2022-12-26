@@ -123,7 +123,7 @@
     "commitlint-circle": "1.0.0",
     "concurrently": "7.5.0",
     "conventional-changelog": "3.1.25",
-    "core-js": "3.26.0",
+    "core-js": "3.27.0",
     "coveralls": "3.1.1",
     "delete-empty": "3.0.0",
     "engine.io-client": "6.2.3",
