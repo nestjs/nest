@@ -147,7 +147,7 @@
     "ioredis": "5.2.4",
     "json-loader": "0.5.7",
     "kafkajs": "2.2.3",
-    "lerna": "2.11.0",
+    "lerna": "6.3.0",
     "lerna-changelog": "2.2.0",
     "light-my-request": "5.8.0",
     "lint-staged": "13.1.0",
