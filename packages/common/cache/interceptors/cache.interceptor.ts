@@ -55,7 +55,7 @@ export class CacheInterceptor implements NestInterceptor {
         : ttlValueOrFactory;
       return next.handle().pipe(
         tap(async response => {
-          const args = isNil(ttl) ? [key, response] : [key, response, { ttl }];
+          const args = isNil(ttl) ? [key, response] : [key, response, ttl];
 
           try {
             await this.cacheManager.set(...args);
