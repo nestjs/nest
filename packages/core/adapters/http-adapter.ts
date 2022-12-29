@@ -19,8 +19,8 @@ export abstract class AbstractHttpAdapter<
 
   constructor(protected instance?: any) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   public init(): any;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   public async init() {}
 
   public use(...args: any[]) {
