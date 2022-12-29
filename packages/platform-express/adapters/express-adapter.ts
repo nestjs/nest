@@ -55,6 +55,13 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     super(instance || express());
   }
 
+  public init() {
+    BigInt.prototype['toJSON'] = function () {
+      return this.toString();
+    };
+    return this;
+  }
+
   public reply(response: any, body: any, statusCode?: number) {
     if (statusCode) {
       response.status(statusCode);
