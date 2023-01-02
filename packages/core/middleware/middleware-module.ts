@@ -218,7 +218,7 @@ export class MiddlewareModule {
               configurable: false,
             });
             this.container.registerRequestProvider(
-              contextId.getParent ? contextId.payload : req,
+              isUndefined(contextId.payload) ? req : contextId.payload,
               contextId,
             );
           }

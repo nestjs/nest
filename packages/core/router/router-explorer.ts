@@ -425,7 +425,7 @@ export class RouterExplorer {
         configurable: false,
       });
       this.container.registerRequestProvider(
-        contextId.getParent ? contextId.payload : request,
+        isUndefined(contextId.payload) ? request : contextId.payload,
         contextId,
       );
     }

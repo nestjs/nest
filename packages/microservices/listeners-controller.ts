@@ -183,7 +183,7 @@ export class ListenersController {
           );
           contextId = this.getContextId(request);
           this.container.registerRequestProvider(
-            contextId.getParent ? contextId.payload : request,
+            isUndefined(contextId.payload) ? request : contextId.payload,
             contextId,
           );
           dataOrContextHost = request;
@@ -241,7 +241,7 @@ export class ListenersController {
         configurable: false,
       });
       this.container.registerRequestProvider(
-        contextId.getParent ? contextId.payload : request,
+        isUndefined(contextId.payload) ? request : contextId.payload,
         contextId,
       );
     }
