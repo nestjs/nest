@@ -14,4 +14,9 @@ export class DurableController {
   echo() {
     return this.durableService.requestPayload;
   }
+
+  @Get('is-req-defined')
+  getIfReqObjectIsDefined(): string {
+    return this.durableService.requestPayload ? 'yes' : 'no';
+  }
 }
