@@ -20,7 +20,7 @@ import {
   fastify,
   FastifyBodyParser,
   FastifyInstance,
-  FastifyLoggerInstance,
+  FastifyBaseLogger,
   FastifyPluginAsync,
   FastifyPluginCallback,
   FastifyRegister,
@@ -51,7 +51,7 @@ import {
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
-  Logger extends FastifyLoggerInstance = FastifyLoggerInstance,
+  Logger extends FastifyBaseLogger = FastifyBaseLogger,
 > = FastifyServerOptions<Server, Logger> & {
   http2: true;
   https: http2.SecureServerOptions;
@@ -59,7 +59,7 @@ type FastifyHttp2SecureOptions<
 
 type FastifyHttp2Options<
   Server extends http2.Http2Server,
-  Logger extends FastifyLoggerInstance = FastifyLoggerInstance,
+  Logger extends FastifyBaseLogger = FastifyBaseLogger,
 > = FastifyServerOptions<Server, Logger> & {
   http2: true;
   http2SessionTimeout?: number;
@@ -67,7 +67,7 @@ type FastifyHttp2Options<
 
 type FastifyHttpsOptions<
   Server extends https.Server,
-  Logger extends FastifyLoggerInstance = FastifyLoggerInstance,
+  Logger extends FastifyBaseLogger = FastifyBaseLogger,
 > = FastifyServerOptions<Server, Logger> & {
   https: https.ServerOptions;
 };
