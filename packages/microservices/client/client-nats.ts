@@ -56,13 +56,11 @@ export class ClientNats extends ClientProxy {
         this.logger.error(
           `NatsError: type: "${status.type}", data: "${data}".`,
         );
-      } else {
-        const message = `NatsStatus: type: "${status.type}", data: "${data}".`;
-        if (status.type === 'pingTimer') {
-          this.logger.debug(message);
-        } else {
-          this.logger.log(message);
-        }
+      }
+      if (status.type === 'pingTimer' && this.options.debug) {
+        this.logger.debug(
+          `NatsStatus: type: "${status.type}", data: "${data}".`,
+        );
       }
     }
   }
