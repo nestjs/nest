@@ -17,7 +17,7 @@ import { ExecutionContextHost } from '../helpers/execution-context-host';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
-import { InstanceWrapper } from '../injector/instance-wrapper';
+import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 import { InstanceToken, Module } from '../injector/module';
 import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
 import { RoutePathFactory } from '../router/route-path-factory';
@@ -200,6 +200,9 @@ export class MiddlewareModule {
       const proxy = await this.createProxy(instance);
       return this.registerHandler(applicationRef, routeInfo, proxy);
     }
+
+    const isTreeDurable = wrapper.isDependencyTreeDurable();
+
     await this.registerHandler(
       applicationRef,
       routeInfo,
@@ -217,8 +220,12 @@ export class MiddlewareModule {
               writable: false,
               configurable: false,
             });
+
+            const requestProviderValue = isTreeDurable
+              ? contextId.payload
+              : req;
             this.container.registerRequestProvider(
-              contextId.getParent ? contextId.payload : req,
+              requestProviderValue,
               contextId,
             );
           }
