@@ -212,23 +212,7 @@ export class MiddlewareModule {
         next: () => void,
       ) => {
         try {
-          const contextId = ContextIdFactory.getByRequest(req);
-          if (!req[REQUEST_CONTEXT_ID]) {
-            Object.defineProperty(req, REQUEST_CONTEXT_ID, {
-              value: contextId,
-              enumerable: false,
-              writable: false,
-              configurable: false,
-            });
-
-            const requestProviderValue = isTreeDurable
-              ? contextId.payload
-              : req;
-            this.container.registerRequestProvider(
-              requestProviderValue,
-              contextId,
-            );
-          }
+          const contextId = this.getContextId(req, isTreeDurable);
           const contextInstance = await this.injector.loadPerContext(
             instance,
             moduleRef,
@@ -324,5 +308,21 @@ export class MiddlewareModule {
             return next();
           },
     );
+  }
+
+  private getContextId(request: unknown, isTreeDurable: boolean): ContextId {
+    const contextId = ContextIdFactory.getByRequest(request);
+    if (!request[REQUEST_CONTEXT_ID]) {
+      Object.defineProperty(request, REQUEST_CONTEXT_ID, {
+        value: contextId,
+        enumerable: false,
+        writable: false,
+        configurable: false,
+      });
+
+      const requestProviderValue = isTreeDurable ? contextId.payload : request;
+      this.container.registerRequestProvider(requestProviderValue, contextId);
+    }
+    return contextId;
   }
 }
