@@ -521,8 +521,11 @@ export class Module {
 
       public get<TInput = any, TResult = TInput>(
         typeOrToken: Type<TInput> | string | symbol,
-        options: GetOrResolveOptions = { strict: true },
+        options: GetOrResolveOptions = {},
       ): TResult | Array<TResult> {
+        options.strict ??= true;
+        options.each ??= false;
+
         return !(options && options.strict)
           ? this.find<TInput, TResult>(typeOrToken, options)
           : this.find<TInput, TResult>(typeOrToken, {
@@ -534,8 +537,11 @@ export class Module {
       public resolve<TInput = any, TResult = TInput>(
         typeOrToken: Type<TInput> | string | symbol,
         contextId = createContextId(),
-        options: GetOrResolveOptions = { strict: true },
+        options: GetOrResolveOptions = {},
       ): Promise<TResult | Array<TResult>> {
+        options.strict ??= true;
+        options.each ??= false;
+
         return this.resolvePerContext<TInput, TResult>(
           typeOrToken,
           self,
