@@ -86,7 +86,7 @@
     "@fastify/multipart": "7.3.0",
     "@fastify/static": "6.5.0",
     "@fastify/view": "7.3.0",
-    "@grpc/grpc-js": "1.8.0",
+    "@grpc/grpc-js": "1.8.1",
     "@grpc/proto-loader": "0.7.4",
     "@nestjs/apollo": "10.1.7",
     "@nestjs/graphql": "10.1.7",
