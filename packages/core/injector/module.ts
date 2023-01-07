@@ -526,12 +526,15 @@ export class Module {
         options.strict ??= true;
         options.each ??= false;
 
-        return !(options && options.strict)
-          ? this.find<TInput, TResult>(typeOrToken, options)
-          : this.find<TInput, TResult>(typeOrToken, {
-              moduleId: self.id,
-              each: options.each,
-            });
+        return this.find<TInput, TResult>(
+          typeOrToken,
+          options.strict
+            ? {
+                moduleId: self.id,
+                each: options.each,
+              }
+            : options,
+        );
       }
 
       public resolve<TInput = any, TResult = TInput>(
