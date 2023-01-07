@@ -4,7 +4,6 @@ import {
   DynamicModule,
   ExistingProvider,
   FactoryProvider,
-  GetOrResolveOptions,
   Injectable,
   InjectionToken,
   NestModule,
@@ -33,7 +32,7 @@ import { isDurable } from '../helpers/is-durable';
 import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
-import { ModuleRef } from './module-ref';
+import { ModuleRefGetOrResolveOpts, ModuleRef } from './module-ref';
 
 /**
  * @note
@@ -521,7 +520,7 @@ export class Module {
 
       public get<TInput = any, TResult = TInput>(
         typeOrToken: Type<TInput> | string | symbol,
-        options: GetOrResolveOptions = {},
+        options: ModuleRefGetOrResolveOpts = {},
       ): TResult | Array<TResult> {
         options.strict ??= true;
         options.each ??= false;
@@ -540,7 +539,7 @@ export class Module {
       public resolve<TInput = any, TResult = TInput>(
         typeOrToken: Type<TInput> | string | symbol,
         contextId = createContextId(),
-        options: GetOrResolveOptions = {},
+        options: ModuleRefGetOrResolveOpts = {},
       ): Promise<TResult | Array<TResult>> {
         options.strict ??= true;
         options.each ??= false;
