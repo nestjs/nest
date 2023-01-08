@@ -23,6 +23,15 @@ const DEFAULT_LOG_LEVELS: LogLevel[] = [
   'verbose',
 ];
 
+const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric',
+  second: 'numeric',
+  day: '2-digit',
+  month: '2-digit',
+});
+
 @Injectable()
 export class ConsoleLogger implements LoggerService {
   private static lastTimestampAt?: number;
@@ -162,18 +171,7 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected getTimestamp(): string {
-    const localeStringOptions = {
-      year: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-      day: '2-digit',
-      month: '2-digit',
-    };
-    return new Date(Date.now()).toLocaleString(
-      undefined,
-      localeStringOptions as Intl.DateTimeFormatOptions,
-    );
+    return dateTimeFormatter.format(Date.now());
   }
 
   protected printMessages(
