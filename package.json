@@ -74,6 +74,7 @@
     "rxjs": "7.8.0",
     "socket.io": "4.5.4",
     "tslib": "2.4.1",
+    "uid": "2.0.1",
     "uuid": "9.0.0"
   },
   "devDependencies": {
