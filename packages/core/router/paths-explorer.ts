@@ -5,7 +5,10 @@ import {
 } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common/enums';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { VersionValue } from '@nestjs/common/interfaces/version-options.interface';
+import {
+  VersioningOptions,
+  VersionValue,
+} from '@nestjs/common/interfaces/version-options.interface';
 import {
   addLeadingSlash,
   isString,
@@ -23,7 +26,10 @@ export interface RouteDefinition {
 }
 
 export class PathsExplorer {
-  constructor(private readonly metadataScanner: MetadataScanner) {}
+  constructor(
+    private readonly metadataScanner: MetadataScanner,
+    private readonly versioningOptions?: VersioningOptions,
+  ) {}
 
   public scanForPaths(
     instance: Controller,
@@ -55,20 +61,26 @@ export class PathsExplorer {
       METHOD_METADATA,
       prototypeCallback,
     );
-    const version: VersionValue | undefined = Reflect.getMetadata(
+    const methodVersion: VersionValue | undefined = Reflect.getMetadata(
       VERSION_METADATA,
       prototypeCallback,
+    );
+    const controllerVersion: VersionValue | undefined = Reflect.getMetadata(
+      VERSION_METADATA,
+      prototype.constructor,
     );
     const path = isString(routePath)
       ? [addLeadingSlash(routePath)]
       : routePath.map((p: string) => addLeadingSlash(p));
+
+    const globalVersion = this.versioningOptions?.defaultVersion;
 
     return {
       path,
       requestMethod,
       targetCallback: instanceCallback,
       methodName,
-      version,
+      version: methodVersion || controllerVersion || globalVersion,
     };
   }
 }

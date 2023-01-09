@@ -1,4 +1,4 @@
-import { Version } from '../../../common';
+import { Version, VersioningType } from '../../../common';
 import { MiddlewareConfiguration } from '../../../common/interfaces';
 import { expect } from 'chai';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
@@ -9,6 +9,7 @@ import {
 import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { NestContainer } from '../../injector/container';
 import { RoutesMapper } from '../../middleware/routes-mapper';
+import { ApplicationConfig } from '../../../core/application-config';
 
 describe('RoutesMapper', () => {
   @Controller('test')
@@ -25,8 +26,17 @@ describe('RoutesMapper', () => {
   }
 
   let mapper: RoutesMapper;
+  let mapperWithGlobalVersioning: RoutesMapper;
   beforeEach(() => {
     mapper = new RoutesMapper(new NestContainer());
+
+    const applicationConfig = new ApplicationConfig();
+    applicationConfig.enableVersioning({
+      defaultVersion: 'defaultVersion1',
+      type: VersioningType.URI,
+    });
+    const container = new NestContainer(applicationConfig);
+    mapperWithGlobalVersioning = new RoutesMapper(container);
   });
 
   it('should map @Controller() to "ControllerMetadata" in forRoutes', () => {
@@ -79,6 +89,61 @@ describe('RoutesMapper', () => {
       { path: '/test/another', method: RequestMethod.DELETE },
       { path: '/test2/test', method: RequestMethod.GET },
       { path: '/test2/another', method: RequestMethod.DELETE },
+    ]);
+  });
+
+  @Controller({
+    path: 'test',
+    version: '1',
+  })
+  class TestRouteWithControllerVersion {
+    @RequestMapping({ path: 'test' })
+    public getTest() {}
+
+    @Version('2')
+    @RequestMapping({ path: 'another', method: RequestMethod.DELETE })
+    public getAnother() {}
+  }
+
+  it('should map @Controller with controller version to "ControllerMetadata"', () => {
+    const config = {
+      middleware: 'Test',
+      forRoutes: [TestRouteWithControllerVersion],
+    };
+
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).to.deep.equal([
+      { path: '/test/test', method: RequestMethod.GET, version: '1' },
+      { path: '/test/another', method: RequestMethod.DELETE, version: '2' },
+    ]);
+  });
+
+  it('should create ControllerMetadata from version defined in @Controller rather than global default version', () => {
+    const config = {
+      middleware: 'Test',
+      forRoutes: [TestRoute, TestRouteWithControllerVersion],
+    };
+
+    expect(
+      mapperWithGlobalVersioning.mapRouteToRouteInfo(config.forRoutes[0]),
+    ).to.deep.equal([
+      {
+        path: '/test/test',
+        method: RequestMethod.GET,
+        version: 'defaultVersion1',
+      },
+      {
+        path: '/test/another',
+        method: RequestMethod.DELETE,
+        version: 'defaultVersion1',
+      },
+      { path: '/test/versioned', method: RequestMethod.GET, version: '1' },
+    ]);
+
+    expect(
+      mapperWithGlobalVersioning.mapRouteToRouteInfo(config.forRoutes[1]),
+    ).to.deep.equal([
+      { path: '/test/test', method: RequestMethod.GET, version: '1' },
+      { path: '/test/another', method: RequestMethod.DELETE, version: '2' },
     ]);
   });
 });

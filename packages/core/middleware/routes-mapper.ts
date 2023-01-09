@@ -15,7 +15,10 @@ export class RoutesMapper {
   private readonly pathsExplorer: PathsExplorer;
 
   constructor(private readonly container: NestContainer) {
-    this.pathsExplorer = new PathsExplorer(new MetadataScanner());
+    this.pathsExplorer = new PathsExplorer(
+      new MetadataScanner(),
+      container.applicationConfig?.getVersioning(),
+    );
   }
 
   public mapRouteToRouteInfo(

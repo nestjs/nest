@@ -73,7 +73,10 @@ export class RouterExplorer {
     private readonly routePathFactory: RoutePathFactory,
     private readonly graphInspector: GraphInspector,
   ) {
-    this.pathsExplorer = new PathsExplorer(metadataScanner);
+    this.pathsExplorer = new PathsExplorer(
+      metadataScanner,
+      config.getVersioning(),
+    );
 
     const routeParamsFactory = new RouteParamsFactory();
     const pipesContextCreator = new PipesContextCreator(container, config);

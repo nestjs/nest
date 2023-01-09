@@ -210,7 +210,7 @@ describe('RoutesResolver', () => {
         versioningOptions: {
           type: VersioningType.URI,
         },
-        methodVersion: undefined,
+        methodVersion: '1',
         methodPath: '/',
       };
 
