@@ -5,7 +5,7 @@ import {
   Controller,
   PipeTransform,
 } from '@nestjs/common/interfaces';
-import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
+import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { lastValueFrom, isObservable } from 'rxjs';
 import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context';
 import { FORBIDDEN_MESSAGE } from '../guards/constants';

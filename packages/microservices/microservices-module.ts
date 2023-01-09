@@ -1,15 +1,15 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+import { GuardsConsumer, GuardsContextCreator } from '@nestjs/core/guards';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import {
+  InterceptorsConsumer,
+  InterceptorsContextCreator,
+} from '@nestjs/core/interceptors';
+import { PipesConsumer, PipesContextCreator } from '@nestjs/core/pipes';
 import { ClientProxyFactory } from './client';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
