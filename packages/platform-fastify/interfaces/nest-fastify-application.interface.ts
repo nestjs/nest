@@ -11,7 +11,7 @@ import {
   InjectOptions,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
-import { FastifyStaticOptions, PointOfViewOptions } from './external';
+import { FastifyStaticOptions, FastifyViewOptions } from './external';
 
 export interface NestFastifyApplication extends INestApplication {
   /**
@@ -41,7 +41,7 @@ export interface NestFastifyApplication extends INestApplication {
    * Don't pass in a string. The string type in the argument is for compatibilility reason and will cause an exception.
    * @returns {this}
    */
-  setViewEngine(options: PointOfViewOptions | string): this;
+  setViewEngine(options: FastifyViewOptions | string): this;
 
   /**
    * A wrapper function around native `fastify.inject()` method.
