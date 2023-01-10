@@ -38,7 +38,7 @@ async function runBenchmarkOfLib(lib: string): Promise<WrkResults> {
 
   const result = await wrk({
     threads: 8,
-    duraton: '10s',
+    duration: '10s',
     connections: 1024,
     url: 'http://localhost:3000',
   });

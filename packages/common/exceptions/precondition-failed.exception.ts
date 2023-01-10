@@ -1,5 +1,5 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException } from './http.exception';
+import { HttpException, HttpExceptionOptions } from './http.exception';
 
 /**
  * Defines an HTTP exception for *Precondition Failed* type errors.
@@ -18,7 +18,7 @@ export class PreconditionFailedException extends HttpException {
    * @usageNotes
    * The HTTP response status code will be 412.
    * - The `objectOrError` argument defines the JSON response body or the message string.
-   * - The `description` argument contains a short description of the HTTP error.
+   * - The `descriptionOrOptions` argument contains either a short description of the HTTP error or an options object used to provide an underlying error cause.
    *
    * By default, the JSON response body contains two properties:
    * - `statusCode`: this will be the value 412.
@@ -31,12 +31,15 @@ export class PreconditionFailedException extends HttpException {
    * and return it as the JSON response body.
    *
    * @param objectOrError string or object describing the error condition.
-   * @param description a short description of the HTTP error.
+   * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
    */
   constructor(
     objectOrError?: string | object | any,
-    description = 'Precondition Failed',
+    descriptionOrOptions: string | HttpExceptionOptions = 'Precondition Failed',
   ) {
+    const { description, httpExceptionOptions } =
+      HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
+
     super(
       HttpException.createBody(
         objectOrError,
@@ -44,6 +47,7 @@ export class PreconditionFailedException extends HttpException {
         HttpStatus.PRECONDITION_FAILED,
       ),
       HttpStatus.PRECONDITION_FAILED,
+      httpExceptionOptions,
     );
   }
 }

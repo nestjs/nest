@@ -154,9 +154,16 @@ describe('ClientTCP', () => {
     });
   });
   describe('close', () => {
+    let routingMap;
+    let callback;
+
     beforeEach(() => {
+      routingMap = new Map<string, Function>();
+      callback = sinon.spy();
+      routingMap.set('some id', callback);
       (client as any).socket = socket;
       (client as any).isConnected = true;
+      (client as any).routingMap = routingMap;
       client.close();
     });
     it('should end() socket', () => {
@@ -167,6 +174,16 @@ describe('ClientTCP', () => {
     });
     it('should set "socket" to null', () => {
       expect((client as any).socket).to.be.null;
+    });
+    it('should clear out the routing map', () => {
+      expect((client as any).routingMap.size).to.be.eq(0);
+    });
+    it('should call callbacks', () => {
+      expect(
+        callback.calledWith({
+          err: sinon.match({ message: 'Connection closed' }),
+        }),
+      ).to.be.true;
     });
   });
   describe('bindEvents', () => {

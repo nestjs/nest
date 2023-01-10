@@ -1,5 +1,5 @@
 /**
- * @see https://github.com/fastify/point-of-view/blob/master/index.d.ts
+ * @see https://github.com/fastify/point-of-view/blob/master/types/index.d.ts
  */
 
 export interface PointOfViewOptions {

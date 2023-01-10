@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config';
 import { ModuleRef, NestContainer } from '../injector';
-import { InternalCoreModule } from '../injector/internal-core-module';
+import { InternalCoreModule } from '../injector/internal-core-module/internal-core-module';
 import { Module } from '../injector/module';
 import {
   DebugReplFn,

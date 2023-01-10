@@ -576,5 +576,54 @@ describe('Logger', () => {
         `Prefix: ~~~test~~~`,
       );
     });
+
+    it('should stringify messages', () => {
+      class CustomConsoleLogger extends ConsoleLogger {
+        protected colorize(message: string, _: LogLevel): string {
+          return message;
+        }
+      }
+
+      const consoleLogger = new CustomConsoleLogger();
+      const consoleLoggerSpy = sinon.spy(
+        consoleLogger,
+        'stringifyMessage' as keyof ConsoleLogger,
+      );
+      consoleLogger.debug(
+        'str1',
+        { key: 'str2' },
+        ['str3'],
+        [{ key: 'str4' }],
+        null,
+        1,
+      );
+
+      expect(consoleLoggerSpy.getCall(0).returnValue).to.equal('str1');
+      expect(consoleLoggerSpy.getCall(1).returnValue).to.equal(
+        `Object:
+{
+  "key": "str2"
+}
+`,
+      );
+      expect(consoleLoggerSpy.getCall(2).returnValue).to.equal(
+        `Object:
+[
+  "str3"
+]
+`,
+      );
+      expect(consoleLoggerSpy.getCall(3).returnValue).to.equal(
+        `Object:
+[
+  {
+    "key": "str4"
+  }
+]
+`,
+      );
+      expect(consoleLoggerSpy.getCall(4).returnValue).to.equal(null);
+      expect(consoleLoggerSpy.getCall(5).returnValue).to.equal(1);
+    });
   });
 });

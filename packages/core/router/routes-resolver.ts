@@ -4,9 +4,12 @@ import {
   MODULE_PATH,
   VERSION_METADATA,
 } from '@nestjs/common/constants';
-import { HttpServer, Type } from '@nestjs/common/interfaces';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { VersionValue } from '@nestjs/common/interfaces/version-options.interface';
+import {
+  HttpServer,
+  Type,
+  VersionValue,
+  Controller,
+} from '@nestjs/common/interfaces';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '../application-config';
 import {

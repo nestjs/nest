@@ -10,11 +10,10 @@ import {
 import {
   ConfigurableModuleAsyncOptions,
   ConfigurableModuleCls,
+  ConfigurableModuleHost,
   ConfigurableModuleOptionsFactory,
 } from './interfaces';
-import { ConfigurableModuleHost } from './interfaces/configurable-module-host.interface';
-import { generateOptionsInjectionToken } from './utils/generate-options-injection-token.util';
-import { getInjectionProviders } from './utils/get-injection-providers.util';
+import { generateOptionsInjectionToken, getInjectionProviders } from './utils';
 
 /**
  * @publicApi
@@ -98,7 +97,7 @@ export class ConfigurableModuleBuilder<
     transformDefinition: (
       definition: DynamicModule,
       extras: ExtraModuleDefinitionOptions,
-    ) => DynamicModule,
+    ) => DynamicModule = def => def,
   ) {
     const builder = new ConfigurableModuleBuilder<
       ModuleOptions,
@@ -223,7 +222,10 @@ export class ConfigurableModuleBuilder<
             module: this,
             providers,
           },
-          options,
+          {
+            ...self.extras,
+            ...options,
+          },
         );
       }
 
@@ -244,7 +246,10 @@ export class ConfigurableModuleBuilder<
             imports: options.imports || [],
             providers,
           },
-          options,
+          {
+            ...self.extras,
+            ...options,
+          },
         );
       }
 

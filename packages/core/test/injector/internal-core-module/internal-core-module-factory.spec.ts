@@ -1,11 +1,11 @@
 import { ClassProvider, FactoryProvider } from '@nestjs/common';
 import { expect } from 'chai';
-import { ExternalContextCreator } from '../../helpers/external-context-creator';
-import { HttpAdapterHost } from '../../helpers/http-adapter-host';
-import { LazyModuleLoader, ModulesContainer } from '../../injector';
-import { NestContainer } from '../../injector/container';
-import { InternalCoreModule } from '../../injector/internal-core-module';
-import { InternalCoreModuleFactory } from '../../injector/internal-core-module-factory';
+import { ExternalContextCreator } from '../../../helpers/external-context-creator';
+import { HttpAdapterHost } from '../../../helpers/http-adapter-host';
+import { LazyModuleLoader, ModulesContainer } from '../../../injector';
+import { NestContainer } from '../../../injector/container';
+import { InternalCoreModule } from '../../../injector/internal-core-module/internal-core-module';
+import { InternalCoreModuleFactory } from '../../../injector/internal-core-module/internal-core-module-factory';
 
 describe('InternalCoreModuleFactory', () => {
   it('should return the internal core module definition', () => {

@@ -14,8 +14,10 @@ export class DurableContextIdStrategy implements ContextIdStrategy {
       tenantSubTreeId = { id: +tenantId } as ContextId;
       tenants.set(tenantId, tenantSubTreeId);
     }
-
-    return (info: HostComponentInfo) =>
-      info.isTreeDurable ? tenantSubTreeId : contextId;
+    return {
+      resolve: (info: HostComponentInfo) =>
+        info.isTreeDurable ? tenantSubTreeId : contextId,
+      payload: { tenantId },
+    };
   }
 }

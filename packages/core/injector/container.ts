@@ -1,15 +1,16 @@
 import { DynamicModule, Provider } from '@nestjs/common';
 import { GLOBAL_MODULE_METADATA } from '@nestjs/common/constants';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { Type } from '@nestjs/common/interfaces/type.interface';
+import { Injectable, Type } from '@nestjs/common/interfaces';
 import { ApplicationConfig } from '../application-config';
-import { CircularDependencyException } from '../errors/exceptions/circular-dependency.exception';
-import { UndefinedForwardRefException } from '../errors/exceptions/undefined-forwardref.exception';
-import { UnknownModuleException } from '../errors/exceptions/unknown-module.exception';
+import {
+  CircularDependencyException,
+  UndefinedForwardRefException,
+  UnknownModuleException,
+} from '../errors/exceptions';
 import { REQUEST } from '../router/request/request-constants';
 import { ModuleCompiler } from './compiler';
 import { ContextId } from './instance-wrapper';
-import { InternalCoreModule } from './internal-core-module';
+import { InternalCoreModule } from './internal-core-module/internal-core-module';
 import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
 import { ModuleTokenFactory } from './module-token-factory';

@@ -46,7 +46,7 @@ import { UndefinedModuleException } from './errors/exceptions/undefined-module.e
 import { getClassScope } from './helpers/get-class-scope';
 import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
-import { InternalCoreModuleFactory } from './injector/internal-core-module-factory';
+import { InternalCoreModuleFactory } from './injector/internal-core-module/internal-core-module-factory';
 import { Module } from './injector/module';
 import { MetadataScanner } from './metadata-scanner';
 

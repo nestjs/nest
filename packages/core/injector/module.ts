@@ -4,13 +4,14 @@ import {
   DynamicModule,
   ExistingProvider,
   FactoryProvider,
+  GetOrResolveOptions,
   Injectable,
   InjectionToken,
   NestModule,
   Provider,
+  Type,
   ValueProvider,
 } from '@nestjs/common/interfaces';
-import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import {
   isFunction,
@@ -21,9 +22,11 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
-import { InvalidClassException } from '../errors/exceptions/invalid-class.exception';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { UnknownExportException } from '../errors/exceptions/unknown-export.exception';
+import {
+  InvalidClassException,
+  RuntimeException,
+  UnknownExportException,
+} from '../errors/exceptions';
 import { createContextId } from '../helpers/context-id-factory';
 import { getClassScope } from '../helpers/get-class-scope';
 import { isDurable } from '../helpers/is-durable';
@@ -518,19 +521,27 @@ export class Module {
 
       public get<TInput = any, TResult = TInput>(
         typeOrToken: Type<TInput> | string | symbol,
-        options: { strict: boolean } = { strict: true },
-      ): TResult {
+        options: GetOrResolveOptions = { strict: true },
+      ): TResult | Array<TResult> {
         return !(options && options.strict)
-          ? this.find<TInput, TResult>(typeOrToken)
-          : this.find<TInput, TResult>(typeOrToken, self);
+          ? this.find<TInput, TResult>(typeOrToken, options)
+          : this.find<TInput, TResult>(typeOrToken, {
+              moduleId: self.id,
+              each: options.each,
+            });
       }
 
       public resolve<TInput = any, TResult = TInput>(
         typeOrToken: Type<TInput> | string | symbol,
         contextId = createContextId(),
-        options: { strict: boolean } = { strict: true },
-      ): Promise<TResult> {
-        return this.resolvePerContext(typeOrToken, self, contextId, options);
+        options: GetOrResolveOptions = { strict: true },
+      ): Promise<TResult | Array<TResult>> {
+        return this.resolvePerContext<TInput, TResult>(
+          typeOrToken,
+          self,
+          contextId,
+          options,
+        );
       }
 
       public async create<T = any>(type: Type<T>): Promise<T> {
