@@ -20,6 +20,7 @@ import { NestContainer } from './injector/container';
 import { Injector } from './injector/injector';
 import { InstanceLoader } from './injector/instance-loader';
 import { GraphInspector } from './inspector/graph-inspector';
+import { NoopGraphInspector } from './inspector/noop-graph-inspector';
 import { MetadataScanner } from './metadata-scanner';
 import { NestApplication } from './nest-application';
 import { NestApplicationContext } from './nest-application-context';
@@ -75,7 +76,7 @@ export class NestFactoryStatic {
 
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
-    const graphInspector = new GraphInspector(container);
+    const graphInspector = this.createGraphInspector(appOptions, container);
 
     this.setAbortOnError(serverOrOptions, options);
     this.registerLoggerConfiguration(appOptions);
@@ -120,7 +121,7 @@ export class NestFactoryStatic {
     );
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
-    const graphInspector = new GraphInspector(container);
+    const graphInspector = this.createGraphInspector(options, container);
 
     this.setAbortOnError(options);
     this.registerLoggerConfiguration(options);
@@ -156,7 +157,7 @@ export class NestFactoryStatic {
     options?: NestApplicationContextOptions,
   ): Promise<INestApplicationContext> {
     const container = new NestContainer();
-    const graphInspector = new GraphInspector(container);
+    const graphInspector = this.createGraphInspector(options, container);
 
     this.setAbortOnError(options);
     this.registerLoggerConfiguration(options);
@@ -340,6 +341,15 @@ export class NestFactoryStatic {
       },
     });
     return proxy as unknown as T;
+  }
+
+  private createGraphInspector(
+    appOptions: NestApplicationContextOptions,
+    container: NestContainer,
+  ) {
+    return appOptions?.snapshot
+      ? new GraphInspector(container)
+      : NoopGraphInspector;
   }
 }
 

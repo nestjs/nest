@@ -37,4 +37,11 @@ export class NestApplicationContextOptions {
    * @default false
    */
   preview?: boolean;
+
+  /**
+   * Whether to generate a serialized graph snapshot.
+   *
+   * @default false
+   */
+  snapshot?: boolean;
 }

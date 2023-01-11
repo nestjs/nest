@@ -21,16 +21,19 @@ import { Module } from '@nestjs/core/injector/module';
 import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 
 export class TestingModule extends NestApplicationContext {
-  protected readonly graphInspector = new GraphInspector(this.container);
+  protected readonly graphInspector: GraphInspector;
 
   constructor(
     container: NestContainer,
-    scope: Type<any>[],
+    graphInspector: GraphInspector,
     contextModule: Module,
     private readonly applicationConfig: ApplicationConfig,
+    scope: Type<any>[] = [],
   ) {
     const options = {};
     super(container, options, contextModule, scope);
+
+    this.graphInspector = graphInspector;
   }
 
   private isHttpServer(
