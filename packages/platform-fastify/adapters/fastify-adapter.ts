@@ -23,6 +23,7 @@ import {
   FastifyLoggerInstance,
   FastifyPluginAsync,
   FastifyPluginCallback,
+  FastifyRegister,
   FastifyReply,
   FastifyRequest,
   FastifyServerOptions,
@@ -45,7 +46,7 @@ import {
 import { parse as querystringParse } from 'querystring';
 import {
   FastifyStaticOptions,
-  PointOfViewOptions,
+  FastifyViewOptions,
 } from '../interfaces/external';
 
 type FastifyHttp2SecureOptions<
@@ -368,7 +369,7 @@ export class FastifyAdapter<
     return this.instance as unknown as T;
   }
 
-  public register<TRegister extends Parameters<TInstance['register']>>(
+  public register<TRegister extends Parameters<FastifyRegister<TInstance>>>(
     plugin: TRegister['0'],
     opts?: TRegister['1'],
   ) {
@@ -408,7 +409,7 @@ export class FastifyAdapter<
     );
   }
 
-  public setViewEngine(options: PointOfViewOptions | string) {
+  public setViewEngine(options: FastifyViewOptions | string) {
     if (isString(options)) {
       new Logger('FastifyAdapter').error(
         "setViewEngine() doesn't support a string argument.",

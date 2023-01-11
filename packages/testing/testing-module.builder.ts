@@ -1,12 +1,12 @@
 import { Logger, LoggerService, Module } from '@nestjs/common';
 import { ModuleMetadata } from '@nestjs/common/interfaces';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
+import { NoopGraphInspector } from '@nestjs/core/inspector/noop-graph-inspector';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
-import { NestApplicationContextOptions } from '../common/interfaces/nest-application-context-options.interface';
-import { GraphInspector } from '../core/inspector/graph-inspector';
-import { NoopGraphInspector } from '../core/inspector/noop-graph-inspector';
 import {
   MockFactory,
   OverrideBy,

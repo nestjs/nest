@@ -3,7 +3,10 @@ import { loadPackage } from '../utils/load-package.util';
 import { CACHE_MANAGER } from './cache.constants';
 import { MODULE_OPTIONS_TOKEN } from './cache.module-definition';
 import { defaultCacheOptions } from './default-options';
-import { CacheManagerOptions } from './interfaces/cache-manager.interface';
+import {
+  CacheManagerOptions,
+  CacheStore,
+} from './interfaces/cache-manager.interface';
 
 /**
  * Creates a CacheManager Provider.
@@ -28,10 +31,14 @@ export function createCacheManager(): Provider {
             ...{ ...options, store },
           });
         }
-        let cache: string | Function = 'memory';
+        let cache: string | Function | CacheStore = 'memory';
         defaultCacheOptions.ttl *= 1000;
-        if (typeof store === 'object' && 'create' in store) {
-          cache = store.create;
+        if (typeof store === 'object') {
+          if ('create' in store) {
+            cache = store.create;
+          } else {
+            cache = store;
+          }
         } else if (typeof store === 'function') {
           cache = store;
         }

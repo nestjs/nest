@@ -3,8 +3,7 @@ import {
   EnhancerSubtype,
   GLOBAL_MODULE_METADATA,
 } from '@nestjs/common/constants';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { Type } from '@nestjs/common/interfaces/type.interface';
+import { Injectable, Type } from '@nestjs/common/interfaces';
 import { ApplicationConfig } from '../application-config';
 import {
   CircularDependencyException,

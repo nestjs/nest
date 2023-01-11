@@ -1,3 +1,4 @@
+import { EnhancerSubtype } from '@nestjs/common/constants';
 import {
   ClassProvider,
   Controller,
@@ -21,7 +22,6 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
-import { EnhancerSubtype } from '../../common/constants';
 import { ApplicationConfig } from '../application-config';
 import {
   InvalidClassException,
