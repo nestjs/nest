@@ -213,8 +213,9 @@ describe('WebSocketsController', () => {
           classNodeId: instanceWrapperId,
           metadata: {
             port,
+            key: messageHandlers[0].message,
             message: messageHandlers[0].message,
-          },
+          } as any,
         }),
       ).to.be.true;
       expect(
@@ -225,8 +226,9 @@ describe('WebSocketsController', () => {
           classNodeId: instanceWrapperId,
           metadata: {
             port,
+            key: messageHandlers[1].message,
             message: messageHandlers[1].message,
-          },
+          } as any,
         }),
       ).to.be.true;
     });

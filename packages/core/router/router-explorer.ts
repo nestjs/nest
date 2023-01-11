@@ -220,6 +220,7 @@ export class RouterExplorer {
           className: instanceWrapper.name,
           classNodeId: instanceWrapper.id,
           metadata: {
+            key: path,
             path,
             requestMethod: RequestMethod[
               requestMethod
@@ -234,6 +235,7 @@ export class RouterExplorer {
 
         this.graphInspector.insertEntrypointDefinition<HttpEntrypointMetadata>(
           entrypointDefinition,
+          instanceWrapper.id,
         );
       });
 

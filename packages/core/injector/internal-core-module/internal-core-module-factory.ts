@@ -6,6 +6,7 @@ import { SerializedGraph } from '../../inspector/serialized-graph';
 import { DependenciesScanner } from '../../scanner';
 import { ModuleCompiler } from '../compiler';
 import { NestContainer } from '../container';
+import { Injector } from '../injector';
 import { InstanceLoader } from '../instance-loader';
 import { LazyModuleLoader } from '../lazy-module-loader/lazy-module-loader';
 import { ModulesContainer } from '../modules-container';
@@ -23,8 +24,10 @@ export class InternalCoreModuleFactory {
       const logger = new Logger(LazyModuleLoader.name, {
         timestamp: false,
       });
+      const injector = new Injector();
       const instanceLoader = new InstanceLoader(
         container,
+        injector,
         graphInspector,
         logger,
       );

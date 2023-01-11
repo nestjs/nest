@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
@@ -22,20 +23,26 @@ import { SocketServerProvider } from './socket-server-provider';
 import { SocketsContainer } from './sockets-container';
 import { WebSocketsController } from './web-sockets-controller';
 
-export class SocketModule<HttpServer = any> {
+export class SocketModule<
+  THttpServer = any,
+  TAppOptions extends NestApplicationContextOptions = NestApplicationContextOptions,
+> {
   private readonly socketsContainer = new SocketsContainer();
   private applicationConfig: ApplicationConfig;
   private webSocketsController: WebSocketsController;
   private isAdapterInitialized: boolean;
-  private httpServer: HttpServer | undefined;
+  private httpServer: THttpServer | undefined;
+  private appOptions: TAppOptions;
 
   public register(
     container: NestContainer,
     applicationConfig: ApplicationConfig,
     graphInspector: GraphInspector,
-    httpServer?: HttpServer,
+    appOptions: TAppOptions,
+    httpServer?: THttpServer,
   ) {
     this.applicationConfig = applicationConfig;
+    this.appOptions = appOptions;
     this.httpServer = httpServer;
 
     const contextCreator = this.getContextCreator(container);
@@ -48,6 +55,7 @@ export class SocketModule<HttpServer = any> {
       applicationConfig,
       contextCreator,
       graphInspector,
+      this.appOptions,
     );
     const modules = container.getModules();
     modules.forEach(({ providers }, moduleName: string) =>

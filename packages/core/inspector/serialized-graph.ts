@@ -23,7 +23,7 @@ type WithOptionalId<T extends Record<'id', string>> = Omit<T, 'id'> &
 export class SerializedGraph {
   private readonly nodes = new Map<string, Node>();
   private readonly edges = new Map<string, Edge>();
-  private readonly entrypoints = new Set<Entrypoint<unknown>>();
+  private readonly entrypoints = new Map<string, Entrypoint<unknown>[]>();
   private readonly extras: Extras = {
     orphanedEnhancers: [],
     attachedEnhancers: [],
@@ -54,6 +54,9 @@ export class SerializedGraph {
         internal: true,
       };
     }
+    if (this.nodes.has(nodeDefinition.id)) {
+      return this.nodes.get(nodeDefinition.id);
+    }
     this.nodes.set(nodeDefinition.id, nodeDefinition);
     return nodeDefinition;
   }
@@ -83,8 +86,13 @@ export class SerializedGraph {
     return edge;
   }
 
-  public insertEntrypoint<T>(definition: Entrypoint<T>) {
-    this.entrypoints.add(definition);
+  public insertEntrypoint<T>(definition: Entrypoint<T>, parentId: string) {
+    if (this.entrypoints.has(parentId)) {
+      const existingCollection = this.entrypoints.get(parentId);
+      existingCollection.push(definition);
+    } else {
+      this.entrypoints.set(parentId, [definition]);
+    }
   }
 
   public insertOrphanedEnhancer(entry: OrphanedEnhancerDefinition) {
@@ -105,7 +113,7 @@ export class SerializedGraph {
     return {
       nodes: Object.fromEntries(this.nodes),
       edges: Object.fromEntries(this.edges),
-      entrypoints: Array.from(this.entrypoints.values()),
+      entrypoints: Object.fromEntries(this.entrypoints),
       extras: this.extras,
     };
   }

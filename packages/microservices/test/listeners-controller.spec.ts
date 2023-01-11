@@ -302,11 +302,12 @@ describe('ListenersController', () => {
           className: 'TestCtrl',
           classNodeId: instanceWrapper.id,
           metadata: {
+            key: definition.patterns.toString(),
             transportId: 'MQTT',
             patterns: definition.patterns,
             isEventHandler: definition.isEventHandler,
             extras: definition.extras,
-          },
+          } as any,
         }),
       ).to.be.true;
     });

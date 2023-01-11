@@ -64,7 +64,7 @@ export class MiddlewareModule {
       appRef,
     );
     this.routesMapper = new RoutesMapper(container);
-    this.resolver = new MiddlewareResolver(middlewareContainer);
+    this.resolver = new MiddlewareResolver(middlewareContainer, injector);
 
     this.config = config;
     this.injector = injector;
@@ -182,20 +182,29 @@ export class MiddlewareModule {
       if (instanceWrapper.isTransient) {
         return;
       }
+      this.graphInspector.insertClassNode(
+        moduleRef,
+        instanceWrapper,
+        'middleware',
+      );
       const middlewareDefinition: Entrypoint<MiddlewareEntrypointMetadata> = {
         type: 'middleware',
         methodName: 'use',
         className: instanceWrapper.name,
         classNodeId: instanceWrapper.id,
         metadata: {
+          key: routeInfo.path,
           path: routeInfo.path,
-          requestMethod: RequestMethod[
-            routeInfo.method
-          ] as keyof typeof RequestMethod,
+          requestMethod:
+            (RequestMethod[routeInfo.method] as keyof typeof RequestMethod) ??
+            'ALL',
           version: routeInfo.version,
         },
       };
-      this.graphInspector.insertEntrypointDefinition(middlewareDefinition);
+      this.graphInspector.insertEntrypointDefinition(
+        middlewareDefinition,
+        instanceWrapper.id,
+      );
 
       await this.bindHandler(
         instanceWrapper,

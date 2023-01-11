@@ -6,6 +6,7 @@ import {
   ModulesContainer,
   NestContainer,
 } from '../../../injector';
+import { Injector } from '../../../injector/injector';
 import { InstanceLoader } from '../../../injector/instance-loader';
 import { GraphInspector } from '../../../inspector/graph-inspector';
 import { MetadataScanner } from '../../../metadata-scanner';
@@ -31,8 +32,11 @@ describe('LazyModuleLoader', () => {
       new MetadataScanner(),
       graphInspector,
     );
+
+    const injector = new Injector();
     instanceLoader = new InstanceLoader(
       nestContainer,
+      injector,
       graphInspector,
       new NoopLogger(),
     );

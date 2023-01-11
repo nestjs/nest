@@ -17,10 +17,10 @@ export class GraphInspector {
     this.graph = container.serializedGraph;
   }
 
-  public inspectModules() {
-    const modules = this.container.getModules().values();
-
-    for (const moduleRef of modules) {
+  public inspectModules(
+    modules: Map<string, Module> = this.container.getModules(),
+  ) {
+    for (const moduleRef of modules.values()) {
       this.insertModuleNode(moduleRef);
       this.insertClassNodes(moduleRef);
       this.insertModuleToModuleEdges(moduleRef);
@@ -72,8 +72,39 @@ export class GraphInspector {
     this.graph.insertAttachedEnhancer(existingNode.id);
   }
 
-  public insertEntrypointDefinition<T>(definition: Entrypoint<T>) {
-    this.graph.insertEntrypoint(definition);
+  public insertEntrypointDefinition<T>(
+    definition: Entrypoint<T>,
+    parentId: string,
+  ) {
+    definition = {
+      ...definition,
+      id: `${definition.classNodeId}_${definition.methodName}`,
+    };
+    this.graph.insertEntrypoint(definition, parentId);
+  }
+
+  public insertClassNode(
+    moduleRef: Module,
+    wrapper: InstanceWrapper,
+    type: Exclude<Node['metadata']['type'], 'module'>,
+  ) {
+    this.graph.insertNode({
+      id: wrapper.id,
+      label: wrapper.name,
+      parent: moduleRef.id,
+      metadata: {
+        type,
+        internal: wrapper.metatype === moduleRef.metatype,
+        sourceModuleName: moduleRef.name,
+        durable: wrapper.isDependencyTreeDurable(),
+        static: wrapper.isDependencyTreeStatic(),
+        scope: wrapper.scope,
+        transient: wrapper.isTransient,
+        exported: moduleRef.exports.has(wrapper.token),
+        token: wrapper.token,
+        subtype: wrapper.subtype,
+      },
+    });
   }
 
   private insertModuleNode(moduleRef: Module) {
@@ -87,6 +118,7 @@ export class GraphInspector {
         type: 'module',
         global: moduleRef.isGlobal,
         dynamic: !!dynamicMetadata,
+        internal: moduleRef.name === 'InternalCoreModule',
       },
     };
     this.graph.insertNode(node);
@@ -128,6 +160,7 @@ export class GraphInspector {
       enhancers.push({
         id: entry.enhancerInstanceWrapper.id,
         methodKey: entry.methodKey,
+        subtype: entry.subtype,
       });
     } else {
       const name =
@@ -137,6 +170,7 @@ export class GraphInspector {
       enhancers.push({
         name,
         methodKey: entry.methodKey,
+        subtype: entry.subtype,
       });
     }
     existingSourceNode.metadata.enhancers = enhancers;
@@ -170,37 +204,11 @@ export class GraphInspector {
     moduleRef.providers.forEach(value =>
       this.insertClassNode(moduleRef, value, 'provider'),
     );
-    moduleRef.middlewares.forEach(item =>
-      this.insertClassNode(moduleRef, item, 'middleware'),
-    );
     moduleRef.injectables.forEach(value =>
       this.insertClassNode(moduleRef, value, 'injectable'),
     );
     moduleRef.controllers.forEach(value =>
       this.insertClassNode(moduleRef, value, 'controller'),
     );
-  }
-
-  private insertClassNode(
-    moduleRef: Module,
-    wrapper: InstanceWrapper,
-    type: Exclude<Node['metadata']['type'], 'module'>,
-  ) {
-    this.graph.insertNode({
-      id: wrapper.id,
-      label: wrapper.name,
-      parent: moduleRef.id,
-      metadata: {
-        type,
-        internal: wrapper.metatype === moduleRef.metatype,
-        sourceModuleName: moduleRef.name,
-        durable: wrapper.isDependencyTreeDurable(),
-        static: wrapper.isDependencyTreeStatic(),
-        scope: wrapper.scope,
-        transient: wrapper.isTransient,
-        token: wrapper.token,
-        subtype: wrapper.subtype,
-      },
-    });
   }
 }

@@ -260,10 +260,11 @@ describe('MiddlewareModule', () => {
           className: instanceWrapper.name,
           classNodeId: instanceWrapper.id,
           metadata: {
+            key: route,
             path: route,
             requestMethod: 'ALL',
             version: undefined,
-          },
+          } as any,
         }),
       ).to.be.true;
     });

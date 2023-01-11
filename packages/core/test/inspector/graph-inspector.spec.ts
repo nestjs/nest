@@ -171,9 +171,9 @@ describe('GraphInspector', () => {
       expect(serializedNode).to.deep.equal({
         metadata: {
           enhancers: [
-            { methodKey, name: RandomPipe.name },
-            { methodKey, name: 'Function' },
-            { methodKey: undefined, id: enhancerInstanceWrapper.id },
+            { methodKey, name: RandomPipe.name, subtype },
+            { methodKey, name: 'Function', subtype },
+            { methodKey: undefined, id: enhancerInstanceWrapper.id, subtype },
           ],
         },
       });
@@ -199,6 +199,7 @@ describe('GraphInspector', () => {
           scope: Scope.DEFAULT,
           transient: false,
           token: class A {},
+          exported: false,
         },
       };
       const insertedNode = graph.insertNode(nodeDefinition);

@@ -32,16 +32,16 @@ describe('InstanceLoader', () => {
       'inspectInstanceWrapper',
     );
 
-    loader = new InstanceLoader(container, graphInspector);
     injector = new Injector();
-    (loader as any).injector = injector;
-
+    loader = new InstanceLoader(container, injector, graphInspector);
     mockContainer = sinon.mock(container);
 
     moduleMock = {
+      imports: new Set(),
       providers: new Map(),
       controllers: new Map(),
       injectables: new Map(),
+      exports: new Set(),
       metatype: { name: 'test' },
     };
 
@@ -51,16 +51,16 @@ describe('InstanceLoader', () => {
   });
 
   it('should call "loadPrototype" for every provider and controller in every module', async () => {
-    const providerWrapper: InstanceWrapper = {
+    const providerWrapper = new InstanceWrapper({
       instance: null,
       metatype: TestProvider,
       token: 'TestProvider',
-    } as any;
-    const ctrlWrapper: InstanceWrapper = {
+    });
+    const ctrlWrapper = new InstanceWrapper({
       instance: null,
       metatype: TestCtrl,
       token: 'TestRoute',
-    } as any;
+    });
 
     moduleMock.providers.set('TestProvider', providerWrapper);
     moduleMock.controllers.set('TestRoute', ctrlWrapper);

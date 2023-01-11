@@ -80,8 +80,6 @@ export class DependenciesScanner {
 
     this.addScopedEnhancersMetadata();
     this.container.bindGlobalScope();
-
-    this.graphInspector.inspectModules();
   }
 
   public async scanForModules(

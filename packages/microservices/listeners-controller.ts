@@ -160,6 +160,7 @@ export class ListenersController {
         className: instanceWrapper.metatype?.name,
         classNodeId: instanceWrapper.id,
         metadata: {
+          key: definition.patterns.toString(),
           transportId:
             typeof transportId === 'number'
               ? (Transport[transportId] as keyof typeof Transport)
@@ -169,6 +170,7 @@ export class ListenersController {
           extras: definition.extras,
         },
       },
+      instanceWrapper.id,
     );
   }
 

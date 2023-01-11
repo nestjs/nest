@@ -36,7 +36,7 @@ describe('Graph inspector', () => {
   });
 
   it('should generate a post-initialization graph and match snapshot', async () => {
-    const app = testingModule.createNestApplication();
+    const app = testingModule.createNestApplication({ preview: true });
     app.useGlobalPipes(new ValidationPipe());
     app.useGlobalFilters(new HttpExceptionFilter());
     app.useGlobalInterceptors(new TimeoutInterceptor());

@@ -4,23 +4,24 @@ import { InstanceToken, Module } from '../injector/module';
 import { MiddlewareContainer } from './container';
 
 export class MiddlewareResolver {
-  private readonly instanceLoader = new Injector();
-
-  constructor(private readonly middlewareContainer: MiddlewareContainer) {}
+  constructor(
+    private readonly middlewareContainer: MiddlewareContainer,
+    private readonly injector: Injector,
+  ) {}
 
   public async resolveInstances(moduleRef: Module, moduleName: string) {
-    const middleware =
+    const middlewareMap =
       this.middlewareContainer.getMiddlewareCollection(moduleName);
     const resolveInstance = async (wrapper: InstanceWrapper) =>
-      this.resolveMiddlewareInstance(wrapper, middleware, moduleRef);
-    await Promise.all([...middleware.values()].map(resolveInstance));
+      this.resolveMiddlewareInstance(wrapper, middlewareMap, moduleRef);
+    await Promise.all([...middlewareMap.values()].map(resolveInstance));
   }
 
   private async resolveMiddlewareInstance(
     wrapper: InstanceWrapper,
-    middleware: Map<InstanceToken, InstanceWrapper>,
+    middlewareMap: Map<InstanceToken, InstanceWrapper>,
     moduleRef: Module,
   ) {
-    await this.instanceLoader.loadMiddleware(wrapper, middleware, moduleRef);
+    await this.injector.loadMiddleware(wrapper, middlewareMap, moduleRef);
   }
 }

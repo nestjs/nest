@@ -47,7 +47,7 @@ export class MiddlewareContainer {
         new InstanceWrapper({
           scope: getClassScope(metatype),
           durable: isDurable(metatype),
-          name: token,
+          name: token?.name ?? token,
           metatype,
           token,
         }),

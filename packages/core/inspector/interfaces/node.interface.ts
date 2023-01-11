@@ -6,6 +6,7 @@ export type ModuleNode = {
     type: 'module';
     global: boolean;
     dynamic: boolean;
+    internal: boolean;
   };
 };
 
@@ -18,16 +19,16 @@ export type ClassNode = {
     durable: boolean;
     static: boolean;
     transient: boolean;
+    exported: boolean;
     scope: Scope;
     token: InjectionToken;
     /**
      * Enhancers metadata collection
      */
-    enhancers?: Array<{ id: string } | { name: string; methodKey?: string }>;
-    /**
-     * Order in which globally registered enhancers are applied
-     */
-    enhancerRegistrationOrder?: number;
+    enhancers?: Array<
+      | { id: string; subtype: EnhancerSubtype }
+      | { name: string; methodKey?: string; subtype: EnhancerSubtype }
+    >;
     /**
      * If true, node is a globally registered enhancer
      */

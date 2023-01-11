@@ -17,6 +17,7 @@ import { ExceptionsZone } from './errors/exceptions-zone';
 import { loadAdapter } from './helpers/load-adapter';
 import { rethrow } from './helpers/rethrow';
 import { NestContainer } from './injector/container';
+import { Injector } from './injector/injector';
 import { InstanceLoader } from './injector/instance-loader';
 import { GraphInspector } from './inspector/graph-inspector';
 import { MetadataScanner } from './metadata-scanner';
@@ -64,7 +65,7 @@ export class NestFactoryStatic {
     options?: NestApplicationOptions,
   ): Promise<T>;
   public async create<T extends INestApplication = INestApplication>(
-    module: any,
+    moduleCls: any,
     serverOrOptions?: AbstractHttpAdapter | NestApplicationOptions,
     options?: NestApplicationOptions,
   ): Promise<T> {
@@ -80,10 +81,11 @@ export class NestFactoryStatic {
     this.registerLoggerConfiguration(appOptions);
 
     await this.initialize(
-      module,
+      moduleCls,
       container,
       graphInspector,
       applicationConfig,
+      appOptions,
       httpServer,
     );
 
@@ -101,14 +103,14 @@ export class NestFactoryStatic {
   /**
    * Creates an instance of NestMicroservice.
    *
-   * @param module Entry (root) application module class
+   * @param moduleCls Entry (root) application module class
    * @param options Optional microservice configuration
    *
    * @returns A promise that, when resolved,
    * contains a reference to the NestMicroservice instance.
    */
   public async createMicroservice<T extends object>(
-    module: any,
+    moduleCls: any,
     options?: NestMicroserviceOptions & T,
   ): Promise<INestMicroservice> {
     const { NestMicroservice } = loadPackage(
@@ -123,7 +125,13 @@ export class NestFactoryStatic {
     this.setAbortOnError(options);
     this.registerLoggerConfiguration(options);
 
-    await this.initialize(module, container, graphInspector, applicationConfig);
+    await this.initialize(
+      moduleCls,
+      container,
+      graphInspector,
+      applicationConfig,
+      options,
+    );
     return this.createNestInstance<INestMicroservice>(
       new NestMicroservice(
         container,
@@ -137,14 +145,14 @@ export class NestFactoryStatic {
   /**
    * Creates an instance of NestApplicationContext.
    *
-   * @param module Entry (root) application module class
+   * @param moduleCls Entry (root) application module class
    * @param options Optional Nest application configuration
    *
    * @returns A promise that, when resolved,
    * contains a reference to the NestApplicationContext instance.
    */
   public async createApplicationContext(
-    module: any,
+    moduleCls: any,
     options?: NestApplicationContextOptions,
   ): Promise<INestApplicationContext> {
     const container = new NestContainer();
@@ -153,13 +161,20 @@ export class NestFactoryStatic {
     this.setAbortOnError(options);
     this.registerLoggerConfiguration(options);
 
-    await this.initialize(module, container, graphInspector);
+    const applicationConfig = undefined;
+    await this.initialize(
+      moduleCls,
+      container,
+      graphInspector,
+      applicationConfig,
+      options,
+    );
 
     const modules = container.getModules().values();
     const root = modules.next().value;
 
     const context = this.createNestInstance<NestApplicationContext>(
-      new NestApplicationContext(container, [], root),
+      new NestApplicationContext(container, options, root),
     );
     if (this.autoFlushLogs) {
       context.flushLogsOnOverride();
@@ -176,9 +191,15 @@ export class NestFactoryStatic {
     container: NestContainer,
     graphInspector: GraphInspector,
     config = new ApplicationConfig(),
+    options?: NestApplicationContextOptions,
     httpServer: HttpServer = null,
   ) {
-    const instanceLoader = new InstanceLoader(container, graphInspector);
+    const injector = new Injector({ preview: options.preview });
+    const instanceLoader = new InstanceLoader(
+      container,
+      injector,
+      graphInspector,
+    );
     const metadataScanner = new MetadataScanner();
     const dependenciesScanner = new DependenciesScanner(
       container,

@@ -11,6 +11,7 @@ import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-con
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
 import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import { NestApplicationContextOptions } from '../common/interfaces/nest-application-context-options.interface';
 import { ClientProxyFactory } from './client';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
@@ -20,15 +21,20 @@ import { CustomTransportStrategy } from './interfaces';
 import { ListenersController } from './listeners-controller';
 import { Server } from './server/server';
 
-export class MicroservicesModule {
+export class MicroservicesModule<
+  TAppOptions extends NestApplicationContextOptions = NestApplicationContextOptions,
+> {
   private readonly clientsContainer = new ClientsContainer();
   private listenersController: ListenersController;
+  private appOptions: TAppOptions;
 
   public register(
     container: NestContainer,
     graphInspector: GraphInspector,
     config: ApplicationConfig,
+    options: TAppOptions,
   ) {
+    this.appOptions = options;
     const exceptionFiltersContext = new ExceptionFiltersContext(
       container,
       config,
@@ -72,6 +78,9 @@ export class MicroservicesModule {
   public setupClients(container: NestContainer) {
     if (!this.listenersController) {
       throw new RuntimeException();
+    }
+    if (this.appOptions.preview) {
+      return;
     }
     const modules = container.getModules();
     modules.forEach(({ controllers, providers }) => {

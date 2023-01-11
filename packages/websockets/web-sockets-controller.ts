@@ -1,3 +1,4 @@
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
@@ -38,6 +39,7 @@ export class WebSocketsController {
     private readonly config: ApplicationConfig,
     private readonly contextCreator: WsContextCreator,
     private readonly graphInspector: GraphInspector,
+    private readonly appOptions: NestApplicationContextOptions = {},
   ) {}
 
   public connectGatewayToServer(
@@ -81,12 +83,6 @@ export class WebSocketsController {
         ),
       }),
     );
-    const observableServer = this.socketServerProvider.scanForSocketServer<T>(
-      options,
-      port,
-    );
-    this.assignServerToProperties(instance, observableServer.server);
-    this.subscribeEvents(instance, messageHandlers, observableServer);
 
     this.inspectEntrypointDefinitions(
       instance,
@@ -94,6 +90,16 @@ export class WebSocketsController {
       messageHandlers,
       instanceWrapperId,
     );
+
+    if (this.appOptions.preview) {
+      return;
+    }
+    const observableServer = this.socketServerProvider.scanForSocketServer<T>(
+      options,
+      port,
+    );
+    this.assignServerToProperties(instance, observableServer.server);
+    this.subscribeEvents(instance, messageHandlers, observableServer);
   }
 
   public subscribeEvents(
@@ -205,9 +211,11 @@ export class WebSocketsController {
           classNodeId: instanceWrapperId,
           metadata: {
             port,
+            key: handler.message,
             message: handler.message,
           },
         },
+        instanceWrapperId,
       );
     });
   }

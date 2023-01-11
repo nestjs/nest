@@ -85,7 +85,8 @@ export class InstanceWrapper<T = any> {
     metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>> = {},
   ) {
     this.initialize(metadata);
-    this[INSTANCE_ID_SYMBOL] = this.generateUuid();
+    this[INSTANCE_ID_SYMBOL] =
+      metadata[INSTANCE_ID_SYMBOL] ?? this.generateUuid();
   }
 
   get id(): string {

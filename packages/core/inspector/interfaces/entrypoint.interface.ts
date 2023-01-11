@@ -15,9 +15,10 @@ export type MiddlewareEntrypointMetadata = {
 };
 
 export type Entrypoint<T> = {
+  id?: string;
   type: string;
   methodName: string;
   className: string;
   classNodeId: string;
-  metadata: T;
+  metadata: { key: string } & T;
 };

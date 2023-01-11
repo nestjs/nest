@@ -29,4 +29,12 @@ export class NestApplicationContextOptions {
    * @default true
    */
   autoFlushLogs?: boolean;
+
+  /**
+   * Whether to run application in the preview mode.
+   * In the preview mode, providers/controllers are not instantiated & resolved.
+   *
+   * @default false
+   */
+  preview?: boolean;
 }

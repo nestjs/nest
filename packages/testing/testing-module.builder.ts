@@ -11,6 +11,7 @@ import {
   OverrideByFactoryOptions,
 } from './interfaces';
 import { TestingLogger } from './services/testing-logger.service';
+import { TestingInjector } from './testing-injector';
 import { TestingInstanceLoader } from './testing-instance-loader';
 import { TestingModule } from './testing-module';
 
@@ -18,9 +19,11 @@ export class TestingModuleBuilder {
   private readonly applicationConfig = new ApplicationConfig();
   private readonly container = new NestContainer(this.applicationConfig);
   private readonly graphInspector = new GraphInspector(this.container);
+  private readonly injector = new TestingInjector();
   private readonly overloadsMap = new Map();
   private readonly instanceLoader = new TestingInstanceLoader(
     this.container,
+    this.injector,
     this.graphInspector,
   );
   private readonly scanner: DependenciesScanner;

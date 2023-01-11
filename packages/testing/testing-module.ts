@@ -29,7 +29,8 @@ export class TestingModule extends NestApplicationContext {
     contextModule: Module,
     private readonly applicationConfig: ApplicationConfig,
   ) {
-    super(container, scope, contextModule);
+    const options = {};
+    super(container, options, contextModule, scope);
   }
 
   private isHttpServer(

@@ -77,6 +77,8 @@ export interface InjectorDependencyContext {
 export class Injector {
   private logger: LoggerService = new Logger('InjectorLogger');
 
+  constructor(private readonly options?: { preview: boolean }) {}
+
   public loadPrototype<T>(
     { token }: InstanceWrapper<T>,
     collection: Map<InstanceToken, InstanceWrapper<T>>,
@@ -712,6 +714,11 @@ export class Injector {
       wrapper.isInRequestScope(contextId, inquirer) ||
       wrapper.isLazyTransient(contextId, inquirer) ||
       wrapper.isExplicitlyRequested(contextId, inquirer);
+
+    if (this.options?.preview) {
+      instanceHost.isResolved = true;
+      return instanceHost.instance;
+    }
 
     if (isNil(inject) && isInContext) {
       instanceHost.instance = wrapper.forwardRef

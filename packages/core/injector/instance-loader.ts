@@ -8,11 +8,10 @@ import { Injector } from './injector';
 import { InternalCoreModule } from './internal-core-module/internal-core-module';
 import { Module } from './module';
 
-export class InstanceLoader {
-  protected readonly injector = new Injector();
-
+export class InstanceLoader<TInjector extends Injector = Injector> {
   constructor(
     protected readonly container: NestContainer,
+    protected readonly injector: TInjector,
     protected readonly graphInspector: GraphInspector,
     private logger: LoggerService = new Logger(InstanceLoader.name, {
       timestamp: true,
@@ -27,7 +26,10 @@ export class InstanceLoader {
     modules: Map<string, Module> = this.container.getModules(),
   ) {
     this.createPrototypes(modules);
+
     await this.createInstances(modules);
+
+    this.graphInspector.inspectModules(modules);
   }
 
   private createPrototypes(modules: Map<string, Module>) {

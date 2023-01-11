@@ -37,6 +37,7 @@ import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { optionalRequire } from './helpers/optional-require';
 import { NestContainer } from './injector/container';
+import { Injector } from './injector/injector';
 import { GraphInspector } from './inspector/graph-inspector';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
@@ -59,10 +60,10 @@ const { MicroservicesModule } = optionalRequire(
  * @publicApi
  */
 export class NestApplication
-  extends NestApplicationContext
+  extends NestApplicationContext<NestApplicationOptions>
   implements INestApplication
 {
-  private readonly logger = new Logger(NestApplication.name, {
+  protected readonly logger = new Logger(NestApplication.name, {
     timestamp: true,
   });
   private readonly middlewareModule: MiddlewareModule;
@@ -82,14 +83,15 @@ export class NestApplication
     private readonly httpAdapter: HttpServer,
     private readonly config: ApplicationConfig,
     private readonly graphInspector: GraphInspector,
-    private readonly appOptions: NestApplicationOptions = {},
+    appOptions: NestApplicationOptions = {},
   ) {
-    super(container);
+    super(container, appOptions);
 
     this.selectContextModule();
     this.registerHttpServer();
-    this.middlewareModule = new MiddlewareModule(new RoutePathFactory(config));
 
+    this.injector = new Injector({ preview: this.appOptions.preview });
+    this.middlewareModule = new MiddlewareModule(new RoutePathFactory(config));
     this.routesResolver = new RoutesResolver(
       this.container,
       this.config,
@@ -146,9 +148,15 @@ export class NestApplication
     this.registerWsModule();
 
     if (this.microservicesModule) {
-      this.microservicesModule.register(this.container, this.config);
+      this.microservicesModule.register(
+        this.container,
+        this.graphInspector,
+        this.config,
+        this.appOptions,
+      );
       this.microservicesModule.setupClients(this.container);
     }
+
     await this.middlewareModule.register(
       this.middlewareContainer,
       this.container,
@@ -167,6 +175,7 @@ export class NestApplication
       this.container,
       this.config,
       this.graphInspector,
+      this.appOptions,
       this.httpServer,
     );
   }
@@ -246,6 +255,7 @@ export class NestApplication
   }
 
   public async startAllMicroservices(): Promise<this> {
+    this.assertNotInPreviewMode('startAllMicroservices');
     await Promise.all(this.microservices.map(msvc => msvc.listen()));
     return this;
   }
@@ -269,6 +279,7 @@ export class NestApplication
   public async listen(port: number | string): Promise<any>;
   public async listen(port: number | string, hostname: string): Promise<any>;
   public async listen(port: number | string, ...args: any[]): Promise<any> {
+    this.assertNotInPreviewMode('listen');
     !this.isInitialized && (await this.init());
 
     return new Promise((resolve, reject) => {
