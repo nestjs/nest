@@ -69,8 +69,8 @@ export class TestingModuleBuilder {
     this.applyLogger();
 
     const graphInspector = options?.snapshot
-      ? NoopGraphInspector
-      : new GraphInspector(this.container);
+      ? new GraphInspector(this.container)
+      : NoopGraphInspector;
 
     const scanner = new DependenciesScanner(
       this.container,

@@ -192,7 +192,7 @@ export class NestFactoryStatic {
     container: NestContainer,
     graphInspector: GraphInspector,
     config = new ApplicationConfig(),
-    options?: NestApplicationContextOptions,
+    options: NestApplicationContextOptions = {},
     httpServer: HttpServer = null,
   ) {
     const injector = new Injector({ preview: options.preview });

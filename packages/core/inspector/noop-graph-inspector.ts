@@ -1,5 +1,9 @@
 import { GraphInspector } from './graph-inspector';
 
-export const NoopGraphInspector: GraphInspector = Object.create(
+const noop = () => {};
+export const NoopGraphInspector: GraphInspector = new Proxy(
   GraphInspector.prototype,
+  {
+    get: () => noop,
+  },
 );
