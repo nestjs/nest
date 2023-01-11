@@ -1,8 +1,8 @@
 /**
+ * "fastify/view" interfaces
  * @see https://github.com/fastify/point-of-view/blob/master/types/index.d.ts
  */
-
-export interface PointOfViewOptions {
+export interface FastifyViewOptions {
   engine: {
     ejs?: any;
     eta?: any;
