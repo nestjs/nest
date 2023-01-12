@@ -247,7 +247,13 @@ export class InstanceWrapper<T = any> {
     }
     const propertiesHosts = (properties || []).map(item => item.wrapper);
     introspectionResult =
-      introspectionResult && callback(propertiesHosts, lookupRegistry);
+      introspectionResult &&
+      ((properties &&
+        callback(
+          properties.map(item => item.wrapper),
+          lookupRegistry,
+        )) ||
+        !properties);
     if (!introspectionResult || !enhancers) {
       return introspectionResult;
     }
