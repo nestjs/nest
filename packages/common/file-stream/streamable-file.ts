@@ -1,13 +1,8 @@
 import { Readable } from 'stream';
 import { types } from 'util';
+import { HttpStatus } from '../enums';
 import { isFunction } from '../utils/shared.utils';
-import { StreamableFileOptions } from './streamable-options.interface';
-
-export interface StreamableHandlerResponse {
-  destroyed: boolean;
-  statusCode: number;
-  send: (msg: string) => void;
-}
+import { StreamableFileOptions, StreamableHandlerResponse } from './interfaces';
 
 export class StreamableFile {
   private readonly stream: Readable;
@@ -17,7 +12,7 @@ export class StreamableFile {
     response: StreamableHandlerResponse,
   ) => void = (err: Error, res) => {
     if (!res.destroyed) {
-      res.statusCode = 400;
+      res.statusCode = HttpStatus.BAD_REQUEST;
       res.send(err.message);
     }
   };
