@@ -2,7 +2,6 @@ import { DynamicModule } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isFunction, isSymbol } from '@nestjs/common/utils/shared.utils';
-import stringify from 'fast-safe-stringify';
 import * as hash from 'object-hash';
 
 export class ModuleTokenFactory {
@@ -16,20 +15,9 @@ export class ModuleTokenFactory {
     const opaqueToken = {
       id: moduleId,
       module: this.getModuleName(metatype),
-      dynamic: this.getDynamicMetadataToken(dynamicModuleMetadata),
+      dynamic: dynamicModuleMetadata,
     };
-    return hash(opaqueToken, { ignoreUnknown: true });
-  }
-
-  public getDynamicMetadataToken(
-    dynamicModuleMetadata: Partial<DynamicModule> | undefined,
-  ): string {
-    // Uses safeStringify instead of JSON.stringify to support circular dynamic modules
-    // The replacer function is also required in order to obtain real class names
-    // instead of the unified "Function" key
-    return dynamicModuleMetadata
-      ? stringify(dynamicModuleMetadata, this.replacer)
-      : '';
+    return hash(this.shallow(opaqueToken));
   }
 
   public getModuleId(metatype: Type<unknown>): string {
@@ -46,18 +34,21 @@ export class ModuleTokenFactory {
     return metatype.name;
   }
 
-  private replacer(key: string, value: any) {
-    if (isFunction(value)) {
-      const funcAsString = value.toString();
-      const isClass = /^class\s/.test(funcAsString);
-      if (isClass) {
-        return value.name;
+  public shallow(obj: Record<string, any>, depth = 3) {
+    if (typeof obj === 'function') {
+      return obj.name;
+    }
+    if (typeof obj === 'object' && obj !== null) {
+      if (depth <= 0) {
+        return `[object Object(${depth})]`;
       }
-      return hash(funcAsString, { ignoreUnknown: true });
+      const result = Object.create(null);
+      // for-loop + Object.create is much faster than reduce
+      for (const key of Object.keys(obj)) {
+        result[key] = this.shallow(obj[key], depth - 1);
+      }
+      return result;
     }
-    if (isSymbol(value)) {
-      return value.toString();
-    }
-    return value;
+    return obj?.toString?.() ?? obj;
   }
 }
