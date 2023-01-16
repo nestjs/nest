@@ -18,10 +18,11 @@ import {
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { HandlerMetadataStorage } from '@nestjs/core/helpers/handler-metadata-storage';
 import { ParamsMetadata } from '@nestjs/core/helpers/interfaces';
-import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import {
+  InterceptorsConsumer,
+  InterceptorsContextCreator,
+} from '@nestjs/core/interceptors';
+import { PipesConsumer, PipesContextCreator } from '@nestjs/core/pipes';
 import { PARAM_ARGS_METADATA } from '../constants';
 import { WsException } from '../errors/ws-exception';
 import { WsParamsFactory } from '../factories/ws-params-factory';

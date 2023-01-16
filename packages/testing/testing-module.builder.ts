@@ -1,5 +1,4 @@
-import { Logger, LoggerService, Module } from '@nestjs/common';
-import { ModuleMetadata } from '@nestjs/common/interfaces';
+import { Logger, LoggerService, Module, ModuleMetadata } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';

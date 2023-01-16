@@ -1,5 +1,5 @@
 import { MODULE_PATH, PATH_METADATA } from '@nestjs/common/constants';
-import { RouteInfo, Type, VersionValue } from '@nestjs/common/interfaces';
+import { RouteInfo, Type } from '@nestjs/common/interfaces';
 import {
   addLeadingSlash,
   isString,
