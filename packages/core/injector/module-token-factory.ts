@@ -34,21 +34,23 @@ export class ModuleTokenFactory {
     return metatype.name;
   }
 
-  public shallow(obj: Record<string, any>, depth = 3) {
+  public shallow(obj: Record<string, any>, depth = 4) {
     if (typeof obj === 'function') {
-      return obj.name;
+      return `${obj.name}${depth}`;
     }
     if (typeof obj === 'object' && obj !== null) {
       if (depth <= 0) {
-        return `[object Object(${depth})]`;
+        return `object${depth}`;
       }
+
       const result = Object.create(null);
       // for-loop + Object.create is much faster than reduce
       for (const key of Object.keys(obj)) {
         result[key] = this.shallow(obj[key], depth - 1);
       }
+
       return result;
     }
-    return obj?.toString?.() ?? obj;
+    return obj?.toString ? `${obj}${depth}` : obj;
   }
 }
