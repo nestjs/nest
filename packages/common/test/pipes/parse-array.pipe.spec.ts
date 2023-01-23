@@ -151,7 +151,10 @@ describe('ParseArrayPipe', () => {
       class ArrItem {}
 
       it('should validate and transform each item', async () => {
-        target = new ParseArrayPipe({ items: ArrItem });
+        target = new ParseArrayPipe({
+          items: ArrItem,
+          forbidUnknownValues: false,
+        });
 
         let items = await target.transform(
           [{}, {}, {}],
