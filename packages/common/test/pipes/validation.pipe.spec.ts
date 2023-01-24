@@ -3,12 +3,12 @@ import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import { Exclude, Expose, Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsDefined,
   IsOptional,
   IsString,
   ValidateNested,
-  IsArray,
 } from 'class-validator';
 import { HttpStatus } from '../../enums';
 import { UnprocessableEntityException } from '../../exceptions';
@@ -384,7 +384,7 @@ describe('ValidationPipe', () => {
       });
       describe('otherwise', () => {
         it('should not reject', async () => {
-          target = new ValidationPipe();
+          target = new ValidationPipe({ forbidUnknownValues: false });
           const testObj = [
             { prop1: 'value1', prop2: 'value2', prop3: 'value3' },
           ];
