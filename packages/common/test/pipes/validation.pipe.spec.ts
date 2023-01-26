@@ -221,7 +221,7 @@ describe('ValidationPipe', () => {
         });
       });
       describe('when input is a query parameter (boolean)', () => {
-        it('should parse to boolean', async () => {
+        it('should parse the string "true" to the boolean true', async () => {
           target = new ValidationPipe({ transform: true });
           const value = 'true';
 
@@ -233,9 +233,45 @@ describe('ValidationPipe', () => {
             }),
           ).to.be.true;
         });
+        it('should parse the string "false" to the boolean false', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = 'false';
+
+          expect(
+            await target.transform(value, {
+              metatype: Boolean,
+              data: 'test',
+              type: 'query',
+            }),
+          ).to.be.false;
+        });
+        it('should parse an empty string to false', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = '';
+
+          expect(
+            await target.transform(value, {
+              metatype: Boolean,
+              data: 'test',
+              type: 'query',
+            }),
+          ).to.be.false;
+        });
+        it('should parse undefined to undefined', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = undefined;
+
+          expect(
+            await target.transform(value, {
+              metatype: Boolean,
+              data: 'test',
+              type: 'query',
+            }),
+          ).to.be.undefined;
+        });
       });
       describe('when input is a path parameter (boolean)', () => {
-        it('should parse to boolean', async () => {
+        it('should parse the string "true" to boolean true', async () => {
           target = new ValidationPipe({ transform: true });
           const value = 'true';
 
@@ -246,6 +282,42 @@ describe('ValidationPipe', () => {
               type: 'param',
             }),
           ).to.be.true;
+        });
+        it('should parse the string "false" to boolean false', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = 'false';
+
+          expect(
+            await target.transform(value, {
+              metatype: Boolean,
+              data: 'test',
+              type: 'param',
+            }),
+          ).to.be.false;
+        });
+        it('should parse an empty string to false', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = '';
+
+          expect(
+            await target.transform(value, {
+              metatype: Boolean,
+              data: 'test',
+              type: 'param',
+            }),
+          ).to.be.false;
+        });
+        it('should parse undefined to undefined', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = undefined;
+
+          expect(
+            await target.transform(value, {
+              metatype: Boolean,
+              data: 'test',
+              type: 'param',
+            }),
+          ).to.be.undefined;
         });
       });
       describe('when validation strips', () => {
