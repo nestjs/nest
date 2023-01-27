@@ -5,7 +5,7 @@
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
-<p align="center">Uma estrutura <a href="http://nodejs.org" target="_blank">Node.js</a> progressiva para criar aplicativos de servidor eficientes e escalonáveis.</p >
+<p align="center">Um framework <a href="http://nodejs.org" target="_blank">Node.js</a> progressivo para criar aplicações de servidor eficientes e escaláveis.</p >
 <p align="center">
   <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
   <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
@@ -29,7 +29,7 @@ Nest é uma estrutura para criar aplicações <a href="http://nodejs.org" target
 
 ## Filosofia
 
-<p>Nos últimos anos, graças ao Node.js, o JavaScript tornou-se a “língua franca” da Web para aplicativos front-end e back-end, dando origem a projetos incríveis como <a href="https://angular.io/ " target="_blank">Angular</a>, <a href="https://github.com/facebook/react" target="_blank">React</a> e <a href="https:/ /github.com/vuejs/vue" target="_blank">Vue</a> que melhoram a produtividade do desenvolvedor e permitem a construção de aplicações front-end rápidos, testáveis e extensíveis. No entanto, no lado do servidor, embora existam muitas bibliotecas excelentes, auxiliares e ferramentas para o Node, nenhum deles resolve efetivamente o problema principal - a arquitetura.</p>
+<p>Nos últimos anos, graças ao Node.js, o JavaScript tornou-se a “língua franca” da Web para aplicações front-end e back-end, dando origem a projetos incríveis como <a href="https://angular.io/ " target="_blank">Angular</a>, <a href="https://github.com/facebook/react" target="_blank">React</a> e <a href="https:/ /github.com/vuejs/vue" target="_blank">Vue</a> que melhoram a produtividade do desenvolvedor e permitem a construção de aplicações front-end rápidos, testáveis e extensíveis. No entanto, no lado do servidor, embora existam muitas bibliotecas excelentes, auxiliares e ferramentas para o Node, nenhum deles resolve efetivamente o problema principal - a arquitetura.</p>
 <p>O Nest visa fornecer uma arquitetura de sistemas pronta para uso que permite a criação sem esforço de aplicações altamente testáveis, escaláveis, fracamente acoplados e de fácil manutenção. A arquitetura é fortemente inspirada em Angular.</p>
 
 ## Como começar
@@ -45,11 +45,11 @@ Para perguntas e suporte use o [canal do Discord](https://discord.gg/G7Qnnhy). A
 
 ## Problemas
 
-Certifique-se de ler sobre [checklist de relatório de problemas](https://github.com/nestjs/nest/blob/master/CONTRIBUTING.md#-submitting-an-issue) antes de abrir uma issue. Problemas que não estejam em conformidade com as diretrizes podem ser encerrados imediatamente..
+Certifique-se de ler sobre [checklist de relatório de problemas](https://github.com/nestjs/nest/blob/master/CONTRIBUTING.md#-submitting-an-issue) antes de abrir uma issue. Problemas que não estejam em conformidade com as diretrizes podem ser encerrados imediatamente.
 
-## Consultando
+## Consultoria
 
-Com o suporte oficial, você pode obter ajuda especializada diretamente da equipe principal da Nest. Fornecemos suporte técnico dedicado, estratégias de migração, conselhos sobre as melhores práticas (e decisões de design), revisões de relações públicas e aumento da equipe. Leia mais sobrew [suporte aqui](https://enterprise.nestjs.com).
+Com o suporte oficial, você pode obter ajuda especializada diretamente da equipe principal do Nest. Fornecemos suporte técnico dedicado, estratégias de migração, conselhos sobre as melhores práticas (e decisões de design), revisões de _pull requests_ e aumento da equipe. Leia mais sobre o [suporte aqui](https://enterprise.nestjs.com).
 
 ## Suporte
 Nest é um projeto open source sob a licença MIT-licensed. Seu crescimento é graças aos incríveis patrocinadores e apoiadores. Se você gostaria de se juntar a eles, [leia mais aqui](https://docs.nestjs.com/support).
