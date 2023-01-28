@@ -164,6 +164,7 @@ export class NestApplication
       this.injector,
       this.httpAdapter,
       this.graphInspector,
+      this.appOptions,
     );
   }
 
