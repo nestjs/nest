@@ -11,10 +11,16 @@ export class StreamableFile {
     err: Error,
     response: StreamableHandlerResponse,
   ) => void = (err: Error, res) => {
-    if (!res.destroyed) {
-      res.statusCode = HttpStatus.BAD_REQUEST;
-      res.send(err.message);
+    if (res.destroyed) {
+      return;
     }
+    if (res.headersSent) {
+      res.end();
+      return;
+    }
+
+    res.statusCode = HttpStatus.BAD_REQUEST;
+    res.send(err.message);
   };
 
   constructor(buffer: Uint8Array, options?: StreamableFileOptions);
