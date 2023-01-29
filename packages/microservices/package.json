@@ -35,6 +35,7 @@
     "ioredis": "*",
     "kafkajs": "*",
     "mqtt": "*",
+    "memphis-dev": "*",
     "nats": "*",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^7.1.0"

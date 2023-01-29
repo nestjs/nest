@@ -17,6 +17,7 @@ import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
   ClientOptions,
   KafkaOptions,
+  MemphisOptions,
   MqttOptions,
   MsPattern,
   NatsOptions,
@@ -148,6 +149,7 @@ export abstract class ClientProxy {
             | TcpClientOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
+            | MemphisOptions['options']
         ).serializer) ||
       new IdentitySerializer();
   }
@@ -163,6 +165,7 @@ export abstract class ClientProxy {
             | TcpClientOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
+            | MemphisOptions['options']
         ).deserializer) ||
       new IncomingResponseDeserializer();
   }

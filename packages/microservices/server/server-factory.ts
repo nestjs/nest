@@ -8,6 +8,7 @@ import { ServerNats } from './server-nats';
 import { ServerRedis } from './server-redis';
 import { ServerTCP } from './server-tcp';
 import { ServerRMQ } from './server-rmq';
+import { ServerMemphis } from './server-memphis';
 
 export class ServerFactory {
   public static create(
@@ -27,6 +28,8 @@ export class ServerFactory {
         return new ServerKafka(options);
       case Transport.RMQ:
         return new ServerRMQ(options);
+      case Transport.MEMPHIS:
+        return new ServerMemphis(options);
       default:
         return new ServerTCP(options);
     }

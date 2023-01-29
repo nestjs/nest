@@ -25,6 +25,7 @@ export type MicroserviceOptions =
   | MqttOptions
   | RmqOptions
   | KafkaOptions
+  | MemphisOptions
   | CustomStrategy;
 
 export interface CustomStrategy {
@@ -214,5 +215,21 @@ export interface KafkaOptions {
     deserializer?: Deserializer;
     parser?: KafkaParserConfig;
     producerOnlyMode?: boolean;
+  };
+}
+
+export interface MemphisOptions {
+  transport?: Transport.MEMPHIS;
+  options?: {
+    host?: string;
+    port?: number;
+    username?: string;
+    connectionToken?: string;
+    reconnect?: boolean;
+    maxReconnect?: number;
+    reconnectIntervalMs?: number;
+    timeoutMs?: number;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
   };
 }

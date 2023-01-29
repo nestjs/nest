@@ -18,6 +18,7 @@ import { IncomingRequestDeserializer } from '../deserializers/incoming-request.d
 import {
   ClientOptions,
   KafkaOptions,
+  MemphisOptions,
   MessageHandler,
   MicroserviceOptions,
   MqttOptions,
@@ -173,6 +174,7 @@ export abstract class Server {
             | TcpOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
+            | MemphisOptions['options']
         ).serializer) ||
       new IdentitySerializer();
   }
@@ -188,6 +190,7 @@ export abstract class Server {
             | TcpOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
+            | MemphisOptions['options']
         ).deserializer) ||
       new IncomingRequestDeserializer();
   }

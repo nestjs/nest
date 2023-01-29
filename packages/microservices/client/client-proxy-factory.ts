@@ -8,6 +8,7 @@ import { Closeable } from '../interfaces/closeable.interface';
 import {
   GrpcOptions,
   KafkaOptions,
+  MemphisOptions,
   MqttOptions,
   NatsOptions,
   RedisOptions,
@@ -15,6 +16,7 @@ import {
 } from '../interfaces/microservice-configuration.interface';
 import { ClientGrpcProxy } from './client-grpc';
 import { ClientKafka } from './client-kafka';
+import { ClientMemphis } from './client-memphis';
 import { ClientMqtt } from './client-mqtt';
 import { ClientNats } from './client-nats';
 import { ClientProxy } from './client-proxy';
@@ -55,6 +57,8 @@ export class ClientProxyFactory {
         return new ClientRMQ(options as RmqOptions['options']);
       case Transport.KAFKA:
         return new ClientKafka(options as KafkaOptions['options']);
+      case Transport.MEMPHIS:
+        return new ClientMemphis(options as MemphisOptions['options']);
       default:
         return new ClientTCP(options as TcpClientOptions['options']);
     }

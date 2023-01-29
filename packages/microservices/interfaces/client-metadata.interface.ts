@@ -6,6 +6,7 @@ import { Deserializer } from './deserializer.interface';
 import {
   GrpcOptions,
   KafkaOptions,
+  MemphisOptions,
   MqttOptions,
   NatsOptions,
   RedisOptions,
@@ -20,7 +21,8 @@ export type ClientOptions =
   | GrpcOptions
   | KafkaOptions
   | TcpClientOptions
-  | RmqOptions;
+  | RmqOptions
+  | MemphisOptions;
 
 export interface CustomClientOptions {
   customClass: Type<ClientProxy>;
