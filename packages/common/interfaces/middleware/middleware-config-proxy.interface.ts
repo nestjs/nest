@@ -2,6 +2,9 @@ import { Type } from '../type.interface';
 import { RouteInfo } from './middleware-configuration.interface';
 import { MiddlewareConsumer } from './middleware-consumer.interface';
 
+/**
+ * @publicApi
+ */
 export interface MiddlewareConfigProxy {
   /**
    * Excludes routes from the currently processed middleware.

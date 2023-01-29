@@ -4,8 +4,14 @@ import { isObject } from '../utils/shared.utils';
 import { ConsoleLogger } from './console-logger.service';
 import { isLogLevelEnabled } from './utils';
 
+/**
+ * @publicApi
+ */
 export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose';
 
+/**
+ * @publicApi
+ */
 export interface LoggerService {
   /**
    * Write a 'log' level log.
@@ -53,6 +59,9 @@ interface LogBufferRecord {
 
 const DEFAULT_LOGGER = new ConsoleLogger();
 
+/**
+ * @publicApi
+ */
 @Injectable()
 export class Logger implements LoggerService {
   protected static logBuffer = new Array<LogBufferRecord>();

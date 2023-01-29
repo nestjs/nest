@@ -9,6 +9,11 @@ export interface StreamableHandlerResponse {
   send: (msg: string) => void;
 }
 
+/**
+ * @see [Streaming files](https://docs.nestjs.com/techniques/streaming-files)
+ *
+ * @publicApi
+ */
 export class StreamableFile {
   private readonly stream: Readable;
 

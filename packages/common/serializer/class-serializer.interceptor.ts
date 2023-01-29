@@ -21,11 +21,17 @@ export interface PlainLiteralObject {
 // between core and common packages
 const REFLECTOR = 'Reflector';
 
+/**
+ * @publicApi
+ */
 export interface ClassSerializerInterceptorOptions
   extends ClassTransformOptions {
   transformerPackage?: TransformerPackage;
 }
 
+/**
+ * @publicApi
+ */
 @Injectable()
 export class ClassSerializerInterceptor implements NestInterceptor {
   constructor(
