@@ -205,7 +205,7 @@ export class ConfigurableModuleBuilder<
       static [self.staticMethodKey](
         options: ModuleOptions & ExtraModuleDefinitionOptions,
       ): DynamicModule {
-        const providers = [
+        const providers: Array<Provider> = [
           {
             provide: self.options.optionsInjectionToken,
             useValue: this.omitExtras(options, self.extras),
