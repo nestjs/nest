@@ -2,9 +2,9 @@ import { Injectable, Optional } from '../../decorators/core';
 import { HttpStatus } from '../../enums';
 import { PipeTransform } from '../../interfaces/features/pipe-transform.interface';
 import { HttpErrorByCode } from '../../utils/http-error-by-code.util';
+import { isEmpty, isObject, isUndefined } from '../../utils/shared.utils';
 import { FileValidator } from './file-validator.interface';
 import { ParseFileOptions } from './parse-file-options.interface';
-import { isEmpty, isObject } from 'class-validator';
 
 /**
  * Defines the built-in ParseFile Pipe. This pipe can be used to validate incoming files
@@ -62,11 +62,9 @@ export class ParseFilePipe implements PipeTransform<any> {
   }
 
   private thereAreNoFilesIn(value: any): boolean {
-    if (Array.isArray(value)) {
-      return value.length === 0;
-    } else {
-      return isEmpty(value);
-    }
+    const isEmptyArray = Array.isArray(value) && isEmpty(value);
+    const isEmptyObject = isObject(value) && isEmpty(Object.keys(value));
+    return isUndefined(value) || isEmptyArray || isEmptyObject;
   }
 
   protected async validate(file: any): Promise<any> {
