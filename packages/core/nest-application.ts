@@ -266,6 +266,20 @@ export class NestApplication
     return this;
   }
 
+  public useBodyParser(...args: [any, any?]): this {
+    if (!('useBodyParser' in this.httpAdapter)) {
+      this.logger.warn('Your HTTP Adapter does not support `.useBodyParser`.');
+      return this;
+    }
+
+    const [parserType, ...otherArgs] = args;
+    const rawBody = !!this.appOptions.rawBody;
+
+    this.httpAdapter.useBodyParser(...[parserType, rawBody, ...otherArgs]);
+
+    return this;
+  }
+
   public enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void {
     this.httpAdapter.enableCors(options);
   }
