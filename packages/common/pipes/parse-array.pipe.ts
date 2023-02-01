@@ -13,6 +13,9 @@ import { ValidationPipe, ValidationPipeOptions } from './validation.pipe';
 const VALIDATION_ERROR_MESSAGE = 'Validation failed (parsable array expected)';
 const DEFAULT_ARRAY_SEPARATOR = ',';
 
+/**
+ * @publicApi
+ */
 export interface ParseArrayOptions
   extends Omit<
     ValidationPipeOptions,

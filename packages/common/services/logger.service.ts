@@ -3,8 +3,14 @@ import { isObject } from '../utils/shared.utils';
 import { ConsoleLogger } from './console-logger.service';
 import { isLogLevelEnabled } from './utils';
 
+/**
+ * @publicApi
+ */
 export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose';
 
+/**
+ * @publicApi
+ */
 export interface LoggerService {
   /**
    * Write a 'log' level log.
@@ -52,6 +58,18 @@ interface LogBufferRecord {
 
 const DEFAULT_LOGGER = new ConsoleLogger();
 
+const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric',
+  second: 'numeric',
+  day: '2-digit',
+  month: '2-digit',
+});
+
+/**
+ * @publicApi
+ */
 @Injectable()
 export class Logger implements LoggerService {
   protected static logBuffer = new Array<LogBufferRecord>();
@@ -248,18 +266,7 @@ export class Logger implements LoggerService {
   }
 
   static getTimestamp() {
-    const localeStringOptions = {
-      year: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-      day: '2-digit',
-      month: '2-digit',
-    };
-    return new Date(Date.now()).toLocaleString(
-      undefined,
-      localeStringOptions as Intl.DateTimeFormatOptions,
-    );
+    return dateTimeFormatter.format(Date.now());
   }
 
   static overrideLogger(logger: LoggerService | LogLevel[] | boolean) {

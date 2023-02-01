@@ -7,6 +7,9 @@ import { VersioningType } from '../enums/version-type.enum';
  */
 export const VERSION_NEUTRAL = Symbol('VERSION_NEUTRAL');
 
+/**
+ * @publicApi
+ */
 export type VersionValue =
   | string
   | typeof VERSION_NEUTRAL
@@ -28,6 +31,9 @@ export interface VersionOptions {
   version?: VersionValue;
 }
 
+/**
+ * @publicApi
+ */
 export interface HeaderVersioningOptions {
   type: VersioningType.HEADER;
   /**
@@ -36,6 +42,9 @@ export interface HeaderVersioningOptions {
   header: string;
 }
 
+/**
+ * @publicApi
+ */
 export interface UriVersioningOptions {
   type: VersioningType.URI;
   /**
@@ -48,6 +57,9 @@ export interface UriVersioningOptions {
   prefix?: string | false;
 }
 
+/**
+ * @publicApi
+ */
 export interface MediaTypeVersioningOptions {
   type: VersioningType.MEDIA_TYPE;
   /**
@@ -58,6 +70,9 @@ export interface MediaTypeVersioningOptions {
   key: string;
 }
 
+/**
+ * @publicApi
+ */
 export interface CustomVersioningOptions {
   type: VersioningType.CUSTOM;
 
@@ -72,6 +87,9 @@ export interface CustomVersioningOptions {
   extractor: (request: unknown) => string | string[];
 }
 
+/**
+ * @publicApi
+ */
 interface VersioningCommonOptions {
   /**
    * The default version to be used as a fallback when you did not provide some

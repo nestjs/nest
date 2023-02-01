@@ -22,6 +22,7 @@ export class RouterProxy {
       } catch (e) {
         const host = new ExecutionContextHost([req, res, next]);
         exceptionsHandler.next(e, host);
+        return res;
       }
     };
   }
@@ -46,6 +47,7 @@ export class RouterProxy {
       } catch (e) {
         const host = new ExecutionContextHost([req, res, next]);
         exceptionsHandler.next(e, host);
+        return res;
       }
     };
   }

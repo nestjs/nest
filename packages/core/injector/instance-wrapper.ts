@@ -1,4 +1,5 @@
 import { Logger, LoggerService, Provider, Scope, Type } from '@nestjs/common';
+import { EnhancerSubtype } from '@nestjs/common/constants';
 import { FactoryProvider } from '@nestjs/common/interfaces';
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
@@ -8,6 +9,7 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
+import { DeterministicUuidRegistry } from '../inspector/deterministic-uuid-registry';
 import { STATIC_CONTEXT } from './constants';
 import {
   isClassProvider,
@@ -60,6 +62,7 @@ export class InstanceWrapper<T = any> {
   public readonly async?: boolean;
   public readonly host?: Module;
   public readonly isAlias: boolean = false;
+  public readonly subtype?: EnhancerSubtype;
 
   public scope?: Scope = Scope.DEFAULT;
   public metatype: Type<T> | Function;
@@ -81,8 +84,9 @@ export class InstanceWrapper<T = any> {
   constructor(
     metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>> = {},
   ) {
-    this[INSTANCE_ID_SYMBOL] = randomStringGenerator();
     this.initialize(metadata);
+    this[INSTANCE_ID_SYMBOL] =
+      metadata[INSTANCE_ID_SYMBOL] ?? this.generateUuid();
   }
 
   get id(): string {
@@ -210,8 +214,10 @@ export class InstanceWrapper<T = any> {
     }
     const isTreeNonDurable = this.introspectDepsAttribute(
       (collection, registry) =>
-        collection.every(
-          (item: InstanceWrapper) => !item.isDependencyTreeDurable(registry),
+        collection.some(
+          (item: InstanceWrapper) =>
+            !item.isDependencyTreeStatic() &&
+            !item.isDependencyTreeDurable(registry),
         ),
       lookupRegistry,
     );
@@ -245,7 +251,13 @@ export class InstanceWrapper<T = any> {
     }
     const propertiesHosts = (properties || []).map(item => item.wrapper);
     introspectionResult =
-      introspectionResult && callback(propertiesHosts, lookupRegistry);
+      introspectionResult &&
+      ((properties &&
+        callback(
+          properties.map(item => item.wrapper),
+          lookupRegistry,
+        )) ||
+        !properties);
     if (!introspectionResult || !enhancers) {
       return introspectionResult;
     }
@@ -451,5 +463,12 @@ export class InstanceWrapper<T = any> {
 
   private isDebugMode(): boolean {
     return !!process.env.NEST_DEBUG;
+  }
+
+  private generateUuid(): string {
+    let key = this.name?.toString() ?? this.token?.toString();
+    key += this.host?.name ?? '';
+
+    return key ? DeterministicUuidRegistry.get(key) : randomStringGenerator();
   }
 }
