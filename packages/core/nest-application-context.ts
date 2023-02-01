@@ -244,11 +244,11 @@ export class NestApplicationContext<
    * Terminates the application
    * @returns {Promise<void>}
    */
-  public async close(): Promise<void> {
+  public async close(signal?: string): Promise<void> {
     await this.callDestroyHook();
-    await this.callBeforeShutdownHook();
+    await this.callBeforeShutdownHook(signal);
     await this.dispose();
-    await this.callShutdownHook();
+    await this.callShutdownHook(signal);
     this.unsubscribeFromProcessSignals();
   }
 
