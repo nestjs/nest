@@ -34,6 +34,7 @@ import {
   RequestGenericInterface,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
+import { kRouteContext } from 'fastify/lib/symbols';
 import { RouteShorthandMethod } from 'fastify/types/route';
 import * as http2 from 'http2';
 import * as https from 'https';
@@ -288,7 +289,7 @@ export class FastifyAdapter<
       ? new Reply(
           response,
           {
-            context: {
+            [kRouteContext]: {
               preSerialization: null,
               preValidation: [],
               preHandler: [],
