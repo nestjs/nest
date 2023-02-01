@@ -214,8 +214,10 @@ export class InstanceWrapper<T = any> {
     }
     const isTreeNonDurable = this.introspectDepsAttribute(
       (collection, registry) =>
-        collection.every(
-          (item: InstanceWrapper) => !item.isDependencyTreeDurable(registry),
+        collection.some(
+          (item: InstanceWrapper) =>
+            !item.isDependencyTreeStatic() &&
+            !item.isDependencyTreeDurable(registry),
         ),
       lookupRegistry,
     );
@@ -249,7 +251,13 @@ export class InstanceWrapper<T = any> {
     }
     const propertiesHosts = (properties || []).map(item => item.wrapper);
     introspectionResult =
-      introspectionResult && callback(propertiesHosts, lookupRegistry);
+      introspectionResult &&
+      ((properties &&
+        callback(
+          properties.map(item => item.wrapper),
+          lookupRegistry,
+        )) ||
+        !properties);
     if (!introspectionResult || !enhancers) {
       return introspectionResult;
     }
