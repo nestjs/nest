@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { uid } from 'uid';
 import { ROUTE_ARGS_METADATA } from '../../constants';
 import { PipeTransform } from '../../index';
 import { Type } from '../../interfaces';
@@ -25,7 +25,7 @@ export function createParamDecorator<
 ): (
   ...dataOrPipes: (Type<PipeTransform> | PipeTransform | FactoryData)[]
 ) => ParameterDecorator {
-  const paramtype = uuid();
+  const paramtype = uid(21);
   return (
       data?,
       ...pipes: (Type<PipeTransform> | PipeTransform | FactoryData)[]
