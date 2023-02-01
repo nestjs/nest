@@ -10,6 +10,8 @@ import { NestContainer } from '../../injector/container';
 import { Injector, PropertyDependency } from '../../injector/injector';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { Module } from '../../injector/module';
+import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
+
 chai.use(chaiAsPromised);
 
 describe('Injector', () => {
@@ -837,6 +839,24 @@ describe('Injector', () => {
 
       expect(dependencies).to.deep.eq([FixtureDep1, FixtureDep2]);
       expect(optionalDependenciesIds).to.deep.eq([1]);
+    });
+
+    it('should not mutate the constructor metadata', async () => {
+      class FixtureDep1 {}
+      /** This needs to be something other than FixtureDep1 so the test can ensure that the metadata was not mutated */
+      const injectionToken = 'test_token';
+
+      @Injectable()
+      class FixtureClass {
+        constructor(@Inject(injectionToken) private dep1: FixtureDep1) {}
+      }
+
+      const wrapper = new InstanceWrapper({ metatype: FixtureClass });
+      const [dependencies] = injector.getClassDependencies(wrapper);
+      expect(dependencies).to.deep.eq([injectionToken]);
+
+      const paramtypes = Reflect.getMetadata(PARAMTYPES_METADATA, FixtureClass);
+      expect(paramtypes).to.deep.eq([FixtureDep1]);
     });
   });
 
