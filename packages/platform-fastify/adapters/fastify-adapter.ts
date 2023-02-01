@@ -18,9 +18,10 @@ import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   fastify,
+  FastifyBaseLogger,
   FastifyBodyParser,
   FastifyInstance,
-  FastifyBaseLogger,
+  FastifyListenOptions,
   FastifyPluginAsync,
   FastifyPluginCallback,
   FastifyRegister,
@@ -32,7 +33,6 @@ import {
   RawServerBase,
   RawServerDefault,
   RequestGenericInterface,
-  FastifyListenOptions,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
 import { kRouteContext } from 'fastify/lib/symbols';
@@ -229,18 +229,26 @@ export class FastifyAdapter<
     hostname: string,
     callback?: () => void,
   ): void;
-  public listen(listenOptions: string | number | FastifyListenOptions, ...args: any[]): void {
+  public listen(
+    listenOptions: string | number | FastifyListenOptions,
+    ...args: any[]
+  ): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
     const callback = isFirstArgTypeofFunction ? args[0] : args[1];
+
     let options: Record<string, any>;
-    if (typeof(listenOptions) == 'object' && (listenOptions.host !== undefined || listenOptions.port !== undefined || listenOptions.path !== undefined)) {
-        // Handle new function signature : first parameter is an object with path, port and/or host attributes
-        options = listenOptions;
+    if (
+      typeof listenOptions === 'object' &&
+      (listenOptions.host !== undefined ||
+        listenOptions.port !== undefined ||
+        listenOptions.path !== undefined)
+    ) {
+      // First parameter is an object with a path, port and/or host attributes
+      options = listenOptions;
     } else {
-        // Old signature - first parameter MUST be an integer (port number)
-        options = {
-            port: +listenOptions
-        };
+      options = {
+        port: +listenOptions,
+      };
     }
     if (!isFirstArgTypeofFunction) {
       options.host = args[0];
