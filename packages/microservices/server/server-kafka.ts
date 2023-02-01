@@ -220,6 +220,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
             reject(err);
           }
           replayStream$.error(err);
+          resolve();
         },
         complete: () => replayStream$.complete(),
       });
