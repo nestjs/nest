@@ -6,11 +6,13 @@ import { LazyModuleLoader, ModulesContainer } from '../../../injector';
 import { NestContainer } from '../../../injector/container';
 import { InternalCoreModule } from '../../../injector/internal-core-module/internal-core-module';
 import { InternalCoreModuleFactory } from '../../../injector/internal-core-module/internal-core-module-factory';
+import { SerializedGraph } from '../../../inspector/serialized-graph';
 
 describe('InternalCoreModuleFactory', () => {
   it('should return the internal core module definition', () => {
     const moduleDefinition = InternalCoreModuleFactory.create(
       new NestContainer(),
+      null,
       null,
       null,
       null,
@@ -27,6 +29,7 @@ describe('InternalCoreModuleFactory', () => {
       HttpAdapterHost,
       HttpAdapterHost.name,
       LazyModuleLoader,
+      SerializedGraph,
     ]);
 
     const lazyModuleLoaderProvider = moduleDefinition.providers.find(

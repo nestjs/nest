@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { ApplicationConfig } from '../application-config';
 import { NestContainer } from '../injector/container';
+import { GraphInspector } from '../inspector/graph-inspector';
 import { NestApplication } from '../nest-application';
 import { NoopHttpAdapter } from './utils/noop-adapter.spec';
 
@@ -18,6 +19,7 @@ describe('NestApplication', () => {
         container,
         new NoopHttpAdapter({}),
         applicationConfig,
+        new GraphInspector(container),
         {},
       );
       instance.useGlobalInterceptors(new Interceptor());
@@ -36,6 +38,7 @@ describe('NestApplication', () => {
         container,
         new NoopHttpAdapter({}),
         applicationConfig,
+        new GraphInspector(container),
         {},
       );
       instance.useGlobalInterceptors(new Interceptor());

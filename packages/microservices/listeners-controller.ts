@@ -11,6 +11,7 @@ import {
   InstanceWrapper,
 } from '@nestjs/core/injector/instance-wrapper';
 import { Module } from '@nestjs/core/injector/module';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants';
 import { connectable, Observable, Subject } from 'rxjs';
@@ -24,13 +25,18 @@ import {
   DEFAULT_GRPC_CALLBACK_METADATA,
 } from './context/rpc-metadata-constants';
 import { BaseRpcContext } from './ctx-host/base-rpc.context';
+import { Transport } from './enums';
 import {
   CustomTransportStrategy,
   MessageHandler,
   PatternMetadata,
   RequestContext,
 } from './interfaces';
-import { ListenerMetadataExplorer } from './listener-metadata-explorer';
+import { MicroserviceEntrypointMetadata } from './interfaces/microservice-entrypoint-metadata.interface';
+import {
+  EventOrMessageListenerDefinition,
+  ListenerMetadataExplorer,
+} from './listener-metadata-explorer';
 import { ServerGrpc } from './server';
 import { Server } from './server/server';
 
@@ -47,6 +53,7 @@ export class ListenersController {
     private readonly injector: Injector,
     private readonly clientFactory: IClientProxyFactory,
     private readonly exceptionFiltersContext: ExceptionFiltersContext,
+    private readonly graphInspector: GraphInspector,
   ) {}
 
   public registerPatternHandlers(
@@ -78,61 +85,93 @@ export class ListenersController {
         );
         return acc;
       }, [])
-      .forEach(
-        ({
+      .forEach((definition: EventOrMessageListenerDefinition) => {
+        const {
           patterns: [pattern],
           targetCallback,
           methodKey,
           extras,
           isEventHandler,
-        }) => {
-          if (isStatic) {
-            const proxy = this.contextCreator.create(
-              instance as object,
-              targetCallback,
-              moduleKey,
-              methodKey,
-              STATIC_CONTEXT,
-              undefined,
-              defaultCallMetadata,
-            );
-            if (isEventHandler) {
-              const eventHandler: MessageHandler = (...args: unknown[]) => {
-                const originalArgs = args;
-                const [dataOrContextHost] = originalArgs;
-                if (dataOrContextHost instanceof RequestContextHost) {
-                  args = args.slice(1, args.length);
-                }
-                const originalReturnValue = proxy(...args);
-                const returnedValueWrapper = eventHandler.next?.(
-                  ...(originalArgs as Parameters<MessageHandler>),
-                );
-                returnedValueWrapper?.then(returnedValue =>
-                  this.connectIfStream(returnedValue as Observable<unknown>),
-                );
-                return originalReturnValue;
-              };
-              return server.addHandler(
-                pattern,
-                eventHandler,
-                isEventHandler,
-                extras,
-              );
-            } else {
-              return server.addHandler(pattern, proxy, isEventHandler, extras);
-            }
-          }
-          const asyncHandler = this.createRequestScopedHandler(
-            instanceWrapper,
-            pattern,
-            moduleRef,
+        } = definition;
+
+        this.insertEntrypointDefinition(
+          instanceWrapper,
+          definition,
+          server.transportId,
+        );
+
+        if (isStatic) {
+          const proxy = this.contextCreator.create(
+            instance as object,
+            targetCallback,
             moduleKey,
             methodKey,
+            STATIC_CONTEXT,
+            undefined,
             defaultCallMetadata,
           );
-          server.addHandler(pattern, asyncHandler, isEventHandler, extras);
+          if (isEventHandler) {
+            const eventHandler: MessageHandler = (...args: unknown[]) => {
+              const originalArgs = args;
+              const [dataOrContextHost] = originalArgs;
+              if (dataOrContextHost instanceof RequestContextHost) {
+                args = args.slice(1, args.length);
+              }
+              const originalReturnValue = proxy(...args);
+              const returnedValueWrapper = eventHandler.next?.(
+                ...(originalArgs as Parameters<MessageHandler>),
+              );
+              returnedValueWrapper?.then(returnedValue =>
+                this.connectIfStream(returnedValue as Observable<unknown>),
+              );
+              return originalReturnValue;
+            };
+            return server.addHandler(
+              pattern,
+              eventHandler,
+              isEventHandler,
+              extras,
+            );
+          } else {
+            return server.addHandler(pattern, proxy, isEventHandler, extras);
+          }
+        }
+        const asyncHandler = this.createRequestScopedHandler(
+          instanceWrapper,
+          pattern,
+          moduleRef,
+          moduleKey,
+          methodKey,
+          defaultCallMetadata,
+        );
+        server.addHandler(pattern, asyncHandler, isEventHandler, extras);
+      });
+  }
+
+  public insertEntrypointDefinition(
+    instanceWrapper: InstanceWrapper,
+    definition: EventOrMessageListenerDefinition,
+    transportId: Transport | symbol,
+  ) {
+    this.graphInspector.insertEntrypointDefinition<MicroserviceEntrypointMetadata>(
+      {
+        type: 'microservice',
+        methodName: definition.methodKey,
+        className: instanceWrapper.metatype?.name,
+        classNodeId: instanceWrapper.id,
+        metadata: {
+          key: definition.patterns.toString(),
+          transportId:
+            typeof transportId === 'number'
+              ? (Transport[transportId] as keyof typeof Transport)
+              : transportId,
+          patterns: definition.patterns,
+          isEventHandler: definition.isEventHandler,
+          extras: definition.extras,
         },
-      );
+      },
+      instanceWrapper.id,
+    );
   }
 
   public assignClientsToProperties(instance: Controller | Injectable) {

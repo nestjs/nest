@@ -1,9 +1,12 @@
 import { Logger } from '@nestjs/common';
 import { ExternalContextCreator } from '../../helpers/external-context-creator';
 import { HttpAdapterHost } from '../../helpers/http-adapter-host';
+import { GraphInspector } from '../../inspector/graph-inspector';
+import { SerializedGraph } from '../../inspector/serialized-graph';
 import { DependenciesScanner } from '../../scanner';
 import { ModuleCompiler } from '../compiler';
 import { NestContainer } from '../container';
+import { Injector } from '../injector';
 import { InstanceLoader } from '../instance-loader';
 import { LazyModuleLoader } from '../lazy-module-loader/lazy-module-loader';
 import { ModulesContainer } from '../modules-container';
@@ -15,7 +18,27 @@ export class InternalCoreModuleFactory {
     scanner: DependenciesScanner,
     moduleCompiler: ModuleCompiler,
     httpAdapterHost: HttpAdapterHost,
+    graphInspector: GraphInspector,
   ) {
+    const lazyModuleLoaderFactory = () => {
+      const logger = new Logger(LazyModuleLoader.name, {
+        timestamp: false,
+      });
+      const injector = new Injector();
+      const instanceLoader = new InstanceLoader(
+        container,
+        injector,
+        graphInspector,
+        logger,
+      );
+      return new LazyModuleLoader(
+        scanner,
+        instanceLoader,
+        moduleCompiler,
+        container.getModules(),
+      );
+    };
+
     return InternalCoreModule.register([
       {
         provide: ExternalContextCreator,
@@ -35,18 +58,11 @@ export class InternalCoreModuleFactory {
       },
       {
         provide: LazyModuleLoader,
-        useFactory: () => {
-          const logger = new Logger(LazyModuleLoader.name, {
-            timestamp: false,
-          });
-          const instanceLoader = new InstanceLoader(container, logger);
-          return new LazyModuleLoader(
-            scanner,
-            instanceLoader,
-            moduleCompiler,
-            container.getModules(),
-          );
-        },
+        useFactory: lazyModuleLoaderFactory,
+      },
+      {
+        provide: SerializedGraph,
+        useValue: container.serializedGraph,
       },
     ]);
   }
