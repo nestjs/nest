@@ -1,4 +1,4 @@
-import { v4 as uuid } from 'uuid';
+import { uid } from 'uid';
 import { INJECTABLE_WATERMARK, SCOPE_OPTIONS_METADATA } from '../../constants';
 import { ScopeOptions } from '../../interfaces/scope-options.interface';
 import { Type } from '../../interfaces/type.interface';
@@ -52,7 +52,7 @@ export function Injectable(options?: InjectableOptions): ClassDecorator {
  */
 export function mixin<T>(mixinClass: Type<T>) {
   Object.defineProperty(mixinClass, 'name', {
-    value: uuid(),
+    value: uid(21),
   });
   Injectable()(mixinClass);
   return mixinClass;

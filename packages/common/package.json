@@ -19,7 +19,7 @@
   "dependencies": {
     "iterare": "1.2.1",
     "tslib": "2.4.1",
-    "uuid": "9.0.0"
+    "uid": "2.0.1"
   },
   "peerDependencies": {
     "cache-manager": "<=5",
