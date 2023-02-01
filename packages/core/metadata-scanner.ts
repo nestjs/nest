@@ -11,19 +11,20 @@ export class MetadataScanner {
     prototype: object | null,
     callback: (name: string) => R,
   ): R[] {
-    if (!prototype) return [];
-
+    if (!prototype) {
+      return [];
+    }
     const visitedNames = new Map<string, boolean>();
     const result: R[] = [];
 
     do {
       for (const property of Object.getOwnPropertyNames(prototype)) {
-        if (visitedNames.has(property)) continue;
-
+        if (visitedNames.has(property)) {
+          continue;
+        }
         visitedNames.set(property, true);
 
         const descriptor = Object.getOwnPropertyDescriptor(prototype, property);
-
         if (
           descriptor.set ||
           descriptor.get ||
@@ -34,7 +35,6 @@ export class MetadataScanner {
         }
 
         const value = callback(property);
-
         if (isNil(value)) {
           continue;
         }
@@ -52,19 +52,20 @@ export class MetadataScanner {
   *getAllFilteredMethodNames(
     prototype: object | null,
   ): IterableIterator<string> {
-    if (!prototype) return [];
-
+    if (!prototype) {
+      return [];
+    }
     const visitedNames = new Map<string, boolean>();
     const result: string[] = [];
 
     do {
       for (const property of Object.getOwnPropertyNames(prototype)) {
-        if (visitedNames.has(property)) continue;
-
+        if (visitedNames.has(property)) {
+          continue;
+        }
         visitedNames.set(property, true);
 
         const descriptor = Object.getOwnPropertyDescriptor(prototype, property);
-
         if (
           descriptor.set ||
           descriptor.get ||
