@@ -4,7 +4,6 @@ import {
   DynamicModule,
   ExistingProvider,
   FactoryProvider,
-  GetOrResolveOptions,
   Injectable,
   InjectionToken,
   NestModule,
@@ -33,7 +32,7 @@ import { isDurable } from '../helpers/is-durable';
 import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
 import { InstanceWrapper } from './instance-wrapper';
-import { ModuleRef } from './module-ref';
+import { ModuleRefGetOrResolveOpts, ModuleRef } from './module-ref';
 
 /**
  * @note
@@ -521,21 +520,30 @@ export class Module {
 
       public get<TInput = any, TResult = TInput>(
         typeOrToken: Type<TInput> | string | symbol,
-        options: GetOrResolveOptions = { strict: true },
+        options: ModuleRefGetOrResolveOpts = {},
       ): TResult | Array<TResult> {
-        return !(options && options.strict)
-          ? this.find<TInput, TResult>(typeOrToken, options)
-          : this.find<TInput, TResult>(typeOrToken, {
-              moduleId: self.id,
-              each: options.each,
-            });
+        options.strict ??= true;
+        options.each ??= false;
+
+        return this.find<TInput, TResult>(
+          typeOrToken,
+          options.strict
+            ? {
+                moduleId: self.id,
+                each: options.each,
+              }
+            : options,
+        );
       }
 
       public resolve<TInput = any, TResult = TInput>(
         typeOrToken: Type<TInput> | string | symbol,
         contextId = createContextId(),
-        options: GetOrResolveOptions = { strict: true },
+        options: ModuleRefGetOrResolveOpts = {},
       ): Promise<TResult | Array<TResult>> {
+        options.strict ??= true;
+        options.each ??= false;
+
         return this.resolvePerContext<TInput, TResult>(
           typeOrToken,
           self,
