@@ -5,6 +5,9 @@ import {
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
 
+/**
+ * @publicApi
+ */
 export interface ParseEnumPipeOptions {
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (error: string) => any;

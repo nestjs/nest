@@ -4,8 +4,14 @@ import { isObject } from '../utils/shared.utils';
 import { ConsoleLogger } from './console-logger.service';
 import { isLogLevelEnabled } from './utils';
 
+/**
+ * @publicApi
+ */
 export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose';
 
+/**
+ * @publicApi
+ */
 export interface LoggerService {
   /**
    * Write a 'log' level log.
@@ -62,6 +68,9 @@ const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
   month: '2-digit',
 });
 
+/**
+ * @publicApi
+ */
 @Injectable()
 export class Logger implements LoggerService {
   protected static logBuffer = new Array<LogBufferRecord>();

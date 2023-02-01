@@ -12,6 +12,8 @@ export type ParamDecoratorEnhancer = ParameterDecorator;
  * Defines HTTP route param decorator
  *
  * @param factory
+ *
+ * @publicApi
  */
 export function createParamDecorator<
   FactoryData = any,
