@@ -364,11 +364,13 @@ export class NestApplication
             return {
               requestMethod: RequestMethod.ALL,
               pathRegex: pathToRegexp(addLeadingSlash(route)),
+              path: route,
             };
           }
           return {
             requestMethod: route.method,
             pathRegex: pathToRegexp(addLeadingSlash(route.path)),
+            path: route.path,
           };
         },
       );

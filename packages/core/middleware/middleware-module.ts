@@ -325,10 +325,10 @@ export class MiddlewareModule<
   ) {
     const prefix = this.config.getGlobalPrefix();
     const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
+    const useExcluded = ['*', '/*', '(.*)', '/(.*)'].includes(path);
     if (
-      (Array.isArray(excludedRoutes) &&
-        isRouteExcluded(excludedRoutes, path, method)) ||
-      ['*', '/*', '(.*)', '/(.*)'].includes(path)
+      Array.isArray(excludedRoutes) &&
+      isRouteExcluded(excludedRoutes, path, method)
     ) {
       path = addLeadingSlash(path);
     } else {
@@ -352,20 +352,23 @@ export class MiddlewareModule<
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);
-    router(
-      path,
-      isMethodAll
-        ? proxy
-        : <TRequest, TResponse>(
-            req: TRequest,
-            res: TResponse,
-            next: () => void,
-          ) => {
-            if (applicationRef.getRequestMethod(req) === requestMethod) {
-              return proxy(req, res, next);
-            }
-            return next();
-          },
-    );
+    const mw = isMethodAll
+      ? proxy
+      : <TRequest, TResponse>(
+          req: TRequest,
+          res: TResponse,
+          next: () => void,
+        ) => {
+          if (applicationRef.getRequestMethod(req) === requestMethod) {
+            return proxy(req, res, next);
+          }
+          return next();
+        };
+    if (useExcluded && Array.isArray(excludedRoutes)) {
+      excludedRoutes.forEach(route => {
+        router(route.path, mw);
+      });
+    }
+    router(path, mw);
   }
 }

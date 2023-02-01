@@ -249,6 +249,7 @@ describe('RoutePathFactory', () => {
               {
                 pathRegex: pathToRegexp('/random'),
                 requestMethod: RequestMethod.ALL,
+                path: '/random',
               },
             ],
           });
@@ -267,6 +268,7 @@ describe('RoutePathFactory', () => {
               {
                 pathRegex: pathToRegexp('/cats'),
                 requestMethod: RequestMethod.ALL,
+                path: '/cats',
               },
             ],
           });
@@ -285,6 +287,7 @@ describe('RoutePathFactory', () => {
                 {
                   pathRegex: pathToRegexp('/cats'),
                   requestMethod: RequestMethod.GET,
+                  path: '/cats',
                 },
               ],
             });
