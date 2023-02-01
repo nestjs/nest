@@ -1,5 +1,7 @@
 import { Server } from 'net';
 import { INestApplication } from '@nestjs/common';
+import * as bodyparser from 'body-parser';
+import { NestExpressBodyParserOptions } from './nest-express-body-parser-options.interface';
 import { ServeStaticOptions } from './serve-static-options.interface';
 
 /**
@@ -72,6 +74,24 @@ export interface NestExpressApplication extends INestApplication {
    * @returns {this}
    */
   useStaticAssets(path: string, options?: ServeStaticOptions): this;
+
+  /**
+   * Register Express body parsers on the fly. Will respect
+   * the application's `rawBody` option.
+   *
+   * @example
+   * const app = await NestFactory.create<NestExpressApplication>(
+   *   AppModule,
+   *   { rawBody: true }
+   * );
+   * app.useBodyParser('json', { limit: '50mb' });
+   *
+   * @returns {this}
+   */
+  useBodyParser<Options extends bodyparser.Options = bodyparser.Options>(
+    parser: keyof bodyparser.BodyParser,
+    options?: NestExpressBodyParserOptions<Options>,
+  ): this;
 
   /**
    * Sets one or multiple base directories for templates (views).

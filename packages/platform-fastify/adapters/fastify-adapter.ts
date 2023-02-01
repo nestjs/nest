@@ -45,6 +45,7 @@ import {
 } from 'light-my-request';
 // `querystring` is used internally in fastify for registering urlencoded body parser.
 import { parse as querystringParse } from 'querystring';
+import { NestFastifyBodyParserOptions } from '../interfaces';
 import {
   FastifyStaticOptions,
   FastifyViewOptions,
@@ -465,6 +466,43 @@ export class FastifyAdapter<
     this._isParserRegistered = true;
   }
 
+  public useBodyParser(
+    type: string | string[] | RegExp,
+    rawBody: boolean,
+    options?: NestFastifyBodyParserOptions,
+    parser?: FastifyBodyParser<Buffer, TServer>,
+  ) {
+    const parserOptions = {
+      ...(options || {}),
+      parseAs: 'buffer' as const,
+    };
+
+    this.getInstance().addContentTypeParser<Buffer>(
+      type,
+      parserOptions,
+      (
+        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
+        body: Buffer,
+        done,
+      ) => {
+        if (rawBody === true && Buffer.isBuffer(body)) {
+          req.rawBody = body;
+        }
+
+        if (parser) {
+          parser(req, body, done);
+          return;
+        }
+
+        done(null, body);
+      },
+    );
+
+    // To avoid the Nest application init to override our custom
+    // body parser, we mark the parsers as registered.
+    this._isParserRegistered = true;
+  }
+
   public async createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): Promise<(path: string, callback: Function) => any> {
@@ -510,20 +548,15 @@ export class FastifyAdapter<
   }
 
   private registerJsonContentParser(rawBody?: boolean) {
+    const contentType = 'application/json';
+    const withRawBody = !!rawBody;
     const { bodyLimit } = this.getInstance().initialConfig;
 
-    this.getInstance().addContentTypeParser<Buffer>(
-      'application/json',
-      { parseAs: 'buffer', bodyLimit },
-      (
-        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
-        body: Buffer,
-        done,
-      ) => {
-        if (rawBody === true && Buffer.isBuffer(body)) {
-          req.rawBody = body;
-        }
-
+    this.useBodyParser(
+      contentType,
+      withRawBody,
+      { bodyLimit },
+      (req, body, done) => {
         const { onProtoPoisoning, onConstructorPoisoning } =
           this.instance.initialConfig;
         const defaultJsonParser = this.instance.getDefaultJsonParser(
@@ -536,20 +569,15 @@ export class FastifyAdapter<
   }
 
   private registerUrlencodedContentParser(rawBody?: boolean) {
+    const contentType = 'application/x-www-form-urlencoded';
+    const withRawBody = !!rawBody;
     const { bodyLimit } = this.getInstance().initialConfig;
 
-    this.getInstance().addContentTypeParser<Buffer>(
-      'application/x-www-form-urlencoded',
-      { parseAs: 'buffer', bodyLimit },
-      (
-        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
-        body: Buffer,
-        done,
-      ) => {
-        if (rawBody === true && Buffer.isBuffer(body)) {
-          req.rawBody = body;
-        }
-
+    this.useBodyParser(
+      contentType,
+      withRawBody,
+      { bodyLimit },
+      (_req, body, done) => {
         done(null, querystringParse(body.toString()));
       },
     );
