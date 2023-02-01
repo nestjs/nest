@@ -1,7 +1,7 @@
 {
   "nodes": {
-    "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408": {
-      "id": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+    "cd386e3b-3d69-5901-952d-1f208af88d8c": {
+      "id": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "label": "InternalCoreModule",
       "metadata": {
         "type": "module",
@@ -10,10 +10,10 @@
         "internal": true
       }
     },
-    "0266246d-7911-5b7d-a84d-262fe9a2374f": {
-      "id": "0266246d-7911-5b7d-a84d-262fe9a2374f",
+    "be0abc22-6df8-5993-b558-46c0848a2b3f": {
+      "id": "be0abc22-6df8-5993-b558-46c0848a2b3f",
       "label": "InternalCoreModule",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -26,10 +26,10 @@
         "token": "InternalCoreModule"
       }
     },
-    "8a6da9c2-02e2-5673-a780-3e91cb35a740": {
-      "id": "8a6da9c2-02e2-5673-a780-3e91cb35a740",
+    "d8961021-03e5-50b1-9589-e6552d20eb4c": {
+      "id": "d8961021-03e5-50b1-9589-e6552d20eb4c",
       "label": "ModuleRef",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -42,10 +42,10 @@
         "token": "ModuleRef"
       }
     },
-    "d93f57f9-7088-5f85-84f4-b2a757f20434": {
-      "id": "d93f57f9-7088-5f85-84f4-b2a757f20434",
+    "952a9871-0035-5d69-9eed-bc675bbdd4ae": {
+      "id": "952a9871-0035-5d69-9eed-bc675bbdd4ae",
       "label": "ApplicationConfig",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -58,10 +58,10 @@
         "token": "ApplicationConfig"
       }
     },
-    "0f97a46c-8619-5a59-a84d-bc0af7a2f49c": {
-      "id": "0f97a46c-8619-5a59-a84d-bc0af7a2f49c",
+    "5ee7ae73-b49c-5410-bf8b-1cea1fc2727b": {
+      "id": "5ee7ae73-b49c-5410-bf8b-1cea1fc2727b",
       "label": "Reflector",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -73,10 +73,10 @@
         "token": "Reflector"
       }
     },
-    "1bd85856-6a0d-5ad9-b5ab-4e446f49a760": {
-      "id": "1bd85856-6a0d-5ad9-b5ab-4e446f49a760",
+    "c0b09f2c-4660-5a02-a030-78bfa806c398": {
+      "id": "c0b09f2c-4660-5a02-a030-78bfa806c398",
       "label": "Reflector",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -89,10 +89,10 @@
         "token": "Reflector"
       }
     },
-    "98fbcd2c-b5dc-5819-b1c1-a8540f39a343": {
-      "id": "98fbcd2c-b5dc-5819-b1c1-a8540f39a343",
+    "78cb636b-37ad-583d-8d4f-f322886f43f9": {
+      "id": "78cb636b-37ad-583d-8d4f-f322886f43f9",
       "label": "REQUEST",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -105,10 +105,10 @@
         "token": "REQUEST"
       }
     },
-    "cb90aade-4ecd-5820-9bdd-6d976425f35f": {
-      "id": "cb90aade-4ecd-5820-9bdd-6d976425f35f",
+    "e5157988-49ec-53a2-80c2-29ba86e03a03": {
+      "id": "e5157988-49ec-53a2-80c2-29ba86e03a03",
       "label": "INQUIRER",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -121,10 +121,10 @@
         "token": "INQUIRER"
       }
     },
-    "35988aac-c61e-5697-bf81-17b787df7199": {
-      "id": "35988aac-c61e-5697-bf81-17b787df7199",
+    "e4c58859-73a1-5981-b476-9af572c1bb63": {
+      "id": "e4c58859-73a1-5981-b476-9af572c1bb63",
       "label": "ExternalContextCreator",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -137,10 +137,10 @@
         "token": "ExternalContextCreator"
       }
     },
-    "1dc14da7-cdc3-5719-8615-d5e43b0bb589": {
-      "id": "1dc14da7-cdc3-5719-8615-d5e43b0bb589",
+    "7994dca3-7e8d-594a-bc99-19736b521b1a": {
+      "id": "7994dca3-7e8d-594a-bc99-19736b521b1a",
       "label": "ModulesContainer",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -153,10 +153,10 @@
         "token": "ModulesContainer"
       }
     },
-    "f3784e54-6f1e-5b0b-a054-8f0ce00b5a26": {
-      "id": "f3784e54-6f1e-5b0b-a054-8f0ce00b5a26",
+    "02d5a2da-8413-5244-aea2-e99a9b2a47a1": {
+      "id": "02d5a2da-8413-5244-aea2-e99a9b2a47a1",
       "label": "HttpAdapterHost",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -169,10 +169,10 @@
         "token": "HttpAdapterHost"
       }
     },
-    "a70e728e-bd78-59c8-82c3-677db604d485": {
-      "id": "a70e728e-bd78-59c8-82c3-677db604d485",
+    "82a7deba-d4bb-51f7-b591-6f0810c62dde": {
+      "id": "82a7deba-d4bb-51f7-b591-6f0810c62dde",
       "label": "HttpAdapterHost",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -185,10 +185,10 @@
         "token": "HttpAdapterHost"
       }
     },
-    "cba1025d-74a1-5c3a-9b99-2e3b1253fc59": {
-      "id": "cba1025d-74a1-5c3a-9b99-2e3b1253fc59",
+    "7c1ea1db-49b6-508f-8d1b-21c10acfe6fc": {
+      "id": "7c1ea1db-49b6-508f-8d1b-21c10acfe6fc",
       "label": "LazyModuleLoader",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -200,10 +200,10 @@
         "token": "LazyModuleLoader"
       }
     },
-    "5f2354a8-aa71-588e-8eb8-4327b44d1f77": {
-      "id": "5f2354a8-aa71-588e-8eb8-4327b44d1f77",
+    "b78ad2e1-5445-54bd-ae3a-599d272c8f3c": {
+      "id": "b78ad2e1-5445-54bd-ae3a-599d272c8f3c",
       "label": "SerializedGraph",
-      "parent": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "parent": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -216,8 +216,8 @@
         "token": "SerializedGraph"
       }
     },
-    "d8bd964c-de23-5d00-b06b-670ea2de73af": {
-      "id": "d8bd964c-de23-5d00-b06b-670ea2de73af",
+    "419c0cf1-5c75-5001-9c7c-f4068e096458": {
+      "id": "419c0cf1-5c75-5001-9c7c-f4068e096458",
       "label": "RootTestModule",
       "metadata": {
         "type": "module",
@@ -226,10 +226,10 @@
         "internal": false
       }
     },
-    "17793954-3040-5afe-85a1-ba6e552b63ac": {
-      "id": "17793954-3040-5afe-85a1-ba6e552b63ac",
+    "44aabda8-8671-524d-a160-51706ac058f8": {
+      "id": "44aabda8-8671-524d-a160-51706ac058f8",
       "label": "RootTestModule",
-      "parent": "d8bd964c-de23-5d00-b06b-670ea2de73af",
+      "parent": "419c0cf1-5c75-5001-9c7c-f4068e096458",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -242,10 +242,10 @@
         "token": "RootTestModule"
       }
     },
-    "08e91ffe-a032-53e5-95c1-ce31bdb9b62f": {
-      "id": "08e91ffe-a032-53e5-95c1-ce31bdb9b62f",
+    "0c116509-b402-5c8d-8806-5744e4dabe9d": {
+      "id": "0c116509-b402-5c8d-8806-5744e4dabe9d",
       "label": "ModuleRef",
-      "parent": "d8bd964c-de23-5d00-b06b-670ea2de73af",
+      "parent": "419c0cf1-5c75-5001-9c7c-f4068e096458",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -258,10 +258,10 @@
         "token": "ModuleRef"
       }
     },
-    "42009d50-15f3-5533-9fb0-56be650c07c4": {
-      "id": "42009d50-15f3-5533-9fb0-56be650c07c4",
+    "56db34a2-f833-58bc-be40-8e832cf47839": {
+      "id": "56db34a2-f833-58bc-be40-8e832cf47839",
       "label": "ApplicationConfig",
-      "parent": "d8bd964c-de23-5d00-b06b-670ea2de73af",
+      "parent": "419c0cf1-5c75-5001-9c7c-f4068e096458",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -274,8 +274,8 @@
         "token": "ApplicationConfig"
       }
     },
-    "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e": {
-      "id": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+    "190c0792-40e6-59da-a900-900f5421fbf3": {
+      "id": "190c0792-40e6-59da-a900-900f5421fbf3",
       "label": "AppModule",
       "metadata": {
         "type": "module",
@@ -284,10 +284,10 @@
         "internal": false
       }
     },
-    "62ef898c-93f9-5411-9a5d-cfcdc73e93ee": {
-      "id": "62ef898c-93f9-5411-9a5d-cfcdc73e93ee",
+    "858c2700-7202-5270-ae4a-e079de2e594d": {
+      "id": "858c2700-7202-5270-ae4a-e079de2e594d",
       "label": "AppModule",
-      "parent": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+      "parent": "190c0792-40e6-59da-a900-900f5421fbf3",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -300,10 +300,10 @@
         "token": "AppModule"
       }
     },
-    "c2d780da-354b-5695-bdd8-f57674f2ab43": {
-      "id": "c2d780da-354b-5695-bdd8-f57674f2ab43",
+    "e122a91a-deac-56ad-b5df-7ab279321fbe": {
+      "id": "e122a91a-deac-56ad-b5df-7ab279321fbe",
       "label": "ModuleRef",
-      "parent": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+      "parent": "190c0792-40e6-59da-a900-900f5421fbf3",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -316,10 +316,10 @@
         "token": "ModuleRef"
       }
     },
-    "f4b08010-a828-5e57-b763-713ea8ce14a4": {
-      "id": "f4b08010-a828-5e57-b763-713ea8ce14a4",
+    "bf91d262-6ac2-58f8-8132-3f83a2947364": {
+      "id": "bf91d262-6ac2-58f8-8132-3f83a2947364",
       "label": "ApplicationConfig",
-      "parent": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+      "parent": "190c0792-40e6-59da-a900-900f5421fbf3",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -335,7 +335,7 @@
     "c58d72a9-efa9-586a-a61d-a3f6fce0df77": {
       "id": "c58d72a9-efa9-586a-a61d-a3f6fce0df77",
       "label": "AppV1Controller",
-      "parent": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+      "parent": "190c0792-40e6-59da-a900-900f5421fbf3",
       "metadata": {
         "type": "controller",
         "internal": false,
@@ -350,7 +350,7 @@
     "ff454cab-300d-5318-98cb-d702256ea27c": {
       "id": "ff454cab-300d-5318-98cb-d702256ea27c",
       "label": "AppV2Controller",
-      "parent": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+      "parent": "190c0792-40e6-59da-a900-900f5421fbf3",
       "metadata": {
         "type": "controller",
         "internal": false,
@@ -432,7 +432,7 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "APP_INTERCEPTOR (UUID: 2039dbe9-fda1-5fe2-8253-79f85aa611ef)",
+        "token": "APP_INTERCEPTOR (UUID: 4d1c64db-1eb5-5dad-81a6-db033e2c90f9)",
         "subtype": "interceptor",
         "global": true
       }
@@ -449,13 +449,13 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "APP_INTERCEPTOR (UUID: c76291d7-e5f2-5f75-ac78-1a0c771cba56)",
+        "token": "APP_INTERCEPTOR (UUID: ef427625-59f9-584b-8807-11e761f447fb)",
         "subtype": "interceptor",
         "global": true
       }
     },
-    "ff654e54-b225-59ff-9435-5856c3f023e6": {
-      "id": "ff654e54-b225-59ff-9435-5856c3f023e6",
+    "881c95d9-c95d-5e43-8c9e-8c837f7ef5fc": {
+      "id": "881c95d9-c95d-5e43-8c9e-8c837f7ef5fc",
       "label": "CatsModule",
       "metadata": {
         "type": "module",
@@ -464,10 +464,10 @@
         "internal": false
       }
     },
-    "7d4d50c1-5e42-5e87-9756-a02629ebc2b2": {
-      "id": "7d4d50c1-5e42-5e87-9756-a02629ebc2b2",
+    "6400d5fb-c5eb-58c8-baa6-7854bfe9220d": {
+      "id": "6400d5fb-c5eb-58c8-baa6-7854bfe9220d",
       "label": "CatsModule",
-      "parent": "ff654e54-b225-59ff-9435-5856c3f023e6",
+      "parent": "881c95d9-c95d-5e43-8c9e-8c837f7ef5fc",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -480,10 +480,10 @@
         "token": "CatsModule"
       }
     },
-    "2bf0bce0-780f-5388-8203-53067826d97b": {
-      "id": "2bf0bce0-780f-5388-8203-53067826d97b",
+    "05955a45-ac72-5f10-9f1c-74b3ecade567": {
+      "id": "05955a45-ac72-5f10-9f1c-74b3ecade567",
       "label": "ModuleRef",
-      "parent": "ff654e54-b225-59ff-9435-5856c3f023e6",
+      "parent": "881c95d9-c95d-5e43-8c9e-8c837f7ef5fc",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -496,10 +496,10 @@
         "token": "ModuleRef"
       }
     },
-    "033d92e8-d925-56ab-80c9-c51418cf29f2": {
-      "id": "033d92e8-d925-56ab-80c9-c51418cf29f2",
+    "98eafd3a-b2d5-5d15-a269-21318db9ac47": {
+      "id": "98eafd3a-b2d5-5d15-a269-21318db9ac47",
       "label": "ApplicationConfig",
-      "parent": "ff654e54-b225-59ff-9435-5856c3f023e6",
+      "parent": "881c95d9-c95d-5e43-8c9e-8c837f7ef5fc",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -512,10 +512,10 @@
         "token": "ApplicationConfig"
       }
     },
-    "66da07f0-0d07-501b-b783-869c9dac4d0c": {
-      "id": "66da07f0-0d07-501b-b783-869c9dac4d0c",
+    "7ee7d0cd-f4e7-54e5-a204-025b0a180c2f": {
+      "id": "7ee7d0cd-f4e7-54e5-a204-025b0a180c2f",
       "label": "CatsService",
-      "parent": "ff654e54-b225-59ff-9435-5856c3f023e6",
+      "parent": "881c95d9-c95d-5e43-8c9e-8c837f7ef5fc",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -530,7 +530,7 @@
     "02df382a-48e1-54d2-a16c-2322f9a13ed4": {
       "id": "02df382a-48e1-54d2-a16c-2322f9a13ed4",
       "label": "RolesGuard",
-      "parent": "ff654e54-b225-59ff-9435-5856c3f023e6",
+      "parent": "881c95d9-c95d-5e43-8c9e-8c837f7ef5fc",
       "metadata": {
         "type": "injectable",
         "internal": false,
@@ -546,7 +546,7 @@
     "9cd5ba23-0bdc-52f0-9e25-c478e0689f88": {
       "id": "9cd5ba23-0bdc-52f0-9e25-c478e0689f88",
       "label": "CatsController",
-      "parent": "ff654e54-b225-59ff-9435-5856c3f023e6",
+      "parent": "881c95d9-c95d-5e43-8c9e-8c837f7ef5fc",
       "metadata": {
         "type": "controller",
         "internal": false,
@@ -569,8 +569,8 @@
         ]
       }
     },
-    "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf": {
-      "id": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+    "83323fa4-1058-50ca-afd1-186e9b44528e": {
+      "id": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "label": "HelloModule",
       "metadata": {
         "type": "module",
@@ -579,10 +579,10 @@
         "internal": false
       }
     },
-    "02a39df5-5e06-5700-9d18-b60515336df3": {
-      "id": "02a39df5-5e06-5700-9d18-b60515336df3",
+    "ca6529cf-19c0-5d1a-ac52-6f21455fbca5": {
+      "id": "ca6529cf-19c0-5d1a-ac52-6f21455fbca5",
       "label": "HelloModule",
-      "parent": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+      "parent": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -595,10 +595,10 @@
         "token": "HelloModule"
       }
     },
-    "b5b055a4-1c73-535a-a11f-532afa5cd3a5": {
-      "id": "b5b055a4-1c73-535a-a11f-532afa5cd3a5",
+    "884b8400-c115-5286-9d7e-9d2603ff1688": {
+      "id": "884b8400-c115-5286-9d7e-9d2603ff1688",
       "label": "ModuleRef",
-      "parent": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+      "parent": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -611,10 +611,10 @@
         "token": "ModuleRef"
       }
     },
-    "04381b7d-6c07-566e-8406-1a7512b287ad": {
-      "id": "04381b7d-6c07-566e-8406-1a7512b287ad",
+    "faa1f549-1f2f-56e3-8462-79a2c818d33e": {
+      "id": "faa1f549-1f2f-56e3-8462-79a2c818d33e",
       "label": "ApplicationConfig",
-      "parent": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+      "parent": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -627,10 +627,10 @@
         "token": "ApplicationConfig"
       }
     },
-    "faa725fd-ae13-5c49-9ca5-061fbbab787e": {
-      "id": "faa725fd-ae13-5c49-9ca5-061fbbab787e",
+    "f95f0452-ba3c-5749-aead-d4d34a6235d3": {
+      "id": "f95f0452-ba3c-5749-aead-d4d34a6235d3",
       "label": "HelloService",
-      "parent": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+      "parent": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -643,10 +643,10 @@
         "token": "HelloService"
       }
     },
-    "d77a662b-e5f5-523d-946b-211624d7497c": {
-      "id": "d77a662b-e5f5-523d-946b-211624d7497c",
+    "028385ff-10ad-5a1c-851e-d4ca2bdf8e5d": {
+      "id": "028385ff-10ad-5a1c-851e-d4ca2bdf8e5d",
       "label": "UsersService",
-      "parent": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+      "parent": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -662,7 +662,7 @@
     "6676173c-ce2a-51d3-952a-93fa8c7a3923": {
       "id": "6676173c-ce2a-51d3-952a-93fa8c7a3923",
       "label": "Meta",
-      "parent": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+      "parent": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -678,7 +678,7 @@
     "beeb3251-4b2b-5810-a4ec-ed05623a7557": {
       "id": "beeb3251-4b2b-5810-a4ec-ed05623a7557",
       "label": "Guard",
-      "parent": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+      "parent": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "metadata": {
         "type": "injectable",
         "internal": false,
@@ -695,7 +695,7 @@
     "0ea50366-8cd7-5410-91f4-5a140b2a5fe9": {
       "id": "0ea50366-8cd7-5410-91f4-5a140b2a5fe9",
       "label": "Interceptor",
-      "parent": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+      "parent": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "metadata": {
         "type": "injectable",
         "internal": false,
@@ -709,10 +709,10 @@
         "subtype": "interceptor"
       }
     },
-    "d8184163-323d-511e-b2a0-368003f3425a": {
-      "id": "d8184163-323d-511e-b2a0-368003f3425a",
+    "317c5d2d-4c46-5b39-83e8-c27aa64a1edd": {
+      "id": "317c5d2d-4c46-5b39-83e8-c27aa64a1edd",
       "label": "UserByIdPipe",
-      "parent": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+      "parent": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "metadata": {
         "type": "injectable",
         "internal": false,
@@ -725,10 +725,10 @@
         "subtype": "pipe"
       }
     },
-    "c6535829-8ec6-5852-b1f5-2a1332218877": {
-      "id": "c6535829-8ec6-5852-b1f5-2a1332218877",
+    "769e8ad6-f9f6-515d-83f5-9c6a8e6ebc54": {
+      "id": "769e8ad6-f9f6-515d-83f5-9c6a8e6ebc54",
       "label": "HelloController",
-      "parent": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+      "parent": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "metadata": {
         "type": "controller",
         "internal": false,
@@ -750,7 +750,7 @@
             "subtype": "interceptor"
           },
           {
-            "id": "d8184163-323d-511e-b2a0-368003f3425a",
+            "id": "317c5d2d-4c46-5b39-83e8-c27aa64a1edd",
             "methodKey": "greeting",
             "subtype": "pipe"
           }
@@ -1471,8 +1471,8 @@
         "token": "HelperService"
       }
     },
-    "1ef97d71-97a2-5b1b-891c-5c823511343c": {
-      "id": "1ef97d71-97a2-5b1b-891c-5c823511343c",
+    "f5e96eaf-21c4-533f-8324-a118e7763b54": {
+      "id": "f5e96eaf-21c4-533f-8324-a118e7763b54",
       "label": "PropertiesModule",
       "metadata": {
         "type": "module",
@@ -1481,10 +1481,10 @@
         "internal": false
       }
     },
-    "2adbdd35-3104-5c91-8106-347bb586b56b": {
-      "id": "2adbdd35-3104-5c91-8106-347bb586b56b",
+    "652c9c93-f2ce-581f-9b87-0aa3182ef701": {
+      "id": "652c9c93-f2ce-581f-9b87-0aa3182ef701",
       "label": "PropertiesModule",
-      "parent": "1ef97d71-97a2-5b1b-891c-5c823511343c",
+      "parent": "f5e96eaf-21c4-533f-8324-a118e7763b54",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1497,10 +1497,10 @@
         "token": "PropertiesModule"
       }
     },
-    "b24a24c0-4913-50f2-9b37-f2434cc60bc5": {
-      "id": "b24a24c0-4913-50f2-9b37-f2434cc60bc5",
+    "17db7eca-bb20-52e6-8651-473a37307dd4": {
+      "id": "17db7eca-bb20-52e6-8651-473a37307dd4",
       "label": "ModuleRef",
-      "parent": "1ef97d71-97a2-5b1b-891c-5c823511343c",
+      "parent": "f5e96eaf-21c4-533f-8324-a118e7763b54",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1513,10 +1513,10 @@
         "token": "ModuleRef"
       }
     },
-    "a372752b-0bde-5c42-b235-e4e0b7535ecf": {
-      "id": "a372752b-0bde-5c42-b235-e4e0b7535ecf",
+    "1804e686-cc4b-50f9-9f1f-c412d8be76d0": {
+      "id": "1804e686-cc4b-50f9-9f1f-c412d8be76d0",
       "label": "ApplicationConfig",
-      "parent": "1ef97d71-97a2-5b1b-891c-5c823511343c",
+      "parent": "f5e96eaf-21c4-533f-8324-a118e7763b54",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1529,10 +1529,10 @@
         "token": "ApplicationConfig"
       }
     },
-    "37849930-7360-509c-abde-733fb268c8dc": {
-      "id": "37849930-7360-509c-abde-733fb268c8dc",
+    "ce56b867-fe35-5579-b455-3f33e161c418": {
+      "id": "ce56b867-fe35-5579-b455-3f33e161c418",
       "label": "DependencyService",
-      "parent": "1ef97d71-97a2-5b1b-891c-5c823511343c",
+      "parent": "f5e96eaf-21c4-533f-8324-a118e7763b54",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -1544,10 +1544,10 @@
         "token": "DependencyService"
       }
     },
-    "f1efd40f-12c0-5bf8-a499-fa63f5b6a77c": {
-      "id": "f1efd40f-12c0-5bf8-a499-fa63f5b6a77c",
+    "bc426371-e5ad-55f4-895a-6701455d2b40": {
+      "id": "bc426371-e5ad-55f4-895a-6701455d2b40",
       "label": "PropertiesService",
-      "parent": "1ef97d71-97a2-5b1b-891c-5c823511343c",
+      "parent": "f5e96eaf-21c4-533f-8324-a118e7763b54",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -1559,10 +1559,10 @@
         "token": "PropertiesService"
       }
     },
-    "822f3a86-ab6f-58ec-8ca5-73d0f3371b8a": {
-      "id": "822f3a86-ab6f-58ec-8ca5-73d0f3371b8a",
+    "576fbd85-f97e-54b2-bf76-87ed5c2df2ed": {
+      "id": "576fbd85-f97e-54b2-bf76-87ed5c2df2ed",
       "label": "token",
-      "parent": "1ef97d71-97a2-5b1b-891c-5c823511343c",
+      "parent": "f5e96eaf-21c4-533f-8324-a118e7763b54",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -1575,10 +1575,10 @@
         "token": "token"
       }
     },
-    "d07d69a1-3a51-5605-8463-2d1625d2c1c6": {
-      "id": "d07d69a1-3a51-5605-8463-2d1625d2c1c6",
+    "d8a13bee-462c-5e09-862b-8a50ba181163": {
+      "id": "d8a13bee-462c-5e09-862b-8a50ba181163",
       "label": "Symbol(token)",
-      "parent": "1ef97d71-97a2-5b1b-891c-5c823511343c",
+      "parent": "f5e96eaf-21c4-533f-8324-a118e7763b54",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -1591,8 +1591,8 @@
         "token": "Symbol(token)"
       }
     },
-    "0e41b294-78d8-5f2a-8889-3a3ddc0f7c3d": {
-      "id": "0e41b294-78d8-5f2a-8889-3a3ddc0f7c3d",
+    "8d33008c-4294-5979-987b-4b50bb077c85": {
+      "id": "8d33008c-4294-5979-987b-4b50bb077c85",
       "label": "InputModule",
       "metadata": {
         "type": "module",
@@ -1601,10 +1601,10 @@
         "internal": false
       }
     },
-    "6f480ce1-6367-5d66-8009-afb93b21b72a": {
-      "id": "6f480ce1-6367-5d66-8009-afb93b21b72a",
+    "259ccdaa-e714-56ce-9a8d-4d6c60a10f0d": {
+      "id": "259ccdaa-e714-56ce-9a8d-4d6c60a10f0d",
       "label": "InputModule",
-      "parent": "0e41b294-78d8-5f2a-8889-3a3ddc0f7c3d",
+      "parent": "8d33008c-4294-5979-987b-4b50bb077c85",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1617,10 +1617,10 @@
         "token": "InputModule"
       }
     },
-    "de2537f0-a428-5f07-8b21-07fbc694ae80": {
-      "id": "de2537f0-a428-5f07-8b21-07fbc694ae80",
+    "829c226a-332a-5c54-8a20-ebb93b182709": {
+      "id": "829c226a-332a-5c54-8a20-ebb93b182709",
       "label": "ModuleRef",
-      "parent": "0e41b294-78d8-5f2a-8889-3a3ddc0f7c3d",
+      "parent": "8d33008c-4294-5979-987b-4b50bb077c85",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1633,10 +1633,10 @@
         "token": "ModuleRef"
       }
     },
-    "88585ed2-947c-5ffa-b088-42315ad2a900": {
-      "id": "88585ed2-947c-5ffa-b088-42315ad2a900",
+    "081822dc-eb43-5000-8038-acf089f629be": {
+      "id": "081822dc-eb43-5000-8038-acf089f629be",
       "label": "ApplicationConfig",
-      "parent": "0e41b294-78d8-5f2a-8889-3a3ddc0f7c3d",
+      "parent": "8d33008c-4294-5979-987b-4b50bb077c85",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1649,10 +1649,10 @@
         "token": "ApplicationConfig"
       }
     },
-    "8320566b-f7d2-5802-9603-faa2ff1fdbef": {
-      "id": "8320566b-f7d2-5802-9603-faa2ff1fdbef",
+    "98d04266-c04c-5406-9e26-7be953a58803": {
+      "id": "98d04266-c04c-5406-9e26-7be953a58803",
       "label": "InputService",
-      "parent": "0e41b294-78d8-5f2a-8889-3a3ddc0f7c3d",
+      "parent": "8d33008c-4294-5979-987b-4b50bb077c85",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -1664,8 +1664,8 @@
         "token": "InputService"
       }
     },
-    "746cc074-e478-5e4b-8381-f1af1e2ae09f": {
-      "id": "746cc074-e478-5e4b-8381-f1af1e2ae09f",
+    "51b4619f-17da-58cc-a918-8bd2de787ade": {
+      "id": "51b4619f-17da-58cc-a918-8bd2de787ade",
       "label": "CircularModule",
       "metadata": {
         "type": "module",
@@ -1674,10 +1674,10 @@
         "internal": false
       }
     },
-    "93e005c4-999c-56b5-88f3-6ea5eb2d8b0f": {
-      "id": "93e005c4-999c-56b5-88f3-6ea5eb2d8b0f",
+    "ac22164f-01ec-5409-8e12-2bace8542fd0": {
+      "id": "ac22164f-01ec-5409-8e12-2bace8542fd0",
       "label": "CircularModule",
-      "parent": "746cc074-e478-5e4b-8381-f1af1e2ae09f",
+      "parent": "51b4619f-17da-58cc-a918-8bd2de787ade",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1690,10 +1690,10 @@
         "token": "CircularModule"
       }
     },
-    "8d3a2f87-2876-592b-9035-3f9a6c36a857": {
-      "id": "8d3a2f87-2876-592b-9035-3f9a6c36a857",
+    "4f6ecfd6-8413-5f57-bf0e-f2e9c7cad0a6": {
+      "id": "4f6ecfd6-8413-5f57-bf0e-f2e9c7cad0a6",
       "label": "ModuleRef",
-      "parent": "746cc074-e478-5e4b-8381-f1af1e2ae09f",
+      "parent": "51b4619f-17da-58cc-a918-8bd2de787ade",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1706,10 +1706,10 @@
         "token": "ModuleRef"
       }
     },
-    "265e9357-d8dc-51f1-aea9-81c447e46902": {
-      "id": "265e9357-d8dc-51f1-aea9-81c447e46902",
+    "ed4a6c21-f47a-5b6d-ae32-f4ddc0a22b05": {
+      "id": "ed4a6c21-f47a-5b6d-ae32-f4ddc0a22b05",
       "label": "ApplicationConfig",
-      "parent": "746cc074-e478-5e4b-8381-f1af1e2ae09f",
+      "parent": "51b4619f-17da-58cc-a918-8bd2de787ade",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1722,10 +1722,10 @@
         "token": "ApplicationConfig"
       }
     },
-    "64c961f0-cb2e-53e5-95a5-590ab811d0d5": {
-      "id": "64c961f0-cb2e-53e5-95a5-590ab811d0d5",
+    "814286f5-6afc-5fe8-bd31-9e49252b3e84": {
+      "id": "814286f5-6afc-5fe8-bd31-9e49252b3e84",
       "label": "CircularService",
-      "parent": "746cc074-e478-5e4b-8381-f1af1e2ae09f",
+      "parent": "51b4619f-17da-58cc-a918-8bd2de787ade",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -1739,9 +1739,9 @@
     }
   },
   "edges": {
-    "883d83bd-11dc-5741-a542-aa8e353fbd0f": {
-      "source": "a70e728e-bd78-59c8-82c3-677db604d485",
-      "target": "f3784e54-6f1e-5b0b-a054-8f0ce00b5a26",
+    "dc9bef27-dac6-5a49-9441-645e70895c1b": {
+      "source": "82a7deba-d4bb-51f7-b591-6f0810c62dde",
+      "target": "02d5a2da-8413-5244-aea2-e99a9b2a47a1",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "InternalCoreModule",
@@ -1754,11 +1754,11 @@
         "injectionType": "constructor",
         "internal": true
       },
-      "id": "883d83bd-11dc-5741-a542-aa8e353fbd0f"
+      "id": "dc9bef27-dac6-5a49-9441-645e70895c1b"
     },
-    "7b797b5b-e91a-5cc6-9100-7330592d81c9": {
-      "source": "64c961f0-cb2e-53e5-95a5-590ab811d0d5",
-      "target": "8320566b-f7d2-5802-9603-faa2ff1fdbef",
+    "552073d3-f2c5-54dc-9858-4b83b6e7232c": {
+      "source": "814286f5-6afc-5fe8-bd31-9e49252b3e84",
+      "target": "98d04266-c04c-5406-9e26-7be953a58803",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "CircularModule",
@@ -1770,11 +1770,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "7b797b5b-e91a-5cc6-9100-7330592d81c9"
+      "id": "552073d3-f2c5-54dc-9858-4b83b6e7232c"
     },
-    "1652c590-de47-5c4c-ae22-8d88e1663175": {
-      "source": "f1efd40f-12c0-5bf8-a499-fa63f5b6a77c",
-      "target": "37849930-7360-509c-abde-733fb268c8dc",
+    "13671bfb-15c2-53da-91b7-d3cb1bd7aa30": {
+      "source": "bc426371-e5ad-55f4-895a-6701455d2b40",
+      "target": "ce56b867-fe35-5579-b455-3f33e161c418",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "PropertiesModule",
@@ -1786,11 +1786,11 @@
         "keyOrIndex": "service",
         "injectionType": "property"
       },
-      "id": "1652c590-de47-5c4c-ae22-8d88e1663175"
+      "id": "13671bfb-15c2-53da-91b7-d3cb1bd7aa30"
     },
-    "75a05070-c244-56f7-b89b-bf0830498329": {
-      "source": "f1efd40f-12c0-5bf8-a499-fa63f5b6a77c",
-      "target": "822f3a86-ab6f-58ec-8ca5-73d0f3371b8a",
+    "762418b1-e772-5025-992c-ab319bbc8e52": {
+      "source": "bc426371-e5ad-55f4-895a-6701455d2b40",
+      "target": "576fbd85-f97e-54b2-bf76-87ed5c2df2ed",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "PropertiesModule",
@@ -1802,11 +1802,11 @@
         "keyOrIndex": "token",
         "injectionType": "property"
       },
-      "id": "75a05070-c244-56f7-b89b-bf0830498329"
+      "id": "762418b1-e772-5025-992c-ab319bbc8e52"
     },
-    "a77c5fa0-6de5-5655-9bb1-25487bd6aa04": {
-      "source": "f1efd40f-12c0-5bf8-a499-fa63f5b6a77c",
-      "target": "d07d69a1-3a51-5605-8463-2d1625d2c1c6",
+    "a131d39b-ff7b-5691-9428-34ad12d93e6e": {
+      "source": "bc426371-e5ad-55f4-895a-6701455d2b40",
+      "target": "d8a13bee-462c-5e09-862b-8a50ba181163",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "PropertiesModule",
@@ -1818,11 +1818,11 @@
         "keyOrIndex": "symbolToken",
         "injectionType": "property"
       },
-      "id": "a77c5fa0-6de5-5655-9bb1-25487bd6aa04"
+      "id": "a131d39b-ff7b-5691-9428-34ad12d93e6e"
     },
-    "ff034dba-9e7f-5ae7-8823-1feab50720a8": {
-      "source": "1bd85856-6a0d-5ad9-b5ab-4e446f49a760",
-      "target": "0f97a46c-8619-5a59-a84d-bc0af7a2f49c",
+    "617b6c39-f865-514a-a7a4-8195c1442b7b": {
+      "source": "c0b09f2c-4660-5a02-a030-78bfa806c398",
+      "target": "5ee7ae73-b49c-5410-bf8b-1cea1fc2727b",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "InternalCoreModule",
@@ -1835,10 +1835,10 @@
         "injectionType": "constructor",
         "internal": true
       },
-      "id": "ff034dba-9e7f-5ae7-8823-1feab50720a8"
+      "id": "617b6c39-f865-514a-a7a4-8195c1442b7b"
     },
-    "efc5503f-e3e9-548f-a58a-c303d130e6e7": {
-      "source": "02a39df5-5e06-5700-9d18-b60515336df3",
+    "d90d6621-f877-56aa-826c-5ba4b3f95f12": {
+      "source": "ca6529cf-19c0-5d1a-ac52-6f21455fbca5",
       "target": "6676173c-ce2a-51d3-952a-93fa8c7a3923",
       "metadata": {
         "type": "class-to-class",
@@ -1851,10 +1851,10 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "efc5503f-e3e9-548f-a58a-c303d130e6e7"
+      "id": "d90d6621-f877-56aa-826c-5ba4b3f95f12"
     },
-    "95485fc7-feac-5945-aa29-e0f1d4cc6119": {
-      "source": "faa725fd-ae13-5c49-9ca5-061fbbab787e",
+    "21e8c0ef-65e0-5a7c-a084-019887ba2fc1": {
+      "source": "f95f0452-ba3c-5749-aead-d4d34a6235d3",
       "target": "6676173c-ce2a-51d3-952a-93fa8c7a3923",
       "metadata": {
         "type": "class-to-class",
@@ -1867,10 +1867,10 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "95485fc7-feac-5945-aa29-e0f1d4cc6119"
+      "id": "21e8c0ef-65e0-5a7c-a084-019887ba2fc1"
     },
-    "6958b8d2-f4c9-5d98-9da4-a10a294262b2": {
-      "source": "d77a662b-e5f5-523d-946b-211624d7497c",
+    "f29b9103-59b6-52b8-9d29-9717f9280246": {
+      "source": "028385ff-10ad-5a1c-851e-d4ca2bdf8e5d",
       "target": "6676173c-ce2a-51d3-952a-93fa8c7a3923",
       "metadata": {
         "type": "class-to-class",
@@ -1883,7 +1883,7 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "6958b8d2-f4c9-5d98-9da4-a10a294262b2"
+      "id": "f29b9103-59b6-52b8-9d29-9717f9280246"
     },
     "943b4528-d32f-5929-b6af-360bf3a4972a": {
       "source": "88f1f0a0-285c-5d09-ae0a-61313d7ba1c3",
@@ -1901,9 +1901,9 @@
       },
       "id": "943b4528-d32f-5929-b6af-360bf3a4972a"
     },
-    "c5ba7998-5ad7-5f4b-a2b9-b25aa2494d65": {
+    "6826749b-2fe6-5f56-ada6-e619292cbf8b": {
       "source": "aebfd5cb-285b-5ea8-b10a-22b8ec75dc48",
-      "target": "98fbcd2c-b5dc-5819-b1c1-a8540f39a343",
+      "target": "78cb636b-37ad-583d-8d4f-f322886f43f9",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "DurableModule",
@@ -1916,11 +1916,11 @@
         "injectionType": "constructor",
         "internal": true
       },
-      "id": "c5ba7998-5ad7-5f4b-a2b9-b25aa2494d65"
+      "id": "6826749b-2fe6-5f56-ada6-e619292cbf8b"
     },
-    "b474b908-5c65-5711-9453-22afeed92ec4": {
+    "603c685b-36de-5d5d-a13b-348f419e11f9": {
       "source": "639fd5ea-03c8-52ed-90a1-65d76f46b662",
-      "target": "98fbcd2c-b5dc-5819-b1c1-a8540f39a343",
+      "target": "78cb636b-37ad-583d-8d4f-f322886f43f9",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "HelperModule",
@@ -1933,11 +1933,11 @@
         "injectionType": "constructor",
         "internal": true
       },
-      "id": "b474b908-5c65-5711-9453-22afeed92ec4"
+      "id": "603c685b-36de-5d5d-a13b-348f419e11f9"
     },
-    "dd41e29b-b05d-5b77-85f9-0c0a71130285": {
+    "ed589357-ef7e-5537-ba11-94db263976f4": {
       "source": "02df382a-48e1-54d2-a16c-2322f9a13ed4",
-      "target": "0f97a46c-8619-5a59-a84d-bc0af7a2f49c",
+      "target": "5ee7ae73-b49c-5410-bf8b-1cea1fc2727b",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "CatsModule",
@@ -1950,7 +1950,7 @@
         "injectionType": "constructor",
         "internal": true
       },
-      "id": "dd41e29b-b05d-5b77-85f9-0c0a71130285"
+      "id": "ed589357-ef7e-5537-ba11-94db263976f4"
     },
     "aa096600-fa82-55f6-9c90-000509c8d2d0": {
       "source": "a769a8d9-6245-5479-8822-cbdb27f9c2b4",
@@ -2016,9 +2016,9 @@
       },
       "id": "4c938b43-3a4d-5cb9-8891-f6e8e25765e8"
     },
-    "c995fb45-6e6b-51ce-b7e7-bb514870a884": {
-      "source": "8320566b-f7d2-5802-9603-faa2ff1fdbef",
-      "target": "64c961f0-cb2e-53e5-95a5-590ab811d0d5",
+    "f499705b-2c1d-5992-8f80-75e7abd57eda": {
+      "source": "98d04266-c04c-5406-9e26-7be953a58803",
+      "target": "814286f5-6afc-5fe8-bd31-9e49252b3e84",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "InputModule",
@@ -2030,11 +2030,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "c995fb45-6e6b-51ce-b7e7-bb514870a884"
+      "id": "f499705b-2c1d-5992-8f80-75e7abd57eda"
     },
-    "706b2812-7325-501f-98fd-479d8782f3ba": {
-      "source": "d8184163-323d-511e-b2a0-368003f3425a",
-      "target": "d77a662b-e5f5-523d-946b-211624d7497c",
+    "333ce738-ca0b-557e-91cd-aedd9f697ad8": {
+      "source": "317c5d2d-4c46-5b39-83e8-c27aa64a1edd",
+      "target": "028385ff-10ad-5a1c-851e-d4ca2bdf8e5d",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "HelloModule",
@@ -2046,7 +2046,7 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "706b2812-7325-501f-98fd-479d8782f3ba"
+      "id": "333ce738-ca0b-557e-91cd-aedd9f697ad8"
     },
     "6f5134a4-f7f3-51ba-bfbb-8bafc10a407f": {
       "source": "b08bf57c-5956-57a2-b901-b4e41243e0ba",
@@ -2080,9 +2080,9 @@
       },
       "id": "641bcf28-5c94-5b7e-a3ec-39695a110809"
     },
-    "33b2cfb2-f3e9-5aff-9caa-2361e394b662": {
+    "9e818131-9b06-522c-81f3-97ac728fb2e9": {
       "source": "9cd5ba23-0bdc-52f0-9e25-c478e0689f88",
-      "target": "66da07f0-0d07-501b-b783-869c9dac4d0c",
+      "target": "7ee7d0cd-f4e7-54e5-a204-025b0a180c2f",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "CatsModule",
@@ -2094,11 +2094,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "33b2cfb2-f3e9-5aff-9caa-2361e394b662"
+      "id": "9e818131-9b06-522c-81f3-97ac728fb2e9"
     },
-    "7b630278-4dcd-5f83-8d02-03399f4dc779": {
-      "source": "c6535829-8ec6-5852-b1f5-2a1332218877",
-      "target": "faa725fd-ae13-5c49-9ca5-061fbbab787e",
+    "f030355a-5b10-5794-8395-b87966c04f8b": {
+      "source": "769e8ad6-f9f6-515d-83f5-9c6a8e6ebc54",
+      "target": "f95f0452-ba3c-5749-aead-d4d34a6235d3",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "HelloModule",
@@ -2110,11 +2110,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "7b630278-4dcd-5f83-8d02-03399f4dc779"
+      "id": "f030355a-5b10-5794-8395-b87966c04f8b"
     },
-    "5e789513-07cb-557f-9427-eca333315dfb": {
-      "source": "c6535829-8ec6-5852-b1f5-2a1332218877",
-      "target": "d77a662b-e5f5-523d-946b-211624d7497c",
+    "0f621b9b-8472-546e-9efa-9d1b6f0ac867": {
+      "source": "769e8ad6-f9f6-515d-83f5-9c6a8e6ebc54",
+      "target": "028385ff-10ad-5a1c-851e-d4ca2bdf8e5d",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "HelloModule",
@@ -2126,7 +2126,7 @@
         "keyOrIndex": 1,
         "injectionType": "constructor"
       },
-      "id": "5e789513-07cb-557f-9427-eca333315dfb"
+      "id": "0f621b9b-8472-546e-9efa-9d1b6f0ac867"
     },
     "c9c6d848-223a-59fc-be2a-525c9cee8001": {
       "source": "febfc01c-9a3c-5bd8-8150-feaeb7ed0781",
@@ -2160,245 +2160,245 @@
       },
       "id": "216e6db0-e31a-5239-adc5-178cf17232df"
     },
-    "696b3f30-3c36-52a6-b77c-53380384849a": {
-      "source": "d8bd964c-de23-5d00-b06b-670ea2de73af",
-      "target": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+    "204775bf-5308-5823-9cd7-755fd45ec1ad": {
+      "source": "419c0cf1-5c75-5001-9c7c-f4068e096458",
+      "target": "190c0792-40e6-59da-a900-900f5421fbf3",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "RootTestModule",
         "targetModuleName": "AppModule"
       },
-      "id": "696b3f30-3c36-52a6-b77c-53380384849a"
+      "id": "204775bf-5308-5823-9cd7-755fd45ec1ad"
     },
-    "24fab9f2-9034-5fec-88ea-f60703d55746": {
-      "source": "d8bd964c-de23-5d00-b06b-670ea2de73af",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+    "7cab9450-4ebb-5390-be71-0e1d45e8192e": {
+      "source": "419c0cf1-5c75-5001-9c7c-f4068e096458",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "RootTestModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "24fab9f2-9034-5fec-88ea-f60703d55746"
+      "id": "7cab9450-4ebb-5390-be71-0e1d45e8192e"
     },
-    "8265e34f-74df-5723-8342-12f29f099617": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+    "156ba1f5-a3c2-5842-9579-df66d731c856": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
       "target": "cb7b08c4-a986-5118-8811-cebf00c9ad57",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "CoreModule"
       },
-      "id": "8265e34f-74df-5723-8342-12f29f099617"
+      "id": "156ba1f5-a3c2-5842-9579-df66d731c856"
     },
-    "d38f158c-13fa-5818-95fd-cf3a2127b198": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
-      "target": "ff654e54-b225-59ff-9435-5856c3f023e6",
+    "51d961af-436c-562c-afa0-54e916822ec6": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
+      "target": "881c95d9-c95d-5e43-8c9e-8c837f7ef5fc",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "CatsModule"
       },
-      "id": "d38f158c-13fa-5818-95fd-cf3a2127b198"
+      "id": "51d961af-436c-562c-afa0-54e916822ec6"
     },
-    "e9605d46-6a3a-5025-94ec-5422dd0dd1ea": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
-      "target": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
+    "20671238-7477-580a-b1fc-29a6fef62992": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
+      "target": "83323fa4-1058-50ca-afd1-186e9b44528e",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "HelloModule"
       },
-      "id": "e9605d46-6a3a-5025-94ec-5422dd0dd1ea"
+      "id": "20671238-7477-580a-b1fc-29a6fef62992"
     },
-    "99b36155-6b9e-5aa2-a540-7b1ad68e4ad6": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+    "cc8acca8-9bff-53ca-9481-0a5e2a651d75": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
       "target": "da1314a2-cdd6-5915-9a1f-a0db319b2a0a",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "DurableModule"
       },
-      "id": "99b36155-6b9e-5aa2-a540-7b1ad68e4ad6"
+      "id": "cc8acca8-9bff-53ca-9481-0a5e2a651d75"
     },
-    "b1ea7c81-a642-5313-a6bb-ca69816a0200": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+    "aa4a2aa2-aa32-5dcd-add6-6e27a8942a2e": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
       "target": "038094a4-e405-516e-a3a8-c554fe07fa96",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "DogsModule"
       },
-      "id": "b1ea7c81-a642-5313-a6bb-ca69816a0200"
+      "id": "aa4a2aa2-aa32-5dcd-add6-6e27a8942a2e"
     },
-    "7cae432f-2982-51cb-b27c-72a68a753372": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+    "83775522-4d64-57a9-bce2-90935e3552c7": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
       "target": "d179d559-dd09-5660-bd2b-f204b8ed7baa",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "UsersModule"
       },
-      "id": "7cae432f-2982-51cb-b27c-72a68a753372"
+      "id": "83775522-4d64-57a9-bce2-90935e3552c7"
     },
-    "4176ae81-5378-5672-856b-d11a6a02f55f": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+    "2721f189-5437-543c-a0dc-77962e66d11f": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
       "target": "d67cef96-6f3b-5efe-82c0-17b967daa5c5",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "DatabaseModule"
       },
-      "id": "4176ae81-5378-5672-856b-d11a6a02f55f"
+      "id": "2721f189-5437-543c-a0dc-77962e66d11f"
     },
-    "c153a55a-0888-5163-8c33-9c1d30a264d3": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+    "e2ec7e98-ae5d-50f3-b304-ee88f6980672": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
       "target": "5730500b-b42b-507d-86df-8a5af01ae9c2",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "ExternalSvcModule"
       },
-      "id": "c153a55a-0888-5163-8c33-9c1d30a264d3"
+      "id": "e2ec7e98-ae5d-50f3-b304-ee88f6980672"
     },
-    "9b78971d-acfa-561a-95b7-6db5c66243b5": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+    "136c75ca-a34e-56af-9b4b-912e83b1c047": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
       "target": "22ecab4d-2742-5e17-b611-97dc15ff02a6",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "ChatModule"
       },
-      "id": "9b78971d-acfa-561a-95b7-6db5c66243b5"
+      "id": "136c75ca-a34e-56af-9b4b-912e83b1c047"
     },
-    "c668d0c1-ced2-5262-908e-1e573aefc4c8": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
+    "3edba900-79ec-5929-80bf-f9204ceae263": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
       "target": "d9e0023c-5d26-5419-b2df-18111057965c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "RequestChainModule"
       },
-      "id": "c668d0c1-ced2-5262-908e-1e573aefc4c8"
+      "id": "3edba900-79ec-5929-80bf-f9204ceae263"
     },
-    "c23f6f08-785c-55cb-8b96-f9288651d0cc": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
-      "target": "1ef97d71-97a2-5b1b-891c-5c823511343c",
+    "9a432e1f-ff52-5260-a82d-b03b6088c2ec": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
+      "target": "f5e96eaf-21c4-533f-8324-a118e7763b54",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "PropertiesModule"
       },
-      "id": "c23f6f08-785c-55cb-8b96-f9288651d0cc"
+      "id": "9a432e1f-ff52-5260-a82d-b03b6088c2ec"
     },
-    "946ee9cf-bacb-5237-ae90-5f39f8cb2290": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
-      "target": "0e41b294-78d8-5f2a-8889-3a3ddc0f7c3d",
+    "f783d271-bea1-5513-8c18-6f696e77979d": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
+      "target": "8d33008c-4294-5979-987b-4b50bb077c85",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "InputModule"
       },
-      "id": "946ee9cf-bacb-5237-ae90-5f39f8cb2290"
+      "id": "f783d271-bea1-5513-8c18-6f696e77979d"
     },
-    "86012aa7-e9e2-56d1-a751-28800dbc1886": {
-      "source": "33ad50d4-f5f7-59e0-a95a-b2e0d2cf019e",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+    "a24459dc-3cae-5df9-b1a4-566e9798cff2": {
+      "source": "190c0792-40e6-59da-a900-900f5421fbf3",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "86012aa7-e9e2-56d1-a751-28800dbc1886"
+      "id": "a24459dc-3cae-5df9-b1a4-566e9798cff2"
     },
-    "9da4294e-90f7-57fd-9f5f-c392389ecc3f": {
+    "00e334bb-274c-5c31-b1df-a083ae7da1ac": {
       "source": "cb7b08c4-a986-5118-8811-cebf00c9ad57",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "CoreModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "9da4294e-90f7-57fd-9f5f-c392389ecc3f"
+      "id": "00e334bb-274c-5c31-b1df-a083ae7da1ac"
     },
-    "bf0d86f8-0896-53a9-bedd-fbce05f4b506": {
-      "source": "ff654e54-b225-59ff-9435-5856c3f023e6",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+    "592a41d1-72a1-571c-8e62-398a6c705350": {
+      "source": "881c95d9-c95d-5e43-8c9e-8c837f7ef5fc",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "CatsModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "bf0d86f8-0896-53a9-bedd-fbce05f4b506"
+      "id": "592a41d1-72a1-571c-8e62-398a6c705350"
     },
-    "952e1331-5129-575b-a294-82b6b3906787": {
-      "source": "c3f045fc-20d0-5ef4-b271-7cb89aa8c5cf",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+    "09fe6382-a915-52c9-ab82-ed769386d488": {
+      "source": "83323fa4-1058-50ca-afd1-186e9b44528e",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "HelloModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "952e1331-5129-575b-a294-82b6b3906787"
+      "id": "09fe6382-a915-52c9-ab82-ed769386d488"
     },
-    "f24857c1-ed01-5c52-a248-4cccdfbb1b55": {
+    "c9b7ad71-985f-5578-bd70-649ecfb2339e": {
       "source": "da1314a2-cdd6-5915-9a1f-a0db319b2a0a",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "DurableModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "f24857c1-ed01-5c52-a248-4cccdfbb1b55"
+      "id": "c9b7ad71-985f-5578-bd70-649ecfb2339e"
     },
-    "476b489e-8f75-5886-91e4-dc9a3f2c5146": {
+    "4a84bdb3-670f-5bb5-a8aa-cfa16a9e5993": {
       "source": "038094a4-e405-516e-a3a8-c554fe07fa96",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "DogsModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "476b489e-8f75-5886-91e4-dc9a3f2c5146"
+      "id": "4a84bdb3-670f-5bb5-a8aa-cfa16a9e5993"
     },
-    "d7b2f9b2-8948-5700-b73b-5e0e6ba09974": {
+    "c582e5da-b9fc-51e2-8566-8487c70a35ae": {
       "source": "d179d559-dd09-5660-bd2b-f204b8ed7baa",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "UsersModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "d7b2f9b2-8948-5700-b73b-5e0e6ba09974"
+      "id": "c582e5da-b9fc-51e2-8566-8487c70a35ae"
     },
-    "270ad78e-ded9-53d1-bc74-cb9cc0b6481e": {
+    "443917b4-4966-519b-870a-23405baaf539": {
       "source": "d67cef96-6f3b-5efe-82c0-17b967daa5c5",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "DatabaseModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "270ad78e-ded9-53d1-bc74-cb9cc0b6481e"
+      "id": "443917b4-4966-519b-870a-23405baaf539"
     },
-    "d2528703-6de3-534b-968a-c9b4c86fb108": {
+    "d26daefa-ed22-5aa1-8622-c2c376e72e8e": {
       "source": "5730500b-b42b-507d-86df-8a5af01ae9c2",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "ExternalSvcModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "d2528703-6de3-534b-968a-c9b4c86fb108"
+      "id": "d26daefa-ed22-5aa1-8622-c2c376e72e8e"
     },
-    "62acabdc-184b-53bf-b6e5-9a1f4a2398e8": {
+    "6c8277b1-b03d-52f5-9a69-e399f0cd8b24": {
       "source": "22ecab4d-2742-5e17-b611-97dc15ff02a6",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "ChatModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "62acabdc-184b-53bf-b6e5-9a1f4a2398e8"
+      "id": "6c8277b1-b03d-52f5-9a69-e399f0cd8b24"
     },
     "ca2b9513-23d8-503f-b8d4-228358087dba": {
       "source": "d9e0023c-5d26-5419-b2df-18111057965c",
@@ -2410,75 +2410,75 @@
       },
       "id": "ca2b9513-23d8-503f-b8d4-228358087dba"
     },
-    "5c1c47f1-816d-5d94-ab04-3c647ce8aa3f": {
+    "9956b2a4-282c-530d-9362-f07f964635ed": {
       "source": "d9e0023c-5d26-5419-b2df-18111057965c",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "RequestChainModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "5c1c47f1-816d-5d94-ab04-3c647ce8aa3f"
+      "id": "9956b2a4-282c-530d-9362-f07f964635ed"
     },
-    "747a1b4e-76bd-572d-926e-d007848f063f": {
+    "a8d3be2f-c7df-5c4e-b67f-2cfaa14f0aa7": {
       "source": "fe0b8505-2fef-54ff-813f-5ad4060a6e38",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "HelperModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "747a1b4e-76bd-572d-926e-d007848f063f"
+      "id": "a8d3be2f-c7df-5c4e-b67f-2cfaa14f0aa7"
     },
-    "896ea27a-d712-51ce-838f-e87d0c007ce6": {
-      "source": "1ef97d71-97a2-5b1b-891c-5c823511343c",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+    "26a28a80-197b-5bc7-9a37-55375086efda": {
+      "source": "f5e96eaf-21c4-533f-8324-a118e7763b54",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "PropertiesModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "896ea27a-d712-51ce-838f-e87d0c007ce6"
+      "id": "26a28a80-197b-5bc7-9a37-55375086efda"
     },
-    "771b140b-b5fa-5dd4-b4d1-a4382b3fca1b": {
-      "source": "0e41b294-78d8-5f2a-8889-3a3ddc0f7c3d",
-      "target": "746cc074-e478-5e4b-8381-f1af1e2ae09f",
+    "e40943b5-db14-5ea3-b6c5-94dfbb94d520": {
+      "source": "8d33008c-4294-5979-987b-4b50bb077c85",
+      "target": "51b4619f-17da-58cc-a918-8bd2de787ade",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "InputModule",
         "targetModuleName": "CircularModule"
       },
-      "id": "771b140b-b5fa-5dd4-b4d1-a4382b3fca1b"
+      "id": "e40943b5-db14-5ea3-b6c5-94dfbb94d520"
     },
-    "f3aff888-ddfc-51df-afe3-e7039d67d798": {
-      "source": "0e41b294-78d8-5f2a-8889-3a3ddc0f7c3d",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+    "e4779052-0f38-5368-a6e7-de6b59077684": {
+      "source": "8d33008c-4294-5979-987b-4b50bb077c85",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "InputModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "f3aff888-ddfc-51df-afe3-e7039d67d798"
+      "id": "e4779052-0f38-5368-a6e7-de6b59077684"
     },
-    "235202ad-f68a-537a-89fd-846f7a7d3fb8": {
-      "source": "746cc074-e478-5e4b-8381-f1af1e2ae09f",
-      "target": "0e41b294-78d8-5f2a-8889-3a3ddc0f7c3d",
+    "92ed76ae-d5bc-5a24-8092-5efd9343e13a": {
+      "source": "51b4619f-17da-58cc-a918-8bd2de787ade",
+      "target": "8d33008c-4294-5979-987b-4b50bb077c85",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "CircularModule",
         "targetModuleName": "InputModule"
       },
-      "id": "235202ad-f68a-537a-89fd-846f7a7d3fb8"
+      "id": "92ed76ae-d5bc-5a24-8092-5efd9343e13a"
     },
-    "e5fb0dc2-bb23-55de-bae8-6db87b08a9be": {
-      "source": "746cc074-e478-5e4b-8381-f1af1e2ae09f",
-      "target": "9d72a9e9-4e3c-545b-a5c3-f7c3396c6408",
+    "c2ed6ca3-057e-5331-8fc6-923b430ab816": {
+      "source": "51b4619f-17da-58cc-a918-8bd2de787ade",
+      "target": "cd386e3b-3d69-5901-952d-1f208af88d8c",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "CircularModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "e5fb0dc2-bb23-55de-bae8-6db87b08a9be"
+      "id": "c2ed6ca3-057e-5331-8fc6-923b430ab816"
     },
     "56f5df54-a625-57db-99ea-f51bacf7d2e1": {
       "source": "9cd5ba23-0bdc-52f0-9e25-c478e0689f88",
@@ -2495,8 +2495,8 @@
       },
       "id": "56f5df54-a625-57db-99ea-f51bacf7d2e1"
     },
-    "fe7ebc60-36e9-5177-8a03-d0cb98243218": {
-      "source": "c6535829-8ec6-5852-b1f5-2a1332218877",
+    "330b4c34-6801-54bf-bac2-7ce72659861e": {
+      "source": "769e8ad6-f9f6-515d-83f5-9c6a8e6ebc54",
       "target": "beeb3251-4b2b-5810-a4ec-ed05623a7557",
       "metadata": {
         "type": "class-to-class",
@@ -2508,10 +2508,10 @@
         "targetModuleName": "HelloModule",
         "injectionType": "decorator"
       },
-      "id": "fe7ebc60-36e9-5177-8a03-d0cb98243218"
+      "id": "330b4c34-6801-54bf-bac2-7ce72659861e"
     },
-    "f7ddc5bb-b39f-500b-b051-4798536781b1": {
-      "source": "c6535829-8ec6-5852-b1f5-2a1332218877",
+    "0a91b819-ec5e-577d-a0b2-aac29cdde0a0": {
+      "source": "769e8ad6-f9f6-515d-83f5-9c6a8e6ebc54",
       "target": "0ea50366-8cd7-5410-91f4-5a140b2a5fe9",
       "metadata": {
         "type": "class-to-class",
@@ -2523,11 +2523,11 @@
         "targetModuleName": "HelloModule",
         "injectionType": "decorator"
       },
-      "id": "f7ddc5bb-b39f-500b-b051-4798536781b1"
+      "id": "0a91b819-ec5e-577d-a0b2-aac29cdde0a0"
     },
-    "ce53b93d-f1db-5491-9297-1400678505ab": {
-      "source": "c6535829-8ec6-5852-b1f5-2a1332218877",
-      "target": "d8184163-323d-511e-b2a0-368003f3425a",
+    "0508cfc7-3e89-5431-83b2-bd31523d1e82": {
+      "source": "769e8ad6-f9f6-515d-83f5-9c6a8e6ebc54",
+      "target": "317c5d2d-4c46-5b39-83e8-c27aa64a1edd",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "HelloModule",
@@ -2538,7 +2538,7 @@
         "targetModuleName": "HelloModule",
         "injectionType": "decorator"
       },
-      "id": "ce53b93d-f1db-5491-9297-1400678505ab"
+      "id": "0508cfc7-3e89-5431-83b2-bd31523d1e82"
     },
     "57b364e1-cb7b-5314-b4fe-49c4a024b7aa": {
       "source": "5b34c433-222a-5cf1-a0cd-cfe52d873525",

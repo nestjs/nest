@@ -4,6 +4,10 @@ import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { NoopGraphInspector } from '@nestjs/core/inspector/noop-graph-inspector';
+import {
+  UuidFactory,
+  UuidFactoryMode,
+} from '@nestjs/core/inspector/uuid-factory';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
 import {
@@ -67,9 +71,14 @@ export class TestingModuleBuilder {
   ): Promise<TestingModule> {
     this.applyLogger();
 
-    const graphInspector = options?.snapshot
-      ? new GraphInspector(this.container)
-      : NoopGraphInspector;
+    let graphInspector: GraphInspector;
+    if (options?.snapshot) {
+      graphInspector = new GraphInspector(this.container);
+      UuidFactory.mode = UuidFactoryMode.Deterministic;
+    } else {
+      graphInspector = NoopGraphInspector;
+      UuidFactory.mode = UuidFactoryMode.Random;
+    }
 
     const scanner = new DependenciesScanner(
       this.container,
@@ -80,17 +89,7 @@ export class TestingModuleBuilder {
     await scanner.scan(this.module);
 
     this.applyOverloadsMap();
-
-    const instanceLoader = new TestingInstanceLoader(
-      this.container,
-      this.injector,
-      graphInspector,
-    );
-    await instanceLoader.createInstancesOfDependencies(
-      this.container.getModules(),
-      this.mocker,
-    );
-
+    await this.createInstancesOfDependencies(graphInspector);
     scanner.applyApplicationProviders();
 
     const root = this.getRootModule();
@@ -133,6 +132,18 @@ export class TestingModuleBuilder {
   private getRootModule() {
     const modules = this.container.getModules().values();
     return modules.next().value;
+  }
+
+  private async createInstancesOfDependencies(graphInspector: GraphInspector) {
+    const instanceLoader = new TestingInstanceLoader(
+      this.container,
+      this.injector,
+      graphInspector,
+    );
+    await instanceLoader.createInstancesOfDependencies(
+      this.container.getModules(),
+      this.mocker,
+    );
   }
 
   private createModule(metadata: ModuleMetadata) {
