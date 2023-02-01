@@ -22,6 +22,11 @@ export interface HttpAdapterHost<T extends HttpServer = any> {
   httpAdapter: T;
 }
 
+/**
+ * @see [Caching](https://docs.nestjs.com/techniques/caching)
+ *
+ * @publicApi
+ */
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
   @Optional()

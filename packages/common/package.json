@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/common",
-  "version": "9.2.0",
+  "version": "9.3.0-beta.3",
   "description": "Nest - modern, fast, powerful node.js web framework (@common)",
   "author": "Kamil Mysliwiec",
   "homepage": "https://nestjs.com",
@@ -19,7 +19,7 @@
   "dependencies": {
     "iterare": "1.2.1",
     "tslib": "2.4.1",
-    "uuid": "9.0.0"
+    "uid": "2.0.1"
   },
   "peerDependencies": {
     "cache-manager": "<=5",

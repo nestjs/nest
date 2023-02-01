@@ -21,7 +21,7 @@
     "dependencies": {
         "@nestjs/common": "9.0.1",
         "@nestjs/core": "9.0.1",
-        "@nestjs/platform-fastify": "9.0.1",
+        "@nestjs/platform-fastify": "9.2.1",
         "@fastify/static": "6.4.0",
         "handlebars": "4.7.7",
         "@fastify/view": "7.0.0",

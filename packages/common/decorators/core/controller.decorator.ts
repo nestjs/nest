@@ -5,8 +5,7 @@ import {
   SCOPE_OPTIONS_METADATA,
   VERSION_METADATA,
 } from '../../constants';
-import { ScopeOptions } from '../../interfaces/scope-options.interface';
-import { VersionOptions } from '../../interfaces/version-options.interface';
+import { ScopeOptions, VersionOptions } from '../../interfaces';
 import { isString, isUndefined } from '../../utils/shared.utils';
 
 /**

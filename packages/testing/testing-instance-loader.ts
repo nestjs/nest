@@ -3,9 +3,7 @@ import { Module } from '@nestjs/core/injector/module';
 import { MockFactory } from './interfaces';
 import { TestingInjector } from './testing-injector';
 
-export class TestingInstanceLoader extends InstanceLoader {
-  protected injector = new TestingInjector();
-
+export class TestingInstanceLoader extends InstanceLoader<TestingInjector> {
   public async createInstancesOfDependencies(
     modules: Map<string, Module> = this.container.getModules(),
     mocker?: MockFactory,

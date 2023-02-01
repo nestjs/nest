@@ -12,6 +12,8 @@ import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MESSAGES } from '@nestjs/core/constants';
 import { optionalRequire } from '@nestjs/core/helpers/optional-require';
 import { NestContainer } from '@nestjs/core/injector/container';
+import { Injector } from '@nestjs/core/injector/injector';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
 import { Transport } from './enums/transport.enum';
 import { CustomTransportStrategy } from './interfaces/custom-transport-strategy.interface';
@@ -26,10 +28,10 @@ const { SocketModule } = optionalRequire(
 );
 
 export class NestMicroservice
-  extends NestApplicationContext
+  extends NestApplicationContext<NestMicroserviceOptions>
   implements INestMicroservice
 {
-  private readonly logger = new Logger(NestMicroservice.name, {
+  protected readonly logger = new Logger(NestMicroservice.name, {
     timestamp: true,
   });
   private readonly microservicesModule = new MicroservicesModule();
@@ -42,11 +44,18 @@ export class NestMicroservice
   constructor(
     container: NestContainer,
     config: NestMicroserviceOptions & MicroserviceOptions = {},
+    private readonly graphInspector: GraphInspector,
     private readonly applicationConfig: ApplicationConfig,
   ) {
-    super(container);
+    super(container, config);
 
-    this.microservicesModule.register(container, this.applicationConfig);
+    this.injector = new Injector({ preview: config.preview });
+    this.microservicesModule.register(
+      container,
+      this.graphInspector,
+      this.applicationConfig,
+      this.appOptions,
+    );
     this.createServer(config);
     this.selectContextModule();
   }
@@ -69,10 +78,18 @@ export class NestMicroservice
 
   public async registerModules(): Promise<any> {
     this.socketModule &&
-      this.socketModule.register(this.container, this.applicationConfig);
-    this.microservicesModule.setupClients(this.container);
+      this.socketModule.register(
+        this.container,
+        this.applicationConfig,
+        this.graphInspector,
+        this.appOptions,
+      );
 
-    this.registerListeners();
+    if (!this.appOptions.preview) {
+      this.microservicesModule.setupClients(this.container);
+      this.registerListeners();
+    }
+
     this.setIsInitialized(true);
 
     if (!this.isInitHookCalled) {
@@ -92,21 +109,45 @@ export class NestMicroservice
 
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
     this.applicationConfig.useGlobalFilters(...filters);
+    filters.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'filter',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
     this.applicationConfig.useGlobalPipes(...pipes);
+    pipes.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'pipe',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
     this.applicationConfig.useGlobalInterceptors(...interceptors);
+    interceptors.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'interceptor',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalGuards(...guards: CanActivate[]): this {
     this.applicationConfig.useGlobalGuards(...guards);
+    guards.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'guard',
+        ref: item,
+      }),
+    );
     return this;
   }
 
@@ -120,6 +161,7 @@ export class NestMicroservice
   }
 
   public async listen() {
+    this.assertNotInPreviewMode('listen');
     !this.isInitialized && (await this.registerModules());
 
     return new Promise<any>((resolve, reject) => {

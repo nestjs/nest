@@ -56,7 +56,7 @@ describe('Module', () => {
     const setSpy = sinon.spy(collection, 'set');
     (module as any)._injectables = collection;
 
-    module.addInjectable(TestProvider, TestModule);
+    module.addInjectable(TestProvider, 'interceptor', TestModule);
     expect(
       setSpy.calledWith(
         TestProvider,
@@ -69,6 +69,7 @@ describe('Module', () => {
           instance: null,
           durable: undefined,
           isResolved: false,
+          subtype: 'interceptor',
         }),
       ),
     ).to.be.true;
@@ -78,7 +79,7 @@ describe('Module', () => {
     it('should call `addCustomProvider`', () => {
       const addCustomProviderSpy = sinon.spy(module, 'addCustomProvider');
 
-      module.addInjectable({ provide: 'test' } as any);
+      module.addInjectable({ provide: 'test' } as any, 'guard');
       expect(addCustomProviderSpy.called).to.be.true;
     });
   });
@@ -180,6 +181,7 @@ describe('Module', () => {
             durable: true,
             instance: null,
             isResolved: false,
+            subtype: undefined,
           }),
         ),
       ).to.be.true;
@@ -211,6 +213,7 @@ describe('Module', () => {
             instance: value,
             isResolved: true,
             async: false,
+            subtype: undefined,
           }),
         ),
       ).to.be.true;
@@ -244,6 +247,7 @@ describe('Module', () => {
             instance: null,
             isResolved: false,
             inject: inject as any,
+            subtype: undefined,
           }),
         ),
       ).to.be.true;
@@ -279,6 +283,7 @@ describe('Module', () => {
             inject: [provider.useExisting as any],
             isResolved: false,
             isAlias: true,
+            subtype: undefined,
           }),
         ),
       ).to.be.true;

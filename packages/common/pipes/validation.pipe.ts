@@ -20,6 +20,9 @@ import {
 import { loadPackage } from '../utils/load-package.util';
 import { isNil } from '../utils/shared.utils';
 
+/**
+ * @publicApi
+ */
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
   disableErrorMessages?: boolean;
@@ -35,6 +38,11 @@ export interface ValidationPipeOptions extends ValidatorOptions {
 let classValidator: ValidatorPackage = {} as any;
 let classTransformer: TransformerPackage = {} as any;
 
+/**
+ * @see [Validation](https://docs.nestjs.com/techniques/validation)
+ *
+ * @publicApi
+ */
 @Injectable()
 export class ValidationPipe implements PipeTransform<any> {
   protected isTransformEnabled: boolean;

@@ -1,7 +1,13 @@
-import { Logger, LoggerService, Module } from '@nestjs/common';
-import { ModuleMetadata } from '@nestjs/common/interfaces';
+import { Logger, LoggerService, Module, ModuleMetadata } from '@nestjs/common';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
+import { NoopGraphInspector } from '@nestjs/core/inspector/noop-graph-inspector';
+import {
+  UuidFactory,
+  UuidFactoryMode,
+} from '@nestjs/core/inspector/uuid-factory';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
 import {
@@ -10,25 +16,23 @@ import {
   OverrideByFactoryOptions,
 } from './interfaces';
 import { TestingLogger } from './services/testing-logger.service';
+import { TestingInjector } from './testing-injector';
 import { TestingInstanceLoader } from './testing-instance-loader';
 import { TestingModule } from './testing-module';
 
 export class TestingModuleBuilder {
   private readonly applicationConfig = new ApplicationConfig();
   private readonly container = new NestContainer(this.applicationConfig);
+  private readonly injector = new TestingInjector();
   private readonly overloadsMap = new Map();
-  private readonly scanner: DependenciesScanner;
-  private readonly instanceLoader = new TestingInstanceLoader(this.container);
   private readonly module: any;
   private testingLogger: LoggerService;
   private mocker?: MockFactory;
 
-  constructor(metadataScanner: MetadataScanner, metadata: ModuleMetadata) {
-    this.scanner = new DependenciesScanner(
-      this.container,
-      metadataScanner,
-      this.applicationConfig,
-    );
+  constructor(
+    private readonly metadataScanner: MetadataScanner,
+    metadata: ModuleMetadata,
+  ) {
     this.module = this.createModule(metadata);
   }
 
@@ -62,19 +66,39 @@ export class TestingModuleBuilder {
     return this.override(typeOrToken, true);
   }
 
-  public async compile(): Promise<TestingModule> {
+  public async compile(
+    options: Pick<NestApplicationContextOptions, 'snapshot'> = {},
+  ): Promise<TestingModule> {
     this.applyLogger();
-    await this.scanner.scan(this.module);
+
+    let graphInspector: GraphInspector;
+    if (options?.snapshot) {
+      graphInspector = new GraphInspector(this.container);
+      UuidFactory.mode = UuidFactoryMode.Deterministic;
+    } else {
+      graphInspector = NoopGraphInspector;
+      UuidFactory.mode = UuidFactoryMode.Random;
+    }
+
+    const scanner = new DependenciesScanner(
+      this.container,
+      this.metadataScanner,
+      graphInspector,
+      this.applicationConfig,
+    );
+    await scanner.scan(this.module);
 
     this.applyOverloadsMap();
-    await this.instanceLoader.createInstancesOfDependencies(
-      this.container.getModules(),
-      this.mocker,
-    );
-    this.scanner.applyApplicationProviders();
+    await this.createInstancesOfDependencies(graphInspector);
+    scanner.applyApplicationProviders();
 
     const root = this.getRootModule();
-    return new TestingModule(this.container, [], root, this.applicationConfig);
+    return new TestingModule(
+      this.container,
+      graphInspector,
+      root,
+      this.applicationConfig,
+    );
   }
 
   private override<T = any>(typeOrToken: T, isProvider: boolean): OverrideBy {
@@ -108,6 +132,18 @@ export class TestingModuleBuilder {
   private getRootModule() {
     const modules = this.container.getModules().values();
     return modules.next().value;
+  }
+
+  private async createInstancesOfDependencies(graphInspector: GraphInspector) {
+    const instanceLoader = new TestingInstanceLoader(
+      this.container,
+      this.injector,
+      graphInspector,
+    );
+    await instanceLoader.createInstancesOfDependencies(
+      this.container.getModules(),
+      this.mocker,
+    );
   }
 
   private createModule(metadata: ModuleMetadata) {

@@ -152,6 +152,26 @@ describe('InstanceWrapper', () => {
             expect(wrapper.isDependencyTreeDurable()).to.be.true;
           });
         });
+        describe('when one is not static, durable and non durable', () => {
+          it('should return false', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addCtorMetadata(0, new InstanceWrapper());
+            wrapper.addCtorMetadata(
+              1,
+              new InstanceWrapper({
+                scope: Scope.REQUEST,
+                durable: true,
+              }),
+            );
+            wrapper.addCtorMetadata(
+              2,
+              new InstanceWrapper({
+                scope: Scope.REQUEST,
+              }),
+            );
+            expect(wrapper.isDependencyTreeDurable()).to.be.false;
+          });
+        });
       });
       describe('properties', () => {
         describe('when each is static', () => {
@@ -184,6 +204,21 @@ describe('InstanceWrapper', () => {
             expect(wrapper.isDependencyTreeDurable()).to.be.true;
           });
         });
+        describe('when one is not static, non durable and durable', () => {
+          it('should return false', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addPropertiesMetadata(
+              'key1',
+              new InstanceWrapper({ scope: Scope.REQUEST, durable: true }),
+            );
+            wrapper.addPropertiesMetadata('key2', new InstanceWrapper());
+            wrapper.addPropertiesMetadata(
+              'key3',
+              new InstanceWrapper({ scope: Scope.REQUEST }),
+            );
+            expect(wrapper.isDependencyTreeDurable()).to.be.false;
+          });
+        });
       });
       describe('enhancers', () => {
         describe('when each is static', () => {
@@ -212,6 +247,19 @@ describe('InstanceWrapper', () => {
             );
             wrapper.addEnhancerMetadata(new InstanceWrapper());
             expect(wrapper.isDependencyTreeDurable()).to.be.true;
+          });
+        });
+        describe('when one is not static, non durable and durable', () => {
+          it('should return false', () => {
+            const wrapper = new InstanceWrapper();
+            wrapper.addEnhancerMetadata(
+              new InstanceWrapper({ scope: Scope.REQUEST, durable: true }),
+            );
+            wrapper.addEnhancerMetadata(new InstanceWrapper());
+            wrapper.addEnhancerMetadata(
+              new InstanceWrapper({ scope: Scope.REQUEST }),
+            );
+            expect(wrapper.isDependencyTreeDurable()).to.be.false;
           });
         });
       });

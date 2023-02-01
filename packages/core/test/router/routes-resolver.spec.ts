@@ -13,6 +13,8 @@ import { ApplicationConfig } from '../../application-config';
 import { NestContainer } from '../../injector';
 import { Injector } from '../../injector/injector';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { GraphInspector } from '../../inspector/graph-inspector';
+import { SerializedGraph } from '../../inspector/serialized-graph';
 import { RoutesResolver } from '../../router/routes-resolver';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
@@ -65,6 +67,7 @@ describe('RoutesResolver', () => {
       getModules: () => modules,
       getModuleByKey: (key: string) => modules.get(key),
       getHttpAdapterRef: () => applicationRef,
+      serializedGraph: new SerializedGraph(),
     } as any;
     router = {
       get() {},
@@ -77,6 +80,7 @@ describe('RoutesResolver', () => {
       container,
       new ApplicationConfig(),
       new Injector(),
+      new GraphInspector(container),
     );
   });
 
@@ -175,6 +179,7 @@ describe('RoutesResolver', () => {
         container,
         applicationConfig,
         new Injector(),
+        new GraphInspector(container),
       );
 
       const routes = new Map();

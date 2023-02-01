@@ -1,6 +1,7 @@
 import { RequestMethod } from '@nestjs/common';
 
 export interface ExcludeRouteMetadata {
+  path: string;
   /**
    * Route path.
    */

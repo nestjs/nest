@@ -11,6 +11,7 @@ import {
   GetOrResolveOptions,
   Type,
 } from '@nestjs/common/interfaces';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { MESSAGES } from './constants';
@@ -34,12 +35,17 @@ import { Module } from './injector/module';
 /**
  * @publicApi
  */
-export class NestApplicationContext
+export class NestApplicationContext<
+    TOptions extends NestApplicationContextOptions = NestApplicationContextOptions,
+  >
   extends AbstractInstanceResolver
   implements INestApplicationContext
 {
   protected isInitialized = false;
-  protected readonly injector = new Injector();
+  protected injector: Injector;
+  protected readonly logger = new Logger(NestApplicationContext.name, {
+    timestamp: true,
+  });
 
   private shouldFlushLogsOnOverride = false;
   private readonly activeShutdownSignals = new Array<string>();
@@ -57,10 +63,16 @@ export class NestApplicationContext
 
   constructor(
     protected readonly container: NestContainer,
-    private readonly scope = new Array<Type<any>>(),
+    protected readonly appOptions: TOptions = {} as TOptions,
     private contextModule: Module = null,
+    private readonly scope = new Array<Type<any>>(),
   ) {
     super();
+    this.injector = new Injector();
+
+    if (this.appOptions.preview) {
+      this.printInPreviewModeWarning();
+    }
   }
 
   public selectContextModule() {
@@ -88,7 +100,12 @@ export class NestApplicationContext
     if (!selectedModule) {
       throw new UnknownModuleException();
     }
-    return new NestApplicationContext(this.container, scope, selectedModule);
+    return new NestApplicationContext(
+      this.container,
+      this.appOptions,
+      selectedModule,
+      scope,
+    );
   }
 
   /**
@@ -227,11 +244,11 @@ export class NestApplicationContext
    * Terminates the application
    * @returns {Promise<void>}
    */
-  public async close(): Promise<void> {
+  public async close(signal?: string): Promise<void> {
     await this.callDestroyHook();
-    await this.callBeforeShutdownHook();
+    await this.callBeforeShutdownHook(signal);
     await this.dispose();
-    await this.callShutdownHook();
+    await this.callShutdownHook(signal);
     this.unsubscribeFromProcessSignals();
   }
 
@@ -306,13 +323,20 @@ export class NestApplicationContext
    * @param {string[]} signals The system signals it should listen to
    */
   protected listenToShutdownSignals(signals: string[]) {
+    let receivedSignal = false;
     const cleanup = async (signal: string) => {
       try {
-        signals.forEach(sig => process.removeListener(sig, cleanup));
+        if (receivedSignal) {
+          // If we receive another signal while we're waiting
+          // for the server to stop, just ignore it.
+          return;
+        }
+        receivedSignal = true;
         await this.callDestroyHook();
         await this.callBeforeShutdownHook(signal);
         await this.dispose();
         await this.callShutdownHook(signal);
+        signals.forEach(sig => process.removeListener(sig, cleanup));
         process.kill(process.pid, signal);
       } catch (err) {
         Logger.error(
@@ -348,6 +372,9 @@ export class NestApplicationContext
    * modules and its children.
    */
   protected async callInitHook(): Promise<void> {
+    if (this.appOptions.preview) {
+      return;
+    }
     const modulesSortedByDistance = this.getModulesSortedByDistance();
     for (const module of modulesSortedByDistance) {
       await callModuleInitHook(module);
@@ -359,6 +386,9 @@ export class NestApplicationContext
    * modules and its children.
    */
   protected async callDestroyHook(): Promise<void> {
+    if (this.appOptions.preview) {
+      return;
+    }
     const modulesSortedByDistance = this.getModulesSortedByDistance();
     for (const module of modulesSortedByDistance) {
       await callModuleDestroyHook(module);
@@ -370,6 +400,9 @@ export class NestApplicationContext
    * modules and its children.
    */
   protected async callBootstrapHook(): Promise<void> {
+    if (this.appOptions.preview) {
+      return;
+    }
     const modulesSortedByDistance = this.getModulesSortedByDistance();
     for (const module of modulesSortedByDistance) {
       await callModuleBootstrapHook(module);
@@ -381,6 +414,9 @@ export class NestApplicationContext
    * modules and children.
    */
   protected async callShutdownHook(signal?: string): Promise<void> {
+    if (this.appOptions.preview) {
+      return;
+    }
     const modulesSortedByDistance = this.getModulesSortedByDistance();
     for (const module of modulesSortedByDistance) {
       await callAppShutdownHook(module, signal);
@@ -392,9 +428,20 @@ export class NestApplicationContext
    * modules and children.
    */
   protected async callBeforeShutdownHook(signal?: string): Promise<void> {
+    if (this.appOptions.preview) {
+      return;
+    }
     const modulesSortedByDistance = this.getModulesSortedByDistance();
     for (const module of modulesSortedByDistance) {
       await callBeforeAppShutdownHook(module, signal);
+    }
+  }
+
+  protected assertNotInPreviewMode(methodName: string) {
+    if (this.appOptions.preview) {
+      const error = `Calling the "${methodName}" in the preview mode is not supported.`;
+      this.logger.error(error);
+      throw new Error(error);
     }
   }
 
@@ -409,5 +456,12 @@ export class NestApplicationContext
       compareFn,
     );
     return this._moduleRefsByDistance;
+  }
+
+  private printInPreviewModeWarning() {
+    this.logger.warn('------------------------------------------------');
+    this.logger.warn('Application is running in the PREVIEW mode!');
+    this.logger.warn('Providers/controllers will not be instantiated.');
+    this.logger.warn('------------------------------------------------');
   }
 }

@@ -1,5 +1,4 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { isString } from '../utils/shared.utils';
 import { HttpException, HttpExceptionOptions } from './http.exception';
 
 /**

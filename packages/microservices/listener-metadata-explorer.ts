@@ -11,8 +11,7 @@ import {
 } from './constants';
 import { Transport } from './enums';
 import { PatternHandler } from './enums/pattern-handler.enum';
-import { ClientOptions } from './interfaces/client-metadata.interface';
-import { PatternMetadata } from './interfaces/pattern-metadata.interface';
+import { ClientOptions, PatternMetadata } from './interfaces';
 
 export interface ClientProperties {
   property: string;

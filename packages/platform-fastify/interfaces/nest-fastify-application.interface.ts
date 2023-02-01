@@ -1,17 +1,20 @@
 import { INestApplication } from '@nestjs/common';
 import {
+  FastifyBodyParser,
   FastifyInstance,
   FastifyPluginAsync,
   FastifyPluginCallback,
   FastifyPluginOptions,
   FastifyRegisterOptions,
+  RawServerBase,
 } from 'fastify';
 import {
   Chain as LightMyRequestChain,
   InjectOptions,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
-import { FastifyStaticOptions, PointOfViewOptions } from './external';
+import { FastifyStaticOptions, FastifyViewOptions } from './external';
+import { NestFastifyBodyParserOptions } from './nest-fastify-body-parser-options.interface';
 
 export interface NestFastifyApplication extends INestApplication {
   /**
@@ -29,6 +32,27 @@ export interface NestFastifyApplication extends INestApplication {
   ): Promise<FastifyInstance>;
 
   /**
+   * Register Fastify body parsers on the fly. Will respect
+   * the application's `rawBody` option.
+   *
+   * @example
+   * const app = await NestFactory.create<NestFastifyApplication>(
+   *   AppModule,
+   *   new FastifyAdapter(),
+   *   { rawBody: true }
+   * );
+   * // enable the json parser with a parser limit of 50mb
+   * app.useBodyParser('application/json', { bodyLimit: 50 * 1000 * 1024 });
+   *
+   * @returns {this}
+   */
+  useBodyParser<TServer extends RawServerBase = RawServerBase>(
+    type: string | string[] | RegExp,
+    options?: NestFastifyBodyParserOptions,
+    parser?: FastifyBodyParser<Buffer, TServer>,
+  ): this;
+
+  /**
    * Sets a base directory for public assets.
    * Example `app.useStaticAssets({ root: 'public' })`
    * @returns {this}
@@ -41,7 +65,7 @@ export interface NestFastifyApplication extends INestApplication {
    * Don't pass in a string. The string type in the argument is for compatibilility reason and will cause an exception.
    * @returns {this}
    */
-  setViewEngine(options: PointOfViewOptions | string): this;
+  setViewEngine(options: FastifyViewOptions | string): this;
 
   /**
    * A wrapper function around native `fastify.inject()` method.

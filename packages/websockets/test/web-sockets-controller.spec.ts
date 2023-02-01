@@ -1,14 +1,19 @@
+import { NestContainer } from '@nestjs/core';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { expect } from 'chai';
 import { fromEvent, lastValueFrom, Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
+import { GraphInspector } from '../../core/inspector/graph-inspector';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { AbstractWsAdapter } from '../adapters/ws-adapter';
 import { PORT_METADATA } from '../constants';
 import { WsContextCreator } from '../context/ws-context-creator';
 import { WebSocketGateway } from '../decorators/socket-gateway.decorator';
 import { InvalidSocketPortException } from '../errors/invalid-socket-port.exception';
-import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
+import {
+  GatewayMetadataExplorer,
+  MessageMappingProperties,
+} from '../gateway-metadata-explorer';
 import { SocketServerProvider } from '../socket-server-provider';
 import { WebSocketsController } from '../web-sockets-controller';
 
@@ -29,8 +34,10 @@ class NoopAdapter extends AbstractWsAdapter {
 describe('WebSocketsController', () => {
   let instance: WebSocketsController;
   let provider: SocketServerProvider,
+    graphInspector: GraphInspector,
     config: ApplicationConfig,
     mockProvider: sinon.SinonMock;
+
   const messageHandlerCallback = () => Promise.resolve();
   const port = 90,
     namespace = '/';
@@ -40,6 +47,7 @@ describe('WebSocketsController', () => {
   beforeEach(() => {
     config = new ApplicationConfig(new NoopAdapter());
     provider = new SocketServerProvider(null, config);
+    graphInspector = new GraphInspector(new NestContainer());
     mockProvider = sinon.mock(provider);
 
     const contextCreator = sinon.createStubInstance(WsContextCreator);
@@ -48,6 +56,7 @@ describe('WebSocketsController', () => {
       provider,
       config,
       contextCreator as any,
+      graphInspector,
     );
   });
   describe('connectGatewayToServer', () => {
@@ -69,20 +78,37 @@ describe('WebSocketsController', () => {
         instance.connectGatewayToServer(
           new InvalidGateway(),
           InvalidGateway,
-          '',
+          'moduleKey',
+          'instanceWrapperId',
         ),
       ).throws(InvalidSocketPortException);
     });
     it('should call "subscribeToServerEvents" with default values when metadata is empty', () => {
       const gateway = new DefaultGateway();
-      instance.connectGatewayToServer(gateway, DefaultGateway, '');
-      expect(subscribeToServerEvents.calledWith(gateway, {}, 0, '')).to.be.true;
+      instance.connectGatewayToServer(
+        gateway,
+        DefaultGateway,
+        'moduleKey',
+        'instanceWrapperId',
+      );
+      expect(subscribeToServerEvents.calledWith(gateway, {}, 0, 'moduleKey')).to
+        .be.true;
     });
     it('should call "subscribeToServerEvents" when metadata is valid', () => {
       const gateway = new Test();
-      instance.connectGatewayToServer(gateway, Test, '');
+      instance.connectGatewayToServer(
+        gateway,
+        Test,
+        'moduleKey',
+        'instanceWrapperId',
+      );
       expect(
-        subscribeToServerEvents.calledWith(gateway, { namespace }, port, ''),
+        subscribeToServerEvents.calledWith(
+          gateway,
+          { namespace },
+          port,
+          'moduleKey',
+        ),
       ).to.be.true;
     });
   });
@@ -116,16 +142,28 @@ describe('WebSocketsController', () => {
 
       assignServerToProperties = sinon.spy();
       subscribeEvents = sinon.spy();
-      (instance as any).assignServerToProperties = assignServerToProperties;
-      (instance as any).subscribeEvents = subscribeEvents;
+      instance['assignServerToProperties'] = assignServerToProperties;
+      instance['subscribeEvents'] = subscribeEvents;
     });
     it('should call "assignServerToProperties" with expected arguments', () => {
-      instance.subscribeToServerEvents(gateway, { namespace }, port, '');
+      instance.subscribeToServerEvents(
+        gateway,
+        { namespace },
+        port,
+        'moduleKey',
+        'instanceWrapperId',
+      );
       expect(assignServerToProperties.calledWith(gateway, server.server)).to.be
         .true;
     });
     it('should call "subscribeEvents" with expected arguments', () => {
-      instance.subscribeToServerEvents(gateway, { namespace }, port, '');
+      instance.subscribeToServerEvents(
+        gateway,
+        { namespace },
+        port,
+        'moduleKey',
+        'instanceWrapperId',
+      );
       expect(subscribeEvents.firstCall.args[0]).to.be.equal(gateway);
       expect(subscribeEvents.firstCall.args[2]).to.be.equal(server);
       expect(subscribeEvents.firstCall.args[1]).to.be.eql([
@@ -137,11 +175,69 @@ describe('WebSocketsController', () => {
       ]);
     });
   });
+  describe('inspectEntrypointDefinitions', () => {
+    it('should inspect & insert corresponding entrypoint definitions', () => {
+      class GatewayHostCls {}
+
+      const port = 80;
+      const instanceWrapperId = '1234';
+      const messageHandlers: MessageMappingProperties[] = [
+        {
+          methodName: 'findOne',
+          message: 'find',
+          callback: null,
+        },
+        {
+          methodName: 'create',
+          message: 'insert',
+          callback: null,
+        },
+      ];
+      const insertEntrypointDefinitionSpy = sinon.spy(
+        graphInspector,
+        'insertEntrypointDefinition',
+      );
+      instance.inspectEntrypointDefinitions(
+        new GatewayHostCls(),
+        port,
+        messageHandlers,
+        instanceWrapperId,
+      );
+
+      expect(insertEntrypointDefinitionSpy.calledTwice).to.be.true;
+      expect(
+        insertEntrypointDefinitionSpy.calledWith({
+          type: 'websocket',
+          methodName: messageHandlers[0].methodName,
+          className: GatewayHostCls.name,
+          classNodeId: instanceWrapperId,
+          metadata: {
+            port,
+            key: messageHandlers[0].message,
+            message: messageHandlers[0].message,
+          } as any,
+        }),
+      ).to.be.true;
+      expect(
+        insertEntrypointDefinitionSpy.calledWith({
+          type: 'websocket',
+          methodName: messageHandlers[1].methodName,
+          className: GatewayHostCls.name,
+          classNodeId: instanceWrapperId,
+          metadata: {
+            port,
+            key: messageHandlers[1].message,
+            message: messageHandlers[1].message,
+          } as any,
+        }),
+      ).to.be.true;
+    });
+  });
   describe('subscribeEvents', () => {
     const gateway = new Test();
 
-    let handlers;
-    let server,
+    let handlers: any;
+    let server: any,
       subscribeConnectionEvent: sinon.SinonSpy,
       subscribeDisconnectEvent: sinon.SinonSpy,
       nextSpy: sinon.SinonSpy,

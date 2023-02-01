@@ -1,3 +1,6 @@
+/**
+ * @publicApi
+ */
 export enum HttpStatus {
   CONTINUE = 100,
   SWITCHING_PROTOCOLS = 101,

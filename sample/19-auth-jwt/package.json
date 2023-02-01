@@ -22,11 +22,11 @@
   "dependencies": {
     "@nestjs/common": "9.0.1",
     "@nestjs/core": "9.0.1",
-    "@nestjs/jwt": "9.0.0",
+    "@nestjs/jwt": "10.0.1",
     "@nestjs/passport": "9.0.0",
     "@nestjs/platform-express": "9.0.1",
     "passport": "0.6.0",
-    "passport-jwt": "4.0.0",
+    "passport-jwt": "4.0.1",
     "passport-local": "1.0.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "3.0.2",

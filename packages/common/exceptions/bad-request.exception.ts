@@ -1,4 +1,3 @@
-import { isString } from 'class-validator';
 import { HttpStatus } from '../enums/http-status.enum';
 import { HttpException, HttpExceptionOptions } from './http.exception';
 

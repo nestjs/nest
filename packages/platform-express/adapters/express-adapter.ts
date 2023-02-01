@@ -29,11 +29,13 @@ import {
   OptionsUrlencoded,
   urlencoded as bodyParserUrlencoded,
 } from 'body-parser';
+import * as bodyparser from 'body-parser';
 import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
 import { Duplex, pipeline } from 'stream';
+import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util';
 
@@ -233,6 +235,19 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))
       .forEach(parserKey => this.use(parserMiddleware[parserKey]));
+  }
+
+  public useBodyParser<Options extends bodyparser.Options = bodyparser.Options>(
+    type: keyof bodyparser.BodyParser,
+    rawBody: boolean,
+    options?: NestExpressBodyParserOptions<Options>,
+  ): this {
+    const parserOptions = getBodyParserOptions(rawBody, options || {});
+    const parser = bodyparser[type](parserOptions);
+
+    this.use(parser);
+
+    return this;
   }
 
   public setLocal(key: string, value: any) {

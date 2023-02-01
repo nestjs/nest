@@ -1,17 +1,19 @@
-import { Logger } from '@nestjs/common';
+import { Logger, LoggerService } from '@nestjs/common';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { MODULE_INIT_MESSAGE } from '../helpers/messages';
+import { GraphInspector } from '../inspector/graph-inspector';
 import { NestContainer } from './container';
 import { Injector } from './injector';
 import { InternalCoreModule } from './internal-core-module/internal-core-module';
 import { Module } from './module';
 
-export class InstanceLoader {
-  protected readonly injector = new Injector();
+export class InstanceLoader<TInjector extends Injector = Injector> {
   constructor(
     protected readonly container: NestContainer,
-    private logger = new Logger(InstanceLoader.name, {
+    protected readonly injector: TInjector,
+    protected readonly graphInspector: GraphInspector,
+    private logger: LoggerService = new Logger(InstanceLoader.name, {
       timestamp: true,
     }),
   ) {}
@@ -24,7 +26,10 @@ export class InstanceLoader {
     modules: Map<string, Module> = this.container.getModules(),
   ) {
     this.createPrototypes(modules);
+
     await this.createInstances(modules);
+
+    this.graphInspector.inspectModules(modules);
   }
 
   private createPrototypes(modules: Map<string, Module>) {
@@ -42,7 +47,7 @@ export class InstanceLoader {
         await this.createInstancesOfInjectables(moduleRef);
         await this.createInstancesOfControllers(moduleRef);
 
-        const { name } = moduleRef.metatype;
+        const { name } = moduleRef;
         this.isModuleWhitelisted(name) &&
           this.logger.log(MODULE_INIT_MESSAGE`${name}`);
       }),
@@ -60,7 +65,10 @@ export class InstanceLoader {
     const { providers } = moduleRef;
     const wrappers = [...providers.values()];
     await Promise.all(
-      wrappers.map(item => this.injector.loadProvider(item, moduleRef)),
+      wrappers.map(async item => {
+        await this.injector.loadProvider(item, moduleRef);
+        this.graphInspector.inspectInstanceWrapper(item, moduleRef);
+      }),
     );
   }
 
@@ -75,7 +83,10 @@ export class InstanceLoader {
     const { controllers } = moduleRef;
     const wrappers = [...controllers.values()];
     await Promise.all(
-      wrappers.map(item => this.injector.loadController(item, moduleRef)),
+      wrappers.map(async item => {
+        await this.injector.loadController(item, moduleRef);
+        this.graphInspector.inspectInstanceWrapper(item, moduleRef);
+      }),
     );
   }
 
@@ -90,7 +101,10 @@ export class InstanceLoader {
     const { injectables } = moduleRef;
     const wrappers = [...injectables.values()];
     await Promise.all(
-      wrappers.map(item => this.injector.loadInjectable(item, moduleRef)),
+      wrappers.map(async item => {
+        await this.injector.loadInjectable(item, moduleRef);
+        this.graphInspector.inspectInstanceWrapper(item, moduleRef);
+      }),
     );
   }
 
