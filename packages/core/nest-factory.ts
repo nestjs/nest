@@ -196,9 +196,10 @@ export class NestFactoryStatic {
     options: NestApplicationContextOptions = {},
     httpServer: HttpServer = null,
   ) {
-    if (options.snapshot) {
-      UuidFactory.mode = UuidFactoryMode.Deterministic;
-    }
+    UuidFactory.mode = options.snapshot
+      ? UuidFactoryMode.Deterministic
+      : UuidFactoryMode.Random;
+
     const injector = new Injector({ preview: options.preview });
     const instanceLoader = new InstanceLoader(
       container,
