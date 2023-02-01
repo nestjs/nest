@@ -8,7 +8,7 @@ export class DebugReplFn extends ReplFunction {
   public fnDefinition: ReplFnDefinition = {
     name: 'debug',
     description:
-      'Print all registered modules as a list together with their controllers and providers. If the argument is passed in, for example, "debug(MyModule)" then it will only print components of this specific module.',
+      'Print all registered modules as a list together with their controllers and providers.\nIf the argument is passed in, for example, "debug(MyModule)" then it will only print components of this specific module.',
     signature: '(moduleCls?: ClassRef | string) => void',
   };
 
