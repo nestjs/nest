@@ -7,13 +7,13 @@ export enum UuidFactoryMode {
 }
 
 export class UuidFactory {
-  private static _mode: UuidFactoryMode = UuidFactoryMode.Random;
+  private static _mode = UuidFactoryMode.Random;
 
   static set mode(value: UuidFactoryMode) {
     this._mode = value;
   }
 
-  static get(key: string = '', namespace?: string) {
+  static get(key = '', namespace?: string) {
     return this._mode === UuidFactoryMode.Deterministic
       ? DeterministicUuidRegistry.get(key, namespace)
       : randomStringGenerator();
