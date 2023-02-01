@@ -218,9 +218,10 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
           if (err instanceof KafkaRetriableException && !isPromiseResolved) {
             isPromiseResolved = true;
             reject(err);
+          } else {
+            resolve()
           }
           replayStream$.error(err);
-          resolve();
         },
         complete: () => replayStream$.complete(),
       });
