@@ -323,13 +323,20 @@ export class NestApplicationContext<
    * @param {string[]} signals The system signals it should listen to
    */
   protected listenToShutdownSignals(signals: string[]) {
+    let receivedSignal = false;
     const cleanup = async (signal: string) => {
       try {
-        signals.forEach(sig => process.removeListener(sig, cleanup));
+        if (receivedSignal) {
+          // If we receive another signal while we're waiting
+          // for the server to stop, just ignore it.
+          return;
+        }
+        receivedSignal = true;
         await this.callDestroyHook();
         await this.callBeforeShutdownHook(signal);
         await this.dispose();
         await this.callShutdownHook(signal);
+        signals.forEach(sig => process.removeListener(sig, cleanup));
         process.kill(process.pid, signal);
       } catch (err) {
         Logger.error(
