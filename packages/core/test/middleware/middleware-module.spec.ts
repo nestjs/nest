@@ -48,22 +48,20 @@ describe('MiddlewareModule', () => {
     const container = new NestContainer();
     const appConfig = new ApplicationConfig();
     graphInspector = new GraphInspector(container);
-    middlewareModule = new MiddlewareModule(
-      new RouteInfoPathExtractor(appConfig),
+    middlewareModule = new MiddlewareModule();
+    middlewareModule['routerExceptionFilter'] = new RouterExceptionFilters(
+      new NestContainer(),
+      appConfig,
+      new NoopHttpAdapter({}),
     );
-    (middlewareModule as any).routerExceptionFilter =
-      new RouterExceptionFilters(
-        new NestContainer(),
-        appConfig,
-        new NoopHttpAdapter({}),
-      );
-    (middlewareModule as any).config = appConfig;
+    middlewareModule['routeInfoPathExtractor'] = new RouteInfoPathExtractor(
+      appConfig,
+    );
     middlewareModule['routerExceptionFilter'] = new RouterExceptionFilters(
       container,
       appConfig,
       new NoopHttpAdapter({}),
     );
-    middlewareModule['config'] = appConfig;
     middlewareModule['graphInspector'] = graphInspector;
   });
 

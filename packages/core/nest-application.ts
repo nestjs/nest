@@ -86,13 +86,8 @@ export class NestApplication
 
     this.selectContextModule();
     this.registerHttpServer();
-    this.middlewareModule = new MiddlewareModule(
-      new RouteInfoPathExtractor(config),
-    );
     this.injector = new Injector({ preview: this.appOptions.preview });
-    this.middlewareModule = new MiddlewareModule(
-      new RouteInfoPathExtractor(config),
-    );
+    this.middlewareModule = new MiddlewareModule();
     this.routesResolver = new RoutesResolver(
       this.container,
       this.config,

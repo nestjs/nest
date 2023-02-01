@@ -47,8 +47,7 @@ export class MiddlewareModule<
   private httpAdapter: HttpServer;
   private graphInspector: GraphInspector;
   private appOptions: TAppOptions;
-
-  constructor(private routeInfoPathExtractor: RouteInfoPathExtractor) {}
+  private routeInfoPathExtractor: RouteInfoPathExtractor;
 
   public async register(
     middlewareContainer: MiddlewareContainer,
@@ -69,7 +68,7 @@ export class MiddlewareModule<
     );
     this.routesMapper = new RoutesMapper(container);
     this.resolver = new MiddlewareResolver(middlewareContainer, injector);
-
+    this.routeInfoPathExtractor = new RouteInfoPathExtractor(config);
     this.injector = injector;
     this.container = container;
     this.httpAdapter = httpAdapter;
