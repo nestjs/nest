@@ -9,7 +9,7 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
-import { DeterministicUuidRegistry } from '../inspector/deterministic-uuid-registry';
+import { UuidFactory } from '../inspector/uuid-factory';
 import { STATIC_CONTEXT } from './constants';
 import {
   isClassProvider,
@@ -469,6 +469,6 @@ export class InstanceWrapper<T = any> {
     let key = this.name?.toString() ?? this.token?.toString();
     key += this.host?.name ?? '';
 
-    return key ? DeterministicUuidRegistry.get(key) : randomStringGenerator();
+    return key ? UuidFactory.get(key) : randomStringGenerator();
   }
 }

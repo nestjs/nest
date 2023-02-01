@@ -21,6 +21,7 @@ import { Injector } from './injector/injector';
 import { InstanceLoader } from './injector/instance-loader';
 import { GraphInspector } from './inspector/graph-inspector';
 import { NoopGraphInspector } from './inspector/noop-graph-inspector';
+import { UuidFactory, UuidFactoryMode } from './inspector/uuid-factory';
 import { MetadataScanner } from './metadata-scanner';
 import { NestApplication } from './nest-application';
 import { NestApplicationContext } from './nest-application-context';
@@ -195,6 +196,9 @@ export class NestFactoryStatic {
     options: NestApplicationContextOptions = {},
     httpServer: HttpServer = null,
   ) {
+    if (options.snapshot) {
+      UuidFactory.mode = UuidFactoryMode.Deterministic;
+    }
     const injector = new Injector({ preview: options.preview });
     const instanceLoader = new InstanceLoader(
       container,

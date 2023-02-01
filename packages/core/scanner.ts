@@ -50,8 +50,8 @@ import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { InternalCoreModuleFactory } from './injector/internal-core-module/internal-core-module-factory';
 import { Module } from './injector/module';
-import { DeterministicUuidRegistry } from './inspector/deterministic-uuid-registry';
 import { GraphInspector } from './inspector/graph-inspector';
+import { UuidFactory } from './inspector/uuid-factory';
 import { MetadataScanner } from './metadata-scanner';
 
 interface ApplicationProviderWrapper {
@@ -410,7 +410,7 @@ export class DependenciesScanner {
     if (!providersKeys.includes(type as string)) {
       return this.container.addProvider(provider as any, token);
     }
-    const uuid = DeterministicUuidRegistry.get(type.toString());
+    const uuid = UuidFactory.get(type.toString());
     const providerToken = `${type as string} (UUID: ${uuid})`;
 
     let scope = (provider as ClassProvider | FactoryProvider).scope;
