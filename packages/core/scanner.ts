@@ -23,10 +23,11 @@ import {
   PipeTransform,
   Scope,
   ValueProvider,
+  Controller,
+  Injectable,
+  Type,
 } from '@nestjs/common/interfaces';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { Type } from '@nestjs/common/interfaces/type.interface';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import {
   isFunction,
   isNil,
