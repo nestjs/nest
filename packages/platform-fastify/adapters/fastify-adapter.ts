@@ -18,9 +18,10 @@ import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   fastify,
+  FastifyBaseLogger,
   FastifyBodyParser,
   FastifyInstance,
-  FastifyBaseLogger,
+  FastifyListenOptions,
   FastifyPluginAsync,
   FastifyPluginCallback,
   FastifyRegister,
@@ -228,12 +229,27 @@ export class FastifyAdapter<
     hostname: string,
     callback?: () => void,
   ): void;
-  public listen(port: string | number, ...args: any[]): void {
+  public listen(
+    listenOptions: string | number | FastifyListenOptions,
+    ...args: any[]
+  ): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
     const callback = isFirstArgTypeofFunction ? args[0] : args[1];
-    const options: Record<string, any> = {
-      port: +port,
-    };
+
+    let options: Record<string, any>;
+    if (
+      typeof listenOptions === 'object' &&
+      (listenOptions.host !== undefined ||
+        listenOptions.port !== undefined ||
+        listenOptions.path !== undefined)
+    ) {
+      // First parameter is an object with a path, port and/or host attributes
+      options = listenOptions;
+    } else {
+      options = {
+        port: +listenOptions,
+      };
+    }
     if (!isFirstArgTypeofFunction) {
       options.host = args[0];
     }
