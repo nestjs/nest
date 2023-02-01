@@ -325,7 +325,7 @@ export class MiddlewareModule<
   ) {
     const prefix = this.config.getGlobalPrefix();
     const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
-    const useExcluded = ['*', '/*', '(.*)', '/(.*)'].includes(path);
+
     if (
       Array.isArray(excludedRoutes) &&
       isRouteExcluded(excludedRoutes, path, method)
@@ -352,7 +352,7 @@ export class MiddlewareModule<
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);
-    const mw = isMethodAll
+    const middlewareFunction = isMethodAll
       ? proxy
       : <TRequest, TResponse>(
           req: TRequest,
@@ -364,11 +364,12 @@ export class MiddlewareModule<
           }
           return next();
         };
-    if (useExcluded && Array.isArray(excludedRoutes)) {
-      excludedRoutes.forEach(route => {
-        router(route.path, mw);
-      });
+
+    const isAWildcard = ['*', '/*', '(.*)', '/(.*)'].includes(path);
+    if (isAWildcard && Array.isArray(excludedRoutes)) {
+      excludedRoutes.forEach(route => router(route.path, middlewareFunction));
     }
-    router(path, mw);
+
+    router(path, middlewareFunction);
   }
 }
