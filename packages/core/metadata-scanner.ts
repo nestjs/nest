@@ -6,19 +6,28 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 
 export class MetadataScanner {
+  private readonly cachedScannedPrototypes: Map<object, string[]> = new Map();
+
+  /**
+   * @deprecated Use {@link getAllMethodNames} instead.
+   */
   public scanFromPrototype<T extends Injectable, R = any>(
     instance: T,
-    prototype: object | null,
+    prototype: object,
     callback: (name: string) => R,
   ): R[] {
-    if (!prototype) return [];
+    if (!prototype) {
+      return [];
+    }
 
     const visitedNames = new Map<string, boolean>();
     const result: R[] = [];
 
     do {
       for (const property of Object.getOwnPropertyNames(prototype)) {
-        if (visitedNames.has(property)) continue;
+        if (visitedNames.has(property)) {
+          continue;
+        }
 
         visitedNames.set(property, true);
 
@@ -50,15 +59,34 @@ export class MetadataScanner {
     return result;
   }
 
-  getAllFilteredMethodNames(prototype: object | null): string[] {
-    if (!prototype) return [];
+  /**
+   * @deprecated Use {@link getAllMethodNames} instead.
+   */
+  public *getAllFilteredMethodNames(
+    prototype: object,
+  ): IterableIterator<string> {
+    yield* this.getAllMethodNames(prototype);
+  }
+
+  public getAllMethodNames(prototype: object | null): string[] {
+    if (!prototype) {
+      return [];
+    }
+
+    if (this.cachedScannedPrototypes.has(prototype)) {
+      return this.cachedScannedPrototypes.get(prototype);
+    }
 
     const visitedNames = new Map<string, boolean>();
     const result: string[] = [];
 
+    this.cachedScannedPrototypes.set(prototype, result);
+
     do {
       for (const property of Object.getOwnPropertyNames(prototype)) {
-        if (visitedNames.has(property)) continue;
+        if (visitedNames.has(property)) {
+          continue;
+        }
 
         visitedNames.set(property, true);
 

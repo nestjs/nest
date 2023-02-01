@@ -53,6 +53,7 @@ import { Module } from './injector/module';
 import { DeterministicUuidRegistry } from './inspector/deterministic-uuid-registry';
 import { GraphInspector } from './inspector/graph-inspector';
 import { MetadataScanner } from './metadata-scanner';
+import { ParamsMetadata } from './helpers/interfaces/params-metadata.interface';
 
 interface ApplicationProviderWrapper {
   moduleKey: string;
@@ -249,14 +250,21 @@ export class DependenciesScanner {
       metadataKey,
       component,
     );
-    const methodInjectables = this.metadataScanner.scanFromPrototype<
-      Type,
-      { methodKey: string; metadata: Type<Injectable>[] }
-    >(
-      null,
-      component.prototype,
-      this.reflectKeyMetadata.bind(this, component, metadataKey),
-    );
+    const methodInjectables = this.metadataScanner
+      .getAllMethodNames(component.prototype)
+      .reduce((acc, method) => {
+        const methodInjectable = this.reflectKeyMetadata(
+          component,
+          metadataKey,
+          method,
+        );
+
+        if (methodInjectable) {
+          acc.push(methodInjectable);
+        }
+
+        return acc;
+      }, []);
 
     controllerInjectables.forEach(injectable =>
       this.insertInjectable(
@@ -266,17 +274,17 @@ export class DependenciesScanner {
         ENHANCER_KEY_TO_SUBTYPE_MAP[metadataKey],
       ),
     );
-    methodInjectables.forEach(({ methodKey, metadata }) =>
-      metadata.forEach(injectable =>
+    methodInjectables.forEach(methodInjectable => {
+      methodInjectable.metadata.forEach(injectable =>
         this.insertInjectable(
           injectable,
           token,
           component,
           ENHANCER_KEY_TO_SUBTYPE_MAP[metadataKey],
-          methodKey,
+          methodInjectable.methodKey,
         ),
-      ),
-    );
+      );
+    });
   }
 
   public reflectParamInjectables(
@@ -284,28 +292,24 @@ export class DependenciesScanner {
     token: string,
     metadataKey: string,
   ) {
-    const paramsMetadata = this.metadataScanner.scanFromPrototype<
-      Type,
-      {
-        methodKey: string;
-        metadata: Record<
-          string,
-          {
-            index: number;
-            data: unknown;
-            pipes: Array<Type<PipeTransform> | PipeTransform>;
-          }
-        >;
-      }
-    >(null, component.prototype, methodKey => {
-      const metadata = Reflect.getMetadata(metadataKey, component, methodKey);
+    const paramsMethods = this.metadataScanner.getAllMethodNames(
+      component.prototype,
+    );
+
+    paramsMethods.forEach(methodKey => {
+      const metadata: Record<
+        string,
+        {
+          index: number;
+          data: unknown;
+          pipes: Array<Type<PipeTransform> | PipeTransform>;
+        }
+      > = Reflect.getMetadata(metadataKey, component, methodKey);
+
       if (!metadata) {
         return;
       }
-      return { methodKey, metadata };
-    });
 
-    paramsMetadata.forEach(({ methodKey, metadata }) => {
       const params = Object.values(metadata);
       params
         .map(item => item.pipes)
@@ -326,7 +330,7 @@ export class DependenciesScanner {
     component: Type<Injectable>,
     key: string,
     methodKey: string,
-  ) {
+  ): { methodKey: string; metadata: any } | undefined {
     let prototype = component.prototype;
     do {
       const descriptor = Reflect.getOwnPropertyDescriptor(prototype, methodKey);

@@ -52,17 +52,16 @@ describe('ListenerMetadataExplorer', () => {
     instance = new ListenerMetadataExplorer(scanner);
   });
   describe('explore', () => {
-    let scanFromPrototype: sinon.SinonSpy;
+    let getAllMethodNames: sinon.SinonSpy;
     beforeEach(() => {
-      scanFromPrototype = sinon.spy(scanner, 'scanFromPrototype');
+      getAllMethodNames = sinon.spy(scanner, 'getAllMethodNames');
     });
     it(`should call "scanFromPrototype" with expected arguments`, () => {
       const obj = new Test();
       instance.explore(obj);
 
-      const { args } = scanFromPrototype.getCall(0);
-      expect(args[0]).to.be.eql(obj);
-      expect(args[1]).to.be.eql(Object.getPrototypeOf(obj));
+      const { args } = getAllMethodNames.getCall(0);
+      expect(args[0]).to.be.eql(Object.getPrototypeOf(obj));
     });
   });
   describe('exploreMethodMetadata', () => {

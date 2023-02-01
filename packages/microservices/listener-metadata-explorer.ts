@@ -37,12 +37,9 @@ export class ListenerMetadataExplorer {
 
   public explore(instance: Controller): EventOrMessageListenerDefinition[] {
     const instancePrototype = Object.getPrototypeOf(instance);
-    return this.metadataScanner.scanFromPrototype<
-      Controller,
-      EventOrMessageListenerDefinition
-    >(instance, instancePrototype, method =>
-      this.exploreMethodMetadata(instancePrototype, method),
-    );
+    return this.metadataScanner
+      .getAllMethodNames(instancePrototype)
+      .map(method => this.exploreMethodMetadata(instancePrototype, method));
   }
 
   public exploreMethodMetadata(

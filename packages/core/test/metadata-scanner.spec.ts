@@ -30,12 +30,32 @@ describe('MetadataScanner', () => {
     }
 
     it('should return only methods', () => {
-      const methods = scanner.scanFromPrototype(
+      const methods = scanner.getAllMethodNames(Test.prototype);
+      expect(methods).to.eql(['test', 'test2', 'testParent', 'testParent2']);
+    });
+
+    it('should return the same instance for the same prototype', () => {
+      const methods1 = scanner.getAllMethodNames(Test.prototype);
+      const methods2 = scanner.getAllMethodNames(Test.prototype);
+      expect(methods1 === methods2).to.eql(true);
+    });
+
+    it('should keep compatibility with older methods', () => {
+      const methods1 = scanner.getAllMethodNames(Test.prototype).map(m => m[0]);
+      const methods2 = scanner.scanFromPrototype(
         new Test(),
         Test.prototype,
-        a => a,
+        r => r[0],
       );
-      expect(methods).to.eql(['test', 'test2', 'testParent', 'testParent2']);
+
+      expect(methods1).to.eql(methods2);
+
+      const methods3 = scanner.getAllMethodNames(Test.prototype);
+      const methods4 = [
+        ...new Set(scanner.getAllFilteredMethodNames(Test.prototype)),
+      ];
+
+      expect(methods3).to.eql(methods4);
     });
   });
 });
