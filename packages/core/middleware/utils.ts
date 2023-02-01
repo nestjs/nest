@@ -13,6 +13,7 @@ export const mapToExcludeRoute = (
   return routes.map(({ path, method }) => ({
     pathRegex: pathToRegexp(path),
     requestMethod: method,
+    path,
   }));
 };
 
