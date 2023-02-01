@@ -1,8 +1,10 @@
+import { InjectionToken, Scope } from '@nestjs/common';
 import { expect } from 'chai';
-import { InjectionToken, Logger, Scope } from '@nestjs/common';
 import { ContextIdFactory } from '../helpers/context-id-factory';
-import { InstanceLoader } from '../injector/instance-loader';
 import { NestContainer } from '../injector/container';
+import { Injector } from '../injector/injector';
+import { InstanceLoader } from '../injector/instance-loader';
+import { GraphInspector } from '../inspector/graph-inspector';
 import { NestApplicationContext } from '../nest-application-context';
 
 describe('NestApplicationContext', () => {
@@ -13,7 +15,12 @@ describe('NestApplicationContext', () => {
     scope: Scope,
   ): Promise<NestApplicationContext> {
     const nestContainer = new NestContainer();
-    const instanceLoader = new InstanceLoader(nestContainer);
+    const injector = new Injector();
+    const instanceLoader = new InstanceLoader(
+      nestContainer,
+      injector,
+      new GraphInspector(nestContainer),
+    );
     const module = await nestContainer.addModule(class T {}, []);
 
     nestContainer.addProvider(
@@ -32,12 +39,13 @@ describe('NestApplicationContext', () => {
         scope,
       },
       module.token,
+      'interceptor',
     );
 
     const modules = nestContainer.getModules();
     await instanceLoader.createInstancesOfDependencies(modules);
 
-    const applicationContext = new NestApplicationContext(nestContainer, []);
+    const applicationContext = new NestApplicationContext(nestContainer);
     return applicationContext;
   }
 

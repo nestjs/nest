@@ -13,9 +13,9 @@ import {
   WebSocketAdapter,
 } from '@nestjs/common';
 import {
-  RouteInfo,
   GlobalPrefixOptions,
   NestApplicationOptions,
+  RouteInfo,
 } from '@nestjs/common/interfaces';
 import {
   CorsOptions,
@@ -37,6 +37,8 @@ import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { optionalRequire } from './helpers/optional-require';
 import { NestContainer } from './injector/container';
+import { Injector } from './injector/injector';
+import { GraphInspector } from './inspector/graph-inspector';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
 import { NestApplicationContext } from './nest-application-context';
@@ -58,10 +60,10 @@ const { MicroservicesModule } = optionalRequire(
  * @publicApi
  */
 export class NestApplication
-  extends NestApplicationContext
+  extends NestApplicationContext<NestApplicationOptions>
   implements INestApplication
 {
-  private readonly logger = new Logger(NestApplication.name, {
+  protected readonly logger = new Logger(NestApplication.name, {
     timestamp: true,
   });
   private readonly middlewareModule: MiddlewareModule;
@@ -80,18 +82,21 @@ export class NestApplication
     container: NestContainer,
     private readonly httpAdapter: HttpServer,
     private readonly config: ApplicationConfig,
-    private readonly appOptions: NestApplicationOptions = {},
+    private readonly graphInspector: GraphInspector,
+    appOptions: NestApplicationOptions = {},
   ) {
-    super(container);
+    super(container, appOptions);
 
     this.selectContextModule();
     this.registerHttpServer();
-    this.middlewareModule = new MiddlewareModule(new RoutePathFactory(config));
 
+    this.injector = new Injector({ preview: this.appOptions.preview });
+    this.middlewareModule = new MiddlewareModule(new RoutePathFactory(config));
     this.routesResolver = new RoutesResolver(
       this.container,
       this.config,
       this.injector,
+      this.graphInspector,
     );
   }
 
@@ -143,15 +148,23 @@ export class NestApplication
     this.registerWsModule();
 
     if (this.microservicesModule) {
-      this.microservicesModule.register(this.container, this.config);
+      this.microservicesModule.register(
+        this.container,
+        this.graphInspector,
+        this.config,
+        this.appOptions,
+      );
       this.microservicesModule.setupClients(this.container);
     }
+
     await this.middlewareModule.register(
       this.middlewareContainer,
       this.container,
       this.config,
       this.injector,
       this.httpAdapter,
+      this.graphInspector,
+      this.appOptions,
     );
   }
 
@@ -159,7 +172,13 @@ export class NestApplication
     if (!this.socketModule) {
       return;
     }
-    this.socketModule.register(this.container, this.config, this.httpServer);
+    this.socketModule.register(
+      this.container,
+      this.config,
+      this.graphInspector,
+      this.appOptions,
+      this.httpServer,
+    );
   }
 
   public async init(): Promise<this> {
@@ -217,6 +236,7 @@ export class NestApplication
     const instance = new NestMicroservice(
       this.container,
       microserviceOptions,
+      this.graphInspector,
       applicationConfig,
     );
     instance.registerListeners();
@@ -236,6 +256,7 @@ export class NestApplication
   }
 
   public async startAllMicroservices(): Promise<this> {
+    this.assertNotInPreviewMode('startAllMicroservices');
     await Promise.all(this.microservices.map(msvc => msvc.listen()));
     return this;
   }
@@ -259,6 +280,7 @@ export class NestApplication
   public async listen(port: number | string): Promise<any>;
   public async listen(port: number | string, hostname: string): Promise<any>;
   public async listen(port: number | string, ...args: any[]): Promise<any> {
+    this.assertNotInPreviewMode('listen');
     !this.isInitialized && (await this.init());
 
     return new Promise((resolve, reject) => {
@@ -365,21 +387,45 @@ export class NestApplication
 
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
     this.config.useGlobalFilters(...filters);
+    filters.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'filter',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
     this.config.useGlobalPipes(...pipes);
+    pipes.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'pipe',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
     this.config.useGlobalInterceptors(...interceptors);
+    interceptors.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'interceptor',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalGuards(...guards: CanActivate[]): this {
     this.config.useGlobalGuards(...guards);
+    guards.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'guard',
+        ref: item,
+      }),
+    );
     return this;
   }
 

@@ -1,9 +1,5 @@
 import { HttpServer } from '@nestjs/common';
-import {
-  METHOD_METADATA,
-  PATH_METADATA,
-  VERSION_METADATA,
-} from '@nestjs/common/constants';
+import { PATH_METADATA } from '@nestjs/common/constants';
 import { RequestMethod, VersioningType } from '@nestjs/common/enums';
 import { InternalServerErrorException } from '@nestjs/common/exceptions';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
@@ -12,7 +8,6 @@ import { VersionValue } from '@nestjs/common/interfaces/version-options.interfac
 import { Logger } from '@nestjs/common/services/logger.service';
 import {
   addLeadingSlash,
-  isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import * as pathToRegexp from 'path-to-regexp';
@@ -32,6 +27,11 @@ import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
+import { GraphInspector } from '../inspector/graph-inspector';
+import {
+  Entrypoint,
+  HttpEntrypointMetadata,
+} from '../inspector/interfaces/entrypoint.interface';
 import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
 import { MetadataScanner } from '../metadata-scanner';
@@ -39,6 +39,7 @@ import { PipesConsumer } from '../pipes/pipes-consumer';
 import { PipesContextCreator } from '../pipes/pipes-context-creator';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
 import { RoutePathMetadata } from './interfaces/route-path-metadata.interface';
+import { PathsExplorer } from './paths-explorer';
 import { REQUEST_CONTEXT_ID } from './request/request-constants';
 import { RouteParamsFactory } from './route-params-factory';
 import { RoutePathFactory } from './route-path-factory';
@@ -55,6 +56,7 @@ export interface RouteDefinition {
 
 export class RouterExplorer {
   private readonly executionContextCreator: RouterExecutionContext;
+  private readonly pathsExplorer: PathsExplorer;
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(RouterExplorer.name, {
     timestamp: true,
@@ -62,14 +64,17 @@ export class RouterExplorer {
   private readonly exceptionFiltersCache = new WeakMap();
 
   constructor(
-    private readonly metadataScanner: MetadataScanner,
+    metadataScanner: MetadataScanner,
     private readonly container: NestContainer,
-    private readonly injector?: Injector,
-    private readonly routerProxy?: RouterProxy,
-    private readonly exceptionsFilter?: ExceptionsFilter,
-    private readonly config?: ApplicationConfig,
-    private readonly routePathFactory?: RoutePathFactory,
+    private readonly injector: Injector,
+    private readonly routerProxy: RouterProxy,
+    private readonly exceptionsFilter: ExceptionsFilter,
+    config: ApplicationConfig,
+    private readonly routePathFactory: RoutePathFactory,
+    private readonly graphInspector: GraphInspector,
   ) {
+    this.pathsExplorer = new PathsExplorer(metadataScanner);
+
     const routeParamsFactory = new RouteParamsFactory();
     const pipesContextCreator = new PipesContextCreator(container, config);
     const pipesConsumer = new PipesConsumer();
@@ -101,7 +106,7 @@ export class RouterExplorer {
     routePathMetadata: RoutePathMetadata,
   ) {
     const { instance } = instanceWrapper;
-    const routerPaths = this.scanForPaths(instance);
+    const routerPaths = this.pathsExplorer.scanForPaths(instance);
     this.applyPathsToRouterProxy(
       applicationRef,
       routerPaths,
@@ -122,53 +127,6 @@ export class RouterExplorer {
       return path.map(p => addLeadingSlash(p));
     }
     return [addLeadingSlash(path)];
-  }
-
-  public scanForPaths(
-    instance: Controller,
-    prototype?: object,
-  ): RouteDefinition[] {
-    const instancePrototype = isUndefined(prototype)
-      ? Object.getPrototypeOf(instance)
-      : prototype;
-
-    return this.metadataScanner.scanFromPrototype<Controller, RouteDefinition>(
-      instance,
-      instancePrototype,
-      method => this.exploreMethodMetadata(instance, instancePrototype, method),
-    );
-  }
-
-  public exploreMethodMetadata(
-    instance: Controller,
-    prototype: object,
-    methodName: string,
-  ): RouteDefinition {
-    const instanceCallback = instance[methodName];
-    const prototypeCallback = prototype[methodName];
-    const routePath = Reflect.getMetadata(PATH_METADATA, prototypeCallback);
-    if (isUndefined(routePath)) {
-      return null;
-    }
-    const requestMethod: RequestMethod = Reflect.getMetadata(
-      METHOD_METADATA,
-      prototypeCallback,
-    );
-    const version: VersionValue | undefined = Reflect.getMetadata(
-      VERSION_METADATA,
-      prototypeCallback,
-    );
-    const path = isString(routePath)
-      ? [addLeadingSlash(routePath)]
-      : routePath.map((p: string) => addLeadingSlash(p));
-
-    return {
-      path,
-      requestMethod,
-      targetCallback: instanceCallback,
-      methodName,
-      version,
-    };
   }
 
   public applyPathsToRouterProxy<T extends HttpServer>(
@@ -255,7 +213,31 @@ export class RouterExplorer {
         routePathMetadata,
         requestMethod,
       );
-      pathsToRegister.forEach(path => routerMethodRef(path, routeHandler));
+      pathsToRegister.forEach(path => {
+        const entrypointDefinition: Entrypoint<HttpEntrypointMetadata> = {
+          type: 'http-endpoint',
+          methodName,
+          className: instanceWrapper.name,
+          classNodeId: instanceWrapper.id,
+          metadata: {
+            key: path,
+            path,
+            requestMethod: RequestMethod[
+              requestMethod
+            ] as keyof typeof RequestMethod,
+            methodVersion: routePathMetadata.methodVersion as VersionValue,
+            controllerVersion:
+              routePathMetadata.controllerVersion as VersionValue,
+          },
+        };
+
+        routerMethodRef(path, routeHandler);
+
+        this.graphInspector.insertEntrypointDefinition<HttpEntrypointMetadata>(
+          entrypointDefinition,
+          instanceWrapper.id,
+        );
+      });
 
       const pathsToLog = this.routePathFactory.create(
         {

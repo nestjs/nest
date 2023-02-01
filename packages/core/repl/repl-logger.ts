@@ -9,6 +9,7 @@ export class ReplLogger extends ConsoleLogger {
     RouterExplorer.name,
     NestApplication.name,
   ];
+
   log(_message: any, context?: string) {
     if (ReplLogger.ignoredContexts.includes(context)) {
       return;
