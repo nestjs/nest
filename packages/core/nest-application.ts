@@ -38,7 +38,6 @@ import { Injector } from './injector/injector';
 import { GraphInspector } from './inspector/graph-inspector';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
-import { RouteInfoPathExtractor } from './middleware/route-info-path-extractor';
 import { mapToExcludeRoute } from './middleware/utils';
 import { NestApplicationContext } from './nest-application-context';
 import { Resolver } from './router/interfaces/resolver.interface';
