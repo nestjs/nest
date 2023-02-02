@@ -205,15 +205,13 @@ export class ListenersController {
     const collection = moduleRef.controllers;
     const { instance } = wrapper;
 
-    const isTreeDurable = wrapper.isDependencyTreeDurable();
-
     const requestScopedHandler: MessageHandler = async (...args: unknown[]) => {
       try {
         let contextId: ContextId;
 
         let [dataOrContextHost] = args;
         if (dataOrContextHost instanceof RequestContextHost) {
-          contextId = this.getContextId(dataOrContextHost, isTreeDurable);
+          contextId = this.getContextId(dataOrContextHost);
           args.shift();
         } else {
           const [data, reqCtx] = args;
@@ -222,7 +220,11 @@ export class ListenersController {
             data,
             reqCtx as BaseRpcContext,
           );
-          contextId = this.getContextId(request, isTreeDurable);
+          contextId = this.getContextId(request);
+          this.container.registerRequestProvider(
+            contextId.getParent ? contextId.payload : request,
+            contextId,
+          );
           dataOrContextHost = request;
         }
         const contextInstance = await this.injector.loadPerContext(
@@ -268,10 +270,7 @@ export class ListenersController {
     return requestScopedHandler;
   }
 
-  private getContextId<T extends RequestContext = any>(
-    request: T,
-    isTreeDurable: boolean,
-  ): ContextId {
+  private getContextId<T extends RequestContext = any>(request: T): ContextId {
     const contextId = ContextIdFactory.getByRequest(request);
     if (!request[REQUEST_CONTEXT_ID as any]) {
       Object.defineProperty(request, REQUEST_CONTEXT_ID, {
@@ -280,9 +279,10 @@ export class ListenersController {
         writable: false,
         configurable: false,
       });
-
-      const requestProviderValue = isTreeDurable ? contextId.payload : request;
-      this.container.registerRequestProvider(requestProviderValue, contextId);
+      this.container.registerRequestProvider(
+        contextId.getParent ? contextId.payload : request,
+        contextId,
+      );
     }
     return contextId;
   }

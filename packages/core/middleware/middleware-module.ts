@@ -18,7 +18,7 @@ import { ExecutionContextHost } from '../helpers/execution-context-host';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
-import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
+import { InstanceWrapper } from '../injector/instance-wrapper';
 import { InstanceToken, Module } from '../injector/module';
 import { GraphInspector } from '../inspector/graph-inspector';
 import {
@@ -250,9 +250,6 @@ export class MiddlewareModule<
       const proxy = await this.createProxy(instance);
       return this.registerHandler(applicationRef, routeInfo, proxy);
     }
-
-    const isTreeDurable = wrapper.isDependencyTreeDurable();
-
     await this.registerHandler(
       applicationRef,
       routeInfo,
@@ -262,7 +259,19 @@ export class MiddlewareModule<
         next: () => void,
       ) => {
         try {
-          const contextId = this.getContextId(req, isTreeDurable);
+          const contextId = ContextIdFactory.getByRequest(req);
+          if (!req[REQUEST_CONTEXT_ID]) {
+            Object.defineProperty(req, REQUEST_CONTEXT_ID, {
+              value: contextId,
+              enumerable: false,
+              writable: false,
+              configurable: false,
+            });
+            this.container.registerRequestProvider(
+              contextId.getParent ? contextId.payload : req,
+              contextId,
+            );
+          }
           const contextInstance = await this.injector.loadPerContext(
             instance,
             moduleRef,
@@ -359,21 +368,5 @@ export class MiddlewareModule<
         };
 
     router(path, middlewareFunction);
-  }
-
-  private getContextId(request: unknown, isTreeDurable: boolean): ContextId {
-    const contextId = ContextIdFactory.getByRequest(request);
-    if (!request[REQUEST_CONTEXT_ID]) {
-      Object.defineProperty(request, REQUEST_CONTEXT_ID, {
-        value: contextId,
-        enumerable: false,
-        writable: false,
-        configurable: false,
-      });
-
-      const requestProviderValue = isTreeDurable ? contextId.payload : request;
-      this.container.registerRequestProvider(requestProviderValue, contextId);
-    }
-    return contextId;
   }
 }
