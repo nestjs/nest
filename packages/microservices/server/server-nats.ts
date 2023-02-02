@@ -1,5 +1,4 @@
 import { isUndefined, isObject } from '@nestjs/common/utils/shared.utils';
-import { Observable } from 'rxjs';
 import { NATS_DEFAULT_URL, NO_MESSAGE_HANDLER } from '../constants';
 import { NatsContext } from '../ctx-host/nats.context';
 import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer';
@@ -137,17 +136,28 @@ export class ServerNats extends Server implements CustomTransportStrategy {
         status.data && isObject(status.data)
           ? JSON.stringify(status.data)
           : status.data;
-      if (status.type === 'disconnect' || status.type === 'error') {
-        this.logger.error(
-          `NatsError: type: "${status.type}", data: "${data}".`,
-        );
-      } else {
-        const message = `NatsStatus: type: "${status.type}", data: "${data}".`;
-        if (status.type === 'pingTimer') {
-          this.logger.debug(message);
-        } else {
-          this.logger.log(message);
-        }
+
+      switch (status.type) {
+        case 'error':
+        case 'disconnect':
+          this.logger.error(
+            `NatsError: type: "${status.type}", data: "${data}".`,
+          );
+          break;
+
+        case 'pingTimer':
+          if (this.options.debug) {
+            this.logger.debug(
+              `NatsStatus: type: "${status.type}", data: "${data}".`,
+            );
+          }
+          break;
+
+        default:
+          this.logger.log(
+            `NatsStatus: type: "${status.type}", data: "${data}".`,
+          );
+          break;
       }
     }
   }
