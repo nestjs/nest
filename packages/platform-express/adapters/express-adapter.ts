@@ -1,11 +1,12 @@
 import type { Server } from 'net';
 import {
+  HttpStatus,
   InternalServerErrorException,
   Logger,
   RequestMethod,
   StreamableFile,
-  VersioningType,
   VersioningOptions,
+  VersioningType,
   VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { VersionValue } from '@nestjs/common/interfaces';
@@ -95,6 +96,16 @@ export class ExpressAdapter extends AbstractHttpAdapter {
           }
         },
       );
+    }
+    if (
+      response.getHeader('Content-Type') !== undefined &&
+      response.getHeader('Content-Type') !== 'application/json' &&
+      body?.statusCode >= HttpStatus.BAD_REQUEST
+    ) {
+      this.logger.warn(
+        "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",
+      );
+      response.setHeader('Content-Type', 'application/json');
     }
     return isObject(body) ? response.json(body) : response.send(String(body));
   }
