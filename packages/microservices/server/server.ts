@@ -11,7 +11,7 @@ import {
   Subject,
   Subscription,
 } from 'rxjs';
-import { catchError, finalize } from 'rxjs/operators';
+import { catchError, finalize, mergeMap } from 'rxjs/operators';
 import { NO_EVENT_HANDLER } from '../constants';
 import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
@@ -133,7 +133,9 @@ export abstract class Server {
     : Observable<ObservedValueOf<T>>;
   public transformToObservable(resultOrDeferred: any) {
     if (resultOrDeferred instanceof Promise) {
-      return fromPromise(resultOrDeferred);
+      return fromPromise(resultOrDeferred).pipe(
+        mergeMap(val => (isObservable(val) ? val : of(val))),
+      );
     }
 
     if (isObservable(resultOrDeferred)) {
