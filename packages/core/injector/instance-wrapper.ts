@@ -224,7 +224,7 @@ export class InstanceWrapper<T = any> {
         ),
       lookupRegistry,
     );
-    this.isTreeDurable = !isTreeNonDurable && this.durable !== false;
+    this.isTreeDurable = !isTreeNonDurable;
     if (this.isTreeDurable) {
       this.printIntrospectedAsDurable();
     }
@@ -252,7 +252,6 @@ export class InstanceWrapper<T = any> {
     if (!introspectionResult || !(properties || enhancers)) {
       return introspectionResult;
     }
-    const propertiesHosts = (properties || []).map(item => item.wrapper);
     introspectionResult =
       introspectionResult &&
       ((properties &&
