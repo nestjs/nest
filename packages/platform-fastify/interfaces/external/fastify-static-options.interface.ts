@@ -1,6 +1,7 @@
 /**
  * "fastify-static" interfaces
  * @see https://github.com/fastify/fastify-static/blob/master/types/index.d.ts
+ * @publicApi
  */
 import { Stats } from 'fs';
 
