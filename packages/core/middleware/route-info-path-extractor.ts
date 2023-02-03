@@ -31,7 +31,8 @@ export class RouteInfoPathExtractor {
       versionPath = addLeadingSlash(versionPrefix + version.toString());
     }
 
-    if (['*', '/*', '/*/', '(.*)', '/(.*)'].includes(path)) {
+    const isAWildcard = ['*', '/*', '/*/', '(.*)', '/(.*)'].includes(path);
+    if (isAWildcard) {
       return Array.isArray(excludedRoutes)
         ? [
             prefixPath + versionPath + addLeadingSlash(path),
