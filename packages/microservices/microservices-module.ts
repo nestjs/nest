@@ -79,7 +79,7 @@ export class MicroservicesModule<
     if (!this.listenersController) {
       throw new RuntimeException();
     }
-    if (this.appOptions.preview) {
+    if (this.appOptions?.preview) {
       return;
     }
     const modules = container.getModules();

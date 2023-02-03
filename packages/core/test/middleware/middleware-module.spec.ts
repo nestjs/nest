@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { RoutePathFactory } from '@nestjs/core/router/route-path-factory';
+import { RouteInfoPathExtractor } from '@nestjs/core/middleware/route-info-path-extractor';
 import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
@@ -47,15 +47,21 @@ describe('MiddlewareModule', () => {
   beforeEach(() => {
     const container = new NestContainer();
     const appConfig = new ApplicationConfig();
-
     graphInspector = new GraphInspector(container);
-    middlewareModule = new MiddlewareModule(new RoutePathFactory(appConfig));
+    middlewareModule = new MiddlewareModule();
+    middlewareModule['routerExceptionFilter'] = new RouterExceptionFilters(
+      new NestContainer(),
+      appConfig,
+      new NoopHttpAdapter({}),
+    );
+    middlewareModule['routeInfoPathExtractor'] = new RouteInfoPathExtractor(
+      appConfig,
+    );
     middlewareModule['routerExceptionFilter'] = new RouterExceptionFilters(
       container,
       appConfig,
       new NoopHttpAdapter({}),
     );
-    middlewareModule['config'] = appConfig;
     middlewareModule['graphInspector'] = graphInspector;
   });
 

@@ -22,6 +22,11 @@ export class AppModule {
         req.extras = { data: 'Data attached in middleware' };
         next();
       })
+      .forRoutes({ path: '*', method: RequestMethod.GET })
+      .apply((req, res, next) => {
+        req.middlewareParams = req.params;
+        next();
+      })
       .forRoutes({ path: '*', method: RequestMethod.GET });
   }
 }

@@ -1,4 +1,4 @@
-import { HttpServer, Logger, VersioningType } from '@nestjs/common';
+import { HttpServer, Logger } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import {
   MiddlewareConfiguration,
@@ -6,10 +6,7 @@ import {
   RouteInfo,
 } from '@nestjs/common/interfaces/middleware';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import {
-  addLeadingSlash,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
@@ -26,13 +23,13 @@ import {
   MiddlewareEntrypointMetadata,
 } from '../inspector/interfaces/entrypoint.interface';
 import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
-import { RoutePathFactory } from '../router/route-path-factory';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
 import { RouterProxy } from '../router/router-proxy';
-import { isRequestMethodAll, isRouteExcluded } from '../router/utils';
+import { isRequestMethodAll } from '../router/utils';
 import { MiddlewareBuilder } from './builder';
 import { MiddlewareContainer } from './container';
 import { MiddlewareResolver } from './resolver';
+import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
 
 export class MiddlewareModule<
@@ -46,13 +43,11 @@ export class MiddlewareModule<
   private routerExceptionFilter: RouterExceptionFilters;
   private routesMapper: RoutesMapper;
   private resolver: MiddlewareResolver;
-  private config: ApplicationConfig;
   private container: NestContainer;
   private httpAdapter: HttpServer;
   private graphInspector: GraphInspector;
   private appOptions: TAppOptions;
-
-  constructor(private readonly routePathFactory: RoutePathFactory) {}
+  private routeInfoPathExtractor: RouteInfoPathExtractor;
 
   public async register(
     middlewareContainer: MiddlewareContainer,
@@ -73,8 +68,7 @@ export class MiddlewareModule<
     );
     this.routesMapper = new RoutesMapper(container);
     this.resolver = new MiddlewareResolver(middlewareContainer, injector);
-
-    this.config = config;
+    this.routeInfoPathExtractor = new RouteInfoPathExtractor(config);
     this.injector = injector;
     this.container = container;
     this.httpAdapter = httpAdapter;
@@ -307,44 +301,18 @@ export class MiddlewareModule<
 
   private async registerHandler(
     applicationRef: HttpServer,
-    { path, method, version }: RouteInfo,
+    routeInfo: RouteInfo,
     proxy: <TRequest, TResponse>(
       req: TRequest,
       res: TResponse,
       next: () => void,
     ) => void,
   ) {
-    const prefix = this.config.getGlobalPrefix();
-    const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
-    const isAWildcard = ['*', '/*', '(.*)', '/(.*)'].includes(path);
-    if (
-      (Array.isArray(excludedRoutes) &&
-        isRouteExcluded(excludedRoutes, path, method)) ||
-      isAWildcard
-    ) {
-      path = addLeadingSlash(path);
-    } else {
-      const basePath = addLeadingSlash(prefix);
-      if (basePath?.endsWith('/') && path?.startsWith('/')) {
-        // strip slash when a wildcard is being used
-        // and global prefix has been set
-        path = path?.slice(1);
-      }
-      path = basePath + path;
-    }
-
-    const applicationVersioningConfig = this.config.getVersioning();
-    if (version && applicationVersioningConfig.type === VersioningType.URI) {
-      const versionPrefix = this.routePathFactory.getVersionPrefix(
-        applicationVersioningConfig,
-      );
-      path = `/${versionPrefix}${version.toString()}${path}`;
-    }
-
+    const { method } = routeInfo;
+    const paths = this.routeInfoPathExtractor.extractPathsFrom(routeInfo);
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);
-
     const middlewareFunction = isMethodAll
       ? proxy
       : <TRequest, TResponse>(
@@ -357,8 +325,7 @@ export class MiddlewareModule<
           }
           return next();
         };
-
-    router(path, middlewareFunction);
+    paths.forEach(path => router(path, middlewareFunction));
   }
 
   private getContextId(request: unknown, isTreeDurable: boolean): ContextId {

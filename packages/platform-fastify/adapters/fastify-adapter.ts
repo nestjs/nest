@@ -343,6 +343,17 @@ export class FastifyAdapter<
       }
       body = body.getStream();
     }
+    if (
+      fastifyReply.getHeader('Content-Type') !== undefined &&
+      fastifyReply.getHeader('Content-Type') !== 'application/json' &&
+      body?.statusCode >= HttpStatus.BAD_REQUEST
+    ) {
+      Logger.warn(
+        "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",
+        FastifyAdapter.name,
+      );
+      fastifyReply.header('Content-Type', 'application/json');
+    }
     return fastifyReply.send(body);
   }
 

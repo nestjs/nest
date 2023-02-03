@@ -35,7 +35,7 @@ export const ENHANCER_KEY_TO_SUBTYPE_MAP = {
 } as const;
 
 export type EnhancerSubtype =
-  typeof ENHANCER_KEY_TO_SUBTYPE_MAP[keyof typeof ENHANCER_KEY_TO_SUBTYPE_MAP];
+  (typeof ENHANCER_KEY_TO_SUBTYPE_MAP)[keyof typeof ENHANCER_KEY_TO_SUBTYPE_MAP];
 
 export const RENDER_METADATA = '__renderTemplate__';
 export const HTTP_CODE_METADATA = '__httpCode__';
