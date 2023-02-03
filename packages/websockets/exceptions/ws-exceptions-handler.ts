@@ -5,6 +5,9 @@ import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/
 import { WsException } from '../errors/ws-exception';
 import { BaseWsExceptionFilter } from './base-ws-exception-filter';
 
+/**
+ * @publicApi
+ */
 export class WsExceptionsHandler extends BaseWsExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];
 
