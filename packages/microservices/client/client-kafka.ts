@@ -46,7 +46,7 @@ export class ClientKafka extends ClientProxy {
   protected consumer: Consumer | null = null;
   protected producer: Producer | null = null;
   protected parser: KafkaParser | null = null;
-  protected initialized$: Promise<void> | null = null;
+  protected initialized: Promise<void> | null = null;
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number } = {};
   protected brokers: string[] | BrokersFunction;
@@ -94,15 +94,15 @@ export class ClientKafka extends ClientProxy {
     this.consumer && (await this.consumer.disconnect());
     this.producer = null;
     this.consumer = null;
-    this.initialized$ = null;
+    this.initialized = null;
     this.client = null;
   }
 
   public async connect(): Promise<Producer> {
-    if (this.client) {
-      return this.initialized$.then(() => this.producer);
+    if (this.initialized) {
+      return this.initialized.then(() => this.producer);
     }
-    this.initialized$ = new Promise(async (resolve, reject) => {
+    this.initialized = new Promise(async (resolve, reject) => {
       try {
         this.client = this.createClient();
 
@@ -143,7 +143,7 @@ export class ClientKafka extends ClientProxy {
         reject(err);
       }
     });
-    return this.initialized$.then(() => this.producer);
+    return this.initialized.then(() => this.producer);
   }
 
   public async bindTopics(): Promise<void> {
