@@ -1,6 +1,7 @@
 /**
  * "fastify/view" interfaces
  * @see https://github.com/fastify/point-of-view/blob/master/types/index.d.ts
+ * @publicApi
  */
 export interface FastifyViewOptions {
   engine: {

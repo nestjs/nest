@@ -16,6 +16,9 @@ import {
 import { FastifyStaticOptions, FastifyViewOptions } from './external';
 import { NestFastifyBodyParserOptions } from './nest-fastify-body-parser-options.interface';
 
+/**
+ * @publicApi
+ */
 export interface NestFastifyApplication extends INestApplication {
   /**
    * A wrapper function around native `fastify.register()` method.
