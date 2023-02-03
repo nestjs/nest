@@ -27,6 +27,9 @@ type WsServerRegistryEntry = any[];
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
 
+/**
+ * @publicApi
+ */
 export class WsAdapter extends AbstractWsAdapter {
   protected readonly logger = new Logger(WsAdapter.name);
   protected readonly httpServersRegistry = new Map<
