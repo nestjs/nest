@@ -191,7 +191,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     }
 
     const response$ = this.transformToObservable(
-      await handler(packet.data, kafkaContext),
+      handler(packet.data, kafkaContext),
     );
 
     const replayStream$ = new ReplaySubject();
@@ -219,7 +219,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
             isPromiseResolved = true;
             reject(err);
           } else {
-            resolve()
+            resolve();
           }
           replayStream$.error(err);
         },
