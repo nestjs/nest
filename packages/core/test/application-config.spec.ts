@@ -24,9 +24,9 @@ describe('ApplicationConfig', () => {
       const options: GlobalPrefixOptions<ExcludeRouteMetadata> = {
         exclude: [
           {
+            path: '/health',
             pathRegex: new RegExp(/health/),
             requestMethod: RequestMethod.GET,
-            path: 'health',
           },
         ],
       };
