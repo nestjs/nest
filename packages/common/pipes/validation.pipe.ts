@@ -66,8 +66,10 @@ export class ValidationPipe implements PipeTransform<any> {
       ...validatorOptions
     } = options;
 
+    // @see https://github.com/nestjs/nest/issues/10683#issuecomment-1413690508
+    this.validatorOptions = { forbidUnknownValues: false, ...validatorOptions };
+
     this.isTransformEnabled = !!transform;
-    this.validatorOptions = validatorOptions;
     this.transformOptions = transformOptions;
     this.isDetailedOutputDisabled = disableErrorMessages;
     this.validateCustomDecorators = validateCustomDecorators || false;

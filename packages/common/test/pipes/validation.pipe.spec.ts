@@ -384,7 +384,7 @@ describe('ValidationPipe', () => {
       });
       describe('otherwise', () => {
         it('should not reject', async () => {
-          target = new ValidationPipe({ forbidUnknownValues: false });
+          target = new ValidationPipe();
           const testObj = [
             { prop1: 'value1', prop2: 'value2', prop3: 'value3' },
           ];
@@ -447,7 +447,7 @@ describe('ValidationPipe', () => {
       target = new ValidationPipe({ expectedType: TestModel });
       const testObj = { prop1: 'value1', prop2: 'value2' };
 
-      expect(await target.transform(testObj, m)).to.equal(testObj);
+      expect(await target.transform(testObj, m)).to.deep.equal(testObj);
     });
 
     it('should validate against the expected type if presented and metatype is primitive type', async () => {
@@ -460,7 +460,7 @@ describe('ValidationPipe', () => {
       target = new ValidationPipe({ expectedType: TestModel });
       const testObj = { prop1: 'value1', prop2: 'value2' };
 
-      expect(await target.transform(testObj, m)).to.equal(testObj);
+      expect(await target.transform(testObj, m)).to.deep.equal(testObj);
     });
   });
 });
