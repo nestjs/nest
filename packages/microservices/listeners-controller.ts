@@ -205,13 +205,15 @@ export class ListenersController {
     const collection = moduleRef.controllers;
     const { instance } = wrapper;
 
+    const isTreeDurable = wrapper.isDependencyTreeDurable();
+
     const requestScopedHandler: MessageHandler = async (...args: unknown[]) => {
       try {
         let contextId: ContextId;
 
         let [dataOrContextHost] = args;
         if (dataOrContextHost instanceof RequestContextHost) {
-          contextId = this.getContextId(dataOrContextHost);
+          contextId = this.getContextId(dataOrContextHost, isTreeDurable);
           args.shift();
         } else {
           const [data, reqCtx] = args;
@@ -220,11 +222,7 @@ export class ListenersController {
             data,
             reqCtx as BaseRpcContext,
           );
-          contextId = this.getContextId(request);
-          this.container.registerRequestProvider(
-            contextId.getParent ? contextId.payload : request,
-            contextId,
-          );
+          contextId = this.getContextId(request, isTreeDurable);
           dataOrContextHost = request;
         }
         const contextInstance = await this.injector.loadPerContext(
@@ -270,7 +268,10 @@ export class ListenersController {
     return requestScopedHandler;
   }
 
-  private getContextId<T extends RequestContext = any>(request: T): ContextId {
+  private getContextId<T extends RequestContext = any>(
+    request: T,
+    isTreeDurable: boolean,
+  ): ContextId {
     const contextId = ContextIdFactory.getByRequest(request);
     if (!request[REQUEST_CONTEXT_ID as any]) {
       Object.defineProperty(request, REQUEST_CONTEXT_ID, {
@@ -279,10 +280,9 @@ export class ListenersController {
         writable: false,
         configurable: false,
       });
-      this.container.registerRequestProvider(
-        contextId.getParent ? contextId.payload : request,
-        contextId,
-      );
+
+      const requestProviderValue = isTreeDurable ? contextId.payload : request;
+      this.container.registerRequestProvider(requestProviderValue, contextId);
     }
     return contextId;
   }
