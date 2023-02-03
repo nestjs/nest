@@ -1,4 +1,5 @@
 import { FileValidator } from './file-validator.interface';
+import { FileType } from './interfaces';
 
 export type MaxFileSizeValidatorOptions = {
   maxSize: number;
@@ -16,7 +17,7 @@ export class MaxFileSizeValidator extends FileValidator<MaxFileSizeValidatorOpti
     return `Validation failed (expected size is less than ${this.validationOptions.maxSize})`;
   }
 
-  public isValid(file: any): boolean {
+  public isValid(file: FileType): boolean {
     if (!this.validationOptions) {
       return true;
     }
