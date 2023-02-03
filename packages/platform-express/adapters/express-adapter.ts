@@ -49,6 +49,9 @@ type VersionedRoute = <
   next: () => void,
 ) => any;
 
+/**
+ * @publicApi
+ */
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(ExpressAdapter.name);
