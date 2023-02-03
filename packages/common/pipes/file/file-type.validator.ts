@@ -30,6 +30,6 @@ export class FileTypeValidator extends FileValidator<FileTypeValidatorOptions> {
       return false;
     }
 
-    return Boolean(file.mimetype.match(this.validationOptions.fileType));
+    return !!file.mimetype.match(this.validationOptions.fileType);
   }
 }
