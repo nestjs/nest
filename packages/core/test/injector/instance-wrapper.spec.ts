@@ -118,6 +118,35 @@ describe('InstanceWrapper', () => {
     });
     describe('when statically scoped', () => {
       describe('dependencies', () => {
+        describe('when wrapper is non durable and dependecy is static', () => {
+          it('should return false', () => {
+            const wrapper = new InstanceWrapper({ scope: Scope.REQUEST });
+            wrapper.addCtorMetadata(0, new InstanceWrapper());
+            expect(wrapper.isDependencyTreeDurable()).to.be.false;
+          });
+        });
+        describe('when wrapper is durable and dependecy is static', () => {
+          it('should return true', () => {
+            const wrapper = new InstanceWrapper({
+              scope: Scope.REQUEST,
+              durable: true,
+            });
+            wrapper.addCtorMetadata(0, new InstanceWrapper());
+            expect(wrapper.isDependencyTreeDurable()).to.be.true;
+          });
+        });
+        describe('when wrapper is non durable and dependecy is durable', () => {
+          it('should return false', () => {
+            const wrapper = new InstanceWrapper({
+              scope: Scope.REQUEST,
+            });
+            wrapper.addCtorMetadata(
+              0,
+              new InstanceWrapper({ scope: Scope.REQUEST, durable: true }),
+            );
+            expect(wrapper.isDependencyTreeDurable()).to.be.false;
+          });
+        });
         describe('when each is static', () => {
           it('should return false', () => {
             const wrapper = new InstanceWrapper();

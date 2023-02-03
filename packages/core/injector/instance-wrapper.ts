@@ -203,15 +203,18 @@ export class InstanceWrapper<T = any> {
     if (!isUndefined(this.isTreeDurable)) {
       return this.isTreeDurable;
     }
-    if (this.durable === true) {
-      this.isTreeDurable = true;
-      this.printIntrospectedAsDurable();
+    if (this.scope === Scope.REQUEST) {
+      this.isTreeDurable = this.durable === undefined ? false : this.durable;
+      if (this.isTreeDurable) {
+        this.printIntrospectedAsDurable();
+      }
       return this.isTreeDurable;
     }
     const isStatic = this.isDependencyTreeStatic();
     if (isStatic) {
       return false;
     }
+
     const isTreeNonDurable = this.introspectDepsAttribute(
       (collection, registry) =>
         collection.some(
