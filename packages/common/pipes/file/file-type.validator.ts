@@ -21,7 +21,7 @@ export class FileTypeValidator extends FileValidator<FileTypeValidatorOptions> {
     return `Validation failed (expected type is ${this.validationOptions.fileType})`;
   }
 
-  isValid(file: FileType): boolean {
+  isValid(file: Partial<FileType> | FileType): boolean {
     if (!this.validationOptions) {
       return true;
     }
