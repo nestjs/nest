@@ -27,6 +27,7 @@ describe('RoutesMapper', () => {
 
   let mapper: RoutesMapper;
   let mapperWithGlobalVersioning: RoutesMapper;
+  
   beforeEach(() => {
     mapper = new RoutesMapper(new NestContainer());
 
