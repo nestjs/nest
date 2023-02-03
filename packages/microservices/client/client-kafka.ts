@@ -126,8 +126,8 @@ export class ClientKafka extends ClientProxy {
         this.consumer.events.GROUP_JOIN,
         this.setConsumerAssignments.bind(this),
       );
-      await this.consumer.connect();
-      await this.bindTopics();
+      
+      this.bindTopics();
     }
 
     this.producer = this.client.producer(this.options.producer || {});
@@ -140,7 +140,7 @@ export class ClientKafka extends ClientProxy {
     if (!this.consumer) {
       throw Error('No consumer initialized');
     }
-
+    await this.consumer.connect();
     const consumerSubscribeOptions = this.options.subscribe || {};
     const subscribeTo = async (responsePattern: string) =>
       this.consumer.subscribe({
