@@ -119,7 +119,19 @@ export class ListenersController {
             defaultCallMetadata,
           );
           if (isEventHandler) {
-            const eventHandler = this.createEventHandlerCallback(proxy);
+            const eventHandler: MessageHandler = async (...args: unknown[]) => {
+              const originalArgs = args;
+              const [dataOrContextHost] = originalArgs;
+              if (dataOrContextHost instanceof RequestContextHost) {
+                args = args.slice(1, args.length);
+              }
+              const returnValue = proxy(...args);
+              return this.forkJoinHandlersIfAttached(
+                returnValue,
+                originalArgs,
+                eventHandler,
+              );
+            };
             return server.addHandler(
               pattern,
               eventHandler,
@@ -169,29 +181,21 @@ export class ListenersController {
     );
   }
 
-  public createEventHandlerCallback(
-    proxy: (...args: unknown[]) => Observable<any> | Promise<any>,
-  ): MessageHandler {
-    const eventHandler: MessageHandler = async (...args: unknown[]) => {
-      const originalArgs = args;
-      const [dataOrContextHost] = originalArgs;
-      if (dataOrContextHost instanceof RequestContextHost) {
-        args = args.slice(1, args.length);
-      }
-      const originalReturnValue = proxy(...args);
-
-      if (eventHandler.next) {
-        const returnedValueWrapper = eventHandler.next(
-          ...(originalArgs as Parameters<MessageHandler>),
-        );
-        return forkJoin({
-          current: this.transformToObservable(originalReturnValue),
-          next: this.transformToObservable(returnedValueWrapper),
-        });
-      }
-      return originalReturnValue;
-    };
-    return eventHandler;
+  public forkJoinHandlersIfAttached(
+    currentReturnValue: Promise<unknown> | Observable<unknown>,
+    originalArgs: unknown[],
+    handlerRef: MessageHandler,
+  ) {
+    if (handlerRef.next) {
+      const returnedValueWrapper = handlerRef.next(
+        ...(originalArgs as Parameters<MessageHandler>),
+      );
+      return forkJoin({
+        current: this.transformToObservable(currentReturnValue),
+        next: this.transformToObservable(returnedValueWrapper),
+      });
+    }
+    return currentReturnValue;
   }
 
   public assignClientsToProperties(instance: Controller | Injectable) {
@@ -263,13 +267,15 @@ export class ListenersController {
           defaultCallMetadata,
         );
 
+        const returnValue = proxy(...args);
         if (isEventHandler) {
-          const eventHandler: (...args: unknown[]) => unknown =
-            this.createEventHandlerCallback(proxy);
-          return eventHandler(...args);
-        } else {
-          return proxy(...args);
+          return this.forkJoinHandlersIfAttached(
+            returnValue,
+            [dataOrContextHost, ...args],
+            requestScopedHandler,
+          );
         }
+        return returnValue;
       } catch (err) {
         let exceptionFilter = this.exceptionFiltersCache.get(
           instance[methodKey],
