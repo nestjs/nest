@@ -1,4 +1,8 @@
-import { DynamicModule, Type } from '@nestjs/common/interfaces';
+import {
+  DynamicModule,
+  ForwardReference,
+  Type,
+} from '@nestjs/common/interfaces';
 import { ModuleTokenFactory } from './module-token-factory';
 
 export interface ModuleFactory {
@@ -18,19 +22,25 @@ export class ModuleCompiler {
     return { type, dynamicMetadata, token };
   }
 
-  public extractMetadata(metatype: Type<any> | DynamicModule): {
+  public extractMetadata(
+    metatype: Type<any> | ForwardReference | DynamicModule,
+  ): {
     type: Type<any>;
     dynamicMetadata?: Partial<DynamicModule> | undefined;
   } {
     if (!this.isDynamicModule(metatype)) {
-      return { type: metatype };
+      return {
+        type: (metatype as ForwardReference)?.forwardRef
+          ? (metatype as ForwardReference).forwardRef()
+          : metatype,
+      };
     }
     const { module: type, ...dynamicMetadata } = metatype;
     return { type, dynamicMetadata };
   }
 
   public isDynamicModule(
-    module: Type<any> | DynamicModule,
+    module: Type<any> | DynamicModule | ForwardReference,
   ): module is DynamicModule {
     return !!(module as DynamicModule).module;
   }
