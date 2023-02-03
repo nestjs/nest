@@ -1,4 +1,4 @@
-import { randomStringGenerator } from '../../common/utils/random-string-generator.util';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { DeterministicUuidRegistry } from './deterministic-uuid-registry';
 
 export enum UuidFactoryMode {

@@ -99,9 +99,9 @@ export class HttpException extends Error {
     ) {
       this.message = (this.response as Record<string, any>).message;
     } else if (this.constructor) {
-      this.message = this.constructor.name
-        .match(/[A-Z][a-z]+|[0-9]+/g)
-        ?.join(' ') ?? 'Error';
+      this.message =
+        this.constructor.name.match(/[A-Z][a-z]+|[0-9]+/g)?.join(' ') ??
+        'Error';
     }
   }
 

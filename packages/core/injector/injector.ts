@@ -353,7 +353,9 @@ export class Injector {
   }
 
   public reflectConstructorParams<T>(type: Type<T>): any[] {
-    const paramtypes = [...(Reflect.getMetadata(PARAMTYPES_METADATA, type) || [])];
+    const paramtypes = [
+      ...(Reflect.getMetadata(PARAMTYPES_METADATA, type) || []),
+    ];
     const selfParams = this.reflectSelfParams<T>(type);
 
     selfParams.forEach(({ index, param }) => (paramtypes[index] = param));
