@@ -1,19 +1,9 @@
 import { Injectable, Optional } from '../decorators/core';
 import { clc, yellow } from '../utils/cli-colors.util';
 import { isPlainObject, isString } from '../utils/shared.utils';
-import { LoggerService, LogLevel } from './logger.service';
+import { ConsoleLoggerOptions } from './interfaces';
+import { LogLevel, LoggerService } from './logger.service';
 import { isLogLevelEnabled } from './utils';
-
-export interface ConsoleLoggerOptions {
-  /**
-   * Enabled log levels.
-   */
-  logLevels?: LogLevel[];
-  /**
-   * If enabled, will print timestamp (time difference) between current and previous log message.
-   */
-  timestamp?: boolean;
-}
 
 const DEFAULT_LOG_LEVELS: LogLevel[] = [
   'log',
@@ -31,6 +21,18 @@ const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
   day: '2-digit',
   month: '2-digit',
 });
+
+export interface LogBufferRecord {
+  /**
+   * Method to execute.
+   */
+  methodRef: Function;
+
+  /**
+   * Arguments to pass to the method.
+   */
+  arguments: unknown[];
+}
 
 @Injectable()
 export class ConsoleLogger implements LoggerService {

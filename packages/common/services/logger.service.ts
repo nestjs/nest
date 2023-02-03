@@ -1,6 +1,6 @@
 import { Injectable, Optional } from '../decorators/core';
 import { isObject } from '../utils/shared.utils';
-import { ConsoleLogger } from './console-logger.service';
+import { ConsoleLogger, LogBufferRecord } from './console-logger.service';
 import { isLogLevelEnabled } from './utils';
 
 /**
@@ -42,18 +42,6 @@ export interface LoggerService {
    * @param levels log levels
    */
   setLogLevels?(levels: LogLevel[]): any;
-}
-
-interface LogBufferRecord {
-  /**
-   * Method to execute.
-   */
-  methodRef: Function;
-
-  /**
-   * Arguments to pass to the method.
-   */
-  arguments: unknown[];
 }
 
 const DEFAULT_LOGGER = new ConsoleLogger();
