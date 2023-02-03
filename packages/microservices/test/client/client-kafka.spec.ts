@@ -11,7 +11,6 @@ import {
 } from '../../external/kafka.interface';
 
 describe('ClientKafka', () => {
-  // static
   const topic = 'test.topic';
   const partition = 0;
   const replyTopic = 'test.topic.reply';
@@ -25,7 +24,6 @@ describe('ClientKafka', () => {
   const heartbeat = async () => {};
   const pause = () => () => {};
 
-  // message
   const message: KafkaMessage = {
     key: Buffer.from(key),
     offset,
@@ -35,7 +33,6 @@ describe('ClientKafka', () => {
     attributes,
   };
 
-  // deserialized message
   const deserializedMessage: any = {
     key,
     offset,
@@ -47,7 +44,6 @@ describe('ClientKafka', () => {
     partition,
   };
 
-  // payloads
   const payload: EachMessagePayload = {
     topic,
     partition,
@@ -152,26 +148,6 @@ describe('ClientKafka', () => {
     pause,
   };
 
-  const deserializedPayloadError: EachMessagePayload = {
-    topic,
-    partition,
-    message: Object.assign(
-      {
-        headers: {
-          [KafkaHeaders.CORRELATION_ID]: correlationId,
-          [KafkaHeaders.NEST_ERR]: NO_MESSAGE_HANDLER,
-        },
-      },
-      deserializedMessage,
-      {
-        size: 0,
-        value: null,
-      },
-    ),
-    heartbeat,
-    pause,
-  };
-
   let client: ClientKafka;
   let callback: sinon.SinonSpy;
   let connect: sinon.SinonSpy;
@@ -182,7 +158,7 @@ describe('ClientKafka', () => {
   let consumerStub: sinon.SinonStub;
   let producerStub: sinon.SinonStub;
   let createClientStub: sinon.SinonStub;
-  let kafkaClient;
+  let kafkaClient: any;
 
   beforeEach(() => {
     client = new ClientKafka({});
@@ -322,7 +298,8 @@ describe('ClientKafka', () => {
       });
 
       it('should expect the connection to be reused', async () => {
-        (client as any).client = kafkaClient;
+        (client as any).initialized = Promise.resolve({});
+
         await client.connect();
 
         expect(createClientStub.calledOnce).to.be.false;
@@ -368,7 +345,8 @@ describe('ClientKafka', () => {
       });
 
       it('should expect the connection to be reused', async () => {
-        (client as any).client = kafkaClient;
+        (client as any).initialized = Promise.resolve({});
+
         await client.connect();
 
         expect(createClientStub.calledOnce).to.be.false;
