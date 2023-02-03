@@ -3,6 +3,9 @@ import { Module } from '@nestjs/core/injector/module';
 import { MockFactory } from './interfaces';
 import { TestingInjector } from './testing-injector';
 
+/**
+ * @publicApi
+ */
 export class TestingInstanceLoader extends InstanceLoader<TestingInjector> {
   public async createInstancesOfDependencies(
     modules: Map<string, Module> = this.container.getModules(),
