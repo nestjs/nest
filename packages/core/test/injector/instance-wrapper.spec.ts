@@ -6,7 +6,7 @@ import { InstanceWrapper } from '../../injector/instance-wrapper';
 
 class TestClass {}
 
-describe.only('InstanceWrapper', () => {
+describe('InstanceWrapper', () => {
   describe('initialize', () => {
     const partial = {
       name: 'test',
