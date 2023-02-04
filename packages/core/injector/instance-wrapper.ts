@@ -246,24 +246,23 @@ export class InstanceWrapper<T = any> {
     const { dependencies, properties, enhancers } =
       this[INSTANCE_METADATA_SYMBOL];
 
-    let introspectionResult =
-      (dependencies && callback(dependencies, lookupRegistry)) || !dependencies;
+    let introspectionResult = dependencies
+      ? callback(dependencies, lookupRegistry)
+      : false;
 
-    if (!introspectionResult || !(properties || enhancers)) {
+    if (introspectionResult || !(properties || enhancers)) {
       return introspectionResult;
     }
-    introspectionResult =
-      introspectionResult &&
-      ((properties &&
-        callback(
+    introspectionResult = properties
+      ? callback(
           properties.map(item => item.wrapper),
           lookupRegistry,
-        )) ||
-        !properties);
-    if (!introspectionResult || !enhancers) {
+        )
+      : false;
+    if (introspectionResult || !enhancers) {
       return introspectionResult;
     }
-    return callback(enhancers, lookupRegistry);
+    return enhancers ? callback(enhancers, lookupRegistry) : false;
   }
 
   public isDependencyTreeStatic(lookupRegistry: string[] = []): boolean {
@@ -275,10 +274,10 @@ export class InstanceWrapper<T = any> {
       this.printIntrospectedAsRequestScoped();
       return this.isTreeStatic;
     }
-    this.isTreeStatic = this.introspectDepsAttribute(
+    this.isTreeStatic = !this.introspectDepsAttribute(
       (collection, registry) =>
-        collection.every((item: InstanceWrapper) =>
-          item.isDependencyTreeStatic(registry),
+        collection.some(
+          (item: InstanceWrapper) => !item.isDependencyTreeStatic(registry),
         ),
       lookupRegistry,
     );
