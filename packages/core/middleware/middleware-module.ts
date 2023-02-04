@@ -105,6 +105,7 @@ export class MiddlewareModule<
     const middlewareBuilder = new MiddlewareBuilder(
       this.routesMapper,
       this.httpAdapter,
+      this.routeInfoPathExtractor,
     );
     try {
       await instance.configure(middlewareBuilder);
