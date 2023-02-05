@@ -2,12 +2,7 @@ import { Injectable, Optional } from '../../decorators/core';
 import { HttpStatus } from '../../enums';
 import { PipeTransform } from '../../interfaces/features/pipe-transform.interface';
 import { HttpErrorByCode } from '../../utils/http-error-by-code.util';
-import {
-  isEmpty,
-  isObject,
-  isRejected,
-  isUndefined,
-} from '../../utils/shared.utils';
+import { isEmpty, isObject, isUndefined } from '../../utils/shared.utils';
 import { FileValidator } from './file-validator.interface';
 import { ParseFileOptions } from './parse-file-options.interface';
 
@@ -70,12 +65,9 @@ export class ParseFilePipe implements PipeTransform<any> {
   }
 
   protected async validate(file: any): Promise<any> {
-    const validationResults = await Promise.allSettled(
-      this.validators.map(validator => this.validateOrThrow(file, validator)),
-    );
-
-    const error = await validationResults.find(isRejected)?.reason;
-    if (error) throw error;
+    for (const validator of this.validators) {
+      await this.validateOrThrow(file, validator);
+    }
     return file;
   }
 
