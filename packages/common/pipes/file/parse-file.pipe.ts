@@ -65,9 +65,9 @@ export class ParseFilePipe implements PipeTransform<any> {
   }
 
   protected async validate(file: any): Promise<any> {
-    await Promise.all(
-      this.validators.map(validator => this.validateOrThrow(file, validator)),
-    );
+    for (const validator of this.validators) {
+      await this.validateOrThrow(file, validator);
+    }
 
     return file;
   }
