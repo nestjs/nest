@@ -49,3 +49,11 @@ export const isNil = (val: any): val is null | undefined =>
   isUndefined(val) || val === null;
 export const isEmpty = (array: any): boolean => !(array && array.length > 0);
 export const isSymbol = (val: any): val is symbol => typeof val === 'symbol';
+
+export const isRejected = (
+  input: PromiseSettledResult<unknown>,
+): input is PromiseRejectedResult => input.status === 'rejected';
+
+export const isFulfilled = <T>(
+  input: PromiseSettledResult<T>,
+): input is PromiseFulfilledResult<T> => input.status === 'fulfilled';
