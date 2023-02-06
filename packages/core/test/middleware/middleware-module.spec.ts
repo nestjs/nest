@@ -92,6 +92,7 @@ describe('MiddlewareModule', () => {
           new MiddlewareBuilder(
             (middlewareModule as any).routesMapper,
             undefined,
+            new RouteInfoPathExtractor(new ApplicationConfig()),
           ),
         ),
       ).to.be.true;
