@@ -31,7 +31,17 @@ describe('InstanceWrapper', () => {
   });
 
   describe('isDependencyTreeStatic', () => {
-    describe('when request scoped', () => {
+    describe.only('when circular reference', () => {
+      it('should return true', () => {
+        const wrapper = new InstanceWrapper();
+        const otherWrapper = new InstanceWrapper();
+        wrapper.addCtorMetadata(0, otherWrapper);
+        otherWrapper.addCtorMetadata(0, wrapper);
+        expect(wrapper.isDependencyTreeStatic()).to.be.true;
+        expect(otherWrapper.isDependencyTreeStatic()).to.be.true;
+      });
+    });
+    describe.only('when request scoped', () => {
       it('should return false', () => {
         const wrapper = new InstanceWrapper({
           scope: Scope.REQUEST,
