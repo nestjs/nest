@@ -2,10 +2,14 @@ import { DynamicModule } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isFunction, isSymbol } from '@nestjs/common/utils/shared.utils';
+import { xxh32 } from '@node-rs/xxhash';
 import stringify from 'fast-safe-stringify';
-import * as hash from 'object-hash';
+
+const checkClass = 'class ';
+const checkClassLength = checkClass.length;
 
 export class ModuleTokenFactory {
+  private readonly moduleTokenCache = new Map<string, string>();
   private readonly moduleIdsCache = new WeakMap<Type<unknown>, string>();
 
   public create(
@@ -13,23 +17,40 @@ export class ModuleTokenFactory {
     dynamicModuleMetadata?: Partial<DynamicModule> | undefined,
   ): string {
     const moduleId = this.getModuleId(metatype);
+
+    if (!dynamicModuleMetadata) {
+      return this.getFastModuleToken(moduleId, this.getModuleName(metatype));
+    }
+
     const opaqueToken = {
       id: moduleId,
       module: this.getModuleName(metatype),
-      dynamic: this.getDynamicMetadataToken(dynamicModuleMetadata),
+      dynamic: dynamicModuleMetadata || '',
     };
-    return hash(opaqueToken, { ignoreUnknown: true });
+    const opaqueTokenString = this.getStringifiedOpaqueToken(opaqueToken);
+
+    return this.hashString(opaqueTokenString);
   }
 
-  public getDynamicMetadataToken(
-    dynamicModuleMetadata: Partial<DynamicModule> | undefined,
-  ): string {
+  public getFastModuleToken(moduleId: string, moduleName: string): string {
+    const key = `${moduleId}_${moduleName}`;
+
+    if (this.moduleTokenCache.has(key)) {
+      return this.moduleTokenCache.get(key);
+    }
+
+    const hash = this.hashString(key);
+
+    this.moduleTokenCache.set(key, hash);
+
+    return hash;
+  }
+
+  public getStringifiedOpaqueToken(opaqueToken: object | undefined): string {
     // Uses safeStringify instead of JSON.stringify to support circular dynamic modules
     // The replacer function is also required in order to obtain real class names
     // instead of the unified "Function" key
-    return dynamicModuleMetadata
-      ? stringify(dynamicModuleMetadata, this.replacer)
-      : '';
+    return opaqueToken ? stringify(opaqueToken, this.replacer) : '';
   }
 
   public getModuleId(metatype: Type<unknown>): string {
@@ -46,14 +67,18 @@ export class ModuleTokenFactory {
     return metatype.name;
   }
 
+  private hashString(value: string): string {
+    return xxh32(value).toString();
+  }
+
   private replacer(key: string, value: any) {
     if (isFunction(value)) {
       const funcAsString = value.toString();
-      const isClass = /^class\s/.test(funcAsString);
+      const isClass = funcAsString.slice(0, checkClassLength) === checkClass;
       if (isClass) {
         return value.name;
       }
-      return hash(funcAsString, { ignoreUnknown: true });
+      return funcAsString;
     }
     if (isSymbol(value)) {
       return value.toString();
