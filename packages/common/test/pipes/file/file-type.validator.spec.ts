@@ -1,5 +1,5 @@
-import { FileTypeValidator } from '../../../pipes';
 import { expect } from 'chai';
+import { FileTypeValidator } from '../../../pipes';
 
 describe('FileTypeValidator', () => {
   describe('isValid', () => {

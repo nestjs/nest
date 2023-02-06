@@ -1,4 +1,4 @@
-import { FileType } from './interfaces';
+import { IFile } from './interfaces';
 
 /**
  * Interface describing FileValidators, which can be added to a {@link ParseFilePipe}.
@@ -12,7 +12,7 @@ export abstract class FileValidator<TValidationOptions = Record<string, any>> {
    * Indicates if this file should be considered valid, according to the options passed in the constructor.
    * @param file the file from the request object
    */
-  abstract isValid<TFile extends File = any>(
+  abstract isValid<TFile extends IFile | {}>(
     file?: TFile,
   ): boolean | Promise<boolean>;
 

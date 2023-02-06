@@ -1,8 +1,4 @@
-export interface FileType {
-  fieldname: string;
-  originalname: string;
-  encoding: string;
+export interface IFile {
   mimetype: string;
-  buffer: Buffer;
   size: number;
 }
