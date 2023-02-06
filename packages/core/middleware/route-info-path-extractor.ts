@@ -15,9 +15,9 @@ import { RoutePathFactory } from './../router/route-path-factory';
 
 export class RouteInfoPathExtractor {
   private routePathFactory: RoutePathFactory;
-  private prefixPath: string;
-  private excludedGlobalPrefixRoutes: ExcludeRouteMetadata[];
-  private versioningConfig?: VersioningOptions;
+  private readonly prefixPath: string;
+  private readonly excludedGlobalPrefixRoutes: ExcludeRouteMetadata[];
+  private readonly versioningConfig?: VersioningOptions;
 
   constructor(private readonly applicationConfig: ApplicationConfig) {
     this.routePathFactory = new RoutePathFactory(applicationConfig);
