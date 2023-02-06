@@ -33,18 +33,28 @@ export class PathsExplorer {
       ? Object.getPrototypeOf(instance)
       : prototype;
 
-    return this.metadataScanner.scanFromPrototype<Controller, RouteDefinition>(
-      instance,
-      instancePrototype,
-      method => this.exploreMethodMetadata(instance, instancePrototype, method),
-    );
+    return this.metadataScanner
+      .getAllMethodNames(instancePrototype)
+      .reduce((acc, method) => {
+        const route = this.exploreMethodMetadata(
+          instance,
+          instancePrototype,
+          method,
+        );
+
+        if (route) {
+          acc.push(route);
+        }
+
+        return acc;
+      }, []);
   }
 
   public exploreMethodMetadata(
     instance: Controller,
     prototype: object,
     methodName: string,
-  ): RouteDefinition {
+  ): RouteDefinition | null {
     const instanceCallback = instance[methodName];
     const prototypeCallback = prototype[methodName];
     const routePath = Reflect.getMetadata(PATH_METADATA, prototypeCallback);

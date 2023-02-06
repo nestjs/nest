@@ -20,9 +20,7 @@ export class MethodsReplFn extends ReplFunction {
         ? Object.getPrototypeOf(this.ctx.app.get(token))
         : token?.prototype;
 
-    const methods = new Set(
-      this.metadataScanner.getAllFilteredMethodNames(proto),
-    );
+    const methods = this.metadataScanner.getAllMethodNames(proto);
 
     this.ctx.writeToStdout('\n');
     this.ctx.writeToStdout(`${clc.green('Methods')}:\n`);
