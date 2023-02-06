@@ -35,7 +35,7 @@ describe('RouteInfoPathExtractor', () => {
     });
 
     it(`should return correct paths when set global prefix`, () => {
-      routeInfoPathExtractor['prefixPath'] = '/api';
+      (routeInfoPathExtractor as any).prefixPath = '/api';
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -54,10 +54,9 @@ describe('RouteInfoPathExtractor', () => {
     });
 
     it(`should return correct paths when set global prefix and global prefix options`, () => {
-      routeInfoPathExtractor['prefixPath'] = '/api';
-      routeInfoPathExtractor['excludedGlobalPrefixRoutes'] = mapToExcludeRoute([
-        'foo',
-      ]);
+      (routeInfoPathExtractor as any).prefixPath = '/api';
+      (routeInfoPathExtractor as any).excludedGlobalPrefixRoutes =
+        mapToExcludeRoute(['foo']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -122,7 +121,7 @@ describe('RouteInfoPathExtractor', () => {
     });
 
     it(`should return correct path when set global prefix`, () => {
-      routeInfoPathExtractor['prefixPath'] = '/api';
+      (routeInfoPathExtractor as any).prefixPath = '/api';
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -141,10 +140,9 @@ describe('RouteInfoPathExtractor', () => {
     });
 
     it(`should return correct path when set global prefix and global prefix options`, () => {
-      routeInfoPathExtractor['prefixPath'] = '/api';
-      routeInfoPathExtractor['excludedGlobalPrefixRoutes'] = mapToExcludeRoute([
-        'foo',
-      ]);
+      (routeInfoPathExtractor as any).prefixPath = '/api';
+      (routeInfoPathExtractor as any).excludedGlobalPrefixRoutes =
+        mapToExcludeRoute(['foo']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
