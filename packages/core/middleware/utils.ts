@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import * as pathToRegexp from 'path-to-regexp';
-import { v4 as uuid } from 'uuid';
+import { uid } from 'uid';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
 import { isRouteExcluded } from '../router/utils';
 
@@ -99,7 +99,7 @@ export function isMiddlewareClass(middleware: any): middleware is Type<any> {
   );
 }
 
-export function assignToken(metatype: Type<any>, token = uuid()): Type<any> {
+export function assignToken(metatype: Type<any>, token = uid(21)): Type<any> {
   Object.defineProperty(metatype, 'name', { value: token });
   return metatype;
 }
