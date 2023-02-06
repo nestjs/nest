@@ -5,8 +5,8 @@ import { isFunction, isSymbol } from '@nestjs/common/utils/shared.utils';
 import { xxh32 } from '@node-rs/xxhash';
 import stringify from 'fast-safe-stringify';
 
-const checkClass = 'class ';
-const checkClassLength = checkClass.length;
+const CLASS_STR = 'class ';
+const CLASS_STR_LEN = CLASS_STR.length;
 
 export class ModuleTokenFactory {
   private readonly moduleTokenCache = new Map<string, string>();
@@ -19,30 +19,26 @@ export class ModuleTokenFactory {
     const moduleId = this.getModuleId(metatype);
 
     if (!dynamicModuleMetadata) {
-      return this.getFastModuleToken(moduleId, this.getModuleName(metatype));
+      return this.getStaticModuleToken(moduleId, this.getModuleName(metatype));
     }
-
     const opaqueToken = {
       id: moduleId,
       module: this.getModuleName(metatype),
-      dynamic: dynamicModuleMetadata || '',
+      dynamic: dynamicModuleMetadata,
     };
     const opaqueTokenString = this.getStringifiedOpaqueToken(opaqueToken);
 
     return this.hashString(opaqueTokenString);
   }
 
-  public getFastModuleToken(moduleId: string, moduleName: string): string {
+  public getStaticModuleToken(moduleId: string, moduleName: string): string {
     const key = `${moduleId}_${moduleName}`;
-
     if (this.moduleTokenCache.has(key)) {
       return this.moduleTokenCache.get(key);
     }
 
     const hash = this.hashString(key);
-
     this.moduleTokenCache.set(key, hash);
-
     return hash;
   }
 
@@ -74,7 +70,7 @@ export class ModuleTokenFactory {
   private replacer(key: string, value: any) {
     if (isFunction(value)) {
       const funcAsString = value.toString();
-      const isClass = funcAsString.slice(0, checkClassLength) === checkClass;
+      const isClass = funcAsString.slice(0, CLASS_STR_LEN) === CLASS_STR;
       if (isClass) {
         return value.name;
       }
