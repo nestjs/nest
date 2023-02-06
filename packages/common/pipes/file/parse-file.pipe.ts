@@ -41,11 +41,12 @@ export class ParseFilePipe implements PipeTransform<any> {
   async transform(value: any): Promise<any> {
     const areThereNoFileIn = this.thereAreNoFilesIn(value);
 
-    if (areThereNoFileIn && this.fileIsRequired)
+    if (areThereNoFileIn && this.fileIsRequired) {
       throw this.exceptionFactory('File is required');
-
-    if (!areThereNoFileIn && this.validators.length)
+    }
+    if (!areThereNoFileIn && this.validators.length) {
       await this.validateFilesOrFile(value);
+    }
 
     return value;
   }
