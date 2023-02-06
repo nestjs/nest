@@ -12,8 +12,8 @@ export abstract class FileValidator<TValidationOptions = Record<string, any>> {
    * Indicates if this file should be considered valid, according to the options passed in the constructor.
    * @param file the file from the request object
    */
-  abstract isValid(
-    file?: FileType | Partial<FileType>,
+  abstract isValid<TFile extends File = any>(
+    file?: TFile,
   ): boolean | Promise<boolean>;
 
   /**
