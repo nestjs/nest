@@ -1,5 +1,7 @@
 /**
  * @external https://github.com/socketio/socket.io/blob/master/lib/index.ts
+ *
+ * @publicApi
  */
 
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';

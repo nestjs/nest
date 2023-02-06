@@ -4,6 +4,8 @@ import { GatewayMetadata } from '../interfaces';
 /**
  * Decorator that marks a class as a Nest gateway that enables real-time, bidirectional
  * and event-based communication between the browser and the server.
+ *
+ * @publicApi
  */
 export function WebSocketGateway(port?: number): ClassDecorator;
 export function WebSocketGateway<

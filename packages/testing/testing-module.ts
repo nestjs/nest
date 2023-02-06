@@ -20,6 +20,9 @@ import { NestContainer } from '@nestjs/core/injector/container';
 import { Module } from '@nestjs/core/injector/module';
 import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 
+/**
+ * @publicApi
+ */
 export class TestingModule extends NestApplicationContext {
   protected readonly graphInspector: GraphInspector;
 

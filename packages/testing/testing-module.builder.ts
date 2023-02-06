@@ -20,6 +20,9 @@ import { TestingInjector } from './testing-injector';
 import { TestingInstanceLoader } from './testing-instance-loader';
 import { TestingModule } from './testing-module';
 
+/**
+ * @publicApi
+ */
 export class TestingModuleBuilder {
   private readonly applicationConfig = new ApplicationConfig();
   private readonly container = new NestContainer(this.applicationConfig);
