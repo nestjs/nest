@@ -253,7 +253,7 @@
         "internal": false,
         "sourceModuleName": "CircularModule",
         "durable": false,
-        "static": false,
+        "static": true,
         "transient": false,
         "exported": true,
         "token": "CircularService"
@@ -746,7 +746,7 @@
         "internal": false,
         "sourceModuleName": "InputModule",
         "durable": false,
-        "static": false,
+        "static": true,
         "transient": false,
         "exported": true,
         "token": "InputService"
