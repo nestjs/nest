@@ -203,18 +203,15 @@ export class InstanceWrapper<T = any> {
     if (!isUndefined(this.isTreeDurable)) {
       return this.isTreeDurable;
     }
-    if (this.scope === Scope.REQUEST) {
-      this.isTreeDurable = this.durable === undefined ? false : this.durable;
-      if (this.isTreeDurable) {
-        this.printIntrospectedAsDurable();
-      }
+    if (this.durable === true) {
+      this.isTreeDurable = true;
+      this.printIntrospectedAsDurable();
       return this.isTreeDurable;
     }
     const isStatic = this.isDependencyTreeStatic();
     if (isStatic) {
       return false;
     }
-
     const isTreeNonDurable = this.introspectDepsAttribute(
       (collection, registry) =>
         collection.some(
@@ -224,7 +221,7 @@ export class InstanceWrapper<T = any> {
         ),
       lookupRegistry,
     );
-    this.isTreeDurable = !isTreeNonDurable;
+    this.isTreeDurable = !isTreeNonDurable && this.durable !== false;
     if (this.isTreeDurable) {
       this.printIntrospectedAsDurable();
     }
@@ -246,23 +243,25 @@ export class InstanceWrapper<T = any> {
     const { dependencies, properties, enhancers } =
       this[INSTANCE_METADATA_SYMBOL];
 
-    let introspectionResult = dependencies
-      ? callback(dependencies, lookupRegistry)
-      : false;
+    let introspectionResult =
+      (dependencies && callback(dependencies, lookupRegistry)) || !dependencies;
 
-    if (introspectionResult || !(properties || enhancers)) {
+    if (!introspectionResult || !(properties || enhancers)) {
       return introspectionResult;
     }
-    introspectionResult = properties
-      ? callback(
+    const propertiesHosts = (properties || []).map(item => item.wrapper);
+    introspectionResult =
+      introspectionResult &&
+      ((properties &&
+        callback(
           properties.map(item => item.wrapper),
           lookupRegistry,
-        )
-      : false;
-    if (introspectionResult || !enhancers) {
+        )) ||
+        !properties);
+    if (!introspectionResult || !enhancers) {
       return introspectionResult;
     }
-    return enhancers ? callback(enhancers, lookupRegistry) : false;
+    return callback(enhancers, lookupRegistry);
   }
 
   public isDependencyTreeStatic(lookupRegistry: string[] = []): boolean {
@@ -274,10 +273,10 @@ export class InstanceWrapper<T = any> {
       this.printIntrospectedAsRequestScoped();
       return this.isTreeStatic;
     }
-    this.isTreeStatic = !this.introspectDepsAttribute(
+    this.isTreeStatic = this.introspectDepsAttribute(
       (collection, registry) =>
-        collection.some(
-          (item: InstanceWrapper) => !item.isDependencyTreeStatic(registry),
+        collection.every((item: InstanceWrapper) =>
+          item.isDependencyTreeStatic(registry),
         ),
       lookupRegistry,
     );
