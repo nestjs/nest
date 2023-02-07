@@ -1,6 +1,7 @@
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Inject, Injectable, Optional } from '../../decorators';
+import { StreamableFile } from '../../file-stream';
 import {
   CallHandler,
   ExecutionContext,
@@ -60,6 +61,10 @@ export class CacheInterceptor implements NestInterceptor {
         : ttlValueOrFactory;
       return next.handle().pipe(
         tap(async response => {
+          if (response instanceof StreamableFile) {
+            return;
+          }
+
           const args = isNil(ttl) ? [key, response] : [key, response, { ttl }];
 
           try {
