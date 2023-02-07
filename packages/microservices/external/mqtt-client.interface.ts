@@ -2,6 +2,9 @@ import { EventEmitter } from 'events';
 
 /**
  * @see https://github.com/mqttjs/MQTT.js/
+ *
+ * @publicApi
+ *
  */
 export declare class MqttClient extends EventEmitter {
   public connected: boolean;

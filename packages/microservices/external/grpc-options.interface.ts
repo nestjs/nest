@@ -1,6 +1,8 @@
 /**
  * An interface that contains options used when initializing a Channel instance.
  * This listing is incomplete. Full reference: https://grpc.github.io/grpc/core/group__grpc__arg__keys.html
+ *
+ * @publicApi
  */
 export interface ChannelOptions {
   'grpc.max_send_message_length'?: number;

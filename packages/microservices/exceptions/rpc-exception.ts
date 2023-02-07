@@ -1,5 +1,8 @@
 import { isObject, isString } from '@nestjs/common/utils/shared.utils';
 
+/**
+ * @publicApi
+ */
 export class RpcException extends Error {
   constructor(private readonly error: string | object) {
     super();

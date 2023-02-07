@@ -4,6 +4,9 @@ import {
   IncomingResponse,
 } from './packet.interface';
 
+/**
+ * @publicApi
+ */
 export interface Deserializer<TInput = any, TOutput = any> {
   deserialize(
     value: TInput,

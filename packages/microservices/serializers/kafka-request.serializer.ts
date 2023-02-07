@@ -13,6 +13,9 @@ export interface KafkaRequest<T = any> {
   headers: Record<string, any>;
 }
 
+/**
+ * @publicApi
+ */
 export class KafkaRequestSerializer
   implements Serializer<any, KafkaRequest | Promise<KafkaRequest>>
 {

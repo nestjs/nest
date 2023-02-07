@@ -6,6 +6,9 @@ import { Observable } from 'rxjs';
 import { BaseRpcExceptionFilter } from './base-rpc-exception-filter';
 import { RpcException } from './rpc-exception';
 
+/**
+ * @publicApi
+ */
 export class RpcExceptionsHandler extends BaseRpcExceptionFilter {
   private filters: RpcExceptionFilterMetadata[] = [];
 
