@@ -73,7 +73,7 @@
     "path-to-regexp": "3.2.0",
     "reflect-metadata": "0.1.13",
     "rxjs": "7.8.0",
-    "socket.io": "4.5.4",
+    "socket.io": "4.6.0",
     "tslib": "2.5.0",
     "uid": "2.0.1",
     "uuid": "9.0.0"
