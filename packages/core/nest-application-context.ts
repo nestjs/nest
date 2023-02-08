@@ -52,7 +52,7 @@ export class NestApplicationContext<
   private readonly moduleCompiler = new ModuleCompiler();
   private shutdownCleanupRef?: (...args: unknown[]) => unknown;
   private _instanceLinksHost: InstanceLinksHost;
-  private _moduleRefsByDistance?: Array<Module>;
+  private _moduleRefsForHooksByDistance?: Array<Module>;
 
   protected get instanceLinksHost() {
     if (!this._instanceLinksHost) {
@@ -372,10 +372,7 @@ export class NestApplicationContext<
    * modules and its children.
    */
   protected async callInitHook(): Promise<void> {
-    if (this.appOptions.preview) {
-      return;
-    }
-    const modulesSortedByDistance = this.getModulesSortedByDistance();
+    const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
     for (const module of modulesSortedByDistance) {
       await callModuleInitHook(module);
     }
@@ -386,10 +383,7 @@ export class NestApplicationContext<
    * modules and its children.
    */
   protected async callDestroyHook(): Promise<void> {
-    if (this.appOptions.preview) {
-      return;
-    }
-    const modulesSortedByDistance = this.getModulesSortedByDistance();
+    const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
     for (const module of modulesSortedByDistance) {
       await callModuleDestroyHook(module);
     }
@@ -400,10 +394,7 @@ export class NestApplicationContext<
    * modules and its children.
    */
   protected async callBootstrapHook(): Promise<void> {
-    if (this.appOptions.preview) {
-      return;
-    }
-    const modulesSortedByDistance = this.getModulesSortedByDistance();
+    const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
     for (const module of modulesSortedByDistance) {
       await callModuleBootstrapHook(module);
     }
@@ -414,10 +405,7 @@ export class NestApplicationContext<
    * modules and children.
    */
   protected async callShutdownHook(signal?: string): Promise<void> {
-    if (this.appOptions.preview) {
-      return;
-    }
-    const modulesSortedByDistance = this.getModulesSortedByDistance();
+    const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
     for (const module of modulesSortedByDistance) {
       await callAppShutdownHook(module, signal);
     }
@@ -428,10 +416,7 @@ export class NestApplicationContext<
    * modules and children.
    */
   protected async callBeforeShutdownHook(signal?: string): Promise<void> {
-    if (this.appOptions.preview) {
-      return;
-    }
-    const modulesSortedByDistance = this.getModulesSortedByDistance();
+    const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
     for (const module of modulesSortedByDistance) {
       await callBeforeAppShutdownHook(module, signal);
     }
@@ -445,17 +430,20 @@ export class NestApplicationContext<
     }
   }
 
-  private getModulesSortedByDistance(): Module[] {
-    if (this._moduleRefsByDistance) {
-      return this._moduleRefsByDistance;
+  private getModulesToTriggerHooksOn(): Module[] {
+    if (this._moduleRefsForHooksByDistance) {
+      return this._moduleRefsForHooksByDistance;
     }
     const modulesContainer = this.container.getModules();
     const compareFn = (a: Module, b: Module) => b.distance - a.distance;
-
-    this._moduleRefsByDistance = Array.from(modulesContainer.values()).sort(
+    const modulesSortedByDistance = Array.from(modulesContainer.values()).sort(
       compareFn,
     );
-    return this._moduleRefsByDistance;
+
+    this._moduleRefsForHooksByDistance = this.appOptions?.preview
+      ? modulesSortedByDistance.filter(moduleRef => moduleRef.initOnPreview)
+      : modulesSortedByDistance;
+    return this._moduleRefsForHooksByDistance;
   }
 
   private printInPreviewModeWarning() {

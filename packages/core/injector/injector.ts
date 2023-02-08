@@ -717,7 +717,7 @@ export class Injector {
       wrapper.isLazyTransient(contextId, inquirer) ||
       wrapper.isExplicitlyRequested(contextId, inquirer);
 
-    if (this.options?.preview) {
+    if (this.options?.preview && !wrapper.host?.initOnPreview) {
       instanceHost.isResolved = true;
       return instanceHost.instance;
     }

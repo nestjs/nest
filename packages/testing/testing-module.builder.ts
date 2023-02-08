@@ -26,7 +26,6 @@ import { TestingModule } from './testing-module';
 export class TestingModuleBuilder {
   private readonly applicationConfig = new ApplicationConfig();
   private readonly container = new NestContainer(this.applicationConfig);
-  private readonly injector = new TestingInjector();
   private readonly overloadsMap = new Map();
   private readonly module: any;
   private testingLogger: LoggerService;
@@ -70,7 +69,7 @@ export class TestingModuleBuilder {
   }
 
   public async compile(
-    options: Pick<NestApplicationContextOptions, 'snapshot'> = {},
+    options: Pick<NestApplicationContextOptions, 'snapshot' | 'preview'> = {},
   ): Promise<TestingModule> {
     this.applyLogger();
 
@@ -92,7 +91,7 @@ export class TestingModuleBuilder {
     await scanner.scan(this.module);
 
     this.applyOverloadsMap();
-    await this.createInstancesOfDependencies(graphInspector);
+    await this.createInstancesOfDependencies(graphInspector, options);
     scanner.applyApplicationProviders();
 
     const root = this.getRootModule();
@@ -137,10 +136,16 @@ export class TestingModuleBuilder {
     return modules.next().value;
   }
 
-  private async createInstancesOfDependencies(graphInspector: GraphInspector) {
+  private async createInstancesOfDependencies(
+    graphInspector: GraphInspector,
+    options: { preview?: boolean },
+  ) {
+    const injector = new TestingInjector({
+      preview: options?.preview ?? false,
+    });
     const instanceLoader = new TestingInstanceLoader(
       this.container,
-      this.injector,
+      injector,
       graphInspector,
     );
     await instanceLoader.createInstancesOfDependencies(

@@ -63,6 +63,7 @@ export class Module {
   >();
   private readonly _exports = new Set<InstanceToken>();
   private _distance = 0;
+  private _initOnPreview = false;
   private _isGlobal = false;
   private _token: string;
 
@@ -96,6 +97,14 @@ export class Module {
 
   set isGlobal(global: boolean) {
     this._isGlobal = global;
+  }
+
+  get initOnPreview() {
+    return this._initOnPreview;
+  }
+
+  set initOnPreview(initOnPreview: boolean) {
+    this._initOnPreview = initOnPreview;
   }
 
   get providers(): Map<InstanceToken, InstanceWrapper<Injectable>> {

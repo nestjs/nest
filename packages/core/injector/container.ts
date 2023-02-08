@@ -10,6 +10,7 @@ import {
   UndefinedForwardRefException,
   UnknownModuleException,
 } from '../errors/exceptions';
+import { InitializeOnPreviewAllowlist } from '../inspector/initialize-on-preview.allowlist';
 import { SerializedGraph } from '../inspector/serialized-graph';
 import { REQUEST } from '../router/request/request-constants';
 import { ModuleCompiler } from './compiler';
@@ -80,6 +81,7 @@ export class NestContainer {
     }
     const moduleRef = new Module(type, this);
     moduleRef.token = token;
+    moduleRef.initOnPreview = this.shouldInitOnPreview(type);
     this.modules.set(token, moduleRef);
 
     const updatedScope = [].concat(scope, type);
@@ -254,5 +256,9 @@ export class NestContainer {
       instance: request,
       isResolved: true,
     });
+  }
+
+  private shouldInitOnPreview(type: Type) {
+    return InitializeOnPreviewAllowlist.has(type);
   }
 }
