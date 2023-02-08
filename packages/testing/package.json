@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/testing",
-  "version": "9.3.6",
+  "version": "9.3.7",
   "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
