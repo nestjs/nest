@@ -442,6 +442,17 @@ describe('Logger', () => {
         );
         expect(processStdoutWriteSpy.thirdCall.firstArg).to.include('ms');
       });
+      it('should log out an error to stderr but not include an undefined log', () => {
+        const message = 'message 1';
+
+        logger.error(message);
+
+        expect(processStderrWriteSpy.calledOnce).to.be.true;
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+          `[${globalContext}]`,
+        );
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+      });
     });
 
     describe('when logging is disabled', () => {
