@@ -1,6 +1,6 @@
 import { Injectable, Optional } from '../decorators/core';
 import { clc, yellow } from '../utils/cli-colors.util';
-import { isPlainObject, isString } from '../utils/shared.utils';
+import { isPlainObject, isString, isUndefined } from '../utils/shared.utils';
 import { LoggerService, LogLevel } from './logger.service';
 import { isLogLevelEnabled } from './utils';
 
@@ -279,7 +279,7 @@ export class ConsoleLogger implements LoggerService {
     }
     const lastElement = messages[messages.length - 1];
     const isStack = isString(lastElement);
-    if (!isStack) {
+    if (!isStack && !isUndefined(lastElement)) {
       return { messages, context };
     }
     return {
