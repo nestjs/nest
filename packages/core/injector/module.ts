@@ -633,8 +633,8 @@ export class Module {
   }
 
   private generateUuid(): string {
-    const UUID_NAMESPACE = 'fb848993-0c82-4b9e-ae95-3c3c1dbe3d6b';
+    const prefix = 'M_';
     const key = this.name?.toString() ?? this.token?.toString();
-    return key ? UuidFactory.get(key, UUID_NAMESPACE) : randomStringGenerator();
+    return key ? UuidFactory.get(`${prefix}_${key}`) : randomStringGenerator();
   }
 }

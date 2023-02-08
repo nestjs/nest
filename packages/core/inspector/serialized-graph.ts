@@ -131,10 +131,6 @@ export class SerializedGraph {
   private generateUuidByEdgeDefinition(
     edgeDefinition: WithOptionalId<Edge>,
   ): string {
-    const UUID_NAMESPACE = '7a6d19ab-ec88-419f-a833-062532c468a7';
-    return DeterministicUuidRegistry.get(
-      JSON.stringify(edgeDefinition),
-      UUID_NAMESPACE,
-    );
+    return DeterministicUuidRegistry.get(JSON.stringify(edgeDefinition));
   }
 }

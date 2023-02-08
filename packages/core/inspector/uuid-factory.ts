@@ -13,9 +13,9 @@ export class UuidFactory {
     this._mode = value;
   }
 
-  static get(key = '', namespace?: string) {
+  static get(key = '') {
     return this._mode === UuidFactoryMode.Deterministic
-      ? DeterministicUuidRegistry.get(key, namespace)
+      ? DeterministicUuidRegistry.get(key)
       : randomStringGenerator();
   }
 }

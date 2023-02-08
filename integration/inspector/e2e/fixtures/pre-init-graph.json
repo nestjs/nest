@@ -1,603 +1,25 @@
 {
   "nodes": {
-    "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef": {
-      "id": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "label": "InternalCoreModule",
-      "metadata": {
-        "type": "module",
-        "global": true,
-        "dynamic": true,
-        "internal": true
-      }
-    },
-    "3ee9738b7bcaa750f13525c392973c3583577372e681032599db3d15b6f65e6e": {
-      "id": "3ee9738b7bcaa750f13525c392973c3583577372e681032599db3d15b6f65e6e",
-      "label": "InternalCoreModule",
-      "parent": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "InternalCoreModule"
-      }
-    },
-    "7ffce2d4a423ea1cabe5d1f6e8a1cb56ad45903eaa51634869e7782e29e81a2a": {
-      "id": "7ffce2d4a423ea1cabe5d1f6e8a1cb56ad45903eaa51634869e7782e29e81a2a",
-      "label": "ModuleRef",
-      "parent": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "740edccf038cfb37aebecc137616fd5d9107692f1f5fbb28af41d542935a4b16": {
-      "id": "740edccf038cfb37aebecc137616fd5d9107692f1f5fbb28af41d542935a4b16",
-      "label": "ApplicationConfig",
-      "parent": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "d78284aad1f036e25523eef8c0936b3cf79ef92c5603cdac04743f28ece2a65e": {
-      "id": "d78284aad1f036e25523eef8c0936b3cf79ef92c5603cdac04743f28ece2a65e",
-      "label": "Reflector",
-      "parent": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": true,
-        "token": "Reflector"
-      }
-    },
-    "8c1617ac7394f3befcd74a28b0351d67ee280a21899a32a14ece210bcd0d7f76": {
-      "id": "8c1617ac7394f3befcd74a28b0351d67ee280a21899a32a14ece210bcd0d7f76",
-      "label": "REQUEST",
-      "parent": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": false,
-        "scope": 2,
-        "transient": false,
-        "exported": true,
-        "token": "REQUEST"
-      }
-    },
-    "9d28b31abda680c2929d6a57ce21fb4baf02694c821de96d13c1f1d8cccf4dae": {
-      "id": "9d28b31abda680c2929d6a57ce21fb4baf02694c821de96d13c1f1d8cccf4dae",
-      "label": "INQUIRER",
-      "parent": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 1,
-        "transient": true,
-        "exported": true,
-        "token": "INQUIRER"
-      }
-    },
-    "3cc29e1c6b3077b746cf1b75deda366a9bcec858dc765fa47ac199dd0e452207": {
-      "id": "3cc29e1c6b3077b746cf1b75deda366a9bcec858dc765fa47ac199dd0e452207",
-      "label": "ExternalContextCreator",
-      "parent": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": true,
-        "token": "ExternalContextCreator"
-      }
-    },
-    "3780e9bb1ccd3522c4fd4aff71521ae17aeff5cac7da80a4c5ba37a1b17d8c41": {
-      "id": "3780e9bb1ccd3522c4fd4aff71521ae17aeff5cac7da80a4c5ba37a1b17d8c41",
-      "label": "ModulesContainer",
-      "parent": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": true,
-        "token": "ModulesContainer"
-      }
-    },
-    "05b8e224fd1881f3da0598f7756a5389316ba635a504f7ed31610d71e1269460": {
-      "id": "05b8e224fd1881f3da0598f7756a5389316ba635a504f7ed31610d71e1269460",
-      "label": "HttpAdapterHost",
-      "parent": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": true,
-        "token": "HttpAdapterHost"
-      }
-    },
-    "2a1526f1eb45d5c073d13d8d3ca41b682c07d369aeda7958374bb7a953aa42ae": {
-      "id": "2a1526f1eb45d5c073d13d8d3ca41b682c07d369aeda7958374bb7a953aa42ae",
-      "label": "LazyModuleLoader",
-      "parent": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": true,
-        "token": "LazyModuleLoader"
-      }
-    },
-    "1a8c294e46390e82b0a028a02a715396e55e448f7affb64ab050bcd1fd263504": {
-      "id": "1a8c294e46390e82b0a028a02a715396e55e448f7affb64ab050bcd1fd263504",
-      "label": "SerializedGraph",
-      "parent": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": true,
-        "token": "SerializedGraph"
-      }
-    },
-    "21e59072ade09341f3645b476e23fe1e4f8a899c9f9b26a9d805d1070b2c4b62": {
-      "id": "21e59072ade09341f3645b476e23fe1e4f8a899c9f9b26a9d805d1070b2c4b62",
-      "label": "RootTestModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "0231801bbf11e5891f64efd78dfea7b7df58e1bb658b052585ee1ffa4ab32bd7": {
-      "id": "0231801bbf11e5891f64efd78dfea7b7df58e1bb658b052585ee1ffa4ab32bd7",
-      "label": "RootTestModule",
-      "parent": "21e59072ade09341f3645b476e23fe1e4f8a899c9f9b26a9d805d1070b2c4b62",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "RootTestModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "RootTestModule"
-      }
-    },
-    "616e9f07be991da95433b7cbad8ab134398bba9a8f21da243b1eb8bfbd1f4d22": {
-      "id": "616e9f07be991da95433b7cbad8ab134398bba9a8f21da243b1eb8bfbd1f4d22",
-      "label": "ModuleRef",
-      "parent": "21e59072ade09341f3645b476e23fe1e4f8a899c9f9b26a9d805d1070b2c4b62",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "RootTestModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "b71614a7571789395edff2595efa313b98ca59d6aaa12e766642e69fbdcfcbbc": {
-      "id": "b71614a7571789395edff2595efa313b98ca59d6aaa12e766642e69fbdcfcbbc",
-      "label": "ApplicationConfig",
-      "parent": "21e59072ade09341f3645b476e23fe1e4f8a899c9f9b26a9d805d1070b2c4b62",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "RootTestModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134": {
-      "id": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "label": "AppModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "e5cd33d29216e06319b3818ad5196949d082a7cdbf61816cd4c9e71bd5cf8c3e": {
-      "id": "e5cd33d29216e06319b3818ad5196949d082a7cdbf61816cd4c9e71bd5cf8c3e",
-      "label": "AppModule",
-      "parent": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "AppModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "AppModule"
-      }
-    },
-    "69fbda6bf154cbc9296f980d7d2f62bc491d328ac1f53f3cbac84e9193c347cd": {
-      "id": "69fbda6bf154cbc9296f980d7d2f62bc491d328ac1f53f3cbac84e9193c347cd",
-      "label": "ModuleRef",
-      "parent": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "AppModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "69c1c98a5a1f4a9a67fd9621a11d09fcad1042cb7f142f78e78cfce5d0d4cf7f": {
-      "id": "69c1c98a5a1f4a9a67fd9621a11d09fcad1042cb7f142f78e78cfce5d0d4cf7f",
-      "label": "ApplicationConfig",
-      "parent": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "AppModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "de1c888d312127413b6fbe6072b1b4a36b0a4c81b2a3a998c3376311f4bf6b1f": {
-      "id": "de1c888d312127413b6fbe6072b1b4a36b0a4c81b2a3a998c3376311f4bf6b1f",
-      "label": "AppV1Controller",
-      "parent": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "metadata": {
-        "type": "controller",
-        "internal": false,
-        "sourceModuleName": "AppModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "AppV1Controller"
-      }
-    },
-    "4e27b565e5d49a722f92ca25576af7522c6fb34196dd5715be745754d9f05374": {
-      "id": "4e27b565e5d49a722f92ca25576af7522c6fb34196dd5715be745754d9f05374",
-      "label": "AppV2Controller",
-      "parent": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "metadata": {
-        "type": "controller",
-        "internal": false,
-        "sourceModuleName": "AppModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "AppV2Controller"
-      }
-    },
-    "79ff3cf51a8c5eac8246d484cbb7a70de599eaca44f60e48dd83f816d324a489": {
-      "id": "79ff3cf51a8c5eac8246d484cbb7a70de599eaca44f60e48dd83f816d324a489",
-      "label": "CoreModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "d82bfac9bc37a880f23e9ae13abc78c6b1a5299cca61c22c8c6334946415ea23": {
-      "id": "d82bfac9bc37a880f23e9ae13abc78c6b1a5299cca61c22c8c6334946415ea23",
-      "label": "CoreModule",
-      "parent": "79ff3cf51a8c5eac8246d484cbb7a70de599eaca44f60e48dd83f816d324a489",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "CoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "CoreModule"
-      }
-    },
-    "6c9dad5cad1d3b730836b71ccbeec26d5353feed3b27b7be2514a46f5e44d0f5": {
-      "id": "6c9dad5cad1d3b730836b71ccbeec26d5353feed3b27b7be2514a46f5e44d0f5",
-      "label": "ModuleRef",
-      "parent": "79ff3cf51a8c5eac8246d484cbb7a70de599eaca44f60e48dd83f816d324a489",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "CoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "6e8729d1703423c5cc42f94c332e0f7d604f2b7cb5f1532f6a3f767224b6861c": {
-      "id": "6e8729d1703423c5cc42f94c332e0f7d604f2b7cb5f1532f6a3f767224b6861c",
-      "label": "ApplicationConfig",
-      "parent": "79ff3cf51a8c5eac8246d484cbb7a70de599eaca44f60e48dd83f816d324a489",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "CoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "cad7c7b4c73f9b6c8c6a9fb87fdcabd201c1f9848ac83fcc702cb6163d10a2ad": {
-      "id": "cad7c7b4c73f9b6c8c6a9fb87fdcabd201c1f9848ac83fcc702cb6163d10a2ad",
+    "18347652": {
+      "id": "18347652",
       "label": "LoggingInterceptor",
-      "parent": "79ff3cf51a8c5eac8246d484cbb7a70de599eaca44f60e48dd83f816d324a489",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "CoreModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "APP_INTERCEPTOR (UUID: 609f7df9241e36d2d2f7de3601f6e53875c954e213c931e86794772e4a75d498)",
-        "subtype": "interceptor",
-        "global": true
-      }
-    },
-    "6407fe70fe239923752c4659208c58633ea983f85f55afc71795854c891a5113": {
-      "id": "6407fe70fe239923752c4659208c58633ea983f85f55afc71795854c891a5113",
-      "label": "CatsModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "5d39a5deb6df4daec30740f98232e0910209f11e21be26c56865ca14bd5dc04b": {
-      "id": "5d39a5deb6df4daec30740f98232e0910209f11e21be26c56865ca14bd5dc04b",
-      "label": "CatsModule",
-      "parent": "6407fe70fe239923752c4659208c58633ea983f85f55afc71795854c891a5113",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "CatsModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "CatsModule"
-      }
-    },
-    "665bbe21433653859968da5324e3a97dbf1f7c31f8564fd39be216d53e431545": {
-      "id": "665bbe21433653859968da5324e3a97dbf1f7c31f8564fd39be216d53e431545",
-      "label": "ModuleRef",
-      "parent": "6407fe70fe239923752c4659208c58633ea983f85f55afc71795854c891a5113",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "CatsModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "d0dab87b994a8acb473f7127c7840bc0a726dc0920dac00542cb3ad3c19f79d1": {
-      "id": "d0dab87b994a8acb473f7127c7840bc0a726dc0920dac00542cb3ad3c19f79d1",
-      "label": "ApplicationConfig",
-      "parent": "6407fe70fe239923752c4659208c58633ea983f85f55afc71795854c891a5113",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "CatsModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "f7b89dbb6778c3e02157316838e6e326ab52d8a1217d7b12e55d34e0ac5f3706": {
-      "id": "f7b89dbb6778c3e02157316838e6e326ab52d8a1217d7b12e55d34e0ac5f3706",
-      "label": "CatsService",
-      "parent": "6407fe70fe239923752c4659208c58633ea983f85f55afc71795854c891a5113",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "CatsModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "CatsService"
-      }
-    },
-    "0d2aae61704d83b061cd2438e055b0c660e92cfee2dd2fe730d293756b2a921f": {
-      "id": "0d2aae61704d83b061cd2438e055b0c660e92cfee2dd2fe730d293756b2a921f",
-      "label": "RolesGuard",
-      "parent": "6407fe70fe239923752c4659208c58633ea983f85f55afc71795854c891a5113",
+      "parent": "2133316171",
       "metadata": {
         "type": "injectable",
         "internal": false,
-        "sourceModuleName": "CatsModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "RolesGuard",
-        "subtype": "guard"
-      }
-    },
-    "d7c4ca5064f05c5e03085ff48f10d4228e530da52b6a77b372dec2d98c21877e": {
-      "id": "d7c4ca5064f05c5e03085ff48f10d4228e530da52b6a77b372dec2d98c21877e",
-      "label": "CatsController",
-      "parent": "6407fe70fe239923752c4659208c58633ea983f85f55afc71795854c891a5113",
-      "metadata": {
-        "type": "controller",
-        "internal": false,
-        "sourceModuleName": "CatsModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "CatsController",
-        "enhancers": [
-          {
-            "id": "0d2aae61704d83b061cd2438e055b0c660e92cfee2dd2fe730d293756b2a921f",
-            "subtype": "guard"
-          },
-          {
-            "name": "ParseIntPipe",
-            "methodKey": "findOne",
-            "subtype": "pipe"
-          }
-        ]
-      }
-    },
-    "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a": {
-      "id": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
-      "label": "HelloModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": true,
-        "internal": false
-      }
-    },
-    "5f25dae41b7f9b1915acd07dba96f8713a9ef047bdddce426b7eec6ae4070436": {
-      "id": "5f25dae41b7f9b1915acd07dba96f8713a9ef047bdddce426b7eec6ae4070436",
-      "label": "HelloModule",
-      "parent": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "HelloModule",
+        "sourceModuleName": "RequestChainModule",
         "durable": false,
         "static": false,
-        "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "HelloModule"
+        "token": "LoggingInterceptor",
+        "subtype": "interceptor"
       }
     },
-    "893b2f738a0fa04a81e735b30e041c8a6ce40c50c61bd64c48e44fc29239f983": {
-      "id": "893b2f738a0fa04a81e735b30e041c8a6ce40c50c61bd64c48e44fc29239f983",
-      "label": "ModuleRef",
-      "parent": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "HelloModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "46653ed4b99b30ae156cdd685836859fa76c45ca57b4f01f13682e5eecc85669": {
-      "id": "46653ed4b99b30ae156cdd685836859fa76c45ca57b4f01f13682e5eecc85669",
-      "label": "ApplicationConfig",
-      "parent": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "HelloModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "fb439df7a9a476c13fc7c82f8cef02acc7c2726f6dae1bb451026c8c80dc2710": {
-      "id": "fb439df7a9a476c13fc7c82f8cef02acc7c2726f6dae1bb451026c8c80dc2710",
-      "label": "HelloService",
-      "parent": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "HelloModule",
-        "durable": false,
-        "static": false,
-        "scope": 2,
-        "transient": false,
-        "exported": false,
-        "token": "HelloService"
-      }
-    },
-    "e2449efe718e310060bb4d2385a24c691fa41eefd6d8bd3bbbfad0c66071c206": {
-      "id": "e2449efe718e310060bb4d2385a24c691fa41eefd6d8bd3bbbfad0c66071c206",
+    "55510001": {
+      "id": "55510001",
       "label": "UsersService",
-      "parent": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
+      "parent": "1743739569",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -610,43 +32,229 @@
         "token": "UsersService"
       }
     },
-    "a82e2c2c071bd464c592a68170eef711b24ad903ae5f97d95e51c8a985af60bf": {
-      "id": "a82e2c2c071bd464c592a68170eef711b24ad903ae5f97d95e51c8a985af60bf",
-      "label": "Meta",
-      "parent": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
+    "91819333": {
+      "id": "91819333",
+      "label": "ModuleRef",
+      "parent": "2133316171",
       "metadata": {
         "type": "provider",
-        "internal": false,
-        "sourceModuleName": "HelloModule",
+        "internal": true,
+        "sourceModuleName": "RequestChainModule",
         "durable": false,
-        "static": false,
-        "scope": 2,
+        "static": true,
+        "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "META"
+        "token": "ModuleRef"
       }
     },
-    "cebe9015a8892aa6ab7bea070663536494d40bd16de7f75d6cd3fef1f9d36fd3": {
-      "id": "cebe9015a8892aa6ab7bea070663536494d40bd16de7f75d6cd3fef1f9d36fd3",
-      "label": "Guard",
-      "parent": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
+    "203550704": {
+      "id": "203550704",
+      "label": "ExternalContextCreator",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": true,
+        "token": "ExternalContextCreator"
+      }
+    },
+    "208171089": {
+      "id": "208171089",
+      "label": "RolesGuard",
+      "parent": "1434441974",
       "metadata": {
         "type": "injectable",
         "internal": false,
-        "sourceModuleName": "HelloModule",
+        "sourceModuleName": "CatsModule",
         "durable": false,
-        "static": false,
-        "scope": 2,
+        "static": true,
         "transient": false,
         "exported": false,
-        "token": "Guard",
+        "token": "RolesGuard",
         "subtype": "guard"
       }
     },
-    "11e5a82d5d8412c1e417070e17fe4ea0b813aeced3d41a10d5faf8817fe01826": {
-      "id": "11e5a82d5d8412c1e417070e17fe4ea0b813aeced3d41a10d5faf8817fe01826",
+    "225063248": {
+      "id": "225063248",
+      "label": "InternalCoreModule",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "InternalCoreModule"
+      }
+    },
+    "256260345": {
+      "id": "256260345",
+      "label": "ApplicationConfig",
+      "parent": "1528017428",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "DatabaseModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "345516396": {
+      "id": "345516396",
+      "label": "ApplicationConfig",
+      "parent": "1142369607",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "HelperModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "345719894": {
+      "id": "345719894",
+      "label": "CoreModule",
+      "parent": "-1125887048",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "CoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "CoreModule"
+      }
+    },
+    "437945905": {
+      "id": "437945905",
+      "label": "ApplicationConfig",
+      "parent": "-1469176692",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "PropertiesModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "519735830": {
+      "id": "519735830",
+      "label": "ApplicationConfig",
+      "parent": "-493958991",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "ChatModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "521671888": {
+      "id": "521671888",
+      "label": "DogsModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "555176277": {
+      "id": "555176277",
+      "label": "InternalCoreModule",
+      "metadata": {
+        "type": "module",
+        "global": true,
+        "dynamic": true,
+        "internal": true
+      }
+    },
+    "594986539": {
+      "id": "594986539",
+      "label": "InputService",
+      "parent": "-1813741655",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "InputModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": true,
+        "token": "InputService"
+      }
+    },
+    "603011239": {
+      "id": "603011239",
+      "label": "UsersService",
+      "parent": "-2003726489",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "UsersModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "UsersService"
+      }
+    },
+    "671882984": {
+      "id": "671882984",
+      "label": "Reflector",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": true,
+        "token": "Reflector"
+      }
+    },
+    "791004148": {
+      "id": "791004148",
+      "label": "ExternalSvcModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "867482265": {
+      "id": "867482265",
       "label": "Interceptor",
-      "parent": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
+      "parent": "1743739569",
       "metadata": {
         "type": "injectable",
         "internal": false,
@@ -660,629 +268,10 @@
         "subtype": "interceptor"
       }
     },
-    "298a3c9f4c57b0f22fe4fc494925f5e08ec30af95da7c719535d9781bbeaeb8f": {
-      "id": "298a3c9f4c57b0f22fe4fc494925f5e08ec30af95da7c719535d9781bbeaeb8f",
-      "label": "UserByIdPipe",
-      "parent": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
-      "metadata": {
-        "type": "injectable",
-        "internal": false,
-        "sourceModuleName": "HelloModule",
-        "durable": false,
-        "static": false,
-        "transient": false,
-        "exported": false,
-        "token": "UserByIdPipe",
-        "subtype": "pipe"
-      }
-    },
-    "faab69841d6fc7fd6b5cbaa94db337f4f616c26aaf2d210acaab7b96baddedce": {
-      "id": "faab69841d6fc7fd6b5cbaa94db337f4f616c26aaf2d210acaab7b96baddedce",
-      "label": "HelloController",
-      "parent": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
-      "metadata": {
-        "type": "controller",
-        "internal": false,
-        "sourceModuleName": "HelloModule",
-        "durable": false,
-        "static": false,
-        "transient": false,
-        "exported": false,
-        "token": "HelloController",
-        "enhancers": [
-          {
-            "id": "cebe9015a8892aa6ab7bea070663536494d40bd16de7f75d6cd3fef1f9d36fd3",
-            "methodKey": "greeting",
-            "subtype": "guard"
-          },
-          {
-            "id": "11e5a82d5d8412c1e417070e17fe4ea0b813aeced3d41a10d5faf8817fe01826",
-            "methodKey": "greeting",
-            "subtype": "interceptor"
-          },
-          {
-            "id": "298a3c9f4c57b0f22fe4fc494925f5e08ec30af95da7c719535d9781bbeaeb8f",
-            "methodKey": "greeting",
-            "subtype": "pipe"
-          }
-        ]
-      }
-    },
-    "e2bac7f2ea3a3c662b5d4ab8e69078c2b3691d2ade4bdacd1ad2c25b061acb78": {
-      "id": "e2bac7f2ea3a3c662b5d4ab8e69078c2b3691d2ade4bdacd1ad2c25b061acb78",
-      "label": "DurableModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "f194a5ba7c58dbd4750c87e24a68535bcde4e967b6ef73c44531911d75c2571d": {
-      "id": "f194a5ba7c58dbd4750c87e24a68535bcde4e967b6ef73c44531911d75c2571d",
-      "label": "DurableModule",
-      "parent": "e2bac7f2ea3a3c662b5d4ab8e69078c2b3691d2ade4bdacd1ad2c25b061acb78",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "DurableModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "DurableModule"
-      }
-    },
-    "f6133defb7c37eb81c762b0b63f1ee609aef0042263730f123961b64030fef09": {
-      "id": "f6133defb7c37eb81c762b0b63f1ee609aef0042263730f123961b64030fef09",
-      "label": "ModuleRef",
-      "parent": "e2bac7f2ea3a3c662b5d4ab8e69078c2b3691d2ade4bdacd1ad2c25b061acb78",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "DurableModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "7aa88d8aca7e644f9496f0c7fb6a00020a80cd8179ab952e84fab12cfbd91300": {
-      "id": "7aa88d8aca7e644f9496f0c7fb6a00020a80cd8179ab952e84fab12cfbd91300",
+    "927096496": {
+      "id": "927096496",
       "label": "ApplicationConfig",
-      "parent": "e2bac7f2ea3a3c662b5d4ab8e69078c2b3691d2ade4bdacd1ad2c25b061acb78",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "DurableModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "20947d79e32e482444206548fa6752b0587adb051730d50df500b624a9686b42": {
-      "id": "20947d79e32e482444206548fa6752b0587adb051730d50df500b624a9686b42",
-      "label": "DurableService",
-      "parent": "e2bac7f2ea3a3c662b5d4ab8e69078c2b3691d2ade4bdacd1ad2c25b061acb78",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "DurableModule",
-        "durable": true,
-        "static": false,
-        "scope": 2,
-        "transient": false,
-        "exported": false,
-        "token": "DurableService"
-      }
-    },
-    "4a91f2ecb106b503459a6fb1ccdbec479cee40d3995b98dd495b558a1ede1e9e": {
-      "id": "4a91f2ecb106b503459a6fb1ccdbec479cee40d3995b98dd495b558a1ede1e9e",
-      "label": "DurableController",
-      "parent": "e2bac7f2ea3a3c662b5d4ab8e69078c2b3691d2ade4bdacd1ad2c25b061acb78",
-      "metadata": {
-        "type": "controller",
-        "internal": false,
-        "sourceModuleName": "DurableModule",
-        "durable": true,
-        "static": false,
-        "transient": false,
-        "exported": false,
-        "token": "DurableController"
-      }
-    },
-    "60064da574ad702eba737eea0fc2b1d939f993a048bf163b80248d983882666a": {
-      "id": "60064da574ad702eba737eea0fc2b1d939f993a048bf163b80248d983882666a",
-      "label": "DogsModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "daede78def7a10bb4f61d3b7c83cbd7b96384e5210553cf20b5f590f54c5dc1f": {
-      "id": "daede78def7a10bb4f61d3b7c83cbd7b96384e5210553cf20b5f590f54c5dc1f",
-      "label": "DogsModule",
-      "parent": "60064da574ad702eba737eea0fc2b1d939f993a048bf163b80248d983882666a",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "DogsModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "DogsModule"
-      }
-    },
-    "771ba61feb6987a78f7ca63486d65b1e82c8473ad8c030fa8d72d6c7dc1bc764": {
-      "id": "771ba61feb6987a78f7ca63486d65b1e82c8473ad8c030fa8d72d6c7dc1bc764",
-      "label": "ModuleRef",
-      "parent": "60064da574ad702eba737eea0fc2b1d939f993a048bf163b80248d983882666a",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "DogsModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "90bc3f76c74857d1f457cb9a2b4d6268d75d3ab98d46d80d52cc3c5fa3ec9afa": {
-      "id": "90bc3f76c74857d1f457cb9a2b4d6268d75d3ab98d46d80d52cc3c5fa3ec9afa",
-      "label": "ApplicationConfig",
-      "parent": "60064da574ad702eba737eea0fc2b1d939f993a048bf163b80248d983882666a",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "DogsModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "2efa5d0edc47a45722954c030a45e02857cd00dc040688adda5648a45e6e4335": {
-      "id": "2efa5d0edc47a45722954c030a45e02857cd00dc040688adda5648a45e6e4335",
-      "label": "DogsService",
-      "parent": "60064da574ad702eba737eea0fc2b1d939f993a048bf163b80248d983882666a",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "DogsModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "DogsService"
-      }
-    },
-    "07121bec8e6b93cd2902d9b664477f9baebaf99b0e1eea301c09c2d59b6c456e": {
-      "id": "07121bec8e6b93cd2902d9b664477f9baebaf99b0e1eea301c09c2d59b6c456e",
-      "label": "DogsController",
-      "parent": "60064da574ad702eba737eea0fc2b1d939f993a048bf163b80248d983882666a",
-      "metadata": {
-        "type": "controller",
-        "internal": false,
-        "sourceModuleName": "DogsModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "DogsController"
-      }
-    },
-    "48626f93d2fb19d7cfc8ab8fe06fb6b6d0292fc15104ca5174483ec3a23e40e6": {
-      "id": "48626f93d2fb19d7cfc8ab8fe06fb6b6d0292fc15104ca5174483ec3a23e40e6",
-      "label": "UsersModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "133023883704101181f1e65ff8ecac057eb11f07ab90832c9408a356f5415108": {
-      "id": "133023883704101181f1e65ff8ecac057eb11f07ab90832c9408a356f5415108",
-      "label": "UsersModule",
-      "parent": "48626f93d2fb19d7cfc8ab8fe06fb6b6d0292fc15104ca5174483ec3a23e40e6",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "UsersModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "UsersModule"
-      }
-    },
-    "5f0d1585189398a0fca337a2675987ef62312754106743bbdad9b8bec40afaee": {
-      "id": "5f0d1585189398a0fca337a2675987ef62312754106743bbdad9b8bec40afaee",
-      "label": "ModuleRef",
-      "parent": "48626f93d2fb19d7cfc8ab8fe06fb6b6d0292fc15104ca5174483ec3a23e40e6",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "UsersModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "d344dc00b8e62005d4eb9bcf9191a1631ea8004fbb0a471d2ef0b666befa133c": {
-      "id": "d344dc00b8e62005d4eb9bcf9191a1631ea8004fbb0a471d2ef0b666befa133c",
-      "label": "ApplicationConfig",
-      "parent": "48626f93d2fb19d7cfc8ab8fe06fb6b6d0292fc15104ca5174483ec3a23e40e6",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "UsersModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "9228307d77a202aa761aa8b291a0f30592c0a86b8274654c8f7aa7bd8c12050b": {
-      "id": "9228307d77a202aa761aa8b291a0f30592c0a86b8274654c8f7aa7bd8c12050b",
-      "label": "UsersService",
-      "parent": "48626f93d2fb19d7cfc8ab8fe06fb6b6d0292fc15104ca5174483ec3a23e40e6",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "UsersModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "UsersService"
-      }
-    },
-    "1933a14c184dece95fd3e5bcdd63642a74a5bfbb558e022e73b741ccee5ef2eb": {
-      "id": "1933a14c184dece95fd3e5bcdd63642a74a5bfbb558e022e73b741ccee5ef2eb",
-      "label": "UsersController",
-      "parent": "48626f93d2fb19d7cfc8ab8fe06fb6b6d0292fc15104ca5174483ec3a23e40e6",
-      "metadata": {
-        "type": "controller",
-        "internal": false,
-        "sourceModuleName": "UsersModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "UsersController"
-      }
-    },
-    "bc3eb83ff1a9e29045a906abc878b68367d37a5c5ece9850e277934e73a95ef3": {
-      "id": "bc3eb83ff1a9e29045a906abc878b68367d37a5c5ece9850e277934e73a95ef3",
-      "label": "DatabaseModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "db381057e82000a82d0bd48d00ba2533f2280efe3891d5fee9203998d6db32f6": {
-      "id": "db381057e82000a82d0bd48d00ba2533f2280efe3891d5fee9203998d6db32f6",
-      "label": "DatabaseModule",
-      "parent": "bc3eb83ff1a9e29045a906abc878b68367d37a5c5ece9850e277934e73a95ef3",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "DatabaseModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "DatabaseModule"
-      }
-    },
-    "2b8605b7f33dd7942d651aac67c340e3a7ae67a49046acb5d7eeb16958b7794e": {
-      "id": "2b8605b7f33dd7942d651aac67c340e3a7ae67a49046acb5d7eeb16958b7794e",
-      "label": "ModuleRef",
-      "parent": "bc3eb83ff1a9e29045a906abc878b68367d37a5c5ece9850e277934e73a95ef3",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "DatabaseModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "61db1ad3683d21837dd6dc1f59d2c6a14513e6e6e52d3ee6c991f6e087b07f4e": {
-      "id": "61db1ad3683d21837dd6dc1f59d2c6a14513e6e6e52d3ee6c991f6e087b07f4e",
-      "label": "ApplicationConfig",
-      "parent": "bc3eb83ff1a9e29045a906abc878b68367d37a5c5ece9850e277934e73a95ef3",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "DatabaseModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "8057032bb5538127feae284e20a757574cfa123d9de85cd003b539be5067027f": {
-      "id": "8057032bb5538127feae284e20a757574cfa123d9de85cd003b539be5067027f",
-      "label": "DatabaseService",
-      "parent": "bc3eb83ff1a9e29045a906abc878b68367d37a5c5ece9850e277934e73a95ef3",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "DatabaseModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "DatabaseService"
-      }
-    },
-    "0d300f9d89c0dd340d75c1fc7e84dcc6484ff5c790cb2466bf2a48db83157a28": {
-      "id": "0d300f9d89c0dd340d75c1fc7e84dcc6484ff5c790cb2466bf2a48db83157a28",
-      "label": "DatabaseController",
-      "parent": "bc3eb83ff1a9e29045a906abc878b68367d37a5c5ece9850e277934e73a95ef3",
-      "metadata": {
-        "type": "controller",
-        "internal": false,
-        "sourceModuleName": "DatabaseModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "DatabaseController"
-      }
-    },
-    "d6e8db4a9090bb6aa807b1fc3d5fa7c7d34924a60679965e6e33a4668af1acc8": {
-      "id": "d6e8db4a9090bb6aa807b1fc3d5fa7c7d34924a60679965e6e33a4668af1acc8",
-      "label": "ExternalSvcModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "45a60985328830222e15eb4cdc343e3cdc20e6a2903c726eaf0bde5112b1c209": {
-      "id": "45a60985328830222e15eb4cdc343e3cdc20e6a2903c726eaf0bde5112b1c209",
-      "label": "ExternalSvcModule",
-      "parent": "d6e8db4a9090bb6aa807b1fc3d5fa7c7d34924a60679965e6e33a4668af1acc8",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "ExternalSvcModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ExternalSvcModule"
-      }
-    },
-    "6e60d008dee7afb7f62216295e095153f2bb827908db3f5e0ec7c6d9d6215af1": {
-      "id": "6e60d008dee7afb7f62216295e095153f2bb827908db3f5e0ec7c6d9d6215af1",
-      "label": "ModuleRef",
-      "parent": "d6e8db4a9090bb6aa807b1fc3d5fa7c7d34924a60679965e6e33a4668af1acc8",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "ExternalSvcModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "57fe04219fbbdeb34db8c19c22f07b980933cee20127879b3b0ec84a58af2d32": {
-      "id": "57fe04219fbbdeb34db8c19c22f07b980933cee20127879b3b0ec84a58af2d32",
-      "label": "ApplicationConfig",
-      "parent": "d6e8db4a9090bb6aa807b1fc3d5fa7c7d34924a60679965e6e33a4668af1acc8",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "ExternalSvcModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "bebaed3d75b0d98c19a26f2082fa817aff27635963f3f3d3e3e76d5f04fe2287": {
-      "id": "bebaed3d75b0d98c19a26f2082fa817aff27635963f3f3d3e3e76d5f04fe2287",
-      "label": "ExternalSvcService",
-      "parent": "d6e8db4a9090bb6aa807b1fc3d5fa7c7d34924a60679965e6e33a4668af1acc8",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "ExternalSvcModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "ExternalSvcService"
-      }
-    },
-    "6bb6a7fbf7d45077d8540459f4d1311194701762a9305d0401e48bf973ecb3e1": {
-      "id": "6bb6a7fbf7d45077d8540459f4d1311194701762a9305d0401e48bf973ecb3e1",
-      "label": "ExternalSvcController",
-      "parent": "d6e8db4a9090bb6aa807b1fc3d5fa7c7d34924a60679965e6e33a4668af1acc8",
-      "metadata": {
-        "type": "controller",
-        "internal": false,
-        "sourceModuleName": "ExternalSvcModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "ExternalSvcController"
-      }
-    },
-    "ca4ac10713e80c6a16088d90d62a441b3b0ae696a8c8d5d6570f55e7f78a275f": {
-      "id": "ca4ac10713e80c6a16088d90d62a441b3b0ae696a8c8d5d6570f55e7f78a275f",
-      "label": "ChatModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "fddb65b7ced75c8509e1a36e4945a853021c3fecf16f5c0b25c18c98ac38ea36": {
-      "id": "fddb65b7ced75c8509e1a36e4945a853021c3fecf16f5c0b25c18c98ac38ea36",
-      "label": "ChatModule",
-      "parent": "ca4ac10713e80c6a16088d90d62a441b3b0ae696a8c8d5d6570f55e7f78a275f",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "ChatModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ChatModule"
-      }
-    },
-    "f2668023a9f167dcf96630f1e032e0c463d17217f509c98ed64f569a6b8fd7ef": {
-      "id": "f2668023a9f167dcf96630f1e032e0c463d17217f509c98ed64f569a6b8fd7ef",
-      "label": "ModuleRef",
-      "parent": "ca4ac10713e80c6a16088d90d62a441b3b0ae696a8c8d5d6570f55e7f78a275f",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "ChatModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "766552f82b3cf67d42fd1979300643c18a78a17f472bbc6782c627772432d11c": {
-      "id": "766552f82b3cf67d42fd1979300643c18a78a17f472bbc6782c627772432d11c",
-      "label": "ApplicationConfig",
-      "parent": "ca4ac10713e80c6a16088d90d62a441b3b0ae696a8c8d5d6570f55e7f78a275f",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "ChatModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "1595d2366bb1ed579d8bced83fae4230ead847e99ab2f3f32bb4db441444f4b8": {
-      "id": "1595d2366bb1ed579d8bced83fae4230ead847e99ab2f3f32bb4db441444f4b8",
-      "label": "ChatGateway",
-      "parent": "ca4ac10713e80c6a16088d90d62a441b3b0ae696a8c8d5d6570f55e7f78a275f",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "ChatModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "ChatGateway"
-      }
-    },
-    "13d0ff75ea5520d4489f6936ba0a2d7439c8ea24aa979e8fbb1d269019e579c8": {
-      "id": "13d0ff75ea5520d4489f6936ba0a2d7439c8ea24aa979e8fbb1d269019e579c8",
-      "label": "ChatService",
-      "parent": "ca4ac10713e80c6a16088d90d62a441b3b0ae696a8c8d5d6570f55e7f78a275f",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "ChatModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "ChatService"
-      }
-    },
-    "09c06aa29eb46a0176bf63add5f8b9604cf7d615cd6e0898ee8b9105c6b61421": {
-      "id": "09c06aa29eb46a0176bf63add5f8b9604cf7d615cd6e0898ee8b9105c6b61421",
-      "label": "RequestChainModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "0363735776aec22509104a8794e03fabf15f7fcb8407f4b7793ecb67d08569fd": {
-      "id": "0363735776aec22509104a8794e03fabf15f7fcb8407f4b7793ecb67d08569fd",
-      "label": "RequestChainModule",
-      "parent": "09c06aa29eb46a0176bf63add5f8b9604cf7d615cd6e0898ee8b9105c6b61421",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "RequestChainModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "RequestChainModule"
-      }
-    },
-    "ef0d230fc52f9bc0ce3e0adae4ce55391bab6bebd2b842a7b5d78136b6a70362": {
-      "id": "ef0d230fc52f9bc0ce3e0adae4ce55391bab6bebd2b842a7b5d78136b6a70362",
-      "label": "ModuleRef",
-      "parent": "09c06aa29eb46a0176bf63add5f8b9604cf7d615cd6e0898ee8b9105c6b61421",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "RequestChainModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "d266d8e8fbefa4044eee705494530d59931958f7ccdc274ca0f58bbf22b209bf": {
-      "id": "d266d8e8fbefa4044eee705494530d59931958f7ccdc274ca0f58bbf22b209bf",
-      "label": "ApplicationConfig",
-      "parent": "09c06aa29eb46a0176bf63add5f8b9604cf7d615cd6e0898ee8b9105c6b61421",
+      "parent": "2133316171",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1295,121 +284,10 @@
         "token": "ApplicationConfig"
       }
     },
-    "025c7d15142dd59cc6376dffaf07a40eb5719deceafbcef2268200e370344ef9": {
-      "id": "025c7d15142dd59cc6376dffaf07a40eb5719deceafbcef2268200e370344ef9",
-      "label": "RequestChainService",
-      "parent": "09c06aa29eb46a0176bf63add5f8b9604cf7d615cd6e0898ee8b9105c6b61421",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "RequestChainModule",
-        "durable": false,
-        "static": false,
-        "transient": false,
-        "exported": false,
-        "token": "RequestChainService"
-      }
-    },
-    "75bd13412017c39a3b9f7f34bc4954ed5c26bfdaaccf4fab13328c91151240b4": {
-      "id": "75bd13412017c39a3b9f7f34bc4954ed5c26bfdaaccf4fab13328c91151240b4",
-      "label": "LoggingInterceptor",
-      "parent": "09c06aa29eb46a0176bf63add5f8b9604cf7d615cd6e0898ee8b9105c6b61421",
-      "metadata": {
-        "type": "injectable",
-        "internal": false,
-        "sourceModuleName": "RequestChainModule",
-        "durable": false,
-        "static": false,
-        "transient": false,
-        "exported": false,
-        "token": "LoggingInterceptor",
-        "subtype": "interceptor"
-      }
-    },
-    "01b06a8feed52af3e5ce09428af29c21ef8dc55a1f29127d5110f72d622382da": {
-      "id": "01b06a8feed52af3e5ce09428af29c21ef8dc55a1f29127d5110f72d622382da",
-      "label": "RequestChainController",
-      "parent": "09c06aa29eb46a0176bf63add5f8b9604cf7d615cd6e0898ee8b9105c6b61421",
-      "metadata": {
-        "type": "controller",
-        "internal": false,
-        "sourceModuleName": "RequestChainModule",
-        "durable": false,
-        "static": false,
-        "transient": false,
-        "exported": false,
-        "token": "RequestChainController",
-        "enhancers": [
-          {
-            "id": "75bd13412017c39a3b9f7f34bc4954ed5c26bfdaaccf4fab13328c91151240b4",
-            "methodKey": "greeting",
-            "subtype": "interceptor"
-          }
-        ]
-      }
-    },
-    "e6372ef11c0d0b62a6a0372513843a2ae3c1ee750e173df4388c20aefc2f6c94": {
-      "id": "e6372ef11c0d0b62a6a0372513843a2ae3c1ee750e173df4388c20aefc2f6c94",
-      "label": "HelperModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "28fbf95c4ab281afe1433b8f52a91e9091ba98b0f8f1e1f7f8990bad2189127c": {
-      "id": "28fbf95c4ab281afe1433b8f52a91e9091ba98b0f8f1e1f7f8990bad2189127c",
-      "label": "HelperModule",
-      "parent": "e6372ef11c0d0b62a6a0372513843a2ae3c1ee750e173df4388c20aefc2f6c94",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "HelperModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "HelperModule"
-      }
-    },
-    "48b2be3668be0be637d5a76669c7c831c77926dc0857eae290fa84b27a41165c": {
-      "id": "48b2be3668be0be637d5a76669c7c831c77926dc0857eae290fa84b27a41165c",
-      "label": "ModuleRef",
-      "parent": "e6372ef11c0d0b62a6a0372513843a2ae3c1ee750e173df4388c20aefc2f6c94",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "HelperModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "d553e53eb325fbd553c3889ed45c0e8414fb789d4b3087ff0db860a34d3cb039": {
-      "id": "d553e53eb325fbd553c3889ed45c0e8414fb789d4b3087ff0db860a34d3cb039",
-      "label": "ApplicationConfig",
-      "parent": "e6372ef11c0d0b62a6a0372513843a2ae3c1ee750e173df4388c20aefc2f6c94",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "HelperModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "48a6371b0c731333ce43b29650edc0e0879eea061fa5a3d8b648e4273afe67b8": {
-      "id": "48a6371b0c731333ce43b29650edc0e0879eea061fa5a3d8b648e4273afe67b8",
+    "928565345": {
+      "id": "928565345",
       "label": "HelperService",
-      "parent": "e6372ef11c0d0b62a6a0372513843a2ae3c1ee750e173df4388c20aefc2f6c94",
+      "parent": "1142369607",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -1422,114 +300,26 @@
         "token": "HelperService"
       }
     },
-    "6c96a422bf65d40cb582b00a7628e02af2d083ec86d9d5a3556a50c883bd63f8": {
-      "id": "6c96a422bf65d40cb582b00a7628e02af2d083ec86d9d5a3556a50c883bd63f8",
-      "label": "PropertiesModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "a110611ed322f708130c5a1dd56a4d2cb1338d6be1e2cb535d536810121bea5a": {
-      "id": "a110611ed322f708130c5a1dd56a4d2cb1338d6be1e2cb535d536810121bea5a",
-      "label": "PropertiesModule",
-      "parent": "6c96a422bf65d40cb582b00a7628e02af2d083ec86d9d5a3556a50c883bd63f8",
+    "941957564": {
+      "id": "941957564",
+      "label": "RequestChainModule",
+      "parent": "2133316171",
       "metadata": {
         "type": "provider",
         "internal": true,
-        "sourceModuleName": "PropertiesModule",
+        "sourceModuleName": "RequestChainModule",
         "durable": false,
         "static": true,
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "PropertiesModule"
+        "token": "RequestChainModule"
       }
     },
-    "760f7a6f7aa91523625e0949e1a5721915f4958a62a7ac0ac657f57be3f9217b": {
-      "id": "760f7a6f7aa91523625e0949e1a5721915f4958a62a7ac0ac657f57be3f9217b",
-      "label": "ModuleRef",
-      "parent": "6c96a422bf65d40cb582b00a7628e02af2d083ec86d9d5a3556a50c883bd63f8",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "PropertiesModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "9af90e7d185fc8b8cc8e36589775936940b37e6a08b68878706d59a22654c30b": {
-      "id": "9af90e7d185fc8b8cc8e36589775936940b37e6a08b68878706d59a22654c30b",
-      "label": "ApplicationConfig",
-      "parent": "6c96a422bf65d40cb582b00a7628e02af2d083ec86d9d5a3556a50c883bd63f8",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "PropertiesModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "e4b6e80153f97e7275b0e100bbfaa61eb5037cd6dd64f4ae8395242cfb92d92a": {
-      "id": "e4b6e80153f97e7275b0e100bbfaa61eb5037cd6dd64f4ae8395242cfb92d92a",
-      "label": "DependencyService",
-      "parent": "6c96a422bf65d40cb582b00a7628e02af2d083ec86d9d5a3556a50c883bd63f8",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "PropertiesModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "DependencyService"
-      }
-    },
-    "a49cc11662af89b137c9558cbb3e2a6f9aa817ff6a166a219ee40db1ed5388cd": {
-      "id": "a49cc11662af89b137c9558cbb3e2a6f9aa817ff6a166a219ee40db1ed5388cd",
-      "label": "PropertiesService",
-      "parent": "6c96a422bf65d40cb582b00a7628e02af2d083ec86d9d5a3556a50c883bd63f8",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "PropertiesModule",
-        "durable": false,
-        "static": true,
-        "transient": false,
-        "exported": false,
-        "token": "PropertiesService"
-      }
-    },
-    "93f266edbdda5b4e1b029e9019d94006fbd9fde91d89072345db1141e2ff74e5": {
-      "id": "93f266edbdda5b4e1b029e9019d94006fbd9fde91d89072345db1141e2ff74e5",
-      "label": "token",
-      "parent": "6c96a422bf65d40cb582b00a7628e02af2d083ec86d9d5a3556a50c883bd63f8",
-      "metadata": {
-        "type": "provider",
-        "internal": false,
-        "sourceModuleName": "PropertiesModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "token"
-      }
-    },
-    "9f1ba33fcf08f3f61a3081c69c12e05960f4aafae4cf5e8f9e8b86ebe7bc2ed4": {
-      "id": "9f1ba33fcf08f3f61a3081c69c12e05960f4aafae4cf5e8f9e8b86ebe7bc2ed4",
+    "980514911": {
+      "id": "980514911",
       "label": "Symbol(token)",
-      "parent": "6c96a422bf65d40cb582b00a7628e02af2d083ec86d9d5a3556a50c883bd63f8",
+      "parent": "-1469176692",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -1542,93 +332,42 @@
         "token": "Symbol(token)"
       }
     },
-    "f461dcd0b1a9db20e0d9374019e9076697c738def903b41d70a4dcfea3cd35ab": {
-      "id": "f461dcd0b1a9db20e0d9374019e9076697c738def903b41d70a4dcfea3cd35ab",
-      "label": "InputModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "c1fb40b55653a145799c61b602868b184780dee1af923fc7f0495135e96bd750": {
-      "id": "c1fb40b55653a145799c61b602868b184780dee1af923fc7f0495135e96bd750",
-      "label": "InputModule",
-      "parent": "f461dcd0b1a9db20e0d9374019e9076697c738def903b41d70a4dcfea3cd35ab",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InputModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "InputModule"
-      }
-    },
-    "da7a22227587546911562b19e984aebe4055f49bf6600db0a777b22b92b0edb1": {
-      "id": "da7a22227587546911562b19e984aebe4055f49bf6600db0a777b22b92b0edb1",
-      "label": "ModuleRef",
-      "parent": "f461dcd0b1a9db20e0d9374019e9076697c738def903b41d70a4dcfea3cd35ab",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InputModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ModuleRef"
-      }
-    },
-    "d15a244be5c4598de6989a3a40ac4ff1f5d5129004e2b3435cb94fb179f3d8b7": {
-      "id": "d15a244be5c4598de6989a3a40ac4ff1f5d5129004e2b3435cb94fb179f3d8b7",
-      "label": "ApplicationConfig",
-      "parent": "f461dcd0b1a9db20e0d9374019e9076697c738def903b41d70a4dcfea3cd35ab",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InputModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": false,
-        "token": "ApplicationConfig"
-      }
-    },
-    "7a9317f596376652be4d9a552148188bd1d251f081fc62cd7228bb65092b3379": {
-      "id": "7a9317f596376652be4d9a552148188bd1d251f081fc62cd7228bb65092b3379",
-      "label": "InputService",
-      "parent": "f461dcd0b1a9db20e0d9374019e9076697c738def903b41d70a4dcfea3cd35ab",
+    "1004276345": {
+      "id": "1004276345",
+      "label": "Meta",
+      "parent": "1743739569",
       "metadata": {
         "type": "provider",
         "internal": false,
-        "sourceModuleName": "InputModule",
+        "sourceModuleName": "HelloModule",
+        "durable": false,
+        "static": false,
+        "scope": 2,
+        "transient": false,
+        "exported": false,
+        "token": "META"
+      }
+    },
+    "1010833816": {
+      "id": "1010833816",
+      "label": "token",
+      "parent": "-1469176692",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "PropertiesModule",
         "durable": false,
         "static": true,
+        "scope": 0,
         "transient": false,
-        "exported": true,
-        "token": "InputService"
+        "exported": false,
+        "token": "token"
       }
     },
-    "fbd13736354b9d772b4d7b999359042c25b5ea7b95c823beb116c694a63a900a": {
-      "id": "fbd13736354b9d772b4d7b999359042c25b5ea7b95c823beb116c694a63a900a",
+    "1047229654": {
+      "id": "1047229654",
       "label": "CircularModule",
-      "metadata": {
-        "type": "module",
-        "global": false,
-        "dynamic": false,
-        "internal": false
-      }
-    },
-    "4c16316f82ffe340d50eba3693be48510af3f6fed72454fc2c6060632c8e69fd": {
-      "id": "4c16316f82ffe340d50eba3693be48510af3f6fed72454fc2c6060632c8e69fd",
-      "label": "CircularModule",
-      "parent": "fbd13736354b9d772b4d7b999359042c25b5ea7b95c823beb116c694a63a900a",
+      "parent": "-369869768",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1641,10 +380,1271 @@
         "token": "CircularModule"
       }
     },
-    "c38367288e3bebfe1d7518bed3f2849659db6464ba87989524757deff60674c1": {
-      "id": "c38367288e3bebfe1d7518bed3f2849659db6464ba87989524757deff60674c1",
+    "1074192353": {
+      "id": "1074192353",
+      "label": "ChatService",
+      "parent": "-493958991",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "ChatModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "ChatService"
+      }
+    },
+    "1120316353": {
+      "id": "1120316353",
       "label": "ModuleRef",
-      "parent": "fbd13736354b9d772b4d7b999359042c25b5ea7b95c823beb116c694a63a900a",
+      "parent": "1142369607",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "HelperModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "1131051184": {
+      "id": "1131051184",
+      "label": "ChatGateway",
+      "parent": "-493958991",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "ChatModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "ChatGateway"
+      }
+    },
+    "1142369607": {
+      "id": "1142369607",
+      "label": "HelperModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "1189153544": {
+      "id": "1189153544",
+      "label": "ChatModule",
+      "parent": "-493958991",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "ChatModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ChatModule"
+      }
+    },
+    "1253818496": {
+      "id": "1253818496",
+      "label": "RootTestModule",
+      "parent": "-1251270035",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "RootTestModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "RootTestModule"
+      }
+    },
+    "1433815174": {
+      "id": "1433815174",
+      "label": "DogsModule",
+      "parent": "521671888",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "DogsModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "DogsModule"
+      }
+    },
+    "1434441974": {
+      "id": "1434441974",
+      "label": "CatsModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "1472486160": {
+      "id": "1472486160",
+      "label": "HelloController",
+      "parent": "1743739569",
+      "metadata": {
+        "type": "controller",
+        "internal": false,
+        "sourceModuleName": "HelloModule",
+        "durable": false,
+        "static": false,
+        "transient": false,
+        "exported": false,
+        "token": "HelloController",
+        "enhancers": [
+          {
+            "id": "-2010060263",
+            "methodKey": "greeting",
+            "subtype": "guard"
+          },
+          {
+            "id": "867482265",
+            "methodKey": "greeting",
+            "subtype": "interceptor"
+          },
+          {
+            "id": "1893794611",
+            "methodKey": "greeting",
+            "subtype": "pipe"
+          }
+        ]
+      }
+    },
+    "1528017428": {
+      "id": "1528017428",
+      "label": "DatabaseModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "1535366709": {
+      "id": "1535366709",
+      "label": "ApplicationConfig",
+      "parent": "521671888",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "DogsModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "1551182002": {
+      "id": "1551182002",
+      "label": "ModuleRef",
+      "parent": "-1125887048",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "CoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "1616075090": {
+      "id": "1616075090",
+      "label": "CatsModule",
+      "parent": "1434441974",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "CatsModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "CatsModule"
+      }
+    },
+    "1743739569": {
+      "id": "1743739569",
+      "label": "HelloModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": true,
+        "internal": false
+      }
+    },
+    "1771940178": {
+      "id": "1771940178",
+      "label": "ApplicationConfig",
+      "parent": "-1251270035",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "RootTestModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "1809676814": {
+      "id": "1809676814",
+      "label": "ModuleRef",
+      "parent": "1528017428",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "DatabaseModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "1893794611": {
+      "id": "1893794611",
+      "label": "UserByIdPipe",
+      "parent": "1743739569",
+      "metadata": {
+        "type": "injectable",
+        "internal": false,
+        "sourceModuleName": "HelloModule",
+        "durable": false,
+        "static": false,
+        "transient": false,
+        "exported": false,
+        "token": "UserByIdPipe",
+        "subtype": "pipe"
+      }
+    },
+    "1919157847": {
+      "id": "1919157847",
+      "label": "REQUEST",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": false,
+        "scope": 2,
+        "transient": false,
+        "exported": true,
+        "token": "REQUEST"
+      }
+    },
+    "2133316171": {
+      "id": "2133316171",
+      "label": "RequestChainModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "-1486320561": {
+      "id": "-1486320561",
+      "label": "ModuleRef",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-651043398": {
+      "id": "-651043398",
+      "label": "ApplicationConfig",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "-255469305": {
+      "id": "-255469305",
+      "label": "INQUIRER",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 1,
+        "transient": true,
+        "exported": true,
+        "token": "INQUIRER"
+      }
+    },
+    "-26938366": {
+      "id": "-26938366",
+      "label": "ModulesContainer",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": true,
+        "token": "ModulesContainer"
+      }
+    },
+    "-326832201": {
+      "id": "-326832201",
+      "label": "HttpAdapterHost",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": true,
+        "token": "HttpAdapterHost"
+      }
+    },
+    "-702581189": {
+      "id": "-702581189",
+      "label": "LazyModuleLoader",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": true,
+        "token": "LazyModuleLoader"
+      }
+    },
+    "-1904419534": {
+      "id": "-1904419534",
+      "label": "SerializedGraph",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": true,
+        "token": "SerializedGraph"
+      }
+    },
+    "-1251270035": {
+      "id": "-1251270035",
+      "label": "RootTestModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "-969610649": {
+      "id": "-969610649",
+      "label": "ModuleRef",
+      "parent": "-1251270035",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "RootTestModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-19112576": {
+      "id": "-19112576",
+      "label": "AppModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "-2139588960": {
+      "id": "-2139588960",
+      "label": "AppModule",
+      "parent": "-19112576",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "AppModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "AppModule"
+      }
+    },
+    "-71302842": {
+      "id": "-71302842",
+      "label": "ModuleRef",
+      "parent": "-19112576",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "AppModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-2064622725": {
+      "id": "-2064622725",
+      "label": "ApplicationConfig",
+      "parent": "-19112576",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "AppModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "-365265483": {
+      "id": "-365265483",
+      "label": "AppV1Controller",
+      "parent": "-19112576",
+      "metadata": {
+        "type": "controller",
+        "internal": false,
+        "sourceModuleName": "AppModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "AppV1Controller"
+      }
+    },
+    "-774089708": {
+      "id": "-774089708",
+      "label": "AppV2Controller",
+      "parent": "-19112576",
+      "metadata": {
+        "type": "controller",
+        "internal": false,
+        "sourceModuleName": "AppModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "AppV2Controller"
+      }
+    },
+    "-1125887048": {
+      "id": "-1125887048",
+      "label": "CoreModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "-112192227": {
+      "id": "-112192227",
+      "label": "ApplicationConfig",
+      "parent": "-1125887048",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "CoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "-2007711503": {
+      "id": "-2007711503",
+      "label": "LoggingInterceptor",
+      "parent": "-1125887048",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "CoreModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "APP_INTERCEPTOR (UUID: -1146749753)",
+        "subtype": "interceptor",
+        "global": true
+      }
+    },
+    "-183456272": {
+      "id": "-183456272",
+      "label": "ModuleRef",
+      "parent": "1434441974",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "CatsModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-1846830501": {
+      "id": "-1846830501",
+      "label": "ApplicationConfig",
+      "parent": "1434441974",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "CatsModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "-593595711": {
+      "id": "-593595711",
+      "label": "CatsService",
+      "parent": "1434441974",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "CatsModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "CatsService"
+      }
+    },
+    "-1550892030": {
+      "id": "-1550892030",
+      "label": "CatsController",
+      "parent": "1434441974",
+      "metadata": {
+        "type": "controller",
+        "internal": false,
+        "sourceModuleName": "CatsModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "CatsController",
+        "enhancers": [
+          {
+            "id": "208171089",
+            "subtype": "guard"
+          },
+          {
+            "name": "ParseIntPipe",
+            "methodKey": "findOne",
+            "subtype": "pipe"
+          }
+        ]
+      }
+    },
+    "-1378706112": {
+      "id": "-1378706112",
+      "label": "HelloModule",
+      "parent": "1743739569",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "HelloModule",
+        "durable": false,
+        "static": false,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "HelloModule"
+      }
+    },
+    "-1166465801": {
+      "id": "-1166465801",
+      "label": "ModuleRef",
+      "parent": "1743739569",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "HelloModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-1191459348": {
+      "id": "-1191459348",
+      "label": "ApplicationConfig",
+      "parent": "1743739569",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "HelloModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "-1758187461": {
+      "id": "-1758187461",
+      "label": "HelloService",
+      "parent": "1743739569",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "HelloModule",
+        "durable": false,
+        "static": false,
+        "scope": 2,
+        "transient": false,
+        "exported": false,
+        "token": "HelloService"
+      }
+    },
+    "-2010060263": {
+      "id": "-2010060263",
+      "label": "Guard",
+      "parent": "1743739569",
+      "metadata": {
+        "type": "injectable",
+        "internal": false,
+        "sourceModuleName": "HelloModule",
+        "durable": false,
+        "static": false,
+        "scope": 2,
+        "transient": false,
+        "exported": false,
+        "token": "Guard",
+        "subtype": "guard"
+      }
+    },
+    "-1124392646": {
+      "id": "-1124392646",
+      "label": "DurableModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "-522935456": {
+      "id": "-522935456",
+      "label": "DurableModule",
+      "parent": "-1124392646",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "DurableModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "DurableModule"
+      }
+    },
+    "-1808043520": {
+      "id": "-1808043520",
+      "label": "ModuleRef",
+      "parent": "-1124392646",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "DurableModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-57038411": {
+      "id": "-57038411",
+      "label": "ApplicationConfig",
+      "parent": "-1124392646",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "DurableModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "-1673986099": {
+      "id": "-1673986099",
+      "label": "DurableService",
+      "parent": "-1124392646",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "DurableModule",
+        "durable": true,
+        "static": false,
+        "scope": 2,
+        "transient": false,
+        "exported": false,
+        "token": "DurableService"
+      }
+    },
+    "-848516688": {
+      "id": "-848516688",
+      "label": "DurableController",
+      "parent": "-1124392646",
+      "metadata": {
+        "type": "controller",
+        "internal": false,
+        "sourceModuleName": "DurableModule",
+        "durable": true,
+        "static": false,
+        "transient": false,
+        "exported": false,
+        "token": "DurableController"
+      }
+    },
+    "-1096226358": {
+      "id": "-1096226358",
+      "label": "ModuleRef",
+      "parent": "521671888",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "DogsModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-335387007": {
+      "id": "-335387007",
+      "label": "DogsService",
+      "parent": "521671888",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "DogsModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "DogsService"
+      }
+    },
+    "-1558907338": {
+      "id": "-1558907338",
+      "label": "DogsController",
+      "parent": "521671888",
+      "metadata": {
+        "type": "controller",
+        "internal": false,
+        "sourceModuleName": "DogsModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "DogsController"
+      }
+    },
+    "-2003726489": {
+      "id": "-2003726489",
+      "label": "UsersModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "-495603840": {
+      "id": "-495603840",
+      "label": "UsersModule",
+      "parent": "-2003726489",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "UsersModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "UsersModule"
+      }
+    },
+    "-618964563": {
+      "id": "-618964563",
+      "label": "ModuleRef",
+      "parent": "-2003726489",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "UsersModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-643958110": {
+      "id": "-643958110",
+      "label": "ApplicationConfig",
+      "parent": "-2003726489",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "UsersModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "-1102473136": {
+      "id": "-1102473136",
+      "label": "UsersController",
+      "parent": "-2003726489",
+      "metadata": {
+        "type": "controller",
+        "internal": false,
+        "sourceModuleName": "UsersModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "UsersController"
+      }
+    },
+    "-1098322034": {
+      "id": "-1098322034",
+      "label": "DatabaseModule",
+      "parent": "1528017428",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "DatabaseModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "DatabaseModule"
+      }
+    },
+    "-616397055": {
+      "id": "-616397055",
+      "label": "DatabaseService",
+      "parent": "1528017428",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "DatabaseModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "DatabaseService"
+      }
+    },
+    "-377928898": {
+      "id": "-377928898",
+      "label": "DatabaseController",
+      "parent": "1528017428",
+      "metadata": {
+        "type": "controller",
+        "internal": false,
+        "sourceModuleName": "DatabaseModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "DatabaseController"
+      }
+    },
+    "-511735264": {
+      "id": "-511735264",
+      "label": "ExternalSvcModule",
+      "parent": "791004148",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "ExternalSvcModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ExternalSvcModule"
+      }
+    },
+    "-660323910": {
+      "id": "-660323910",
+      "label": "ModuleRef",
+      "parent": "791004148",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "ExternalSvcModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-217737489": {
+      "id": "-217737489",
+      "label": "ApplicationConfig",
+      "parent": "791004148",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "ExternalSvcModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "-1902429503": {
+      "id": "-1902429503",
+      "label": "ExternalSvcService",
+      "parent": "791004148",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "ExternalSvcModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "ExternalSvcService"
+      }
+    },
+    "-349899408": {
+      "id": "-349899408",
+      "label": "ExternalSvcController",
+      "parent": "791004148",
+      "metadata": {
+        "type": "controller",
+        "internal": false,
+        "sourceModuleName": "ExternalSvcModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "ExternalSvcController"
+      }
+    },
+    "-493958991": {
+      "id": "-493958991",
+      "label": "ChatModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "-2111857237": {
+      "id": "-2111857237",
+      "label": "ModuleRef",
+      "parent": "-493958991",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "ChatModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-234035039": {
+      "id": "-234035039",
+      "label": "RequestChainService",
+      "parent": "2133316171",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "RequestChainModule",
+        "durable": false,
+        "static": false,
+        "transient": false,
+        "exported": false,
+        "token": "RequestChainService"
+      }
+    },
+    "-1927427604": {
+      "id": "-1927427604",
+      "label": "RequestChainController",
+      "parent": "2133316171",
+      "metadata": {
+        "type": "controller",
+        "internal": false,
+        "sourceModuleName": "RequestChainModule",
+        "durable": false,
+        "static": false,
+        "transient": false,
+        "exported": false,
+        "token": "RequestChainController",
+        "enhancers": [
+          {
+            "id": "18347652",
+            "methodKey": "greeting",
+            "subtype": "interceptor"
+          }
+        ]
+      }
+    },
+    "-162987852": {
+      "id": "-162987852",
+      "label": "HelperModule",
+      "parent": "1142369607",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "HelperModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "HelperModule"
+      }
+    },
+    "-1469176692": {
+      "id": "-1469176692",
+      "label": "PropertiesModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "-1501313730": {
+      "id": "-1501313730",
+      "label": "PropertiesModule",
+      "parent": "-1469176692",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "PropertiesModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "PropertiesModule"
+      }
+    },
+    "-1377446394": {
+      "id": "-1377446394",
+      "label": "ModuleRef",
+      "parent": "-1469176692",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "PropertiesModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-1494077847": {
+      "id": "-1494077847",
+      "label": "DependencyService",
+      "parent": "-1469176692",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "PropertiesModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "DependencyService"
+      }
+    },
+    "-1803759743": {
+      "id": "-1803759743",
+      "label": "PropertiesService",
+      "parent": "-1469176692",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "PropertiesModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "PropertiesService"
+      }
+    },
+    "-1813741655": {
+      "id": "-1813741655",
+      "label": "InputModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "-2113121728": {
+      "id": "-2113121728",
+      "label": "InputModule",
+      "parent": "-1813741655",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InputModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "InputModule"
+      }
+    },
+    "-428979729": {
+      "id": "-428979729",
+      "label": "ModuleRef",
+      "parent": "-1813741655",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InputModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ModuleRef"
+      }
+    },
+    "-453973276": {
+      "id": "-453973276",
+      "label": "ApplicationConfig",
+      "parent": "-1813741655",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InputModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": false,
+        "token": "ApplicationConfig"
+      }
+    },
+    "-369869768": {
+      "id": "-369869768",
+      "label": "CircularModule",
+      "metadata": {
+        "type": "module",
+        "global": false,
+        "dynamic": false,
+        "internal": false
+      }
+    },
+    "-88210382": {
+      "id": "-88210382",
+      "label": "ModuleRef",
+      "parent": "-369869768",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1657,10 +1657,10 @@
         "token": "ModuleRef"
       }
     },
-    "ed336bb4552a490e78b8abe78fc7f5255c2b3dfdd0ca68802fa93d09a067e609": {
-      "id": "ed336bb4552a490e78b8abe78fc7f5255c2b3dfdd0ca68802fa93d09a067e609",
+    "-1641626851": {
+      "id": "-1641626851",
       "label": "ApplicationConfig",
-      "parent": "fbd13736354b9d772b4d7b999359042c25b5ea7b95c823beb116c694a63a900a",
+      "parent": "-369869768",
       "metadata": {
         "type": "provider",
         "internal": true,
@@ -1673,10 +1673,10 @@
         "token": "ApplicationConfig"
       }
     },
-    "3f80425605a874a2f3a09bef33ef96b9052a707cf10b356d991c553659ec36aa": {
-      "id": "3f80425605a874a2f3a09bef33ef96b9052a707cf10b356d991c553659ec36aa",
+    "-1721730431": {
+      "id": "-1721730431",
       "label": "CircularService",
-      "parent": "fbd13736354b9d772b4d7b999359042c25b5ea7b95c823beb116c694a63a900a",
+      "parent": "-369869768",
       "metadata": {
         "type": "provider",
         "internal": false,
@@ -1690,9 +1690,394 @@
     }
   },
   "edges": {
-    "4a899766de3f9c17094c81fd9011c8d4281b0e199f2bc23653dbe6ef3bb8db0c": {
-      "source": "05b8e224fd1881f3da0598f7756a5389316ba635a504f7ed31610d71e1269460",
-      "target": "05b8e224fd1881f3da0598f7756a5389316ba635a504f7ed31610d71e1269460",
+    "22193019": {
+      "source": "-19112576",
+      "target": "521671888",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "AppModule",
+        "targetModuleName": "DogsModule"
+      },
+      "id": "22193019"
+    },
+    "33333764": {
+      "source": "791004148",
+      "target": "555176277",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "ExternalSvcModule",
+        "targetModuleName": "InternalCoreModule"
+      },
+      "id": "33333764"
+    },
+    "40501732": {
+      "source": "521671888",
+      "target": "555176277",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "DogsModule",
+        "targetModuleName": "InternalCoreModule"
+      },
+      "id": "40501732"
+    },
+    "73947303": {
+      "source": "-1813741655",
+      "target": "555176277",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "InputModule",
+        "targetModuleName": "InternalCoreModule"
+      },
+      "id": "73947303"
+    },
+    "182501115": {
+      "source": "1434441974",
+      "target": "555176277",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "CatsModule",
+        "targetModuleName": "InternalCoreModule"
+      },
+      "id": "182501115"
+    },
+    "231469845": {
+      "source": "-1803759743",
+      "target": "-1494077847",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "PropertiesModule",
+        "sourceClassName": "PropertiesService",
+        "targetClassName": "DependencyService",
+        "sourceClassToken": "PropertiesService",
+        "targetClassToken": "DependencyService",
+        "targetModuleName": "PropertiesModule",
+        "keyOrIndex": "service",
+        "injectionType": "property"
+      },
+      "id": "231469845"
+    },
+    "250652665": {
+      "source": "2133316171",
+      "target": "1142369607",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "RequestChainModule",
+        "targetModuleName": "HelperModule"
+      },
+      "id": "250652665"
+    },
+    "393939926": {
+      "source": "-1813741655",
+      "target": "-369869768",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "InputModule",
+        "targetModuleName": "CircularModule"
+      },
+      "id": "393939926"
+    },
+    "417363164": {
+      "source": "-1251270035",
+      "target": "555176277",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "RootTestModule",
+        "targetModuleName": "InternalCoreModule"
+      },
+      "id": "417363164"
+    },
+    "469401997": {
+      "source": "-493958991",
+      "target": "555176277",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "ChatModule",
+        "targetModuleName": "InternalCoreModule"
+      },
+      "id": "469401997"
+    },
+    "654001290": {
+      "source": "1472486160",
+      "target": "867482265",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "HelloModule",
+        "sourceClassName": "HelloController",
+        "targetClassName": "Interceptor",
+        "sourceClassToken": "HelloController",
+        "targetClassToken": "Interceptor",
+        "targetModuleName": "HelloModule",
+        "injectionType": "decorator"
+      },
+      "id": "654001290"
+    },
+    "676175891": {
+      "source": "-1251270035",
+      "target": "-19112576",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "RootTestModule",
+        "targetModuleName": "AppModule"
+      },
+      "id": "676175891"
+    },
+    "800268760": {
+      "source": "-1102473136",
+      "target": "603011239",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "UsersModule",
+        "sourceClassName": "UsersController",
+        "targetClassName": "UsersService",
+        "sourceClassToken": "UsersController",
+        "targetClassToken": "UsersService",
+        "targetModuleName": "UsersModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "800268760"
+    },
+    "804987620": {
+      "source": "-19112576",
+      "target": "-1125887048",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "AppModule",
+        "targetModuleName": "CoreModule"
+      },
+      "id": "804987620"
+    },
+    "807697929": {
+      "source": "-19112576",
+      "target": "1528017428",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "AppModule",
+        "targetModuleName": "DatabaseModule"
+      },
+      "id": "807697929"
+    },
+    "966350248": {
+      "source": "1131051184",
+      "target": "1074192353",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "ChatModule",
+        "sourceClassName": "ChatGateway",
+        "targetClassName": "ChatService",
+        "sourceClassToken": "ChatGateway",
+        "targetClassToken": "ChatService",
+        "targetModuleName": "ChatModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "966350248"
+    },
+    "987755577": {
+      "source": "-2003726489",
+      "target": "555176277",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "UsersModule",
+        "targetModuleName": "InternalCoreModule"
+      },
+      "id": "987755577"
+    },
+    "1056428433": {
+      "source": "-19112576",
+      "target": "555176277",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "AppModule",
+        "targetModuleName": "InternalCoreModule"
+      },
+      "id": "1056428433"
+    },
+    "1059069749": {
+      "source": "-1558907338",
+      "target": "-335387007",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "DogsModule",
+        "sourceClassName": "DogsController",
+        "targetClassName": "DogsService",
+        "sourceClassToken": "DogsController",
+        "targetClassToken": "DogsService",
+        "targetModuleName": "DogsModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "1059069749"
+    },
+    "1142343545": {
+      "source": "-1758187461",
+      "target": "1004276345",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "HelloModule",
+        "sourceClassName": "HelloService",
+        "targetClassName": "Meta",
+        "sourceClassToken": "HelloService",
+        "targetClassToken": "META",
+        "targetModuleName": "HelloModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "1142343545"
+    },
+    "1178436405": {
+      "source": "1893794611",
+      "target": "55510001",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "HelloModule",
+        "sourceClassName": "UserByIdPipe",
+        "targetClassName": "UsersService",
+        "sourceClassToken": "UserByIdPipe",
+        "targetClassToken": "UsersService",
+        "targetModuleName": "HelloModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "1178436405"
+    },
+    "1195474320": {
+      "source": "-369869768",
+      "target": "-1813741655",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "CircularModule",
+        "targetModuleName": "InputModule"
+      },
+      "id": "1195474320"
+    },
+    "1247743823": {
+      "source": "2133316171",
+      "target": "555176277",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "RequestChainModule",
+        "targetModuleName": "InternalCoreModule"
+      },
+      "id": "1247743823"
+    },
+    "1325313063": {
+      "source": "-1927427604",
+      "target": "18347652",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "RequestChainModule",
+        "sourceClassName": "RequestChainController",
+        "targetClassName": "LoggingInterceptor",
+        "sourceClassToken": "RequestChainController",
+        "targetClassToken": "LoggingInterceptor",
+        "targetModuleName": "RequestChainModule",
+        "injectionType": "decorator"
+      },
+      "id": "1325313063"
+    },
+    "1497653915": {
+      "source": "55510001",
+      "target": "1004276345",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "HelloModule",
+        "sourceClassName": "UsersService",
+        "targetClassName": "Meta",
+        "sourceClassToken": "UsersService",
+        "targetClassToken": "META",
+        "targetModuleName": "HelloModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "1497653915"
+    },
+    "1615322974": {
+      "source": "-1469176692",
+      "target": "555176277",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "PropertiesModule",
+        "targetModuleName": "InternalCoreModule"
+      },
+      "id": "1615322974"
+    },
+    "1856016815": {
+      "source": "-1721730431",
+      "target": "594986539",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "CircularModule",
+        "sourceClassName": "CircularService",
+        "targetClassName": "InputService",
+        "sourceClassToken": "CircularService",
+        "targetClassToken": "InputService",
+        "targetModuleName": "InputModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "1856016815"
+    },
+    "1900414743": {
+      "source": "1472486160",
+      "target": "1893794611",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "HelloModule",
+        "sourceClassName": "HelloController",
+        "targetClassName": "UserByIdPipe",
+        "sourceClassToken": "HelloController",
+        "targetClassToken": "UserByIdPipe",
+        "targetModuleName": "HelloModule",
+        "injectionType": "decorator"
+      },
+      "id": "1900414743"
+    },
+    "1904579661": {
+      "source": "18347652",
+      "target": "928565345",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "RequestChainModule",
+        "sourceClassName": "LoggingInterceptor",
+        "targetClassName": "HelperService",
+        "sourceClassToken": "LoggingInterceptor",
+        "targetClassToken": "HelperService",
+        "targetModuleName": "HelperModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "1904579661"
+    },
+    "1960203007": {
+      "source": "-1803759743",
+      "target": "980514911",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "PropertiesModule",
+        "sourceClassName": "PropertiesService",
+        "targetClassName": "Symbol(token)",
+        "sourceClassToken": "PropertiesService",
+        "targetClassToken": "Symbol(token)",
+        "targetModuleName": "PropertiesModule",
+        "keyOrIndex": "symbolToken",
+        "injectionType": "property"
+      },
+      "id": "1960203007"
+    },
+    "1976848738": {
+      "source": "1528017428",
+      "target": "555176277",
+      "metadata": {
+        "type": "module-to-module",
+        "sourceModuleName": "DatabaseModule",
+        "targetModuleName": "InternalCoreModule"
+      },
+      "id": "1976848738"
+    },
+    "2092394069": {
+      "source": "-326832201",
+      "target": "-326832201",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "InternalCoreModule",
@@ -1705,43 +2090,11 @@
         "injectionType": "constructor",
         "internal": true
       },
-      "id": "4a899766de3f9c17094c81fd9011c8d4281b0e199f2bc23653dbe6ef3bb8db0c"
+      "id": "2092394069"
     },
-    "681a486066d13b77778e214701e9aaa3349eab01f4fd1d050b037b579c95847a": {
-      "source": "3f80425605a874a2f3a09bef33ef96b9052a707cf10b356d991c553659ec36aa",
-      "target": "7a9317f596376652be4d9a552148188bd1d251f081fc62cd7228bb65092b3379",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "CircularModule",
-        "sourceClassName": "CircularService",
-        "targetClassName": "InputService",
-        "sourceClassToken": "CircularService",
-        "targetClassToken": "InputService",
-        "targetModuleName": "InputModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "681a486066d13b77778e214701e9aaa3349eab01f4fd1d050b037b579c95847a"
-    },
-    "9ae38f5a74126cb6a442d8e280f1d2569a2062c69aa9517d5e99d264599a4d4c": {
-      "source": "a49cc11662af89b137c9558cbb3e2a6f9aa817ff6a166a219ee40db1ed5388cd",
-      "target": "e4b6e80153f97e7275b0e100bbfaa61eb5037cd6dd64f4ae8395242cfb92d92a",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "PropertiesModule",
-        "sourceClassName": "PropertiesService",
-        "targetClassName": "DependencyService",
-        "sourceClassToken": "PropertiesService",
-        "targetClassToken": "DependencyService",
-        "targetModuleName": "PropertiesModule",
-        "keyOrIndex": "service",
-        "injectionType": "property"
-      },
-      "id": "9ae38f5a74126cb6a442d8e280f1d2569a2062c69aa9517d5e99d264599a4d4c"
-    },
-    "f5630716d8ca83a9388d61e44b135924b8d8839a2b0e6e75919000cae8c2a3e6": {
-      "source": "a49cc11662af89b137c9558cbb3e2a6f9aa817ff6a166a219ee40db1ed5388cd",
-      "target": "93f266edbdda5b4e1b029e9019d94006fbd9fde91d89072345db1141e2ff74e5",
+    "-2105726668": {
+      "source": "-1803759743",
+      "target": "1010833816",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "PropertiesModule",
@@ -1753,27 +2106,11 @@
         "keyOrIndex": "token",
         "injectionType": "property"
       },
-      "id": "f5630716d8ca83a9388d61e44b135924b8d8839a2b0e6e75919000cae8c2a3e6"
+      "id": "-2105726668"
     },
-    "650d922f65d2e53b1bcc38034a1022b2e2073fba1f7cd3fe702d566c1cf62e7e": {
-      "source": "a49cc11662af89b137c9558cbb3e2a6f9aa817ff6a166a219ee40db1ed5388cd",
-      "target": "9f1ba33fcf08f3f61a3081c69c12e05960f4aafae4cf5e8f9e8b86ebe7bc2ed4",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "PropertiesModule",
-        "sourceClassName": "PropertiesService",
-        "targetClassName": "Symbol(token)",
-        "sourceClassToken": "PropertiesService",
-        "targetClassToken": "Symbol(token)",
-        "targetModuleName": "PropertiesModule",
-        "keyOrIndex": "symbolToken",
-        "injectionType": "property"
-      },
-      "id": "650d922f65d2e53b1bcc38034a1022b2e2073fba1f7cd3fe702d566c1cf62e7e"
-    },
-    "9f77a1fce6e5a1f3acea895fca56d73518c60f7066de2bcf4aeaf0886d6e0919": {
-      "source": "d78284aad1f036e25523eef8c0936b3cf79ef92c5603cdac04743f28ece2a65e",
-      "target": "d78284aad1f036e25523eef8c0936b3cf79ef92c5603cdac04743f28ece2a65e",
+    "-72331150": {
+      "source": "671882984",
+      "target": "671882984",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "InternalCoreModule",
@@ -1786,11 +2123,11 @@
         "injectionType": "constructor",
         "internal": true
       },
-      "id": "9f77a1fce6e5a1f3acea895fca56d73518c60f7066de2bcf4aeaf0886d6e0919"
+      "id": "-72331150"
     },
-    "b73cd0ea0331ccfca7b3e053efb29c8f82cd76c67be33d9f78db5731e6e1f34f": {
-      "source": "5f25dae41b7f9b1915acd07dba96f8713a9ef047bdddce426b7eec6ae4070436",
-      "target": "a82e2c2c071bd464c592a68170eef711b24ad903ae5f97d95e51c8a985af60bf",
+    "-21463590": {
+      "source": "-1378706112",
+      "target": "1004276345",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "HelloModule",
@@ -1802,59 +2139,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "b73cd0ea0331ccfca7b3e053efb29c8f82cd76c67be33d9f78db5731e6e1f34f"
+      "id": "-21463590"
     },
-    "460d10bca5be7f069bc36bf0ca8086faede4ee853bca3df00c94174301f2f8e8": {
-      "source": "fb439df7a9a476c13fc7c82f8cef02acc7c2726f6dae1bb451026c8c80dc2710",
-      "target": "a82e2c2c071bd464c592a68170eef711b24ad903ae5f97d95e51c8a985af60bf",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "HelloModule",
-        "sourceClassName": "HelloService",
-        "targetClassName": "Meta",
-        "sourceClassToken": "HelloService",
-        "targetClassToken": "META",
-        "targetModuleName": "HelloModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "460d10bca5be7f069bc36bf0ca8086faede4ee853bca3df00c94174301f2f8e8"
-    },
-    "e1cc50b61f212650bbca9babda107066861625cf27f72b24707c3fdfd4d877e9": {
-      "source": "e2449efe718e310060bb4d2385a24c691fa41eefd6d8bd3bbbfad0c66071c206",
-      "target": "a82e2c2c071bd464c592a68170eef711b24ad903ae5f97d95e51c8a985af60bf",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "HelloModule",
-        "sourceClassName": "UsersService",
-        "targetClassName": "Meta",
-        "sourceClassToken": "UsersService",
-        "targetClassToken": "META",
-        "targetModuleName": "HelloModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "e1cc50b61f212650bbca9babda107066861625cf27f72b24707c3fdfd4d877e9"
-    },
-    "ed712307ae92d42790a6e62a7920888fd4d6e6be823d3ed87b2a8cec4ad7019a": {
-      "source": "1595d2366bb1ed579d8bced83fae4230ead847e99ab2f3f32bb4db441444f4b8",
-      "target": "13d0ff75ea5520d4489f6936ba0a2d7439c8ea24aa979e8fbb1d269019e579c8",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "ChatModule",
-        "sourceClassName": "ChatGateway",
-        "targetClassName": "ChatService",
-        "sourceClassToken": "ChatGateway",
-        "targetClassToken": "ChatService",
-        "targetModuleName": "ChatModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "ed712307ae92d42790a6e62a7920888fd4d6e6be823d3ed87b2a8cec4ad7019a"
-    },
-    "160486172afd733c39abcf221def23509bff740a5ef8fd164485659fc5ab8599": {
-      "source": "20947d79e32e482444206548fa6752b0587adb051730d50df500b624a9686b42",
-      "target": "8c1617ac7394f3befcd74a28b0351d67ee280a21899a32a14ece210bcd0d7f76",
+    "-1657371464": {
+      "source": "-1673986099",
+      "target": "1919157847",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "DurableModule",
@@ -1867,11 +2156,11 @@
         "injectionType": "constructor",
         "internal": true
       },
-      "id": "160486172afd733c39abcf221def23509bff740a5ef8fd164485659fc5ab8599"
+      "id": "-1657371464"
     },
-    "9ade8bf107483a2bd59fa14e9cf3193c2608144d0f6d23007e8eefe0cc732cdd": {
-      "source": "48a6371b0c731333ce43b29650edc0e0879eea061fa5a3d8b648e4273afe67b8",
-      "target": "8c1617ac7394f3befcd74a28b0351d67ee280a21899a32a14ece210bcd0d7f76",
+    "-1303681274": {
+      "source": "928565345",
+      "target": "1919157847",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "HelperModule",
@@ -1884,11 +2173,11 @@
         "injectionType": "constructor",
         "internal": true
       },
-      "id": "9ade8bf107483a2bd59fa14e9cf3193c2608144d0f6d23007e8eefe0cc732cdd"
+      "id": "-1303681274"
     },
-    "889d30784e3e2175ca550aa5324c73735f2ce13d37a2d36b41e2cc94fc0d4527": {
-      "source": "0d2aae61704d83b061cd2438e055b0c660e92cfee2dd2fe730d293756b2a921f",
-      "target": "d78284aad1f036e25523eef8c0936b3cf79ef92c5603cdac04743f28ece2a65e",
+    "-886102564": {
+      "source": "208171089",
+      "target": "671882984",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "CatsModule",
@@ -1901,43 +2190,11 @@
         "injectionType": "constructor",
         "internal": true
       },
-      "id": "889d30784e3e2175ca550aa5324c73735f2ce13d37a2d36b41e2cc94fc0d4527"
+      "id": "-886102564"
     },
-    "001ee239bf2366d0613013c8c18fc420f1a7c15dd17a9ca32dd836949a6cc7b7": {
-      "source": "07121bec8e6b93cd2902d9b664477f9baebaf99b0e1eea301c09c2d59b6c456e",
-      "target": "2efa5d0edc47a45722954c030a45e02857cd00dc040688adda5648a45e6e4335",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "DogsModule",
-        "sourceClassName": "DogsController",
-        "targetClassName": "DogsService",
-        "sourceClassToken": "DogsController",
-        "targetClassToken": "DogsService",
-        "targetModuleName": "DogsModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "001ee239bf2366d0613013c8c18fc420f1a7c15dd17a9ca32dd836949a6cc7b7"
-    },
-    "9cfdf48154f9615652201596103c57a8be80e89a94fb349dea81b99781d0dcd4": {
-      "source": "1933a14c184dece95fd3e5bcdd63642a74a5bfbb558e022e73b741ccee5ef2eb",
-      "target": "9228307d77a202aa761aa8b291a0f30592c0a86b8274654c8f7aa7bd8c12050b",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "UsersModule",
-        "sourceClassName": "UsersController",
-        "targetClassName": "UsersService",
-        "sourceClassToken": "UsersController",
-        "targetClassToken": "UsersService",
-        "targetModuleName": "UsersModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "9cfdf48154f9615652201596103c57a8be80e89a94fb349dea81b99781d0dcd4"
-    },
-    "a3482af9cdbc87f4a4d6519b3292a104e9c3562d76e5feb3a17b314753155e33": {
-      "source": "0d300f9d89c0dd340d75c1fc7e84dcc6484ff5c790cb2466bf2a48db83157a28",
-      "target": "8057032bb5538127feae284e20a757574cfa123d9de85cd003b539be5067027f",
+    "-2003045613": {
+      "source": "-377928898",
+      "target": "-616397055",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "DatabaseModule",
@@ -1949,11 +2206,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "a3482af9cdbc87f4a4d6519b3292a104e9c3562d76e5feb3a17b314753155e33"
+      "id": "-2003045613"
     },
-    "89fc3f4bb9143c7439269a0987938b5147f71e120c55eec00d42ef7cf6442b7d": {
-      "source": "6bb6a7fbf7d45077d8540459f4d1311194701762a9305d0401e48bf973ecb3e1",
-      "target": "bebaed3d75b0d98c19a26f2082fa817aff27635963f3f3d3e3e76d5f04fe2287",
+    "-881420795": {
+      "source": "-349899408",
+      "target": "-1902429503",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "ExternalSvcModule",
@@ -1965,11 +2222,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "89fc3f4bb9143c7439269a0987938b5147f71e120c55eec00d42ef7cf6442b7d"
+      "id": "-881420795"
     },
-    "82a8e56af0963459b6388c96e1bbe3918479ba8eda2bfee19c7209f7bfd714f9": {
-      "source": "7a9317f596376652be4d9a552148188bd1d251f081fc62cd7228bb65092b3379",
-      "target": "3f80425605a874a2f3a09bef33ef96b9052a707cf10b356d991c553659ec36aa",
+    "-831049991": {
+      "source": "594986539",
+      "target": "-1721730431",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "InputModule",
@@ -1981,27 +2238,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "82a8e56af0963459b6388c96e1bbe3918479ba8eda2bfee19c7209f7bfd714f9"
+      "id": "-831049991"
     },
-    "944eece45c7d46e0c560ece143c99129d60433215dcf5377d82ff034f17bccad": {
-      "source": "298a3c9f4c57b0f22fe4fc494925f5e08ec30af95da7c719535d9781bbeaeb8f",
-      "target": "e2449efe718e310060bb4d2385a24c691fa41eefd6d8bd3bbbfad0c66071c206",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "HelloModule",
-        "sourceClassName": "UserByIdPipe",
-        "targetClassName": "UsersService",
-        "sourceClassToken": "UserByIdPipe",
-        "targetClassToken": "UsersService",
-        "targetModuleName": "HelloModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "944eece45c7d46e0c560ece143c99129d60433215dcf5377d82ff034f17bccad"
-    },
-    "989e43613240f36268fc5d896c7acfd6761cb8d029be832beb19914f0275abff": {
-      "source": "025c7d15142dd59cc6376dffaf07a40eb5719deceafbcef2268200e370344ef9",
-      "target": "48a6371b0c731333ce43b29650edc0e0879eea061fa5a3d8b648e4273afe67b8",
+    "-2146943494": {
+      "source": "-234035039",
+      "target": "928565345",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "RequestChainModule",
@@ -2013,11 +2254,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "989e43613240f36268fc5d896c7acfd6761cb8d029be832beb19914f0275abff"
+      "id": "-2146943494"
     },
-    "1c021427cb0e2b1dc4171f8ccfbb272181ea441e80e48d7dbfeb9a00ccc15d66": {
-      "source": "4a91f2ecb106b503459a6fb1ccdbec479cee40d3995b98dd495b558a1ede1e9e",
-      "target": "20947d79e32e482444206548fa6752b0587adb051730d50df500b624a9686b42",
+    "-1816180282": {
+      "source": "-848516688",
+      "target": "-1673986099",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "DurableModule",
@@ -2029,11 +2270,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "1c021427cb0e2b1dc4171f8ccfbb272181ea441e80e48d7dbfeb9a00ccc15d66"
+      "id": "-1816180282"
     },
-    "fd919be6640f1427d23609e0a8a382bde117fd13ebf703a770e192d930b2b708": {
-      "source": "d7c4ca5064f05c5e03085ff48f10d4228e530da52b6a77b372dec2d98c21877e",
-      "target": "f7b89dbb6778c3e02157316838e6e326ab52d8a1217d7b12e55d34e0ac5f3706",
+    "-180350082": {
+      "source": "-1550892030",
+      "target": "-593595711",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "CatsModule",
@@ -2045,11 +2286,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "fd919be6640f1427d23609e0a8a382bde117fd13ebf703a770e192d930b2b708"
+      "id": "-180350082"
     },
-    "f3a4b3b2fb89a07bead844a031737ce60ab3b5298e397d0ac76cc7b2dddf5a2c": {
-      "source": "faab69841d6fc7fd6b5cbaa94db337f4f616c26aaf2d210acaab7b96baddedce",
-      "target": "fb439df7a9a476c13fc7c82f8cef02acc7c2726f6dae1bb451026c8c80dc2710",
+    "-1043628608": {
+      "source": "1472486160",
+      "target": "-1758187461",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "HelloModule",
@@ -2061,11 +2302,11 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "f3a4b3b2fb89a07bead844a031737ce60ab3b5298e397d0ac76cc7b2dddf5a2c"
+      "id": "-1043628608"
     },
-    "051d062f9b2b618ca992799c9d2e9ae1731613964c78e2fbb6a37d948bfc380d": {
-      "source": "faab69841d6fc7fd6b5cbaa94db337f4f616c26aaf2d210acaab7b96baddedce",
-      "target": "e2449efe718e310060bb4d2385a24c691fa41eefd6d8bd3bbbfad0c66071c206",
+    "-1335121169": {
+      "source": "1472486160",
+      "target": "55510001",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "HelloModule",
@@ -2077,27 +2318,11 @@
         "keyOrIndex": 1,
         "injectionType": "constructor"
       },
-      "id": "051d062f9b2b618ca992799c9d2e9ae1731613964c78e2fbb6a37d948bfc380d"
+      "id": "-1335121169"
     },
-    "475a3cdf41ec8de924a04f742ee0c3327406388b085ff6eb4dc0d29e60a3d681": {
-      "source": "75bd13412017c39a3b9f7f34bc4954ed5c26bfdaaccf4fab13328c91151240b4",
-      "target": "48a6371b0c731333ce43b29650edc0e0879eea061fa5a3d8b648e4273afe67b8",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "RequestChainModule",
-        "sourceClassName": "LoggingInterceptor",
-        "targetClassName": "HelperService",
-        "sourceClassToken": "LoggingInterceptor",
-        "targetClassToken": "HelperService",
-        "targetModuleName": "HelperModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "475a3cdf41ec8de924a04f742ee0c3327406388b085ff6eb4dc0d29e60a3d681"
-    },
-    "c8e56bf067b39f5fc33f97db32367eab64afc6f33c77e21a948c9d2f6826a3a9": {
-      "source": "01b06a8feed52af3e5ce09428af29c21ef8dc55a1f29127d5110f72d622382da",
-      "target": "025c7d15142dd59cc6376dffaf07a40eb5719deceafbcef2268200e370344ef9",
+    "-296280311": {
+      "source": "-1927427604",
+      "target": "-234035039",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "RequestChainModule",
@@ -2109,331 +2334,151 @@
         "keyOrIndex": 0,
         "injectionType": "constructor"
       },
-      "id": "c8e56bf067b39f5fc33f97db32367eab64afc6f33c77e21a948c9d2f6826a3a9"
+      "id": "-296280311"
     },
-    "b70733e237724f9cf3d3a40b3e26fb27c650e957a42a7205b87f40b6a0658c04": {
-      "source": "21e59072ade09341f3645b476e23fe1e4f8a899c9f9b26a9d805d1070b2c4b62",
-      "target": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "RootTestModule",
-        "targetModuleName": "AppModule"
-      },
-      "id": "b70733e237724f9cf3d3a40b3e26fb27c650e957a42a7205b87f40b6a0658c04"
-    },
-    "0444ebf68e9ee68cf50cee41ee6924e898583b5b51e99036a628cbd6b3d1e702": {
-      "source": "21e59072ade09341f3645b476e23fe1e4f8a899c9f9b26a9d805d1070b2c4b62",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "RootTestModule",
-        "targetModuleName": "InternalCoreModule"
-      },
-      "id": "0444ebf68e9ee68cf50cee41ee6924e898583b5b51e99036a628cbd6b3d1e702"
-    },
-    "b592d71e5d08d4ebd62368f3b9e974f18d0a45c2b4246bf5e9caf3f0c9cd09bc": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "79ff3cf51a8c5eac8246d484cbb7a70de599eaca44f60e48dd83f816d324a489",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "AppModule",
-        "targetModuleName": "CoreModule"
-      },
-      "id": "b592d71e5d08d4ebd62368f3b9e974f18d0a45c2b4246bf5e9caf3f0c9cd09bc"
-    },
-    "b7d52a5e48ca18270b164958840bde544b55169cff0736f97521b6f84b1ee55b": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "6407fe70fe239923752c4659208c58633ea983f85f55afc71795854c891a5113",
+    "-393224862": {
+      "source": "-19112576",
+      "target": "1434441974",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "CatsModule"
       },
-      "id": "b7d52a5e48ca18270b164958840bde544b55169cff0736f97521b6f84b1ee55b"
+      "id": "-393224862"
     },
-    "802d3f4e683b828d2abd8aa7b1fa5dcb4d4539d23a8ca8f29a09f5c52c0988cd": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
+    "-1675983900": {
+      "source": "-19112576",
+      "target": "1743739569",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "HelloModule"
       },
-      "id": "802d3f4e683b828d2abd8aa7b1fa5dcb4d4539d23a8ca8f29a09f5c52c0988cd"
+      "id": "-1675983900"
     },
-    "e5afffd254f8c18a235915bb6ffee4f248f51cafd68b17799583c162bd9b59c6": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "e2bac7f2ea3a3c662b5d4ab8e69078c2b3691d2ade4bdacd1ad2c25b061acb78",
+    "-678699872": {
+      "source": "-19112576",
+      "target": "-1124392646",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "DurableModule"
       },
-      "id": "e5afffd254f8c18a235915bb6ffee4f248f51cafd68b17799583c162bd9b59c6"
+      "id": "-678699872"
     },
-    "13b67bf4659b4fb78f6811a77e1257bcc6c1434367e1c18fad4573fe647f5900": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "60064da574ad702eba737eea0fc2b1d939f993a048bf163b80248d983882666a",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "AppModule",
-        "targetModuleName": "DogsModule"
-      },
-      "id": "13b67bf4659b4fb78f6811a77e1257bcc6c1434367e1c18fad4573fe647f5900"
-    },
-    "c8c913c487baa43c384f2b2dbcb8761aa1ff1e80c0fad8b91e272f5d21b0cd07": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "48626f93d2fb19d7cfc8ab8fe06fb6b6d0292fc15104ca5174483ec3a23e40e6",
+    "-158970266": {
+      "source": "-19112576",
+      "target": "-2003726489",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "UsersModule"
       },
-      "id": "c8c913c487baa43c384f2b2dbcb8761aa1ff1e80c0fad8b91e272f5d21b0cd07"
+      "id": "-158970266"
     },
-    "8d728d7bd0b1b4b7340d14ae7e06f1b86093eec6179d627a11c2791988f222eb": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "bc3eb83ff1a9e29045a906abc878b68367d37a5c5ece9850e277934e73a95ef3",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "AppModule",
-        "targetModuleName": "DatabaseModule"
-      },
-      "id": "8d728d7bd0b1b4b7340d14ae7e06f1b86093eec6179d627a11c2791988f222eb"
-    },
-    "c9a487f673d000dcb20400483404b6c9a63f4524d8bd2b476ff1d5da5e6e06d9": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "d6e8db4a9090bb6aa807b1fc3d5fa7c7d34924a60679965e6e33a4668af1acc8",
+    "-2086236431": {
+      "source": "-19112576",
+      "target": "791004148",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "ExternalSvcModule"
       },
-      "id": "c9a487f673d000dcb20400483404b6c9a63f4524d8bd2b476ff1d5da5e6e06d9"
+      "id": "-2086236431"
     },
-    "f9e7632fb50139dc2b117c5c418189eb389d8a60a69cf8409cf52152e5de6392": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "ca4ac10713e80c6a16088d90d62a441b3b0ae696a8c8d5d6570f55e7f78a275f",
+    "-192150092": {
+      "source": "-19112576",
+      "target": "-493958991",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "ChatModule"
       },
-      "id": "f9e7632fb50139dc2b117c5c418189eb389d8a60a69cf8409cf52152e5de6392"
+      "id": "-192150092"
     },
-    "605b6e10900fd07ad374939e2d6c92e85b0ae969c20e1c6ab2370b28e4a5f01f": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "09c06aa29eb46a0176bf63add5f8b9604cf7d615cd6e0898ee8b9105c6b61421",
+    "-1609022090": {
+      "source": "-19112576",
+      "target": "2133316171",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "RequestChainModule"
       },
-      "id": "605b6e10900fd07ad374939e2d6c92e85b0ae969c20e1c6ab2370b28e4a5f01f"
+      "id": "-1609022090"
     },
-    "0690cba8a84105c8bf0e06c116829c256e269749f49d2f1e7479047e6a39b5b1": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "6c96a422bf65d40cb582b00a7628e02af2d083ec86d9d5a3556a50c883bd63f8",
+    "-773455435": {
+      "source": "-19112576",
+      "target": "-1469176692",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "PropertiesModule"
       },
-      "id": "0690cba8a84105c8bf0e06c116829c256e269749f49d2f1e7479047e6a39b5b1"
+      "id": "-773455435"
     },
-    "4d114e53a9330e793e618d9848da6aa897a8dc4f3f4ec0f13803902585d8591d": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "f461dcd0b1a9db20e0d9374019e9076697c738def903b41d70a4dcfea3cd35ab",
+    "-967144236": {
+      "source": "-19112576",
+      "target": "-1813741655",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "AppModule",
         "targetModuleName": "InputModule"
       },
-      "id": "4d114e53a9330e793e618d9848da6aa897a8dc4f3f4ec0f13803902585d8591d"
+      "id": "-967144236"
     },
-    "b9ebb5ad60c0df3b5b190ba1a376a1aef53bd6e3adc4aba69b95ca6e247da9de": {
-      "source": "5a9baa7a946ee99f6eb663a0f6c9592dee26093c2e7c49ad4b7b71ded851d134",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "AppModule",
-        "targetModuleName": "InternalCoreModule"
-      },
-      "id": "b9ebb5ad60c0df3b5b190ba1a376a1aef53bd6e3adc4aba69b95ca6e247da9de"
-    },
-    "09a30c4d3ff0574ca70befcda89d9bfcd5501cf65f95edf58bf02f1abdd3fbe0": {
-      "source": "79ff3cf51a8c5eac8246d484cbb7a70de599eaca44f60e48dd83f816d324a489",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
+    "-528424051": {
+      "source": "-1125887048",
+      "target": "555176277",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "CoreModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "09a30c4d3ff0574ca70befcda89d9bfcd5501cf65f95edf58bf02f1abdd3fbe0"
+      "id": "-528424051"
     },
-    "4e46d390ab8f24acb4de33c4d71061d6eaec35a7e35438aaf8a05143055b4c44": {
-      "source": "6407fe70fe239923752c4659208c58633ea983f85f55afc71795854c891a5113",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "CatsModule",
-        "targetModuleName": "InternalCoreModule"
-      },
-      "id": "4e46d390ab8f24acb4de33c4d71061d6eaec35a7e35438aaf8a05143055b4c44"
-    },
-    "51abc3c66ed8f0e7ae9c0f15d05c128a528b4c15688f6a722a4fa25c6e266925": {
-      "source": "f8c136a3fa198e60f4645e92d9ec063885e97f6e289110310a4a5c67c34a415a",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
+    "-698929209": {
+      "source": "1743739569",
+      "target": "555176277",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "HelloModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "51abc3c66ed8f0e7ae9c0f15d05c128a528b4c15688f6a722a4fa25c6e266925"
+      "id": "-698929209"
     },
-    "d8ecb1af1d9d4a0662bf0005615fe308f6007f38aef23da12ac9354d67ae703d": {
-      "source": "e2bac7f2ea3a3c662b5d4ab8e69078c2b3691d2ade4bdacd1ad2c25b061acb78",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
+    "-1671708813": {
+      "source": "-1124392646",
+      "target": "555176277",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "DurableModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "d8ecb1af1d9d4a0662bf0005615fe308f6007f38aef23da12ac9354d67ae703d"
+      "id": "-1671708813"
     },
-    "3ad94209a35d7b45cc554e82c8de30415fcc0e2e8b7138f024b6322159910759": {
-      "source": "60064da574ad702eba737eea0fc2b1d939f993a048bf163b80248d983882666a",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "DogsModule",
-        "targetModuleName": "InternalCoreModule"
-      },
-      "id": "3ad94209a35d7b45cc554e82c8de30415fcc0e2e8b7138f024b6322159910759"
-    },
-    "ea7705959ba5e4b7da4086c7259a42906ebff1de78e19a375e47999376c929df": {
-      "source": "48626f93d2fb19d7cfc8ab8fe06fb6b6d0292fc15104ca5174483ec3a23e40e6",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "UsersModule",
-        "targetModuleName": "InternalCoreModule"
-      },
-      "id": "ea7705959ba5e4b7da4086c7259a42906ebff1de78e19a375e47999376c929df"
-    },
-    "2374b438b76c369992e919eb05b47e55dd5bba235bd58d05de71ca8b6a26c42a": {
-      "source": "bc3eb83ff1a9e29045a906abc878b68367d37a5c5ece9850e277934e73a95ef3",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "DatabaseModule",
-        "targetModuleName": "InternalCoreModule"
-      },
-      "id": "2374b438b76c369992e919eb05b47e55dd5bba235bd58d05de71ca8b6a26c42a"
-    },
-    "1540e85572502c93f4554838bb1d6ce00726ecc8e94eeb5dde4b9537ed91166a": {
-      "source": "d6e8db4a9090bb6aa807b1fc3d5fa7c7d34924a60679965e6e33a4668af1acc8",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "ExternalSvcModule",
-        "targetModuleName": "InternalCoreModule"
-      },
-      "id": "1540e85572502c93f4554838bb1d6ce00726ecc8e94eeb5dde4b9537ed91166a"
-    },
-    "fc78a39b022c6b400e8b1c34c2ed2ca74db907cb92a74aeab87c4113a86b8a63": {
-      "source": "ca4ac10713e80c6a16088d90d62a441b3b0ae696a8c8d5d6570f55e7f78a275f",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "ChatModule",
-        "targetModuleName": "InternalCoreModule"
-      },
-      "id": "fc78a39b022c6b400e8b1c34c2ed2ca74db907cb92a74aeab87c4113a86b8a63"
-    },
-    "f03e4258b9b246757c2ecea3780f09788af941fbd6836050c17f2ca393d913d0": {
-      "source": "09c06aa29eb46a0176bf63add5f8b9604cf7d615cd6e0898ee8b9105c6b61421",
-      "target": "e6372ef11c0d0b62a6a0372513843a2ae3c1ee750e173df4388c20aefc2f6c94",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "RequestChainModule",
-        "targetModuleName": "HelperModule"
-      },
-      "id": "f03e4258b9b246757c2ecea3780f09788af941fbd6836050c17f2ca393d913d0"
-    },
-    "0ee72b293298836dc9af2539447ae067594d730cc271d0cefe3e66dfb5872ba7": {
-      "source": "09c06aa29eb46a0176bf63add5f8b9604cf7d615cd6e0898ee8b9105c6b61421",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "RequestChainModule",
-        "targetModuleName": "InternalCoreModule"
-      },
-      "id": "0ee72b293298836dc9af2539447ae067594d730cc271d0cefe3e66dfb5872ba7"
-    },
-    "8601ff2fea22931fbb5496162c8a973d39a5f1fba0c92d530a920107166508b7": {
-      "source": "e6372ef11c0d0b62a6a0372513843a2ae3c1ee750e173df4388c20aefc2f6c94",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
+    "-665042842": {
+      "source": "1142369607",
+      "target": "555176277",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "HelperModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "8601ff2fea22931fbb5496162c8a973d39a5f1fba0c92d530a920107166508b7"
+      "id": "-665042842"
     },
-    "2711df86ba56d1b63d2ced6dc735d33e9b5c54d01a0df7be2c29a8f46b7ff845": {
-      "source": "6c96a422bf65d40cb582b00a7628e02af2d083ec86d9d5a3556a50c883bd63f8",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "PropertiesModule",
-        "targetModuleName": "InternalCoreModule"
-      },
-      "id": "2711df86ba56d1b63d2ced6dc735d33e9b5c54d01a0df7be2c29a8f46b7ff845"
-    },
-    "6859888f8ffd953254cabd8dc959b42d2a9594793f5d92663797a8ee24e62c0d": {
-      "source": "f461dcd0b1a9db20e0d9374019e9076697c738def903b41d70a4dcfea3cd35ab",
-      "target": "fbd13736354b9d772b4d7b999359042c25b5ea7b95c823beb116c694a63a900a",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "InputModule",
-        "targetModuleName": "CircularModule"
-      },
-      "id": "6859888f8ffd953254cabd8dc959b42d2a9594793f5d92663797a8ee24e62c0d"
-    },
-    "20ba95def7bbd16fc539db96a4cc65246b4b383aaa9cdf9417a62c2b841b443c": {
-      "source": "f461dcd0b1a9db20e0d9374019e9076697c738def903b41d70a4dcfea3cd35ab",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "InputModule",
-        "targetModuleName": "InternalCoreModule"
-      },
-      "id": "20ba95def7bbd16fc539db96a4cc65246b4b383aaa9cdf9417a62c2b841b443c"
-    },
-    "d5cf75366602112b8287845a531e7746813d7a77b60fc67148e11a3747be8794": {
-      "source": "fbd13736354b9d772b4d7b999359042c25b5ea7b95c823beb116c694a63a900a",
-      "target": "f461dcd0b1a9db20e0d9374019e9076697c738def903b41d70a4dcfea3cd35ab",
-      "metadata": {
-        "type": "module-to-module",
-        "sourceModuleName": "CircularModule",
-        "targetModuleName": "InputModule"
-      },
-      "id": "d5cf75366602112b8287845a531e7746813d7a77b60fc67148e11a3747be8794"
-    },
-    "64e0917743f200455e53eeb5373151e1365349c1054bff4767b6debe5e5cad55": {
-      "source": "fbd13736354b9d772b4d7b999359042c25b5ea7b95c823beb116c694a63a900a",
-      "target": "163e406b400edc14db9740c15690190ebbd339e97df42d928454a22dbe5b19ef",
+    "-1891610441": {
+      "source": "-369869768",
+      "target": "555176277",
       "metadata": {
         "type": "module-to-module",
         "sourceModuleName": "CircularModule",
         "targetModuleName": "InternalCoreModule"
       },
-      "id": "64e0917743f200455e53eeb5373151e1365349c1054bff4767b6debe5e5cad55"
+      "id": "-1891610441"
     },
-    "24cb09584d8b05d36e2d7e946605da982e5d14fdbb364fc43fb24ae62070d9f7": {
-      "source": "d7c4ca5064f05c5e03085ff48f10d4228e530da52b6a77b372dec2d98c21877e",
-      "target": "0d2aae61704d83b061cd2438e055b0c660e92cfee2dd2fe730d293756b2a921f",
+    "-878379437": {
+      "source": "-1550892030",
+      "target": "208171089",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "CatsModule",
@@ -2444,11 +2489,11 @@
         "targetModuleName": "CatsModule",
         "injectionType": "decorator"
       },
-      "id": "24cb09584d8b05d36e2d7e946605da982e5d14fdbb364fc43fb24ae62070d9f7"
+      "id": "-878379437"
     },
-    "79bc39ce6d24d760cd8fdbffbeafd9a1cdebf5daacd685eb4c587a61f5c02ecc": {
-      "source": "faab69841d6fc7fd6b5cbaa94db337f4f616c26aaf2d210acaab7b96baddedce",
-      "target": "cebe9015a8892aa6ab7bea070663536494d40bd16de7f75d6cd3fef1f9d36fd3",
+    "-822816169": {
+      "source": "1472486160",
+      "target": "-2010060263",
       "metadata": {
         "type": "class-to-class",
         "sourceModuleName": "HelloModule",
@@ -2459,52 +2504,7 @@
         "targetModuleName": "HelloModule",
         "injectionType": "decorator"
       },
-      "id": "79bc39ce6d24d760cd8fdbffbeafd9a1cdebf5daacd685eb4c587a61f5c02ecc"
-    },
-    "3c67c20c737d2de97c438dac9bda8abe65cfe6f79497c7f06f31686bf81770ca": {
-      "source": "faab69841d6fc7fd6b5cbaa94db337f4f616c26aaf2d210acaab7b96baddedce",
-      "target": "11e5a82d5d8412c1e417070e17fe4ea0b813aeced3d41a10d5faf8817fe01826",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "HelloModule",
-        "sourceClassName": "HelloController",
-        "targetClassName": "Interceptor",
-        "sourceClassToken": "HelloController",
-        "targetClassToken": "Interceptor",
-        "targetModuleName": "HelloModule",
-        "injectionType": "decorator"
-      },
-      "id": "3c67c20c737d2de97c438dac9bda8abe65cfe6f79497c7f06f31686bf81770ca"
-    },
-    "e598417ffd41a520091e46ac7dcb861265501a95c68f204ade066a09bc10166b": {
-      "source": "faab69841d6fc7fd6b5cbaa94db337f4f616c26aaf2d210acaab7b96baddedce",
-      "target": "298a3c9f4c57b0f22fe4fc494925f5e08ec30af95da7c719535d9781bbeaeb8f",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "HelloModule",
-        "sourceClassName": "HelloController",
-        "targetClassName": "UserByIdPipe",
-        "sourceClassToken": "HelloController",
-        "targetClassToken": "UserByIdPipe",
-        "targetModuleName": "HelloModule",
-        "injectionType": "decorator"
-      },
-      "id": "e598417ffd41a520091e46ac7dcb861265501a95c68f204ade066a09bc10166b"
-    },
-    "89756096bf37a731038138b47b2dddf7f1f76fbdbe98507091f997854a10920a": {
-      "source": "01b06a8feed52af3e5ce09428af29c21ef8dc55a1f29127d5110f72d622382da",
-      "target": "75bd13412017c39a3b9f7f34bc4954ed5c26bfdaaccf4fab13328c91151240b4",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "RequestChainModule",
-        "sourceClassName": "RequestChainController",
-        "targetClassName": "LoggingInterceptor",
-        "sourceClassToken": "RequestChainController",
-        "targetClassToken": "LoggingInterceptor",
-        "targetModuleName": "RequestChainModule",
-        "injectionType": "decorator"
-      },
-      "id": "89756096bf37a731038138b47b2dddf7f1f76fbdbe98507091f997854a10920a"
+      "id": "-822816169"
     }
   },
   "entrypoints": {},
@@ -2512,10 +2512,10 @@
     "orphanedEnhancers": [],
     "attachedEnhancers": [
       {
-        "nodeId": "cad7c7b4c73f9b6c8c6a9fb87fdcabd201c1f9848ac83fcc702cb6163d10a2ad"
+        "nodeId": "-2007711503"
       },
       {
-        "nodeId": "cad7c7b4c73f9b6c8c6a9fb87fdcabd201c1f9848ac83fcc702cb6163d10a2ad"
+        "nodeId": "-2007711503"
       }
     ]
   }
