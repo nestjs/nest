@@ -494,6 +494,22 @@
         "internal": false
       }
     },
+    "1434456218": {
+      "id": "1434456218",
+      "label": "Reflector",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": true,
+        "token": "Reflector"
+      }
+    },
     "1472486160": {
       "id": "1472486160",
       "label": "HelloController",
@@ -673,6 +689,23 @@
         "token": "REQUEST"
       }
     },
+    "2018972420": {
+      "id": "2018972420",
+      "label": "TransformInterceptor",
+      "parent": "-1125887048",
+      "metadata": {
+        "type": "provider",
+        "internal": false,
+        "sourceModuleName": "CoreModule",
+        "durable": false,
+        "static": true,
+        "transient": false,
+        "exported": false,
+        "token": "APP_INTERCEPTOR (UUID: -1146749753)",
+        "subtype": "interceptor",
+        "global": true
+      }
+    },
     "2133316171": {
       "id": "2133316171",
       "label": "RequestChainModule",
@@ -749,6 +782,22 @@
     },
     "-326832201": {
       "id": "-326832201",
+      "label": "HttpAdapterHost",
+      "parent": "555176277",
+      "metadata": {
+        "type": "provider",
+        "internal": true,
+        "sourceModuleName": "InternalCoreModule",
+        "durable": false,
+        "static": true,
+        "scope": 0,
+        "transient": false,
+        "exported": true,
+        "token": "HttpAdapterHost"
+      }
+    },
+    "-553129559": {
+      "id": "-553129559",
       "label": "HttpAdapterHost",
       "parent": "555176277",
       "metadata": {
@@ -946,7 +995,7 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "APP_INTERCEPTOR (UUID: -1146749753)",
+        "token": "APP_INTERCEPTOR (UUID: 1780085433)",
         "subtype": "interceptor",
         "global": true
       }
@@ -1755,6 +1804,23 @@
       },
       "id": "182501115"
     },
+    "189694679": {
+      "source": "1434456218",
+      "target": "671882984",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "InternalCoreModule",
+        "sourceClassName": "Reflector",
+        "targetClassName": "Reflector",
+        "sourceClassToken": "Reflector",
+        "targetClassToken": "Reflector",
+        "targetModuleName": "InternalCoreModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor",
+        "internal": true
+      },
+      "id": "189694679"
+    },
     "231469845": {
       "source": "-1803759743",
       "target": "-1494077847",
@@ -2090,8 +2156,8 @@
       },
       "id": "1976848738"
     },
-    "2092394069": {
-      "source": "-326832201",
+    "-1759625292": {
+      "source": "-553129559",
       "target": "-326832201",
       "metadata": {
         "type": "class-to-class",
@@ -2105,7 +2171,7 @@
         "injectionType": "constructor",
         "internal": true
       },
-      "id": "2092394069"
+      "id": "-1759625292"
     },
     "-2105726668": {
       "source": "-1803759743",
@@ -2122,23 +2188,6 @@
         "injectionType": "property"
       },
       "id": "-2105726668"
-    },
-    "-72331150": {
-      "source": "671882984",
-      "target": "671882984",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "InternalCoreModule",
-        "sourceClassName": "Reflector",
-        "targetClassName": "Reflector",
-        "sourceClassToken": "Reflector",
-        "targetClassToken": "Reflector",
-        "targetModuleName": "InternalCoreModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor",
-        "internal": true
-      },
-      "id": "-72331150"
     },
     "-21463590": {
       "source": "-1378706112",
@@ -3053,7 +3102,7 @@
     ],
     "attachedEnhancers": [
       {
-        "nodeId": "-2007711503"
+        "nodeId": "2018972420"
       },
       {
         "nodeId": "-2007711503"

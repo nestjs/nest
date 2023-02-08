@@ -2,11 +2,10 @@ export class DeterministicUuidRegistry {
   private static readonly registry = new Map<string, boolean>();
 
   static get(str: string, inc = 0) {
-    const key = inc ? `${str}_${inc}` : `${str}`;
-    if (this.registry.has(key)) {
+    const id = inc ? this.hashCode(`${str}_${inc}`) : this.hashCode(str);
+    if (this.registry.has(id)) {
       return this.get(str, inc + 1);
     }
-    const id = this.hashCode(key);
     this.registry.set(id, true);
     return id;
   }
