@@ -31,7 +31,7 @@ describe('InstanceWrapper', () => {
   });
 
   describe('isDependencyTreeStatic', () => {
-    describe.only('when circular reference', () => {
+    describe('when circular reference', () => {
       it('should return true', () => {
         const wrapper = new InstanceWrapper();
         const otherWrapper = new InstanceWrapper();
@@ -41,7 +41,30 @@ describe('InstanceWrapper', () => {
         expect(otherWrapper.isDependencyTreeStatic()).to.be.true;
       });
     });
-    describe.only('when request scoped', () => {
+    describe('when circular reference and one non static', () => {
+      it('should return false', () => {
+        const wrapper = new InstanceWrapper();
+        const otherWrapper = new InstanceWrapper({ scope: Scope.REQUEST });
+        wrapper.addCtorMetadata(0, otherWrapper);
+        otherWrapper.addCtorMetadata(0, wrapper);
+        expect(wrapper.isDependencyTreeStatic()).to.be.false;
+        expect(otherWrapper.isDependencyTreeStatic()).to.be.false;
+      });
+    });
+    describe('when circular reference and one durable', () => {
+      it('should return false', () => {
+        const wrapper = new InstanceWrapper();
+        const otherWrapper = new InstanceWrapper({
+          scope: Scope.REQUEST,
+          durable: true,
+        });
+        wrapper.addCtorMetadata(0, otherWrapper);
+        otherWrapper.addCtorMetadata(0, wrapper);
+        expect(wrapper.isDependencyTreeStatic()).to.be.false;
+        expect(otherWrapper.isDependencyTreeStatic()).to.be.false;
+      });
+    });
+    describe('when request scoped', () => {
       it('should return false', () => {
         const wrapper = new InstanceWrapper({
           scope: Scope.REQUEST,
@@ -178,6 +201,39 @@ describe('InstanceWrapper', () => {
   });
 
   describe('isDependencyTreeDurable', () => {
+    describe('when circular reference and default scope', () => {
+      it('should return false', () => {
+        const wrapper = new InstanceWrapper();
+        const otherWrapper = new InstanceWrapper();
+        wrapper.addCtorMetadata(0, otherWrapper);
+        otherWrapper.addCtorMetadata(0, wrapper);
+        expect(wrapper.isDependencyTreeDurable()).to.be.false;
+        expect(otherWrapper.isDependencyTreeDurable()).to.be.false;
+      });
+    });
+    describe('when circular reference and one non durable', () => {
+      it('should return false', () => {
+        const wrapper = new InstanceWrapper();
+        const otherWrapper = new InstanceWrapper({ scope: Scope.REQUEST });
+        wrapper.addCtorMetadata(0, otherWrapper);
+        otherWrapper.addCtorMetadata(0, wrapper);
+        expect(wrapper.isDependencyTreeDurable()).to.be.false;
+        expect(otherWrapper.isDependencyTreeDurable()).to.be.false;
+      });
+    });
+    describe('when circular reference and one durable', () => {
+      it('should return true', () => {
+        const wrapper = new InstanceWrapper();
+        const otherWrapper = new InstanceWrapper({
+          scope: Scope.REQUEST,
+          durable: true,
+        });
+        wrapper.addCtorMetadata(0, otherWrapper);
+        otherWrapper.addCtorMetadata(0, wrapper);
+        expect(wrapper.isDependencyTreeDurable()).to.be.true;
+        expect(otherWrapper.isDependencyTreeDurable()).to.be.true;
+      });
+    });
     describe('when request scoped and durable', () => {
       it('should return true', () => {
         const wrapper = new InstanceWrapper({
