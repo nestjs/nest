@@ -279,6 +279,7 @@ export class ConsoleLogger implements LoggerService {
     }
     const lastElement = messages[messages.length - 1];
     const isStack = isString(lastElement);
+    // https://github.com/nestjs/nest/issues/11074#issuecomment-1421680060
     if (!isStack && !isUndefined(lastElement)) {
       return { messages, context };
     }
