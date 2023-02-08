@@ -32,7 +32,7 @@
     "test:dev": "mocha -w --watch-files \"packages\" packages/**/*.spec.ts",
     "pretest:cov": "npm run clean",
     "test:cov": "nyc mocha packages/**/*.spec.ts --reporter spec",
-    "test:integration": "mocha \"integration/*/{,!(node_modules)/**/}/graph-inspector.spec.ts\"",
+    "test:integration": "mocha \"integration/*/{,!(node_modules)/**/}/*.spec.ts\"",
     "test:docker:up": "docker-compose -f integration/docker-compose.yml up -d",
     "test:docker:down": "docker-compose -f integration/docker-compose.yml down",
     "lint": "concurrently 'npm run lint:packages' 'npm run lint:integration' 'npm run lint:spec'",
