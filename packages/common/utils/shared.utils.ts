@@ -43,6 +43,7 @@ export const stripEndSlash = (path: string) =>
 
 export const isFunction = (val: any): boolean => typeof val === 'function';
 export const isString = (val: any): val is string => typeof val === 'string';
+export const isBoolean = (val: any): val is boolean => typeof val === 'boolean';
 export const isNumber = (val: any): val is number => typeof val === 'number';
 export const isConstructor = (val: any): boolean => val === 'constructor';
 export const isNil = (val: any): val is null | undefined =>
