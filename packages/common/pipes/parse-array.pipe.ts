@@ -77,13 +77,13 @@ export class ParseArrayPipe implements PipeTransform {
     }
 
     if (this.options.items) {
-      return await this.getValidateResponse(value);
+      return await this.getValidateInput(value);
     }
 
     return value;
   }
 
-  private async getValidateResponse(values: unknown[]) {
+  private async getValidateInput(values: unknown[]) {
     const toClassInstance = (item, index?: number) => {
       const validationMetadata: ArgumentMetadata = {
         metatype: this.options.items,
@@ -100,13 +100,16 @@ export class ParseArrayPipe implements PipeTransform {
     };
 
     if (this.options.stopAtFirstError === false) {
-      return await this.getResponse(values, toClassInstance);
+      return await this.getValidInputsOrAllExceptions(values, toClassInstance);
     }
 
     return await Promise.all(values.map(toClassInstance));
   }
 
-  private async getResponse(values: unknown[], toClassInstance: Function) {
+  private async getValidInputsOrAllExceptions(
+    values: unknown[],
+    toClassInstance: Function,
+  ) {
     let errors = [];
 
     const targetArray = values;
