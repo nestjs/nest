@@ -112,23 +112,21 @@ export class ParseArrayPipe implements PipeTransform {
   ) {
     let errors = [];
 
-    const targetArray = values;
-
-    for (let i = 0; i < targetArray.length; i++) {
+    for (let i = 0; i < values.length; i++) {
       const result = await this.getValidateTarget(
-        { target: targetArray[i], indexTarget: i },
+        { target: values[i], indexTarget: i },
         toClassInstance,
       );
       if (!result.result) {
         errors = errors.concat(result.error);
       }
-      targetArray[i] = result.result;
+      values[i] = result.result;
     }
     if (errors.length > 0) {
       throw this.exceptionFactory(errors as any);
     }
 
-    return targetArray;
+    return values;
   }
 
   private async getValidateTarget(
