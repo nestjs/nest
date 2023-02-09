@@ -17,7 +17,7 @@ export class MaxFileSizeValidator extends FileValidator<MaxFileSizeValidatorOpti
     return `Validation failed (expected size is less than ${this.validationOptions.maxSize})`;
   }
 
-  public isValid<TFile extends IFile | {} = any>(file: TFile): boolean {
+  public isValid<TFile extends IFile = any>(file: TFile): boolean {
     if (!this.validationOptions) {
       return true;
     }
