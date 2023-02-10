@@ -237,7 +237,11 @@ export class Module {
     host?: Type<T>,
   ) {
     if (this.isCustomProvider(injectable)) {
-      return this.addCustomProvider(injectable, this._injectables);
+      return this.addCustomProvider(
+        injectable,
+        this._injectables,
+        enhancerSubtype,
+      );
     }
     let instanceWrapper = this.injectables.get(injectable);
     if (!instanceWrapper) {
