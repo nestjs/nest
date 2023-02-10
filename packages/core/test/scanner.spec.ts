@@ -466,31 +466,45 @@ describe('DependenciesScanner', () => {
       scope: Scope.REQUEST,
     };
 
-    it('should add enhancers metadata to every controller', () => {
+    it('should add enhancers metadata to every controller and every entry provider', () => {
       (scanner as any).applicationProvidersApplyMap = [provider];
 
       const instance = new InstanceWrapper({ name: 'test' });
       const controllers = new Map();
-      const mockController = new InstanceWrapper();
+      const providers = new Map();
 
-      controllers.set('test', mockController);
+      const fakeController = new InstanceWrapper();
+      const fakeProvider = new InstanceWrapper();
+
+      const providerToken = 'entryProvider';
+      controllers.set('test', fakeController);
+      providers.set(providerToken, fakeProvider);
+
       mockContainer.expects('getModules').callsFake(() => ({
         get: () => ({
           injectables: { get: () => instance },
           controllers,
+          entryProviders: Array.from(providers.values()),
         }),
         values() {
           return [this.get()];
         },
       }));
-      const addEnhancerMetadataSpy = sinon.spy(
-        mockController,
+
+      const addEnhancerMetadataControllerSpy = sinon.spy(
+        fakeController,
+        'addEnhancerMetadata',
+      );
+      const addEnhancerMetadataProviderSpy = sinon.spy(
+        fakeProvider,
         'addEnhancerMetadata',
       );
       scanner.addScopedEnhancersMetadata();
 
-      expect(addEnhancerMetadataSpy.called).to.be.true;
-      expect(addEnhancerMetadataSpy.calledWith(instance)).to.be.true;
+      expect(addEnhancerMetadataControllerSpy.called).to.be.true;
+      expect(addEnhancerMetadataControllerSpy.calledWith(instance)).to.be.true;
+      expect(addEnhancerMetadataProviderSpy.called).to.be.true;
+      expect(addEnhancerMetadataProviderSpy.calledWith(instance)).to.be.true;
     });
   });
 
