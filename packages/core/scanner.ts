@@ -15,19 +15,18 @@ import {
 import {
   CanActivate,
   ClassProvider,
+  Controller,
   ExceptionFilter,
   ExistingProvider,
   FactoryProvider,
+  Injectable,
   InjectionToken,
   NestInterceptor,
   PipeTransform,
   Scope,
-  ValueProvider,
-  Controller,
-  Injectable,
   Type,
+  ValueProvider,
 } from '@nestjs/common/interfaces';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import {
   isFunction,
   isNil,
@@ -54,7 +53,6 @@ import { Module } from './injector/module';
 import { GraphInspector } from './inspector/graph-inspector';
 import { UuidFactory } from './inspector/uuid-factory';
 import { MetadataScanner } from './metadata-scanner';
-import { ParamsMetadata } from './helpers/interfaces/params-metadata.interface';
 
 interface ApplicationProviderWrapper {
   moduleKey: string;
@@ -529,11 +527,16 @@ export class DependenciesScanner {
         const { injectables } = modulesContainer.get(moduleKey);
         const instanceWrapper = injectables.get(providerKey);
 
-        iterate(modulesContainer.values())
-          .map(module => module.controllers.values())
+        const iterableIterator = modulesContainer.values();
+        iterate(iterableIterator)
+          .map(moduleRef =>
+            Array.from<InstanceWrapper>(moduleRef.controllers.values()).concat(
+              moduleRef.entryProviders,
+            ),
+          )
           .flatten()
-          .forEach(controller =>
-            controller.addEnhancerMetadata(instanceWrapper),
+          .forEach(controllerOrEntryProvider =>
+            controllerOrEntryProvider.addEnhancerMetadata(instanceWrapper),
           );
       });
   }

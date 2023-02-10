@@ -1,4 +1,7 @@
-import { EnhancerSubtype } from '@nestjs/common/constants';
+import {
+  EnhancerSubtype,
+  ENTRY_PROVIDER_WATERMARK,
+} from '@nestjs/common/constants';
 import {
   ClassProvider,
   Controller,
@@ -61,7 +64,9 @@ export class Module {
     InstanceToken,
     InstanceWrapper<Controller>
   >();
+  private readonly _entryProviderKeys = new Set<InstanceToken>();
   private readonly _exports = new Set<InstanceToken>();
+
   private _distance = 0;
   private _initOnPreview = false;
   private _isGlobal = false;
@@ -146,6 +151,12 @@ export class Module {
 
   get controllers(): Map<InstanceToken, InstanceWrapper<Controller>> {
     return this._controllers;
+  }
+
+  get entryProviders(): Array<InstanceWrapper<Injectable>> {
+    return Array.from(this._entryProviderKeys).map(token =>
+      this.providers.get(token),
+    );
   }
 
   get exports(): Set<InstanceToken> {
@@ -258,8 +269,12 @@ export class Module {
   ): Provider | InjectionToken;
   public addProvider(provider: Provider, enhancerSubtype?: EnhancerSubtype) {
     if (this.isCustomProvider(provider)) {
+      if (this.isEntryProvider(provider.provide)) {
+        this._entryProviderKeys.add(provider.provide);
+      }
       return this.addCustomProvider(provider, this._providers, enhancerSubtype);
     }
+
     this._providers.set(
       provider,
       new InstanceWrapper({
@@ -273,6 +288,11 @@ export class Module {
         host: this,
       }),
     );
+
+    if (this.isEntryProvider(provider)) {
+      this._entryProviderKeys.add(provider);
+    }
+
     return provider as Type<Injectable>;
   }
 
@@ -349,10 +369,12 @@ export class Module {
     if (isUndefined(durable)) {
       durable = isDurable(useClass);
     }
+
+    const token = provider.provide;
     collection.set(
-      provider.provide,
+      token,
       new InstanceWrapper({
-        token: provider.provide,
+        token,
         name: useClass?.name || useClass,
         metatype: useClass,
         instance: null,
@@ -630,6 +652,12 @@ export class Module {
         return this.instantiateClass<T>(type, self);
       }
     };
+  }
+
+  private isEntryProvider(metatype: InjectionToken): boolean {
+    return typeof metatype === 'function'
+      ? !!Reflect.getMetadata(ENTRY_PROVIDER_WATERMARK, metatype)
+      : false;
   }
 
   private generateUuid(): string {
