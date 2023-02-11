@@ -1,5 +1,5 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpException, HttpExceptionOptions, TBody } from './http.exception';
 
 /**
  * Defines an HTTP exception for *Bad Request* type errors.
@@ -8,7 +8,9 @@ import { HttpException, HttpExceptionOptions } from './http.exception';
  *
  * @publicApi
  */
-export class BadRequestException extends HttpException {
+export class BadRequestException<
+  IResponse extends TBody = TBody,
+> extends HttpException<IResponse> {
   /**
    * Instantiate a `BadRequestException` Exception.
    *
@@ -34,14 +36,14 @@ export class BadRequestException extends HttpException {
    * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
    */
   constructor(
-    objectOrError?: string | object | any,
+    objectOrError?: IResponse,
     descriptionOrOptions: string | HttpExceptionOptions = 'Bad Request',
   ) {
     const { description, httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
-      HttpException.createBody(
+      HttpException.createBody<IResponse>(
         objectOrError,
         description,
         HttpStatus.BAD_REQUEST,

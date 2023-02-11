@@ -1,5 +1,5 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpException, HttpExceptionOptions, TBody } from './http.exception';
 
 /**
  * Defines an HTTP exception for *Conflict* type errors.
@@ -8,7 +8,9 @@ import { HttpException, HttpExceptionOptions } from './http.exception';
  *
  * @publicApi
  */
-export class ConflictException extends HttpException {
+export class ConflictException<
+  IResponse extends TBody = TBody,
+> extends HttpException<IResponse> {
   /**
    * Instantiate a `ConflictException` Exception.
    *

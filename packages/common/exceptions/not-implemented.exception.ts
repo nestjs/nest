@@ -1,5 +1,5 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpException, HttpExceptionOptions, TBody } from './http.exception';
 
 /**
  * Defines an HTTP exception for *Not Implemented* type errors.
@@ -8,7 +8,9 @@ import { HttpException, HttpExceptionOptions } from './http.exception';
  *
  * @publicApi
  */
-export class NotImplementedException extends HttpException {
+export class NotImplementedException<
+  IResponse extends TBody = TBody,
+> extends HttpException<IResponse> {
   /**
    * Instantiate a `NotImplementedException` Exception.
    *
@@ -34,7 +36,7 @@ export class NotImplementedException extends HttpException {
    * @param error a short description of the HTTP error.
    */
   constructor(
-    objectOrError?: string | object | any,
+    objectOrError?: IResponse,
     descriptionOrOptions: string | HttpExceptionOptions = 'Not Implemented',
   ) {
     const { description, httpExceptionOptions } =

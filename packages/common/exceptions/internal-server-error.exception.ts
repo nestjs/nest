@@ -1,5 +1,5 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpException, HttpExceptionOptions, TBody } from './http.exception';
 
 /**
  * Defines an HTTP exception for *Internal Server Error* type errors.
@@ -8,7 +8,9 @@ import { HttpException, HttpExceptionOptions } from './http.exception';
  *
  * @publicApi
  */
-export class InternalServerErrorException extends HttpException {
+export class InternalServerErrorException<
+  IResponse extends TBody = TBody,
+> extends HttpException<IResponse> {
   /**
    * Instantiate an `InternalServerErrorException` Exception.
    *
@@ -34,7 +36,7 @@ export class InternalServerErrorException extends HttpException {
    * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
    */
   constructor(
-    objectOrError?: string | object | any,
+    objectOrError?: IResponse,
     descriptionOrOptions:
       | string
       | HttpExceptionOptions = 'Internal Server Error',

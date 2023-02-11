@@ -1,5 +1,5 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpException, HttpExceptionOptions, TBody } from './http.exception';
 
 /**
  * Defines an HTTP exception for *Precondition Failed* type errors.
@@ -8,7 +8,9 @@ import { HttpException, HttpExceptionOptions } from './http.exception';
  *
  * @publicApi
  */
-export class PreconditionFailedException extends HttpException {
+export class PreconditionFailedException<
+  IResponse extends TBody = TBody,
+> extends HttpException<IResponse> {
   /**
    * Instantiate a `PreconditionFailedException` Exception.
    *
@@ -34,7 +36,7 @@ export class PreconditionFailedException extends HttpException {
    * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
    */
   constructor(
-    objectOrError?: string | object | any,
+    objectOrError?: IResponse,
     descriptionOrOptions: string | HttpExceptionOptions = 'Precondition Failed',
   ) {
     const { description, httpExceptionOptions } =

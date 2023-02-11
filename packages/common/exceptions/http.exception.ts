@@ -1,5 +1,6 @@
 import { Logger } from '../services';
 import { isObject, isString } from '../utils/shared.utils';
+import { IExceptionBody } from './interfaces/sub-exception.interface';
 
 export interface HttpExceptionOptions {
   cause?: Error;
@@ -11,6 +12,8 @@ export interface DescriptionAndOptions {
   httpExceptionOptions?: HttpExceptionOptions;
 }
 
+export type TBody = string | number | object;
+
 /**
  * Defines the base Nest HTTP exception, which is handled by the default
  * Exceptions Handler.
@@ -19,7 +22,7 @@ export interface DescriptionAndOptions {
  *
  * @publicApi
  */
-export class HttpException extends Error {
+export class HttpException<IResponse extends TBody = TBody> extends Error {
   /**
    * Instantiate a plain HTTP Exception.
    *
@@ -57,7 +60,7 @@ export class HttpException extends Error {
    * @param options An object used to add an error cause.
    */
   constructor(
-    private readonly response: string | Record<string, any>,
+    private readonly response: IExceptionBody<IResponse> | IResponse,
     private readonly status: number,
     private readonly options?: HttpExceptionOptions,
   ) {
@@ -76,6 +79,7 @@ export class HttpException extends Error {
    * - https://nodejs.org/en/blog/release/v16.9.0/#error-cause
    * - https://github.com/microsoft/TypeScript/issues/45167
    */
+
   public initCause(): void {
     if (this.options?.cause) {
       this.cause = this.options.cause;
@@ -109,7 +113,7 @@ export class HttpException extends Error {
     this.name = this.constructor.name;
   }
 
-  public getResponse(): string | object {
+  public getResponse() {
     return this.response;
   }
 
@@ -117,11 +121,11 @@ export class HttpException extends Error {
     return this.status;
   }
 
-  public static createBody(
-    objectOrErrorMessage: object | string,
+  public static createBody<IResponse extends TBody = TBody>(
+    objectOrErrorMessage: IResponse,
     description?: string,
     statusCode?: number,
-  ) {
+  ): IExceptionBody<IResponse> | IResponse {
     if (!objectOrErrorMessage) {
       return { statusCode, message: description };
     }
