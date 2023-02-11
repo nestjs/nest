@@ -26,7 +26,7 @@ const getInstanceName = (instance: unknown): string => {
  * Returns the name of the dependency
  * Tries to get the class name, otherwise the string value
  * (= injection token). As fallback it returns '+'
- * @param dependency The dependency whichs name should get displayed
+ * @param dependency The name of the dependency to be displayed
  */
 const getDependencyName = (dependency: InjectorDependency): string =>
   // use class name

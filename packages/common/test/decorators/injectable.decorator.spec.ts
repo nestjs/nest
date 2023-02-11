@@ -51,7 +51,7 @@ describe('mixin', () => {
     expect(type.name).to.not.eql('Test');
   });
 
-  it('should not lost the design:parmatypes metadata', () => {
+  it('should not lost the design:paramtypes metadata', () => {
     const type = mixin(Test);
     const constructorParams = Reflect.getMetadata('design:paramtypes', type);
 

@@ -108,8 +108,8 @@ describe('JsonSocket message parsing', () => {
   describe('Error handling', () => {
     describe('JSON Error', () => {
       const errorMsg = `Could not parse JSON: Unexpected end of JSON input\nRequest data: "Hel`;
-      const packetStrin = '4#"Hel';
-      const packet = Buffer.from(packetStrin);
+      const packetString = '4#"Hel';
+      const packet = Buffer.from(packetString);
 
       it('should fail to parse invalid JSON', () => {
         try {
@@ -146,12 +146,12 @@ describe('JsonSocket message parsing', () => {
 
     describe('Corrupted length value', () => {
       const errorMsg = `Corrupted length value "wtf" supplied in a packet`;
-      const packetStrin = 'wtf#"Hello"';
-      const packet = Buffer.from(packetStrin);
+      const packetString = 'wtf#"Hello"';
+      const packet = Buffer.from(packetString);
 
       it('should not accept invalid content length', () => {
         try {
-          socket['handleData'](packetStrin);
+          socket['handleData'](packetString);
         } catch (err) {
           expect(err.message).to.deep.equal(errorMsg);
         }

@@ -87,7 +87,7 @@ describe('ContextUtils', () => {
     });
   });
   describe('mergeParamsMetatypes', () => {
-    it('should return "paramsProperties" when paramtypes array doesnt exists', () => {
+    it('should return "paramsProperties" when paramtypes array doesn\'t exists', () => {
       const paramsProperties = ['1'];
       expect(
         contextUtils.mergeParamsMetatypes(paramsProperties as any, null),

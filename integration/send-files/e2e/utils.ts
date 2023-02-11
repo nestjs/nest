@@ -32,7 +32,7 @@ export const sendHttpRequest = async (url: URL) => {
       res.on('data', chunk => {
         // no op
       });
-      // fail the test if somethin goes wrong
+      // fail the test if something goes wrong
       res.on('error', err => {
         reject(err);
       });
