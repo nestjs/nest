@@ -88,7 +88,9 @@ export class HttpException<IResponse extends TBody = TBody> extends Error {
 
     if (this.response instanceof Error) {
       Logger.warn(
-        'DEPRECATED! Passing the error cause as the first argument to HttpException constructor is deprecated. You should use the "options" parameter instead: new HttpException("message", 400, { cause: new Error("Some Error") }) ',
+        'DEPRECATED! Passing the error cause as the first argument to HttpException constructor is deprecated.' +
+          'You should use the "options" parameter instead:' +
+          'new HttpException("message", 400, { cause: new Error("Some Error") }) ',
       );
       this.cause = this.response;
     }
