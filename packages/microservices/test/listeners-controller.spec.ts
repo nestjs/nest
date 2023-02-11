@@ -248,7 +248,7 @@ describe('ListenersController', () => {
       const patterns = [{}];
       const wrapper = new InstanceWrapper({ instance: { [methodKey]: {} } });
 
-      it('should delegete error to exception filters', async () => {
+      it('should delegate error to exception filters', async () => {
         sinon.stub(injector, 'loadPerContext').callsFake(() => {
           throw new Error();
         });

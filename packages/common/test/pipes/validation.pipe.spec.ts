@@ -45,7 +45,7 @@ class TestModel {
   public optionalProp: string;
 }
 
-class TestModelNoValidaton {
+class TestModelNoValidation {
   constructor() {}
 
   public prop1: string;
@@ -367,7 +367,7 @@ describe('ValidationPipe', () => {
         });
       });
     });
-    describe('when type doesnt match', () => {
+    describe("when type doesn't match", () => {
       describe('when validation rules are applied', () => {
         it('should throw an error', async () => {
           target = new ValidationPipe();
@@ -389,7 +389,7 @@ describe('ValidationPipe', () => {
             { prop1: 'value1', prop2: 'value2', prop3: 'value3' },
           ];
 
-          const objMetadata = { ...metadata, metatype: TestModelNoValidaton };
+          const objMetadata = { ...metadata, metatype: TestModelNoValidation };
           const result = await target.transform(testObj, objMetadata);
 
           expect(result).to.not.be.instanceOf(TestModel);

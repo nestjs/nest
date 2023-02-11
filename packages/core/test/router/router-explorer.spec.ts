@@ -189,7 +189,7 @@ describe('RouterExplorer', () => {
         instance: { [methodKey]: {} },
       });
 
-      it('should delegete error to exception filters', async () => {
+      it('should delegate error to exception filters', async () => {
         const handler = routerBuilder.createRequestScopedHandler(
           wrapper,
           RequestMethod.ALL,

@@ -260,21 +260,21 @@ describe('DependenciesScanner', () => {
 
       expect(module.forwardRef.called).to.be.true;
     });
-    it('should throw "InvalidClassModuleException" exception when suppling a class annotated with `@Injectable()` decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with `@Injectable()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
       expect(scanner.insertModule(TestComponent, [])).to.be.rejectedWith(
         InvalidClassModuleException,
       );
     });
-    it('should throw "InvalidClassModuleException" exception when suppling a class annotated with `@Controller()` decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with `@Controller()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
       expect(scanner.insertModule(TestController, [])).to.be.rejectedWith(
         InvalidClassModuleException,
       );
     });
-    it('should throw "InvalidClassModuleException" exception when suppling a class annotated with (only) `@Catch()` decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with (only) `@Catch()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
       expect(

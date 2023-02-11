@@ -15,7 +15,7 @@ export function getDirs(base: string) {
 
 /**
  * Checks if the directory contains a package.json file
- * @param dir Path to the dircetory
+ * @param dir Path to the directory
  * @returns True if the directory contains a package.json
  */
 export function containsPackageJson(dir: string) {
