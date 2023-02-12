@@ -27,11 +27,17 @@ export type MicroserviceOptions =
   | KafkaOptions
   | CustomStrategy;
 
+/**
+ * @publicApi
+ */
 export interface CustomStrategy {
   strategy: CustomTransportStrategy;
   options?: {};
 }
 
+/**
+ * @publicApi
+ */
 export interface GrpcOptions {
   transport?: Transport.GRPC;
   options: {
@@ -70,6 +76,9 @@ export interface GrpcOptions {
   };
 }
 
+/**
+ * @publicApi
+ */
 export interface TcpOptions {
   transport?: Transport.TCP;
   options?: {
@@ -83,6 +92,9 @@ export interface TcpOptions {
   };
 }
 
+/**
+ * @publicApi
+ */
 export interface RedisOptions {
   transport?: Transport.REDIS;
   options?: {
@@ -95,6 +107,9 @@ export interface RedisOptions {
   } & IORedisOptions;
 }
 
+/**
+ * @publicApi
+ */
 export interface MqttOptions {
   transport?: Transport.MQTT;
   options?: MqttClientOptions & {
@@ -123,6 +138,9 @@ export interface MqttOptions {
   };
 }
 
+/**
+ * @publicApi
+ */
 export interface NatsOptions {
   transport?: Transport.NATS;
   options?: {
@@ -167,6 +185,9 @@ export interface NatsOptions {
   };
 }
 
+/**
+ * @publicApi
+ */
 export interface RmqOptions {
   transport?: Transport.RMQ;
   options?: {
@@ -193,10 +214,16 @@ export interface RmqOptions {
   };
 }
 
+/**
+ * @publicApi
+ */
 export interface KafkaParserConfig {
   keepBinary?: boolean;
 }
 
+/**
+ * @publicApi
+ */
 export interface KafkaOptions {
   transport?: Transport.KAFKA;
   options?: {

@@ -5,6 +5,9 @@ import {
   IncomingRequest,
 } from '../interfaces';
 
+/**
+ * @publicApi
+ */
 export class IncomingRequestDeserializer implements ConsumerDeserializer {
   deserialize(
     value: any,

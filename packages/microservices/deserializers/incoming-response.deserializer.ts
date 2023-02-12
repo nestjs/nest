@@ -1,6 +1,9 @@
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { IncomingResponse, ProducerDeserializer } from '../interfaces';
 
+/**
+ * @publicApi
+ */
 export class IncomingResponseDeserializer implements ProducerDeserializer {
   deserialize(value: any, options?: Record<string, any>): IncomingResponse {
     return this.isExternal(value) ? this.mapToSchema(value) : value;

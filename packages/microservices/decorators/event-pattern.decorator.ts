@@ -15,6 +15,8 @@ import { Transport } from '../enums';
 
 /**
  * Subscribes to incoming events which fulfils chosen pattern.
+ *
+ * @publicApi
  */
 export const EventPattern: {
   <T = string>(metadata?: T): MethodDecorator;

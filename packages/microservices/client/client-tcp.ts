@@ -15,6 +15,9 @@ import { PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { TcpClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
 
+/**
+ * @publicApi
+ */
 export class ClientTCP extends ClientProxy {
   protected connection: Promise<any>;
   private readonly logger = new Logger(ClientTCP.name);

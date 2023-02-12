@@ -2,6 +2,9 @@
  * Do NOT add NestJS logic to this interface.  It is meant to ONLY represent the types for the kafkajs package.
  *
  * @see https://github.com/tulios/kafkajs/blob/master/types/index.d.ts
+ *
+ * @publicApi
+ *
  */
 
 /// <reference types="node" />

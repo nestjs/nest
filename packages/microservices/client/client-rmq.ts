@@ -48,6 +48,9 @@ let rqmPackage: any = {};
 
 const REPLY_QUEUE = 'amq.rabbitmq.reply-to';
 
+/**
+ * @publicApi
+ */
 export class ClientRMQ extends ClientProxy {
   protected readonly logger = new Logger(ClientProxy.name);
   protected connection$: ReplaySubject<any>;

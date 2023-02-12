@@ -40,6 +40,9 @@ import { ClientProxy } from './client-proxy';
 
 let kafkaPackage: any = {};
 
+/**
+ * @publicApi
+ */
 export class ClientKafka extends ClientProxy {
   protected logger = new Logger(ClientKafka.name);
   protected client: Kafka | null = null;

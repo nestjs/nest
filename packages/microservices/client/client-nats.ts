@@ -12,6 +12,9 @@ import { ClientProxy } from './client-proxy';
 
 let natsPackage = {} as any;
 
+/**
+ * @publicApi
+ */
 export class ClientNats extends ClientProxy {
   protected readonly logger = new Logger(ClientNats.name);
   protected natsClient: Client;

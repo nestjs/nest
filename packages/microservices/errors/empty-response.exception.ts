@@ -1,3 +1,6 @@
+/**
+ * @publicApi
+ */
 export class EmptyResponseException extends Error {
   constructor(pattern: string) {
     super(

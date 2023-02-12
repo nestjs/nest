@@ -20,6 +20,9 @@ import { ClientProxy } from './client-proxy';
 
 let mqttPackage: any = {};
 
+/**
+ * @publicApi
+ */
 export class ClientMqtt extends ClientProxy {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly subscriptionsCount = new Map<string, number>();
