@@ -1,6 +1,7 @@
 export * from './server';
 export * from './server-grpc';
 export * from './server-kafka';
+export * from './server-memphis';
 export * from './server-mqtt';
 export * from './server-nats';
 export * from './server-redis';
