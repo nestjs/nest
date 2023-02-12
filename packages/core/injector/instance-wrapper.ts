@@ -239,7 +239,7 @@ export class InstanceWrapper<T = any> {
     lookupRegistry: string[] = [],
   ): boolean {
     if (lookupRegistry.includes(this[INSTANCE_ID_SYMBOL])) {
-      return true;
+      return false;
     }
     lookupRegistry = lookupRegistry.concat(this[INSTANCE_ID_SYMBOL]);
 

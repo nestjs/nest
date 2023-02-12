@@ -4,7 +4,7 @@ import { InstanceToken } from '../module';
 
 /**
  * Returns the instances which are transient
- * @param instances The instances which should be checked whether they are transcient
+ * @param instances The instances which should be checked whether they are transient
  */
 export function getTransientInstances(
   instances: [InstanceToken, InstanceWrapper][],
@@ -20,7 +20,7 @@ export function getTransientInstances(
 
 /**
  * Returns the instances which are not transient
- * @param instances The instances which should be checked whether they are transcient
+ * @param instances The instances which should be checked whether they are transient
  */
 export function getNonTransientInstances(
   instances: [InstanceToken, InstanceWrapper][],

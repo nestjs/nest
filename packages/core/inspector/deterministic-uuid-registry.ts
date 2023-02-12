@@ -1,24 +1,23 @@
-import { xxh32 } from '@node-rs/xxhash';
-
-const DEFAULT_UUID_NAMESPACE = 'efa0df42-88af-474f-9cad-4206a2319f07';
-
 export class DeterministicUuidRegistry {
-  private static readonly registry = new Set<string>();
+  private static readonly registry = new Map<string, boolean>();
 
-  static get(str: string, namespace: string = DEFAULT_UUID_NAMESPACE, inc = 0) {
-    const id = inc
-      ? xxh32(`${namespace}_${str}_${inc}`)
-      : xxh32(`${namespace}_${str}`);
-    const idAsString = `${id}`;
-
-    if (this.registry.has(idAsString)) {
-      return this.get(str, namespace, inc + 1);
+  static get(str: string, inc = 0) {
+    const id = inc ? this.hashCode(`${str}_${inc}`) : this.hashCode(str);
+    if (this.registry.has(id)) {
+      return this.get(str, inc + 1);
     }
-    this.registry.add(idAsString);
-    return idAsString;
+    this.registry.set(id, true);
+    return id;
   }
 
   static clear() {
     this.registry.clear();
+  }
+
+  private static hashCode(s: string) {
+    let h = 0;
+    for (let i = 0; i < s.length; i++)
+      h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+    return h.toString();
   }
 }

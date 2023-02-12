@@ -13,6 +13,7 @@ export * from './discovery';
 export * from './exceptions';
 export * from './helpers';
 export * from './injector';
+export * from './inspector';
 export * from './metadata-scanner';
 export * from './middleware';
 export * from './nest-application';

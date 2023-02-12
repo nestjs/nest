@@ -974,7 +974,7 @@ export type ConsumerRebalancingEvent = InstrumentationEvent<{
   groupId: string;
   memberId: string;
 }>;
-export type ConsumerReceivedUnsubcribedTopicsEvent = InstrumentationEvent<{
+export type ConsumerReceivedUnsubscribedTopicsEvent = InstrumentationEvent<{
   groupId: string;
   generationId: number;
   memberId: string;
@@ -1109,7 +1109,7 @@ export type Consumer = {
   ): RemoveInstrumentationEventListener<typeof eventName>;
   on(
     eventName: ConsumerEvents['RECEIVED_UNSUBSCRIBED_TOPICS'],
-    listener: (event: ConsumerReceivedUnsubcribedTopicsEvent) => void,
+    listener: (event: ConsumerReceivedUnsubscribedTopicsEvent) => void,
   ): RemoveInstrumentationEventListener<typeof eventName>;
   on(
     eventName: ConsumerEvents['REQUEST'],

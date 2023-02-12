@@ -2,7 +2,7 @@ import { DynamicModule } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isFunction, isSymbol } from '@nestjs/common/utils/shared.utils';
-import { xxh32 } from '@node-rs/xxhash';
+import { createHash } from 'crypto';
 import stringify from 'fast-safe-stringify';
 
 const CLASS_STR = 'class ';
@@ -64,7 +64,7 @@ export class ModuleTokenFactory {
   }
 
   private hashString(value: string): string {
-    return xxh32(value).toString();
+    return createHash('sha256').update(value).digest('hex');
   }
 
   private replacer(key: string, value: any) {

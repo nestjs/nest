@@ -1,4 +1,7 @@
-import { EnhancerSubtype } from '@nestjs/common/constants';
+import {
+  EnhancerSubtype,
+  ENTRY_PROVIDER_WATERMARK,
+} from '@nestjs/common/constants';
 import {
   ClassProvider,
   Controller,
@@ -61,8 +64,11 @@ export class Module {
     InstanceToken,
     InstanceWrapper<Controller>
   >();
+  private readonly _entryProviderKeys = new Set<InstanceToken>();
   private readonly _exports = new Set<InstanceToken>();
+
   private _distance = 0;
+  private _initOnPreview = false;
   private _isGlobal = false;
   private _token: string;
 
@@ -96,6 +102,14 @@ export class Module {
 
   set isGlobal(global: boolean) {
     this._isGlobal = global;
+  }
+
+  get initOnPreview() {
+    return this._initOnPreview;
+  }
+
+  set initOnPreview(initOnPreview: boolean) {
+    this._initOnPreview = initOnPreview;
   }
 
   get providers(): Map<InstanceToken, InstanceWrapper<Injectable>> {
@@ -137,6 +151,12 @@ export class Module {
 
   get controllers(): Map<InstanceToken, InstanceWrapper<Controller>> {
     return this._controllers;
+  }
+
+  get entryProviders(): Array<InstanceWrapper<Injectable>> {
+    return Array.from(this._entryProviderKeys).map(token =>
+      this.providers.get(token),
+    );
   }
 
   get exports(): Set<InstanceToken> {
@@ -217,7 +237,11 @@ export class Module {
     host?: Type<T>,
   ) {
     if (this.isCustomProvider(injectable)) {
-      return this.addCustomProvider(injectable, this._injectables);
+      return this.addCustomProvider(
+        injectable,
+        this._injectables,
+        enhancerSubtype,
+      );
     }
     let instanceWrapper = this.injectables.get(injectable);
     if (!instanceWrapper) {
@@ -249,8 +273,12 @@ export class Module {
   ): Provider | InjectionToken;
   public addProvider(provider: Provider, enhancerSubtype?: EnhancerSubtype) {
     if (this.isCustomProvider(provider)) {
+      if (this.isEntryProvider(provider.provide)) {
+        this._entryProviderKeys.add(provider.provide);
+      }
       return this.addCustomProvider(provider, this._providers, enhancerSubtype);
     }
+
     this._providers.set(
       provider,
       new InstanceWrapper({
@@ -264,6 +292,11 @@ export class Module {
         host: this,
       }),
     );
+
+    if (this.isEntryProvider(provider)) {
+      this._entryProviderKeys.add(provider);
+    }
+
     return provider as Type<Injectable>;
   }
 
@@ -340,10 +373,12 @@ export class Module {
     if (isUndefined(durable)) {
       durable = isDurable(useClass);
     }
+
+    const token = provider.provide;
     collection.set(
-      provider.provide,
+      token,
       new InstanceWrapper({
-        token: provider.provide,
+        token,
         name: useClass?.name || useClass,
         metatype: useClass,
         instance: null,
@@ -623,9 +658,15 @@ export class Module {
     };
   }
 
+  private isEntryProvider(metatype: InjectionToken): boolean {
+    return typeof metatype === 'function'
+      ? !!Reflect.getMetadata(ENTRY_PROVIDER_WATERMARK, metatype)
+      : false;
+  }
+
   private generateUuid(): string {
-    const UUID_NAMESPACE = 'fb848993-0c82-4b9e-ae95-3c3c1dbe3d6b';
+    const prefix = 'M_';
     const key = this.name?.toString() ?? this.token?.toString();
-    return key ? UuidFactory.get(key, UUID_NAMESPACE) : randomStringGenerator();
+    return key ? UuidFactory.get(`${prefix}_${key}`) : randomStringGenerator();
   }
 }

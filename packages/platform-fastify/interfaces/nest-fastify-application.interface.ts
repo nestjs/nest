@@ -65,7 +65,7 @@ export interface NestFastifyApplication extends INestApplication {
   /**
    * Sets a view engine for templates (views), for example: `pug`, `handlebars`, or `ejs`.
    *
-   * Don't pass in a string. The string type in the argument is for compatibilility reason and will cause an exception.
+   * Don't pass in a string. The string type in the argument is for compatibility reason and will cause an exception.
    * @returns {this}
    */
   setViewEngine(options: FastifyViewOptions | string): this;

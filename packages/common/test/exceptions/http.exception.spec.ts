@@ -240,7 +240,7 @@ describe('HttpException', () => {
       expect(cause).to.be.eql(errorCause);
     });
 
-    it('configures a cause when using a bult-in exception with options', () => {
+    it('configures a cause when using a built-in exception with options', () => {
       const builtInErrorClasses = [
         BadGatewayException,
         BadRequestException,
