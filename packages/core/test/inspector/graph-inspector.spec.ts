@@ -200,6 +200,7 @@ describe('GraphInspector', () => {
           transient: false,
           token: class A {},
           exported: false,
+          initTime: 100,
         },
       };
       const insertedNode = graph.insertNode(nodeDefinition);

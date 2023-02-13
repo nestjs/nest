@@ -32,6 +32,7 @@ describe('SerializedGraph', () => {
             token: ApplicationConfig,
             scope: Scope.DEFAULT,
             exported: false,
+            initTime: 100,
           },
         };
         serializedGraph.insertNode(nodeDefinition);
@@ -62,6 +63,7 @@ describe('SerializedGraph', () => {
             token: AppService,
             scope: Scope.DEFAULT,
             exported: false,
+            initTime: 100,
           },
         };
         serializedGraph.insertNode(nodeDefinition);
@@ -145,6 +147,7 @@ describe('SerializedGraph', () => {
           scope: Scope.DEFAULT,
           token: 'AppService',
           exported: true,
+          initTime: 100,
         },
       };
 

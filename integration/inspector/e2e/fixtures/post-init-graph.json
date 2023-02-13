@@ -13,7 +13,8 @@
         "transient": false,
         "exported": false,
         "token": "LoggingInterceptor",
-        "subtype": "interceptor"
+        "subtype": "interceptor",
+        "initTime": 0
       }
     },
     "55510001": {
@@ -29,7 +30,8 @@
         "scope": 2,
         "transient": false,
         "exported": false,
-        "token": "UsersService"
+        "token": "UsersService",
+        "initTime": 0
       }
     },
     "91819333": {
@@ -77,7 +79,8 @@
         "transient": false,
         "exported": false,
         "token": "RolesGuard",
-        "subtype": "guard"
+        "subtype": "guard",
+        "initTime": 0
       }
     },
     "225063248": {
@@ -93,7 +96,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "InternalCoreModule"
+        "token": "InternalCoreModule",
+        "initTime": 0
       }
     },
     "256260345": {
@@ -141,7 +145,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "CoreModule"
+        "token": "CoreModule",
+        "initTime": 0
       }
     },
     "437945905": {
@@ -208,7 +213,8 @@
         "static": true,
         "transient": false,
         "exported": true,
-        "token": "InputService"
+        "token": "InputService",
+        "initTime": 0
       }
     },
     "603011239": {
@@ -223,7 +229,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "UsersService"
+        "token": "UsersService",
+        "initTime": 0
       }
     },
     "671882984": {
@@ -238,7 +245,8 @@
         "static": true,
         "transient": false,
         "exported": true,
-        "token": "Reflector"
+        "token": "Reflector",
+        "initTime": 0
       }
     },
     "791004148": {
@@ -265,7 +273,8 @@
         "transient": false,
         "exported": false,
         "token": "Interceptor",
-        "subtype": "interceptor"
+        "subtype": "interceptor",
+        "initTime": 0
       }
     },
     "927096496": {
@@ -297,7 +306,8 @@
         "scope": 2,
         "transient": false,
         "exported": true,
-        "token": "HelperService"
+        "token": "HelperService",
+        "initTime": 0
       }
     },
     "941957564": {
@@ -313,7 +323,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "RequestChainModule"
+        "token": "RequestChainModule",
+        "initTime": 0
       }
     },
     "980514911": {
@@ -345,7 +356,8 @@
         "scope": 2,
         "transient": false,
         "exported": false,
-        "token": "META"
+        "token": "META",
+        "initTime": 0
       }
     },
     "1010833816": {
@@ -377,7 +389,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "CircularModule"
+        "token": "CircularModule",
+        "initTime": 0
       }
     },
     "1074192353": {
@@ -392,7 +405,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "ChatService"
+        "token": "ChatService",
+        "initTime": 0
       }
     },
     "1120316353": {
@@ -423,7 +437,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "ChatGateway"
+        "token": "ChatGateway",
+        "initTime": 0
       }
     },
     "1142369607": {
@@ -449,7 +464,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "ChatModule"
+        "token": "ChatModule",
+        "initTime": 0
       }
     },
     "1253818496": {
@@ -465,7 +481,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "RootTestModule"
+        "token": "RootTestModule",
+        "initTime": 0
       }
     },
     "1433815174": {
@@ -481,7 +498,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "DogsModule"
+        "token": "DogsModule",
+        "initTime": 0
       }
     },
     "1434441974": {
@@ -507,7 +525,8 @@
         "scope": 0,
         "transient": false,
         "exported": true,
-        "token": "Reflector"
+        "token": "Reflector",
+        "initTime": 0
       }
     },
     "1472486160": {
@@ -523,6 +542,7 @@
         "transient": false,
         "exported": false,
         "token": "HelloController",
+        "initTime": 0,
         "enhancers": [
           {
             "id": "-2010060263",
@@ -597,7 +617,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "CatsModule"
+        "token": "CatsModule",
+        "initTime": 0
       }
     },
     "1634859874": {
@@ -612,7 +633,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "LoggerMiddleware"
+        "token": "LoggerMiddleware",
+        "initTime": 0
       }
     },
     "1743739569": {
@@ -670,7 +692,8 @@
         "transient": false,
         "exported": false,
         "token": "UserByIdPipe",
-        "subtype": "pipe"
+        "subtype": "pipe",
+        "initTime": 0
       }
     },
     "1919157847": {
@@ -686,7 +709,8 @@
         "scope": 2,
         "transient": false,
         "exported": true,
-        "token": "REQUEST"
+        "token": "REQUEST",
+        "initTime": 0
       }
     },
     "2018972420": {
@@ -703,6 +727,7 @@
         "exported": false,
         "token": "APP_INTERCEPTOR (UUID: -1146749753)",
         "subtype": "interceptor",
+        "initTime": 0,
         "global": true
       }
     },
@@ -761,7 +786,8 @@
         "scope": 1,
         "transient": true,
         "exported": true,
-        "token": "INQUIRER"
+        "token": "INQUIRER",
+        "initTime": 0
       }
     },
     "-26938366": {
@@ -809,7 +835,8 @@
         "scope": 0,
         "transient": false,
         "exported": true,
-        "token": "HttpAdapterHost"
+        "token": "HttpAdapterHost",
+        "initTime": 0
       }
     },
     "-702581189": {
@@ -824,7 +851,8 @@
         "static": true,
         "transient": false,
         "exported": true,
-        "token": "LazyModuleLoader"
+        "token": "LazyModuleLoader",
+        "initTime": 0
       }
     },
     "-1904419534": {
@@ -892,7 +920,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "AppModule"
+        "token": "AppModule",
+        "initTime": 0
       }
     },
     "-71302842": {
@@ -939,7 +968,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "AppV1Controller"
+        "token": "AppV1Controller",
+        "initTime": 0
       }
     },
     "-774089708": {
@@ -954,7 +984,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "AppV2Controller"
+        "token": "AppV2Controller",
+        "initTime": 0
       }
     },
     "-1125887048": {
@@ -997,6 +1028,7 @@
         "exported": false,
         "token": "APP_INTERCEPTOR (UUID: 1780085433)",
         "subtype": "interceptor",
+        "initTime": 0,
         "global": true
       }
     },
@@ -1044,7 +1076,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "CatsService"
+        "token": "CatsService",
+        "initTime": 0
       }
     },
     "-1550892030": {
@@ -1060,6 +1093,7 @@
         "transient": false,
         "exported": false,
         "token": "CatsController",
+        "initTime": 0,
         "enhancers": [
           {
             "id": "208171089",
@@ -1086,7 +1120,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "HelloModule"
+        "token": "HelloModule",
+        "initTime": 0
       }
     },
     "-1166465801": {
@@ -1134,7 +1169,8 @@
         "scope": 2,
         "transient": false,
         "exported": false,
-        "token": "HelloService"
+        "token": "HelloService",
+        "initTime": 0
       }
     },
     "-2010060263": {
@@ -1151,7 +1187,8 @@
         "transient": false,
         "exported": false,
         "token": "Guard",
-        "subtype": "guard"
+        "subtype": "guard",
+        "initTime": 0
       }
     },
     "-1124392646": {
@@ -1177,7 +1214,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "DurableModule"
+        "token": "DurableModule",
+        "initTime": 0
       }
     },
     "-1808043520": {
@@ -1225,7 +1263,8 @@
         "scope": 2,
         "transient": false,
         "exported": false,
-        "token": "DurableService"
+        "token": "DurableService",
+        "initTime": 0
       }
     },
     "-848516688": {
@@ -1240,7 +1279,8 @@
         "static": false,
         "transient": false,
         "exported": false,
-        "token": "DurableController"
+        "token": "DurableController",
+        "initTime": 0
       }
     },
     "-1096226358": {
@@ -1271,7 +1311,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "DogsService"
+        "token": "DogsService",
+        "initTime": 0
       }
     },
     "-1558907338": {
@@ -1286,7 +1327,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "DogsController"
+        "token": "DogsController",
+        "initTime": 0
       }
     },
     "-2003726489": {
@@ -1312,7 +1354,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "UsersModule"
+        "token": "UsersModule",
+        "initTime": 0
       }
     },
     "-618964563": {
@@ -1359,7 +1402,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "UsersController"
+        "token": "UsersController",
+        "initTime": 0
       }
     },
     "-1098322034": {
@@ -1375,7 +1419,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "DatabaseModule"
+        "token": "DatabaseModule",
+        "initTime": 0
       }
     },
     "-616397055": {
@@ -1390,7 +1435,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "DatabaseService"
+        "token": "DatabaseService",
+        "initTime": 0
       }
     },
     "-377928898": {
@@ -1405,7 +1451,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "DatabaseController"
+        "token": "DatabaseController",
+        "initTime": 0
       }
     },
     "-511735264": {
@@ -1421,7 +1468,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "ExternalSvcModule"
+        "token": "ExternalSvcModule",
+        "initTime": 0
       }
     },
     "-660323910": {
@@ -1468,7 +1516,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "ExternalSvcService"
+        "token": "ExternalSvcService",
+        "initTime": 0
       }
     },
     "-349899408": {
@@ -1483,7 +1532,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "ExternalSvcController"
+        "token": "ExternalSvcController",
+        "initTime": 0
       }
     },
     "-493958991": {
@@ -1524,7 +1574,8 @@
         "static": false,
         "transient": false,
         "exported": false,
-        "token": "RequestChainService"
+        "token": "RequestChainService",
+        "initTime": 0
       }
     },
     "-1927427604": {
@@ -1540,6 +1591,7 @@
         "transient": false,
         "exported": false,
         "token": "RequestChainController",
+        "initTime": 0,
         "enhancers": [
           {
             "id": "18347652",
@@ -1562,7 +1614,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "HelperModule"
+        "token": "HelperModule",
+        "initTime": 0
       }
     },
     "-1469176692": {
@@ -1588,7 +1641,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "PropertiesModule"
+        "token": "PropertiesModule",
+        "initTime": 0
       }
     },
     "-1377446394": {
@@ -1619,7 +1673,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "DependencyService"
+        "token": "DependencyService",
+        "initTime": 0
       }
     },
     "-1803759743": {
@@ -1634,7 +1689,8 @@
         "static": true,
         "transient": false,
         "exported": false,
-        "token": "PropertiesService"
+        "token": "PropertiesService",
+        "initTime": 0
       }
     },
     "-1813741655": {
@@ -1660,7 +1716,8 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "InputModule"
+        "token": "InputModule",
+        "initTime": 0
       }
     },
     "-428979729": {
@@ -1749,7 +1806,8 @@
         "static": true,
         "transient": false,
         "exported": true,
-        "token": "CircularService"
+        "token": "CircularService",
+        "initTime": 0
       }
     }
   },

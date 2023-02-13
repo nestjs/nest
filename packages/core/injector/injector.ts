@@ -22,6 +22,7 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
+import { performance } from 'perf_hooks';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
@@ -129,7 +130,7 @@ export class Injector {
       return done();
     }
     try {
-      const t0 = performance.now();
+      const t0 = this.getNowTimestamp();
       const callback = async (instances: unknown[]) => {
         const properties = await this.resolveProperties(
           wrapper,
@@ -147,7 +148,7 @@ export class Injector {
           inquirer,
         );
         this.applyProperties(instance, properties);
-        wrapper.initTime = performance.now() - t0;
+        wrapper.initTime = this.getNowTimestamp() - t0;
         done();
       };
       await this.resolveConstructorParams<T>(
@@ -943,5 +944,9 @@ export class Injector {
           isTreeDurable: instanceWrapper.isDependencyTreeDurable(),
         })
       : contextId;
+  }
+
+  private getNowTimestamp() {
+    return performance.now();
   }
 }
