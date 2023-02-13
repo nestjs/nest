@@ -69,6 +69,7 @@ export class InstanceWrapper<T = any> {
   public inject?: FactoryProvider['inject'];
   public forwardRef?: boolean;
   public durable?: boolean;
+  public initTime?: number;
 
   private static logger: LoggerService = new Logger(InstanceWrapper.name);
 

@@ -103,6 +103,7 @@ export class GraphInspector {
         exported: moduleRef.exports.has(wrapper.token),
         token: wrapper.token,
         subtype: wrapper.subtype,
+        initTime: wrapper.initTime,
       },
     });
   }

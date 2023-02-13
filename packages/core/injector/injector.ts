@@ -129,6 +129,7 @@ export class Injector {
       return done();
     }
     try {
+      const t0 = performance.now();
       const callback = async (instances: unknown[]) => {
         const properties = await this.resolveProperties(
           wrapper,
@@ -146,6 +147,7 @@ export class Injector {
           inquirer,
         );
         this.applyProperties(instance, properties);
+        wrapper.initTime = performance.now() - t0;
         done();
       };
       await this.resolveConstructorParams<T>(

@@ -22,6 +22,7 @@ export type ClassNode = {
     exported: boolean;
     scope: Scope;
     token: InjectionToken;
+    initTime: number;
     /**
      * Enhancers metadata collection
      */
