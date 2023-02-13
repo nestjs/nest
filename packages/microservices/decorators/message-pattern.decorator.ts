@@ -1,19 +1,20 @@
 import {
-  isObject,
-  isNumber,
   isNil,
+  isNumber,
+  isObject,
   isSymbol,
 } from '@nestjs/common/utils/shared.utils';
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {
+  PATTERN_EXTRAS_METADATA,
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
-  PATTERN_EXTRAS_METADATA,
 } from '../constants';
-import { PatternHandler } from '../enums/pattern-handler.enum';
-import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 import { Transport } from '../enums';
+import { PatternHandler } from '../enums/pattern-handler.enum';
+import { MemphisConsumerOption } from '../external/memphis.interface';
+import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',
@@ -184,4 +185,23 @@ export function createGrpcMethodMetadata(
     return { service, rpc: capitalizeFirstLetter(key as string), streaming };
   }
   return { service, rpc: method, streaming };
+}
+
+export function ConsumeMessage(
+  options: MemphisConsumerOption,
+  context: object = {},
+): MethodDecorator {
+  return (
+    target: any,
+    key: string | symbol,
+    descriptor: PropertyDescriptor,
+  ) => {
+    const { consumerName, stationName } = options;
+    const id = `consumer.${String(key)}.${consumerName}.${stationName}`;
+    return MessagePattern(id, Transport.MEMPHIS, { options, context })(
+      target,
+      key,
+      descriptor,
+    );
+  };
 }

@@ -16,7 +16,7 @@ export class ServerMemphis extends Server implements CustomTransportStrategy {
     super();
 
     memphisPackage = this.loadPackage('memphis-dev', ServerMemphis.name, () =>
-      require('memphis-dev')
+      require('memphis-dev'),
     );
 
     this.initializeSerializer(options);
@@ -24,7 +24,7 @@ export class ServerMemphis extends Server implements CustomTransportStrategy {
   }
 
   public async listen(
-    callback: (err?: unknown, ...optionalParams: unknown[]) => Promise<void>
+    callback: (err?: unknown, ...optionalParams: unknown[]) => Promise<void>,
   ) {
     try {
       this.connection = await memphisPackage.connect(this.options);
@@ -45,22 +45,19 @@ export class ServerMemphis extends Server implements CustomTransportStrategy {
   }
 
   private async createConsumers(): Promise<void> {
-    const channels = [...this.messageHandlers.keys()];
-
-    channels.forEach(async (option) => {
-      const handler = this.messageHandlers.get(option);
-      const consumer = await this.connection.consumer(JSON.parse(option));
+    this.messageHandlers.forEach(async handler => {
+      const { options, context } = handler.extras;
+      const consumer = await this.connection.consumer(options, context);
       this.bindEventHandlers(consumer, handler);
     });
-    //await Promise.all(channels.map((channel) => this.subscriber.listenTo(channel)));
   }
 
   private bindEventHandlers(consumer: any, handler: any): void {
-    consumer.on('message', (message) => {
+    consumer.on('message', message => {
       handler(message);
     });
 
-    consumer.on('error', (error) => {
+    consumer.on('error', error => {
       handler(error);
     });
   }

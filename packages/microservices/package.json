@@ -34,8 +34,8 @@
     "cache-manager": "*",
     "ioredis": "*",
     "kafkajs": "*",
-    "mqtt": "*",
     "memphis-dev": "*",
+    "mqtt": "*",
     "nats": "*",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^7.1.0"
@@ -51,6 +51,9 @@
       "optional": true
     },
     "kafkajs": {
+      "optional": true
+    },
+    "memphis-dev": {
       "optional": true
     },
     "mqtt": {
