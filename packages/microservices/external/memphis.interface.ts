@@ -1,4 +1,4 @@
-export interface MemphisConsumerOption {
+export interface MemphisConsumerOptions {
   stationName: string;
   consumerName: string;
   consumerGroup?: string;

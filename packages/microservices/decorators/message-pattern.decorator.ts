@@ -13,7 +13,7 @@ import {
 } from '../constants';
 import { Transport } from '../enums';
 import { PatternHandler } from '../enums/pattern-handler.enum';
-import { MemphisConsumerOption } from '../external/memphis.interface';
+import { MemphisConsumerOptions } from '../external/memphis.interface';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 
 export enum GrpcMethodStreamingType {
@@ -188,7 +188,7 @@ export function createGrpcMethodMetadata(
 }
 
 export function ConsumeMessage(
-  options: MemphisConsumerOption,
+  options: MemphisConsumerOptions,
   context: object = {},
 ): MethodDecorator {
   return (
