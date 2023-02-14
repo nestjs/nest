@@ -11,12 +11,22 @@ import {
 } from '../utils/http-error-by-code.util';
 import { isString } from '../utils/shared.utils';
 
+/**
+ * @publicApi
+ */
 export interface ParseUUIDPipeOptions {
   version?: '3' | '4' | '5';
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (errors: string) => any;
 }
 
+/**
+ * Defines the built-in ParseUUID Pipe
+ *
+ * @see [Built-in Pipes](https://docs.nestjs.com/pipes#built-in-pipes)
+ *
+ * @publicApi
+ */
 @Injectable()
 export class ParseUUIDPipe implements PipeTransform<string> {
   protected static uuidRegExps = {

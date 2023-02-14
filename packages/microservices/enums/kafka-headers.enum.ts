@@ -1,5 +1,7 @@
 /**
  * @see https://docs.spring.io/spring-kafka/api/org/springframework/kafka/support/KafkaHeaders.html
+ *
+ * @publicApi
  */
 export enum KafkaHeaders {
   ACKNOWLEDGMENT = 'kafka_acknowledgment',

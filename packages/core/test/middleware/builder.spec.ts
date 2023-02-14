@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import { Controller, Get, RequestMethod, Version } from '../../../common';
+import { ApplicationConfig } from '../../application-config';
 import { NestContainer } from '../../injector/container';
 import { MiddlewareBuilder } from '../../middleware/builder';
+import { RouteInfoPathExtractor } from '../../middleware/route-info-path-extractor';
 import { RoutesMapper } from '../../middleware/routes-mapper';
 import { NoopHttpAdapter } from './../utils/noop-adapter.spec';
 
@@ -10,9 +12,11 @@ describe('MiddlewareBuilder', () => {
 
   beforeEach(() => {
     const container = new NestContainer();
+    const appConfig = new ApplicationConfig();
     builder = new MiddlewareBuilder(
       new RoutesMapper(container),
       new NoopHttpAdapter({}),
+      new RouteInfoPathExtractor(appConfig),
     );
   });
   describe('apply', () => {

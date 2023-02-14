@@ -1,10 +1,12 @@
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
 import { GuardsConsumer, GuardsContextCreator } from '@nestjs/core/guards';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import {
   InterceptorsConsumer,
   InterceptorsContextCreator,
@@ -19,11 +21,20 @@ import { CustomTransportStrategy } from './interfaces';
 import { ListenersController } from './listeners-controller';
 import { Server } from './server/server';
 
-export class MicroservicesModule {
+export class MicroservicesModule<
+  TAppOptions extends NestApplicationContextOptions = NestApplicationContextOptions,
+> {
   private readonly clientsContainer = new ClientsContainer();
   private listenersController: ListenersController;
+  private appOptions: TAppOptions;
 
-  public register(container: NestContainer, config: ApplicationConfig) {
+  public register(
+    container: NestContainer,
+    graphInspector: GraphInspector,
+    config: ApplicationConfig,
+    options: TAppOptions,
+  ) {
+    this.appOptions = options;
     const exceptionFiltersContext = new ExceptionFiltersContext(
       container,
       config,
@@ -47,6 +58,7 @@ export class MicroservicesModule {
       injector,
       ClientProxyFactory,
       exceptionFiltersContext,
+      graphInspector,
     );
   }
 
@@ -66,6 +78,9 @@ export class MicroservicesModule {
   public setupClients(container: NestContainer) {
     if (!this.listenersController) {
       throw new RuntimeException();
+    }
+    if (this.appOptions?.preview) {
+      return;
     }
     const modules = container.getModules();
     modules.forEach(({ controllers, providers }) => {

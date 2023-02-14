@@ -351,13 +351,13 @@ describe('ClientGrpcProxy', () => {
 
         const stream$ = client.createUnaryServiceMethod(obj, methodName)();
 
-        const subsciption = stream$.subscribe({
+        const subscription = stream$.subscribe({
           next: dataSpy,
           error: errorSpy,
           complete: completeSpy,
         });
 
-        subsciption.unsubscribe();
+        subscription.unsubscribe();
         handler(null, 'a');
 
         expect(dataSpy.called).to.be.false;

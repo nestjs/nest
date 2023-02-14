@@ -1,14 +1,12 @@
-import { HttpServer, VersioningType } from '@nestjs/common';
+import { HttpServer, Logger } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import {
   MiddlewareConfiguration,
-  RouteInfo,
   NestMiddleware,
+  RouteInfo,
 } from '@nestjs/common/interfaces/middleware';
-import {
-  addLeadingSlash,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '../application-config';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
@@ -17,31 +15,39 @@ import { ExecutionContextHost } from '../helpers/execution-context-host';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
-import { InstanceWrapper } from '../injector/instance-wrapper';
+import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 import { InstanceToken, Module } from '../injector/module';
+import { GraphInspector } from '../inspector/graph-inspector';
+import {
+  Entrypoint,
+  MiddlewareEntrypointMetadata,
+} from '../inspector/interfaces/entrypoint.interface';
 import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
-import { RoutePathFactory } from '../router/route-path-factory';
 import { RouterExceptionFilters } from '../router/router-exception-filters';
 import { RouterProxy } from '../router/router-proxy';
-import { isRequestMethodAll, isRouteExcluded } from '../router/utils';
+import { isRequestMethodAll } from '../router/utils';
 import { MiddlewareBuilder } from './builder';
 import { MiddlewareContainer } from './container';
 import { MiddlewareResolver } from './resolver';
+import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
 
-export class MiddlewareModule {
+export class MiddlewareModule<
+  TAppOptions extends NestApplicationContextOptions = NestApplicationContextOptions,
+> {
   private readonly routerProxy = new RouterProxy();
   private readonly exceptionFiltersCache = new WeakMap();
+  private readonly logger = new Logger(MiddlewareModule.name);
 
   private injector: Injector;
   private routerExceptionFilter: RouterExceptionFilters;
   private routesMapper: RoutesMapper;
   private resolver: MiddlewareResolver;
-  private config: ApplicationConfig;
   private container: NestContainer;
   private httpAdapter: HttpServer;
-
-  constructor(private readonly routePathFactory: RoutePathFactory) {}
+  private graphInspector: GraphInspector;
+  private appOptions: TAppOptions;
+  private routeInfoPathExtractor: RouteInfoPathExtractor;
 
   public async register(
     middlewareContainer: MiddlewareContainer,
@@ -49,7 +55,11 @@ export class MiddlewareModule {
     config: ApplicationConfig,
     injector: Injector,
     httpAdapter: HttpServer,
+    graphInspector: GraphInspector,
+    options: TAppOptions,
   ) {
+    this.appOptions = options;
+
     const appRef = container.getHttpAdapterRef();
     this.routerExceptionFilter = new RouterExceptionFilters(
       container,
@@ -57,12 +67,12 @@ export class MiddlewareModule {
       appRef,
     );
     this.routesMapper = new RoutesMapper(container);
-    this.resolver = new MiddlewareResolver(middlewareContainer);
-
-    this.config = config;
+    this.resolver = new MiddlewareResolver(middlewareContainer, injector);
+    this.routeInfoPathExtractor = new RouteInfoPathExtractor(config);
     this.injector = injector;
     this.container = container;
     this.httpAdapter = httpAdapter;
+    this.graphInspector = graphInspector;
 
     const modules = container.getModules();
     await this.resolveMiddleware(middlewareContainer, modules);
@@ -95,8 +105,19 @@ export class MiddlewareModule {
     const middlewareBuilder = new MiddlewareBuilder(
       this.routesMapper,
       this.httpAdapter,
+      this.routeInfoPathExtractor,
     );
-    await instance.configure(middlewareBuilder);
+    try {
+      await instance.configure(middlewareBuilder);
+    } catch (err) {
+      if (!this.appOptions.preview) {
+        throw err;
+      }
+      const warningMessage =
+        `Warning! "${moduleRef.name}" module exposes a "configure" method that throws an exception in the preview mode` +
+        ` (possibly due to missing dependencies). Note: you can ignore this message, just be aware that some of those conditional middlewares will not be reflected in your graph.`;
+      this.logger.warn(warningMessage);
+    }
 
     if (!(middlewareBuilder instanceof MiddlewareBuilder)) {
       return;
@@ -174,6 +195,30 @@ export class MiddlewareModule {
       if (instanceWrapper.isTransient) {
         return;
       }
+      this.graphInspector.insertClassNode(
+        moduleRef,
+        instanceWrapper,
+        'middleware',
+      );
+      const middlewareDefinition: Entrypoint<MiddlewareEntrypointMetadata> = {
+        type: 'middleware',
+        methodName: 'use',
+        className: instanceWrapper.name,
+        classNodeId: instanceWrapper.id,
+        metadata: {
+          key: routeInfo.path,
+          path: routeInfo.path,
+          requestMethod:
+            (RequestMethod[routeInfo.method] as keyof typeof RequestMethod) ??
+            'ALL',
+          version: routeInfo.version,
+        },
+      };
+      this.graphInspector.insertEntrypointDefinition(
+        middlewareDefinition,
+        instanceWrapper.id,
+      );
+
       await this.bindHandler(
         instanceWrapper,
         applicationRef,
@@ -200,6 +245,9 @@ export class MiddlewareModule {
       const proxy = await this.createProxy(instance);
       return this.registerHandler(applicationRef, routeInfo, proxy);
     }
+
+    const isTreeDurable = wrapper.isDependencyTreeDurable();
+
     await this.registerHandler(
       applicationRef,
       routeInfo,
@@ -209,19 +257,7 @@ export class MiddlewareModule {
         next: () => void,
       ) => {
         try {
-          const contextId = ContextIdFactory.getByRequest(req);
-          if (!req[REQUEST_CONTEXT_ID]) {
-            Object.defineProperty(req, REQUEST_CONTEXT_ID, {
-              value: contextId,
-              enumerable: false,
-              writable: false,
-              configurable: false,
-            });
-            this.container.registerRequestProvider(
-              contextId.getParent ? contextId.payload : req,
-              contextId,
-            );
-          }
+          const contextId = this.getContextId(req, isTreeDurable);
           const contextInstance = await this.injector.loadPerContext(
             instance,
             moduleRef,
@@ -266,56 +302,46 @@ export class MiddlewareModule {
 
   private async registerHandler(
     applicationRef: HttpServer,
-    { path, method, version }: RouteInfo,
+    routeInfo: RouteInfo,
     proxy: <TRequest, TResponse>(
       req: TRequest,
       res: TResponse,
       next: () => void,
     ) => void,
   ) {
-    const prefix = this.config.getGlobalPrefix();
-    const excludedRoutes = this.config.getGlobalPrefixOptions().exclude;
-    if (
-      (Array.isArray(excludedRoutes) &&
-        isRouteExcluded(excludedRoutes, path, method)) ||
-      ['*', '/*', '(.*)', '/(.*)'].includes(path)
-    ) {
-      path = addLeadingSlash(path);
-    } else {
-      const basePath = addLeadingSlash(prefix);
-      if (basePath?.endsWith('/') && path?.startsWith('/')) {
-        // strip slash when a wildcard is being used
-        // and global prefix has been set
-        path = path?.slice(1);
-      }
-      path = basePath + path;
-    }
-
-    const applicationVersioningConfig = this.config.getVersioning();
-    if (version && applicationVersioningConfig.type === VersioningType.URI) {
-      const versionPrefix = this.routePathFactory.getVersionPrefix(
-        applicationVersioningConfig,
-      );
-      path = `/${versionPrefix}${version.toString()}${path}`;
-    }
-
+    const { method } = routeInfo;
+    const paths = this.routeInfoPathExtractor.extractPathsFrom(routeInfo);
     const isMethodAll = isRequestMethodAll(method);
     const requestMethod = RequestMethod[method];
     const router = await applicationRef.createMiddlewareFactory(method);
-    router(
-      path,
-      isMethodAll
-        ? proxy
-        : <TRequest, TResponse>(
-            req: TRequest,
-            res: TResponse,
-            next: () => void,
-          ) => {
-            if (applicationRef.getRequestMethod(req) === requestMethod) {
-              return proxy(req, res, next);
-            }
-            return next();
-          },
-    );
+    const middlewareFunction = isMethodAll
+      ? proxy
+      : <TRequest, TResponse>(
+          req: TRequest,
+          res: TResponse,
+          next: () => void,
+        ) => {
+          if (applicationRef.getRequestMethod(req) === requestMethod) {
+            return proxy(req, res, next);
+          }
+          return next();
+        };
+    paths.forEach(path => router(path, middlewareFunction));
+  }
+
+  private getContextId(request: unknown, isTreeDurable: boolean): ContextId {
+    const contextId = ContextIdFactory.getByRequest(request);
+    if (!request[REQUEST_CONTEXT_ID]) {
+      Object.defineProperty(request, REQUEST_CONTEXT_ID, {
+        value: contextId,
+        enumerable: false,
+        writable: false,
+        configurable: false,
+      });
+
+      const requestProviderValue = isTreeDurable ? contextId.payload : request;
+      this.container.registerRequestProvider(requestProviderValue, contextId);
+    }
+    return contextId;
   }
 }

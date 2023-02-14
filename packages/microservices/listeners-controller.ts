@@ -11,9 +11,18 @@ import {
   InstanceWrapper,
 } from '@nestjs/core/injector/instance-wrapper';
 import { Module } from '@nestjs/core/injector/module';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants';
-import { connectable, Observable, Subject } from 'rxjs';
+import {
+  forkJoin,
+  from as fromPromise,
+  isObservable,
+  mergeMap,
+  Observable,
+  ObservedValueOf,
+  of,
+} from 'rxjs';
 import { IClientProxyFactory } from './client/client-proxy-factory';
 import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
@@ -24,13 +33,18 @@ import {
   DEFAULT_GRPC_CALLBACK_METADATA,
 } from './context/rpc-metadata-constants';
 import { BaseRpcContext } from './ctx-host/base-rpc.context';
+import { Transport } from './enums';
 import {
   CustomTransportStrategy,
   MessageHandler,
   PatternMetadata,
   RequestContext,
 } from './interfaces';
-import { ListenerMetadataExplorer } from './listener-metadata-explorer';
+import { MicroserviceEntrypointMetadata } from './interfaces/microservice-entrypoint-metadata.interface';
+import {
+  EventOrMessageListenerDefinition,
+  ListenerMetadataExplorer,
+} from './listener-metadata-explorer';
 import { ServerGrpc } from './server';
 import { Server } from './server/server';
 
@@ -47,6 +61,7 @@ export class ListenersController {
     private readonly injector: Injector,
     private readonly clientFactory: IClientProxyFactory,
     private readonly exceptionFiltersContext: ExceptionFiltersContext,
+    private readonly graphInspector: GraphInspector,
   ) {}
 
   public registerPatternHandlers(
@@ -78,61 +93,109 @@ export class ListenersController {
         );
         return acc;
       }, [])
-      .forEach(
-        ({
+      .forEach((definition: EventOrMessageListenerDefinition) => {
+        const {
           patterns: [pattern],
           targetCallback,
           methodKey,
           extras,
           isEventHandler,
-        }) => {
-          if (isStatic) {
-            const proxy = this.contextCreator.create(
-              instance as object,
-              targetCallback,
-              moduleKey,
-              methodKey,
-              STATIC_CONTEXT,
-              undefined,
-              defaultCallMetadata,
-            );
-            if (isEventHandler) {
-              const eventHandler: MessageHandler = (...args: unknown[]) => {
-                const originalArgs = args;
-                const [dataOrContextHost] = originalArgs;
-                if (dataOrContextHost instanceof RequestContextHost) {
-                  args = args.slice(1, args.length);
-                }
-                const originalReturnValue = proxy(...args);
-                const returnedValueWrapper = eventHandler.next?.(
-                  ...(originalArgs as Parameters<MessageHandler>),
-                );
-                returnedValueWrapper?.then(returnedValue =>
-                  this.connectIfStream(returnedValue as Observable<unknown>),
-                );
-                return originalReturnValue;
-              };
-              return server.addHandler(
-                pattern,
-                eventHandler,
-                isEventHandler,
-                extras,
-              );
-            } else {
-              return server.addHandler(pattern, proxy, isEventHandler, extras);
-            }
-          }
-          const asyncHandler = this.createRequestScopedHandler(
-            instanceWrapper,
-            pattern,
-            moduleRef,
+        } = definition;
+
+        this.insertEntrypointDefinition(
+          instanceWrapper,
+          definition,
+          server.transportId,
+        );
+
+        if (isStatic) {
+          const proxy = this.contextCreator.create(
+            instance as object,
+            targetCallback,
             moduleKey,
             methodKey,
+            STATIC_CONTEXT,
+            undefined,
             defaultCallMetadata,
           );
-          server.addHandler(pattern, asyncHandler, isEventHandler, extras);
+          if (isEventHandler) {
+            const eventHandler: MessageHandler = async (...args: unknown[]) => {
+              const originalArgs = args;
+              const [dataOrContextHost] = originalArgs;
+              if (dataOrContextHost instanceof RequestContextHost) {
+                args = args.slice(1, args.length);
+              }
+              const returnValue = proxy(...args);
+              return this.forkJoinHandlersIfAttached(
+                returnValue,
+                originalArgs,
+                eventHandler,
+              );
+            };
+            return server.addHandler(
+              pattern,
+              eventHandler,
+              isEventHandler,
+              extras,
+            );
+          } else {
+            return server.addHandler(pattern, proxy, isEventHandler, extras);
+          }
+        }
+        const asyncHandler = this.createRequestScopedHandler(
+          instanceWrapper,
+          pattern,
+          moduleRef,
+          moduleKey,
+          methodKey,
+          defaultCallMetadata,
+          isEventHandler,
+        );
+        server.addHandler(pattern, asyncHandler, isEventHandler, extras);
+      });
+  }
+
+  public insertEntrypointDefinition(
+    instanceWrapper: InstanceWrapper,
+    definition: EventOrMessageListenerDefinition,
+    transportId: Transport | symbol,
+  ) {
+    this.graphInspector.insertEntrypointDefinition<MicroserviceEntrypointMetadata>(
+      {
+        type: 'microservice',
+        methodName: definition.methodKey,
+        className: instanceWrapper.metatype?.name,
+        classNodeId: instanceWrapper.id,
+        metadata: {
+          key: definition.patterns.toString(),
+          transportId:
+            typeof transportId === 'number'
+              ? (Transport[transportId] as keyof typeof Transport)
+              : transportId,
+          patterns: definition.patterns,
+          isEventHandler: definition.isEventHandler,
+          extras: definition.extras,
         },
+      },
+      instanceWrapper.id,
+    );
+  }
+
+  public forkJoinHandlersIfAttached(
+    currentReturnValue: Promise<unknown> | Observable<unknown>,
+    originalArgs: unknown[],
+    handlerRef: MessageHandler,
+  ) {
+    if (handlerRef.next) {
+      const returnedValueWrapper = handlerRef.next(
+        ...(originalArgs as Parameters<MessageHandler>),
       );
+      return forkJoin({
+        current: this.transformToObservable(currentReturnValue),
+        next: this.transformToObservable(returnedValueWrapper),
+      });
+    }
+    return currentReturnValue;
   }
 
   public assignClientsToProperties(instance: Controller | Injectable) {
@@ -162,9 +225,12 @@ export class ListenersController {
     moduleKey: string,
     methodKey: string,
     defaultCallMetadata: Record<string, any> = DEFAULT_CALLBACK_METADATA,
+    isEventHandler = false,
   ) {
     const collection = moduleRef.controllers;
     const { instance } = wrapper;
+
+    const isTreeDurable = wrapper.isDependencyTreeDurable();
 
     const requestScopedHandler: MessageHandler = async (...args: unknown[]) => {
       try {
@@ -172,7 +238,7 @@ export class ListenersController {
 
         let [dataOrContextHost] = args;
         if (dataOrContextHost instanceof RequestContextHost) {
-          contextId = this.getContextId(dataOrContextHost);
+          contextId = this.getContextId(dataOrContextHost, isTreeDurable);
           args.shift();
         } else {
           const [data, reqCtx] = args;
@@ -181,13 +247,10 @@ export class ListenersController {
             data,
             reqCtx as BaseRpcContext,
           );
-          contextId = this.getContextId(request);
-          this.container.registerRequestProvider(
-            contextId.getParent ? contextId.payload : request,
-            contextId,
-          );
+          contextId = this.getContextId(request, isTreeDurable);
           dataOrContextHost = request;
         }
+
         const contextInstance = await this.injector.loadPerContext(
           instance,
           moduleRef,
@@ -203,14 +266,16 @@ export class ListenersController {
           wrapper.id,
           defaultCallMetadata,
         );
-        const returnedValueWrapper = requestScopedHandler.next?.(
-          dataOrContextHost,
-          ...args,
-        );
-        returnedValueWrapper?.then(returnedValue =>
-          this.connectIfStream(returnedValue as Observable<unknown>),
-        );
-        return proxy(...args);
+
+        const returnValue = proxy(...args);
+        if (isEventHandler) {
+          return this.forkJoinHandlersIfAttached(
+            returnValue,
+            [dataOrContextHost, ...args],
+            requestScopedHandler,
+          );
+        }
+        return returnValue;
       } catch (err) {
         let exceptionFilter = this.exceptionFiltersCache.get(
           instance[methodKey],
@@ -231,7 +296,10 @@ export class ListenersController {
     return requestScopedHandler;
   }
 
-  private getContextId<T extends RequestContext = any>(request: T): ContextId {
+  private getContextId<T extends RequestContext = any>(
+    request: T,
+    isTreeDurable: boolean,
+  ): ContextId {
     const contextId = ContextIdFactory.getByRequest(request);
     if (!request[REQUEST_CONTEXT_ID as any]) {
       Object.defineProperty(request, REQUEST_CONTEXT_ID, {
@@ -240,22 +308,32 @@ export class ListenersController {
         writable: false,
         configurable: false,
       });
-      this.container.registerRequestProvider(
-        contextId.getParent ? contextId.payload : request,
-        contextId,
-      );
+
+      const requestProviderValue = isTreeDurable ? contextId.payload : request;
+      this.container.registerRequestProvider(requestProviderValue, contextId);
     }
     return contextId;
   }
 
-  private connectIfStream(source: Observable<unknown>) {
-    if (!source) {
-      return;
+  public transformToObservable<T>(
+    resultOrDeferred: Observable<T> | Promise<T>,
+  ): Observable<T>;
+  public transformToObservable<T>(
+    resultOrDeferred: T,
+  ): never extends Observable<ObservedValueOf<T>>
+    ? Observable<T>
+    : Observable<ObservedValueOf<T>>;
+  public transformToObservable(resultOrDeferred: any) {
+    if (resultOrDeferred instanceof Promise) {
+      return fromPromise(resultOrDeferred).pipe(
+        mergeMap(val => (isObservable(val) ? val : of(val))),
+      );
     }
-    const connectableSource = connectable(source, {
-      connector: () => new Subject(),
-      resetOnDisconnect: false,
-    });
-    connectableSource.connect();
+
+    if (isObservable(resultOrDeferred)) {
+      return resultOrDeferred;
+    }
+
+    return of(resultOrDeferred);
   }
 }

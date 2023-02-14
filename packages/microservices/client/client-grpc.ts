@@ -14,6 +14,9 @@ import { ChannelOptions } from '../external/grpc-options.interface';
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
 
+/**
+ * @publicApi
+ */
 export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly clients = new Map<string, any>();

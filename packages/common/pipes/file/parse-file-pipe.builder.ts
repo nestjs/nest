@@ -10,6 +10,9 @@ import {
 import { ParseFileOptions } from './parse-file-options.interface';
 import { ParseFilePipe } from './parse-file.pipe';
 
+/**
+ * @publicApi
+ */
 export class ParseFilePipeBuilder {
   private validators: FileValidator[] = [];
 

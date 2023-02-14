@@ -1,6 +1,6 @@
 import { Injectable, Optional } from '../decorators/core';
 import { clc, yellow } from '../utils/cli-colors.util';
-import { isPlainObject, isString } from '../utils/shared.utils';
+import { isPlainObject, isString, isUndefined } from '../utils/shared.utils';
 import { LoggerService, LogLevel } from './logger.service';
 import { isLogLevelEnabled } from './utils';
 
@@ -22,6 +22,15 @@ const DEFAULT_LOG_LEVELS: LogLevel[] = [
   'debug',
   'verbose',
 ];
+
+const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric',
+  second: 'numeric',
+  day: '2-digit',
+  month: '2-digit',
+});
 
 @Injectable()
 export class ConsoleLogger implements LoggerService {
@@ -162,18 +171,7 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected getTimestamp(): string {
-    const localeStringOptions = {
-      year: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-      day: '2-digit',
-      month: '2-digit',
-    };
-    return new Date(Date.now()).toLocaleString(
-      undefined,
-      localeStringOptions as Intl.DateTimeFormatOptions,
-    );
+    return dateTimeFormatter.format(Date.now());
   }
 
   protected printMessages(
@@ -281,7 +279,8 @@ export class ConsoleLogger implements LoggerService {
     }
     const lastElement = messages[messages.length - 1];
     const isStack = isString(lastElement);
-    if (!isStack) {
+    // https://github.com/nestjs/nest/issues/11074#issuecomment-1421680060
+    if (!isStack && !isUndefined(lastElement)) {
       return { messages, context };
     }
     return {

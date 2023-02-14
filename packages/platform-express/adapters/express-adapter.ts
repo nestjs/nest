@@ -1,11 +1,12 @@
 import type { Server } from 'net';
 import {
+  HttpStatus,
   InternalServerErrorException,
   Logger,
   RequestMethod,
   StreamableFile,
-  VersioningType,
   VersioningOptions,
+  VersioningType,
   VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { VersionValue } from '@nestjs/common/interfaces';
@@ -29,11 +30,13 @@ import {
   OptionsUrlencoded,
   urlencoded as bodyParserUrlencoded,
 } from 'body-parser';
+import * as bodyparser from 'body-parser';
 import * as cors from 'cors';
 import * as express from 'express';
 import * as http from 'http';
 import * as https from 'https';
 import { Duplex, pipeline } from 'stream';
+import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util';
 
@@ -46,6 +49,9 @@ type VersionedRoute = <
   next: () => void,
 ) => any;
 
+/**
+ * @publicApi
+ */
 export class ExpressAdapter extends AbstractHttpAdapter {
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(ExpressAdapter.name);
@@ -93,6 +99,16 @@ export class ExpressAdapter extends AbstractHttpAdapter {
           }
         },
       );
+    }
+    if (
+      response.getHeader('Content-Type') !== undefined &&
+      response.getHeader('Content-Type') !== 'application/json' &&
+      body?.statusCode >= HttpStatus.BAD_REQUEST
+    ) {
+      this.logger.warn(
+        "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",
+      );
+      response.setHeader('Content-Type', 'application/json');
     }
     return isObject(body) ? response.json(body) : response.send(String(body));
   }
@@ -233,6 +249,19 @@ export class ExpressAdapter extends AbstractHttpAdapter {
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))
       .forEach(parserKey => this.use(parserMiddleware[parserKey]));
+  }
+
+  public useBodyParser<Options extends bodyparser.Options = bodyparser.Options>(
+    type: keyof bodyparser.BodyParser,
+    rawBody: boolean,
+    options?: NestExpressBodyParserOptions<Options>,
+  ): this {
+    const parserOptions = getBodyParserOptions(rawBody, options || {});
+    const parser = bodyparser[type](parserOptions);
+
+    this.use(parser);
+
+    return this;
   }
 
   public setLocal(key: string, value: any) {

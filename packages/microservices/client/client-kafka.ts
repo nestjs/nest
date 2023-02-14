@@ -40,15 +40,18 @@ import { ClientProxy } from './client-proxy';
 
 let kafkaPackage: any = {};
 
+/**
+ * @publicApi
+ */
 export class ClientKafka extends ClientProxy {
   protected logger = new Logger(ClientKafka.name);
-  protected client: Kafka = null;
-  protected consumer: Consumer = null;
-  protected producer: Producer = null;
-  protected parser: KafkaParser = null;
+  protected client: Kafka | null = null;
+  protected consumer: Consumer | null = null;
+  protected producer: Producer | null = null;
+  protected parser: KafkaParser | null = null;
+  protected initialized: Promise<void> | null = null;
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number } = {};
-
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
@@ -94,46 +97,56 @@ export class ClientKafka extends ClientProxy {
     this.consumer && (await this.consumer.disconnect());
     this.producer = null;
     this.consumer = null;
+    this.initialized = null;
     this.client = null;
   }
 
   public async connect(): Promise<Producer> {
-    if (this.client) {
-      return this.producer;
+    if (this.initialized) {
+      return this.initialized.then(() => this.producer);
     }
-    this.client = this.createClient();
+    this.initialized = new Promise(async (resolve, reject) => {
+      try {
+        this.client = this.createClient();
 
-    if (!this.producerOnlyMode) {
-      const partitionAssigners = [
-        (
-          config: ConstructorParameters<typeof KafkaReplyPartitionAssigner>[1],
-        ) => new KafkaReplyPartitionAssigner(this, config),
-      ] as any[];
+        if (!this.producerOnlyMode) {
+          const partitionAssigners = [
+            (
+              config: ConstructorParameters<
+                typeof KafkaReplyPartitionAssigner
+              >[1],
+            ) => new KafkaReplyPartitionAssigner(this, config),
+          ];
 
-      const consumerOptions = Object.assign(
-        {
-          partitionAssigners,
-        },
-        this.options.consumer || {},
-        {
-          groupId: this.groupId,
-        },
-      );
+          const consumerOptions = Object.assign(
+            {
+              partitionAssigners,
+            },
+            this.options.consumer || {},
+            {
+              groupId: this.groupId,
+            },
+          );
 
-      this.consumer = this.client.consumer(consumerOptions);
-      // set member assignments on join and rebalance
-      this.consumer.on(
-        this.consumer.events.GROUP_JOIN,
-        this.setConsumerAssignments.bind(this),
-      );
-      await this.consumer.connect();
-      await this.bindTopics();
-    }
+          this.consumer = this.client.consumer(consumerOptions);
+          // set member assignments on join and rebalance
+          this.consumer.on(
+            this.consumer.events.GROUP_JOIN,
+            this.setConsumerAssignments.bind(this),
+          );
+          await this.consumer.connect();
+          await this.bindTopics();
+        }
 
-    this.producer = this.client.producer(this.options.producer || {});
-    await this.producer.connect();
+        this.producer = this.client.producer(this.options.producer || {});
+        await this.producer.connect();
 
-    return this.producer;
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    });
+    return this.initialized.then(() => this.producer);
   }
 
   public async bindTopics(): Promise<void> {

@@ -2,6 +2,8 @@ import { ConnectionOptions } from 'tls';
 
 /**
  * @see https://github.dev/luin/ioredis/blob/df04dd8d87a44d3b64b385c86581915248554508/lib/redis/RedisOptions.ts#L184
+ *
+ * @publicApi
  */
 export interface IORedisOptions {
   Connector?: any;

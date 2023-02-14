@@ -19,12 +19,10 @@ export class GatewayMetadataExplorer {
 
   public explore(instance: NestGateway): MessageMappingProperties[] {
     const instancePrototype = Object.getPrototypeOf(instance);
-    return this.metadataScanner.scanFromPrototype<
-      NestGateway,
-      MessageMappingProperties
-    >(instance, instancePrototype, method =>
-      this.exploreMethodMetadata(instancePrototype, method),
-    );
+    return this.metadataScanner
+      .getAllMethodNames(instancePrototype)
+      .map(method => this.exploreMethodMetadata(instancePrototype, method))
+      .filter(metadata => metadata);
   }
 
   public exploreMethodMetadata(

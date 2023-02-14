@@ -1,6 +1,7 @@
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Inject, Injectable, Optional } from '../../decorators';
+import { StreamableFile } from '../../file-stream';
 import {
   CallHandler,
   ExecutionContext,
@@ -22,6 +23,11 @@ export interface HttpAdapterHost<T extends HttpServer = any> {
   httpAdapter: T;
 }
 
+/**
+ * @see [Caching](https://docs.nestjs.com/techniques/caching)
+ *
+ * @publicApi
+ */
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
   @Optional()
@@ -55,13 +61,17 @@ export class CacheInterceptor implements NestInterceptor {
         : ttlValueOrFactory;
       return next.handle().pipe(
         tap(async response => {
+          if (response instanceof StreamableFile) {
+            return;
+          }
+
           const args = isNil(ttl) ? [key, response] : [key, response, { ttl }];
 
           try {
             await this.cacheManager.set(...args);
           } catch (err) {
             Logger.error(
-              `An error has occured when inserting "key: ${key}", "value: ${response}"`,
+              `An error has occurred when inserting "key: ${key}", "value: ${response}"`,
               'CacheInterceptor',
             );
           }

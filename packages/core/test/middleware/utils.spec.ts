@@ -1,4 +1,5 @@
 import { RequestMethod, Type } from '@nestjs/common';
+import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import {
@@ -10,6 +11,7 @@ import {
   mapToExcludeRoute,
 } from '../../middleware/utils';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import * as pathToRegexp from 'path-to-regexp';
 
 describe('middleware utils', () => {
   const noopAdapter = new NoopHttpAdapter({});
@@ -17,6 +19,27 @@ describe('middleware utils', () => {
   class Test {}
   function fnMiddleware(req, res, next) {}
 
+  describe('mapToExcludeRoute', () => {
+    it('should return exclude route metadata', () => {
+      const stringRoute = 'foo';
+      const routeInfo = {
+        path: 'bar',
+        method: RequestMethod.GET,
+      };
+      expect(mapToExcludeRoute([stringRoute, routeInfo])).to.eql([
+        {
+          path: stringRoute,
+          requestMethod: RequestMethod.ALL,
+          pathRegex: pathToRegexp(addLeadingSlash(stringRoute)),
+        },
+        {
+          path: routeInfo.path,
+          requestMethod: routeInfo.method,
+          pathRegex: pathToRegexp(addLeadingSlash(routeInfo.path)),
+        },
+      ]);
+    });
+  });
   describe('filterMiddleware', () => {
     let middleware: any[];
     beforeEach(() => {

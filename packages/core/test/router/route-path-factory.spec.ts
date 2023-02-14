@@ -247,6 +247,7 @@ describe('RoutePathFactory', () => {
           sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
             exclude: [
               {
+                path: '/random',
                 pathRegex: pathToRegexp('/random'),
                 requestMethod: RequestMethod.ALL,
               },
@@ -265,6 +266,7 @@ describe('RoutePathFactory', () => {
           sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
             exclude: [
               {
+                path: '/cats',
                 pathRegex: pathToRegexp('/cats'),
                 requestMethod: RequestMethod.ALL,
               },
@@ -283,6 +285,7 @@ describe('RoutePathFactory', () => {
             sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
               exclude: [
                 {
+                  path: '/cats',
                   pathRegex: pathToRegexp('/cats'),
                   requestMethod: RequestMethod.GET,
                 },

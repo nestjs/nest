@@ -1,5 +1,8 @@
 import { Observable } from 'rxjs';
 
+/**
+ * @publicApi
+ */
 export interface MessageHandler<TInput = any, TContext = any, TResult = any> {
   (data: TInput, ctx?: TContext):
     | Promise<Observable<TResult>>

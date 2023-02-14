@@ -6,7 +6,9 @@ import {
   ModulesContainer,
   NestContainer,
 } from '../../../injector';
+import { Injector } from '../../../injector/injector';
 import { InstanceLoader } from '../../../injector/instance-loader';
+import { GraphInspector } from '../../../inspector/graph-inspector';
 import { MetadataScanner } from '../../../metadata-scanner';
 import { DependenciesScanner } from '../../../scanner';
 
@@ -18,15 +20,26 @@ describe('LazyModuleLoader', () => {
 
   class NoopLogger {
     log() {}
+    error() {}
+    warn() {}
   }
 
   beforeEach(() => {
     const nestContainer = new NestContainer();
+    const graphInspector = new GraphInspector(nestContainer);
     dependenciesScanner = new DependenciesScanner(
       nestContainer,
       new MetadataScanner(),
+      graphInspector,
     );
-    instanceLoader = new InstanceLoader(nestContainer, new NoopLogger() as any);
+
+    const injector = new Injector();
+    instanceLoader = new InstanceLoader(
+      nestContainer,
+      injector,
+      graphInspector,
+      new NoopLogger(),
+    );
     modulesContainer = nestContainer.getModules();
     lazyModuleLoader = new LazyModuleLoader(
       dependenciesScanner,

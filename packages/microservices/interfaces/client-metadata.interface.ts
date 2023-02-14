@@ -24,11 +24,17 @@ export type ClientOptions =
   | RmqOptions
   | MemphisOptions;
 
+/**
+ * @publicApi
+ */
 export interface CustomClientOptions {
   customClass: Type<ClientProxy>;
   options?: Record<string, any>;
 }
 
+/**
+ * @publicApi
+ */
 export interface TcpClientOptions {
   transport: Transport.TCP;
   options?: {

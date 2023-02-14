@@ -79,7 +79,7 @@ export class ConfigurableModuleBuilder<
 
   /**
    * Registers the "extras" object (a set of extra options that can be used to modify the dynamic module definition).
-   * Values you specify within the "extras" object will be used as default values (that can be overriden by module consumers).
+   * Values you specify within the "extras" object will be used as default values (that can be overridden by module consumers).
    *
    * This method also applies the so-called "module definition transform function" that takes the auto-generated
    * dynamic module object ("DynamicModule") and the actual consumer "extras" object as input parameters.
@@ -205,7 +205,7 @@ export class ConfigurableModuleBuilder<
       static [self.staticMethodKey](
         options: ModuleOptions & ExtraModuleDefinitionOptions,
       ): DynamicModule {
-        const providers = [
+        const providers: Array<Provider> = [
           {
             provide: self.options.optionsInjectionToken,
             useValue: this.omitExtras(options, self.extras),

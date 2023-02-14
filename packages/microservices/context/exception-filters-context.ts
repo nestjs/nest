@@ -10,6 +10,9 @@ import { Observable } from 'rxjs';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
 import { iterate } from 'iterare';
 
+/**
+ * @publicApi
+ */
 export class ExceptionFiltersContext extends BaseExceptionFilterContext {
   constructor(
     container: NestContainer,

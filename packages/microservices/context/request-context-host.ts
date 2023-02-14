@@ -1,6 +1,9 @@
 import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { RequestContext } from '../interfaces';
 
+/**
+ * @publicApi
+ */
 export class RequestContextHost<
   TData = any,
   TContext extends BaseRpcContext = any,

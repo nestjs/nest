@@ -5,6 +5,7 @@ import { assignToObject } from './assign-to-object.util';
 import { REPL_INITIALIZED_MESSAGE } from './constants';
 import { ReplContext } from './repl-context';
 import { ReplLogger } from './repl-logger';
+import { defineDefaultCommandsOnRepl } from './repl-native-commands';
 
 export async function repl(module: Type | DynamicModule) {
   const app = await NestFactory.createApplicationContext(module, {
@@ -22,6 +23,8 @@ export async function repl(module: Type | DynamicModule) {
     ignoreUndefined: true,
   });
   assignToObject(replServer.context, replContext.globalScope);
+
+  defineDefaultCommandsOnRepl(replServer);
 
   return replServer;
 }

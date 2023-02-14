@@ -1,4 +1,5 @@
 import { Logger, LoggerService, Provider, Scope, Type } from '@nestjs/common';
+import { EnhancerSubtype } from '@nestjs/common/constants';
 import { FactoryProvider } from '@nestjs/common/interfaces';
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
@@ -8,6 +9,7 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
+import { UuidFactory } from '../inspector/uuid-factory';
 import { STATIC_CONTEXT } from './constants';
 import {
   isClassProvider,
@@ -60,12 +62,14 @@ export class InstanceWrapper<T = any> {
   public readonly async?: boolean;
   public readonly host?: Module;
   public readonly isAlias: boolean = false;
+  public readonly subtype?: EnhancerSubtype;
 
   public scope?: Scope = Scope.DEFAULT;
   public metatype: Type<T> | Function;
   public inject?: FactoryProvider['inject'];
   public forwardRef?: boolean;
   public durable?: boolean;
+  public initTime?: number;
 
   private static logger: LoggerService = new Logger(InstanceWrapper.name);
 
@@ -81,8 +85,9 @@ export class InstanceWrapper<T = any> {
   constructor(
     metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>> = {},
   ) {
-    this[INSTANCE_ID_SYMBOL] = randomStringGenerator();
     this.initialize(metadata);
+    this[INSTANCE_ID_SYMBOL] =
+      metadata[INSTANCE_ID_SYMBOL] ?? this.generateUuid();
   }
 
   get id(): string {
@@ -199,23 +204,28 @@ export class InstanceWrapper<T = any> {
     if (!isUndefined(this.isTreeDurable)) {
       return this.isTreeDurable;
     }
-    if (this.durable === true) {
-      this.isTreeDurable = true;
-      this.printIntrospectedAsDurable();
+    if (this.scope === Scope.REQUEST) {
+      this.isTreeDurable = this.durable === undefined ? false : this.durable;
+      if (this.isTreeDurable) {
+        this.printIntrospectedAsDurable();
+      }
       return this.isTreeDurable;
     }
     const isStatic = this.isDependencyTreeStatic();
     if (isStatic) {
       return false;
     }
+
     const isTreeNonDurable = this.introspectDepsAttribute(
       (collection, registry) =>
-        collection.every(
-          (item: InstanceWrapper) => !item.isDependencyTreeDurable(registry),
+        collection.some(
+          (item: InstanceWrapper) =>
+            !item.isDependencyTreeStatic() &&
+            !item.isDependencyTreeDurable(registry),
         ),
       lookupRegistry,
     );
-    this.isTreeDurable = !isTreeNonDurable && this.durable !== false;
+    this.isTreeDurable = !isTreeNonDurable;
     if (this.isTreeDurable) {
       this.printIntrospectedAsDurable();
     }
@@ -230,26 +240,30 @@ export class InstanceWrapper<T = any> {
     lookupRegistry: string[] = [],
   ): boolean {
     if (lookupRegistry.includes(this[INSTANCE_ID_SYMBOL])) {
-      return true;
+      return false;
     }
     lookupRegistry = lookupRegistry.concat(this[INSTANCE_ID_SYMBOL]);
 
     const { dependencies, properties, enhancers } =
       this[INSTANCE_METADATA_SYMBOL];
 
-    let introspectionResult =
-      (dependencies && callback(dependencies, lookupRegistry)) || !dependencies;
+    let introspectionResult = dependencies
+      ? callback(dependencies, lookupRegistry)
+      : false;
 
-    if (!introspectionResult || !(properties || enhancers)) {
+    if (introspectionResult || !(properties || enhancers)) {
       return introspectionResult;
     }
-    const propertiesHosts = (properties || []).map(item => item.wrapper);
-    introspectionResult =
-      introspectionResult && callback(propertiesHosts, lookupRegistry);
-    if (!introspectionResult || !enhancers) {
+    introspectionResult = properties
+      ? callback(
+          properties.map(item => item.wrapper),
+          lookupRegistry,
+        )
+      : false;
+    if (introspectionResult || !enhancers) {
       return introspectionResult;
     }
-    return callback(enhancers, lookupRegistry);
+    return enhancers ? callback(enhancers, lookupRegistry) : false;
   }
 
   public isDependencyTreeStatic(lookupRegistry: string[] = []): boolean {
@@ -261,10 +275,10 @@ export class InstanceWrapper<T = any> {
       this.printIntrospectedAsRequestScoped();
       return this.isTreeStatic;
     }
-    this.isTreeStatic = this.introspectDepsAttribute(
+    this.isTreeStatic = !this.introspectDepsAttribute(
       (collection, registry) =>
-        collection.every((item: InstanceWrapper) =>
-          item.isDependencyTreeStatic(registry),
+        collection.some(
+          (item: InstanceWrapper) => !item.isDependencyTreeStatic(registry),
         ),
       lookupRegistry,
     );
@@ -451,5 +465,12 @@ export class InstanceWrapper<T = any> {
 
   private isDebugMode(): boolean {
     return !!process.env.NEST_DEBUG;
+  }
+
+  private generateUuid(): string {
+    let key = this.name?.toString() ?? this.token?.toString();
+    key += this.host?.name ?? '';
+
+    return key ? UuidFactory.get(key) : randomStringGenerator();
   }
 }

@@ -7,13 +7,11 @@ import {
   NestHybridApplicationOptions,
   NestInterceptor,
   PipeTransform,
-  RequestMethod,
   VersioningOptions,
   VersioningType,
   WebSocketAdapter,
 } from '@nestjs/common';
 import {
-  RouteInfo,
   GlobalPrefixOptions,
   NestApplicationOptions,
 } from '@nestjs/common/interfaces';
@@ -31,18 +29,18 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { platform } from 'os';
-import * as pathToRegexp from 'path-to-regexp';
 import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { optionalRequire } from './helpers/optional-require';
 import { NestContainer } from './injector/container';
+import { Injector } from './injector/injector';
+import { GraphInspector } from './inspector/graph-inspector';
 import { MiddlewareContainer } from './middleware/container';
 import { MiddlewareModule } from './middleware/middleware-module';
+import { mapToExcludeRoute } from './middleware/utils';
 import { NestApplicationContext } from './nest-application-context';
-import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
 import { Resolver } from './router/interfaces/resolver.interface';
-import { RoutePathFactory } from './router/route-path-factory';
 import { RoutesResolver } from './router/routes-resolver';
 
 const { SocketModule } = optionalRequire(
@@ -58,10 +56,10 @@ const { MicroservicesModule } = optionalRequire(
  * @publicApi
  */
 export class NestApplication
-  extends NestApplicationContext
+  extends NestApplicationContext<NestApplicationOptions>
   implements INestApplication
 {
-  private readonly logger = new Logger(NestApplication.name, {
+  protected readonly logger = new Logger(NestApplication.name, {
     timestamp: true,
   });
   private readonly middlewareModule: MiddlewareModule;
@@ -80,18 +78,20 @@ export class NestApplication
     container: NestContainer,
     private readonly httpAdapter: HttpServer,
     private readonly config: ApplicationConfig,
-    private readonly appOptions: NestApplicationOptions = {},
+    private readonly graphInspector: GraphInspector,
+    appOptions: NestApplicationOptions = {},
   ) {
-    super(container);
+    super(container, appOptions);
 
     this.selectContextModule();
     this.registerHttpServer();
-    this.middlewareModule = new MiddlewareModule(new RoutePathFactory(config));
-
+    this.injector = new Injector({ preview: this.appOptions.preview });
+    this.middlewareModule = new MiddlewareModule();
     this.routesResolver = new RoutesResolver(
       this.container,
       this.config,
       this.injector,
+      this.graphInspector,
     );
   }
 
@@ -143,15 +143,23 @@ export class NestApplication
     this.registerWsModule();
 
     if (this.microservicesModule) {
-      this.microservicesModule.register(this.container, this.config);
+      this.microservicesModule.register(
+        this.container,
+        this.graphInspector,
+        this.config,
+        this.appOptions,
+      );
       this.microservicesModule.setupClients(this.container);
     }
+
     await this.middlewareModule.register(
       this.middlewareContainer,
       this.container,
       this.config,
       this.injector,
       this.httpAdapter,
+      this.graphInspector,
+      this.appOptions,
     );
   }
 
@@ -159,7 +167,13 @@ export class NestApplication
     if (!this.socketModule) {
       return;
     }
-    this.socketModule.register(this.container, this.config, this.httpServer);
+    this.socketModule.register(
+      this.container,
+      this.config,
+      this.graphInspector,
+      this.appOptions,
+      this.httpServer,
+    );
   }
 
   public async init(): Promise<this> {
@@ -217,6 +231,7 @@ export class NestApplication
     const instance = new NestMicroservice(
       this.container,
       microserviceOptions,
+      this.graphInspector,
       applicationConfig,
     );
     instance.registerListeners();
@@ -236,12 +251,27 @@ export class NestApplication
   }
 
   public async startAllMicroservices(): Promise<this> {
+    this.assertNotInPreviewMode('startAllMicroservices');
     await Promise.all(this.microservices.map(msvc => msvc.listen()));
     return this;
   }
 
   public use(...args: [any, any?]): this {
     this.httpAdapter.use(...args);
+    return this;
+  }
+
+  public useBodyParser(...args: [any, any?]): this {
+    if (!('useBodyParser' in this.httpAdapter)) {
+      this.logger.warn('Your HTTP Adapter does not support `.useBodyParser`.');
+      return this;
+    }
+
+    const [parserType, ...otherArgs] = args;
+    const rawBody = !!this.appOptions.rawBody;
+
+    this.httpAdapter.useBodyParser(...[parserType, rawBody, ...otherArgs]);
+
     return this;
   }
 
@@ -259,6 +289,7 @@ export class NestApplication
   public async listen(port: number | string): Promise<any>;
   public async listen(port: number | string, hostname: string): Promise<any>;
   public async listen(port: number | string, ...args: any[]): Promise<any> {
+    this.assertNotInPreviewMode('listen');
     !this.isInitialized && (await this.init());
 
     return new Promise((resolve, reject) => {
@@ -336,20 +367,9 @@ export class NestApplication
   public setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this {
     this.config.setGlobalPrefix(prefix);
     if (options) {
-      const exclude = options?.exclude.map(
-        (route: string | RouteInfo): ExcludeRouteMetadata => {
-          if (isString(route)) {
-            return {
-              requestMethod: RequestMethod.ALL,
-              pathRegex: pathToRegexp(addLeadingSlash(route)),
-            };
-          }
-          return {
-            requestMethod: route.method,
-            pathRegex: pathToRegexp(addLeadingSlash(route.path)),
-          };
-        },
-      );
+      const exclude = options?.exclude
+        ? mapToExcludeRoute(options.exclude)
+        : [];
       this.config.setGlobalPrefixOptions({
         ...options,
         exclude,
@@ -365,21 +385,45 @@ export class NestApplication
 
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
     this.config.useGlobalFilters(...filters);
+    filters.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'filter',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
     this.config.useGlobalPipes(...pipes);
+    pipes.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'pipe',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
     this.config.useGlobalInterceptors(...interceptors);
+    interceptors.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'interceptor',
+        ref: item,
+      }),
+    );
     return this;
   }
 
   public useGlobalGuards(...guards: CanActivate[]): this {
     this.config.useGlobalGuards(...guards);
+    guards.forEach(item =>
+      this.graphInspector.insertOrphanedEnhancer({
+        subtype: 'guard',
+        ref: item,
+      }),
+    );
     return this;
   }
 

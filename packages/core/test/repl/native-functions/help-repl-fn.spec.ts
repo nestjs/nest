@@ -55,7 +55,8 @@ describe('HelpReplFn', () => {
         .equal(`You can call .help on any function listed below (e.g.: help.help):
 
 $ - Retrieves an instance of either injectable or controller, otherwise, throws exception.
-debug - Print all registered modules as a list together with their controllers and providers. If the argument is passed in, for example, "debug(MyModule)" then it will only print components of this specific module.
+debug - Print all registered modules as a list together with their controllers and providers.
+If the argument is passed in, for example, "debug(MyModule)" then it will only print components of this specific module.
 get - Retrieves an instance of either injectable or controller, otherwise, throws exception.
 help - Display all available REPL native functions.
 methods - Display all public methods available on a given provider or controller.

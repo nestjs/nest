@@ -4,7 +4,7 @@ A simple example of GraphQL Federation using Schema First approach.
 
 ## Execution
 
-Make sure to start the two sub-graph applications first, then the gatway. Otherwise the gateway won't be able to fetch schemas from the sub-graphs.
+Make sure to start the two sub-graph applications first, then the gateway. Otherwise the gateway won't be able to fetch schemas from the sub-graphs.
 
 ```sh
 cd users-application && npm run start

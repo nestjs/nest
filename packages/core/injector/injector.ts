@@ -22,6 +22,7 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
+import { performance } from 'perf_hooks';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
@@ -77,6 +78,8 @@ export interface InjectorDependencyContext {
 export class Injector {
   private logger: LoggerService = new Logger('InjectorLogger');
 
+  constructor(private readonly options?: { preview: boolean }) {}
+
   public loadPrototype<T>(
     { token }: InstanceWrapper<T>,
     collection: Map<InstanceToken, InstanceWrapper<T>>,
@@ -127,6 +130,7 @@ export class Injector {
       return done();
     }
     try {
+      const t0 = this.getNowTimestamp();
       const callback = async (instances: unknown[]) => {
         const properties = await this.resolveProperties(
           wrapper,
@@ -144,6 +148,7 @@ export class Injector {
           inquirer,
         );
         this.applyProperties(instance, properties);
+        wrapper.initTime = this.getNowTimestamp() - t0;
         done();
       };
       await this.resolveConstructorParams<T>(
@@ -351,7 +356,9 @@ export class Injector {
   }
 
   public reflectConstructorParams<T>(type: Type<T>): any[] {
-    const paramtypes = Reflect.getMetadata(PARAMTYPES_METADATA, type) || [];
+    const paramtypes = [
+      ...(Reflect.getMetadata(PARAMTYPES_METADATA, type) || []),
+    ];
     const selfParams = this.reflectSelfParams<T>(type);
 
     selfParams.forEach(({ index, param }) => (paramtypes[index] = param));
@@ -713,6 +720,11 @@ export class Injector {
       wrapper.isLazyTransient(contextId, inquirer) ||
       wrapper.isExplicitlyRequested(contextId, inquirer);
 
+    if (this.options?.preview && !wrapper.host?.initOnPreview) {
+      instanceHost.isResolved = true;
+      return instanceHost.instance;
+    }
+
     if (isNil(inject) && isInContext) {
       instanceHost.instance = wrapper.forwardRef
         ? Object.assign(
@@ -932,5 +944,9 @@ export class Injector {
           isTreeDurable: instanceWrapper.isDependencyTreeDurable(),
         })
       : contextId;
+  }
+
+  private getNowTimestamp() {
+    return performance.now();
   }
 }

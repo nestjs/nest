@@ -15,7 +15,6 @@ describe('ClientRMQ', function () {
     let createClientStub: sinon.SinonStub;
     let handleErrorsSpy: sinon.SinonSpy;
     let connect$Stub: sinon.SinonStub;
-    let mergeDisconnectEvent: sinon.SinonStub;
 
     beforeEach(async () => {
       client = new ClientRMQ({});
@@ -33,7 +32,7 @@ describe('ClientRMQ', function () {
           return this;
         },
       }));
-      mergeDisconnectEvent = sinon
+      sinon
         .stub(client, 'mergeDisconnectEvent')
         .callsFake((_, source) => source);
     });
@@ -173,7 +172,7 @@ describe('ClientRMQ', function () {
     const pattern = 'test';
     let msg: ReadPacket;
     let connectSpy: sinon.SinonSpy,
-      sendToQueueSpy: sinon.SinonSpy,
+      sendToQueueStub: sinon.SinonStub,
       eventSpy: sinon.SinonSpy;
 
     beforeEach(() => {
@@ -181,10 +180,10 @@ describe('ClientRMQ', function () {
       msg = { pattern, data: 'data' };
       connectSpy = sinon.spy(client, 'connect');
       eventSpy = sinon.spy();
-      sendToQueueSpy = sinon.spy();
+      sendToQueueStub = sinon.stub().callsFake(() => ({ catch: sinon.spy() }));
 
       client['channel'] = {
-        sendToQueue: sendToQueueSpy,
+        sendToQueue: sendToQueueStub,
       };
       client['responseEmitter'] = new EventEmitter();
       client['responseEmitter'].on(pattern, eventSpy);
@@ -196,15 +195,15 @@ describe('ClientRMQ', function () {
 
     it('should send message to a proper queue', () => {
       client['publish'](msg, () => {
-        expect(sendToQueueSpy.called).to.be.true;
-        expect(sendToQueueSpy.getCall(0).args[0]).to.be.eql(client['queue']);
+        expect(sendToQueueStub.called).to.be.true;
+        expect(sendToQueueStub.getCall(0).args[0]).to.be.eql(client['queue']);
       });
     });
 
     it('should send buffer from stringified message', () => {
       client['publish'](msg, () => {
-        expect(sendToQueueSpy.called).to.be.true;
-        expect(sendToQueueSpy.getCall(1).args[1]).to.be.eql(
+        expect(sendToQueueStub.called).to.be.true;
+        expect(sendToQueueStub.getCall(1).args[1]).to.be.eql(
           Buffer.from(JSON.stringify(msg)),
         );
       });
@@ -231,7 +230,7 @@ describe('ClientRMQ', function () {
     describe('headers', () => {
       it('should not generate headers if none are configured', () => {
         client['publish'](msg, () => {
-          expect(sendToQueueSpy.getCall(0).args[2].headers).to.be.undefined;
+          expect(sendToQueueStub.getCall(0).args[2].headers).to.be.undefined;
         });
       });
 
@@ -240,7 +239,7 @@ describe('ClientRMQ', function () {
         msg.data = new RmqRecord('data', { headers: requestHeaders });
 
         client['publish'](msg, () => {
-          expect(sendToQueueSpy.getCall(0).args[2].headers).to.eql(
+          expect(sendToQueueStub.getCall(0).args[2].headers).to.eql(
             requestHeaders,
           );
         });
@@ -254,7 +253,7 @@ describe('ClientRMQ', function () {
         msg.data = new RmqRecord('data', { headers: requestHeaders });
 
         client['publish'](msg, () => {
-          expect(sendToQueueSpy.getCall(0).args[2].headers).to.eql({
+          expect(sendToQueueStub.getCall(0).args[2].headers).to.eql({
             ...staticHeaders,
             ...requestHeaders,
           });
@@ -269,7 +268,7 @@ describe('ClientRMQ', function () {
         msg.data = new RmqRecord('data', { headers: requestHeaders });
 
         client['publish'](msg, () => {
-          expect(sendToQueueSpy.getCall(0).args[2].headers).to.eql(
+          expect(sendToQueueStub.getCall(0).args[2].headers).to.eql(
             requestHeaders,
           );
         });
