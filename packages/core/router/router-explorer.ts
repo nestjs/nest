@@ -292,7 +292,13 @@ export class RouterExplorer {
       for (const exp of hostRegExps) {
         const match = hostname.match(exp.regexp);
         if (match) {
-          exp.keys.forEach((key, i) => (req.hosts[key.name] = match[i + 1]));
+          if (exp.keys.length > 0) {
+            exp.keys.forEach((key, i) => (req.hosts[key.name] = match[i + 1]));
+          } else if (exp.regexp && match.groups) {
+            for (const groupName in match.groups) {
+              req.hosts[groupName] = match.groups[groupName];
+            }
+          }
           return handler(req, res, next);
         }
       }
