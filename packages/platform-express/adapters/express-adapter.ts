@@ -52,7 +52,9 @@ type VersionedRoute = <
 /**
  * @publicApi
  */
-export class ExpressAdapter extends AbstractHttpAdapter {
+export class ExpressAdapter extends AbstractHttpAdapter<
+  http.Server | https.Server
+> {
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(ExpressAdapter.name);
   private readonly openConnections = new Set<Duplex>();

@@ -21,7 +21,8 @@ import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
  *
  * @publicApi
  */
-export interface INestApplication extends INestApplicationContext {
+export interface INestApplication<TServer = any>
+  extends INestApplicationContext {
   /**
    * A wrapper function around HTTP adapter method: `adapter.use()`.
    * Example `app.use(cors())`
@@ -110,9 +111,9 @@ export interface INestApplication extends INestApplicationContext {
   /**
    * Returns the underlying native HTTP server.
    *
-   * @returns {*}
+   * @returns {TServer}
    */
-  getHttpServer(): any;
+  getHttpServer(): TServer;
 
   /**
    * Returns the underlying HTTP adapter.
