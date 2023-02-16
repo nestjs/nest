@@ -16,7 +16,7 @@ export function isRouteExcluded(
       isRequestMethodAll(route.requestMethod) ||
       route.requestMethod === requestMethod
     ) {
-      return route.pathRegex.exec(addLeadingSlash(path));
+      return route.pathRegex.test(addLeadingSlash(path));
     }
     return false;
   });
