@@ -256,6 +256,9 @@ export interface MemphisOptions {
     maxReconnect?: number;
     reconnectIntervalMs?: number;
     timeoutMs?: number;
+    keyFile?: string;
+    certFile?: string;
+    caFile?: string;
     serializer?: Serializer;
     deserializer?: Deserializer;
   };
