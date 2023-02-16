@@ -1,20 +1,31 @@
-import { DynamicModule, Provider } from '@nestjs/common';
+import {
+  DynamicModule,
+  OptionalFactoryDependency,
+  Provider,
+} from '@nestjs/common';
 import {
   EnhancerSubtype,
   GLOBAL_MODULE_METADATA,
 } from '@nestjs/common/constants';
-import { Injectable, Type } from '@nestjs/common/interfaces';
+import {
+  FactoryProvider,
+  Injectable,
+  InjectionToken,
+  Type,
+} from '@nestjs/common/interfaces';
 import { ApplicationConfig } from '../application-config';
 import {
   CircularDependencyException,
   UndefinedForwardRefException,
   UnknownModuleException,
 } from '../errors/exceptions';
+import { CircularDependencyFactoryProviderException } from '../errors/exceptions/circular-dependency-factory-provider.exception';
 import { InitializeOnPreviewAllowlist } from '../inspector/initialize-on-preview.allowlist';
 import { SerializedGraph } from '../inspector/serialized-graph';
 import { REQUEST } from '../router/request/request-constants';
 import { ModuleCompiler } from './compiler';
-import { ContextId } from './instance-wrapper';
+import { isFactoryProvider } from './helpers/provider-classifier';
+import { ContextId, InstanceWrapper } from './instance-wrapper';
 import { InternalCoreModule } from './internal-core-module/internal-core-module';
 import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
@@ -172,7 +183,70 @@ export class NestContainer {
     if (!moduleRef) {
       throw new UnknownModuleException();
     }
+    // Detect circular dependencies between existing providers and the new one
+    if (isFactoryProvider(provider)) {
+      const [isCircular, provider1, provider2] = this.detectCircularDependency(
+        provider,
+        moduleRef.providers,
+      );
+      if (isCircular === true) {
+        throw new CircularDependencyFactoryProviderException(
+          provider1,
+          provider2,
+        );
+      }
+    }
+
     return moduleRef.addProvider(provider, enhancerSubtype) as Function;
+  }
+
+  private detectCircularDependency(
+    provider: FactoryProvider,
+    addedProviders: Map<InjectionToken, InstanceWrapper<unknown>>,
+  ): [boolean, InjectionToken | null, InjectionToken | null] {
+    const { inject } = provider;
+    if (!inject) {
+      return [false, null, null];
+    }
+    const dependencies = [...inject];
+    let lastDependency: InjectionToken | null = null;
+    for (const dependency of dependencies) {
+      let injectionToken: InjectionToken;
+      if (this.isOptionalDependency(dependency)) {
+        if (!dependency.optional) {
+          continue;
+        }
+        injectionToken = dependency.token;
+      } else {
+        injectionToken = dependency as InjectionToken;
+      }
+
+      if (injectionToken === provider.provide) {
+        return [true, lastDependency, injectionToken];
+      }
+
+      // If the dependency is a provider, we need to check its dependencies
+      const dependencyWrapper = addedProviders.get(injectionToken);
+      if (!dependencyWrapper) {
+        continue;
+      }
+      // If  the dependency is a factory provider, we need to check its dependencies
+      dependencyWrapper.inject.forEach(dep => {
+        if (this.isOptionalDependency(dep)) {
+          dependencies.push(dep.token);
+        } else {
+          dependencies.push(dep);
+        }
+      });
+      lastDependency = injectionToken;
+    }
+    return [false, null, null];
+  }
+
+  private isOptionalDependency(
+    dependency: InjectionToken | OptionalFactoryDependency,
+  ): dependency is OptionalFactoryDependency {
+    return (dependency as OptionalFactoryDependency).optional !== undefined;
   }
 
   public addInjectable(
