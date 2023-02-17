@@ -137,6 +137,16 @@ describe('Module', () => {
     expect((addCustomValue as sinon.SinonSpy).called).to.be.true;
   });
 
+  it('should call "addCustomValue" when "useValue" property exists but its value is `undefined`', () => {
+    const addCustomValue = sinon.spy();
+    module.addCustomValue = addCustomValue;
+
+    const provider = { provide: 'test', useValue: undefined };
+
+    module.addCustomProvider(provider as any, new Map());
+    expect((addCustomValue as sinon.SinonSpy).called).to.be.true;
+  });
+
   it('should call "addCustomFactory" when "useFactory" property exists', () => {
     const addCustomFactory = sinon.spy();
     module.addCustomFactory = addCustomFactory;
