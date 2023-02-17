@@ -11,14 +11,15 @@ import {
  * @param x
  * @returns x is OptionalFactoryDependency
  */
-function isOptionalFactoryDependency(
+export function isOptionalFactoryDependency(
   x: InjectionToken | OptionalFactoryDependency,
 ): x is OptionalFactoryDependency {
   return !!((x as any)?.token && !(x as any)?.prototype);
 }
 
-const mapInjectToTokens = (t: InjectionToken | OptionalFactoryDependency) =>
-  isOptionalFactoryDependency(t) ? t.token : t;
+export const mapInjectToTokens = (
+  t: InjectionToken | OptionalFactoryDependency,
+) => (isOptionalFactoryDependency(t) ? t.token : t);
 
 /**
  *
