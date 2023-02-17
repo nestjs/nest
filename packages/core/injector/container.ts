@@ -231,7 +231,7 @@ export class NestContainer {
         continue;
       }
       // If  the dependency is a factory provider, we need to check its dependencies
-      dependencyWrapper.inject.forEach(dep => {
+      dependencyWrapper.inject?.forEach(dep => {
         if (this.isOptionalDependency(dep)) {
           dependencies.push(dep.token);
         } else {
