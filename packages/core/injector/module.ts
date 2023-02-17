@@ -22,6 +22,7 @@ import {
   isString,
   isSymbol,
   isUndefined,
+  isObject,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
@@ -344,7 +345,10 @@ export class Module {
   }
 
   public isCustomValue(provider: any): provider is ValueProvider {
-    return !isUndefined((provider as ValueProvider).useValue);
+    return (
+      isObject(provider) &&
+      Object.prototype.hasOwnProperty.call(provider, 'useValue')
+    );
   }
 
   public isCustomFactory(provider: any): provider is FactoryProvider {
