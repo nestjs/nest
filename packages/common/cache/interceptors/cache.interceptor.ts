@@ -1,3 +1,4 @@
+import { Store } from 'cache-manager';
 import { Observable, of } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Inject, Injectable, Optional } from '../../decorators';
@@ -9,7 +10,8 @@ import {
   NestInterceptor,
 } from '../../interfaces';
 import { Logger } from '../../services/logger.service';
-import { isFunction, isNil } from '../../utils/shared.utils';
+import { loadPackage } from '../../utils/load-package.util';
+import { isFunction, isNil, isNumber } from '../../utils/shared.utils';
 import {
   CACHE_KEY_METADATA,
   CACHE_MANAGER,
@@ -18,6 +20,13 @@ import {
 
 const HTTP_ADAPTER_HOST = 'HttpAdapterHost';
 const REFLECTOR = 'Reflector';
+
+// We need to check if the cache-manager package is v5 or greater
+// because the set method signature changed in v5
+const cacheManager = loadPackage('cache-manager', 'CacheModule', () =>
+  require('cache-manager'),
+);
+const cacheManagerIsv5OrGreater = 'memoryStore' in cacheManager;
 
 export interface HttpAdapterHost<T extends HttpServer = any> {
   httpAdapter: T;
@@ -65,7 +74,10 @@ export class CacheInterceptor implements NestInterceptor {
             return;
           }
 
-          const args = isNil(ttl) ? [key, response] : [key, response, { ttl }];
+          const args = [key, response];
+          if (!isNil(ttl)) {
+            args.push(cacheManagerIsv5OrGreater ? ttl : { ttl });
+          }
 
           try {
             await this.cacheManager.set(...args);
