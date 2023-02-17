@@ -94,7 +94,6 @@ export class NestContainer {
     moduleRef.token = token;
     moduleRef.initOnPreview = this.shouldInitOnPreview(type);
     this.modules.set(token, moduleRef);
-    console.log('set', token);
 
     const updatedScope = [].concat(scope, type);
     await this.addDynamicMetadata(token, dynamicMetadata, updatedScope);
