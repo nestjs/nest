@@ -1,7 +1,8 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Module } from '../../../common/decorators/modules/module.decorator';
-import { Global } from '../../../common/index';
+import { FactoryProvider, Global } from '../../../common/index';
+import { CircularDependencyFactoryProviderException } from '../../errors/exceptions/circular-dependency-factory-provider.exception';
 import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { NestContainer } from '../../injector/container';
@@ -214,6 +215,109 @@ describe('NestContainer', () => {
       const ref = {} as any;
       container.registerCoreModuleRef(ref);
       expect((container as any).internalCoreModule).to.be.eql(ref);
+    });
+  });
+
+  describe('addProvider', () => {
+    it('should detect a circular dependency between factory providers', async () => {
+      const provider1: FactoryProvider = {
+        provide: 'provider',
+        useFactory: () => ({}),
+        inject: ['provider2'],
+      };
+
+      const provider2: FactoryProvider = {
+        provide: 'provider2',
+        useFactory: () => ({}),
+        inject: ['provider'],
+      };
+
+      const moduleRef = await container.addModule(TestModule as any, []);
+      container.addProvider(provider1, moduleRef.token);
+
+      expect(() => container.addProvider(provider2, moduleRef.token)).to.throw(
+        CircularDependencyFactoryProviderException,
+      );
+    });
+
+    it('should detect a circular dependency between factory providers over multiple providers', async () => {
+      const provider1: FactoryProvider = {
+        provide: 'provider',
+        useFactory: () => ({}),
+        inject: ['provider2'],
+      };
+
+      const provider2: FactoryProvider = {
+        provide: 'provider2',
+        useFactory: () => ({}),
+        inject: ['provider3'],
+      };
+
+      const provider3: FactoryProvider = {
+        provide: 'provider2',
+        useFactory: () => ({}),
+        inject: ['provider'],
+      };
+
+      const moduleRef = await container.addModule(TestModule as any, []);
+
+      container.addProvider(provider1, moduleRef.token);
+      container.addProvider(provider2, moduleRef.token);
+
+      expect(() => container.addProvider(provider3, moduleRef.token)).to.throw(
+        CircularDependencyFactoryProviderException,
+      );
+    });
+
+    it('should not detect a circular dependency between factory providers, when one is optional', async () => {
+      const provider1: FactoryProvider = {
+        provide: 'provider',
+        useFactory: () => ({}),
+        inject: ['provider2'],
+      };
+
+      const provider2: FactoryProvider = {
+        provide: 'provider2',
+        useFactory: () => ({}),
+        inject: [
+          {
+            token: 'provider',
+            optional: true,
+          },
+        ],
+      };
+
+      const moduleRef = await container.addModule(TestModule as any, []);
+
+      container.addProvider(provider1, moduleRef.token);
+
+      expect(() =>
+        container.addProvider(provider2, moduleRef.token),
+      ).to.not.throw(CircularDependencyFactoryProviderException);
+    });
+
+    it('should not detect a circular dependency between factory providers, when no circular dependency exists', async () => {
+      const provider1: FactoryProvider = {
+        provide: 'provider',
+        useFactory: () => ({}),
+      };
+
+      const provider2: FactoryProvider = {
+        provide: 'provider2',
+        useFactory: () => ({}),
+        inject: [
+          {
+            token: 'provider',
+            optional: true,
+          },
+        ],
+      };
+      const moduleRef = await container.addModule(TestModule as any, []);
+      container.addProvider(provider1, moduleRef.token);
+
+      expect(() =>
+        container.addProvider(provider2, moduleRef.token),
+      ).to.not.throw(CircularDependencyFactoryProviderException);
     });
   });
 });
