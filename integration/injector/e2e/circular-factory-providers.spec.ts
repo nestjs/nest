@@ -30,7 +30,6 @@ describe('Circular Factory Provider Dependency', () => {
       imports: [NonCircularFactoryProvidersModule],
     });
 
-    // Assert that the Error is thrown
 
     await expect(builder.compile()).to.eventually.be.fulfilled;
   });
