@@ -2,37 +2,47 @@ import { INestApplication, MiddlewareConsumer, Module } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 
-const RETURN_VALUE_A = 'test_A';
-const RETURN_VALUE_B = 'test_B';
-
 @Module({
   imports: [],
 })
-class ModuleA {
+class ModuleC {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req, res, next) => {
-        res.send(RETURN_VALUE_A);
+        res.append('x-trace', 'module-c');
+        next();
       })
-      .forRoutes('hello');
+      .forRoutes('*');
   }
 }
 
 @Module({
-  imports: [ModuleA],
+  imports: [],
 })
 class ModuleB {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req, res, next) => {
-        res.send(RETURN_VALUE_B);
+        res.append('x-trace', 'module-b');
+        next();
       })
-      .forRoutes('hello');
+      .forRoutes('*');
+  }
+}
+@Module({ imports: [ModuleB] })
+class ModuleA {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => {
+        res.append('x-trace', 'module-a');
+        next();
+      })
+      .forRoutes('*');
   }
 }
 
 @Module({
-  imports: [ModuleB],
+  imports: [ModuleA, ModuleC],
 })
 class TestModule {}
 
@@ -51,8 +61,8 @@ describe('Middleware (execution order)', () => {
 
   it(`should execute middleware in topological order`, () => {
     return request(app.getHttpServer())
-      .get('/hello')
-      .expect(200, RETURN_VALUE_B);
+      .get('/')
+      .expect('x-trace', 'module-a, module-b, module-c');
   });
 
   afterEach(async () => {

@@ -145,15 +145,7 @@ export class MiddlewareModule<
       }
     };
 
-    const entriesSortedByDistance = [...configs.entries()].sort(
-      ([moduleA], [moduleB]) => {
-        return (
-          this.container.getModuleByKey(moduleA).distance -
-          this.container.getModuleByKey(moduleB).distance
-        );
-      },
-    );
-    for (const [moduleRef, moduleConfigurations] of entriesSortedByDistance) {
+    for (const [moduleRef, moduleConfigurations] of configs.entries()) {
       await registerAllConfigs(moduleRef, [...moduleConfigurations]);
     }
   }
