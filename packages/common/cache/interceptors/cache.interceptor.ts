@@ -36,10 +36,21 @@ export class CacheInterceptor implements NestInterceptor {
   protected readonly httpAdapterHost: HttpAdapterHost;
 
   protected allowedMethods = ['GET'];
+
+  private cacheManagerIsv5OrGreater: boolean;
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
     @Inject(REFLECTOR) protected readonly reflector: any,
-  ) {}
+  ) {
+    // We need to check if the cache-manager package is v5 or greater
+    // because the set method signature changed in v5
+    const cacheManagerPackage = loadPackage(
+      'cache-manager',
+      'CacheModule',
+      () => require('cache-manager'),
+    );
+    this.cacheManagerIsv5OrGreater = 'memoryStore' in cacheManagerPackage;
+  }
 
   async intercept(
     context: ExecutionContext,
@@ -61,13 +72,6 @@ export class CacheInterceptor implements NestInterceptor {
         ? await ttlValueOrFactory(context)
         : ttlValueOrFactory;
 
-      // We need to check if the cache-manager package is v5 or greater
-      // because the set method signature changed in v5
-      const cacheManager = loadPackage('cache-manager', 'CacheModule', () =>
-        require('cache-manager'),
-      );
-      const cacheManagerIsv5OrGreater = 'memoryStore' in cacheManager;
-
       return next.handle().pipe(
         tap(async response => {
           if (response instanceof StreamableFile) {
@@ -76,7 +80,7 @@ export class CacheInterceptor implements NestInterceptor {
 
           const args = [key, response];
           if (!isNil(ttl)) {
-            args.push(cacheManagerIsv5OrGreater ? ttl : { ttl });
+            args.push(this.cacheManagerIsv5OrGreater ? ttl : { ttl });
           }
 
           try {
