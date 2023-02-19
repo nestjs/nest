@@ -20,13 +20,6 @@ import {
 const HTTP_ADAPTER_HOST = 'HttpAdapterHost';
 const REFLECTOR = 'Reflector';
 
-// We need to check if the cache-manager package is v5 or greater
-// because the set method signature changed in v5
-const cacheManager = loadPackage('cache-manager', 'CacheModule', () =>
-  require('cache-manager'),
-);
-const cacheManagerIsv5OrGreater = 'memoryStore' in cacheManager;
-
 export interface HttpAdapterHost<T extends HttpServer = any> {
   httpAdapter: T;
 }
@@ -67,6 +60,14 @@ export class CacheInterceptor implements NestInterceptor {
       const ttl = isFunction(ttlValueOrFactory)
         ? await ttlValueOrFactory(context)
         : ttlValueOrFactory;
+
+      // We need to check if the cache-manager package is v5 or greater
+      // because the set method signature changed in v5
+      const cacheManager = loadPackage('cache-manager', 'CacheModule', () =>
+        require('cache-manager'),
+      );
+      const cacheManagerIsv5OrGreater = 'memoryStore' in cacheManager;
+
       return next.handle().pipe(
         tap(async response => {
           if (response instanceof StreamableFile) {
