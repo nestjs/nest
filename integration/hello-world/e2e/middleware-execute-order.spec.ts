@@ -56,13 +56,18 @@ describe('Middleware (execution order)', () => {
       }).compile()
     ).createNestApplication();
 
+    app.use((req, res, next) => {
+      res.append('x-trace', 'global');
+      next();
+    });
+
     await app.init();
   });
 
   it(`should execute middleware in topological order`, () => {
     return request(app.getHttpServer())
       .get('/')
-      .expect('x-trace', 'module-a, module-b, module-c');
+      .expect('x-trace', 'global, module-a, module-b, module-c');
   });
 
   afterEach(async () => {
