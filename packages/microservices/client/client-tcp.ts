@@ -46,10 +46,6 @@ export class ClientTCP extends ClientProxy {
     this.socket = this.createSocket();
     this.bindEvents(this.socket);
 
-    if (!this.tlsOptions) {
-      this.socket.connect(this.port, this.host);
-    }
-
     const source$ = this.connect$(this.socket.netSocket).pipe(
       tap(() => {
         this.isConnected = true;
@@ -60,6 +56,10 @@ export class ClientTCP extends ClientProxy {
       share(),
     );
 
+    // For TLS connections, the connection is initiated when the socket is created
+    if (!this.tlsOptions) {
+      this.socket.connect(this.port, this.host);
+    }
     this.connection = lastValueFrom(source$).catch(err => {
       if (err instanceof EmptyError) {
         return;
