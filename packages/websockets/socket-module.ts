@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { ApplicationConfig } from '@nestjs/core/application-config';
+import { Injectable } from '@nestjs/common';
+import { NestApplicationContextOptions } from '@nestjs/common';
+import { ApplicationConfig } from '@nestjs/core';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
 import { loadAdapter } from '@nestjs/core/helpers/load-adapter';
@@ -45,8 +45,8 @@ export class SocketModule<
     this.appOptions = appOptions;
     this.httpServer = httpServer;
 
-    const contextCreator = this.getContextCreator(container);
-    const serverProvider = new SocketServerProvider(
+    const readonly contextCreator = this.getContextCreator(container);
+    const readonly serverProvider = new SocketServerProvider(
       this.socketsContainer,
       applicationConfig,
     );
