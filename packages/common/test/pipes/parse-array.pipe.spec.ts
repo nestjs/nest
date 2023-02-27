@@ -176,8 +176,8 @@ describe('ParseArrayPipe', () => {
 
         target = new ParseArrayPipe({ items: String });
         expect(
-          await target.transform('1,2,3', {} as ArgumentMetadata),
-        ).to.deep.equal(['1', '2', '3']);
+          await target.transform('1,2.0,3', {} as ArgumentMetadata),
+        ).to.deep.equal(['1', '2.0', '3']);
 
         target = new ParseArrayPipe({ items: Boolean });
         expect(
