@@ -1,5 +1,6 @@
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import { AbstractWsAdapter } from '@nestjs/websockets';
 import {
   CLOSE_EVENT,
@@ -109,7 +110,7 @@ export class WsAdapter extends AbstractWsAdapter {
     const source$ = fromEvent(client, 'message').pipe(
       mergeMap(data =>
         this.bindMessageHandler(data, handlers, transform).pipe(
-          filter(result => result),
+          filter(result => !isNil(result)),
         ),
       ),
       takeUntil(close$),
