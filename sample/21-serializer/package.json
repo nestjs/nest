@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@nestjs/common": "9.0.1",
-    "@nestjs/core": "9.0.1",
+    "@nestjs/core": "9.0.5",
     "@nestjs/platform-express": "9.0.1",
     "class-transformer": "0.5.1",
     "reflect-metadata": "0.1.13",
