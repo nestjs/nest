@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@nestjs/common": "9.0.1",
-    "@nestjs/core": "9.0.1",
+    "@nestjs/core": "9.0.5",
     "@nestjs/platform-express": "9.0.1",
     "@nestjs/schedule": "2.1.0",
     "dotenv": "16.0.1",
