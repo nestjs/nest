@@ -55,6 +55,6 @@
     "ts-morph": "15.1.0",
     "ts-node": "10.8.2",
     "tsconfig-paths": "4.0.0",
-    "typescript": "4.7.4"
+    "typescript": "4.9.5"
   }
 }
