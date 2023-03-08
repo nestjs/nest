@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@nestjs/common": "9.0.1",
-    "@nestjs/core": "9.0.1",
+    "@nestjs/core": "9.0.5",
     "@nestjs/platform-express": "9.0.1",
     "@nestjs/microservices": "9.0.1",
     "@nestjs/websockets": "9.0.1",
