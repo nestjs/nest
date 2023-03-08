@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@nestjs/common": "9.0.1",
-    "@nestjs/core": "9.0.1",
+    "@nestjs/core": "9.0.5",
     "@nestjs/mongoose": "9.2.0",
     "@nestjs/platform-express": "9.0.1",
     "mongoose": "6.4.6",
