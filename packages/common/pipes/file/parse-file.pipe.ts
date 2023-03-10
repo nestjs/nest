@@ -9,8 +9,8 @@ import { ParseFileOptions } from './parse-file-options.interface';
 /**
  * Defines the built-in ParseFile Pipe. This pipe can be used to validate incoming files
  * with `@UploadedFile()` decorator. You can use either other specific built-in validators
- * or provide one of your own, simply implementing it through {@link FileValidator}
- * interface and adding it to ParseFilePipe's constructor.
+ * or provide one of your own, simply implementing it through FileValidator interface
+ * and adding it to ParseFilePipe's constructor.
  *
  * @see [Built-in Pipes](https://docs.nestjs.com/pipes#built-in-pipes)
  *

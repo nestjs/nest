@@ -1,6 +1,7 @@
 /**
- * Interface describing FileValidators, which can be added to a {@link ParseFilePipe}.
+ * Interface describing FileValidators, which can be added to a ParseFilePipe
  *
+ * @see {ParseFilePipe}
  * @publicApi
  */
 export abstract class FileValidator<TValidationOptions = Record<string, any>> {
