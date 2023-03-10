@@ -30,8 +30,8 @@ describe('GraphQL Pipes', () => {
         errors: [
           {
             extensions: {
-              code: 'BAD_USER_INPUT',
-              response: {
+              code: 'BAD_REQUEST',
+              originalError: {
                 error: 'Bad Request',
                 message: [
                   'description must be longer than or equal to 30 characters',
@@ -39,7 +39,14 @@ describe('GraphQL Pipes', () => {
                 statusCode: 400,
               },
             },
+            locations: [
+              {
+                column: 3,
+                line: 2,
+              },
+            ],
             message: 'Bad Request Exception',
+            path: ['addRecipe'],
           },
         ],
       });
