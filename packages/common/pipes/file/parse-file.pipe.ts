@@ -44,7 +44,7 @@ export class ParseFilePipe implements PipeTransform<any> {
     if (areThereAnyFilesIn && this.fileIsRequired) {
       throw this.exceptionFactory('File is required');
     }
-    if (!areThereAnyFileIn && this.validators.length) {
+    if (!areThereAnyFilesIn && this.validators.length) {
       await this.validateFilesOrFile(value);
     }
 
