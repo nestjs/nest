@@ -394,6 +394,102 @@ describe('Logger', () => {
         );
         expect(processStderrWriteSpy.thirdCall.firstArg).to.equal(stack + '\n');
       });
+
+      it('should print one message with Set to the console', () => {
+        const setElements = ['foo', 'bar', 123];
+        const set = new Set(setElements);
+        const context = 'RandomContext';
+        logger.log(set, context);
+
+        expect(processStdoutWriteSpy.calledOnce).to.be.true;
+
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include('Set:');
+        const expectedSerializedSetItems = `[\n  "foo",\n  "bar",\n  123\n]`;
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+          expectedSerializedSetItems,
+        );
+      });
+
+      it('should print one message with Map to the console', () => {
+        const map = new Map();
+        map.set('foo', 'bar');
+        map.set('rab', 123);
+        const context = 'RandomContext';
+        logger.log(map, context);
+
+        expect(processStdoutWriteSpy.calledOnce).to.be.true;
+
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include('Map:');
+        const expectedSerializedMapItems = `{\n  "foo": "bar",\n  "rab": 123\n}`;
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+          expectedSerializedMapItems,
+        );
+      });
+
+      it('should print one message with nested Map to the console', () => {
+        const map = new Map();
+        map.set('foo', 'bar');
+        map.set('rab', 123);
+
+        const plainObject = {
+          blah: 'blah',
+          map,
+        };
+
+        const plainObjectWithRepeatedMap = {
+          ...plainObject,
+          map: {
+            foo: 'bar',
+            rab: 123,
+          },
+        };
+        const stringifiedPlainObjectWithRepeatedMap = JSON.stringify(
+          plainObjectWithRepeatedMap,
+          null,
+          2,
+        );
+
+        const context = 'RandomContext';
+        logger.log(plainObject, context);
+
+        expect(processStdoutWriteSpy.calledOnce).to.be.true;
+
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include('Object:');
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+          stringifiedPlainObjectWithRepeatedMap,
+        );
+      });
+
+      it('should print one message with nested Set to the console', () => {
+        const setItems = ['foo', 'bar', 123];
+        const set = new Set(setItems);
+
+        const plainObject = {
+          blah: 'blah',
+          set,
+        };
+
+        const plainObjectWithRepeatedSet = {
+          ...plainObject,
+          set: ['foo', 'bar', 123],
+        };
+
+        const stringifiedPlainObjectWithRepeatedSet = JSON.stringify(
+          plainObjectWithRepeatedSet,
+          null,
+          2,
+        );
+
+        const context = 'RandomContext';
+        logger.log(plainObject, context);
+
+        expect(processStdoutWriteSpy.calledOnce).to.be.true;
+
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include('Object:');
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+          stringifiedPlainObjectWithRepeatedSet,
+        );
+      });
     });
 
     describe('when the default logger is used and global context is set and timestamp enabled', () => {
