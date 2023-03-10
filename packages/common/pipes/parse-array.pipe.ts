@@ -88,10 +88,11 @@ export class ParseArrayPipe implements PipeTransform {
 
       const isExpectedTypePrimitive = this.isExpectedTypePrimitive();
       const toClassInstance = (item: any, index?: number) => {
-        try {
-          item = JSON.parse(item);
-        } catch {}
-
+        if (this.options.items !== String) {
+          try {
+            item = JSON.parse(item);
+          } catch {}
+        }
         if (isExpectedTypePrimitive) {
           return this.validatePrimitive(item, index);
         }
