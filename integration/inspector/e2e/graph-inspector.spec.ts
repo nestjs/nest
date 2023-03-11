@@ -1,7 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { Injector } from '@nestjs/core/injector/injector';
 import { SerializedGraph } from '@nestjs/core/inspector/serialized-graph';
-import { Transport } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import { readFileSync, writeFileSync } from 'fs';
@@ -45,7 +45,10 @@ describe('Graph inspector', () => {
     app.useGlobalFilters(new HttpExceptionFilter());
     app.useGlobalInterceptors(new TimeoutInterceptor());
     app.enableVersioning();
-    app.connectMicroservice({ transport: Transport.TCP, options: {} });
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.TCP,
+      options: {},
+    });
     await app.init();
 
     const graph = testingModule.get(SerializedGraph);

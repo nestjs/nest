@@ -6,6 +6,7 @@ import { GraphInspector } from '../inspector/graph-inspector';
 import { NestApplication } from '../nest-application';
 import { mapToExcludeRoute } from './../middleware/utils';
 import { NoopHttpAdapter } from './utils/noop-adapter.spec';
+import { MicroserviceOptions } from '@nestjs/microservices';
 
 describe('NestApplication', () => {
   describe('Hybrid Application', () => {
@@ -25,7 +26,9 @@ describe('NestApplication', () => {
         {},
       );
       instance.useGlobalInterceptors(new Interceptor());
-      const microservice = instance.connectMicroservice({});
+      const microservice = instance.connectMicroservice<MicroserviceOptions>(
+        {},
+      );
       expect((instance as any).config.getGlobalInterceptors().length).to.equal(
         1,
       );
@@ -44,7 +47,7 @@ describe('NestApplication', () => {
         {},
       );
       instance.useGlobalInterceptors(new Interceptor());
-      const microservice = instance.connectMicroservice(
+      const microservice = instance.connectMicroservice<MicroserviceOptions>(
         {},
         { inheritAppConfig: true },
       );

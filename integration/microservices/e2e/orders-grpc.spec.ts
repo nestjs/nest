@@ -1,7 +1,7 @@
 import * as GRPC from '@grpc/grpc-js';
 import * as ProtoLoader from '@grpc/proto-loader';
 import { INestApplication } from '@nestjs/common';
-import { Transport } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { fail } from 'assert';
@@ -26,7 +26,7 @@ describe('Advanced GRPC transport', () => {
     /*
      *  Create microservice configuration
      */
-    app.connectMicroservice({
+    app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.GRPC,
       options: {
         url: 'localhost:5001',

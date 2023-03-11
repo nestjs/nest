@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { Transport } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
@@ -31,7 +31,7 @@ describe('Request scope (microservices)', () => {
     }).compile();
 
     app = module.createNestApplication();
-    app.connectMicroservice({ transport: Transport.TCP });
+    app.connectMicroservice<MicroserviceOptions>({ transport: Transport.TCP });
 
     server = app.getHttpServer();
     await app.init();

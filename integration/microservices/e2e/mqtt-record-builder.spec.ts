@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { Transport } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { MqttController } from '../src/mqtt/mqtt.controller';
@@ -16,7 +16,7 @@ describe('MQTT transport', () => {
     app = module.createNestApplication();
     server = app.getHttpAdapter().getInstance();
 
-    app.connectMicroservice({
+    app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.MQTT,
       options: {
         url: 'mqtt://0.0.0.0:1883',
