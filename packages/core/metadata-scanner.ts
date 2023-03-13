@@ -9,7 +9,9 @@ export class MetadataScanner {
   private readonly cachedScannedPrototypes: Map<object, string[]> = new Map();
 
   /**
-   * @deprecated Use {@link getAllMethodNames} instead.
+   * @deprecated 
+   * @see {@link getAllMethodNames}
+   * @see getAllMethodNames
    */
   public scanFromPrototype<T extends Injectable, R = any>(
     instance: T,
@@ -60,7 +62,9 @@ export class MetadataScanner {
   }
 
   /**
-   * @deprecated Use {@link getAllMethodNames} instead.
+   * @deprecated 
+   * @see {@link getAllMethodNames}
+   * @see getAllMethodNames
    */
   public *getAllFilteredMethodNames(
     prototype: object,

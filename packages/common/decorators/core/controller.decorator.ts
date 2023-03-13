@@ -69,7 +69,7 @@ export function Controller(): ClassDecorator;
  * It defines a class that provides a context for one or more message or event
  * handlers.
  *
- * @param {string, Array} prefix string that defines a `route path prefix`.  The prefix
+ * @param {string|Array} prefix string that defines a `route path prefix`.  The prefix
  * is pre-pended to the path specified in any request decorator in the class.
  *
  * @see [Routing](https://docs.nestjs.com/controllers#routing)
