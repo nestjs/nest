@@ -9,12 +9,11 @@ export class MetadataScanner {
   private readonly cachedScannedPrototypes: Map<object, string[]> = new Map();
 
   /**
-   * @deprecated 
+   * @deprecated
    * @see {@link getAllMethodNames}
    * @see getAllMethodNames
    */
-  public scanFromPrototype<T extends Injectable, R = any>(
-    instance: T,
+  public scanFromPrototype<R = any>(
     prototype: object,
     callback: (name: string) => R,
   ): R[] {
@@ -62,7 +61,7 @@ export class MetadataScanner {
   }
 
   /**
-   * @deprecated 
+   * @deprecated
    * @see {@link getAllMethodNames}
    * @see getAllMethodNames
    */

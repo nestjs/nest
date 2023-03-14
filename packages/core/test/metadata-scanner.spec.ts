@@ -42,11 +42,7 @@ describe('MetadataScanner', () => {
 
     it('should keep compatibility with older methods', () => {
       const methods1 = scanner.getAllMethodNames(Test.prototype).map(m => m[0]);
-      const methods2 = scanner.scanFromPrototype(
-        new Test(),
-        Test.prototype,
-        r => r[0],
-      );
+      const methods2 = scanner.scanFromPrototype(Test.prototype, r => r[0]);
 
       expect(methods1).to.eql(methods2);
 
