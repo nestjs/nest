@@ -1,4 +1,4 @@
-import { Server } from 'net';
+import { Server } from 'http';
 import { INestApplication } from '@nestjs/common';
 import * as bodyparser from 'body-parser';
 import { NestExpressBodyParserOptions } from './nest-express-body-parser-options.interface';
