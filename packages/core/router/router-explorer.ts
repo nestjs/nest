@@ -358,13 +358,16 @@ export class RouterExplorer {
 
     const isTreeDurable = instanceWrapper.isDependencyTreeDurable();
 
-    return async <TRequest extends Record<any, any>, TResponse>(
+    return async <
+      TRequest extends Record<any, any>,
+      TResponse extends Record<any, any>,
+    >(
       req: TRequest,
       res: TResponse,
       next: () => void,
     ) => {
       try {
-        const contextId = this.getContextId(req, isTreeDurable);
+        const contextId = this.getContextId(req, res, isTreeDurable);
         const contextInstance = await this.injector.loadPerContext(
           instance,
           moduleRef,
@@ -398,10 +401,10 @@ export class RouterExplorer {
     };
   }
 
-  private getContextId<T extends Record<any, unknown> = any>(
-    request: T,
-    isTreeDurable: boolean,
-  ): ContextId {
+  private getContextId<
+    TRequest extends Record<any, unknown> = any,
+    TResponse extends Record<any, unknown> = any,
+  >(request: TRequest, response: TResponse, isTreeDurable: boolean): ContextId {
     const contextId = ContextIdFactory.getByRequest(request);
     if (!request[REQUEST_CONTEXT_ID as any]) {
       Object.defineProperty(request, REQUEST_CONTEXT_ID, {
@@ -411,8 +414,16 @@ export class RouterExplorer {
         configurable: false,
       });
 
+      Object.defineProperty(response, REQUEST_CONTEXT_ID, {
+        value: contextId,
+        enumerable: false,
+        writable: false,
+        configurable: false,
+      });
+
       const requestProviderValue = isTreeDurable ? contextId.payload : request;
       this.container.registerRequestProvider(requestProviderValue, contextId);
+      this.container.registerResponseProvider(response, contextId);
     }
     return contextId;
   }

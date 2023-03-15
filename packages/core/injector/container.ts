@@ -12,7 +12,7 @@ import {
 } from '../errors/exceptions';
 import { InitializeOnPreviewAllowlist } from '../inspector/initialize-on-preview.allowlist';
 import { SerializedGraph } from '../inspector/serialized-graph';
-import { REQUEST } from '../router/request/request-constants';
+import { REQUEST, RESPONSE } from '../router/request/request-constants';
 import { ModuleCompiler } from './compiler';
 import { ContextId } from './instance-wrapper';
 import { InternalCoreModule } from './internal-core-module/internal-core-module';
@@ -254,6 +254,14 @@ export class NestContainer {
     const wrapper = this.internalCoreModule.getProviderByKey(REQUEST);
     wrapper.setInstanceByContextId(contextId, {
       instance: request,
+      isResolved: true,
+    });
+  }
+
+  public registerResponseProvider<T = any>(response: T, contextId: ContextId) {
+    const wrapper = this.internalCoreModule.getProviderByKey(RESPONSE);
+    wrapper.setInstanceByContextId(contextId, {
+      instance: response,
       isResolved: true,
     });
   }

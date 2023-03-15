@@ -57,7 +57,10 @@ describe('Scoped Instances', () => {
 
     const ctxId = { id: 1 };
     const requestProvider = { host: 'localhost' };
+    const responseProvider = { id: ctxId, msg: 'response' };
+
     testingModule.registerRequestByContextId(requestProvider, ctxId);
+    testingModule.registerResponseByContextId(responseProvider, ctxId);
 
     const request3 = await testingModule.resolve(ScopedService, ctxId);
     const requestFactory = await testingModule.resolve(REQUEST_SCOPED_FACTORY);
@@ -67,6 +70,7 @@ describe('Scoped Instances', () => {
     expect(request3).to.not.be.equal(request2);
     expect(requestFactory).to.be.true;
     expect(request3.request).to.be.equal(requestProvider);
+    expect(request3.response).to.be.equal(responseProvider);
   });
 
   it('should dynamically resolve request-scoped controller', async () => {

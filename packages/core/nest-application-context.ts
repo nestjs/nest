@@ -224,6 +224,17 @@ export class NestApplicationContext<
   }
 
   /**
+   * Registers the response/context object for a given context ID (DI container sub-tree).
+   * @returns {void}
+   */
+  public registerResponseByContextId<T = any>(
+    response: T,
+    contextId: ContextId,
+  ) {
+    this.container.registerResponseProvider(response, contextId);
+  }
+
+  /**
    * Initializes the Nest application.
    * Calls the Nest lifecycle events.
    *

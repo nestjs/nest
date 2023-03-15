@@ -257,7 +257,7 @@ export class MiddlewareModule<
         next: () => void,
       ) => {
         try {
-          const contextId = this.getContextId(req, isTreeDurable);
+          const contextId = this.getContextId(req, res, isTreeDurable);
           const contextInstance = await this.injector.loadPerContext(
             instance,
             moduleRef,
@@ -329,7 +329,11 @@ export class MiddlewareModule<
     paths.forEach(path => router(path, middlewareFunction));
   }
 
-  private getContextId(request: unknown, isTreeDurable: boolean): ContextId {
+  private getContextId(
+    request: unknown,
+    response: unknown,
+    isTreeDurable: boolean,
+  ): ContextId {
     const contextId = ContextIdFactory.getByRequest(request);
     if (!request[REQUEST_CONTEXT_ID]) {
       Object.defineProperty(request, REQUEST_CONTEXT_ID, {
@@ -341,6 +345,7 @@ export class MiddlewareModule<
 
       const requestProviderValue = isTreeDurable ? contextId.payload : request;
       this.container.registerRequestProvider(requestProviderValue, contextId);
+      this.container.registerResponseProvider(response, contextId);
     }
     return contextId;
   }

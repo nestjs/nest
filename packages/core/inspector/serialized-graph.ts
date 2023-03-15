@@ -6,7 +6,7 @@ import { INQUIRER } from '../injector/inquirer/inquirer-constants';
 import { LazyModuleLoader } from '../injector/lazy-module-loader/lazy-module-loader';
 import { ModuleRef } from '../injector/module-ref';
 import { ModulesContainer } from '../injector/modules-container';
-import { REQUEST } from '../router/request/request-constants';
+import { REQUEST, RESPONSE } from '../router/request/request-constants';
 import { Reflector } from '../services/reflector.service';
 import { DeterministicUuidRegistry } from './deterministic-uuid-registry';
 import { Edge } from './interfaces/edge.interface';
@@ -41,6 +41,7 @@ export class SerializedGraph {
     HttpAdapterHost.name,
     Reflector.name,
     REQUEST,
+    RESPONSE,
     INQUIRER,
   ];
 

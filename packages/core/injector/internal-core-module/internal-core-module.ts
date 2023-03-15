@@ -4,7 +4,10 @@ import {
   FactoryProvider,
   ValueProvider,
 } from '@nestjs/common/interfaces';
-import { requestProvider } from '../../router/request/request-providers';
+import {
+  requestProvider,
+  responseProvider,
+} from '../../router/request/request-providers';
 import { Reflector } from '../../services';
 import { inquirerProvider } from '../inquirer/inquirer-providers';
 
@@ -19,12 +22,14 @@ const ReflectorAliasProvider = {
     Reflector,
     ReflectorAliasProvider,
     requestProvider,
+    responseProvider,
     inquirerProvider,
   ],
   exports: [
     Reflector,
     ReflectorAliasProvider,
     requestProvider,
+    responseProvider,
     inquirerProvider,
   ],
 })
