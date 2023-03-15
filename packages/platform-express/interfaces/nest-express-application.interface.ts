@@ -89,7 +89,7 @@ export interface NestExpressApplication extends INestApplication {
    * @returns {this}
    */
   useBodyParser<Options extends bodyparser.Options = bodyparser.Options>(
-    parser: keyof bodyparser.BodyParser,
+    parser: keyof bodyparser.Options,
     options?: NestExpressBodyParserOptions<Options>,
   ): this;
 

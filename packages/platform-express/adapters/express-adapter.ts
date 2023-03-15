@@ -252,7 +252,7 @@ export class ExpressAdapter extends AbstractHttpAdapter {
   }
 
   public useBodyParser<Options extends bodyparser.Options = bodyparser.Options>(
-    type: keyof bodyparser.BodyParser,
+    type: keyof bodyparser.Options,
     rawBody: boolean,
     options?: NestExpressBodyParserOptions<Options>,
   ): this {
