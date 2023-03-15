@@ -1,4 +1,4 @@
-import type { Server } from 'net';
+import type { Server } from 'http';
 import {
   HttpStatus,
   InternalServerErrorException,
