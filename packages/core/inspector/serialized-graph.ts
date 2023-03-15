@@ -16,7 +16,10 @@ import {
   OrphanedEnhancerDefinition,
 } from './interfaces/extras.interface';
 import { Node } from './interfaces/node.interface';
+import { SerializedGraphJson } from './interfaces/serialized-graph-json.interface';
+import { SerializedGraphMetadata } from './interfaces/serialized-graph-metadata.interface';
 
+export type SerializedGraphStatus = 'partial' | 'complete';
 type WithOptionalId<T extends Record<'id', string>> = Omit<T, 'id'> &
   Partial<Pick<T, 'id'>>;
 
@@ -28,6 +31,8 @@ export class SerializedGraph {
     orphanedEnhancers: [],
     attachedEnhancers: [],
   };
+  private _status: SerializedGraphStatus = 'complete';
+  private _metadata?: SerializedGraphMetadata;
 
   private static readonly INTERNAL_PROVIDERS: Array<InjectionToken> = [
     ApplicationConfig,
@@ -43,6 +48,14 @@ export class SerializedGraph {
     REQUEST,
     INQUIRER,
   ];
+
+  set status(status: SerializedGraphStatus) {
+    this._status = status;
+  }
+
+  set metadata(metadata: SerializedGraphMetadata) {
+    this._metadata = metadata;
+  }
 
   public insertNode(nodeDefinition: Node) {
     if (
@@ -109,13 +122,21 @@ export class SerializedGraph {
     return this.nodes.get(id);
   }
 
-  public toJSON() {
-    return {
+  public toJSON(): SerializedGraphJson {
+    const json: SerializedGraphJson = {
       nodes: Object.fromEntries(this.nodes),
       edges: Object.fromEntries(this.edges),
       entrypoints: Object.fromEntries(this.entrypoints),
       extras: this.extras,
     };
+
+    if (this._status) {
+      json['status'] = this._status;
+    }
+    if (this._metadata) {
+      json['metadata'] = this._metadata;
+    }
+    return json;
   }
 
   public toString() {
