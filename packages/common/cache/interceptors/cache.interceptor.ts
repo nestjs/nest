@@ -38,6 +38,7 @@ export class CacheInterceptor implements NestInterceptor {
   protected allowedMethods = ['GET'];
 
   private cacheManagerIsv5OrGreater: boolean;
+  
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
     @Inject(REFLECTOR) protected readonly reflector: any,
