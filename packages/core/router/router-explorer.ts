@@ -414,13 +414,6 @@ export class RouterExplorer {
         configurable: false,
       });
 
-      Object.defineProperty(response, REQUEST_CONTEXT_ID, {
-        value: contextId,
-        enumerable: false,
-        writable: false,
-        configurable: false,
-      });
-
       const requestProviderValue = isTreeDurable ? contextId.payload : request;
       this.container.registerRequestProvider(requestProviderValue, contextId);
       this.container.registerResponseProvider(response, contextId);
