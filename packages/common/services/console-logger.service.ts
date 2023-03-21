@@ -221,14 +221,34 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected stringifyMessage(message: unknown, logLevel: LogLevel) {
-    return isPlainObject(message) || Array.isArray(message)
-      ? `${this.colorize('Object:', logLevel)}\n${JSON.stringify(
-          message,
-          (key, value) =>
-            typeof value === 'bigint' ? value.toString() : value,
-          2,
-        )}\n`
-      : this.colorize(message as string, logLevel);
+    const replacer = (_key: string, value: unknown) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+      if (value instanceof Set) {
+        return [...value];
+      }
+      if (value instanceof Map) {
+        const entriesObj = Object.fromEntries(value.entries());
+        return entriesObj;
+      }
+      return value;
+    };
+
+    let header: string;
+
+    if (message instanceof Map || message instanceof Set) {
+      const objType = message.constructor.name;
+      header = `${objType}:`;
+    } else if (isPlainObject(message) || Array.isArray(message)) {
+      header = 'Object:';
+    } else {
+      return this.colorize(message as string, logLevel);
+    }
+
+    const body = JSON.stringify(message, replacer, 2);
+
+    return `${this.colorize(header, logLevel)}\n${body}\n`;
   }
 
   protected colorize(message: string, logLevel: LogLevel) {
