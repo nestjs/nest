@@ -69,7 +69,7 @@ export class GuardsContextCreator extends ContextCreator {
       return null;
     }
     const instanceHost = instanceWrapper.getInstanceByContextId(
-      contextId,
+      this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
     return instanceHost && instanceHost.instance;
@@ -104,7 +104,12 @@ export class GuardsContextCreator extends ContextCreator {
     const scopedGuardWrappers =
       this.config.getGlobalRequestGuards() as InstanceWrapper[];
     const scopedGuards = iterate(scopedGuardWrappers)
-      .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
+      .map(wrapper =>
+        wrapper.getInstanceByContextId(
+          this.getContextId(contextId, wrapper),
+          inquirerId,
+        ),
+      )
       .filter(host => !!host)
       .map(host => host.instance)
       .toArray();
