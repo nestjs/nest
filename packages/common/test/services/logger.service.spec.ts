@@ -256,6 +256,34 @@ describe('Logger', () => {
       loggerWithContext.resetContext();
       expect(loggerWithContext['context']).to.equal('context');
     });
+
+    describe('functions for message', () => {
+      let processStdoutWriteSpy: sinon.SinonSpy;
+      const logger = new ConsoleLogger();
+      const message = 'Hello World';
+
+      beforeEach(() => {
+        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+      });
+      afterEach(() => {
+        processStdoutWriteSpy.restore();
+      });
+
+      it('works', () => {
+        logger.log(() => message);
+
+        expect(processStdoutWriteSpy.calledOnce).to.be.true;
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(message);
+        // Ensure we didn't serialize the function itself.
+        expect(processStdoutWriteSpy.firstCall.firstArg).not.to.include(' => ');
+        expect(processStdoutWriteSpy.firstCall.firstArg).not.to.include(
+          'function',
+        );
+        expect(processStdoutWriteSpy.firstCall.firstArg).not.to.include(
+          'Function',
+        );
+      });
+    });
   });
 
   describe('[instance methods]', () => {
