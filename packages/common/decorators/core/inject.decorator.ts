@@ -33,7 +33,9 @@ import { isUndefined } from '../../utils/shared.utils';
  *
  * @publicApi
  */
-export function Inject<T = any>(token?: T) {
+export function Inject<T = any>(
+  token?: T,
+): PropertyDecorator & ParameterDecorator {
   return (target: object, key: string | symbol | undefined, index?: number) => {
     const type = token || Reflect.getMetadata('design:type', target, key);
 
