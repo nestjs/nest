@@ -9,14 +9,19 @@ import { Cache } from 'cache-manager';
  * `@CacheMethod()`
  *
  * @param {object} options configuration object specifying:
- * - `key` - string naming the field to be used as a cache key
+ * - `prefix` - string naming the field to be used as a prefix key
  * - `ttl` - number set the cache expiration time
+ * - `transform` - function set the define key by arguments
  *
  * @see [Caching](https://docs.nestjs.com/techniques/caching)
  *
  * @publicApi
  */
-export const CacheMethod = (opts?: { key?: string; ttl?: number }) => {
+export const CacheMethod = (opts?: {
+  prefix?: string;
+  ttl?: number;
+  transform?: (args: unknown[]) => string;
+}) => {
   const injector = Inject(CACHE_MANAGER);
 
   return (
@@ -33,7 +38,9 @@ export const CacheMethod = (opts?: { key?: string; ttl?: number }) => {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {
-      const cacheKey = [key, opts?.key, ...args].filter(Boolean).join(':');
+      const cacheKey = opts?.transform
+        ? opts.transform(args)
+        : [key, opts?.prefix, ...args].filter(Boolean).join(':');
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       const cacheManager = this.cacheManager as Cache;

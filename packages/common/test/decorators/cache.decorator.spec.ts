@@ -61,6 +61,13 @@ describe('@Cache', () => {
           resolve({ name, now: Date.now() });
         });
       }
+
+      @CacheMethod({ transform: (args: unknown[]) => `${+args[0] % 3}` })
+      async transformTest(num: number): Promise<{ num: number; now: number }> {
+        return new Promise(resolve => {
+          resolve({ num, now: Date.now() });
+        });
+      }
     }
 
     let testService: TestService;
@@ -82,6 +89,19 @@ describe('@Cache', () => {
 
         const newRequest = await testService.findOne(`test-${i}`);
         expect(newRequest.now).not.equal(first.now);
+      }
+    });
+
+    it('should be set the transform function', async () => {
+      const zeroKey = await testService.transformTest(3);
+      for (let i = 0; i < 10; i++) {
+        const cached = await testService.transformTest(i);
+        if (i % 3 === 0) {
+          expect(cached.num).equal(3);
+          expect(cached.now).equal(zeroKey.now);
+        } else {
+          expect(cached.num).not.equal(3);
+        }
       }
     });
   });
