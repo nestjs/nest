@@ -26,7 +26,7 @@
     "@typescript-eslint/eslint-plugin": "5.30.5",
     "@typescript-eslint/parser": "5.30.5",
     "eslint": "8.19.0",
-    "eslint-config-prettier": "8.5.0",
+    "eslint-config-prettier": "8.8.0",
     "eslint-plugin-import": "2.26.0",
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "9.3.1",
