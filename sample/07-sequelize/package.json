@@ -25,7 +25,7 @@
     "@nestjs/sequelize": "9.0.0",
     "mysql2": "2.3.3",
     "reflect-metadata": "0.1.13",
-    "rimraf": "3.0.2",
+    "rimraf": "4.4.1",
     "rxjs": "7.5.5",
     "sequelize": "6.29.0",
     "sequelize-typescript": "2.1.3",
