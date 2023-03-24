@@ -30,7 +30,7 @@
     "@nuxtjs/opencollective": "0.3.2",
     "fast-safe-stringify": "2.1.1",
     "iterare": "1.2.1",
-    "path-to-regexp": "3.2.0",
+    "path-to-regexp": "6.2.1",
     "tslib": "2.5.0",
     "uid": "2.0.1"
   },
