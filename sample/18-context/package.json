@@ -30,7 +30,7 @@
     "@nestjs/schematics": "9.0.1",
     "@types/node": "18.0.3",
     "@types/supertest": "2.0.12",
-    "jest": "28.1.2",
+    "jest": "28.1.3",
     "prettier": "2.7.1",
     "supertest": "6.2.4",
     "ts-jest": "28.0.5",
