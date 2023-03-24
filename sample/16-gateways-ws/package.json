@@ -28,7 +28,7 @@
     "class-validator": "0.14.0",
     "rimraf": "3.0.2",
     "reflect-metadata": "0.1.13",
-    "rxjs": "7.5.5",
+    "rxjs": "7.8.0",
     "ws": "8.8.0"
   },
   "devDependencies": {

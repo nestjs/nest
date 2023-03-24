@@ -29,7 +29,7 @@
     "graphql": "16.5.0",
     "mercurius": "11.5.0",
     "reflect-metadata": "0.1.13",
-    "rxjs": "7.5.5"
+    "rxjs": "7.8.0"
   },
   "devDependencies": {
     "@nestjs/cli": "9.0.0",
