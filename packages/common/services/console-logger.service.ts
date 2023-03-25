@@ -39,6 +39,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
 
 @Injectable()
 export class ConsoleLogger implements LoggerService {
+  private static customPrinter?: (logLevel: LogLevel, message: string) => void;
   private static lastTimestampAt?: number;
   private originalContext?: string;
 
@@ -164,6 +165,14 @@ export class ConsoleLogger implements LoggerService {
   }
 
   /**
+   * Set custom printer
+   * @param printer printer
+   */
+  setCustomPrinter(printer: (logLevel: LogLevel, message: string) => void) {
+    ConsoleLogger.customPrinter = printer;
+  }
+
+  /**
    * Resets the logger context to the value that was passed in the constructor.
    */
   resetContext() {
@@ -198,8 +207,11 @@ export class ConsoleLogger implements LoggerService {
         contextMessage,
         timestampDiff,
       );
-
-      process[writeStreamType ?? 'stdout'].write(formattedMessage);
+      if (ConsoleLogger.customPrinter) {
+        ConsoleLogger.customPrinter(logLevel, formattedMessage);
+      } else {
+        process[writeStreamType ?? 'stdout'].write(formattedMessage);
+      }
     });
   }
 
@@ -248,7 +260,11 @@ export class ConsoleLogger implements LoggerService {
     if (!stack) {
       return;
     }
-    process.stderr.write(`${stack}\n`);
+    if (ConsoleLogger.customPrinter) {
+      ConsoleLogger.customPrinter('error', stack);
+    } else {
+      process.stderr.write(`${stack}\n`);
+    }
   }
 
   private updateAndGetTimestampDiff(): string {
