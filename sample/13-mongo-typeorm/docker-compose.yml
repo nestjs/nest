@@ -2,7 +2,7 @@ version: "3"
 
 services:
   mongodb:
-    image: mongo:5.0
+    image: mongo:6.0
     environment:
       - MONGODB_DATABASE="test"
     ports:
