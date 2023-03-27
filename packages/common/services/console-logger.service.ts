@@ -251,7 +251,7 @@ export class ConsoleLogger implements LoggerService {
     process.stderr.write(`${stack}\n`);
   }
 
-  private updateAndGetTimestampDiff(): string {
+  protected updateAndGetTimestampDiff(): string {
     const includeTimestamp =
       ConsoleLogger.lastTimestampAt && this.options?.timestamp;
     const result = includeTimestamp
