@@ -22,7 +22,7 @@
   "dependencies": {
     "@nestjs/common": "9.3.12",
     "@nestjs/core": "9.3.12",
-    "@nestjs/jwt": "10.0.1",
+    "@nestjs/jwt": "10.0.2",
     "@nestjs/passport": "9.0.3",
     "@nestjs/platform-express": "9.3.12",
     "passport": "0.6.0",
