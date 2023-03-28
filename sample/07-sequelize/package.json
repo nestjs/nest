@@ -28,7 +28,7 @@
     "rimraf": "4.4.1",
     "rxjs": "7.5.5",
     "sequelize": "6.29.0",
-    "sequelize-typescript": "2.1.3",
+    "sequelize-typescript": "2.1.5",
     "typescript": "4.9.5"
   },
   "devDependencies": {
