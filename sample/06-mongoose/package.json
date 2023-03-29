@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "9.3.12",
     "@nestjs/core": "9.3.12",
-    "@nestjs/mongoose": "9.2.0",
+    "@nestjs/mongoose": "9.2.2",
     "@nestjs/platform-express": "9.3.12",
     "mongoose": "6.4.6",
     "reflect-metadata": "0.1.13",
