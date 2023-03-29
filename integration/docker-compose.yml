@@ -25,7 +25,7 @@ services:
       - "9001:9001"
     restart: always
   mysql:
-    image: mysql:8.0.30
+    image: mysql:8.0.32
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: test
@@ -59,7 +59,7 @@ services:
   kafka:
     container_name: test-kafka
     hostname: kafka
-    image: confluentinc/cp-kafka:7.0.1
+    image: confluentinc/cp-kafka:7.3.2
     depends_on:
       - zookeeper
     ports:

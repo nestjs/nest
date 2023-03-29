@@ -253,7 +253,7 @@ export class Logger implements LoggerService {
 
   /**
    * Attach buffer.
-   * Turns on initialisation logs buffering.
+   * Turns on initialization logs buffering.
    */
   static attachBuffer() {
     this.isBufferAttached = true;
@@ -261,7 +261,7 @@ export class Logger implements LoggerService {
 
   /**
    * Detach buffer.
-   * Turns off initialisation logs buffering.
+   * Turns off initialization logs buffering.
    */
   static detachBuffer() {
     this.isBufferAttached = false;
