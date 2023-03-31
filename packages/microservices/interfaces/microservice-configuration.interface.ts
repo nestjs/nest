@@ -4,7 +4,7 @@ import { ChannelOptions } from '../external/grpc-options.interface';
 import {
   ConsumerConfig,
   ConsumerRunConfig,
-  ConsumerSubscribeTopic,
+  ConsumerSubscribeTopics,
   KafkaConfig,
   ProducerConfig,
   ProducerRecord,
@@ -234,7 +234,7 @@ export interface KafkaOptions {
     client?: KafkaConfig;
     consumer?: ConsumerConfig;
     run?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;
-    subscribe?: Omit<ConsumerSubscribeTopic, 'topic'>;
+    subscribe?: Omit<ConsumerSubscribeTopics, 'topic'>;
     producer?: ProducerConfig;
     send?: Omit<ProducerRecord, 'topic' | 'messages'>;
     serializer?: Serializer;
