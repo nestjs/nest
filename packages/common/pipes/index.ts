@@ -7,3 +7,4 @@ export * from './parse-enum.pipe';
 export * from './parse-uuid.pipe';
 export * from './validation.pipe';
 export * from './file';
+export * from './parse-positive-int.pipe';
