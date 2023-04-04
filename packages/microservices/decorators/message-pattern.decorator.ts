@@ -75,7 +75,14 @@ export const MessagePattern: {
       descriptor.value,
     );
     Reflect.defineMetadata(TRANSPORT_METADATA, transport, descriptor.value);
-    Reflect.defineMetadata(PATTERN_EXTRAS_METADATA, extras, descriptor.value);
+    Reflect.defineMetadata(
+      PATTERN_EXTRAS_METADATA,
+      {
+        ...Reflect.getMetadata(PATTERN_EXTRAS_METADATA, descriptor.value),
+        ...extras,
+      },
+      descriptor.value,
+    );
     return descriptor;
   };
 };
