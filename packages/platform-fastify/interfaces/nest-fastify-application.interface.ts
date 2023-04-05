@@ -7,6 +7,7 @@ import {
   FastifyPluginOptions,
   FastifyRegisterOptions,
   RawServerBase,
+  RawServerDefault,
 } from 'fastify';
 import {
   Chain as LightMyRequestChain,
@@ -19,7 +20,9 @@ import { NestFastifyBodyParserOptions } from './nest-fastify-body-parser-options
 /**
  * @publicApi
  */
-export interface NestFastifyApplication extends INestApplication {
+export interface NestFastifyApplication<
+  TServer extends RawServerBase = RawServerDefault,
+> extends INestApplication<TServer> {
   /**
    * A wrapper function around native `fastify.register()` method.
    * Example `app.register(require('@fastify/formbody'))
