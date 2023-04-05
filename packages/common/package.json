@@ -22,16 +22,12 @@
     "uid": "2.0.2"
   },
   "peerDependencies": {
-    "cache-manager": "<=5",
     "class-transformer": "*",
     "class-validator": "*",
     "reflect-metadata": "^0.1.12",
     "rxjs": "^7.1.0"
   },
   "peerDependenciesMeta": {
-    "cache-manager": {
-      "optional": true
-    },
     "class-validator": {
       "optional": true
     },
