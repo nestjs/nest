@@ -12,6 +12,7 @@ import { CACHE_KEY_METADATA } from '../cache.constants';
  *
  * @see [Caching](https://docs.nestjs.com/techniques/caching)
  *
+ * @deprecated `CacheModule` (from the `@nestjs/common` package) is deprecated and will be removed in the next major release. Please, use the `@nestjs/cache-manager` package instead
  * @publicApi
  */
 export const CacheKey = (key: string) => SetMetadata(CACHE_KEY_METADATA, key);
