@@ -32,7 +32,7 @@ describe('ParamsTokenFactory', () => {
       });
       describe('not available', () => {
         it('should return "custom"', () => {
-          expect(factory.exchangeEnumForString(-1)).to.be.eql('custom');
+          expect(factory.exchangeEnumForString(-1 as any)).to.be.eql('custom');
         });
       });
     });

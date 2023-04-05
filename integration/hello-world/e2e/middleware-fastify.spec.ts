@@ -77,7 +77,7 @@ class TestModule {
       .apply((req, res, next) => res.end(SCOPED_VALUE))
       .forRoutes(TestController)
       .apply((req, res, next) => res.end(RETURN_VALUE))
-      .exclude({ path: QUERY_VALUE, method: -1 })
+      .exclude({ path: QUERY_VALUE, method: -1 as any })
       .forRoutes('(.*)');
   }
 }
