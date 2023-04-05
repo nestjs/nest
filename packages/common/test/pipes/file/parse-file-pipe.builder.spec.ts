@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import {
   FileTypeValidator,
-  FileTypeValidatorOptions,
   FileValidator,
   MaxFileSizeValidator,
   ParseFilePipeBuilder,

@@ -1,5 +1,5 @@
-import { FileTypeValidator } from '../../../pipes';
 import { expect } from 'chai';
+import { FileTypeValidator } from '../../../pipes';
 
 describe('FileTypeValidator', () => {
   describe('isValid', () => {
@@ -10,7 +10,7 @@ describe('FileTypeValidator', () => {
 
       const requestFile = {
         mimetype: 'image/jpeg',
-      };
+      } as any;
 
       expect(fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
@@ -22,7 +22,7 @@ describe('FileTypeValidator', () => {
 
       const requestFile = {
         mimetype: 'image/jpeg',
-      };
+      } as any;
 
       expect(fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
@@ -34,7 +34,7 @@ describe('FileTypeValidator', () => {
 
       const requestFile = {
         mimetype: 'application/msword',
-      };
+      } as any;
 
       expect(fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
@@ -46,7 +46,7 @@ describe('FileTypeValidator', () => {
 
       const requestFile = {
         mimetype: 'image/png',
-      };
+      } as any;
 
       expect(fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
@@ -58,7 +58,7 @@ describe('FileTypeValidator', () => {
 
       const requestFile = {
         mimetype: 'image/png',
-      };
+      } as any;
 
       expect(fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
@@ -68,7 +68,7 @@ describe('FileTypeValidator', () => {
         fileType: 'image/jpeg',
       });
 
-      const requestFile = {};
+      const requestFile = {} as any;
 
       expect(fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
