@@ -12,7 +12,7 @@ import {
  * Module that provides Nest cache-manager.
  *
  * @see [Caching](https://docs.nestjs.com/techniques/caching)
- *
+ * @deprecated `CacheModule` (from the `@nestjs/common` package) is deprecated and will be removed in the next major release. Please, use the `@nestjs/cache-manager` package instead
  * @publicApi
  */
 @Module({
