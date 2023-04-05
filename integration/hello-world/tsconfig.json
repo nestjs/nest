@@ -7,7 +7,7 @@
     "noLib": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "es6",
+    "target": "ES2021",
     "sourceMap": true,
     "allowJs": true,
     "outDir": "./dist",
