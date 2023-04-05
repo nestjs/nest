@@ -1,8 +1,10 @@
-import { Server } from 'http';
 import { INestApplication } from '@nestjs/common';
+import type { Server as HttpServer } from 'http';
+import type { Server as HttpsServer } from 'https';
+import type { Server } from 'net';
 import { NestExpressBodyParserOptions } from './nest-express-body-parser-options.interface';
-import { ServeStaticOptions } from './serve-static-options.interface';
 import { NestExpressBodyParserType } from './nest-express-body-parser.interface';
+import { ServeStaticOptions } from './serve-static-options.interface';
 
 /**
  * Interface describing methods on NestExpressApplication.
@@ -11,7 +13,9 @@ import { NestExpressBodyParserType } from './nest-express-body-parser.interface'
  *
  * @publicApi
  */
-export interface NestExpressApplication extends INestApplication {
+export interface NestExpressApplication<
+  TServer extends HttpServer | HttpsServer = HttpServer,
+> extends INestApplication<TServer> {
   /**
    * Starts the application.
    *
