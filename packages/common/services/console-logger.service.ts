@@ -1,6 +1,11 @@
 import { Injectable, Optional } from '../decorators/core';
 import { clc, yellow } from '../utils/cli-colors.util';
-import { isPlainObject, isString, isUndefined } from '../utils/shared.utils';
+import {
+  isFunction,
+  isPlainObject,
+  isString,
+  isUndefined,
+} from '../utils/shared.utils';
 import { LoggerService, LogLevel } from './logger.service';
 import { isLogLevelEnabled } from './utils';
 
@@ -221,7 +226,10 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected stringifyMessage(message: unknown, logLevel: LogLevel) {
-    return isPlainObject(message) || Array.isArray(message)
+    // If the message is a function, call it and re-resolve its value.
+    return isFunction(message)
+      ? this.stringifyMessage(message(), logLevel)
+      : isPlainObject(message) || Array.isArray(message)
       ? `${this.colorize('Object:', logLevel)}\n${JSON.stringify(
           message,
           (key, value) =>
@@ -243,7 +251,7 @@ export class ConsoleLogger implements LoggerService {
     process.stderr.write(`${stack}\n`);
   }
 
-  private updateAndGetTimestampDiff(): string {
+  protected updateAndGetTimestampDiff(): string {
     const includeTimestamp =
       ConsoleLogger.lastTimestampAt && this.options?.timestamp;
     const result = includeTimestamp

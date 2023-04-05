@@ -64,7 +64,7 @@ export class PipesContextCreator extends ContextCreator {
       return null;
     }
     const instanceHost = instanceWrapper.getInstanceByContextId(
-      contextId,
+      this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
     return instanceHost && instanceHost.instance;
@@ -98,7 +98,12 @@ export class PipesContextCreator extends ContextCreator {
     const scopedPipeWrappers =
       this.config.getGlobalRequestPipes() as InstanceWrapper[];
     const scopedPipes = iterate(scopedPipeWrappers)
-      .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
+      .map(wrapper =>
+        wrapper.getInstanceByContextId(
+          this.getContextId(contextId, wrapper),
+          inquirerId,
+        ),
+      )
       .filter(host => !!host)
       .map(host => host.instance)
       .toArray();

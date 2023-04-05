@@ -74,7 +74,7 @@ export class InterceptorsContextCreator extends ContextCreator {
       return null;
     }
     const instanceHost = instanceWrapper.getInstanceByContextId(
-      contextId,
+      this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
     return instanceHost && instanceHost.instance;
@@ -108,7 +108,12 @@ export class InterceptorsContextCreator extends ContextCreator {
     const scopedInterceptorWrappers =
       this.config.getGlobalRequestInterceptors() as InstanceWrapper[];
     const scopedInterceptors = iterate(scopedInterceptorWrappers)
-      .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
+      .map(wrapper =>
+        wrapper.getInstanceByContextId(
+          this.getContextId(contextId, wrapper),
+          inquirerId,
+        ),
+      )
       .filter(host => !!host)
       .map(host => host.instance)
       .toArray();

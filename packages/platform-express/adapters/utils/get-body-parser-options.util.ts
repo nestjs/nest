@@ -1,6 +1,6 @@
 import type { RawBodyRequest } from '@nestjs/common';
-import type { Options } from 'body-parser';
 import type { IncomingMessage, ServerResponse } from 'http';
+import type { NestExpressBodyParserOptions } from '../../interfaces';
 
 const rawBodyParser = (
   req: RawBodyRequest<IncomingMessage>,
@@ -13,11 +13,11 @@ const rawBodyParser = (
   return true;
 };
 
-export function getBodyParserOptions<ParserOptions extends Options>(
+export function getBodyParserOptions<Options = NestExpressBodyParserOptions>(
   rawBody: boolean,
-  options?: ParserOptions | undefined,
-): ParserOptions {
-  let parserOptions: ParserOptions = options ?? ({} as ParserOptions);
+  options?: Omit<Options, 'verify'> | undefined,
+): Options {
+  let parserOptions: Options = (options || {}) as Options;
 
   if (rawBody === true) {
     parserOptions = {

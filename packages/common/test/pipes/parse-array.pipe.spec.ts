@@ -78,8 +78,11 @@ describe('ParseArrayPipe', () => {
         target = new ParseArrayPipe();
 
         expect(
-          await target.transform('1,2,3', {} as ArgumentMetadata),
-        ).to.be.deep.equal(['1', '2', '3']);
+          await target.transform(
+            '1,2.0,3,{},true,null,,',
+            {} as ArgumentMetadata,
+          ),
+        ).to.be.deep.equal(['1', '2.0', '3', '{}', 'true', 'null', '', '']);
 
         target = new ParseArrayPipe({ separator: '/' });
 
@@ -171,13 +174,16 @@ describe('ParseArrayPipe', () => {
 
         target = new ParseArrayPipe({ items: Number });
         expect(
-          await target.transform('1,2,3', {} as ArgumentMetadata),
+          await target.transform('1,2.0,3', {} as ArgumentMetadata),
         ).to.deep.equal([1, 2, 3]);
 
         target = new ParseArrayPipe({ items: String });
         expect(
-          await target.transform('1,2,3', {} as ArgumentMetadata),
-        ).to.deep.equal(['1', '2', '3']);
+          await target.transform(
+            '1,2.0,3,{},true,null,,',
+            {} as ArgumentMetadata,
+          ),
+        ).to.deep.equal(['1', '2.0', '3', '{}', 'true', 'null', '', '']);
 
         target = new ParseArrayPipe({ items: Boolean });
         expect(

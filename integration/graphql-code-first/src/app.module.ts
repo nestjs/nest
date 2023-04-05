@@ -9,7 +9,7 @@ import { RecipesModule } from './recipes/recipes.module';
     RecipesModule,
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
-      debug: false,
+      includeStacktraceInErrorResponses: false,
       installSubscriptionHandlers: true,
       autoSchemaFile: join(
         process.cwd(),

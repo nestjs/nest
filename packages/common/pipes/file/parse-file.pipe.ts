@@ -9,8 +9,8 @@ import { ParseFileOptions } from './parse-file-options.interface';
 /**
  * Defines the built-in ParseFile Pipe. This pipe can be used to validate incoming files
  * with `@UploadedFile()` decorator. You can use either other specific built-in validators
- * or provide one of your own, simply implementing it through {@link FileValidator}
- * interface and adding it to ParseFilePipe's constructor.
+ * or provide one of your own, simply implementing it through FileValidator interface
+ * and adding it to ParseFilePipe's constructor.
  *
  * @see [Built-in Pipes](https://docs.nestjs.com/pipes#built-in-pipes)
  *
@@ -39,26 +39,24 @@ export class ParseFilePipe implements PipeTransform<any> {
   }
 
   async transform(value: any): Promise<any> {
-    if (this.thereAreNoFilesIn(value)) {
-      if (this.fileIsRequired) {
-        throw this.exceptionFactory('File is required');
-      }
-      return value;
-    }
+    const areThereAnyFilesIn = this.thereAreNoFilesIn(value);
 
-    if (this.validators.length) {
-      if (Array.isArray(value)) {
-        await this.validateFiles(value);
-      } else {
-        await this.validate(value);
-      }
+    if (areThereAnyFilesIn && this.fileIsRequired) {
+      throw this.exceptionFactory('File is required');
+    }
+    if (!areThereAnyFilesIn && this.validators.length) {
+      await this.validateFilesOrFile(value);
     }
 
     return value;
   }
 
-  private validateFiles(files: any[]): Promise<any[]> {
-    return Promise.all(files.map(f => this.validate(f)));
+  private async validateFilesOrFile(value: any): Promise<void> {
+    if (Array.isArray(value)) {
+      await Promise.all(value.map(f => this.validate(f)));
+    } else {
+      await this.validate(value);
+    }
   }
 
   private thereAreNoFilesIn(value: any): boolean {
@@ -71,7 +69,6 @@ export class ParseFilePipe implements PipeTransform<any> {
     for (const validator of this.validators) {
       await this.validateOrThrow(file, validator);
     }
-
     return file;
   }
 

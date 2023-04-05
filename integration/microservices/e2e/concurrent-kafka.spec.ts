@@ -1,5 +1,5 @@
 import { INestApplication, Logger } from '@nestjs/common';
-import { Transport } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { Admin, ITopicMetadata, Kafka } from 'kafkajs';
 import * as request from 'supertest';
@@ -37,7 +37,7 @@ describe.skip('Kafka concurrent', function () {
 
     const server = app.getHttpAdapter().getInstance();
 
-    app.connectMicroservice({
+    app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.KAFKA,
       options: {
         client: {

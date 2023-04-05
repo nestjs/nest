@@ -1,3 +1,4 @@
+import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
@@ -6,6 +7,7 @@ import { EnhancerMetadataCacheEntry } from './interfaces/enhancer-metadata-cache
 import { Entrypoint } from './interfaces/entrypoint.interface';
 import { OrphanedEnhancerDefinition } from './interfaces/extras.interface';
 import { ClassNode, Node } from './interfaces/node.interface';
+import { PartialGraphHost } from './partial-graph.host';
 import { SerializedGraph } from './serialized-graph';
 
 export class GraphInspector {
@@ -31,6 +33,29 @@ export class GraphInspector {
     );
 
     DeterministicUuidRegistry.clear();
+  }
+
+  public registerPartial(error: unknown) {
+    this.graph.status = 'partial';
+
+    if (error instanceof UnknownDependenciesException) {
+      this.graph.metadata = {
+        cause: {
+          type: 'unknown-dependencies',
+          context: error.context,
+          moduleId: error.moduleRef?.id,
+          nodeId: error.metadata?.id,
+        },
+      };
+    } else {
+      this.graph.metadata = {
+        cause: {
+          type: 'unknown',
+          error,
+        },
+      };
+    }
+    PartialGraphHost.register(this.graph);
   }
 
   public inspectInstanceWrapper<T = any>(

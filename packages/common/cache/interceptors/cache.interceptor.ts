@@ -9,6 +9,7 @@ import {
   NestInterceptor,
 } from '../../interfaces';
 import { Logger } from '../../services/logger.service';
+import { loadPackage } from '../../utils/load-package.util';
 import { isFunction, isNil } from '../../utils/shared.utils';
 import {
   CACHE_KEY_METADATA,
@@ -16,9 +17,13 @@ import {
   CACHE_TTL_METADATA,
 } from '../cache.constants';
 
+/** @deprecated */
 const HTTP_ADAPTER_HOST = 'HttpAdapterHost';
+
+/** @deprecated */
 const REFLECTOR = 'Reflector';
 
+/** @deprecated Import from the "@nestjs/core" instead. */
 export interface HttpAdapterHost<T extends HttpServer = any> {
   httpAdapter: T;
 }
@@ -26,6 +31,7 @@ export interface HttpAdapterHost<T extends HttpServer = any> {
 /**
  * @see [Caching](https://docs.nestjs.com/techniques/caching)
  *
+ * @deprecated `CacheModule` (from the `@nestjs/common` package) is deprecated and will be removed in the next major release. Please, use the `@nestjs/cache-manager` package instead
  * @publicApi
  */
 @Injectable()
@@ -35,10 +41,26 @@ export class CacheInterceptor implements NestInterceptor {
   protected readonly httpAdapterHost: HttpAdapterHost;
 
   protected allowedMethods = ['GET'];
+
+  private cacheManagerIsv5OrGreater: boolean;
+
   constructor(
     @Inject(CACHE_MANAGER) protected readonly cacheManager: any,
     @Inject(REFLECTOR) protected readonly reflector: any,
-  ) {}
+  ) {
+    // We need to check if the cache-manager package is v5 or greater
+    // because the set method signature changed in v5
+    const cacheManagerPackage = loadPackage(
+      'cache-manager',
+      'CacheModule',
+      () => require('cache-manager'),
+    );
+    this.cacheManagerIsv5OrGreater = 'memoryStore' in cacheManagerPackage;
+
+    Logger.warn(
+      'DEPRECATED! "CacheModule" (from the "@nestjs/common" package) is deprecated and will be removed in the next major release. Please, use the "@nestjs/cache-manager" package instead.',
+    );
+  }
 
   async intercept(
     context: ExecutionContext,
@@ -59,13 +81,17 @@ export class CacheInterceptor implements NestInterceptor {
       const ttl = isFunction(ttlValueOrFactory)
         ? await ttlValueOrFactory(context)
         : ttlValueOrFactory;
+
       return next.handle().pipe(
         tap(async response => {
           if (response instanceof StreamableFile) {
             return;
           }
 
-          const args = isNil(ttl) ? [key, response] : [key, response, { ttl }];
+          const args = [key, response];
+          if (!isNil(ttl)) {
+            args.push(this.cacheManagerIsv5OrGreater ? ttl : { ttl });
+          }
 
           try {
             await this.cacheManager.set(...args);

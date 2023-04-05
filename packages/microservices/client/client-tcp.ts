@@ -2,6 +2,7 @@ import { Logger, Type } from '@nestjs/common';
 import * as net from 'net';
 import { EmptyError, lastValueFrom } from 'rxjs';
 import { share, tap } from 'rxjs/operators';
+import { ConnectionOptions } from 'tls';
 import {
   CLOSE_EVENT,
   ECONNREFUSED,
@@ -11,6 +12,7 @@ import {
   TCP_DEFAULT_PORT,
 } from '../constants';
 import { JsonSocket, TcpSocket } from '../helpers';
+import { connect as tlsConnect, TLSSocket } from 'tls';
 import { PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { TcpClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
@@ -26,6 +28,7 @@ export class ClientTCP extends ClientProxy {
   private readonly socketClass: Type<TcpSocket>;
   private isConnected = false;
   private socket: TcpSocket;
+  public tlsOptions?: ConnectionOptions;
 
   constructor(options: TcpClientOptions['options']) {
     super();
@@ -33,6 +36,7 @@ export class ClientTCP extends ClientProxy {
     this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
     this.socketClass =
       this.getOptionsProp(options, 'socketClass') || JsonSocket;
+    this.tlsOptions = this.getOptionsProp(options, 'tlsOptions');
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -55,7 +59,10 @@ export class ClientTCP extends ClientProxy {
       share(),
     );
 
-    this.socket.connect(this.port, this.host);
+    // For TLS connections, the connection is initiated when the socket is created
+    if (!this.tlsOptions) {
+      this.socket.connect(this.port, this.host);
+    }
     this.connection = lastValueFrom(source$).catch(err => {
       if (err instanceof EmptyError) {
         return;
@@ -87,7 +94,21 @@ export class ClientTCP extends ClientProxy {
   }
 
   public createSocket(): TcpSocket {
-    return new this.socketClass(new net.Socket());
+    let socket: net.Socket | TLSSocket;
+    /**
+     * TLS enabled, "upgrade" the TCP Socket to TLS
+     */
+    if (this.tlsOptions) {
+      socket = tlsConnect({
+        ...this.tlsOptions,
+        port: this.port,
+        host: this.host,
+        socket,
+      });
+    } else {
+      socket = new net.Socket();
+    }
+    return new this.socketClass(socket);
   }
 
   public close() {

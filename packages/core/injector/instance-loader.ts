@@ -27,8 +27,13 @@ export class InstanceLoader<TInjector extends Injector = Injector> {
   ) {
     this.createPrototypes(modules);
 
-    await this.createInstances(modules);
-
+    try {
+      await this.createInstances(modules);
+    } catch (err) {
+      this.graphInspector.inspectModules(modules);
+      this.graphInspector.registerPartial(err);
+      throw err;
+    }
     this.graphInspector.inspectModules(modules);
   }
 

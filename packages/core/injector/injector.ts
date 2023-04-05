@@ -507,6 +507,7 @@ export class Injector {
         wrapper.name,
         dependencyContext,
         moduleRef,
+        { id: wrapper.id },
       );
     }
     if (providers.has(name)) {
@@ -547,6 +548,7 @@ export class Injector {
         wrapper.name,
         dependencyContext,
         moduleRef,
+        { id: wrapper.id },
       );
     }
     return instanceWrapper;
