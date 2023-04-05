@@ -3,12 +3,24 @@ import { join } from 'path';
 import { samplePath } from '../config';
 import { containsPackageJson, getDirs } from '../util/task-helpers';
 
+const distFiles = src([
+  'packages/**/*',
+  '!packages/**/*.ts',
+  'packages/**/*.d.ts',
+]);
+
+/**
+ * Moves the compiled nest files into "node_module" folder.
+ */
+function moveToNodeModules() {
+  return distFiles.pipe(dest('node_modules/@nestjs'));
+}
+
 /**
  * Moves the compiled nest files into the `samples/*` dirs.
  */
-function move() {
+function moveToSamples() {
   const samplesDirs = getDirs(samplePath);
-  const distFiles = src(['node_modules/@nestjs/**/*']);
 
   /**
    * Flatten the sampleDirs
@@ -31,4 +43,5 @@ function move() {
   );
 }
 
-task('move', move);
+task('move:node_modules', moveToNodeModules);
+task('move:samples', moveToSamples);

@@ -1,19 +1,33 @@
 import { RequestMethod } from '@nestjs/common';
 import { HttpServer, RouteInfo, Type } from '@nestjs/common/interfaces';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
+import {
+  addLeadingSlash,
+  isFunction,
+  isString,
+} from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import * as pathToRegexp from 'path-to-regexp';
-import { v4 as uuid } from 'uuid';
+import { uid } from 'uid';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
 import { isRouteExcluded } from '../router/utils';
 
 export const mapToExcludeRoute = (
-  routes: RouteInfo[],
+  routes: (string | RouteInfo)[],
 ): ExcludeRouteMetadata[] => {
-  return routes.map(({ path, method }) => ({
-    pathRegex: pathToRegexp(path),
-    requestMethod: method,
-  }));
+  return routes.map(route => {
+    if (isString(route)) {
+      return {
+        path: route,
+        requestMethod: RequestMethod.ALL,
+        pathRegex: pathToRegexp(addLeadingSlash(route)),
+      };
+    }
+    return {
+      path: route.path,
+      requestMethod: route.method,
+      pathRegex: pathToRegexp(addLeadingSlash(route.path)),
+    };
+  });
 };
 
 export const filterMiddleware = <T extends Function | Type<any> = any>(
@@ -85,7 +99,7 @@ export function isMiddlewareClass(middleware: any): middleware is Type<any> {
   );
 }
 
-export function assignToken(metatype: Type<any>, token = uuid()): Type<any> {
+export function assignToken(metatype: Type<any>, token = uid(21)): Type<any> {
   Object.defineProperty(metatype, 'name', { value: token });
   return metatype;
 }

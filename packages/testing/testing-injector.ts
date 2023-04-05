@@ -8,6 +8,9 @@ import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { Module } from '@nestjs/core/injector/module';
 import { MockFactory } from './interfaces';
 
+/**
+ * @publicApi
+ */
 export class TestingInjector extends Injector {
   protected mocker?: MockFactory;
   protected container: NestContainer;

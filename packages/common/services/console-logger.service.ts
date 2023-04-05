@@ -1,7 +1,11 @@
-import { Injectable } from '../decorators/core/injectable.decorator';
-import { Optional } from '../decorators/core/optional.decorator';
+import { Injectable, Optional } from '../decorators/core';
 import { clc, yellow } from '../utils/cli-colors.util';
-import { isPlainObject, isString } from '../utils/shared.utils';
+import {
+  isFunction,
+  isPlainObject,
+  isString,
+  isUndefined,
+} from '../utils/shared.utils';
 import { LoggerService, LogLevel } from './logger.service';
 import { isLogLevelEnabled } from './utils';
 
@@ -23,6 +27,15 @@ const DEFAULT_LOG_LEVELS: LogLevel[] = [
   'debug',
   'verbose',
 ];
+
+const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric',
+  second: 'numeric',
+  day: '2-digit',
+  month: '2-digit',
+});
 
 @Injectable()
 export class ConsoleLogger implements LoggerService {
@@ -163,18 +176,7 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected getTimestamp(): string {
-    const localeStringOptions = {
-      year: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      second: 'numeric',
-      day: '2-digit',
-      month: '2-digit',
-    };
-    return new Date(Date.now()).toLocaleString(
-      undefined,
-      localeStringOptions as Intl.DateTimeFormatOptions,
-    );
+    return dateTimeFormatter.format(Date.now());
   }
 
   protected printMessages(
@@ -185,7 +187,7 @@ export class ConsoleLogger implements LoggerService {
   ) {
     messages.forEach(message => {
       const pidMessage = this.formatPid(process.pid);
-      const contextMessage = context ? yellow(`[${context}] `) : '';
+      const contextMessage = this.formatContext(context);
       const timestampDiff = this.updateAndGetTimestampDiff();
       const formattedLogLevel = logLevel.toUpperCase().padStart(7, ' ');
       const formattedMessage = this.formatMessage(
@@ -205,6 +207,10 @@ export class ConsoleLogger implements LoggerService {
     return `[Nest] ${pid}  - `;
   }
 
+  protected formatContext(context: string): string {
+    return context ? yellow(`[${context}] `) : '';
+  }
+
   protected formatMessage(
     logLevel: LogLevel,
     message: unknown,
@@ -220,7 +226,10 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected stringifyMessage(message: unknown, logLevel: LogLevel) {
-    return isPlainObject(message)
+    // If the message is a function, call it and re-resolve its value.
+    return isFunction(message)
+      ? this.stringifyMessage(message(), logLevel)
+      : isPlainObject(message) || Array.isArray(message)
       ? `${this.colorize('Object:', logLevel)}\n${JSON.stringify(
           message,
           (key, value) =>
@@ -242,14 +251,18 @@ export class ConsoleLogger implements LoggerService {
     process.stderr.write(`${stack}\n`);
   }
 
-  private updateAndGetTimestampDiff(): string {
+  protected updateAndGetTimestampDiff(): string {
     const includeTimestamp =
       ConsoleLogger.lastTimestampAt && this.options?.timestamp;
     const result = includeTimestamp
-      ? yellow(` +${Date.now() - ConsoleLogger.lastTimestampAt}ms`)
+      ? this.formatTimestampDiff(Date.now() - ConsoleLogger.lastTimestampAt)
       : '';
     ConsoleLogger.lastTimestampAt = Date.now();
     return result;
+  }
+
+  protected formatTimestampDiff(timestampDiff: number) {
+    return yellow(` +${timestampDiff}ms`);
   }
 
   private getContextAndMessagesToPrint(args: unknown[]) {
@@ -274,7 +287,8 @@ export class ConsoleLogger implements LoggerService {
     }
     const lastElement = messages[messages.length - 1];
     const isStack = isString(lastElement);
-    if (!isStack) {
+    // https://github.com/nestjs/nest/issues/11074#issuecomment-1421680060
+    if (!isStack && !isUndefined(lastElement)) {
       return { messages, context };
     }
     return {

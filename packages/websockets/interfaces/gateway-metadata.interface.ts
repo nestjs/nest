@@ -1,9 +1,10 @@
-/**
- * @external https://github.com/socketio/socket.io/blob/master/lib/index.ts
- */
-
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
+/**
+ * External interface
+ * @see https://github.com/socketio/socket.io/blob/master/lib/index.ts 
+ * @publicApi
+ */
 export interface GatewayMetadata {
   /**
    * The name of a namespace

@@ -14,6 +14,9 @@ import { ChannelOptions } from '../external/grpc-options.interface';
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
 
+/**
+ * @publicApi
+ */
 export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly clients = new Map<string, any>();
@@ -46,7 +49,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     const grpcClient = this.createClientByServiceName(name);
     const clientRef = this.getClient(name);
     if (!clientRef) {
-      throw new InvalidGrpcServiceException();
+      throw new InvalidGrpcServiceException(name);
     }
 
     const protoMethods = Object.keys(clientRef[name].prototype);
@@ -65,7 +68,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   public createClientByServiceName(name: string) {
     const clientRef = this.getClient(name);
     if (!clientRef) {
-      throw new InvalidGrpcServiceException();
+      throw new InvalidGrpcServiceException(name);
     }
 
     const channelOptions: ChannelOptions =
@@ -241,13 +244,19 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
         });
       }
       return new Observable(observer => {
-        client[methodName](...args, (error: any, data: any) => {
+        const call = client[methodName](...args, (error: any, data: any) => {
           if (error) {
             return observer.error(this.serializeError(error));
           }
           observer.next(data);
           observer.complete();
         });
+
+        return () => {
+          if (!call.finished) {
+            call.cancel();
+          }
+        };
       });
     };
   }
@@ -264,7 +273,9 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
       const grpcPkg = this.lookupPackage(grpcContext, packageName);
 
       if (!grpcPkg) {
-        const invalidPackageError = new InvalidGrpcPackageException();
+        const invalidPackageError = new InvalidGrpcPackageException(
+          packageName,
+        );
         this.logger.error(
           invalidPackageError.message,
           invalidPackageError.stack,
@@ -289,7 +300,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
         grpcPackage.loadPackageDefinition(packageDefinition);
       return packageObject;
     } catch (err) {
-      const invalidProtoError = new InvalidProtoDefinitionException();
+      const invalidProtoError = new InvalidProtoDefinitionException(err.path);
       const message =
         err && err.message ? err.message : invalidProtoError.message;
 

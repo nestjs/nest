@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Header } from '@nestjs/common';
 
 @Controller()
 export class ErrorsController {
@@ -10,6 +10,12 @@ export class ErrorsController {
   @Get('async')
   async asynchronous() {
     this.throwError();
+  }
+
+  @Get('unexpected-error')
+  @Header('Content-Type', 'application/pdf')
+  unexpectedError() {
+    throw new Error();
   }
 
   throwError() {

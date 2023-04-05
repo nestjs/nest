@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { Transport } from '@nestjs/microservices';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
@@ -19,7 +19,7 @@ describe('NATS transport', () => {
     app = module.createNestApplication();
     server = app.getHttpAdapter().getInstance();
 
-    app.connectMicroservice({
+    app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.NATS,
       options: {
         servers: 'nats://0.0.0.0:4222',

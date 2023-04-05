@@ -5,6 +5,9 @@ import { IncomingRequestDeserializer } from './incoming-request.deserializer';
 
 let natsPackage = {} as any;
 
+/**
+ * @publicApi
+ */
 export class NatsRequestJSONDeserializer extends IncomingRequestDeserializer {
   private readonly jsonCodec: NatsCodec<unknown>;
 

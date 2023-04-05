@@ -7,7 +7,7 @@ import {
 @Injectable()
 export class CacheConfig implements CacheOptionsFactory {
   createCacheOptions(): CacheModuleOptions {
-    const ttl = 10;
+    const ttl = 100;
 
     return { ttl };
   }

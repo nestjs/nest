@@ -18,15 +18,25 @@ import {
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Module } from '@nestjs/core/injector/module';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 
+/**
+ * @publicApi
+ */
 export class TestingModule extends NestApplicationContext {
+  protected readonly graphInspector: GraphInspector;
+
   constructor(
     container: NestContainer,
-    scope: Type<any>[],
+    graphInspector: GraphInspector,
     contextModule: Module,
     private readonly applicationConfig: ApplicationConfig,
+    scope: Type<any>[] = [],
   ) {
-    super(container, scope, contextModule);
+    const options = {};
+    super(container, options, contextModule, scope);
+
+    this.graphInspector = graphInspector;
   }
 
   private isHttpServer(
@@ -65,6 +75,7 @@ export class TestingModule extends NestApplicationContext {
       this.container,
       httpAdapter,
       this.applicationConfig,
+      this.graphInspector,
       appOptions,
     );
     return this.createAdapterProxy<T>(instance, httpAdapter);
@@ -82,6 +93,7 @@ export class TestingModule extends NestApplicationContext {
     return new NestMicroservice(
       this.container,
       options,
+      this.graphInspector,
       this.applicationConfig,
     );
   }

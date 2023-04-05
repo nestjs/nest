@@ -35,7 +35,7 @@ jobs:
       - checkout
       - run:
           name: Update NPM version
-          command: 'sudo npm install -g npm@latest'
+          command: 'sudo npm install -g npm@^8'
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run:
@@ -68,7 +68,9 @@ jobs:
       - *restore-cache
       - *install-deps
       - *build-packages
-      - *run-unit-tests
+      - run:
+          name: Test (coverage)
+          command: npm run test:cov
       - run:
           name: Collect coverage
           command: npm run coverage

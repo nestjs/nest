@@ -1,4 +1,4 @@
-import { Catch, Injectable, Logger } from '@nestjs/common';
+import { Catch, Injectable } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { GUARDS_METADATA } from '../../common/constants';
@@ -8,13 +8,15 @@ import { Module } from '../../common/decorators/modules/module.decorator';
 import { Scope } from '../../common/interfaces';
 import { ApplicationConfig } from '../application-config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '../constants';
-import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
 import { InvalidClassModuleException } from '../errors/exceptions/invalid-class-module.exception';
+import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
 import { UndefinedModuleException } from '../errors/exceptions/undefined-module.exception';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
+import { GraphInspector } from '../inspector/graph-inspector';
 import { MetadataScanner } from '../metadata-scanner';
 import { DependenciesScanner } from '../scanner';
+import Sinon = require('sinon');
 
 describe('DependenciesScanner', () => {
   class Guard {}
@@ -55,14 +57,17 @@ describe('DependenciesScanner', () => {
   let scanner: DependenciesScanner;
   let mockContainer: sinon.SinonMock;
   let container: NestContainer;
+  let graphInspector: GraphInspector;
 
   beforeEach(() => {
     container = new NestContainer();
     mockContainer = sinon.mock(container);
+    graphInspector = new GraphInspector(container);
 
     scanner = new DependenciesScanner(
       container,
       new MetadataScanner(),
+      graphInspector,
       new ApplicationConfig(),
     );
     sinon.stub(scanner, 'registerCoreModule').callsFake(async () => {});
@@ -75,7 +80,7 @@ describe('DependenciesScanner', () => {
   it('should "insertModule" call twice (2 modules) container method "addModule"', async () => {
     const expectation = mockContainer.expects('addModule').twice();
 
-    await scanner.scan(TestModule as any);
+    await scanner.scan(TestModule);
     expectation.verify();
   });
 
@@ -134,34 +139,115 @@ describe('DependenciesScanner', () => {
   });
 
   describe('insertInjectable', () => {
-    it('should call "addInjectable"', () => {
-      const addInjectable = sinon
-        .stub((scanner as any).container, 'addInjectable')
-        .callsFake(() => undefined);
-      const comp = {};
-      const token = 'token';
+    class InjectableCls {}
+    class HostCls {}
 
-      scanner.insertInjectable(comp as any, token, null);
-      expect(addInjectable.calledWith(comp, token)).to.be.true;
+    const instanceWrapper = { id: 'random_id' };
+    const token = 'token';
+    const methodKey = 'methodKey';
+
+    let addInjectableStub: Sinon.SinonStub;
+    let insertEnhancerMetadataCacheStub: Sinon.SinonStub;
+
+    beforeEach(() => {
+      addInjectableStub = sinon
+        .stub((scanner as any).container, 'addInjectable')
+        .callsFake(() => instanceWrapper);
+      insertEnhancerMetadataCacheStub = sinon
+        .stub(graphInspector, 'insertEnhancerMetadataCache')
+        .callsFake(() => undefined);
+    });
+
+    describe('when injectable is of type function', () => {
+      const subtype = 'filter';
+      beforeEach(() => {
+        scanner.insertInjectable(
+          InjectableCls,
+          token,
+          HostCls,
+          subtype,
+          methodKey,
+        );
+      });
+
+      it('should call "addInjectable"', () => {
+        expect(addInjectableStub.calledWith(InjectableCls, token)).to.be.true;
+      });
+
+      it('should call "insertEnhancerMetadataCache"', () => {
+        expect(
+          insertEnhancerMetadataCacheStub.calledWith({
+            moduleToken: token,
+            classRef: HostCls,
+            enhancerInstanceWrapper: instanceWrapper,
+            targetNodeId: instanceWrapper.id,
+            methodKey,
+            subtype,
+          }),
+        ).to.be.true;
+      });
+    });
+    describe('when injectable is not of type function', () => {
+      const injectableRef = new InjectableCls();
+      const subtype = 'interceptor';
+
+      beforeEach(() => {
+        scanner.insertInjectable(
+          injectableRef,
+          token,
+          HostCls,
+          subtype,
+          methodKey,
+        );
+      });
+
+      it('should not call "addInjectable"', () => {
+        expect(addInjectableStub.notCalled).to.be.true;
+      });
+
+      it('should call "insertEnhancerMetadataCache"', () => {
+        expect(
+          insertEnhancerMetadataCacheStub.calledWith({
+            moduleToken: token,
+            classRef: HostCls,
+            enhancerRef: injectableRef,
+            methodKey,
+            subtype,
+          }),
+        ).to.be.true;
+      });
     });
   });
 
   class CompMethod {
     @UseGuards(Guard)
     public method() {}
+
+    @UseGuards(Guard, Guard)
+    public method2() {}
   }
   describe('reflectKeyMetadata', () => {
     it('should return undefined', () => {
       const result = scanner.reflectKeyMetadata(TestComponent, 'key', 'method');
       expect(result).to.be.undefined;
     });
-    it('should return array', () => {
+    it('should return an array that consists of 1 element', () => {
+      const methodKey = 'method';
       const result = scanner.reflectKeyMetadata(
         CompMethod,
         GUARDS_METADATA,
-        'method',
+        methodKey,
       );
-      expect(result).to.be.eql([Guard]);
+      expect(result).to.be.deep.equal({ methodKey, metadata: [Guard] });
+    });
+    it('should return an array that consists of 2 elements', () => {
+      const methodKey = 'method2';
+      const result = scanner.reflectKeyMetadata(
+        CompMethod,
+        GUARDS_METADATA,
+        methodKey,
+      );
+      expect(result).to.be.deep.equal({ methodKey, metadata: [Guard, Guard] });
     });
   });
 
@@ -174,21 +260,21 @@ describe('DependenciesScanner', () => {
 
       expect(module.forwardRef.called).to.be.true;
     });
-    it('should throw "InvalidClassModuleException" exception when suppling a class annotated with `@Injectable()` decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with `@Injectable()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
       expect(scanner.insertModule(TestComponent, [])).to.be.rejectedWith(
         InvalidClassModuleException,
       );
     });
-    it('should throw "InvalidClassModuleException" exception when suppling a class annotated with `@Controller()` decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with `@Controller()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
       expect(scanner.insertModule(TestController, [])).to.be.rejectedWith(
         InvalidClassModuleException,
       );
     });
-    it('should throw "InvalidClassModuleException" exception when suppling a class annotated with (only) `@Catch()` decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with (only) `@Catch()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
       expect(
@@ -312,18 +398,30 @@ describe('DependenciesScanner', () => {
       (scanner as any).applicationProvidersApplyMap = [provider];
 
       const expectedInstance = {};
+      const instanceWrapper = {
+        instance: expectedInstance,
+      } as unknown as InstanceWrapper;
       mockContainer.expects('getModules').callsFake(() => ({
         get: () => ({
-          providers: { get: () => ({ instance: expectedInstance }) },
+          providers: { get: () => instanceWrapper },
         }),
       }));
+
       const applySpy = sinon.spy();
       sinon.stub(scanner, 'getApplyProvidersMap').callsFake(() => ({
         [provider.type]: applySpy,
       }));
+
+      const insertAttachedEnhancerStub = sinon.stub(
+        graphInspector,
+        'insertAttachedEnhancer',
+      );
+
       scanner.applyApplicationProviders();
+
       expect(applySpy.called).to.be.true;
       expect(applySpy.calledWith(expectedInstance)).to.be.true;
+      expect(insertAttachedEnhancerStub.calledWith(instanceWrapper)).to.be.true;
     });
     it('should apply each globally scoped provider', () => {
       const provider = {
@@ -340,13 +438,23 @@ describe('DependenciesScanner', () => {
           injectables: { get: () => expectedInstanceWrapper },
         }),
       }));
+
       const applySpy = sinon.spy();
       sinon.stub(scanner, 'getApplyRequestProvidersMap').callsFake(() => ({
         [provider.type]: applySpy,
       }));
+
+      const insertAttachedEnhancerStub = sinon.stub(
+        graphInspector,
+        'insertAttachedEnhancer',
+      );
+
       scanner.applyApplicationProviders();
+
       expect(applySpy.called).to.be.true;
       expect(applySpy.calledWith(expectedInstanceWrapper)).to.be.true;
+      expect(insertAttachedEnhancerStub.calledWith(expectedInstanceWrapper)).to
+        .be.true;
     });
   });
 
@@ -358,31 +466,45 @@ describe('DependenciesScanner', () => {
       scope: Scope.REQUEST,
     };
 
-    it('should add enhancers metadata to every controller', () => {
+    it('should add enhancers metadata to every controller and every entry provider', () => {
       (scanner as any).applicationProvidersApplyMap = [provider];
 
       const instance = new InstanceWrapper({ name: 'test' });
       const controllers = new Map();
-      const mockController = new InstanceWrapper();
+      const providers = new Map();
 
-      controllers.set('test', mockController);
+      const fakeController = new InstanceWrapper();
+      const fakeProvider = new InstanceWrapper();
+
+      const providerToken = 'entryProvider';
+      controllers.set('test', fakeController);
+      providers.set(providerToken, fakeProvider);
+
       mockContainer.expects('getModules').callsFake(() => ({
         get: () => ({
           injectables: { get: () => instance },
           controllers,
+          entryProviders: Array.from(providers.values()),
         }),
         values() {
           return [this.get()];
         },
       }));
-      const addEnhancerMetadataSpy = sinon.spy(
-        mockController,
+
+      const addEnhancerMetadataControllerSpy = sinon.spy(
+        fakeController,
+        'addEnhancerMetadata',
+      );
+      const addEnhancerMetadataProviderSpy = sinon.spy(
+        fakeProvider,
         'addEnhancerMetadata',
       );
       scanner.addScopedEnhancersMetadata();
 
-      expect(addEnhancerMetadataSpy.called).to.be.true;
-      expect(addEnhancerMetadataSpy.calledWith(instance)).to.be.true;
+      expect(addEnhancerMetadataControllerSpy.called).to.be.true;
+      expect(addEnhancerMetadataControllerSpy.calledWith(instance)).to.be.true;
+      expect(addEnhancerMetadataProviderSpy.called).to.be.true;
+      expect(addEnhancerMetadataProviderSpy.calledWith(instance)).to.be.true;
     });
   });
 

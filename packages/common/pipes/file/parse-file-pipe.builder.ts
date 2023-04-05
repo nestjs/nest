@@ -10,16 +10,22 @@ import {
 import { ParseFileOptions } from './parse-file-options.interface';
 import { ParseFilePipe } from './parse-file.pipe';
 
+/**
+ * @publicApi
+ */
 export class ParseFilePipeBuilder {
   private validators: FileValidator[] = [];
 
   addMaxSizeValidator(options: MaxFileSizeValidatorOptions) {
-    this.validators.push(new MaxFileSizeValidator(options));
-    return this;
+    return this.addValidator(new MaxFileSizeValidator(options));
   }
 
   addFileTypeValidator(options: FileTypeValidatorOptions) {
-    this.validators.push(new FileTypeValidator(options));
+    return this.addValidator(new FileTypeValidator(options));
+  }
+
+  addValidator(validator: FileValidator) {
+    this.validators.push(validator);
     return this;
   }
 

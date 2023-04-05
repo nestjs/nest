@@ -18,8 +18,8 @@ describe('Error Messages', () => {
         stringCleaner(`Nest can't resolve dependencies of the CatService (?, CatService). Please make sure that the argument dependency at index [0] is available in the current context.
   
       Potential solutions:
-      - If dependency is a provider, is it part of the current current?
-      - If dependency is exported from a separate @Module, is that module imported within current?
+      - If dependency is a provider, is it part of the current Module?
+      - If dependency is exported from a separate @Module, is that module imported within Module?
       @Module({
         imports: [ /* the Module containing dependency */ ]
       })
@@ -41,8 +41,8 @@ describe('Error Messages', () => {
         stringCleaner(`Nest can't resolve dependencies of the CatService (?, MY_TOKEN). Please make sure that the argument dependency at index [0] is available in the current context.
   
       Potential solutions:
-      - If dependency is a provider, is it part of the current current?
-      - If dependency is exported from a separate @Module, is that module imported within current?
+      - If dependency is a provider, is it part of the current Module?
+      - If dependency is exported from a separate @Module, is that module imported within Module?
       @Module({
       imports: [ /* the Module containing dependency */ ]
       })
@@ -62,8 +62,8 @@ describe('Error Messages', () => {
         stringCleaner(`Nest can't resolve dependencies of the CatService (?, CatFunction). Please make sure that the argument dependency at index [0] is available in the current context.
   
       Potential solutions:
-      - If dependency is a provider, is it part of the current current?
-      - If dependency is exported from a separate @Module, is that module imported within current?
+      - If dependency is a provider, is it part of the current Module?
+      - If dependency is exported from a separate @Module, is that module imported within Module?
       @Module({
         imports: [ /* the Module containing dependency */ ]
       })
@@ -83,8 +83,8 @@ describe('Error Messages', () => {
         stringCleaner(`Nest can't resolve dependencies of the CatService (?, +). Please make sure that the argument dependency at index [0] is available in the current context.
   
       Potential solutions:
-      - If dependency is a provider, is it part of the current current?
-      - If dependency is exported from a separate @Module, is that module imported within current?
+      - If dependency is a provider, is it part of the current Module?
+      - If dependency is exported from a separate @Module, is that module imported within Module?
         @Module({
           imports: [ /* the Module containing dependency */ ]
         })
@@ -104,6 +104,7 @@ describe('Error Messages', () => {
         stringCleaner(`Nest can't resolve dependencies of the CatService (?, MY_TOKEN). Please make sure that the argument dependency at index [0] is available in the TestModule context.
   
       Potential solutions:
+      - Is TestModule a valid NestJS module?
       - If dependency is a provider, is it part of the current TestModule?
       - If dependency is exported from a separate @Module, is that module imported within TestModule?
         @Module({
@@ -137,8 +138,8 @@ describe('Error Messages', () => {
         stringCleaner(`Nest can't resolve dependencies of the Symbol(CatProvider) (?). Please make sure that the argument dependency at index [0] is available in the current context.
   
       Potential solutions:
-      - If dependency is a provider, is it part of the current current?
-      - If dependency is exported from a separate @Module, is that module imported within current?
+      - If dependency is a provider, is it part of the current Module?
+      - If dependency is exported from a separate @Module, is that module imported within Module?
         @Module({
           imports: [ /* the Module containing dependency */ ]
         })
@@ -158,8 +159,8 @@ describe('Error Messages', () => {
         stringCleaner(`Nest can't resolve dependencies of the CatProvider (?, Symbol(DogProvider)). Please make sure that the argument dependency at index [0] is available in the current context.
   
       Potential solutions:
-      - If dependency is a provider, is it part of the current current?
-      - If dependency is exported from a separate @Module, is that module imported within current?
+      - If dependency is a provider, is it part of the current Module?
+      - If dependency is exported from a separate @Module, is that module imported within Module?
         @Module({
           imports: [ /* the Module containing dependency */ ]
         })

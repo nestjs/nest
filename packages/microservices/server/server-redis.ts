@@ -1,5 +1,4 @@
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { Observable } from 'rxjs';
 import {
   ERROR_EVENT,
   MESSAGE_EVENT,

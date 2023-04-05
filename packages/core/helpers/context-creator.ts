@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common/interfaces';
 import { STATIC_CONTEXT } from '../injector/constants';
-import { ContextId } from '../injector/instance-wrapper';
+import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 
 export abstract class ContextCreator {
   public abstract createConcreteContext<T extends any[], R extends any[]>(
@@ -50,5 +50,17 @@ export abstract class ContextCreator {
     metadataKey: string,
   ): T {
     return Reflect.getMetadata(metadataKey, callback);
+  }
+
+  protected getContextId(
+    contextId: ContextId,
+    instanceWrapper: InstanceWrapper,
+  ): ContextId {
+    return contextId.getParent
+      ? contextId.getParent({
+          token: instanceWrapper.token,
+          isTreeDurable: instanceWrapper.isDependencyTreeDurable(),
+        })
+      : contextId;
   }
 }

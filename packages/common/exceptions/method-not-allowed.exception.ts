@@ -1,5 +1,5 @@
 import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException } from './http.exception';
+import { HttpException, HttpExceptionOptions } from './http.exception';
 
 /**
  * Defines an HTTP exception for *Method Not Allowed* type errors.
@@ -18,7 +18,7 @@ export class MethodNotAllowedException extends HttpException {
    * @usageNotes
    * The HTTP response status code will be 405.
    * - The `objectOrError` argument defines the JSON response body or the message string.
-   * - The `description` argument contains a short description of the HTTP error.
+   * - The `descriptionOrOptions` argument contains either a short description of the HTTP error or an options object used to provide an underlying error cause.
    *
    * By default, the JSON response body contains two properties:
    * - `statusCode`: this will be the value 405.
@@ -31,12 +31,15 @@ export class MethodNotAllowedException extends HttpException {
    * and return it as the JSON response body.
    *
    * @param objectOrError string or object describing the error condition.
-   * @param description a short description of the HTTP error.
+   * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
    */
   constructor(
     objectOrError?: string | object | any,
-    description = 'Method Not Allowed',
+    descriptionOrOptions: string | HttpExceptionOptions = 'Method Not Allowed',
   ) {
+    const { description, httpExceptionOptions } =
+      HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
+
     super(
       HttpException.createBody(
         objectOrError,
@@ -44,6 +47,7 @@ export class MethodNotAllowedException extends HttpException {
         HttpStatus.METHOD_NOT_ALLOWED,
       ),
       HttpStatus.METHOD_NOT_ALLOWED,
+      httpExceptionOptions,
     );
   }
 }

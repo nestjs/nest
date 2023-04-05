@@ -1,3 +1,6 @@
+/**
+ * @publicApi
+ */
 export interface RmqUrl {
   protocol?: string;
   hostname?: string;
@@ -10,6 +13,9 @@ export interface RmqUrl {
   vhost?: string;
 }
 
+/**
+ * @publicApi
+ */
 export interface AmqpConnectionManagerSocketOptions {
   reconnectTimeInSeconds?: number;
   heartbeatIntervalInSeconds?: number;
@@ -17,6 +23,9 @@ export interface AmqpConnectionManagerSocketOptions {
   connectionOptions?: any;
 }
 
+/**
+ * @publicApi
+ */
 export interface AmqplibQueueOptions {
   durable?: boolean;
   autoDelete?: boolean;

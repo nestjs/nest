@@ -7,7 +7,7 @@ export type MaxFileSizeValidatorOptions = {
 /**
  * Defines the built-in MaxSize File Validator
  *
- * @see [File Validators](https://docs.nestjs.com/techniques/file-upload#validators)
+ * @see [File Validators](https://docs.nestjs.com/techniques/file-upload#file-validation)
  *
  * @publicApi
  */

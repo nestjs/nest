@@ -57,7 +57,7 @@ export interface ConfigurableModuleHost<
     ModuleOptions,
     FactoryClassMethodKey
   > &
-    ExtraModuleDefinitionOptions;
+    Partial<ExtraModuleDefinitionOptions>;
   /**
    * Can be used to auto-infer the compound "module options" type (options interface + extra module definition options).
    * Note: this property is not supposed to be used as a value.
@@ -73,5 +73,5 @@ export interface ConfigurableModuleHost<
    * }
    * ```
    */
-  OPTIONS_TYPE: ModuleOptions & ExtraModuleDefinitionOptions;
+  OPTIONS_TYPE: ModuleOptions & Partial<ExtraModuleDefinitionOptions>;
 }

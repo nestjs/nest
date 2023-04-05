@@ -10,9 +10,11 @@ import { RequestMethod } from '../../../common/enums/request-method.enum';
 import { VersioningType } from '../../../common/enums/version-type.enum';
 import { Injector } from '../../../core/injector/injector';
 import { ApplicationConfig } from '../../application-config';
+import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception';
 import { ExecutionContextHost } from '../../helpers/execution-context-host';
 import { NestContainer } from '../../injector/container';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { GraphInspector } from '../../inspector/graph-inspector';
 import { MetadataScanner } from '../../metadata-scanner';
 import { RoutePathMetadata } from '../../router/interfaces/route-path-metadata.interface';
 import { RoutePathFactory } from '../../router/route-path-factory';
@@ -51,11 +53,14 @@ describe('RouterExplorer', () => {
     public getTestUsingArray() {}
   }
 
+  class ClassWithMissingControllerDecorator {}
+
   let routerBuilder: RouterExplorer;
   let injector: Injector;
   let exceptionsFilter: RouterExceptionFilters;
   let applicationConfig: ApplicationConfig;
   let routePathFactory: RoutePathFactory;
+  let graphInspector: GraphInspector;
 
   beforeEach(() => {
     const container = new NestContainer();
@@ -63,6 +68,7 @@ describe('RouterExplorer', () => {
     applicationConfig = new ApplicationConfig();
     injector = new Injector();
     routePathFactory = new RoutePathFactory(applicationConfig);
+    graphInspector = new GraphInspector(container);
     exceptionsFilter = new RouterExceptionFilters(
       container,
       applicationConfig,
@@ -76,177 +82,8 @@ describe('RouterExplorer', () => {
       exceptionsFilter,
       applicationConfig,
       routePathFactory,
+      graphInspector,
     );
-  });
-
-  describe('scanForPaths', () => {
-    it('should method return expected list of route paths', () => {
-      const paths = routerBuilder.scanForPaths(new TestRoute());
-
-      expect(paths).to.have.length(4);
-
-      expect(paths[0].path).to.eql(['/test']);
-      expect(paths[1].path).to.eql(['/test']);
-      expect(paths[2].path).to.eql(['/another-test']);
-      expect(paths[3].path).to.eql(['/foo', '/bar']);
-
-      expect(paths[0].requestMethod).to.eql(RequestMethod.GET);
-      expect(paths[1].requestMethod).to.eql(RequestMethod.POST);
-      expect(paths[2].requestMethod).to.eql(RequestMethod.ALL);
-      expect(paths[3].requestMethod).to.eql(RequestMethod.GET);
-    });
-
-    it('should method return expected list of route paths alias', () => {
-      const paths = routerBuilder.scanForPaths(new TestRouteAlias());
-
-      expect(paths).to.have.length(4);
-
-      expect(paths[0].path).to.eql(['/test']);
-      expect(paths[1].path).to.eql(['/test']);
-      expect(paths[2].path).to.eql(['/another-test']);
-      expect(paths[3].path).to.eql(['/foo', '/bar']);
-
-      expect(paths[0].requestMethod).to.eql(RequestMethod.GET);
-      expect(paths[1].requestMethod).to.eql(RequestMethod.POST);
-      expect(paths[2].requestMethod).to.eql(RequestMethod.ALL);
-      expect(paths[3].requestMethod).to.eql(RequestMethod.GET);
-    });
-  });
-
-  describe('exploreMethodMetadata', () => {
-    it('should method return expected object which represent single route', () => {
-      const instance = new TestRoute();
-      const instanceProto = Object.getPrototypeOf(instance);
-
-      const route = routerBuilder.exploreMethodMetadata(
-        instance,
-        instanceProto,
-        'getTest',
-      );
-
-      expect(route.path).to.eql(['/test']);
-      expect(route.requestMethod).to.eql(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTest);
-    });
-
-    it('should method return expected object which represent single route with alias', () => {
-      const instance = new TestRouteAlias();
-      const instanceProto = Object.getPrototypeOf(instance);
-
-      const route = routerBuilder.exploreMethodMetadata(
-        instance,
-        instanceProto,
-        'getTest',
-      );
-
-      expect(route.path).to.eql(['/test']);
-      expect(route.requestMethod).to.eql(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTest);
-    });
-
-    it('should method return expected object which represent multiple routes', () => {
-      const instance = new TestRoute();
-      const instanceProto = Object.getPrototypeOf(instance);
-
-      const route = routerBuilder.exploreMethodMetadata(
-        instance,
-        instanceProto,
-        'getTestUsingArray',
-      );
-
-      expect(route.path).to.eql(['/foo', '/bar']);
-      expect(route.requestMethod).to.eql(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTestUsingArray);
-    });
-
-    it('should method return expected object which represent multiple routes with alias', () => {
-      const instance = new TestRouteAlias();
-      const instanceProto = Object.getPrototypeOf(instance);
-
-      const route = routerBuilder.exploreMethodMetadata(
-        instance,
-        instanceProto,
-        'getTestUsingArray',
-      );
-
-      expect(route.path).to.eql(['/foo', '/bar']);
-      expect(route.requestMethod).to.eql(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTestUsingArray);
-    });
-
-    describe('when new implementation is injected into router', () => {
-      it('should method return changed impl of single route', () => {
-        const instance = new TestRoute();
-        const instanceProto = Object.getPrototypeOf(instance);
-
-        const newImpl = function () {};
-        instance.getTest = newImpl;
-
-        const route = routerBuilder.exploreMethodMetadata(
-          instance,
-          instanceProto,
-          'getTest',
-        );
-
-        expect(route.targetCallback).to.eq(newImpl);
-        expect(route.path).to.eql(['/test']);
-        expect(route.requestMethod).to.eql(RequestMethod.GET);
-      });
-
-      it('should method return changed impl of single route which alias applied', () => {
-        const instance = new TestRouteAlias();
-        const instanceProto = Object.getPrototypeOf(instance);
-
-        const newImpl = function () {};
-        instance.getTest = newImpl;
-
-        const route = routerBuilder.exploreMethodMetadata(
-          instance,
-          instanceProto,
-          'getTest',
-        );
-
-        expect(route.targetCallback).to.eq(newImpl);
-        expect(route.path).to.eql(['/test']);
-        expect(route.requestMethod).to.eql(RequestMethod.GET);
-      });
-
-      it('should method return changed impl of multiple routes', () => {
-        const instance = new TestRoute();
-        const instanceProto = Object.getPrototypeOf(instance);
-
-        const newImpl = function () {};
-        instance.getTestUsingArray = newImpl;
-
-        const route = routerBuilder.exploreMethodMetadata(
-          instance,
-          instanceProto,
-          'getTestUsingArray',
-        );
-
-        expect(route.targetCallback).to.eq(newImpl);
-        expect(route.path).to.eql(['/foo', '/bar']);
-        expect(route.requestMethod).to.eql(RequestMethod.GET);
-      });
-
-      it('should method return changed impl of multiple routes which alias applied', () => {
-        const instance = new TestRouteAlias();
-        const instanceProto = Object.getPrototypeOf(instance);
-
-        const newImpl = function () {};
-        instance.getTestUsingArray = newImpl;
-
-        const route = routerBuilder.exploreMethodMetadata(
-          instance,
-          instanceProto,
-          'getTestUsingArray',
-        );
-
-        expect(route.targetCallback).to.eq(newImpl);
-        expect(route.path).to.eql(['/foo', '/bar']);
-        expect(route.requestMethod).to.eql(RequestMethod.GET);
-      });
-    });
   });
 
   describe('applyPathsToRouterProxy', () => {
@@ -315,6 +152,15 @@ describe('RouterExplorer', () => {
         '/global-alias',
       ]);
     });
+
+    it("should throw UnknownRequestMappingException when missing the `@Controller()` decorator in the class, displaying class's name", () => {
+      expect(() =>
+        routerBuilder.extractRouterPath(ClassWithMissingControllerDecorator),
+      ).to.throw(
+        UnknownRequestMappingException,
+        /ClassWithMissingControllerDecorator/,
+      );
+    });
   });
 
   describe('createRequestScopedHandler', () => {
@@ -343,7 +189,7 @@ describe('RouterExplorer', () => {
         instance: { [methodKey]: {} },
       });
 
-      it('should delegete error to exception filters', async () => {
+      it('should delegate error to exception filters', async () => {
         const handler = routerBuilder.createRequestScopedHandler(
           wrapper,
           RequestMethod.ALL,

@@ -1,4 +1,4 @@
-import { Consumer, KafkaMessage } from '../external/kafka.interface';
+import { Consumer, KafkaMessage, Producer } from '../external/kafka.interface';
 import { BaseRpcContext } from './base-rpc.context';
 
 type KafkaContextArgs = [
@@ -7,6 +7,7 @@ type KafkaContextArgs = [
   topic: string,
   consumer: Consumer,
   heartbeat: () => Promise<void>,
+  producer: Producer,
 ];
 
 export class KafkaContext extends BaseRpcContext<KafkaContextArgs> {
@@ -47,5 +48,12 @@ export class KafkaContext extends BaseRpcContext<KafkaContextArgs> {
    */
   getHeartbeat() {
     return this.args[4];
+  }
+
+  /**
+   * Returns the Kafka producer reference,
+   */
+  getProducer() {
+    return this.args[5];
   }
 }

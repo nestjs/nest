@@ -1,3 +1,4 @@
+import { isObject } from '@nestjs/common/utils/shared.utils';
 import { ContextId, HostComponentInfo } from '../injector/instance-wrapper';
 import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
 
@@ -13,18 +14,30 @@ export function createContextId(): ContextId {
   return { id: Math.random() };
 }
 
+export type ContextIdResolverFn = (info: HostComponentInfo) => ContextId;
+
+export interface ContextIdResolver {
+  /**
+   * Payload associated with the custom context id
+   */
+  payload: unknown;
+  /**
+   * A context id resolver function
+   */
+  resolve: ContextIdResolverFn;
+}
+
 export interface ContextIdStrategy<T = any> {
   /**
    * Allows to attach a parent context id to the existing child context id.
    * This lets you construct durable DI sub-trees that can be shared between contexts.
    * @param contextId auto-generated child context id
    * @param request request object
-   * @returns a context id resolver function
    */
   attach(
     contextId: ContextId,
     request: T,
-  ): ((info: HostComponentInfo) => ContextId) | undefined;
+  ): ContextIdResolverFn | ContextIdResolver | undefined;
 }
 
 export class ContextIdFactory {
@@ -60,7 +73,13 @@ export class ContextIdFactory {
       return ContextIdFactory.create();
     }
     const contextId = createContextId();
-    contextId.getParent = this.strategy.attach(contextId, request);
+    const resolverObjectOrFunction = this.strategy.attach(contextId, request);
+    if (this.isContextIdResolverWithPayload(resolverObjectOrFunction)) {
+      contextId.getParent = resolverObjectOrFunction.resolve;
+      contextId.payload = resolverObjectOrFunction.payload;
+    } else {
+      contextId.getParent = resolverObjectOrFunction;
+    }
     return contextId;
   }
 
@@ -71,5 +90,11 @@ export class ContextIdFactory {
    */
   public static apply(strategy: ContextIdStrategy) {
     this.strategy = strategy;
+  }
+
+  private static isContextIdResolverWithPayload(
+    resolverOrResolverFn: ContextIdResolver | ContextIdResolverFn,
+  ): resolverOrResolverFn is ContextIdResolver {
+    return isObject(resolverOrResolverFn);
   }
 }

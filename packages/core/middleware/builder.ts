@@ -6,10 +6,11 @@ import {
 } from '@nestjs/common/interfaces';
 import {
   MiddlewareConfigProxy,
+  MiddlewareConfiguration,
   RouteInfo,
 } from '@nestjs/common/interfaces/middleware';
-import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { iterate } from 'iterare';
+import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
 import { filterMiddleware } from './utils';
 
@@ -19,12 +20,17 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
   constructor(
     private readonly routesMapper: RoutesMapper,
     private readonly httpAdapter: HttpServer,
+    private readonly routeInfoPathExtractor: RouteInfoPathExtractor,
   ) {}
 
   public apply(
     ...middleware: Array<Type<any> | Function | any>
   ): MiddlewareConfigProxy {
-    return new MiddlewareBuilder.ConfigProxy(this, flatten(middleware));
+    return new MiddlewareBuilder.ConfigProxy(
+      this,
+      flatten(middleware),
+      this.routeInfoPathExtractor,
+    );
   }
 
   public build(): MiddlewareConfiguration[] {
@@ -41,6 +47,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     constructor(
       private readonly builder: MiddlewareBuilder,
       private readonly middleware: Array<Type<any> | Function | any>,
+      private routeInfoPathExtractor: RouteInfoPathExtractor,
     ) {}
 
     public getExcludedRoutes(): RouteInfo[] {
@@ -50,7 +57,10 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     public exclude(
       ...routes: Array<string | RouteInfo>
     ): MiddlewareConfigProxy {
-      this.excludedRoutes = this.getRoutesFlatList(routes);
+      this.excludedRoutes = this.getRoutesFlatList(routes).map(route => ({
+        ...route,
+        path: this.routeInfoPathExtractor.extractPathFrom(route),
+      }));
       return this;
     }
 

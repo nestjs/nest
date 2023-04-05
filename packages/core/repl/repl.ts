@@ -1,13 +1,13 @@
-import { Logger, Type } from '@nestjs/common';
+import { DynamicModule, Logger, Type } from '@nestjs/common';
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { NestFactory } from '../nest-factory';
 import { assignToObject } from './assign-to-object.util';
 import { REPL_INITIALIZED_MESSAGE } from './constants';
 import { ReplContext } from './repl-context';
 import { ReplLogger } from './repl-logger';
-import { AbstractHttpAdapter } from '../adapters/http-adapter';
+import { defineDefaultCommandsOnRepl } from './repl-native-commands';
 
-export async function repl(module: Type) {
+export async function repl(module: Type | DynamicModule) {
   const app = await NestFactory.createApplicationContext(module, {
     abortOnError: false,
     logger: new ReplLogger(),
@@ -23,6 +23,8 @@ export async function repl(module: Type) {
     ignoreUndefined: true,
   });
   assignToObject(replServer.context, replContext.globalScope);
+
+  defineDefaultCommandsOnRepl(replServer);
 
   return replServer;
 }

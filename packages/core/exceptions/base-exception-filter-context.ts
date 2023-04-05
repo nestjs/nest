@@ -50,7 +50,7 @@ export class BaseExceptionFilterContext extends ContextCreator {
       return null;
     }
     const instanceHost = instanceWrapper.getInstanceByContextId(
-      contextId,
+      this.getContextId(contextId, instanceWrapper),
       inquirerId,
     );
     return instanceHost && instanceHost.instance;

@@ -1,10 +1,16 @@
 import { Observable } from 'rxjs';
 
+/**
+ * @publicApi
+ */
 export interface WsMessageHandler<T = string> {
   message: T;
   callback: (...args: any[]) => Observable<any> | Promise<any>;
 }
 
+/**
+ * @publicApi
+ */
 export interface WebSocketAdapter<
   TServer = any,
   TClient = any,

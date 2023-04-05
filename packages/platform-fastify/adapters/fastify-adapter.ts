@@ -18,11 +18,13 @@ import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   fastify,
+  FastifyBaseLogger,
   FastifyBodyParser,
   FastifyInstance,
-  FastifyLoggerInstance,
+  FastifyListenOptions,
   FastifyPluginAsync,
   FastifyPluginCallback,
+  FastifyRegister,
   FastifyReply,
   FastifyRequest,
   FastifyServerOptions,
@@ -33,6 +35,7 @@ import {
   RequestGenericInterface,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
+import { kRouteContext } from 'fastify/lib/symbols';
 import { RouteShorthandMethod } from 'fastify/types/route';
 import * as http2 from 'http2';
 import * as https from 'https';
@@ -43,14 +46,15 @@ import {
 } from 'light-my-request';
 // `querystring` is used internally in fastify for registering urlencoded body parser.
 import { parse as querystringParse } from 'querystring';
+import { NestFastifyBodyParserOptions } from '../interfaces';
 import {
   FastifyStaticOptions,
-  PointOfViewOptions,
+  FastifyViewOptions,
 } from '../interfaces/external';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
-  Logger extends FastifyLoggerInstance = FastifyLoggerInstance,
+  Logger extends FastifyBaseLogger = FastifyBaseLogger,
 > = FastifyServerOptions<Server, Logger> & {
   http2: true;
   https: http2.SecureServerOptions;
@@ -58,7 +62,7 @@ type FastifyHttp2SecureOptions<
 
 type FastifyHttp2Options<
   Server extends http2.Http2Server,
-  Logger extends FastifyLoggerInstance = FastifyLoggerInstance,
+  Logger extends FastifyBaseLogger = FastifyBaseLogger,
 > = FastifyServerOptions<Server, Logger> & {
   http2: true;
   http2SessionTimeout?: number;
@@ -66,7 +70,7 @@ type FastifyHttp2Options<
 
 type FastifyHttpsOptions<
   Server extends https.Server,
-  Logger extends FastifyLoggerInstance = FastifyLoggerInstance,
+  Logger extends FastifyBaseLogger = FastifyBaseLogger,
 > = FastifyServerOptions<Server, Logger> & {
   https: https.ServerOptions;
 };
@@ -89,6 +93,9 @@ type VersionedRoute<TRequest, TResponse> = ((
 type FastifyRawRequest<TServer extends RawServerBase> =
   RawRequestDefaultExpression<TServer> & { originalUrl?: string };
 
+/**
+ * @publicApi
+ */
 export class FastifyAdapter<
   TServer extends RawServerBase = RawServerDefault,
   TRawRequest extends FastifyRawRequest<TServer> = FastifyRawRequest<TServer>,
@@ -225,12 +232,27 @@ export class FastifyAdapter<
     hostname: string,
     callback?: () => void,
   ): void;
-  public listen(port: string | number, ...args: any[]): void {
+  public listen(
+    listenOptions: string | number | FastifyListenOptions,
+    ...args: any[]
+  ): void {
     const isFirstArgTypeofFunction = typeof args[0] === 'function';
     const callback = isFirstArgTypeofFunction ? args[0] : args[1];
-    const options: Record<string, any> = {
-      port: +port,
-    };
+
+    let options: Record<string, any>;
+    if (
+      typeof listenOptions === 'object' &&
+      (listenOptions.host !== undefined ||
+        listenOptions.port !== undefined ||
+        listenOptions.path !== undefined)
+    ) {
+      // First parameter is an object with a path, port and/or host attributes
+      options = listenOptions;
+    } else {
+      options = {
+        port: +listenOptions,
+      };
+    }
     if (!isFirstArgTypeofFunction) {
       options.host = args[0];
     }
@@ -287,7 +309,7 @@ export class FastifyAdapter<
       ? new Reply(
           response,
           {
-            context: {
+            [kRouteContext]: {
               preSerialization: null,
               preValidation: [],
               preHandler: [],
@@ -323,6 +345,17 @@ export class FastifyAdapter<
         fastifyReply.header('Content-Length', streamHeaders.length);
       }
       body = body.getStream();
+    }
+    if (
+      fastifyReply.getHeader('Content-Type') !== undefined &&
+      fastifyReply.getHeader('Content-Type') !== 'application/json' &&
+      body?.statusCode >= HttpStatus.BAD_REQUEST
+    ) {
+      Logger.warn(
+        "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",
+        FastifyAdapter.name,
+      );
+      fastifyReply.header('Content-Type', 'application/json');
     }
     return fastifyReply.send(body);
   }
@@ -368,7 +401,7 @@ export class FastifyAdapter<
     return this.instance as unknown as T;
   }
 
-  public register<TRegister extends Parameters<TInstance['register']>>(
+  public register<TRegister extends Parameters<FastifyRegister<TInstance>>>(
     plugin: TRegister['0'],
     opts?: TRegister['1'],
   ) {
@@ -408,7 +441,7 @@ export class FastifyAdapter<
     );
   }
 
-  public setViewEngine(options: PointOfViewOptions | string) {
+  public setViewEngine(options: FastifyViewOptions | string) {
     if (isString(options)) {
       new Logger('FastifyAdapter').error(
         "setViewEngine() doesn't support a string argument.",
@@ -463,6 +496,43 @@ export class FastifyAdapter<
     this._isParserRegistered = true;
   }
 
+  public useBodyParser(
+    type: string | string[] | RegExp,
+    rawBody: boolean,
+    options?: NestFastifyBodyParserOptions,
+    parser?: FastifyBodyParser<Buffer, TServer>,
+  ) {
+    const parserOptions = {
+      ...(options || {}),
+      parseAs: 'buffer' as const,
+    };
+
+    this.getInstance().addContentTypeParser<Buffer>(
+      type,
+      parserOptions,
+      (
+        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
+        body: Buffer,
+        done,
+      ) => {
+        if (rawBody === true && Buffer.isBuffer(body)) {
+          req.rawBody = body;
+        }
+
+        if (parser) {
+          parser(req, body, done);
+          return;
+        }
+
+        done(null, body);
+      },
+    );
+
+    // To avoid the Nest application init to override our custom
+    // body parser, we mark the parsers as registered.
+    this._isParserRegistered = true;
+  }
+
   public async createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): Promise<(path: string, callback: Function) => any> {
@@ -508,20 +578,15 @@ export class FastifyAdapter<
   }
 
   private registerJsonContentParser(rawBody?: boolean) {
+    const contentType = 'application/json';
+    const withRawBody = !!rawBody;
     const { bodyLimit } = this.getInstance().initialConfig;
 
-    this.getInstance().addContentTypeParser<Buffer>(
-      'application/json',
-      { parseAs: 'buffer', bodyLimit },
-      (
-        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
-        body: Buffer,
-        done,
-      ) => {
-        if (rawBody === true && Buffer.isBuffer(body)) {
-          req.rawBody = body;
-        }
-
+    this.useBodyParser(
+      contentType,
+      withRawBody,
+      { bodyLimit },
+      (req, body, done) => {
         const { onProtoPoisoning, onConstructorPoisoning } =
           this.instance.initialConfig;
         const defaultJsonParser = this.instance.getDefaultJsonParser(
@@ -534,20 +599,15 @@ export class FastifyAdapter<
   }
 
   private registerUrlencodedContentParser(rawBody?: boolean) {
+    const contentType = 'application/x-www-form-urlencoded';
+    const withRawBody = !!rawBody;
     const { bodyLimit } = this.getInstance().initialConfig;
 
-    this.getInstance().addContentTypeParser<Buffer>(
-      'application/x-www-form-urlencoded',
-      { parseAs: 'buffer', bodyLimit },
-      (
-        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
-        body: Buffer,
-        done,
-      ) => {
-        if (rawBody === true && Buffer.isBuffer(body)) {
-          req.rawBody = body;
-        }
-
+    this.useBodyParser(
+      contentType,
+      withRawBody,
+      { bodyLimit },
+      (_req, body, done) => {
         done(null, querystringParse(body.toString()));
       },
     );

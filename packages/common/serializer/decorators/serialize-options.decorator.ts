@@ -1,6 +1,9 @@
 import { SetMetadata } from '../../decorators';
-import { ClassTransformOptions } from '../../interfaces/external/class-transform-options.interface';
+import { ClassSerializerContextOptions } from '../class-serializer.interfaces';
 import { CLASS_SERIALIZER_OPTIONS } from '../class-serializer.constants';
 
-export const SerializeOptions = (options: ClassTransformOptions) =>
+/**
+ * @publicApi
+ */
+export const SerializeOptions = (options: ClassSerializerContextOptions) =>
   SetMetadata(CLASS_SERIALIZER_OPTIONS, options);

@@ -2,6 +2,9 @@ import { EventEmitter } from 'events';
 
 /**
  * @see https://github.com/mqttjs/MQTT.js/
+ *
+ * @publicApi
+ *
  */
 export declare class MqttClient extends EventEmitter {
   public connected: boolean;
@@ -75,7 +78,7 @@ export declare class MqttClient extends EventEmitter {
   /**
    * unsubscribe - unsubscribe from topic(s)
    *
-   * @param {String, Array} topic - topics to unsubscribe from
+   * @param {string|Array} topic - topics to unsubscribe from
    * @param {Function} [callback] - callback fired on unsuback
    * @returns {MqttClient} this - for chaining
    * @api public

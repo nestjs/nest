@@ -1,7 +1,9 @@
 import { expect } from 'chai';
-import { Controller, Get } from '../../../common';
+import { Controller, Get, RequestMethod, Version } from '../../../common';
+import { ApplicationConfig } from '../../application-config';
 import { NestContainer } from '../../injector/container';
 import { MiddlewareBuilder } from '../../middleware/builder';
+import { RouteInfoPathExtractor } from '../../middleware/route-info-path-extractor';
 import { RoutesMapper } from '../../middleware/routes-mapper';
 import { NoopHttpAdapter } from './../utils/noop-adapter.spec';
 
@@ -10,9 +12,11 @@ describe('MiddlewareBuilder', () => {
 
   beforeEach(() => {
     const container = new NestContainer();
+    const appConfig = new ApplicationConfig();
     builder = new MiddlewareBuilder(
       new RoutesMapper(container),
       new NoopHttpAdapter({}),
+      new RouteInfoPathExtractor(appConfig),
     );
   });
   describe('apply', () => {
@@ -30,8 +34,12 @@ describe('MiddlewareBuilder', () => {
         class Test {
           @Get('route')
           public getAll() {}
+
+          @Version('1')
+          @Get('versioned')
+          public getAllVersioned() {}
         }
-        const route = { path: '/test', method: 0 };
+        const route = { path: '/test', method: RequestMethod.GET };
         it('should store configuration passed as argument', () => {
           configProxy.forRoutes(route, Test);
 
@@ -40,12 +48,17 @@ describe('MiddlewareBuilder', () => {
               middleware: [],
               forRoutes: [
                 {
-                  method: 0,
+                  method: RequestMethod.GET,
                   path: route.path,
                 },
                 {
-                  method: 0,
+                  method: RequestMethod.GET,
                   path: '/path/route',
+                },
+                {
+                  method: RequestMethod.GET,
+                  path: '/path/versioned',
+                  version: '1',
                 },
               ],
             },

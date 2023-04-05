@@ -256,6 +256,34 @@ describe('Logger', () => {
       loggerWithContext.resetContext();
       expect(loggerWithContext['context']).to.equal('context');
     });
+
+    describe('functions for message', () => {
+      let processStdoutWriteSpy: sinon.SinonSpy;
+      const logger = new ConsoleLogger();
+      const message = 'Hello World';
+
+      beforeEach(() => {
+        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+      });
+      afterEach(() => {
+        processStdoutWriteSpy.restore();
+      });
+
+      it('works', () => {
+        logger.log(() => message);
+
+        expect(processStdoutWriteSpy.calledOnce).to.be.true;
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(message);
+        // Ensure we didn't serialize the function itself.
+        expect(processStdoutWriteSpy.firstCall.firstArg).not.to.include(' => ');
+        expect(processStdoutWriteSpy.firstCall.firstArg).not.to.include(
+          'function',
+        );
+        expect(processStdoutWriteSpy.firstCall.firstArg).not.to.include(
+          'Function',
+        );
+      });
+    });
   });
 
   describe('[instance methods]', () => {
@@ -442,6 +470,17 @@ describe('Logger', () => {
         );
         expect(processStdoutWriteSpy.thirdCall.firstArg).to.include('ms');
       });
+      it('should log out an error to stderr but not include an undefined log', () => {
+        const message = 'message 1';
+
+        logger.error(message);
+
+        expect(processStderrWriteSpy.calledOnce).to.be.true;
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+          `[${globalContext}]`,
+        );
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+      });
     });
 
     describe('when logging is disabled', () => {
@@ -480,43 +519,87 @@ describe('Logger', () => {
         warn(message: any, context?: string) {}
       }
 
-      const customLogger = new CustomLogger();
-      const originalLogger = new Logger();
+      describe('with global context', () => {
+        const customLogger = new CustomLogger();
+        const globalContext = 'RandomContext';
+        const originalLogger = new Logger(globalContext);
 
-      let previousLoggerRef: LoggerService;
+        let previousLoggerRef: LoggerService;
 
-      beforeEach(() => {
-        previousLoggerRef =
-          Logger['localInstanceRef'] || Logger['staticInstanceRef'];
-        Logger.overrideLogger(customLogger);
+        beforeEach(() => {
+          previousLoggerRef =
+            Logger['localInstanceRef'] || Logger['staticInstanceRef'];
+          Logger.overrideLogger(customLogger);
+        });
+
+        afterEach(() => {
+          Logger.overrideLogger(previousLoggerRef);
+        });
+
+        it('should call custom logger "#log()" method with context as second argument', () => {
+          const message = 'random log message with global context';
+
+          const customLoggerLogSpy = sinon.spy(customLogger, 'log');
+
+          originalLogger.log(message);
+
+          expect(customLoggerLogSpy.called).to.be.true;
+          expect(customLoggerLogSpy.calledWith(message, globalContext)).to.be
+            .true;
+        });
+        it('should call custom logger "#error()" method with context as third argument', () => {
+          const message = 'random error message with global context';
+
+          const customLoggerErrorSpy = sinon.spy(customLogger, 'error');
+
+          originalLogger.error(message);
+
+          expect(customLoggerErrorSpy.called).to.be.true;
+          expect(
+            customLoggerErrorSpy.calledWith(message, undefined, globalContext),
+          ).to.be.true;
+        });
       });
+      describe('without global context', () => {
+        const customLogger = new CustomLogger();
+        const originalLogger = new Logger();
 
-      afterEach(() => {
-        Logger.overrideLogger(previousLoggerRef);
-      });
+        let previousLoggerRef: LoggerService;
 
-      it('should call custom logger "#log()" method', () => {
-        const message = 'random message';
-        const context = 'RandomContext';
+        beforeEach(() => {
+          previousLoggerRef =
+            Logger['localInstanceRef'] || Logger['staticInstanceRef'];
+          Logger.overrideLogger(customLogger);
+        });
 
-        const customLoggerLogSpy = sinon.spy(customLogger, 'log');
+        afterEach(() => {
+          Logger.overrideLogger(previousLoggerRef);
+        });
 
-        originalLogger.log(message, context);
+        it('should call custom logger "#log()" method', () => {
+          const message = 'random message';
+          const context = 'RandomContext';
 
-        expect(customLoggerLogSpy.called).to.be.true;
-        expect(customLoggerLogSpy.calledWith(message, context)).to.be.true;
-      });
+          const customLoggerLogSpy = sinon.spy(customLogger, 'log');
 
-      it('should call custom logger "#error()" method', () => {
-        const message = 'random message';
-        const context = 'RandomContext';
+          originalLogger.log(message, context);
 
-        const customLoggerErrorSpy = sinon.spy(customLogger, 'error');
+          expect(customLoggerLogSpy.called).to.be.true;
+          expect(customLoggerLogSpy.calledWith(message, context)).to.be.true;
+        });
 
-        originalLogger.error(message, context);
+        it('should call custom logger "#error()" method', () => {
+          const message = 'random message';
+          const context = 'RandomContext';
 
-        expect(customLoggerErrorSpy.called).to.be.true;
-        expect(customLoggerErrorSpy.calledWith(message, context)).to.be.true;
+          const customLoggerErrorSpy = sinon.spy(customLogger, 'error');
+
+          originalLogger.error(message, undefined, context);
+
+          expect(customLoggerErrorSpy.called).to.be.true;
+          expect(customLoggerErrorSpy.calledWith(message, undefined, context))
+            .to.be.true;
+        });
       });
     });
   });
@@ -575,6 +658,55 @@ describe('Logger', () => {
       expect(processStdoutWriteSpy.firstCall.firstArg).to.equal(
         `Prefix: ~~~test~~~`,
       );
+    });
+
+    it('should stringify messages', () => {
+      class CustomConsoleLogger extends ConsoleLogger {
+        protected colorize(message: string, _: LogLevel): string {
+          return message;
+        }
+      }
+
+      const consoleLogger = new CustomConsoleLogger();
+      const consoleLoggerSpy = sinon.spy(
+        consoleLogger,
+        'stringifyMessage' as keyof ConsoleLogger,
+      );
+      consoleLogger.debug(
+        'str1',
+        { key: 'str2' },
+        ['str3'],
+        [{ key: 'str4' }],
+        null,
+        1,
+      );
+
+      expect(consoleLoggerSpy.getCall(0).returnValue).to.equal('str1');
+      expect(consoleLoggerSpy.getCall(1).returnValue).to.equal(
+        `Object:
+{
+  "key": "str2"
+}
+`,
+      );
+      expect(consoleLoggerSpy.getCall(2).returnValue).to.equal(
+        `Object:
+[
+  "str3"
+]
+`,
+      );
+      expect(consoleLoggerSpy.getCall(3).returnValue).to.equal(
+        `Object:
+[
+  {
+    "key": "str4"
+  }
+]
+`,
+      );
+      expect(consoleLoggerSpy.getCall(4).returnValue).to.equal(null);
+      expect(consoleLoggerSpy.getCall(5).returnValue).to.equal(1);
     });
   });
 });

@@ -4,15 +4,14 @@ import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import {
   CLIENT_CONFIGURATION_METADATA,
   CLIENT_METADATA,
+  PATTERN_EXTRAS_METADATA,
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
-  PATTERN_EXTRAS_METADATA,
 } from './constants';
 import { Transport } from './enums';
 import { PatternHandler } from './enums/pattern-handler.enum';
-import { ClientOptions } from './interfaces/client-metadata.interface';
-import { PatternMetadata } from './interfaces/pattern-metadata.interface';
+import { ClientOptions, PatternMetadata } from './interfaces';
 
 export interface ClientProperties {
   property: string;
@@ -38,12 +37,10 @@ export class ListenerMetadataExplorer {
 
   public explore(instance: Controller): EventOrMessageListenerDefinition[] {
     const instancePrototype = Object.getPrototypeOf(instance);
-    return this.metadataScanner.scanFromPrototype<
-      Controller,
-      EventOrMessageListenerDefinition
-    >(instance, instancePrototype, method =>
-      this.exploreMethodMetadata(instancePrototype, method),
-    );
+    return this.metadataScanner
+      .getAllMethodNames(instancePrototype)
+      .map(method => this.exploreMethodMetadata(instancePrototype, method))
+      .filter(metadata => metadata);
   }
 
   public exploreMethodMetadata(

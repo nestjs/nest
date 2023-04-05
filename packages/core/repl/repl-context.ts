@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config';
 import { ModuleRef, NestContainer } from '../injector';
-import { InternalCoreModule } from '../injector/internal-core-module';
+import { InternalCoreModule } from '../injector/internal-core-module/internal-core-module';
 import { Module } from '../injector/module';
 import {
   DebugReplFn,
@@ -127,15 +127,15 @@ export class ReplContext {
 
     this.nativeFunctions.set(nativeFunction.fnDefinition.name, nativeFunction);
 
-    nativeFunction.fnDefinition.aliases?.forEach(aliaseName => {
+    nativeFunction.fnDefinition.aliases?.forEach(aliasName => {
       const aliasNativeFunction: InstanceType<ReplFunctionClass> =
         Object.create(nativeFunction);
       aliasNativeFunction.fnDefinition = {
-        name: aliaseName,
+        name: aliasName,
         description: aliasNativeFunction.fnDefinition.description,
         signature: aliasNativeFunction.fnDefinition.signature,
       };
-      this.nativeFunctions.set(aliaseName, aliasNativeFunction);
+      this.nativeFunctions.set(aliasName, aliasNativeFunction);
       nativeFunctions.push(aliasNativeFunction);
     });
 

@@ -10,6 +10,9 @@ import {
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
 
+/**
+ * @publicApi
+ */
 export interface ParseIntPipeOptions {
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (error: string) => any;

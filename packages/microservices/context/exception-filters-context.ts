@@ -6,10 +6,13 @@ import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-excepti
 import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
+import { iterate } from 'iterare';
 import { Observable } from 'rxjs';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler';
-import { iterate } from 'iterare';
 
+/**
+ * @publicApi
+ */
 export class ExceptionFiltersContext extends BaseExceptionFilterContext {
   constructor(
     container: NestContainer,
@@ -53,7 +56,12 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
     const scopedFilterWrappers =
       this.config.getGlobalRequestFilters() as InstanceWrapper[];
     const scopedFilters = iterate(scopedFilterWrappers)
-      .map(wrapper => wrapper.getInstanceByContextId(contextId, inquirerId))
+      .map(wrapper =>
+        wrapper.getInstanceByContextId(
+          this.getContextId(contextId, wrapper),
+          inquirerId,
+        ),
+      )
       .filter(host => !!host)
       .map(host => host.instance)
       .toArray();

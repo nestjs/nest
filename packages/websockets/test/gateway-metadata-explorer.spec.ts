@@ -38,16 +38,15 @@ describe('GatewayMetadataExplorer', () => {
     instance = new GatewayMetadataExplorer(scanner);
   });
   describe('explore', () => {
-    let scanFromPrototype: sinon.SinonSpy;
+    let getAllMethodNames: sinon.SinonSpy;
     beforeEach(() => {
-      scanFromPrototype = sinon.spy(scanner, 'scanFromPrototype');
+      getAllMethodNames = sinon.spy(scanner, 'getAllMethodNames');
     });
     it(`should call "scanFromPrototype" with expected arguments`, () => {
       const obj = new Test();
       instance.explore(obj as any);
 
-      const [argObj, argProto] = scanFromPrototype.getCall(0).args;
-      expect(argObj).to.be.eql(obj);
+      const [argProto] = getAllMethodNames.getCall(0).args;
       expect(argProto).to.be.eql(Object.getPrototypeOf(obj));
     });
   });

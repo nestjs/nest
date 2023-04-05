@@ -168,6 +168,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       payload.topic,
       this.consumer,
       payload.heartbeat,
+      this.producer,
     ]);
     const handler = this.getHandlerByPattern(packet.pattern);
     // if the correlation id or reply topic is not set
@@ -190,7 +191,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     }
 
     const response$ = this.transformToObservable(
-      await handler(packet.data, kafkaContext),
+      handler(packet.data, kafkaContext),
     );
 
     const replayStream$ = new ReplaySubject();
@@ -217,6 +218,8 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
           if (err instanceof KafkaRetriableException && !isPromiseResolved) {
             isPromiseResolved = true;
             reject(err);
+          } else {
+            resolve();
           }
           replayStream$.error(err);
         },

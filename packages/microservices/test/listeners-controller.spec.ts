@@ -6,13 +6,17 @@ import { Injector } from '@nestjs/core/injector/injector';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { GraphInspector } from '../../core/inspector/graph-inspector';
 import { MetadataScanner } from '../../core/metadata-scanner';
 import { ClientProxyFactory } from '../client';
 import { ClientsContainer } from '../container';
 import { ExceptionFiltersContext } from '../context/exception-filters-context';
 import { RpcContextCreator } from '../context/rpc-context-creator';
 import { Transport } from '../enums/transport.enum';
-import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
+import {
+  EventOrMessageListenerDefinition,
+  ListenerMetadataExplorer,
+} from '../listener-metadata-explorer';
 import { ListenersController } from '../listeners-controller';
 
 describe('ListenersController', () => {
@@ -28,6 +32,7 @@ describe('ListenersController', () => {
     addSpyCustom: sinon.SinonSpy,
     proxySpy: sinon.SinonSpy,
     container: NestContainer,
+    graphInspector: GraphInspector,
     injector: Injector,
     rpcContextCreator: RpcContextCreator,
     exceptionFiltersContext: ExceptionFiltersContext;
@@ -38,6 +43,7 @@ describe('ListenersController', () => {
   });
   beforeEach(() => {
     container = new NestContainer();
+    graphInspector = new GraphInspector(container);
     injector = new Injector();
     exceptionFiltersContext = new ExceptionFiltersContext(
       container,
@@ -46,6 +52,7 @@ describe('ListenersController', () => {
     rpcContextCreator = sinon.createStubInstance(RpcContextCreator) as any;
     proxySpy = sinon.spy();
     (rpcContextCreator as any).create.callsFake(() => proxySpy);
+
     instance = new ListenersController(
       new ClientsContainer(),
       rpcContextCreator,
@@ -53,6 +60,7 @@ describe('ListenersController', () => {
       injector,
       ClientProxyFactory,
       exceptionFiltersContext,
+      graphInspector,
     );
     (instance as any).metadataExplorer = metadataExplorer;
     addSpy = sinon.spy();
@@ -240,7 +248,7 @@ describe('ListenersController', () => {
       const patterns = [{}];
       const wrapper = new InstanceWrapper({ instance: { [methodKey]: {} } });
 
-      it('should delegete error to exception filters', async () => {
+      it('should delegate error to exception filters', async () => {
         sinon.stub(injector, 'loadPerContext').callsFake(() => {
           throw new Error();
         });
@@ -259,6 +267,49 @@ describe('ListenersController', () => {
           ExecutionContextHost,
         );
       });
+    });
+  });
+
+  describe('insertEntrypointDefinition', () => {
+    it('should inspect & insert corresponding entrypoint definitions', () => {
+      class TestCtrl {}
+      const instanceWrapper = new InstanceWrapper({
+        metatype: TestCtrl,
+        name: TestCtrl.name,
+      });
+      const definition: EventOrMessageListenerDefinition = {
+        patterns: ['findOne'],
+        methodKey: 'find',
+        isEventHandler: false,
+        targetCallback: null,
+        extras: { qos: 2 },
+      };
+      const transportId = Transport.MQTT;
+
+      const insertEntrypointDefinitionSpy = sinon.spy(
+        graphInspector,
+        'insertEntrypointDefinition',
+      );
+      instance.insertEntrypointDefinition(
+        instanceWrapper,
+        definition,
+        transportId,
+      );
+      expect(
+        insertEntrypointDefinitionSpy.calledWith({
+          type: 'microservice',
+          methodName: definition.methodKey,
+          className: 'TestCtrl',
+          classNodeId: instanceWrapper.id,
+          metadata: {
+            key: definition.patterns.toString(),
+            transportId: 'MQTT',
+            patterns: definition.patterns,
+            isEventHandler: definition.isEventHandler,
+            extras: definition.extras,
+          } as any,
+        }),
+      ).to.be.true;
     });
   });
 

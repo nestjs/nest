@@ -11,7 +11,6 @@
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
 <a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
 <a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
 <a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
 <a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
@@ -78,7 +77,10 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
  <td>
 <a href="https://jetbrains.com/" target="_blank"><img src="https://nestjs.com/img/jetbrains-logo.svg" width="110" valign="middle" /></a></td><td>
 <a href="https://snyk.co/nestjs" target="_blank"><img src="https://nestjs.com/img/snyk-logo-black.png" width="185" valign="middle" /></a></td><td>
-<a href="https://fuseautotech.com/" target="_blank"><img src="https://nestjs.com/img/fuse-logo.svg" width="105" valign="middle" /></a></td></</tr></table>
+<a href="https://fuseautotech.com/" target="_blank"><img src="https://nestjs.com/img/fuse-logo.svg" width="105" valign="middle" /></a></td>
+<td>
+<a href="https://ridicorp.com/career/" target="_blank"><img src="https://nestjs.com/img/ridi-logo.svg" width="105" valign="middle" /></a></td><td>
+<a href="https://www.movavi.com/imovie-for-windows.html" target="_blank"><img src="https://nestjs.com/img/movavi-logo.svg" width="105" valign="middle" /></a></td></</tr></table>
 
 #### Silver Sponsors
 
@@ -90,7 +92,10 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://www.castlecraft.in" target="_blank"><img src="https://nestjs.com/img/castlecraft-logo.png" width="150" valign="middle" /></td>
 <td><a href="https://www.tinystacks.com" target="_blank"><img src="https://nestjs.com/img/tinystacks-logo.png#1" width="140" valign="middle" /></td>
 <td><a href="https://n.inc" target="_blank"><img src="https://nestjs.com/img/n-inc-logo.svg" width="120" valign="middle" /></td></tr><tr>
-<td><a href="https://bilberrry.com/" target="_blank"><img src="https://nestjs.com/img/bilberrry-logo.svg" width="180" valign="middle" /></td></tr></table>
+<td><a href="https://bilberrry.com/" target="_blank"><img src="https://nestjs.com/img/bilberrry-logo.svg" width="180" valign="middle" /></td>
+<td><a href="https://ipinfo.ai/" target="_blank"><img src="https://nestjs.com/img/ipinfo-logo.png" width="130" valign="middle" /></td>
+<td><a href="https://chax.at" target="_blank"><img src="https://nestjs.com/img/chaxat-logo.png" width="100" valign="middle" /></td></tr>
+</table>
 
 #### Sponsors
 
@@ -130,7 +135,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
    <td align="center" valign="middle"><a href="https://mobilereality.pl/" target="_blank"><img src="https://nestjs.com/img/mobile-reality-logo.png" width="45" valign="middle" /></a></td>
      <td align="center" valign="middle"><a href="https://boringowl.io/" target="_blank"><img src="https://nestjs.com/img/boringowl-logo.svg" width="120" valign="middle" /></a></td>
  <td align="center" valign="middle"><a href="https://www.mobilefactory.jp/" target="_blank"><img src="https://nestjs.com/img/mobilefactory-logo.png" width="100" valign="middle" /></a></td>
- <td align="center" valign="middle"><a href="https://db.nordbot.app/" target="_blank"><img src="https://nestjs.com/img/nord-logo.png" width="50" valign="middle" /></a></td>
+ <td align="center" valign="middle"><a href="https://nordbot.app/" target="_blank"><img src="https://nestjs.com/img/nordbot-logo.png" width="120" valign="middle" /></a></td>
+ <td align="center" valign="middle"><a href="https://doppio.sh/" target="_blank"><img src="https://nestjs.com/img/dopiosh-logo.png" width="50" valign="middle" /></a></td>
   </tr></table>
 
 ## Backers

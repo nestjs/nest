@@ -1,5 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { TLSSocket } from 'tls';
+import { Socket as NetSocket } from 'net';
 import { ClientTCP } from '../../client/client-tcp';
 import { ERROR_EVENT } from '../../constants';
 
@@ -154,9 +156,16 @@ describe('ClientTCP', () => {
     });
   });
   describe('close', () => {
+    let routingMap;
+    let callback;
+
     beforeEach(() => {
+      routingMap = new Map<string, Function>();
+      callback = sinon.spy();
+      routingMap.set('some id', callback);
       (client as any).socket = socket;
       (client as any).isConnected = true;
+      (client as any).routingMap = routingMap;
       client.close();
     });
     it('should end() socket', () => {
@@ -167,6 +176,16 @@ describe('ClientTCP', () => {
     });
     it('should set "socket" to null', () => {
       expect((client as any).socket).to.be.null;
+    });
+    it('should clear out the routing map', () => {
+      expect((client as any).routingMap.size).to.be.eq(0);
+    });
+    it('should call callbacks', () => {
+      expect(
+        callback.calledWith({
+          err: sinon.match({ message: 'Connection closed' }),
+        }),
+      ).to.be.true;
     });
   });
   describe('bindEvents', () => {
@@ -195,6 +214,19 @@ describe('ClientTCP', () => {
       await client['dispatchEvent'](msg);
 
       expect(sendMessageStub.called).to.be.true;
+    });
+  });
+
+  describe('tls', () => {
+    it('should upgrade to TLS', () => {
+      const client = new ClientTCP({ tlsOptions: {} });
+      console.log(client);
+      const jsonSocket = client.createSocket();
+      expect(jsonSocket.socket).instanceOf(TLSSocket);
+    });
+    it('should not upgrade to TLS, if not requested', () => {
+      const jsonSocket = new ClientTCP({}).createSocket();
+      expect(jsonSocket.socket).instanceOf(NetSocket);
     });
   });
 });

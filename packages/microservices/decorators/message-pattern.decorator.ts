@@ -23,6 +23,8 @@ export enum GrpcMethodStreamingType {
 
 /**
  * Subscribes to incoming messages which fulfils chosen pattern.
+ *
+ * @publicApi
  */
 export const MessagePattern: {
   <T = PatternMetadata | string>(metadata?: T): MethodDecorator;

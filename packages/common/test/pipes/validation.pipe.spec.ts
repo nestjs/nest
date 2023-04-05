@@ -3,12 +3,12 @@ import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import { Exclude, Expose, Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsDefined,
   IsOptional,
   IsString,
   ValidateNested,
-  IsArray,
 } from 'class-validator';
 import { HttpStatus } from '../../enums';
 import { UnprocessableEntityException } from '../../exceptions';
@@ -45,7 +45,7 @@ class TestModel {
   public optionalProp: string;
 }
 
-class TestModelNoValidaton {
+class TestModelNoValidation {
   constructor() {}
 
   public prop1: string;
@@ -367,7 +367,7 @@ describe('ValidationPipe', () => {
         });
       });
     });
-    describe('when type doesnt match', () => {
+    describe("when type doesn't match", () => {
       describe('when validation rules are applied', () => {
         it('should throw an error', async () => {
           target = new ValidationPipe();
@@ -389,7 +389,7 @@ describe('ValidationPipe', () => {
             { prop1: 'value1', prop2: 'value2', prop3: 'value3' },
           ];
 
-          const objMetadata = { ...metadata, metatype: TestModelNoValidaton };
+          const objMetadata = { ...metadata, metatype: TestModelNoValidation };
           const result = await target.transform(testObj, objMetadata);
 
           expect(result).to.not.be.instanceOf(TestModel);
@@ -447,7 +447,7 @@ describe('ValidationPipe', () => {
       target = new ValidationPipe({ expectedType: TestModel });
       const testObj = { prop1: 'value1', prop2: 'value2' };
 
-      expect(await target.transform(testObj, m)).to.equal(testObj);
+      expect(await target.transform(testObj, m)).to.deep.equal(testObj);
     });
 
     it('should validate against the expected type if presented and metatype is primitive type', async () => {
@@ -460,7 +460,7 @@ describe('ValidationPipe', () => {
       target = new ValidationPipe({ expectedType: TestModel });
       const testObj = { prop1: 'value1', prop2: 'value2' };
 
-      expect(await target.transform(testObj, m)).to.equal(testObj);
+      expect(await target.transform(testObj, m)).to.deep.equal(testObj);
     });
   });
 });

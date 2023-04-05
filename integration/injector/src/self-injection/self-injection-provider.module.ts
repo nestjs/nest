@@ -6,7 +6,7 @@ class ServiceInjectingItself {
 }
 
 @Injectable()
-class ServiceInjectingItselfForwared {
+class ServiceInjectingItselfForward {
   constructor(
     @Inject(forwardRef(() => ServiceInjectingItself))
     private readonly coreService: ServiceInjectingItself,
@@ -24,7 +24,7 @@ class ServiceInjectingItselfViaCustomToken {
 export class SelfInjectionProviderModule {}
 
 @Module({
-  providers: [ServiceInjectingItselfForwared],
+  providers: [ServiceInjectingItselfForward],
 })
 export class SelfInjectionForwardProviderModule {}
 

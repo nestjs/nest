@@ -1,3 +1,4 @@
+import { ClassSerializerContextOptions } from './class-serializer.interfaces';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Inject, Injectable, Optional } from '../decorators/core';
@@ -20,11 +21,17 @@ export interface PlainLiteralObject {
 // between core and common packages
 const REFLECTOR = 'Reflector';
 
+/**
+ * @publicApi
+ */
 export interface ClassSerializerInterceptorOptions
   extends ClassTransformOptions {
   transformerPackage?: TransformerPackage;
 }
 
+/**
+ * @publicApi
+ */
 @Injectable()
 export class ClassSerializerInterceptor implements NestInterceptor {
   constructor(
@@ -63,7 +70,7 @@ export class ClassSerializerInterceptor implements NestInterceptor {
    */
   serialize(
     response: PlainLiteralObject | Array<PlainLiteralObject>,
-    options: ClassTransformOptions,
+    options: ClassSerializerContextOptions,
   ): PlainLiteralObject | Array<PlainLiteralObject> {
     if (!isObject(response) || response instanceof StreamableFile) {
       return response;
@@ -76,16 +83,24 @@ export class ClassSerializerInterceptor implements NestInterceptor {
 
   transformToPlain(
     plainOrClass: any,
-    options: ClassTransformOptions,
+    options: ClassSerializerContextOptions,
   ): PlainLiteralObject {
-    return plainOrClass
-      ? classTransformer.classToPlain(plainOrClass, options)
-      : plainOrClass;
+    if (!plainOrClass) {
+      return plainOrClass;
+    }
+    if (!options.type) {
+      return classTransformer.classToPlain(plainOrClass, options);
+    }
+    if (plainOrClass instanceof options.type) {
+      return classTransformer.classToPlain(plainOrClass, options);
+    }
+    const instance = classTransformer.plainToClass(options.type, plainOrClass);
+    return classTransformer.classToPlain(instance, options);
   }
 
   protected getContextOptions(
     context: ExecutionContext,
-  ): ClassTransformOptions | undefined {
+  ): ClassSerializerContextOptions | undefined {
     return this.reflector.getAllAndOverride(CLASS_SERIALIZER_OPTIONS, [
       context.getHandler(),
       context.getClass(),

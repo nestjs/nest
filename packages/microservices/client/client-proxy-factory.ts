@@ -26,6 +26,9 @@ export interface IClientProxyFactory {
   create(clientOptions: ClientOptions): ClientProxy & Closeable;
 }
 
+/**
+ * @publicApi
+ */
 export class ClientProxyFactory {
   public static create(
     clientOptions: { transport: Transport.GRPC } & ClientOptions,

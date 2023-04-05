@@ -1,56 +1,145 @@
+import { Type } from '../../../common';
 import { expect } from 'chai';
 import {
+  BadGatewayException,
   BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  GatewayTimeoutException,
+  GoneException,
   HttpException,
+  HttpVersionNotSupportedException,
+  ImATeapotException,
+  InternalServerErrorException,
+  MethodNotAllowedException,
+  MisdirectedException,
+  NotAcceptableException,
   NotFoundException,
+  NotImplementedException,
+  PayloadTooLargeException,
+  PreconditionFailedException,
+  RequestTimeoutException,
+  ServiceUnavailableException,
+  UnauthorizedException,
+  UnprocessableEntityException,
+  UnsupportedMediaTypeException,
 } from '../../exceptions';
 
 describe('HttpException', () => {
-  it('should return a response as a string when input is a string', () => {
-    const message = 'My error message';
-    expect(new HttpException(message, 404).getResponse()).to.be.eql(
-      'My error message',
-    );
-  });
+  describe('getResponse', () => {
+    it('should return a response as a string when input is a string', () => {
+      const message = 'My error message';
+      expect(new HttpException(message, 404).getResponse()).to.be.eql(
+        'My error message',
+      );
+    });
 
-  it('should return a response as an object when input is an object', () => {
-    const message = {
-      msg: 'My error message',
-      reason: 'this can be a human readable reason',
-      anything: 'else',
-    };
-    expect(new HttpException(message, 404).getResponse()).to.be.eql(message);
-  });
+    it('should return a response as an object when input is an object', () => {
+      const message = {
+        msg: 'My error message',
+        reason: 'this can be a human readable reason',
+        anything: 'else',
+      };
+      expect(new HttpException(message, 404).getResponse()).to.be.eql(message);
+    });
 
-  it('should return a message from a built-in exception as an object', () => {
-    const message = 'My error message';
-    expect(new BadRequestException(message).getResponse()).to.be.eql({
-      statusCode: 400,
-      error: 'Bad Request',
-      message: 'My error message',
+    it('should return a message from a built-in exception as an object', () => {
+      const message = 'My error message';
+      expect(new BadRequestException(message).getResponse()).to.be.eql({
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'My error message',
+      });
+    });
+
+    it('should return an object even when the message is undefined', () => {
+      expect(new BadRequestException().getResponse()).to.be.eql({
+        statusCode: 400,
+        message: 'Bad Request',
+      });
     });
   });
 
-  it('should return an object even when the message is undefined', () => {
-    expect(new BadRequestException().getResponse()).to.be.eql({
-      statusCode: 400,
-      message: 'Bad Request',
-    });
-  });
+  describe('built-in exceptions', () => {
+    describe('getStatus', () => {
+      it('should return given status code', () => {
+        const testCases: [Type<HttpException>, number][] = [
+          [BadRequestException, 400],
+          [UnauthorizedException, 401],
+          [ForbiddenException, 403],
+          [NotFoundException, 404],
+          [MethodNotAllowedException, 405],
+          [NotAcceptableException, 406],
+          [RequestTimeoutException, 408],
+          [ConflictException, 409],
+          [GoneException, 410],
+          [PreconditionFailedException, 412],
+          [PayloadTooLargeException, 413],
+          [UnsupportedMediaTypeException, 415],
+          [ImATeapotException, 418],
+          [MisdirectedException, 421],
+          [UnprocessableEntityException, 422],
+          [InternalServerErrorException, 500],
+          [NotImplementedException, 501],
+          [BadGatewayException, 502],
+          [ServiceUnavailableException, 503],
+          [GatewayTimeoutException, 504],
+          [HttpVersionNotSupportedException, 505],
+        ];
 
-  it('should return a status code', () => {
-    expect(new BadRequestException().getStatus()).to.be.eql(400);
-    expect(new NotFoundException().getStatus()).to.be.eql(404);
-  });
-
-  it('should return a response', () => {
-    expect(new BadRequestException().getResponse()).to.be.eql({
-      message: 'Bad Request',
-      statusCode: 400,
+        testCases.forEach(([ExceptionClass, expectedStatus]) => {
+          expect(new ExceptionClass().getStatus()).to.be.eql(expectedStatus);
+        });
+      });
     });
-    expect(new NotFoundException().getResponse()).to.be.eql({
-      message: 'Not Found',
-      statusCode: 404,
+
+    describe('getResponse', () => {
+      it('should return a response with default message and status code', () => {
+        const testCases: [Type<HttpException>, number, string][] = [
+          [BadRequestException, 400, 'Bad Request'],
+          [UnauthorizedException, 401, 'Unauthorized'],
+          [ForbiddenException, 403, 'Forbidden'],
+          [NotFoundException, 404, 'Not Found'],
+          [MethodNotAllowedException, 405, 'Method Not Allowed'],
+          [NotAcceptableException, 406, 'Not Acceptable'],
+          [RequestTimeoutException, 408, 'Request Timeout'],
+          [ConflictException, 409, 'Conflict'],
+          [GoneException, 410, 'Gone'],
+          [PreconditionFailedException, 412, 'Precondition Failed'],
+          [PayloadTooLargeException, 413, 'Payload Too Large'],
+          [UnsupportedMediaTypeException, 415, 'Unsupported Media Type'],
+          [ImATeapotException, 418, "I'm a teapot"],
+          [MisdirectedException, 421, 'Misdirected'],
+          [UnprocessableEntityException, 422, 'Unprocessable Entity'],
+          [InternalServerErrorException, 500, 'Internal Server Error'],
+          [NotImplementedException, 501, 'Not Implemented'],
+          [BadGatewayException, 502, 'Bad Gateway'],
+          [ServiceUnavailableException, 503, 'Service Unavailable'],
+          [GatewayTimeoutException, 504, 'Gateway Timeout'],
+          [HttpVersionNotSupportedException, 505, 'HTTP Version Not Supported'],
+        ];
+
+        testCases.forEach(
+          ([ExceptionClass, expectedStatus, expectedMessage]) => {
+            expect(new ExceptionClass().getResponse()).to.be.eql({
+              message: expectedMessage,
+              statusCode: expectedStatus,
+            });
+          },
+        );
+      });
+
+      it('should return a response with an "error" attribute when description was provided as the "option" object', () => {
+        const badRequestError = new BadRequestException('ErrorMessage', {
+          description: 'Some error description',
+        });
+
+        expect(badRequestError.getResponse()).to.be.eql({
+          message: 'ErrorMessage',
+          error: 'Some error description',
+          statusCode: 400,
+        });
+      });
     });
   });
 
@@ -59,31 +148,28 @@ describe('HttpException', () => {
     expect(error instanceof Error).to.be.true;
   });
 
-  it('should be serializable', () => {
-    const message = 'Some Error';
-    const error = new HttpException(message, 400);
-    expect(`${error}`).to.be.eql(`HttpException: ${message}`);
-  });
-
-  describe('when "response" is an object', () => {
-    it('should use default message', () => {
-      const obj = { foo: 'bar' };
-      const error = new HttpException(obj, 400);
-      const badRequestError = new BadRequestException(obj);
-
-      expect(`${error}`).to.be.eql(`HttpException: Http Exception`);
-      expect(`${badRequestError}`).to.be.eql(
-        `BadRequestException: Bad Request Exception`,
-      );
-      expect(`${error}`.includes('[object Object]')).to.not.be.true;
-      expect(`${badRequestError}`.includes('[object Object]')).to.not.be.true;
-    });
-    describe('otherwise', () => {
-      it('should concat strings', () => {
-        const test = 'test message';
-        const error = new HttpException(test, 400);
-        expect(`${error}`).to.be.eql(`HttpException: ${test}`);
+  describe('when serializing', () => {
+    describe('and "response" parameter is a string', () => {
+      it('should concatenate HttpException with the given message', () => {
+        const responseAsString = 'Some Error';
+        const error = new HttpException(responseAsString, 400);
+        expect(`${error}`).to.be.eql(`HttpException: ${responseAsString}`);
         expect(`${error}`.includes('[object Object]')).to.not.be.true;
+      });
+    });
+
+    describe('and "response" parameter is an object', () => {
+      it('should use default message', () => {
+        const responseAsObject = { foo: 'bar' };
+        const error = new HttpException(responseAsObject, 400);
+        const badRequestError = new BadRequestException(responseAsObject);
+
+        expect(`${error}`).to.be.eql(`HttpException: Http Exception`);
+        expect(`${badRequestError}`).to.be.eql(
+          `BadRequestException: Bad Request Exception`,
+        );
+        expect(`${error}`.includes('[object Object]')).to.not.be.true;
+        expect(`${badRequestError}`.includes('[object Object]')).to.not.be.true;
       });
     });
   });
@@ -131,6 +217,9 @@ describe('HttpException', () => {
   });
 
   describe('initCause', () => {
+    const errorCause = new Error('An internal error cause');
+    const customDescription = 'custom description';
+
     it('configures a cause when message is an instance of error', () => {
       const message = new Error('Some Error');
       const error = new HttpException(message, 400);
@@ -138,6 +227,53 @@ describe('HttpException', () => {
       const { cause } = error;
 
       expect(cause).to.be.eql(message);
+    });
+
+    it('configures a cause when message is a string and the options object is passed', () => {
+      const error = new HttpException(customDescription, 400, {
+        cause: errorCause,
+      });
+
+      expect(`${error}`).to.be.eql(`HttpException: ${customDescription}`);
+      const { cause } = error;
+
+      expect(cause).to.be.eql(errorCause);
+    });
+
+    it('configures a cause when using a built-in exception with options', () => {
+      const builtInErrorClasses = [
+        BadGatewayException,
+        BadRequestException,
+        ConflictException,
+        ForbiddenException,
+        GatewayTimeoutException,
+        GoneException,
+        HttpVersionNotSupportedException,
+        ImATeapotException,
+        InternalServerErrorException,
+        MethodNotAllowedException,
+        MisdirectedException,
+        NotAcceptableException,
+        NotFoundException,
+        NotImplementedException,
+        PayloadTooLargeException,
+        PreconditionFailedException,
+        RequestTimeoutException,
+        ServiceUnavailableException,
+        UnauthorizedException,
+        UnprocessableEntityException,
+        UnsupportedMediaTypeException,
+      ];
+
+      builtInErrorClasses.forEach(ExceptionClass => {
+        const error = new ExceptionClass(customDescription, {
+          cause: errorCause,
+        });
+
+        const { cause } = error;
+
+        expect(cause).to.be.eql(errorCause);
+      });
     });
   });
 });

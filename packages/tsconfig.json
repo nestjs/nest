@@ -1,0 +1,32 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "./common/tsconfig.build.json"
+    },
+    {
+      "path": "./core/tsconfig.build.json"
+    },
+    {
+      "path": "./microservices/tsconfig.build.json"
+    },
+    {
+      "path": "./platform-express/tsconfig.build.json"
+    },
+    {
+      "path": "./platform-fastify/tsconfig.build.json"
+    },
+    {
+      "path": "./platform-socket.io/tsconfig.build.json"
+    },
+    {
+      "path": "./platform-ws/tsconfig.build.json"
+    },
+    {
+      "path": "./testing/tsconfig.build.json"
+    },
+    {
+      "path": "./websockets/tsconfig.build.json"
+    }
+  ]
+}

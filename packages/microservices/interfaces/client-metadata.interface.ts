@@ -12,6 +12,7 @@ import {
   RmqOptions,
 } from './microservice-configuration.interface';
 import { Serializer } from './serializer.interface';
+import { ConnectionOptions } from 'tls';
 
 export type ClientOptions =
   | RedisOptions
@@ -22,11 +23,17 @@ export type ClientOptions =
   | TcpClientOptions
   | RmqOptions;
 
+/**
+ * @publicApi
+ */
 export interface CustomClientOptions {
   customClass: Type<ClientProxy>;
   options?: Record<string, any>;
 }
 
+/**
+ * @publicApi
+ */
 export interface TcpClientOptions {
   transport: Transport.TCP;
   options?: {
@@ -34,6 +41,7 @@ export interface TcpClientOptions {
     port?: number;
     serializer?: Serializer;
     deserializer?: Deserializer;
+    tlsOptions?: ConnectionOptions;
     socketClass?: Type<TcpSocket>;
   };
 }

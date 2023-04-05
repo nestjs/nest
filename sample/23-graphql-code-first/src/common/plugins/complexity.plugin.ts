@@ -1,9 +1,6 @@
+import { ApolloServerPlugin, GraphQLRequestListener } from '@apollo/server';
 import { Plugin } from '@nestjs/apollo';
 import { GraphQLSchemaHost } from '@nestjs/graphql';
-import {
-  ApolloServerPlugin,
-  GraphQLRequestListener,
-} from 'apollo-server-plugin-base';
 import { GraphQLError } from 'graphql';
 import {
   fieldExtensionsEstimator,
@@ -15,7 +12,7 @@ import {
 export class ComplexityPlugin implements ApolloServerPlugin {
   constructor(private gqlSchemaHost: GraphQLSchemaHost) {}
 
-  async requestDidStart(): Promise<GraphQLRequestListener> {
+  async requestDidStart(): Promise<GraphQLRequestListener<any>> {
     const { schema } = this.gqlSchemaHost;
 
     return {

@@ -1,6 +1,7 @@
 /**
  * "fastify-static" interfaces
- * @see https://github.com/fastify/fastify-static/blob/master/index.d.ts
+ * @see https://github.com/fastify/fastify-static/blob/master/types/index.d.ts
+ * @publicApi
  */
 import { Stats } from 'fs';
 
@@ -49,6 +50,7 @@ interface SendOptions {
   index?: string[] | false;
   lastModified?: boolean;
   maxAge?: string | number;
+  serveDotFiles?: boolean;
 }
 
 export interface FastifyStaticOptions extends SendOptions {

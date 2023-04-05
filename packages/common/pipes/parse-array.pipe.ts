@@ -13,6 +13,9 @@ import { ValidationPipe, ValidationPipeOptions } from './validation.pipe';
 const VALIDATION_ERROR_MESSAGE = 'Validation failed (parsable array expected)';
 const DEFAULT_ARRAY_SEPARATOR = ',';
 
+/**
+ * @publicApi
+ */
 export interface ParseArrayOptions
   extends Omit<
     ValidationPipeOptions,
@@ -85,10 +88,11 @@ export class ParseArrayPipe implements PipeTransform {
 
       const isExpectedTypePrimitive = this.isExpectedTypePrimitive();
       const toClassInstance = (item: any, index?: number) => {
-        try {
-          item = JSON.parse(item);
-        } catch {}
-
+        if (this.options.items !== String) {
+          try {
+            item = JSON.parse(item);
+          } catch {}
+        }
         if (isExpectedTypePrimitive) {
           return this.validatePrimitive(item, index);
         }
