@@ -53,10 +53,6 @@ export class InternalCoreModuleFactory {
         useValue: httpAdapterHost,
       },
       {
-        provide: HttpAdapterHost.name,
-        useExisting: HttpAdapterHost,
-      },
-      {
         provide: LazyModuleLoader,
         useFactory: lazyModuleLoaderFactory,
       },
