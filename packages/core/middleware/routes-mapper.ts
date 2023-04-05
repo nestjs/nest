@@ -37,7 +37,7 @@ export class RoutesMapper {
     return [
       {
         path: addLeadingSlash(routePath),
-        method: defaultRequestMethod,
+        method: defaultRequestMethod as any,
       },
     ];
   }

@@ -54,6 +54,8 @@ describe('@EventPattern', () => {
   });
 
   describe('decorator overloads', () => {
+    const additionalExtras = { foo: 'bar' };
+
     class TestComponent1 {
       @EventPattern(pattern)
       public static test() {}
@@ -68,6 +70,18 @@ describe('@EventPattern', () => {
     }
     class TestComponent4 {
       @EventPattern(pattern, Transport.TCP, extras)
+      public static test() {}
+    }
+    class TestComponent5 {
+      @EventPattern(pattern, Transport.TCP, extras)
+      @((
+        (): MethodDecorator => (_target, _key, descriptor) =>
+          Reflect.defineMetadata(
+            PATTERN_EXTRAS_METADATA,
+            additionalExtras,
+            descriptor.value,
+          )
+      )())
       public static test() {}
     }
 
@@ -86,7 +100,7 @@ describe('@EventPattern', () => {
       );
       expect(metadataArg).to.be.eql(pattern);
       expect(transportArg).to.be.undefined;
-      expect(extrasArg).to.be.undefined;
+      expect(extrasArg).to.be.eql({});
     });
 
     it(`should enhance method with ${PATTERN_METADATA}, ${TRANSPORT_METADATA} metadata`, () => {
@@ -104,7 +118,7 @@ describe('@EventPattern', () => {
       );
       expect(metadataArg).to.be.eql(pattern);
       expect(transportArg).to.be.eql(Transport.TCP);
-      expect(extrasArg).to.be.undefined;
+      expect(extrasArg).to.be.eql({});
     });
 
     it(`should enhance method with ${PATTERN_METADATA}, ${PATTERN_EXTRAS_METADATA} metadata`, () => {
@@ -142,6 +156,27 @@ ${PATTERN_EXTRAS_METADATA} metadata`, () => {
       expect(metadataArg).to.be.eql(pattern);
       expect(transportArg).to.be.eql(Transport.TCP);
       expect(extrasArg).to.be.eql(extras);
+    });
+
+    it(`should merge with existing ${PATTERN_EXTRAS_METADATA} metadata`, () => {
+      const [metadataArg] = Reflect.getMetadata(
+        PATTERN_METADATA,
+        TestComponent5.test,
+      );
+      const transportArg = Reflect.getMetadata(
+        TRANSPORT_METADATA,
+        TestComponent5.test,
+      );
+      const extrasArg = Reflect.getMetadata(
+        PATTERN_EXTRAS_METADATA,
+        TestComponent5.test,
+      );
+      expect(metadataArg).to.be.eql(pattern);
+      expect(transportArg).to.be.eql(Transport.TCP);
+      expect(extrasArg).to.be.eql({
+        ...additionalExtras,
+        ...extras,
+      });
     });
   });
 });
