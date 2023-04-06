@@ -221,7 +221,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return async (call: GrpcCall, callback: Function) => {
       const handler = methodHandler(call.request, call.metadata, call);
       this.transformToObservable(await handler).subscribe({
-        next: data => callback(null, data),
+        next: async data => callback(null, await data),
         error: (err: any) => callback(err),
       });
     };
