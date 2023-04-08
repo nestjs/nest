@@ -19,7 +19,7 @@ export function WebSocketGateway<
 >(portOrOptions?: number | T, options?: T): ClassDecorator {
   const isPortInt = Number.isInteger(portOrOptions as number);
   // eslint-disable-next-line prefer-const
-  let [port, opt] = isPortInt ? [portOrOptions, options] : [0, portOrOptions];
+  let [port, opt] = isPortInt ? [portOrOptions, options] : [0, options];
 
   opt = opt || ({} as T);
   return (target: object) => {
