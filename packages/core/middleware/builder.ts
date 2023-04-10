@@ -13,6 +13,7 @@ import { iterate } from 'iterare';
 import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
 import { filterMiddleware } from './utils';
+import { stripEndSlash } from '@nestjs/common/utils/shared.utils';
 
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();
@@ -87,10 +88,25 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     ): RouteInfo[] {
       const { routesMapper } = this.builder;
 
-      return iterate(routes)
+      const routesWithNoEndingSlash: Array<RouteInfo> = iterate(routes)
         .map(route => routesMapper.mapRouteToRouteInfo(route))
         .flatten()
-        .toArray();
+        .toArray()
+        .map(route => {
+          const path = stripEndSlash(route.path);
+          return { ...route, path };
+        });
+
+      const routesWithAnEndingSlash: Array<RouteInfo> =
+        routesWithNoEndingSlash.map(route => {
+          const path = route.path + '/';
+          return { ...route, path };
+        });
+
+      return [
+        ...routesWithNoEndingSlash,
+        ...routesWithAnEndingSlash,
+      ] as Array<RouteInfo>;
     }
   };
 }
