@@ -60,6 +60,19 @@ describe('MiddlewareBuilder', () => {
                   path: '/path/versioned',
                   version: '1',
                 },
+                {
+                  method: RequestMethod.GET,
+                  path: route.path + '/',
+                },
+                {
+                  method: RequestMethod.GET,
+                  path: '/path/route/',
+                },
+                {
+                  method: RequestMethod.GET,
+                  path: '/path/versioned/',
+                  version: '1',
+                },
               ],
             },
           ]);
@@ -76,6 +89,10 @@ describe('MiddlewareBuilder', () => {
       expect(proxy.getExcludedRoutes()).to.be.eql([
         {
           path,
+          method: -1 as any,
+        },
+        {
+          path: path + '/',
           method: -1 as any,
         },
       ]);
