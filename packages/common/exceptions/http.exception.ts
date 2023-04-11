@@ -1,4 +1,3 @@
-import { Logger } from '../services';
 import { isObject, isString } from '../utils/shared.utils';
 
 export interface HttpExceptionOptions {
@@ -26,8 +25,6 @@ export class HttpException extends Error {
    * @example
    * throw new HttpException()
    * throw new HttpException('message', HttpStatus.BAD_REQUEST)
-   * throw new HttpException({ reason: 'this can be a human readable reason' }, HttpStatus.BAD_REQUEST)
-   * throw new HttpException(new Error('Cause Error'), HttpStatus.BAD_REQUEST)
    * throw new HttpException('custom message', HttpStatus.BAD_REQUEST, {
    *  cause: new Error('Cause Error'),
    * })
@@ -80,13 +77,6 @@ export class HttpException extends Error {
     if (this.options?.cause) {
       this.cause = this.options.cause;
       return;
-    }
-
-    if (this.response instanceof Error) {
-      Logger.warn(
-        'DEPRECATED! Passing the error cause as the first argument to HttpException constructor is deprecated. You should use the "options" parameter instead: new HttpException("message", 400, { cause: new Error("Some Error") }) ',
-      );
-      this.cause = this.response;
     }
   }
 
