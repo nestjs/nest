@@ -91,7 +91,7 @@
     "@grpc/grpc-js": "1.8.13",
     "@grpc/proto-loader": "0.7.6",
     "@nestjs/apollo": "11.0.4",
-    "@nestjs/graphql": "11.0.4",
+    "@nestjs/graphql": "11.0.5",
     "@nestjs/mongoose": "9.2.2",
     "@nestjs/typeorm": "9.0.1",
     "@types/amqplib": "0.10.1",
