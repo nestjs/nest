@@ -42,13 +42,15 @@ describe('GlobalGuardTestGateway', () => {
 
   it(`should not handle message if application config enabled for ws`, async () => {
     app = await createNestApp(GlobalGuardTestGateway);
+
+    app.applyApplicationConfigToWs();
     await app.listen(3000);
     ws = io('http://localhost:8080');
     ws.emit('test-msg');
     const gateway = app.get(GlobalGuardTestGateway);
     await new Promise<void>(resolve => {
       setTimeout(() => {
-        expect(gateway.handledMessage).to.be.eq(true);
+        expect(gateway.handledMessage).to.be.eq(false);
         resolve();
       }, 1_000);
     });
