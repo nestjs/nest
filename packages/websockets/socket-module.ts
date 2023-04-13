@@ -33,6 +33,7 @@ export class SocketModule<
   private isAdapterInitialized: boolean;
   private httpServer: THttpServer | undefined;
   private appOptions: TAppOptions;
+  private inheritGlobalConfig: boolean;
 
   public register(
     container: NestContainer,
@@ -40,10 +41,12 @@ export class SocketModule<
     graphInspector: GraphInspector,
     appOptions: TAppOptions,
     httpServer?: THttpServer,
+    inheritGlobalConfig = false,
   ) {
     this.applicationConfig = applicationConfig;
     this.appOptions = appOptions;
     this.httpServer = httpServer;
+    this.inheritGlobalConfig = inheritGlobalConfig;
 
     const contextCreator = this.getContextCreator(container);
     const serverProvider = new SocketServerProvider(
@@ -132,11 +135,20 @@ export class SocketModule<
     return new WsContextCreator(
       new WsProxy(),
       new ExceptionFiltersContext(container),
-      new PipesContextCreator(container, this.applicationConfig),
+      new PipesContextCreator(
+        container,
+        this.inheritGlobalConfig ? this.applicationConfig : undefined,
+      ),
       new PipesConsumer(),
-      new GuardsContextCreator(container, this.applicationConfig),
+      new GuardsContextCreator(
+        container,
+        this.inheritGlobalConfig ? this.applicationConfig : undefined,
+      ),
       new GuardsConsumer(),
-      new InterceptorsContextCreator(container, this.applicationConfig),
+      new InterceptorsContextCreator(
+        container,
+        this.inheritGlobalConfig ? this.applicationConfig : undefined,
+      ),
       new InterceptorsConsumer(),
     );
   }

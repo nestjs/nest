@@ -73,6 +73,7 @@ export class NestApplication
   private readonly microservices: any[] = [];
   private httpServer: any;
   private isListening = false;
+  private isAppConfigAppliedToWs = false;
 
   constructor(
     container: NestContainer,
@@ -173,6 +174,7 @@ export class NestApplication
       this.graphInspector,
       this.appOptions,
       this.httpServer,
+      this.isAppConfigAppliedToWs,
     );
   }
 
@@ -193,6 +195,10 @@ export class NestApplication
     this.isInitialized = true;
     this.logger.log(MESSAGES.APPLICATION_READY);
     return this;
+  }
+
+  public applyApplicationConfigToWs() {
+    this.isAppConfigAppliedToWs = true;
   }
 
   public registerParserMiddleware() {

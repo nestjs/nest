@@ -159,6 +159,12 @@ export interface INestApplication extends INestApplicationContext {
   useGlobalGuards(...guards: CanActivate[]): this;
 
   /**
+   * Allow use global guards,pipes,interceptors for websocket gateways
+   * @returns {void}
+   */
+  applyApplicationConfigToWs(): void;
+
+  /**
    * Terminates the application (including NestApplication, Gateways, and each connected
    * microservice)
    *
