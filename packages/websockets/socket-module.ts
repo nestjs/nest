@@ -132,11 +132,11 @@ export class SocketModule<
     return new WsContextCreator(
       new WsProxy(),
       new ExceptionFiltersContext(container),
-      new PipesContextCreator(container),
+      new PipesContextCreator(container, this.applicationConfig),
       new PipesConsumer(),
-      new GuardsContextCreator(container),
+      new GuardsContextCreator(container, this.applicationConfig),
       new GuardsConsumer(),
-      new InterceptorsContextCreator(container),
+      new InterceptorsContextCreator(container, this.applicationConfig),
       new InterceptorsConsumer(),
     );
   }
