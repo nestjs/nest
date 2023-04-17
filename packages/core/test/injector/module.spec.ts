@@ -306,7 +306,7 @@ describe('Module', () => {
       beforeEach(() => {
         sinon.stub((module as any)._providers, 'has').returns(false);
       });
-      it('should throws RuntimeException', () => {
+      it('should throw RuntimeException', () => {
         expect(() => module.instance).to.throws(RuntimeException);
       });
     });
