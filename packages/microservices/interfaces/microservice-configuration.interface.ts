@@ -104,6 +104,10 @@ export interface RedisOptions {
     port?: number;
     retryAttempts?: number;
     retryDelay?: number;
+    /**
+     * Use `psubscribe`/`pmessage` to enable wildcards in the patterns
+     */
+    wildcards?: boolean;
     serializer?: Serializer;
     deserializer?: Deserializer;
   } & IORedisOptions;
