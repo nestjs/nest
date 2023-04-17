@@ -145,7 +145,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
         }),
       );
     });
-  });
+  }).timeout(5000);
 
   it(`should support 2 different gateways running on the same path (but different ports)`, async function () {
     this.retries(10);

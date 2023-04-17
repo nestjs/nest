@@ -4,7 +4,7 @@ import { SerializedGraph } from '@nestjs/core/inspector/serialized-graph';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import * as sinon from 'sinon';
 import { AppModule } from '../src/app.module';
@@ -26,10 +26,10 @@ describe('Graph inspector', () => {
     const graph = testingModule.get(SerializedGraph);
 
     // Update snapshot:
-    writeFileSync(
-      join(__dirname, 'fixtures', 'pre-init-graph.json'),
-      graph.toString(),
-    );
+    // writeFileSync(
+    //   join(__dirname, 'fixtures', 'pre-init-graph.json'),
+    //   graph.toString(),
+    // );
 
     const snapshot = readFileSync(
       join(__dirname, 'fixtures', 'pre-init-graph.json'),
@@ -54,10 +54,10 @@ describe('Graph inspector', () => {
     const graph = testingModule.get(SerializedGraph);
 
     // Update snapshot:
-    writeFileSync(
-      join(__dirname, 'fixtures', 'post-init-graph.json'),
-      graph.toString(),
-    );
+    // writeFileSync(
+    //   join(__dirname, 'fixtures', 'post-init-graph.json'),
+    //   graph.toString(),
+    // );
 
     const snapshot = readFileSync(
       join(__dirname, 'fixtures', 'post-init-graph.json'),

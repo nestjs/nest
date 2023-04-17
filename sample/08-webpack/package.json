@@ -20,7 +20,7 @@
     "typescript": "4.9.5"
   },
   "devDependencies": {
-    "@nestjs/cli": "9.0.0",
+    "@nestjs/cli": "9.4.0",
     "@nestjs/schematics": "9.0.4",
     "@types/node": "18.0.3",
     "@typescript-eslint/eslint-plugin": "5.56.0",

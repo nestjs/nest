@@ -71,7 +71,7 @@ describe('NestContainer', () => {
       expect(setSpy.calledOnce).to.be.true;
     });
 
-    it('should throws an exception when metatype is not defined', () => {
+    it('should throw an exception when metatype is not defined', () => {
       expect(container.addModule(undefined, [])).to.eventually.throws();
     });
 
@@ -81,6 +81,37 @@ describe('NestContainer', () => {
       expect(addGlobalModuleSpy.calledOnce).to.be.true;
     });
   });
+
+  describe('replaceModule', () => {
+    it('should replace module if already exists in collection', async () => {
+      @Module({})
+      class ReplaceTestModule {}
+
+      const modules = new Map();
+      const setSpy = sinon.spy(modules, 'set');
+      (container as any).modules = modules;
+
+      await container.addModule(TestModule as any, []);
+      await container.replaceModule(
+        TestModule as any,
+        ReplaceTestModule as any,
+        [],
+      );
+
+      expect(setSpy.calledTwice).to.be.true;
+    });
+
+    it('should throw an exception when metatype is not defined', () => {
+      expect(container.addModule(undefined, [])).to.eventually.throws();
+    });
+
+    it('should add global module when module is global', async () => {
+      const addGlobalModuleSpy = sinon.spy(container, 'addGlobalModule');
+      await container.addModule(GlobalTestModule as any, []);
+      expect(addGlobalModuleSpy.calledOnce).to.be.true;
+    });
+  });
+
   describe('isGlobalModule', () => {
     describe('when module is not globally scoped', () => {
       it('should return false', () => {
