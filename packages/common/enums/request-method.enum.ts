@@ -7,4 +7,5 @@ export enum RequestMethod {
   ALL,
   OPTIONS,
   HEAD,
+  SEARCH,
 }

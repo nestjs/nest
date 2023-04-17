@@ -1,3 +1,4 @@
+import { InjectionToken } from '@nestjs/common/interfaces';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { ApplicationConfig } from '@nestjs/core/application-config';
@@ -6,7 +7,6 @@ import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator
 import { loadAdapter } from '@nestjs/core/helpers/load-adapter';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { InstanceToken } from '@nestjs/core/injector/module';
 import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
@@ -64,7 +64,7 @@ export class SocketModule<
   }
 
   public connectAllGateways(
-    providers: Map<InstanceToken, InstanceWrapper<Injectable>>,
+    providers: Map<InjectionToken, InstanceWrapper<Injectable>>,
     moduleName: string,
   ) {
     iterate(providers.values())

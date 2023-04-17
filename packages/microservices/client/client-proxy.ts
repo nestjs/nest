@@ -130,7 +130,7 @@ export abstract class ClientProxy {
     T extends ClientOptions['options'],
     K extends keyof T,
   >(obj: T, prop: K, defaultValue: T[K] = undefined) {
-    return (obj && obj[prop]) || defaultValue;
+    return obj && prop in obj ? obj[prop] : defaultValue;
   }
 
   protected normalizePattern(pattern: MsPattern): string {

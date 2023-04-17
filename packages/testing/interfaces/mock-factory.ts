@@ -1,3 +1,3 @@
-import { InstanceToken } from '@nestjs/core/injector/module';
+import { InjectionToken } from '@nestjs/common';
 
-export type MockFactory = (token?: InstanceToken) => any;
+export type MockFactory = (token?: InjectionToken) => any;

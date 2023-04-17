@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, HttpServer } from '@nestjs/common';
 import {
   FastifyBodyParser,
   FastifyInstance,
@@ -6,7 +6,10 @@ import {
   FastifyPluginCallback,
   FastifyPluginOptions,
   FastifyRegisterOptions,
+  FastifyRequest,
+  FastifyReply,
   RawServerBase,
+  RawServerDefault,
 } from 'fastify';
 import {
   Chain as LightMyRequestChain,
@@ -19,7 +22,16 @@ import { NestFastifyBodyParserOptions } from './nest-fastify-body-parser-options
 /**
  * @publicApi
  */
-export interface NestFastifyApplication extends INestApplication {
+export interface NestFastifyApplication<
+  TServer extends RawServerBase = RawServerDefault,
+> extends INestApplication<TServer> {
+  /**
+   * Returns the underlying HTTP adapter bounded to a Fastify app.
+   *
+   * @returns {HttpServer}
+   */
+  getHttpAdapter(): HttpServer<FastifyRequest, FastifyReply, FastifyInstance>;
+
   /**
    * A wrapper function around native `fastify.register()` method.
    * Example `app.register(require('@fastify/formbody'))

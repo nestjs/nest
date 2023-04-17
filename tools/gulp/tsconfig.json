@@ -3,7 +3,6 @@
     "experimentalDecorators": true,
     "noUnusedParameters": false,
     "noUnusedLocals": false,
-    "lib": ["es2015", "dom", "es2016.array.include"],
     "module": "commonjs",
     "moduleResolution": "node",
     "outDir": "../../dist/tools/gulp",
@@ -12,7 +11,7 @@
     "noImplicitThis": true,
     "noEmitOnError": true,
     "noImplicitAny": false,
-    "target": "es5",
+    "target": "ES2021",
     "types": [
       "node"
     ],

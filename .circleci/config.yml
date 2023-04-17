@@ -3,19 +3,19 @@ version: 2
 aliases:
   - &restore-cache
     restore_cache:
-        key: dependency-cache-{{ checksum "package.json" }}
+      key: dependency-cache-{{ checksum "package.json" }}
   - &install-deps
     run:
-        name: Install dependencies
-        command: npm ci
+      name: Install dependencies
+      command: npm ci
   - &build-packages
     run:
-        name: Build
-        command: npm run build
+      name: Build
+      command: npm run build
   - &run-unit-tests
     run:
-        name: Test
-        command: npm run test
+      name: Test
+      command: npm run test
 
 unit-tests-template: &unit-tests-template
   working_directory: ~/nest
@@ -30,7 +30,7 @@ jobs:
   build:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:12
+      - image: cimg/node:16.19
     steps:
       - checkout
       - run:
@@ -48,21 +48,11 @@ jobs:
       - run:
           name: Build
           command: npm run build
-        
-  test_node_12:
-    <<: *unit-tests-template
-    docker:
-      - image: circleci/node:12
 
-  test_node_14:
-    <<: *unit-tests-template
-    docker:
-      - image: circleci/node:14
-    
   test_node_16:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:16
+      - image: cimg/node:16.19
     steps:
       - checkout
       - *restore-cache
@@ -76,6 +66,16 @@ jobs:
           command: npm run coverage
       - store_artifacts:
           path: coverage
+
+  test_node_18:
+    <<: *unit-tests-template
+    docker:
+      - image: cimg/node:18.14
+
+  test_node_19:
+    <<: *unit-tests-template
+    docker:
+      - image: cimg/node:19.8
 
   lint:
     working_directory: ~/nest
@@ -97,17 +97,17 @@ jobs:
     machine: true
     steps:
       - checkout
-      - run: 
+      - run:
           name: Prepare nvm
           command: |
             echo 'export NVM_DIR="/opt/circleci/.nvm"' >> $BASH_ENV
             echo ' [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
-      - run: 
+      - run:
           name: Upgrade Node.js
           command: |
-            nvm install v12
+            nvm install v16
             node -v
-            nvm alias default v12
+            nvm alias default v16
       - run:
           name: Install Docker Compose
           command: |
@@ -126,11 +126,11 @@ jobs:
       - run:
           name: Integration tests
           command: npm run test:integration
-          
+
   codechecks_benchmarks:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:16
+      - image: cimg/node:16.19
     steps:
       - checkout
       - *restore-cache
@@ -146,7 +146,7 @@ jobs:
   samples:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:16
+      - image: cimg/node:16.19
     environment:
       - DISABLE_OPENCOLLECTIVE: true
     steps:
@@ -165,10 +165,10 @@ workflows:
       - test_node_16:
           requires:
             - build
-      - test_node_14:
+      - test_node_18:
           requires:
             - build
-      - test_node_12:
+      - test_node_19:
           requires:
             - build
       - lint:

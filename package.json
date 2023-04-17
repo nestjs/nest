@@ -176,7 +176,7 @@
     "ws": "8.13.0"
   },
   "engines": {
-    "node": ">= 12.9.0"
+    "node": ">= 16"
   },
   "collective": {
     "type": "opencollective",

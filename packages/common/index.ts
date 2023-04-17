@@ -6,7 +6,6 @@
  */
 import 'reflect-metadata';
 
-export * from './cache';
 export * from './decorators';
 export * from './enums';
 export * from './exceptions';

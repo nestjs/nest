@@ -1,9 +1,10 @@
-import { HttpException, Type } from '@nestjs/common';
-import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
-import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
-import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
+import { HttpException } from '@nestjs/common';
+import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
+import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
+import { selectExceptionFilterMetadata } from '@nestjs/common/utils/select-exception-filter-metadata.util';
 import { BaseExceptionFilter } from './base-exception-filter';
+import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
 
 export class ExceptionsHandler extends BaseExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];
@@ -29,14 +30,8 @@ export class ExceptionsHandler extends BaseExceptionFilter {
     if (isEmpty(this.filters)) {
       return false;
     }
-    const isInstanceOf = (metatype: Type<unknown>) =>
-      exception instanceof metatype;
 
-    const filter = this.filters.find(({ exceptionMetatypes }) => {
-      const typeExists =
-        !exceptionMetatypes.length || exceptionMetatypes.some(isInstanceOf);
-      return typeExists;
-    });
+    const filter = selectExceptionFilterMetadata(this.filters, exception);
     filter && filter.func(exception, ctx);
     return !!filter;
   }

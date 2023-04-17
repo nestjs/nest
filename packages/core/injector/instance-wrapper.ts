@@ -1,6 +1,6 @@
 import { Logger, LoggerService, Provider, Scope, Type } from '@nestjs/common';
 import { EnhancerSubtype } from '@nestjs/common/constants';
-import { FactoryProvider } from '@nestjs/common/interfaces';
+import { FactoryProvider, InjectionToken } from '@nestjs/common/interfaces';
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import {
@@ -16,7 +16,7 @@ import {
   isFactoryProvider,
   isValueProvider,
 } from './helpers/provider-classifier';
-import { InstanceToken, Module } from './module';
+import { Module } from './module';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
@@ -25,7 +25,7 @@ export interface HostComponentInfo {
   /**
    * Injection token (or class reference)
    */
-  token: InstanceToken;
+  token: InjectionToken;
   /**
    * Flag that indicates whether DI subtree is durable
    */
@@ -58,7 +58,7 @@ interface InstanceMetadataStore {
 
 export class InstanceWrapper<T = any> {
   public readonly name: any;
-  public readonly token: InstanceToken;
+  public readonly token: InjectionToken;
   public readonly async?: boolean;
   public readonly host?: Module;
   public readonly isAlias: boolean = false;
