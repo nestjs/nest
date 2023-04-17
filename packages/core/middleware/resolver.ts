@@ -1,6 +1,7 @@
+import { InjectionToken } from '@nestjs/common';
 import { Injector } from '../injector/injector';
 import { InstanceWrapper } from '../injector/instance-wrapper';
-import { InstanceToken, Module } from '../injector/module';
+import { Module } from '../injector/module';
 import { MiddlewareContainer } from './container';
 
 export class MiddlewareResolver {
@@ -19,7 +20,7 @@ export class MiddlewareResolver {
 
   private async resolveMiddlewareInstance(
     wrapper: InstanceWrapper,
-    middlewareMap: Map<InstanceToken, InstanceWrapper>,
+    middlewareMap: Map<InjectionToken, InstanceWrapper>,
     moduleRef: Module,
   ) {
     await this.injector.loadMiddleware(wrapper, middlewareMap, moduleRef);
