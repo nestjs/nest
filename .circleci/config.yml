@@ -168,9 +168,6 @@ workflows:
       - test_node_18:
           requires:
             - build
-      - test_node_19:
-          requires:
-            - build
       - lint:
           requires:
             - build
