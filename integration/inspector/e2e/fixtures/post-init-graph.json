@@ -822,23 +822,6 @@
         "token": "HttpAdapterHost"
       }
     },
-    "-553129559": {
-      "id": "-553129559",
-      "label": "HttpAdapterHost",
-      "parent": "555176277",
-      "metadata": {
-        "type": "provider",
-        "internal": true,
-        "sourceModuleName": "InternalCoreModule",
-        "durable": false,
-        "static": true,
-        "scope": 0,
-        "transient": false,
-        "exported": true,
-        "token": "HttpAdapterHost",
-        "initTime": 0
-      }
-    },
     "-702581189": {
       "id": "-702581189",
       "label": "LazyModuleLoader",
@@ -2214,23 +2197,6 @@
       },
       "id": "1976848738"
     },
-    "-1759625292": {
-      "source": "-553129559",
-      "target": "-326832201",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "InternalCoreModule",
-        "sourceClassName": "HttpAdapterHost",
-        "targetClassName": "HttpAdapterHost",
-        "sourceClassToken": "HttpAdapterHost",
-        "targetClassToken": "HttpAdapterHost",
-        "targetModuleName": "InternalCoreModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor",
-        "internal": true
-      },
-      "id": "-1759625292"
-    },
     "-2105726668": {
       "source": "-1803759743",
       "target": "1010833816",
@@ -2756,7 +2722,8 @@
           "patterns": [
             "createExternalSvc"
           ],
-          "isEventHandler": false
+          "isEventHandler": false,
+          "extras": {}
         },
         "id": "-349899408_create"
       },
@@ -2771,7 +2738,8 @@
           "patterns": [
             "findAllExternalSvc"
           ],
-          "isEventHandler": false
+          "isEventHandler": false,
+          "extras": {}
         },
         "id": "-349899408_findAll"
       },
@@ -2786,7 +2754,8 @@
           "patterns": [
             "findOneExternalSvc"
           ],
-          "isEventHandler": false
+          "isEventHandler": false,
+          "extras": {}
         },
         "id": "-349899408_findOne"
       },
@@ -2801,7 +2770,8 @@
           "patterns": [
             "updateExternalSvc"
           ],
-          "isEventHandler": false
+          "isEventHandler": false,
+          "extras": {}
         },
         "id": "-349899408_update"
       },
@@ -2816,7 +2786,8 @@
           "patterns": [
             "removeExternalSvc"
           ],
-          "isEventHandler": false
+          "isEventHandler": false,
+          "extras": {}
         },
         "id": "-349899408_remove"
       }

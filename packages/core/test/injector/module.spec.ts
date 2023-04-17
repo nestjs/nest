@@ -376,7 +376,6 @@ describe('Module', () => {
       (module as any)._imports = test;
 
       expect(module.imports).to.be.eql(test);
-      expect(module.relatedModules).to.be.eql(test);
     });
   });
 
@@ -394,7 +393,6 @@ describe('Module', () => {
       (module as any)._controllers = test;
 
       expect(module.controllers).to.be.eql(test);
-      expect(module.routes).to.be.eql(test);
     });
   });
 
@@ -413,14 +411,11 @@ describe('Module', () => {
       (module as any)._providers = test;
 
       expect(module.providers).to.be.eql(test);
-      expect(module.components).to.be.eql(test);
     });
   });
 
   describe('createModuleReferenceType', () => {
-    let moduleRef;
-
-    class SimpleClass {}
+    let moduleRef: any;
 
     beforeEach(() => {
       const Class = module.createModuleReferenceType();
