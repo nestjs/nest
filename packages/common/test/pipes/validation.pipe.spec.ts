@@ -6,6 +6,7 @@ import {
   IsArray,
   IsBoolean,
   IsDefined,
+  IsNumber,
   IsOptional,
   IsString,
   ValidateNested,
@@ -246,6 +247,32 @@ describe('ValidationPipe', () => {
               type: 'param',
             }),
           ).to.be.true;
+        });
+      });
+      describe('when input is a query parameter (Object)', () => {
+        class TestModelQuery {
+          @IsString()
+          public prop1: string;
+
+          @IsNumber()
+          public prop2: number;
+
+          @IsBoolean()
+          public prop3: boolean;
+
+          @IsOptional()
+          @IsString()
+          public optionalProp: string;
+        }
+        it('should return value follows a given instance', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = { prop1: 'value1', prop2: '34', prop3: 'false' };
+          const result = await target.transform(value, {
+            metatype: TestModelQuery,
+            data: 'test',
+            type: 'query',
+          });
+          expect(result).to.eql({ prop1: 'value1', prop2: 34, prop3: false });
         });
       });
       describe('when validation strips', () => {

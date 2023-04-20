@@ -176,7 +176,7 @@ export class ValidationPipe implements PipeTransform<any> {
 
   protected toValidate(metadata: ArgumentMetadata): boolean {
     const { metatype, type } = metadata;
-    if (type === 'custom' && !this.validateCustomDecorators) {
+    if (['custom', 'query'].includes(type) && !this.validateCustomDecorators) {
       return false;
     }
     const types = [String, Boolean, Number, Array, Object, Buffer];
@@ -190,6 +190,25 @@ export class ValidationPipe implements PipeTransform<any> {
     }
     const { type, metatype } = metadata;
     if (type !== 'param' && type !== 'query') {
+      return value;
+    }
+    if (typeof value === 'object' && type === 'query') {
+      this.transformOptions = Object.assign(this.transformOptions || {}, {
+        enableImplicitConversion: true,
+        enableCircularCheck: true,
+      });
+      // this.transformOptions.enableImplicitConversion = true;
+      for (const key in value) {
+        const metatype = Reflect.getMetadata(
+          'design:type',
+          metadata.metatype.prototype,
+          key,
+        );
+        value[key] = this.transformPrimitive(value[key], {
+          ...metadata,
+          metatype,
+        });
+      }
       return value;
     }
     if (metatype === Boolean) {
