@@ -197,7 +197,6 @@ export class ValidationPipe implements PipeTransform<any> {
         enableImplicitConversion: true,
         enableCircularCheck: true,
       });
-      // this.transformOptions.enableImplicitConversion = true;
       for (const key in value) {
         const metatype = Reflect.getMetadata(
           'design:type',
