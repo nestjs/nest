@@ -65,7 +65,7 @@ export class ClientKafka extends ClientProxy {
     const consumerOptions =
       this.getOptionsProp(this.options, 'consumer') || ({} as ConsumerConfig);
     const postfixId =
-      this.getOptionsProp(this.options, 'postfixId') ?? '-client';
+      this.getOptionsProp(this.options, 'postfixId', undefined, true) ?? '-client';
     this.producerOnlyMode =
       this.getOptionsProp(this.options, 'producerOnlyMode') || false;
 

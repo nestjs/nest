@@ -129,7 +129,7 @@ export abstract class ClientProxy {
   protected getOptionsProp<
     T extends ClientOptions['options'],
     K extends keyof T,
-  >(obj: T, prop: K, defaultValue: T[K] = undefined, nullishCoalesce = false) {
+  >(obj: T, prop: K, defaultValue: T[K] = undefined, nullishCoalesce: boolean = false) {
     if (nullishCoalesce) {
       return (obj && obj[prop]) ?? defaultValue;
     } else {
