@@ -218,6 +218,24 @@ describe('ClientKafka', () => {
 
       expect(logCreatorSpy.called).to.be.true;
     });
+
+    it('should allow an empty postfixId', async () => {
+      const client = new ClientKafka({
+        postfixId: ''
+      })
+      // @ts-ignore: we need to see internal field
+      expect(client.clientId).to.eq('nestjs-consumer')
+      // @ts-ignore: we need to see internal field
+      expect(client.groupId).to.eq('nestjs-group')
+    });
+
+    it('should postfix clientId and groupId with postfixId', async () => {
+      const client = new ClientKafka({ })
+      // @ts-ignore: we need to see internal field
+      expect(client.clientId).to.eq('nestjs-consumer-client')
+      // @ts-ignore: we need to see internal field
+      expect(client.groupId).to.eq('nestjs-group-client')
+    });
   });
 
   describe('subscribeToResponseOf', () => {
