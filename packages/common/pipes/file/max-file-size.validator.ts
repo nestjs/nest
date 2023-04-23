@@ -13,7 +13,7 @@ export type MaxFileSizeValidatorOptions = {
  * @publicApi
  */
 export class MaxFileSizeValidator extends FileValidator<MaxFileSizeValidatorOptions> {
-  buildErrorMessage(file: any): string {
+  buildErrorMessage(): string {
     if ('message' in this.validationOptions) {
       return this.validationOptions.message;
     }
