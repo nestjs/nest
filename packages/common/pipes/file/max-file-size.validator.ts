@@ -2,7 +2,7 @@ import { FileValidator } from './file-validator.interface';
 
 export type MaxFileSizeValidatorOptions = {
   maxSize: number;
-  message?: string | (file?: any) => string;
+  message?: string | ((file?: any) => string);
 };
 
 /**
