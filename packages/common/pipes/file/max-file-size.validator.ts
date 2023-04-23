@@ -2,7 +2,7 @@ import { FileValidator } from './file-validator.interface';
 
 export type MaxFileSizeValidatorOptions = {
   maxSize: number;
-  message?: string | ((file?: any) => string);
+  message?: string;
 };
 
 /**
@@ -15,10 +15,6 @@ export type MaxFileSizeValidatorOptions = {
 export class MaxFileSizeValidator extends FileValidator<MaxFileSizeValidatorOptions> {
   buildErrorMessage(file: any): string {
     if ('message' in this.validationOptions) {
-      if (typeof this.validationOptions.message === 'function') {
-        return this.validationOptions.message(file);
-      }
-
       return this.validationOptions.message;
     }
 
