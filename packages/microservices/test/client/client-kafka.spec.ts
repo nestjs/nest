@@ -222,19 +222,15 @@ describe('ClientKafka', () => {
     it('should allow an empty postfixId', async () => {
       const client = new ClientKafka({
         postfixId: ''
-      })
-      // @ts-ignore: we need to see internal field
-      expect(client.clientId).to.eq('nestjs-consumer')
-      // @ts-ignore: we need to see internal field
-      expect(client.groupId).to.eq('nestjs-group')
+      });
+      expect(client.getClientId()).to.eq('nestjs-consumer');
+      expect(client.getGroupId()).to.eq('nestjs-group');
     });
 
     it('should postfix clientId and groupId with postfixId', async () => {
-      const client = new ClientKafka({ })
-      // @ts-ignore: we need to see internal field
-      expect(client.clientId).to.eq('nestjs-consumer-client')
-      // @ts-ignore: we need to see internal field
-      expect(client.groupId).to.eq('nestjs-group-client')
+      const client = new ClientKafka({});
+      expect(client.getClientId()).to.eq('nestjs-consumer-client');
+      expect(client.getGroupId()).to.eq('nestjs-group-client');
     });
   });
 

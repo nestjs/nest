@@ -283,6 +283,14 @@ export class ClientKafka extends ClientProxy {
     }
   }
 
+  public getGroupId() {
+    return this.groupId
+  }
+
+  public getClientId() {
+    return this.clientId
+  }
+
   protected getResponsePatternName(pattern: string): string {
     return `${pattern}.reply`;
   }
