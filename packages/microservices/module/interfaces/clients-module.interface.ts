@@ -7,7 +7,12 @@ export type ClientProviderOptions = ClientProvider & {
   name: string | symbol;
 };
 
-export type ClientsModuleOptions = Array<ClientProviderOptions>;
+export type ClientsModuleOptions =
+  | Array<ClientProviderOptions>
+  | {
+      clients: Array<ClientProviderOptions>;
+      isGlobal?: boolean;
+    };
 
 export interface ClientsModuleOptionsFactory {
   createClientOptions(): Promise<ClientProvider> | ClientProvider;
@@ -23,4 +28,9 @@ export interface ClientsProviderAsyncOptions
   name: string | symbol;
 }
 
-export type ClientsModuleAsyncOptions = Array<ClientsProviderAsyncOptions>;
+export type ClientsModuleAsyncOptions =
+  | Array<ClientsProviderAsyncOptions>
+  | {
+      clients: Array<ClientsProviderAsyncOptions>;
+      isGlobal?: boolean;
+    };
