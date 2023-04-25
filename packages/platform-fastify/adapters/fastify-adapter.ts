@@ -90,7 +90,7 @@ type VersionedRoute<TRequest, TResponse> = ((
  * ref https://github.com/fastify/middie/pull/16
  * ref https://github.com/fastify/fastify/pull/559
  */
-type FastifyRawRequest<TServer extends RawServerBase> =
+export type FastifyRawRequest<TServer extends RawServerBase> =
   RawRequestDefaultExpression<TServer> & { originalUrl?: string };
 
 /**
