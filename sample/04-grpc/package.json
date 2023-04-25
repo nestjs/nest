@@ -19,7 +19,7 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@grpc/grpc-js": "1.6.7",
+    "@grpc/grpc-js": "1.8.14",
     "@nestjs/common": "9.3.12",
     "@nestjs/core": "9.3.12",
     "@nestjs/microservices": "9.3.12",
@@ -48,7 +48,7 @@
     "ts-jest": "28.0.8",
     "ts-loader": "9.3.1",
     "ts-node": "10.8.2",
-    "tsconfig-paths": "4.0.0",
+    "tsconfig-paths": "4.2.0",
     "typescript": "4.9.5"
   }
 }

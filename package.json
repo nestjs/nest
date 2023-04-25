@@ -5,7 +5,7 @@
   "homepage": "https://nestjs.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nestjs/nest"
+    "url": "https://github.com/nestjs/nest.git"
   },
   "funding": {
     "type": "opencollective",
@@ -78,7 +78,7 @@
     "uuid": "9.0.0"
   },
   "devDependencies": {
-    "@apollo/server": "4.6.0",
+    "@apollo/server": "4.7.0",
     "@codechecks/client": "0.1.12",
     "@commitlint/cli": "17.6.1",
     "@commitlint/config-angular": "17.6.1",
@@ -103,8 +103,8 @@
     "@types/gulp": "4.0.10",
     "@types/http-errors": "2.0.1",
     "@types/mocha": "10.0.1",
-    "@types/node": "18.15.11",
-    "@types/sinon": "10.0.13",
+    "@types/node": "18.16.0",
+    "@types/sinon": "10.0.14",
     "@types/supertest": "2.0.12",
     "@types/ws": "8.5.4",
     "@typescript-eslint/eslint-plugin": "4.33.0",
@@ -114,7 +114,7 @@
     "artillery": "1.7.9",
     "body-parser": "1.20.2",
     "bytes": "3.1.2",
-    "cache-manager": "5.2.0",
+    "cache-manager": "5.2.1",
     "cache-manager-redis-store": "3.0.1",
     "chai": "4.3.7",
     "chai-as-promised": "7.1.1",
@@ -153,17 +153,17 @@
     "markdown-table": "2.0.0",
     "merge-graphql-schemas": "1.7.8",
     "mocha": "10.2.0",
-    "mongoose": "7.0.3",
+    "mongoose": "7.0.4",
     "mqtt": "4.3.7",
     "multer": "1.4.4",
     "mysql2": "3.2.3",
     "nats": "2.13.1",
     "nodemon": "2.0.22",
     "nyc": "15.1.0",
-    "prettier": "2.8.7",
+    "prettier": "2.8.8",
     "redis": "4.6.5",
     "rxjs-compat": "6.6.7",
-    "sinon": "15.0.3",
+    "sinon": "15.0.4",
     "sinon-chai": "3.7.0",
     "socket.io-client": "4.6.1",
     "subscriptions-transport-ws": "0.11.0",

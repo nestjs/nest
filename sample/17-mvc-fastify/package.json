@@ -22,7 +22,7 @@
         "@nestjs/common": "9.3.12",
         "@nestjs/core": "9.3.12",
         "@nestjs/platform-fastify": "9.3.12",
-        "@fastify/static": "6.4.0",
+        "@fastify/static": "6.10.1",
         "handlebars": "4.7.7",
         "@fastify/view": "7.4.1",
         "reflect-metadata": "0.1.13",
@@ -47,7 +47,7 @@
         "ts-jest": "28.0.8",
         "ts-loader": "9.3.1",
         "ts-node": "10.8.2",
-        "tsconfig-paths": "4.0.0",
+        "tsconfig-paths": "4.2.0",
         "typescript": "4.9.5"
     }
 }

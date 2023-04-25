@@ -4,9 +4,9 @@ import { Type } from '../type.interface';
 /**
  * @publicApi
  */
-export type InjectionToken =
+export type InjectionToken<T = any> =
   | string
   | symbol
-  | Type<any>
-  | Abstract<any>
+  | Type<T>
+  | Abstract<T>
   | Function;

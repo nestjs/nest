@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "9.3.12",
     "@nestjs/core": "9.3.12",
-    "@nestjs/graphql": "10.0.18",
+    "@nestjs/graphql": "10.2.1",
     "@nestjs/mercurius": "10.0.17",
     "@nestjs/platform-fastify": "9.3.12",
     "class-transformer": "0.5.1",
@@ -44,7 +44,7 @@
     "ts-jest": "28.0.8",
     "ts-loader": "9.3.1",
     "ts-node": "10.8.2",
-    "tsconfig-paths": "4.0.0",
+    "tsconfig-paths": "4.2.0",
     "@typescript-eslint/eslint-plugin": "5.56.0",
     "@typescript-eslint/parser": "5.56.0",
     "eslint": "8.19.0",

@@ -23,7 +23,7 @@
     "@nestjs/core": "9.3.12",
     "@nestjs/mongoose": "9.2.2",
     "@nestjs/platform-express": "9.3.12",
-    "mongoose": "6.4.6",
+    "mongoose": "6.10.5",
     "reflect-metadata": "0.1.13",
     "rimraf": "4.4.1",
     "rxjs": "7.5.5"
@@ -47,7 +47,7 @@
     "ts-jest": "28.0.8",
     "ts-loader": "9.3.1",
     "ts-node": "10.8.2",
-    "tsconfig-paths": "4.0.0",
+    "tsconfig-paths": "4.2.0",
     "typescript": "4.9.5"
   },
   "jest": {
