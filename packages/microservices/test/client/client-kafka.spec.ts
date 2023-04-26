@@ -227,7 +227,7 @@ describe('ClientKafka', () => {
       expect(client.getGroupId()).to.eq('nestjs-group');
     });
 
-    it('should postfix clientId and groupId with postfixId', async () => {
+    it('should postfix clientId and groupId with default postfixId', async () => {
       const client = new ClientKafka({});
       expect(client.getClientId()).to.eq('nestjs-consumer-client');
       expect(client.getGroupId()).to.eq('nestjs-group-client');
