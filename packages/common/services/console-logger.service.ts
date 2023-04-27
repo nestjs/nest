@@ -281,6 +281,14 @@ export class ConsoleLogger implements LoggerService {
   }
 
   private getContextAndStackAndMessagesToPrint(args: unknown[]) {
+    if (args.length === 2) {
+      return {
+        messages: [args[0]],
+        stack: args[1] as string,
+        context: this.context,
+      };
+    }
+
     const { messages, context } = this.getContextAndMessagesToPrint(args);
     if (messages?.length <= 1) {
       return { messages, context };
