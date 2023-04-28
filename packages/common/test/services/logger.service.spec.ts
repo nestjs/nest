@@ -70,6 +70,19 @@ describe('Logger', () => {
         );
       });
 
+      it('should print one error to the console', () => {
+        const message = 'random error';
+        const context = 'RandomContext';
+
+        Logger.error(message, undefined, context);
+
+        expect(processStderrWriteSpy.calledOnce).to.be.true;
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+          `[${context}]`,
+        );
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+      });
+
       it('should print one error without context to the console', () => {
         const message = 'random error without context';
 
@@ -353,6 +366,19 @@ describe('Logger', () => {
         expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
           messages[2],
         );
+      });
+
+      it('should print one error to the console', () => {
+        const message = 'random error';
+        const context = 'RandomContext';
+
+        logger.error(message, undefined, context);
+
+        expect(processStderrWriteSpy.calledOnce).to.be.true;
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+          `[${context}]`,
+        );
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
       });
 
       it('should print one error to the console with stacktrace and no context', () => {
