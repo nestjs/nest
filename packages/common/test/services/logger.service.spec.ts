@@ -70,17 +70,31 @@ describe('Logger', () => {
         );
       });
 
-      it('should print one error to the console', () => {
+      it('should print one error to the console with context', () => {
         const message = 'random error';
         const context = 'RandomContext';
 
-        Logger.error(message, undefined, context);
+        Logger.error(message, context);
 
         expect(processStderrWriteSpy.calledOnce).to.be.true;
         expect(processStderrWriteSpy.firstCall.firstArg).to.include(
           `[${context}]`,
         );
         expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+      });
+
+      it('should print one error to the console with stacktrace', () => {
+        const message = 'random error';
+        const stacktrace = 'Error: message\n    at <anonymous>:1:2';
+
+        Logger.error(message, stacktrace);
+
+        expect(processStderrWriteSpy.calledTwice).to.be.true;
+        expect(processStderrWriteSpy.firstCall.firstArg).to.not.include(`[]`);
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
+          stacktrace + '\n',
+        );
       });
 
       it('should print one error without context to the console', () => {
@@ -114,20 +128,6 @@ describe('Logger', () => {
         expect(processStderrWriteSpy.firstCall.firstArg).to.include(`Object:`);
         expect(processStderrWriteSpy.firstCall.firstArg).to.include(
           `{\n  "randomError": true\n}`,
-        );
-      });
-
-      it('should print one error to the console with stacktrace and no context', () => {
-        const message = 'random error';
-        const stacktrace = 'stacktrace';
-
-        Logger.error(message, stacktrace);
-
-        expect(processStderrWriteSpy.calledTwice).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.not.include(`[]`);
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
-        expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
-          stacktrace + '\n',
         );
       });
 
@@ -368,11 +368,11 @@ describe('Logger', () => {
         );
       });
 
-      it('should print one error to the console', () => {
+      it('should print one error to the console with context', () => {
         const message = 'random error';
         const context = 'RandomContext';
 
-        logger.error(message, undefined, context);
+        logger.error(message, context);
 
         expect(processStderrWriteSpy.calledOnce).to.be.true;
         expect(processStderrWriteSpy.firstCall.firstArg).to.include(
@@ -381,9 +381,9 @@ describe('Logger', () => {
         expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
       });
 
-      it('should print one error to the console with stacktrace and no context', () => {
+      it('should print one error to the console with stacktrace', () => {
         const message = 'random error';
-        const stacktrace = 'stacktrace';
+        const stacktrace = 'Error: message\n    at <anonymous>:1:2';
 
         logger.error(message, stacktrace);
 

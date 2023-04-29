@@ -80,6 +80,7 @@ export class ConsoleLogger implements LoggerService {
    * Write an 'error' level log, if the configured level allows for it.
    * Prints to `stderr` with newline.
    */
+  error(message: any, stackOrContext?: string): void;
   error(message: any, stack?: string, context?: string): void;
   error(message: any, ...optionalParams: [...any, string?, string?]): void;
   error(message: any, ...optionalParams: any[]) {
@@ -282,11 +283,16 @@ export class ConsoleLogger implements LoggerService {
 
   private getContextAndStackAndMessagesToPrint(args: unknown[]) {
     if (args.length === 2) {
-      return {
-        messages: [args[0]],
-        stack: args[1] as string,
-        context: this.context,
-      };
+      return this.isStackFormat(args[1])
+        ? {
+            messages: [args[0]],
+            stack: args[1] as string,
+            context: this.context,
+          }
+        : {
+            messages: [args[0]],
+            context: args[1] as string,
+          };
     }
 
     const { messages, context } = this.getContextAndMessagesToPrint(args);
@@ -304,6 +310,14 @@ export class ConsoleLogger implements LoggerService {
       messages: messages.slice(0, messages.length - 1),
       context,
     };
+  }
+
+  private isStackFormat(stack: unknown) {
+    if (!isString(stack) && !isUndefined(stack)) {
+      return false;
+    }
+
+    return /^(.)+\n\s+at .+:\d+:\d+$/.test(stack);
   }
 
   private getColorByLogLevel(level: LogLevel) {
