@@ -1,7 +1,6 @@
-### Mongoose sample
+### Mongo TypeORM sample
 
 ### Installation
-
 
 `npm install`
 
