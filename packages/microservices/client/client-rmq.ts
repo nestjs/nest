@@ -11,7 +11,7 @@ import {
   Observable,
   ReplaySubject,
 } from 'rxjs';
-import { first, map, retryWhen, scan, skip, switchMap } from 'rxjs/operators';
+import { first, map, retry, scan, skip, switchMap } from 'rxjs/operators';
 import {
   CONNECT_EVENT,
   CONNECT_FAILED_EVENT,
@@ -152,16 +152,17 @@ export class ClientRMQ extends ClientProxy {
 
     const urls = this.getOptionsProp(this.options, 'urls', []);
     const connectFailed$ = eventToError(CONNECT_FAILED_EVENT).pipe(
-      retryWhen(e =>
-        e.pipe(
-          scan((errorCount, error: any) => {
-            if (urls.indexOf(error.url) >= urls.length - 1) {
-              throw error;
-            }
-            return errorCount + 1;
-          }, 0),
-        ),
-      ),
+      retry({
+        delay: e =>
+          e.pipe(
+            scan((errorCount, error: any) => {
+              if (urls.indexOf(error.url) >= urls.length - 1) {
+                throw error;
+              }
+              return errorCount + 1;
+            }, 0),
+          ),
+      }),
     );
     // If we ever decide to propagate all disconnect errors & re-emit them through
     // the "connection" stream then comment out "first()" operator.
