@@ -1,8 +1,14 @@
 /**
  * @see https://github.com/expressjs/multer
  */
+import { Express, Request } from 'express';
+
 export interface MulterOptions {
-  dest?: string;
+  dest?: string | ((
+            req: Request,
+            file: Express.Multer.File,
+            callback: (error: Error | null, destination: string) => void
+        ) => void) | undefined;
   /** The storage engine to use for uploaded files. */
   storage?: any;
   /**
