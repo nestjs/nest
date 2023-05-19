@@ -7,7 +7,7 @@ aliases:
   - &install-deps
     run:
       name: Install dependencies
-      command: npm ci
+      command: npm ci --legacy-peer-deps
   - &build-packages
     run:
       name: Build
@@ -40,7 +40,7 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
       - run:
           name: Install dependencies
-          command: npm ci
+          command: npm ci --legacy-peer-deps
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
