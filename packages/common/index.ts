@@ -26,6 +26,8 @@ export {
   FactoryProvider,
   ForwardReference,
   HttpServer,
+  HttpExceptionBody,
+  HttpExceptionBodyMessage,
   INestApplication,
   INestApplicationContext,
   INestMicroservice,
