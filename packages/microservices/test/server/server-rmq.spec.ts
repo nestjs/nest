@@ -3,6 +3,7 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerRMQ } from '../../server/server-rmq';
+import { RmqContext } from '../../ctx-host';
 
 describe('ServerRMQ', () => {
   let server: ServerRMQ;
@@ -99,10 +100,15 @@ describe('ServerRMQ', () => {
       data: 'tests',
       id: '3',
     });
+    const channel = {
+      nack: sinon.spy(),
+    };
+
     let sendMessageStub: sinon.SinonStub;
 
     beforeEach(() => {
       sendMessageStub = sinon.stub(server, 'sendMessage').callsFake(() => ({}));
+      (server as any).channel = channel;
     });
     it('should call "handleEvent" if identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
@@ -223,9 +229,33 @@ describe('ServerRMQ', () => {
       server.handleEvent(
         channel,
         { pattern: '', data },
-        new BaseRpcContext([]),
+        new RmqContext([{}, {}, '']),
       );
       expect(handler.calledWith(data)).to.be.true;
+    });
+
+    it('should negative acknowledge without retrying if key does not exists in handlers object and noAck option is false', () => {
+      const nack = sinon.spy();
+      const message = { pattern: 'no-exists', data };
+      (server as any).channel = {
+        nack,
+      };
+      (server as any).noAck = false;
+      server.handleEvent(channel, message, new RmqContext([message, '', '']));
+
+      expect(nack.calledWith(message, false, false)).to.be.true;
+    });
+
+    it('should not negative acknowledge if key does not exists in handlers object but noAck option is true', () => {
+      const nack = sinon.spy();
+      const message = { pattern: 'no-exists', data };
+      (server as any).channel = {
+        nack,
+      };
+      (server as any).noAck = true;
+      server.handleEvent(channel, message, new RmqContext([message, '', '']));
+
+      expect(nack.calledWith(message, false, false)).not.to.be.true;
     });
   });
 });
