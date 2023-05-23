@@ -44,7 +44,7 @@ export const RQM_NO_EVENT_HANDLER = (
   text: TemplateStringsArray,
   pattern: string,
 ) =>
-  `Received non supported event. It has been negative acknowledged without retrying. Pattern: ${pattern}`;
+  `An unsupported event was received. It has been acknowledged, so it will not be re-delivered. Pattern: ${pattern}`;
 export const GRPC_DEFAULT_PROTO_LOADER = '@grpc/proto-loader';
 
 export const NO_EVENT_HANDLER = (text: TemplateStringsArray, pattern: string) =>
