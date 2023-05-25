@@ -164,6 +164,23 @@ export class InstanceWrapper<T = any> {
     collection.set(contextId, value);
   }
 
+  public removeInstanceByContextId(contextId: ContextId, inquirerId?: string) {
+    if (this.scope === Scope.TRANSIENT && inquirerId) {
+      return this.removeInstanceByInquirerId(contextId, inquirerId);
+    }
+
+    this.values.delete(contextId);
+  }
+
+  public removeInstanceByInquirerId(contextId: ContextId, inquirerId: string) {
+    let collection = this.transientMap.get(inquirerId);
+    if (!collection) {
+      return;
+    }
+
+    collection.delete(contextId);
+  }
+
   public addCtorMetadata(index: number, wrapper: InstanceWrapper) {
     if (!this[INSTANCE_METADATA_SYMBOL].dependencies) {
       this[INSTANCE_METADATA_SYMBOL].dependencies = [];

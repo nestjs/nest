@@ -737,6 +737,52 @@ describe('InstanceWrapper', () => {
     });
   });
 
+  describe('removeInstanceByContextId', () => {
+    describe('without inquirer', () => {
+      it('should remove context', () => {
+        const wrapper = new InstanceWrapper({
+          scope: Scope.TRANSIENT,
+        });
+
+        wrapper.setInstanceByContextId(STATIC_CONTEXT, { instance: {} });
+
+        const existingContext = wrapper.getInstanceByContextId(STATIC_CONTEXT);
+        expect(existingContext).to.be.not.undefined;
+        wrapper.removeInstanceByContextId(STATIC_CONTEXT);
+
+        const removedContext = wrapper.getInstanceByContextId(STATIC_CONTEXT);
+        expect(removedContext).to.be.undefined;
+      });
+    });
+
+    describe('when transient and inquirer has been passed', () => {
+      it('should remove context', () => {
+        const wrapper = new InstanceWrapper({
+          scope: Scope.TRANSIENT,
+        });
+
+        wrapper.setInstanceByContextId(
+          STATIC_CONTEXT,
+          { instance: {} },
+          'inquirerId',
+        );
+
+        const existingContext = wrapper.getInstanceByContextId(
+          STATIC_CONTEXT,
+          'inquirerId',
+        );
+        expect(existingContext).to.be.not.undefined;
+        wrapper.removeInstanceByContextId(STATIC_CONTEXT, 'inquirerId');
+
+        const removedContext = wrapper.getInstanceByContextId(
+          STATIC_CONTEXT,
+          'inquirerId',
+        );
+        expect(removedContext).to.be.undefined;
+      });
+    });
+  });
+
   describe('isInRequestScope', () => {
     describe('when tree and context are not static and is not transient', () => {
       it('should return true', () => {

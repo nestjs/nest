@@ -2,9 +2,11 @@ import { INestApplication } from '@nestjs/common';
 import { ContextIdFactory } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import * as request from 'supertest';
 import { DurableContextIdStrategy } from '../src/durable/durable-context-id.strategy';
 import { DurableModule } from '../src/durable/durable.module';
+import { DurableService } from '../src/durable/durable.service';
 
 describe('Durable providers', () => {
   let server: any;
@@ -83,6 +85,26 @@ describe('Durable providers', () => {
         performHttpCall(3, resolve, '/durable/echo'),
       );
       expect(result.body).deep.equal({ tenantId: '3' });
+    });
+
+    it(`should not cache durable providers that throw errors`, async () => {
+      // How to test this?
+      // const constructorStub = sinon.stub(DurableService, 'constructor').throws(new Error('test error'));
+
+      let result: request.Response;
+
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(1, resolve, '/durable/echo'),
+      );
+
+      expect(result.statusCode).equal(400);
+
+      // The second request should be successful
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(1, resolve, '/durable/echo'),
+      );
+
+      expect(result.body).deep.equal({ tenantId: '1' });
     });
   });
 
