@@ -357,7 +357,7 @@ export class DependenciesScanner {
 
     const modulesStack = [];
     const calculateDistance = (moduleRef: Module, distance = 1) => {
-      if (!moduleRef || modulesStack.includes(moduleRef)) {
+      if (!moduleRef) {
         return;
       }
       modulesStack.push(moduleRef);
