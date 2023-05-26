@@ -2,7 +2,8 @@ import { Logger } from '../services';
 import { isObject, isString } from '../utils/shared.utils';
 
 export interface HttpExceptionOptions {
-  cause?: Error;
+  /** original cause of the error */
+  cause?: unknown;
   description?: string;
 }
 
@@ -67,14 +68,13 @@ export class HttpException extends Error {
     this.initCause();
   }
 
-  public cause: Error | undefined;
+  public cause: unknown;
 
   /**
    * Configures error chaining support
    *
-   * See:
-   * - https://nodejs.org/en/blog/release/v16.9.0/#error-cause
-   * - https://github.com/microsoft/TypeScript/issues/45167
+   * @see https://nodejs.org/en/blog/release/v16.9.0/#error-cause
+   * @see https://github.com/microsoft/TypeScript/issues/45167
    */
   public initCause(): void {
     if (this.options?.cause) {
