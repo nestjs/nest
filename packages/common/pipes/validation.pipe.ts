@@ -81,15 +81,16 @@ export class ValidationPipe implements PipeTransform<any> {
       options.exceptionFactory || this.createExceptionFactory();
 
     this.validatorPackage = options.validatorPackage;
-    this.transformerPackage = options.transformPackage;
+    this.transformerPackage = options.transformerPackage;
     
     classValidator = undefined;
     classTransformer = undefined;
   }
 
   protected getClassTransformer(): TransformerPackage {
-    if (!classTransformer)
+    if (!classTransformer) {
         classTransformer = this.loadTransformer(this.transformerPackage);
+    }
     
     return classTransformer;
   }
@@ -245,8 +246,9 @@ export class ValidationPipe implements PipeTransform<any> {
     object: object,
     validatorOptions?: ValidatorOptions,
   ): Promise<ValidationError[]> | ValidationError[] {
-    if (!classValidator)
+    if (!classValidator) {
       classValidator = this.loadValidator(this.validatorPackage);
+    }
       
     return classValidator.validate(object, validatorOptions);
   }
