@@ -53,6 +53,8 @@ export class ValidationPipe implements PipeTransform<any> {
   protected expectedType: Type<any>;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
+  protected validatorPackage?: ValidatorPackage;
+  protected transformerPackage?: TransformerPackage;
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
@@ -78,10 +80,20 @@ export class ValidationPipe implements PipeTransform<any> {
     this.exceptionFactory =
       options.exceptionFactory || this.createExceptionFactory();
 
-    classValidator = this.loadValidator(options.validatorPackage);
-    classTransformer = this.loadTransformer(options.transformerPackage);
+    this.validatorPackage = options.validatorPackage;
+    this.transformerPackage = options.transformPackage;
+    
+    classValidator = undefined;
+    classTransformer = undefined;
   }
 
+  protected getClassTransformer(): TransformerPackage {
+    if (!classTransformer)
+        classTransformer = this.loadTransformer(this.transformerPackage);
+    
+    return classTransformer;
+  }
+  
   protected loadValidator(
     validatorPackage?: ValidatorPackage,
   ): ValidatorPackage {
@@ -121,7 +133,7 @@ export class ValidationPipe implements PipeTransform<any> {
     const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
     this.stripProtoKeys(value);
-    let entity = classTransformer.plainToClass(
+    let entity = this.getClassTransformer().plainToClass(
       metatype,
       value,
       this.transformOptions,
@@ -160,7 +172,7 @@ export class ValidationPipe implements PipeTransform<any> {
     const shouldTransformToPlain =
       Object.keys(this.validatorOptions).length > 1;
     return shouldTransformToPlain
-      ? classTransformer.classToPlain(entity, this.transformOptions)
+      ? this.getClassTransformer().classToPlain(entity, this.transformOptions)
       : value;
   }
 
@@ -233,6 +245,9 @@ export class ValidationPipe implements PipeTransform<any> {
     object: object,
     validatorOptions?: ValidatorOptions,
   ): Promise<ValidationError[]> | ValidationError[] {
+    if (!classValidator)
+      classValidator = this.loadValidator(this.validatorPackage);
+      
     return classValidator.validate(object, validatorOptions);
   }
 
