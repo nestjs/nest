@@ -1,4 +1,5 @@
-import { ArgumentMetadata, HttpStatus, Injectable, Optional } from '../index';
+import { ArgumentMetadata, HttpStatus } from '../index';
+import { Injectable, Optional } from '../decorators/core';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import {
   ErrorHttpStatusCode,
