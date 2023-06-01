@@ -291,12 +291,12 @@ export class ClientKafka extends ClientProxy {
     const consumerAssignments: { [key: string]: number } = {};
 
     // only need to set the minimum
-    Object.keys(data.payload.memberAssignment).forEach(memberId => {
-      const minimumPartition = Math.min(
-        ...data.payload.memberAssignment[memberId],
-      );
+    Object.keys(data.payload.memberAssignment).forEach(topic => {
+      const memberPartitions = data.payload.memberAssignment[topic];
 
-      consumerAssignments[memberId] = minimumPartition;
+      if (memberPartitions.length) {
+        consumerAssignments[topic] = Math.min(...memberPartitions);
+      }
     });
 
     this.consumerAssignments = consumerAssignments;
