@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "socket.io": "4.6.1",
-    "tslib": "2.5.2"
+    "tslib": "2.5.3"
   },
   "peerDependencies": {
     "@nestjs/common": "^9.0.0",
