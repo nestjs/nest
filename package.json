@@ -120,7 +120,7 @@
     "chai-as-promised": "7.1.1",
     "clang-format": "1.8.0",
     "commitlint-circle": "1.0.0",
-    "concurrently": "8.0.1",
+    "concurrently": "8.1.0",
     "conventional-changelog": "3.1.25",
     "core-js": "3.30.2",
     "coveralls": "3.1.1",
