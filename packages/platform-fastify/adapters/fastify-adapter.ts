@@ -4,9 +4,9 @@ import {
   RawBodyRequest,
   RequestMethod,
   StreamableFile,
+  VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
-  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { VersionValue } from '@nestjs/common/interfaces';
 import {
@@ -17,7 +17,6 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
-  fastify,
   FastifyBaseLogger,
   FastifyBodyParser,
   FastifyInstance,
@@ -33,6 +32,7 @@ import {
   RawServerBase,
   RawServerDefault,
   RequestGenericInterface,
+  fastify,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
 import { kRouteContext } from 'fastify/lib/symbols';
@@ -40,10 +40,11 @@ import { RouteShorthandMethod } from 'fastify/types/route';
 import * as http2 from 'http2';
 import * as https from 'https';
 import {
-  Chain as LightMyRequestChain,
   InjectOptions,
+  Chain as LightMyRequestChain,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
+import * as pathToRegexp from 'path-to-regexp';
 // `querystring` is used internally in fastify for registering urlencoded body parser.
 import { parse as querystringParse } from 'querystring';
 import { NestFastifyBodyParserOptions } from '../interfaces';
@@ -547,11 +548,24 @@ export class FastifyAdapter<
       // Fallback to "(.*)" to support plugins like GraphQL
       normalizedPath = normalizedPath === '/(.*)' ? '(.*)' : normalizedPath;
 
+      const re = pathToRegexp(normalizedPath);
+
       // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
       // ref https://github.com/fastify/middie/pull/55
       this.instance.use(
         normalizedPath,
-        callback as Parameters<TInstance['use']>['1'],
+        (req: any, res: any, next: Function) => {
+          const queryParamsIndex = req.originalUrl.indexOf('?');
+          const pathname =
+            queryParamsIndex >= 0
+              ? req.originalUrl.slice(0, queryParamsIndex)
+              : req.originalUrl;
+
+          if (!re.exec(pathname + '/') && normalizedPath) {
+            return next();
+          }
+          return callback(req, res, next);
+        },
       );
     };
   }
