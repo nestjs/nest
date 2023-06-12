@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-express",
-  "version": "9.4.2",
+  "version": "9.4.3",
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-express)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -25,8 +25,8 @@
     "tslib": "2.5.3"
   },
   "devDependencies": {
-    "@nestjs/common": "9.4.2",
-    "@nestjs/core": "9.4.2"
+    "@nestjs/common": "9.4.3",
+    "@nestjs/core": "9.4.3"
   },
   "peerDependencies": {
     "@nestjs/common": "^9.0.0",
