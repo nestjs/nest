@@ -4,8 +4,8 @@
 
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
-  
-  <p align="center">用于构建高效且可扩展的服务器端应用程序的渐进式 <a href="http://nodejs.cn" target="blank">Node.js</a> 框架，深受 <a href="https://angular.cn" target="_blank">Angular</a> 的启发。</p> 
+
+  <p align="center">用于构建高效且可扩展的服务器端应用程序的渐进式 <a href="http://nodejs.cn" target="blank">Node.js</a> 框架，深受 <a href="https://angular.cn" target="_blank">Angular</a> 的启发。</p>
     <p align="center">
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
@@ -46,7 +46,7 @@ QQ群：277386223
 QQ群：336289049
 QQ群：489719517
 
-> 注意：这个交流群不是 NestJS 官方支持和维护的，只是为了方便国内开发者交流而建立的。  
+> 注意：这个交流群不是 NestJS 官方支持和维护的，只是为了方便国内开发者交流而建立的。
 > （Note: This channel is not officially supported and maintained by the NestJS org members.）
 
 ## 赞助商

@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         ## :warning: We use GitHub Issues to track bug reports, feature requests and regressions
- 
+
         If you are not sure that your issue is a bug, you could:
 
         - read the [FAQ's common errors](https://docs.nestjs.com/faq/common-errors) page

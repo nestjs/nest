@@ -9,7 +9,7 @@ export class MetadataScanner {
   private readonly cachedScannedPrototypes: Map<object, string[]> = new Map();
 
   /**
-   * @deprecated 
+   * @deprecated
    * @see {@link getAllMethodNames}
    * @see getAllMethodNames
    */
@@ -62,7 +62,7 @@ export class MetadataScanner {
   }
 
   /**
-   * @deprecated 
+   * @deprecated
    * @see {@link getAllMethodNames}
    * @see getAllMethodNames
    */
