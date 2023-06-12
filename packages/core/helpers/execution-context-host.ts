@@ -59,6 +59,7 @@ export class ExecutionContextHost implements ExecutionContext {
     return Object.assign(this, {
       getClient: () => this.getArgByIndex(0),
       getData: () => this.getArgByIndex(1),
+      getPattern: () => this.getArgByIndex(this.getArgs().length - 1),
     });
   }
 }

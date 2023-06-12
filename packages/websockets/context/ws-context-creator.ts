@@ -23,7 +23,7 @@ import {
   InterceptorsContextCreator,
 } from '@nestjs/core/interceptors';
 import { PipesConsumer, PipesContextCreator } from '@nestjs/core/pipes';
-import { PARAM_ARGS_METADATA } from '../constants';
+import { MESSAGE_METADATA, PARAM_ARGS_METADATA } from '../constants';
 import { WsException } from '../errors/ws-exception';
 import { WsParamsFactory } from '../factories/ws-params-factory';
 import { ExceptionFiltersContext } from './exception-filters-context';
@@ -66,7 +66,6 @@ export class WsContextCreator {
       methodName,
       contextType,
     );
-
     const exceptionHandler = this.exceptionFiltersContext.create(
       instance,
       callback,
@@ -110,6 +109,8 @@ export class WsContextCreator {
     };
 
     return this.wsProxy.create(async (...args: unknown[]) => {
+      args.push(this.reflectCallbackPattern(callback));
+
       const initialArgs = this.contextUtils.createNullArray(argsLength);
       fnCanActivate && (await fnCanActivate(args));
 
@@ -129,6 +130,10 @@ export class WsContextCreator {
     callback: (...args: any[]) => any,
   ): any[] {
     return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
+  }
+
+  public reflectCallbackPattern(callback: (...args: any[]) => any): string {
+    return Reflect.getMetadata(MESSAGE_METADATA, callback);
   }
 
   public createGuardsFn<TContext extends string = ContextType>(

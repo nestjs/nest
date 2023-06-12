@@ -31,6 +31,10 @@ export interface WsArgumentsHost {
    * Returns the client object.
    */
   getClient<T = any>(): T;
+  /**
+   * Returns the pattern for the event
+   */
+  getPattern(): string;
 }
 
 /**

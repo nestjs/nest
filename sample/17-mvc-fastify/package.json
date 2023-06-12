@@ -22,7 +22,7 @@
         "@nestjs/common": "9.3.12",
         "@nestjs/core": "9.3.12",
         "@nestjs/platform-fastify": "9.3.12",
-        "@fastify/static": "6.10.1",
+        "@fastify/static": "6.10.2",
         "handlebars": "4.7.7",
         "@fastify/view": "7.4.1",
         "reflect-metadata": "0.1.13",
@@ -30,7 +30,7 @@
         "rxjs": "7.5.5"
     },
     "devDependencies": {
-        "@nestjs/cli": "9.4.0",
+        "@nestjs/cli": "9.5.0",
         "@nestjs/schematics": "9.0.4",
         "@nestjs/testing": "9.3.12",
         "@types/express": "4.17.17",
@@ -40,7 +40,7 @@
         "@typescript-eslint/parser": "5.56.0",
         "eslint": "8.19.0",
         "eslint-config-prettier": "8.8.0",
-        "eslint-plugin-import": "2.26.0",
+        "eslint-plugin-import": "2.27.5",
         "jest": "28.1.2",
         "prettier": "2.7.1",
         "supertest": "6.2.4",
