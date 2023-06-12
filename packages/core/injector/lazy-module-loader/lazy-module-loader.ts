@@ -1,4 +1,5 @@
 import { DynamicModule, Type } from '@nestjs/common';
+import { ModuleOverride } from '../../interfaces/module-override.interface';
 import { DependenciesScanner } from '../../scanner';
 import { ModuleCompiler } from '../compiler';
 import { SilentLogger } from '../helpers/silent-logger';
@@ -14,6 +15,7 @@ export class LazyModuleLoader {
     private readonly instanceLoader: InstanceLoader,
     private readonly moduleCompiler: ModuleCompiler,
     private readonly modulesContainer: ModulesContainer,
+    private readonly moduleOverrides?: ModuleOverride[],
   ) {}
 
   public async load(
@@ -26,9 +28,10 @@ export class LazyModuleLoader {
     this.registerLoggerConfiguration(loadOpts);
 
     const moduleClassOrDynamicDefinition = await loaderFn();
-    const moduleInstances = await this.dependenciesScanner.scanForModules(
-      moduleClassOrDynamicDefinition,
-    );
+    const moduleInstances = await this.dependenciesScanner.scanForModules({
+      moduleDefinition: moduleClassOrDynamicDefinition,
+      overrides: this.moduleOverrides,
+    });
     if (moduleInstances.length === 0) {
       // The module has been loaded already. In this case, we must
       // retrieve a module reference from the existing container.

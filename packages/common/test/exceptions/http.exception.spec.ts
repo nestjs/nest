@@ -1,5 +1,5 @@
-import { Type } from '../../../common';
 import { expect } from 'chai';
+import { Type } from '../../../common';
 import {
   BadGatewayException,
   BadRequestException,
@@ -219,15 +219,6 @@ describe('HttpException', () => {
   describe('initCause', () => {
     const errorCause = new Error('An internal error cause');
     const customDescription = 'custom description';
-
-    it('configures a cause when message is an instance of error', () => {
-      const message = new Error('Some Error');
-      const error = new HttpException(message, 400);
-      expect(`${error}`).to.be.eql(`HttpException: ${message.message}`);
-      const { cause } = error;
-
-      expect(cause).to.be.eql(message);
-    });
 
     it('configures a cause when message is a string and the options object is passed', () => {
       const error = new HttpException(customDescription, 400, {

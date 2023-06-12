@@ -63,13 +63,23 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public bindEvents(subClient: Redis, pubClient: Redis) {
-    subClient.on(MESSAGE_EVENT, this.getMessageHandler(pubClient).bind(this));
+    subClient.on(
+      this.options.wildcards ? 'pmessage' : MESSAGE_EVENT,
+      this.getMessageHandler(pubClient).bind(this),
+    );
     const subscribePatterns = [...this.messageHandlers.keys()];
     subscribePatterns.forEach(pattern => {
       const { isEventHandler } = this.messageHandlers.get(pattern);
-      subClient.subscribe(
-        isEventHandler ? pattern : this.getRequestPattern(pattern),
-      );
+
+      const channel = isEventHandler
+        ? pattern
+        : this.getRequestPattern(pattern);
+
+      if (this.options.wildcards) {
+        subClient.psubscribe(channel);
+      } else {
+        subClient.subscribe(channel);
+      }
     });
   }
 
@@ -89,18 +99,22 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(pub: Redis) {
-    return async (channel: string, buffer: string | any) =>
-      this.handleMessage(channel, buffer, pub);
+    return this.options.wildcards
+      ? (channel: string, pattern: string, buffer: string | any) =>
+          this.handleMessage(channel, buffer, pub, pattern)
+      : (channel: string, buffer: string | any) =>
+          this.handleMessage(channel, buffer, pub, channel);
   }
 
   public async handleMessage(
     channel: string,
     buffer: string | any,
     pub: Redis,
+    pattern: string,
   ) {
     const rawMessage = this.parseMessage(buffer);
     const packet = await this.deserializer.deserialize(rawMessage, { channel });
-    const redisCtx = new RedisContext([channel]);
+    const redisCtx = new RedisContext([pattern]);
 
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet, redisCtx);

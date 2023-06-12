@@ -27,7 +27,6 @@ describe('InternalCoreModuleFactory', () => {
       ExternalContextCreator,
       ModulesContainer,
       HttpAdapterHost,
-      HttpAdapterHost.name,
       LazyModuleLoader,
       SerializedGraph,
     ]);

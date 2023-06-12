@@ -67,7 +67,7 @@ describe('ServerRedis', () => {
     });
   });
   describe('handleConnection', () => {
-    let onSpy: sinon.SinonSpy, subscribeSpy: sinon.SinonSpy, sub;
+    let onSpy: sinon.SinonSpy, subscribeSpy: sinon.SinonSpy, sub, psub;
 
     beforeEach(() => {
       onSpy = sinon.spy();
@@ -76,18 +76,43 @@ describe('ServerRedis', () => {
         on: onSpy,
         subscribe: subscribeSpy,
       };
+      psub = {
+        on: onSpy,
+        psubscribe: subscribeSpy,
+      };
     });
-    it('should bind "message" event to handler', () => {
+    it('should bind "message" event to handler if wildcards are disabled', () => {
       server.bindEvents(sub, null);
       expect(onSpy.getCall(0).args[0]).to.be.equal('message');
     });
-    it('should subscribe to each pattern', () => {
+    it('should bind "pmessage" event to handler if wildcards are enabled', () => {
+      (server as any).options = {};
+      (server as any).options.wildcards = true;
+
+      server.bindEvents(psub, null);
+      expect(onSpy.getCall(0).args[0]).to.be.equal('pmessage');
+    });
+
+    it('should "subscribe" to each pattern if wildcards are disabled', () => {
       const pattern = 'test';
       const handler = sinon.spy();
       (server as any).messageHandlers = objectToMap({
         [pattern]: handler,
       });
       server.bindEvents(sub, null);
+      expect(subscribeSpy.calledWith(pattern)).to.be.true;
+    });
+
+    it('should "psubscribe" to each pattern if wildcards are enabled', () => {
+      (server as any).options = {};
+      (server as any).options.wildcards = true;
+
+      const pattern = 'test';
+      const handler = sinon.spy();
+      (server as any).messageHandlers = objectToMap({
+        [pattern]: handler,
+      });
+      server.bindEvents(psub, null);
       expect(subscribeSpy.calledWith(pattern)).to.be.true;
     });
   });
@@ -111,12 +136,17 @@ describe('ServerRedis', () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
       sinon.stub(server, 'parseMessage').callsFake(() => ({ data } as any));
 
-      await server.handleMessage(channel, JSON.stringify({}), null);
+      await server.handleMessage(channel, JSON.stringify({}), null, channel);
       expect(handleEventSpy.called).to.be.true;
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
       sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data } as any));
-      await server.handleMessage(channel, JSON.stringify({ id }), null);
+      await server.handleMessage(
+        channel,
+        JSON.stringify({ id }),
+        null,
+        channel,
+      );
       expect(
         getPublisherSpy.calledWith({
           id,
@@ -132,7 +162,7 @@ describe('ServerRedis', () => {
       });
       sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data } as any));
 
-      await server.handleMessage(channel, {}, null);
+      await server.handleMessage(channel, {}, null, channel);
       expect(handler.calledWith(data)).to.be.true;
     });
   });

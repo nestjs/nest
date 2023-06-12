@@ -72,7 +72,7 @@ describe('WebSocketsController', () => {
       subscribeToServerEvents = sinon.spy();
       (instance as any).subscribeToServerEvents = subscribeToServerEvents;
     });
-    it('should throws "InvalidSocketPortException" when port is not a number', () => {
+    it('should throw "InvalidSocketPortException" when port is not a number', () => {
       Reflect.defineMetadata(PORT_METADATA, 'test', InvalidGateway);
       expect(() =>
         instance.connectGatewayToServer(

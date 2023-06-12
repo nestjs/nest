@@ -352,4 +352,70 @@ describe('URI Versioning', () => {
       await app.close();
     });
   });
+
+  // ======================================================================== //
+  describe('with the global prefix enabled and an excluded route', () => {
+    before(async () => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      app = moduleRef.createNestApplication();
+      app.setGlobalPrefix('api', { exclude: ['/foo/bar'] });
+      app.enableVersioning({
+        type: VersioningType.URI,
+        defaultVersion: '1',
+      });
+      await app.init();
+    });
+
+    describe('GET /', () => {
+      it('V1', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1')
+          .expect(200)
+          .expect('Hello World V1!');
+      });
+
+      it('V2', () => {
+        return request(app.getHttpServer())
+          .get('/api/v2')
+          .expect(200)
+          .expect('Hello World V2!');
+      });
+
+      it('V3', () => {
+        return request(app.getHttpServer()).get('/api/v3').expect(404);
+      });
+
+      it('No Version', () => {
+        return request(app.getHttpServer()).get('/api').expect(404);
+      });
+    });
+
+    describe('GET /foo/bar (excluded from the API prefix)', () => {
+      it('V1', () => {
+        return request(app.getHttpServer())
+          .get('/v1/foo/bar')
+          .expect(200)
+          .expect('Hello FooBar!');
+      });
+
+      it('V2', () => {
+        return request(app.getHttpServer()).get('/v2/foo/bar').expect(404);
+      });
+
+      it('V3', () => {
+        return request(app.getHttpServer()).get('/v3/foo/bar').expect(404);
+      });
+
+      it('No Version', () => {
+        return request(app.getHttpServer()).get('/foo/bar').expect(404);
+      });
+    });
+
+    after(async () => {
+      await app.close();
+    });
+  });
 });

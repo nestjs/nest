@@ -113,7 +113,7 @@ describe('WsContextCreator', () => {
         expect(tryActivateSpy.called).to.be.true;
       });
       describe('when can not activate', () => {
-        it('should throws forbidden exception', async () => {
+        it('should throw forbidden exception', async () => {
           sinon
             .stub(guardsConsumer, 'tryActivate')
             .callsFake(async () => false);

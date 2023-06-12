@@ -125,7 +125,7 @@ export class RoutesMapper {
     const modules = Array.from(modulesContainer.values()).filter(moduleRef =>
       moduleRefsSet.has(moduleRef),
     );
-    return modules.find(({ routes }) => routes.has(metatype));
+    return modules.find(({ controllers }) => controllers.has(metatype));
   }
 
   private getModulePath(
