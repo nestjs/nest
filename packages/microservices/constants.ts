@@ -40,6 +40,11 @@ export const RQM_DEFAULT_QUEUE_OPTIONS = {};
 export const RQM_DEFAULT_NOACK = true;
 export const RQM_DEFAULT_PERSISTENT = false;
 export const RQM_DEFAULT_NO_ASSERT = false;
+export const RQM_NO_EVENT_HANDLER = (
+  text: TemplateStringsArray,
+  pattern: string,
+) =>
+  `An unsupported event was received. It has been acknowledged, so it will not be re-delivered. Pattern: ${pattern}`;
 export const GRPC_DEFAULT_PROTO_LOADER = '@grpc/proto-loader';
 
 export const NO_EVENT_HANDLER = (text: TemplateStringsArray, pattern: string) =>

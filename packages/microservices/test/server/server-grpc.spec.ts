@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
-import { of } from 'rxjs';
+import { of, ReplaySubject, Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { CANCEL_EVENT } from '../../constants';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
@@ -441,6 +441,29 @@ describe('ServerGrpc', () => {
         await server.createUnaryServiceMethod(native)(call, callback);
         expect(native.called).to.be.true;
         expect(callback.called).to.be.true;
+      });
+
+      it('should await when a promise is return by the native', async () => {
+        const call = { write: sinon.spy(), end: sinon.spy() };
+        const callback = sinon.spy();
+
+        const original = { native: Function };
+        const mock = sinon.mock(original);
+
+        mock
+          .expects('native')
+          .once()
+          .returns(
+            (() => {
+              const sub = new ReplaySubject<any>(1);
+              sub.next(new Promise(resolve => resolve({ foo: 'bar' })));
+              return sub.asObservable();
+            })(),
+          );
+
+        await server.createUnaryServiceMethod(original.native)(call, callback);
+        mock.verify();
+        expect(callback.calledWith(null, { foo: 'bar' })).to.be.true;
       });
     });
   });

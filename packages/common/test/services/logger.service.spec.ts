@@ -70,7 +70,7 @@ describe('Logger', () => {
         );
       });
 
-      it('should print one error to the console', () => {
+      it('should print one error to the console with context', () => {
         const message = 'random error';
         const context = 'RandomContext';
 
@@ -81,6 +81,20 @@ describe('Logger', () => {
           `[${context}]`,
         );
         expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+      });
+
+      it('should print one error to the console with stacktrace', () => {
+        const message = 'random error';
+        const stacktrace = 'Error: message\n    at <anonymous>:1:2';
+
+        Logger.error(message, stacktrace);
+
+        expect(processStderrWriteSpy.calledTwice).to.be.true;
+        expect(processStderrWriteSpy.firstCall.firstArg).to.not.include(`[]`);
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
+          stacktrace + '\n',
+        );
       });
 
       it('should print one error without context to the console', () => {
@@ -354,7 +368,7 @@ describe('Logger', () => {
         );
       });
 
-      it('should print one error to the console', () => {
+      it('should print one error to the console with context', () => {
         const message = 'random error';
         const context = 'RandomContext';
 
@@ -365,6 +379,20 @@ describe('Logger', () => {
           `[${context}]`,
         );
         expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+      });
+
+      it('should print one error to the console with stacktrace', () => {
+        const message = 'random error';
+        const stacktrace = 'Error: message\n    at <anonymous>:1:2';
+
+        logger.error(message, stacktrace);
+
+        expect(processStderrWriteSpy.calledTwice).to.be.true;
+        expect(processStderrWriteSpy.firstCall.firstArg).to.not.include(`[]`);
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
+          stacktrace + '\n',
+        );
       });
 
       it('should print one error without context to the console', () => {

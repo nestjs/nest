@@ -188,6 +188,7 @@ export class Logger implements LoggerService {
   /**
    * Write an 'error' level log.
    */
+  static error(message: any, stackOrContext?: string): void;
   static error(message: any, context?: string): void;
   static error(message: any, stack?: string, context?: string): void;
   static error(
