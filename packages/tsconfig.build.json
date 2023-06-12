@@ -12,7 +12,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "useUnknownInCatchVariables": false,
-    "target": "es2017",
+    "target": "ES2021",
     "sourceMap": false,
     "allowJs": false,
     "strict": true,
