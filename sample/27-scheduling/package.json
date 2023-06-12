@@ -49,7 +49,7 @@
     "@typescript-eslint/parser": "5.56.0",
     "eslint": "8.19.0",
     "eslint-config-prettier": "8.8.0",
-    "eslint-plugin-import": "2.26.0",
+    "eslint-plugin-import": "2.27.5",
     "typescript": "4.9.5"
   },
   "jest": {
