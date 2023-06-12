@@ -18,7 +18,7 @@ import {
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
 import { loadPackage } from '../utils/load-package.util';
-import { isNil } from '../utils/shared.utils';
+import { isNil, isUndefined } from '../utils/shared.utils';
 
 /**
  * @publicApi
@@ -193,6 +193,13 @@ export class ValidationPipe implements PipeTransform<any> {
       return value;
     }
     if (metatype === Boolean) {
+      if (isUndefined(value)) {
+        // This is an workaround to deal with optional boolean values since
+        // optional booleans shouldn't be parsed to a valid boolean when
+        // they were not defined
+        return undefined;
+      }
+      // Any fasly value but `undefined` will be parsed to `false`
       return value === true || value === 'true';
     }
     if (metatype === Number) {

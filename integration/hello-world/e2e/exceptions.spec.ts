@@ -1,15 +1,16 @@
-import { HttpServer, HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
+import { RawServerDefault } from 'fastify';
 import * as request from 'supertest';
 import { ErrorsController } from '../src/errors/errors.controller';
 
 describe('Error messages', () => {
-  let server: HttpServer;
+  let server: RawServerDefault;
 
   describe('Express', () => {
     let app: INestApplication;

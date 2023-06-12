@@ -1,9 +1,9 @@
-import { Type } from '@nestjs/common';
-import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
-import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
-import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
+import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
+import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
+import { selectExceptionFilterMetadata } from '@nestjs/common/utils/select-exception-filter-metadata.util';
 import { ExternalExceptionFilter } from './external-exception-filter';
+import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
 
 export class ExternalExceptionsHandler extends ExternalExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];
@@ -30,14 +30,8 @@ export class ExternalExceptionsHandler extends ExternalExceptionFilter {
     if (isEmpty(this.filters)) {
       return null;
     }
-    const isInstanceOf = (metatype: Type<unknown>) =>
-      exception instanceof metatype;
 
-    const filter = this.filters.find(({ exceptionMetatypes }) => {
-      const typeExists =
-        !exceptionMetatypes.length || exceptionMetatypes.some(isInstanceOf);
-      return typeExists;
-    });
+    const filter = selectExceptionFilterMetadata(this.filters, exception);
     return filter ? filter.func(exception, host) : null;
   }
 }

@@ -1,13 +1,13 @@
+import { InjectionToken } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { InstanceWrapper } from '../instance-wrapper';
-import { InstanceToken } from '../module';
 
 /**
  * Returns the instances which are transient
  * @param instances The instances which should be checked whether they are transient
  */
 export function getTransientInstances(
-  instances: [InstanceToken, InstanceWrapper][],
+  instances: [InjectionToken, InstanceWrapper][],
 ): InstanceWrapper[] {
   return iterate(instances)
     .filter(([_, wrapper]) => wrapper.isDependencyTreeStatic())
@@ -23,7 +23,7 @@ export function getTransientInstances(
  * @param instances The instances which should be checked whether they are transient
  */
 export function getNonTransientInstances(
-  instances: [InstanceToken, InstanceWrapper][],
+  instances: [InjectionToken, InstanceWrapper][],
 ): InstanceWrapper[] {
   return iterate(instances)
     .filter(

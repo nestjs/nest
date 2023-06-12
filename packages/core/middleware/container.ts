@@ -1,15 +1,14 @@
-import { Type } from '@nestjs/common';
+import { InjectionToken, Type } from '@nestjs/common';
 import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface';
 import { getClassScope } from '../helpers/get-class-scope';
 import { isDurable } from '../helpers/is-durable';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
-import { InstanceToken } from '../injector/module';
 
 export class MiddlewareContainer {
   private readonly middleware = new Map<
     string,
-    Map<InstanceToken, InstanceWrapper>
+    Map<InjectionToken, InstanceWrapper>
   >();
   private readonly configurationSets = new Map<
     string,
@@ -20,7 +19,7 @@ export class MiddlewareContainer {
 
   public getMiddlewareCollection(
     moduleKey: string,
-  ): Map<InstanceToken, InstanceWrapper> {
+  ): Map<InjectionToken, InstanceWrapper> {
     if (!this.middleware.has(moduleKey)) {
       const moduleRef = this.container.getModuleByKey(moduleKey);
       this.middleware.set(moduleKey, moduleRef.middlewares);

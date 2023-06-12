@@ -10,11 +10,14 @@ import {
 } from '@nestjs/core/inspector/uuid-factory';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
+import { ModuleDefinition } from '../core/interfaces/module-definition.interface';
+import { ModuleOverride } from '../core/interfaces/module-override.interface';
 import {
   MockFactory,
   OverrideBy,
   OverrideByFactoryOptions,
 } from './interfaces';
+import { OverrideModule } from './interfaces/override-module.interface';
 import { TestingLogger } from './services/testing-logger.service';
 import { TestingInjector } from './testing-injector';
 import { TestingInstanceLoader } from './testing-instance-loader';
@@ -27,6 +30,10 @@ export class TestingModuleBuilder {
   private readonly applicationConfig = new ApplicationConfig();
   private readonly container = new NestContainer(this.applicationConfig);
   private readonly overloadsMap = new Map();
+  private readonly moduleOverloadsMap = new Map<
+    ModuleDefinition,
+    ModuleDefinition
+  >();
   private readonly module: any;
   private testingLogger: LoggerService;
   private mocker?: MockFactory;
@@ -68,6 +75,15 @@ export class TestingModuleBuilder {
     return this.override(typeOrToken, true);
   }
 
+  public overrideModule(moduleToOverride: ModuleDefinition): OverrideModule {
+    return {
+      useModule: newModule => {
+        this.moduleOverloadsMap.set(moduleToOverride, newModule);
+        return this;
+      },
+    };
+  }
+
   public async compile(
     options: Pick<NestApplicationContextOptions, 'snapshot' | 'preview'> = {},
   ): Promise<TestingModule> {
@@ -88,7 +104,9 @@ export class TestingModuleBuilder {
       graphInspector,
       this.applicationConfig,
     );
-    await scanner.scan(this.module);
+    await scanner.scan(this.module, {
+      overrides: this.getModuleOverloads(),
+    });
 
     this.applyOverloadsMap();
     await this.createInstancesOfDependencies(graphInspector, options);
@@ -126,9 +144,18 @@ export class TestingModuleBuilder {
   }
 
   private applyOverloadsMap() {
-    [...this.overloadsMap.entries()].forEach(([item, options]) => {
+    const overloads = [...this.overloadsMap.entries()];
+    overloads.forEach(([item, options]) => {
       this.container.replace(item, options);
     });
+  }
+
+  private getModuleOverloads(): ModuleOverride[] {
+    const overloads = [...this.moduleOverloadsMap.entries()];
+    return overloads.map(([moduleToReplace, newModule]) => ({
+      moduleToReplace,
+      newModule,
+    }));
   }
 
   private getRootModule() {

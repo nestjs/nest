@@ -34,7 +34,7 @@ import {
   InstanceWrapper,
   PropertyMetadata,
 } from './instance-wrapper';
-import { InstanceToken, Module } from './module';
+import { Module } from './module';
 
 /**
  * The type of an injectable dependency
@@ -82,7 +82,7 @@ export class Injector {
 
   public loadPrototype<T>(
     { token }: InstanceWrapper<T>,
-    collection: Map<InstanceToken, InstanceWrapper<T>>,
+    collection: Map<InjectionToken, InstanceWrapper<T>>,
     contextId = STATIC_CONTEXT,
   ) {
     if (!collection) {
@@ -101,7 +101,7 @@ export class Injector {
 
   public async loadInstance<T>(
     wrapper: InstanceWrapper<T>,
-    collection: Map<InstanceToken, InstanceWrapper>,
+    collection: Map<InjectionToken, InstanceWrapper>,
     moduleRef: Module,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
@@ -168,7 +168,7 @@ export class Injector {
 
   public async loadMiddleware(
     wrapper: InstanceWrapper,
-    collection: Map<InstanceToken, InstanceWrapper>,
+    collection: Map<InjectionToken, InstanceWrapper>,
     moduleRef: Module,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
@@ -417,7 +417,7 @@ export class Injector {
 
   public async resolveComponentInstance<T>(
     moduleRef: Module,
-    token: InstanceToken,
+    token: InjectionToken,
     dependencyContext: InjectorDependencyContext,
     wrapper: InstanceWrapper<T>,
     contextId = STATIC_CONTEXT,
@@ -556,7 +556,7 @@ export class Injector {
 
   public async lookupComponentInImports(
     moduleRef: Module,
-    name: InstanceToken,
+    name: InjectionToken,
     wrapper: InstanceWrapper,
     moduleRegistry: any[] = [],
     contextId = STATIC_CONTEXT,
@@ -747,7 +747,7 @@ export class Injector {
   public async loadPerContext<T = any>(
     instance: T,
     moduleRef: Module,
-    collection: Map<InstanceToken, InstanceWrapper>,
+    collection: Map<InjectionToken, InstanceWrapper>,
     ctx: ContextId,
     wrapper?: InstanceWrapper,
   ): Promise<T> {
@@ -878,12 +878,12 @@ export class Injector {
     }
   }
 
-  private getTokenName(token: InstanceToken): string {
+  private getTokenName(token: InjectionToken): string {
     return isFunction(token) ? (token as Function).name : token.toString();
   }
 
   private printResolvingDependenciesLog(
-    token: InstanceToken,
+    token: InjectionToken,
     inquirer?: InstanceWrapper,
   ): void {
     if (!this.isDebugMode()) {
@@ -904,7 +904,7 @@ export class Injector {
   }
 
   private printLookingForProviderLog(
-    token: InstanceToken,
+    token: InjectionToken,
     moduleRef: Module,
   ): void {
     if (!this.isDebugMode()) {
@@ -919,7 +919,10 @@ export class Injector {
     );
   }
 
-  private printFoundInModuleLog(token: InstanceToken, moduleRef: Module): void {
+  private printFoundInModuleLog(
+    token: InjectionToken,
+    moduleRef: Module,
+  ): void {
     if (!this.isDebugMode()) {
       return;
     }

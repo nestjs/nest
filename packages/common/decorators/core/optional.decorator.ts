@@ -17,7 +17,7 @@ import { isUndefined } from '../../utils/shared.utils';
  *
  * @publicApi
  */
-export function Optional() {
+export function Optional(): PropertyDecorator & ParameterDecorator {
   return (target: object, key: string | symbol | undefined, index?: number) => {
     if (!isUndefined(index)) {
       const args = Reflect.getMetadata(OPTIONAL_DEPS_METADATA, target) || [];

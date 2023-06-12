@@ -60,14 +60,22 @@ export class ClientKafka extends ClientProxy {
   constructor(protected readonly options: KafkaOptions['options']) {
     super();
 
-    const clientOptions =
-      this.getOptionsProp(this.options, 'client') || ({} as KafkaConfig);
-    const consumerOptions =
-      this.getOptionsProp(this.options, 'consumer') || ({} as ConsumerConfig);
-    const postfixId =
-      this.getOptionsProp(this.options, 'postfixId') ?? '-client';
-    this.producerOnlyMode =
-      this.getOptionsProp(this.options, 'producerOnlyMode') || false;
+    const clientOptions = this.getOptionsProp(
+      this.options,
+      'client',
+      {} as KafkaConfig,
+    );
+    const consumerOptions = this.getOptionsProp(
+      this.options,
+      'consumer',
+      {} as ConsumerConfig,
+    );
+    const postfixId = this.getOptionsProp(this.options, 'postfixId', '-client');
+    this.producerOnlyMode = this.getOptionsProp(
+      this.options,
+      'producerOnlyMode',
+      false,
+    );
 
     this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
 

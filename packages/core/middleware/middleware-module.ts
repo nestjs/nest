@@ -1,4 +1,4 @@
-import { HttpServer, Logger } from '@nestjs/common';
+import { HttpServer, InjectionToken, Logger } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 import {
   MiddlewareConfiguration,
@@ -16,7 +16,7 @@ import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
-import { InstanceToken, Module } from '../injector/module';
+import { Module } from '../injector/module';
 import { GraphInspector } from '../inspector/graph-inspector';
 import {
   Entrypoint,
@@ -234,7 +234,7 @@ export class MiddlewareModule<
     applicationRef: HttpServer,
     routeInfo: RouteInfo,
     moduleRef: Module,
-    collection: Map<InstanceToken, InstanceWrapper>,
+    collection: Map<InjectionToken, InstanceWrapper>,
   ) {
     const { instance, metatype } = wrapper;
     if (isUndefined(instance?.use)) {

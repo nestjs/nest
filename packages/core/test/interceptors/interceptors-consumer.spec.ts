@@ -1,5 +1,7 @@
+import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
+import { AsyncLocalStorage } from 'async_hooks';
 import { expect } from 'chai';
-import { lastValueFrom, of } from 'rxjs';
+import { Observable, lastValueFrom, of } from 'rxjs';
 import * as sinon from 'sinon';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 
@@ -35,7 +37,7 @@ describe('InterceptorsConsumer', () => {
       beforeEach(() => {
         next = sinon.stub().returns(Promise.resolve(''));
       });
-      it('should call every `intercept` method', async () => {
+      it('does not call `intercept` (lazy evaluation)', async () => {
         await consumer.intercept(
           interceptors,
           null,
@@ -43,6 +45,19 @@ describe('InterceptorsConsumer', () => {
           null,
           next,
         );
+
+        expect(interceptors[0].intercept.called).to.be.false;
+        expect(interceptors[1].intercept.called).to.be.false;
+      });
+      it('should call every `intercept` method when subscribe', async () => {
+        const intercepted = await consumer.intercept(
+          interceptors,
+          null,
+          { constructor: null },
+          null,
+          next,
+        );
+        await transformToResult(intercepted);
 
         expect(interceptors[0].intercept.calledOnce).to.be.true;
         expect(interceptors[1].intercept.calledOnce).to.be.true;
@@ -58,15 +73,6 @@ describe('InterceptorsConsumer', () => {
         expect(next.called).to.be.false;
       });
       it('should call `next` when subscribe', async () => {
-        async function transformToResult(resultOrDeferred: any) {
-          if (
-            resultOrDeferred &&
-            typeof resultOrDeferred.subscribe === 'function'
-          ) {
-            return lastValueFrom(resultOrDeferred);
-          }
-          return resultOrDeferred;
-        }
         const intercepted = await consumer.intercept(
           interceptors,
           null,
@@ -76,6 +82,30 @@ describe('InterceptorsConsumer', () => {
         );
         await transformToResult(intercepted);
         expect(next.called).to.be.true;
+      });
+    });
+
+    describe('AsyncLocalStorage', () => {
+      it('Allows an interceptor to set values in AsyncLocalStorage that are accesible from the controller', async () => {
+        const storage = new AsyncLocalStorage<Record<string, any>>();
+        class StorageInterceptor implements NestInterceptor {
+          intercept(
+            _context: ExecutionContext,
+            next: CallHandler<any>,
+          ): Observable<any> | Promise<Observable<any>> {
+            return storage.run({ value: 'hello' }, () => next.handle());
+          }
+        }
+        const next = () => Promise.resolve(storage.getStore().value);
+        const intercepted = await consumer.intercept(
+          [new StorageInterceptor()],
+          null,
+          { constructor: null },
+          null,
+          next,
+        );
+        const result = await transformToResult(intercepted);
+        expect(result).to.equal('hello');
       });
     });
   });
@@ -119,3 +149,10 @@ describe('InterceptorsConsumer', () => {
     });
   });
 });
+
+async function transformToResult(resultOrDeferred: any) {
+  if (resultOrDeferred && typeof resultOrDeferred.subscribe === 'function') {
+    return lastValueFrom(resultOrDeferred);
+  }
+  return resultOrDeferred;
+}

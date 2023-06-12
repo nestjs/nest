@@ -3,6 +3,7 @@ import { ExternalContextCreator } from '../../helpers/external-context-creator';
 import { HttpAdapterHost } from '../../helpers/http-adapter-host';
 import { GraphInspector } from '../../inspector/graph-inspector';
 import { SerializedGraph } from '../../inspector/serialized-graph';
+import { ModuleOverride } from '../../interfaces/module-override.interface';
 import { DependenciesScanner } from '../../scanner';
 import { ModuleCompiler } from '../compiler';
 import { NestContainer } from '../container';
@@ -19,6 +20,7 @@ export class InternalCoreModuleFactory {
     moduleCompiler: ModuleCompiler,
     httpAdapterHost: HttpAdapterHost,
     graphInspector: GraphInspector,
+    moduleOverrides?: ModuleOverride[],
   ) {
     const lazyModuleLoaderFactory = () => {
       const logger = new Logger(LazyModuleLoader.name, {
@@ -36,6 +38,7 @@ export class InternalCoreModuleFactory {
         instanceLoader,
         moduleCompiler,
         container.getModules(),
+        moduleOverrides,
       );
     };
 
@@ -51,10 +54,6 @@ export class InternalCoreModuleFactory {
       {
         provide: HttpAdapterHost,
         useValue: httpAdapterHost,
-      },
-      {
-        provide: HttpAdapterHost.name,
-        useExisting: HttpAdapterHost,
       },
       {
         provide: LazyModuleLoader,

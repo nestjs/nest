@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { ExternalExceptionsHandler } from '../../exceptions/external-exceptions-handler';
 import { ExternalExceptionFilter } from '../../exceptions/external-exception-filter';
+import { ExternalExceptionsHandler } from '../../exceptions/external-exceptions-handler';
 
 describe('ExternalExceptionsHandler', () => {
   let handler: ExternalExceptionsHandler;
@@ -37,7 +37,7 @@ describe('ExternalExceptionsHandler', () => {
       handler.setCustomFilters(filters as any);
       expect((handler as any).filters).to.be.eql(filters);
     });
-    it('should throws exception when passed argument is not an array', () => {
+    it('should throw exception when passed argument is not an array', () => {
       expect(() => handler.setCustomFilters(null)).to.throw();
     });
   });

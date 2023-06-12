@@ -1,10 +1,11 @@
 import {
-  flatten,
   RequestMethod,
+  VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
-  VERSION_NEUTRAL,
+  flatten,
 } from '@nestjs/common';
+import { VersionValue } from '@nestjs/common/interfaces';
 import {
   addLeadingSlash,
   isUndefined,
@@ -57,7 +58,14 @@ export class RoutePathFactory {
 
     if (metadata.globalPrefix) {
       paths = paths.map(path => {
-        if (this.isExcludedFromGlobalPrefix(path, requestMethod)) {
+        if (
+          this.isExcludedFromGlobalPrefix(
+            path,
+            requestMethod,
+            versionOrVersions,
+            metadata.versioningOptions,
+          )
+        ) {
           return path;
         }
         return stripEndSlash(metadata.globalPrefix || '') + path;
@@ -109,15 +117,54 @@ export class RoutePathFactory {
   public isExcludedFromGlobalPrefix(
     path: string,
     requestMethod?: RequestMethod,
+    versionOrVersions?: VersionValue,
+    versioningOptions?: VersioningOptions,
   ) {
     if (isUndefined(requestMethod)) {
       return false;
     }
     const options = this.applicationConfig.getGlobalPrefixOptions();
     const excludedRoutes = options.exclude;
+
+    if (
+      versionOrVersions &&
+      versionOrVersions !== VERSION_NEUTRAL &&
+      versioningOptions?.type === VersioningType.URI
+    ) {
+      path = this.truncateVersionPrefixFromPath(
+        path,
+        versionOrVersions,
+        versioningOptions,
+      );
+    }
     return (
       Array.isArray(excludedRoutes) &&
       isRouteExcluded(excludedRoutes, path, requestMethod)
     );
+  }
+
+  private truncateVersionPrefixFromPath(
+    path: string,
+    versionValue: Exclude<VersionValue, typeof VERSION_NEUTRAL>,
+    versioningOptions: VersioningOptions,
+  ) {
+    if (typeof versionValue !== 'string') {
+      versionValue.forEach(version => {
+        if (typeof version === 'string') {
+          path = this.truncateVersionPrefixFromPath(
+            path,
+            version,
+            versioningOptions,
+          );
+        }
+      });
+      return path;
+    }
+
+    const prefix = `/${this.getVersionPrefix(
+      versioningOptions,
+    )}${versionValue}`;
+
+    return path.startsWith(prefix) ? path.replace(prefix, '') : path;
   }
 }

@@ -18,7 +18,11 @@ export type RequestHandler<TRequest = any, TResponse = any> = (
   next?: Function,
 ) => any;
 
-export interface HttpServer<TRequest = any, TResponse = any> {
+export interface HttpServer<
+  TRequest = any,
+  TResponse = any,
+  ServerInstance = any,
+> {
   use(
     handler:
       | RequestHandler<TRequest, TResponse>
@@ -69,7 +73,7 @@ export interface HttpServer<TRequest = any, TResponse = any> {
   getRequestHostname?(request: TRequest): string;
   getRequestMethod?(request: TRequest): string;
   getRequestUrl?(request: TRequest): string;
-  getInstance(): any;
+  getInstance(): ServerInstance;
   registerParserMiddleware(...args: any[]): any;
   enableCors(options: CorsOptions | CorsOptionsDelegate<TRequest>): any;
   getHttpServer(): any;

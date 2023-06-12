@@ -119,7 +119,7 @@ describe('ExceptionsHandler', () => {
       handler.setCustomFilters(filters as any);
       expect((handler as any).filters).to.be.eql(filters);
     });
-    it('should throws exception when passed argument is not an array', () => {
+    it('should throw exception when passed argument is not an array', () => {
       expect(() => handler.setCustomFilters(null)).to.throws(
         InvalidExceptionFilterException,
       );
