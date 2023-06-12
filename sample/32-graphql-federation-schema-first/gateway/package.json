@@ -23,7 +23,7 @@
   "dependencies": {
     "@apollo/gateway": "2.4.0",
     "@apollo/server": "^4.4.1",
-    "@nestjs/apollo": "11.0.4",
+    "@nestjs/apollo": "11.0.6",
     "@nestjs/common": "9.3.12",
     "@nestjs/core": "9.3.12",
     "@nestjs/graphql": "11.0.0",
