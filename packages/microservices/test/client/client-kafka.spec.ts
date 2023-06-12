@@ -395,6 +395,34 @@ describe('ClientKafka', () => {
         },
       );
     });
+
+    it('should not update consumer assignments if there are no partitions assigned to consumer', async () => {
+      await client.connect();
+
+      const consumerAssignments: ConsumerGroupJoinEvent = {
+        id: 'id',
+        type: 'type',
+        timestamp: 1234567890,
+        payload: {
+          duration: 20,
+          groupId: 'group-id',
+          isLeader: true,
+          leaderId: 'member-1',
+          groupProtocol: 'RoundRobin',
+          memberId: 'member-1',
+          memberAssignment: {
+            'topic-a': [],
+            'topic-b': [3, 4, 5],
+          },
+        },
+      };
+
+      client['setConsumerAssignments'](consumerAssignments);
+
+      expect(client['consumerAssignments']).to.deep.eq({
+        'topic-b': 3,
+      });
+    });
   });
 
   describe('bindTopics', () => {
