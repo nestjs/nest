@@ -2,7 +2,7 @@ import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.int
 
 /**
  * External interface
- * @see https://github.com/socketio/socket.io/blob/master/lib/index.ts 
+ * @see https://github.com/socketio/socket.io/blob/master/lib/index.ts
  * @publicApi
  */
 export interface GatewayMetadata {
