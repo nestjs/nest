@@ -51,7 +51,7 @@
     "redis": "4.6.7",
     "supertest": "6.3.3",
     "ts-jest": "28.0.8",
-    "ts-loader": "9.3.1",
+    "ts-loader": "9.4.3",
     "ts-node": "10.9.1",
     "tsconfig-paths": "4.2.0",
     "typescript": "4.9.5"
