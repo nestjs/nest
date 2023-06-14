@@ -1,12 +1,13 @@
-import { Version } from '../../../common';
-import { MiddlewareConfiguration } from '../../../common/interfaces';
 import { expect } from 'chai';
+import { Version, VersioningType } from '../../../common';
 import { Controller } from '../../../common/decorators/core/controller.decorator';
 import {
   Get,
   RequestMapping,
 } from '../../../common/decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../../common/enums/request-method.enum';
+import { MiddlewareConfiguration } from '../../../common/interfaces';
+import { ApplicationConfig } from '../../application-config';
 import { NestContainer } from '../../injector/container';
 import { RoutesMapper } from '../../middleware/routes-mapper';
 
@@ -26,7 +27,9 @@ describe('RoutesMapper', () => {
 
   let mapper: RoutesMapper;
   beforeEach(() => {
-    mapper = new RoutesMapper(new NestContainer());
+    const appConfig = new ApplicationConfig();
+    appConfig.enableVersioning({ type: VersioningType.URI });
+    mapper = new RoutesMapper(new NestContainer(), appConfig);
   });
 
   it('should map @Controller() to "ControllerMetadata" in forRoutes', () => {
@@ -80,5 +83,48 @@ describe('RoutesMapper', () => {
       { path: '/test2/test', method: RequestMethod.GET },
       { path: '/test2/another', method: RequestMethod.DELETE },
     ]);
+  });
+
+  @Controller({
+    version: '1',
+    path: 'versioned',
+  })
+  class VersionedController {
+    @Get()
+    hello() {
+      return 'Hello from "VersionedController"!';
+    }
+
+    @Version('2')
+    @Get('/override')
+    override() {
+      return 'Hello from "VersionedController"!';
+    }
+  }
+
+  @Controller({
+    version: ['1', '2'],
+  })
+  class MultipleVersionController {
+    @Get('multiple')
+    multiple() {
+      return 'Multiple Versions 1 or 2';
+    }
+  }
+
+  it('should map a versioned controller to the corresponding route info objects (single version)', () => {
+    expect(mapper.mapRouteToRouteInfo(VersionedController)).to.deep.equal([
+      { path: '/versioned/', version: '1', method: RequestMethod.GET },
+      { path: '/versioned/override', version: '2', method: RequestMethod.GET },
+    ]);
+  });
+
+  it('should map a versioned controller to the corresponding route info objects (multiple versions)', () => {
+    expect(mapper.mapRouteToRouteInfo(MultipleVersionController)).to.deep.equal(
+      [
+        { path: '/multiple', version: '1', method: RequestMethod.GET },
+        { path: '/multiple', version: '2', method: RequestMethod.GET },
+      ],
+    );
   });
 });

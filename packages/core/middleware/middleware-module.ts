@@ -66,7 +66,7 @@ export class MiddlewareModule<
       config,
       appRef,
     );
-    this.routesMapper = new RoutesMapper(container);
+    this.routesMapper = new RoutesMapper(container, config);
     this.resolver = new MiddlewareResolver(middlewareContainer, injector);
     this.routeInfoPathExtractor = new RouteInfoPathExtractor(config);
     this.injector = injector;

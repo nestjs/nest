@@ -1,5 +1,11 @@
 import { expect } from 'chai';
-import { Controller, Get, RequestMethod, Version } from '../../../common';
+import {
+  Controller,
+  Get,
+  RequestMethod,
+  Version,
+  VersioningType,
+} from '../../../common';
 import { ApplicationConfig } from '../../application-config';
 import { NestContainer } from '../../injector/container';
 import { MiddlewareBuilder } from '../../middleware/builder';
@@ -13,8 +19,9 @@ describe('MiddlewareBuilder', () => {
   beforeEach(() => {
     const container = new NestContainer();
     const appConfig = new ApplicationConfig();
+    appConfig.enableVersioning({ type: VersioningType.URI });
     builder = new MiddlewareBuilder(
-      new RoutesMapper(container),
+      new RoutesMapper(container, appConfig),
       new NoopHttpAdapter({}),
       new RouteInfoPathExtractor(appConfig),
     );
