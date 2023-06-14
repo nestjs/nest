@@ -26,7 +26,7 @@
         "handlebars": "4.7.7",
         "@fastify/view": "7.4.1",
         "reflect-metadata": "0.1.13",
-        "rimraf": "4.4.1",
+        "rimraf": "5.0.1",
         "rxjs": "7.5.5"
     },
     "devDependencies": {
