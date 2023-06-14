@@ -418,4 +418,67 @@ describe('URI Versioning', () => {
       await app.close();
     });
   });
+
+  // ======================================================================== //
+  describe.only('with middleware applied', () => {
+    before(async () => {
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      app = moduleRef.createNestApplication();
+      app.enableVersioning({
+        type: VersioningType.URI,
+        defaultVersion: '1',
+      });
+      await app.init();
+    });
+
+    describe('GET /middleware', () => {
+      it('should return "Hello from middleware function!"', () => {
+        return request(app.getHttpServer())
+          .get('/v1/middleware')
+          .expect(200)
+          .expect('Hello from middleware function!');
+      });
+    });
+
+    describe('GET /middleware/override', () => {
+      it('should return "Hello from middleware function!"', () => {
+        return request(app.getHttpServer())
+          .get('/v2/middleware/override')
+          .expect(200)
+          .expect('Hello from middleware function!');
+      });
+    });
+
+    describe('GET /middleware/multiple', () => {
+      it('should return "Hello from middleware function!" (v1)', () => {
+        return request(app.getHttpServer())
+          .get('/v1/middleware/multiple')
+          .expect(200)
+          .expect('Hello from middleware function!');
+      });
+
+      it('should return "Hello from middleware function!" (v2)', () => {
+        return request(app.getHttpServer())
+          .get('/v2/middleware/multiple')
+          .expect(200)
+          .expect('Hello from middleware function!');
+      });
+    });
+
+    describe('GET /middleware/neutral', () => {
+      it('should return "Hello from middleware function!"', () => {
+        return request(app.getHttpServer())
+          .get('/middleware/neutral')
+          .expect(200)
+          .expect('Hello from middleware function!');
+      });
+    });
+
+    after(async () => {
+      await app.close();
+    });
+  });
 });
