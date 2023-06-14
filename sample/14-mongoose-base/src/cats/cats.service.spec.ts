@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Model } from 'mongoose';
 import { CatsService } from './cats.service';
 import { Cat } from './interfaces/cat.interface';
-import { Model } from 'mongoose';
 
 const mockCat = {
   name: 'Cat #1',
@@ -66,7 +66,7 @@ describe('CatService', () => {
         name: 'Cat #1',
         breed: 'Breed #1',
         age: 4,
-      }),
+      } as any),
     );
     const newCat = await service.create({
       name: 'Cat #1',
