@@ -26,7 +26,7 @@
     "dotenv": "16.1.4",
     "reflect-metadata": "0.1.13",
     "rimraf": "4.4.1",
-    "rxjs": "7.5.5"
+    "rxjs": "7.8.1"
   },
   "devDependencies": {
     "@nestjs/cli": "9.5.0",

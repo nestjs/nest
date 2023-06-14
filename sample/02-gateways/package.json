@@ -29,7 +29,7 @@
     "class-validator": "0.14.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "4.4.1",
-    "rxjs": "7.5.5",
+    "rxjs": "7.8.1",
     "socket.io": "4.6.2"
   },
   "devDependencies": {
