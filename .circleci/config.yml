@@ -75,7 +75,7 @@ jobs:
   test_node_19:
     <<: *unit-tests-template
     docker:
-      - image: cimg/node:19.8
+      - image: cimg/node:19.9
 
   lint:
     working_directory: ~/nest
