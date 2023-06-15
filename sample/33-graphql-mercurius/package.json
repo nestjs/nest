@@ -22,7 +22,7 @@
     "@nestjs/common": "9.4.3",
     "@nestjs/core": "9.4.3",
     "@nestjs/graphql": "11.0.6",
-    "@nestjs/mercurius": "11.0.6",
+    "@nestjs/mercurius": "10.2.1",
     "@nestjs/platform-fastify": "9.4.3",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.0",
