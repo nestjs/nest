@@ -48,6 +48,10 @@ async function executeNPMScriptInDirectory(
     const result = await exec(
       `${script} --prefix ${dir} ${appendScript ? '-- ' + appendScript : ''}`,
     );
+    // const result = await exec(`npx npm-check-updates -u`, {
+    //   cwd: join(process.cwd(), dir),
+    // });
+
     log.info(`Finished running ${clc.blue(script)} in ${clc.magenta(dirName)}`);
     if (result.stderr) {
       log.error(result.stderr);
