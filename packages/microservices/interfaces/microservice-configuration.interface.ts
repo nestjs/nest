@@ -240,7 +240,7 @@ export interface KafkaOptions {
     client?: KafkaConfig;
     consumer?: ConsumerConfig;
     run?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;
-    subscribe?: Omit<ConsumerSubscribeTopics, 'topic'>;
+    subscribe?: Omit<ConsumerSubscribeTopics, 'topics'>;
     producer?: ProducerConfig;
     send?: Omit<ProducerRecord, 'topic' | 'messages'>;
     serializer?: Serializer;
