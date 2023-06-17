@@ -435,7 +435,7 @@ describe('ClientKafka', () => {
       expect(subscribe.calledOnce).to.be.true;
       expect(
         subscribe.calledWith({
-          topic: replyTopic,
+          topics: [replyTopic],
         }),
       ).to.be.true;
       expect(run.calledOnce).to.be.true;
@@ -452,7 +452,7 @@ describe('ClientKafka', () => {
       expect(subscribe.calledOnce).to.be.true;
       expect(
         subscribe.calledWith({
-          topic: replyTopic,
+          topics: [replyTopic],
           fromBeginning: true,
         }),
       ).to.be.true;

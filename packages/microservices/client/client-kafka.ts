@@ -163,12 +163,13 @@ export class ClientKafka extends ClientProxy {
     }
 
     const consumerSubscribeOptions = this.options.subscribe || {};
-    const subscribeTo = async (responsePattern: string) =>
-      this.consumer.subscribe({
-        topic: responsePattern,
+
+    if (this.responsePatterns.length > 0) {
+      await this.consumer.subscribe({
         ...consumerSubscribeOptions,
+        topics: this.responsePatterns,
       });
-    await Promise.all(this.responsePatterns.map(subscribeTo));
+    }
 
     await this.consumer.run(
       Object.assign(this.options.run || {}, {
