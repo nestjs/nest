@@ -192,7 +192,7 @@ describe('Middleware (FastifyAdapter)', () => {
     });
   });
 
-  describe.only('should execute middleware only once for given routes', () => {
+  describe('should execute middleware only once for given routes', () => {
     class Middleware implements NestMiddleware {
       use(request: any, reply: any, next: () => void) {
         if (request.middlewareExecutionCount === undefined) {

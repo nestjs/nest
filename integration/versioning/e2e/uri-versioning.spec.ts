@@ -420,7 +420,7 @@ describe('URI Versioning', () => {
   });
 
   // ======================================================================== //
-  describe.only('with middleware applied', () => {
+  describe('with middleware applied', () => {
     before(async () => {
       const moduleRef = await Test.createTestingModule({
         imports: [AppModule],
