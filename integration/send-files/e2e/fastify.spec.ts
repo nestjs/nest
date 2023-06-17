@@ -77,7 +77,7 @@ describe('Fastify FileSend', () => {
         expect(headers['content-disposition']).to.equal(
           'attachment; filename="Readme.md"',
         );
-        expect(headers['content-length']).to.equal(readme.byteLength);
+        expect(headers['content-length']).to.equal(`${readme.byteLength}`);
         expect(payload).to.equal(readmeString);
       });
   });
