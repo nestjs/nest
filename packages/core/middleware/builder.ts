@@ -113,7 +113,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
         const routeMatch = routesWithRegex.find(isOverlapped);
 
         if (routeMatch === undefined) {
-         return route;
+          return route;
         }
       });
     }
