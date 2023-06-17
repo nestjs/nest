@@ -72,6 +72,14 @@ describe('FileTypeValidator', () => {
 
       expect(fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
+
+    it('should return false when no file provided', () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/jpeg',
+      });
+
+      expect(fileTypeValidator.isValid()).to.equal(false);
+    });
   });
 
   describe('buildErrorMessage', () => {

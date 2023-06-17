@@ -40,6 +40,14 @@ describe('MaxFileSizeValidator', () => {
 
       expect(maxFileSizeValidator.isValid(requestFile)).to.equal(false);
     });
+
+    it('should return true when no file provided', () => {
+      const maxFileSizeValidator = new MaxFileSizeValidator({
+        maxSize: oneKb,
+      });
+
+      expect(maxFileSizeValidator.isValid()).to.equal(true);
+    });
   });
 
   describe('buildErrorMessage', () => {
