@@ -190,7 +190,7 @@ describe('ServerKafka', () => {
       expect(subscribe.called).to.be.true;
       expect(
         subscribe.calledWith({
-          topic: pattern,
+          topics: [pattern],
         }),
       ).to.be.true;
 
@@ -214,7 +214,7 @@ describe('ServerKafka', () => {
       expect(subscribe.called).to.be.true;
       expect(
         subscribe.calledWith({
-          topic: pattern,
+          topics: [pattern],
           fromBeginning: true,
         }),
       ).to.be.true;
