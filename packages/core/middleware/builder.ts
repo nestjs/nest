@@ -9,6 +9,7 @@ import {
   MiddlewareConfiguration,
   RouteInfo,
 } from '@nestjs/common/interfaces/middleware';
+import { stripEndSlash } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
@@ -107,14 +108,14 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
           ),
         }));
       return routes.filter(route => {
-        const isOverlapped = (v: { path: string; regex: RegExp }) => {
-          return route.path !== v.path && route.path.match(v.regex);
+        const isOverlapped = (v: { path: string; regex: RegExp }): boolean => {
+          const normalizedRoutePath = stripEndSlash(route.path);
+          return (
+            normalizedRoutePath !== v.path && v.regex.test(normalizedRoutePath)
+          );
         };
         const routeMatch = routesWithRegex.find(isOverlapped);
-
-        if (routeMatch === undefined) {
-         return route;
-        }
+        return routeMatch === undefined;
       });
     }
   };
