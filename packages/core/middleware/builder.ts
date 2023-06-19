@@ -1,3 +1,4 @@
+import { stripEndSlash } from '@nestjs/common/utils/shared.utils';
 import { flatten } from '@nestjs/common/decorators/core/dependencies.decorator';
 import {
   HttpServer,
@@ -108,12 +109,15 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
         }));
       return routes.filter(route => {
         const isOverlapped = (v: { path: string; regex: RegExp }) => {
-          return route.path !== v.path && route.path.match(v.regex);
+          const normalizedRoutePath = stripEndSlash(route.path);
+          return (
+            normalizedRoutePath !== v.path && normalizedRoutePath.match(v.regex)
+          );
         };
         const routeMatch = routesWithRegex.find(isOverlapped);
 
         if (routeMatch === undefined) {
-         return route;
+          return route;
         }
       });
     }
