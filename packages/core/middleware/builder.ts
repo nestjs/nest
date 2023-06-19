@@ -1,4 +1,3 @@
-import { stripEndSlash } from '@nestjs/common/utils/shared.utils';
 import { flatten } from '@nestjs/common/decorators/core/dependencies.decorator';
 import {
   HttpServer,
@@ -10,6 +9,7 @@ import {
   MiddlewareConfiguration,
   RouteInfo,
 } from '@nestjs/common/interfaces/middleware';
+import { stripEndSlash } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
@@ -115,10 +115,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
           );
         };
         const routeMatch = routesWithRegex.find(isOverlapped);
-
-        if (routeMatch === undefined) {
-          return route;
-        }
+        return routeMatch === undefined;
       });
     }
   };
