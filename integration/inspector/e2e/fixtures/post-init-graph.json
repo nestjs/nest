@@ -2679,6 +2679,30 @@
         "className": "LoggerMiddleware",
         "classNodeId": "1634859874",
         "metadata": {
+          "key": "/cats/",
+          "path": "/cats/",
+          "requestMethod": "POST"
+        },
+        "id": "1634859874_use"
+      },
+      {
+        "type": "middleware",
+        "methodName": "use",
+        "className": "LoggerMiddleware",
+        "classNodeId": "1634859874",
+        "metadata": {
+          "key": "/cats/",
+          "path": "/cats/",
+          "requestMethod": "GET"
+        },
+        "id": "1634859874_use"
+      },
+      {
+        "type": "middleware",
+        "methodName": "use",
+        "className": "LoggerMiddleware",
+        "classNodeId": "1634859874",
+        "metadata": {
           "key": "/cats/:id",
           "path": "/cats/:id",
           "requestMethod": "GET"
