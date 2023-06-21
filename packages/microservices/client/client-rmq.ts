@@ -196,13 +196,12 @@ export class ClientRMQ extends ClientProxy {
   }
 
   public async consumeChannel(channel: Channel) {
-    const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
     await channel.consume(
       this.replyQueue,
       (msg: ConsumeMessage) =>
         this.responseEmitter.emit(msg.properties.correlationId, msg),
       {
-        noAck,
+        noAck: true,
       },
     );
   }

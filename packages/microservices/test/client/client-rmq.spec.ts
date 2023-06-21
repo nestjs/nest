@@ -106,9 +106,10 @@ describe('ClientRMQ', function () {
 
       channel.consume = consumeStub;
     });
-    it('should call "consume" method of the channel instance', async () => {
+    it('should call "consume" method of the channel instance with "noAck"', async () => {
       await client.consumeChannel(channel);
       expect(consumeStub.called).to.be.true;
+      expect(consumeStub.args[0][2]).deep.equal({ noAck: true });
     });
   });
 
