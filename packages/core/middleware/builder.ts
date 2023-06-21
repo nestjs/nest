@@ -101,17 +101,23 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
       const routesWithRegex = routes
         .filter(route => route.path.includes(':'))
         .map(route => ({
+          method: route.method,
           path: route.path,
           regex: new RegExp(
             '^(' + route.path.replace(regexMatchParams, wildcard) + ')$',
             'g',
           ),
         }));
+
       return routes.filter(route => {
-        const isOverlapped = (v: { path: string; regex: RegExp }): boolean => {
+        const isOverlapped = (item: { regex: RegExp } & RouteInfo): boolean => {
+          if (route.method !== item.method) {
+            return false;
+          }
           const normalizedRoutePath = stripEndSlash(route.path);
           return (
-            normalizedRoutePath !== v.path && v.regex.test(normalizedRoutePath)
+            normalizedRoutePath !== item.path &&
+            item.regex.test(normalizedRoutePath)
           );
         };
         const routeMatch = routesWithRegex.find(isOverlapped);
