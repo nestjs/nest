@@ -170,7 +170,7 @@
     "supertest": "6.3.3",
     "ts-morph": "19.0.0",
     "ts-node": "10.9.1",
-    "typeorm": "0.3.16",
+    "typeorm": "0.3.17",
     "typescript": "5.1.3",
     "wrk": "1.2.1",
     "ws": "8.13.0"
