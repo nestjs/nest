@@ -26,6 +26,12 @@ describe('ParseEnumPipe', () => {
           Direction.Up,
         );
       });
+
+      it('should not throw an error if "enumType" is undefined/null and isOptional is true', async () => {
+        const target = new ParseEnumPipe(null, { isOptional: true });
+        const value = await target.transform(undefined, {} as ArgumentMetadata);
+        expect(value).to.equal(undefined);
+      });
     });
     describe('when validation fails', () => {
       it('should throw an error', async () => {
@@ -39,6 +45,15 @@ describe('ParseEnumPipe', () => {
     it('should throw an error if "enumType" is undefined/null', () => {
       try {
         new ParseEnumPipe(null);
+      } catch (err) {
+        expect(err.message).to.equal(
+          `"ParseEnumPipe" requires "enumType" argument specified (to validate input values).`,
+        );
+      }
+    });
+    it('should throw an error if "enumType" is undefined/null and isOptional false', async () => {
+      try {
+        new ParseEnumPipe(null, { isOptional: false });
       } catch (err) {
         expect(err.message).to.equal(
           `"ParseEnumPipe" requires "enumType" argument specified (to validate input values).`,
