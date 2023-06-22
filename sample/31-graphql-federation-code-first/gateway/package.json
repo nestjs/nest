@@ -1,10 +1,8 @@
 {
   "name": "gateway",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
-  "private": true,
-  "license": "UNLICENSED",
+  "version": "1.0.0",
+  "description": "Nest TypeScript starter repository",
+  "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
@@ -21,7 +19,7 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@apollo/gateway": "2.4.8",
+    "@apollo/gateway": "2.2.3",
     "@apollo/server": "4.7.4",
     "@nestjs/apollo": "12.0.1",
     "@nestjs/common": "10.0.2",
