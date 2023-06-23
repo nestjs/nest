@@ -25,12 +25,10 @@ export interface ParseEnumPipeOptions {
 @Injectable()
 export class ParseEnumPipe<T = any> implements PipeTransform<T> {
   protected exceptionFactory: (error: string) => any;
-  protected optional: boolean;
   constructor(
     protected readonly enumType: T,
-    @Optional() options?: ParseEnumPipeOptions,
+    @Optional() protected readonly options?: ParseEnumPipeOptions,
   ) {
-    this.optional = options?.optional ?? false;
     if (!enumType) {
       throw new Error(
         `"ParseEnumPipe" requires "enumType" argument specified (to validate input values).`,
@@ -53,7 +51,7 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(value: T, metadata: ArgumentMetadata): Promise<T> {
-    if (!this.optional && !this.isEnum(value)) {
+    if (!this.options.optional && !this.isEnum(value)) {
       throw this.exceptionFactory(
         'Validation failed (enum string is expected)',
       );
