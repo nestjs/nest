@@ -5,6 +5,7 @@ import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
+import { isNil } from '../utils/shared.utils';
 
 /**
  * @publicApi
@@ -51,7 +52,10 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(value: T, metadata: ArgumentMetadata): Promise<T> {
-    if (!this.options.optional && !this.isEnum(value)) {
+    if (isNil(value) && this.options.optional) {
+      return value;
+    }
+    if (!this.isEnum(value)) {
       throw this.exceptionFactory(
         'Validation failed (enum string is expected)',
       );
