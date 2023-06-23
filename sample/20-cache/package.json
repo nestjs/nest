@@ -19,7 +19,7 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/cache-manager": "2.0.0",
+    "@nestjs/cache-manager": "2.0.1",
     "@nestjs/common": "10.0.3",
     "@nestjs/core": "10.0.3",
     "@nestjs/platform-express": "10.0.3",
