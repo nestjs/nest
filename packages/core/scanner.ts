@@ -1,4 +1,9 @@
-import { DynamicModule, ForwardReference, Provider } from '@nestjs/common';
+import {
+  DynamicModule,
+  ForwardReference,
+  Provider,
+  Logger,
+} from '@nestjs/common';
 import {
   CATCH_WATERMARK,
   CONTROLLER_WATERMARK,
@@ -43,6 +48,7 @@ import {
 } from './constants';
 import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
 import { InvalidClassModuleException } from './errors/exceptions/invalid-class-module.exception';
+import { InvalidControllerException } from './errors/exceptions/invalid-controller.exception';
 import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
 import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
 import { getClassScope } from './helpers/get-class-scope';
@@ -71,6 +77,8 @@ interface ModulesScanParameters {
 }
 
 export class DependenciesScanner {
+  private readonly logger = new Logger(DependenciesScanner.name);
+
   private readonly applicationProvidersApplyMap: ApplicationProviderWrapper[] =
     [];
 
@@ -516,6 +524,10 @@ export class DependenciesScanner {
   }
 
   public insertController(controller: Type<Controller>, token: string) {
+    if (!this.isController(controller)) {
+      // TODO(v11): Throw the exception instead of just warning below
+      this.logger.warn(new InvalidControllerException(controller).message);
+    }
     this.container.addController(controller, token);
   }
 

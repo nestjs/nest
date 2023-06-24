@@ -6,3 +6,4 @@ export * from './invalid-class.exception';
 export * from './unknown-export.exception';
 export * from './unknown-module.exception';
 export * from './undefined-forwardref.exception';
+export * from './invalid-controller.exception';
