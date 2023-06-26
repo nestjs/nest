@@ -1,5 +1,7 @@
 /**
  * @see https://github.com/expressjs/multer
+ * 
+ * @publicApi
  */
 export interface MulterOptions {
   dest?: string;
@@ -55,6 +57,9 @@ export interface MulterOptions {
   ): void;
 }
 
+/**
+ * @publicApi
+ */
 export interface MulterField {
   /** The field name. */
   name: string;

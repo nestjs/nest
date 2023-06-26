@@ -8,6 +8,9 @@ import {
 } from './interfaces/files-upload-module.interface';
 import { MULTER_MODULE_ID } from './multer.constants';
 
+/**
+ * @publicApi
+ */
 @Module({})
 export class MulterModule {
   static register(options: MulterModuleOptions = {}): DynamicModule {
