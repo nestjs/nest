@@ -14,9 +14,16 @@ describe('ParseEnumPipe', () => {
     Up = 'UP',
   }
   let target: ParseEnumPipe;
+  let tatargetWithOptionIsTrue: ParseEnumPipe;
+
   beforeEach(() => {
     target = new ParseEnumPipe(Direction, {
       exceptionFactory: (error: any) => new CustomTestError(),
+    });
+
+    tatargetWithOptionIsTrue = new ParseEnumPipe(Direction, {
+      exceptionFactory: (error: any) => new CustomTestError(),
+      optional: true,
     });
   });
   describe('transform', () => {
@@ -26,11 +33,23 @@ describe('ParseEnumPipe', () => {
           Direction.Up,
         );
       });
+
+      it('should not throw an error if enumType is undefined/null and optional is true', async () => {
+        const target = new ParseEnumPipe('DOWN', { optional: true });
+        const value = await target.transform(undefined, {} as ArgumentMetadata);
+        expect(value).to.equal(undefined);
+      });
     });
     describe('when validation fails', () => {
       it('should throw an error', async () => {
         return expect(
           target.transform('DOWN', {} as ArgumentMetadata),
+        ).to.be.rejectedWith(CustomTestError);
+      });
+
+      it('should throw an error if enumType is wrong even optional is true', async () => {
+        return expect(
+          tatargetWithOptionIsTrue.transform('DOWN', {} as ArgumentMetadata),
         ).to.be.rejectedWith(CustomTestError);
       });
     });

@@ -5,11 +5,13 @@ import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
+import { isNil } from '../utils/shared.utils';
 
 /**
  * @publicApi
  */
 export interface ParseEnumPipeOptions {
+  optional?: boolean;
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (error: string) => any;
 }
@@ -24,10 +26,9 @@ export interface ParseEnumPipeOptions {
 @Injectable()
 export class ParseEnumPipe<T = any> implements PipeTransform<T> {
   protected exceptionFactory: (error: string) => any;
-
   constructor(
     protected readonly enumType: T,
-    @Optional() options?: ParseEnumPipeOptions,
+    @Optional() protected readonly options?: ParseEnumPipeOptions,
   ) {
     if (!enumType) {
       throw new Error(
@@ -51,6 +52,9 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(value: T, metadata: ArgumentMetadata): Promise<T> {
+    if (isNil(value) && this.options.optional) {
+      return value;
+    }
     if (!this.isEnum(value)) {
       throw this.exceptionFactory(
         'Validation failed (enum string is expected)',

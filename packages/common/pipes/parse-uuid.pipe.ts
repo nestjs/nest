@@ -9,7 +9,7 @@ import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
-import { isString } from '../utils/shared.utils';
+import { isNil, isString } from '../utils/shared.utils';
 
 /**
  * @publicApi
@@ -18,6 +18,7 @@ export interface ParseUUIDPipeOptions {
   version?: '3' | '4' | '5';
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (errors: string) => any;
+  optional?: boolean;
 }
 
 /**
@@ -38,7 +39,7 @@ export class ParseUUIDPipe implements PipeTransform<string> {
   private readonly version: '3' | '4' | '5';
   protected exceptionFactory: (errors: string) => any;
 
-  constructor(@Optional() options?: ParseUUIDPipeOptions) {
+  constructor(@Optional() protected readonly options?: ParseUUIDPipeOptions) {
     options = options || {};
     const {
       exceptionFactory,
@@ -53,6 +54,9 @@ export class ParseUUIDPipe implements PipeTransform<string> {
   }
 
   async transform(value: string, metadata: ArgumentMetadata): Promise<string> {
+    if (isNil(value) && this.options.optional) {
+      return value;
+    }
     if (!this.isUUID(value, this.version)) {
       throw this.exceptionFactory(
         `Validation failed (uuid${
