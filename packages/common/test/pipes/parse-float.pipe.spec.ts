@@ -25,6 +25,11 @@ describe('ParseFloatPipe', () => {
           parseFloat(num),
         );
       });
+      it('should not throw an error if the value is undefined/null and optional is true', async () => {
+        const target = new ParseFloatPipe({ optional: true });
+        const value = await target.transform(undefined, {} as ArgumentMetadata);
+        expect(value).to.equal(undefined);
+      });
     });
     describe('when validation fails', () => {
       it('should throw an error', async () => {

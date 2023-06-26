@@ -41,6 +41,11 @@ describe('ParseUUIDPipe', () => {
         target = new ParseUUIDPipe({ version: '5', exceptionFactory });
         expect(await target.transform(v5, {} as ArgumentMetadata)).to.equal(v5);
       });
+      it('should not throw an error if the value is undefined/null and optional is true', async () => {
+        const target = new ParseUUIDPipe({ optional: true });
+        const value = await target.transform(undefined, {} as ArgumentMetadata);
+        expect(value).to.equal(undefined);
+      });
     });
 
     describe('when validation fails', () => {

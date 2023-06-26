@@ -5,6 +5,7 @@ import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util';
+import { isNil } from '../utils/shared.utils';
 
 /**
  * @publicApi
@@ -12,6 +13,7 @@ import {
 export interface ParseFloatPipeOptions {
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (error: string) => any;
+  optional?: boolean;
 }
 
 /**
@@ -25,7 +27,7 @@ export interface ParseFloatPipeOptions {
 export class ParseFloatPipe implements PipeTransform<string> {
   protected exceptionFactory: (error: string) => any;
 
-  constructor(@Optional() options?: ParseFloatPipeOptions) {
+  constructor(@Optional() protected readonly options?: ParseFloatPipeOptions) {
     options = options || {};
     const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
       options;
@@ -43,6 +45,9 @@ export class ParseFloatPipe implements PipeTransform<string> {
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
+    if (isNil(value) && this.options.optional) {
+      return value;
+    }
     if (!this.isNumeric(value)) {
       throw this.exceptionFactory(
         'Validation failed (numeric string is expected)',
