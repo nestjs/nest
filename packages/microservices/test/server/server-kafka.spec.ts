@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { AssertionError, expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaHeaders } from '../../enums';
 import {
@@ -90,6 +91,7 @@ describe('ServerKafka', () => {
   let subscribe: sinon.SinonSpy;
   let run: sinon.SinonSpy;
   let send: sinon.SinonSpy;
+  let on: sinon.SinonSpy;
   let consumerStub: sinon.SinonStub;
   let producerStub: sinon.SinonStub;
   let client;
@@ -101,12 +103,17 @@ describe('ServerKafka', () => {
     subscribe = sinon.spy();
     run = sinon.spy();
     send = sinon.spy();
+    on = sinon.spy();
 
     consumerStub = sinon.stub(server as any, 'consumer').callsFake(() => {
       return {
         connect,
         subscribe,
         run,
+        events: {
+          CRASH: 'consumer.crash',
+        },
+        on,
       };
     });
     producerStub = sinon.stub(server as any, 'producer').callsFake(() => {

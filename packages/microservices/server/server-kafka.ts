@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import { isObservable, lastValueFrom, Observable, ReplaySubject } from 'rxjs';
+
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -17,8 +18,10 @@ import {
   Consumer,
   ConsumerConfig,
   EachMessagePayload,
+  InstrumentationEvent,
   Kafka,
   KafkaConfig,
+  KafkaJSError,
   KafkaMessage,
   Message,
   Producer,
@@ -102,6 +105,8 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     });
     this.consumer = this.client.consumer(consumerOptions);
     this.producer = this.client.producer(this.options.producer);
+
+    this.consumer.on(this.consumer.events.CRASH, this.handleConsumerCrash);
 
     await this.consumer.connect();
     await this.producer.connect();
@@ -316,5 +321,19 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
 
   protected initializeDeserializer(options: KafkaOptions['options']) {
     this.deserializer = options?.deserializer ?? new KafkaRequestDeserializer();
+  }
+
+  private handleConsumerCrash(
+    event: InstrumentationEvent<{
+      error: KafkaJSError;
+      groupId: string;
+      restart: boolean;
+    }>,
+  ) {
+    const { error, groupId, restart } = event.payload;
+
+    if (!restart) {
+      throw new Error('Consumer crashed');
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
+
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -15,8 +16,10 @@ import {
   ConsumerConfig,
   ConsumerGroupJoinEvent,
   EachMessagePayload,
+  InstrumentationEvent,
   Kafka,
   KafkaConfig,
+  KafkaJSError,
   KafkaMessage,
   Producer,
   TopicPartitionOffsetAndMetadata,
@@ -141,6 +144,10 @@ export class ClientKafka extends ClientProxy {
           this.consumer.on(
             this.consumer.events.GROUP_JOIN,
             this.setConsumerAssignments.bind(this),
+          );
+          this.consumer.on(
+            this.consumer.events.CRASH,
+            this.handleConsumerCrash,
           );
           await this.consumer.connect();
           await this.bindTopics();
@@ -328,6 +335,20 @@ export class ClientKafka extends ClientProxy {
       return this.consumer.commitOffsets(topicPartitions);
     } else {
       throw new Error('No consumer initialized');
+    }
+  }
+
+  private handleConsumerCrash(
+    event: InstrumentationEvent<{
+      error: KafkaJSError;
+      groupId: string;
+      restart: boolean;
+    }>,
+  ) {
+    const { error, groupId, restart } = event.payload;
+
+    if (!restart) {
+      throw new Error('Consumer crashed');
     }
   }
 }

@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+
 import { ClientKafka } from '../../client/client-kafka';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaHeaders } from '../../enums';
@@ -176,6 +177,7 @@ describe('ClientKafka', () => {
         run,
         events: {
           GROUP_JOIN: 'consumer.group_join',
+          CRASH: 'consumer.crash',
         },
         on,
       };
@@ -288,7 +290,7 @@ describe('ClientKafka', () => {
 
         expect(consumerStub.calledOnce).to.be.true;
 
-        expect(on.calledOnce).to.be.true;
+        expect(on.calledTwice).to.be.true;
         expect(client['consumerAssignments']).to.be.empty;
 
         expect(connect.calledTwice).to.be.true;
