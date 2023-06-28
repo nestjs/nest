@@ -1,7 +1,7 @@
 import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { expect } from 'chai';
-import { Observable, lastValueFrom, of } from 'rxjs';
+import { Observable, lastValueFrom, of, retry } from 'rxjs';
 import * as sinon from 'sinon';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 
@@ -106,6 +106,35 @@ describe('InterceptorsConsumer', () => {
         );
         const result = await transformToResult(intercepted);
         expect(result).to.equal('hello');
+      });
+    });
+
+    describe('Retries', () => {
+      it('works with RxJS retries', async () => {
+        let count = 0;
+        const next = () => {
+          count++;
+          if (count < 3) {
+            return Promise.reject(new Error('count not reached'));
+          }
+          return Promise.resolve(count);
+        };
+        class RetryInterceptor implements NestInterceptor {
+          intercept(
+            _context: ExecutionContext,
+            next: CallHandler<any>,
+          ): Observable<any> | Promise<Observable<any>> {
+            return next.handle().pipe(retry(4));
+          }
+        }
+        const intercepted = await consumer.intercept(
+          [new RetryInterceptor()],
+          null,
+          { constructor: null },
+          null,
+          next,
+        );
+        expect(await transformToResult(intercepted)).to.equal(3);
       });
     });
   });
