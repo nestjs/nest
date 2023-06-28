@@ -96,7 +96,9 @@ describe('InterceptorsConsumer', () => {
             return storage.run({ value: 'hello' }, () => next.handle());
           }
         }
-        const next = () => Promise.resolve(storage.getStore().value);
+        const next = () => {
+          return Promise.resolve(storage.getStore().value);
+        };
         const intercepted = await consumer.intercept(
           [new StorageInterceptor()],
           null,
