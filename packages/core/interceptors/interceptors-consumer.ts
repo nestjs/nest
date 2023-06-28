@@ -24,16 +24,16 @@ export class InterceptorsConsumer {
     const context = this.createContext(args, instance, callback);
     context.setType<TContext>(type);
 
-    const nextFn = (i: number) => async () => {
+    const nextFn = async (i = 0) => {
       if (i >= interceptors.length) {
         return defer(() => this.transformDeferred(next));
       }
       const handler: CallHandler = {
-        handle: () => fromPromise(nextFn(i + 1)()).pipe(mergeAll()),
+        handle: () => fromPromise(nextFn(i + 1)).pipe(mergeAll()),
       };
       return interceptors[i].intercept(context, handler);
     };
-    return defer(nextFn(0)).pipe(mergeAll());
+    return defer(() => nextFn()).pipe(mergeAll());
   }
 
   public createContext(
