@@ -31,7 +31,7 @@
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "9.4.4",
     "ts-node": "10.9.1",
-    "webpack": "5.88.0",
+    "webpack": "5.88.1",
     "webpack-cli": "5.1.4",
     "webpack-node-externals": "3.0.0"
   }
