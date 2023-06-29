@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common/interfaces';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
 import { AsyncResource } from 'async_hooks';
-import { defer, from as fromPromise, Observable } from 'rxjs';
+import { Observable, defer, from as fromPromise } from 'rxjs';
 import { mergeAll, switchMap } from 'rxjs/operators';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 

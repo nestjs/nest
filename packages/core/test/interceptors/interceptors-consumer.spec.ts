@@ -85,8 +85,8 @@ describe('InterceptorsConsumer', () => {
       });
     });
 
-    describe('AsyncLocalStorage', () => {
-      it('Allows an interceptor to set values in AsyncLocalStorage that are accesible from the controller', async () => {
+    describe('when AsyncLocalStorage is used', () => {
+      it('should allow an interceptor to set values in AsyncLocalStorage that are accesible from the controller', async () => {
         const storage = new AsyncLocalStorage<Record<string, any>>();
         class StorageInterceptor implements NestInterceptor {
           intercept(
@@ -111,8 +111,8 @@ describe('InterceptorsConsumer', () => {
       });
     });
 
-    describe('Retries', () => {
-      it('works with RxJS retries', async () => {
+    describe('when retrying is enabled', () => {
+      it('should retry a specified amount of times', async () => {
         let count = 0;
         const next = () => {
           count++;

@@ -67,6 +67,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
   public bindEvents(mqttClient: MqttClient) {
     mqttClient.on(MESSAGE_EVENT, this.getMessageHandler(mqttClient).bind(this));
+
     const registeredPatterns = [...this.messageHandlers.keys()];
     registeredPatterns.forEach(pattern => {
       const { isEventHandler } = this.messageHandlers.get(pattern);
