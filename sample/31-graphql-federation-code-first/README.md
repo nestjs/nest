@@ -20,7 +20,7 @@ cd gateway && npm run start
 
 ## Access the graph
 
-You can reach the gateway under `http://localhost:3002/graphql`
+You can reach the gateway under `http://localhost:3001/graphql`
 
 ## Query a combined graph
 
