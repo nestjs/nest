@@ -5,5 +5,10 @@
  * MIT Licensed
  */
 
+export type {
+  FastifyRequest as RequestFastify,
+  FastifyReply as ResponseFastify,
+} from 'fastify';
+
 export * from './adapters';
 export * from './interfaces';

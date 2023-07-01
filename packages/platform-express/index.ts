@@ -5,6 +5,11 @@
  * MIT Licensed
  */
 
+export type {
+  Request as RequestExpress,
+  Response as ResponseExpress,
+} from 'express';
+
 export * from './adapters';
 export * from './interfaces';
 export * from './multer';
