@@ -54,7 +54,7 @@ export class ParseUUIDPipe implements PipeTransform<string> {
   }
 
   async transform(value: string, metadata: ArgumentMetadata): Promise<string> {
-    if (isNil(value) && this.options.optional) {
+    if (isNil(value) && this.options?.optional) {
       return value;
     }
     if (!this.isUUID(value, this.version)) {

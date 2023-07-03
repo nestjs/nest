@@ -53,7 +53,7 @@ export class ParseBoolPipe
     value: string | boolean,
     metadata: ArgumentMetadata,
   ): Promise<boolean> {
-    if (isNil(value) && this.options.optional) {
+    if (isNil(value) && this.options?.optional) {
       return value;
     }
     if (this.isTrue(value)) {

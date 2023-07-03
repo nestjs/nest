@@ -1,5 +1,5 @@
-import { ArgumentMetadata, HttpStatus } from '../index';
 import { Injectable, Optional } from '../decorators/core';
+import { ArgumentMetadata, HttpStatus } from '../index';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import {
   ErrorHttpStatusCode,
@@ -45,7 +45,7 @@ export class ParseFloatPipe implements PipeTransform<string> {
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
-    if (isNil(value) && this.options.optional) {
+    if (isNil(value) && this.options?.optional) {
       return value;
     }
     if (!this.isNumeric(value)) {

@@ -49,7 +49,7 @@ export class ParseIntPipe implements PipeTransform<string> {
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
-    if (isNil(value) && this.options.optional) {
+    if (isNil(value) && this.options?.optional) {
       return value;
     }
     if (!this.isNumeric(value)) {
