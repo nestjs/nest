@@ -30,11 +30,13 @@ import { STATIC_CONTEXT } from './constants';
 import { INQUIRER } from './inquirer';
 import {
   ContextId,
+  INSTANCE_METADATA_SYMBOL,
   InstancePerContext,
   InstanceWrapper,
   PropertyMetadata,
 } from './instance-wrapper';
 import { Module } from './module';
+import { CircularDependencyFactoryProviderException } from '../errors/exceptions/circular-dependency-factory-provider.exception';
 
 /**
  * The type of an injectable dependency
@@ -436,6 +438,28 @@ export class Injector {
       inquirer,
       keyOrIndex,
     );
+
+    if (!isNil(instanceWrapper.inject)) {
+      const encounteredDependencies = new Set<InjectionToken>();
+      const checkForCircularDependency = (instance: InstanceWrapper) => {
+        const dependencies = instance[INSTANCE_METADATA_SYMBOL].dependencies;
+        dependencies.forEach(dep => {
+          if (encounteredDependencies.has(dep.token)) {
+            const injectionPath = [...encounteredDependencies, dep.token].map(
+              token => token.toString(),
+            );
+            throw new CircularDependencyFactoryProviderException(injectionPath);
+          }
+
+          if (!isNil(dep.inject)) {
+            encounteredDependencies.add(dep.token);
+            checkForCircularDependency(dep);
+          }
+        });
+      };
+
+      checkForCircularDependency(instanceWrapper);
+    }
 
     return this.resolveComponentHost(
       moduleRef,
