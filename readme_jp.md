@@ -1,11 +1,11 @@
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <a href="https://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
-<p align="center">すばやくスケーラブルなサーバーサイドアプリケーションを構築するための革新的な<a href="http://nodejs.org" target="_blank">Node.js</a>フレームワークです。</p>
+<p align="center">すばやくスケーラブルなサーバーサイドアプリケーションを構築するための革新的な<a href="https://nodejs.org" target="_blank">Node.js</a>フレームワークです。</p>
 <p align="center">
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
@@ -24,7 +24,7 @@
 
 ## 概要
 
-すばやくスケーラブルなサーバーサイドアプリケーションを構築するための革新的な<a href="http://nodejs.org" target="_blank">Node.js</a>フレームワークです。最新のJavaScriptを使用し、<a href="http://www.typescriptlang.org" target="_blank">TypeScript</a>（JavaScriptを拡張したスーパーセット）で構築され 、OOP（オブジェクト指向プログラミング）、FP（関数型プログラミング）、およびFRP（関数型リアクティブプログラミング）の要素を取り入れています。
+すばやくスケーラブルなサーバーサイドアプリケーションを構築するための革新的な<a href="https://nodejs.org" target="_blank">Node.js</a>フレームワークです。最新のJavaScriptを使用し、<a href="https://www.typescriptlang.org" target="_blank">TypeScript</a>（JavaScriptを拡張したスーパーセット）で構築され 、OOP（オブジェクト指向プログラミング）、FP（関数型プログラミング）、およびFRP（関数型リアクティブプログラミング）の要素を取り入れています。
 
 <p>Nestは<a href="https://expressjs.com/" target="_blank">Express</a>(デフォルト)や<a href="https://github.com/fastify/fastify" target="_blank">Fastify</a>などのさまざまなライブラリとの互換性を提供することで、たくさんのサードパーティプラグインを簡単に使用することができます。
 </p>

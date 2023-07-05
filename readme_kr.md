@@ -1,11 +1,11 @@
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <a href="https://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">효율적이고 확장 가능한 서버 사이드 애플리케이션을 위한 혁신적 <a href="http://nodejs.org" target="_blank">Node.js</a> 프레임워크.</p>
+  <p align="center">효율적이고 확장 가능한 서버 사이드 애플리케이션을 위한 혁신적 <a href="https://nodejs.org" target="_blank">Node.js</a> 프레임워크.</p>
     <p align="center">
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
@@ -24,7 +24,7 @@
 
 ## 개요
 
-Nest는 효율적이고 확장 가능한 <a href="http://nodejs.org" target="_blank">Node.js</a> 서버 사이드 애플리케이션을 빌드하기 위한 프레임워크입니다. Nest는 모던 Javascript를 사용하고 <a href="http://www.typescriptlang.org" target="_blank">TypeScript</a>로 빌드되었으며(순수 자바스크립트와 호환), OOP(객체 지향 프로그래밍), FP(함수형 프로그래밍), FRP(함수 반응형 프로그래밍)의 요소들이 결합되어 있습니다.
+Nest는 효율적이고 확장 가능한 <a href="https://nodejs.org" target="_blank">Node.js</a> 서버 사이드 애플리케이션을 빌드하기 위한 프레임워크입니다. Nest는 모던 Javascript를 사용하고 <a href="https://www.typescriptlang.org" target="_blank">TypeScript</a>로 빌드되었으며(순수 자바스크립트와 호환), OOP(객체 지향 프로그래밍), FP(함수형 프로그래밍), FRP(함수 반응형 프로그래밍)의 요소들이 결합되어 있습니다.
 
 <p>Nest는 내부적으로 <a href="https://expressjs.com/" target="_blank">Express</a>를 사용하지만, <a href="https://github.com/fastify/fastify" target="_blank">Fastify</a>와 같은 타 라이브러리들과의 호환성을 광범위하게 제공하며 많은 서드파티 플러그인들을 손쉽게 사용할 수 있게 해줍니다.</p>
 
