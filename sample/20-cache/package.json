@@ -42,7 +42,7 @@
     "eslint": "8.42.0",
     "eslint-config-prettier": "8.8.0",
     "eslint-plugin-import": "2.27.5",
-    "jest": "29.5.0",
+    "jest": "29.6.1",
     "prettier": "2.8.8",
     "supertest": "6.3.3",
     "ts-jest": "29.1.1",
