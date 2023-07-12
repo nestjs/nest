@@ -9,6 +9,10 @@ import {
   KafkaConfig,
   ProducerConfig,
   ProducerRecord,
+  AdminEvents,
+  ProducerEvents,
+  ConsumerEvents,
+  InstrumentationEvent,
 } from '../external/kafka.interface';
 import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
 import { IORedisOptions } from '../external/redis.interface';
@@ -17,6 +21,19 @@ import { TcpSocket } from '../helpers';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
+
+export type ValueOf<T> = T[keyof T];
+
+export type InstrumentationEventToRegister<T> = {
+  eventName: ValueOf<T>;
+  listener: (event: InstrumentationEvent<any>) => void;
+};
+
+export type InstrumentationEventsToRegister = {
+  consumerEvents?: InstrumentationEventToRegister<ConsumerEvents>[];
+  producerEvents?: InstrumentationEventToRegister<ProducerEvents>[];
+  adminEvents?: InstrumentationEventToRegister<AdminEvents>[];
+};
 
 export type MicroserviceOptions =
   | GrpcOptions
@@ -247,5 +264,6 @@ export interface KafkaOptions {
     deserializer?: Deserializer;
     parser?: KafkaParserConfig;
     producerOnlyMode?: boolean;
+    instrumentationEvents?: InstrumentationEventsToRegister;
   };
 }

@@ -23,13 +23,20 @@ import {
   Message,
   Producer,
   RecordMetadata,
+  AdminEvents,
+  ConsumerEvents,
+  ProducerEvents,
+  RemoveInstrumentationEventListener,
 } from '../external/kafka.interface';
 import { KafkaLogger, KafkaParser } from '../helpers';
 import {
   CustomTransportStrategy,
+  InstrumentationEventsToRegister,
+  InstrumentationEventToRegister,
   KafkaOptions,
   OutgoingResponse,
   ReadPacket,
+  ValueOf,
 } from '../interfaces';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
 import { Server } from './server';
@@ -48,6 +55,13 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
+  consumerListeners: RemoveInstrumentationEventListener<
+    ValueOf<ConsumerEvents>
+  >[];
+  producerListeners: RemoveInstrumentationEventListener<
+    ValueOf<ProducerEvents>
+  >[];
+  adminListeners: RemoveInstrumentationEventListener<ValueOf<AdminEvents>>[];
 
   constructor(protected readonly options: KafkaOptions['options']) {
     super();
@@ -91,6 +105,12 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   public async close(): Promise<void> {
     this.consumer && (await this.consumer.disconnect());
     this.producer && (await this.producer.disconnect());
+    this.producerListeners?.forEach(removeListener => removeListener());
+    this.consumerListeners?.forEach(removeListener => removeListener());
+    this.adminListeners?.forEach(removeListener => removeListener());
+    this.producerListeners = null;
+    this.consumerListeners = null;
+    this.adminListeners = null;
     this.consumer = null;
     this.producer = null;
     this.client = null;
@@ -103,10 +123,37 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
     this.consumer = this.client.consumer(consumerOptions);
     this.producer = this.client.producer(this.options.producer);
 
+    this.registerInstrumentationEvents(this.options.instrumentationEvents);
+
     await this.consumer.connect();
     await this.producer.connect();
     await this.bindEvents(this.consumer);
     callback();
+  }
+
+  private registerInstrumentationEvents({
+    consumerEvents,
+    producerEvents,
+    adminEvents,
+  }: InstrumentationEventsToRegister = {}): void {
+    this.consumerListeners = consumerEvents?.map(
+      ({
+        eventName,
+        listener,
+      }: InstrumentationEventToRegister<ConsumerEvents>) =>
+        this.consumer?.on(eventName, listener),
+    );
+    this.producerListeners = producerEvents?.map(
+      ({
+        eventName,
+        listener,
+      }: InstrumentationEventToRegister<ProducerEvents>) =>
+        this.producer?.on(eventName, listener),
+    );
+    this.adminListeners = adminEvents?.map(
+      ({ eventName, listener }: InstrumentationEventToRegister<AdminEvents>) =>
+        this.client.admin()?.on(eventName, listener),
+    );
   }
 
   public createClient<T = any>(): T {

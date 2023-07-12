@@ -90,6 +90,7 @@ describe('ServerKafka', () => {
   let subscribe: sinon.SinonSpy;
   let run: sinon.SinonSpy;
   let send: sinon.SinonSpy;
+  let on: sinon.SinonSpy;
   let consumerStub: sinon.SinonStub;
   let producerStub: sinon.SinonStub;
   let client;
@@ -101,18 +102,21 @@ describe('ServerKafka', () => {
     subscribe = sinon.spy();
     run = sinon.spy();
     send = sinon.spy();
+    on = sinon.spy();
 
     consumerStub = sinon.stub(server as any, 'consumer').callsFake(() => {
       return {
         connect,
         subscribe,
         run,
+        on,
       };
     });
     producerStub = sinon.stub(server as any, 'producer').callsFake(() => {
       return {
         connect,
         send,
+        on,
       };
     });
     client = {
@@ -148,6 +152,31 @@ describe('ServerKafka', () => {
     });
   });
 
+  describe('registerInstrumentationEvents', () => {
+    it('should call "registerInstrumentationEvents"', async () => {
+      const registerInstrumentationEventsStub = sinon
+        .stub(server as any, 'registerInstrumentationEvents')
+        .callsFake(() => ({} as any));
+      await server.listen(callback);
+      expect(registerInstrumentationEventsStub.called).to.be.true;
+    });
+
+    it('should subscribe to an instrumentation event', async () => {
+      const consumerConnectListener = sinon.spy();
+      (server as any).options.instrumentationEvents = {
+        consumerEvents: [
+          {
+            eventName: 'consumer.connect',
+            listener: consumerConnectListener,
+          },
+        ],
+      };
+      await server.listen(callback);
+      expect(on.called).to.be.true;
+      expect((server as any).consumerListeners).to.be.not.null;
+    });
+  });
+
   describe('close', () => {
     const consumer = { disconnect: sinon.spy() };
     const producer = { disconnect: sinon.spy() };
@@ -160,6 +189,9 @@ describe('ServerKafka', () => {
 
       expect(consumer.disconnect.calledOnce).to.be.true;
       expect(producer.disconnect.calledOnce).to.be.true;
+      expect((server as any).consumerListeners).to.be.null;
+      expect((server as any).producerListeners).to.be.null;
+      expect((server as any).adminListeners).to.be.null;
       expect((server as any).consumer).to.be.null;
       expect((server as any).producer).to.be.null;
       expect((server as any).client).to.be.null;
