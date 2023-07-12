@@ -177,6 +177,10 @@ export class NestApplication
   }
 
   public async init(): Promise<this> {
+    if (this.isInitialized) {
+      return this;
+    }
+
     this.applyOptions();
     await this.httpAdapter?.init();
 
