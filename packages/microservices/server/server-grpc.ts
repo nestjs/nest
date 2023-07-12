@@ -315,8 +315,20 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     };
   }
 
-  public close() {
-    this.grpcClient && this.grpcClient.forceShutdown();
+  public async close(): Promise<void> {
+    if (this.grpcClient) {
+      const graceful = this.getOptionsProp(this.options, 'gracefulShutdown');
+      if (graceful) {
+        await new Promise<void>((resolve, reject) => {
+          this.grpcClient.tryShutdown((error: Error) => {
+            if (error) reject(error);
+            else resolve();
+          });
+        });
+      } else {
+        this.grpcClient.forceShutdown();
+      }
+    }
     this.grpcClient = null;
   }
 
