@@ -218,7 +218,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
         return new Observable(observer => {
           let isClientCanceled = false;
           const callArgs = [
-            (error: unknown, data: unknown) => {
+            (error: any, data: unknown) => {
               if (error) {
                 if (error.details === GRPC_CANCELLED) {
                   call.destroy();
