@@ -240,6 +240,9 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
           return () => {
             upstreamSubscription.unsubscribe();
+            if (!call.finished) {
+              call.cancel();
+            }
           };
         });
       }
