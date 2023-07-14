@@ -226,7 +226,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
                     return;
                   }
                 }
-              return observer.error(this.serializeError(error));
+                return observer.error(this.serializeError(error));
               }
               observer.next(data);
               observer.complete();

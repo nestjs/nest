@@ -290,12 +290,17 @@ describe('ClientGrpcProxy', () => {
       ) => void;
       const writeSpy = sinon.spy();
       const methodName = 'm';
+
+      const callMock = {
+        cancel: sinon.spy(),
+        finished: false,
+        write: writeSpy,
+      };
+
       const obj = {
         [methodName]: callback => {
           clientCallback = callback;
-          return {
-            write: writeSpy,
-          };
+          return callMock;
         },
       };
 
@@ -306,6 +311,10 @@ describe('ClientGrpcProxy', () => {
         upstream = new Subject();
         (obj[methodName] as any).requestStream = true;
         stream$ = client.createUnaryServiceMethod(obj, methodName)(upstream);
+      });
+
+      afterEach(() => {
+        clientCallback(null, {});
       });
 
       it('should subscribe to request upstream', () => {
@@ -382,10 +391,13 @@ describe('ClientGrpcProxy', () => {
             return callMock;
           },
         };
-  
+
         (obj[methodName] as any).requestStream = true;
-        const upstream: Subject<unknown> = new Subject();
-        const stream$: Observable<any> = client.createUnaryServiceMethod(obj, methodName)(upstream);
+        let upstream: Subject<unknown> = new Subject();
+        let stream$: Observable<any> = client.createUnaryServiceMethod(
+          obj,
+          methodName,
+        )(upstream);
 
         const upstreamSubscribe = sinon.spy(upstream, 'subscribe');
         stream$.subscribe({
