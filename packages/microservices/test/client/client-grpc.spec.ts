@@ -384,8 +384,8 @@ describe('ClientGrpcProxy', () => {
         };
   
         (obj[methodName] as any).requestStream = true;
-        let upstream: Subject<unknown> = new Subject();
-        let stream$: Observable<any> = client.createUnaryServiceMethod(obj, methodName)(upstream);
+        const upstream: Subject<unknown> = new Subject();
+        const stream$: Observable<any> = client.createUnaryServiceMethod(obj, methodName)(upstream);
 
         const upstreamSubscribe = sinon.spy(upstream, 'subscribe');
         stream$.subscribe({
