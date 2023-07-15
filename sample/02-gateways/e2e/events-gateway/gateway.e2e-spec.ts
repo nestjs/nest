@@ -16,9 +16,11 @@ describe('EventsGateway', () => {
     await app.listen(3000);
   });
 
-  beforeEach(() => {
+  beforeEach((done) => {
     socket = io('http://localhost:3000');
-    socket.connect();
+    socket.on('connect', () => {
+      done();
+    });
   });
 
   describe('findAll', () => {
