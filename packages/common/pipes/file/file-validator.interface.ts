@@ -6,16 +6,17 @@ import { IFile } from './interfaces';
  * @see {ParseFilePipe}
  * @publicApi
  */
-export abstract class FileValidator<TValidationOptions = Record<string, any>> {
+export abstract class FileValidator<
+  TValidationOptions = Record<string, any>,
+  TFile extends IFile = IFile,
+> {
   constructor(protected readonly validationOptions: TValidationOptions) {}
 
   /**
    * Indicates if this file should be considered valid, according to the options passed in the constructor.
    * @param file the file from the request object
    */
-  abstract isValid<TFile extends IFile = any>(
-    file?: TFile,
-  ): boolean | Promise<boolean>;
+  abstract isValid(file?: TFile): boolean | Promise<boolean>;
 
   /**
    * Builds an error message in case the validation fails.
