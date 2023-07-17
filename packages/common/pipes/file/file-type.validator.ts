@@ -16,12 +16,15 @@ export type FileTypeValidatorOptions = {
  *
  * @publicApi
  */
-export class FileTypeValidator extends FileValidator<FileTypeValidatorOptions> {
+export class FileTypeValidator extends FileValidator<
+  FileTypeValidatorOptions,
+  IFile
+> {
   buildErrorMessage(): string {
     return `Validation failed (expected type is ${this.validationOptions.fileType})`;
   }
 
-  isValid<TFile extends IFile = any>(file?: TFile): boolean {
+  isValid(file?: IFile): boolean {
     if (!this.validationOptions) {
       return true;
     }

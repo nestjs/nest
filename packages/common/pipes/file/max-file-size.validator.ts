@@ -13,7 +13,10 @@ export type MaxFileSizeValidatorOptions = {
  *
  * @publicApi
  */
-export class MaxFileSizeValidator extends FileValidator<MaxFileSizeValidatorOptions> {
+export class MaxFileSizeValidator extends FileValidator<
+  MaxFileSizeValidatorOptions,
+  IFile
+> {
   buildErrorMessage(): string {
     if ('message' in this.validationOptions) {
       if (typeof this.validationOptions.message === 'function') {
@@ -26,7 +29,7 @@ export class MaxFileSizeValidator extends FileValidator<MaxFileSizeValidatorOpti
     return `Validation failed (expected size is less than ${this.validationOptions.maxSize})`;
   }
 
-  public isValid<TFile extends IFile = any>(file?: TFile): boolean {
+  public isValid(file?: IFile): boolean {
     if (!this.validationOptions || !file) {
       return true;
     }
