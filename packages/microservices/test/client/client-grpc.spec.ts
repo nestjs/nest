@@ -290,12 +290,17 @@ describe('ClientGrpcProxy', () => {
       ) => void;
       const writeSpy = sinon.spy();
       const methodName = 'm';
+
+      const callMock = {
+        cancel: sinon.spy(),
+        finished: false,
+        write: writeSpy,
+      };
+
       const obj = {
         [methodName]: callback => {
           clientCallback = callback;
-          return {
-            write: writeSpy,
-          };
+          return callMock;
         },
       };
 
@@ -309,7 +314,6 @@ describe('ClientGrpcProxy', () => {
       });
 
       afterEach(() => {
-        // invoke client callback to allow resources to be cleaned up
         clientCallback(null, {});
       });
 
@@ -364,6 +368,59 @@ describe('ClientGrpcProxy', () => {
         expect(errorSpy.called).to.be.false;
         expect(completeSpy.called).to.be.false;
         expect(callMock.cancel.called).to.be.true;
+      });
+
+      it('should cancel call on client unsubscribe case client streaming', () => {
+        const methodName = 'm';
+
+        const dataSpy = sinon.spy();
+        const errorSpy = sinon.spy();
+        const completeSpy = sinon.spy();
+        const writeSpy = sinon.spy();
+
+        const callMock = {
+          cancel: sinon.spy(),
+          finished: false,
+          write: writeSpy,
+        };
+
+        let handler: (error: any, data: any) => void;
+        const obj = {
+          [methodName]: callback => {
+            handler = callback;
+            return callMock;
+          },
+        };
+
+        (obj[methodName] as any).requestStream = true;
+        const upstream: Subject<unknown> = new Subject();
+        const stream$: Observable<any> = client.createUnaryServiceMethod(
+          obj,
+          methodName,
+        )(upstream);
+
+        const upstreamSubscribe = sinon.spy(upstream, 'subscribe');
+        stream$.subscribe({
+          next: () => ({}),
+          error: () => ({}),
+        });
+        upstream.next({ test: true });
+
+        const subscription = stream$.subscribe({
+          next: dataSpy,
+          error: errorSpy,
+          complete: completeSpy,
+        });
+
+        subscription.unsubscribe();
+        handler(null, 'a');
+
+        expect(dataSpy.called).to.be.false;
+        expect(writeSpy.called).to.be.true;
+        expect(errorSpy.called).to.be.false;
+        expect(completeSpy.called).to.be.false;
+        expect(callMock.cancel.called).to.be.true;
+        expect(upstreamSubscribe.called).to.be.true;
       });
     });
   });

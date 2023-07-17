@@ -216,9 +216,16 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
       if (isRequestStream && isUpstreamSubject) {
         return new Observable(observer => {
+          let isClientCanceled = false;
           const callArgs = [
-            (error: unknown, data: unknown) => {
+            (error: any, data: unknown) => {
               if (error) {
+                if (error.details === GRPC_CANCELLED || error.code === 1) {
+                  call.destroy();
+                  if (isClientCanceled) {
+                    return;
+                  }
+                }
                 return observer.error(this.serializeError(error));
               }
               observer.next(data);
@@ -240,6 +247,10 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
           return () => {
             upstreamSubscription.unsubscribe();
+            if (!call.finished) {
+              isClientCanceled = true;
+              call.cancel();
+            }
           };
         });
       }
