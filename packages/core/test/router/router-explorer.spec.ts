@@ -239,4 +239,27 @@ describe('RouterExplorer', () => {
       );
     });
   });
+
+  describe('copyMetadataToCallback', () => {
+    it('should then copy the metadata from the original callback to the target callback', () => {
+      const originalCallback = () => {};
+      Reflect.defineMetadata(
+        'test_metadata_key',
+        'test_metadata_value',
+        originalCallback,
+      );
+
+      const targetCallback = () => {};
+
+      // We're using type assertion here because `copyMetadataToCallback` is private
+      (routerBuilder as any).copyMetadataToCallback(
+        originalCallback,
+        targetCallback,
+      );
+
+      expect(
+        Reflect.getMetadata('test_metadata_key', targetCallback),
+      ).to.be.equal('test_metadata_value');
+    });
+  });
 });
