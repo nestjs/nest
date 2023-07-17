@@ -85,7 +85,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 #### Silver Sponsors
 
-<table style="text-align:center;"><tr><td>
+<table style="text-align:center;"><tr>
 <td><a href="https://n.inc" target="_blank"><img src="https://nestjs.com/img/n-inc-logo.svg" width="120" valign="middle" /></td></tr>
 </table>
 
