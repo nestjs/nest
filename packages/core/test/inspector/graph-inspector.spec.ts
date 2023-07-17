@@ -129,7 +129,7 @@ describe('GraphInspector', () => {
     class RandomPipe {}
 
     it('should inspect all modules', async () => {
-      const moduleRef = await container.addModule(TestModule, []);
+      const { moduleRef } = await container.addModule(TestModule, []);
       moduleRef.addController(AController);
 
       const subtype = 'interceptor';

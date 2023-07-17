@@ -1,4 +1,5 @@
 import { Optional } from '@nestjs/common';
+import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
 import * as chai from 'chai';
 import { expect } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
@@ -10,7 +11,6 @@ import { NestContainer } from '../../injector/container';
 import { Injector, PropertyDependency } from '../../injector/injector';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { Module } from '../../injector/module';
-import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
 
 chai.use(chaiAsPromised);
 
@@ -710,17 +710,17 @@ describe('Injector', () => {
       const container = new NestContainer();
       const moduleCtor = class TestModule {};
       const ctx = STATIC_CONTEXT;
-      const module = await container.addModule(moduleCtor, []);
+      const { moduleRef } = await container.addModule(moduleCtor, []);
 
-      module.addProvider({
+      moduleRef.addProvider({
         provide: TestClass,
         useClass: TestClass,
       });
 
       const instance = await injector.loadPerContext(
         new TestClass(),
-        module,
-        module.providers,
+        moduleRef,
+        moduleRef.providers,
         ctx,
       );
       expect(instance).to.be.instanceOf(TestClass);

@@ -2,9 +2,9 @@ import { DynamicModule, ForwardReference, Provider } from '@nestjs/common';
 import {
   CATCH_WATERMARK,
   CONTROLLER_WATERMARK,
-  EnhancerSubtype,
   ENHANCER_KEY_TO_SUBTYPE_MAP,
   EXCEPTION_FILTERS_METADATA,
+  EnhancerSubtype,
   GUARDS_METADATA,
   INJECTABLE_WATERMARK,
   INTERCEPTORS_METADATA,
@@ -68,6 +68,7 @@ interface ModulesScanParameters {
   scope?: Type<unknown>[];
   ctxRegistry?: (ForwardReference | DynamicModule | Type<unknown>)[];
   overrides?: ModuleOverride[];
+  lazy?: boolean;
 }
 
 export class DependenciesScanner {
@@ -99,23 +100,24 @@ export class DependenciesScanner {
 
   public async scanForModules({
     moduleDefinition,
+    lazy,
     scope = [],
     ctxRegistry = [],
     overrides = [],
   }: ModulesScanParameters): Promise<Module[]> {
-    const moduleInstance = await this.insertOrOverrideModule(
-      moduleDefinition,
-      overrides,
-      scope,
-    );
+    const { moduleRef: moduleInstance, inserted: moduleInserted } =
+      (await this.insertOrOverrideModule(moduleDefinition, overrides, scope)) ??
+      {};
 
     moduleDefinition =
       this.getOverrideModuleByModule(moduleDefinition, overrides)?.newModule ??
       moduleDefinition;
+
     moduleDefinition =
       moduleDefinition instanceof Promise
         ? await moduleDefinition
         : moduleDefinition;
+
     ctxRegistry.push(moduleDefinition);
 
     if (this.isForwardReference(moduleDefinition)) {
@@ -153,11 +155,16 @@ export class DependenciesScanner {
         scope: [].concat(scope, moduleDefinition),
         ctxRegistry,
         overrides,
+        lazy,
       });
       registeredModuleRefs = registeredModuleRefs.concat(moduleRefs);
     }
     if (!moduleInstance) {
       return registeredModuleRefs;
+    }
+
+    if (lazy && moduleInserted) {
+      this.container.bindGlobalsToImports(moduleInstance);
     }
     return [moduleInstance].concat(registeredModuleRefs);
   }
@@ -165,7 +172,13 @@ export class DependenciesScanner {
   public async insertModule(
     moduleDefinition: any,
     scope: Type<unknown>[],
-  ): Promise<Module | undefined> {
+  ): Promise<
+    | {
+        moduleRef: Module;
+        inserted: boolean;
+      }
+    | undefined
+  > {
     const moduleToAdd = this.isForwardReference(moduleDefinition)
       ? moduleDefinition.forwardRef()
       : moduleDefinition;
@@ -523,7 +536,13 @@ export class DependenciesScanner {
     moduleDefinition: ModuleDefinition,
     overrides: ModuleOverride[],
     scope: Type<unknown>[],
-  ): Promise<Module | undefined> {
+  ): Promise<
+    | {
+        moduleRef: Module;
+        inserted: boolean;
+      }
+    | undefined
+  > {
     const overrideModule = this.getOverrideModuleByModule(
       moduleDefinition,
       overrides,
@@ -563,7 +582,13 @@ export class DependenciesScanner {
     moduleToOverride: ModuleDefinition,
     newModule: ModuleDefinition,
     scope: Type<unknown>[],
-  ): Promise<Module | undefined> {
+  ): Promise<
+    | {
+        moduleRef: Module;
+        inserted: boolean;
+      }
+    | undefined
+  > {
     return this.container.replaceModule(
       this.isForwardReference(moduleToOverride)
         ? moduleToOverride.forwardRef()

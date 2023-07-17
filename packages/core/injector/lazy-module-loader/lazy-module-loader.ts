@@ -31,6 +31,7 @@ export class LazyModuleLoader {
     const moduleInstances = await this.dependenciesScanner.scanForModules({
       moduleDefinition: moduleClassOrDynamicDefinition,
       overrides: this.moduleOverrides,
+      lazy: true,
     });
     if (moduleInstances.length === 0) {
       // The module has been loaded already. In this case, we must
