@@ -17,6 +17,7 @@ import {
   isValueProvider,
 } from './helpers/provider-classifier';
 import { Module } from './module';
+import { SettlementSignal } from './settlement-signal';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
@@ -63,13 +64,13 @@ export class InstanceWrapper<T = any> {
   public readonly host?: Module;
   public readonly isAlias: boolean = false;
   public readonly subtype?: EnhancerSubtype;
-
   public scope?: Scope = Scope.DEFAULT;
   public metatype: Type<T> | Function;
   public inject?: FactoryProvider['inject'];
   public forwardRef?: boolean;
   public durable?: boolean;
   public initTime?: number;
+  public settlementSignal?: SettlementSignal;
 
   private static logger: LoggerService = new Logger(InstanceWrapper.name);
 
@@ -104,8 +105,11 @@ export class InstanceWrapper<T = any> {
   }
 
   get isNotMetatype(): boolean {
-    const isFactory = this.metatype && !isNil(this.inject);
-    return !this.metatype || isFactory;
+    return !this.metatype || this.isFactory;
+  }
+
+  get isFactory(): boolean {
+    return this.metatype && !isNil(this.inject);
   }
 
   get isTransient(): boolean {

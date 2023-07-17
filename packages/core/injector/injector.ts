@@ -23,6 +23,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { performance } from 'perf_hooks';
+import { CircularDependencyException } from '../errors/exceptions';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
@@ -35,6 +36,7 @@ import {
   PropertyMetadata,
 } from './instance-wrapper';
 import { Module } from './module';
+import { SettlementSignal } from './settlement-signal';
 
 /**
  * The type of an injectable dependency
@@ -111,14 +113,21 @@ export class Injector {
       this.getContextId(contextId, wrapper),
       inquirerId,
     );
+
     if (instanceHost.isPending) {
+      const settlementSignal = wrapper.settlementSignal;
+      if (inquirer && settlementSignal?.isCycle(inquirer.id)) {
+        throw new CircularDependencyException(`"${wrapper.name}"`);
+      }
+
       return instanceHost.donePromise.then((err?: unknown) => {
         if (err) {
           throw err;
         }
       });
     }
-    const done = this.applyDoneHook(instanceHost);
+
+    const settlementSignal = this.applySettlementSignal(instanceHost, wrapper);
     const token = wrapper.token || wrapper.name;
 
     const { inject } = wrapper;
@@ -127,7 +136,7 @@ export class Injector {
       throw new RuntimeException();
     }
     if (instanceHost.isResolved) {
-      return done();
+      return settlementSignal.complete();
     }
     try {
       const t0 = this.getNowTimestamp();
@@ -149,7 +158,7 @@ export class Injector {
         );
         this.applyProperties(instance, properties);
         wrapper.initTime = this.getNowTimestamp() - t0;
-        done();
+        settlementSignal.complete();
       };
       await this.resolveConstructorParams<T>(
         wrapper,
@@ -161,7 +170,7 @@ export class Injector {
         inquirer,
       );
     } catch (err) {
-      done(err);
+      settlementSignal.error(err);
       throw err;
     }
   }
@@ -237,15 +246,16 @@ export class Injector {
     await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
   }
 
-  public applyDoneHook<T>(
-    wrapper: InstancePerContext<T>,
-  ): (err?: unknown) => void {
-    let done: (err?: unknown) => void;
-    wrapper.donePromise = new Promise<unknown>((resolve, reject) => {
-      done = resolve;
-    });
-    wrapper.isPending = true;
-    return done;
+  public applySettlementSignal<T>(
+    instancePerContext: InstancePerContext<T>,
+    host: InstanceWrapper<T>,
+  ) {
+    const settlementSignal = new SettlementSignal();
+    instancePerContext.donePromise = settlementSignal.asPromise();
+    instancePerContext.isPending = true;
+    host.settlementSignal = settlementSignal;
+
+    return settlementSignal;
   }
 
   public async resolveConstructorParams<T>(
@@ -457,6 +467,8 @@ export class Injector {
       inquirerId,
     );
     if (!instanceHost.isResolved && !instanceWrapper.forwardRef) {
+      inquirer?.settlementSignal?.insertRef(instanceWrapper.id);
+
       await this.loadProvider(
         instanceWrapper,
         instanceWrapper.host ?? moduleRef,
@@ -581,6 +593,7 @@ export class Injector {
       }
       this.printLookingForProviderLog(name, relatedModule);
       moduleRegistry.push(relatedModule.id);
+
       const { providers, exports } = relatedModule;
       if (!exports.has(name) || !providers.has(name)) {
         const instanceRef = await this.lookupComponentInImports(
@@ -609,6 +622,8 @@ export class Injector {
         inquirerId,
       );
       if (!instanceHost.isResolved && !instanceWrapperRef.forwardRef) {
+        wrapper.settlementSignal?.insertRef(instanceWrapperRef.id);
+
         await this.loadProvider(
           instanceWrapperRef,
           relatedModule,
