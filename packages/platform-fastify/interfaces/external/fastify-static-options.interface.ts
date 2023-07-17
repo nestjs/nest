@@ -3,6 +3,7 @@
  * @see https://github.com/fastify/fastify-static/blob/master/types/index.d.ts
  * @publicApi
  */
+import { RouteOptions, FastifyRequest } from 'fastify';
 import { Stats } from 'fs';
 
 interface ExtendedInformation {
@@ -47,7 +48,7 @@ interface SendOptions {
   etag?: boolean;
   extensions?: string[];
   immutable?: boolean;
-  index?: string[] | false;
+  index?: string[] | string | false;
   lastModified?: boolean;
   maxAge?: string | number;
   serveDotFiles?: boolean;
@@ -64,7 +65,11 @@ export interface FastifyStaticOptions extends SendOptions {
   redirect?: boolean;
   wildcard?: boolean;
   list?: boolean | ListOptions;
-  allowedPath?: (pathName: string, root?: string) => boolean;
+  allowedPath?: (
+    pathName: string,
+    root: string,
+    request: FastifyRequest,
+  ) => boolean;
   /**
    * @description
    * Opt-in to looking for pre-compressed files
@@ -78,7 +83,8 @@ export interface FastifyStaticOptions extends SendOptions {
   etag?: boolean;
   extensions?: string[];
   immutable?: boolean;
-  index?: string[] | false;
+  index?: string[] | string | false;
   lastModified?: boolean;
   maxAge?: string | number;
+  constraints?: RouteOptions['constraints'];
 }
