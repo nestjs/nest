@@ -1,9 +1,9 @@
+import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
+import { NestContainer } from '../../../injector/container';
 import { MethodsReplFn } from '../../../repl/native-functions';
 import { ReplContext } from '../../../repl/repl-context';
-import { NestContainer } from '../../../injector/container';
 
 describe('MethodsReplFn', () => {
   let methodsReplFn: MethodsReplFn;
@@ -18,8 +18,14 @@ describe('MethodsReplFn', () => {
 
   before(async () => {
     const container = new NestContainer();
-    const aModuleRef = await container.addModule(class ModuleA {}, []);
-    const bModuleRef = await container.addModule(class ModuleB {}, []);
+    const { moduleRef: aModuleRef } = await container.addModule(
+      class ModuleA {},
+      [],
+    );
+    const { moduleRef: bModuleRef } = await container.addModule(
+      class ModuleB {},
+      [],
+    );
 
     container.addController(class ControllerA {}, aModuleRef.token);
     container.addProvider(class ProviderA1 {}, aModuleRef.token);

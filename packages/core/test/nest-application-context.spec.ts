@@ -1,12 +1,12 @@
 import { InjectionToken, Scope } from '@nestjs/common';
 import { expect } from 'chai';
+import * as sinon from 'sinon';
 import { ContextIdFactory } from '../helpers/context-id-factory';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { InstanceLoader } from '../injector/instance-loader';
 import { GraphInspector } from '../inspector/graph-inspector';
 import { NestApplicationContext } from '../nest-application-context';
-import * as sinon from 'sinon';
 
 describe('NestApplicationContext', () => {
   class A {}
@@ -22,7 +22,7 @@ describe('NestApplicationContext', () => {
       injector,
       new GraphInspector(nestContainer),
     );
-    const module = await nestContainer.addModule(class T {}, []);
+    const { moduleRef } = await nestContainer.addModule(class T {}, []);
 
     nestContainer.addProvider(
       {
@@ -30,7 +30,7 @@ describe('NestApplicationContext', () => {
         useClass: A,
         scope,
       },
-      module.token,
+      moduleRef.token,
     );
 
     nestContainer.addInjectable(
@@ -39,7 +39,7 @@ describe('NestApplicationContext', () => {
         useClass: A,
         scope,
       },
-      module.token,
+      moduleRef.token,
       'interceptor',
     );
 

@@ -70,7 +70,13 @@ export class NestContainer {
   public async addModule(
     metatype: ModuleMetatype,
     scope: ModuleScope,
-  ): Promise<Module | undefined> {
+  ): Promise<
+    | {
+        moduleRef: Module;
+        inserted: boolean;
+      }
+    | undefined
+  > {
     // In DependenciesScanner#scanForModules we already check for undefined or invalid modules
     // We still need to catch the edge-case of `forwardRef(() => undefined)`
     if (!metatype) {
@@ -80,24 +86,36 @@ export class NestContainer {
       metatype,
     );
     if (this.modules.has(token)) {
-      return this.modules.get(token);
+      return {
+        moduleRef: this.modules.get(token),
+        inserted: true,
+      };
     }
 
-    return this.setModule(
-      {
-        token,
-        type,
-        dynamicMetadata,
-      },
-      scope,
-    );
+    return {
+      moduleRef: await this.setModule(
+        {
+          token,
+          type,
+          dynamicMetadata,
+        },
+        scope,
+      ),
+      inserted: true,
+    };
   }
 
   public async replaceModule(
     metatypeToReplace: ModuleMetatype,
     newMetatype: ModuleMetatype,
     scope: ModuleScope,
-  ): Promise<Module | undefined> {
+  ): Promise<
+    | {
+        moduleRef: Module;
+        inserted: boolean;
+      }
+    | undefined
+  > {
     // In DependenciesScanner#scanForModules we already check for undefined or invalid modules
     // We still need to catch the edge-case of `forwardRef(() => undefined)`
     if (!metatypeToReplace || !newMetatype) {
@@ -109,14 +127,17 @@ export class NestContainer {
       newMetatype,
     );
 
-    return this.setModule(
-      {
-        token,
-        type,
-        dynamicMetadata,
-      },
-      scope,
-    );
+    return {
+      moduleRef: await this.setModule(
+        {
+          token,
+          type,
+          dynamicMetadata,
+        },
+        scope,
+      ),
+      inserted: false,
+    };
   }
 
   private async setModule(
