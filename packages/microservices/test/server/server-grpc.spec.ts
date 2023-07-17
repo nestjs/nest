@@ -46,7 +46,7 @@ describe('ServerGrpc', () => {
 
     it('should call "bindEvents"', async () => {
       await server.listen(callback);
-      server.close();
+      await server.close();
       expect(bindEventsStub.called).to.be.true;
     });
     it('should call "client.start"', async () => {
@@ -58,7 +58,7 @@ describe('ServerGrpc', () => {
     });
     it('should call callback', async () => {
       await server.listen(callback);
-      server.close();
+      await server.close();
       expect(callback.called).to.be.true;
     });
     describe('when "start" throws an exception', () => {
@@ -90,7 +90,7 @@ describe('ServerGrpc', () => {
 
     it('should call "bindEvents"', async () => {
       await serverMulti.listen(callback);
-      serverMulti.close();
+      await serverMulti.close();
       expect(bindEventsStub.called).to.be.true;
     });
     it('should call "client.start"', async () => {
@@ -101,7 +101,7 @@ describe('ServerGrpc', () => {
     });
     it('should call callback', async () => {
       await serverMulti.listen(callback);
-      serverMulti.close();
+      await serverMulti.close();
       expect(callback.called).to.be.true;
     });
   });
@@ -556,11 +556,39 @@ describe('ServerGrpc', () => {
   });
 
   describe('close', () => {
-    it('should call "forceShutdown"', () => {
-      const grpcClient = { forceShutdown: sinon.spy() };
+    it('should call "forceShutdown" by default', async () => {
+      const grpcClient = {
+        forceShutdown: sinon.spy(),
+        tryShutdown: sinon.stub().yields(),
+      };
       (server as any).grpcClient = grpcClient;
-      server.close();
+      await server.close();
       expect(grpcClient.forceShutdown.called).to.be.true;
+      expect(grpcClient.tryShutdown.called).to.be.false;
+    });
+
+    it('should call "forceShutdown" when "gracefulShutdown" is false', async () => {
+      const grpcClient = {
+        forceShutdown: sinon.spy(),
+        tryShutdown: sinon.stub().yields(),
+      };
+      (server as any).grpcClient = grpcClient;
+      (server as any).options.gracefulShutdown = false;
+      await server.close();
+      expect(grpcClient.forceShutdown.called).to.be.true;
+      expect(grpcClient.tryShutdown.called).to.be.false;
+    });
+
+    it('should call "tryShutdown" when "gracefulShutdown" is true', async () => {
+      const grpcClient = {
+        forceShutdown: sinon.spy(),
+        tryShutdown: sinon.stub().yields(),
+      };
+      (server as any).grpcClient = grpcClient;
+      (server as any).options.gracefulShutdown = true;
+      await server.close();
+      expect(grpcClient.forceShutdown.called).to.be.false;
+      expect(grpcClient.tryShutdown.called).to.be.true;
     });
   });
 
