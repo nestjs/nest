@@ -1,73 +1,62 @@
 import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { BaseExceptionFilterContext } from '../../exceptions/base-exception-filter-context';
-import { NestContainer } from '../../injector/container';
+import { BaseExceptionFilter } from '../../exceptions/base-exception-filter';
+import { HttpStatus } from '@nestjs/common';
 
-export class Filter {}
+describe('BaseExceptionFilter', () => {
+  describe('isHttpError', () => {
+    const base = new BaseExceptionFilter();
 
-describe('BaseExceptionFilterContext', () => {
-  let filter: BaseExceptionFilterContext;
-  let container: NestContainer;
-
-  beforeEach(() => {
-    container = new NestContainer();
-    filter = new BaseExceptionFilterContext(container);
-  });
-
-  describe('getFilterInstance', () => {
-    describe('when param is an object', () => {
-      it('should return instance', () => {
-        const instance = { catch: () => null };
-        expect(filter.getFilterInstance(instance)).to.be.eql(instance);
-      });
+    it('happy path', () => {
+      expect(
+        base.isHttpError({
+          statusCode: 400,
+          message: 'Bad Request',
+        }),
+      ).to.equal('Bad Request');
     });
-    describe('when param is a constructor', () => {
-      it('should pick instance from container', () => {
-        const wrapper = {
-          instance: 'test',
-          getInstanceByContextId: () => wrapper,
-        };
-        sinon
-          .stub(filter, 'getInstanceByMetatype')
-          .callsFake(() => wrapper as any);
-        expect(filter.getFilterInstance(Filter)).to.be.eql(wrapper.instance);
-      });
-      it('should return null', () => {
-        sinon.stub(filter, 'getInstanceByMetatype').callsFake(() => null);
-        expect(filter.getFilterInstance(Filter)).to.be.eql(null);
-      });
+
+    it('error is empty', () => {
+      expect(base.isHttpError({})).to.be.undefined;
     });
-  });
 
-  describe('getInstanceByMetatype', () => {
-    describe('when "moduleContext" is nil', () => {
-      it('should return undefined', () => {
-        (filter as any).moduleContext = undefined;
-        expect(filter.getInstanceByMetatype(null)).to.be.undefined;
-      });
+    it('error is Error instance', () => {
+      expect(base.isHttpError(new Error())).to.be.undefined;
     });
-    describe('when "moduleContext" is not nil', () => {
-      beforeEach(() => {
-        (filter as any).moduleContext = 'test';
-      });
 
-      describe('and when module exists', () => {
-        it('should return undefined', () => {
-          sinon.stub(container.getModules(), 'get').callsFake(() => undefined);
-          expect(filter.getInstanceByMetatype(null)).to.be.undefined;
-        });
-      });
+    it('error is Custom error with statusCode -1', () => {
+      class CustomError extends Error {
+        statusCode = -1;
+      }
 
-      describe('and when module does not exist', () => {
-        it('should return instance', () => {
-          const instance = { test: true };
-          const module = { injectables: { get: () => instance } };
-          sinon
-            .stub(container.getModules(), 'get')
-            .callsFake(() => module as any);
-          expect(filter.getInstanceByMetatype(class {})).to.be.eql(instance);
-        });
-      });
+      expect(base.isHttpError(new CustomError('Error status -1'))).to.be.false;
+    });
+
+    it('error is Custom error with statusCode BAD_REQUEST', () => {
+      class CustomError extends Error {
+        statusCode = HttpStatus.BAD_REQUEST;
+      }
+
+      expect(base.isHttpError(new CustomError('BAD_REQUEST'))).to.equal(
+        'BAD_REQUEST',
+      );
+    });
+
+    it('statusCode is not a valid number', () => {
+      expect(
+        base.isHttpError({
+          statusCode: -1,
+          message: 'Bad Request',
+        }),
+      ).to.be.false;
+    });
+
+    it('statusCode is not a number', () => {
+      expect(
+        base.isHttpError({
+          statusCode: '-1',
+          message: 'Bad Request',
+        }),
+      ).to.be.false;
     });
   });
 });

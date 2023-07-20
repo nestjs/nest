@@ -86,6 +86,13 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
    * @param err error object
    */
   public isHttpError(err: any): err is { statusCode: number; message: string } {
-    return err?.statusCode && err?.message;
+    const statusCodes = Object.values(HttpStatus);
+
+    return (
+      err?.statusCode &&
+      typeof err.statusCode === 'number' &&
+      statusCodes.includes(err.statusCode) &&
+      err?.message
+    );
   }
 }
