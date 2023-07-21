@@ -7,6 +7,7 @@ import {
   StreamableFile,
   VersioningOptions,
   VersioningType,
+  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { VersionValue } from '@nestjs/common/interfaces';
 import {
@@ -27,8 +28,10 @@ import {
   json as bodyParserJson,
   urlencoded as bodyParserUrlencoded,
 } from 'body-parser';
+import * as bodyparser from 'body-parser';
 import * as cors from 'cors';
 import * as express from 'express';
+import * as http from 'http';
 import * as https from 'https';
 import { Duplex, pipeline } from 'stream';
 import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface';
