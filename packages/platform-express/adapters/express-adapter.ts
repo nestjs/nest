@@ -1,13 +1,14 @@
 import type { Server } from 'http';
+import * as http from 'http';
 import {
   HttpStatus,
   InternalServerErrorException,
   Logger,
   RequestMethod,
   StreamableFile,
+  VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
-  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { VersionValue } from '@nestjs/common/interfaces';
 import {
@@ -24,14 +25,13 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
+import * as bodyparser from 'body-parser';
 import {
   json as bodyParserJson,
   urlencoded as bodyParserUrlencoded,
 } from 'body-parser';
-import * as bodyparser from 'body-parser';
 import * as cors from 'cors';
 import * as express from 'express';
-import * as http from 'http';
 import * as https from 'https';
 import { Duplex, pipeline } from 'stream';
 import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface';
@@ -63,18 +63,17 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public reply(response: any, body: any, statusCode?: number) {
+    const logger = this.logger;
     if (statusCode) {
       response.status(statusCode);
     }
     if (isNil(body)) {
       return response.send();
     }
+    const contentType = response.getHeader('Content-Type');
     if (body instanceof StreamableFile) {
       const streamHeaders = body.getHeaders();
-      if (
-        response.getHeader('Content-Type') === undefined &&
-        streamHeaders.type !== undefined
-      ) {
+      if (contentType === undefined && streamHeaders.type !== undefined) {
         response.setHeader('Content-Type', streamHeaders.type);
       }
       if (
@@ -96,17 +95,18 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         response,
         (err: Error) => {
           if (err) {
-            this.logger.error(err.message, err.stack);
+            const { message, stack } = err;
+            logger.error(message, stack);
           }
         },
       );
     }
     if (
-      response.getHeader('Content-Type') !== undefined &&
-      !response.getHeader('Content-Type').startsWith('application/json') &&
+      contentType !== undefined &&
+      !contentType.startsWith('application/json') &&
       body?.statusCode >= HttpStatus.BAD_REQUEST
     ) {
-      this.logger.warn(
+      logger.warn(
         "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",
       );
       response.setHeader('Content-Type', 'application/json');
@@ -292,10 +292,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       // URL Versioning is done via the path, so the filter continues forward
       versioningOptions.type === VersioningType.URI
     ) {
-      const handlerForNoVersioning: VersionedRoute = (req, res, next) =>
-        handler(req, res, next);
-
-      return handlerForNoVersioning;
+      return (req, res, next) => handler(req, res, next);
     }
 
     // Custom Extractor Versioning Handler

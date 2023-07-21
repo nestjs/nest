@@ -17,8 +17,8 @@ import { transformException } from '../multer/multer.utils';
 type MulterInstance = any;
 
 /**
- * @param localOptions 
- * 
+ * @param localOptions
+ *
  * @publicApi
  */
 export function AnyFilesInterceptor(
@@ -56,6 +56,6 @@ export function AnyFilesInterceptor(
       return next.handle();
     }
   }
-  const Interceptor = mixin(MixinInterceptor);
-  return Interceptor;
+
+  return mixin(MixinInterceptor);
 }

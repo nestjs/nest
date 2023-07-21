@@ -48,11 +48,12 @@ export class MulterModule {
     if (options.useExisting || options.useFactory) {
       return [this.createAsyncOptionsProvider(options)];
     }
+    const { useClass } = options;
     return [
       this.createAsyncOptionsProvider(options),
       {
-        provide: options.useClass,
-        useClass: options.useClass,
+        provide: useClass,
+        useClass,
       },
     ];
   }

@@ -17,12 +17,12 @@ import { transformException } from '../multer/multer.utils';
 type MulterInstance = any;
 
 /**
- * 
- * @param fieldName 
- * @param maxCount 
- * @param localOptions 
- * 
- * @publicApi 
+ *
+ * @param fieldName
+ * @param maxCount
+ * @param localOptions
+ *
+ * @publicApi
  */
 export function FilesInterceptor(
   fieldName: string,
@@ -65,6 +65,6 @@ export function FilesInterceptor(
       return next.handle();
     }
   }
-  const Interceptor = mixin(MixinInterceptor);
-  return Interceptor;
+
+  return mixin(MixinInterceptor);
 }
