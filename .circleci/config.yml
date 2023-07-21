@@ -30,7 +30,7 @@ jobs:
   build:
     working_directory: ~/nest
     docker:
-      - image: cimg/node:16.20
+      - image: cimg/node:20.5
     steps:
       - checkout
       - run:
@@ -52,7 +52,7 @@ jobs:
   test_node_16:
     working_directory: ~/nest
     docker:
-      - image: cimg/node:16.20
+      - image: cimg/node:20.5
     steps:
       - checkout
       - *restore-cache
@@ -70,12 +70,12 @@ jobs:
   test_node_18:
     <<: *unit-tests-template
     docker:
-      - image: cimg/node:18.16
+      - image: cimg/node:20.5
 
   test_node_19:
     <<: *unit-tests-template
     docker:
-      - image: cimg/node:19.9
+      - image: cimg/node:20.5
 
   lint:
     working_directory: ~/nest
@@ -130,7 +130,7 @@ jobs:
   codechecks_benchmarks:
     working_directory: ~/nest
     docker:
-      - image: cimg/node:16.20
+      - image: cimg/node:20.5
     steps:
       - checkout
       - *restore-cache
@@ -146,7 +146,7 @@ jobs:
   samples:
     working_directory: ~/nest
     docker:
-      - image: cimg/node:16.20
+      - image: cimg/node:20.5
     environment:
       - DISABLE_OPENCOLLECTIVE: true
     steps:
