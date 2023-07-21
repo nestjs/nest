@@ -1,12 +1,10 @@
 import type { Server } from 'http';
-import * as http from 'http';
 import {
   HttpStatus,
   InternalServerErrorException,
   Logger,
   RequestMethod,
   StreamableFile,
-  VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
@@ -25,7 +23,6 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
-import * as bodyparser from 'body-parser';
 import {
   json as bodyParserJson,
   urlencoded as bodyParserUrlencoded,
