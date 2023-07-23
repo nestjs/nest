@@ -96,16 +96,16 @@ export interface NestFastifyApplication<
   listen(
     port: number | string,
     callback?: (err: Error, address: string) => void,
-  ): Promise<any>;
+  ): Promise<TServer>;
   listen(
     port: number | string,
     address: string,
     callback?: (err: Error, address: string) => void,
-  ): Promise<any>;
+  ): Promise<TServer>;
   listen(
     port: number | string,
     address: string,
     backlog: number,
     callback?: (err: Error, address: string) => void,
-  ): Promise<any>;
+  ): Promise<TServer>;
 }
