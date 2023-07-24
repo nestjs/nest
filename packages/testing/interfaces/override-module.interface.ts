@@ -1,4 +1,4 @@
-import { ModuleDefinition } from '../../core/interfaces/module-definition.interface';
+import { ModuleDefinition } from '@nestjs/core/interfaces/module-definition.interface';
 import { TestingModuleBuilder } from '../testing-module.builder';
 
 /**
