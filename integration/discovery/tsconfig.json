@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": false,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "noLib": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "allowJs": true,
+    "outDir": "./dist",
+    "paths": {
+      "@nestjs/common": ["../../packages/common"],
+      "@nestjs/common/*": ["../../packages/common/*"],
+      "@nestjs/core": ["../../packages/core"],
+      "@nestjs/core/*": ["../../packages/core/*"],
+      "@nestjs/microservices": ["../../packages/microservices"],
+      "@nestjs/microservices/*": ["../../packages/microservices/*"],
+      "@nestjs/websockets": ["../../packages/websockets"],
+      "@nestjs/websockets/*": ["../../packages/websockets/*"],
+      "@nestjs/testing": ["../../packages/testing"],
+      "@nestjs/testing/*": ["../../packages/testing/*"],
+      "@nestjs/platform-express": ["../../packages/platform-express"],
+      "@nestjs/platform-express/*": ["../../packages/platform-express/*"],
+      "@nestjs/platform-socket.io": ["../../packages/platform-socket.io"],
+      "@nestjs/platform-socket.io/*": ["../../packages/platform-socket.io/*"],
+      "@nestjs/platform-ws": ["../../packages/platform-ws"],
+      "@nestjs/platform-ws/*": ["../../packages/platform-ws/*"]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "e2e/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+  ]
+}
