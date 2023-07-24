@@ -1,7 +1,7 @@
 import { expect } from 'chai';
+import { Socket as NetSocket } from 'net';
 import * as sinon from 'sinon';
 import { TLSSocket } from 'tls';
-import { Socket as NetSocket } from 'net';
 import { ClientTCP } from '../../client/client-tcp';
 import { ERROR_EVENT } from '../../constants';
 
@@ -220,7 +220,6 @@ describe('ClientTCP', () => {
   describe('tls', () => {
     it('should upgrade to TLS', () => {
       const client = new ClientTCP({ tlsOptions: {} });
-      console.log(client);
       const jsonSocket = client.createSocket();
       expect(jsonSocket.socket).instanceOf(TLSSocket);
     });

@@ -104,7 +104,6 @@ describe('ConfigurableModuleBuilder', () => {
 
       expect(definition.global).to.equal(true);
       expect(definition.providers).to.have.length(5);
-      console.log(definition.providers);
       expect(definition.providers).to.deep.contain('test');
       expect(definition.providers).to.include.members(
         provideInjectionTokensFrom.slice(0, 2),
