@@ -152,17 +152,17 @@ describe('NestContainer', () => {
 
   describe('bindGlobalModuleToModule', () => {
     describe('when "module" is not "globalModule"', () => {
-      it('should call "addRelatedModule"', () => {
-        const module = { addRelatedModule: sinon.spy() };
+      it('should call "addImport"', () => {
+        const module = { addImport: sinon.spy() };
         container.bindGlobalModuleToModule(module as any, null);
-        expect(module.addRelatedModule.calledOnce).to.be.true;
+        expect(module.addImport.calledOnce).to.be.true;
       });
     });
     describe('when "module" is "globalModule"', () => {
-      it('should not call "addRelatedModule"', () => {
-        const module = { addRelatedModule: sinon.spy() };
+      it('should not call "addImport"', () => {
+        const module = { addImport: sinon.spy() };
         container.bindGlobalModuleToModule(module as any, module as any);
-        expect(module.addRelatedModule.calledOnce).to.be.false;
+        expect(module.addImport.calledOnce).to.be.false;
       });
     });
   });
