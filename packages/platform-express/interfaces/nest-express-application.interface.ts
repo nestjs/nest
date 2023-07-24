@@ -1,7 +1,6 @@
 import { INestApplication, HttpServer } from '@nestjs/common';
 import type { Server as CoreHttpServer } from 'http';
 import type { Server as CoreHttpsServer } from 'https';
-import type { Server } from 'net';
 import type { Express } from 'express';
 import { NestExpressBodyParserOptions } from './nest-express-body-parser-options.interface';
 import { NestExpressBodyParserType } from './nest-express-body-parser.interface';
@@ -32,12 +31,12 @@ export interface NestExpressApplication<
    * @param {Function} [callback] Optional callback
    * @returns {Promise} A Promise that, when resolved, is a reference to the underlying HttpServer.
    */
-  listen(port: number | string, callback?: () => void): Promise<Server>;
+  listen(port: number | string, callback?: () => void): Promise<TServer>;
   listen(
     port: number | string,
     hostname: string,
     callback?: () => void,
-  ): Promise<Server>;
+  ): Promise<TServer>;
 
   /**
    * A wrapper function around native `express.set()` method.
