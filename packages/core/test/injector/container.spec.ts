@@ -144,7 +144,7 @@ describe('NestContainer', () => {
         'bindGlobalModuleToModule',
       );
       container.bindGlobalsToImports({
-        addRelatedModule: sinon.spy(),
+        addImport: sinon.spy(),
       } as any);
       expect(bindGlobalModuleToModuleSpy.calledTwice).to.be.true;
     });
