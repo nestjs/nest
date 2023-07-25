@@ -8,10 +8,10 @@ import {
   UuidFactory,
   UuidFactoryMode,
 } from '@nestjs/core/inspector/uuid-factory';
+import { ModuleDefinition } from '@nestjs/core/interfaces/module-definition.interface';
+import { ModuleOverride } from '@nestjs/core/interfaces/module-override.interface';
 import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import { DependenciesScanner } from '@nestjs/core/scanner';
-import { ModuleDefinition } from '../core/interfaces/module-definition.interface';
-import { ModuleOverride } from '../core/interfaces/module-override.interface';
 import {
   MockFactory,
   OverrideBy,
