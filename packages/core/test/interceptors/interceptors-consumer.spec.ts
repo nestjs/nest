@@ -174,7 +174,7 @@ describe('InterceptorsConsumer', () => {
         const val = 3;
         const next = async () => of(val);
         expect(
-          await await lastValueFrom(consumer.transformDeferred(next) as any),
+          await lastValueFrom(consumer.transformDeferred(next) as any),
         ).to.be.eql(val);
       });
     });
