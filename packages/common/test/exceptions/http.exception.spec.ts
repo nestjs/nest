@@ -23,6 +23,8 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
   UnsupportedMediaTypeException,
+  PaymentRequiredException,
+  TooEarlyException,
 } from '../../exceptions';
 
 describe('HttpException', () => {
@@ -98,6 +100,7 @@ describe('HttpException', () => {
         const testCases: [Type<HttpException>, number, string][] = [
           [BadRequestException, 400, 'Bad Request'],
           [UnauthorizedException, 401, 'Unauthorized'],
+          [PaymentRequiredException, 402, 'Payment Required'],
           [ForbiddenException, 403, 'Forbidden'],
           [NotFoundException, 404, 'Not Found'],
           [MethodNotAllowedException, 405, 'Method Not Allowed'],
@@ -111,6 +114,7 @@ describe('HttpException', () => {
           [ImATeapotException, 418, "I'm a teapot"],
           [MisdirectedException, 421, 'Misdirected'],
           [UnprocessableEntityException, 422, 'Unprocessable Entity'],
+          [TooEarlyException, 425, 'Too Early'],
           [InternalServerErrorException, 500, 'Internal Server Error'],
           [NotImplementedException, 501, 'Not Implemented'],
           [BadGatewayException, 502, 'Bad Gateway'],
@@ -254,6 +258,8 @@ describe('HttpException', () => {
         UnauthorizedException,
         UnprocessableEntityException,
         UnsupportedMediaTypeException,
+        PaymentRequiredException,
+        TooEarlyException,
       ];
 
       builtInErrorClasses.forEach(ExceptionClass => {
