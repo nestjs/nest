@@ -191,7 +191,7 @@ export class Logger implements LoggerService {
   }
 
   /**
-   * Write a 'verbose' level log.
+   * Write a 'fatal' level log.
    */
   fatal(message: any, context?: string): void;
   fatal(message: any, ...optionalParams: [...any, string?]): void;
