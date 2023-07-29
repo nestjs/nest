@@ -6,7 +6,7 @@ import { isLogLevelEnabled } from './utils';
 /**
  * @publicApi
  */
-export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose';
+export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose' | 'fatal';
 
 /**
  * @publicApi
@@ -36,6 +36,11 @@ export interface LoggerService {
    * Write a 'verbose' level log.
    */
   verbose?(message: any, ...optionalParams: any[]): any;
+
+  /**
+   * Write a 'fatal' level log.
+   */
+  fatal?(message: any, ...optionalParams: any[]): any;
 
   /**
    * Set log levels.
@@ -186,6 +191,19 @@ export class Logger implements LoggerService {
   }
 
   /**
+   * Write a 'verbose' level log.
+   */
+  fatal(message: any, context?: string): void;
+  fatal(message: any, ...optionalParams: [...any, string?]): void;
+  @Logger.WrapBuffer
+  fatal(message: any, ...optionalParams: any[]) {
+    optionalParams = this.context
+      ? optionalParams.concat(this.context)
+      : optionalParams;
+    this.localInstance?.fatal?.(message, ...optionalParams);
+  }
+
+  /**
    * Write an 'error' level log.
    */
   static error(message: any, stackOrContext?: string): void;
@@ -239,6 +257,16 @@ export class Logger implements LoggerService {
   @Logger.WrapBuffer
   static verbose(message: any, ...optionalParams: any[]) {
     this.staticInstanceRef?.verbose?.(message, ...optionalParams);
+  }
+
+  /**
+   * Write a 'fatal' level log.
+   */
+  static fatal(message: any, context?: string): void;
+  static fatal(message: any, ...optionalParams: [...any, string?]): void;
+  @Logger.WrapBuffer
+  static fatal(message: any, ...optionalParams: any[]) {
+    this.staticInstanceRef?.fatal?.(message, ...optionalParams);
   }
 
   /**
