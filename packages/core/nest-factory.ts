@@ -164,7 +164,6 @@ export class NestFactoryStatic {
     this.setAbortOnError(options);
     this.registerLoggerConfiguration(options);
 
-    
     await this.initialize(
       moduleCls,
       container,
