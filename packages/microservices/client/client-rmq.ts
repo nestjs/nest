@@ -15,12 +15,12 @@ import { first, map, retryWhen, scan, skip, switchMap } from 'rxjs/operators';
 import {
   CONNECT_EVENT,
   CONNECT_FAILED_EVENT,
-  DISCONNECTED_RMQ_MESSAGE,
   DISCONNECT_EVENT,
+  DISCONNECTED_RMQ_MESSAGE,
   ERROR_EVENT,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
-  RQM_DEFAULT_NOACK,
   RQM_DEFAULT_NO_ASSERT,
+  RQM_DEFAULT_NOACK,
   RQM_DEFAULT_PERSISTENT,
   RQM_DEFAULT_PREFETCH_COUNT,
   RQM_DEFAULT_QUEUE,
@@ -267,7 +267,11 @@ export class ClientRMQ extends ClientProxy {
         content: Buffer;
         options: Record<string, unknown>;
       }) =>
-        this.handleMessage(JSON.parse(content.toString()), options, callback);
+        this.handleMessage(
+          this.parseMessageContent(content),
+          options,
+          callback,
+        );
 
       Object.assign(message, { id: correlationId });
       const serializedPacket: ReadPacket & Partial<RmqRecord> =
@@ -332,5 +336,14 @@ export class ClientRMQ extends ClientProxy {
       ...this.options?.headers,
       ...requestHeaders,
     };
+  }
+
+  protected parseMessageContent(content: Buffer) {
+    const rawContent = content.toString();
+    try {
+      return JSON.parse(rawContent);
+    } catch {
+      return rawContent;
+    }
   }
 }
