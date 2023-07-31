@@ -157,13 +157,13 @@ export class NestFactoryStatic {
     moduleCls: any,
     options?: NestApplicationContextOptions,
   ): Promise<INestApplicationContext> {
-    const container = new NestContainer();
+    const applicationConfig = new ApplicationConfig();
+    const container = new NestContainer(applicationConfig);
     const graphInspector = this.createGraphInspector(options, container);
 
     this.setAbortOnError(options);
     this.registerLoggerConfiguration(options);
 
-    const applicationConfig = undefined;
     await this.initialize(
       moduleCls,
       container,

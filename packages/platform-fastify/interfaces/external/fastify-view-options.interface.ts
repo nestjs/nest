@@ -16,7 +16,7 @@ export interface FastifyViewOptions {
     liquid?: any;
     dot?: any;
   };
-  templates?: string;
+  templates?: string | string[];
   includeViewExtension?: boolean;
   options?: object;
   charset?: string;
