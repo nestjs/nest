@@ -7,6 +7,7 @@ export class SettlementSignal {
   private readonly _refs = new Set();
   private readonly settledPromise: Promise<unknown>;
   private settleFn!: (err?: unknown) => void;
+  private completed = false;
 
   constructor() {
     this.settledPromise = new Promise<unknown>(resolve => {
@@ -18,6 +19,7 @@ export class SettlementSignal {
    * Resolves the promise returned by `asPromise`.
    */
   public complete() {
+    this.completed = true;
     this.settleFn();
   }
 
@@ -26,6 +28,7 @@ export class SettlementSignal {
    * @param err Error to reject the promise returned by `asPromise` with.
    */
   public error(err: unknown) {
+    this.completed = true;
     this.settleFn(err);
   }
 
@@ -51,6 +54,6 @@ export class SettlementSignal {
    * @returns True if relationship is circular, false otherwise.
    */
   public isCycle(wrapperId: string) {
-    return this._refs.has(wrapperId);
+    return !this.completed && this._refs.has(wrapperId);
   }
 }
