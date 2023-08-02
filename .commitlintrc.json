@@ -19,6 +19,7 @@
         "perf",
         "refactor",
         "revert",
+        "test",
         "style",
         "test",
         "sample"
