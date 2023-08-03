@@ -12,19 +12,20 @@ import { Server, ServerOptions, Socket } from 'socket.io';
  * @publicApi
  */
 export class IoAdapter extends AbstractWsAdapter {
+  private disconnectFunctions: Map<Socket, Observable<any>> = new Map();
   public create(
-    port: number,
-    options?: ServerOptions & { namespace?: string; server?: any },
+      port: number,
+      options?: ServerOptions & { namespace?: string; server?: any },
   ): Server {
     if (!options) {
       return this.createIOServer(port);
     }
     const { namespace, server, ...opt } = options;
     return server && isFunction(server.of)
-      ? server.of(namespace)
-      : namespace
-      ? this.createIOServer(port, opt).of(namespace)
-      : this.createIOServer(port, opt);
+        ? server.of(namespace)
+        : namespace
+            ? this.createIOServer(port, opt).of(namespace)
+            : this.createIOServer(port, opt);
   }
 
   public createIOServer(port: number, options?: any): any {
@@ -35,25 +36,26 @@ export class IoAdapter extends AbstractWsAdapter {
   }
 
   public bindMessageHandlers(
-    socket: Socket,
-    handlers: MessageMappingProperties[],
-    transform: (data: any) => Observable<any>,
+      socket: Socket,
+      handlers: MessageMappingProperties[],
+      transform: (data: any) => Observable<any>,
   ) {
-    const disconnect$ = fromEvent(socket, DISCONNECT_EVENT).pipe(
-      share(),
-      first(),
-    );
+    let disconnect$ = this.disconnectFunctions.get(socket);
+    if (!disconnect$) {
+      disconnect$ = fromEvent(socket, DISCONNECT_EVENT).pipe(share(), first());
+      this.disconnectFunctions.set(socket, disconnect$);
+    }
 
     handlers.forEach(({ message, callback }) => {
       const source$ = fromEvent(socket, message).pipe(
-        mergeMap((payload: any) => {
-          const { data, ack } = this.mapPayload(payload);
-          return transform(callback(data, ack)).pipe(
-            filter((response: any) => !isNil(response)),
-            map((response: any) => [response, ack]),
-          );
-        }),
-        takeUntil(disconnect$),
+          mergeMap((payload: any) => {
+            const { data, ack } = this.mapPayload(payload);
+            return transform(callback(data, ack)).pipe(
+                filter((response: any) => !isNil(response)),
+                map((response: any) => [response, ack]),
+            );
+          }),
+          takeUntil(disconnect$),
       );
       source$.subscribe(([response, ack]) => {
         if (response.event) {
