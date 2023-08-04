@@ -165,7 +165,7 @@
     "rxjs-compat": "6.6.7",
     "sinon": "15.2.0",
     "sinon-chai": "3.7.0",
-    "socket.io-client": "4.7.1",
+    "socket.io-client": "4.7.2",
     "subscriptions-transport-ws": "0.11.0",
     "supertest": "6.3.3",
     "ts-morph": "19.0.0",
