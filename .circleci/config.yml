@@ -43,7 +43,7 @@ jobs:
       - checkout
       - run:
           name: Update NPM version
-          command: 'sudo npm install -g npm@^8'
+          command: 'sudo npm install -g npm@^9'
       - *restore-cache
       - *install-deps
       - *save-cache
