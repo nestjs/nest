@@ -48,6 +48,7 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
+  protected producerOnlyMode: boolean;
 
   constructor(protected readonly options: KafkaOptions['options']) {
     super();
@@ -58,7 +59,11 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
       this.getOptionsProp(this.options, 'consumer') || ({} as ConsumerConfig);
     const postfixId =
       this.getOptionsProp(this.options, 'postfixId') ?? '-server';
-
+    this.producerOnlyMode = this.getOptionsProp(
+      this.options,
+      'producerOnlyMode',
+      false,
+    );
     this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
 
     // append a unique id to the clientId and groupId
@@ -97,15 +102,19 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   }
 
   public async start(callback: () => void): Promise<void> {
-    const consumerOptions = Object.assign(this.options.consumer || {}, {
-      groupId: this.groupId,
-    });
-    this.consumer = this.client.consumer(consumerOptions);
+    if (!this.producerOnlyMode) {
+      const consumerOptions = Object.assign(this.options.consumer || {}, {
+        groupId: this.groupId,
+      });
+      this.consumer = this.client.consumer(consumerOptions);
+
+      await this.consumer.connect();
+      await this.bindEvents(this.consumer);
+    }
+
     this.producer = this.client.producer(this.options.producer);
 
-    await this.consumer.connect();
     await this.producer.connect();
-    await this.bindEvents(this.consumer);
     callback();
   }
 

@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { AssertionError, expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_MESSAGE_HANDLER } from '../../constants';
+import { KAFKA_DEFAULT_GROUP, NO_MESSAGE_HANDLER } from '../../constants';
 import { KafkaHeaders } from '../../enums';
 import {
   EachMessagePayload,
@@ -126,7 +126,7 @@ describe('ServerKafka', () => {
     it('should call "bindEvents"', async () => {
       bindEventsStub = sinon
         .stub(server, 'bindEvents')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
       await server.listen(callback);
       expect(bindEventsStub.called).to.be.true;
     });
@@ -163,6 +163,65 @@ describe('ServerKafka', () => {
       expect((server as any).consumer).to.be.null;
       expect((server as any).producer).to.be.null;
       expect((server as any).client).to.be.null;
+    });
+  });
+
+  describe('start', () => {
+    let consumerMethods: { connect: sinon.SinonSpy };
+    let producerMethods: { connect: sinon.SinonSpy };
+    let consumer: sinon.SinonSpy;
+    let producer: sinon.SinonSpy;
+    let callback: sinon.SinonSpy;
+
+    beforeEach(() => {
+      consumerMethods = {
+        connect: sinon.spy(),
+      };
+      producerMethods = {
+        connect: sinon.spy(),
+      };
+      consumer = sinon.fake.returns(consumerMethods);
+      producer = sinon.fake.returns(producerMethods);
+      (server as any).client = {
+        consumer,
+        producer,
+      };
+      callback = sinon.spy();
+    });
+
+    it('should not initialize a consumer when producerOnlyMode is set', async () => {
+      const bindEventsStub = sinon
+        .stub(server, 'bindEvents')
+        .callsFake(() => null);
+      (server as any).producerOnlyMode = true;
+
+      await server.start(callback);
+
+      expect(consumer.notCalled).to.be.true;
+      expect(consumerMethods.connect.notCalled).to.be.true;
+      expect(bindEventsStub.notCalled).to.be.true;
+      expect(producer.calledOnceWith(undefined)).to.be.true;
+      expect(producerMethods.connect.calledOnce).to.be.true;
+      expect(callback.calledOnce).to.be.true;
+    });
+
+    it('should initialize a consumer and producer when producerOnlyMode is not set', async () => {
+      const bindEventsStub = sinon
+        .stub(server, 'bindEvents')
+        .callsFake(() => null);
+
+      await server.start(callback);
+
+      expect(
+        consumer.calledOnceWith({
+          groupId: `${KAFKA_DEFAULT_GROUP}-server`,
+        }),
+      ).to.be.true;
+      expect(consumerMethods.connect.calledOnce).to.be.true;
+      expect(bindEventsStub.calledOnceWith(consumerMethods)).to.be.true;
+      expect(producer.calledOnceWith(undefined)).to.be.true;
+      expect(producerMethods.connect.calledOnce).to.be.true;
+      expect(callback.calledOnce).to.be.true;
     });
   });
 
