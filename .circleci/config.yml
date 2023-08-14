@@ -1,6 +1,9 @@
 version: 2
 
 parameters:
+  legacy-node-version:
+    type: string
+    default: "ignore"
   maintenance-node-version:
     type: string
     default: "16.20"
@@ -57,28 +60,33 @@ jobs:
     docker:
       - image: cimg/node:<< parameters.node-version >>
     steps:
-      - checkout
-      - *restore-cache
-      - *install-deps
-      - *build-packages
-      - when:
-          condition:
-            equals: [ "<< parameters.node-version >>", "<< pipeline.parameters.maintenance-node-version >>" ]
-          steps:
-            - run:
-                name: Test (coverage)
-                command: npm run test:cov
-            - run:
-                name: Collect coverage
-                command: npm run coverage
-            - store_artifacts:
-                path: coverage
       - when:
           condition:
             not:
-              equals: [ "<< parameters.node-version >>", "<< pipeline.parameters.maintenance-node-version >>" ]
+              equals: [ "<< parameters.node-version >>", "ignore" ]
           steps:
-            - *run-unit-tests
+            - checkout
+            - *restore-cache
+            - *install-deps
+            - *build-packages
+            - when:
+                condition:
+                  equals: [ "<< parameters.node-version >>", "<< pipeline.parameters.maintenance-node-version >>" ]
+                steps:
+                  - run:
+                      name: Test (coverage)
+                      command: npm run test:cov
+                  - run:
+                      name: Collect coverage
+                      command: npm run coverage
+                  - store_artifacts:
+                      path: coverage
+            - when:
+                condition:
+                  not:
+                    equals: [ "<< parameters.node-version >>", "<< pipeline.parameters.maintenance-node-version >>" ]
+                steps:
+                  - *run-unit-tests
 
   lint:
     working_directory: ~/nest
@@ -102,36 +110,41 @@ jobs:
     working_directory: ~/nest
     machine: true
     steps:
-      - checkout
-      - run:
-          name: Prepare nvm
-          command: |
-            echo 'export NVM_DIR="/opt/circleci/.nvm"' >> $BASH_ENV
-            echo ' [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
-      - run:
-          name: Upgrade Node.js
-          command: |
-            nvm install << parameters.node-version >>
-            node -v
-            nvm alias default << parameters.node-version >>
-      - run:
-          name: Install Docker Compose
-          command: |
-            curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
-            chmod +x ~/docker-compose
-            sudo mv ~/docker-compose /usr/local/bin/docker-compose
-      - *install-deps
-      - run:
-          name: Prepare tests
-          command: |
-            bash ./scripts/prepare.sh
-            sleep 10
-      - run:
-          name: List containers
-          command: docker ps
-      - run:
-          name: Integration tests
-          command: npm run test:integration
+      - when:
+          condition:
+            not:
+              equals: [ "<< parameters.node-version >>", "ignore" ]
+          steps:
+            - checkout
+            - run:
+                name: Prepare nvm
+                command: |
+                  echo 'export NVM_DIR="/opt/circleci/.nvm"' >> $BASH_ENV
+                  echo ' [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
+            - run:
+                name: Upgrade Node.js
+                command: |
+                  nvm install << parameters.node-version >>
+                  node -v
+                  nvm alias default << parameters.node-version >>
+            - run:
+                name: Install Docker Compose
+                command: |
+                  curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
+                  chmod +x ~/docker-compose
+                  sudo mv ~/docker-compose /usr/local/bin/docker-compose
+            - *install-deps
+            - run:
+                name: Prepare tests
+                command: |
+                  bash ./scripts/prepare.sh
+                  sleep 10
+            - run:
+                name: List containers
+                command: docker ps
+            - run:
+                name: Integration tests
+                command: npm run test:integration
 
   codechecks_benchmarks:
     working_directory: ~/nest
@@ -174,6 +187,7 @@ workflows:
           matrix:
             parameters:
               node-version: [
+                "<< pipeline.parameters.legacy-node-version >>",
                 "<< pipeline.parameters.maintenance-node-version >>",
                 "<< pipeline.parameters.active-node-version >>",
                 "<< pipeline.parameters.current-node-version >>"
@@ -187,6 +201,7 @@ workflows:
           matrix:
             parameters:
               node-version: [
+                "<< pipeline.parameters.legacy-node-version >>",
                 "<< pipeline.parameters.maintenance-node-version >>",
                 "<< pipeline.parameters.active-node-version >>",
                 "<< pipeline.parameters.current-node-version >>"
