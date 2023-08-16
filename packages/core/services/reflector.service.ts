@@ -118,8 +118,8 @@ export class Reflector {
     targets: (Type<any> | Function)[],
   ): T extends ReflectableDecorator<infer R>
     ? R extends Array<any>
-      ? R[]
-      : R
+      ? R
+      : R[]
     : unknown;
   /**
    * Retrieve metadata for a specified key for a specified set of targets.
@@ -158,7 +158,13 @@ export class Reflector {
   public getAllAndMerge<T extends ReflectableDecorator<any>>(
     decorator: T,
     targets: (Type<any> | Function)[],
-  ): T extends ReflectableDecorator<infer R> ? R : unknown;
+  ): T extends ReflectableDecorator<infer R>
+    ? R extends Array<any>
+      ? R
+      : R extends object
+      ? R | []
+      : R[]
+    : unknown;
   /**
    * Retrieve metadata for a specified key for a specified set of targets and merge results.
    *
@@ -187,6 +193,13 @@ export class Reflector {
     ).filter(item => item !== undefined);
 
     if (isEmpty(metadataCollection)) {
+      return metadataCollection as TResult;
+    }
+    if (metadataCollection.length === 1) {
+      const value = metadataCollection[0];
+      if (isObject(value)) {
+        return value as TResult;
+      }
       return metadataCollection as TResult;
     }
     return metadataCollection.reduce((a, b) => {
