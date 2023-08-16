@@ -8,11 +8,34 @@ describe('Reflector', () => {
     reflector = new Reflector();
   });
   describe('get', () => {
-    it('should reflect metadata', () => {
+    it('should reflect metadata by key', () => {
       const key = 'key';
       const value = 'value';
       Reflect.defineMetadata(key, value, Test);
       expect(reflector.get(key, Test)).to.eql(value);
+    });
+    it('should reflect metadata by decorator', () => {
+      const decorator = Reflector.createDecorator<string>();
+      const value = 'value';
+      Reflect.defineMetadata(decorator.KEY, value, Test);
+
+      let reflectedValue = reflector.get(decorator, Test);
+      expect(reflectedValue).to.eql(value);
+
+      // @ts-expect-error 'value' is not assignable to parameter of type 'string'
+      reflectedValue = true;
+    });
+
+    it('should reflect metadata by decorator (custom key)', () => {
+      const decorator = Reflector.createDecorator<string[]>({ key: 'custom' });
+      const value = ['value'];
+      Reflect.defineMetadata('custom', value, Test);
+
+      let reflectedValue = reflector.get(decorator, Test);
+      expect(reflectedValue).to.eql(value);
+
+      // @ts-expect-error 'value' is not assignable to parameter of type 'string[]'
+      reflectedValue = true;
     });
   });
 
