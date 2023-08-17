@@ -36,9 +36,8 @@ export type ReflectableDecorator<T> = ((opts?: T) => CustomDecorator) & {
 export class Reflector {
   /**
    * Creates a decorator that can be used to decorate classes and methods with metadata.
-   * The decorator will also add the class to the collection of discoverable classes (by metadata key).
-   * Decorated classes can be discovered using the `getProviders` and `getControllers` methods.
-   * @param metadataKey The metadata key to use.
+   * Can be used as a strongly-typed alternative to `@SetMetadata`.
+   * @param options Decorator options.
    * @returns A decorator function.
    */
   static createDecorator<T>(
