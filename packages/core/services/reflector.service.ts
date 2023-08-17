@@ -13,7 +13,7 @@ export interface CreateDecoratorOptions<T = any> {
   key?: string;
 
   /**
-   * The transform function to apply to the value.
+   * The transform function to apply to the metadata value.
    * @default value => value
    */
   transform?: (value: T) => T;
