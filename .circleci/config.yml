@@ -176,7 +176,6 @@ jobs:
           command: npm run build:samples
 
 workflows:
-  version: 2
   build-and-test:
     jobs:
       - build
