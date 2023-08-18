@@ -54,7 +54,6 @@ export class DiscoveryService {
    * Creates a decorator that can be used to decorate classes and methods with metadata.
    * The decorator will also add the class to the collection of discoverable classes (by metadata key).
    * Decorated classes can be discovered using the `getProviders` and `getControllers` methods.
-   * @param metadataKey The metadata key to use.
    * @returns A decorator function.
    */
   static createDecorator<T>(): DiscoverableDecorator<T> {
