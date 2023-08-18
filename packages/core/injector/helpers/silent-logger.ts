@@ -8,5 +8,6 @@ export class SilentLogger extends Logger {
   warn = noop;
   debug = noop;
   verbose = noop;
+  fatal = noop;
   setLogLevels = noop;
 }

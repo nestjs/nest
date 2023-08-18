@@ -6,6 +6,7 @@ const LOG_LEVEL_VALUES: Record<LogLevel, number> = {
   log: 2,
   warn: 3,
   error: 4,
+  fatal: 5,
 };
 
 /**

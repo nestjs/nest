@@ -240,11 +240,11 @@ export class Module {
     return instanceWrapper;
   }
 
-  public addProvider(provider: Provider): Provider | InjectionToken;
+  public addProvider(provider: Provider): InjectionToken;
   public addProvider(
     provider: Provider,
     enhancerSubtype: EnhancerSubtype,
-  ): Provider | InjectionToken;
+  ): InjectionToken;
   public addProvider(provider: Provider, enhancerSubtype?: EnhancerSubtype) {
     if (this.isCustomProvider(provider)) {
       if (this.isEntryProvider(provider.provide)) {
@@ -517,6 +517,13 @@ export class Module {
     });
   }
 
+  public addImport(moduleRef: Module) {
+    this._imports.add(moduleRef);
+  }
+
+  /**
+   * @deprecated
+   */
   public addRelatedModule(module: Module) {
     this._imports.add(module);
   }

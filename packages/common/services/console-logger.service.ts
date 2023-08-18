@@ -26,6 +26,7 @@ const DEFAULT_LOG_LEVELS: LogLevel[] = [
   'warn',
   'debug',
   'verbose',
+  'fatal',
 ];
 
 const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
@@ -143,6 +144,23 @@ export class ConsoleLogger implements LoggerService {
       ...optionalParams,
     ]);
     this.printMessages(messages, context, 'verbose');
+  }
+
+  /**
+   * Write a 'fatal' level log, if the configured level allows for it.
+   * Prints to `stdout` with newline.
+   */
+  fatal(message: any, context?: string): void;
+  fatal(message: any, ...optionalParams: [...any, string?]): void;
+  fatal(message: any, ...optionalParams: any[]) {
+    if (!this.isLevelEnabled('fatal')) {
+      return;
+    }
+    const { messages, context } = this.getContextAndMessagesToPrint([
+      message,
+      ...optionalParams,
+    ]);
+    this.printMessages(messages, context, 'fatal');
   }
 
   /**
@@ -330,6 +348,8 @@ export class ConsoleLogger implements LoggerService {
         return clc.red;
       case 'verbose':
         return clc.cyanBright;
+      case 'fatal':
+        return clc.bold;
       default:
         return clc.green;
     }

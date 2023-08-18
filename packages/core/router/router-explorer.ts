@@ -231,6 +231,7 @@ export class RouterExplorer {
           },
         };
 
+        this.copyMetadataToCallback(targetCallback, routeHandler);
         routerMethodRef(path, routeHandler);
 
         this.graphInspector.insertEntrypointDefinition<HttpEntrypointMetadata>(
@@ -421,5 +422,18 @@ export class RouterExplorer {
       this.container.registerRequestProvider(requestProviderValue, contextId);
     }
     return contextId;
+  }
+
+  private copyMetadataToCallback(
+    originalCallback: RouterProxyCallback,
+    targetCallback: Function,
+  ) {
+    for (const key of Reflect.getMetadataKeys(originalCallback)) {
+      Reflect.defineMetadata(
+        key,
+        Reflect.getMetadata(key, originalCallback),
+        targetCallback,
+      );
+    }
   }
 }
