@@ -64,14 +64,20 @@ jobs:
     steps:
       - when:
           condition:
-            not: << pipeline.parameters.check-legacy-node-version >>
+            and:
+              - equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
+              - not: << pipeline.parameters.check-legacy-node-version >>
           steps:
             - run:
                 name: Skip
                 command: |
                   echo Skipping
       - when:
-          condition: << pipeline.parameters.check-legacy-node-version >>
+          condition:
+            or:
+              - not:
+                  equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
+              - << pipeline.parameters.check-legacy-node-version >>
           steps:
             - checkout
             - *restore-cache
@@ -99,7 +105,7 @@ jobs:
   lint:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:<< pipeline.parameters.maintenance-node-version >>
+      - image: cimg/node:<< pipeline.parameters.maintenance-node-version >>
     steps:
       - checkout
       - *restore-cache
@@ -120,14 +126,20 @@ jobs:
     steps:
       - when:
           condition:
-            not: << pipeline.parameters.check-legacy-node-version >>
+            and:
+              - equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
+              - not: << pipeline.parameters.check-legacy-node-version >>
           steps:
             - run:
                 name: Skip
                 command: |
                   echo Skipping
       - when:
-          condition: << pipeline.parameters.check-legacy-node-version >>
+          condition:
+            or:
+              - not:
+                  equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
+              - << pipeline.parameters.check-legacy-node-version >>
           steps:
             - checkout
             - run:
