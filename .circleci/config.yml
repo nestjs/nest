@@ -61,6 +61,14 @@ jobs:
     steps:
       - when:
           condition:
+            equal: [ "<< parameters.node-version >>", "ignore" ]
+          steps:
+            - run:
+                name: Skip
+                command: |
+                  echo Skipping
+      - when:
+          condition:
             not:
               equal: [ "<< parameters.node-version >>", "ignore" ]
           steps:
@@ -109,6 +117,14 @@ jobs:
     working_directory: ~/nest
     machine: true
     steps:
+      - when:
+          condition:
+            equal: [ "<< parameters.node-version >>", "ignore" ]
+          steps:
+            - run:
+                name: Skip
+                command: |
+                  echo Skipping
       - when:
           condition:
             not:
