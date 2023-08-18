@@ -3,16 +3,16 @@ version: 2.1
 parameters:
   legacy-node-version:
     type: string
-    default: 'ignore'
+    default: "ignore"
   maintenance-node-version:
     type: string
-    default: '16.20'
+    default: "16.20"
   active-node-version:
     type: string
-    default: '18.17'
+    default: "18.17"
   current-node-version:
     type: string
-    default: '20.5'
+    default: "20.5"
 
 aliases:
   - &restore-cache
@@ -62,7 +62,7 @@ jobs:
       - when:
           condition:
             not:
-              equal: ['<< parameters.node-version >>', 'ignore']
+              equal: [ "<< parameters.node-version >>", "ignore" ]
           steps:
             - checkout
             - *restore-cache
@@ -70,11 +70,7 @@ jobs:
             - *build-packages
             - when:
                 condition:
-                  equal:
-                    [
-                      '<< parameters.node-version >>',
-                      '<< pipeline.parameters.maintenance-node-version >>',
-                    ]
+                  equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.maintenance-node-version >>" ]
                 steps:
                   - run:
                       name: Test (coverage)
@@ -87,11 +83,7 @@ jobs:
             - when:
                 condition:
                   not:
-                    equal:
-                      [
-                        '<< parameters.node-version >>',
-                        '<< pipeline.parameters.maintenance-node-version >>',
-                      ]
+                    equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.maintenance-node-version >>" ]
                 steps:
                   - *run-unit-tests
 
@@ -120,7 +112,7 @@ jobs:
       - when:
           condition:
             not:
-              equal: ['<< parameters.node-version >>', 'ignore']
+              equal: [ "<< parameters.node-version >>", "ignore" ]
           steps:
             - checkout
             - run:
@@ -174,7 +166,7 @@ jobs:
     docker:
       - image: cimg/node:<< pipeline.parameters.maintenance-node-version >>
     environment:
-      DISABLE_OPENCOLLECTIVE: 'true'
+      DISABLE_OPENCOLLECTIVE: "true"
     steps:
       - checkout
       - *restore-cache
@@ -193,13 +185,12 @@ workflows:
             - build
           matrix:
             parameters:
-              node-version:
-                [
-                  '<< pipeline.parameters.legacy-node-version >>',
-                  '<< pipeline.parameters.maintenance-node-version >>',
-                  '<< pipeline.parameters.active-node-version >>',
-                  '<< pipeline.parameters.current-node-version >>',
-                ]
+              node-version: [
+                "<< pipeline.parameters.legacy-node-version >>",
+                "<< pipeline.parameters.maintenance-node-version >>",
+                "<< pipeline.parameters.active-node-version >>",
+                "<< pipeline.parameters.current-node-version >>"
+              ]
       - lint:
           requires:
             - build
@@ -208,13 +199,12 @@ workflows:
             - build
           matrix:
             parameters:
-              node-version:
-                [
-                  '<< pipeline.parameters.legacy-node-version >>',
-                  '<< pipeline.parameters.maintenance-node-version >>',
-                  '<< pipeline.parameters.active-node-version >>',
-                  '<< pipeline.parameters.current-node-version >>',
-                ]
+              node-version: [
+                "<< pipeline.parameters.legacy-node-version >>",
+                "<< pipeline.parameters.maintenance-node-version >>",
+                "<< pipeline.parameters.active-node-version >>",
+                "<< pipeline.parameters.current-node-version >>"
+              ]
       - samples:
           requires:
             - build
