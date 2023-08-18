@@ -32,32 +32,27 @@ const MISSING_REQUIRED_DEPENDENCY = (name: string, reason: string) =>
 
 const logger = new Logger('PackageLoader');
 
-type KnownPackages =
-  | { name: 'ws'; exports: typeof Ws }
-  | { name: 'mqtt'; exports: typeof Mqtt }
-  | { name: 'nats'; exports: typeof Nats }
-  | { name: 'amqplib'; exports: typeof Amqplib }
-  | { name: 'ioredis'; exports: typeof IORedis }
-  | { name: 'kafkajs'; exports: typeof KafkaJs }
-  | { name: '@grpc/grpc-js'; exports: typeof GrpcJs }
-  | { name: '@fastify/view'; exports: typeof FastifyView }
-  | { name: '@fastify/static'; exports: typeof FastifyStatic }
-  | { name: 'class-validator'; exports: typeof ClassValidator }
-  | { name: 'reflect-metadata'; exports: typeof ReflectMetadata }
-  | { name: 'class-transformer'; exports: typeof ClassTransformer }
-  | { name: 'amqp-connection-manager'; exports: typeof AmqplibConnManager };
+type KnownPackages = {
+  ws: typeof Ws;
+  mqtt: typeof Mqtt;
+  nats: typeof Nats;
+  amqplib: typeof Amqplib;
+  ioredis: typeof IORedis;
+  kafkajs: typeof KafkaJs;
+  '@grpc/grpc-js': typeof GrpcJs;
+  '@fastify/view': typeof FastifyView;
+  '@fastify/static': typeof FastifyStatic;
+  'class-validator': typeof ClassValidator;
+  'reflect-metadata': typeof ReflectMetadata;
+  'class-transformer': typeof ClassTransformer;
+  'amqp-connection-manager': typeof AmqplibConnManager;
+};
 
-type UnknownPackagesNames = Exclude<string, KnownPackages['name']>;
-
-export function loadPackage<
-  T extends KnownPackages['name'] | UnknownPackagesNames,
->(
+export function loadPackage<T extends string>(
   packageName: T,
   context: string,
   loaderFn?: Function,
-): T extends KnownPackages['name']
-  ? Extract<KnownPackages, { name: T }>['exports']
-  : any {
+): T extends keyof KnownPackages ? KnownPackages[T] : any {
   try {
     return loaderFn ? loaderFn() : require(packageName);
   } catch (e) {
