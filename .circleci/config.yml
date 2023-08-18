@@ -1,9 +1,12 @@
 version: 2.1
 
 parameters:
+  check-legacy-node-version:
+    type: boolean
+    default: false
   legacy-node-version:
     type: string
-    default: "ignore"
+    default: "14.21.3"
   maintenance-node-version:
     type: string
     default: "16.20"
@@ -61,7 +64,9 @@ jobs:
     steps:
       - when:
           condition:
-            equal: [ "<< parameters.node-version >>", "ignore" ]
+            and:
+              - equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
+              - not: << pipeline.parameters.check-legacy-node-version >>
           steps:
             - run:
                 name: Skip
@@ -69,8 +74,10 @@ jobs:
                   echo Skipping
       - when:
           condition:
-            not:
-              equal: [ "<< parameters.node-version >>", "ignore" ]
+            or:
+              - not:
+                  equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
+              - << pipeline.parameters.check-legacy-node-version >>
           steps:
             - checkout
             - *restore-cache
@@ -98,7 +105,7 @@ jobs:
   lint:
     working_directory: ~/nest
     docker:
-      - image: circleci/node:<< pipeline.parameters.maintenance-node-version >>
+      - image: cimg/node:<< pipeline.parameters.maintenance-node-version >>
     steps:
       - checkout
       - *restore-cache
@@ -119,7 +126,9 @@ jobs:
     steps:
       - when:
           condition:
-            equal: [ "<< parameters.node-version >>", "ignore" ]
+            and:
+              - equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
+              - not: << pipeline.parameters.check-legacy-node-version >>
           steps:
             - run:
                 name: Skip
@@ -127,8 +136,10 @@ jobs:
                   echo Skipping
       - when:
           condition:
-            not:
-              equal: [ "<< parameters.node-version >>", "ignore" ]
+            or:
+              - not:
+                  equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
+              - << pipeline.parameters.check-legacy-node-version >>
           steps:
             - checkout
             - run:
