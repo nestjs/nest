@@ -16,7 +16,7 @@ export abstract class FileValidator<
    * Indicates if this file should be considered valid, according to the options passed in the constructor.
    * @param file the file from the request object
    */
-  abstract isValid(file?: TFile): boolean | Promise<boolean>;
+  abstract isValid(file?: TFile | TFile[] | Record<string, TFile[]>): boolean | Promise<boolean>;
 
   /**
    * Builds an error message in case the validation fails.
