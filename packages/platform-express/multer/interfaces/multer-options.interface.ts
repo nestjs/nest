@@ -1,10 +1,10 @@
 /**
  * @see https://github.com/expressjs/multer
- * 
+ *
  * @publicApi
  */
 export interface MulterOptions {
-  dest?: string;
+  dest?: string | Function;
   /** The storage engine to use for uploaded files. */
   storage?: any;
   /**
