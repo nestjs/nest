@@ -130,8 +130,17 @@ describe('JsonSocket message parsing', () => {
 
         socket['onData'](packet);
 
-        expect(socketEmitSpy.calledOnceWithExactly(ERROR_EVENT, errorMsg)).to.be
-          .true;
+        try {
+          expect(socketEmitSpy.calledOnceWithExactly(ERROR_EVENT, errorMsg)).to
+            .be.true;
+        } catch (err) {
+          expect(
+            socketEmitSpy.calledOnceWithExactly(
+              ERROR_EVENT,
+              errorMsgNodeBelowV20,
+            ),
+          ).to.be.true;
+        }
         socketEmitSpy.restore();
       });
 
