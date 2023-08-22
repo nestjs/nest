@@ -118,8 +118,8 @@ export class Reflector {
     targets: (Type<any> | Function)[],
   ): T extends ReflectableDecorator<infer R>
     ? R extends Array<any>
-      ? R[]
-      : R
+      ? R
+      : R[]
     : unknown;
   /**
    * Retrieve metadata for a specified key for a specified set of targets.
