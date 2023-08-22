@@ -19,7 +19,7 @@
   "license": "MIT",
   "dependencies": {
     "iterare": "1.2.1",
-    "tslib": "2.6.1",
+    "tslib": "2.6.2",
     "uid": "2.0.2"
   },
   "peerDependencies": {

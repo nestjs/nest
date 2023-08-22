@@ -73,7 +73,7 @@
     "reflect-metadata": "0.1.13",
     "rxjs": "7.8.1",
     "socket.io": "4.7.2",
-    "tslib": "2.6.1",
+    "tslib": "2.6.2",
     "uid": "2.0.2",
     "uuid": "9.0.0"
   },
