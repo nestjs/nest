@@ -34,17 +34,14 @@ export class RouteInfoPathExtractor {
 
     if (this.isAWildcard(path)) {
       const prefix = addLeadingSlash(this.prefixPath + versionPath);
-      const basePaths = prefix
-        ? [prefix, prefix + addLeadingSlash(path)]
-        : [addLeadingSlash(path)];
       return Array.isArray(this.excludedGlobalPrefixRoutes)
         ? [
-            ...basePaths,
+            prefix,
             ...this.excludedGlobalPrefixRoutes.map(
               route => versionPath + addLeadingSlash(route.path),
             ),
           ]
-        : basePaths;
+        : [prefix];
     }
 
     return [this.extractNonWildcardPathFrom({ path, method, version })];
