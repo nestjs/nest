@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
-import { of, ReplaySubject, Subject } from 'rxjs';
+import {of, ReplaySubject, Subject, throwError} from 'rxjs';
 import * as sinon from 'sinon';
 import { CANCEL_EVENT } from '../../constants';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
@@ -520,6 +520,29 @@ describe('ServerGrpc', () => {
 
         expect(responseCallback.called).to.be.true;
       });
+
+      it('should handle error thrown in handler', async () => {
+        const error = new Error('Error')
+        const handler = async () => throwError(() => error);
+        const fn = server.createRequestStreamMethod(handler, false);
+        const call = {
+          on: (event, callback) => {
+            if (event !== CANCEL_EVENT) {
+              callback();
+            }
+          },
+          off: sinon.spy(),
+          end: sinon.spy(),
+          write: sinon.spy(),
+        };
+
+        const responseCallback = sinon.spy();
+        await fn(call as any, responseCallback);
+        
+        expect(responseCallback.calledOnce).to.be.true;
+        expect(responseCallback.firstCall.args).to.eql([error, null]);
+      });
+
       describe('when response is a stream', () => {
         it('should call write() and end()', async () => {
           const handler = async () => ({ test: true });
