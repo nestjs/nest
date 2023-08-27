@@ -155,8 +155,9 @@ describe('WsContextCreator', () => {
       const metadata = {
         [WsParamtype.SOCKET]: { index: 0, data: 'test', pipes: [] },
         [WsParamtype.PAYLOAD]: { index: 2, data: 'test', pipes: [] },
+        [WsParamtype.MESSAGE]: { index: 3, data: 'test', pipes: [] },
         [`key${CUSTOM_ROUTE_ARGS_METADATA}`]: {
-          index: 3,
+          index: 4,
           data: 'custom',
           pipes: [],
         },
@@ -172,10 +173,12 @@ describe('WsContextCreator', () => {
       const expectedValues = [
         { index: 0, type: WsParamtype.SOCKET, data: 'test' },
         { index: 2, type: WsParamtype.PAYLOAD, data: 'test' },
-        { index: 3, type: `key${CUSTOM_ROUTE_ARGS_METADATA}`, data: 'custom' },
+        { index: 3, type: WsParamtype.MESSAGE, data: 'test' },
+        { index: 4, type: `key${CUSTOM_ROUTE_ARGS_METADATA}`, data: 'custom' },
       ];
       expect(values[0]).to.deep.include(expectedValues[0]);
       expect(values[1]).to.deep.include(expectedValues[1]);
+      expect(values[2]).to.deep.include(expectedValues[2]);
     });
   });
   describe('getParamValue', () => {

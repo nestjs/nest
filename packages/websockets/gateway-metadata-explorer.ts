@@ -21,14 +21,14 @@ export class GatewayMetadataExplorer {
     const instancePrototype = Object.getPrototypeOf(instance);
     return this.metadataScanner
       .getAllMethodNames(instancePrototype)
-      .map(method => this.exploreMethodMetadata(instancePrototype, method))
+      .flatMap(method => this.exploreMethodMetadata(instancePrototype, method))
       .filter(metadata => metadata);
   }
 
   public exploreMethodMetadata(
     instancePrototype: object,
     methodName: string,
-  ): MessageMappingProperties {
+  ): MessageMappingProperties[] {
     const callback = instancePrototype[methodName];
     const isMessageMapping = Reflect.getMetadata(
       MESSAGE_MAPPING_METADATA,
@@ -37,12 +37,12 @@ export class GatewayMetadataExplorer {
     if (isUndefined(isMessageMapping)) {
       return null;
     }
-    const message = Reflect.getMetadata(MESSAGE_METADATA, callback);
-    return {
+    const messages = Reflect.getMetadata(MESSAGE_METADATA, callback) as any[];
+    return messages.map(message => ({
       callback,
       message,
       methodName,
-    };
+    }));
   }
 
   public *scanForServerHooks(instance: NestGateway): IterableIterator<string> {

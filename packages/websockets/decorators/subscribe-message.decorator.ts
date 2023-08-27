@@ -5,14 +5,22 @@ import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA } from '../constants';
  *
  * @publicApi
  */
-export const SubscribeMessage = <T = string>(message: T): MethodDecorator => {
+export const SubscribeMessage = <T = string>(
+  ...messages: T[]
+): MethodDecorator => {
   return (
     target: object,
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
     Reflect.defineMetadata(MESSAGE_MAPPING_METADATA, true, descriptor.value);
-    Reflect.defineMetadata(MESSAGE_METADATA, message, descriptor.value);
+    const currentMessages =
+      Reflect.getMetadata(MESSAGE_METADATA, descriptor.value) || [];
+    Reflect.defineMetadata(
+      MESSAGE_METADATA,
+      [...currentMessages, ...messages],
+      descriptor.value,
+    );
     return descriptor;
   };
 };

@@ -132,7 +132,7 @@ export class WsContextCreator {
     return Reflect.getMetadata(PARAMTYPES_METADATA, instance, callback.name);
   }
 
-  public reflectCallbackPattern(callback: (...args: any[]) => any): string {
+  public reflectCallbackPattern(callback: (...args: any[]) => any): string[] {
     return Reflect.getMetadata(MESSAGE_METADATA, callback);
   }
 

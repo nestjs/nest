@@ -10,9 +10,10 @@ describe('WsParamsFactory', () => {
   describe('exchangeKeyForValue', () => {
     const client = {};
     const data = { data: true };
+    const message = 'test';
 
     describe('when key is', () => {
-      const args = [client, data];
+      const args = [client, data, message];
       describe(`WsParamtype.PAYLOAD`, () => {
         it('should return a message payload object', () => {
           expect(
@@ -30,6 +31,13 @@ describe('WsParamsFactory', () => {
           expect(
             factory.exchangeKeyForValue(WsParamtype.SOCKET, null, args),
           ).to.be.eql(client);
+        });
+      });
+      describe(`WsParamtype.MESSAGE`, () => {
+        it('should return a message name', () => {
+          expect(
+            factory.exchangeKeyForValue(WsParamtype.MESSAGE, null, args),
+          ).to.be.eql(message);
         });
       });
     });
