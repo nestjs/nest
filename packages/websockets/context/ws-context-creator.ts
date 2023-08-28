@@ -109,7 +109,7 @@ export class WsContextCreator {
     };
 
     return this.wsProxy.create(async (...args: unknown[]) => {
-      args.push(this.reflectCallbackPattern(callback));
+      args.push(...this.reflectCallbackPattern(callback));
 
       const initialArgs = this.contextUtils.createNullArray(argsLength);
       fnCanActivate && (await fnCanActivate(args));
@@ -133,7 +133,7 @@ export class WsContextCreator {
   }
 
   public reflectCallbackPattern(callback: (...args: any[]) => any): string[] {
-    return Reflect.getMetadata(MESSAGE_METADATA, callback);
+    return Reflect.getMetadata(MESSAGE_METADATA, callback) || [];
   }
 
   public createGuardsFn<TContext extends string = ContextType>(
