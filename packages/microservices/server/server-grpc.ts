@@ -3,7 +3,15 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import { EMPTY, Subject, defaultIfEmpty, fromEvent, lastValueFrom } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  Subject,
+  Subscription,
+  defaultIfEmpty,
+  fromEvent,
+  lastValueFrom,
+} from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
@@ -18,6 +26,7 @@ import { ChannelOptions } from '../external/grpc-options.interface';
 import { CustomTransportStrategy, MessageHandler } from '../interfaces';
 import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
+import { Writable } from 'stream';
 
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
@@ -29,6 +38,7 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   end: Function;
   write: Function;
   on: Function;
+  off: Function;
   emit: Function;
 }
 
@@ -231,16 +241,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return async (call: GrpcCall, callback: Function) => {
       const handler = methodHandler(call.request, call.metadata, call);
       const result$ = this.transformToObservable(await handler);
-      await result$
-        .pipe(
-          takeUntil(fromEvent(call as any, CANCEL_EVENT)),
-          catchError(err => {
-            call.emit('error', err);
-            return EMPTY;
-          }),
-        )
-        .forEach(data => call.write(data));
-      call.end();
+
+      try {
+        await writeObservableToGrpc(result$, call);
+      } catch (err) {
+        call.emit('error', err);
+        return;
+      }
     };
   }
 
@@ -270,17 +277,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(req.asObservable(), call.metadata, call);
       const res = this.transformToObservable(await handler);
       if (isResponseStream) {
-        await res
-          .pipe(
-            takeUntil(fromEvent(call as any, CANCEL_EVENT)),
-            catchError(err => {
-              call.emit('error', err);
-              return EMPTY;
-            }),
-          )
-          .forEach(m => call.write(m));
-
-        call.end();
+        await writeObservableToGrpc(res, call);
       } else {
         const response = await lastValueFrom(
           res.pipe(
@@ -483,4 +480,108 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       );
     }
   }
+}
+
+/**
+ * Writes an observable to a GRPC call.
+ *
+ * This function will ensure that backpressure is managed while writing values
+ * that come from an observable to a GRPC call.
+ *
+ * @param source The observable we want to write out to the GRPC call.
+ * @param call The GRPC call we want to write to.
+ * @returns A promise that resolves when we're done writing to the call.
+ */
+function writeObservableToGrpc<T>(
+  source: Observable<T>,
+  call: GrpcCall<T>,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    // This buffer is used to house values that arrive
+    // while the call is in the process of writing and draining.
+    const buffer: T[] = [];
+    let isComplete = false;
+    let writing = false;
+
+    const cleanups: (() => void)[] = [];
+    const cleanup = () => {
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
+    };
+
+    const write = (value: T) => {
+      writing = true;
+      call.write(value);
+    };
+
+    const done = () => {
+      call.end();
+      resolve();
+      cleanup();
+    };
+
+    // Handling backpressure by waiting for drain event
+    const drainHandler = () => {
+      if (writing) {
+        writing = false;
+        if (buffer.length > 0) {
+          // Write any queued values we have in
+          // our buffer. Note that the `writing` boolean
+          // flips from false to true synchronously in this case
+          // that will prevent values arriving in our `next` call
+          // below from being interleaved in the written output.
+          write(buffer.shift()!);
+        } else if (isComplete) {
+          // Otherwise, if we're complete, end the call.
+          done();
+        }
+      }
+    };
+    call.on('drain', drainHandler);
+    cleanups.push(() => {
+      call.off('drain', drainHandler);
+    });
+
+    const subscription = new Subscription();
+
+    // Make sure that a cancel event unsubscribes from
+    // the source observable.
+    const cancelHandler = () => {
+      subscription.unsubscribe();
+      done();
+    };
+
+    call.on(CANCEL_EVENT, cancelHandler);
+    cleanups.push(() => {
+      call.off(CANCEL_EVENT, cancelHandler);
+    });
+
+    subscription.add(
+      source.subscribe({
+        next: (value: T) => {
+          if (writing) {
+            // If a value arrives while we're writing
+            // then we queue it up to be processed FIFO.
+            buffer.push(value);
+          } else {
+            // If we're not currently writing, then
+            // we can write the value immediately.
+            write(value);
+          }
+        },
+        error: (err: any) => {
+          call.emit('error', err);
+          reject(err);
+          cleanup();
+        },
+        complete: () => {
+          isComplete = true;
+          if (buffer.length === 0) {
+            done();
+          }
+        },
+      }),
+    );
+  });
 }
