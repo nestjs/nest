@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
-import {of, ReplaySubject, Subject, throwError} from 'rxjs';
+import { of, ReplaySubject, throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { CANCEL_EVENT } from '../../constants';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
@@ -41,7 +41,7 @@ describe('ServerGrpc', () => {
       callback = sinon.spy();
       bindEventsStub = sinon
         .stub(server, 'bindEvents')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
     });
 
     it('should call "bindEvents"', async () => {
@@ -85,7 +85,7 @@ describe('ServerGrpc', () => {
       callback = sinon.spy();
       bindEventsStub = sinon
         .stub(serverMulti, 'bindEvents')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
     });
 
     it('should call "bindEvents"', async () => {
@@ -224,7 +224,7 @@ describe('ServerGrpc', () => {
 
       const spy = sinon
         .stub(server, 'createServiceMethod')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
       (server as any).messageHandlers = handlers;
       await server.createService(
         {
@@ -246,7 +246,7 @@ describe('ServerGrpc', () => {
           .onFirstCall()
           .returns('test2');
 
-        sinon.stub(server, 'createServiceMethod').callsFake(() => ({} as any));
+        sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
         (server as any).messageHandlers = handlers;
         await server.createService(
           {
@@ -281,7 +281,7 @@ describe('ServerGrpc', () => {
           .onSecondCall()
           .returns('test2');
 
-        sinon.stub(server, 'createServiceMethod').callsFake(() => ({} as any));
+        sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
         (server as any).messageHandlers = handlers;
         await server.createService(
           {
@@ -522,7 +522,7 @@ describe('ServerGrpc', () => {
       });
 
       it('should handle error thrown in handler', async () => {
-        const error = new Error('Error')
+        const error = new Error('Error');
         const handler = async () => throwError(() => error);
         const fn = server.createRequestStreamMethod(handler, false);
         const call = {
@@ -538,7 +538,7 @@ describe('ServerGrpc', () => {
 
         const responseCallback = sinon.spy();
         await fn(call as any, responseCallback);
-        
+
         expect(responseCallback.calledOnce).to.be.true;
         expect(responseCallback.firstCall.args).to.eql([error, null]);
       });

@@ -3,7 +3,7 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import {defaultIfEmpty, EMPTY, fromEvent, lastValueFrom, Subject} from 'rxjs';
+import { EMPTY, Subject, defaultIfEmpty, fromEvent, lastValueFrom } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
