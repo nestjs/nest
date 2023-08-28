@@ -5,7 +5,7 @@ import { uid } from 'uid';
 /**
  * @publicApi
  */
-export interface CreateDecoratorOptions<T = any> {
+export interface CreateDecoratorOptions<TParam = any, TTransformed = TParam> {
   /**
    * The key for the metadata.
    * @default uid(21)
@@ -16,13 +16,21 @@ export interface CreateDecoratorOptions<T = any> {
    * The transform function to apply to the metadata value.
    * @default value => value
    */
-  transform?: (value: T) => T;
+  transform?: (value: TParam) => TTransformed;
 }
+
+type CreateDecoratorWithTransformOptions<
+  TParam,
+  TTransformed = TParam,
+> = CreateDecoratorOptions<TParam, TTransformed> &
+  Required<Pick<CreateDecoratorOptions<TParam, TTransformed>, 'transform'>>;
 
 /**
  * @publicApi
  */
-export type ReflectableDecorator<T> = ((opts?: T) => CustomDecorator) & {
+export type ReflectableDecorator<TParam, TTransformed = TParam> = ((
+  opts?: TParam,
+) => CustomDecorator) & {
   KEY: string;
 };
 
@@ -40,12 +48,18 @@ export class Reflector {
    * @param options Decorator options.
    * @returns A decorator function.
    */
-  static createDecorator<T>(
-    options: CreateDecoratorOptions = {},
-  ): ReflectableDecorator<T> {
+  static createDecorator<TParam>(
+    options?: CreateDecoratorOptions<TParam>,
+  ): ReflectableDecorator<TParam>;
+  static createDecorator<TParam, TTransformed>(
+    options: CreateDecoratorWithTransformOptions<TParam, TTransformed>,
+  ): ReflectableDecorator<TParam, TTransformed>;
+  static createDecorator<TParam, TTransformed = TParam>(
+    options: CreateDecoratorOptions<TParam, TTransformed> = {},
+  ): ReflectableDecorator<TParam, TTransformed> {
     const metadataKey = options.key ?? uid(21);
     const decoratorFn =
-      (metadataValue: T) =>
+      (metadataValue: TParam) =>
       (target: object | Function, key?: string | symbol, descriptor?: any) => {
         const value = options.transform
           ? options.transform(metadataValue)
@@ -54,7 +68,7 @@ export class Reflector {
       };
 
     decoratorFn.KEY = metadataKey;
-    return decoratorFn as ReflectableDecorator<T>;
+    return decoratorFn as ReflectableDecorator<TParam, TTransformed>;
   }
 
   /**
@@ -70,7 +84,7 @@ export class Reflector {
   public get<T extends ReflectableDecorator<any>>(
     decorator: T,
     target: Type<any> | Function,
-  ): T extends ReflectableDecorator<infer R> ? R : unknown;
+  ): T extends ReflectableDecorator<any, infer R> ? R : unknown;
   /**
    * Retrieve metadata for a specified key for a specified target.
    *
