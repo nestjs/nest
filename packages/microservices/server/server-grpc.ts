@@ -3,7 +3,7 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import { EMPTY, fromEvent, lastValueFrom, Subject } from 'rxjs';
+import { EMPTY, Subject, defaultIfEmpty, fromEvent, lastValueFrom } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import {
   CANCEL_EVENT,
@@ -289,6 +289,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
               callback(err, null);
               return EMPTY;
             }),
+            defaultIfEmpty(undefined),
           ),
         );
 
