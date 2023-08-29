@@ -131,7 +131,7 @@
     "eslint-plugin-import": "2.28.1",
     "eventsource": "2.0.2",
     "fancy-log": "2.0.0",
-    "fastify": "4.21.0",
+    "fastify": "4.22.0",
     "graphql": "16.8.0",
     "graphql-tools": "9.0.0",
     "gulp": "4.0.2",
