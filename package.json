@@ -116,7 +116,7 @@
     "bytes": "3.1.2",
     "cache-manager": "5.2.3",
     "cache-manager-redis-store": "3.0.1",
-    "chai": "4.3.7",
+    "chai": "4.3.8",
     "chai-as-promised": "7.1.1",
     "clang-format": "1.8.0",
     "commitlint-circle": "1.0.0",
