@@ -23,7 +23,7 @@
         "@nestjs/core": "10.0.3",
         "@nestjs/platform-fastify": "10.0.3",
         "@fastify/static": "6.10.2",
-        "handlebars": "4.7.7",
+        "handlebars": "4.7.8",
         "@fastify/view": "7.4.1",
         "reflect-metadata": "0.1.13",
         "rimraf": "5.0.1",
