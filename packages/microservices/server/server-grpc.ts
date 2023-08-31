@@ -269,7 +269,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       // while the call is in the process of writing and draining.
       const buffer: T[] = [];
       let isComplete = false;
-      let writing = false;
+      let clearToWrite = true;
 
       const cleanups: (() => void)[] = [];
       const cleanup = () => {
@@ -279,8 +279,10 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       };
 
       const write = (value: T) => {
-        writing = true;
-        call.write(value);
+        // If the stream `write` returns `false`, we have
+        // to wait for a drain event before writing again.
+        // This is done to handle backpressure.
+        clearToWrite = call.write(value);
       };
 
       const done = () => {
@@ -291,14 +293,10 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
       // Handling backpressure by waiting for drain event
       const drainHandler = () => {
-        if (writing) {
-          writing = false;
+        if (!clearToWrite) {
+          clearToWrite = true;
           if (buffer.length > 0) {
-            // Write any queued values we have in
-            // our buffer. Note that the `writing` boolean
-            // flips from false to true synchronously in this case
-            // that will prevent values arriving in our `next` call
-            // below from being interleaved in the written output.
+            // Write any queued values we have in our buffer.
             write(buffer.shift()!);
           } else if (isComplete) {
             // Otherwise, if we're complete, end the call.
@@ -306,6 +304,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
           }
         }
       };
+
       call.on('drain', drainHandler);
       cleanups.push(() => {
         call.off('drain', drainHandler);
@@ -328,14 +327,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       subscription.add(
         source.subscribe({
           next: (value: T) => {
-            if (writing) {
-              // If a value arrives while we're writing
-              // then we queue it up to be processed FIFO.
-              buffer.push(value);
-            } else {
+            if (clearToWrite) {
               // If we're not currently writing, then
               // we can write the value immediately.
               write(value);
+            } else {
+              // If a value arrives while we're writing
+              // then we queue it up to be processed FIFO.
+              buffer.push(value);
             }
           },
           error: (err: any) => {
