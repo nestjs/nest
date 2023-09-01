@@ -57,6 +57,28 @@ describe('Error Messages', () => {
 
       expect(actualMessage).to.equal(expectedResult);
     });
+    it('should display the provide token as double-quoted string for string-based tokens', () => {
+      const expectedResult =
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?). Please make sure that the argument "FooRepository" at index [0] is available in the current context.
+
+      Potential solutions:
+      - If "FooRepository" is a provider, is it part of the current Module?
+      - If "FooRepository" is exported from a separate @Module, is that module imported within Module?
+      @Module({
+      imports: [ /* the Module containing "FooRepository" */ ]
+      })
+      `);
+
+      const actualMessage = stringCleaner(
+        new UnknownDependenciesException('CatService', {
+          index: 0,
+          dependencies: ['FooRepository'],
+          name: 'FooRepository',
+        }).message,
+      );
+
+      expect(actualMessage).to.equal(expectedResult);
+    });
     it('should display the function name', () => {
       const expectedResult =
         stringCleaner(`Nest can't resolve dependencies of the CatService (?, CatFunction). Please make sure that the argument dependency at index [0] is available in the current context.
