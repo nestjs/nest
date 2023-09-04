@@ -37,8 +37,9 @@ import { isDurable } from '../helpers/is-durable';
 import { UuidFactory } from '../inspector/uuid-factory';
 import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
-import { InstanceWrapper } from './instance-wrapper';
+import { ContextId, InstanceWrapper } from './instance-wrapper';
 import { ModuleRef, ModuleRefGetOrResolveOpts } from './module-ref';
+import { Injector } from './injector';
 
 export class Module {
   private readonly _id: string;
@@ -633,11 +634,14 @@ export class Module {
         );
       }
 
-      public async create<T = any>(type: Type<T>): Promise<T> {
+      public async create<T = any>(
+        type: Type<T>,
+        contextId?: ContextId,
+      ): Promise<T> {
         if (!(type && isFunction(type) && type.prototype)) {
           throw new InvalidClassException(type);
         }
-        return this.instantiateClass<T>(type, self);
+        return this.instantiateClass<T>(type, self, contextId);
       }
     };
   }
