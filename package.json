@@ -103,7 +103,7 @@
     "@types/gulp": "4.0.13",
     "@types/http-errors": "2.0.1",
     "@types/mocha": "10.0.1",
-    "@types/node": "20.5.7",
+    "@types/node": "20.5.9",
     "@types/sinon": "10.0.16",
     "@types/supertest": "2.0.12",
     "@types/ws": "8.5.5",
