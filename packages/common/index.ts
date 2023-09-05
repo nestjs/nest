@@ -28,6 +28,7 @@ export {
   HttpServer,
   HttpExceptionBody,
   HttpExceptionBodyMessage,
+  HttpRedirectResponse,
   INestApplication,
   INestApplicationContext,
   INestMicroservice,
