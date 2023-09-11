@@ -120,6 +120,70 @@ export class Reflector {
     return Reflect.getMetadata(metadataKey, target);
   }
 
+
+  /**
+   * Retrieve metadata for a reflectable decorator for a specified target function.
+   * The metadata is returned as an array where each index corresponds to a parameter index in the method signature.
+   *
+   * @example
+   * `const roles = this.getParam(Roles, myFunction);`
+   *
+   * @param decorator reflectable decorator created through `SetMetadata`
+   * @param target context (decorated function) to retrieve metadata from
+   *
+   * @returns An array of metadata values, where each index in the array corresponds to a parameter index in the function. 
+   * Returns `undefined` if no such metadata exists.
+  */
+  public getParam<T extends ReflectableDecorator<any>>(
+    decorator: T,
+    target: Function,
+  ): T extends ReflectableDecorator<any, infer R> ? R : unknown;
+
+  /**
+   * Retrieve metadata for a specified key for a specified target function.
+   * The metadata is returned as an array where each index corresponds to a parameter index in the method signature.
+   *
+   * @example
+   * `const roles = this.getParam<string>('roles', myFunction);`
+   *
+   * @param metadataKey lookup key for metadata to retrieve
+   * @param target context (decorated function) to retrieve metadata from
+   *
+   * @returns An array of metadata values, where each index in the array corresponds to a parameter index in the function. 
+   * Returns `undefined` if no such metadata exists.
+  */
+  public getParam<TResult = any, TKey = any>(
+    metadataKey: TKey,
+    target: Function,
+  ): TResult;
+  
+  /**
+   * Retrieve metadata for a specified key or decorator for a specified target.
+   * This method returns an array where each index corresponds to a parameter index in the method signature.
+   *
+   * @example
+   * `const queryParam = this.getParam<string>('query', myFunction);`
+   * If `myFunction` was decorated for its parameters with metadata via
+   * `@SetMetadata('query', 'value1')`
+   * `@SetMetadata('query', 'value2')`
+   * Then `queryParam` would be an array like: ['value1', 'value2']
+   *
+   * @param metadataKeyOrDecorator lookup key or decorator for metadata to retrieve
+   * @param target context (decorated function) to retrieve metadata from
+   *
+   * @returns An array of metadata values, where each index in the array corresponds to a parameter index in the function.
+  */
+  public getParam<TResult = any, TKey = any>(
+    metadataKeyOrDecorator: TKey,
+    target: Function,
+  ): TResult[] {
+    const metadataKey =
+      (metadataKeyOrDecorator as ReflectableDecorator<unknown>).KEY ??
+      metadataKeyOrDecorator;
+
+    return Reflect.getMetadata(`param:${metadataKey}`, target);
+  }
+
   /**
    * Retrieve metadata for a specified decorator for a specified set of targets.
    *

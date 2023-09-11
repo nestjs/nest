@@ -1,10 +1,10 @@
 export type CustomDecorator<TKey = string> = MethodDecorator &
-  ClassDecorator & {
+  ClassDecorator & PropertyDecorator & {
     KEY: TKey;
   };
 
 /**
- * Decorator that assigns metadata to the class/function using the
+ * Decorator that assigns metadata to the class/function/params using the
  * specified `key`.
  *
  * Requires two parameters:
@@ -23,14 +23,28 @@ export const SetMetadata = <K = string, V = any>(
   metadataKey: K,
   metadataValue: V,
 ): CustomDecorator<K> => {
-  const decoratorFactory = (target: object, key?: any, descriptor?: any) => {
-    if (descriptor) {
+  const decoratorFactory = (target: object, key?: any, descriptorOrIndex?: any) => {
+    if (typeof descriptorOrIndex == "object") {
+      const descriptor = descriptorOrIndex;
       Reflect.defineMetadata(metadataKey, metadataValue, descriptor.value);
       return descriptor;
     }
+
+    if (typeof descriptorOrIndex === "number") {
+      const index = descriptorOrIndex;
+			const func = (target as any)[key] as Function;
+			let existingMetadata: V[] = Reflect.getMetadata(`param:${metadataKey}`, func) || [];
+			if (!Array.isArray(existingMetadata))
+				existingMetadata = [existingMetadata];
+			existingMetadata[index] = metadataValue;
+			Reflect.defineMetadata(`param:${metadataKey}`, existingMetadata, func);
+			return target;
+    }
+
     Reflect.defineMetadata(metadataKey, metadataValue, target);
     return target;
   };
+  
   decoratorFactory.KEY = metadataKey;
   return decoratorFactory;
 };
