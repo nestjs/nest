@@ -137,7 +137,7 @@ export class Reflector {
   public getParam<T extends ReflectableDecorator<any>>(
     decorator: T,
     target: Function,
-  ): T extends ReflectableDecorator<any, infer R> ? R : unknown;
+  ): T extends ReflectableDecorator<any, infer R> ? R[] : unknown[];
 
   /**
    * Retrieve metadata for a specified key for a specified target function.
@@ -155,7 +155,7 @@ export class Reflector {
   public getParam<TResult = any, TKey = any>(
     metadataKey: TKey,
     target: Function,
-  ): TResult;
+  ): TResult[];
   
   /**
    * Retrieve metadata for a specified key or decorator for a specified target.
