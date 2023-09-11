@@ -32,13 +32,13 @@ export const SetMetadata = <K = string, V = any>(
 
     if (typeof descriptorOrIndex === "number") {
       const index = descriptorOrIndex;
-			const func = (target as any)[key] as Function;
-			let existingMetadata: V[] = Reflect.getMetadata(`param:${metadataKey}`, func) || [];
-			if (!Array.isArray(existingMetadata))
-				existingMetadata = [existingMetadata];
-			existingMetadata[index] = metadataValue;
-			Reflect.defineMetadata(`param:${metadataKey}`, existingMetadata, func);
-			return target;
+      const func = (target as any)[key] as Function;
+      let existingMetadata: V[] = Reflect.getMetadata(`param:${metadataKey}`, func) || [];
+      if (!Array.isArray(existingMetadata))
+        existingMetadata = [existingMetadata];
+      existingMetadata[index] = metadataValue;
+      Reflect.defineMetadata(`param:${metadataKey}`, existingMetadata, func);
+      return target;
     }
 
     Reflect.defineMetadata(metadataKey, metadataValue, target);
