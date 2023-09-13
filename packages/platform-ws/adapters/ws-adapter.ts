@@ -178,22 +178,26 @@ export class WsAdapter extends AbstractWsAdapter {
     this.httpServersRegistry.set(port, httpServer);
 
     httpServer.on('upgrade', (request, socket, head) => {
-      const baseUrl = 'ws://' + request.headers.host + '/';
-      const pathname = new URL(request.url, baseUrl).pathname;
-      const wsServersCollection = this.wsServersRegistry.get(port);
+      try {
+        const baseUrl = 'ws://' + request.headers.host + '/';
+        const pathname = new URL(request.url, baseUrl).pathname;
+        const wsServersCollection = this.wsServersRegistry.get(port);
 
-      let isRequestDelegated = false;
-      for (const wsServer of wsServersCollection) {
-        if (pathname === wsServer.path) {
-          wsServer.handleUpgrade(request, socket, head, (ws: unknown) => {
-            wsServer.emit('connection', ws, request);
-          });
-          isRequestDelegated = true;
-          break;
+        let isRequestDelegated = false;
+        for (const wsServer of wsServersCollection) {
+          if (pathname === wsServer.path) {
+            wsServer.handleUpgrade(request, socket, head, (ws: unknown) => {
+              wsServer.emit('connection', ws, request);
+            });
+            isRequestDelegated = true;
+            break;
+          }
         }
-      }
-      if (!isRequestDelegated) {
-        socket.destroy();
+        if (!isRequestDelegated) {
+          socket.destroy();
+        }
+      } catch (err) {
+        socket.end(err.message);
       }
     });
     return httpServer;
