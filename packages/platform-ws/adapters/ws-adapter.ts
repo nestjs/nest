@@ -197,7 +197,7 @@ export class WsAdapter extends AbstractWsAdapter {
           socket.destroy();
         }
       } catch (err) {
-        socket.end(err.message);
+        socket.end('HTTP/1.1 400\r\n' + err.message);
       }
     });
     return httpServer;
