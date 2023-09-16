@@ -19,7 +19,7 @@ export function createParamDecorator<
   FactoryData = any,
   FactoryInput = any,
   FactoryOutput = any,
->(
+  >(
   factory: CustomParamFactory<FactoryData, FactoryInput, FactoryOutput>,
   enhancers: ParamDecoratorEnhancer[] = [],
 ): (
