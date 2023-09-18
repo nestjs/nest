@@ -56,6 +56,13 @@ describe('ParseUUIDPipe', () => {
         ).to.be.rejectedWith(TestException);
       });
 
+      it('should mention the field name in the error', async () => {
+        target = new ParseUUIDPipe();
+        await expect(
+          target.transform('123a', { data: 'foo' } as ArgumentMetadata),
+        ).to.be.rejectedWith(/.*Validation failed.*"foo".*/);
+      });
+
       it('should throw an error - not a string', async () => {
         target = new ParseUUIDPipe({ exceptionFactory });
         await expect(

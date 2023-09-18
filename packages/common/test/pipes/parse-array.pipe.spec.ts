@@ -43,6 +43,11 @@ describe('ParseArrayPipe', () => {
       beforeEach(() => {
         target = new ParseArrayPipe();
       });
+      it('should mention the field name in the error', async () => {
+        return expect(
+          target.transform(true, { data: 'foo' } as ArgumentMetadata),
+        ).to.be.rejectedWith(/.*Validation failed.*"foo".*/);
+      });
       it('should throw an exception (boolean)', async () => {
         return expect(
           target.transform(true, {} as ArgumentMetadata),

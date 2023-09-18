@@ -2,7 +2,7 @@ import * as sinon from 'sinon';
 import { expect } from 'chai';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseFloatPipe } from '../../pipes/parse-float.pipe';
-import { HttpException } from '../../exceptions';
+import { BadRequestException, HttpException } from '../../exceptions';
 
 class CustomTestError extends HttpException {
   constructor() {
@@ -13,9 +13,7 @@ class CustomTestError extends HttpException {
 describe('ParseFloatPipe', () => {
   let target: ParseFloatPipe;
   beforeEach(() => {
-    target = new ParseFloatPipe({
-      exceptionFactory: (error: any) => new CustomTestError(),
-    });
+    target = new ParseFloatPipe();
   });
   describe('transform', () => {
     describe('when validation passes', () => {
@@ -35,6 +33,23 @@ describe('ParseFloatPipe', () => {
       it('should throw an error', async () => {
         return expect(
           target.transform('123.123abc', {} as ArgumentMetadata),
+        ).to.be.rejectedWith(BadRequestException);
+      });
+      it('should mention the field name in the error', async () => {
+        return expect(
+          target.transform('123.123abc', { data: 'foo' } as ArgumentMetadata),
+        ).to.be.rejectedWith(/.*Validation failed.*"foo".*/);
+      });
+    });
+    describe('with an exceptionFactory', () => {
+      beforeEach(() => {
+        target = new ParseFloatPipe({
+          exceptionFactory: (error: any) => new CustomTestError(),
+        });
+      });
+      it('uses it when the validation fails', async () => {
+        return expect(
+          target.transform('123abc', {} as ArgumentMetadata),
         ).to.be.rejectedWith(CustomTestError);
       });
     });
