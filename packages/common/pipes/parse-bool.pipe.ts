@@ -63,7 +63,7 @@ export class ParseBoolPipe
       return false;
     }
     throw this.exceptionFactory(
-      'Validation failed (boolean string is expected)',
+      `Validation failed (boolean string is expected in "${metadata.data}")`,
     );
   }
 

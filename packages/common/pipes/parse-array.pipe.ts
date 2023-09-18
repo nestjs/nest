@@ -10,7 +10,6 @@ import { HttpErrorByCode } from '../utils/http-error-by-code.util';
 import { isNil, isUndefined, isString } from '../utils/shared.utils';
 import { ValidationPipe, ValidationPipeOptions } from './validation.pipe';
 
-const VALIDATION_ERROR_MESSAGE = 'Validation failed (parsable array expected)';
 const DEFAULT_ARRAY_SEPARATOR = ',';
 
 /**
@@ -62,21 +61,27 @@ export class ParseArrayPipe implements PipeTransform {
    */
   async transform(value: any, metadata: ArgumentMetadata): Promise<any> {
     if (!value && !this.options.optional) {
-      throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
+      throw this.exceptionFactory(
+        this.getValidationErrorMessage(metadata.data),
+      );
     } else if (isNil(value) && this.options.optional) {
       return value;
     }
 
     if (!Array.isArray(value)) {
       if (!isString(value)) {
-        throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
+        throw this.exceptionFactory(
+          this.getValidationErrorMessage(metadata.data),
+        );
       } else {
         try {
           value = value
             .trim()
             .split(this.options.separator || DEFAULT_ARRAY_SEPARATOR);
         } catch {
-          throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
+          throw this.exceptionFactory(
+            this.getValidationErrorMessage(metadata.data),
+          );
         }
       }
     }
@@ -133,6 +138,10 @@ export class ParseArrayPipe implements PipeTransform {
       }
     }
     return value;
+  }
+
+  protected getValidationErrorMessage(field: string) {
+    return `Validation failed (parsable array expected in "${field}")`;
   }
 
   protected isExpectedTypePrimitive(): boolean {

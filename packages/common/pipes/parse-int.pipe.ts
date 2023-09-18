@@ -54,7 +54,7 @@ export class ParseIntPipe implements PipeTransform<string> {
     }
     if (!this.isNumeric(value)) {
       throw this.exceptionFactory(
-        'Validation failed (numeric string is expected)',
+        `Validation failed (numeric string is expected in "${metadata.data}")`,
       );
     }
     return parseInt(value, 10);
