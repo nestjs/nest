@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import { Body, HostParam, Param, Query, Search } from '../../decorators';
 import { RequestMethod } from '../../enums/request-method.enum';
-import { All, Delete, Get, Patch, Post, Put } from '../../index';
+import { All, Delete, Get, ParseIntPipe, Patch, Post, Put } from '../../index';
+import { ROUTE_ARGS_METADATA } from '../../constants';
+import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
 
 describe('@Get', () => {
   const requestPath = 'test';
@@ -19,18 +21,28 @@ describe('@Get', () => {
   it('should enhance class with expected request metadata', () => {
     class Test {
       @Get(requestPath)
-      public static test(@Param('id') params) {}
+      public static test(@Param('id', ParseIntPipe) params) {}
 
       @Get(requestPathUsingArray)
       public static testUsingArray(@Param('id') params) {}
     }
 
     const path = Reflect.getMetadata('path', Test.test);
+    const args = Reflect.getMetadata(
+      ROUTE_ARGS_METADATA,
+      Test.constructor,
+      'test',
+    );
     const method = Reflect.getMetadata('method', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
     expect(path).to.be.eql(requestPath);
+    expect(args[`${RouteParamtypes.PARAM}:0`]).to.be.eql({
+      index: 0,
+      data: 'id',
+      pipes: [ParseIntPipe],
+    });
     expect(method).to.be.eql(requestProps.method);
     expect(pathUsingArray).to.be.eql(requestPathUsingArray);
     expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
