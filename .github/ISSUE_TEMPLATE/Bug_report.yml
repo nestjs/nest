@@ -83,6 +83,7 @@ body:
         - label: "<code>@nestjs/platform-fastify</code>"
         - label: "<code>@nestjs/platform-socket.io</code>"
         - label: "<code>@nestjs/platform-ws</code>"
+        - label: "<code>@nestjs/platform-bun-ws</code>"
         - label: "<code>@nestjs/testing</code>"
         - label: "<code>@nestjs/websockets</code>"
         - label: "Other (see below)"

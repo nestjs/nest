@@ -28,10 +28,12 @@
       "@nestjs/platform-express/*": ["./packages/platform-express/*"],
       "@nestjs/platform-ws": ["./packages/platform-ws"],
       "@nestjs/platform-ws/*": ["./packages/platform-ws/*"],
+      "@nestjs/platform-bun-ws": ["./packages/platform-bun-ws"],
+      "@nestjs/platform-bun-ws/*": ["./packages/platform-bun-ws/*"],
       "@nestjs/platform-fastify": ["./packages/platform-fastify"],
       "@nestjs/platform-fastify/*": ["./packages/platform-fastify/*"],
       "@nestjs/platform-socket.io": ["./packages/platform-socket.io"],
-      "@nestjs/platform-socket.io/*": ["./packages/platform-socket.io/*"],
+      "@nestjs/platform-socket.io/*": ["./packages/platform-socket.io/*"]
     }
   },
   "include": ["packages/**/*", "integration/**/*"],

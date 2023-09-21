@@ -274,6 +274,7 @@ The following is the list of supported scopes:
 - **fastify**: for changes made on `packages/platform-fastify` directory
 - **socket.io**: for changes made on `packages/platform-socket.io` directory
 - **ws**: for changes made on `packages/platform-ws` directory
+- **bun-ws**: for changes made on `packages/platform-bun-ws` directory
 - **testing**: for changes made on `packages/testing` directory
 - **websockets**: for changes made on `packages/websockets` directory
 
