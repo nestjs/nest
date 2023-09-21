@@ -29,7 +29,7 @@
     "@prisma/client": "4.16.2",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.0",
-    "graphql": "16.6.0",
+    "graphql": "16.8.1",
     "graphql-subscriptions": "2.0.0",
     "reflect-metadata": "0.1.13",
     "rimraf": "5.0.1",
