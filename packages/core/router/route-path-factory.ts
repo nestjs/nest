@@ -165,6 +165,6 @@ export class RoutePathFactory {
       versioningOptions,
     )}${versionValue}`;
 
-    return path.startsWith(prefix) ? path.replace(prefix, '') : path;
+    return path[0] === prefix ? path.replace(prefix, '') : path;
   }
 }

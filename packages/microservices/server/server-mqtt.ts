@@ -206,7 +206,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   }
 
   public removeHandlerKeySharedPrefix(handlerKey: string) {
-    return handlerKey && handlerKey.startsWith('$share')
+    return handlerKey && handlerKey[0] === '$share'
       ? handlerKey.split('/').slice(2).join('/')
       : handlerKey;
   }
