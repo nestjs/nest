@@ -15,7 +15,8 @@ import { ConfigurableModuleAsyncOptions } from './configurable-module-async-opti
 export type ConfigurableModuleCls<
   ModuleOptions,
   MethodKey extends string = typeof DEFAULT_METHOD_KEY,
-  FactoryClassMethodKey extends string = typeof DEFAULT_FACTORY_CLASS_METHOD_KEY,
+  FactoryClassMethodKey extends
+    string = typeof DEFAULT_FACTORY_CLASS_METHOD_KEY,
   ExtraModuleDefinitionOptions = {},
 > = {
   new (): any;

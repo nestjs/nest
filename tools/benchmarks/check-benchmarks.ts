@@ -12,9 +12,8 @@ export default async function checkBenchmarks() {
   if (!codechecks.isPr()) {
     return;
   }
-  const baselineBenchmarks = await codechecks.getValue<Benchmarks>(
-    benchmarksKey,
-  );
+  const baselineBenchmarks =
+    await codechecks.getValue<Benchmarks>(benchmarksKey);
   const report = getCodechecksReport(currentBenchmarks, baselineBenchmarks);
   await codechecks.report(report);
 }

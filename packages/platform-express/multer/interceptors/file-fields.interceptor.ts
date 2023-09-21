@@ -20,8 +20,8 @@ import { transformException } from '../multer/multer.utils';
 type MulterInstance = any;
 
 /**
- * @param uploadFields 
- * @param localOptions 
+ * @param uploadFields
+ * @param localOptions
  * @publicApi
  */
 export function FileFieldsInterceptor(

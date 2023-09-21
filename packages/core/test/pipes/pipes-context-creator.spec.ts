@@ -111,7 +111,7 @@ describe('PipesContextCreator', () => {
           .callsFake(() => scopedPipeWrappers);
         sinon
           .stub(instanceWrapper, 'getInstanceByContextId')
-          .callsFake(() => ({ instance } as any));
+          .callsFake(() => ({ instance }) as any);
 
         expect(creator.getGlobalMetadata({ id: 3 })).to.contains(
           instance,

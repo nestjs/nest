@@ -175,7 +175,7 @@ describe('RouterExplorer', () => {
         () =>
           ({
             next: nextSpy,
-          } as any),
+          }) as any,
       );
     });
 
