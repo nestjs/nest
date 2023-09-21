@@ -20,6 +20,7 @@ import {
   takeUntil,
 } from 'rxjs';
 import { Buffer } from 'buffer';
+import { CLOSE_EVENT } from '@nestjs/websockets/constants';
 
 enum READY_STATE {
   CONNECTING_STATE = 0,
@@ -27,10 +28,6 @@ enum READY_STATE {
   CLOSING_STATE = 2,
   CLOSED_STATE = 3,
 }
-export const CONNECTION_EVENT = 'connection';
-export const DISCONNECT_EVENT = 'disconnect';
-export const CLOSE_EVENT = 'close';
-export const ERROR_EVENT = 'error';
 
 interface SocketData {
   socketId: string;
@@ -48,6 +45,7 @@ class BunWsClient<T> implements BaseWsInstance {
     this.#emitter = new EventEmitter();
     this.#ws = ws;
   }
+  // @ts-expect-error types
   on(event: string, callback: (data: any) => void) {
     this.#emitter.on(event, callback);
   }
@@ -112,6 +110,7 @@ class BunWsServer implements BaseWsInstance {
     });
   }
 
+  // @ts-expect-error types
   on(event: string, callback: (eventData: any) => void) {
     this.#emitter.on(event, callback);
   }
@@ -140,6 +139,7 @@ class BunWsServer implements BaseWsInstance {
  * @publicApi
  */
 export class BunWsAdapter extends AbstractWsAdapter<
+  // @ts-expect-error types
   BunWsServer,
   BunWsClient<SocketData>
 > {
