@@ -1,0 +1,32 @@
+{
+  "name": "@nestjs/platform-bun-ws",
+  "version": "10.0.3",
+  "description": "Nest - modern, fast, powerful node.js web framework (@platform-bun-ws)",
+  "author": "Jelf<okxiaoliang4@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://nestjs.com",
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/nest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nestjs/nest.git",
+    "directory": "packages/platform-bun-ws"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "tslib": "2.6.2",
+    "ws": "8.13.0"
+  },
+  "devDependencies": {
+    "bun-types": "^1.0.2"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/websockets": "^10.0.0",
+    "rxjs": "^7.1.0"
+  }
+}

@@ -23,6 +23,9 @@
       "path": "./platform-ws/tsconfig.build.json"
     },
     {
+      "path": "./platform-bun-ws/tsconfig.build.json"
+    },
+    {
       "path": "./testing/tsconfig.build.json"
     },
     {
