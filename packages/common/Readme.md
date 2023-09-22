@@ -89,7 +89,9 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <table style="text-align:center;"><tr>
 <td><a href="https://n.inc" target="_blank"><img src="https://nestjs.com/img/n-inc-logo.svg" width="120" valign="middle" /></td>
-<td><a href="https://twistag.com/" target="_blank"><img src="https://nestjs.com/img/twistag-logo.png" width="120" valign="middle" /></td></tr>
+<td><a href="https://twistag.com/" target="_blank"><img src="https://nestjs.com/img/twistag-logo.png" width="120" valign="middle" /></td>
+<td><a href="https://immediateedgeapp.org/" target="_blank"><img src="https://nestjs.com/img/immediate-edge-logo.png" width="120" valign="middle" /></td>
+</tr>
 </table>
 
 #### Sponsors
@@ -116,6 +118,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
    <td align="center" valign="middle"><a href="https://www.hingehealth.com/" target="_blank"><img src="https://nestjs.com/img/hinge-health-logo.svg" width="100" valign="middle" /></a></td>
    <td align="center" valign="middle"><a href="https://julienferand.dev/" target="_blank"><img src="https://nestjs.com/img/julienferand-logo.jpeg" width="65" valign="middle" /></a></td>
    <td align="center" valign="middle"><a href="https://www.tripoffice.com/" target="_blank"><img src="https://nestjs.com/img/tripoffice-logo.png" width="140" valign="middle" /></a></td>
+   <td align="center" valign="middle"><a href="https://solcellsforetag.se/" target="_blank"><img src="https://nestjs.com/img/solcellsforetag-logo.svg" width="140" valign="middle" /></a></td>
   </tr></table>
 
 ## Backers
@@ -124,9 +127,9 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 ## Stay in touch
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+- Author - [Kamil Myśliwiec](https://x.com/kammysliwiec)
 - Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- X - [@nestframework](https://x.com/nestframework)
 
 ## License
 
