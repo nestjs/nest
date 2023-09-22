@@ -88,7 +88,7 @@ export class RoutesMapper {
 
     const toRouteInfo = (item: RouteDefinition, prefix: string) =>
       item.path
-        ?.map(p => {
+        ?.flatMap(p => {
           let endpointPath = modulePath ?? '';
           endpointPath += this.normalizeGlobalPath(prefix) + addLeadingSlash(p);
 
@@ -108,8 +108,7 @@ export class RoutesMapper {
           }
 
           return routeInfo;
-        })
-        .flat() as RouteInfo[];
+        });
 
     return []
       .concat(routePath)

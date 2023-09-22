@@ -42,8 +42,7 @@ export function getInjectionProviders(
     // get injection tokens of the matched providers, if any
     search = match
       .filter(p => (p as any)?.inject)
-      .map(p => (p as FactoryProvider).inject)
-      .flat()
+      .flatMap(p => (p as FactoryProvider).inject)
       .map(mapInjectToTokens);
   }
   return result;
