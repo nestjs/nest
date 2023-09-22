@@ -241,7 +241,7 @@ describe('ClientNats', () => {
     beforeEach(async () => {
       createClientSpy = sinon
         .stub(client, 'createClient')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
       handleStatusUpdatesSpy = sinon.spy(client, 'handleStatusUpdates');
 
       await client.connect();

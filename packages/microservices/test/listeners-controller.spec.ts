@@ -87,7 +87,7 @@ describe('ListenersController', () => {
     ];
 
     beforeEach(() => {
-      sinon.stub(container, 'getModuleByKey').callsFake(() => ({} as any));
+      sinon.stub(container, 'getModuleByKey').callsFake(() => ({}) as any);
     });
     it(`should call "addHandler" method of server for each pattern handler`, () => {
       explorer.expects('explore').returns(handlers);
@@ -203,12 +203,12 @@ describe('ListenersController', () => {
         () =>
           ({
             handle: handleSpy,
-          } as any),
+          }) as any,
       );
 
       sinon
         .stub((instance as any).container, 'registerRequestProvider')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
     });
 
     describe('when "loadPerContext" resolves', () => {

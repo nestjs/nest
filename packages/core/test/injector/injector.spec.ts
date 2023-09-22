@@ -32,7 +32,10 @@ describe('Injector', () => {
     class MainTest {
       @Inject() property: DependencyOne;
 
-      constructor(public one: DependencyOne, public two: DependencyTwo) {}
+      constructor(
+        public one: DependencyOne,
+        public two: DependencyTwo,
+      ) {}
     }
 
     let moduleDeps: Module;
@@ -743,7 +746,7 @@ describe('Injector', () => {
 
       const loadInstanceStub = sinon
         .stub(injector, 'loadInstance')
-        .callsFake(async () => ({} as any));
+        .callsFake(async () => ({}) as any);
 
       await injector.loadEnhancersPerContext(wrapper, STATIC_CONTEXT);
       expect(loadInstanceStub.calledTwice).to.be.true;

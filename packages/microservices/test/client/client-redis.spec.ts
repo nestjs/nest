@@ -221,7 +221,7 @@ describe('ClientRedis', () => {
           ({
             addListener: () => null,
             removeListener: () => null,
-          } as any),
+          }) as any,
       );
       handleErrorsSpy = sinon.spy(client, 'handleError');
 

@@ -17,7 +17,10 @@ export interface RmqRecordOptions {
 }
 
 export class RmqRecord<TData = any> {
-  constructor(public readonly data: TData, public options?: RmqRecordOptions) {}
+  constructor(
+    public readonly data: TData,
+    public options?: RmqRecordOptions,
+  ) {}
 }
 
 export class RmqRecordBuilder<TData> {

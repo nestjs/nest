@@ -18,8 +18,10 @@ describe('WsProxy', () => {
 
   describe('create', () => {
     it('should method return thunk', async () => {
-      const proxy = await routerProxy.create(async (client, data) => {},
-      handler);
+      const proxy = await routerProxy.create(
+        async (client, data) => {},
+        handler,
+      );
       expect(typeof proxy === 'function').to.be.true;
     });
 

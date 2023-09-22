@@ -160,7 +160,7 @@ describe('InterceptorsContextCreator', () => {
           .callsFake(() => scopedInterceptorWrappers);
         sinon
           .stub(instanceWrapper, 'getInstanceByContextId')
-          .callsFake(() => ({ instance } as any));
+          .callsFake(() => ({ instance }) as any);
 
         expect(
           interceptorsContextCreator.getGlobalMetadata({ id: 3 }),

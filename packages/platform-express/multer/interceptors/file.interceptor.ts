@@ -17,9 +17,9 @@ import { transformException } from '../multer/multer.utils';
 type MulterInstance = any;
 
 /**
- * @param fieldName 
- * @param localOptions 
- * 
+ * @param fieldName
+ * @param localOptions
+ *
  * @publicApi
  */
 export function FileInterceptor(

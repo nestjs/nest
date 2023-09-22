@@ -33,7 +33,7 @@ describe('ExceptionFiltersContext', () => {
       it('should return plain ExceptionHandler object', () => {
         const filter = exceptionFilter.create(
           new EmptyMetadata(),
-          () => ({} as any),
+          () => ({}) as any,
           undefined,
         );
         expect((filter as any).filters).to.be.empty;
@@ -46,7 +46,7 @@ describe('ExceptionFiltersContext', () => {
       it('should return ExceptionHandler object with exception filters', () => {
         const filter = exceptionFilter.create(
           new WithMetadata(),
-          () => ({} as any),
+          () => ({}) as any,
           undefined,
         );
         expect((filter as any).filters).to.not.be.empty;
@@ -76,7 +76,7 @@ describe('ExceptionFiltersContext', () => {
           .callsFake(() => scopedFilterWrappers);
         sinon
           .stub(instanceWrapper, 'getInstanceByContextId')
-          .callsFake(() => ({ instance } as any));
+          .callsFake(() => ({ instance }) as any);
 
         expect(exceptionFilter.getGlobalMetadata({ id: 3 })).to.contains(
           instance,
