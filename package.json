@@ -100,7 +100,7 @@
     "@types/chai-as-promised": "7.1.6",
     "@types/cors": "2.8.14",
     "@types/express": "4.17.17",
-    "@types/gulp": "4.0.13",
+    "@types/gulp": "4.0.14",
     "@types/http-errors": "2.0.1",
     "@types/mocha": "10.0.1",
     "@types/node": "20.6.0",
