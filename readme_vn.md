@@ -38,7 +38,7 @@ Nest là một framework dành cho việc xây dựng ứng dụng máy chủ <a
 - 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
 - [가이드](readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. :books:
 - [ガイド](readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 :books:
-- Vui lòng xem [hướng dẫn](readme_jp.md) tại [docs.nestjs.com](https://docs.nestjs.com). :books:
+- Vui lòng xem [hướng dẫn](readme_vn.md) tại [docs.nestjs.com](https://docs.nestjs.com). :books:
 
 
 ## Câu hỏi
