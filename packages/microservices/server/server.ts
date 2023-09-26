@@ -82,10 +82,14 @@ export abstract class Server {
       if (!dataBuffer) {
         dataBuffer = [data];
         process.nextTick(async () => {
-          for (const item of dataBuffer) {
-            await respond(item);
+          try {
+            for (const item of dataBuffer) {
+              await respond(item);
+            }
+            dataBuffer = null;
+          } catch (err) {
+            this.logger.error(err);
           }
-          dataBuffer = null;
         });
       } else if (!data.isDisposed) {
         dataBuffer = dataBuffer.concat(data);
