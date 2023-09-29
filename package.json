@@ -102,7 +102,7 @@
     "@types/express": "4.17.18",
     "@types/gulp": "4.0.14",
     "@types/http-errors": "2.0.2",
-    "@types/mocha": "10.0.1",
+    "@types/mocha": "10.0.2",
     "@types/node": "20.7.1",
     "@types/sinon": "10.0.17",
     "@types/supertest": "2.0.12",
