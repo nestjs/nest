@@ -80,7 +80,7 @@
   "devDependencies": {
     "@apollo/server": "4.9.3",
     "@codechecks/client": "0.1.12",
-    "@commitlint/cli": "17.7.1",
+    "@commitlint/cli": "17.7.2",
     "@commitlint/config-angular": "17.7.0",
     "@fastify/cors": "8.4.0",
     "@fastify/formbody": "7.4.0",
