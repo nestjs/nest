@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/websockets",
-  "version": "10.2.6",
+  "version": "10.2.7",
   "description": "Nest - modern, fast, powerful node.js web framework (@websockets)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -18,8 +18,8 @@
     "tslib": "2.6.2"
   },
   "devDependencies": {
-    "@nestjs/common": "10.2.6",
-    "@nestjs/core": "10.2.6"
+    "@nestjs/common": "10.2.7",
+    "@nestjs/core": "10.2.7"
   },
   "peerDependencies": {
     "@nestjs/common": "^10.0.0",
