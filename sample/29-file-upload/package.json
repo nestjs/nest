@@ -34,7 +34,7 @@
     "@nestjs/testing": "10.0.3",
     "@types/express": "4.17.18",
     "@types/jest": "29.5.4",
-    "@types/multer": "1.4.7",
+    "@types/multer": "1.4.8",
     "@types/node": "20.3.3",
     "@types/supertest": "2.0.12",
     "jest": "29.6.4",
