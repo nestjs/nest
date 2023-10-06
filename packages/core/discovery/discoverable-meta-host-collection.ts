@@ -94,7 +94,7 @@ export class DiscoverableMetaHostCollection {
     metaKey: string,
   ): Set<InstanceWrapper> {
     const wrappersByMetaKey = this.providersByMetaKey.get(hostContainerRef);
-    return wrappersByMetaKey.get(metaKey);
+    return wrappersByMetaKey?.get(metaKey) ?? new Set<InstanceWrapper>();
   }
 
   public static getControllersByMetaKey(
@@ -102,7 +102,7 @@ export class DiscoverableMetaHostCollection {
     metaKey: string,
   ): Set<InstanceWrapper> {
     const wrappersByMetaKey = this.controllersByMetaKey.get(hostContainerRef);
-    return wrappersByMetaKey.get(metaKey);
+    return wrappersByMetaKey?.get(metaKey) ?? new Set<InstanceWrapper>();
   }
 
   private static inspectInstanceWrapper(
