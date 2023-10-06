@@ -33,7 +33,7 @@
     "socket.io": "4.7.0"
   },
   "devDependencies": {
-    "@nestjs/cli": "10.0.5",
+    "@nestjs/cli": "10.1.18",
     "@nestjs/schematics": "10.0.2",
     "@nestjs/testing": "10.2.6",
     "@types/express": "4.17.18",
