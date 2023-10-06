@@ -1,15 +1,21 @@
-import { Test } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
+import { DiscoveryService } from '@nestjs/core';
 import { expect } from 'chai';
 import { AppModule } from '../src/app.module';
 import { WebhooksExplorer } from '../src/webhooks.explorer';
+import { NonAppliedDecorator } from '../src/decorators/non-applied.decorator';
 
 describe('DiscoveryModule', () => {
-  it('should discover all providers & handlers with corresponding annotations', async () => {
-    const builder = Test.createTestingModule({
+  let moduleRef: TestingModule;
+
+  beforeEach(async () => {
+    moduleRef = await Test.createTestingModule({
       imports: [AppModule],
-    });
-    const testingModule = await builder.compile();
-    const webhooksExplorer = testingModule.get(WebhooksExplorer);
+    }).compile();
+  });
+
+  it('should discover all providers & handlers with corresponding annotations', async () => {
+    const webhooksExplorer = moduleRef.get(WebhooksExplorer);
 
     expect(webhooksExplorer.getWebhooks()).to.be.eql([
       {
@@ -31,5 +37,23 @@ describe('DiscoveryModule', () => {
         name: 'flush',
       },
     ]);
+  });
+
+  it('should return an empty array if no providers were found for a given discoverable decorator', () => {
+    const discoveryService = moduleRef.get(DiscoveryService);
+
+    const providers = discoveryService.getProviders({
+      metadataKey: NonAppliedDecorator.KEY,
+    });
+    expect(providers).to.be.eql([]);
+  });
+
+  it('should return an empty array if no controllers were found for a given discoverable decorator', () => {
+    const discoveryService = moduleRef.get(DiscoveryService);
+
+    const controllers = discoveryService.getControllers({
+      metadataKey: NonAppliedDecorator.KEY,
+    });
+    expect(controllers).to.be.eql([]);
   });
 });
