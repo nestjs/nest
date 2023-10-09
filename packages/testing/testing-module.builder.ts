@@ -1,4 +1,11 @@
-import { Logger, LoggerService, Module, ModuleMetadata } from '@nestjs/common';
+import {
+  Logger,
+  LoggerService,
+  MiddlewareConsumer,
+  Module,
+  ModuleMetadata,
+  Type,
+} from '@nestjs/common';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { NestContainer } from '@nestjs/core/injector/container';
@@ -22,6 +29,7 @@ import { TestingLogger } from './services/testing-logger.service';
 import { TestingInjector } from './testing-injector';
 import { TestingInstanceLoader } from './testing-instance-loader';
 import { TestingModule } from './testing-module';
+import { OverrideMiddleware } from './interfaces/override-middleware.interface';
 
 /**
  * @publicApi
@@ -34,6 +42,11 @@ export class TestingModuleBuilder {
     ModuleDefinition,
     ModuleDefinition
   >();
+  private readonly middlewareOverloadsMap = new Map<
+    Type<any> | Function,
+    (Type<any> | Function)[]
+  >();
+
   private readonly module: any;
   private testingLogger: LoggerService;
   private mocker?: MockFactory;
@@ -84,6 +97,17 @@ export class TestingModuleBuilder {
     };
   }
 
+  public overrideMiddleware(
+    middlewareToOverride: Type<any> | Function,
+  ): OverrideMiddleware {
+    return {
+      useMiddleware: (...newMiddleware: (Type<any> | Function)[]) => {
+        this.middlewareOverloadsMap.set(middlewareToOverride, newMiddleware);
+        return this;
+      },
+    };
+  }
+
   public async compile(
     options: Pick<NestApplicationContextOptions, 'snapshot' | 'preview'> = {},
   ): Promise<TestingModule> {
@@ -111,6 +135,7 @@ export class TestingModuleBuilder {
     this.applyOverloadsMap();
     await this.createInstancesOfDependencies(graphInspector, options);
     scanner.applyApplicationProviders();
+    this.applyMiddlewareOverrides();
 
     const root = this.getRootModule();
     return new TestingModule(
@@ -150,6 +175,21 @@ export class TestingModuleBuilder {
     });
   }
 
+  private applyMiddlewareOverrides() {
+    for (const { instance } of this.container.getModules().values()) {
+      const originalConfigurationMethod = instance.configure;
+      instance.configure = (middlewareConsumer: MiddlewareConsumer) => {
+        if (!originalConfigurationMethod) return [];
+        originalConfigurationMethod(middlewareConsumer);
+        for (const [middlewareToOverride, newMiddleware] of this
+          .middlewareOverloadsMap) {
+          middlewareConsumer.replace(middlewareToOverride, ...newMiddleware);
+        }
+        return middlewareConsumer;
+      };
+    }
+  }
+
   private getModuleOverloads(): ModuleOverride[] {
     const overloads = [...this.moduleOverloadsMap.entries()];
     return overloads.map(([moduleToReplace, newModule]) => ({
@@ -183,6 +223,7 @@ export class TestingModuleBuilder {
 
   private createModule(metadata: ModuleMetadata) {
     class RootTestModule {}
+
     Module(metadata)(RootTestModule);
     return RootTestModule;
   }

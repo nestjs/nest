@@ -15,8 +15,15 @@ import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
 import { filterMiddleware } from './utils';
 
+type MiddlewareConfigurationContext = {
+  middleware: (Type<any> | Function)[];
+  routes: RouteInfo[];
+  excludedRoutes: RouteInfo[];
+};
+
 export class MiddlewareBuilder implements MiddlewareConsumer {
-  private readonly middlewareCollection = new Set<MiddlewareConfiguration>();
+  private readonly middlewareConfigurationContexts: MiddlewareConfigurationContext[] =
+    [];
 
   constructor(
     private readonly routesMapper: RoutesMapper,
@@ -34,8 +41,39 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     );
   }
 
+  public replace(
+    middlewareToReplace: Type<any> | Function,
+    ...middlewareReplacements: Array<Type<any> | Function>
+  ): MiddlewareBuilder {
+    for (const currentConfigurationContext of this
+      .middlewareConfigurationContexts) {
+      currentConfigurationContext.middleware = flatten(
+        currentConfigurationContext.middleware.map(middleware =>
+          middleware === middlewareToReplace
+            ? middlewareReplacements
+            : middleware,
+        ),
+      ) as (Type<any> | Function)[];
+    }
+
+    return this;
+  }
+
+  public getMiddlewareConfigurationContexts(): MiddlewareConfigurationContext[] {
+    return this.middlewareConfigurationContexts;
+  }
+
   public build(): MiddlewareConfiguration[] {
-    return [...this.middlewareCollection];
+    return this.middlewareConfigurationContexts.map(
+      ({ middleware, routes, excludedRoutes }) => ({
+        middleware: filterMiddleware(
+          middleware,
+          excludedRoutes,
+          this.getHttpAdapter(),
+        ),
+        forRoutes: routes,
+      }),
+    );
   }
 
   public getHttpAdapter(): HttpServer {
@@ -68,19 +106,17 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     public forRoutes(
       ...routes: Array<string | Type<any> | RouteInfo>
     ): MiddlewareConsumer {
-      const { middlewareCollection } = this.builder;
+      const { middlewareConfigurationContexts } = this.builder;
 
       const flattedRoutes = this.getRoutesFlatList(routes);
       const forRoutes = this.removeOverlappedRoutes(flattedRoutes);
-      const configuration = {
-        middleware: filterMiddleware(
-          this.middleware,
-          this.excludedRoutes,
-          this.builder.getHttpAdapter(),
-        ),
-        forRoutes,
-      };
-      middlewareCollection.add(configuration);
+
+      middlewareConfigurationContexts.push({
+        middleware: this.middleware,
+        routes: forRoutes,
+        excludedRoutes: this.excludedRoutes,
+      });
+
       return this.builder;
     }
 
