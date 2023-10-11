@@ -3,6 +3,7 @@ import { types } from 'util';
 import { HttpStatus } from '../enums';
 import { isFunction } from '../utils/shared.utils';
 import { StreamableFileOptions, StreamableHandlerResponse } from './interfaces';
+import { Logger } from '../services';
 
 /**
  * @see [Streaming files](https://docs.nestjs.com/techniques/streaming-files)
@@ -11,6 +12,7 @@ import { StreamableFileOptions, StreamableHandlerResponse } from './interfaces';
  */
 export class StreamableFile {
   private readonly stream: Readable;
+  protected logger = new Logger('StreamableFile');
 
   protected handleError: (
     err: Error,
@@ -26,6 +28,10 @@ export class StreamableFile {
 
     res.statusCode = HttpStatus.BAD_REQUEST;
     res.send(err.message);
+  };
+
+  protected logError: (err: Error) => void = (err: Error) => {
+    this.logger.error(err.message, err.stack);
   };
 
   constructor(buffer: Uint8Array, options?: StreamableFileOptions);
@@ -72,6 +78,15 @@ export class StreamableFile {
     handler: (err: Error, response: StreamableHandlerResponse) => void,
   ) {
     this.handleError = handler;
+    return this;
+  }
+
+  get errorLogger() {
+    return this.logError;
+  }
+
+  setErrorLogger(handler: (err: Error) => void) {
+    this.logError = handler;
     return this;
   }
 }

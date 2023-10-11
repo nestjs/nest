@@ -96,7 +96,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         response,
         (err: Error) => {
           if (err) {
-            this.logger.error(err.message, err.stack);
+            body.errorLogger(err);
           }
         },
       );
