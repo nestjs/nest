@@ -12,3 +12,4 @@ export * from './use-interceptors.decorator';
 export * from './use-pipes.decorator';
 export * from './apply-decorators';
 export * from './version.decorator';
+export * from './logger.decorator'
