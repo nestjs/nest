@@ -59,10 +59,15 @@ export class ClientRedis extends ClientProxy {
     this.handleError(this.pubClient);
     this.handleError(this.subClient);
 
-    this.connection = Promise.all([
-      this.subClient.connect(),
-      this.pubClient.connect(),
-    ]);
+    this.connection = new Promise((resolve, reject) => {
+      Promise.all([this.subClient.connect(), this.pubClient.connect()])
+        .then(resolve)
+        .catch(error => {
+          this.handleError(error);
+          reject(error);
+        });
+    });
+
     await this.connection;
 
     this.subClient.on(MESSAGE_EVENT, this.createResponseCallback());
