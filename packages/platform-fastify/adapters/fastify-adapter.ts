@@ -52,7 +52,10 @@ import {
   FastifyStaticOptions,
   FastifyViewOptions,
 } from '../interfaces/external';
-import { FASTIFY_ROUTE_CONFIG_METADATA } from '../constants';
+import {
+  FASTIFY_ROUTE_CONFIG_METADATA,
+  FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+} from '../constants';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -659,17 +662,27 @@ export class FastifyAdapter<
       FASTIFY_ROUTE_CONFIG_METADATA,
       handlerRef,
     );
-    const hasConfig = !isUndefined(routeConfig);
 
-    if (isVersioned || hasConfig) {
+    const routeConstraints = Reflect.getMetadata(
+      FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+      handlerRef,
+    );
+
+    const hasConfig = !isUndefined(routeConfig);
+    const hasConstraints = !isUndefined(routeConstraints);
+
+    if (isVersioned || hasConstraints || hasConfig) {
       const isPathAndRouteTuple = args.length === 2;
       if (isPathAndRouteTuple) {
-        const options = {
+        const constraints = {
+          ...(hasConstraints && routeConstraints),
           ...(isVersioned && {
-            constraints: {
-              version: handlerRef.version,
-            },
+            version: handlerRef.version,
           }),
+        };
+
+        const options = {
+          constraints,
           ...(hasConfig && {
             config: {
               ...routeConfig,
@@ -680,6 +693,7 @@ export class FastifyAdapter<
         return this.instance[routerMethodKey](path, options, handlerRef);
       }
     }
+
     return this.instance[routerMethodKey](
       ...(args as Parameters<
         RouteShorthandMethod<TServer, TRawRequest, TRawResponse>
