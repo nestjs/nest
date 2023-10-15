@@ -47,7 +47,7 @@ export enum HttpStatusMessage {
   PAYLOAD_TOO_LARGE = "Payload Too Large",
   URI_TOO_LONG = "Uri Too Long",
   PROCESSING = "Processing",
-  EARLYHINTS = "Earlyhints",
+  EARLYHINTS = "Early Hints",
   PERMANENT_REDIRECT = "Permanent Redirect",
-  TOO_MANY_REQUESTS = "Too many Requests"
+  TOO_MANY_REQUESTS = "Too Many Requests"
 }
