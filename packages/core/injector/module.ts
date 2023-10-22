@@ -39,7 +39,6 @@ import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
 import { ContextId, InstanceWrapper } from './instance-wrapper';
 import { ModuleRef, ModuleRefGetOrResolveOpts } from './module-ref';
-import { Injector } from './injector';
 
 export class Module {
   private readonly _id: string;
