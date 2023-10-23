@@ -6,7 +6,5 @@ import { Type } from '@nestjs/common';
  * @publicApi
  */
 export interface OverrideMiddleware {
-  useMiddleware: (
-    ...newMiddleware: (Type<any> | Function)[]
-  ) => TestingModuleBuilder;
+  use: (...newMiddleware: (Type<any> | Function)[]) => TestingModuleBuilder;
 }

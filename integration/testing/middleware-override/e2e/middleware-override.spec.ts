@@ -98,9 +98,9 @@ describe('Middleware overriding', () => {
       imports: [AppModule],
     })
       .overrideMiddleware(MiddlewareA)
-      .useMiddleware(MiddlewareAOverride)
+      .use(MiddlewareAOverride)
       .overrideMiddleware(MiddlewareC)
-      .useMiddleware(MiddlewareC1Override, MiddlewareC2Override)
+      .use(MiddlewareC1Override, MiddlewareC2Override)
       .compile();
 
     const app = testingModule.createNestApplication();
@@ -147,7 +147,7 @@ describe('Middleware overriding', () => {
       imports: [AppModule],
     })
       .overrideMiddleware(MiddlewareB)
-      .useMiddleware(MiddlewareBOverride)
+      .use(MiddlewareBOverride)
       .compile();
 
     const app = testingModule.createNestApplication();

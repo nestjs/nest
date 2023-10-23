@@ -101,7 +101,7 @@ export class TestingModuleBuilder {
     middlewareToOverride: Type<any> | Function,
   ): OverrideMiddleware {
     return {
-      useMiddleware: (...newMiddleware: (Type<any> | Function)[]) => {
+      use: (...newMiddleware: (Type<any> | Function)[]) => {
         this.middlewareOverloadsMap.set(middlewareToOverride, newMiddleware);
         return this;
       },
