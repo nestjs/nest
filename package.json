@@ -31,7 +31,7 @@
     "test": "mocha packages/**/*.spec.ts",
     "test:dev": "mocha -w --watch-files \"packages\" packages/**/*.spec.ts",
     "pretest:cov": "npm run clean",
-    "test:cov": "nyc mocha packages/**/*.spec.ts --reporter spec",
+    "test:cov": "NODE_OPTIONS=--max-old-space-size=8192 nyc mocha packages/**/*.spec.ts --reporter spec",
     "test:integration": "mocha \"integration/*/{,!(node_modules)/**/}/*.spec.ts\"",
     "test:docker:up": "docker-compose -f integration/docker-compose.yml up -d",
     "test:docker:down": "docker-compose -f integration/docker-compose.yml down",
