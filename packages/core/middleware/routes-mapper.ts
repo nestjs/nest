@@ -87,28 +87,27 @@ export class RoutesMapper {
       version === VERSION_NEUTRAL ? undefined : version;
 
     const toRouteInfo = (item: RouteDefinition, prefix: string) =>
-      item.path
-        ?.flatMap(p => {
-          let endpointPath = modulePath ?? '';
-          endpointPath += this.normalizeGlobalPath(prefix) + addLeadingSlash(p);
+      item.path?.flatMap(p => {
+        let endpointPath = modulePath ?? '';
+        endpointPath += this.normalizeGlobalPath(prefix) + addLeadingSlash(p);
 
-          const routeInfo: RouteInfo = {
-            path: endpointPath,
-            method: item.requestMethod,
-          };
-          const version = item.version ?? controllerVersion;
-          if (version && versioningConfig) {
-            if (typeof version !== 'string' && Array.isArray(version)) {
-              return version.map(v => ({
-                ...routeInfo,
-                version: toUndefinedIfNeural(v),
-              }));
-            }
-            routeInfo.version = toUndefinedIfNeural(version);
+        const routeInfo: RouteInfo = {
+          path: endpointPath,
+          method: item.requestMethod,
+        };
+        const version = item.version ?? controllerVersion;
+        if (version && versioningConfig) {
+          if (typeof version !== 'string' && Array.isArray(version)) {
+            return version.map(v => ({
+              ...routeInfo,
+              version: toUndefinedIfNeural(v),
+            }));
           }
+          routeInfo.version = toUndefinedIfNeural(version);
+        }
 
-          return routeInfo;
-        });
+        return routeInfo;
+      });
 
     return []
       .concat(routePath)

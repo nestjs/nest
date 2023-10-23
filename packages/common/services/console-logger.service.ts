@@ -245,10 +245,18 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected stringifyMessage(message: unknown, logLevel: LogLevel) {
-    // If the message is a function, call it and re-resolve its value.
-    return isFunction(message)
-      ? this.stringifyMessage(message(), logLevel)
-      : isPlainObject(message) || Array.isArray(message)
+    if (isFunction(message)) {
+      const messageAsStr = Function.prototype.toString.call(message);
+      const isClass = messageAsStr.startsWith('class ');
+      if (isClass) {
+        // If the message is a class, we will display the class name.
+        return this.stringifyMessage(message.name, logLevel);
+      }
+      // If the message is a non-class function, call it and re-resolve its value.
+      return this.stringifyMessage(message(), logLevel);
+    }
+
+    return isPlainObject(message) || Array.isArray(message)
       ? `${this.colorize('Object:', logLevel)}\n${JSON.stringify(
           message,
           (key, value) =>

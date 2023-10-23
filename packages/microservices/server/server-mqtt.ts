@@ -189,7 +189,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     if (this.messageHandlers.has(route)) {
       return this.messageHandlers.get(route) || null;
     }
-  
+
     for (const [key, value] of this.messageHandlers) {
       const keyWithoutSharedPrefix = this.removeHandlerKeySharedPrefix(key);
       if (this.matchMqttPattern(keyWithoutSharedPrefix, route)) {
