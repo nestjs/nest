@@ -81,7 +81,7 @@
     "@apollo/server": "4.9.4",
     "@codechecks/client": "0.1.12",
     "@commitlint/cli": "17.7.2",
-    "@commitlint/config-angular": "17.7.0",
+    "@commitlint/config-angular": "18.0.0",
     "@fastify/cors": "8.4.0",
     "@fastify/formbody": "7.4.0",
     "@fastify/middie": "8.3.0",
