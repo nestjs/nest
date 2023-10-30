@@ -179,7 +179,9 @@ export class TestingModuleBuilder {
     for (const { instance } of this.container.getModules().values()) {
       const originalConfigurationMethod = instance.configure;
       instance.configure = (middlewareConsumer: MiddlewareConsumer) => {
-        if (!originalConfigurationMethod) return [];
+        if (!originalConfigurationMethod) {
+          return [];
+        }
         originalConfigurationMethod(middlewareConsumer);
         for (const [middlewareToOverride, newMiddleware] of this
           .middlewareOverloadsMap) {
