@@ -379,7 +379,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(req.asObservable(), call.metadata, call);
       const res = this.transformToObservable(await handler);
       if (isResponseStream) {
-        await this.writeObservableToGrpc(res, call);
+        try {
+          await this.writeObservableToGrpc(res, call);
+        }
+        catch (err) {
+          call.emit('error', err);
+          return;
+        }
       } else {
         const response = await lastValueFrom(
           res.pipe(
