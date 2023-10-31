@@ -82,5 +82,21 @@ describe('WebSocketGateway', () => {
     );
   });
 
+  it(`should be able to get the pattern in a filter (when the error comes from a known handler)`, async () => {
+    app = await createNestApp(ApplicationGateway);
+    await app.listen(3000);
+
+    ws = io('http://localhost:8080');
+    ws.emit('getClientWithError', {
+      test: 'test',
+    });
+    await new Promise<void>(resolve =>
+      ws.on('exception', data => {
+        expect(data.pattern).to.be.eql('getClientWithError');
+        resolve();
+      }),
+    );
+  });
+
   afterEach(() => app.close());
 });

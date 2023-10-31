@@ -126,7 +126,7 @@ describe('ServerKafka', () => {
     it('should call "bindEvents"', async () => {
       bindEventsStub = sinon
         .stub(server, 'bindEvents')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
       await server.listen(callback);
       expect(bindEventsStub.called).to.be.true;
     });

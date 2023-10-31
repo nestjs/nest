@@ -6,16 +6,16 @@ parameters:
     default: false
   legacy-node-version:
     type: string
-    default: "14.21.3"
+    default: '14.21.3'
   maintenance-node-version:
     type: string
-    default: "16.20"
+    default: '16.20'
   active-node-version:
     type: string
-    default: "18.17"
+    default: '18.17'
   current-node-version:
     type: string
-    default: "20.5"
+    default: '20.5'
 
 aliases:
   - &restore-cache
@@ -65,7 +65,11 @@ jobs:
       - when:
           condition:
             and:
-              - equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
+              - equal:
+                  [
+                    '<< parameters.node-version >>',
+                    '<< pipeline.parameters.legacy-node-version >>',
+                  ]
               - not: << pipeline.parameters.check-legacy-node-version >>
           steps:
             - run:
@@ -76,7 +80,11 @@ jobs:
           condition:
             or:
               - not:
-                  equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
+                  equal:
+                    [
+                      '<< parameters.node-version >>',
+                      '<< pipeline.parameters.legacy-node-version >>',
+                    ]
               - << pipeline.parameters.check-legacy-node-version >>
           steps:
             - checkout
@@ -85,7 +93,11 @@ jobs:
             - *build-packages
             - when:
                 condition:
-                  equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.maintenance-node-version >>" ]
+                  equal:
+                    [
+                      '<< parameters.node-version >>',
+                      '<< pipeline.parameters.maintenance-node-version >>',
+                    ]
                 steps:
                   - run:
                       name: Test (coverage)
@@ -98,7 +110,11 @@ jobs:
             - when:
                 condition:
                   not:
-                    equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.maintenance-node-version >>" ]
+                    equal:
+                      [
+                        '<< parameters.node-version >>',
+                        '<< pipeline.parameters.maintenance-node-version >>',
+                      ]
                 steps:
                   - *run-unit-tests
 
@@ -118,59 +134,39 @@ jobs:
           command: ./node_modules/.bin/commitlint-circle -c .commitlintrc.json
 
   integration_tests:
-    parameters:
-      node-version:
-        type: string
     working_directory: ~/nest
     machine: true
     steps:
-      - when:
-          condition:
-            and:
-              - equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
-              - not: << pipeline.parameters.check-legacy-node-version >>
-          steps:
-            - run:
-                name: Skip
-                command: |
-                  echo Skipping
-      - when:
-          condition:
-            or:
-              - not:
-                  equal: [ "<< parameters.node-version >>", "<< pipeline.parameters.legacy-node-version >>" ]
-              - << pipeline.parameters.check-legacy-node-version >>
-          steps:
-            - checkout
-            - run:
-                name: Prepare nvm
-                command: |
-                  echo 'export NVM_DIR="/opt/circleci/.nvm"' >> $BASH_ENV
-                  echo ' [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
-            - run:
-                name: Upgrade Node.js
-                command: |
-                  nvm install << parameters.node-version >>
-                  node -v
-                  nvm alias default << parameters.node-version >>
-            - run:
-                name: Install Docker Compose
-                command: |
-                  curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
-                  chmod +x ~/docker-compose
-                  sudo mv ~/docker-compose /usr/local/bin/docker-compose
-            - *install-deps
-            - run:
-                name: Prepare tests
-                command: |
-                  bash ./scripts/prepare.sh
-                  sleep 10
-            - run:
-                name: List containers
-                command: docker ps
-            - run:
-                name: Integration tests
-                command: npm run test:integration
+      - checkout
+      - run:
+          name: Prepare nvm
+          command: |
+            echo 'export NVM_DIR="/opt/circleci/.nvm"' >> $BASH_ENV
+            echo ' [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
+      - run:
+          name: Upgrade Node.js
+          command: |
+            nvm install << pipeline.parameters.maintenance-node-version >>
+            node -v
+            nvm alias default << pipeline.parameters.maintenance-node-version >>
+      - run:
+          name: Install Docker Compose
+          command: |
+            curl -L https://github.com/docker/compose/releases/download/1.19.0/docker-compose-`uname -s`-`uname -m` > ~/docker-compose
+            chmod +x ~/docker-compose
+            sudo mv ~/docker-compose /usr/local/bin/docker-compose
+      - *install-deps
+      - run:
+          name: Prepare tests
+          command: |
+            bash ./scripts/prepare.sh
+            sleep 10
+      - run:
+          name: List containers
+          command: docker ps
+      - run:
+          name: Integration tests
+          command: npm run test:integration
 
   codechecks_benchmarks:
     working_directory: ~/nest
@@ -193,7 +189,7 @@ jobs:
     docker:
       - image: cimg/node:<< pipeline.parameters.maintenance-node-version >>
     environment:
-      DISABLE_OPENCOLLECTIVE: "true"
+      DISABLE_OPENCOLLECTIVE: 'true'
     steps:
       - checkout
       - *restore-cache
@@ -211,26 +207,19 @@ workflows:
             - build
           matrix:
             parameters:
-              node-version: [
-                "<< pipeline.parameters.legacy-node-version >>",
-                "<< pipeline.parameters.maintenance-node-version >>",
-                "<< pipeline.parameters.active-node-version >>",
-                "<< pipeline.parameters.current-node-version >>"
-              ]
+              node-version:
+                [
+                  '<< pipeline.parameters.legacy-node-version >>',
+                  '<< pipeline.parameters.maintenance-node-version >>',
+                  '<< pipeline.parameters.active-node-version >>',
+                  '<< pipeline.parameters.current-node-version >>',
+                ]
       - lint:
           requires:
             - build
       - integration_tests:
           requires:
             - build
-          matrix:
-            parameters:
-              node-version: [
-                "<< pipeline.parameters.legacy-node-version >>",
-                "<< pipeline.parameters.maintenance-node-version >>",
-                "<< pipeline.parameters.active-node-version >>",
-                "<< pipeline.parameters.current-node-version >>"
-              ]
       - samples:
           requires:
             - build

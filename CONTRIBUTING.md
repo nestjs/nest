@@ -164,7 +164,7 @@ You will need [Node.js](https://nodejs.org) version >= 10.13.0 (except for v13).
 1. After cloning the repo, run:
 
 ```bash
-$ npm ci # (or yarn install)
+$ npm ci --legacy-peer-deps # (or yarn install)
 ```
 
 2. In order to prepare your environment run `prepare.sh` shell script:

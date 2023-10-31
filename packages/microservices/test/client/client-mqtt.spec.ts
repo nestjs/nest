@@ -255,7 +255,7 @@ describe('ClientMqtt', () => {
           ({
             addListener: () => ({}),
             removeListener: () => ({}),
-          } as any),
+          }) as any,
       );
       handleErrorsSpy = sinon.spy(client, 'handleError');
       connect$Stub = sinon.stub(client, 'connect$' as any).callsFake(() => ({

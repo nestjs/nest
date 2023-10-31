@@ -10,7 +10,6 @@ export interface MulterOptionsFactory {
   createMulterOptions(): Promise<MulterModuleOptions> | MulterModuleOptions;
 }
 
-
 /**
  * @publicApi
  */

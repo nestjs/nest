@@ -22,7 +22,8 @@ import { ListenersController } from './listeners-controller';
 import { Server } from './server/server';
 
 export class MicroservicesModule<
-  TAppOptions extends NestApplicationContextOptions = NestApplicationContextOptions,
+  TAppOptions extends
+    NestApplicationContextOptions = NestApplicationContextOptions,
 > {
   private readonly clientsContainer = new ClientsContainer();
   private listenersController: ListenersController;

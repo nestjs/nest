@@ -1,7 +1,14 @@
 import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
-import { of, ReplaySubject, Subject } from 'rxjs';
+import {
+  async,
+  Observable,
+  of,
+  ReplaySubject,
+  Subject,
+  throwError,
+} from 'rxjs';
 import * as sinon from 'sinon';
 import { CANCEL_EVENT } from '../../constants';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
@@ -41,7 +48,7 @@ describe('ServerGrpc', () => {
       callback = sinon.spy();
       bindEventsStub = sinon
         .stub(server, 'bindEvents')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
     });
 
     it('should call "bindEvents"', async () => {
@@ -85,7 +92,7 @@ describe('ServerGrpc', () => {
       callback = sinon.spy();
       bindEventsStub = sinon
         .stub(serverMulti, 'bindEvents')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
     });
 
     it('should call "bindEvents"', async () => {
@@ -224,7 +231,7 @@ describe('ServerGrpc', () => {
 
       const spy = sinon
         .stub(server, 'createServiceMethod')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
       (server as any).messageHandlers = handlers;
       await server.createService(
         {
@@ -246,7 +253,7 @@ describe('ServerGrpc', () => {
           .onFirstCall()
           .returns('test2');
 
-        sinon.stub(server, 'createServiceMethod').callsFake(() => ({} as any));
+        sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
         (server as any).messageHandlers = handlers;
         await server.createService(
           {
@@ -281,7 +288,7 @@ describe('ServerGrpc', () => {
           .onSecondCall()
           .returns('test2');
 
-        sinon.stub(server, 'createServiceMethod').callsFake(() => ({} as any));
+        sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
         (server as any).messageHandlers = handlers;
         await server.createService(
           {
@@ -391,29 +398,40 @@ describe('ServerGrpc', () => {
         const call = {
           write: sinon.spy(),
           end: sinon.spy(),
-          addListener: sinon.spy(),
-          removeListener: sinon.spy(),
+          on: sinon.spy(),
+          off: sinon.spy(),
         };
         const callback = sinon.spy();
         const native = sinon.spy();
 
         await server.createStreamServiceMethod(native)(call, callback);
         expect(native.called).to.be.true;
-        expect(call.addListener.calledWith('cancelled')).to.be.true;
-        expect(call.removeListener.calledWith('cancelled')).to.be.true;
+        expect(call.on.calledWith('cancelled')).to.be.true;
+        expect(call.off.calledWith('cancelled')).to.be.true;
       });
 
       it(`should close the result observable when receiving an 'cancelled' event from the client`, async () => {
-        let cancelCb: () => void;
+        const et = new EventTarget();
+        let calls = 0;
         const call = {
-          write: sinon
-            .stub()
-            .onSecondCall()
-            .callsFake(() => cancelCb()),
+          write: sinon.spy((value: any) => {
+            calls++;
+            if (calls === 2) {
+              et.dispatchEvent(new Event('cancelled'));
+            }
+            // automatically drain the call stream after this returns false.
+            Promise.resolve().then(() => et.dispatchEvent(new Event('drain')));
+            return false;
+          }),
           end: sinon.spy(),
-          addListener: (name, cb) => (cancelCb = cb),
-          removeListener: sinon.spy(),
+          on: sinon.spy((name, cb) => {
+            et.addEventListener(name, cb);
+          }),
+          off: sinon.spy((name, cb) => {
+            et.removeEventListener(name, cb);
+          }),
         };
+
         const result$ = of(1, 2, 3);
         const callback = sinon.spy();
         const native = sinon
@@ -421,8 +439,13 @@ describe('ServerGrpc', () => {
           .returns(new Promise((resolve, reject) => resolve(result$)));
 
         await server.createStreamServiceMethod(native)(call, callback);
-        expect(call.write.calledTwice).to.be.true;
+        expect(call.write.callCount).to.equal(2);
         expect(call.end.called).to.be.true;
+
+        expect(call.on.calledWith('cancelled')).to.be.true;
+        expect(call.on.calledWith('drain')).to.be.true;
+        expect(call.off.calledWith('cancelled')).to.be.true;
+        expect(call.off.calledWith('drain')).to.be.true;
       });
     });
   });
@@ -500,9 +523,31 @@ describe('ServerGrpc', () => {
       expect(handler.called).to.be.true;
       expect(handler.args[0][1]).to.eq(call.metadata);
     });
+
     describe('when response is not a stream', () => {
       it('should call callback', async () => {
         const handler = async () => ({ test: true });
+        const fn = server.createRequestStreamMethod(handler, false);
+        const call = {
+          on: (event, callback) => {
+            if (event !== CANCEL_EVENT) {
+              callback();
+            }
+          },
+          off: sinon.spy(),
+          end: sinon.spy(),
+          write: sinon.spy(() => false),
+        };
+
+        const responseCallback = sinon.spy();
+        await fn(call as any, responseCallback);
+
+        expect(responseCallback.called).to.be.true;
+      });
+
+      it('should handle error thrown in handler', async () => {
+        const error = new Error('Error');
+        const handler = async () => throwError(() => error);
         const fn = server.createRequestStreamMethod(handler, false);
         const call = {
           on: (event, callback) => {
@@ -518,8 +563,10 @@ describe('ServerGrpc', () => {
         const responseCallback = sinon.spy();
         await fn(call as any, responseCallback);
 
-        expect(responseCallback.called).to.be.true;
+        expect(responseCallback.calledOnce).to.be.true;
+        expect(responseCallback.firstCall.args).to.eql([error, null]);
       });
+
       describe('when response is a stream', () => {
         it('should call write() and end()', async () => {
           const handler = async () => ({ test: true });
@@ -532,13 +579,291 @@ describe('ServerGrpc', () => {
             },
             off: sinon.spy(),
             end: sinon.spy(),
-            write: sinon.spy(),
+            write: sinon.spy(() => false),
           };
 
           await fn(call as any, null);
 
           expect(call.write.called).to.be.true;
           expect(call.end.called).to.be.true;
+        });
+
+        it('should wait for a drain event from the GRPC call before writing more data from the observable', async () => {
+          const emitter = new EventTarget();
+
+          const drain = () => {
+            emitter.dispatchEvent(new Event('drain'));
+          };
+
+          const call = {
+            write: sinon.spy(() => false),
+            end: sinon.spy(),
+            emit: sinon.spy(),
+            request: sinon.spy(),
+            metadata: sinon.spy(),
+            sendMetadata: sinon.spy(),
+            on: (name, cb) => {
+              emitter.addEventListener(name, cb);
+            },
+            off: (name, cb) => {
+              emitter.removeEventListener(name, cb);
+            },
+          };
+
+          const callback = sinon.spy();
+
+          const subject = new Subject<string>();
+          const handlerResult = Promise.resolve(subject);
+          const methodHandler = () => handlerResult;
+
+          const serviceMethod = await server.createRequestStreamMethod(
+            methodHandler,
+            true,
+          );
+
+          const result = serviceMethod(call, callback);
+
+          await handlerResult;
+
+          // Nothing has arrived from the observable yet.
+          expect(call.write.notCalled).to.be.true;
+
+          // When the observable emits the first value, it will
+          // write immediately, because the GRPC call is not being
+          // written to yet.
+          subject.next('a');
+          expect(call.write.calledOnce).to.be.true;
+
+          // The second emission from the observable will not cause
+          // a write yet, because the GRPC call has not been drained.
+          subject.next('b');
+          expect(call.write.calledOnce).to.be.true;
+
+          // Once we drain the GRPC call, "b" will be written
+          drain();
+          expect(call.write.calledTwice).to.be.true;
+
+          // After writing "b" drains, we shouldn't have written
+          // anything else yet, because we haven't gotten any more values.
+          drain();
+          expect(call.write.calledTwice).to.be.true;
+
+          // When the observable emits the third value, it will
+          // write immediately, because the GRPC call is not being
+          // written to yet.
+          subject.next('c');
+          expect(call.write.calledThrice).to.be.true;
+          drain();
+
+          // It shouldn't end until it's complete.
+          expect(call.end.notCalled).to.be.true;
+
+          subject.complete();
+          expect(call.end.called).to.be.true;
+          return result;
+        });
+
+        it('should end the subscription to the source if the call is cancelled', async () => {
+          const emitter = new EventTarget();
+
+          const drain = () => {
+            emitter.dispatchEvent(new Event('drain'));
+          };
+
+          const cancel = () => {
+            emitter.dispatchEvent(new Event(CANCEL_EVENT));
+          };
+
+          const call = {
+            write: sinon.spy(() => false),
+            end: sinon.spy(),
+            emit: sinon.spy(),
+            request: sinon.spy(),
+            metadata: sinon.spy(),
+            sendMetadata: sinon.spy(),
+            on: (name, cb) => {
+              emitter.addEventListener(name, cb);
+            },
+            off: (name, cb) => {
+              emitter.removeEventListener(name, cb);
+            },
+          };
+
+          const callback = sinon.spy();
+
+          let cancelled = false;
+          const subject = new Observable<string>(subscriber => {
+            subscriber.next('a');
+            subscriber.next('b');
+            return () => {
+              cancelled = true;
+            };
+          });
+
+          const handlerResult = Promise.resolve(subject);
+          const methodHandler = () => handlerResult;
+
+          const serviceMethod = await server.createRequestStreamMethod(
+            methodHandler,
+            true,
+          );
+
+          const result = serviceMethod(call, callback);
+
+          await handlerResult;
+
+          // The first value is written because the GRPC call
+          // is not being written to yet.
+          expect(call.write.calledOnce).to.be.true; // a
+
+          // "b" can't be written until the GRPC call is drained.
+          drain();
+          expect(call.write.calledTwice).to.be.true; // b
+
+          // We shouldn't be cancelled yet.
+          expect(cancelled).to.be.false;
+
+          // Signal that the GRPC call is cancelled.
+          cancel();
+          // we should have only written twice at this point.
+          expect(call.write.calledTwice).to.be.true;
+          expect(cancelled).to.be.true;
+
+          return result;
+        });
+
+        it('should wait to end until all values from the source have been written', async () => {
+          const emitter = new EventTarget();
+
+          const drain = () => {
+            emitter.dispatchEvent(new Event('drain'));
+          };
+
+          const call = {
+            write: sinon.spy(() => false),
+            end: sinon.spy(),
+            emit: sinon.spy(),
+            request: sinon.spy(),
+            metadata: sinon.spy(),
+            sendMetadata: sinon.spy(),
+            on: (name, cb) => {
+              emitter.addEventListener(name, cb);
+            },
+            off: (name, cb) => {
+              emitter.removeEventListener(name, cb);
+            },
+          };
+
+          const callback = sinon.spy();
+
+          const subject = new Subject<string>();
+          const handlerResult = Promise.resolve(subject);
+          const methodHandler = () => handlerResult;
+
+          const serviceMethod = await server.createRequestStreamMethod(
+            methodHandler,
+            true,
+          );
+
+          const result = serviceMethod(call, callback);
+
+          await handlerResult;
+
+          // Nothing has arrived from the observable yet.
+          expect(call.write.notCalled).to.be.true;
+
+          subject.next('a');
+          subject.next('b');
+          subject.next('c');
+          subject.complete();
+
+          expect(call.write.calledOnce).to.be.true; // a
+          expect(call.end.notCalled).to.be.true;
+
+          drain();
+          expect(call.write.calledTwice).to.be.true; // b
+          expect(call.end.notCalled).to.be.true;
+
+          drain();
+          expect(call.write.calledThrice).to.be.true; // c
+          expect(call.end.notCalled).to.be.true;
+
+          drain();
+          expect(call.end.called).to.be.true;
+          return result;
+        });
+
+        it('should only wait for drain events if the write call returns false', async () => {
+          const emitter = new EventTarget();
+
+          const drain = () => {
+            emitter.dispatchEvent(new Event('drain'));
+          };
+
+          const writeReturn = {
+            value: false,
+          };
+
+          const call = {
+            write: sinon.spy(() => writeReturn.value),
+            end: sinon.spy(),
+            emit: sinon.spy(),
+            request: sinon.spy(),
+            metadata: sinon.spy(),
+            sendMetadata: sinon.spy(),
+            on: (name, cb) => {
+              emitter.addEventListener(name, cb);
+            },
+            off: (name, cb) => {
+              emitter.removeEventListener(name, cb);
+            },
+          };
+
+          const callback = sinon.spy();
+
+          const subject = new Subject<string>();
+          const handlerResult = Promise.resolve(subject);
+          const methodHandler = () => handlerResult;
+
+          const serviceMethod = await server.createRequestStreamMethod(
+            methodHandler,
+            true,
+          );
+
+          const result = serviceMethod(call, callback);
+
+          await handlerResult;
+
+          // Nothing has arrived from the observable yet.
+          expect(call.write.notCalled).to.be.true;
+
+          writeReturn.value = true; // no drain needed
+
+          subject.next('a');
+
+          expect(call.write.calledOnce).to.be.true; // a
+          expect(call.end.notCalled).to.be.true;
+
+          writeReturn.value = false; // drain needed
+          subject.next('b');
+
+          expect(call.write.calledTwice).to.be.true; // b
+          expect(call.end.notCalled).to.be.true;
+
+          subject.next('c');
+
+          expect(call.write.calledTwice).to.be.true; // drain not called yet.
+          expect(call.end.notCalled).to.be.true;
+
+          drain();
+          expect(call.write.calledThrice).to.be.true; // c
+          expect(call.end.notCalled).to.be.true;
+
+          subject.complete();
+
+          drain();
+          expect(call.end.called).to.be.true;
+          return result;
         });
       });
     });

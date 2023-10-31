@@ -96,14 +96,15 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         response,
         (err: Error) => {
           if (err) {
-            this.logger.error(err.message, err.stack);
+            body.errorLogger(err);
           }
         },
       );
     }
+    const responseContentType = response.getHeader('Content-Type');
     if (
-      response.getHeader('Content-Type') !== undefined &&
-      !response.getHeader('Content-Type').startsWith('application/json') &&
+      typeof responseContentType === 'string' &&
+      !responseContentType.startsWith('application/json') &&
       body?.statusCode >= HttpStatus.BAD_REQUEST
     ) {
       this.logger.warn(

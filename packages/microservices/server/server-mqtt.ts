@@ -191,12 +191,6 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     }
 
     for (const [key, value] of this.messageHandlers) {
-      if (
-        !key.includes(MQTT_WILDCARD_SINGLE) &&
-        !key.includes(MQTT_WILDCARD_ALL)
-      ) {
-        continue;
-      }
       const keyWithoutSharedPrefix = this.removeHandlerKeySharedPrefix(key);
       if (this.matchMqttPattern(keyWithoutSharedPrefix, route)) {
         return value;

@@ -23,20 +23,31 @@ const getInstanceName = (instance: unknown): string => {
 };
 
 /**
- * Returns the name of the dependency
+ * Returns the name of the dependency.
  * Tries to get the class name, otherwise the string value
- * (= injection token). As fallback it returns '+'
+ * (= injection token). As fallback to any falsy value for `dependency`, it
+ * returns `fallbackValue`
  * @param dependency The name of the dependency to be displayed
+ * @param fallbackValue The fallback value if the dependency is falsy
+ * @param disambiguated Whether dependency's name is disambiguated with double quotes
  */
-const getDependencyName = (dependency: InjectorDependency): string =>
+const getDependencyName = (
+  dependency: InjectorDependency | undefined,
+  fallbackValue: string,
+  disambiguated = true,
+): string =>
   // use class name
   getInstanceName(dependency) ||
   // use injection token (symbol)
   (isSymbol(dependency) && dependency.toString()) ||
   // use string directly
-  (dependency as string) ||
+  (dependency
+    ? disambiguated
+      ? `"${dependency as string}"`
+      : (dependency as string)
+    : undefined) ||
   // otherwise
-  '+';
+  fallbackValue;
 
 /**
  * Returns the name of the module
@@ -54,14 +65,9 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   unknownDependencyContext: InjectorDependencyContext,
   module: Module,
 ) => {
-  const {
-    index,
-    name = 'dependency',
-    dependencies,
-    key,
-  } = unknownDependencyContext;
+  const { index, name, dependencies, key } = unknownDependencyContext;
   const moduleName = getModuleName(module);
-  const dependencyName = getDependencyName(name);
+  const dependencyName = getDependencyName(name, 'dependency');
 
   const potentialSolutions =
     // If module's name is well defined
@@ -90,7 +96,9 @@ Potential solutions:
     message += `. Please make sure that the "${key.toString()}" property is available in the current context.${potentialSolutions}`;
     return message;
   }
-  const dependenciesName = (dependencies || []).map(getDependencyName);
+  const dependenciesName = (dependencies || []).map(dependencyName =>
+    getDependencyName(dependencyName, '+', false),
+  );
   dependenciesName[index] = '?';
 
   message += ` (`;

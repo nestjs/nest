@@ -134,13 +134,13 @@ describe('ServerRedis', () => {
     });
     it('should call "handleEvent" if identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
-      sinon.stub(server, 'parseMessage').callsFake(() => ({ data } as any));
+      sinon.stub(server, 'parseMessage').callsFake(() => ({ data }) as any);
 
       await server.handleMessage(channel, JSON.stringify({}), null, channel);
       expect(handleEventSpy.called).to.be.true;
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
-      sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data } as any));
+      sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data }) as any);
       await server.handleMessage(
         channel,
         JSON.stringify({ id }),
@@ -160,7 +160,7 @@ describe('ServerRedis', () => {
       (server as any).messageHandlers = objectToMap({
         [channel]: handler,
       });
-      sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data } as any));
+      sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data }) as any);
 
       await server.handleMessage(channel, {}, null, channel);
       expect(handler.calledWith(data)).to.be.true;

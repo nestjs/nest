@@ -101,7 +101,8 @@ type FastifyRawRequest<TServer extends RawServerBase> =
 export class FastifyAdapter<
   TServer extends RawServerBase = RawServerDefault,
   TRawRequest extends FastifyRawRequest<TServer> = FastifyRawRequest<TServer>,
-  TRawResponse extends RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>,
+  TRawResponse extends
+    RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>,
   TRequest extends FastifyRequest<
     RequestGenericInterface,
     TServer,

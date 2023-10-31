@@ -29,7 +29,7 @@ describe('ServerRMQ', () => {
       createChannelStub = sinon.stub().callsFake(({ setup }) => setup());
       setupChannelStub = sinon
         .stub(server, 'setupChannel')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
 
       client = {
         on: onStub,

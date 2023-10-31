@@ -17,8 +17,8 @@ import { transformException } from '../multer/multer.utils';
 type MulterInstance = any;
 
 /**
- * 
- * @param localOptions 
+ *
+ * @param localOptions
  * @publicApi
  */
 export function NoFilesInterceptor(

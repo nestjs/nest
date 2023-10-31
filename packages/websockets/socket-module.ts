@@ -25,7 +25,8 @@ import { WebSocketsController } from './web-sockets-controller';
 
 export class SocketModule<
   THttpServer = any,
-  TAppOptions extends NestApplicationContextOptions = NestApplicationContextOptions,
+  TAppOptions extends
+    NestApplicationContextOptions = NestApplicationContextOptions,
 > {
   private readonly socketsContainer = new SocketsContainer();
   private applicationConfig: ApplicationConfig;

@@ -154,7 +154,7 @@ describe('GuardsContextCreator', () => {
           .callsFake(() => scopedGuardWrappers);
         sinon
           .stub(instanceWrapper, 'getInstanceByContextId')
-          .callsFake(() => ({ instance } as any));
+          .callsFake(() => ({ instance }) as any);
 
         expect(guardsContextCreator.getGlobalMetadata({ id: 3 })).to.contains(
           instance,

@@ -62,10 +62,10 @@ Nestは、MITライセンスのオープンソースプロジェクトです。�
 
 ## 連絡先
 
-* Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-* Website - [https://nestjs.com](https://nestjs.com/)
-* Twitter - [@nestframework](https://twitter.com/nestframework)
+* 著者 - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+* ウェブサイト - [https://nestjs.com](https://nestjs.com/)
+* X - [@nestframework](https://twitter.com/nestframework)
 
 ## ライセンス
 
-Nest is [MIT licensed](LICENSE).
+Nest は [MIT ライセンス](LICENSE) です。

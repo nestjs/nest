@@ -83,9 +83,8 @@ export class NestContainer {
     if (!metatype) {
       throw new UndefinedForwardRefException(scope);
     }
-    const { type, dynamicMetadata, token } = await this.moduleCompiler.compile(
-      metatype,
-    );
+    const { type, dynamicMetadata, token } =
+      await this.moduleCompiler.compile(metatype);
     if (this.modules.has(token)) {
       return {
         moduleRef: this.modules.get(token),
@@ -124,9 +123,8 @@ export class NestContainer {
     }
 
     const { token } = await this.moduleCompiler.compile(metatypeToReplace);
-    const { type, dynamicMetadata } = await this.moduleCompiler.compile(
-      newMetatype,
-    );
+    const { type, dynamicMetadata } =
+      await this.moduleCompiler.compile(newMetatype);
 
     return {
       moduleRef: await this.setModule(
@@ -220,9 +218,8 @@ export class NestContainer {
       return;
     }
     const moduleRef = this.modules.get(token);
-    const { token: relatedModuleToken } = await this.moduleCompiler.compile(
-      relatedModule,
-    );
+    const { token: relatedModuleToken } =
+      await this.moduleCompiler.compile(relatedModule);
     const related = this.modules.get(relatedModuleToken);
     moduleRef.addImport(related);
   }

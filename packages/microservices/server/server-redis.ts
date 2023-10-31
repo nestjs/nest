@@ -64,7 +64,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
 
   public bindEvents(subClient: Redis, pubClient: Redis) {
     subClient.on(
-      this.options.wildcards ? 'pmessage' : MESSAGE_EVENT,
+      this.options?.wildcards ? 'pmessage' : MESSAGE_EVENT,
       this.getMessageHandler(pubClient).bind(this),
     );
     const subscribePatterns = [...this.messageHandlers.keys()];
@@ -75,7 +75,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
         ? pattern
         : this.getRequestPattern(pattern);
 
-      if (this.options.wildcards) {
+      if (this.options?.wildcards) {
         subClient.psubscribe(channel);
       } else {
         subClient.subscribe(channel);
@@ -99,7 +99,7 @@ export class ServerRedis extends Server implements CustomTransportStrategy {
   }
 
   public getMessageHandler(pub: Redis) {
-    return this.options.wildcards
+    return this.options?.wildcards
       ? (channel: string, pattern: string, buffer: string | any) =>
           this.handleMessage(channel, buffer, pub, pattern)
       : (channel: string, buffer: string | any) =>
