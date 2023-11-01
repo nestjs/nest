@@ -93,6 +93,7 @@ describe('Middleware overriding', () => {
   beforeEach(() => {
     resetMiddlewareApplicationFlags();
   });
+  
   it('should override class middleware', async () => {
     const testingModule = await Test.createTestingModule({
       imports: [AppModule],
