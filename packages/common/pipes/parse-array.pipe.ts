@@ -68,11 +68,6 @@ export class ParseArrayPipe implements PipeTransform {
     }
 
     if (!Array.isArray(value)) {
-      // not sure this is needed lines 72-74
-      // if .trim() is called on a non-string, it will throw an error and get caught
-      if (!isString(value)) {
-        throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
-      }
       try {
         value = value
           .trim()
@@ -82,6 +77,23 @@ export class ParseArrayPipe implements PipeTransform {
       }
     }
     if (this.options.items) {
+      const validationMetadata: ArgumentMetadata = {
+        metatype: this.options.items,
+        type: 'query',
+      };
+
+      const isExpectedTypePrimitive = this.isExpectedTypePrimitive();
+      const toClassInstance = (item: any, index?: number) => {
+        if (this.options.items !== String) {
+          try {
+            item = JSON.parse(item);
+          } catch {}
+        }
+        if (isExpectedTypePrimitive) {
+          return this.validatePrimitive(item, index);
+        }
+        return this.validationPipe.transform(item, validationMetadata);
+      };
       if (this.options.stopAtFirstError === false) {
         // strict compare to "false" to make sure
         // that this option is disabled by default
@@ -90,7 +102,7 @@ export class ParseArrayPipe implements PipeTransform {
         const targetArray = value as Array<unknown>;
         for (let i = 0; i < targetArray.length; i++) {
           try {
-            targetArray[i] = await this.toClassInstance(targetArray[i], i);
+            targetArray[i] = await toClassInstance(targetArray[i]);
           } catch (err) {
             let message: string[] | unknown;
             if ((err as any).getResponse) {
@@ -113,7 +125,7 @@ export class ParseArrayPipe implements PipeTransform {
         }
         return targetArray;
       } else {
-        value = await Promise.all(value.map(this.toClassInstance));
+        value = await Promise.all(value.map(toClassInstance));
       }
     }
     return value;
@@ -123,22 +135,6 @@ export class ParseArrayPipe implements PipeTransform {
     return [Boolean, Number, String].includes(this.options.items as any);
   }
 
-  protected toClassInstance(item: any, index: number): any {
-    if (this.options.items !== String) {
-      try {
-        item = JSON.parse(item);
-      } catch {}
-    }
-    if (this.isExpectedTypePrimitive()) {
-      return this.validatePrimitive(item, index);
-    }
-
-    const validationMetadata: ArgumentMetadata = {
-      metatype: this.options.items,
-      type: 'query',
-    };
-    return this.validationPipe.transform(item, validationMetadata);
-  }
   protected validatePrimitive(originalValue: any, index?: number) {
     if (this.options.items === Number) {
       const value =
