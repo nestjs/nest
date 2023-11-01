@@ -200,7 +200,8 @@ export class NestFactoryStatic {
       ? UuidFactoryMode.Deterministic
       : UuidFactoryMode.Random;
 
-    const injector = new Injector({ preview: options.preview });
+    const injector = new Injector();
+    injector.setPreviewInstance(options.preview);
     const instanceLoader = new InstanceLoader(
       container,
       injector,

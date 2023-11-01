@@ -79,9 +79,13 @@ export interface InjectorDependencyContext {
 
 export class Injector {
   private logger: LoggerService = new Logger('InjectorLogger');
+  protected previewInstance = false;
 
-  constructor(private readonly options?: { preview: boolean }) {}
+  constructor() {}
 
+  public setPreviewInstance(preview: boolean = false) {
+    this.previewInstance = preview;
+  }
   public loadPrototype<T>(
     { token }: InstanceWrapper<T>,
     collection: Map<InjectionToken, InstanceWrapper<T>>,
@@ -737,7 +741,7 @@ export class Injector {
       wrapper.isLazyTransient(contextId, inquirer) ||
       wrapper.isExplicitlyRequested(contextId, inquirer);
 
-    if (this.options?.preview && !wrapper.host?.initOnPreview) {
+    if (this.previewInstance && !wrapper.host?.initOnPreview) {
       instanceHost.isResolved = true;
       return instanceHost.instance;
     }

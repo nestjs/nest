@@ -167,9 +167,8 @@ export class TestingModuleBuilder {
     graphInspector: GraphInspector,
     options: { preview?: boolean },
   ) {
-    const injector = new TestingInjector({
-      preview: options?.preview ?? false,
-    });
+    const injector = new TestingInjector();
+    injector.setPreviewInstance(options?.preview);
     const instanceLoader = new TestingInstanceLoader(
       this.container,
       injector,
