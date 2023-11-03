@@ -107,7 +107,7 @@
     "@types/sinon": "10.0.20",
     "@types/supertest": "2.0.15",
     "@types/ws": "8.5.8",
-    "@typescript-eslint/eslint-plugin": "6.9.0",
+    "@typescript-eslint/eslint-plugin": "6.9.1",
     "@typescript-eslint/parser": "6.9.0",
     "amqp-connection-manager": "4.1.14",
     "amqplib": "0.10.3",
