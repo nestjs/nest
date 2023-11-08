@@ -65,7 +65,7 @@ describe('flattenRoutePaths', () => {
             children: [
               {
                 path: 'child',
-                ChildModule3,
+                module: ChildModule3,
               },
               ChildModule4,
             ],
