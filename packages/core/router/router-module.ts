@@ -39,7 +39,7 @@ export class RouterModule {
   }
 
   private deepCloneRoutes(
-    routes: Routes | Type<any>[],
+    routes: (RouteTree | Type<any>)[],
   ): Routes | Array<Type<any>> {
     return routes.map((routeOrType: Type<any> | RouteTree) => {
       if (typeof routeOrType === 'function') {
