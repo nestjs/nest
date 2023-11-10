@@ -101,7 +101,7 @@
     "@types/cors": "2.8.15",
     "@types/express": "4.17.20",
     "@types/gulp": "4.0.16",
-    "@types/http-errors": "2.0.3",
+    "@types/http-errors": "2.0.4",
     "@types/mocha": "10.0.3",
     "@types/node": "20.9.0",
     "@types/sinon": "17.0.1",
