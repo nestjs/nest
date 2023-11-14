@@ -4,6 +4,7 @@ import { randomStringGenerator } from '@nestjs/common/utils/random-string-genera
 import { isFunction, isSymbol } from '@nestjs/common/utils/shared.utils';
 import { createHash } from 'crypto';
 import stringify from 'fast-safe-stringify';
+import { performance } from 'perf_hooks';
 
 const CLASS_STR = 'class ';
 const CLASS_STR_LEN = CLASS_STR.length;
@@ -26,7 +27,17 @@ export class ModuleTokenFactory {
       module: this.getModuleName(metatype),
       dynamic: dynamicModuleMetadata,
     };
+    const start = performance.now();
     const opaqueTokenString = this.getStringifiedOpaqueToken(opaqueToken);
+    const timeSpentInMs = performance.now() - start;
+
+    if (timeSpentInMs > 10) {
+      process.emitWarning(
+        `The module "${opaqueToken.module}" took ${timeSpentInMs.toFixed(
+          2,
+        )}ms to serialize, consider reduce the size of the object. More details: https://github.com/nestjs/nest/issues/12738`,
+      );
+    }
 
     return this.hashString(opaqueTokenString);
   }
