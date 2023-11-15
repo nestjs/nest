@@ -1,4 +1,4 @@
-import { DynamicModule } from '@nestjs/common';
+import { DynamicModule, Logger } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isFunction, isSymbol } from '@nestjs/common/utils/shared.utils';
@@ -12,6 +12,9 @@ const CLASS_STR_LEN = CLASS_STR.length;
 export class ModuleTokenFactory {
   private readonly moduleTokenCache = new Map<string, string>();
   private readonly moduleIdsCache = new WeakMap<Type<unknown>, string>();
+  private readonly logger = new Logger(ModuleTokenFactory.name, {
+    timestamp: true,
+  });
 
   public create(
     metatype: Type<unknown>,
@@ -32,10 +35,10 @@ export class ModuleTokenFactory {
     const timeSpentInMs = performance.now() - start;
 
     if (timeSpentInMs > 10) {
-      process.emitWarning(
-        `The module "${opaqueToken.module}" took ${timeSpentInMs.toFixed(
+      this.logger.warn(
+        `The module "${opaqueToken.module}" is taking ${timeSpentInMs.toFixed(
           2,
-        )}ms to serialize, consider reduce the size of the object. More details: https://github.com/nestjs/nest/issues/12738`,
+        )}ms to serialize, this may be caused by larger objects assigned to the module. More details: https://github.com/nestjs/nest/issues/12738`,
       );
     }
 
