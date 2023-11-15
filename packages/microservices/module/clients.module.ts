@@ -19,7 +19,8 @@ export class ClientsModule {
     const clientsOptions = !Array.isArray(options) ? options.clients : options;
     const clients = (clientsOptions || []).map(item => ({
       provide: item.name,
-      useValue: this.assignOnAppShutdownHook(ClientProxyFactory.create(item)),
+      useFactory: () =>
+        this.assignOnAppShutdownHook(ClientProxyFactory.create(item)),
     }));
     return {
       module: ClientsModule,

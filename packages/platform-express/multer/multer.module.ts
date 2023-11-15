@@ -17,7 +17,7 @@ export class MulterModule {
     return {
       module: MulterModule,
       providers: [
-        { provide: MULTER_MODULE_OPTIONS, useValue: options },
+        { provide: MULTER_MODULE_OPTIONS, useFactory: () => options },
         {
           provide: MULTER_MODULE_ID,
           useValue: randomStringGenerator(),
