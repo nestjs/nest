@@ -48,6 +48,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   protected readonly queueOptions: any;
   protected readonly isGlobalPrefetchCount: boolean;
   protected readonly noAssert: boolean;
+  protected readonly consumerTag: string;
 
   constructor(protected readonly options: RmqOptions['options']) {
     super();
@@ -58,6 +59,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       this.getOptionsProp(this.options, 'prefetchCount') ||
       RQM_DEFAULT_PREFETCH_COUNT;
     this.noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
+    this.consumerTag = this.getOptionsProp(this.options, 'consumerTag', undefined);
     this.isGlobalPrefetchCount =
       this.getOptionsProp(this.options, 'isGlobalPrefetchCount') ||
       RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
@@ -154,6 +156,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       (msg: Record<string, any>) => this.handleMessage(msg, channel),
       {
         noAck: this.noAck,
+        consumerTag: this.consumerTag
       },
     );
     callback();
