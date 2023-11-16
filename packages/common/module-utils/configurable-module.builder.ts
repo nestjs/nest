@@ -209,6 +209,8 @@ export class ConfigurableModuleBuilder<
         const providers: Array<Provider> = [
           {
             provide: self.options.optionsInjectionToken,
+            // useFactory is for performance reasons
+            // see more: https://github.com/nestjs/nest/issues/12738#issuecomment-1810987001
             useFactory: () => this.omitExtras(options, self.extras),
           },
         ];
