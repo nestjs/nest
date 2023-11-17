@@ -1,9 +1,10 @@
-import { DynamicModule } from '@nestjs/common';
+import { DynamicModule, Logger } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isFunction, isSymbol } from '@nestjs/common/utils/shared.utils';
 import { createHash } from 'crypto';
 import stringify from 'fast-safe-stringify';
+import { performance } from 'perf_hooks';
 
 const CLASS_STR = 'class ';
 const CLASS_STR_LEN = CLASS_STR.length;
@@ -11,6 +12,9 @@ const CLASS_STR_LEN = CLASS_STR.length;
 export class ModuleTokenFactory {
   private readonly moduleTokenCache = new Map<string, string>();
   private readonly moduleIdsCache = new WeakMap<Type<unknown>, string>();
+  private readonly logger = new Logger(ModuleTokenFactory.name, {
+    timestamp: true,
+  });
 
   public create(
     metatype: Type<unknown>,
@@ -26,7 +30,16 @@ export class ModuleTokenFactory {
       module: this.getModuleName(metatype),
       dynamic: dynamicModuleMetadata,
     };
+    const start = performance.now();
     const opaqueTokenString = this.getStringifiedOpaqueToken(opaqueToken);
+    const timeSpentInMs = performance.now() - start;
+
+    if (timeSpentInMs > 10) {
+      const formattedTimeSpent = timeSpentInMs.toFixed(2);
+      this.logger.warn(
+        `The module "${opaqueToken.module}" is taking ${formattedTimeSpent}ms to serialize, this may be caused by larger objects statically assigned to the module. More details: https://github.com/nestjs/nest/issues/12738`,
+      );
+    }
 
     return this.hashString(opaqueTokenString);
   }
