@@ -39,8 +39,8 @@ export class RouterModule {
   }
 
   private deepCloneRoutes(
-    routes: Routes | Type<any>[],
-  ): Routes | Array<Type<any>> {
+    routes: (RouteTree | Type<any>)[],
+  ): (RouteTree | Type<any>)[] {
     return routes.map((routeOrType: Type<any> | RouteTree) => {
       if (typeof routeOrType === 'function') {
         return routeOrType;
@@ -52,7 +52,7 @@ export class RouterModule {
         };
       }
       return { ...routeOrType };
-    }) as Routes | Array<Type<any>>;
+    });
   }
 
   private initialize() {
