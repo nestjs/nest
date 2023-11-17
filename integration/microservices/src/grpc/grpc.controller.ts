@@ -128,7 +128,7 @@ export class GrpcController {
     return svc.sum2({ data });
   }
 
-  @GrpcMethod('Backpressure', 'StreamLargeMessages')
+  @GrpcMethod('Math')
   streamLargeMessages(_req: unknown, _meta: unknown) {
     // Send 1000 messages of >1MB each relatively fast
     // This should be enough to trigger backpressure issues
