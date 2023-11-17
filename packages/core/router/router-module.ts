@@ -32,7 +32,7 @@ export class RouterModule {
       providers: [
         {
           provide: ROUTES,
-          useFactory: () => routes,
+          useValue: routes,
         },
       ],
     };
