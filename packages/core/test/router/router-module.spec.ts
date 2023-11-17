@@ -16,12 +16,15 @@ describe('RouterModule', () => {
 
   describe('register', () => {
     it('should return a dynamic module with routes registered as a provider', () => {
-      const moduleRegistered = RouterModule.register(routes);
-      const provider = moduleRegistered.providers.find(
-        p => 'useFactory' in p && p.provide === ROUTES,
-      ) as FactoryProvider;
-      expect(provider).to.not.be.undefined;
-      expect(provider.useFactory()).to.be.eq(routes);
+      expect(RouterModule.register(routes)).to.deep.equal({
+        module: RouterModule,
+        providers: [
+          {
+            provide: ROUTES,
+            useValue: routes,
+          },
+        ],
+      });
     });
   });
   describe('when instantiated', () => {
