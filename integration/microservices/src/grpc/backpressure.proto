@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package backpressure;
+
+service Backpressure {
+    rpc StreamLargeMessages(Empty) returns (stream BackpressureData) {}
+}
+
+message BackpressureData {
+    int32 id = 1;
+    string data = 2;
+}
+
+message Empty {}

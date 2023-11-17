@@ -269,6 +269,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       let shouldErrorAfterDraining = false;
       let error: any;
       let shouldResolveAfterDraining = false;
+      let writing = true;
 
       // Used to manage finalization
       const subscription = new Subscription();
@@ -290,19 +291,18 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       subscription.add(() => call.end());
 
       const drain = () => {
+        writing = true;
         while (valuesWaitingToBeDrained.length > 0) {
-          // Try to write the value, THEN shift it off, because
-          // if we can't write the value, we need to keep it in the
-          // buffer at it's position to ensure ordering.
-          const value = valuesWaitingToBeDrained[0];
-          if (!call.write(value)) {
-            // We can't write anymore so we need to wait for the drain event
-            // stop draining for now.
-            return;
+          const value = valuesWaitingToBeDrained.shift()!;
+          if (writing) {
+            // The first time `call.write` returns false, we need to stop.
+            // It wrote the value, but it won't write anything else.
+            writing = call.write(value);
+            if (!writing) {
+              // We can't write anymore so we need to wait for the drain event
+              return;
+            }
           }
-
-          // We successfully wrote the value, so we can shift it off the buffer
-          valuesWaitingToBeDrained.shift();
         }
 
         if (shouldResolveAfterDraining) {
@@ -320,7 +320,9 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       subscription.add(
         source.subscribe({
           next(value) {
-            if (!call.write(value)) {
+            if (writing) {
+              writing = call.write(value);
+            } else {
               // If we can't write, that's because we need to
               // wait for the drain event before we can write again
               // buffer the value and wait for the drain event
@@ -383,8 +385,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       if (isResponseStream) {
         try {
           await this.writeObservableToGrpc(res, call);
-        }
-        catch (err) {
+        } catch (err) {
           call.emit('error', err);
           return;
         }
