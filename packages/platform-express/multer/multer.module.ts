@@ -17,8 +17,6 @@ export class MulterModule {
     return {
       module: MulterModule,
       providers: [
-        // useFactory is for performance reasons
-        // see more: https://github.com/nestjs/nest/issues/12738#issuecomment-1810987001
         { provide: MULTER_MODULE_OPTIONS, useFactory: () => options },
         {
           provide: MULTER_MODULE_ID,

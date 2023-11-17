@@ -42,8 +42,6 @@ export class InternalCoreModuleFactory {
       );
     };
 
-    // useFactory is for performance reasons
-    // see more: https://github.com/nestjs/nest/issues/12738#issuecomment-1810987001
     return InternalCoreModule.register([
       {
         provide: ExternalContextCreator,

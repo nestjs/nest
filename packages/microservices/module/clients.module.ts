@@ -19,8 +19,6 @@ export class ClientsModule {
     const clientsOptions = !Array.isArray(options) ? options.clients : options;
     const clients = (clientsOptions || []).map(item => ({
       provide: item.name,
-      // useFactory is for performance reasons
-      // see more: https://github.com/nestjs/nest/issues/12738#issuecomment-1810987001
       useFactory: () =>
         this.assignOnAppShutdownHook(ClientProxyFactory.create(item)),
     }));
