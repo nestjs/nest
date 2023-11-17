@@ -205,6 +205,7 @@ export interface RmqOptions {
     queueOptions?: any; // AmqplibQueueOptions;
     socketOptions?: any; // AmqpConnectionManagerSocketOptions;
     noAck?: boolean;
+    consumerTag?: string;
     serializer?: Serializer;
     deserializer?: Deserializer;
     replyQueue?: string;
