@@ -34,7 +34,7 @@ export interface WsArgumentsHost {
   /**
    * Returns the pattern for the event
    */
-  getPattern(): string;
+  getPattern<T = string>(): T;
 }
 
 /**
