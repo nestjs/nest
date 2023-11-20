@@ -128,6 +128,27 @@ export class GrpcController {
     return svc.sum2({ data });
   }
 
+  @GrpcMethod('Math')
+  streamLargeMessages(_req: unknown, _meta: unknown) {
+    // Send 1000 messages of >1MB each relatively fast
+    // This should be enough to trigger backpressure issues
+    // while writing to the socket.
+    return new Observable(subscriber => {
+      let n = 0;
+      const interval = setInterval(() => {
+        // We'll be checking the ids. The `data` is just to make the
+        // message large enough to trigger backpressure issues.
+        subscriber.next({ id: n++, data: 'a'.repeat(1024 * 1024) });
+        if (n === 1000) {
+          subscriber.complete();
+        }
+      }, 0);
+      return () => {
+        clearInterval(interval);
+      };
+    });
+  }
+
   @Post('error')
   @HttpCode(200)
   serializeError(

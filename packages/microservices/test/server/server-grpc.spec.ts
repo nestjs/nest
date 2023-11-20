@@ -602,11 +602,12 @@ describe('ServerGrpc', () => {
           const call = {
             write: sinon.spy(value => {
               // Simulating a writable stream becoming overwhelmed.
-              const canWrite = writeCounter++ < highwaterMark;
-              if (canWrite) {
+              if (writeCounter++ < highwaterMark) {
+                // We can write this value to the stream.
                 written.push(value);
               }
-              return canWrite;
+              // But as soon as we pass the highwater mark, we can't write anymore.
+              return writeCounter < highwaterMark;
             }),
             end: sinon.spy(() => {
               written.push('end');

@@ -128,6 +128,27 @@ describe('GRPC transport', () => {
     });
   });
 
+  it(`GRPC with backpressure control`, async function () {
+    // This test hit the gRPC server with 1000 messages, but the server
+    // has to process large (> 1MB) messages, so it will definitely hit
+    // issues where writing to the stream needs to be paused until a drain
+    // event. Prior to this test, a bug existed where the server would
+    // send the incorrect number of messages due to improper backpressure
+    // handling that wrote messages more than once.
+    this.timeout(10000);
+
+    const largeMessages = client.streamLargeMessages();
+    // [0, 1, 2, ..., 999]
+    const expectedIds = Array.from({ length: 1000 }, (_, n) => n);
+    const receivedIds: number[] = [];
+
+    await largeMessages.forEach(msg => {
+      receivedIds.push(msg.id);
+    });
+
+    expect(receivedIds).to.deep.equal(expectedIds);
+  });
+
   after(async () => {
     await app.close();
   });
