@@ -69,7 +69,21 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!main.(t|j)s",
+      "!**/*.module.(t|j)s",
+      "!**/*.dto.(t|j)s",
+      "!**/*.entity.(t|j)s",
+      "!**/*.guard.(t|j)s",
+      "!**/*.response.(t|j)s",
+      "!**/*.strategy.(t|j)s",
+      "!**/*.args.(t|j)s",
+      "!**/*.types.(t|j)s",
+      "!**/*.directive.(t|j)s",
+      "!**/*.plugin.(t|j)s",
+      "!**/*.scalar.(t|j)s",
+      "!**/*.schema.(t|j)s",
+      "!**/node_modules/**"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"

@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { CatsService } from './cats.service';
 import { CatsResolver } from './cats.resolver';
 import { Cat } from '../graphql.schema';
+
 import { MINIMUM_AGE, MINIMUM_AGE_ERROR } from './dto/create-cat.dto';
 
 describe('CatsResolver', () => {
