@@ -31,7 +31,7 @@ describe('CatOwnerResolver', () => {
   it('should resolve the owner for a cat', async () => {
     // Mock data
     const cat: Cat & { ownerId: number } = { id: 1, ownerId: 101 };
-    const owner: Owner = { id: 101, name: 'John' };
+    const owner: Owner = { id: 101, name: 'Kambale' };
 
     // Mock the findOneById method to return the owner data
     jest.spyOn(ownersService, 'findOneById').mockImplementation(() => owner);
