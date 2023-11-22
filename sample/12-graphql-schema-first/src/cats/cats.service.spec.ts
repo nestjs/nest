@@ -20,8 +20,8 @@ describe('CatsService', () => {
 
   it('should create a new cat', () => {
     const newCat = service.create(cat);
+    expect(newCat.name).toEqual(cat.name);
     expect(newCat).toEqual({ id: 1, ...cat });
-    expect(newCat.name).toEqual('Cat');
   });
 
   it('should return all cats', () => {
@@ -33,5 +33,10 @@ describe('CatsService', () => {
   it('should return a cat by id', () => {
     const cat = service.findOneById(1);
     expect(cat).toEqual({ ...cat, id: 1 });
+  });
+
+  it('should return undefined if cat not found', () => {
+    const cat = service.findOneById(2);
+    expect(cat).toBeUndefined();
   });
 });
