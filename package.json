@@ -106,7 +106,7 @@
     "@types/node": "20.9.4",
     "@types/sinon": "17.0.1",
     "@types/supertest": "2.0.16",
-    "@types/ws": "8.5.9",
+    "@types/ws": "8.5.10",
     "@typescript-eslint/eslint-plugin": "6.11.0",
     "@typescript-eslint/parser": "6.12.0",
     "amqp-connection-manager": "4.1.14",
