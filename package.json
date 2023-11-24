@@ -104,7 +104,7 @@
     "@types/http-errors": "2.0.4",
     "@types/mocha": "10.0.4",
     "@types/node": "20.9.4",
-    "@types/sinon": "17.0.1",
+    "@types/sinon": "17.0.2",
     "@types/supertest": "2.0.16",
     "@types/ws": "8.5.9",
     "@typescript-eslint/eslint-plugin": "6.11.0",
