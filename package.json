@@ -127,7 +127,7 @@
     "delete-empty": "3.0.0",
     "engine.io-client": "6.5.3",
     "eslint": "8.54.0",
-    "eslint-config-prettier": "9.0.0",
+    "eslint-config-prettier": "9.1.0",
     "eslint-plugin-import": "2.29.0",
     "eventsource": "2.0.2",
     "fancy-log": "2.0.0",
