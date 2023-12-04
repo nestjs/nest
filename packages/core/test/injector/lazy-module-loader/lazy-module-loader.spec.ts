@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { expect } from 'chai';
 import {
   LazyModuleLoader,
@@ -24,6 +24,18 @@ describe('LazyModuleLoader', () => {
     warn() {}
   }
 
+  @Global()
+  @Module({
+    providers: [
+      {
+        provide: 'GLOBAL',
+        useValue: 'GLOBAL',
+      },
+    ],
+    exports: ['GLOBAL'],
+  })
+  class SomeGlobalModule {}
+
   beforeEach(() => {
     const nestContainer = new NestContainer();
     const graphInspector = new GraphInspector(nestContainer);
@@ -32,6 +44,7 @@ describe('LazyModuleLoader', () => {
       new MetadataScanner(),
       graphInspector,
     );
+    dependenciesScanner.scan(SomeGlobalModule);
 
     const injector = new Injector();
     instanceLoader = new InstanceLoader(
@@ -41,6 +54,7 @@ describe('LazyModuleLoader', () => {
       new NoopLogger(),
     );
     modulesContainer = nestContainer.getModules();
+
     lazyModuleLoader = new LazyModuleLoader(
       dependenciesScanner,
       instanceLoader,
@@ -50,6 +64,18 @@ describe('LazyModuleLoader', () => {
   });
   describe('load', () => {
     const bProvider = { provide: 'B', useValue: 'B' };
+
+    @Module({
+      providers: [
+        {
+          provide: 'C',
+          useFactory: (message: string) => message,
+          inject: ['GLOBAL'],
+        },
+      ],
+      exports: ['C'],
+    })
+    class ModuleC {}
 
     @Module({ providers: [bProvider], exports: [bProvider] })
     class ModuleB {}
@@ -74,6 +100,12 @@ describe('LazyModuleLoader', () => {
         const moduleRef = await lazyModuleLoader.load(() => ModuleC);
         const moduleRef2 = await lazyModuleLoader.load(() => ModuleC);
         expect(moduleRef).to.equal(moduleRef2);
+      });
+    });
+    describe('when global modules are defined', () => {
+      it('should providers of global modules are injected', async () => {
+        const moduleRef = await lazyModuleLoader.load(() => ModuleC);
+        expect(moduleRef.get('C')).to.be.string('GLOBAL');
       });
     });
   });

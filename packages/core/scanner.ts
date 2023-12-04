@@ -83,7 +83,7 @@ export class DependenciesScanner {
   }
 
   public async scanForModules(
-    moduleDefinition:
+    moduleDef:
       | ForwardReference
       | Type<unknown>
       | DynamicModule
@@ -91,46 +91,42 @@ export class DependenciesScanner {
     scope: Type<unknown>[] = [],
     ctxRegistry: (ForwardReference | DynamicModule | Type<unknown>)[] = [],
   ): Promise<Module[]> {
-    const moduleInstance = await this.insertModule(moduleDefinition, scope);
-    moduleDefinition =
-      moduleDefinition instanceof Promise
-        ? await moduleDefinition
-        : moduleDefinition;
-    ctxRegistry.push(moduleDefinition);
+    const moduleInstance = await this.insertModule(moduleDef, scope);
+    this.container.bindGlobalsToImports(moduleInstance);
 
-    if (this.isForwardReference(moduleDefinition)) {
-      moduleDefinition = (moduleDefinition as ForwardReference).forwardRef();
+    ctxRegistry.push(await moduleDef);
+
+    if (this.isForwardReference(await moduleDef)) {
+      moduleDef = (moduleDef as ForwardReference).forwardRef();
     }
+
     const modules = !this.isDynamicModule(
-      moduleDefinition as Type<any> | DynamicModule,
+      moduleDef as Type<any> | DynamicModule,
     )
-      ? this.reflectMetadata(
-          MODULE_METADATA.IMPORTS,
-          moduleDefinition as Type<any>,
-        )
+      ? this.reflectMetadata(MODULE_METADATA.IMPORTS, moduleDef as Type<any>)
       : [
           ...this.reflectMetadata(
             MODULE_METADATA.IMPORTS,
-            (moduleDefinition as DynamicModule).module,
+            (moduleDef as DynamicModule).module,
           ),
-          ...((moduleDefinition as DynamicModule).imports || []),
+          ...((moduleDef as DynamicModule).imports || []),
         ];
 
     let registeredModuleRefs = [];
     for (const [index, innerModule] of modules.entries()) {
       // In case of a circular dependency (ES module system), JavaScript will resolve the type to `undefined`.
       if (innerModule === undefined) {
-        throw new UndefinedModuleException(moduleDefinition, index, scope);
+        throw new UndefinedModuleException(moduleDef, index, scope);
       }
       if (!innerModule) {
-        throw new InvalidModuleException(moduleDefinition, index, scope);
+        throw new InvalidModuleException(moduleDef, index, scope);
       }
       if (ctxRegistry.includes(innerModule)) {
         continue;
       }
       const moduleRefs = await this.scanForModules(
         innerModule,
-        [].concat(scope, moduleDefinition),
+        [].concat(scope, moduleDef),
         ctxRegistry,
       );
       registeredModuleRefs = registeredModuleRefs.concat(moduleRefs);
