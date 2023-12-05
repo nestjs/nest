@@ -28,6 +28,9 @@ export class LazyModuleLoader {
     const moduleClassOrDynamicDefinition = await loaderFn();
     const moduleInstances = await this.dependenciesScanner.scanForModules(
       moduleClassOrDynamicDefinition,
+      [],
+      [],
+      true,
     );
     if (moduleInstances.length === 0) {
       // The module has been loaded already. In this case, we must

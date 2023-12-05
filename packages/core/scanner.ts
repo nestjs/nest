@@ -90,9 +90,13 @@ export class DependenciesScanner {
       | Promise<DynamicModule>,
     scope: Type<unknown>[] = [],
     ctxRegistry: (ForwardReference | DynamicModule | Type<unknown>)[] = [],
+    bindGlobal = false,
   ): Promise<Module[]> {
     const moduleInstance = await this.insertModule(moduleDef, scope);
-    this.container.bindGlobalsToImports(moduleInstance);
+
+    if (bindGlobal) {
+      this.container.bindGlobalsToImports(moduleInstance);
+    }
 
     ctxRegistry.push(await moduleDef);
 
@@ -128,6 +132,7 @@ export class DependenciesScanner {
         innerModule,
         [].concat(scope, moduleDef),
         ctxRegistry,
+        bindGlobal,
       );
       registeredModuleRefs = registeredModuleRefs.concat(moduleRefs);
     }
