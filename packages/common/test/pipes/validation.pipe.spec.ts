@@ -205,6 +205,18 @@ describe('ValidationPipe', () => {
             }),
           ).to.be.equal(+value);
         });
+        it('should parse undefined to undefined', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = undefined;
+
+          expect(
+            await target.transform(value, {
+              metatype: Number,
+              data: 'test',
+              type: 'query',
+            }),
+          ).to.be.undefined;
+        });
       });
       describe('when input is a path parameter (number)', () => {
         it('should parse to number', async () => {
@@ -218,6 +230,18 @@ describe('ValidationPipe', () => {
               type: 'param',
             }),
           ).to.be.equal(+value);
+        });
+        it('should parse undefined to undefined', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = undefined;
+
+          expect(
+            await target.transform(value, {
+              metatype: Number,
+              data: 'test',
+              type: 'param',
+            }),
+          ).to.be.undefined;
         });
       });
       describe('when input is a query parameter (boolean)', () => {
