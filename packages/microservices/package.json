@@ -27,6 +27,7 @@
   },
   "peerDependencies": {
     "@grpc/grpc-js": "*",
+    "@grpc/reflection": "^1.0.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/websockets": "^10.0.0",
@@ -42,6 +43,9 @@
   },
   "peerDependenciesMeta": {
     "@grpc/grpc-js": {
+      "optional": true
+    },
+    "@grpc/reflection": {
       "optional": true
     },
     "@nestjs/websockets": {
