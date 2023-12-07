@@ -4,3 +4,4 @@ export { ContextId, HostComponentInfo } from './instance-wrapper';
 export * from './lazy-module-loader/lazy-module-loader';
 export * from './module-ref';
 export * from './modules-container';
+export { UniqueDynamicModuleFactory } from './unique-dynamic-module-factory';

@@ -26,17 +26,17 @@ export class ModuleCompiler {
     metatype: Type<any> | ForwardReference | DynamicModule,
   ): {
     type: Type<any>;
-    dynamicMetadata?: Partial<DynamicModule> | undefined;
+    dynamicMetadata?: DynamicModule | undefined;
   } {
     if (!this.isDynamicModule(metatype)) {
       return {
         type: (metatype as ForwardReference)?.forwardRef
           ? (metatype as ForwardReference).forwardRef()
           : metatype,
+        dynamicMetadata: undefined,
       };
     }
-    const { module: type, ...dynamicMetadata } = metatype;
-    return { type, dynamicMetadata };
+    return { type: metatype.module, dynamicMetadata: metatype };
   }
 
   public isDynamicModule(

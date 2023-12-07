@@ -2,6 +2,10 @@ import { DynamicModule, Logger } from '@nestjs/common';
 import { Type } from '@nestjs/common/interfaces/type.interface';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isFunction, isSymbol } from '@nestjs/common/utils/shared.utils';
+import {
+  getUniqueDynamicModuleId,
+  isUniqueDynamicModule,
+} from './unique-dynamic-module-factory';
 import { createHash } from 'crypto';
 import stringify from 'fast-safe-stringify';
 import { performance } from 'perf_hooks';
@@ -18,8 +22,12 @@ export class ModuleTokenFactory {
 
   public create(
     metatype: Type<unknown>,
-    dynamicModuleMetadata?: Partial<DynamicModule> | undefined,
+    dynamicModuleMetadata?: DynamicModule | undefined,
   ): string {
+    if (isUniqueDynamicModule(dynamicModuleMetadata)) {
+      return getUniqueDynamicModuleId(dynamicModuleMetadata);
+    }
+
     const moduleId = this.getModuleId(metatype);
 
     if (!dynamicModuleMetadata) {
