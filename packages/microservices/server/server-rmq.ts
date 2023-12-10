@@ -153,7 +153,11 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       (msg: Record<string, any>) => this.handleMessage(msg, channel),
       {
         noAck: this.noAck,
-        consumerTag: this.getOptionsProp(this.options, 'consumerTag', undefined)
+        consumerTag: this.getOptionsProp(
+          this.options,
+          'consumerTag',
+          undefined,
+        ),
       },
     );
     callback();

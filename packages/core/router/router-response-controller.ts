@@ -48,8 +48,8 @@ export class RouterResponseController {
       result && result.statusCode
         ? result.statusCode
         : redirectResponse.statusCode
-        ? redirectResponse.statusCode
-        : HttpStatus.FOUND;
+          ? redirectResponse.statusCode
+          : HttpStatus.FOUND;
     const url = result && result.url ? result.url : redirectResponse.url;
     this.applicationRef.redirect(response, statusCode, url);
   }

@@ -23,8 +23,8 @@ export class IoAdapter extends AbstractWsAdapter {
     return server && isFunction(server.of)
       ? server.of(namespace)
       : namespace
-      ? this.createIOServer(port, opt).of(namespace)
-      : this.createIOServer(port, opt);
+        ? this.createIOServer(port, opt).of(namespace)
+        : this.createIOServer(port, opt);
   }
 
   public createIOServer(port: number, options?: any): any {

@@ -158,15 +158,15 @@ export function Controller(
   )
     ? [defaultPath, undefined, undefined, undefined]
     : isString(prefixOrOptions) || Array.isArray(prefixOrOptions)
-    ? [prefixOrOptions, undefined, undefined, undefined]
-    : [
-        prefixOrOptions.path || defaultPath,
-        prefixOrOptions.host,
-        { scope: prefixOrOptions.scope, durable: prefixOrOptions.durable },
-        Array.isArray(prefixOrOptions.version)
-          ? Array.from(new Set(prefixOrOptions.version))
-          : prefixOrOptions.version,
-      ];
+      ? [prefixOrOptions, undefined, undefined, undefined]
+      : [
+          prefixOrOptions.path || defaultPath,
+          prefixOrOptions.host,
+          { scope: prefixOrOptions.scope, durable: prefixOrOptions.durable },
+          Array.isArray(prefixOrOptions.version)
+            ? Array.from(new Set(prefixOrOptions.version))
+            : prefixOrOptions.version,
+        ];
 
   return (target: object) => {
     Reflect.defineMetadata(CONTROLLER_WATERMARK, true, target);
