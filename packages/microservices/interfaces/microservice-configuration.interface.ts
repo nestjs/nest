@@ -12,7 +12,11 @@ import {
 } from '../external/kafka.interface';
 import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
 import { IORedisOptions } from '../external/redis.interface';
-import { RmqUrl } from '../external/rmq-url.interface';
+import {
+  AmqpConnectionManagerSocketOptions,
+  AmqplibQueueOptions,
+  RmqUrl,
+} from '../external/rmq-url.interface';
 import { TcpSocket } from '../helpers';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
@@ -202,8 +206,8 @@ export interface RmqOptions {
     queue?: string;
     prefetchCount?: number;
     isGlobalPrefetchCount?: boolean;
-    queueOptions?: any; // AmqplibQueueOptions;
-    socketOptions?: any; // AmqpConnectionManagerSocketOptions;
+    queueOptions?: AmqplibQueueOptions;
+    socketOptions?: AmqpConnectionManagerSocketOptions;
     noAck?: boolean;
     consumerTag?: string;
     serializer?: Serializer;
