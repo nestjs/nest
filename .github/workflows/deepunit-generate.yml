@@ -1,0 +1,37 @@
+
+name: DeepUnit Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      paths:
+        description: 'Paths to test'
+        required: true
+      meta:
+        description: 'Meta Data'
+        required: true
+
+jobs:
+  run-deepunit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run DeepUnit
+        run: npx deepunit@latest --f ${{ github.event.inputs.paths }} --json --ff --ap --email 'support@deepunit.ai' --meta ${{ github.event.inputs.meta }} 
+
+
+      - name: Store as Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: deepunit-tests
+          path: deepunit-tests.json
