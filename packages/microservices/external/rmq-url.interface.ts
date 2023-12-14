@@ -13,7 +13,7 @@ export interface RmqUrl {
   vhost?: string;
 }
 
-interface clientProperties {
+interface ClientProperties {
   connectionName?: string;
   [key: string]: any;
 }
@@ -26,7 +26,7 @@ export interface AmqpConnectionManagerSocketOptions {
   heartbeatIntervalInSeconds?: number;
   findServers?: () => string | string[];
   connectionOptions?: any;
-  clientProperties?: clientProperties;
+  clientProperties?: ClientProperties;
   [key: string]: any;
 }
 
