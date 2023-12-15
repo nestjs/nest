@@ -118,3 +118,66 @@ export const All = createMappingDecorator(RequestMethod.ALL);
  * @publicApi
  */
 export const Search = createMappingDecorator(RequestMethod.SEARCH);
+
+/**
+ * Route handler (method) Decorator. Routes WebDAV PROPFIND requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const PropFind = createMappingDecorator(RequestMethod.PROPFIND);
+
+/**
+ * Route handler (method) Decorator. Routes WebDAV PROPPATCH requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const PropPatch = createMappingDecorator(RequestMethod.PROPPATCH);
+
+/**
+ * Route handler (method) Decorator. Routes WebDAV MKCOL requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const MKCOL = createMappingDecorator(RequestMethod.MKCOL);
+
+/**
+ * Route handler (method) Decorator. Routes WebDAV COPY requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const Copy = createMappingDecorator(RequestMethod.COPY);
+
+/**
+ * Route handler (method) Decorator. Routes WebDAV MOVE requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const Move = createMappingDecorator(RequestMethod.MOVE);
+
+/**
+ * Route handler (method) Decorator. Routes WebDAV LOCK requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const Lock = createMappingDecorator(RequestMethod.LOCK);
+
+/**
+ * Route handler (method) Decorator. Routes WebDAV UNLOCK requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const Unlock = createMappingDecorator(RequestMethod.UNLOCK);
