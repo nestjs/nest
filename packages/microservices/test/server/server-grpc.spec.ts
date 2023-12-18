@@ -1,19 +1,14 @@
 import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
-import {
-  async,
-  Observable,
-  of,
-  ReplaySubject,
-  Subject,
-  throwError,
-} from 'rxjs';
+import { ReplaySubject, Subject, throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { CANCEL_EVENT } from '../../constants';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
+import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
+import * as grpcHelpers from '../../helpers/grpc-helpers';
 import { GrpcMethodStreamingType } from '../../index';
-import { ServerGrpc } from '../../server/server-grpc';
+import { ServerGrpc } from '../../server';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -774,6 +769,25 @@ describe('ServerGrpc', () => {
       fn(args as any, sinon.spy());
 
       expect(handler.calledWith(args)).to.be.true;
+    });
+  });
+
+  describe('loadProto', () => {
+    describe('when proto is invalid', () => {
+      it('should throw InvalidProtoDefinitionException', () => {
+        const getPackageDefinitionStub = sinon.stub(
+          grpcHelpers,
+          'getGrpcPackageDefinition' as any,
+        );
+        getPackageDefinitionStub.callsFake(() => {
+          throw new Error();
+        });
+        (server as any).logger = new NoopLogger();
+        expect(() => server.loadProto()).to.throws(
+          InvalidProtoDefinitionException,
+        );
+        getPackageDefinitionStub.restore();
+      });
     });
   });
 

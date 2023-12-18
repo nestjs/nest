@@ -3,10 +3,11 @@ import { expect } from 'chai';
 import { join } from 'path';
 import { Observable, Subject } from 'rxjs';
 import * as sinon from 'sinon';
-import { ClientGrpcProxy } from '../../client/client-grpc';
+import { ClientGrpcProxy } from '../../client';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
+import * as grpcHelpers from '../../helpers/grpc-helpers';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -443,13 +444,18 @@ describe('ClientGrpcProxy', () => {
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {
-        sinon.stub(client, 'getOptionsProp' as any).callsFake(() => {
+        const getPackageDefinitionStub = sinon.stub(
+          grpcHelpers,
+          'getGrpcPackageDefinition' as any,
+        );
+        getPackageDefinitionStub.callsFake(() => {
           throw new Error();
         });
         (client as any).logger = new NoopLogger();
         expect(() => client.loadProto()).to.throws(
           InvalidProtoDefinitionException,
         );
+        getPackageDefinitionStub.restore();
       });
     });
   });
