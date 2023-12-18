@@ -29,7 +29,7 @@
     "rxjs": "7.8.1",
     "sequelize": "6.35.1",
     "sequelize-typescript": "2.1.6",
-    "typescript": "5.2.2"
+    "typescript": "5.3.3"
   },
   "devDependencies": {
     "@nestjs/cli": "10.2.1",
@@ -51,7 +51,7 @@
     "ts-loader": "9.4.4",
     "ts-node": "10.9.1",
     "tsconfig-paths": "4.2.0",
-    "typescript": "5.2.2"
+    "typescript": "5.3.3"
   },
   "jest": {
     "moduleFileExtensions": [
