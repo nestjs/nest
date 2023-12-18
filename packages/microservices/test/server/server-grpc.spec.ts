@@ -13,7 +13,9 @@ import * as sinon from 'sinon';
 import { CANCEL_EVENT } from '../../constants';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { GrpcMethodStreamingType } from '../../index';
-import { ServerGrpc } from '../../server/server-grpc';
+import { ServerGrpc } from '../../server';
+import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
+import * as grpcHelpers from '../../helpers/grpc-helpers';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -774,6 +776,25 @@ describe('ServerGrpc', () => {
       fn(args as any, sinon.spy());
 
       expect(handler.calledWith(args)).to.be.true;
+    });
+  });
+
+  describe('loadProto', () => {
+    describe('when proto is invalid', () => {
+      it('should throw InvalidProtoDefinitionException', () => {
+        const getPackageDefinitionStub = sinon.stub(
+          grpcHelpers,
+          'getGrpcPackageDefinition' as any,
+        );
+        getPackageDefinitionStub.callsFake(() => {
+          throw new Error();
+        });
+        (server as any).logger = new NoopLogger();
+        expect(() => server.loadProto()).to.throws(
+          InvalidProtoDefinitionException,
+        );
+        getPackageDefinitionStub.restore();
+      });
     });
   });
 

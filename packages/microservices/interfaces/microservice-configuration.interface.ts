@@ -61,7 +61,7 @@ export interface GrpcOptions {
     };
     channelOptions?: ChannelOptions;
     credentials?: any;
-    protoPath: string | string[];
+    protoPath?: string | string[];
     package: string | string[];
     protoLoader?: string;
     packageDefinition?: any;
