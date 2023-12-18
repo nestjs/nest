@@ -99,7 +99,7 @@ export class NestApplicationContext<
 
     const selectedModule = modulesContainer.get(token);
     if (!selectedModule) {
-      throw new UnknownModuleException();
+      throw new UnknownModuleException(type.name);
     }
     return new NestApplicationContext(
       this.container,

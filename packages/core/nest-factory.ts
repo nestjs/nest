@@ -326,8 +326,8 @@ export class NestFactoryStatic {
           return result instanceof Promise
             ? result.then(mapToProxy)
             : result instanceof NestApplication
-            ? proxy
-            : result;
+              ? proxy
+              : result;
         };
 
         if (!(prop in receiver) && prop in adapter) {
