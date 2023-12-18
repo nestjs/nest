@@ -3,7 +3,7 @@ import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.excepti
 export class InvalidGrpcPackageDefinitionMutexException extends RuntimeException {
   constructor() {
     super(
-      'Both protoPath and packageDefinition were provided, but only one can be defined',
+      `Invalid gRPC configuration. Both protoPath and packageDefinition cannot be defined at the same time.`,
     );
   }
 }

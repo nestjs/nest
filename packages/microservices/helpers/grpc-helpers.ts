@@ -1,6 +1,6 @@
-import { GrpcOptions } from '../interfaces';
+import { InvalidGrpcPackageDefinitionMissingPackageDefinitionException } from '../errors/invalid-grpc-package-definition-missing-package-definition.exception';
 import { InvalidGrpcPackageDefinitionMutexException } from '../errors/invalid-grpc-package-definition-mutex.exception';
-import { InvalidGrpcPackageDefinitionMissingPacakgeDefinitionException } from '../errors/invalid-grpc-package-definition-missing-package-definition.exception';
+import { GrpcOptions } from '../interfaces';
 
 export function getGrpcPackageDefinition(
   options: GrpcOptions['options'],
@@ -9,12 +9,11 @@ export function getGrpcPackageDefinition(
   const file = options['protoPath'];
   const packageDefinition = options['packageDefinition'];
 
-  if ([file, packageDefinition].every(x => x != undefined)) {
+  if (file && packageDefinition) {
     throw new InvalidGrpcPackageDefinitionMutexException();
   }
-
-  if ([file, packageDefinition].every(x => x == undefined)) {
-    throw new InvalidGrpcPackageDefinitionMissingPacakgeDefinitionException();
+  if (!file && !packageDefinition) {
+    throw new InvalidGrpcPackageDefinitionMissingPackageDefinitionException();
   }
 
   return (

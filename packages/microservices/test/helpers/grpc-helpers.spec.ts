@@ -1,56 +1,64 @@
 import { expect } from 'chai';
-import { getGrpcPackageDefinition } from '../../helpers/grpc-helpers';
+import { InvalidGrpcPackageDefinitionMissingPackageDefinitionException } from '../../errors/invalid-grpc-package-definition-missing-package-definition.exception';
 import { InvalidGrpcPackageDefinitionMutexException } from '../../errors/invalid-grpc-package-definition-mutex.exception';
-import { InvalidGrpcPackageDefinitionMissingPacakgeDefinitionException } from '../../errors/invalid-grpc-package-definition-missing-package-definition.exception';
+import { getGrpcPackageDefinition } from '../../helpers/grpc-helpers';
 
 const grpcProtoLoaderPackage = { loadSync: (a, b) => 'withLoader' };
 
 describe('getGrpcPackageDefinition', () => {
-  it('missing both protoPath and packageDefinition', () => {
-    expect(() =>
-      getGrpcPackageDefinition(
-        {
-          package: 'somePackage',
-        },
-        grpcProtoLoaderPackage,
-      ),
-    ).to.throw(InvalidGrpcPackageDefinitionMissingPacakgeDefinitionException);
+  describe('when missing both protoPath and packageDefinition', () => {
+    it('should throw InvalidGrpcPackageDefinitionMissingPackageDefinitionException', () => {
+      expect(() =>
+        getGrpcPackageDefinition(
+          {
+            package: 'somePackage',
+          },
+          grpcProtoLoaderPackage,
+        ),
+      ).to.throw(InvalidGrpcPackageDefinitionMissingPackageDefinitionException);
+    });
   });
 
-  it('got both protoPath and packageDefinition', () => {
-    expect(() =>
-      getGrpcPackageDefinition(
-        {
-          package: 'somePackage',
-          protoPath: 'some/path',
-          packageDefinition: {},
-        },
-        grpcProtoLoaderPackage,
-      ),
-    ).to.throw(InvalidGrpcPackageDefinitionMutexException);
+  describe('when both protoPath and packageDefinition are defined', () => {
+    it('should throw InvalidGrpcPackageDefinitionMutexException', () => {
+      expect(() =>
+        getGrpcPackageDefinition(
+          {
+            package: 'somePackage',
+            protoPath: 'some/path',
+            packageDefinition: {},
+          },
+          grpcProtoLoaderPackage,
+        ),
+      ).to.throw(InvalidGrpcPackageDefinitionMutexException);
+    });
   });
 
-  it('success with protoPath', () => {
-    expect(() =>
-      getGrpcPackageDefinition(
-        {
-          package: 'somePackage',
-          protoPath: 'some/path',
-        },
-        grpcProtoLoaderPackage,
-      ),
-    ).to.not.throw(Error);
+  describe('when only protoPath is defined', () => {
+    it('should not throw any exception', () => {
+      expect(() =>
+        getGrpcPackageDefinition(
+          {
+            package: 'somePackage',
+            protoPath: 'some/path',
+          },
+          grpcProtoLoaderPackage,
+        ),
+      ).to.not.throw(Error);
+    });
   });
 
-  it('success with packageDef', () => {
-    expect(() =>
-      getGrpcPackageDefinition(
-        {
-          package: 'somePackage',
-          packageDefinition: {},
-        },
-        grpcProtoLoaderPackage,
-      ),
-    ).to.not.throw(Error);
+  describe('when only packageDefinition is defined', () => {
+    it('should not throw any exception', () => {
+      expect(() =>
+        getGrpcPackageDefinition(
+          {
+            package: 'somePackage',
+            packageDefinition: {},
+          },
+          grpcProtoLoaderPackage,
+        ),
+      ).to.not.throw(Error);
+    });
   });
 });
