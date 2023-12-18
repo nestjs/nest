@@ -13,6 +13,11 @@ export interface RmqUrl {
   vhost?: string;
 }
 
+interface ClientProperties {
+  connectionName?: string;
+  [key: string]: any;
+}
+
 /**
  * @publicApi
  */
@@ -21,6 +26,8 @@ export interface AmqpConnectionManagerSocketOptions {
   heartbeatIntervalInSeconds?: number;
   findServers?: () => string | string[];
   connectionOptions?: any;
+  clientProperties?: ClientProperties;
+  [key: string]: any;
 }
 
 /**
@@ -36,4 +43,5 @@ export interface AmqplibQueueOptions {
   deadLetterRoutingKey?: string;
   maxLength?: number;
   maxPriority?: number;
+  [key: string]: any;
 }
