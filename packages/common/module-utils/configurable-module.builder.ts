@@ -209,7 +209,7 @@ export class ConfigurableModuleBuilder<
         const providers: Array<Provider> = [
           {
             provide: self.options.optionsInjectionToken,
-            useValue: this.omitExtras(options, self.extras),
+            useFactory: () => this.omitExtras(options, self.extras),
           },
         ];
         if (self.options.alwaysTransient) {

@@ -21,14 +21,13 @@ describe('ClientsModule', () => {
       expect(dynamicModule.module).to.be.eql(ClientsModule);
     });
     it('should return an expected providers array', () => {
-      expect(dynamicModule.providers).to.be.deep.eq([
-        {
-          provide: 'test',
-          useValue: ClientsModule['assignOnAppShutdownHook'](
-            ClientProxyFactory.create({}),
-          ),
-        },
-      ]);
+      const provider = dynamicModule.providers.find(
+        p => 'useFactory' in p && p.provide === 'test',
+      ) as FactoryProvider;
+      expect(provider).to.not.be.undefined;
+      expect(provider.useFactory()).to.be.deep.eq(
+        ClientsModule['assignOnAppShutdownHook'](ClientProxyFactory.create({})),
+      );
     });
   });
   describe('registerAsync', () => {

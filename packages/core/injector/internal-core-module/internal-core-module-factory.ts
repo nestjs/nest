@@ -45,15 +45,15 @@ export class InternalCoreModuleFactory {
     return InternalCoreModule.register([
       {
         provide: ExternalContextCreator,
-        useValue: ExternalContextCreator.fromContainer(container),
+        useFactory: () => ExternalContextCreator.fromContainer(container),
       },
       {
         provide: ModulesContainer,
-        useValue: container.getModules(),
+        useFactory: () => container.getModules(),
       },
       {
         provide: HttpAdapterHost,
-        useValue: httpAdapterHost,
+        useFactory: () => httpAdapterHost,
       },
       {
         provide: LazyModuleLoader,
@@ -61,7 +61,7 @@ export class InternalCoreModuleFactory {
       },
       {
         provide: SerializedGraph,
-        useValue: container.serializedGraph,
+        useFactory: () => container.serializedGraph,
       },
     ]);
   }

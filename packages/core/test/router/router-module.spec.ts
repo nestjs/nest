@@ -7,6 +7,7 @@ import {
   ROUTES,
   targetModulesByContainer,
 } from '../../router/router-module';
+import { FactoryProvider } from '@nestjs/common';
 
 class TestModuleClass {}
 
