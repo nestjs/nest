@@ -466,8 +466,8 @@ export class FastifyAdapter<
     return response.sent;
   }
 
-  public getHeader?(response: any, name: string, value: string) {
-    return response.getHeader(name, value);
+  public getHeader?(response: any, name: string) {
+    return response.getHeader(name);
   }
 
   public setHeader(response: TReply, name: string, value: string) {
