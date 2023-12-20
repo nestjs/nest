@@ -466,8 +466,16 @@ export class FastifyAdapter<
     return response.sent;
   }
 
+  public getHeader?(response: any, name: string, value: string) {
+    return response.getHeader(name, value);
+  }
+
   public setHeader(response: TReply, name: string, value: string) {
     return response.header(name, value);
+  }
+
+  public appendHeader?(response: any, name: string, value: string) {
+    response.header(name, value);
   }
 
   public getRequestHostname(request: TRequest): string {

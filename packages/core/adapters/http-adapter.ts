@@ -117,7 +117,11 @@ export abstract class AbstractHttpAdapter<
   abstract setErrorHandler(handler: Function, prefix?: string);
   abstract setNotFoundHandler(handler: Function, prefix?: string);
   abstract isHeadersSent(response: any);
+  // TODO remove optional signature (v11)
+  abstract getHeader?(response: any, name: string, value: string);
   abstract setHeader(response: any, name: string, value: string);
+  // TODO remove optional signature (v11)
+  abstract appendHeader?(response: any, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string, rawBody?: boolean);
   abstract enableCors(
     options: CorsOptions | CorsOptionsDelegate<TRequest>,
