@@ -250,7 +250,17 @@ export class ClientKafka extends ClientProxy {
     return connectableSource;
   }
 
-  async dispatchBatchEvent<TInput = any>(
+  public commitOffsets(
+    topicPartitions: TopicPartitionOffsetAndMetadata[],
+  ): Promise<void> {
+    if (this.consumer) {
+      return this.consumer.commitOffsets(topicPartitions);
+    } else {
+      throw new Error('No consumer initialized');
+    }
+  }
+
+  protected async dispatchBatchEvent<TInput = any>(
     packets: ReadPacket<{ messages: TInput[] }>,
   ): Promise<any> {
     if (packets.data.messages.length === 0) {
@@ -272,16 +282,6 @@ export class ClientKafka extends ClientProxy {
     );
 
     return this.producer.send(message);
-  }
-
-  public commitOffsets(
-    topicPartitions: TopicPartitionOffsetAndMetadata[],
-  ): Promise<void> {
-    if (this.consumer) {
-      return this.consumer.commitOffsets(topicPartitions);
-    } else {
-      throw new Error('No consumer initialized');
-    }
   }
 
   protected async dispatchEvent(packet: OutgoingEvent): Promise<any> {
