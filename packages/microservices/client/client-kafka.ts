@@ -253,7 +253,9 @@ export class ClientKafka extends ClientProxy {
   async dispatchBatchEvent<TInput = any>(
     packets: ReadPacket<{ messages: TInput[] }>,
   ): Promise<any> {
-    if (packets.data.messages.length === 0) return;
+    if (packets.data.messages.length === 0) {
+      return;
+    }
     const pattern = this.normalizePattern(packets.pattern);
     const outgoingEvents = await Promise.all(
       packets.data.messages.map(message => {
