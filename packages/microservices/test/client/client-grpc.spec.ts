@@ -462,10 +462,13 @@ describe('ClientGrpcProxy', () => {
   describe('close', () => {
     it('should call "close" method', () => {
       const grpcClient = { close: sinon.spy() };
-      (client as any).grpcClients[0] = grpcClient;
+      (client as any).clients.set('test', grpcClient);
+      (client as any).grpcClients[0] = {};
 
       client.close();
       expect(grpcClient.close.called).to.be.true;
+      expect((client as any).clients.size).to.be.eq(0);
+      expect((client as any).grpcClients.length).to.be.eq(0);
     });
   });
 
