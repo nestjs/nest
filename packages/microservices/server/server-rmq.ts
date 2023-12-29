@@ -18,6 +18,7 @@ import {
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
   RQM_NO_EVENT_HANDLER,
+  RQM_NO_MESSAGE_HANDLER,
 } from '../constants';
 import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
@@ -184,6 +185,10 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     const handler = this.getHandlerByPattern(pattern);
 
     if (!handler) {
+      if (!this.noAck) {
+        this.logger.warn(RQM_NO_MESSAGE_HANDLER`${pattern}`);
+        this.channel.nack(rmqContext.getMessage(), false, false);
+      }
       const status = 'error';
       const noHandlerPacket = {
         id: (packet as IncomingRequest).id,
