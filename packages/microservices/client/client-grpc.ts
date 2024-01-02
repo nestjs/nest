@@ -330,9 +330,11 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public close() {
-    this.clients.forEach(
-      client => client && isFunction(client.close) && client.close(),
-    );
+    this.clients.forEach(client => {
+      if (client && isFunction(client.close)) {
+        client.close();
+      }
+    });
     this.clients.clear();
     this.grpcClients = [];
   }
