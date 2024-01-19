@@ -5,6 +5,11 @@ export enum HttpStatus {
   CONTINUE = 100,
   SWITCHING_PROTOCOLS = 101,
   PROCESSING = 102,
+  EARLY_HINTS = 103,
+  /**
+   * @deprecated use `EARLY_HINTS` instead
+   */
+  // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
   EARLYHINTS = 103,
   OK = 200,
   CREATED = 201,
@@ -16,6 +21,11 @@ export enum HttpStatus {
   MULTI_STATUS = 207,
   ALREADY_REPORTED = 208,
   IM_USED = 226,
+  MULTIPLE_CHOICES = 300,
+  /**
+   * @deprecated use `MULTIPLE_CHOICES` instead
+   */
+  // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
   AMBIGUOUS = 300,
   MOVED_PERMANENTLY = 301,
   FOUND = 302,
