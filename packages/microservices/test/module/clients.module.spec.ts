@@ -1,4 +1,9 @@
-import { DynamicModule, FactoryProvider, Injectable } from '@nestjs/common';
+import {
+  DynamicModule,
+  FactoryProvider,
+  Injectable,
+  ValueProvider,
+} from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ClientProxyFactory } from '../../client';
@@ -22,10 +27,10 @@ describe('ClientsModule', () => {
     });
     it('should return an expected providers array', () => {
       const provider = dynamicModule.providers.find(
-        p => 'useFactory' in p && p.provide === 'test',
-      ) as FactoryProvider;
+        p => 'useValue' in p && p.provide === 'test',
+      ) as ValueProvider;
       expect(provider).to.not.be.undefined;
-      expect(provider.useFactory()).to.be.deep.eq(
+      expect(provider.useValue).to.be.deep.eq(
         ClientsModule['assignOnAppShutdownHook'](ClientProxyFactory.create({})),
       );
     });
