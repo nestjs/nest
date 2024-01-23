@@ -20,8 +20,7 @@ export class ClientsModule {
     const clients = (clientsOptions || []).map(item => {
       return {
         provide: item.name,
-        useFactory: () =>
-          this.assignOnAppShutdownHook(ClientProxyFactory.create(item)),
+        useValue: this.assignOnAppShutdownHook(ClientProxyFactory.create(item)),
       };
     });
     return {
