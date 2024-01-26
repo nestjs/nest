@@ -14,16 +14,28 @@ export function applyDecorators(
     target: TFunction | object,
     propertyKey?: string | symbol,
     descriptor?: TypedPropertyDescriptor<Y>,
-  ) => {
+  ): void => {
     for (const decorator of decorators) {
-      if (target instanceof Function && !descriptor) {
+      if (target instanceof Function && descriptor === undefined && propertyKey === undefined) {
         (decorator as ClassDecorator)(target);
         continue;
       }
-      (decorator as MethodDecorator | PropertyDecorator)(
+
+      if (propertyKey === undefined)
+        throw new Error('Parameter decorators are not supported in applyDecorators function');
+
+      if (descriptor !== undefined) {
+        (decorator as MethodDecorator)(
+          target,
+          propertyKey,
+          descriptor,
+        );
+        continue;
+      }
+
+      (decorator as PropertyDecorator)(
         target,
         propertyKey,
-        descriptor,
       );
     }
   };
