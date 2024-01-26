@@ -68,10 +68,10 @@ export abstract class AbstractHttpAdapter<
     return this.instance.all(...args);
   }
 
-  public search(port: string | number, callback?: () => void);
-  public search(port: string | number, hostname: string, callback?: () => void);
-  public search(port: any, hostname?: any, callback?: any) {
-    return this.instance.search(port, hostname, callback);
+  public search(handler: RequestHandler);
+  public search(path: any, handler: RequestHandler);
+  public search(...args: any[]) {
+    return this.instance.search(...args);
   }
 
   public options(handler: RequestHandler);
