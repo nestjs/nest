@@ -31,7 +31,7 @@ import {
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer';
 import { Server } from './server';
 
-let rqmPackage: any = {};
+let rmqPackage: any = {};
 
 const INFINITE_CONNECTION_ATTEMPTS = -1;
 
@@ -67,7 +67,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       this.getOptionsProp(this.options, 'noAssert') || RQM_DEFAULT_NO_ASSERT;
 
     this.loadPackage('amqplib', ServerRMQ.name, () => require('amqplib'));
-    rqmPackage = this.loadPackage(
+    rmqPackage = this.loadPackage(
       'amqp-connection-manager',
       ServerRMQ.name,
       () => require('amqp-connection-manager'),
@@ -136,7 +136,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   public createClient<T = any>(): T {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    return rqmPackage.connect(this.urls, {
+    return rmqPackage.connect(this.urls, {
       connectionOptions: socketOptions,
       heartbeatIntervalInSeconds: socketOptions?.heartbeatIntervalInSeconds,
       reconnectTimeInSeconds: socketOptions?.reconnectTimeInSeconds,
