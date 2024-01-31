@@ -24,7 +24,7 @@
     "@nestjs/platform-express": "10.2.10",
     "@nestjs/swagger": "7.1.17",
     "class-transformer": "0.5.1",
-    "class-validator": "0.14.0",
+    "class-validator": "0.14.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "5.0.5",
     "rxjs": "7.8.1"
