@@ -23,7 +23,7 @@
     "@nestjs/core": "10.2.10",
     "@nestjs/platform-fastify": "10.2.10",
     "class-transformer": "0.5.1",
-    "class-validator": "0.14.0",
+    "class-validator": "0.14.1",
     "reflect-metadata": "0.1.13",
     "rimraf": "5.0.5",
     "rxjs": "7.8.1"
