@@ -14,6 +14,13 @@ describe('RouterMethodFactory', () => {
     patch: () => {},
     options: () => {},
     head: () => {},
+    propfind: () => {},
+    proppatch: () => {},
+    mkcol: () => {},
+    copy: () => {},
+    move: () => {},
+    lock: () => {},
+    unlock: () => {},
     all: () => {},
   };
   beforeEach(() => {
@@ -29,6 +36,13 @@ describe('RouterMethodFactory', () => {
     expect(factory.get(target, RequestMethod.PATCH)).to.equal(target.patch);
     expect(factory.get(target, RequestMethod.OPTIONS)).to.equal(target.options);
     expect(factory.get(target, RequestMethod.HEAD)).to.equal(target.head);
+    expect(factory.get(target, RequestMethod.PROPFIND)).to.equal(target.propfind);
+    expect(factory.get(target, RequestMethod.PROPPATCH)).to.equal(target.proppatch);
+    expect(factory.get(target, RequestMethod.MKCOL)).to.equal(target.mkcol);
+    expect(factory.get(target, RequestMethod.COPY)).to.equal(target.copy);
+    expect(factory.get(target, RequestMethod.MOVE)).to.equal(target.move);
+    expect(factory.get(target, RequestMethod.LOCK)).to.equal(target.lock);
+    expect(factory.get(target, RequestMethod.UNLOCK)).to.equal(target.unlock);
     expect(factory.get(target, -1 as any)).to.equal(target.use);
   });
 });
