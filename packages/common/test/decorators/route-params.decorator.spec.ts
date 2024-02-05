@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { Body, HostParam, Param, Query, Search, Unlock } from '../../decorators';
+import { Body, HostParam, Param, Query, Search } from '../../decorators';
 import { RequestMethod } from '../../enums/request-method.enum';
-import { All, Delete, Get, ParseIntPipe, Patch, Post, Put, PropFind, PropPatch, MkCol, Move, Copy, Lock } from '../../index';
+import { All, Delete, Get, ParseIntPipe, Patch, Post, Put, PropFind, PropPatch, MkCol, Move, Copy, Lock, Unlock } from '../../index';
 import { ROUTE_ARGS_METADATA } from '../../constants';
 import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
 
