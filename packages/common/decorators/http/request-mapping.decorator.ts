@@ -102,6 +102,69 @@ export const Options = createMappingDecorator(RequestMethod.OPTIONS);
 export const Head = createMappingDecorator(RequestMethod.HEAD);
 
 /**
+ * Route handler (method) Decorator. Routes Webdav PROPFIND requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const PropFind = createMappingDecorator(RequestMethod.PROPFIND);
+
+/**
+ * Route handler (method) Decorator. Routes Webdav PROPPATCH requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const PropPatch = createMappingDecorator(RequestMethod.PROPPATCH);
+
+/**
+ * Route handler (method) Decorator. Routes Webdav MKCOL requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const MkCol = createMappingDecorator(RequestMethod.MKCOL);
+
+/**
+ * Route handler (method) Decorator. Routes Webdav COPY requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const Copy = createMappingDecorator(RequestMethod.COPY);
+
+/**
+ * Route handler (method) Decorator. Routes Webdav MOVE requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const Move = createMappingDecorator(RequestMethod.MOVE);
+
+/**
+ * Route handler (method) Decorator. Routes Webdav LOCK requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const Lock = createMappingDecorator(RequestMethod.LOCK);
+
+/**
+ * Route handler (method) Decorator. Routes Webdav UNLOCK requests to the specified path.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const Unlock = createMappingDecorator(RequestMethod.UNLOCK);
+
+/**
  * Route handler (method) Decorator. Routes all HTTP requests to the specified path.
  *
  * @see [Routing](https://docs.nestjs.com/controllers#routing)
