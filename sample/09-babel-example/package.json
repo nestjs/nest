@@ -18,7 +18,7 @@
     "@nestjs/platform-express": "10.2.10",
     "@nestjs/microservices": "10.2.10",
     "@nestjs/websockets": "10.2.10",
-    "reflect-metadata": "0.1.13",
+    "reflect-metadata": "0.2.1",
     "rxjs": "7.8.1"
   },
   "devDependencies": {

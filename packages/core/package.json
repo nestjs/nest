@@ -43,7 +43,7 @@
     "@nestjs/microservices": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/websockets": "^10.0.0",
-    "reflect-metadata": "^0.1.12",
+    "reflect-metadata": "^0.1.12 || ^0.2.0",
     "rxjs": "^7.1.0"
   },
   "peerDependenciesMeta": {
