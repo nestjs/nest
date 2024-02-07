@@ -44,7 +44,7 @@ type ChannelWrapper = any;
 type ConsumeMessage = any;
 type AmqpConnectionManager = any;
 
-let rqmPackage: any = {};
+let rmqPackage: any = {};
 
 const REPLY_QUEUE = 'amq.rabbitmq.reply-to';
 
@@ -81,7 +81,7 @@ export class ClientRMQ extends ClientProxy {
       this.getOptionsProp(this.options, 'noAssert') || RQM_DEFAULT_NO_ASSERT;
 
     loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
-    rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
+    rmqPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
       require('amqp-connection-manager'),
     );
 
@@ -133,7 +133,7 @@ export class ClientRMQ extends ClientProxy {
 
   public createClient(): AmqpConnectionManager {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    return rqmPackage.connect(this.urls, {
+    return rmqPackage.connect(this.urls, {
       connectionOptions: socketOptions,
     });
   }

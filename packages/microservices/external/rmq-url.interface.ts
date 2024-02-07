@@ -1,3 +1,6 @@
+import { ConnectionOptions } from 'tls';
+import { TcpSocketConnectOpts } from 'net';
+
 /**
  * @publicApi
  */
@@ -18,6 +21,26 @@ interface ClientProperties {
   [key: string]: any;
 }
 
+type AmqpConnectionOptions = (ConnectionOptions | TcpSocketConnectOpts) & {
+  noDelay?: boolean;
+  timeout?: number;
+  keepAlive?: boolean;
+  keepAliveDelay?: number;
+  clientProperties?: any;
+  credentials?:
+    | {
+        mechanism: string;
+        username: string;
+        password: string;
+        response: () => Buffer;
+      }
+    | {
+        mechanism: string;
+        response: () => Buffer;
+      }
+    | undefined;
+};
+
 /**
  * @publicApi
  */
@@ -25,7 +48,7 @@ export interface AmqpConnectionManagerSocketOptions {
   reconnectTimeInSeconds?: number;
   heartbeatIntervalInSeconds?: number;
   findServers?: () => string | string[];
-  connectionOptions?: any;
+  connectionOptions?: AmqpConnectionOptions;
   clientProperties?: ClientProperties;
   [key: string]: any;
 }
