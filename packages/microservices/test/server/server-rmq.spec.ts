@@ -110,6 +110,9 @@ describe('ServerRMQ', () => {
       sendMessageStub = sinon.stub(server, 'sendMessage').callsFake(() => ({}));
       (server as any).channel = channel;
     });
+    afterEach(() => {
+      channel.nack.resetHistory();
+    });
     it('should call "handleEvent" if identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
       await server.handleMessage(createMessage({ pattern: '', data: '' }), '');
@@ -148,6 +151,29 @@ describe('ServerRMQ', () => {
       return server.handleMessage(invalidMsg, '').catch(() => {
         assert.fail('Was not supposed to throw an error');
       });
+    });
+    it('should negative acknowledge if message does not exists in handlers object and noAck option is false', async () => {
+      (server as any).noAck = false;
+      await server.handleMessage(msg, '');
+      expect(channel.nack.calledWith(msg, false, false)).to.be.true;
+      expect(
+        sendMessageStub.calledWith({
+          id: '3',
+          status: 'error',
+          err: NO_MESSAGE_HANDLER,
+        }),
+      ).to.be.true;
+    });
+    it('should not negative acknowledge if key does not exists in handlers object and noAck option is true', async () => {
+      await server.handleMessage(msg, '');
+      expect(channel.nack.notCalled).to.be.true;
+      expect(
+        sendMessageStub.calledWith({
+          id: '3',
+          status: 'error',
+          err: NO_MESSAGE_HANDLER,
+        }),
+      ).to.be.true;
     });
   });
   describe('setupChannel', () => {
