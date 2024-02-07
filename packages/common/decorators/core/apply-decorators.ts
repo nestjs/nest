@@ -21,8 +21,9 @@ export function applyDecorators(
         continue;
       }
 
-      if (propertyKey === undefined)
+      if (propertyKey === undefined) {
         throw new Error('Parameter decorators are not supported in applyDecorators function');
+      }
 
       if (descriptor !== undefined) {
         (decorator as MethodDecorator)(
