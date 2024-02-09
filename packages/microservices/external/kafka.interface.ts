@@ -38,13 +38,17 @@ type Authenticator = {
   authenticate: () => Promise<void>;
 };
 
+export type SaslAuthenticateArgs<ParseResult> = {
+  request: SaslAuthenticationRequest;
+  response?: SaslAuthenticationResponse<ParseResult>;
+};
+
 type AuthenticationProviderArgs = {
   host: string;
   port: number;
   logger: Logger;
   saslAuthenticate: <ParseResult>(
-    request: SaslAuthenticationRequest,
-    response?: SaslAuthenticationResponse<ParseResult>,
+    args: SaslAuthenticateArgs<ParseResult>,
   ) => Promise<ParseResult | void>;
 };
 

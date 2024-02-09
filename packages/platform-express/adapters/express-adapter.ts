@@ -143,8 +143,16 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     return response.headersSent;
   }
 
+  public getHeader?(response: any, name: string) {
+    return response.get(name);
+  }
+
   public setHeader(response: any, name: string, value: string) {
     return response.set(name, value);
+  }
+
+  public appendHeader?(response: any, name: string, value: string) {
+    return response.append(name, value);
   }
 
   public listen(port: string | number, callback?: () => void): Server;
