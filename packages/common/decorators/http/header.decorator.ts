@@ -15,7 +15,10 @@ import { extendArrayMetadata } from '../../utils/extend-metadata.util';
  *
  * @publicApi
  */
-export function Header(name: string, value: string | (() => string)): MethodDecorator {
+export function Header(
+  name: string,
+  value: string | (() => string),
+): MethodDecorator {
   return (
     target: object,
     key: string | symbol,
