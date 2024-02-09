@@ -87,7 +87,7 @@ export class RouterResponseController {
       this.applicationRef.setHeader(
         response,
         name,
-        typeof value === 'function' ? value() : value
+        typeof value === 'function' ? value() : value,
       ),
     );
   }
