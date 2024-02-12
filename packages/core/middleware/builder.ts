@@ -58,10 +58,22 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     public exclude(
       ...routes: Array<string | RouteInfo>
     ): MiddlewareConfigProxy {
-      this.excludedRoutes = this.getRoutesFlatList(routes).map(route => ({
-        ...route,
-        path: this.routeInfoPathExtractor.extractPathFrom(route),
-      }));
+      this.excludedRoutes = this.getRoutesFlatList(routes).reduce(
+        (excludedRoutes, route) => {
+          for (const routePath of this.routeInfoPathExtractor.extractPathFrom(
+            route,
+          )) {
+            excludedRoutes.push({
+              ...route,
+              path: routePath,
+            });
+          }
+
+          return excludedRoutes;
+        },
+        [] as RouteInfo[],
+      );
+
       return this;
     }
 
