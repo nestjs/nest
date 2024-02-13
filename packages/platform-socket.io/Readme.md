@@ -93,7 +93,6 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <table style="text-align:center;"><tr>
 <td><a href="https://n.inc" target="_blank"><img src="https://nestjs.com/img/n-inc-logo.svg" width="120" valign="middle" /></td>
 <td><a href="https://twistag.com/" target="_blank"><img src="https://nestjs.com/img/twistag-logo.png" width="120" valign="middle" /></td>
-<td><a href="https://immediateedgeapp.org/" target="_blank"><img src="https://nestjs.com/img/immediate-edge-logo.png" width="120" valign="middle" /></td>
 </tr>
 </table>
 
