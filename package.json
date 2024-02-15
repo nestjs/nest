@@ -47,7 +47,7 @@
     "publish:next": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=next --access public --skip-git -m \"chore(@nestjs) publish %s release\"",
     "publish:rc": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=rc --access public -m \"chore(@nestjs) publish %s release\"",
     "publish:test": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --force-publish --access public --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\"",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "lint-staged": {
     "**/*.ts": [
