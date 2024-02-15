@@ -141,7 +141,7 @@
     "gulp-typescript": "5.0.1",
     "gulp-watch": "5.0.1",
     "http-errors": "2.0.0",
-    "husky": "9.0.10",
+    "husky": "9.0.11",
     "imports-loader": "5.0.0",
     "ioredis": "5.3.2",
     "json-loader": "0.5.7",
