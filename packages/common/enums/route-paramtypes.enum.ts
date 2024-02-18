@@ -3,6 +3,7 @@ export enum RouteParamtypes {
   RESPONSE,
   NEXT,
   BODY,
+  RAW_BODY,
   QUERY,
   PARAM,
   HEADERS,
