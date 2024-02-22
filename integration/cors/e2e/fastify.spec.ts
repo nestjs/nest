@@ -38,10 +38,12 @@ describe.skip('Fastify Cors', () => {
         );
 
         let requestId = 0;
-        const configDelegation = function (req, cb) {
-          const config = configs[requestId];
-          requestId++;
-          cb(null, config);
+        const configDelegation = {
+          delegator: function (req, cb) {
+            const config = configs[requestId];
+            requestId++;
+            cb(null, config);
+          },
         };
         app.enableCors(configDelegation);
 

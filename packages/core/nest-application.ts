@@ -15,10 +15,6 @@ import {
   GlobalPrefixOptions,
   NestApplicationOptions,
 } from '@nestjs/common/interfaces';
-import {
-  CorsOptions,
-  CorsOptionsDelegate,
-} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import {
@@ -129,9 +125,7 @@ export class NestApplication
     if (!passCustomOptions) {
       return this.enableCors();
     }
-    return this.enableCors(
-      this.appOptions.cors as CorsOptions | CorsOptionsDelegate<any>,
-    );
+    return this.enableCors(this.appOptions.cors);
   }
 
   public createServer<T = any>(): T {
@@ -279,7 +273,7 @@ export class NestApplication
     return this;
   }
 
-  public enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void {
+  public enableCors(options?: any): void {
     this.httpAdapter.enableCors(options);
   }
 

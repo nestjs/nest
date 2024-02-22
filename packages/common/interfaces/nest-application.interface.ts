@@ -1,7 +1,3 @@
-import {
-  CorsOptions,
-  CorsOptionsDelegate,
-} from './external/cors-options.interface';
 import { CanActivate } from './features/can-activate.interface';
 import { NestInterceptor } from './features/nest-interceptor.interface';
 import { GlobalPrefixOptions } from './global-prefix-options.interface';
@@ -30,13 +26,6 @@ export interface INestApplication<TServer = any>
    * @returns {this}
    */
   use(...args: any[]): this;
-
-  /**
-   * Enables CORS (Cross-Origin Resource Sharing)
-   *
-   * @returns {void}
-   */
-  enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void;
 
   /**
    * Enables Versioning for the application.

@@ -1,3 +1,4 @@
+import { FastifyCorsOptions } from '@fastify/cors';
 import {
   HttpStatus,
   Logger,
@@ -9,10 +10,6 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { VersionValue } from '@nestjs/common/interfaces';
-import {
-  CorsOptions,
-  CorsOptionsDelegate,
-} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
@@ -47,15 +44,15 @@ import {
 import * as pathToRegexp from 'path-to-regexp';
 // `querystring` is used internally in fastify for registering urlencoded body parser.
 import { parse as querystringParse } from 'querystring';
+import {
+  FASTIFY_ROUTE_CONFIG_METADATA,
+  FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+} from '../constants';
 import { NestFastifyBodyParserOptions } from '../interfaces';
 import {
   FastifyStaticOptions,
   FastifyViewOptions,
 } from '../interfaces/external';
-import {
-  FASTIFY_ROUTE_CONFIG_METADATA,
-  FASTIFY_ROUTE_CONSTRAINTS_METADATA,
-} from '../constants';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -492,7 +489,7 @@ export class FastifyAdapter<
     return this.getRequestOriginalUrl(request.raw || request);
   }
 
-  public enableCors(options: CorsOptions | CorsOptionsDelegate<TRequest>) {
+  public enableCors(options?: FastifyCorsOptions) {
     this.register(
       import('@fastify/cors') as Parameters<TInstance['register']>[0],
       options,
