@@ -1,7 +1,7 @@
 import { ArgumentsHost, Logger, WsExceptionFilter } from '@nestjs/common';
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { MESSAGES } from '@nestjs/core/constants';
-import { WsException } from '../errors/ws-exception';
+import { WsException } from '@nestjs/common';
 
 /**
  * @publicApi

@@ -3,6 +3,7 @@ import { PipeTransform } from '../../interfaces/index';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';
 import { isFunction } from '../../utils/shared.utils';
 import { validateEach } from '../../utils/validate-each.util';
+import { isTargetAware } from '../../interfaces/features/target-aware-pipe.interface';
 
 /**
  * Decorator that binds pipes to the scope of the controller or method,
@@ -43,6 +44,12 @@ export function UsePipes(
       return descriptor;
     }
     validateEach(target, pipes, isPipeValid, '@UsePipes', 'pipe');
+
+    const pipesWithSetTarget = pipes.filter(pipe => isTargetAware(pipe));
+    pipesWithSetTarget.forEach(pipeWithSetTarget =>
+      pipeWithSetTarget['setTarget'](target),
+    );
+
     extendArrayMetadata(PIPES_METADATA, pipes, target);
     return target;
   };

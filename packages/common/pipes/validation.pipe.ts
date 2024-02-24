@@ -19,6 +19,10 @@ import {
 } from '../utils/http-error-by-code.util';
 import { loadPackage } from '../utils/load-package.util';
 import { isNil, isUndefined } from '../utils/shared.utils';
+import { GATEWAY_METADATA } from '../constants';
+import { WsException } from '../exceptions';
+import { HttpException } from '../exceptions';
+import { TargetAwarePipe } from '../interfaces/features/target-aware-pipe.interface';
 
 /**
  * @publicApi
@@ -44,7 +48,7 @@ let classTransformer: TransformerPackage = {} as any;
  * @publicApi
  */
 @Injectable()
-export class ValidationPipe implements PipeTransform<any> {
+export class ValidationPipe implements PipeTransform<any>, TargetAwarePipe {
   protected isTransformEnabled: boolean;
   protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
@@ -53,6 +57,9 @@ export class ValidationPipe implements PipeTransform<any> {
   protected expectedType: Type<any>;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
+  protected isInGatewayMode = false;
+  protected target: unknown;
+  isTargetAware = true as const;
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
@@ -82,6 +89,10 @@ export class ValidationPipe implements PipeTransform<any> {
     classTransformer = this.loadTransformer(options.transformerPackage);
   }
 
+  public setTarget(target: unknown) {
+    this.target = target;
+  }
+
   protected loadValidator(
     validatorPackage?: ValidatorPackage,
   ): ValidatorPackage {
@@ -105,6 +116,15 @@ export class ValidationPipe implements PipeTransform<any> {
   }
 
   public async transform(value: any, metadata: ArgumentMetadata) {
+    if (
+      !this.isInGatewayMode &&
+      this.target &&
+      Reflect.getMetadata(GATEWAY_METADATA, this.target)
+    ) {
+      this.isInGatewayMode = true;
+      this.exceptionFactory = this.createExceptionFactory();
+    }
+
     if (this.expectedType) {
       metadata = { ...metadata, metatype: this.expectedType };
     }
@@ -165,12 +185,27 @@ export class ValidationPipe implements PipeTransform<any> {
   }
 
   public createExceptionFactory() {
+    let errorConstructorWrapper: (error: unknown) => unknown | WsException = (
+      error: unknown,
+    ) => error;
+    if (this.isInGatewayMode) {
+      errorConstructorWrapper = (error: unknown) => {
+        if (error instanceof HttpException) {
+          return new WsException(error);
+        }
+      };
+    }
+
     return (validationErrors: ValidationError[] = []) => {
       if (this.isDetailedOutputDisabled) {
-        return new HttpErrorByCode[this.errorHttpStatusCode]();
+        return errorConstructorWrapper(
+          new HttpErrorByCode[this.errorHttpStatusCode](),
+        );
       }
       const errors = this.flattenValidationErrors(validationErrors);
-      return new HttpErrorByCode[this.errorHttpStatusCode](errors);
+      return errorConstructorWrapper(
+        new HttpErrorByCode[this.errorHttpStatusCode](errors),
+      );
     };
   }
 
