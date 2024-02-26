@@ -9,7 +9,7 @@ import { toArray } from 'rxjs/operators';
 import { HeroById } from './interfaces/hero-by-id.interface';
 import { Hero } from './interfaces/hero.interface';
 
-interface HeroService {
+interface HeroesService {
   findOne(data: HeroById): Observable<Hero>;
   findMany(upstream: Observable<HeroById>): Observable<Hero>;
 }
@@ -20,12 +20,12 @@ export class HeroController implements OnModuleInit {
     { id: 1, name: 'John' },
     { id: 2, name: 'Doe' },
   ];
-  private heroService: HeroService;
+  private heroesService: HeroesService;
 
   constructor(@Inject('HERO_PACKAGE') private readonly client: ClientGrpc) {}
 
   onModuleInit() {
-    this.heroService = this.client.getService<HeroService>('HeroService');
+    this.heroesService = this.client.getService<HeroesService>('HeroesService');
   }
 
   @Get()
@@ -35,21 +35,21 @@ export class HeroController implements OnModuleInit {
     ids$.next({ id: 2 });
     ids$.complete();
 
-    const stream = this.heroService.findMany(ids$.asObservable());
+    const stream = this.heroesService.findMany(ids$.asObservable());
     return stream.pipe(toArray());
   }
 
   @Get(':id')
   getById(@Param('id') id: string): Observable<Hero> {
-    return this.heroService.findOne({ id: +id });
+    return this.heroesService.findOne({ id: +id });
   }
 
-  @GrpcMethod('HeroService')
+  @GrpcMethod('HeroesService')
   findOne(data: HeroById): Hero {
     return this.items.find(({ id }) => id === data.id);
   }
 
-  @GrpcStreamMethod('HeroService')
+  @GrpcStreamMethod('HeroesService')
   findMany(data$: Observable<HeroById>): Observable<Hero> {
     const hero$ = new Subject<Hero>();
 

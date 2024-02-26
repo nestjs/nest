@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package hero;
 
-service HeroService {
+service HeroesService {
   rpc FindOne (HeroById) returns (Hero);
   rpc FindMany (stream HeroById) returns (stream Hero);
 }
