@@ -56,6 +56,7 @@ import {
   FASTIFY_ROUTE_CONFIG_METADATA,
   FASTIFY_ROUTE_CONSTRAINTS_METADATA,
 } from '../constants';
+import { RouterMethod } from '../interfaces/nest-fastify-router-method.interface';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -291,6 +292,34 @@ export class FastifyAdapter<
 
   public options(...args: any[]) {
     return this.injectRouteOptions('options', ...args);
+  }
+
+  public propfind(...args: any[]) {
+    return this.injectRouteOptions('propfind', ...args);
+  }
+
+  public proppatch(...args: any[]) {
+    return this.injectRouteOptions('proppatch', ...args);
+  }
+
+  public mkcol(...args: any[]) {
+    return this.injectRouteOptions('mkcol', ...args);
+  }
+
+  public copy(...args: any[]) {
+    return this.injectRouteOptions('copy', ...args);
+  }
+
+  public move(...args: any[]) {
+    return this.injectRouteOptions('move', ...args);
+  }
+
+  public lock(...args: any[]) {
+    return this.injectRouteOptions('lock', ...args);
+  }
+
+  public unlock(...args: any[]) {
+    return this.injectRouteOptions('unlock', ...args);
   }
 
   public applyVersionFilter(
@@ -651,17 +680,7 @@ export class FastifyAdapter<
     return rawRequest.originalUrl || rawRequest.url;
   }
 
-  private injectRouteOptions(
-    routerMethodKey:
-      | 'get'
-      | 'post'
-      | 'put'
-      | 'delete'
-      | 'options'
-      | 'patch'
-      | 'head',
-    ...args: any[]
-  ) {
+  private injectRouteOptions(routerMethodKey: RouterMethod, ...args: any[]) {
     const handlerRef = args[args.length - 1];
     const isVersioned =
       !isUndefined(handlerRef.version) &&
