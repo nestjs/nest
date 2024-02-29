@@ -320,6 +320,34 @@ export class FastifyAdapter<
     return this.injectRouteOptions('search', ...args);
   }
 
+  public propfind(...args: any[]) {
+    return this.injectRouteOptions('propfind', ...args);
+  }
+
+  public proppatch(...args: any[]) {
+    return this.injectRouteOptions('proppatch', ...args);
+  }
+
+  public mkcol(...args: any[]) {
+    return this.injectRouteOptions('mkcol', ...args);
+  }
+
+  public copy(...args: any[]) {
+    return this.injectRouteOptions('copy', ...args);
+  }
+
+  public move(...args: any[]) {
+    return this.injectRouteOptions('move', ...args);
+  }
+
+  public lock(...args: any[]) {
+    return this.injectRouteOptions('lock', ...args);
+  }
+
+  public unlock(...args: any[]) {
+    return this.injectRouteOptions('unlock', ...args);
+  }
+
   public applyVersionFilter(
     handler: Function,
     version: VersionValue,
