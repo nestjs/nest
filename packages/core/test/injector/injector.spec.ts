@@ -61,7 +61,7 @@ describe('Injector', () => {
         name: DependencyTwo,
         token: DependencyTwo,
         metatype: DependencyTwo,
-        instance: Object.create(DependencyOne.prototype),
+        instance: Object.create(DependencyTwo.prototype),
         isResolved: false,
       });
       moduleDeps.providers.set('MainTest', mainTest);

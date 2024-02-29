@@ -198,6 +198,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
    *
    * @param methodHandler
    * @param protoNativeHandler
+   * @param streamType
    */
   public createServiceMethod(
     methodHandler: Function,
