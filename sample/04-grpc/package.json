@@ -20,7 +20,6 @@
   },
   "dependencies": {
     "@grpc/grpc-js": "1.10.0",
-    "@grpc/reflection": "1.0.1",
     "@nestjs/common": "10.3.2",
     "@nestjs/core": "10.3.2",
     "@nestjs/microservices": "10.3.2",

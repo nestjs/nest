@@ -509,7 +509,6 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         this.options,
         grpcProtoLoaderPackage,
       );
-      this.addReflection(packageDefinition);
       return grpcPackage.loadPackageDefinition(packageDefinition);
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException(err.path);
@@ -593,33 +592,5 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         await this.createService(definition.service, definition.name),
       );
     }
-  }
-
-  /** Optionally add gRPC Reflection support if the user has the `@grpc/reflection` package installed
-   *
-   * @param pkg - PackageDefinition returned by proto-loader.sync or equivalent
-   */
-  private addReflection(pkg): Promise<void> {
-    const disabled = this.getOptionsProp(
-      this.options,
-      'disableReflection',
-      false,
-    );
-    if (disabled) {
-      return;
-    }
-
-    try {
-      require('@grpc/reflection');
-    } catch {
-      this.logger.warn(
-        'Missing @grpc/reflection dependency. Disabling gRPC reflection functionality',
-      );
-      return;
-    }
-
-    const reflectionPackage = require('@grpc/reflection'); // eslint-disable-line @typescript-eslint/no-var-requires
-    const reflection = new reflectionPackage.ReflectionService(pkg);
-    reflection.addToServer(this.grpcClient);
   }
 }

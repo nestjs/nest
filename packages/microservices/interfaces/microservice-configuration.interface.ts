@@ -66,7 +66,6 @@ export interface GrpcOptions {
     protoLoader?: string;
     packageDefinition?: any;
     gracefulShutdown?: boolean;
-    disableReflection?: boolean;
     loader?: {
       keepCase?: boolean;
       alternateCommentMode?: boolean;
