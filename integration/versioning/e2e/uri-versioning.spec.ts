@@ -174,6 +174,50 @@ describe('URI Versioning', () => {
       });
     });
 
+    describe('GET /internal-api/internal-resource', () => {
+      it('No Version', () => {
+        return request(app.getHttpServer())
+          .get('/internal-api/internal-resource')
+          .expect(200)
+          .expect('Internal Resource Version 1');
+      });
+
+      it('V2', () => {
+        return request(app.getHttpServer())
+          .get('/v2/internal-api/internal-resource')
+          .expect(200)
+          .expect('Internal Resource Version 2');
+      });
+
+      it('V2 - wrong version position', () => {
+        return request(app.getHttpServer())
+          .get('/internal-api/v2/internal-resource')
+          .expect(404);
+      });
+    });
+
+    describe('GET /public-api/public-resource', () => {
+      it('No Version', () => {
+        return request(app.getHttpServer())
+          .get('/public-api/public-resource')
+          .expect(200)
+          .expect('Public Resource Version 1');
+      });
+
+      it('V2', () => {
+        return request(app.getHttpServer())
+          .get('/public-api/v2/public-resource')
+          .expect(200)
+          .expect('Public Resource Version 2');
+      });
+
+      it('V2 - wrong version position', () => {
+        return request(app.getHttpServer())
+          .get('/v2/public-api/public-resource')
+          .expect(404);
+      });
+    });
+
     after(async () => {
       await app.close();
     });
@@ -348,6 +392,50 @@ describe('URI Versioning', () => {
       });
     });
 
+    describe('GET /internal-api/internal-resource', () => {
+      it('No Version', () => {
+        return request(app.getHttpServer())
+          .get('/v1/internal-api/internal-resource')
+          .expect(200)
+          .expect('Internal Resource Version 1');
+      });
+
+      it('V2', () => {
+        return request(app.getHttpServer())
+          .get('/v2/internal-api/internal-resource')
+          .expect(200)
+          .expect('Internal Resource Version 2');
+      });
+
+      it('V2 - wrong version position', () => {
+        return request(app.getHttpServer())
+          .get('/internal-api/v2/internal-resource')
+          .expect(404);
+      });
+    });
+
+    describe('GET /public-api/public-resource', () => {
+      it('No Version', () => {
+        return request(app.getHttpServer())
+          .get('/public-api/v1/public-resource')
+          .expect(200)
+          .expect('Public Resource Version 1');
+      });
+
+      it('V2', () => {
+        return request(app.getHttpServer())
+          .get('/public-api/v2/public-resource')
+          .expect(200)
+          .expect('Public Resource Version 2');
+      });
+
+      it('V2 - wrong version position', () => {
+        return request(app.getHttpServer())
+          .get('/v2/public-api/public-resource')
+          .expect(404);
+      });
+    });
+
     after(async () => {
       await app.close();
     });
@@ -411,6 +499,50 @@ describe('URI Versioning', () => {
 
       it('No Version', () => {
         return request(app.getHttpServer()).get('/foo/bar').expect(404);
+      });
+    });
+
+    describe('GET /internal-api/internal-resource', () => {
+      it('No Version', () => {
+        return request(app.getHttpServer())
+          .get('/api/v1/internal-api/internal-resource')
+          .expect(200)
+          .expect('Internal Resource Version 1');
+      });
+
+      it('V2', () => {
+        return request(app.getHttpServer())
+          .get('/api/v2/internal-api/internal-resource')
+          .expect(200)
+          .expect('Internal Resource Version 2');
+      });
+
+      it('V2 - wrong version position', () => {
+        return request(app.getHttpServer())
+          .get('/api/internal-api/v2/internal-resource')
+          .expect(404);
+      });
+    });
+
+    describe('GET /public-api/public-resource', () => {
+      it('No Version', () => {
+        return request(app.getHttpServer())
+          .get('/api/public-api/v1/public-resource')
+          .expect(200)
+          .expect('Public Resource Version 1');
+      });
+
+      it('V2', () => {
+        return request(app.getHttpServer())
+          .get('/api/public-api/v2/public-resource')
+          .expect(200)
+          .expect('Public Resource Version 2');
+      });
+
+      it('V2 - wrong version position', () => {
+        return request(app.getHttpServer())
+          .get('/api/v2/public-api/public-resource')
+          .expect(404);
       });
     });
 

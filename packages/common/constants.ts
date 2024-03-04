@@ -36,6 +36,7 @@ export type EnhancerSubtype =
 export const RENDER_METADATA = '__renderTemplate__';
 export const HTTP_CODE_METADATA = '__httpCode__';
 export const MODULE_PATH = '__module_path__';
+export const MODULE_PATH_BEFORE_VERSION = '__modulePathBeforeVersion__';
 export const HEADERS_METADATA = '__headers__';
 export const REDIRECT_METADATA = '__redirect__';
 export const RESPONSE_PASSTHROUGH_METADATA = '__responsePassthrough__';
