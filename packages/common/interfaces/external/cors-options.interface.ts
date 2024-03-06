@@ -56,7 +56,7 @@ export interface CorsOptions {
 }
 
 export interface CorsOptionsCallback {
-  (error: Error, options: CorsOptions): void;
+  (error: Error | null, options: CorsOptions): void;
 }
 export interface CorsOptionsDelegate<T> {
   (req: T, cb: CorsOptionsCallback): void;

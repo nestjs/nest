@@ -23,21 +23,21 @@
 
 ## Description
 
-Nest is a framework for building efficient, scalable <a href="https://nodejs.org" target="_blank">Node.js</a> server-side applications. It uses modern JavaScript, is built with  <a href="https://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).
+Nest is a framework for building efficient, scalable <a href="https://nodejs.org" target="_blank">Node.js</a> server-side applications. It uses modern JavaScript, is built with <a href="https://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).
 
-<p>Under the hood, Nest makes use of <a href="https://expressjs.com/" target="_blank">Express</a>, but also, provides compatibility with a wide range of other libraries, like e.g. <a href="https://github.com/fastify/fastify" target="_blank">Fastify</a>, allowing for easy use of the myriad third-party plugins which are available.</p>
+<p>Under the hood, Nest makes use of <a href="https://expressjs.com/" target="_blank">Express</a>, but also provides compatibility with a wide range of other libraries, like <a href="https://github.com/fastify/fastify" target="_blank">Fastify</a>, allowing for easy use of the myriad of third-party plugins which are available.</p>
 
 ## Philosophy
 
-<p>In recent years, thanks to Node.js, JavaScript has become the “lingua franca” of the web for both front and backend applications, giving rise to awesome projects like <a href="https://angular.io/" target="_blank">Angular</a>, <a href="https://github.com/facebook/react" target="_blank">React</a> and <a href="https://github.com/vuejs/vue" target="_blank">Vue</a> which improve developer productivity and enable the construction of fast, testable, extensible frontend applications. However, on the server-side, while there are a lot of superb libraries, helpers and tools for Node, none of them effectively solve the main problem - the architecture.</p>
-<p>Nest aims to provide an application architecture out of the box which allows for effortless creation of highly testable, scalable, loosely coupled and easily maintainable applications. The architecture is heavily inspired by Angular.</p>
+<p>In recent years, thanks to Node.js, JavaScript has become the “lingua franca” of the web for both front and backend applications, giving rise to awesome projects like <a href="https://angular.io/" target="_blank">Angular</a>, <a href="https://github.com/facebook/react" target="_blank">React</a>, and <a href="https://github.com/vuejs/vue" target="_blank">Vue</a>, which improve developer productivity and enable the construction of fast, testable, and extensible frontend applications. However, on the server-side, while there are a lot of superb libraries, helpers, and tools for Node, none of them effectively solve the main problem - the architecture.</p>
+<p>Nest aims to provide an application architecture out of the box which allows for effortless creation of highly testable, scalable, and loosely coupled and easily maintainable applications. The architecture is heavily inspired by Angular.</p>
 
 ## Getting started
 
-* To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
-* 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
-* [가이드](readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. :books:
-* [ガイド](readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 :books:
+- To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
+- 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
+- [가이드](readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. :books:
+- [ガイド](readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 :books:
 
 ## Questions
 
@@ -56,10 +56,13 @@ With official support, you can get expert help straight from Nest core team. We 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support from the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
 
 #### Principal Sponsors
+
 <table style="text-align:center;"><tr>
   <td><a href="https://trilon.io" target="_blank"><img src="https://nestjs.com/img/trilon.svg" width="200" valign="middle" /></a></td>
     <td>
 <a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td>
+<td>
+<a href="https://amplication.com/" target="_blank"><img src="https://nestjs.com/img/amplication-logo.svg" width="190" valign="middle" /></a></td>
 </tr></table>
 
 #### Gold Sponsors
@@ -69,8 +72,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td>
 <a href="https://github.com/Sanofi-IADC" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/sanofi.png" width="180" valign="middle" /></a></td>
 <td>
-<a href="https://nx.dev" target="_blank"><img src="https://nestjs.com/img/nx-logo.png" height="45" valign="middle" /></a></td><td>
-  <a href="https://amplication.com/" target="_blank"><img src="https://nestjs.com/img/amplication-logo.svg" width="190" valign="middle" /></a></td>
+<a href="https://nx.dev" target="_blank"><img src="https://nestjs.com/img/nx-logo.png" height="45" valign="middle" /></a></td>
   <td>
 <a href="https://weld.app/" target="_blank"><img src="https://nestjs.com/img/weld-logo.svg" width="140" valign="middle" /></a></td>
 <td>
@@ -81,12 +83,17 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <a href="https://fuseautotech.com/" target="_blank"><img src="https://nestjs.com/img/fuse-logo.svg" width="105" valign="middle" /></a></td>
 <td>
 <a href="https://ridicorp.com/career/" target="_blank"><img src="https://nestjs.com/img/ridi-logo.svg" width="105" valign="middle" /></a></td><td>
-<a href="https://www.movavi.com/imovie-for-windows.html" target="_blank"><img src="https://nestjs.com/img/movavi-logo.svg" width="105" valign="middle" /></a></td></</tr></table>
+<a href="https://www.movavi.com/imovie-for-windows.html" target="_blank"><img src="https://nestjs.com/img/movavi-logo.svg" width="105" valign="middle" /></a></td>
+</tr><tr><td>
+<a href="https://skunk.team" target="_blank"><img src="https://nestjs.com/img/skunk-logo.png" height="60" valign="middle" /></a></td>
+ </tr></table>
 
 #### Silver Sponsors
 
 <table style="text-align:center;"><tr>
-<td><a href="https://n.inc" target="_blank"><img src="https://nestjs.com/img/n-inc-logo.svg" width="120" valign="middle" /></td></tr>
+<td><a href="https://n.inc" target="_blank"><img src="https://nestjs.com/img/n-inc-logo.svg" width="120" valign="middle" /></td>
+<td><a href="https://twistag.com/" target="_blank"><img src="https://nestjs.com/img/twistag-logo.png" width="120" valign="middle" /></td>
+</tr>
 </table>
 
 #### Sponsors
@@ -113,6 +120,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
    <td align="center" valign="middle"><a href="https://www.hingehealth.com/" target="_blank"><img src="https://nestjs.com/img/hinge-health-logo.svg" width="100" valign="middle" /></a></td>
    <td align="center" valign="middle"><a href="https://julienferand.dev/" target="_blank"><img src="https://nestjs.com/img/julienferand-logo.jpeg" width="65" valign="middle" /></a></td>
    <td align="center" valign="middle"><a href="https://www.tripoffice.com/" target="_blank"><img src="https://nestjs.com/img/tripoffice-logo.png" width="140" valign="middle" /></a></td>
+   <td align="center" valign="middle"><a href="https://solcellsforetag.se/" target="_blank"><img src="https://nestjs.com/img/solcellsforetag-logo.svg" width="140" valign="middle" /></a></td>
   </tr></table>
 
 ## Backers
@@ -121,9 +129,9 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 ## Stay in touch
 
-* Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-* Website - [https://nestjs.com](https://nestjs.com/)
-* Twitter - [@nestframework](https://twitter.com/nestframework)
+- Author - [Kamil Myśliwiec](https://x.com/kammysliwiec)
+- Website - [https://nestjs.com](https://nestjs.com/)
+- X - [@nestframework](https://x.com/nestframework)
 
 ## License
 

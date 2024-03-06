@@ -96,14 +96,15 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         response,
         (err: Error) => {
           if (err) {
-            this.logger.error(err.message, err.stack);
+            body.errorLogger(err);
           }
         },
       );
     }
+    const responseContentType = response.getHeader('Content-Type');
     if (
-      response.getHeader('Content-Type') !== undefined &&
-      !response.getHeader('Content-Type').startsWith('application/json') &&
+      typeof responseContentType === 'string' &&
+      !responseContentType.startsWith('application/json') &&
       body?.statusCode >= HttpStatus.BAD_REQUEST
     ) {
       this.logger.warn(
@@ -142,8 +143,16 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     return response.headersSent;
   }
 
+  public getHeader?(response: any, name: string) {
+    return response.get(name);
+  }
+
   public setHeader(response: any, name: string, value: string) {
     return response.set(name, value);
+  }
+
+  public appendHeader?(response: any, name: string, value: string) {
+    return response.append(name, value);
   }
 
   public listen(port: string | number, callback?: () => void): Server;

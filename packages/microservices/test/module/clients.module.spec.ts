@@ -1,4 +1,9 @@
-import { DynamicModule, FactoryProvider, Injectable } from '@nestjs/common';
+import {
+  DynamicModule,
+  FactoryProvider,
+  Injectable,
+  ValueProvider,
+} from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ClientProxyFactory } from '../../client';
@@ -21,14 +26,13 @@ describe('ClientsModule', () => {
       expect(dynamicModule.module).to.be.eql(ClientsModule);
     });
     it('should return an expected providers array', () => {
-      expect(dynamicModule.providers).to.be.deep.eq([
-        {
-          provide: 'test',
-          useValue: ClientsModule['assignOnAppShutdownHook'](
-            ClientProxyFactory.create({}),
-          ),
-        },
-      ]);
+      const provider = dynamicModule.providers.find(
+        p => 'useValue' in p && p.provide === 'test',
+      ) as ValueProvider;
+      expect(provider).to.not.be.undefined;
+      expect(provider.useValue).to.be.deep.eq(
+        ClientsModule['assignOnAppShutdownHook'](ClientProxyFactory.create({})),
+      );
     });
   });
   describe('registerAsync', () => {

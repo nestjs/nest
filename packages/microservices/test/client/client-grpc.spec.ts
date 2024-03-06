@@ -3,10 +3,11 @@ import { expect } from 'chai';
 import { join } from 'path';
 import { Observable, Subject } from 'rxjs';
 import * as sinon from 'sinon';
-import { ClientGrpcProxy } from '../../client/client-grpc';
+import { ClientGrpcProxy } from '../../client';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
+import * as grpcHelpers from '../../helpers/grpc-helpers';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -443,23 +444,31 @@ describe('ClientGrpcProxy', () => {
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {
-        sinon.stub(client, 'getOptionsProp' as any).callsFake(() => {
+        const getPackageDefinitionStub = sinon.stub(
+          grpcHelpers,
+          'getGrpcPackageDefinition' as any,
+        );
+        getPackageDefinitionStub.callsFake(() => {
           throw new Error();
         });
         (client as any).logger = new NoopLogger();
         expect(() => client.loadProto()).to.throws(
           InvalidProtoDefinitionException,
         );
+        getPackageDefinitionStub.restore();
       });
     });
   });
   describe('close', () => {
     it('should call "close" method', () => {
       const grpcClient = { close: sinon.spy() };
-      (client as any).grpcClients[0] = grpcClient;
+      (client as any).clients.set('test', grpcClient);
+      (client as any).grpcClients[0] = {};
 
       client.close();
       expect(grpcClient.close.called).to.be.true;
+      expect((client as any).clients.size).to.be.eq(0);
+      expect((client as any).grpcClients.length).to.be.eq(0);
     });
   });
 

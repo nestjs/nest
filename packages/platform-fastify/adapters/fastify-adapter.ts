@@ -52,6 +52,10 @@ import {
   FastifyStaticOptions,
   FastifyViewOptions,
 } from '../interfaces/external';
+import {
+  FASTIFY_ROUTE_CONFIG_METADATA,
+  FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+} from '../constants';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -100,7 +104,8 @@ type FastifyRawRequest<TServer extends RawServerBase> =
 export class FastifyAdapter<
   TServer extends RawServerBase = RawServerDefault,
   TRawRequest extends FastifyRawRequest<TServer> = FastifyRawRequest<TServer>,
-  TRawResponse extends RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>,
+  TRawResponse extends
+    RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>,
   TRequest extends FastifyRequest<
     RequestGenericInterface,
     TServer,
@@ -261,31 +266,31 @@ export class FastifyAdapter<
   }
 
   public get(...args: any[]) {
-    return this.injectConstraintsIfVersioned('get', ...args);
+    return this.injectRouteOptions('get', ...args);
   }
 
   public post(...args: any[]) {
-    return this.injectConstraintsIfVersioned('post', ...args);
+    return this.injectRouteOptions('post', ...args);
   }
 
   public head(...args: any[]) {
-    return this.injectConstraintsIfVersioned('head', ...args);
+    return this.injectRouteOptions('head', ...args);
   }
 
   public delete(...args: any[]) {
-    return this.injectConstraintsIfVersioned('delete', ...args);
+    return this.injectRouteOptions('delete', ...args);
   }
 
   public put(...args: any[]) {
-    return this.injectConstraintsIfVersioned('put', ...args);
+    return this.injectRouteOptions('put', ...args);
   }
 
   public patch(...args: any[]) {
-    return this.injectConstraintsIfVersioned('patch', ...args);
+    return this.injectRouteOptions('patch', ...args);
   }
 
   public options(...args: any[]) {
-    return this.injectConstraintsIfVersioned('options', ...args);
+    return this.injectRouteOptions('options', ...args);
   }
 
   public applyVersionFilter(
@@ -461,8 +466,16 @@ export class FastifyAdapter<
     return response.sent;
   }
 
+  public getHeader?(response: any, name: string) {
+    return response.getHeader(name);
+  }
+
   public setHeader(response: TReply, name: string, value: string) {
     return response.header(name, value);
+  }
+
+  public appendHeader?(response: any, name: string, value: string) {
+    response.header(name, value);
   }
 
   public getRequestHostname(request: TRequest): string {
@@ -638,7 +651,7 @@ export class FastifyAdapter<
     return rawRequest.originalUrl || rawRequest.url;
   }
 
-  private injectConstraintsIfVersioned(
+  private injectRouteOptions(
     routerMethodKey:
       | 'get'
       | 'post'
@@ -653,19 +666,42 @@ export class FastifyAdapter<
     const isVersioned =
       !isUndefined(handlerRef.version) &&
       handlerRef.version !== VERSION_NEUTRAL;
+    const routeConfig = Reflect.getMetadata(
+      FASTIFY_ROUTE_CONFIG_METADATA,
+      handlerRef,
+    );
 
-    if (isVersioned) {
+    const routeConstraints = Reflect.getMetadata(
+      FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+      handlerRef,
+    );
+
+    const hasConfig = !isUndefined(routeConfig);
+    const hasConstraints = !isUndefined(routeConstraints);
+
+    if (isVersioned || hasConstraints || hasConfig) {
       const isPathAndRouteTuple = args.length === 2;
       if (isPathAndRouteTuple) {
-        const options = {
-          constraints: {
+        const constraints = {
+          ...(hasConstraints && routeConstraints),
+          ...(isVersioned && {
             version: handlerRef.version,
-          },
+          }),
+        };
+
+        const options = {
+          constraints,
+          ...(hasConfig && {
+            config: {
+              ...routeConfig,
+            },
+          }),
         };
         const path = args[0];
         return this.instance[routerMethodKey](path, options, handlerRef);
       }
     }
+
     return this.instance[routerMethodKey](
       ...(args as Parameters<
         RouteShorthandMethod<TServer, TRawRequest, TRawResponse>

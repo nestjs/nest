@@ -112,7 +112,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql('/*');
+      ).to.eql(['/*']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -120,7 +120,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql('/v1/*');
+      ).to.eql(['/v1/*']);
     });
 
     it(`should return correct path when set global prefix`, () => {
@@ -131,7 +131,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql('/*');
+      ).to.eql(['/*']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -139,7 +139,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql('/api/v1/*');
+      ).to.eql(['/api/v1/*']);
     });
 
     it(`should return correct path when set global prefix and global prefix options`, () => {
@@ -155,7 +155,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql('/*');
+      ).to.eql(['/*']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -163,7 +163,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql('/api/v1/*');
+      ).to.eql(['/api/v1/*']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -171,7 +171,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql('/v1/foo');
+      ).to.eql(['/v1/foo']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -179,7 +179,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql('/api/v1/bar');
+      ).to.eql(['/api/v1/bar']);
     });
   });
 });

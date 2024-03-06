@@ -14,6 +14,10 @@ import {
 import { PatternHandler } from '../enums/pattern-handler.enum';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 import { Transport } from '../enums';
+import {
+  InvalidGrpcDecoratorException,
+  RpcDecoratorMetadata,
+} from '../errors/invalid-grpc-message-decorator.exception';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',
@@ -64,26 +68,30 @@ export const MessagePattern: {
     key: string | symbol,
     descriptor: PropertyDescriptor,
   ) => {
-    Reflect.defineMetadata(
-      PATTERN_METADATA,
-      [].concat(metadata),
-      descriptor.value,
-    );
-    Reflect.defineMetadata(
-      PATTERN_HANDLER_METADATA,
-      PatternHandler.MESSAGE,
-      descriptor.value,
-    );
-    Reflect.defineMetadata(TRANSPORT_METADATA, transport, descriptor.value);
-    Reflect.defineMetadata(
-      PATTERN_EXTRAS_METADATA,
-      {
-        ...Reflect.getMetadata(PATTERN_EXTRAS_METADATA, descriptor.value),
-        ...extras,
-      },
-      descriptor.value,
-    );
-    return descriptor;
+    try {
+      Reflect.defineMetadata(
+        PATTERN_METADATA,
+        [].concat(metadata),
+        descriptor.value,
+      );
+      Reflect.defineMetadata(
+        PATTERN_HANDLER_METADATA,
+        PatternHandler.MESSAGE,
+        descriptor.value,
+      );
+      Reflect.defineMetadata(TRANSPORT_METADATA, transport, descriptor.value);
+      Reflect.defineMetadata(
+        PATTERN_EXTRAS_METADATA,
+        {
+          ...Reflect.getMetadata(PATTERN_EXTRAS_METADATA, descriptor.value),
+          ...extras,
+        },
+        descriptor.value,
+      );
+      return descriptor;
+    } catch (err) {
+      throw new InvalidGrpcDecoratorException(metadata as RpcDecoratorMetadata);
+    }
   };
 };
 

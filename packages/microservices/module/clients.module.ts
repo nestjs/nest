@@ -17,10 +17,12 @@ import {
 export class ClientsModule {
   static register(options: ClientsModuleOptions): DynamicModule {
     const clientsOptions = !Array.isArray(options) ? options.clients : options;
-    const clients = (clientsOptions || []).map(item => ({
-      provide: item.name,
-      useValue: this.assignOnAppShutdownHook(ClientProxyFactory.create(item)),
-    }));
+    const clients = (clientsOptions || []).map(item => {
+      return {
+        provide: item.name,
+        useValue: this.assignOnAppShutdownHook(ClientProxyFactory.create(item)),
+      };
+    });
     return {
       module: ClientsModule,
       global: !Array.isArray(options) && options.isGlobal,

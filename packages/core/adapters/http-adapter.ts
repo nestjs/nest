@@ -68,10 +68,10 @@ export abstract class AbstractHttpAdapter<
     return this.instance.all(...args);
   }
 
-  public search(port: string | number, callback?: () => void);
-  public search(port: string | number, hostname: string, callback?: () => void);
-  public search(port: any, hostname?: any, callback?: any) {
-    return this.instance.search(port, hostname, callback);
+  public search(handler: RequestHandler);
+  public search(path: any, handler: RequestHandler);
+  public search(...args: any[]) {
+    return this.instance.search(...args);
   }
 
   public options(handler: RequestHandler);
@@ -117,7 +117,11 @@ export abstract class AbstractHttpAdapter<
   abstract setErrorHandler(handler: Function, prefix?: string);
   abstract setNotFoundHandler(handler: Function, prefix?: string);
   abstract isHeadersSent(response: any);
+  // TODO remove optional signature (v11)
+  abstract getHeader?(response: any, name: string);
   abstract setHeader(response: any, name: string, value: string);
+  // TODO remove optional signature (v11)
+  abstract appendHeader?(response: any, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string, rawBody?: boolean);
   abstract enableCors(
     options: CorsOptions | CorsOptionsDelegate<TRequest>,

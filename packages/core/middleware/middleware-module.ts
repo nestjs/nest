@@ -33,7 +33,8 @@ import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
 
 export class MiddlewareModule<
-  TAppOptions extends NestApplicationContextOptions = NestApplicationContextOptions,
+  TAppOptions extends
+    NestApplicationContextOptions = NestApplicationContextOptions,
 > {
   private readonly routerProxy = new RouterProxy();
   private readonly exceptionFiltersCache = new WeakMap();

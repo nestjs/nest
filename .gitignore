@@ -6,6 +6,9 @@ node_modules/
 /.awcache
 /.vscode
 /.devcontainer
+/.classpath
+/.project
+/.settings 
 *.code-workspace
 
 # Vim

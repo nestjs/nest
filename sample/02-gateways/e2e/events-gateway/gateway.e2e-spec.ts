@@ -16,7 +16,7 @@ describe('EventsGateway', () => {
     await app.listen(3000);
   });
 
-  beforeEach((done) => {
+  beforeEach(done => {
     socket = io('http://localhost:3000');
     socket.on('connect', () => {
       done();

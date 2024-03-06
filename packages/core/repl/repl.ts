@@ -7,7 +7,12 @@ import { ReplContext } from './repl-context';
 import { ReplLogger } from './repl-logger';
 import { defineDefaultCommandsOnRepl } from './repl-native-commands';
 
-export async function repl(module: Type | DynamicModule) {
+import type { ReplOptions } from 'repl';
+
+export async function repl(
+  module: Type | DynamicModule,
+  replOptions: ReplOptions = {},
+) {
   const app = await NestFactory.createApplicationContext(module, {
     abortOnError: false,
     logger: new ReplLogger(),
@@ -21,6 +26,7 @@ export async function repl(module: Type | DynamicModule) {
   const replServer = _repl.start({
     prompt: clc.green('> '),
     ignoreUndefined: true,
+    ...replOptions,
   });
   assignToObject(replServer.context, replContext.globalScope);
 

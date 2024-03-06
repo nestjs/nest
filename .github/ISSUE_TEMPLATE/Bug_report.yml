@@ -38,7 +38,9 @@ body:
       required: true
     attributes:
       label: "Minimum reproduction code"
-      description: "An URL to some Git repository/[StackBlitz](https://stackblitz.com/fork/github/nestjs/typescript-starter)/[CodeSandbox](https://codesandbox.io/s/github/nestjs/typescript-starter/tree/master) project that reproduces your issue. [Wtf is a minimum reproduction?](https://jmcdo29.github.io/wtf-is-a-minimum-reproduction)"
+      description: |
+        An URL to some Git repository/[StackBlitz](https://stackblitz.com/fork/github/nestjs/typescript-starter)/[CodeSandbox](https://codesandbox.io/s/github/nestjs/typescript-starter/tree/master) project that reproduces your issue. [What is a minimum reproduction?](https://jmcdo29.github.io/wtf-is-a-minimum-reproduction)  
+        :warning: **NOTE:** We can close this issue if we don't manage to reproduce your potential bug. [Here](https://antfu.me/posts/why-reproductions-are-required) is why.
       placeholder: "https://github.com/..."
 
   - type: textarea
@@ -46,7 +48,7 @@ body:
       label: "Steps to reproduce"
       description: |
         How the issue manifests?
-        You could leave this blank if you alread write this in your reproduction code
+        You could leave this blank if you already write this in your reproduction code
       placeholder: |
         1. `npm ci`
         2. `npm start:dev`

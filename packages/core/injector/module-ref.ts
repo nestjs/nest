@@ -128,7 +128,10 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
     options?: ModuleRefGetOrResolveOpts,
   ): Promise<TResult | Array<TResult>>;
 
-  public abstract create<T = any>(type: Type<T>): Promise<T>;
+  public abstract create<T = any>(
+    type: Type<T>,
+    contextId?: ContextId,
+  ): Promise<T>;
 
   public introspect<T = any>(
     token: Type<T> | string | symbol,
@@ -151,6 +154,7 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
   protected async instantiateClass<T = any>(
     type: Type<T>,
     moduleRef: Module,
+    contextId?: ContextId,
   ): Promise<T> {
     const wrapper = new InstanceWrapper({
       name: type && type.name,
@@ -166,6 +170,8 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
           const properties = await this.injector.resolveProperties(
             wrapper,
             moduleRef,
+            undefined,
+            contextId,
           );
           const instance = new type(...instances);
           this.injector.applyProperties(instance, properties);
@@ -176,6 +182,7 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
           moduleRef,
           undefined,
           callback,
+          contextId,
         );
       } catch (err) {
         reject(err);

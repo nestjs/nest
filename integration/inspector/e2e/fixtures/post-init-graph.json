@@ -60,10 +60,10 @@
         "sourceModuleName": "InternalCoreModule",
         "durable": false,
         "static": true,
-        "scope": 0,
         "transient": false,
         "exported": true,
-        "token": "ExternalContextCreator"
+        "token": "ExternalContextCreator",
+        "initTime": 0
       }
     },
     "208171089": {
@@ -800,10 +800,10 @@
         "sourceModuleName": "InternalCoreModule",
         "durable": false,
         "static": true,
-        "scope": 0,
         "transient": false,
         "exported": true,
-        "token": "ModulesContainer"
+        "token": "ModulesContainer",
+        "initTime": 0
       }
     },
     "-326832201": {
@@ -816,10 +816,10 @@
         "sourceModuleName": "InternalCoreModule",
         "durable": false,
         "static": true,
-        "scope": 0,
         "transient": false,
         "exported": true,
-        "token": "HttpAdapterHost"
+        "token": "HttpAdapterHost",
+        "initTime": 0
       }
     },
     "-702581189": {
@@ -848,10 +848,10 @@
         "sourceModuleName": "InternalCoreModule",
         "durable": false,
         "static": true,
-        "scope": 0,
         "transient": false,
         "exported": true,
-        "token": "SerializedGraph"
+        "token": "SerializedGraph",
+        "initTime": 0
       }
     },
     "-1251270035": {

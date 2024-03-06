@@ -298,6 +298,34 @@ describe('Logger', () => {
         );
       });
     });
+
+    describe('classes for message', () => {
+      let processStdoutWriteSpy: sinon.SinonSpy;
+
+      beforeEach(() => {
+        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+      });
+      afterEach(() => {
+        processStdoutWriteSpy.restore();
+      });
+
+      it("should display class's name or empty for anonymous classes", () => {
+        const logger = new ConsoleLogger();
+
+        // in-line anonymous class
+        logger.log(class {});
+
+        // named class
+        class Test {
+          #privateField = 'private field';
+          publicField = 'public field';
+        }
+        logger.log(Test);
+
+        expect(processStdoutWriteSpy.firstCall.firstArg).to.include('');
+        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(Test.name);
+      });
+    });
   });
 
   describe('[instance methods]', () => {

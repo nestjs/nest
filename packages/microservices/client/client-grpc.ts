@@ -10,6 +10,7 @@ import { ClientGrpc, GrpcOptions } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 import { GRPC_CANCELLED } from './constants';
 import { ChannelOptions } from '../external/grpc-options.interface';
+import { getGrpcPackageDefinition } from '../helpers';
 
 let grpcPackage: any = {};
 let grpcProtoLoaderPackage: any = {};
@@ -300,16 +301,11 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
   public loadProto(): any {
     try {
-      const file = this.getOptionsProp(this.options, 'protoPath');
-      const loader = this.getOptionsProp(this.options, 'loader');
-
-      const packageDefinition =
-        this.getOptionsProp(this.options, 'packageDefinition') ||
-        grpcProtoLoaderPackage.loadSync(file, loader);
-
-      const packageObject =
-        grpcPackage.loadPackageDefinition(packageDefinition);
-      return packageObject;
+      const packageDefinition = getGrpcPackageDefinition(
+        this.options,
+        grpcProtoLoaderPackage,
+      );
+      return grpcPackage.loadPackageDefinition(packageDefinition);
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException(err.path);
       const message =
@@ -334,9 +330,12 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   public close() {
-    this.grpcClients
-      .filter(client => client && isFunction(client.close))
-      .forEach(client => client.close());
+    this.clients.forEach(client => {
+      if (client && isFunction(client.close)) {
+        client.close();
+      }
+    });
+    this.clients.clear();
     this.grpcClients = [];
   }
 

@@ -22,4 +22,14 @@ describe('@Inject', () => {
     ];
     expect(metadata).to.be.eql(expectedMetadata);
   });
+
+  it('should throw an error when token is undefined', () => {
+    const defineInvalidClass = () => {
+      class Test {
+        constructor(@Inject(undefined) invalidParam) {}
+      }
+    };
+
+    expect(defineInvalidClass).to.throw(/^Token is undefined/);
+  });
 });

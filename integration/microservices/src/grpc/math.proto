@@ -7,7 +7,15 @@ service Math {
   rpc SumStream(stream RequestSum) returns(stream SumResult);
   rpc SumStreamPass(stream RequestSum) returns(stream SumResult);
   rpc Divide (RequestDivide) returns (DivideResult);
+  rpc StreamLargeMessages(Empty) returns (stream BackpressureData) {}
 }
+
+message BackpressureData {
+    int32 id = 1;
+    string data = 2;
+}
+
+message Empty {}
 
 message SumResult {
   int32 result = 1;

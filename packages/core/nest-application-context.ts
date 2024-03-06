@@ -36,7 +36,8 @@ import { Module } from './injector/module';
  * @publicApi
  */
 export class NestApplicationContext<
-    TOptions extends NestApplicationContextOptions = NestApplicationContextOptions,
+    TOptions extends
+      NestApplicationContextOptions = NestApplicationContextOptions,
   >
   extends AbstractInstanceResolver
   implements INestApplicationContext
@@ -98,7 +99,7 @@ export class NestApplicationContext<
 
     const selectedModule = modulesContainer.get(token);
     if (!selectedModule) {
-      throw new UnknownModuleException();
+      throw new UnknownModuleException(type.name);
     }
     return new NestApplicationContext(
       this.container,

@@ -28,7 +28,6 @@ export class HttpException extends Error {
    * Instantiate a plain HTTP Exception.
    *
    * @example
-   * throw new HttpException()
    * throw new HttpException('message', HttpStatus.BAD_REQUEST)
    * throw new HttpException('custom message', HttpStatus.BAD_REQUEST, {
    *  cause: new Error('Cause Error'),

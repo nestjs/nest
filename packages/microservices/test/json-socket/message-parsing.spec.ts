@@ -107,7 +107,8 @@ describe('JsonSocket message parsing', () => {
 
   describe('Error handling', () => {
     describe('JSON Error', () => {
-      const errorMsg = `Could not parse JSON: Unexpected end of JSON input\nRequest data: "Hel`;
+      const errorMsgNodeBelowV20 = `Could not parse JSON: Unexpected end of JSON input\nRequest data: "Hel`;
+      const errorMsg = `Could not parse JSON: Unterminated string in JSON at position 4\nRequest data: "Hel`;
       const packetString = '4#"Hel';
       const packet = Buffer.from(packetString);
 
@@ -115,7 +116,7 @@ describe('JsonSocket message parsing', () => {
         try {
           socket['handleData']('4#"Hel');
         } catch (err) {
-          expect(err.message).to.deep.equal(errorMsg);
+          expect([errorMsgNodeBelowV20, errorMsg]).to.include(err.message);
         }
         expect(messages.length).to.deep.equal(0);
         expect(socket['buffer']).to.deep.equal('');
@@ -129,8 +130,17 @@ describe('JsonSocket message parsing', () => {
 
         socket['onData'](packet);
 
-        expect(socketEmitSpy.calledOnceWithExactly(ERROR_EVENT, errorMsg)).to.be
-          .true;
+        try {
+          expect(socketEmitSpy.calledOnceWithExactly(ERROR_EVENT, errorMsg)).to
+            .be.true;
+        } catch (err) {
+          expect(
+            socketEmitSpy.calledOnceWithExactly(
+              ERROR_EVENT,
+              errorMsgNodeBelowV20,
+            ),
+          ).to.be.true;
+        }
         socketEmitSpy.restore();
       });
 

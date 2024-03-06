@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common/constants';
 import { Injectable, Type } from '@nestjs/common/interfaces';
 import { ApplicationConfig } from '../application-config';
+import { DiscoverableMetaHostCollection } from '../discovery/discoverable-meta-host-collection';
 import {
   CircularDependencyException,
   UndefinedForwardRefException,
@@ -82,9 +83,8 @@ export class NestContainer {
     if (!metatype) {
       throw new UndefinedForwardRefException(scope);
     }
-    const { type, dynamicMetadata, token } = await this.moduleCompiler.compile(
-      metatype,
-    );
+    const { type, dynamicMetadata, token } =
+      await this.moduleCompiler.compile(metatype);
     if (this.modules.has(token)) {
       return {
         moduleRef: this.modules.get(token),
@@ -123,9 +123,8 @@ export class NestContainer {
     }
 
     const { token } = await this.moduleCompiler.compile(metatypeToReplace);
-    const { type, dynamicMetadata } = await this.moduleCompiler.compile(
-      newMetatype,
-    );
+    const { type, dynamicMetadata } =
+      await this.moduleCompiler.compile(newMetatype);
 
     return {
       moduleRef: await this.setModule(
@@ -219,11 +218,10 @@ export class NestContainer {
       return;
     }
     const moduleRef = this.modules.get(token);
-    const { token: relatedModuleToken } = await this.moduleCompiler.compile(
-      relatedModule,
-    );
+    const { token: relatedModuleToken } =
+      await this.moduleCompiler.compile(relatedModule);
     const related = this.modules.get(relatedModuleToken);
-    moduleRef.addRelatedModule(related);
+    moduleRef.addImport(related);
   }
 
   public addProvider(
@@ -238,7 +236,12 @@ export class NestContainer {
     if (!moduleRef) {
       throw new UnknownModuleException();
     }
-    return moduleRef.addProvider(provider, enhancerSubtype) as Function;
+    const providerKey = moduleRef.addProvider(provider, enhancerSubtype);
+    const providerRef = moduleRef.getProviderByKey(providerKey);
+
+    DiscoverableMetaHostCollection.inspectProvider(this.modules, providerRef);
+
+    return providerKey as Function;
   }
 
   public addInjectable(
@@ -268,6 +271,12 @@ export class NestContainer {
     }
     const moduleRef = this.modules.get(token);
     moduleRef.addController(controller);
+
+    const controllerRef = moduleRef.controllers.get(controller);
+    DiscoverableMetaHostCollection.inspectController(
+      this.modules,
+      controllerRef,
+    );
   }
 
   public clear() {
@@ -292,7 +301,7 @@ export class NestContainer {
     if (target === globalModule || target === this.internalCoreModule) {
       return;
     }
-    target.addRelatedModule(globalModule);
+    target.addImport(globalModule);
   }
 
   public getDynamicMetadataByToken(token: string): Partial<DynamicModule>;

@@ -28,7 +28,8 @@ export type ConfigurableModuleOptionsFactory<
  */
 export interface ConfigurableModuleAsyncOptions<
   ModuleOptions,
-  FactoryClassMethodKey extends string = typeof DEFAULT_FACTORY_CLASS_METHOD_KEY,
+  FactoryClassMethodKey extends
+    string = typeof DEFAULT_FACTORY_CLASS_METHOD_KEY,
 > extends Pick<ModuleMetadata, 'imports'> {
   /**
    * Injection token resolving to an existing provider. The provider must implement

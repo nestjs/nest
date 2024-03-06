@@ -1,12 +1,14 @@
 import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
-import { of, ReplaySubject, Subject } from 'rxjs';
+import { ReplaySubject, Subject, throwError } from 'rxjs';
 import * as sinon from 'sinon';
 import { CANCEL_EVENT } from '../../constants';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
+import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
+import * as grpcHelpers from '../../helpers/grpc-helpers';
 import { GrpcMethodStreamingType } from '../../index';
-import { ServerGrpc } from '../../server/server-grpc';
+import { ServerGrpc } from '../../server';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -41,7 +43,7 @@ describe('ServerGrpc', () => {
       callback = sinon.spy();
       bindEventsStub = sinon
         .stub(server, 'bindEvents')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
     });
 
     it('should call "bindEvents"', async () => {
@@ -85,7 +87,7 @@ describe('ServerGrpc', () => {
       callback = sinon.spy();
       bindEventsStub = sinon
         .stub(serverMulti, 'bindEvents')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
     });
 
     it('should call "bindEvents"', async () => {
@@ -224,7 +226,7 @@ describe('ServerGrpc', () => {
 
       const spy = sinon
         .stub(server, 'createServiceMethod')
-        .callsFake(() => ({} as any));
+        .callsFake(() => ({}) as any);
       (server as any).messageHandlers = handlers;
       await server.createService(
         {
@@ -246,7 +248,7 @@ describe('ServerGrpc', () => {
           .onFirstCall()
           .returns('test2');
 
-        sinon.stub(server, 'createServiceMethod').callsFake(() => ({} as any));
+        sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
         (server as any).messageHandlers = handlers;
         await server.createService(
           {
@@ -281,7 +283,7 @@ describe('ServerGrpc', () => {
           .onSecondCall()
           .returns('test2');
 
-        sinon.stub(server, 'createServiceMethod').callsFake(() => ({} as any));
+        sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
         (server as any).messageHandlers = handlers;
         await server.createService(
           {
@@ -389,40 +391,65 @@ describe('ServerGrpc', () => {
     describe('on call', () => {
       it('should call native method', async () => {
         const call = {
-          write: sinon.spy(),
+          write: sinon.spy(() => true),
           end: sinon.spy(),
-          addListener: sinon.spy(),
-          removeListener: sinon.spy(),
+          on: sinon.spy(),
+          off: sinon.spy(),
         };
         const callback = sinon.spy();
         const native = sinon.spy();
 
         await server.createStreamServiceMethod(native)(call, callback);
         expect(native.called).to.be.true;
-        expect(call.addListener.calledWith('cancelled')).to.be.true;
-        expect(call.removeListener.calledWith('cancelled')).to.be.true;
+        expect(call.on.calledWith('cancelled')).to.be.true;
+        expect(call.off.calledWith('cancelled')).to.be.true;
       });
 
       it(`should close the result observable when receiving an 'cancelled' event from the client`, async () => {
-        let cancelCb: () => void;
-        const call = {
-          write: sinon
-            .stub()
-            .onSecondCall()
-            .callsFake(() => cancelCb()),
-          end: sinon.spy(),
-          addListener: (name, cb) => (cancelCb = cb),
-          removeListener: sinon.spy(),
-        };
-        const result$ = of(1, 2, 3);
-        const callback = sinon.spy();
-        const native = sinon
-          .stub()
-          .returns(new Promise((resolve, reject) => resolve(result$)));
+        const et = new EventTarget();
+        const cancel = () => et.dispatchEvent(new Event('cancelled'));
 
-        await server.createStreamServiceMethod(native)(call, callback);
-        expect(call.write.calledTwice).to.be.true;
+        const written: any[] = [];
+        const call = {
+          write: sinon.spy((value: any) => {
+            written.push(value);
+            return true;
+          }),
+          end: sinon.spy(() => written.push('end')),
+          on: sinon.spy((name, cb) => {
+            et.addEventListener(name, cb);
+          }),
+          off: sinon.spy((name, cb) => {
+            et.removeEventListener(name, cb);
+          }),
+        };
+
+        const result$ = new Subject<number>();
+        const resolvedObservable = Promise.resolve(result$);
+        const callback = sinon.spy();
+        const native = sinon.stub().returns(resolvedObservable);
+
+        const result = server.createStreamServiceMethod(native)(call, callback);
+
+        await resolvedObservable;
+
+        result$.next(1);
+        expect(written).to.deep.equal([1]);
+        result$.next(2);
+        expect(written).to.deep.equal([1, 2]);
+        result$.next(3);
+        expect(written).to.deep.equal([1, 2, 3]);
+        cancel();
+        result$.next(4);
+        expect(written).to.deep.equal([1, 2, 3, 'end']);
+
         expect(call.end.called).to.be.true;
+        expect(call.on.calledWith('cancelled')).to.be.true;
+        expect(call.on.calledWith('drain')).to.be.true;
+        expect(call.off.calledWith('cancelled')).to.be.true;
+        expect(call.off.calledWith('drain')).to.be.true;
+
+        await result;
       });
     });
   });
@@ -500,9 +527,31 @@ describe('ServerGrpc', () => {
       expect(handler.called).to.be.true;
       expect(handler.args[0][1]).to.eq(call.metadata);
     });
+
     describe('when response is not a stream', () => {
       it('should call callback', async () => {
         const handler = async () => ({ test: true });
+        const fn = server.createRequestStreamMethod(handler, false);
+        const call = {
+          on: (event, callback) => {
+            if (event !== CANCEL_EVENT) {
+              callback();
+            }
+          },
+          off: sinon.spy(),
+          end: sinon.spy(),
+          write: sinon.spy(() => false),
+        };
+
+        const responseCallback = sinon.spy();
+        await fn(call as any, responseCallback);
+
+        expect(responseCallback.called).to.be.true;
+      });
+
+      it('should handle error thrown in handler', async () => {
+        const error = new Error('Error');
+        const handler = async () => throwError(() => error);
         const fn = server.createRequestStreamMethod(handler, false);
         const call = {
           on: (event, callback) => {
@@ -518,10 +567,81 @@ describe('ServerGrpc', () => {
         const responseCallback = sinon.spy();
         await fn(call as any, responseCallback);
 
-        expect(responseCallback.called).to.be.true;
+        expect(responseCallback.calledOnce).to.be.true;
+        expect(responseCallback.firstCall.args).to.eql([error, null]);
       });
+
       describe('when response is a stream', () => {
-        it('should call write() and end()', async () => {
+        /**
+         * A helper to create a repeated fixture to test streaming writes against.
+         */
+        async function createCall() {
+          const emitter = new EventTarget();
+
+          // If we write more than this number, the call will become unwritable.
+          const highwaterMark = 2;
+          let writeCounter = 0;
+
+          // What has been "written" so far.
+          const written: any[] = [];
+
+          const drain = () => {
+            writeCounter = 0;
+            emitter.dispatchEvent(new Event('drain'));
+          };
+
+          const cancel = () => {
+            emitter.dispatchEvent(new Event(CANCEL_EVENT));
+          };
+
+          const call = {
+            write: sinon.spy(value => {
+              // Simulating a writable stream becoming overwhelmed.
+              if (writeCounter++ < highwaterMark) {
+                // We can write this value to the stream.
+                written.push(value);
+              }
+              // But as soon as we pass the highwater mark, we can't write anymore.
+              return writeCounter < highwaterMark;
+            }),
+            end: sinon.spy(() => {
+              written.push('end');
+            }),
+            emit: sinon.spy(),
+            request: sinon.spy(),
+            metadata: sinon.spy(),
+            sendMetadata: sinon.spy(),
+            on: (name, cb) => {
+              emitter.addEventListener(name, cb);
+            },
+            off: (name, cb) => {
+              emitter.removeEventListener(name, cb);
+            },
+            fire: {
+              drain,
+              cancel,
+            },
+          };
+
+          const callback = sinon.spy();
+
+          const subject = new Subject<string>();
+          const handlerResult = Promise.resolve(subject);
+          const methodHandler = () => handlerResult;
+
+          const serviceMethod = await server.createRequestStreamMethod(
+            methodHandler,
+            true,
+          );
+
+          const result = serviceMethod(call, callback);
+
+          await handlerResult;
+
+          return { call, written, result, subject };
+        }
+
+        it('should call write() and end() for streams from promises', async () => {
           const handler = async () => ({ test: true });
           const fn = server.createRequestStreamMethod(handler, true);
           const call = {
@@ -532,13 +652,110 @@ describe('ServerGrpc', () => {
             },
             off: sinon.spy(),
             end: sinon.spy(),
-            write: sinon.spy(),
+            write: sinon.spy(() => true),
           };
 
           await fn(call as any, null);
 
           expect(call.write.called).to.be.true;
           expect(call.end.called).to.be.true;
+        });
+
+        it('should drain all values emitted from the observable while waiting for the drain event from the call', async () => {
+          const { call, written, result, subject } = await createCall();
+
+          subject.next('a');
+          subject.next('b');
+          expect(written).to.deep.equal(['a', 'b']);
+          subject.next('c'); // can't be written yet.
+          expect(written).to.deep.equal(['a', 'b']);
+          call.fire.drain();
+          subject.next('d');
+          expect(written).to.deep.equal(['a', 'b', 'c', 'd']);
+          subject.next('e'); // can't be written yet.
+          expect(written).to.deep.equal(['a', 'b', 'c', 'd']);
+          call.fire.drain();
+          expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e']);
+          subject.next('f');
+          expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e', 'f']);
+          subject.complete();
+          expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e', 'f', 'end']);
+
+          return result;
+        });
+
+        it(
+          'should drain all values emitted from the observable while waiting for the drain event from the call ' +
+            'even if the call becomes unwritable during draining',
+          async () => {
+            const { call, written, result, subject } = await createCall();
+
+            subject.next('a');
+            subject.next('b');
+            subject.next('c');
+            subject.next('d');
+            subject.next('e');
+            expect(written).to.deep.equal(['a', 'b']);
+            call.fire.drain();
+            expect(written).to.deep.equal(['a', 'b', 'c', 'd']);
+            call.fire.drain();
+            expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e']);
+            subject.complete();
+            expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e', 'end']);
+
+            return result;
+          },
+        );
+
+        it('should wait to end until after the internal buffer has drained', async () => {
+          const { call, written, result, subject } = await createCall();
+
+          subject.next('a');
+          subject.next('b');
+          subject.next('c');
+          subject.next('d');
+          subject.next('e');
+          subject.complete();
+          expect(written).to.deep.equal(['a', 'b']);
+          call.fire.drain();
+          expect(written).to.deep.equal(['a', 'b', 'c', 'd']);
+          call.fire.drain();
+          expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e', 'end']);
+
+          return result;
+        });
+
+        it('should end the subscription to the source if the call is cancelled', async () => {
+          const { call, subject, result } = await createCall();
+
+          expect(subject.observed).to.be.true;
+          call.fire.cancel();
+          expect(subject.observed).to.be.false;
+          expect(call.end.called).to.be.true;
+
+          return result;
+        });
+
+        it('should wait to throw errors from the observable source until after the internal buffer has drained', async () => {
+          const { call, written, result, subject } = await createCall();
+          const error = new Error('test');
+          subject.next('a');
+          subject.next('b');
+          subject.next('c');
+          subject.next('d');
+          subject.next('e');
+          subject.error(error);
+          expect(written).to.deep.equal(['a', 'b']);
+          call.fire.drain();
+          expect(written).to.deep.equal(['a', 'b', 'c', 'd']);
+          call.fire.drain();
+          expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e', 'end']);
+
+          try {
+            await result;
+          } catch (err) {
+            expect(err).to.equal(error);
+          }
         });
       });
     });
@@ -552,6 +769,25 @@ describe('ServerGrpc', () => {
       fn(args as any, sinon.spy());
 
       expect(handler.calledWith(args)).to.be.true;
+    });
+  });
+
+  describe('loadProto', () => {
+    describe('when proto is invalid', () => {
+      it('should throw InvalidProtoDefinitionException', () => {
+        const getPackageDefinitionStub = sinon.stub(
+          grpcHelpers,
+          'getGrpcPackageDefinition' as any,
+        );
+        getPackageDefinitionStub.callsFake(() => {
+          throw new Error();
+        });
+        (server as any).logger = new NoopLogger();
+        expect(() => server.loadProto()).to.throws(
+          InvalidProtoDefinitionException,
+        );
+        getPackageDefinitionStub.restore();
+      });
     });
   });
 
