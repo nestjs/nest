@@ -61,7 +61,7 @@
     "@nuxtjs/opencollective": "0.3.2",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.1",
-    "cli-color": "2.0.3",
+    "cli-color": "2.0.4",
     "cors": "2.8.5",
     "express": "4.18.2",
     "fast-json-stringify": "5.12.0",
