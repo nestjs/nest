@@ -187,7 +187,7 @@ export class ClientRMQ extends ClientProxy {
       this.getOptionsProp(this.options, 'isGlobalPrefetchCount') ||
       RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
 
-    if (!this.queueOptions.noAssert) {
+    if (!this.noAssert) {
       await channel.assertQueue(this.queue, this.queueOptions);
     }
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);

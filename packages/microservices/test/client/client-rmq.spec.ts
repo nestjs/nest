@@ -119,6 +119,7 @@ describe('ClientRMQ', function () {
     const prefetchCount = 10;
 
     let consumeStub: sinon.SinonStub;
+    let noAssertStub: sinon.SinonStub;
     let channel: any = {};
 
     beforeEach(() => {
@@ -131,13 +132,20 @@ describe('ClientRMQ', function () {
         prefetch: sinon.spy(),
       };
       consumeStub = sinon.stub(client, 'consumeChannel').callsFake(() => null);
+      noAssertStub = sinon.stub(client as any, 'noAssert').value(false);
     });
     afterEach(() => {
       consumeStub.restore();
+      noAssertStub.restore();
     });
     it('should call "assertQueue" with queue and queue options', async () => {
       await client.setupChannel(channel, () => null);
       expect(channel.assertQueue.calledWith(queue, queueOptions)).to.be.true;
+    });
+    it('should not call "assertQueue" when "noAssert" flag is true', async () => {
+      sinon.stub(client as any, 'noAssert').value(true);
+      await client.setupChannel(channel, () => null);
+      expect(channel.assertQueue.notCalled).to.be.true;
     });
     it('should call "prefetch" with prefetchCount and "isGlobalPrefetchCount"', async () => {
       await client.setupChannel(channel, () => null);

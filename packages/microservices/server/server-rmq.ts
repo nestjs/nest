@@ -145,7 +145,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   }
 
   public async setupChannel(channel: any, callback: Function) {
-    if (!this.queueOptions.noAssert) {
+    if (!this.noAssert) {
       await channel.assertQueue(this.queue, this.queueOptions);
     }
     await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
