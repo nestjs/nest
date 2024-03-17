@@ -411,7 +411,7 @@ describe('Logger', () => {
 
       it('should print one error to the console with stacktrace', () => {
         const message = 'random error';
-        const stacktrace = 'Error: message\n    at <anonymous>:1:2';
+        const stacktrace = new Error('err').stack;
 
         logger.error(message, stacktrace);
 
