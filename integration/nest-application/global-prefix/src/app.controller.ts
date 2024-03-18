@@ -26,4 +26,14 @@ export class AppController {
   postTest(): string {
     return 'test';
   }
+
+  @Get()
+  getHome(@Req() req) {
+    return req.count;
+  }
+
+  @Get('count')
+  getCount(@Req() req) {
+    return req.count;
+  }
 }
