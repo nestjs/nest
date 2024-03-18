@@ -1,8 +1,8 @@
 # gRPC - Client / Server
 
-[nest/sample/04-grpc/](https://github.com/nestjs/nest/tree/master/sample/04-grpc) is a hybrid application (HTTP + gRPC), where the gRPC client and gRPC server are written together as one program.
+[nest/sample/04-grpc/hybrid/](https://github.com/nestjs/nest/tree/master/sample/04-grpc/hybrid/) is a hybrid application (HTTP + gRPC), where the gRPC client and gRPC server are written together as one program.
 
-nest/sample/34-grpc-client-server/ uses the [ts-proto](https://www.npmjs.com/package/ts-proto) package to convert proto files to TypeScript(NestJS).<br>
+[nest/sample/04-grpc/client/](https://github.com/nestjs/nest/tree/master/sample/04-grpc/client/) & [nest/sample/04-grpc/server/](https://github.com/nestjs/nest/tree/master/sample/04-grpc/server/) use the [ts-proto](https://www.npmjs.com/package/ts-proto) package to convert proto files to TypeScript(NestJS).<br>
 (ex, `protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=nestJs=true:. ./hero.proto`)<br>
 Additionally, multiple proto [sample programs](https://github.com/grpc/grpc-node/tree/master/examples) written as separate clients/servers demonstrate compatibility with the sample programs in `@grpc/grpc-js`.
 
@@ -31,7 +31,7 @@ gRPC Client / gRPC Server that use the same [proto file](https://github.com/grpc
 |-------------------------------------------------------------------------------------------------------------|------------------------------------|------------------------------------|
 | [grpc-node/examples/helloworld/](https://github.com/grpc/grpc-node/tree/master/examples/helloworld)         | **c-1** `$ node greeter_client.js` | **s-1** `$ node greeter_server.js` |
 | [grpc-node/examples/error_handling/](https://github.com/grpc/grpc-node/tree/master/examples/error_handling) | **c-2** `$ node client.js`         | **s-2** `$ node server.js`         |
-| nest/sample/34-grpc-client-server/                                                                          | **c-3** `client$ npm start`        | **s-3** `server$ npm start`        |
+| nest/sample/04-grpc/                                                                                        | **c-3** `client$ npm start`        | **s-3** `server$ npm start`        |
 
 - **c-1** --> **s-1**, **s-3**
   ```shell
