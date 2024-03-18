@@ -327,7 +327,11 @@ export class MiddlewareModule<
           }
           return next();
         };
-    paths.forEach(path => router(path, middlewareFunction));
+    const pathsToApplyMiddleware = [];
+    paths.some(path => path.match(/^\/?$/))
+      ? pathsToApplyMiddleware.push('/')
+      : pathsToApplyMiddleware.push(...paths);
+    pathsToApplyMiddleware.forEach(path => router(path, middlewareFunction));
   }
 
   private getContextId(request: unknown, isTreeDurable: boolean): ContextId {

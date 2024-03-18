@@ -8,6 +8,7 @@ export const MIDDLEWARE_PARAM_VALUE = 'middleware_param';
   controllers: [AppController],
 })
 export class AppModule {
+  private count = 0;
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
@@ -27,6 +28,12 @@ export class AppModule {
         req.middlewareParams = req.params;
         next();
       })
-      .forRoutes({ path: '*', method: RequestMethod.GET });
+      .forRoutes({ path: '*', method: RequestMethod.GET })
+      .apply((req, res, next) => {
+        this.count += 1;
+        req.count = this.count;
+        next();
+      })
+      .forRoutes('*');
   }
 }
