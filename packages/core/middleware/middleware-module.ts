@@ -190,12 +190,14 @@ export class MiddlewareModule<
     for (const metatype of middlewareCollection) {
       const collection = middlewareContainer.getMiddlewareCollection(moduleKey);
       const instanceWrapper = collection.get(metatype);
+
       if (isUndefined(instanceWrapper)) {
         throw new RuntimeException();
       }
       if (instanceWrapper.isTransient) {
         return;
       }
+
       this.graphInspector.insertClassNode(
         moduleRef,
         instanceWrapper,
