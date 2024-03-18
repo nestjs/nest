@@ -2,11 +2,6 @@ import { Controller, Get, Post, Req } from '@nestjs/common';
 
 @Controller()
 export class AppController {
-  @Get()
-  root(@Req() req): string {
-    return 'Root: ' + req.extras?.data;
-  }
-
   @Get('hello/:name')
   getHello(@Req() req): string {
     return 'Hello: ' + req.extras?.data;
@@ -34,7 +29,7 @@ export class AppController {
 
   @Get()
   getHome(@Req() req) {
-    return req.count;
+    return 'Extras: ' + req.extras?.data + ', Count: ' + req.count;
   }
 
   @Get('count')

@@ -28,10 +28,6 @@ describe('Global prefix', () => {
     await request(server).get('/health').expect(404);
 
     await request(server).get('/api/v1/health').expect(200);
-
-    await request(server)
-      .get('/api/v1')
-      .expect(200, 'Root: Data attached in middleware');
   });
 
   it(`should exclude the path as string`, async () => {
@@ -140,7 +136,9 @@ describe('Global prefix', () => {
     server = app.getHttpServer();
     await app.init();
 
-    await request(server).get('/').expect(200, '1');
+    await request(server)
+      .get('/')
+      .expect(200, 'Extras: Data attached in middleware, Count: 1');
     await request(server).get('/api/count').expect(200, '2');
   });
 

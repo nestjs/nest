@@ -31,7 +31,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/v1', '/v1/*']);
+      ).to.eql(['/v1$', '/v1/*']);
     });
 
     it(`should return correct paths when set global prefix`, () => {
@@ -42,7 +42,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql(['/api', '/api/*']);
+      ).to.eql(['/api$', '/api/*']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -50,7 +50,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/api/v1', '/api/v1/*']);
+      ).to.eql(['/api/v1$', '/api/v1/*']);
     });
 
     it(`should return correct paths when set global prefix and global prefix options`, () => {
@@ -66,7 +66,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql(['/api', '/api/*', '/foo']);
+      ).to.eql(['/api$', '/api/*', '/foo']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -74,7 +74,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/api/v1', '/api/v1/*', '/v1/foo']);
+      ).to.eql(['/api/v1$', '/api/v1/*', '/v1/foo']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({

@@ -20,7 +20,6 @@ import { Module } from '../injector/module';
 import { MetadataScanner } from '../metadata-scanner';
 import { PathsExplorer, RouteDefinition } from '../router/paths-explorer';
 import { targetModulesByContainer } from '../router/router-module';
-import { RequestMethod } from '@nestjs/common';
 
 export class RoutesMapper {
   private readonly pathsExplorer: PathsExplorer;
@@ -47,7 +46,7 @@ export class RoutesMapper {
   }
 
   private getRouteInfoFromPath(routePath: string): RouteInfo[] {
-    const defaultRequestMethod = RequestMethod.ALL;
+    const defaultRequestMethod = -1;
     return [
       {
         path: addLeadingSlash(routePath),

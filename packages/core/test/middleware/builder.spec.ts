@@ -193,7 +193,7 @@ describe('MiddlewareBuilder', () => {
       expect(proxy.getExcludedRoutes()).to.be.eql([
         {
           path,
-          method: RequestMethod.ALL,
+          method: -1,
         },
       ]);
     });

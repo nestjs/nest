@@ -47,15 +47,15 @@ import {
 import * as pathToRegexp from 'path-to-regexp';
 // `querystring` is used internally in fastify for registering urlencoded body parser.
 import { parse as querystringParse } from 'querystring';
+import {
+  FASTIFY_ROUTE_CONFIG_METADATA,
+  FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+} from '../constants';
 import { NestFastifyBodyParserOptions } from '../interfaces';
 import {
   FastifyStaticOptions,
   FastifyViewOptions,
 } from '../interfaces/external';
-import {
-  FASTIFY_ROUTE_CONFIG_METADATA,
-  FASTIFY_ROUTE_CONSTRAINTS_METADATA,
-} from '../constants';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -554,6 +554,9 @@ export class FastifyAdapter<
       await this.registerMiddie();
     }
     return (path: string, callback: Function) => {
+      const hasEndOfStringCharacter = path.endsWith('$');
+      path = hasEndOfStringCharacter ? path.slice(0, -1) : path;
+
       let normalizedPath = path.endsWith('/*')
         ? `${path.slice(0, -1)}(.*)`
         : path;
@@ -561,7 +564,8 @@ export class FastifyAdapter<
       // Fallback to "(.*)" to support plugins like GraphQL
       normalizedPath = normalizedPath === '/(.*)' ? '(.*)' : normalizedPath;
 
-      const re = pathToRegexp(normalizedPath);
+      let re = pathToRegexp(normalizedPath);
+      re = hasEndOfStringCharacter ? new RegExp(re.source + '$', re.flags) : re;
 
       // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
       // ref https://github.com/fastify/middie/pull/55
