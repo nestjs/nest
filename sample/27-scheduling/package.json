@@ -43,7 +43,7 @@
     "supertest": "6.3.3",
     "ts-jest": "29.1.2",
     "ts-loader": "9.5.1",
-    "ts-node": "10.9.1",
+    "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",

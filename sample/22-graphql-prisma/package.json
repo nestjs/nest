@@ -54,7 +54,7 @@
     "ts-jest": "29.1.2",
     "ts-loader": "9.5.1",
     "ts-morph": "21.0.1",
-    "ts-node": "10.9.1",
+    "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.3.3"
   }
