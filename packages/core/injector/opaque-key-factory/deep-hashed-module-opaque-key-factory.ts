@@ -35,7 +35,7 @@ export class DeepHashedModuleOpaqueKeyFactory
 
   public createForDynamic(
     moduleCls: Type<unknown>,
-    dynamicMetadata: Partial<DynamicModule>,
+    dynamicMetadata: Omit<DynamicModule, 'module'>,
   ): string {
     const moduleId = this.getModuleId(moduleCls);
     const moduleName = this.getModuleName(moduleCls);

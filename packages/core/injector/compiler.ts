@@ -48,14 +48,14 @@ export class ModuleCompiler {
     moduleClsOrDynamic: Type | ForwardReference | DynamicModule,
   ): {
     type: Type;
-    dynamicMetadata?: Partial<DynamicModule> | undefined;
+    dynamicMetadata: Omit<DynamicModule, 'module'> | undefined;
   } {
     if (!this.isDynamicModule(moduleClsOrDynamic)) {
       return {
         type: (moduleClsOrDynamic as ForwardReference)?.forwardRef
           ? (moduleClsOrDynamic as ForwardReference).forwardRef()
           : moduleClsOrDynamic,
-          dynamicMetadata: undefined,
+        dynamicMetadata: undefined,
       };
     }
     const { module: type, ...dynamicMetadata } = moduleClsOrDynamic;

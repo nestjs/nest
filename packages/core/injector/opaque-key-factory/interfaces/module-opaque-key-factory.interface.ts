@@ -15,12 +15,12 @@ export interface ModuleOpaqueKeyFactory {
   /**
    * Creates a unique opaque key for the given dynamic module.
    * @param moduleCls  A dynamic module class reference.
-   * @param dynamicMetadata Partial dynamic module metadata.
+   * @param dynamicMetadata Dynamic module metadata.
    * @param originalRef Original object reference.
    */
   createForDynamic(
     moduleCls: Type<unknown>,
-    dynamicMetadata: Partial<DynamicModule>,
+    dynamicMetadata: Omit<DynamicModule, 'module'>,
     originalRef: DynamicModule | ForwardReference,
   ): string;
 }

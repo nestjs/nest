@@ -25,7 +25,7 @@ export class ByReferenceModuleOpaqueKeyFactory
 
   public createForDynamic(
     moduleCls: Type<unknown>,
-    dynamicMetadata: Partial<DynamicModule>,
+    dynamicMetadata: Omit<DynamicModule, 'module'>,
     originalRef: DynamicModule | ForwardReference,
   ): string {
     return this.getOrCreateModuleId(moduleCls, dynamicMetadata, originalRef);
