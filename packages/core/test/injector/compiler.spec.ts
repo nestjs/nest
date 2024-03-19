@@ -24,6 +24,7 @@ describe('ModuleCompiler', () => {
         const type = 'test';
         expect(compiler.extractMetadata(type as any)).to.be.deep.equal({
           type,
+          dynamicMetadata: undefined,
         });
       });
     });
