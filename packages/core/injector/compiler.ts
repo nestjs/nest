@@ -55,6 +55,7 @@ export class ModuleCompiler {
         type: (moduleClsOrDynamic as ForwardReference)?.forwardRef
           ? (moduleClsOrDynamic as ForwardReference).forwardRef()
           : moduleClsOrDynamic,
+          dynamicMetadata: undefined,
       };
     }
     const { module: type, ...dynamicMetadata } = moduleClsOrDynamic;
