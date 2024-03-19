@@ -51,7 +51,7 @@ export class DeepHashedModuleOpaqueKeyFactory
     if (timeSpentInMs > 10) {
       const formattedTimeSpent = timeSpentInMs.toFixed(2);
       this.logger.warn(
-        `The module "${opaqueToken.module}" is taking ${formattedTimeSpent}ms to serialize, this may be caused by larger objects statically assigned to the module. More details: https://github.com/nestjs/nest/issues/12738`,
+        `The module "${opaqueToken.module}" is taking ${formattedTimeSpent}ms to serialize, this may be caused by larger objects statically assigned to the module. Consider changing the "moduleIdGeneratorAlgorithm" option to "reference" to improve the performance.`,
       );
     }
 
