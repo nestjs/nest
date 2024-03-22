@@ -1,5 +1,7 @@
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+
 export enum RpcParamtype {
-  PAYLOAD = 3,
-  CONTEXT = 6,
-  GRPC_CALL = 9,
+  PAYLOAD = RouteParamtypes.BODY,
+  CONTEXT = RouteParamtypes.HEADERS,
+  GRPC_CALL = RouteParamtypes.FILES,
 }
