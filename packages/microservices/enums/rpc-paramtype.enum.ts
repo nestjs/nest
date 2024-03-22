@@ -1,4 +1,4 @@
-import {RouteParamtypes} from "@nestjs/common/enums/route-paramtypes.enum";
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 
 export enum RpcParamtype {
   PAYLOAD = RouteParamtypes.BODY,
