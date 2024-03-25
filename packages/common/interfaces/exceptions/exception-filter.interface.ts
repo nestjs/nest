@@ -7,7 +7,7 @@ import { ArgumentsHost } from '../features/arguments-host.interface';
  *
  * @publicApi
  */
-export interface ExceptionFilter<T = any> {
+export interface ExceptionFilter<T = Error> {
   /**
    * Method to implement a custom exception filter.
    *
