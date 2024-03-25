@@ -81,7 +81,6 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public async start(callback?: () => void) {
     await this.bindEvents();
-    this.grpcClient.start();
     callback();
   }
 
@@ -243,12 +242,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(call.request, call.metadata, call);
       const result$ = this.transformToObservable(await handler);
 
-      try {
-        await this.writeObservableToGrpc(result$, call);
-      } catch (err) {
-        call.emit('error', err);
-        return;
-      }
+      await this.writeObservableToGrpc(result$, call);
     };
   }
 
@@ -387,12 +381,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(req.asObservable(), call.metadata, call);
       const res = this.transformToObservable(await handler);
       if (isResponseStream) {
-        try {
-          await this.writeObservableToGrpc(res, call);
-        } catch (err) {
-          call.emit('error', err);
-          return;
-        }
+        await this.writeObservableToGrpc(res, call);
       } else {
         const response = await lastValueFrom(
           res.pipe(
@@ -509,6 +498,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         this.options,
         grpcProtoLoaderPackage,
       );
+
+      if (this.options.onLoadPackageDefinition) {
+        this.options.onLoadPackageDefinition(
+          packageDefinition,
+          this.grpcClient,
+        );
+      }
+
       return grpcPackage.loadPackageDefinition(packageDefinition);
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException(err.path);

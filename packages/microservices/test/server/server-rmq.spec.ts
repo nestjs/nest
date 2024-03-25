@@ -14,6 +14,20 @@ describe('ServerRMQ', () => {
   beforeEach(() => {
     server = new ServerRMQ({});
   });
+
+  describe('constructor', () => {
+    it(`should fallback to queueOptions.noAssert when 'noAssert' is undefined`, () => {
+      const queueOptions = {
+        noAssert: true,
+      };
+      const instance = new ServerRMQ({
+        queueOptions,
+      });
+
+      expect(instance).property('noAssert').to.eq(queueOptions.noAssert);
+    });
+  });
+
   describe('listen', () => {
     let createClient: sinon.SinonStub;
     let onStub: sinon.SinonStub;
@@ -196,9 +210,17 @@ describe('ServerRMQ', () => {
         consume: sinon.spy(),
       };
     });
-    it('should call "assertQueue" with queue and queue options', async () => {
+    it('should call "assertQueue" with queue and queue options when noAssert is false', async () => {
+      server['noAssert' as any] = false;
+
       await server.setupChannel(channel, () => null);
       expect(channel.assertQueue.calledWith(queue, queueOptions)).to.be.true;
+    });
+    it('should not call "assertQueue" when noAssert is true', async () => {
+      server['noAssert' as any] = true;
+
+      await server.setupChannel(channel, () => null);
+      expect(channel.assertQueue.called).not.to.be.true;
     });
     it('should call "prefetch" with prefetchCount and "isGlobalPrefetchCount"', async () => {
       await server.setupChannel(channel, () => null);

@@ -65,7 +65,9 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       this.getOptionsProp(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
     this.noAssert =
-      this.getOptionsProp(this.options, 'noAssert') || RQM_DEFAULT_NO_ASSERT;
+      this.getOptionsProp(this.options, 'noAssert') ??
+      this.queueOptions.noAssert ??
+      RQM_DEFAULT_NO_ASSERT;
 
     this.loadPackage('amqplib', ServerRMQ.name, () => require('amqplib'));
     rmqPackage = this.loadPackage(
@@ -145,7 +147,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   }
 
   public async setupChannel(channel: any, callback: Function) {
-    if (!this.queueOptions.noAssert) {
+    if (!this.noAssert) {
       await channel.assertQueue(this.queue, this.queueOptions);
     }
     await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);

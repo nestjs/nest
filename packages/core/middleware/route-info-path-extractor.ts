@@ -35,11 +35,15 @@ export class RouteInfoPathExtractor {
     if (this.isAWildcard(path)) {
       const entries =
         versionPaths.length > 0
-          ? versionPaths.map(
-              versionPath =>
+          ? versionPaths
+              .map(versionPath => [
+                this.prefixPath + versionPath + '$',
                 this.prefixPath + versionPath + addLeadingSlash(path),
-            )
-          : [this.prefixPath + addLeadingSlash(path)];
+              ])
+              .flat()
+          : this.prefixPath
+            ? [this.prefixPath + '$', this.prefixPath + addLeadingSlash(path)]
+            : [addLeadingSlash(path)];
 
       return Array.isArray(this.excludedGlobalPrefixRoutes)
         ? [

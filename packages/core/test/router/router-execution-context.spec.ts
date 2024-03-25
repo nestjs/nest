@@ -210,7 +210,7 @@ describe('RouterExecutionContext', () => {
     beforeEach(() => {
       consumerApplySpy = sinon.spy(consumer, 'apply');
     });
-    describe('when paramtype is query, body or param', () => {
+    describe('when paramtype is query, body, rawBody or param', () => {
       it('should call "consumer.apply" with expected arguments', () => {
         contextCreator.getParamValue(
           value,
@@ -240,6 +240,19 @@ describe('RouterExecutionContext', () => {
 
         contextCreator.getParamValue(
           value,
+          { metatype, type: RouteParamtypes.RAW_BODY, data: null },
+          transforms,
+        );
+        expect(
+          consumerApplySpy.calledWith(
+            value,
+            { metatype, type: RouteParamtypes.RAW_BODY, data: null },
+            transforms,
+          ),
+        ).to.be.true;
+
+        contextCreator.getParamValue(
+          value,
           { metatype, type: RouteParamtypes.PARAM, data: null },
           transforms,
         );
@@ -261,6 +274,7 @@ describe('RouterExecutionContext', () => {
       });
       it('otherwise', () => {
         expect(contextCreator.isPipeable(RouteParamtypes.BODY)).to.be.true;
+        expect(contextCreator.isPipeable(RouteParamtypes.RAW_BODY)).to.be.true;
         expect(contextCreator.isPipeable(RouteParamtypes.QUERY)).to.be.true;
         expect(contextCreator.isPipeable(RouteParamtypes.PARAM)).to.be.true;
         expect(contextCreator.isPipeable(RouteParamtypes.FILE)).to.be.true;

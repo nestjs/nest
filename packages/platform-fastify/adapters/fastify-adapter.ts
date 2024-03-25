@@ -47,16 +47,15 @@ import {
 import * as pathToRegexp from 'path-to-regexp';
 // `querystring` is used internally in fastify for registering urlencoded body parser.
 import { parse as querystringParse } from 'querystring';
+import {
+  FASTIFY_ROUTE_CONFIG_METADATA,
+  FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+} from '../constants';
 import { NestFastifyBodyParserOptions } from '../interfaces';
 import {
   FastifyStaticOptions,
   FastifyViewOptions,
 } from '../interfaces/external';
-import {
-  FASTIFY_ROUTE_CONFIG_METADATA,
-  FASTIFY_ROUTE_CONSTRAINTS_METADATA,
-} from '../constants';
-import { RouterMethod } from '../interfaces/nest-fastify-router-method.interface';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -292,34 +291,6 @@ export class FastifyAdapter<
 
   public options(...args: any[]) {
     return this.injectRouteOptions('options', ...args);
-  }
-
-  public propfind(...args: any[]) {
-    return this.injectRouteOptions('propfind', ...args);
-  }
-
-  public proppatch(...args: any[]) {
-    return this.injectRouteOptions('proppatch', ...args);
-  }
-
-  public mkcol(...args: any[]) {
-    return this.injectRouteOptions('mkcol', ...args);
-  }
-
-  public copy(...args: any[]) {
-    return this.injectRouteOptions('copy', ...args);
-  }
-
-  public move(...args: any[]) {
-    return this.injectRouteOptions('move', ...args);
-  }
-
-  public lock(...args: any[]) {
-    return this.injectRouteOptions('lock', ...args);
-  }
-
-  public unlock(...args: any[]) {
-    return this.injectRouteOptions('unlock', ...args);
   }
 
   public applyVersionFilter(
@@ -583,6 +554,9 @@ export class FastifyAdapter<
       await this.registerMiddie();
     }
     return (path: string, callback: Function) => {
+      const hasEndOfStringCharacter = path.endsWith('$');
+      path = hasEndOfStringCharacter ? path.slice(0, -1) : path;
+
       let normalizedPath = path.endsWith('/*')
         ? `${path.slice(0, -1)}(.*)`
         : path;
@@ -590,7 +564,8 @@ export class FastifyAdapter<
       // Fallback to "(.*)" to support plugins like GraphQL
       normalizedPath = normalizedPath === '/(.*)' ? '(.*)' : normalizedPath;
 
-      const re = pathToRegexp(normalizedPath);
+      let re = pathToRegexp(normalizedPath);
+      re = hasEndOfStringCharacter ? new RegExp(re.source + '$', re.flags) : re;
 
       // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
       // ref https://github.com/fastify/middie/pull/55
@@ -680,7 +655,17 @@ export class FastifyAdapter<
     return rawRequest.originalUrl || rawRequest.url;
   }
 
-  private injectRouteOptions(routerMethodKey: RouterMethod, ...args: any[]) {
+  private injectRouteOptions(
+    routerMethodKey:
+      | 'get'
+      | 'post'
+      | 'put'
+      | 'delete'
+      | 'options'
+      | 'patch'
+      | 'head',
+    ...args: any[]
+  ) {
     const handlerRef = args[args.length - 1];
     const isVersioned =
       !isUndefined(handlerRef.version) &&

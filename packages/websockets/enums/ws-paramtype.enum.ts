@@ -1,4 +1,6 @@
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+
 export enum WsParamtype {
-  SOCKET = 0,
-  PAYLOAD = 3,
+  SOCKET = RouteParamtypes.REQUEST,
+  PAYLOAD = RouteParamtypes.BODY,
 }
