@@ -241,13 +241,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return async (call: GrpcCall, callback: Function) => {
       const handler = methodHandler(call.request, call.metadata, call);
       const result$ = this.transformToObservable(await handler);
-
-      try {
-        await this.writeObservableToGrpc(result$, call);
-      } catch (err) {
-        call.emit('error', err);
-        return;
-      }
+      await this.writeObservableToGrpc(result$, call);
     };
   }
 
@@ -261,11 +255,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
    * @param call The GRPC call we want to write to.
    * @returns A promise that resolves when we're done writing to the call.
    */
-  public writeObservableToGrpc<T>(
+  private writeObservableToGrpc<T>(
     source: Observable<T>,
     call: GrpcCall<T>,
   ): Promise<void> {
-    return new Promise((resolve, reject) => {
+    // this promise should **not** reject, as we're handling errors in the observable for the Call
+    // the promise is only needed to signal when writing/draining has been completed
+    return new Promise((resolve, _doNotUse) => {
       const valuesWaitingToBeDrained: T[] = [];
       let shouldErrorAfterDraining = false;
       let error: any;
@@ -278,17 +274,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       // If the call is cancelled, unsubscribe from the source
       const cancelHandler = () => {
         subscription.unsubscribe();
-        // The call has been cancelled, so we need to either resolve
-        // or reject the promise. We're resolving in this case because
-        // rejection is noisy. If at any point in the future, we need to
-        // know that cancellation happened, we can either reject or
-        // start resolving with some sort of outcome value.
+        // Calls that are cancelled by the client should be successfully resolved here
         resolve();
       };
       call.on(CANCEL_EVENT, cancelHandler);
       subscription.add(() => call.off(CANCEL_EVENT, cancelHandler));
 
       // In all cases, when we finalize, end the writable stream
+      // being careful that errors and writes must be emitted _before_ this call is ended
       subscription.add(() => call.end());
 
       const drain = () => {
@@ -312,7 +305,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         } else if (shouldErrorAfterDraining) {
           call.emit('error', error);
           subscription.unsubscribe();
-          reject(error);
+          resolve();
         }
       };
 
@@ -337,7 +330,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
               // reject and teardown.
               call.emit('error', err);
               subscription.unsubscribe();
-              reject(err);
+              resolve();
             } else {
               // We're waiting for a drain event, record the
               // error so it can be handled after everything is drained.
@@ -386,12 +379,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(req.asObservable(), call.metadata, call);
       const res = this.transformToObservable(await handler);
       if (isResponseStream) {
-        try {
-          await this.writeObservableToGrpc(res, call);
-        } catch (err) {
-          call.emit('error', err);
-          return;
-        }
+        await this.writeObservableToGrpc(res, call);
       } else {
         const response = await lastValueFrom(
           res.pipe(
