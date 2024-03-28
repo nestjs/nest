@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -37,6 +37,15 @@ import {
   KafkaRequestSerializer,
 } from '../serializers/kafka-request.serializer';
 import { ClientProxy } from './client-proxy';
+import {
+  connectable,
+  defer,
+  Observable,
+  Subject,
+  throwError as _throw,
+} from 'rxjs';
+import { mergeMap } from 'rxjs/operators';
+import { InvalidMessageException } from '../errors/invalid-message.exception';
 
 let kafkaPackage: any = {};
 
@@ -223,6 +232,58 @@ export class ClientKafka extends ClientProxy {
     return this.consumerAssignments;
   }
 
+  public emitBatch<TResult = any, TInput = any>(
+    pattern: any,
+    data: { messages: TInput[] },
+  ): Observable<TResult> {
+    if (isNil(pattern) || isNil(data)) {
+      return _throw(() => new InvalidMessageException());
+    }
+    const source = defer(async () => this.connect()).pipe(
+      mergeMap(() => this.dispatchBatchEvent({ pattern, data })),
+    );
+    const connectableSource = connectable(source, {
+      connector: () => new Subject(),
+      resetOnDisconnect: false,
+    });
+    connectableSource.connect();
+    return connectableSource;
+  }
+
+  public commitOffsets(
+    topicPartitions: TopicPartitionOffsetAndMetadata[],
+  ): Promise<void> {
+    if (this.consumer) {
+      return this.consumer.commitOffsets(topicPartitions);
+    } else {
+      throw new Error('No consumer initialized');
+    }
+  }
+
+  protected async dispatchBatchEvent<TInput = any>(
+    packets: ReadPacket<{ messages: TInput[] }>,
+  ): Promise<any> {
+    if (packets.data.messages.length === 0) {
+      return;
+    }
+    const pattern = this.normalizePattern(packets.pattern);
+    const outgoingEvents = await Promise.all(
+      packets.data.messages.map(message => {
+        return this.serializer.serialize(message as any, { pattern });
+      }),
+    );
+
+    const message = Object.assign(
+      {
+        topic: pattern,
+        messages: outgoingEvents,
+      },
+      this.options.send || {},
+    );
+
+    return this.producer.send(message);
+  }
+
   protected async dispatchEvent(packet: OutgoingEvent): Promise<any> {
     const pattern = this.normalizePattern(packet.pattern);
     const outgoingEvent = await this.serializer.serialize(packet.data, {
@@ -319,15 +380,5 @@ export class ClientKafka extends ClientProxy {
   protected initializeDeserializer(options: KafkaOptions['options']) {
     this.deserializer =
       (options && options.deserializer) || new KafkaResponseDeserializer();
-  }
-
-  public commitOffsets(
-    topicPartitions: TopicPartitionOffsetAndMetadata[],
-  ): Promise<void> {
-    if (this.consumer) {
-      return this.consumer.commitOffsets(topicPartitions);
-    } else {
-      throw new Error('No consumer initialized');
-    }
   }
 }
