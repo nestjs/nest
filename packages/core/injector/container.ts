@@ -4,6 +4,7 @@ import {
   GLOBAL_MODULE_METADATA,
 } from '@nestjs/common/constants';
 import { Injectable, Type } from '@nestjs/common/interfaces';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { ApplicationConfig } from '../application-config';
 import { DiscoverableMetaHostCollection } from '../discovery/discoverable-meta-host-collection';
 import {
@@ -19,16 +20,16 @@ import { ContextId } from './instance-wrapper';
 import { InternalCoreModule } from './internal-core-module/internal-core-module';
 import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
-import { ModuleTokenFactory } from './module-token-factory';
 import { ModulesContainer } from './modules-container';
+import { ByReferenceModuleOpaqueKeyFactory } from './opaque-key-factory/by-reference-module-opaque-key-factory';
+import { DeepHashedModuleOpaqueKeyFactory } from './opaque-key-factory/deep-hashed-module-opaque-key-factory';
+import { ModuleOpaqueKeyFactory } from './opaque-key-factory/interfaces/module-opaque-key-factory.interface';
 
 type ModuleMetatype = Type<any> | DynamicModule | Promise<DynamicModule>;
 type ModuleScope = Type<any>[];
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
-  private readonly moduleTokenFactory = new ModuleTokenFactory();
-  private readonly moduleCompiler = new ModuleCompiler(this.moduleTokenFactory);
   private readonly modules = new ModulesContainer();
   private readonly dynamicModulesMetadata = new Map<
     string,
@@ -36,11 +37,27 @@ export class NestContainer {
   >();
   private readonly internalProvidersStorage = new InternalProvidersStorage();
   private readonly _serializedGraph = new SerializedGraph();
+  private moduleCompiler: ModuleCompiler;
   private internalCoreModule: Module;
 
   constructor(
-    private readonly _applicationConfig: ApplicationConfig = undefined,
-  ) {}
+    private readonly _applicationConfig:
+      | ApplicationConfig
+      | undefined = undefined,
+    private readonly _contextOptions:
+      | NestApplicationContextOptions
+      | undefined = undefined,
+  ) {
+    const moduleOpaqueKeyFactory =
+      this._contextOptions?.moduleIdGeneratorAlgorithm === 'deep-hash'
+        ? new DeepHashedModuleOpaqueKeyFactory()
+        : new ByReferenceModuleOpaqueKeyFactory({
+            keyGenerationStrategy: this._contextOptions?.snapshot
+              ? 'shallow'
+              : 'random',
+          });
+    this.moduleCompiler = new ModuleCompiler(moduleOpaqueKeyFactory);
+  }
 
   get serializedGraph(): SerializedGraph {
     return this._serializedGraph;
@@ -321,8 +338,8 @@ export class NestContainer {
     this.modules[InternalCoreModule.name] = moduleRef;
   }
 
-  public getModuleTokenFactory(): ModuleTokenFactory {
-    return this.moduleTokenFactory;
+  public getModuleTokenFactory(): ModuleOpaqueKeyFactory {
+    return this.moduleCompiler.moduleOpaqueKeyFactory;
   }
 
   public registerRequestProvider<T = any>(request: T, contextId: ContextId) {
