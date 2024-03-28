@@ -1,27 +1,8 @@
-import { isObject, isString } from '@nestjs/common/utils/shared.utils';
+import { WsException as WSE } from '@nestjs/common/exceptions/ws-exception';
 
-export class WsException extends Error {
-  constructor(private readonly error: string | object) {
-    super();
-    this.initMessage();
-  }
+/**
+ * @deprecated WsException has been moved to @nestjs/common
+ */
+const WsException = WSE;
 
-  public initMessage() {
-    if (isString(this.error)) {
-      this.message = this.error;
-    } else if (
-      isObject(this.error) &&
-      isString((this.error as Record<string, any>).message)
-    ) {
-      this.message = (this.error as Record<string, any>).message;
-    } else if (this.constructor) {
-      this.message = this.constructor.name
-        .match(/[A-Z][a-z]+|[0-9]+/g)
-        .join(' ');
-    }
-  }
-
-  public getError(): string | object {
-    return this.error;
-  }
-}
+export { WsException };
