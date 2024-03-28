@@ -10,7 +10,7 @@ import {
   RpcException,
 } from '@nestjs/microservices';
 import { join } from 'path';
-import { Observable, of, catchError } from 'rxjs';
+import { Observable, of, catchError, from, mergeMap } from 'rxjs';
 
 class ErrorHandlingProxy extends ClientGrpcProxy {
   serializeError(err) {
@@ -105,6 +105,17 @@ export class GrpcController {
     return {
       result: request.dividend / request.divisor,
     };
+  }
+
+  // contrived example meant to show when an error is encountered, like dividing by zero, the
+  // application does not crash and the error is returned appropriately to the client
+  @GrpcMethod('Math', 'StreamDivide')
+  streamDivide({
+    data,
+  }: {
+    data: { dividend: number; divisor: number }[];
+  }): Observable<any> {
+    return from(data).pipe(mergeMap(request => this.divide(request)));
   }
 
   @GrpcMethod('Math2')

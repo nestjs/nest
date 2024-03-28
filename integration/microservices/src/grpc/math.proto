@@ -7,7 +7,9 @@ service Math {
   rpc SumStream(stream RequestSum) returns(stream SumResult);
   rpc SumStreamPass(stream RequestSum) returns(stream SumResult);
   rpc Divide (RequestDivide) returns (DivideResult);
-  rpc StreamLargeMessages(Empty) returns (stream BackpressureData) {}
+  rpc StreamLargeMessages(Empty) returns (stream BackpressureData);
+  /* Given a series of dividend and divisor, stream back the division results for each */
+  rpc StreamDivide (StreamDivideRequest) returns (stream StreamDivideResponse);
 }
 
 message BackpressureData {
@@ -32,4 +34,12 @@ message RequestDivide {
 
 message DivideResult {
   int32 result = 1;
+}
+
+message StreamDivideRequest {
+  repeated RequestDivide data = 1;
+}
+
+message StreamDivideResponse {
+  DivideResult data = 1;
 }
