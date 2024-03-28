@@ -39,12 +39,6 @@ export function Inject<T = any>(
   return (target: object, key: string | symbol | undefined, index?: number) => {
     const type = token || Reflect.getMetadata('design:type', target, key);
 
-    if (!type) {
-      throw new Error(`Token is undefined at index: ${index}. This often occurs due to circular dependencies.
-Ensure there are no circular dependencies in your files or barrel files. 
-For more details, refer to https://trilon.io/blog/avoiding-circular-dependencies-in-nestjs.`);
-    }
-
     if (!isUndefined(index)) {
       let dependencies =
         Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, target) || [];
