@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import {
   HOST_METADATA,
   MODULE_PATH,
+  MODULE_PATH_BEFORE_VERSION,
   VERSION_METADATA,
 } from '@nestjs/common/constants';
 import {
@@ -71,11 +72,14 @@ export class RoutesResolver implements Resolver {
     const modules = this.container.getModules();
     modules.forEach(({ controllers, metatype }, moduleName) => {
       const modulePath = this.getModulePathMetadata(metatype);
+      const modulePathBeforeVersion =
+        this.getModulePathBeforeVersionMetadata(metatype);
       this.registerRouters(
         controllers,
         moduleName,
         globalPrefix,
         modulePath,
+        modulePathBeforeVersion,
         applicationRef,
       );
     });
@@ -86,6 +90,7 @@ export class RoutesResolver implements Resolver {
     moduleName: string,
     globalPrefix: string,
     modulePath: string,
+    modulePathBeforeVersion: boolean,
     applicationRef: HttpServer,
   ) {
     routes.forEach(instanceWrapper => {
@@ -102,6 +107,7 @@ export class RoutesResolver implements Resolver {
         const pathsToLog = this.routePathFactory.create({
           ctrlPath: path,
           modulePath,
+          modulePathBeforeVersion,
           globalPrefix,
         });
         if (!controllerVersion) {
@@ -124,6 +130,7 @@ export class RoutesResolver implements Resolver {
         const routePathMetadata: RoutePathMetadata = {
           ctrlPath: path,
           modulePath,
+          modulePathBeforeVersion,
           globalPrefix,
           controllerVersion,
           versioningOptions,
@@ -197,6 +204,20 @@ export class RoutesResolver implements Resolver {
       metatype,
     );
     return modulePath ?? Reflect.getMetadata(MODULE_PATH, metatype);
+  }
+
+  private getModulePathBeforeVersionMetadata(
+    metatype: Type<unknown>,
+  ): boolean | undefined {
+    const modulesContainer = this.container.getModules();
+    const modulePathBeforeVersion = Reflect.getMetadata(
+      MODULE_PATH_BEFORE_VERSION + modulesContainer.applicationId,
+      metatype,
+    );
+    return (
+      modulePathBeforeVersion ??
+      Reflect.getMetadata(MODULE_PATH_BEFORE_VERSION, metatype)
+    );
   }
 
   private getHostMetadata(
