@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseBoolPipe } from '../../pipes/parse-bool.pipe';
+import { BadRequestException } from '../../exceptions';
 
 describe('ParseBoolPipe', () => {
   let target: ParseBoolPipe;
@@ -27,8 +28,14 @@ describe('ParseBoolPipe', () => {
     });
     describe('when validation fails', () => {
       it('should throw an error', async () => {
-        return expect(target.transform('123abc', {} as ArgumentMetadata)).to.be
-          .rejected;
+        return expect(
+          target.transform('123abc', {} as ArgumentMetadata),
+        ).to.be.rejectedWith(BadRequestException);
+      });
+      it('should mention the field name in the error', async () => {
+        return expect(
+          target.transform('123abc', { data: 'foo' } as ArgumentMetadata),
+        ).to.be.rejectedWith(/.*Validation failed.*"foo".*/);
       });
     });
   });
