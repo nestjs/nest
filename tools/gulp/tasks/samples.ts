@@ -2,10 +2,11 @@ import * as childProcess from 'child_process';
 import * as clc from 'cli-color';
 import * as log from 'fancy-log';
 import { task } from 'gulp';
-import { resolve } from 'path';
+import { join, resolve } from 'path';
 import { promisify } from 'util';
 import { samplePath } from '../config';
 import { containsPackageJson, getDirs } from '../util/task-helpers';
+import { existsSync } from 'fs';
 
 const exec = promisify(childProcess.exec);
 
@@ -43,6 +44,14 @@ async function executeNPMScriptInDirectory(
   appendScript?: string,
 ) {
   const dirName = dir.replace(resolve(__dirname, '../../../'), '');
+
+  if (!existsSync(join(dir, 'package.json'))) {
+    log.info(
+      `Skipping ${clc.magenta(dirName)} as it does not contain a package.json`,
+    );
+    return;
+  }
+
   log.info(`Running ${clc.blue(script)} in ${clc.magenta(dirName)}`);
   try {
     const result = await exec(
