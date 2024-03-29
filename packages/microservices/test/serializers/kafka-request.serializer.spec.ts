@@ -97,7 +97,9 @@ describe('KafkaRequestSerializer', () => {
         }),
       ).to.deep.eq({
         headers: {},
-        value: 'string',
+        value: JSON.stringify({
+          value: 'string',
+        }),
       });
     });
 
