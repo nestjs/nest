@@ -103,6 +103,19 @@ describe('KafkaRequestSerializer', () => {
       });
     });
 
+    it('kafka message without value', async () => {
+      expect(
+        await instance.serialize({
+          key: 'string',
+        }),
+      ).to.deep.eq({
+        headers: {},
+        value: JSON.stringify({
+          key: 'string',
+        }),
+      });
+    });
+
     it('kafka message with key', async () => {
       expect(
         await instance.serialize({
