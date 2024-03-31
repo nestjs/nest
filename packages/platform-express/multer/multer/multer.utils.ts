@@ -19,6 +19,11 @@ export function transformException(error: Error | undefined) {
     case multerExceptions.LIMIT_UNEXPECTED_FILE:
     case multerExceptions.LIMIT_PART_COUNT:
     case multerExceptions.MISSING_FIELD_NAME:
+      //@ts-expect-error: Multer may attach the fieldname to the error object
+      if (error.field) {
+        //@ts-expect-error: Multer may attach the fieldname to the error object
+        return new BadRequestException(`${error.message} - ${error.field}`);
+      }
       return new BadRequestException(error.message);
     case busboyExceptions.MULTIPART_BOUNDARY_NOT_FOUND:
       return new BadRequestException(error.message);
