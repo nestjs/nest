@@ -127,14 +127,11 @@ export class Reflector {
    * @param targets context (decorated objects) to retrieve metadata from
    *
    */
-  public getAll<T extends ReflectableDecorator<any>>(
-    decorator: T,
-    targets: (Type<any> | Function)[],
-  ): T extends ReflectableDecorator<infer R>
-    ? R extends Array<any>
-      ? R
-      : R[]
-    : unknown;
+  public getAll<
+    TParam = any,
+    TTransformed = TParam,
+    T extends ReflectableDecorator<TParam, TTransformed> = ReflectableDecorator<TParam, TTransformed>,
+  >(decorator: T, targets: (Type<any> | Function)[]): TTransformed extends any[] ? TTransformed : TTransformed[];
   /**
    * Retrieve metadata for a specified key for a specified set of targets.
    *
@@ -169,10 +166,11 @@ export class Reflector {
    * @param targets context (decorated objects) to retrieve metadata from
    *
    */
-  public getAllAndMerge<T extends ReflectableDecorator<any>>(
-    decorator: T,
-    targets: (Type<any> | Function)[],
-  ): T extends ReflectableDecorator<infer R> ? R : unknown;
+  public getAllAndMerge<
+    TParam = any,
+    TTransformed = TParam,
+    T extends ReflectableDecorator<TParam, TTransformed> = ReflectableDecorator<TParam, TTransformed>,
+  >(decorator: T, targets: (Type<any> | Function)[]): TTransformed;
   /**
    * Retrieve metadata for a specified key for a specified set of targets and merge results.
    *
@@ -224,10 +222,11 @@ export class Reflector {
    * @param targets context (decorated objects) to retrieve metadata from
    *
    */
-  public getAllAndOverride<T extends ReflectableDecorator<any>>(
-    decorator: T,
-    targets: (Type<any> | Function)[],
-  ): T extends ReflectableDecorator<infer R> ? R : unknown;
+  public getAllAndOverride<
+    TParam = any,
+    TTransformed = TParam,
+    T extends ReflectableDecorator<TParam, TTransformed> = ReflectableDecorator<TParam, TTransformed>,
+  >(decorator: T, targets: (Type<any> | Function)[]): TTransformed;
   /**
    * Retrieve metadata for a specified key for a specified set of targets and return a first not undefined value.
    *
