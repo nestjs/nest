@@ -127,11 +127,10 @@ export class Reflector {
    * @param targets context (decorated objects) to retrieve metadata from
    *
    */
-  public getAll<
-    TParam = any,
-    TTransformed = TParam,
-    T extends ReflectableDecorator<TParam, TTransformed> = ReflectableDecorator<TParam, TTransformed>,
-  >(decorator: T, targets: (Type<any> | Function)[]): TTransformed extends any[] ? TTransformed : TTransformed[];
+  public getAll<TParam = any, TTransformed = TParam>(
+    decorator: ReflectableDecorator<TParam, TTransformed>,
+    targets: (Type<any> | Function)[],
+  ): TTransformed extends any[] ? TTransformed : TTransformed[];
   /**
    * Retrieve metadata for a specified key for a specified set of targets.
    *
@@ -166,11 +165,10 @@ export class Reflector {
    * @param targets context (decorated objects) to retrieve metadata from
    *
    */
-  public getAllAndMerge<
-    TParam = any,
-    TTransformed = TParam,
-    T extends ReflectableDecorator<TParam, TTransformed> = ReflectableDecorator<TParam, TTransformed>,
-  >(decorator: T, targets: (Type<any> | Function)[]): TTransformed;
+  public getAllAndMerge<TParam = any, TTransformed = TParam>(
+    decorator: ReflectableDecorator<TParam, TTransformed>,
+    targets: (Type<any> | Function)[],
+  ): TTransformed;
   /**
    * Retrieve metadata for a specified key for a specified set of targets and merge results.
    *
@@ -222,11 +220,10 @@ export class Reflector {
    * @param targets context (decorated objects) to retrieve metadata from
    *
    */
-  public getAllAndOverride<
-    TParam = any,
-    TTransformed = TParam,
-    T extends ReflectableDecorator<TParam, TTransformed> = ReflectableDecorator<TParam, TTransformed>,
-  >(decorator: T, targets: (Type<any> | Function)[]): TTransformed;
+  public getAllAndOverride<TParam = any, TTransformed = TParam>(
+    decorator: ReflectableDecorator<TParam, TTransformed>,
+    targets: (Type<any> | Function)[],
+  ): TTransformed;
   /**
    * Retrieve metadata for a specified key for a specified set of targets and return a first not undefined value.
    *
