@@ -9,6 +9,7 @@ import { ExamplePathGateway } from '../src/example-path.gateway';
 import { ServerGateway } from '../src/server.gateway';
 import { WsPathGateway } from '../src/ws-path.gateway';
 import { WsPathGateway2 } from '../src/ws-path2.gateway';
+import { WsPathGatewayRegex } from '../src/ws-path-regex.gateway';
 
 async function createNestApp(...gateways): Promise<INestApplication> {
   const testingModule = await Test.createTestingModule({
@@ -75,6 +76,36 @@ describe('WebSocketGateway (WsAdapter)', () => {
     await app.listen(3000);
     try {
       ws = new WebSocket('ws://localhost:3000/ws-path');
+      await new Promise((resolve, reject) => {
+        ws.on('open', resolve);
+        ws.on('error', reject);
+      });
+
+      ws.send(
+        JSON.stringify({
+          event: 'push',
+          data: {
+            test: 'test',
+          },
+        }),
+      );
+      await new Promise<void>(resolve =>
+        ws.on('message', data => {
+          expect(JSON.parse(data).data.test).to.be.eql('test');
+          ws.close();
+          resolve();
+        }),
+      );
+    } catch (err) {
+      console.log(err);
+    }
+  });
+
+  it(`should handle message on a regex path`, async () => {
+    app = await createNestApp(WsPathGatewayRegex);
+    await app.listen(3000);
+    try {
+      ws = new WebSocket('ws://localhost:3000/ws-path/randomRoomId');
       await new Promise((resolve, reject) => {
         ws.on('open', resolve);
         ws.on('error', reject);

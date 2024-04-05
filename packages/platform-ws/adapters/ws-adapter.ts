@@ -1,6 +1,6 @@
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { normalizePath, isNil } from '@nestjs/common/utils/shared.utils';
+import { isNil, normalizePath } from '@nestjs/common/utils/shared.utils';
 import { AbstractWsAdapter } from '@nestjs/websockets';
 import {
   CLOSE_EVENT,
@@ -9,7 +9,8 @@ import {
 } from '@nestjs/websockets/constants';
 import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer';
 import * as http from 'http';
-import { EMPTY, fromEvent, Observable } from 'rxjs';
+import * as pathToRegex from 'path-to-regexp';
+import { EMPTY, Observable, fromEvent } from 'rxjs';
 import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
 
 let wsPackage: any = {};
@@ -185,7 +186,9 @@ export class WsAdapter extends AbstractWsAdapter {
 
         let isRequestDelegated = false;
         for (const wsServer of wsServersCollection) {
-          if (pathname === wsServer.path) {
+          const pathMatchFn =
+            wsServer.path as pathToRegex.MatchFunction<object>;
+          if (pathMatchFn(pathname)) {
             wsServer.handleUpgrade(request, socket, head, (ws: unknown) => {
               wsServer.emit('connection', ws, request);
             });
@@ -203,15 +206,13 @@ export class WsAdapter extends AbstractWsAdapter {
     return httpServer;
   }
 
-  protected addWsServerToRegistry<T extends Record<'path', string> = any>(
-    wsServer: T,
-    port: number,
-    path: string,
-  ) {
+  protected addWsServerToRegistry<
+    T extends Record<'path', pathToRegex.MatchFunction<object>> = any,
+  >(wsServer: T, port: number, path: string) {
     const entries = this.wsServersRegistry.get(port) ?? [];
     entries.push(wsServer);
 
-    wsServer.path = normalizePath(path);
+    wsServer.path = pathToRegex.match(normalizePath(path));
     this.wsServersRegistry.set(port, entries);
   }
 }

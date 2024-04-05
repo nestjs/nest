@@ -18,6 +18,7 @@
     "access": "public"
   },
   "dependencies": {
+    "path-to-regexp": "^6.2.1",
     "tslib": "2.6.2",
     "ws": "8.16.0"
   },
