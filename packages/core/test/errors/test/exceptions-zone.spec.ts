@@ -13,7 +13,7 @@ describe('ExceptionsZone', () => {
       callback = sinon.spy();
     });
     it('should call callback', () => {
-      ExceptionsZone.run(callback as any, rethrow);
+      ExceptionsZone.run(callback as any, rethrow, false);
       expect(callback.called).to.be.true;
     });
     describe('when callback throws exception', () => {
@@ -29,7 +29,9 @@ describe('ExceptionsZone', () => {
         const throwsCallback = () => {
           throw new Error('');
         };
-        expect(() => ExceptionsZone.run(throwsCallback, rethrow)).to.throws();
+        expect(() =>
+          ExceptionsZone.run(throwsCallback, rethrow, false),
+        ).to.throws();
         expect(handleSpy.called).to.be.true;
       });
     });
@@ -40,7 +42,7 @@ describe('ExceptionsZone', () => {
       callback = sinon.spy();
     });
     it('should call callback', async () => {
-      await ExceptionsZone.asyncRun(callback as any, rethrow);
+      await ExceptionsZone.asyncRun(callback as any, rethrow, false);
       expect(callback.called).to.be.true;
     });
     describe('when callback throws exception', () => {
@@ -56,8 +58,8 @@ describe('ExceptionsZone', () => {
         const throwsCallback = () => {
           throw new Error('');
         };
-        expect(ExceptionsZone.asyncRun(throwsCallback, rethrow)).to.eventually
-          .be.rejected;
+        expect(ExceptionsZone.asyncRun(throwsCallback, rethrow, false)).to
+          .eventually.be.rejected;
       });
     });
   });
