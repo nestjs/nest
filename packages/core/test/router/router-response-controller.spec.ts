@@ -436,9 +436,7 @@ data: test
 
         await new Promise(resolve => process.nextTick(resolve));
 
-        expect(() => {
-          expect(maxDrainListenersExceededWarning).to.equal(null);
-        }, 'it will fail as there is an issue here to be addressed').to.throw();
+        expect(maxDrainListenersExceededWarning).to.equal(null);
       });
     });
 
