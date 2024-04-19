@@ -136,7 +136,7 @@ export class ClientRMQ extends ClientProxy {
   public createClient(): AmqpConnectionManager {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
     return rmqPackage.connect(this.urls, {
-      connectionOptions: socketOptions,
+      connectionOptions: socketOptions?.connectionOptions,
     });
   }
 

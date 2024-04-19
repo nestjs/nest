@@ -81,6 +81,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public async start(callback?: () => void) {
     await this.bindEvents();
+    this.grpcClient.start();
     callback();
   }
 
