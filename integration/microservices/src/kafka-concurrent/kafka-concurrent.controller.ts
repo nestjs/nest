@@ -13,7 +13,7 @@ import { Observable } from 'rxjs';
 import { SumDto } from './dto/sum.dto';
 
 /**
- * The following function explicity sends messages to the key representing the partition.
+ * The following function explicitly sends messages to the key representing the partition.
  */
 const explicitPartitioner = () => {
   return ({ message }: PartitionerArgs) => {
