@@ -32,11 +32,12 @@ import {
   RawServerBase,
   RawServerDefault,
   RequestGenericInterface,
+  RouteOptions,
+  RouteShorthandOptions,
   fastify,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
 import { kRouteContext } from 'fastify/lib/symbols';
-import { RouteShorthandMethod } from 'fastify/types/route';
 import * as http2 from 'http2';
 import * as https from 'https';
 import {
@@ -683,6 +684,13 @@ export class FastifyAdapter<
     const hasConfig = !isUndefined(routeConfig);
     const hasConstraints = !isUndefined(routeConstraints);
 
+    const routeToInject: RouteOptions<TServer, TRawRequest, TRawResponse> &
+      RouteShorthandOptions = {
+      method: routerMethodKey,
+      url: args[0],
+      handler: handlerRef,
+    };
+
     if (isVersioned || hasConstraints || hasConfig) {
       const isPathAndRouteTuple = args.length === 2;
       if (isPathAndRouteTuple) {
@@ -701,15 +709,12 @@ export class FastifyAdapter<
             },
           }),
         };
-        const path = args[0];
-        return this.instance[routerMethodKey](path, options, handlerRef);
+
+        const routeToInjectWithOptions = { ...routeToInject, ...options };
+
+        return this.instance.route(routeToInjectWithOptions);
       }
     }
-
-    return this.instance[routerMethodKey](
-      ...(args as Parameters<
-        RouteShorthandMethod<TServer, TRawRequest, TRawResponse>
-      >),
-    );
+    return this.instance.route(routeToInject);
   }
 }
