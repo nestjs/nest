@@ -1,5 +1,10 @@
 import { Controller, Logger } from '@nestjs/common';
-import { EventPattern, MessagePattern } from '@nestjs/microservices';
+import {
+  Ctx,
+  EventPattern,
+  KafkaContext,
+  MessagePattern,
+} from '@nestjs/microservices';
 import { BusinessDto } from './dtos/business.dto';
 import { UserDto } from './dtos/user.dto';
 import { BusinessEntity } from './entities/business.entity';
@@ -10,6 +15,7 @@ import { KafkaController } from './kafka.controller';
 export class KafkaMessagesController {
   protected readonly logger = new Logger(KafkaMessagesController.name);
   static IS_NOTIFIED = false;
+  static IS_REGEX_NOTIFIED: any = false;
 
   @MessagePattern('math.sum.sync.kafka.message')
   mathSumSyncKafkaMessage(data: any) {
@@ -53,7 +59,12 @@ export class KafkaMessagesController {
 
   @EventPattern('notify')
   eventHandler(data: any) {
-    KafkaController.IS_NOTIFIED = data.value.notify;
+    KafkaMessagesController.IS_NOTIFIED = data.value.notify;
+  }
+
+  @EventPattern(/regex\.notify\.test-[0-9]*/)
+  regexHandler(data: any, @Ctx() context: KafkaContext) {
+    KafkaMessagesController.IS_REGEX_NOTIFIED = context.getTopic();
   }
 
   // Complex data to send.

@@ -28,6 +28,7 @@ import { KafkaLogger, KafkaParser } from '../helpers';
 import {
   CustomTransportStrategy,
   KafkaOptions,
+  MessageHandler,
   OutgoingResponse,
   ReadPacket,
 } from '../interfaces';
@@ -48,6 +49,8 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
+
+  protected registeredPatterns: any[] = [];
 
   constructor(protected readonly options: KafkaOptions['options']) {
     super();
@@ -120,13 +123,12 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
   }
 
   public async bindEvents(consumer: Consumer) {
-    const registeredPatterns = [...this.messageHandlers.keys()];
     const consumerSubscribeOptions = this.options.subscribe || {};
 
-    if (registeredPatterns.length > 0) {
+    if (this.registeredPatterns.length > 0) {
       await this.consumer.subscribe({
         ...consumerSubscribeOptions,
-        topics: registeredPatterns,
+        topics: this.registeredPatterns,
       });
     }
 
@@ -316,5 +318,15 @@ export class ServerKafka extends Server implements CustomTransportStrategy {
 
   protected initializeDeserializer(options: KafkaOptions['options']) {
     this.deserializer = options?.deserializer ?? new KafkaRequestDeserializer();
+  }
+
+  public addHandler(
+    pattern: any,
+    callback: MessageHandler,
+    isEventHandler: boolean = false,
+    extras: Record<string, any> = {},
+  ) {
+    this.registeredPatterns.push(pattern);
+    super.addHandler(pattern, callback, isEventHandler, extras);
   }
 }

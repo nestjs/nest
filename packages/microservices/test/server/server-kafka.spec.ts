@@ -180,10 +180,26 @@ describe('ServerKafka', () => {
       await server.listen(callback);
 
       const pattern = 'test';
-      const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
-        [pattern]: handler,
-      });
+      (server as any).registeredPatterns = [pattern];
+
+      await server.bindEvents((server as any).consumer);
+
+      expect(subscribe.called).to.be.true;
+      expect(
+        subscribe.calledWith({
+          topics: [pattern],
+        }),
+      ).to.be.true;
+
+      expect(run.called).to.be.true;
+      expect(connect.called).to.be.true;
+    });
+    it('should call subscribe and run on consumer when there are RegExp messageHandlers', async () => {
+      (server as any).logger = new NoopLogger();
+      await server.listen(callback);
+
+      const pattern = /test/;
+      (server as any).registeredPatterns = [pattern];
 
       await server.bindEvents((server as any).consumer);
 
@@ -204,10 +220,7 @@ describe('ServerKafka', () => {
       await server.listen(callback);
 
       const pattern = 'test';
-      const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
-        [pattern]: handler,
-      });
+      (server as any).registeredPatterns = [pattern];
 
       await server.bindEvents((server as any).consumer);
 

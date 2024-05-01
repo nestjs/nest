@@ -96,7 +96,21 @@ describe.skip('Kafka transport', function () {
       .send()
       .end(() => {
         setTimeout(() => {
-          expect(KafkaController.IS_NOTIFIED).to.be.true;
+          expect(KafkaMessagesController.IS_NOTIFIED).to.be.true;
+          done();
+        }, 1000);
+      });
+  });
+
+  it(`/POST (async event notification)`, done => {
+    request(server)
+      .post('/notifyRegex')
+      .send()
+      .end(() => {
+        setTimeout(() => {
+          expect(KafkaMessagesController.IS_REGEX_NOTIFIED).to.be.eq(
+            'regex.notify.test-0',
+          );
           done();
         }, 1000);
       });

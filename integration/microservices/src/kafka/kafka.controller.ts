@@ -15,7 +15,6 @@ import { UserDto } from './dtos/user.dto';
 @Controller()
 export class KafkaController implements OnModuleInit, OnModuleDestroy {
   protected readonly logger = new Logger(KafkaController.name);
-  static IS_NOTIFIED = false;
   static MATH_SUM = 0;
 
   @Client({
@@ -131,6 +130,11 @@ export class KafkaController implements OnModuleInit, OnModuleDestroy {
   @Post('notify')
   async sendNotification(): Promise<any> {
     return this.client.emit('notify', { notify: true });
+  }
+
+  @Post('notifyRegex')
+  async sendRegexNotification(): Promise<any> {
+    return this.client.emit('regex.notify.test-0', { notify: true });
   }
 
   // Complex data to send.
