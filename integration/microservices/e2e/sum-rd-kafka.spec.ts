@@ -30,7 +30,7 @@ describe('RdKafka transport', function () {
       options: {
         client: {
           'metadata.broker.list': 'localhost:9092'
-        },
+        }
       },
     });
     app.enableShutdownHooks();

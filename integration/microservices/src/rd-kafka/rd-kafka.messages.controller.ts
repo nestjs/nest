@@ -53,7 +53,7 @@ export class RdKafkaMessagesController {
 
   @EventPattern('notify')
   eventHandler(data: any) {
-    RdKafkaController.IS_NOTIFIED = data.value.notify;
+    RdKafkaController.IS_NOTIFIED = data.notify;
   }
 
   // Complex data to send.

@@ -91,7 +91,6 @@ export class ServerRdKafka extends Server implements CustomTransportStrategy {
   }
 
   public async close(): Promise<void> {
-    // TODO: figure out how to properly close the consumer and producer
     this.consumer && (await this.disconnect(this.consumer));
     this.producer && (await this.disconnect(this.producer));
     this.consumer = null;
@@ -283,6 +282,7 @@ export class ServerRdKafka extends Server implements CustomTransportStrategy {
     if (!outgoingResponse.isDisposed) {
       return;
     }
+    // TODO: I think the confluent headers signature is wrong but I don't know yet
     // headers[KafkaHeaders.NEST_IS_DISPOSED] = Buffer.alloc(1);
     headers.push({
       [KafkaHeaders.NEST_IS_DISPOSED]: Buffer.alloc(1)
