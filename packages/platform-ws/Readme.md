@@ -105,24 +105,22 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td align="center" valign="middle"><a href="https://genuinebee.com/" target="_blank"><img src="https://nestjs.com/img/logos/genuinebee.svg" width="97" valign="middle" /></a></td>
 </tr>
 <tr>
-<td align="center" valign="middle"><a href="https://sanyodigital.com/" target="_blank"><img src="https://nestjs.com/img/logos/sanyo-digital.png" width="130" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://vpn-review.com/vpn-for-torrenting" target="_blank"><img src="https://nestjs.com/img/logos/vpn-review-logo.png" width="85" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://lambda-it.ch/" target="_blank"><img src="https://nestjs.com/img/logos/lambda-it-logo.svg" width="115" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://www.najlepszeplatformyforex.pl/blog/broker-xtb/" target="_blank"><img src="https://nestjs.com/img/logos/npf-logo.jpg" width="200" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://rocketech.it/cases/?utm_source=google&utm_medium=badge&utm_campaign=nestjs" target="_blank"><img src="https://nestjs.com/img/logos/rocketech-logo.svg" width="110" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://www.anonymistic.com/" target="_blank"><img src="https://nestjs.com/img/logos/anonymistic-logo.png" width="125" valign="middle" /></a></td>
-</tr>
-<tr>
 <td align="center" valign="middle"><a href="https://www.naologic.com/" target="_blank"><img src="https://nestjs.com/img/logos/naologic-logo.svg" width="125" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://triplecore.io" target="_blank"><img src="https://nestjs.com/img/logos/triplecore-logo.svg" width="50" valign="middle" /></a></td>
+</tr>
+<tr>
 <td align="center" valign="middle"><a href="https://thecasinowizard.com/bonuses/no-deposit-bonuses/" target="_blank"><img src="https://nestjs.com/img/logos/casinowizard-logo.png" width="120" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://polygon-software.ch/" target="_blank"><img src="https://nestjs.com/img/logos/polygon-logo.svg" width="120" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://boringowl.io/" target="_blank"><img src="https://nestjs.com/img/logos/boringowl-logo.svg" width="120" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://nordbot.app/" target="_blank"><img src="https://nestjs.com/img/logos/nordbot-logo.png" width="120" valign="middle" /></a></td>
-</tr>
-<tr>
 <td align="center" valign="middle"><a href="https://doppio.sh/" target="_blank"><img src="https://nestjs.com/img/logos/dopiosh-logo.png" width="50" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://www.hingehealth.com/" target="_blank"><img src="https://nestjs.com/img/logos/hinge-health-logo.svg" width="100" valign="middle" /></a></td>
+</tr>
+<tr>
 <td align="center" valign="middle"><a href="https://julienferand.dev/" target="_blank"><img src="https://nestjs.com/img/logos/julienferand-logo.jpeg" width="65" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://www.tripoffice.com/" target="_blank"><img src="https://nestjs.com/img/logos/tripoffice-logo.png" width="140" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://solcellsforetag.se/" target="_blank"><img src="https://nestjs.com/img/logos/solcellsforetag-logo.svg" width="140" valign="middle" /></a></td>
