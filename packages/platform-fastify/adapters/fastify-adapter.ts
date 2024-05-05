@@ -166,7 +166,7 @@ export class FastifyAdapter<
     },
     deriveConstraint: (req: FastifyRequest) => {
       // Media Type (Accept Header) Versioning Handler
-      if (this.versioningOptions.type === VersioningType.MEDIA_TYPE) {
+      if (this.versioningOptions?.type === VersioningType.MEDIA_TYPE) {
         const MEDIA_TYPE_HEADER = 'Accept';
         const acceptHeaderValue: string | undefined = (req.headers?.[
           MEDIA_TYPE_HEADER
@@ -181,7 +181,7 @@ export class FastifyAdapter<
           : acceptHeaderVersionParameter.split(this.versioningOptions.key)[1];
       }
       // Header Versioning Handler
-      else if (this.versioningOptions.type === VersioningType.HEADER) {
+      else if (this.versioningOptions?.type === VersioningType.HEADER) {
         const customHeaderVersionParameter: string | string[] | undefined =
           req.headers?.[this.versioningOptions.header] ||
           req.headers?.[this.versioningOptions.header.toLowerCase()];
@@ -191,7 +191,7 @@ export class FastifyAdapter<
           : customHeaderVersionParameter;
       }
       // Custom Versioning Handler
-      else if (this.versioningOptions.type === VersioningType.CUSTOM) {
+      else if (this.versioningOptions?.type === VersioningType.CUSTOM) {
         return this.versioningOptions.extractor(req);
       }
       return undefined;
