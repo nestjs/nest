@@ -37,8 +37,6 @@ export class ServerRdKafka extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.RD_KAFKA;
 
   protected logger = new Logger(ServerRdKafka.name);
-  // not sure if the client is needed since the producer and consumer are subtypes of the client?
-  // protected client: Client<any> = null;
 
   protected consumer: Consumer = null;
   protected producer: HighLevelProducer = null;
