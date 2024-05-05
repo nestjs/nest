@@ -30,7 +30,10 @@ import {
   KafkaConsumer,
   Message,
 } from '../external/rd-kafka.interface';
-import { RdKafkaRequest, RdKafkaRequestSerializer } from '../serializers/rd-kafka-request.serializer';
+import {
+  RdKafkaRequest,
+  RdKafkaRequestSerializer,
+} from '../serializers/rd-kafka-request.serializer';
 
 let kafkaPackage: any = {};
 
@@ -66,7 +69,7 @@ export class ClientRdKafka extends ClientProxy {
 
     this.brokers =
       clientOptions['metadata.broker.list'] || KAFKA_DEFAULT_BROKER;
-    
+
     this.producerOnlyMode = this.getOptionsProp(
       this.options,
       'producerOnlyMode',
@@ -162,19 +165,19 @@ export class ClientRdKafka extends ClientProxy {
           this.options.producer || {},
           {
             'client.id': this.clientId,
-            'metadata.broker.list': this.brokers
+            'metadata.broker.list': this.brokers,
           },
         );
         this.producer = new kafkaPackage.HighLevelProducer(producerOptions);
 
         // TODO: remove the following debug messages later
         // logging debug messages, if debug is enabled
-        this.producer.on('event.log', (log) => {
+        this.producer.on('event.log', log => {
           console.log(log);
         });
 
         //logging all errors
-        this.producer.on('event.error', (err) => {
+        this.producer.on('event.error', err => {
           console.error('Error from producer');
           console.error(err);
         });
@@ -273,12 +276,19 @@ export class ClientRdKafka extends ClientProxy {
       // this.producer.produce(pattern, null, outgoingEvent.value, outgoingEvent.key, null, outgoingEvent.headers, (err, offset) => { // this does not work either
       // this.producer.produce(pattern, -1, outgoingEvent.value, outgoingEvent.key, null, null, (err, offset) => { // this does not work
       // for some reason this following works? probably need to pass only buffers
-      this.producer.produce(pattern, -1, Buffer.from(outgoingEvent.value), outgoingEvent.key || null, null, (err, offset) => {
-        if (err) {
-          return reject(err);
-        }
-        return resolve(offset);
-      });
+      this.producer.produce(
+        pattern,
+        -1,
+        Buffer.from(outgoingEvent.value),
+        outgoingEvent.key || null,
+        null,
+        (err, offset) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(offset);
+        },
+      );
     });
   }
 
@@ -314,13 +324,13 @@ export class ClientRdKafka extends ClientProxy {
         .then((serializedPacket: RdKafkaRequest) => {
           const headers = [];
           headers.push({
-            [KafkaHeaders.CORRELATION_ID]: packet.id
+            [KafkaHeaders.CORRELATION_ID]: packet.id,
           });
           headers.push({
-            [KafkaHeaders.REPLY_TOPIC]: replyTopic
+            [KafkaHeaders.REPLY_TOPIC]: replyTopic,
           });
           headers.push({
-            [KafkaHeaders.REPLY_PARTITION]: replyPartition
+            [KafkaHeaders.REPLY_PARTITION]: replyPartition,
           });
           // TODO: maybe the following is actually right
           // headers[KafkaHeaders.CORRELATION_ID] = packet.id;
@@ -330,12 +340,20 @@ export class ClientRdKafka extends ClientProxy {
           // TODO: fix the serialized packet type either in the confluent lib or nestjs so user can pass their own headers
 
           return new Promise((resolve, reject) => {
-            this.producer.produce(pattern, null, serializedPacket.value, serializedPacket.key, null, headers, (err, offset) => {
-              if (err) {
-                return reject(err);
-              }
-              return resolve(offset);
-            });
+            this.producer.produce(
+              pattern,
+              null,
+              serializedPacket.value,
+              serializedPacket.key,
+              null,
+              headers,
+              (err, offset) => {
+                if (err) {
+                  return reject(err);
+                }
+                return resolve(offset);
+              },
+            );
           });
         })
         .catch(err => errorCallback(err));

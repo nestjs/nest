@@ -61,7 +61,7 @@ export class ClientProxyFactory {
       case Transport.KAFKA:
         return new ClientKafka(options as KafkaOptions['options']);
       case Transport.RD_KAFKA:
-         return new ClientRdKafka(options as RdKafkaOptions['options']);
+        return new ClientRdKafka(options as RdKafkaOptions['options']);
       default:
         return new ClientTCP(options as TcpClientOptions['options']);
     }
