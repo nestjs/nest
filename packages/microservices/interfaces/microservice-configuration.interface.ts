@@ -10,6 +10,7 @@ import {
   ProducerConfig,
   ProducerRecord,
 } from '../external/kafka.interface';
+import { ConsumerGlobalConfig, GlobalConfig, ProducerGlobalConfig } from '../external/rd-kafka.interface';
 import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
 import { IORedisOptions } from '../external/redis.interface';
 import {
@@ -30,6 +31,7 @@ export type MicroserviceOptions =
   | MqttOptions
   | RmqOptions
   | KafkaOptions
+  | RdKafkaOptions
   | CustomStrategy;
 
 /**
@@ -253,6 +255,30 @@ export interface KafkaOptions {
     serializer?: Serializer;
     deserializer?: Deserializer;
     parser?: KafkaParserConfig;
+    producerOnlyMode?: boolean;
+  };
+}
+
+/**
+ * @publicApi
+ */
+export interface RdKafkaOptions {
+  transport?: Transport.RD_KAFKA;
+  options?: {
+    client?: GlobalConfig;
+    consumer?: ConsumerGlobalConfig;
+    producer?: ProducerGlobalConfig;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
+    parser?: KafkaParserConfig;
+    /**
+     * Defaults to `"-server"` on server side and `"-client"` on client side.
+     */
+    postfixId?: string;
+    /**
+     * If `true`, the server will skip the consumer group creation, and
+     * associated rebalancing, only acts as a producer on Kafka.
+     */
     producerOnlyMode?: boolean;
   };
 }
