@@ -10,25 +10,13 @@ import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deser
 import { KafkaHeaders } from '../enums';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
 import {
-  BrokersFunction,
-  Consumer,
-  ConsumerConfig,
-  ConsumerGroupJoinEvent,
-  EachMessagePayload,
-  Kafka,
-  KafkaConfig,
-  KafkaMessage,
-  Producer,
-  TopicPartitionOffsetAndMetadata,
-} from '../external/kafka.interface';
-import {
   KafkaLogger,
   KafkaParser,
   KafkaReplyPartitionAssigner,
 } from '../helpers';
 import {
-  KafkaOptions,
   OutgoingEvent,
+  RdKafkaOptions,
   ReadPacket,
   WritePacket,
 } from '../interfaces';
@@ -37,6 +25,13 @@ import {
   KafkaRequestSerializer,
 } from '../serializers/kafka-request.serializer';
 import { ClientProxy } from './client-proxy';
+import {
+  Client,
+  ConsumerGlobalConfig,
+  GlobalConfig,
+  HighLevelProducer,
+  KafkaConsumer,
+} from '../external/rd-kafka.interface';
 
 let kafkaPackage: any = {};
 
@@ -45,30 +40,29 @@ let kafkaPackage: any = {};
  */
 export class ClientRdKafka extends ClientProxy {
   protected logger = new Logger(ClientRdKafka.name);
-  protected client: Kafka | null = null;
-  protected consumer: Consumer | null = null;
-  protected producer: Producer | null = null;
+  protected consumer: KafkaConsumer | null = null;
+  protected producer: HighLevelProducer | null = null;
   protected parser: KafkaParser | null = null;
   protected initialized: Promise<void> | null = null;
   protected responsePatterns: string[] = [];
   protected consumerAssignments: { [key: string]: number } = {};
-  protected brokers: string[] | BrokersFunction;
+  protected brokers: string;
   protected clientId: string;
   protected groupId: string;
   protected producerOnlyMode: boolean;
 
-  constructor(protected readonly options: KafkaOptions['options']) {
+  constructor(protected readonly options: RdKafkaOptions['options']) {
     super();
 
     const clientOptions = this.getOptionsProp(
       this.options,
       'client',
-      {} as KafkaConfig,
+      {} as GlobalConfig,
     );
     const consumerOptions = this.getOptionsProp(
       this.options,
       'consumer',
-      {} as ConsumerConfig,
+      {} as ConsumerGlobalConfig,
     );
     const postfixId = this.getOptionsProp(this.options, 'postfixId', '-client');
     this.producerOnlyMode = this.getOptionsProp(
@@ -77,16 +71,20 @@ export class ClientRdKafka extends ClientProxy {
       false,
     );
 
-    this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
+    this.brokers =
+      clientOptions['metadata.broker.list'] || KAFKA_DEFAULT_BROKER;
 
     // Append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
-    this.clientId =
-      (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
-    this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
+    (clientOptions['client.id'] || KAFKA_DEFAULT_CLIENT) + postfixId;
 
-    kafkaPackage = loadPackage('kafkajs', ClientRdKafka.name, () =>
-      require('kafkajs'),
+    this.groupId =
+      (consumerOptions['group.id'] || KAFKA_DEFAULT_GROUP) + postfixId;
+
+    kafkaPackage = loadPackage(
+      '@confluentinc/kafka-javascript',
+      ClientRdKafka.name,
+      () => require('@confluentinc/kafka-javascript'),
     );
 
     this.parser = new KafkaParser((options && options.parser) || undefined);
@@ -101,55 +99,74 @@ export class ClientRdKafka extends ClientProxy {
   }
 
   public async close(): Promise<void> {
-    this.producer && (await this.producer.disconnect());
-    this.consumer && (await this.consumer.disconnect());
+    this.consumer && (await this.disconnect(this.consumer));
+    this.producer && (await this.disconnect(this.producer));
     this.producer = null;
     this.consumer = null;
     this.initialized = null;
-    this.client = null;
   }
 
-  public async connect(): Promise<Producer> {
+  public async disconnect(client: Client<any>): Promise<void> {
+    // wrapping with a promise to avoid creating event handlers manually for the disconnect
+    return new Promise((resolve, reject) => {
+      return client.disconnect(err => {
+        if (err) {
+          return reject(err);
+        }
+        resolve();
+      });
+    });
+  }
+
+  public async connect(): Promise<HighLevelProducer> {
     if (this.initialized) {
       return this.initialized.then(() => this.producer);
     }
     this.initialized = new Promise(async (resolve, reject) => {
       try {
-        this.client = this.createClient();
+        // TODO: we're going to have to write our own partition assigner for rdkafka
+        // if (!this.producerOnlyMode) {
+        //   // TODO: we're going to have to write our own assigner for rdkafka
+        //   const partitionAssigners = [];
+        //   // const partitionAssigners = [
+        //   //   (
+        //   //     config: ConstructorParameters<
+        //   //       typeof KafkaReplyPartitionAssigner
+        //   //     >[1],
+        //   //   ) => new KafkaReplyPartitionAssigner(this, config),
+        //   // ];
 
-        if (!this.producerOnlyMode) {
-          // TODO: we're going to have to write our own assigner for rdkafka
-          const partitionAssigners = [];
-          // const partitionAssigners = [
-          //   (
-          //     config: ConstructorParameters<
-          //       typeof KafkaReplyPartitionAssigner
-          //     >[1],
-          //   ) => new KafkaReplyPartitionAssigner(this, config),
-          // ];
+        //   const consumerOptions = Object.assign(
+        //     {
+        //       partitionAssigners,
+        //     },
+        //     this.options.consumer || {},
+        //     {
+        //       groupId: this.groupId,
+        //     },
+        //   );
 
-          const consumerOptions = Object.assign(
-            {
-              partitionAssigners,
-            },
-            this.options.consumer || {},
-            {
-              groupId: this.groupId,
-            },
-          );
+        //   this.consumer = this.client.consumer(consumerOptions);
+        //   // set member assignments on join and rebalance
+        //   this.consumer.on(
+        //     this.consumer.events.GROUP_JOIN,
+        //     this.setConsumerAssignments.bind(this),
+        //   );
+        //   await this.consumer.connect();
+        //   await this.bindTopics();
+        // }
 
-          this.consumer = this.client.consumer(consumerOptions);
-          // set member assignments on join and rebalance
-          this.consumer.on(
-            this.consumer.events.GROUP_JOIN,
-            this.setConsumerAssignments.bind(this),
-          );
-          await this.consumer.connect();
-          await this.bindTopics();
-        }
-
-        this.producer = this.client.producer(this.options.producer || {});
-        await this.producer.connect();
+        const producerOptions = Object.assign(
+          {},
+          this.options.client || {},
+          this.options.producer || {},
+          {
+            'client.id': this.clientId,
+            'metadata.broker.list': this.brokers,
+          },
+        );
+        this.producer = new kafkaPackage.HighLevelProducer(producerOptions);
+        await this.connectClient(this.producer);
 
         resolve();
       } catch (err) {
@@ -159,36 +176,44 @@ export class ClientRdKafka extends ClientProxy {
     return this.initialized.then(() => this.producer);
   }
 
-  public async bindTopics(): Promise<void> {
-    if (!this.consumer) {
-      throw Error('No consumer initialized');
-    }
-
-    const consumerSubscribeOptions = this.options.subscribe || {};
-
-    if (this.responsePatterns.length > 0) {
-      await this.consumer.subscribe({
-        ...consumerSubscribeOptions,
-        topics: this.responsePatterns,
-      });
-    }
-
-    await this.consumer.run(
-      Object.assign(this.options.run || {}, {
-        eachMessage: this.createResponseCallback(),
-      }),
-    );
+  public async connectClient(client: Client<any>): Promise<void> {
+    // wrapping with a promise to avoid creating event handlers manually for the connect
+    return new Promise((resolve, reject) => {
+      return client.connect(
+        {
+          // TODO: make this more efficient by only getting metadata for the topics we care about
+          allTopics: true,
+        },
+        err => {
+          if (err) {
+            return reject(err);
+          }
+          resolve();
+        },
+      );
+    });
   }
 
-  public createClient<T = any>(): T {
-    const kafkaConfig: KafkaConfig = Object.assign(
-      { logCreator: KafkaLogger.bind(null, this.logger) },
-      this.options.client,
-      { brokers: this.brokers, clientId: this.clientId },
-    );
+  // public async bindTopics(): Promise<void> {
+  //   if (!this.consumer) {
+  //     throw Error('No consumer initialized');
+  //   }
 
-    return new kafkaPackage.Kafka(kafkaConfig);
-  }
+  //   const consumerSubscribeOptions = this.options.subscribe || {};
+
+  //   if (this.responsePatterns.length > 0) {
+  //     await this.consumer.subscribe({
+  //       ...consumerSubscribeOptions,
+  //       topics: this.responsePatterns,
+  //     });
+  //   }
+
+  //   await this.consumer.run(
+  //     Object.assign(this.options.run || {}, {
+  //       eachMessage: this.createResponseCallback(),
+  //     }),
+  //   );
+  // }
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
     return async (payload: EachMessagePayload) => {
@@ -313,12 +338,12 @@ export class ClientRdKafka extends ClientProxy {
     this.consumerAssignments = consumerAssignments;
   }
 
-  protected initializeSerializer(options: KafkaOptions['options']) {
+  protected initializeSerializer(options: RdKafkaOptions['options']) {
     this.serializer =
       (options && options.serializer) || new KafkaRequestSerializer();
   }
 
-  protected initializeDeserializer(options: KafkaOptions['options']) {
+  protected initializeDeserializer(options: RdKafkaOptions['options']) {
     this.deserializer =
       (options && options.deserializer) || new KafkaResponseDeserializer();
   }
