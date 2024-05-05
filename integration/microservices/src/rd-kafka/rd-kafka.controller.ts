@@ -22,9 +22,9 @@ export class RdKafkaController implements OnModuleInit, OnModuleDestroy {
     transport: Transport.RD_KAFKA,
     options: {
       client: {
-        'metadata.broker.list': 'localhost:9092',
-      },
-    },
+        'metadata.broker.list': 'localhost:9092'
+      }
+    }
   })
   private readonly client: ClientRdKafka;
 
