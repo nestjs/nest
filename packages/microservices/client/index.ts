@@ -1,5 +1,6 @@
 export * from './client-grpc';
 export * from './client-kafka';
+export * from './client-rd-kafka';
 export * from './client-mqtt';
 export * from './client-nats';
 export * from './client-proxy';

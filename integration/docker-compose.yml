@@ -1,58 +1,58 @@
-version: "3"
+version: '3'
 
 services:
-  redis:
-    container_name: test-redis
-    image: redis
-    ports:
-      - "6379:6379"
-    restart: always
-  nats:
-    container_name: test-nats
-    image: nats
-    ports:
-      - "8222:8222"
-      - "4222:4222"
-      - "6222:6222"
-    restart: always
-  mqtt:
-    container_name: test-mqtt
-    image: eclipse-mosquitto
-    volumes:
-      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    restart: always
-  mysql:
-    image: mysql:8.3.0
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: test
-    ports:
-      - "3306:3306"
-    restart: always
-  mongodb:
-    container_name: test-mongodb
-    image: mongo:latest
-    environment:
-      - MONGODB_DATABASE="test"
-    ports:
-      - 27017:27017
-  rabbit:
-    container_name: test-rabbit
-    hostname: rabbit
-    image: "rabbitmq:management"
-    ports:
-      - "15672:15672"
-      - "5672:5672"
-    tty: true
+  # redis:
+  #   container_name: test-redis
+  #   image: redis
+  #   ports:
+  #     - "6379:6379"
+  #   restart: always
+  # nats:
+  #   container_name: test-nats
+  #   image: nats
+  #   ports:
+  #     - "8222:8222"
+  #     - "4222:4222"
+  #     - "6222:6222"
+  #   restart: always
+  # mqtt:
+  #   container_name: test-mqtt
+  #   image: eclipse-mosquitto
+  #   volumes:
+  #     - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+  #   ports:
+  #     - "1883:1883"
+  #     - "9001:9001"
+  #   restart: always
+  # mysql:
+  #   image: mysql:8.3.0
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: root
+  #     MYSQL_DATABASE: test
+  #   ports:
+  #     - "3306:3306"
+  #   restart: always
+  # mongodb:
+  #   container_name: test-mongodb
+  #   image: mongo:latest
+  #   environment:
+  #     - MONGODB_DATABASE="test"
+  #   ports:
+  #     - 27017:27017
+  # rabbit:
+  #   container_name: test-rabbit
+  #   hostname: rabbit
+  #   image: "rabbitmq:management"
+  #   ports:
+  #     - "15672:15672"
+  #     - "5672:5672"
+  #   tty: true
   zookeeper:
     container_name: test-zookeeper
     hostname: zookeeper
     image: confluentinc/cp-zookeeper:7.5.3
     ports:
-      - "2181:2181"
+      - '2181:2181'
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -63,8 +63,8 @@ services:
     depends_on:
       - zookeeper
     ports:
-      - "29092:29092"
-      - "9092:9092"
+      - '29092:29092'
+      - '9092:9092'
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181

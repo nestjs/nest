@@ -116,13 +116,13 @@ export class ServerRdKafka extends Server implements CustomTransportStrategy {
       'metadata.broker.list': this.brokers,
       'group.id': this.groupId,
     });
-    this.consumer = new Consumer(consumerOptions);
+    this.consumer = new kafkaPackage.KafkaConsumer(consumerOptions);
 
     const producerOptions = Object.assign({}, this.options.client || {}, this.options.producer || {}, {
       'client.id': this.clientId,
       'metadata.broker.list': this.brokers
     });
-    this.producer = new HighLevelProducer(producerOptions);
+    this.producer = new kafkaPackage.HighLevelProducer(producerOptions);
 
     await this.connect(this.producer);
 
