@@ -20,10 +20,7 @@ import {
   ReadPacket,
   WritePacket,
 } from '../interfaces';
-import {
-  KafkaRequest,
-  KafkaRequestSerializer,
-} from '../serializers/kafka-request.serializer';
+
 import { ClientProxy } from './client-proxy';
 import {
   Client,
@@ -31,7 +28,12 @@ import {
   GlobalConfig,
   HighLevelProducer,
   KafkaConsumer,
+  Message,
 } from '../external/rd-kafka.interface';
+import {
+  RdKafkaRequest,
+  RdKafkaRequestSerializer,
+} from '../serializers/rd-kafka-request.serializer';
 
 let kafkaPackage: any = {};
 
@@ -64,16 +66,17 @@ export class ClientRdKafka extends ClientProxy {
       'consumer',
       {} as ConsumerGlobalConfig,
     );
-    const postfixId = this.getOptionsProp(this.options, 'postfixId', '-client');
+
+    this.brokers =
+      clientOptions['metadata.broker.list'] || KAFKA_DEFAULT_BROKER;
+
     this.producerOnlyMode = this.getOptionsProp(
       this.options,
       'producerOnlyMode',
       false,
     );
 
-    this.brokers =
-      clientOptions['metadata.broker.list'] || KAFKA_DEFAULT_BROKER;
-
+    const postfixId = this.getOptionsProp(this.options, 'postfixId', '-client');
     // Append a unique id to the clientId and groupId
     // so they don't collide with a microservices client
     (clientOptions['client.id'] || KAFKA_DEFAULT_CLIENT) + postfixId;
@@ -99,14 +102,14 @@ export class ClientRdKafka extends ClientProxy {
   }
 
   public async close(): Promise<void> {
-    this.consumer && (await this.disconnect(this.consumer));
-    this.producer && (await this.disconnect(this.producer));
+    this.consumer && (await this.disconnectClient(this.consumer));
+    this.producer && (await this.disconnectClient(this.producer));
     this.producer = null;
     this.consumer = null;
     this.initialized = null;
   }
 
-  public async disconnect(client: Client<any>): Promise<void> {
+  public async disconnectClient(client: Client<any>): Promise<void> {
     // wrapping with a promise to avoid creating event handlers manually for the disconnect
     return new Promise((resolve, reject) => {
       return client.disconnect(err => {
@@ -166,6 +169,23 @@ export class ClientRdKafka extends ClientProxy {
           },
         );
         this.producer = new kafkaPackage.HighLevelProducer(producerOptions);
+
+        // TODO: remove the following debug messages later
+        // logging debug messages, if debug is enabled
+        this.producer.on('event.log', log => {
+          console.log(log);
+        });
+
+        //logging all errors
+        this.producer.on('event.error', err => {
+          console.error('Error from producer');
+          console.error(err);
+        });
+
+        this.producer.on('delivery-report', (err, report) => {
+          console.log('delivery-report: ', report);
+        });
+
         await this.connectClient(this.producer);
 
         resolve();
@@ -215,14 +235,9 @@ export class ClientRdKafka extends ClientProxy {
   //   );
   // }
 
-  public createResponseCallback(): (payload: EachMessagePayload) => any {
-    return async (payload: EachMessagePayload) => {
-      const rawMessage = this.parser.parse<KafkaMessage>(
-        Object.assign(payload.message, {
-          topic: payload.topic,
-          partition: payload.partition,
-        }),
-      );
+  public createResponseCallback(): (message: Message) => any {
+    return async (message: Message) => {
+      const rawMessage = this.parser.parse<Message>(message);
       if (isUndefined(rawMessage.headers[KafkaHeaders.CORRELATION_ID])) {
         return;
       }
@@ -255,15 +270,26 @@ export class ClientRdKafka extends ClientProxy {
     const outgoingEvent = await this.serializer.serialize(packet.data, {
       pattern,
     });
-    const message = Object.assign(
-      {
-        topic: pattern,
-        messages: [outgoingEvent],
-      },
-      this.options.send || {},
-    );
 
-    return this.producer.send(message);
+    return new Promise((resolve, reject) => {
+      // TODO: fix the headers
+      // this.producer.produce(pattern, null, outgoingEvent.value, outgoingEvent.key, null, outgoingEvent.headers, (err, offset) => { // this does not work either
+      // this.producer.produce(pattern, -1, outgoingEvent.value, outgoingEvent.key, null, null, (err, offset) => { // this does not work
+      // for some reason this following works? probably need to pass only buffers
+      this.producer.produce(
+        pattern,
+        -1,
+        Buffer.from(outgoingEvent.value),
+        outgoingEvent.key || null,
+        null,
+        (err, offset) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve(offset);
+        },
+      );
+    });
   }
 
   protected getReplyTopicPartition(topic: string): string {
@@ -295,21 +321,40 @@ export class ClientRdKafka extends ClientProxy {
       const replyPartition = this.getReplyTopicPartition(replyTopic);
 
       Promise.resolve(this.serializer.serialize(packet.data, { pattern }))
-        .then((serializedPacket: KafkaRequest) => {
-          serializedPacket.headers[KafkaHeaders.CORRELATION_ID] = packet.id;
-          serializedPacket.headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
-          serializedPacket.headers[KafkaHeaders.REPLY_PARTITION] =
-            replyPartition;
+        .then((serializedPacket: RdKafkaRequest) => {
+          const headers = [];
+          headers.push({
+            [KafkaHeaders.CORRELATION_ID]: packet.id,
+          });
+          headers.push({
+            [KafkaHeaders.REPLY_TOPIC]: replyTopic,
+          });
+          headers.push({
+            [KafkaHeaders.REPLY_PARTITION]: replyPartition,
+          });
+          // TODO: maybe the following is actually right
+          // headers[KafkaHeaders.CORRELATION_ID] = packet.id;
+          // headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
+          // headers[KafkaHeaders.REPLY_PARTITION] = replyPartition;
 
-          const message = Object.assign(
-            {
-              topic: pattern,
-              messages: [serializedPacket],
-            },
-            this.options.send || {},
-          );
+          // TODO: fix the serialized packet type either in the confluent lib or nestjs so user can pass their own headers
 
-          return this.producer.send(message);
+          return new Promise((resolve, reject) => {
+            this.producer.produce(
+              pattern,
+              null,
+              serializedPacket.value,
+              serializedPacket.key,
+              null,
+              headers,
+              (err, offset) => {
+                if (err) {
+                  return reject(err);
+                }
+                return resolve(offset);
+              },
+            );
+          });
         })
         .catch(err => errorCallback(err));
 
@@ -323,24 +368,24 @@ export class ClientRdKafka extends ClientProxy {
     return `${pattern}.reply`;
   }
 
-  protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
-    const consumerAssignments: { [key: string]: number } = {};
+  // protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
+  //   const consumerAssignments: { [key: string]: number } = {};
 
-    // only need to set the minimum
-    Object.keys(data.payload.memberAssignment).forEach(topic => {
-      const memberPartitions = data.payload.memberAssignment[topic];
+  //   // only need to set the minimum
+  //   Object.keys(data.payload.memberAssignment).forEach(topic => {
+  //     const memberPartitions = data.payload.memberAssignment[topic];
 
-      if (memberPartitions.length) {
-        consumerAssignments[topic] = Math.min(...memberPartitions);
-      }
-    });
+  //     if (memberPartitions.length) {
+  //       consumerAssignments[topic] = Math.min(...memberPartitions);
+  //     }
+  //   });
 
-    this.consumerAssignments = consumerAssignments;
-  }
+  //   this.consumerAssignments = consumerAssignments;
+  // }
 
   protected initializeSerializer(options: RdKafkaOptions['options']) {
     this.serializer =
-      (options && options.serializer) || new KafkaRequestSerializer();
+      (options && options.serializer) || new RdKafkaRequestSerializer();
   }
 
   protected initializeDeserializer(options: RdKafkaOptions['options']) {
@@ -348,13 +393,13 @@ export class ClientRdKafka extends ClientProxy {
       (options && options.deserializer) || new KafkaResponseDeserializer();
   }
 
-  public commitOffsets(
-    topicPartitions: TopicPartitionOffsetAndMetadata[],
-  ): Promise<void> {
-    if (this.consumer) {
-      return this.consumer.commitOffsets(topicPartitions);
-    } else {
-      throw new Error('No consumer initialized');
-    }
-  }
+  // public commitOffsets(
+  //   topicPartitions: TopicPartitionOffsetAndMetadata[],
+  // ): Promise<void> {
+  //   if (this.consumer) {
+  //     return this.consumer.commitOffsets(topicPartitions);
+  //   } else {
+  //     throw new Error('No consumer initialized');
+  //   }
+  // }
 }

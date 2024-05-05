@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { Serializer } from '../interfaces/serializer.interface';
 
-export interface KafkaRequest<T = any> {
+export interface RdKafkaRequest<T = any> {
   key: Buffer | string | null;
   value: T;
   headers: Record<string, any>;
@@ -16,8 +16,8 @@ export interface KafkaRequest<T = any> {
 /**
  * @publicApi
  */
-export class KafkaRequestSerializer
-  implements Serializer<any, KafkaRequest | Promise<KafkaRequest>>
+export class RdKafkaRequestSerializer
+  implements Serializer<any, RdKafkaRequest | Promise<RdKafkaRequest>>
 {
   public serialize(value: any) {
     const isNotKafkaMessage =
@@ -51,4 +51,18 @@ export class KafkaRequestSerializer
     }
     return value;
   }
+
+  // public encode(value: any): Buffer | null {
+  //   const isObjectOrArray =
+  //     !isNil(value) && !isString(value) && !Buffer.isBuffer(value);
+
+  //   if (isObjectOrArray) {
+  //     return isPlainObject(value) || Array.isArray(value)
+  //       ? Buffer.from(JSON.stringify(value))
+  //       : Buffer.from(value.toString());
+  //   } else if (isUndefined(value)) {
+  //     return null;
+  //   }
+  //   return Buffer.from(value);
+  // }
 }

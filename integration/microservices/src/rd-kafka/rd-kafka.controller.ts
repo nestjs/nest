@@ -7,7 +7,7 @@ import {
   OnModuleInit,
   Post,
 } from '@nestjs/common';
-import { Client, ClientKafka, Transport } from '@nestjs/microservices';
+import { Client, ClientRdKafka, Transport } from '@nestjs/microservices';
 import { lastValueFrom, Observable } from 'rxjs';
 import { BusinessDto } from './dtos/business.dto';
 import { UserDto } from './dtos/user.dto';
@@ -19,14 +19,14 @@ export class RdKafkaController implements OnModuleInit, OnModuleDestroy {
   static MATH_SUM = 0;
 
   @Client({
-    transport: Transport.KAFKA,
+    transport: Transport.RD_KAFKA,
     options: {
       client: {
-        brokers: ['localhost:9092'],
+        'metadata.broker.list': 'localhost:9092',
       },
     },
   })
-  private readonly client: ClientKafka;
+  private readonly client: ClientRdKafka;
 
   async onModuleInit() {
     const requestPatterns = [
@@ -41,7 +41,7 @@ export class RdKafkaController implements OnModuleInit, OnModuleDestroy {
     ];
 
     requestPatterns.forEach(pattern => {
-      this.client.subscribeToResponseOf(pattern);
+      // this.client.subscribeToResponseOf(pattern);
     });
 
     await this.client.connect();
