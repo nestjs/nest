@@ -10,7 +10,7 @@ import {
   ProducerConfig,
   ProducerRecord,
 } from '../external/kafka.interface';
-import { ConsumerGlobalConfig, GlobalConfig, ProducerGlobalConfig } from '../external/rd-kafka.interface';
+import { ConsumerGlobalConfig as RdKafkaConsumerConfig, GlobalConfig as RdKafkaClientConfig, ProducerGlobalConfig as RdKafkaProducerConfig } from '../external/rd-kafka.interface';
 import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
 import { IORedisOptions } from '../external/redis.interface';
 import {
@@ -265,9 +265,9 @@ export interface KafkaOptions {
 export interface RdKafkaOptions {
   transport?: Transport.RD_KAFKA;
   options?: {
-    client?: GlobalConfig;
-    consumer?: ConsumerGlobalConfig;
-    producer?: ProducerGlobalConfig;
+    client?: RdKafkaClientConfig;
+    consumer?: RdKafkaConsumerConfig;
+    producer?: RdKafkaProducerConfig;
     serializer?: Serializer;
     deserializer?: Deserializer;
     parser?: KafkaParserConfig;
