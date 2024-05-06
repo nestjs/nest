@@ -126,7 +126,7 @@ export class FastifyAdapter<
 
   private _isParserRegistered: boolean;
   private isMiddieRegistered: boolean;
-  private versioningOptions: VersioningOptions;
+  private versioningOptions?: VersioningOptions;
   private readonly versionConstraint = {
     name: 'version',
     validate(value: unknown) {
