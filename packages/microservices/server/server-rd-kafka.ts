@@ -9,7 +9,8 @@ import {
   NO_MESSAGE_HANDLER,
 } from '../constants';
 import { RdKafkaContext } from '../ctx-host';
-import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer';
+import { RdKafkaRequestSerializer } from '../serializers/rd-kafka-request.serializer';
+import { RdKafkaRequestDeserializer } from '../deserializers/rd-kafka-request.deserializer';
 import { KafkaHeaders, Transport } from '../enums';
 import { KafkaRetriableException } from '../exceptions';
 import {
@@ -19,16 +20,15 @@ import {
   ConsumerGlobalConfig,
   GlobalConfig,
   HighLevelProducer,
-  MessageHeader,
+  MessageHeader
 } from '../external/rd-kafka.interface';
-import { KafkaLogger, KafkaParser } from '../helpers';
+import { KafkaLogger, RdKafkaParser } from '../helpers';
 import {
   CustomTransportStrategy,
   RdKafkaOptions,
   OutgoingResponse,
   ReadPacket,
 } from '../interfaces';
-import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
 import { Server } from './server';
 
 let kafkaPackage: any = {};
@@ -41,7 +41,7 @@ export class ServerRdKafka extends Server implements CustomTransportStrategy {
   protected consumer: Consumer = null;
   protected producer: HighLevelProducer = null;
 
-  protected parser: KafkaParser = null;
+  protected parser: RdKafkaParser = null;
 
   protected brokers: string;
   protected clientId: string;
@@ -72,7 +72,7 @@ export class ServerRdKafka extends Server implements CustomTransportStrategy {
       require('@confluentinc/kafka-javascript'),
     );
 
-    this.parser = new KafkaParser((options && options.parser) || undefined);
+    this.parser = new RdKafkaParser((options && options.parser) || undefined);
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -253,7 +253,7 @@ export class ServerRdKafka extends Server implements CustomTransportStrategy {
   ): Promise<void> {
     const outgoingMessage = await this.serializer.serialize(outgoingResponse.response);
 
-    const headers: MessageHeader[] = [];
+    const headers: MessageHeader = {};
 
     this.assignCorrelationIdHeader(correlationId, headers);
     this.assignErrorHeader(outgoingResponse, headers);
@@ -261,35 +261,28 @@ export class ServerRdKafka extends Server implements CustomTransportStrategy {
 
     // TODO: figure out a better way, rather than using a promise
     return new Promise((resolve, reject) => {
-      this.producer.produce(replyTopic, replyPartition, outgoingMessage, null, null, headers, (err, offset) => {
+      this.producer.produce(replyTopic, replyPartition, outgoingMessage, null, null, [headers], (err, offset) => {
         if (err) {
           return reject(err);
         }
         return resolve();
       });
     });
-
-
-    // return this.producer.produce(replyMessage);
   }
 
   public assignIsDisposedHeader(
     outgoingResponse: OutgoingResponse,
-    headers: MessageHeader[],
+    headers: MessageHeader,
   ) {
     if (!outgoingResponse.isDisposed) {
       return;
     }
-    // TODO: I think the confluent headers signature is wrong but I don't know yet
-    // headers[KafkaHeaders.NEST_IS_DISPOSED] = Buffer.alloc(1);
-    headers.push({
-      [KafkaHeaders.NEST_IS_DISPOSED]: Buffer.alloc(1)
-    });
+    headers[KafkaHeaders.NEST_IS_DISPOSED] = Buffer.alloc(1);
   }
 
   public assignErrorHeader(
     outgoingResponse: OutgoingResponse,
-    headers: MessageHeader[],
+    headers: MessageHeader,
   ) {
     if (!outgoingResponse.err) {
       return;
@@ -299,20 +292,14 @@ export class ServerRdKafka extends Server implements CustomTransportStrategy {
         ? JSON.stringify(outgoingResponse.err)
         : outgoingResponse.err;
 
-    // headers[KafkaHeaders.NEST_ERR] = Buffer.from(stringifiedError);
-    headers.push({
-      [KafkaHeaders.NEST_ERR]: Buffer.from(stringifiedError)
-    });
+    headers[KafkaHeaders.NEST_ERR] = Buffer.from(stringifiedError);
   }
 
   public assignCorrelationIdHeader(
     correlationId: string,
-    headers: MessageHeader[],
+    headers: MessageHeader,
   ) {
-    // headers.push[KafkaHeaders.CORRELATION_ID] = Buffer.from(correlationId);
-    headers.push({
-      [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId)
-    });
+    headers[KafkaHeaders.CORRELATION_ID] = Buffer.from(correlationId);
   }
 
   public async handleEvent(
@@ -332,10 +319,10 @@ export class ServerRdKafka extends Server implements CustomTransportStrategy {
 
   protected initializeSerializer(options: RdKafkaOptions['options']) {
     this.serializer =
-      (options && options.serializer) || new KafkaRequestSerializer();
+      (options && options.serializer) || new RdKafkaRequestSerializer();
   }
 
   protected initializeDeserializer(options: RdKafkaOptions['options']) {
-    this.deserializer = options?.deserializer ?? new KafkaRequestDeserializer();
+    this.deserializer = options?.deserializer ?? new RdKafkaRequestDeserializer();
   }
 }

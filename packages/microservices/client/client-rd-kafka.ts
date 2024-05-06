@@ -6,7 +6,7 @@ import {
   KAFKA_DEFAULT_CLIENT,
   KAFKA_DEFAULT_GROUP,
 } from '../constants';
-import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deserializer';
+import { RdKafkaResponseDeserializer } from '../deserializers/rd-kafka-response.deserializer';
 import { KafkaHeaders } from '../enums';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
 import {
@@ -172,21 +172,28 @@ export class ClientRdKafka extends ClientProxy {
 
         // TODO: remove the following debug messages later
         // logging debug messages, if debug is enabled
-        this.producer.on('event.log', log => {
-          console.log(log);
+        this.producer.on('event.log', (log) => {
+          this.logger.debug(log);
         });
 
         //logging all errors
-        this.producer.on('event.error', err => {
-          console.error('Error from producer');
-          console.error(err);
+        this.producer.on('event.error', (err) => {
+          this.logger.error(err);
         });
 
         this.producer.on('delivery-report', (err, report) => {
-          console.log('delivery-report: ', report);
+          if (err) {
+            this.logger.error(err);
+          }
+          this.logger.debug(report);
         });
 
         await this.connectClient(this.producer);
+
+        // the high level producer sets the polling interval to 1000ms by default
+        // TODO: create constant for default polling interval
+        // TODO: get this to work, may need to write our own high level producer logic
+        this.producer.setPollInterval(100);
 
         resolve();
       } catch (err) {
@@ -272,16 +279,15 @@ export class ClientRdKafka extends ClientProxy {
     });
 
     return new Promise((resolve, reject) => {
-      // TODO: fix the headers
-      // this.producer.produce(pattern, null, outgoingEvent.value, outgoingEvent.key, null, outgoingEvent.headers, (err, offset) => { // this does not work either
-      // this.producer.produce(pattern, -1, outgoingEvent.value, outgoingEvent.key, null, null, (err, offset) => { // this does not work
-      // for some reason this following works? probably need to pass only buffers
       this.producer.produce(
         pattern,
-        -1,
-        Buffer.from(outgoingEvent.value),
-        outgoingEvent.key || null,
-        null,
+        // TODO: maybe add the ability for a user to set the partition through the serializer?
+        -1, // if partition is set to -1, librdkafka will use the default partitioner
+        outgoingEvent.value,
+        outgoingEvent.key,
+        // TODO: maybe add the ability for a user to set the timestamp through the serializer?
+        null, // null defaults to the functionality of librdkafka
+        outgoingEvent.headers,
         (err, offset) => {
           if (err) {
             return reject(err);
@@ -322,31 +328,26 @@ export class ClientRdKafka extends ClientProxy {
 
       Promise.resolve(this.serializer.serialize(packet.data, { pattern }))
         .then((serializedPacket: RdKafkaRequest) => {
-          const headers = [];
-          headers.push({
-            [KafkaHeaders.CORRELATION_ID]: packet.id,
+          serializedPacket.headers.push({
+            [KafkaHeaders.CORRELATION_ID]: packet.id
           });
-          headers.push({
-            [KafkaHeaders.REPLY_TOPIC]: replyTopic,
+          serializedPacket.headers.push({
+            [KafkaHeaders.REPLY_TOPIC]: replyTopic
           });
-          headers.push({
-            [KafkaHeaders.REPLY_PARTITION]: replyPartition,
+          serializedPacket.headers.push({
+            [KafkaHeaders.REPLY_PARTITION]: replyPartition
           });
-          // TODO: maybe the following is actually right
-          // headers[KafkaHeaders.CORRELATION_ID] = packet.id;
-          // headers[KafkaHeaders.REPLY_TOPIC] = replyTopic;
-          // headers[KafkaHeaders.REPLY_PARTITION] = replyPartition;
 
           // TODO: fix the serialized packet type either in the confluent lib or nestjs so user can pass their own headers
 
           return new Promise((resolve, reject) => {
             this.producer.produce(
               pattern,
-              null,
+              -1, // if partition is set to -1, librdkafka will use the default partitioner
               serializedPacket.value,
               serializedPacket.key,
-              null,
-              headers,
+              null, // null defaults to the functionality of librdkafka
+              serializedPacket.headers,
               (err, offset) => {
                 if (err) {
                   return reject(err);
@@ -390,7 +391,7 @@ export class ClientRdKafka extends ClientProxy {
 
   protected initializeDeserializer(options: RdKafkaOptions['options']) {
     this.deserializer =
-      (options && options.deserializer) || new KafkaResponseDeserializer();
+      (options && options.deserializer) || new RdKafkaResponseDeserializer();
   }
 
   // public commitOffsets(

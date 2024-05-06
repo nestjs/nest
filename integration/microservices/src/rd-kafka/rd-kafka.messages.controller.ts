@@ -1,5 +1,5 @@
 import { Controller, Logger } from '@nestjs/common';
-import { EventPattern, MessagePattern } from '@nestjs/microservices';
+import { Ctx, EventPattern, MessagePattern, Payload, RdKafkaContext } from '@nestjs/microservices';
 import { BusinessDto } from './dtos/business.dto';
 import { UserDto } from './dtos/user.dto';
 import { BusinessEntity } from './entities/business.entity';
@@ -10,6 +10,36 @@ import { RdKafkaController } from './rd-kafka.controller';
 export class RdKafkaMessagesController {
   protected readonly logger = new Logger(RdKafkaMessagesController.name);
   static IS_NOTIFIED = false;
+
+  @EventPattern('notify')
+  notify(data: any) {
+    // console.log('notify data', data);
+    RdKafkaController.IS_NOTIFIED = data.notify;
+  }
+
+  @EventPattern('notify.with.key')
+  notifyWithKey(@Payload() data: any, @Ctx() context: RdKafkaContext) {
+    // console.log('notifyWithKey data', data);
+    // console.log('notifyWithKey context', context);
+    RdKafkaController.IS_NOTIFIED_WITH_KEY = data.notify;
+  }
+
+  @EventPattern('notify.with.key.and.headers')
+  notifyWithKeyAndHeaders(@Payload() data: any, @Ctx() context: RdKafkaContext) {
+    // console.log('notifyWithKeyAndHeaders data', data);
+    // console.log('notifyWithKeyAndHeaders context', context);
+    // console.log('notifyWithKeyAndHeaders context message', context.getMessage());
+    RdKafkaController.IS_NOTIFIED_WITH_KEY_AND_HEADERS = data.notify;
+  }
+
+
+  @EventPattern('notify.with.key.and.many.headers')
+  notifyWithKeyAndManyHeaders(@Payload() data: any, @Ctx() context: RdKafkaContext) {
+    // console.log('notifyWithKeyAndHeaders data', data);
+    // console.log('notifyWithKeyAndHeaders context', context);
+    // console.log('notifyWithKeyAndHeaders context message', context.getMessage());
+    RdKafkaController.IS_NOTIFIED_WITH_KEY_AND_MANY_HEADERS = data.notify;
+  }
 
   @MessagePattern('math.sum.sync.kafka.message')
   mathSumSyncKafkaMessage(data: any) {
@@ -49,11 +79,6 @@ export class RdKafkaMessagesController {
         return parseFloat(i);
       })
       .reduce((a, b) => a + b);
-  }
-
-  @EventPattern('notify')
-  eventHandler(data: any) {
-    RdKafkaController.IS_NOTIFIED = data.notify;
   }
 
   // Complex data to send.

@@ -265,6 +265,10 @@ export interface KafkaOptions {
 export interface RdKafkaOptions {
   transport?: Transport.RD_KAFKA;
   options?: {
+    /**
+     * Client options provided in the consumer and producer configurations will be merged with these options.
+     * Consumer and producer configurations will take precedence over the client options.
+     */
     client?: RdKafkaClientConfig;
     consumer?: RdKafkaConsumerConfig;
     producer?: RdKafkaProducerConfig;

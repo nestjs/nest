@@ -16,6 +16,10 @@ import { UserDto } from './dtos/user.dto';
 export class RdKafkaController implements OnModuleInit, OnModuleDestroy {
   protected readonly logger = new Logger(RdKafkaController.name);
   static IS_NOTIFIED = false;
+  static IS_NOTIFIED_WITH_KEY = false;
+  static IS_NOTIFIED_WITH_KEY_AND_HEADERS = false;
+  static IS_NOTIFIED_WITH_KEY_AND_MANY_HEADERS = false;
+
   static MATH_SUM = 0;
 
   @Client({
@@ -49,6 +53,53 @@ export class RdKafkaController implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy() {
     await this.client.close();
+  }
+
+  // async notify
+  @Post('notify')
+  async sendNotification(): Promise<any> {
+    return this.client.emit('notify', { notify: true });
+  }
+
+  // async notify with key
+  @Post('notifyWithKey')
+  async sendNotificationWithKey(): Promise<any> {
+    return this.client.emit('notify.with.key', { 
+      key: 'unique-key',
+      value: {
+        notify: true
+      }
+    });
+  }
+
+  // async notify with key and headers
+  @Post('notifyWithKeyAndHeaders')
+  async sendNotificationWithKeyAndHeaders(): Promise<any> {
+    return this.client.emit('notify.with.key.and.headers', { 
+      key: 'unique-key-with-header',
+      headers: {
+        'custom': 'something'
+      },
+      value: {
+        notify: true
+      }
+    });
+  }
+
+  // async notify with key and headers
+  @Post('notifyWithKeyAndManyHeaders')
+  async sendNotificationWithKeyAndManyHeaders(): Promise<any> {
+    return this.client.emit('notify.with.key.and.many.headers', { 
+      key: 'unique-key-with-many-headers',
+      headers: {
+        'custom': 'something',
+        'custom2': 'something2',
+        'int': 123
+      },
+      value: {
+        notify: true
+      }
+    });
   }
 
   // sync send kafka message
@@ -125,12 +176,6 @@ export class RdKafkaController implements OnModuleInit, OnModuleDestroy {
       this.client.send('math.sum.sync.number', data[0]),
     );
     return result;
-  }
-
-  // async notify
-  @Post('notify')
-  async sendNotification(): Promise<any> {
-    return this.client.emit('notify', { notify: true });
   }
 
   // Complex data to send.

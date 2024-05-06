@@ -192,7 +192,7 @@ export abstract class Server {
             | TcpOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
-            | KafkaOptions['options']
+            | RdKafkaOptions['options']
         ).deserializer) ||
       new IncomingRequestDeserializer();
   }

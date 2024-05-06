@@ -38,6 +38,54 @@ describe('RdKafka transport', function () {
     await app.init();
   });
 
+  it(`/POST (async event notification)`, done => {
+    request(server)
+      .post('/notify')
+      .send()
+      .end(() => {
+        setTimeout(() => {
+          expect(RdKafkaController.IS_NOTIFIED).to.be.true;
+          done();
+        }, 1000);
+      });
+  });
+
+  it(`/POST (async event notification with key)`, done => {
+    request(server)
+      .post('/notifyWithKey')
+      .send()
+      .end(() => {
+        setTimeout(() => {
+          expect(RdKafkaController.IS_NOTIFIED_WITH_KEY).to.be.true;
+          done();
+        }, 1000);
+      });
+  });
+
+  it(`/POST (async event notification with key and headers)`, done => {
+    request(server)
+      .post('/notifyWithKeyAndHeaders')
+      .send()
+      .end(() => {
+        setTimeout(() => {
+          expect(RdKafkaController.IS_NOTIFIED_WITH_KEY_AND_HEADERS).to.be.true;
+          done();
+        }, 1000);
+      });
+  });
+
+  it(`/POST (async event notification with key and many headers)`, done => {
+    request(server)
+      .post('/notifyWithKeyAndManyHeaders')
+      .send()
+      .end(() => {
+        setTimeout(() => {
+          expect(RdKafkaController.IS_NOTIFIED_WITH_KEY_AND_MANY_HEADERS).to.be.true;
+          done();
+        }, 1000);
+      });
+  });
+
   // it(`/POST (sync sum kafka message)`, function () {
   //   return request(server)
   //     .post('/mathSumSyncKafkaMessage')
@@ -85,18 +133,6 @@ describe('RdKafka transport', function () {
   //     .expect(200)
   //     .expect(200, '15');
   // });
-
-  it(`/POST (async event notification)`, done => {
-    request(server)
-      .post('/notify')
-      .send()
-      .end(() => {
-        setTimeout(() => {
-          expect(RdKafkaController.IS_NOTIFIED).to.be.true;
-          done();
-        }, 1000);
-      });
-  });
 
   // const userDto: UserDto = {
   //   email: 'enriquebenavidesm@gmail.com',
