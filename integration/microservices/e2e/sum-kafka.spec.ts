@@ -13,7 +13,7 @@ import { KafkaMessagesController } from '../src/kafka/kafka.messages.controller'
  * Skip this flaky test in CI/CD pipeline as it frequently
  * fails to connect to Kafka container in the cloud.
  */
-describe.skip('Kafka transport', function () {
+describe('Kafka transport', function () {
   let server: any;
   let app: INestApplication;
 

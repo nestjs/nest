@@ -23,6 +23,7 @@ import {
   MqttOptions,
   MsPattern,
   NatsOptions,
+  RdKafkaOptions,
   ReadPacket,
   RedisOptions,
   RmqOptions,
@@ -175,6 +176,7 @@ export abstract class Server {
             | TcpOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
+            | RdKafkaOptions['options']
         ).serializer) ||
       new IdentitySerializer();
   }
@@ -190,6 +192,7 @@ export abstract class Server {
             | TcpOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
+            | RdKafkaOptions['options']
         ).deserializer) ||
       new IncomingRequestDeserializer();
   }

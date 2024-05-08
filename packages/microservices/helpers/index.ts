@@ -4,3 +4,4 @@ export * from './kafka-parser';
 export * from './kafka-reply-partition-assigner';
 export * from './tcp-socket';
 export * from './grpc-helpers';
+export * from './rd-kafka-parser';

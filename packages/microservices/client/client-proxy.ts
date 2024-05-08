@@ -21,6 +21,7 @@ import {
   MsPattern,
   NatsOptions,
   PacketId,
+  RdKafkaOptions,
   ReadPacket,
   RedisOptions,
   RmqOptions,
@@ -148,6 +149,7 @@ export abstract class ClientProxy {
             | TcpClientOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
+            | RdKafkaOptions['options']
         ).serializer) ||
       new IdentitySerializer();
   }
@@ -163,6 +165,7 @@ export abstract class ClientProxy {
             | TcpClientOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
+            | RdKafkaOptions['options']
         ).deserializer) ||
       new IncomingResponseDeserializer();
   }
