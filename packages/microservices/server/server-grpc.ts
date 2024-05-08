@@ -42,6 +42,9 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   emit: Function;
 }
 
+/**
+ * @publicApi
+ */
 export class ServerGrpc extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.GRPC;
 

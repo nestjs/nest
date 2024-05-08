@@ -26,6 +26,9 @@ import {
 import { TcpOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
+/**
+ * @publicApi
+ */
 export class ServerTCP extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.TCP;
 

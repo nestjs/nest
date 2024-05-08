@@ -1,3 +1,6 @@
+/**
+ * @publicApi
+ */
 export class BaseRpcContext<T = unknown[]> {
   constructor(protected readonly args: T) {}
 
