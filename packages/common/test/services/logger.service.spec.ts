@@ -539,6 +539,60 @@ describe('Logger', () => {
       });
     });
 
+    describe('when the default logger is used and global context is set and asJSON enabled', () => {
+      const globalContext = 'GlobalContext';
+
+      const logger = new ConsoleLogger(globalContext, { asJSON: true });
+
+      let processStdoutWriteSpy: sinon.SinonSpy;
+      let processStderrWriteSpy: sinon.SinonSpy;
+
+      beforeEach(() => {
+        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+        processStderrWriteSpy = sinon.spy(process.stderr, 'write');
+      });
+
+      afterEach(() => {
+        processStdoutWriteSpy.restore();
+        processStderrWriteSpy.restore();
+      });
+
+      it('should print error with stack as JSON to the console', () => {
+        const errorMessage = 'error message';
+        const error = new Error(errorMessage);
+
+        logger.error(error.message, error.stack);
+
+        const json = JSON.parse(processStderrWriteSpy.firstCall?.firstArg);
+
+        expect(json.logLevel).to.equal('error');
+        expect(json.context).to.equal(globalContext);
+        expect(json.message).to.equal(errorMessage);
+      });
+      it('should log out to stdout as JSON', () => {
+        const message = 'message 1';
+
+        logger.log(message);
+
+        const json = JSON.parse(processStdoutWriteSpy.firstCall?.firstArg);
+
+        expect(json.logLevel).to.equal('log');
+        expect(json.context).to.equal(globalContext);
+        expect(json.message).to.equal(message);
+      });
+      it('should log out an error to stderr as JSON', () => {
+        const message = 'message 1';
+
+        logger.error(message);
+
+        const json = JSON.parse(processStderrWriteSpy.firstCall?.firstArg);
+
+        expect(json.logLevel).to.equal('error');
+        expect(json.context).to.equal(globalContext);
+        expect(json.message).to.equal(message);
+      });
+    });
+
     describe('when logging is disabled', () => {
       const logger = new Logger();
 
