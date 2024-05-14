@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "10.3.2",
     "@nestjs/core": "10.3.2",
-    "@nestjs/platform-express": "10.3.2",
+    "@nestjs/platform-express": "10.3.8",
     "@nestjs/typeorm": "10.0.1",
     "mongodb": "6.3.0",
     "reflect-metadata": "0.2.1",
