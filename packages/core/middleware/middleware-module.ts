@@ -190,12 +190,14 @@ export class MiddlewareModule<
     for (const metatype of middlewareCollection) {
       const collection = middlewareContainer.getMiddlewareCollection(moduleKey);
       const instanceWrapper = collection.get(metatype);
+
       if (isUndefined(instanceWrapper)) {
         throw new RuntimeException();
       }
       if (instanceWrapper.isTransient) {
         return;
       }
+
       this.graphInspector.insertClassNode(
         moduleRef,
         instanceWrapper,
@@ -327,7 +329,11 @@ export class MiddlewareModule<
           }
           return next();
         };
-    paths.forEach(path => router(path, middlewareFunction));
+    const pathsToApplyMiddleware = [];
+    paths.some(path => path.match(/^\/?$/))
+      ? pathsToApplyMiddleware.push('/')
+      : pathsToApplyMiddleware.push(...paths);
+    pathsToApplyMiddleware.forEach(path => router(path, middlewareFunction));
   }
 
   private getContextId(request: unknown, isTreeDurable: boolean): ContextId {

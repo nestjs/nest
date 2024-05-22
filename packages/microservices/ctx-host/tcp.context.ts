@@ -3,6 +3,9 @@ import { BaseRpcContext } from './base-rpc.context';
 
 type TcpContextArgs = [TcpSocket, string];
 
+/**
+ * @publicApi
+ */
 export class TcpContext extends BaseRpcContext<TcpContextArgs> {
   constructor(args: TcpContextArgs) {
     super(args);

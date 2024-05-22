@@ -14,6 +14,20 @@ describe('ServerRMQ', () => {
   beforeEach(() => {
     server = new ServerRMQ({});
   });
+
+  describe('constructor', () => {
+    it(`should fallback to queueOptions.noAssert when 'noAssert' is undefined`, () => {
+      const queueOptions = {
+        noAssert: true,
+      };
+      const instance = new ServerRMQ({
+        queueOptions,
+      });
+
+      expect(instance).property('noAssert').to.eq(queueOptions.noAssert);
+    });
+  });
+
   describe('listen', () => {
     let createClient: sinon.SinonStub;
     let onStub: sinon.SinonStub;
@@ -110,6 +124,9 @@ describe('ServerRMQ', () => {
       sendMessageStub = sinon.stub(server, 'sendMessage').callsFake(() => ({}));
       (server as any).channel = channel;
     });
+    afterEach(() => {
+      channel.nack.resetHistory();
+    });
     it('should call "handleEvent" if identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
       await server.handleMessage(createMessage({ pattern: '', data: '' }), '');
@@ -149,6 +166,29 @@ describe('ServerRMQ', () => {
         assert.fail('Was not supposed to throw an error');
       });
     });
+    it('should negative acknowledge if message does not exists in handlers object and noAck option is false', async () => {
+      (server as any).noAck = false;
+      await server.handleMessage(msg, '');
+      expect(channel.nack.calledWith(msg, false, false)).to.be.true;
+      expect(
+        sendMessageStub.calledWith({
+          id: '3',
+          status: 'error',
+          err: NO_MESSAGE_HANDLER,
+        }),
+      ).to.be.true;
+    });
+    it('should not negative acknowledge if key does not exists in handlers object and noAck option is true', async () => {
+      await server.handleMessage(msg, '');
+      expect(channel.nack.notCalled).to.be.true;
+      expect(
+        sendMessageStub.calledWith({
+          id: '3',
+          status: 'error',
+          err: NO_MESSAGE_HANDLER,
+        }),
+      ).to.be.true;
+    });
   });
   describe('setupChannel', () => {
     const queue = 'test';
@@ -170,9 +210,17 @@ describe('ServerRMQ', () => {
         consume: sinon.spy(),
       };
     });
-    it('should call "assertQueue" with queue and queue options', async () => {
+    it('should call "assertQueue" with queue and queue options when noAssert is false', async () => {
+      server['noAssert' as any] = false;
+
       await server.setupChannel(channel, () => null);
       expect(channel.assertQueue.calledWith(queue, queueOptions)).to.be.true;
+    });
+    it('should not call "assertQueue" when noAssert is true', async () => {
+      server['noAssert' as any] = true;
+
+      await server.setupChannel(channel, () => null);
+      expect(channel.assertQueue.called).not.to.be.true;
     });
     it('should call "prefetch" with prefetchCount and "isGlobalPrefetchCount"', async () => {
       await server.setupChannel(channel, () => null);

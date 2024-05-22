@@ -343,7 +343,7 @@ export class ConsoleLogger implements LoggerService {
       return false;
     }
 
-    return /^(.)+\n\s+at .+:\d+:\d+$/.test(stack);
+    return /^(.)+\n\s+at .+:\d+:\d+/.test(stack);
   }
 
   private getColorByLogLevel(level: LogLevel) {

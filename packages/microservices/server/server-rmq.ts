@@ -18,6 +18,7 @@ import {
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
   RQM_NO_EVENT_HANDLER,
+  RQM_NO_MESSAGE_HANDLER,
 } from '../constants';
 import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
@@ -31,10 +32,13 @@ import {
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer';
 import { Server } from './server';
 
-let rqmPackage: any = {};
+let rmqPackage: any = {};
 
 const INFINITE_CONNECTION_ATTEMPTS = -1;
 
+/**
+ * @publicApi
+ */
 export class ServerRMQ extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.RMQ;
 
@@ -64,10 +68,12 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
       this.getOptionsProp(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
     this.noAssert =
-      this.getOptionsProp(this.options, 'noAssert') || RQM_DEFAULT_NO_ASSERT;
+      this.getOptionsProp(this.options, 'noAssert') ??
+      this.queueOptions.noAssert ??
+      RQM_DEFAULT_NO_ASSERT;
 
     this.loadPackage('amqplib', ServerRMQ.name, () => require('amqplib'));
-    rqmPackage = this.loadPackage(
+    rmqPackage = this.loadPackage(
       'amqp-connection-manager',
       ServerRMQ.name,
       () => require('amqp-connection-manager'),
@@ -136,15 +142,15 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
 
   public createClient<T = any>(): T {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    return rqmPackage.connect(this.urls, {
-      connectionOptions: socketOptions,
+    return rmqPackage.connect(this.urls, {
+      connectionOptions: socketOptions?.connectionOptions,
       heartbeatIntervalInSeconds: socketOptions?.heartbeatIntervalInSeconds,
       reconnectTimeInSeconds: socketOptions?.reconnectTimeInSeconds,
     });
   }
 
   public async setupChannel(channel: any, callback: Function) {
-    if (!this.queueOptions.noAssert) {
+    if (!this.noAssert) {
       await channel.assertQueue(this.queue, this.queueOptions);
     }
     await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
@@ -184,6 +190,10 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     const handler = this.getHandlerByPattern(pattern);
 
     if (!handler) {
+      if (!this.noAck) {
+        this.logger.warn(RQM_NO_MESSAGE_HANDLER`${pattern}`);
+        this.channel.nack(rmqContext.getMessage(), false, false);
+      }
       const status = 'error';
       const noHandlerPacket = {
         id: (packet as IncomingRequest).id,

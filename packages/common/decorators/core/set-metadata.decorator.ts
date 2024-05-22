@@ -15,7 +15,7 @@ export type CustomDecorator<TKey = string> = MethodDecorator &
  *
  * Example: `@SetMetadata('roles', ['admin'])`
  *
- * @see [Reflection](https://docs.nestjs.com/guards#reflection)
+ * @see [Reflection](https://docs.nestjs.com/fundamentals/execution-context#reflection-and-metadata)
  *
  * @publicApi
  */

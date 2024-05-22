@@ -14,7 +14,7 @@ import { isRouteExcluded } from '../router/utils';
 import { RoutePathFactory } from './../router/route-path-factory';
 
 export class RouteInfoPathExtractor {
-  private routePathFactory: RoutePathFactory;
+  private readonly routePathFactory: RoutePathFactory;
   private readonly prefixPath: string;
   private readonly excludedGlobalPrefixRoutes: ExcludeRouteMetadata[];
   private readonly versioningConfig?: VersioningOptions;
@@ -30,58 +30,87 @@ export class RouteInfoPathExtractor {
   }
 
   public extractPathsFrom({ path, method, version }: RouteInfo): string[] {
-    const versionPath = this.extractVersionPathFrom(version);
+    const versionPaths = this.extractVersionPathFrom(version);
 
     if (this.isAWildcard(path)) {
+      const entries =
+        versionPaths.length > 0
+          ? versionPaths
+              .map(versionPath => [
+                this.prefixPath + versionPath + '$',
+                this.prefixPath + versionPath + addLeadingSlash(path),
+              ])
+              .flat()
+          : this.prefixPath
+            ? [this.prefixPath + '$', this.prefixPath + addLeadingSlash(path)]
+            : [addLeadingSlash(path)];
+
       return Array.isArray(this.excludedGlobalPrefixRoutes)
         ? [
-            this.prefixPath + versionPath + addLeadingSlash(path),
+            ...entries,
             ...this.excludedGlobalPrefixRoutes.map(
-              route => versionPath + addLeadingSlash(route.path),
+              route => versionPaths + addLeadingSlash(route.path),
             ),
           ]
-        : [this.prefixPath + versionPath + addLeadingSlash(path)];
+        : entries;
     }
 
-    return [this.extractNonWildcardPathFrom({ path, method, version })];
+    return this.extractNonWildcardPathsFrom({ path, method, version });
   }
 
-  public extractPathFrom(route: RouteInfo): string {
+  public extractPathFrom(route: RouteInfo): string[] {
     if (this.isAWildcard(route.path) && !route.version) {
-      return addLeadingSlash(route.path);
+      return [addLeadingSlash(route.path)];
     }
 
-    return this.extractNonWildcardPathFrom(route);
+    return this.extractNonWildcardPathsFrom(route);
   }
 
   private isAWildcard(path: string): boolean {
     return ['*', '/*', '/*/', '(.*)', '/(.*)'].includes(path);
   }
 
-  private extractNonWildcardPathFrom({
+  private extractNonWildcardPathsFrom({
     path,
     method,
     version,
-  }: RouteInfo): string {
-    const versionPath = this.extractVersionPathFrom(version);
+  }: RouteInfo): string[] {
+    const versionPaths = this.extractVersionPathFrom(version);
 
     if (
       Array.isArray(this.excludedGlobalPrefixRoutes) &&
       isRouteExcluded(this.excludedGlobalPrefixRoutes, path, method)
     ) {
-      return versionPath + addLeadingSlash(path);
+      if (!versionPaths.length) {
+        return [addLeadingSlash(path)];
+      }
+
+      return versionPaths.map(
+        versionPath => versionPath + addLeadingSlash(path),
+      );
     }
 
-    return this.prefixPath + versionPath + addLeadingSlash(path);
+    if (!versionPaths.length) {
+      return [this.prefixPath + addLeadingSlash(path)];
+    }
+    return versionPaths.map(
+      versionPath => this.prefixPath + versionPath + addLeadingSlash(path),
+    );
   }
 
-  private extractVersionPathFrom(version?: VersionValue): string {
-    if (!version || this.versioningConfig?.type !== VersioningType.URI)
-      return '';
+  private extractVersionPathFrom(versionValue?: VersionValue): string[] {
+    if (!versionValue || this.versioningConfig?.type !== VersioningType.URI)
+      return [];
 
     const versionPrefix = this.routePathFactory.getVersionPrefix(
       this.versioningConfig,
     );
-    return addLeadingSlash(versionPrefix + version.toString());
+
+    if (Array.isArray(versionValue)) {
+      return versionValue.map(version =>
+        addLeadingSlash(versionPrefix + version.toString()),
+      );
+    }
+    return [addLeadingSlash(versionPrefix + versionValue.toString())];
   }
 }

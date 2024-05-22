@@ -66,6 +66,7 @@ export interface GrpcOptions {
     protoLoader?: string;
     packageDefinition?: any;
     gracefulShutdown?: boolean;
+    onLoadPackageDefinition?: (pkg: any, server: any) => void;
     loader?: {
       keepCase?: boolean;
       alternateCommentMode?: boolean;

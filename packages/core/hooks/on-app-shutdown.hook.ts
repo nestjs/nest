@@ -40,6 +40,7 @@ function callOperator(
  * (providers / controllers).
  *
  * @param module The module which will be initialized
+ * @param signal
  */
 export async function callAppShutdownHook(
   module: Module,

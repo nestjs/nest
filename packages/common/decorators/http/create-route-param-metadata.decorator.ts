@@ -12,6 +12,7 @@ export type ParamDecoratorEnhancer = ParameterDecorator;
  * Defines HTTP route param decorator
  *
  * @param factory
+ * @param enhancers
  *
  * @publicApi
  */

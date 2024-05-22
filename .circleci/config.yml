@@ -129,9 +129,6 @@ jobs:
       - run:
           name: Lint
           command: npm run lint
-      - run:
-          name: Lint commit
-          command: ./node_modules/.bin/commitlint-circle -c .commitlintrc.json
 
   integration_tests:
     working_directory: ~/nest

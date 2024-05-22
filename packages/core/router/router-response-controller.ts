@@ -17,7 +17,7 @@ import {
 
 export interface CustomHeader {
   name: string;
-  value: string;
+  value: string | (() => string);
 }
 
 export interface RedirectResponse {
@@ -84,7 +84,11 @@ export class RouterResponseController {
     headers: CustomHeader[],
   ) {
     headers.forEach(({ name, value }) =>
-      this.applicationRef.setHeader(response, name, value),
+      this.applicationRef.setHeader(
+        response,
+        name,
+        typeof value === 'function' ? value() : value,
+      ),
     );
   }
 

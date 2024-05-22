@@ -42,6 +42,9 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   emit: Function;
 }
 
+/**
+ * @publicApi
+ */
 export class ServerGrpc extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.GRPC;
 
@@ -198,6 +201,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
    *
    * @param methodHandler
    * @param protoNativeHandler
+   * @param streamType
    */
   public createServiceMethod(
     methodHandler: Function,
@@ -310,6 +314,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
           subscription.unsubscribe();
           resolve();
         } else if (shouldErrorAfterDraining) {
+          call.emit('error', error);
           subscription.unsubscribe();
           reject(error);
         }
@@ -334,6 +339,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
             if (valuesWaitingToBeDrained.length === 0) {
               // We're not waiting for a drain event, so we can just
               // reject and teardown.
+              call.emit('error', err);
               subscription.unsubscribe();
               reject(err);
             } else {
@@ -506,6 +512,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         this.options,
         grpcProtoLoaderPackage,
       );
+
+      if (this.options.onLoadPackageDefinition) {
+        this.options.onLoadPackageDefinition(
+          packageDefinition,
+          this.grpcClient,
+        );
+      }
+
       return grpcPackage.loadPackageDefinition(packageDefinition);
     } catch (err) {
       const invalidProtoError = new InvalidProtoDefinitionException(err.path);

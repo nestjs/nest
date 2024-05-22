@@ -96,4 +96,10 @@ export interface HttpsOptions {
    * the default callback with high-level API will be used.
    */
   SNICallback?: (servername: string, cb: (err: Error, ctx: any) => any) => any;
+  /**
+   * Optionally affect the OpenSSL protocol behavior, which is not usually necessary.
+   * This should be used carefully if at all! Value is a numeric bitmask of the SSL_OP_* options
+   * from OpenSSL Options.
+   */
+  secureOptions?: number;
 }

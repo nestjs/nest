@@ -20,6 +20,8 @@ export class RouteParamsFactory implements IRouteParamsFactory {
         return res as any;
       case RouteParamtypes.BODY:
         return data && req.body ? req.body[data] : req.body;
+      case RouteParamtypes.RAW_BODY:
+        return req.rawBody;
       case RouteParamtypes.PARAM:
         return data ? req.params[data] : req.params;
       case RouteParamtypes.HOST:

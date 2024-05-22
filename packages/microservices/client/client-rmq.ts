@@ -44,7 +44,7 @@ type ChannelWrapper = any;
 type ConsumeMessage = any;
 type AmqpConnectionManager = any;
 
-let rqmPackage: any = {};
+let rmqPackage: any = {};
 
 const REPLY_QUEUE = 'amq.rabbitmq.reply-to';
 
@@ -78,10 +78,12 @@ export class ClientRMQ extends ClientProxy {
     this.persistent =
       this.getOptionsProp(this.options, 'persistent') || RQM_DEFAULT_PERSISTENT;
     this.noAssert =
-      this.getOptionsProp(this.options, 'noAssert') || RQM_DEFAULT_NO_ASSERT;
+      this.getOptionsProp(this.options, 'noAssert') ??
+      this.queueOptions.noAssert ??
+      RQM_DEFAULT_NO_ASSERT;
 
     loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
-    rqmPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
+    rmqPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
       require('amqp-connection-manager'),
     );
 
@@ -133,8 +135,8 @@ export class ClientRMQ extends ClientProxy {
 
   public createClient(): AmqpConnectionManager {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    return rqmPackage.connect(this.urls, {
-      connectionOptions: socketOptions,
+    return rmqPackage.connect(this.urls, {
+      connectionOptions: socketOptions?.connectionOptions,
     });
   }
 
@@ -187,7 +189,7 @@ export class ClientRMQ extends ClientProxy {
       this.getOptionsProp(this.options, 'isGlobalPrefetchCount') ||
       RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
 
-    if (!this.queueOptions.noAssert) {
+    if (!this.noAssert) {
       await channel.assertQueue(this.queue, this.queueOptions);
     }
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);

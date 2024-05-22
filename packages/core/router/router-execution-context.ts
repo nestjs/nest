@@ -345,6 +345,7 @@ export class RouterExecutionContext {
   public isPipeable(type: number | string): boolean {
     return (
       type === RouteParamtypes.BODY ||
+      type === RouteParamtypes.RAW_BODY ||
       type === RouteParamtypes.QUERY ||
       type === RouteParamtypes.PARAM ||
       type === RouteParamtypes.FILE ||

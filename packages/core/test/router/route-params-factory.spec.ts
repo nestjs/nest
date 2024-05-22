@@ -13,6 +13,7 @@ describe('RouteParamsFactory', () => {
     const req = {
       ip: 'ip',
       session: null,
+      rawBody: Buffer.from('{"foo":"bar"}'),
       body: {
         foo: 'bar',
       },
@@ -65,6 +66,16 @@ describe('RouteParamsFactory', () => {
           expect(
             (factory as any).exchangeKeyForValue(RouteParamtypes.BODY, ...args),
           ).to.be.eql(req.body);
+        });
+      });
+      describe(`RouteParamtypes.RAW_BODY`, () => {
+        it('should return rawBody buffer', () => {
+          expect(
+            (factory as any).exchangeKeyForValue(
+              RouteParamtypes.RAW_BODY,
+              ...args,
+            ),
+          ).to.be.eql(req.rawBody);
         });
       });
       describe(`RouteParamtypes.HEADERS`, () => {

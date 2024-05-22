@@ -127,7 +127,7 @@ export class ClientNats extends ClientProxy {
       const packet = this.assignPacketId(partialPacket);
       const channel = this.normalizePattern(partialPacket.pattern);
       const serializedPacket: NatsRecord = this.serializer.serialize(packet);
-      const inbox = natsPackage.createInbox();
+      const inbox = natsPackage.createInbox(this.options.inboxPrefix);
 
       const subscriptionHandler = this.createSubscriptionHandler(
         packet,
