@@ -1,0 +1,81 @@
+version: "3.8"
+
+services:
+  pgdb-main-db:
+    image: postgres:14-bullseye
+    environment:
+      POSTGRES_DB: maindb
+      POSTGRES_USER: adminpostgres
+      POSTGRES_PASSWORD: adminpostgres
+    networks:
+      - network
+    ports:
+      - "34301:5432"
+
+
+  pgdb-client1-db:
+    image: postgres:14-bullseye
+    environment:
+      POSTGRES_DB: client1db
+      POSTGRES_USER: adminpostgres
+      POSTGRES_PASSWORD: adminpostgres
+    networks:
+      - network
+    ports:
+      - "34302:5432"
+
+
+  pgdb-client2-db:
+    image: postgres:14-bullseye
+    environment:
+      POSTGRES_DB: client2db
+      POSTGRES_USER: adminpostgres
+      POSTGRES_PASSWORD: adminpostgres
+    networks:
+      - network
+    ports:
+      - "34303:5432"
+
+
+
+  flyway-staging-maindb:
+    image: flyway/flyway:9.22.3-alpine
+    container_name: flyway-staging-maindb
+    command: -url=jdbc:postgresql://pgdb-main-db/maindb -user=adminpostgres -password=adminpostgres -connectRetries=60 -placeholderReplacement=true "-locations=filesystem:/flyway/migration" migrate
+    volumes:
+      - ./db/migration/maindb/:/flyway/migration
+    restart: on-failure
+    depends_on:
+      - pgdb-main-db
+    networks:
+      - network
+
+  flyway-staging-client1:
+    image: flyway/flyway:9.22.3-alpine
+    container_name: flyway-staging-client1
+    command: -url=jdbc:postgresql://pgdb-client1-db/client1db -user=adminpostgres -password=adminpostgres -connectRetries=60 -placeholderReplacement=true "-locations=filesystem:/flyway/migration" migrate
+    volumes:
+      - ./db/migration/remotedb/:/flyway/migration
+    restart: on-failure
+    depends_on:
+      - pgdb-client1-db
+    networks:
+      - network
+
+  flyway-staging-client2:
+    image: flyway/flyway:9.22.3-alpine
+    container_name: flyway-staging-client2
+    command: -url=jdbc:postgresql://pgdb-client2-db/client2db -user=adminpostgres -password=adminpostgres -connectRetries=60 -placeholderReplacement=true "-locations=filesystem:/flyway/migration" migrate
+    volumes:
+      - ./db/migration/remotedb/:/flyway/migration
+    restart: on-failure
+    depends_on:
+      - pgdb-client2-db
+    networks:
+      - network
+
+
+networks:
+  network:
+    driver: bridge
+
