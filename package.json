@@ -111,7 +111,7 @@
     "@typescript-eslint/parser": "7.9.0",
     "amqp-connection-manager": "4.1.14",
     "amqplib": "0.10.4",
-    "artillery": "2.0.12",
+    "artillery": "2.0.14",
     "body-parser": "1.20.2",
     "bytes": "3.1.2",
     "cache-manager": "5.5.2",
