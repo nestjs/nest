@@ -34,6 +34,7 @@ import {
   RequestGenericInterface,
   RouteOptions,
   RouteShorthandOptions,
+  HTTPMethods,
   fastify,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
@@ -57,7 +58,6 @@ import {
   FastifyStaticOptions,
   FastifyViewOptions,
 } from '../interfaces/external';
-import { RouterMethod } from '../interfaces/nest-fastify-router-method.interface';
 
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
@@ -685,7 +685,7 @@ export class FastifyAdapter<
     return rawRequest.originalUrl || rawRequest.url;
   }
 
-  private injectRouteOptions(routerMethodKey: RouterMethod, ...args: any[]) {
+  private injectRouteOptions(routerMethodKey: HTTPMethods, ...args: any[]) {
     const handlerRef = args[args.length - 1];
     const isVersioned =
       !isUndefined(handlerRef.version) &&
