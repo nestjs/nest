@@ -24,7 +24,7 @@
     "@nestjs/platform-express": "10.3.8",
     "@nestjs/typeorm": "10.0.1",
     "mysql2": "3.9.7",
-    "reflect-metadata": "0.2.1",
+    "reflect-metadata": "0.2.2",
     "rimraf": "5.0.5",
     "rxjs": "7.8.1",
     "typeorm": "0.3.20"
