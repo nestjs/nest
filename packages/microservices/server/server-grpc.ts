@@ -564,14 +564,19 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         ? deepDefinition.service !== false
         : false;
 
+      // grpc namespace object does not have 'format' or 'service' properties defined
+      const isFormatDefined =
+        deepDefinition && !isUndefined(deepDefinition.format);
+
       if (isServiceDefined && isServiceBoolean) {
         accumulator.push({
           name: nameExtended,
           service: deepDefinition,
         });
-      }
-      // Continue recursion until objects end or service definition found
-      else {
+      } else if (isFormatDefined) {
+        // Do nothing
+      } else {
+        // Continue recursion for namespace object until objects end or service definition found
         this.collectDeepServices(nameExtended, deepDefinition, accumulator);
       }
     }
