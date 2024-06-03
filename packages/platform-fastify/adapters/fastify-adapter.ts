@@ -32,11 +32,12 @@ import {
   RawServerBase,
   RawServerDefault,
   RequestGenericInterface,
+  RouteOptions,
+  RouteShorthandOptions,
   fastify,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
 import { kRouteContext } from 'fastify/lib/symbols';
-import { RouteShorthandMethod } from 'fastify/types/route';
 import * as http2 from 'http2';
 import * as https from 'https';
 import {
@@ -127,7 +128,7 @@ export class FastifyAdapter<
 
   private _isParserRegistered: boolean;
   private isMiddieRegistered: boolean;
-  private versioningOptions: VersioningOptions;
+  private versioningOptions?: VersioningOptions;
   private readonly versionConstraint = {
     name: 'version',
     validate(value: unknown) {
@@ -167,7 +168,7 @@ export class FastifyAdapter<
     },
     deriveConstraint: (req: FastifyRequest) => {
       // Media Type (Accept Header) Versioning Handler
-      if (this.versioningOptions.type === VersioningType.MEDIA_TYPE) {
+      if (this.versioningOptions?.type === VersioningType.MEDIA_TYPE) {
         const MEDIA_TYPE_HEADER = 'Accept';
         const acceptHeaderValue: string | undefined = (req.headers?.[
           MEDIA_TYPE_HEADER
@@ -182,7 +183,7 @@ export class FastifyAdapter<
           : acceptHeaderVersionParameter.split(this.versioningOptions.key)[1];
       }
       // Header Versioning Handler
-      else if (this.versioningOptions.type === VersioningType.HEADER) {
+      else if (this.versioningOptions?.type === VersioningType.HEADER) {
         const customHeaderVersionParameter: string | string[] | undefined =
           req.headers?.[this.versioningOptions.header] ||
           req.headers?.[this.versioningOptions.header.toLowerCase()];
@@ -192,7 +193,7 @@ export class FastifyAdapter<
           : customHeaderVersionParameter;
       }
       // Custom Versioning Handler
-      else if (this.versioningOptions.type === VersioningType.CUSTOM) {
+      else if (this.versioningOptions?.type === VersioningType.CUSTOM) {
         return this.versioningOptions.extractor(req);
       }
       return undefined;
@@ -702,6 +703,13 @@ export class FastifyAdapter<
     const hasConfig = !isUndefined(routeConfig);
     const hasConstraints = !isUndefined(routeConstraints);
 
+    const routeToInject: RouteOptions<TServer, TRawRequest, TRawResponse> &
+      RouteShorthandOptions = {
+      method: routerMethodKey,
+      url: args[0],
+      handler: handlerRef,
+    };
+
     if (isVersioned || hasConstraints || hasConfig) {
       const isPathAndRouteTuple = args.length === 2;
       if (isPathAndRouteTuple) {
@@ -720,15 +728,12 @@ export class FastifyAdapter<
             },
           }),
         };
-        const path = args[0];
-        return this.instance[routerMethodKey](path, options, handlerRef);
+
+        const routeToInjectWithOptions = { ...routeToInject, ...options };
+
+        return this.instance.route(routeToInjectWithOptions);
       }
     }
-
-    return this.instance[routerMethodKey](
-      ...(args as Parameters<
-        RouteShorthandMethod<TServer, TRawRequest, TRawResponse>
-      >),
-    );
+    return this.instance.route(routeToInject);
   }
 }

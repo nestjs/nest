@@ -34,7 +34,7 @@ describe('Injector', () => {
 
       constructor(
         public one: DependencyOne,
-        public two: DependencyTwo,
+        @Inject() public two: DependencyTwo,
       ) {}
     }
 

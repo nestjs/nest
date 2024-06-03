@@ -2,6 +2,9 @@ import { BaseRpcContext } from './base-rpc.context';
 
 type MqttContextArgs = [string, Record<string, any>];
 
+/**
+ * @publicApi
+ */
 export class MqttContext extends BaseRpcContext<MqttContextArgs> {
   constructor(args: MqttContextArgs) {
     super(args);

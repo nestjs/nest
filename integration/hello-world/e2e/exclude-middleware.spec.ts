@@ -45,6 +45,11 @@ class TestController {
   overviewById() {
     return RETURN_VALUE;
   }
+
+  @Get('multiple/exclude')
+  multipleExclude() {
+    return RETURN_VALUE;
+  }
 }
 
 @Module({
@@ -59,6 +64,7 @@ class TestModule {
         path: 'middleware',
         method: RequestMethod.POST,
       })
+      .exclude('multiple/exclude')
       .forRoutes('*');
   }
 }
@@ -107,6 +113,12 @@ describe('Exclude middleware', () => {
   it(`should exclude "/wildcard/overview" endpoint (by wildcard)`, () => {
     return request(app.getHttpServer())
       .get('/wildcard/overview')
+      .expect(200, RETURN_VALUE);
+  });
+
+  it(`should exclude "/multiple/exclude" endpoint`, () => {
+    return request(app.getHttpServer())
+      .get('/multiple/exclude')
       .expect(200, RETURN_VALUE);
   });
 

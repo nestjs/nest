@@ -19,6 +19,9 @@ type Redis = any;
 
 let redisPackage = {} as any;
 
+/**
+ * @publicApi
+ */
 export class ServerRedis extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.REDIS;
 

@@ -116,7 +116,7 @@ export class SseStream extends Transform {
       message.id = this.lastEventId.toString();
     }
 
-    if (!this.write(message, 'utf-8', cb)) {
+    if (!this.write(message, 'utf-8')) {
       this.once('drain', cb);
     } else {
       process.nextTick(cb);

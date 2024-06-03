@@ -1,3 +1,6 @@
+/**
+ * @publicApi
+ */
 export interface MqttRecordOptions {
   /**
    * The QoS
@@ -26,6 +29,9 @@ export interface MqttRecordOptions {
   };
 }
 
+/**
+ * @publicApi
+ */
 export class MqttRecord<TData = any> {
   constructor(
     public readonly data: TData,
@@ -33,6 +39,9 @@ export class MqttRecord<TData = any> {
   ) {}
 }
 
+/**
+ * @publicApi
+ */
 export class MqttRecordBuilder<TData> {
   private options?: MqttRecordOptions;
 

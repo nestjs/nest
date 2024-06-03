@@ -2,6 +2,9 @@ import { BaseRpcContext } from './base-rpc.context';
 
 type RmqContextArgs = [Record<string, any>, any, string];
 
+/**
+ * @publicApi
+ */
 export class RmqContext extends BaseRpcContext<RmqContextArgs> {
   constructor(args: RmqContextArgs) {
     super(args);

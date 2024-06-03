@@ -2,6 +2,9 @@ import { BaseRpcContext } from './base-rpc.context';
 
 type NatsContextArgs = [string, any];
 
+/**
+ * @publicApi
+ */
 export class NatsContext extends BaseRpcContext<NatsContextArgs> {
   constructor(args: NatsContextArgs) {
     super(args);

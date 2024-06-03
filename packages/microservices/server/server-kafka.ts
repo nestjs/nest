@@ -36,6 +36,9 @@ import { Server } from './server';
 
 let kafkaPackage: any = {};
 
+/**
+ * @publicApi
+ */
 export class ServerKafka extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.KAFKA;
 

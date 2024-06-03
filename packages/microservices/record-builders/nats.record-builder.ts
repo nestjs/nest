@@ -1,3 +1,6 @@
+/**
+ * @publicApi
+ */
 export class NatsRecord<TData = any, THeaders = any> {
   constructor(
     public readonly data: TData,
@@ -5,6 +8,9 @@ export class NatsRecord<TData = any, THeaders = any> {
   ) {}
 }
 
+/**
+ * @publicApi
+ */
 export class NatsRecordBuilder<TData> {
   private headers?: any;
 

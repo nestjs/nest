@@ -1,4 +1,5 @@
 import {
+  PARAMTYPES_METADATA,
   PROPERTY_DEPS_METADATA,
   SELF_DECLARED_DEPS_METADATA,
 } from '../../constants';
@@ -36,8 +37,14 @@ import { isUndefined } from '../../utils/shared.utils';
 export function Inject<T = any>(
   token?: T,
 ): PropertyDecorator & ParameterDecorator {
+  const injectCallHasArguments = arguments.length > 0;
+
   return (target: object, key: string | symbol | undefined, index?: number) => {
-    const type = token || Reflect.getMetadata('design:type', target, key);
+    let type = token || Reflect.getMetadata('design:type', target, key);
+    // Try to infer the token in a constructor-based injection
+    if (!type && !injectCallHasArguments) {
+      type = Reflect.getMetadata(PARAMTYPES_METADATA, target, key)?.[index];
+    }
 
     if (!isUndefined(index)) {
       let dependencies =

@@ -86,7 +86,7 @@ describe('InterceptorsConsumer', () => {
     });
 
     describe('when AsyncLocalStorage is used', () => {
-      it('should allow an interceptor to set values in AsyncLocalStorage that are accesible from the controller', async () => {
+      it('should allow an interceptor to set values in AsyncLocalStorage that are accessible from the controller', async () => {
         const storage = new AsyncLocalStorage<Record<string, any>>();
         class StorageInterceptor implements NestInterceptor {
           intercept(

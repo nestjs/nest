@@ -26,6 +26,9 @@ import { Server } from './server';
 
 let mqttPackage: any = {};
 
+/**
+ * @publicApi
+ */
 export class ServerMqtt extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.MQTT;
 

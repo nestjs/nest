@@ -36,6 +36,9 @@ let rmqPackage: any = {};
 
 const INFINITE_CONNECTION_ATTEMPTS = -1;
 
+/**
+ * @publicApi
+ */
 export class ServerRMQ extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.RMQ;
 
