@@ -4,10 +4,14 @@ import { INestApplication } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { fail } from 'assert';
-import { expect } from 'chai';
+import { expect, use } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
 import { join } from 'path';
+import * as sinon from 'sinon';
 import * as request from 'supertest';
 import { GrpcController } from '../src/grpc/grpc.controller';
+
+use(chaiAsPromised);
 
 describe('GRPC transport', () => {
   let server;
@@ -32,6 +36,7 @@ describe('GRPC transport', () => {
         ],
       },
     });
+
     // Start gRPC microservice
     await app.startAllMicroservices();
     await app.init();
@@ -147,6 +152,50 @@ describe('GRPC transport', () => {
     });
 
     expect(receivedIds).to.deep.equal(expectedIds);
+  });
+
+  describe('streaming calls that error', () => {
+    // We want to assert that the application does not crash when an error is encountered with an unhandledRejection
+    // the best way to do that is to listen for the unhandledRejection event and fail the test if it is called
+    let processSpy: sinon.SinonSpy;
+
+    beforeEach(() => {
+      processSpy = sinon.spy();
+      process.on('unhandledRejection', processSpy);
+    });
+
+    afterEach(() => {
+      process.off('unhandledRejection', processSpy);
+    });
+
+    it('should not crash when replying with an error', async () => {
+      const call = new Promise<void>((resolve, reject) => {
+        const stream = client.streamDivide({
+          data: [{ dividend: 1, divisor: 0 }],
+        });
+
+        stream.on('data', () => {
+          fail('Stream should not have emitted any data');
+        });
+
+        stream.on('error', err => {
+          if (err.code !== GRPC.status.CANCELLED) {
+            reject(err);
+          }
+        });
+
+        stream.on('end', () => {
+          resolve();
+        });
+      });
+
+      await expect(call).to.eventually.be.rejectedWith(
+        '3 INVALID_ARGUMENT: dividing by 0 is not possible',
+      );
+
+      // if this fails the application has crashed
+      expect(processSpy.called).to.be.false;
+    });
   });
 
   after(async () => {

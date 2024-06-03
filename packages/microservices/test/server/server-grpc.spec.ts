@@ -388,6 +388,7 @@ describe('ServerGrpc', () => {
       const fn = server.createStreamServiceMethod(sinon.spy());
       expect(fn).to.be.a('function');
     });
+
     describe('on call', () => {
       it('should call native method', async () => {
         const call = {
@@ -403,6 +404,26 @@ describe('ServerGrpc', () => {
         expect(native.called).to.be.true;
         expect(call.on.calledWith('cancelled')).to.be.true;
         expect(call.off.calledWith('cancelled')).to.be.true;
+      });
+
+      it('should handle error thrown in handler', async () => {
+        const call = {
+          write: sinon.spy(() => true),
+          end: sinon.spy(),
+          on: sinon.spy(),
+          off: sinon.spy(),
+          emit: sinon.spy(),
+        };
+
+        const callback = sinon.spy();
+        const error = new Error('handler threw');
+        const native = sinon.spy(() => throwError(() => error));
+
+        // implicit assertion that this will never throw when call.emit emits an error event
+        await server.createStreamServiceMethod(native)(call, callback);
+        expect(native.called).to.be.true;
+        expect(call.emit.calledWith('error', error)).to.be.ok;
+        expect(call.end.called).to.be.true;
       });
 
       it(`should close the result observable when receiving an 'cancelled' event from the client`, async () => {
