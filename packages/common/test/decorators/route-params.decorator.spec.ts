@@ -9,9 +9,9 @@ import {
   Patch,
   Post,
   Put,
-  PropFind,
-  PropPatch,
-  MkCol,
+  Propfind,
+  Proppatch,
+  Mkcol,
   Move,
   Copy,
   Lock,
@@ -446,10 +446,10 @@ describe('@PropFind', () => {
 
   it('should enhance class with expected request metadata', () => {
     class Test {
-      @PropFind(requestPath)
+      @Propfind(requestPath)
       public static test() {}
 
-      @PropFind(requestPathUsingArray)
+      @Propfind(requestPathUsingArray)
       public static testUsingArray() {}
     }
 
@@ -466,14 +466,14 @@ describe('@PropFind', () => {
 
   it('should set path on "/" by default', () => {
     class Test {
-      @PropFind()
+      @Propfind()
       public static test(
         @Query() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
-      @PropFind([])
+      @Propfind([])
       public static testUsingArray(
         @Query() query,
         @Param() params,
@@ -504,10 +504,10 @@ describe('@PropPatch', () => {
 
   it('should enhance class with expected request metadata', () => {
     class Test {
-      @PropPatch(requestPath)
+      @Proppatch(requestPath)
       public static test() {}
 
-      @PropPatch(requestPathUsingArray)
+      @Proppatch(requestPathUsingArray)
       public static testUsingArray() {}
     }
 
@@ -524,14 +524,14 @@ describe('@PropPatch', () => {
 
   it('should set path on "/" by default', () => {
     class Test {
-      @PropPatch()
+      @Proppatch()
       public static test(
         @Query() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
-      @PropPatch([])
+      @Proppatch([])
       public static testUsingArray(
         @Query() query,
         @Param() params,
@@ -562,10 +562,10 @@ describe('@MkCol', () => {
 
   it('should enhance class with expected request metadata', () => {
     class Test {
-      @MkCol(requestPath)
+      @Mkcol(requestPath)
       public static test() {}
 
-      @MkCol(requestPathUsingArray)
+      @Mkcol(requestPathUsingArray)
       public static testUsingArray() {}
     }
 
@@ -582,14 +582,14 @@ describe('@MkCol', () => {
 
   it('should set path on "/" by default', () => {
     class Test {
-      @MkCol()
+      @Mkcol()
       public static test(
         @Query() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
-      @MkCol([])
+      @Mkcol([])
       public static testUsingArray(
         @Query() query,
         @Param() params,

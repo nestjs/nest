@@ -126,7 +126,7 @@ export const Search = createMappingDecorator(RequestMethod.SEARCH);
  *
  * @publicApi
  */
-export const PropFind = createMappingDecorator(RequestMethod.PROPFIND);
+export const Propfind = createMappingDecorator(RequestMethod.PROPFIND);
 
 /**
  * Route handler (method) Decorator. Routes Webdav PROPPATCH requests to the specified path.
@@ -135,7 +135,7 @@ export const PropFind = createMappingDecorator(RequestMethod.PROPFIND);
  *
  * @publicApi
  */
-export const PropPatch = createMappingDecorator(RequestMethod.PROPPATCH);
+export const Proppatch = createMappingDecorator(RequestMethod.PROPPATCH);
 
 /**
  * Route handler (method) Decorator. Routes Webdav MKCOL requests to the specified path.
@@ -144,7 +144,7 @@ export const PropPatch = createMappingDecorator(RequestMethod.PROPPATCH);
  *
  * @publicApi
  */
-export const MkCol = createMappingDecorator(RequestMethod.MKCOL);
+export const Mkcol = createMappingDecorator(RequestMethod.MKCOL);
 
 /**
  * Route handler (method) Decorator. Routes Webdav COPY requests to the specified path.
