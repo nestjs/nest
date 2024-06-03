@@ -15,7 +15,7 @@ import { isNil, isString } from '../utils/shared.utils';
  * @publicApi
  */
 export interface ParseUUIDPipeOptions {
-  version?: '3' | '4' | '5';
+  version?: '3' | '4' | '5' | '7';
   errorHttpStatusCode?: ErrorHttpStatusCode;
   exceptionFactory?: (errors: string) => any;
   optional?: boolean;
@@ -34,9 +34,10 @@ export class ParseUUIDPipe implements PipeTransform<string> {
     3: /^[0-9A-F]{8}-[0-9A-F]{4}-3[0-9A-F]{3}-[0-9A-F]{4}-[0-9A-F]{12}$/i,
     4: /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
     5: /^[0-9A-F]{8}-[0-9A-F]{4}-5[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
+    7: /^[0-9A-F]{8}-[0-9A-F]{4}-7[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
     all: /^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i,
   };
-  private readonly version: '3' | '4' | '5';
+  private readonly version: '3' | '4' | '5' | '7';
   protected exceptionFactory: (errors: string) => any;
 
   constructor(@Optional() protected readonly options?: ParseUUIDPipeOptions) {
