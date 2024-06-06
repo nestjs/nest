@@ -210,6 +210,16 @@ describe('NestContainer', () => {
         expect(addModuleSpy.called).to.be.true;
       });
     });
+    describe('when array is readonly', () => {
+      it('should call "addModule"', () => {
+        const addModuleSpy = sinon.spy(container, 'addModule');
+
+        const readonlyModules: ReadonlyArray<any> = Object.freeze([Test]);
+        container.addDynamicModules(readonlyModules, []);
+
+        expect(addModuleSpy.called).to.be.true;
+      });
+    });
   });
 
   describe('get applicationConfig', () => {

@@ -173,7 +173,10 @@ export class NestContainer {
     await this.addDynamicModules(imports, scope);
   }
 
-  public async addDynamicModules(modules: any[], scope: Type<any>[]) {
+  public async addDynamicModules(
+    modules: ReadonlyArray<any>,
+    scope: Type<any>[],
+  ) {
     if (!modules) {
       return;
     }
