@@ -61,6 +61,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <tr>
 <td><a href="https://trilon.io" target="_blank"><img src="https://nestjs.com/img/trilon.svg" width="200" valign="middle" /></a></td>
 <td><a href="https://mojam.co" target="_blank"><img src="https://nestjs.com/img/logos/mojam-logo.png" width="80" valign="middle" /></a></td>
+<td><a href="https://marblism.com?utm_source=mui" target="_blank"><img src="https://nestjs.com/img/logos/marblism-logo.png" width="180" valign="middle" /></a></td>
 <td><a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td>
 <td><a href="https://amplication.com/" target="_blank"><img src="https://nestjs.com/img/logos/amplication-logo.svg" width="190" valign="middle" /></a></td>
 </tr>
@@ -91,6 +92,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <tr>
 <td><a href="https://n.inc" target="_blank"><img src="https://nestjs.com/img/logos/n-inc-logo.svg" width="120" valign="middle" /></a></td>
 <td><a href="https://twistag.com/" target="_blank"><img src="https://nestjs.com/img/logos/twistag-logo.png" width="120" valign="middle" /></a></td>
+  <td><a href="https://www.dinii.jp/" target="_blank"><img src="https://nestjs.com/img/logos/dinii-logo.png" width="75" valign="middle" /></a></td>
 </tr>
 </table>
 
