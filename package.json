@@ -75,7 +75,7 @@
     "socket.io": "4.7.5",
     "tslib": "2.6.3",
     "uid": "2.0.2",
-    "uuid": "9.0.1"
+    "uuid": "10.0.0"
   },
   "devDependencies": {
     "@apollo/server": "4.10.4",
