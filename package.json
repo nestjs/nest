@@ -133,7 +133,7 @@
     "fastify": "4.27.0",
     "graphql": "16.8.1",
     "graphql-tools": "9.0.1",
-    "gulp": "4.0.2",
+    "gulp": "5.0.0",
     "gulp-clang-format": "1.0.27",
     "gulp-clean": "0.4.0",
     "gulp-sourcemaps": "3.0.0",
