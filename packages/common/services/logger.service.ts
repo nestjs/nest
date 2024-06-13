@@ -129,6 +129,11 @@ export class Logger implements LoggerService {
   error(message: any, ...optionalParams: [...any, string?, string?]): void;
   @Logger.WrapBuffer
   error(message: any, ...optionalParams: any[]) {
+    if (message instanceof Error) {
+      this.localInstance.error(message);
+      return;
+    }
+
     optionalParams = this.context
       ? (optionalParams.length ? optionalParams : [undefined]).concat(
           this.context,
