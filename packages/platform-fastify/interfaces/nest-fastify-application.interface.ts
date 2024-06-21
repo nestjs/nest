@@ -1,4 +1,5 @@
-import { INestApplication, HttpServer } from '@nestjs/common';
+import { FastifyCorsOptions } from '@fastify/cors';
+import { HttpServer, INestApplication } from '@nestjs/common';
 import {
   FastifyBodyParser,
   FastifyInstance,
@@ -6,14 +7,14 @@ import {
   FastifyPluginCallback,
   FastifyPluginOptions,
   FastifyRegisterOptions,
-  FastifyRequest,
   FastifyReply,
+  FastifyRequest,
   RawServerBase,
   RawServerDefault,
 } from 'fastify';
 import {
-  Chain as LightMyRequestChain,
   InjectOptions,
+  Chain as LightMyRequestChain,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { FastifyStaticOptions, FastifyViewOptions } from './external';
@@ -73,6 +74,13 @@ export interface NestFastifyApplication<
    * @returns {this}
    */
   useStaticAssets(options: FastifyStaticOptions): this;
+
+  /**
+   * Enables CORS (Cross-Origin Resource Sharing)
+   *
+   * @returns {void}
+   */
+  enableCors(options?: FastifyCorsOptions): void;
 
   /**
    * Sets a view engine for templates (views), for example: `pug`, `handlebars`, or `ejs`.

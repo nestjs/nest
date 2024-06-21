@@ -1,7 +1,11 @@
-import { INestApplication, HttpServer } from '@nestjs/common';
+import { HttpServer, INestApplication } from '@nestjs/common';
+import type {
+  CorsOptions,
+  CorsOptionsDelegate,
+} from '@nestjs/common/interfaces/external/cors-options.interface';
+import type { Express } from 'express';
 import type { Server as CoreHttpServer } from 'http';
 import type { Server as CoreHttpsServer } from 'https';
-import type { Express } from 'express';
 import { NestExpressBodyParserOptions } from './nest-express-body-parser-options.interface';
 import { NestExpressBodyParserType } from './nest-express-body-parser.interface';
 import { ServeStaticOptions } from './serve-static-options.interface';
@@ -85,6 +89,8 @@ export interface NestExpressApplication<
    * @returns {this}
    */
   useStaticAssets(path: string, options?: ServeStaticOptions): this;
+
+  enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void;
 
   /**
    * Register Express body parsers on the fly. Will respect
