@@ -131,7 +131,7 @@
     "eventsource": "2.0.2",
     "fancy-log": "2.0.0",
     "fastify": "4.28.0",
-    "graphql": "16.8.2",
+    "graphql": "16.9.0",
     "graphql-tools": "9.0.1",
     "gulp": "4.0.2",
     "gulp-clang-format": "1.0.27",
