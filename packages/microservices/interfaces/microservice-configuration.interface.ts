@@ -106,8 +106,8 @@ export interface TcpOptions {
  */
 export interface LocalDomainOptions {
   transport?: Transport.LOCAL_DOMAIN;
-  options: {
-    path: string;
+  options?: {
+    path?: string;
     retryAttempts?: number;
     retryDelay?: number;
     serializer?: Serializer;

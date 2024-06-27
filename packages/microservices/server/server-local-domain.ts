@@ -7,6 +7,8 @@ import {
   EADDRINUSE,
   ECONNREFUSED,
   ERROR_EVENT,
+  LOCAL_DOMAIN_DEFAULT_PATH,
+  LOCAL_DOMAIN_DEFAULT_PATH_WIN32,
   MESSAGE_EVENT,
   NO_MESSAGE_HANDLER,
 } from '../constants';
@@ -41,7 +43,11 @@ export class ServerLocalDomain
 
   constructor(private readonly options: LocalDomainOptions['options']) {
     super();
-    this.path = this.getOptionsProp(options, 'path');
+    this.path =
+      this.getOptionsProp(options, 'path') ||
+      (process.platform === 'win32'
+        ? LOCAL_DOMAIN_DEFAULT_PATH_WIN32
+        : LOCAL_DOMAIN_DEFAULT_PATH);
     this.socketClass =
       this.getOptionsProp(options, 'socketClass') || JsonLocalDomainSocket;
 

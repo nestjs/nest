@@ -3,6 +3,11 @@ import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 export const TCP_DEFAULT_PORT = 3000;
 export const TCP_DEFAULT_HOST = 'localhost';
 
+export const LOCAL_DOMAIN_DEFAULT_PATH_WIN32 =
+  '\\\\.\\pipe\\nestjs-microservices-default-local-domain-pipe';
+export const LOCAL_DOMAIN_DEFAULT_PATH =
+  '\0nestjs-microservices-default-local-domain-pipe';
+
 export const REDIS_DEFAULT_PORT = 6379;
 export const REDIS_DEFAULT_HOST = 'localhost';
 

@@ -52,8 +52,8 @@ export interface TcpClientOptions {
  */
 export interface LocalDomainClientOptions {
   transport: Transport.LOCAL_DOMAIN;
-  options: {
-    path: string;
+  options?: {
+    path?: string;
     serializer?: Serializer;
     deserializer?: Deserializer;
     socketClass?: Type<LocalDomainSocket>;

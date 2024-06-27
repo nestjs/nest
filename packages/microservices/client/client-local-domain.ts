@@ -6,6 +6,8 @@ import {
   CLOSE_EVENT,
   ECONNREFUSED,
   ERROR_EVENT,
+  LOCAL_DOMAIN_DEFAULT_PATH,
+  LOCAL_DOMAIN_DEFAULT_PATH_WIN32,
   MESSAGE_EVENT,
 } from '../constants';
 import { JsonLocalDomainSocket, LocalDomainSocket } from '../helpers';
@@ -26,7 +28,11 @@ export class ClientLocalDomain extends ClientProxy {
 
   constructor(options: LocalDomainClientOptions['options']) {
     super();
-    this.path = this.getOptionsProp(options, 'path');
+    this.path =
+      this.getOptionsProp(options, 'path') ||
+      (process.platform === 'win32'
+        ? LOCAL_DOMAIN_DEFAULT_PATH_WIN32
+        : LOCAL_DOMAIN_DEFAULT_PATH);
     this.socketClass =
       this.getOptionsProp(options, 'socketClass') || JsonLocalDomainSocket;
 
