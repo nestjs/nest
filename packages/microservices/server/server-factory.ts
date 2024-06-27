@@ -7,6 +7,7 @@ import { ServerMqtt } from './server-mqtt';
 import { ServerNats } from './server-nats';
 import { ServerRedis } from './server-redis';
 import { ServerTCP } from './server-tcp';
+import { ServerLocalDomain } from './server-local-domain';
 import { ServerRMQ } from './server-rmq';
 
 export class ServerFactory {
@@ -27,6 +28,8 @@ export class ServerFactory {
         return new ServerKafka(options);
       case Transport.RMQ:
         return new ServerRMQ(options);
+      case Transport.LOCAL_DOMAIN:
+        return new ServerLocalDomain(options);
       default:
         return new ServerTCP(options);
     }

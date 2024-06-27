@@ -27,6 +27,7 @@ import {
   RedisOptions,
   RmqOptions,
   TcpOptions,
+  LocalDomainOptions,
   WritePacket,
 } from '../interfaces';
 import { ConsumerDeserializer } from '../interfaces/deserializer.interface';
@@ -176,6 +177,7 @@ export abstract class Server {
             | NatsOptions['options']
             | MqttOptions['options']
             | TcpOptions['options']
+            | LocalDomainOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
         ).serializer) ||
@@ -191,6 +193,7 @@ export abstract class Server {
             | NatsOptions['options']
             | MqttOptions['options']
             | TcpOptions['options']
+            | LocalDomainOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
         ).deserializer) ||

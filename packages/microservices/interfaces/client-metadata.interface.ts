@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common';
 import { ClientProxy } from '../client';
-import { TcpSocket } from '../helpers';
+import { TcpSocket, LocalDomainSocket } from '../helpers';
 import { Transport } from '../enums/transport.enum';
 import { Deserializer } from './deserializer.interface';
 import {
@@ -21,6 +21,7 @@ export type ClientOptions =
   | GrpcOptions
   | KafkaOptions
   | TcpClientOptions
+  | LocalDomainClientOptions
   | RmqOptions;
 
 /**
@@ -43,5 +44,18 @@ export interface TcpClientOptions {
     deserializer?: Deserializer;
     tlsOptions?: ConnectionOptions;
     socketClass?: Type<TcpSocket>;
+  };
+}
+
+/**
+ * @publicApi
+ */
+export interface LocalDomainClientOptions {
+  transport: Transport.LOCAL_DOMAIN;
+  options: {
+    path: string;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
+    socketClass?: Type<LocalDomainSocket>;
   };
 }

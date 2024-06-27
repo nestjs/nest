@@ -17,7 +17,7 @@ import {
   AmqplibQueueOptions,
   RmqUrl,
 } from '../external/rmq-url.interface';
-import { TcpSocket } from '../helpers';
+import { TcpSocket, LocalDomainSocket } from '../helpers';
 import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
@@ -25,6 +25,7 @@ import { Serializer } from './serializer.interface';
 export type MicroserviceOptions =
   | GrpcOptions
   | TcpOptions
+  | LocalDomainOptions
   | RedisOptions
   | NatsOptions
   | MqttOptions
@@ -97,6 +98,21 @@ export interface TcpOptions {
     tlsOptions?: ConnectionOptions;
     deserializer?: Deserializer;
     socketClass?: Type<TcpSocket>;
+  };
+}
+
+/**
+ * @publicApi
+ */
+export interface LocalDomainOptions {
+  transport?: Transport.LOCAL_DOMAIN;
+  options: {
+    path: string;
+    retryAttempts?: number;
+    retryDelay?: number;
+    serializer?: Serializer;
+    deserializer?: Deserializer;
+    socketClass?: Type<LocalDomainSocket>;
   };
 }
 

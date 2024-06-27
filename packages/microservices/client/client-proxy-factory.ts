@@ -3,6 +3,7 @@ import {
   ClientOptions,
   CustomClientOptions,
   TcpClientOptions,
+  LocalDomainClientOptions,
 } from '../interfaces/client-metadata.interface';
 import { Closeable } from '../interfaces/closeable.interface';
 import {
@@ -21,6 +22,7 @@ import { ClientProxy } from './client-proxy';
 import { ClientRedis } from './client-redis';
 import { ClientRMQ } from './client-rmq';
 import { ClientTCP } from './client-tcp';
+import { ClientLocalDomain } from './client-local-domain';
 
 export interface IClientProxyFactory {
   create(clientOptions: ClientOptions): ClientProxy & Closeable;
@@ -58,6 +60,10 @@ export class ClientProxyFactory {
         return new ClientRMQ(options as RmqOptions['options']);
       case Transport.KAFKA:
         return new ClientKafka(options as KafkaOptions['options']);
+      case Transport.LOCAL_DOMAIN:
+        return new ClientLocalDomain(
+          options as LocalDomainClientOptions['options'],
+        );
       default:
         return new ClientTCP(options as TcpClientOptions['options']);
     }
