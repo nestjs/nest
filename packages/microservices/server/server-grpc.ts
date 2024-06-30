@@ -125,7 +125,6 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     const service = {};
 
     for (const methodName in grpcService.prototype) {
-      let pattern = '';
       let methodHandler = null;
       let streamingType = GrpcMethodStreamingType.NO_STREAMING;
 
@@ -135,32 +134,32 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       if (!isUndefined(methodReqStreaming) && methodReqStreaming) {
         // Try first pattern to be presented, RX streaming pattern would be
         // a preferable pattern to select among a few defined
-        pattern = this.createPattern(
+        methodHandler = this.getMessageHandler(
           name,
           methodName,
           GrpcMethodStreamingType.RX_STREAMING,
+          methodFunction,
         );
-        methodHandler = this.messageHandlers.get(pattern);
         streamingType = GrpcMethodStreamingType.RX_STREAMING;
         // If first pattern didn't match to any of handlers then try
         // pass-through handler to be presented
         if (!methodHandler) {
-          pattern = this.createPattern(
+          methodHandler = this.getMessageHandler(
             name,
             methodName,
             GrpcMethodStreamingType.PT_STREAMING,
+            methodFunction,
           );
-          methodHandler = this.messageHandlers.get(pattern);
           streamingType = GrpcMethodStreamingType.PT_STREAMING;
         }
       } else {
-        pattern = this.createPattern(
+        // Select handler if any presented for No-Streaming pattern
+        methodHandler = this.getMessageHandler(
           name,
           methodName,
           GrpcMethodStreamingType.NO_STREAMING,
+          methodFunction,
         );
-        // Select handler if any presented for No-Streaming pattern
-        methodHandler = this.messageHandlers.get(pattern);
         streamingType = GrpcMethodStreamingType.NO_STREAMING;
       }
       if (!methodHandler) {
@@ -173,6 +172,22 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       );
     }
     return service;
+  }
+
+  getMessageHandler(
+    serviceName: string,
+    methodName: string,
+    streaming: GrpcMethodStreamingType,
+    grpcMethod: { path?: string },
+  ) {
+    let pattern = this.createPattern(serviceName, methodName, streaming);
+    let methodHandler = this.messageHandlers.get(pattern);
+    if (!methodHandler) {
+      const packageServiceName = grpcMethod.path?.split('/')[1];
+      pattern = this.createPattern(packageServiceName, methodName, streaming);
+      methodHandler = this.messageHandlers.get(pattern);
+    }
+    return methodHandler;
   }
 
   /**
