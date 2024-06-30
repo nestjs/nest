@@ -183,7 +183,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     let pattern = this.createPattern(serviceName, methodName, streaming);
     let methodHandler = this.messageHandlers.get(pattern);
     if (!methodHandler) {
-      const packageServiceName = grpcMethod.path?.split('/')[1];
+      const packageServiceName = grpcMethod.path?.split?.('/')[1];
       pattern = this.createPattern(packageServiceName, methodName, streaming);
       methodHandler = this.messageHandlers.get(pattern);
     }
