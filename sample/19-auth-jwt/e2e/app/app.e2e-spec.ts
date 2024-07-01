@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 
@@ -28,8 +27,8 @@ describe('E2E JWT Sample', () => {
       .set('Authorization', 'Bearer ' + token)
       .expect(200)
       .expect(({ body }) => {
-        expect(body.sub).to.equal(1);
-        expect(body.username).to.equal('john');
+        expect(body.sub).toEqual(1);
+        expect(body.username).toEqual('john');
       });
   });
 
