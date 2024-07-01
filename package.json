@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "10.3.4",
+  "version": "10.3.10",
   "description": "Modern, fast, powerful node.js web framework",
   "homepage": "https://nestjs.com",
   "repository": {
