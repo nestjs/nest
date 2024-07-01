@@ -74,8 +74,7 @@
     "rxjs": "7.8.1",
     "socket.io": "4.7.5",
     "tslib": "2.6.3",
-    "uid": "2.0.2",
-    "uuid": "10.0.0"
+    "uid": "2.0.2"
   },
   "devDependencies": {
     "@apollo/server": "4.10.4",
@@ -156,7 +155,6 @@
     "multer": "1.4.4",
     "mysql2": "3.10.1",
     "nats": "2.27.0",
-    "nodemon": "3.1.4",
     "nyc": "14.1.1",
     "prettier": "3.3.2",
     "redis": "4.6.14",
