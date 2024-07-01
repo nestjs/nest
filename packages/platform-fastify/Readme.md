@@ -60,7 +60,9 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <table style="text-align:center;">
 <tr>
 <td><a href="https://trilon.io" target="_blank"><img src="https://nestjs.com/img/trilon.svg" width="200" valign="middle" /></a></td>
+<td><a href="https://microsoft.com/" target="_blank"><img src="https://nestjs.com/img/logos/microsoft-logo.png" width="180" valign="middle" /></a></td>
 <td><a href="https://mojam.co" target="_blank"><img src="https://nestjs.com/img/logos/mojam-logo.png" width="80" valign="middle" /></a></td>
+<td><a href="https://marblism.com?utm_source=nest" target="_blank"><img src="https://nestjs.com/img/logos/marblism-logo.png" width="180" valign="middle" /></a></td>
 <td><a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td>
 <td><a href="https://amplication.com/" target="_blank"><img src="https://nestjs.com/img/logos/amplication-logo.svg" width="190" valign="middle" /></a></td>
 </tr>
@@ -89,8 +91,10 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <table style="text-align:center;">
 <tr>
-<td><a href="https://n.inc" target="_blank"><img src="https://nestjs.com/img/logos/n-inc-logo.svg" width="120" valign="middle" /></a></td>
+<td><a href="https://n.inc" target="_blank"><img src="https://nestjs.com/img/logos/n-inc-logo.svg" width="90" valign="middle" /></a></td>
 <td><a href="https://twistag.com/" target="_blank"><img src="https://nestjs.com/img/logos/twistag-logo.png" width="120" valign="middle" /></a></td>
+<td><a href="https://www.dinii.jp/" target="_blank"><img src="https://nestjs.com/img/logos/dinii-logo.png" width="75" valign="middle" /></a></td>
+<td><a href="https://www.mercedes-benz.com/" target="_blank"><img src="https://nestjs.com/img/logos/mercedes-logo.png" width="110" valign="middle" /></a></td>
 </tr>
 </table>
 
@@ -125,6 +129,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td align="center" valign="middle"><a href="https://julienferand.dev/" target="_blank"><img src="https://nestjs.com/img/logos/julienferand-logo.jpeg" width="65" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://www.tripoffice.com/" target="_blank"><img src="https://nestjs.com/img/logos/tripoffice-logo.png" width="140" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://solcellsforetag.se/" target="_blank"><img src="https://nestjs.com/img/logos/solcellsforetag-logo.svg" width="140" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://www.itflashcards.com/" target="_blank"><img src="https://nestjs.com/img/logos/it_flashcards-logo.png" width="150" valign="middle" /></a></td>
 </tr>
 </table>
 
