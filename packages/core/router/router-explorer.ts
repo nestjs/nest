@@ -418,7 +418,9 @@ export class RouterExplorer {
         configurable: false,
       });
 
-      const requestProviderValue = isTreeDurable ? contextId.payload : request;
+      const requestProviderValue = isTreeDurable
+        ? contextId.payload
+        : Object.assign(request, contextId.payload);
       this.container.registerRequestProvider(requestProviderValue, contextId);
     }
     return contextId;
