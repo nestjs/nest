@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "10.3.9",
+  "version": "10.3.10",
   "description": "Nest - modern, fast, powerful node.js web framework (@core)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -32,11 +32,11 @@
     "fast-safe-stringify": "2.1.1",
     "iterare": "1.2.1",
     "path-to-regexp": "3.2.0",
-    "tslib": "2.6.2",
+    "tslib": "2.6.3",
     "uid": "2.0.2"
   },
   "devDependencies": {
-    "@nestjs/common": "10.3.9"
+    "@nestjs/common": "10.3.10"
   },
   "peerDependencies": {
     "@nestjs/common": "^10.0.0",

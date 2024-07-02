@@ -59,10 +59,17 @@ import {
   FastifyViewOptions,
 } from '../interfaces/external';
 
+type FastifyAdapterBaseOptions<
+  Server extends RawServerBase = RawServerDefault,
+  Logger extends FastifyBaseLogger = FastifyBaseLogger,
+> = FastifyServerOptions<Server, Logger> & {
+  skipMiddie?: boolean;
+};
+
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
   Logger extends FastifyBaseLogger = FastifyBaseLogger,
-> = FastifyServerOptions<Server, Logger> & {
+> = FastifyAdapterBaseOptions<Server, Logger> & {
   http2: true;
   https: http2.SecureServerOptions;
 };
@@ -70,7 +77,7 @@ type FastifyHttp2SecureOptions<
 type FastifyHttp2Options<
   Server extends http2.Http2Server,
   Logger extends FastifyBaseLogger = FastifyBaseLogger,
-> = FastifyServerOptions<Server, Logger> & {
+> = FastifyAdapterBaseOptions<Server, Logger> & {
   http2: true;
   http2SessionTimeout?: number;
 };
@@ -78,7 +85,7 @@ type FastifyHttp2Options<
 type FastifyHttpsOptions<
   Server extends https.Server,
   Logger extends FastifyBaseLogger = FastifyBaseLogger,
-> = FastifyServerOptions<Server, Logger> & {
+> = FastifyAdapterBaseOptions<Server, Logger> & {
   https: https.ServerOptions;
 };
 
@@ -211,7 +218,7 @@ export class FastifyAdapter<
       | FastifyHttp2Options<any>
       | FastifyHttp2SecureOptions<any>
       | FastifyHttpsOptions<any>
-      | FastifyServerOptions<TServer>,
+      | FastifyAdapterBaseOptions<TServer>,
   ) {
     super();
 
@@ -224,7 +231,12 @@ export class FastifyAdapter<
             },
             ...(instanceOrOptions as FastifyServerOptions),
           });
+
     this.setInstance(instance);
+
+    if ((instanceOrOptions as FastifyAdapterBaseOptions)?.skipMiddie) {
+      this.isMiddieRegistered = true;
+    }
   }
 
   public async init() {
