@@ -281,6 +281,8 @@ describe('ServerGrpc', () => {
           .onFirstCall()
           .returns('_invalid')
           .onSecondCall()
+          .returns('_invalid')
+          .onThirdCall()
           .returns('test2');
 
         sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
@@ -303,6 +305,69 @@ describe('ServerGrpc', () => {
           ),
         ).to.be.true;
       });
+    });
+  });
+
+  describe('getMessageHandler', () => {
+    it('should return handler when service name specified', () => {
+      const testPattern = server.createPattern(
+        'test',
+        'TestMethod',
+        GrpcMethodStreamingType.NO_STREAMING,
+      );
+      const handlers = new Map([[testPattern, () => ({})]]);
+      console.log(handlers.entries());
+      (server as any).messageHandlers = handlers;
+
+      expect(
+        server.getMessageHandler(
+          'test',
+          'TestMethod',
+          GrpcMethodStreamingType.NO_STREAMING,
+          {},
+        ),
+      ).not.to.be.undefined;
+    });
+    it('should return handler when package name specified with service name', () => {
+      const testPattern = server.createPattern(
+        'package.example.test',
+        'TestMethod',
+        GrpcMethodStreamingType.NO_STREAMING,
+      );
+      const handlers = new Map([[testPattern, () => ({})]]);
+      (server as any).messageHandlers = handlers;
+
+      expect(
+        server.getMessageHandler(
+          'test',
+          'TestMethod',
+          GrpcMethodStreamingType.NO_STREAMING,
+          {
+            path: '/package.example.test/TestMethod',
+          },
+        ),
+      ).not.to.be.undefined;
+    });
+
+    it('should return undefined when method name is unknown', () => {
+      const testPattern = server.createPattern(
+        'package.example.test',
+        'unknown',
+        GrpcMethodStreamingType.NO_STREAMING,
+      );
+      const handlers = new Map([[testPattern, () => ({})]]);
+      (server as any).messageHandlers = handlers;
+
+      expect(
+        server.getMessageHandler(
+          'test',
+          'TestMethod',
+          GrpcMethodStreamingType.NO_STREAMING,
+          {
+            path: '/package.example.test/TestMethod',
+          },
+        ),
+      ).to.be.undefined;
     });
   });
 
