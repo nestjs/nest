@@ -112,8 +112,7 @@ type FastifyRawRequest<TServer extends RawServerBase> =
 export class FastifyAdapter<
   TServer extends RawServerBase = RawServerDefault,
   TRawRequest extends FastifyRawRequest<TServer> = FastifyRawRequest<TServer>,
-  TRawResponse extends
-    RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>,
+  TRawResponse extends RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>,
   TRequest extends FastifyRequest<
     RequestGenericInterface,
     TServer,
@@ -455,7 +454,7 @@ export class FastifyAdapter<
     return this.register(
       loadPackage('@fastify/static', 'FastifyAdapter.useStaticAssets()', () =>
         require('@fastify/static'),
-      ),
+      ) as unknown as Parameters<TInstance['register']>[0],
       options,
     );
   }
@@ -470,7 +469,7 @@ export class FastifyAdapter<
     return this.register(
       loadPackage('@fastify/view', 'FastifyAdapter.setViewEngine()', () =>
         require('@fastify/view'),
-      ),
+      ) as unknown as Parameters<TInstance['register']>[0],
       options,
     );
   }
