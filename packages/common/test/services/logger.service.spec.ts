@@ -8,15 +8,18 @@ describe('Logger', () => {
     describe('when the default logger is used', () => {
       let processStdoutWriteSpy: sinon.SinonSpy;
       let processStderrWriteSpy: sinon.SinonSpy;
+      let consoleErrorSpy: sinon.SinonSpy;
 
       beforeEach(() => {
         processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
         processStderrWriteSpy = sinon.spy(process.stderr, 'write');
+        consoleErrorSpy = sinon.spy(console, 'error');
       });
 
       afterEach(() => {
         processStdoutWriteSpy.restore();
         processStderrWriteSpy.restore();
+        consoleErrorSpy.restore();
       });
 
       it('should print one message to the console', () => {
@@ -111,10 +114,8 @@ describe('Logger', () => {
 
         Logger.error(error);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
-          `Error: Random text here`,
-        );
+        expect(consoleErrorSpy.calledOnce).to.be.true;
+        expect(consoleErrorSpy.firstCall.firstArg).to.equal(error);
       });
 
       it('should serialise a plain JS object (as a message) without context to the console', () => {

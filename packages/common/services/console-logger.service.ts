@@ -91,6 +91,12 @@ export class ConsoleLogger implements LoggerService {
     const { messages, context, stack } =
       this.getContextAndStackAndMessagesToPrint([message, ...optionalParams]);
 
+    if (message instanceof Error) {
+      this.printMessages(messages, context, 'error', 'stderr');
+      this.printError(message);
+      return;
+    }
+
     this.printMessages(messages, context, 'error', 'stderr');
     this.printStackTrace(stack);
   }
@@ -276,6 +282,13 @@ export class ConsoleLogger implements LoggerService {
       return;
     }
     process.stderr.write(`${stack}\n`);
+  }
+
+  protected printError(error: Error) {
+    if (!error) {
+      return;
+    }
+    console.error(error);
   }
 
   protected updateAndGetTimestampDiff(): string {
