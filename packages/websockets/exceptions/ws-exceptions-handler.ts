@@ -3,7 +3,7 @@ import { ArgumentsHost } from '@nestjs/common';
 import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
 import { selectExceptionFilterMetadata } from '@nestjs/common/utils/select-exception-filter-metadata.util';
 import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/invalid-exception-filter.exception';
-import { WsException } from '../errors/ws-exception';
+import { WsException } from '@nestjs/common';
 import { BaseWsExceptionFilter } from './base-ws-exception-filter';
 
 /**
