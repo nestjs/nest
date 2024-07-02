@@ -16,4 +16,17 @@ export interface MiddlewareConsumer {
    * @returns {MiddlewareConfigProxy}
    */
   apply(...middleware: (Type<any> | Function)[]): MiddlewareConfigProxy;
+
+  /**
+   * Replaces the currently applied middleware with a new (set of) middleware.
+   *
+   * @param {Type | Function} middlewareToReplace middleware class/function to be replaced.
+   * @param {(Type | Function)[]} middlewareReplacement middleware class/function(s) that serve as a replacement for {@link middlewareToReplace}.
+   *
+   * @returns {MiddlewareConsumer}
+   */
+  replace(
+    middlewareToReplace: Type<any> | Function,
+    ...middlewareReplacement: (Type<any> | Function)[]
+  ): MiddlewareConsumer;
 }
