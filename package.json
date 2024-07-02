@@ -117,7 +117,7 @@
     "cache-manager": "5.6.1",
     "cache-manager-redis-store": "3.0.1",
     "chai": "4.4.1",
-    "chai-as-promised": "7.1.2",
+    "chai-as-promised": "8.0.0",
     "clang-format": "1.8.0",
     "concurrently": "8.2.2",
     "conventional-changelog": "6.0.0",
