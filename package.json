@@ -64,7 +64,7 @@
     "cli-color": "2.0.4",
     "cors": "2.8.5",
     "express": "4.19.2",
-    "fast-json-stringify": "5.16.1",
+    "fast-json-stringify": "6.0.0",
     "fast-safe-stringify": "2.1.1",
     "graphql-subscriptions": "2.0.0",
     "iterare": "1.2.1",
