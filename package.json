@@ -159,7 +159,7 @@
     "nodemon": "3.1.4",
     "nyc": "14.1.1",
     "prettier": "3.3.2",
-    "redis": "4.6.14",
+    "redis": "4.6.15",
     "rxjs-compat": "6.6.7",
     "sinon": "18.0.0",
     "sinon-chai": "3.7.0",
