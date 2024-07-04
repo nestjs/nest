@@ -114,7 +114,7 @@
     "artillery": "2.0.16",
     "body-parser": "1.20.2",
     "bytes": "3.1.2",
-    "cache-manager": "5.6.1",
+    "cache-manager": "5.7.1",
     "cache-manager-redis-store": "3.0.1",
     "chai": "4.4.1",
     "chai-as-promised": "7.1.2",
