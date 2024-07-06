@@ -3,6 +3,9 @@ import {
   INestApplication,
   INestApplicationContext,
   INestMicroservice,
+  DynamicModule,
+  ForwardReference,
+  Type,
 } from '@nestjs/common';
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
@@ -28,6 +31,15 @@ import { NestApplicationContext } from './nest-application-context';
 import { DependenciesScanner } from './scanner';
 
 /**
+ * A valid NestJS entry (or 'root') module reference.
+ */
+type IEntryNestModule =
+  | Type<any>
+  | DynamicModule
+  | ForwardReference
+  | Promise<IEntryNestModule>;
+
+/**
  * @publicApi
  */
 export class NestFactoryStatic {
@@ -47,7 +59,7 @@ export class NestFactoryStatic {
    * contains a reference to the NestApplication instance.
    */
   public async create<T extends INestApplication = INestApplication>(
-    module: any,
+    module: IEntryNestModule,
     options?: NestApplicationOptions,
   ): Promise<T>;
   /**
@@ -62,12 +74,12 @@ export class NestFactoryStatic {
    * contains a reference to the NestApplication instance.
    */
   public async create<T extends INestApplication = INestApplication>(
-    module: any,
+    module: IEntryNestModule,
     httpAdapter: AbstractHttpAdapter,
     options?: NestApplicationOptions,
   ): Promise<T>;
   public async create<T extends INestApplication = INestApplication>(
-    moduleCls: any,
+    moduleCls: IEntryNestModule,
     serverOrOptions?: AbstractHttpAdapter | NestApplicationOptions,
     options?: NestApplicationOptions,
   ): Promise<T> {
@@ -112,7 +124,7 @@ export class NestFactoryStatic {
    * contains a reference to the NestMicroservice instance.
    */
   public async createMicroservice<T extends object>(
-    moduleCls: any,
+    moduleCls: IEntryNestModule,
     options?: NestMicroserviceOptions & T,
   ): Promise<INestMicroservice> {
     const { NestMicroservice } = loadPackage(
@@ -154,7 +166,7 @@ export class NestFactoryStatic {
    * contains a reference to the NestApplicationContext instance.
    */
   public async createApplicationContext(
-    moduleCls: any,
+    moduleCls: IEntryNestModule,
     options?: NestApplicationContextOptions,
   ): Promise<INestApplicationContext> {
     const applicationConfig = new ApplicationConfig();
