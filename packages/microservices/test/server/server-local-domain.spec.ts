@@ -42,13 +42,8 @@ describe('ServerLocalDomain', () => {
     it('should call native listen method with expected arguments', () => {
       const callback = () => {};
       server.listen(callback);
-      expect(
-        serverMock.listen.calledWith(
-          (server as any).port,
-          (server as any).host,
-          callback,
-        ),
-      ).to.be.true;
+      expect(serverMock.listen.calledWith((server as any).path, callback)).to.be
+        .true;
     });
   });
   describe('handleMessage', () => {
