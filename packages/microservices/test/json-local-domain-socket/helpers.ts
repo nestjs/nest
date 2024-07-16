@@ -6,7 +6,7 @@ import * as nodePath from 'path';
 export const path =
   process.platform === 'win32'
     ? nodePath.join('\\\\.\\pipe', 'test-json-local-domain-socket-pipe-path')
-    : '\0json-local-domain-socket-abstract-path';
+    : '\\0json-local-domain-socket-abstract-path';
 
 export function createServer(callback: (err?: any, server?: Server) => void) {
   const server = netCreateServer();
