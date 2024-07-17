@@ -25,13 +25,13 @@ describe('ServerLocalDomain', () => {
     });
   });
   describe('close', () => {
-    const tcpServer = { close: sinon.spy() };
+    const localDomainServer = { close: sinon.spy() };
     beforeEach(() => {
-      (server as any).server = tcpServer;
+      (server as any).server = localDomainServer;
     });
     it('should close server', () => {
       server.close();
-      expect(tcpServer.close.called).to.be.true;
+      expect(localDomainServer.close.called).to.be.true;
     });
   });
   describe('listen', () => {
