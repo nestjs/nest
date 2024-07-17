@@ -2,11 +2,12 @@ import { createServer as netCreateServer, Server, Socket } from 'net';
 import { ERROR_EVENT } from '../../constants';
 import { JsonLocalDomainSocket } from '../../helpers/json-local-domain-socket';
 import * as nodePath from 'path';
+import { tmpdir } from 'os';
 
 export const path =
   process.platform === 'win32'
     ? nodePath.join('\\\\.\\pipe', 'test-json-local-domain-socket-pipe-path')
-    : '\\0json-local-domain-socket-abstract-path';
+    : `${tmpdir()}/json-local-domain-socket-abstract-path`;
 
 export function createServer(callback: (err?: any, server?: Server) => void) {
   const server = netCreateServer();
