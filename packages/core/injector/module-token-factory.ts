@@ -9,6 +9,10 @@ import { performance } from 'perf_hooks';
 const CLASS_STR = 'class ';
 const CLASS_STR_LEN = CLASS_STR.length;
 
+const slowThresholdMs = Number(
+  +process.env.NEST_TOKEN_FACTORY_SLOW_THRESHOLD_MS || 10,
+);
+
 export class ModuleTokenFactory {
   private readonly moduleTokenCache = new Map<string, string>();
   private readonly moduleIdsCache = new WeakMap<Type<unknown>, string>();
@@ -34,10 +38,10 @@ export class ModuleTokenFactory {
     const opaqueTokenString = this.getStringifiedOpaqueToken(opaqueToken);
     const timeSpentInMs = performance.now() - start;
 
-    if (timeSpentInMs > 10) {
+    if (timeSpentInMs > slowThresholdMs) {
       const formattedTimeSpent = timeSpentInMs.toFixed(2);
       this.logger.warn(
-        `The module "${opaqueToken.module}" is taking ${formattedTimeSpent}ms to serialize, this may be caused by larger objects statically assigned to the module. More details: https://github.com/nestjs/nest/issues/12738`,
+        `The module "${opaqueToken.module}" is taking ${formattedTimeSpent}ms to serialize, this may be caused by larger objects statically assigned to the module. To ignore, increase the threshold using env variable NEST_TOKEN_FACTORY_SLOW_THRESHOLD_MS. More details: https://github.com/nestjs/nest/issues/12738`,
       );
     }
 
