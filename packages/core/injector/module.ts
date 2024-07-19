@@ -297,9 +297,8 @@ export class Module {
     );
   }
 
-  public isTransientProvider(provider: Provider): boolean {
-    const metadata = Reflect.getMetadata('scope:options', provider);
-    return metadata && metadata?.scope === Scope.TRANSIENT;
+  private isTransientProvider(provider: Type<any>): boolean {
+    return getClassScope(provider) === Scope.TRANSIENT;
   }
 
   public addCustomProvider(
