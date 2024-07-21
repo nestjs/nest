@@ -306,6 +306,10 @@ export class FastifyAdapter<
     return this.injectRouteOptions('options', ...args);
   }
 
+  public search(...args: any[]) {
+    return this.injectRouteOptions('search', ...args);
+  }
+
   public applyVersionFilter(
     handler: Function,
     version: VersionValue,
