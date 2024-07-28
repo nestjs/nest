@@ -41,8 +41,8 @@ export class PaymentRequiredException extends HttpException {
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
-      HttpException.createBody(objectOrError, description, HttpStatus.PaymentRequiredException),
-      HttpStatus.PaymentRequiredException,
+      HttpException.createBody(objectOrError, description, HttpStatus.PAYMENT_REQUIRED),
+      HttpStatus.PAYMENT_REQUIRED,
       httpExceptionOptions,
     );
   }
