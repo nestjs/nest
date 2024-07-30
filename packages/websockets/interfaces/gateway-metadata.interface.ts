@@ -16,6 +16,11 @@ export interface GatewayMetadata {
    */
   path?: string;
   /**
+   * Api version acts as prefix to path
+   * @default undefined
+   */
+  prefix?: string;
+  /**
    * Whether to serve the client files
    * @default true
    */
