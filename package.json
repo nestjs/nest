@@ -152,7 +152,7 @@
     "markdown-table": "2.0.0",
     "mocha": "10.7.0",
     "mongoose": "8.5.2",
-    "mqtt": "5.6.0",
+    "mqtt": "5.9.0",
     "multer": "1.4.4",
     "mysql2": "3.11.0",
     "nats": "2.28.2",
