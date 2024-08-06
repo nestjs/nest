@@ -16,7 +16,7 @@ export interface ModuleMetadata {
    * Optional list of imported modules that export the providers which are
    * required in this module.
    */
-  imports?: Array<
+  imports?: ReadonlyArray<
     Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference
   >;
   /**
@@ -33,7 +33,7 @@ export interface ModuleMetadata {
    * Optional list of the subset of providers that are provided by this module
    * and should be available in other modules which import this module.
    */
-  exports?: Array<
+  exports?: ReadonlyArray<
     | DynamicModule
     | Promise<DynamicModule>
     | string
