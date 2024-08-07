@@ -131,6 +131,7 @@ export class FastifyAdapter<
   > = FastifyInstance<TServer, TRawRequest, TRawResponse>,
 > extends AbstractHttpAdapter<TServer, TRequest, TReply> {
   protected readonly instance: TInstance;
+  protected _pathPrefix?: string;
 
   private _isParserRegistered: boolean;
   private isMiddieRegistered: boolean;
@@ -521,6 +522,11 @@ export class FastifyAdapter<
     this.registerJsonContentParser(rawBody);
 
     this._isParserRegistered = true;
+    this._pathPrefix = prefix
+      ? !prefix.startsWith('/')
+        ? `/${prefix}`
+        : prefix
+      : undefined;
   }
 
   public useBodyParser(
@@ -576,6 +582,12 @@ export class FastifyAdapter<
 
       // Fallback to "(.*)" to support plugins like GraphQL
       normalizedPath = normalizedPath === '/(.*)' ? '(.*)' : normalizedPath;
+
+      // Normalize the path to support the prefix if it set in application
+      normalizedPath =
+        this._pathPrefix && !normalizedPath.startsWith(this._pathPrefix)
+          ? `${this._pathPrefix}${normalizedPath}(.*)`
+          : normalizedPath;
 
       let re = pathToRegexp(normalizedPath);
       re = hasEndOfStringCharacter ? new RegExp(re.source + '$', re.flags) : re;

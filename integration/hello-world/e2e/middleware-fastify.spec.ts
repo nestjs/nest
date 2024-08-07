@@ -16,6 +16,8 @@ import {
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { AppModule } from '../src/app.module';
+import * as request from 'supertest';
+import { FastifyRequest } from 'fastify';
 
 describe('Middleware (FastifyAdapter)', () => {
   let app: NestFastifyApplication;
@@ -392,6 +394,135 @@ describe('Middleware (FastifyAdapter)', () => {
             }),
           ),
         );
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
+
+  describe('should have data attached in middleware', () => {
+    @Controller()
+    class DataController {
+      @Get('data')
+      async data(@Req() req: FastifyRequest['raw']) {
+        return {
+          success: true,
+          extras: req?.['raw']?.extras,
+          pong: req?.['raw']?.headers?.ping,
+        };
+      }
+      @Get('pong')
+      async pong(@Req() req: FastifyRequest['raw']) {
+        return { success: true, pong: req?.['raw']?.headers?.ping };
+      }
+
+      @Get('')
+      async rootPath(@Req() req: FastifyRequest['raw']) {
+        return { success: true, root: true };
+      }
+    }
+
+    @Module({
+      controllers: [DataController],
+    })
+    class DataModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            req.extras = { data: 'Data attached in middleware' };
+            req.headers['ping'] = 'pong';
+            next();
+          })
+          .forRoutes('*');
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [DataModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    });
+
+    it(`GET forRoutes('*') with global prefix`, async () => {
+      app.setGlobalPrefix('/api');
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+      return app
+        .inject({
+          method: 'GET',
+          url: '/api/pong',
+        })
+        .then(({ payload }) =>
+          expect(payload).to.be.eql(
+            JSON.stringify({
+              success: true,
+              pong: 'pong',
+            }),
+          ),
+        );
+    });
+
+    it(`GET forRoutes('*') without prefix config`, async () => {
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+      return app
+        .inject({
+          method: 'GET',
+          url: '/pong',
+        })
+        .then(({ payload }) =>
+          expect(payload).to.be.eql(
+            JSON.stringify({
+              success: true,
+              pong: 'pong',
+            }),
+          ),
+        );
+    });
+
+    it(`GET forRoutes('*') with global prefix and exclude patterns`, async () => {
+      app.setGlobalPrefix('/api', { exclude: ['/'] });
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/')
+        .expect(200, { success: true, root: true });
+    });
+
+    it(`GET forRoutes('*') with global prefix and global prefix options`, async () => {
+      app.setGlobalPrefix('/api', { exclude: ['/'] });
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/api/data')
+        .expect(200, {
+          success: true,
+          extras: { data: 'Data attached in middleware' },
+          pong: 'pong',
+        });
+      await request(app.getHttpServer())
+        .get('/')
+        .expect(200, { success: true, root: true });
+    });
+
+    it(`GET forRoutes('*') with global prefix that not starts with /`, async () => {
+      app.setGlobalPrefix('api');
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/api/data')
+        .expect(200, {
+          success: true,
+          extras: { data: 'Data attached in middleware' },
+          pong: 'pong',
+        });
+      await request(app.getHttpServer()).get('/').expect(404);
     });
 
     afterEach(async () => {
