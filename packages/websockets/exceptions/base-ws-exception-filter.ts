@@ -2,6 +2,7 @@ import { ArgumentsHost, Logger, WsExceptionFilter } from '@nestjs/common';
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { MESSAGES } from '@nestjs/core/constants';
 import { WsException } from '../errors/ws-exception';
+import { inspect } from 'util';
 
 /**
  * @publicApi
@@ -49,7 +50,7 @@ export class BaseWsExceptionFilter<TError = any>
     if (this.isExceptionObject(exception)) {
       return BaseWsExceptionFilter.logger.error(
         exception.message,
-        exception.stack,
+        inspect(exception),
       );
     }
     return BaseWsExceptionFilter.logger.error(exception);

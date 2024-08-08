@@ -4,6 +4,7 @@ import { isObject } from '@nestjs/common/utils/shared.utils';
 import { MESSAGES } from '@nestjs/core/constants';
 import { Observable, throwError as _throw } from 'rxjs';
 import { RpcException } from './rpc-exception';
+import { inspect } from 'util';
 
 /**
  * @publicApi
@@ -27,7 +28,7 @@ export class BaseRpcExceptionFilter<T = any, R = any>
     const errorMessage = MESSAGES.UNKNOWN_EXCEPTION_MESSAGE;
 
     const loggerArgs = this.isError(exception)
-      ? [exception.message, exception.stack]
+      ? [exception.message, inspect(exception)]
       : [exception];
     const logger = BaseRpcExceptionFilter.logger;
     logger.error.apply(logger, loggerArgs as any);

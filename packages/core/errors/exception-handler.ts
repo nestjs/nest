@@ -1,3 +1,4 @@
+import { inspect } from 'util';
 import { RuntimeException } from './exceptions/runtime.exception';
 import { Logger } from '@nestjs/common/services/logger.service';
 
@@ -6,9 +7,9 @@ export class ExceptionHandler {
 
   public handle(exception: RuntimeException | Error) {
     if (!(exception instanceof RuntimeException)) {
-      ExceptionHandler.logger.error(exception.message, exception.stack);
+      ExceptionHandler.logger.error(exception.message, inspect(exception));
       return;
     }
-    ExceptionHandler.logger.error(exception.what(), exception.stack);
+    ExceptionHandler.logger.error(exception.what(), inspect(exception));
   }
 }
