@@ -6,7 +6,7 @@ import {
   isString,
   isUndefined,
 } from '../utils/shared.utils';
-import { LoggerService, LogLevel } from './logger.service';
+import { LogLevel, LoggerService } from './logger.service';
 import { isLogLevelEnabled } from './utils';
 
 export interface ConsoleLoggerOptions {
@@ -18,6 +18,11 @@ export interface ConsoleLoggerOptions {
    * If enabled, will print timestamp (time difference) between current and previous log message.
    */
   timestamp?: boolean;
+
+  /**
+   * If enabled, logs will be in form of JSON strings.
+   */
+  asJSON?: boolean;
 }
 
 const DEFAULT_LOG_LEVELS: LogLevel[] = [
@@ -91,8 +96,11 @@ export class ConsoleLogger implements LoggerService {
     const { messages, context, stack } =
       this.getContextAndStackAndMessagesToPrint([message, ...optionalParams]);
 
-    this.printMessages(messages, context, 'error', 'stderr');
-    this.printStackTrace(stack);
+    this.printMessages(messages, context, 'error', 'stderr', stack);
+
+    if (!this.options?.asJSON) {
+      this.printStackTrace(stack);
+    }
   }
 
   /**
@@ -203,6 +211,7 @@ export class ConsoleLogger implements LoggerService {
     context = '',
     logLevel: LogLevel = 'log',
     writeStreamType?: 'stdout' | 'stderr',
+    stack?: string,
   ) {
     messages.forEach(message => {
       const pidMessage = this.formatPid(process.pid);
@@ -216,6 +225,7 @@ export class ConsoleLogger implements LoggerService {
         formattedLogLevel,
         contextMessage,
         timestampDiff,
+        stack,
       );
 
       process[writeStreamType ?? 'stdout'].write(formattedMessage);
@@ -227,6 +237,10 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected formatContext(context: string): string {
+    if (this.options?.asJSON) {
+      return context;
+    }
+
     return context ? yellow(`[${context}] `) : '';
   }
 
@@ -237,8 +251,22 @@ export class ConsoleLogger implements LoggerService {
     formattedLogLevel: string,
     contextMessage: string,
     timestampDiff: string,
+    stack?: string,
   ) {
     const output = this.stringifyMessage(message, logLevel);
+
+    if (this.options?.asJSON) {
+      return `${JSON.stringify({
+        pid: process.pid,
+        timestamp: Date.now(),
+        logLevel,
+        context: contextMessage,
+        message,
+        ...(timestampDiff !== '' && { timestampDiff }),
+        ...(stack && { stack }),
+      })}\n`;
+    }
+
     pidMessage = this.colorize(pidMessage, logLevel);
     formattedLogLevel = this.colorize(formattedLogLevel, logLevel);
     return `${pidMessage}${this.getTimestamp()} ${formattedLogLevel} ${contextMessage}${output}${timestampDiff}\n`;
@@ -267,6 +295,10 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected colorize(message: string, logLevel: LogLevel) {
+    if (this.options?.asJSON) {
+      return message;
+    }
+
     const color = this.getColorByLogLevel(logLevel);
     return color(message);
   }
