@@ -40,6 +40,7 @@ import * as Reply from 'fastify/lib/reply';
 import { kRouteContext } from 'fastify/lib/symbols';
 import * as http2 from 'http2';
 import * as https from 'https';
+import * as http from 'http';
 import {
   InjectOptions,
   Chain as LightMyRequestChain,
@@ -86,6 +87,13 @@ type FastifyHttpsOptions<
   Logger extends FastifyBaseLogger = FastifyBaseLogger,
 > = FastifyAdapterBaseOptions<Server, Logger> & {
   https: https.ServerOptions;
+};
+
+type FastifyHttpOptions<
+  Server extends http.Server,
+  Logger extends FastifyBaseLogger = FastifyBaseLogger,
+> = FastifyAdapterBaseOptions<Server, Logger> & {
+  http: http.ServerOptions;
 };
 
 type VersionedRoute<TRequest, TResponse> = ((
@@ -217,6 +225,7 @@ export class FastifyAdapter<
       | FastifyHttp2Options<any>
       | FastifyHttp2SecureOptions<any>
       | FastifyHttpsOptions<any>
+      | FastifyHttpOptions<any>
       | FastifyAdapterBaseOptions<TServer>,
   ) {
     super();
