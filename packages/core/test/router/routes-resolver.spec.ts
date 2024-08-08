@@ -104,11 +104,19 @@ describe('RoutesResolver', () => {
       sinon
         .stub((routesResolver as any).routerExplorer, 'extractRouterPath')
         .callsFake(() => ['']);
-      routesResolver.registerRouters(routes, moduleName, '', '', appInstance);
+      routesResolver.registerRouters(
+        routes,
+        moduleName,
+        '',
+        '',
+        false,
+        appInstance,
+      );
 
       const routePathMetadata = {
         ctrlPath: '',
         modulePath: '',
+        modulePathBeforeVersion: false,
         globalPrefix: '',
         controllerVersion: undefined,
         versioningOptions: undefined,
@@ -146,11 +154,19 @@ describe('RoutesResolver', () => {
       sinon
         .stub((routesResolver as any).routerExplorer, 'extractRouterPath')
         .callsFake(() => ['']);
-      routesResolver.registerRouters(routes, moduleName, '', '', appInstance);
+      routesResolver.registerRouters(
+        routes,
+        moduleName,
+        '',
+        '',
+        false,
+        appInstance,
+      );
 
       const routePathMetadata = {
         ctrlPath: '',
         modulePath: '',
+        modulePathBeforeVersion: false,
         globalPrefix: '',
         controllerVersion: undefined,
         versioningOptions: undefined,
@@ -200,11 +216,19 @@ describe('RoutesResolver', () => {
       sinon
         .stub((routesResolver as any).routerExplorer, 'extractRouterPath')
         .callsFake(() => ['']);
-      routesResolver.registerRouters(routes, moduleName, '', '', appInstance);
+      routesResolver.registerRouters(
+        routes,
+        moduleName,
+        '',
+        '',
+        true,
+        appInstance,
+      );
 
       const routePathMetadata = {
         ctrlPath: '',
         modulePath: '',
+        modulePathBeforeVersion: true,
         globalPrefix: '',
         controllerVersion: '1',
         versioningOptions: {
