@@ -116,6 +116,7 @@ export interface ProducerConfig {
   transactionalId?: string;
   transactionTimeout?: number;
   maxInFlightRequests?: number;
+  compression?: CompressionTypes;
 }
 
 export interface Message {
