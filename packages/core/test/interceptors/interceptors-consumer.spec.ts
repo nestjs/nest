@@ -1,7 +1,7 @@
 import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
 import { expect } from 'chai';
-import { Observable, lastValueFrom, of, retry } from 'rxjs';
+import { Observable, defer, lastValueFrom, merge, of, retry } from 'rxjs';
 import * as sinon from 'sinon';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 
@@ -177,6 +177,51 @@ describe('InterceptorsConsumer', () => {
           await lastValueFrom(consumer.transformDeferred(next) as any),
         ).to.be.eql(val);
       });
+    });
+  });
+  describe('deferred promise conversion', () => {
+    it('should convert promise to observable deferred', async () => {
+      class TestError extends Error {}
+      const testInterceptors = [
+        {
+          intercept: sinon.stub().callsFake(async (ctx, handler) => {
+            return merge(
+              handler.handle(),
+              defer(() => {
+                throw new TestError();
+              }),
+            );
+          }),
+        },
+        {
+          intercept: sinon
+            .stub()
+            .callsFake(async (ctx, handler) => handler.handle()),
+        },
+        {
+          intercept: sinon
+            .stub()
+            .callsFake(async (ctx, handler) => handler.handle()),
+        },
+        ,
+      ];
+
+      const observable = await consumer.intercept(
+        testInterceptors,
+        null,
+        { constructor: null },
+        null,
+        async () => 1,
+      );
+
+      try {
+        await transformToResult(observable);
+      } catch (error) {
+        if (!(error instanceof TestError)) {
+          throw error;
+        }
+      }
+      expect(testInterceptors[2].intercept.called).to.be.false;
     });
   });
 });
