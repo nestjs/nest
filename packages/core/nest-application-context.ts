@@ -50,7 +50,7 @@ export class NestApplicationContext<
 
   private shouldFlushLogsOnOverride = false;
   private readonly activeShutdownSignals = new Array<string>();
-  private readonly moduleCompiler = new ModuleCompiler();
+  private readonly moduleCompiler: ModuleCompiler;
   private shutdownCleanupRef?: (...args: unknown[]) => unknown;
   private _instanceLinksHost: InstanceLinksHost;
   private _moduleRefsForHooksByDistance?: Array<Module>;
@@ -70,6 +70,7 @@ export class NestApplicationContext<
   ) {
     super();
     this.injector = new Injector();
+    this.moduleCompiler = container.getModuleCompiler();
 
     if (this.appOptions.preview) {
       this.printInPreviewModeWarning();
@@ -95,7 +96,13 @@ export class NestApplicationContext<
     const moduleTokenFactory = this.container.getModuleTokenFactory();
     const { type, dynamicMetadata } =
       this.moduleCompiler.extractMetadata(moduleType);
-    const token = moduleTokenFactory.create(type, dynamicMetadata);
+    const token = dynamicMetadata
+      ? moduleTokenFactory.createForDynamic(
+          type,
+          dynamicMetadata,
+          moduleType as DynamicModule,
+        )
+      : moduleTokenFactory.createForStatic(type, moduleType as Type);
 
     const selectedModule = modulesContainer.get(token);
     if (!selectedModule) {
