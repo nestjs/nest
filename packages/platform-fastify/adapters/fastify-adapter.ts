@@ -34,6 +34,7 @@ import {
   RequestGenericInterface,
   RouteOptions,
   RouteShorthandOptions,
+  HTTPMethods,
   fastify,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
@@ -304,6 +305,10 @@ export class FastifyAdapter<
 
   public options(...args: any[]) {
     return this.injectRouteOptions('options', ...args);
+  }
+
+  public search(...args: any[]) {
+    return this.injectRouteOptions('search', ...args);
   }
 
   public applyVersionFilter(
@@ -668,17 +673,7 @@ export class FastifyAdapter<
     return rawRequest.originalUrl || rawRequest.url;
   }
 
-  private injectRouteOptions(
-    routerMethodKey:
-      | 'get'
-      | 'post'
-      | 'put'
-      | 'delete'
-      | 'options'
-      | 'patch'
-      | 'head',
-    ...args: any[]
-  ) {
+  private injectRouteOptions(routerMethodKey: HTTPMethods, ...args: any[]) {
     const handlerRef = args[args.length - 1];
     const isVersioned =
       !isUndefined(handlerRef.version) &&
