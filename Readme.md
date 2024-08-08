@@ -92,11 +92,9 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <table style="text-align:center;">
 <tr>
 <td><a href="https://www.mercedes-benz.com/" target="_blank"><img src="https://nestjs.com/img/logos/mercedes-logo.png" width="100" valign="middle" /></a></td>
-<td><a href="https://n.inc" target="_blank"><img src="https://nestjs.com/img/logos/n-inc-logo.svg" width="80" valign="middle" /></a></td>
-<td><a href="https://twistag.com/" target="_blank"><img src="https://nestjs.com/img/logos/twistag-logo.png" width="126" valign="middle" /></a></td>
 <td><a href="https://www.dinii.jp/" target="_blank"><img src="https://nestjs.com/img/logos/dinii-logo.png" width="65" valign="middle" /></a></td>
 <td><a href="https://bloodycase.com/?promocode=NEST" target="_blank"><img src="https://nestjs.com/img/logos/bloodycase-logo.png" width="65" valign="middle" /></a></td>
-<td><a href="https://handsontable.com" target="_blank"><img src="https://nestjs.com/img/logos/handsontable-logo.svg" width="140" valign="middle" /></a></td>
+<td><a href="https://handsontable.com/docs/react-data-grid/?utm_source=NestJS_GH&utm_medium=sponsorship&utm_campaign=library_sponsorship_2024" target="_blank"><img src="https://nestjs.com/img/logos/handsontable-logo.svg" width="150" valign="middle" /></a></td>
 </tr>
 </table>
 
