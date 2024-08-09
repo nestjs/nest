@@ -78,7 +78,7 @@
     "uuid": "10.0.0"
   },
   "devDependencies": {
-    "@apollo/server": "4.10.5",
+    "@apollo/server": "4.11.0",
     "@codechecks/client": "0.1.12",
     "@commitlint/cli": "19.3.0",
     "@commitlint/config-angular": "19.3.0",
