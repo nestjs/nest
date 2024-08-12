@@ -12,6 +12,7 @@ import { isObject } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '../adapters';
 import { MESSAGES } from '../constants';
 import { HttpAdapterHost } from '../helpers/http-adapter-host';
+import { inspect } from 'util';
 
 export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
   private static readonly logger = new Logger('ExceptionsHandler');
@@ -71,7 +72,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     if (this.isExceptionObject(exception)) {
       return BaseExceptionFilter.logger.error(
         exception.message,
-        exception.stack,
+        inspect(exception, false, null),
       );
     }
     return BaseExceptionFilter.logger.error(exception);
