@@ -99,7 +99,7 @@ export interface NestFastifyApplication<
     callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
   listen(
-    opts: FastifyListenOptions,
+    opts?: FastifyListenOptions,
   ): Promise<TServer>;
   listen(
     callback?: (err: Error | null, address: string) => void,
