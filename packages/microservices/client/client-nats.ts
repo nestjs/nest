@@ -18,6 +18,7 @@ let natsPackage = {} as any;
 export class ClientNats extends ClientProxy {
   protected readonly logger = new Logger(ClientNats.name);
   protected natsClient: Client;
+  protected clientConnectionPromise: Promise<Client>;
 
   constructor(protected readonly options: NatsOptions['options']) {
     super();
@@ -33,10 +34,11 @@ export class ClientNats extends ClientProxy {
   }
 
   public async connect(): Promise<any> {
-    if (this.natsClient) {
-      return this.natsClient;
+    if (this.clientConnectionPromise) {
+      return this.clientConnectionPromise;
     }
-    this.natsClient = await this.createClient();
+    this.clientConnectionPromise = this.createClient();
+    this.natsClient = await this.clientConnectionPromise;
     this.handleStatusUpdates(this.natsClient);
     return this.natsClient;
   }
