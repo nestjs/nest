@@ -253,6 +253,7 @@ describe('ClientNats', () => {
     describe('when is not connected', () => {
       beforeEach(async () => {
         client['natsClient'] = null;
+        client['clientConnectionPromise'] = null;
         await client.connect();
       });
       it('should call "handleStatusUpdatesSpy" once', async () => {
