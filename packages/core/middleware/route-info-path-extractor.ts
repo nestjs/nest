@@ -49,7 +49,7 @@ export class RouteInfoPathExtractor {
         ? [
             ...entries,
             ...this.excludedGlobalPrefixRoutes.map(
-              route => versionPaths + addLeadingSlash(route.path),
+              route => versionPaths + addLeadingSlash(route.path) + '$',
             ),
           ]
         : entries;
