@@ -1,6 +1,6 @@
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CatsService } from './cats.service';
 import { Cat } from './schemas/cat.schema';
 import { CreateCatDto } from './dto/create-cat.dto';
@@ -8,6 +8,8 @@ import { CreateCatDto } from './dto/create-cat.dto';
 const catModelMock = {
   create: jest.fn(),
   find: jest.fn(),
+  findOne: jest.fn(),
+  findByIdAndRemove: jest.fn(),
 };
 
 describe('CatsService', () => {
@@ -76,6 +78,44 @@ describe('CatsService', () => {
 
       expect(result).toEqual(mockedCats);
       expect(model.find).toHaveBeenCalled();
+    });
+  });
+
+  describe('findOne()', () => {
+    it('should return one cat', async () => {
+      const mockedCat = {
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      model.findOne.mockReturnValueOnce({
+        exec: jest.fn().mockResolvedValueOnce(mockedCat),
+      } as any);
+
+      const id = new Types.ObjectId().toString();
+      const result = await service.findOne(id);
+
+      expect(result).toEqual(mockedCat);
+      expect(model.findOne).toHaveBeenCalledWith({ _id: id });
+    });
+  });
+
+  describe('delete()', () => {
+    it('should delete a cat', async () => {
+      const mockedCat = {
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      model.findByIdAndRemove.mockReturnValueOnce({
+        exec: jest.fn().mockResolvedValueOnce(mockedCat),
+      } as any);
+
+      const id = new Types.ObjectId().toString();
+      const result = await service.delete(id);
+
+      expect(result).toEqual(mockedCat);
+      expect(model.findByIdAndRemove).toHaveBeenCalledWith({ _id: id });
     });
   });
 });
