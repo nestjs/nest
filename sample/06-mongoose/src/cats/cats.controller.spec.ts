@@ -8,6 +8,7 @@ const catsServiceMock = {
   create: jest.fn(),
   findAll: jest.fn(),
   findOne: jest.fn(),
+  update: jest.fn(),
   delete: jest.fn(),
 };
 
@@ -98,6 +99,29 @@ describe('Cats Controller', () => {
 
       expect(result).toEqual(mockedCat);
       expect(service.findOne).toHaveBeenCalledWith(id);
+    });
+  });
+
+  describe('update()', () => {
+    it('should update a single cat', async () => {
+      const mockedCat = {
+        _id: new Types.ObjectId(),
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      service.update.mockResolvedValueOnce(mockedCat);
+
+      const id = new Types.ObjectId().toString();
+      const updateCatDto: CreateCatDto = {
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      const result = await controller.update(id, updateCatDto);
+
+      expect(result).toEqual(mockedCat);
+      expect(service.update).toHaveBeenCalledWith(id, updateCatDto);
     });
   });
 

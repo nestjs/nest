@@ -9,6 +9,7 @@ const catModelMock = {
   create: jest.fn(),
   find: jest.fn(),
   findOne: jest.fn(),
+  findByIdAndUpdate: jest.fn(),
   findByIdAndRemove: jest.fn(),
 };
 
@@ -97,6 +98,34 @@ describe('CatsService', () => {
 
       expect(result).toEqual(mockedCat);
       expect(model.findOne).toHaveBeenCalledWith({ _id: id });
+    });
+  });
+
+  describe('update()', () => {
+    it('should update a cat', async () => {
+      const mockedCat = {
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      model.findByIdAndUpdate.mockReturnValueOnce({
+        exec: jest.fn().mockResolvedValueOnce(mockedCat),
+      } as any);
+
+      const id = new Types.ObjectId().toString();
+      const updateCatDto = {
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      const result = await service.update(id, updateCatDto);
+
+      expect(result).toEqual(mockedCat);
+      expect(model.findByIdAndUpdate).toHaveBeenCalledWith(
+        { _id: id },
+        updateCatDto,
+        { new: true },
+      );
     });
   });
 

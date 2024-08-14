@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { CatsService } from './cats.service';
 import { CreateCatDto } from './dto/create-cat.dto';
 import { Cat } from './schemas/cat.schema';
+import { UpdateCatDto } from './dto/update-cat.dto';
 
 @Controller('cats')
 export class CatsController {
@@ -20,6 +21,11 @@ export class CatsController {
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<Cat> {
     return this.catsService.findOne(id);
+  }
+
+  @Post(':id')
+  async update(@Param('id') id: string, @Body() updateCatDto: UpdateCatDto) {
+    return this.catsService.update(id, updateCatDto);
   }
 
   @Delete(':id')
