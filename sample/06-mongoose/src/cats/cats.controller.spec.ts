@@ -7,6 +7,8 @@ import { Types } from 'mongoose';
 const catsServiceMock = {
   create: jest.fn(),
   findAll: jest.fn(),
+  findOne: jest.fn(),
+  delete: jest.fn(),
 };
 
 describe('Cats Controller', () => {

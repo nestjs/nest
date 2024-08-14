@@ -21,7 +21,7 @@ export class CatsService {
     return this.catModel.findOne({ _id: id }).exec();
   }
 
-  async delete(id: string) {
+  async delete(id: string): Promise<Cat> {
     const deletedCat = await this.catModel
       .findByIdAndRemove({ _id: id })
       .exec();
