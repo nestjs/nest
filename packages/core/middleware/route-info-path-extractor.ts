@@ -30,39 +30,30 @@ export class RouteInfoPathExtractor {
   }
 
   public extractPathsFrom({ path, method, version }: RouteInfo): string[] {
-    const versionPaths = this.extractVersionPathFrom(version);
-
-    if (this.isAWildcard(path)) {
-      const entries =
-        versionPaths.length > 0
-          ? versionPaths
-              .map(versionPath => [
-                this.prefixPath + versionPath + '$',
-                this.prefixPath + versionPath + addLeadingSlash(path),
-              ])
-              .flat()
-          : this.prefixPath
-            ? [this.prefixPath + '$', this.prefixPath + addLeadingSlash(path)]
-            : [addLeadingSlash(path)];
-
-      return Array.isArray(this.excludedGlobalPrefixRoutes)
-        ? [
-            ...entries,
-            ...this.excludedGlobalPrefixRoutes
-              .map(route =>
-                versionPaths.length > 0
-                  ? versionPaths.map(
-                      versionPath =>
-                        versionPath + addLeadingSlash(route.path) + '$',
-                    )
-                  : addLeadingSlash(route.path) + '$',
-              )
-              .flat(),
-          ]
-        : entries;
+    if (!this.isAWildcard(path)) {
+      return this.extractNonWildcardPathsFrom({ path, method, version });
     }
 
-    return this.extractNonWildcardPathsFrom({ path, method, version });
+    const versionPaths = this.extractVersionPathFrom(version);
+    const prefixes = this.combinePaths(this.prefixPath, versionPaths);
+    const entries = [
+      ...prefixes.filter(Boolean).map(prefix => prefix + '$'),
+      ...this.combinePaths(prefixes, addLeadingSlash(path)),
+    ];
+
+    if (
+      Array.isArray(this.excludedGlobalPrefixRoutes) &&
+      this.excludedGlobalPrefixRoutes.length
+    ) {
+      const excludedGlobalPrefixPaths = this.excludedGlobalPrefixRoutes
+        .map(route =>
+          this.combinePaths(versionPaths, addLeadingSlash(route.path + '$')),
+        )
+        .flat();
+      entries.push(...excludedGlobalPrefixPaths);
+    }
+
+    return entries;
   }
 
   public extractPathFrom(route: RouteInfo): string[] {
@@ -119,5 +110,15 @@ export class RouteInfoPathExtractor {
       );
     }
     return [addLeadingSlash(versionPrefix + versionValue.toString())];
+  }
+
+  public combinePaths(a: string | string[], b: string | string[]): string[] {
+    const formatter = (path: string | string[]) => {
+      return Array.isArray(path) ? (path.length > 0 ? path : ['']) : [path];
+    };
+
+    const aArr = formatter(a);
+    const bArr = formatter(b);
+    return aArr.map(a => bArr.map(b => a + b)).flat();
   }
 }
