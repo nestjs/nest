@@ -34,6 +34,12 @@ export class RouteInfoPathExtractor {
       return this.extractNonWildcardPathsFrom({ path, method, version });
     }
 
+    if (!this.hasParamInPrefixPath()) {
+      return [addLeadingSlash(path)];
+    }
+
+    // The following logic is for cases where `prefixPath` contains `:param`.
+    // To resolve https://github.com/nestjs/nest/issues/9776
     const versionPaths = this.extractVersionPathFrom(version);
     const prefixes = this.combinePaths(this.prefixPath, versionPaths);
     const entries = [
@@ -62,6 +68,10 @@ export class RouteInfoPathExtractor {
     }
 
     return this.extractNonWildcardPathsFrom(route);
+  }
+
+  private hasParamInPrefixPath(): boolean {
+    return this.prefixPath.includes(':');
   }
 
   private isAWildcard(path: string): boolean {

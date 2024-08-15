@@ -31,7 +31,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/v1$', '/v1/*']);
+      ).to.eql(['/*']);
     });
 
     it(`should return correct paths when set global prefix`, () => {
@@ -42,7 +42,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql(['/api$', '/api/*']);
+      ).to.eql(['/*']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -50,7 +50,26 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/api/v1$', '/api/v1/*']);
+      ).to.eql(['/*']);
+    });
+
+    it(`should return correct paths when set global prefix (has :param)`, () => {
+      Reflect.set(routeInfoPathExtractor, 'prefixPath', '/:param');
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: '*',
+          method: RequestMethod.ALL,
+        }),
+      ).to.eql(['/:param$', '/:param/*']);
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: '*',
+          method: RequestMethod.ALL,
+          version: '1',
+        }),
+      ).to.eql(['/:param/v1$', '/:param/v1/*']);
     });
 
     it(`should return correct paths when set global prefix and global prefix options`, () => {
@@ -66,7 +85,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql(['/api$', '/api/*', '/foo$']);
+      ).to.eql(['/*']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -74,7 +93,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/api/v1$', '/api/v1/*', '/v1/foo$']);
+      ).to.eql(['/*']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -91,6 +110,46 @@ describe('RouteInfoPathExtractor', () => {
           version: '1',
         }),
       ).to.eql(['/api/v1/bar']);
+    });
+
+    it(`should return correct paths when set global prefix (has :param) and global prefix options`, () => {
+      Reflect.set(routeInfoPathExtractor, 'prefixPath', '/:param');
+      Reflect.set(
+        routeInfoPathExtractor,
+        'excludedGlobalPrefixRoutes',
+        mapToExcludeRoute(['foo']),
+      );
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: '*',
+          method: RequestMethod.ALL,
+        }),
+      ).to.eql(['/:param$', '/:param/*', '/foo$']);
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: '*',
+          method: RequestMethod.ALL,
+          version: '1',
+        }),
+      ).to.eql(['/:param/v1$', '/:param/v1/*', '/v1/foo$']);
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: 'foo',
+          method: RequestMethod.ALL,
+          version: '1',
+        }),
+      ).to.eql(['/v1/foo']);
+
+      expect(
+        routeInfoPathExtractor.extractPathsFrom({
+          path: 'bar',
+          method: RequestMethod.ALL,
+          version: '1',
+        }),
+      ).to.eql(['/:param/v1/bar']);
     });
   });
 
