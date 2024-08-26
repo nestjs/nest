@@ -179,7 +179,7 @@ export class ConsoleLogger implements LoggerService {
 
   /**
    * Set logger prefix
-   * @param setPrefix prefix
+   * @param prefix prefix
    */
   setPrefix(prefix: string): void {
     ConsoleLogger.prefix = prefix;
