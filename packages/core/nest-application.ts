@@ -382,6 +382,11 @@ export class NestApplication
     return this;
   }
 
+  public setLoggerPrefix(prefix: string): this {
+    this.logger.setPrefix(prefix);
+    return this;
+  }
+
   public useWebSocketAdapter(adapter: WebSocketAdapter): this {
     this.config.setIoAdapter(adapter);
     return this;

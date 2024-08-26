@@ -20,6 +20,8 @@ export interface ConsoleLoggerOptions {
   timestamp?: boolean;
 }
 
+const DEFAULT_PREFIX = 'Nest';
+
 const DEFAULT_LOG_LEVELS: LogLevel[] = [
   'log',
   'error',
@@ -42,6 +44,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
 export class ConsoleLogger implements LoggerService {
   private static lastTimestampAt?: number;
   private originalContext?: string;
+  private static prefix: string = DEFAULT_PREFIX;
 
   constructor();
   constructor(context: string);
@@ -175,6 +178,14 @@ export class ConsoleLogger implements LoggerService {
   }
 
   /**
+   * Set logger prefix
+   * @param setPrefix prefix
+   */
+  setPrefix(prefix: string): void {
+    ConsoleLogger.prefix = prefix;
+  }
+
+  /**
    * Set logger context
    * @param context context
    */
@@ -223,7 +234,7 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected formatPid(pid: number) {
-    return `[Nest] ${pid}  - `;
+    return `[${ConsoleLogger.prefix}] ${pid}  - `;
   }
 
   protected formatContext(context: string): string {
