@@ -8,7 +8,7 @@ async function bootstrap() {
   const appService = app.get(AppService);
   console.log('AppService#getHello:', appService.getHello());
 
-  // Note that bellow we can't use `app.select(MyDynamicModule)` otherwise we would get an error as the static version of `MyDynamicModule` was not imported anywhere
+  // Note that below we can't use `app.select(MyDynamicModule)` otherwise we would get an error as the static version of `MyDynamicModule` was not imported anywhere
   const myDynamicProviderValue = app
     .select(dynamicModule)
     .get('MyDynamicProvider');
