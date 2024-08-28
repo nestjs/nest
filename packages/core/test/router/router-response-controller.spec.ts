@@ -382,7 +382,7 @@ data: test
 
       beforeEach(() => {
         // Can't access to the internal sseStream,
-        // as a workround, set `defaultMaxListeners` of `SseStream` and reset the max listeners of `process`
+        // as a workaround, set `defaultMaxListeners` of `SseStream` and reset the max listeners of `process`
         const PROCESS_MAX_LISTENERS = process.getMaxListeners();
         SseStream.defaultMaxListeners = MAX_LISTENERS;
         process.setMaxListeners(PROCESS_MAX_LISTENERS);

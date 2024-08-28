@@ -522,7 +522,7 @@ export class DependenciesScanner {
   }
 
   public insertExportedProvider(
-    // TODO: improve the type definition bellow because it doesn't reflects the real usage of this method
+    // TODO: improve the type definition below because it doesn't reflects the real usage of this method
     exportedProvider: Type<Injectable> | ForwardReference,
     token: string,
   ) {
