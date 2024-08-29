@@ -151,7 +151,7 @@
     "lint-staged": "15.2.9",
     "markdown-table": "2.0.0",
     "mocha": "10.7.3",
-    "mongoose": "8.5.3",
+    "mongoose": "8.6.0",
     "mqtt": "5.6.0",
     "multer": "1.4.4",
     "mysql2": "3.11.0",
