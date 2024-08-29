@@ -15,7 +15,9 @@ import {
 
 @Module({})
 export class ClientsModule {
-  static register(options: ClientsModuleOptions): DynamicModule {
+  static register<ClientProviderOverrideOptions>(
+    options: ClientsModuleOptions<ClientProviderOverrideOptions>,
+  ): DynamicModule {
     const clientsOptions = !Array.isArray(options) ? options.clients : options;
     const clients = (clientsOptions || []).map(item => {
       return {
@@ -23,6 +25,7 @@ export class ClientsModule {
         useValue: this.assignOnAppShutdownHook(ClientProxyFactory.create(item)),
       };
     });
+
     return {
       module: ClientsModule,
       global: !Array.isArray(options) && options.isGlobal,

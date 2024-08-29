@@ -22,8 +22,8 @@ import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
 
-export type MicroserviceOptions =
-  | GrpcOptions
+export type MicroserviceOptions<GrpcLoaderOption> =
+  | GrpcOptions<GrpcLoaderOption>
   | TcpOptions
   | RedisOptions
   | NatsOptions
@@ -43,7 +43,7 @@ export interface CustomStrategy {
 /**
  * @publicApi
  */
-export interface GrpcOptions {
+export interface GrpcOptions<GrpcLoaderOption> {
   transport?: Transport.GRPC;
   options: {
     url?: string;
@@ -67,19 +67,21 @@ export interface GrpcOptions {
     packageDefinition?: any;
     gracefulShutdown?: boolean;
     onLoadPackageDefinition?: (pkg: any, server: any) => void;
-    loader?: {
-      keepCase?: boolean;
-      alternateCommentMode?: boolean;
-      longs?: Function;
-      enums?: Function;
-      bytes?: Function;
-      defaults?: boolean;
-      arrays?: boolean;
-      objects?: boolean;
-      oneofs?: boolean;
-      json?: boolean;
-      includeDirs?: string[];
-    };
+    loader?:
+      | GrpcLoaderOption
+      | {
+          keepCase?: boolean;
+          alternateCommentMode?: boolean;
+          longs?: Function;
+          enums?: Function;
+          bytes?: Function;
+          defaults?: boolean;
+          arrays?: boolean;
+          objects?: boolean;
+          oneofs?: boolean;
+          json?: boolean;
+          includeDirs?: string[];
+        };
   };
 }
 
