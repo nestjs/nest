@@ -223,7 +223,7 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected formatPid(pid: number) {
-    return `[Nest] ${pid}  - `;
+    return `[${process.env.CONSOLE_LOGGER_PREFIX || 'Nest'}] ${pid}  - `;
   }
 
   protected formatContext(context: string): string {
