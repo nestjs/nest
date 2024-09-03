@@ -22,7 +22,7 @@ import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
 
-export type MicroserviceOptions<GrpcLoaderOption> =
+export type MicroserviceOptions<GrpcLoaderOption = {}> =
   | GrpcOptions<GrpcLoaderOption>
   | TcpOptions
   | RedisOptions
@@ -40,10 +40,24 @@ export interface CustomStrategy {
   options?: {};
 }
 
+interface DefaultLoaderOptions {
+  keepCase?: boolean;
+  alternateCommentMode?: boolean;
+  longs?: Function;
+  enums?: Function;
+  bytes?: Function;
+  defaults?: boolean;
+  arrays?: boolean;
+  objects?: boolean;
+  oneofs?: boolean;
+  json?: boolean;
+  includeDirs?: string[];
+}
+
 /**
  * @publicApi
  */
-export interface GrpcOptions<GrpcLoaderOption> {
+export interface GrpcOptions<GrpcLoaderOption = {}> {
   transport?: Transport.GRPC;
   options: {
     url?: string;
@@ -67,21 +81,7 @@ export interface GrpcOptions<GrpcLoaderOption> {
     packageDefinition?: any;
     gracefulShutdown?: boolean;
     onLoadPackageDefinition?: (pkg: any, server: any) => void;
-    loader?:
-      | GrpcLoaderOption
-      | {
-          keepCase?: boolean;
-          alternateCommentMode?: boolean;
-          longs?: Function;
-          enums?: Function;
-          bytes?: Function;
-          defaults?: boolean;
-          arrays?: boolean;
-          objects?: boolean;
-          oneofs?: boolean;
-          json?: boolean;
-          includeDirs?: string[];
-        };
+    loader?: GrpcLoaderOption | DefaultLoaderOptions;
   };
 }
 
