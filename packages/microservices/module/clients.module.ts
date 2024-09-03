@@ -15,8 +15,8 @@ import {
 
 @Module({})
 export class ClientsModule {
-  static register<ClientProviderOverrideOptions>(
-    options: ClientsModuleOptions<ClientProviderOverrideOptions>,
+  static register<ClientProviderCustomOptions>(
+    options: ClientsModuleOptions<ClientProviderCustomOptions>,
   ): DynamicModule {
     const clientsOptions = !Array.isArray(options) ? options.clients : options;
     const clients = (clientsOptions || []).map(item => {

@@ -1,19 +1,19 @@
 import { ClientOptions, CustomClientOptions } from '../../interfaces';
 import { Type, Provider, ModuleMetadata } from '@nestjs/common/interfaces';
 
-export type ClientProvider<ClientProviderOverrideOptions = {}> =
-  | ClientOptions<ClientProviderOverrideOptions>
+export type ClientProvider<ClientProviderCustomOptions = {}> =
+  | ClientOptions<ClientProviderCustomOptions>
   | CustomClientOptions;
 
-export type ClientProviderOptions<ClientProviderOverrideOptions> =
-  ClientProvider<ClientProviderOverrideOptions> & {
+export type ClientProviderOptions<ClientProviderCustomOptions> =
+  ClientProvider<ClientProviderCustomOptions> & {
     name: string | symbol;
   };
 
-export type ClientsModuleOptions<ClientProviderOverrideOptions = {}> =
-  | Array<ClientProviderOptions<ClientProviderOverrideOptions>>
+export type ClientsModuleOptions<ClientProviderCustomOptions = {}> =
+  | Array<ClientProviderOptions<ClientProviderCustomOptions>>
   | {
-      clients: Array<ClientProviderOptions<ClientProviderOverrideOptions>>;
+      clients: Array<ClientProviderOptions<ClientProviderCustomOptions>>;
       isGlobal?: boolean;
     };
 

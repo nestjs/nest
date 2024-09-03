@@ -14,11 +14,11 @@ import {
 import { Serializer } from './serializer.interface';
 import { ConnectionOptions } from 'tls';
 
-export type ClientOptions<ClientProviderOverrideOptions = {}> =
+export type ClientOptions<ClientProviderCustomOptions = {}> =
   | RedisOptions
   | NatsOptions
   | MqttOptions
-  | GrpcOptions<ClientProviderOverrideOptions>
+  | GrpcOptions<ClientProviderCustomOptions>
   | KafkaOptions
   | TcpClientOptions
   | RmqOptions;
