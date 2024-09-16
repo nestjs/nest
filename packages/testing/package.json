@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/testing",
-  "version": "10.4.1",
+  "version": "10.4.2",
   "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -18,7 +18,7 @@
     "access": "public"
   },
   "dependencies": {
-    "tslib": "2.6.3"
+    "tslib": "2.7.0"
   },
   "peerDependencies": {
     "@nestjs/common": "^10.0.0",
