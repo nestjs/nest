@@ -19,7 +19,7 @@
     "build:dev": "tsc -b -v packages --watch",
     "prebuild:prod": "npm run clean",
     "build:prod": "tsc -b -v packages",
-    "changelog": "lerna-changelog",
+    "changelog": "lerna-changelog --from=v10.4.1",
     "clean": "tsc -b --clean packages",
     "move:samples": "gulp move:samples",
     "move:node_modules": "gulp move:node_modules",
