@@ -313,7 +313,7 @@ export class NestContainer {
     metadataKey?: Exclude<keyof DynamicModule, 'global' | 'module'>,
   ) {
     const metadata = this.dynamicModulesMetadata.get(token);
-    return metadataKey ? metadata?.[metadataKey] ?? [] : metadata;
+    return metadataKey ? (metadata?.[metadataKey] ?? []) : metadata;
   }
 
   public registerCoreModuleRef(moduleRef: Module) {
