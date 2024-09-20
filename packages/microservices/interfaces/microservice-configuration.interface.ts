@@ -22,7 +22,7 @@ import { CustomTransportStrategy } from './custom-transport-strategy.interface';
 import { Deserializer } from './deserializer.interface';
 import { Serializer } from './serializer.interface';
 
-export type MicroserviceOptions<GrpcLoaderOption = {}> =
+export type MicroserviceOptions<GrpcLoaderOption = any> =
   | GrpcOptions<GrpcLoaderOption>
   | TcpOptions
   | RedisOptions
