@@ -14,7 +14,7 @@ import {
 import { Serializer } from './serializer.interface';
 import { ConnectionOptions } from 'tls';
 
-export type ClientOptions<ClientProviderCustomOptions = {}> =
+export type ClientOptions<ClientProviderCustomOptions = any> =
   | RedisOptions
   | NatsOptions
   | MqttOptions

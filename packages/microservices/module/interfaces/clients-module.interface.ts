@@ -1,7 +1,7 @@
 import { ClientOptions, CustomClientOptions } from '../../interfaces';
 import { Type, Provider, ModuleMetadata } from '@nestjs/common/interfaces';
 
-export type ClientProvider<ClientProviderCustomOptions = {}> =
+export type ClientProvider<ClientProviderCustomOptions = any> =
   | ClientOptions<ClientProviderCustomOptions>
   | CustomClientOptions;
 
@@ -10,7 +10,7 @@ export type ClientProviderOptions<ClientProviderCustomOptions> =
     name: string | symbol;
   };
 
-export type ClientsModuleOptions<ClientProviderCustomOptions = {}> =
+export type ClientsModuleOptions<ClientProviderCustomOptions = any> =
   | Array<ClientProviderOptions<ClientProviderCustomOptions>>
   | {
       clients: Array<ClientProviderOptions<ClientProviderCustomOptions>>;
