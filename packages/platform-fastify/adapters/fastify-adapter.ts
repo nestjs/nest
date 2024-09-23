@@ -289,35 +289,35 @@ export class FastifyAdapter<
   }
 
   public get(...args: any[]) {
-    return this.injectRouteOptions('get', ...args);
+    return this.injectRouteOptions('GET', ...args);
   }
 
   public post(...args: any[]) {
-    return this.injectRouteOptions('post', ...args);
+    return this.injectRouteOptions('POST', ...args);
   }
 
   public head(...args: any[]) {
-    return this.injectRouteOptions('head', ...args);
+    return this.injectRouteOptions('HEAD', ...args);
   }
 
   public delete(...args: any[]) {
-    return this.injectRouteOptions('delete', ...args);
+    return this.injectRouteOptions('DELETE', ...args);
   }
 
   public put(...args: any[]) {
-    return this.injectRouteOptions('put', ...args);
+    return this.injectRouteOptions('PUT', ...args);
   }
 
   public patch(...args: any[]) {
-    return this.injectRouteOptions('patch', ...args);
+    return this.injectRouteOptions('PATCH', ...args);
   }
 
   public options(...args: any[]) {
-    return this.injectRouteOptions('options', ...args);
+    return this.injectRouteOptions('OPTIONS', ...args);
   }
 
   public search(...args: any[]) {
-    return this.injectRouteOptions('search', ...args);
+    return this.injectRouteOptions('SEARCH', ...args);
   }
 
   public applyVersionFilter(
