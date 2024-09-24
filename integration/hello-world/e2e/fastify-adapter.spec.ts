@@ -87,6 +87,15 @@ describe('Hello world (fastify adapter)', () => {
       .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
   });
 
+  it('/HEAD should respond to with a 200', () => {
+    return app
+      .inject({
+        method: 'HEAD',
+        url: '/hello',
+      })
+      .then(({ statusCode }) => expect(statusCode).to.be.eq(200));
+  });
+
   afterEach(async () => {
     await app.close();
   });

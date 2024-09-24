@@ -682,7 +682,10 @@ export class FastifyAdapter<
     return rawRequest.originalUrl || rawRequest.url;
   }
 
-  private injectRouteOptions(routerMethodKey: HTTPMethods, ...args: any[]) {
+  private injectRouteOptions(
+    routerMethodKey: Uppercase<HTTPMethods>,
+    ...args: any[]
+  ) {
     const handlerRef = args[args.length - 1];
     const isVersioned =
       !isUndefined(handlerRef.version) &&
