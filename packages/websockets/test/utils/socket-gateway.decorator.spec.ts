@@ -27,16 +27,21 @@ describe('@WebSocketGateway', () => {
     expect(port).to.be.eql(0);
   });
 
-  @WebSocketGateway({ namespace: '/' })
+  @WebSocketGateway({ namespace: '/', path: '/path', prefix: '/prefix' })
   class TestGateway3 {}
 
   it('should decorate transport with expected options', () => {
     const isGateway = Reflect.getMetadata(GATEWAY_METADATA, TestGateway3);
     const port = Reflect.getMetadata('port', TestGateway3);
-    const { namespace } = Reflect.getMetadata(GATEWAY_OPTIONS, TestGateway3);
+    const { namespace, path, prefix } = Reflect.getMetadata(
+      GATEWAY_OPTIONS,
+      TestGateway3,
+    );
 
     expect(isGateway).to.be.eql(true);
     expect(port).to.be.eql(0);
     expect(namespace).to.be.eql('/');
+    expect(path).to.be.eql('/path');
+    expect(prefix).to.be.eql('/prefix');
   });
 });
