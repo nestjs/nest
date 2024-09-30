@@ -51,6 +51,13 @@ describe('ServerGrpc', () => {
       await server.close();
       expect(bindEventsStub.called).to.be.true;
     });
+    it('should call "client.start"', async () => {
+      const client = { start: sinon.spy() };
+      sinon.stub(server, 'createClient').callsFake(async () => client);
+
+      await server.listen(callback);
+      expect(client.start.called).to.be.true;
+    });
     it('should call callback', async () => {
       await server.listen(callback);
       await server.close();
@@ -87,6 +94,12 @@ describe('ServerGrpc', () => {
       await serverMulti.listen(callback);
       await serverMulti.close();
       expect(bindEventsStub.called).to.be.true;
+    });
+    it('should call "client.start"', async () => {
+      const client = { start: sinon.spy() };
+      sinon.stub(serverMulti, 'createClient').callsFake(async () => client);
+      await serverMulti.listen(callback);
+      expect(client.start.called).to.be.true;
     });
     it('should call callback', async () => {
       await serverMulti.listen(callback);
@@ -268,6 +281,8 @@ describe('ServerGrpc', () => {
           .onFirstCall()
           .returns('_invalid')
           .onSecondCall()
+          .returns('_invalid')
+          .onThirdCall()
           .returns('test2');
 
         sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
@@ -290,6 +305,69 @@ describe('ServerGrpc', () => {
           ),
         ).to.be.true;
       });
+    });
+  });
+
+  describe('getMessageHandler', () => {
+    it('should return handler when service name specified', () => {
+      const testPattern = server.createPattern(
+        'test',
+        'TestMethod',
+        GrpcMethodStreamingType.NO_STREAMING,
+      );
+      const handlers = new Map([[testPattern, () => ({})]]);
+      console.log(handlers.entries());
+      (server as any).messageHandlers = handlers;
+
+      expect(
+        server.getMessageHandler(
+          'test',
+          'TestMethod',
+          GrpcMethodStreamingType.NO_STREAMING,
+          {},
+        ),
+      ).not.to.be.undefined;
+    });
+    it('should return handler when package name specified with service name', () => {
+      const testPattern = server.createPattern(
+        'package.example.test',
+        'TestMethod',
+        GrpcMethodStreamingType.NO_STREAMING,
+      );
+      const handlers = new Map([[testPattern, () => ({})]]);
+      (server as any).messageHandlers = handlers;
+
+      expect(
+        server.getMessageHandler(
+          'test',
+          'TestMethod',
+          GrpcMethodStreamingType.NO_STREAMING,
+          {
+            path: '/package.example.test/TestMethod',
+          },
+        ),
+      ).not.to.be.undefined;
+    });
+
+    it('should return undefined when method name is unknown', () => {
+      const testPattern = server.createPattern(
+        'package.example.test',
+        'unknown',
+        GrpcMethodStreamingType.NO_STREAMING,
+      );
+      const handlers = new Map([[testPattern, () => ({})]]);
+      (server as any).messageHandlers = handlers;
+
+      expect(
+        server.getMessageHandler(
+          'test',
+          'TestMethod',
+          GrpcMethodStreamingType.NO_STREAMING,
+          {
+            path: '/package.example.test/TestMethod',
+          },
+        ),
+      ).to.be.undefined;
     });
   });
 
@@ -375,6 +453,7 @@ describe('ServerGrpc', () => {
       const fn = server.createStreamServiceMethod(sinon.spy());
       expect(fn).to.be.a('function');
     });
+
     describe('on call', () => {
       it('should call native method', async () => {
         const call = {
@@ -390,6 +469,26 @@ describe('ServerGrpc', () => {
         expect(native.called).to.be.true;
         expect(call.on.calledWith('cancelled')).to.be.true;
         expect(call.off.calledWith('cancelled')).to.be.true;
+      });
+
+      it('should handle error thrown in handler', async () => {
+        const call = {
+          write: sinon.spy(() => true),
+          end: sinon.spy(),
+          on: sinon.spy(),
+          off: sinon.spy(),
+          emit: sinon.spy(),
+        };
+
+        const callback = sinon.spy();
+        const error = new Error('handler threw');
+        const native = sinon.spy(() => throwError(() => error));
+
+        // implicit assertion that this will never throw when call.emit emits an error event
+        await server.createStreamServiceMethod(native)(call, callback);
+        expect(native.called).to.be.true;
+        expect(call.emit.calledWith('error', error)).to.be.ok;
+        expect(call.end.called).to.be.true;
       });
 
       it(`should close the result observable when receiving an 'cancelled' event from the client`, async () => {

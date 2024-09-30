@@ -13,6 +13,9 @@ import { Server } from './server';
 
 let natsPackage = {} as any;
 
+/**
+ * @publicApi
+ */
 export class ServerNats extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.NATS;
 

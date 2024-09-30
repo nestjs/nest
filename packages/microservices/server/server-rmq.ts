@@ -36,6 +36,9 @@ let rmqPackage: any = {};
 
 const INFINITE_CONNECTION_ATTEMPTS = -1;
 
+/**
+ * @publicApi
+ */
 export class ServerRMQ extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.RMQ;
 
@@ -140,7 +143,7 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
   public createClient<T = any>(): T {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
     return rmqPackage.connect(this.urls, {
-      connectionOptions: socketOptions,
+      connectionOptions: socketOptions?.connectionOptions,
       heartbeatIntervalInSeconds: socketOptions?.heartbeatIntervalInSeconds,
       reconnectTimeInSeconds: socketOptions?.reconnectTimeInSeconds,
     });

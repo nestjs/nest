@@ -10,6 +10,9 @@ type KafkaContextArgs = [
   producer: Producer,
 ];
 
+/**
+ * @publicApi
+ */
 export class KafkaContext extends BaseRpcContext<KafkaContextArgs> {
   constructor(args: KafkaContextArgs) {
     super(args);

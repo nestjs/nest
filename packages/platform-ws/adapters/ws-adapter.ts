@@ -112,10 +112,13 @@ export class WsAdapter extends AbstractWsAdapter {
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {
+    const handlersMap = new Map<string, MessageMappingProperties>();
+    handlers.forEach(handler => handlersMap.set(handler.message, handler));
+
     const close$ = fromEvent(client, CLOSE_EVENT).pipe(share(), first());
     const source$ = fromEvent(client, 'message').pipe(
       mergeMap(data =>
-        this.bindMessageHandler(data, handlers, transform).pipe(
+        this.bindMessageHandler(data, handlersMap, transform).pipe(
           filter(result => !isNil(result)),
         ),
       ),
@@ -132,14 +135,12 @@ export class WsAdapter extends AbstractWsAdapter {
 
   public bindMessageHandler(
     buffer: any,
-    handlers: MessageMappingProperties[],
+    handlersMap: Map<string, MessageMappingProperties>,
     transform: (data: any) => Observable<any>,
   ): Observable<any> {
     try {
       const message = JSON.parse(buffer.data);
-      const messageHandler = handlers.find(
-        handler => handler.message === message.event,
-      );
+      const messageHandler = handlersMap.get(message.event);
       const { callback } = messageHandler;
       return transform(callback(message.data, message.event));
     } catch {
@@ -157,6 +158,16 @@ export class WsAdapter extends AbstractWsAdapter {
 
   public bindClientDisconnect(client: any, callback: Function) {
     client.on(CLOSE_EVENT, callback);
+  }
+
+  public async close(server: any) {
+    const closeEventSignal = new Promise((resolve, reject) =>
+      server.close(err => (err ? reject(err) : resolve(undefined))),
+    );
+    for (const ws of server.clients) {
+      ws.terminate();
+    }
+    await closeEventSignal;
   }
 
   public async dispose() {
