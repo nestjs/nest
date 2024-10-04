@@ -24,6 +24,10 @@ export class RoutePathFactory {
   ): string[] {
     let paths = [''];
 
+    if (metadata.modulePathBeforeVersion) {
+      paths = this.appendToAllIfDefined(paths, metadata.modulePath);
+    }
+
     const versionOrVersions = this.getVersion(metadata);
     if (
       versionOrVersions &&
@@ -52,7 +56,9 @@ export class RoutePathFactory {
       }
     }
 
-    paths = this.appendToAllIfDefined(paths, metadata.modulePath);
+    if (!metadata.modulePathBeforeVersion) {
+      paths = this.appendToAllIfDefined(paths, metadata.modulePath);
+    }
     paths = this.appendToAllIfDefined(paths, metadata.ctrlPath);
     paths = this.appendToAllIfDefined(paths, metadata.methodPath);
 

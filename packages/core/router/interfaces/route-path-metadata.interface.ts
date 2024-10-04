@@ -23,6 +23,11 @@ export interface RoutePathMetadata {
   modulePath?: string;
 
   /**
+   * Option to put the route version after the module-level path.
+   */
+  modulePathBeforeVersion?: boolean;
+
+  /**
    * Controller-level version (e.g., @Controller({ version: '1.0' }) = "1.0").
    */
   controllerVersion?: VersionValue;
