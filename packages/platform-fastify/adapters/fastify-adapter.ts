@@ -321,31 +321,31 @@ export class FastifyAdapter<
   }
 
   public propfind(...args: any[]) {
-    return this.injectRouteOptions('propfind', ...args);
+    return this.injectRouteOptions('PROPFIND', ...args);
   }
 
   public proppatch(...args: any[]) {
-    return this.injectRouteOptions('proppatch', ...args);
+    return this.injectRouteOptions('PROPPATCH', ...args);
   }
 
   public mkcol(...args: any[]) {
-    return this.injectRouteOptions('mkcol', ...args);
+    return this.injectRouteOptions('MKCOL', ...args);
   }
 
   public copy(...args: any[]) {
-    return this.injectRouteOptions('copy', ...args);
+    return this.injectRouteOptions('COPY', ...args);
   }
 
   public move(...args: any[]) {
-    return this.injectRouteOptions('move', ...args);
+    return this.injectRouteOptions('MOVE', ...args);
   }
 
   public lock(...args: any[]) {
-    return this.injectRouteOptions('lock', ...args);
+    return this.injectRouteOptions('LOCK', ...args);
   }
 
   public unlock(...args: any[]) {
-    return this.injectRouteOptions('unlock', ...args);
+    return this.injectRouteOptions('UNLOCK', ...args);
   }
 
   public applyVersionFilter(
