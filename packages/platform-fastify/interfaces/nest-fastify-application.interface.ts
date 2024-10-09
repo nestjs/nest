@@ -2,6 +2,7 @@ import { INestApplication, HttpServer } from '@nestjs/common';
 import {
   FastifyBodyParser,
   FastifyInstance,
+  FastifyListenOptions,
   FastifyPluginAsync,
   FastifyPluginCallback,
   FastifyPluginOptions,
@@ -94,18 +95,40 @@ export interface NestFastifyApplication<
    * @returns A Promise that, when resolved, is a reference to the underlying HttpServer.
    */
   listen(
-    port: number | string,
-    callback?: (err: Error, address: string) => void,
+    opts: FastifyListenOptions,
+    callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
+  listen(
+    opts?: FastifyListenOptions,
+  ): Promise<TServer>;
+  listen(
+    callback?: (err: Error | null, address: string) => void,
+  ): Promise<TServer>;
+  /**
+   * @deprecated Variadic listen method is deprecated. Please use `.listen(optionsObject, callback)` instead. The variadic signature will be removed in `fastify@5`
+   * @see https://github.com/fastify/fastify/pull/3712
+   */
+  listen(
+    port: number | string,
+    callback?: (err: Error | null, address: string) => void,
+  ): Promise<TServer>;
+  /**
+   * @deprecated Variadic listen method is deprecated. Please use `.listen(optionsObject, callback)` instead. The variadic signature will be removed in `fastify@5`
+   * @see https://github.com/fastify/fastify/pull/3712
+   */
   listen(
     port: number | string,
     address: string,
-    callback?: (err: Error, address: string) => void,
+    callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
+  /**
+   * @deprecated Variadic listen method is deprecated. Please use `.listen(optionsObject, callback)` instead. The variadic signature will be removed in `fastify@5`
+   * @see https://github.com/fastify/fastify/pull/3712
+   */
   listen(
     port: number | string,
     address: string,
     backlog: number,
-    callback?: (err: Error, address: string) => void,
+    callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
 }
