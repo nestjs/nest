@@ -1,6 +1,10 @@
 import { ContextId, ContextIdStrategy, HostComponentInfo } from '@nestjs/core';
 import { Request } from 'express';
 
+export type TenantContext = {
+  tenantId: string;
+};
+
 const tenants = new Map<string, ContextId>();
 
 export class DurableContextIdStrategy implements ContextIdStrategy {
@@ -17,7 +21,7 @@ export class DurableContextIdStrategy implements ContextIdStrategy {
     return {
       resolve: (info: HostComponentInfo) =>
         info.isTreeDurable ? tenantSubTreeId : contextId,
-      payload: { tenantId },
+      payload: { tenantId } satisfies TenantContext,
     };
   }
 }
