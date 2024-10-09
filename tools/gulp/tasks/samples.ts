@@ -13,9 +13,34 @@ async function executeNpmScriptInSamples(
   script: string,
   appendScript?: string,
 ) {
+  const nodejsVersionMajorSlice = Number.parseInt(process.versions.node);
+
   const directories = getDirs(samplePath);
 
+  /**
+   * A dictionary that maps the sample number to the minimum Node.js version
+   * required to execute any scripts.
+   */
+  const minNodejsVersionBySampleNumber = {
+    '34': 18, // we could use `engines.node` from package.json instead of hardcoding
+  };
+
   for await (const dir of directories) {
+    const sampleIdentifier = dir.match(/\d+/)?.[0];
+    const minNodejsVersionForDir =
+      sampleIdentifier && sampleIdentifier in minNodejsVersionBySampleNumber
+        ? minNodejsVersionBySampleNumber[sampleIdentifier]
+        : undefined;
+    const isOnDesiredMinNodejsVersion = minNodejsVersionForDir
+      ? nodejsVersionMajorSlice >= minNodejsVersionForDir
+      : true;
+    if (!isOnDesiredMinNodejsVersion) {
+      console.info(
+        `Skipping sample ${sampleIdentifier} because it requires Node.js version v${minNodejsVersionForDir}`,
+      );
+      continue;
+    }
+
     // Check if the sample is a multi-application sample
     const isSingleApplicationSample = containsPackageJson(dir);
     if (!isSingleApplicationSample) {
