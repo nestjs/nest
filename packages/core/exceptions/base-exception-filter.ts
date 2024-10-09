@@ -11,6 +11,7 @@ import {
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '../adapters';
 import { MESSAGES } from '../constants';
+import { combineStackTrace } from '../helpers/combine-stack-trace';
 import { HttpAdapterHost } from '../helpers/http-adapter-host';
 
 export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
@@ -71,7 +72,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     if (this.isExceptionObject(exception)) {
       return BaseExceptionFilter.logger.error(
         exception.message,
-        exception.stack,
+        combineStackTrace(exception),
       );
     }
     return BaseExceptionFilter.logger.error(exception);
