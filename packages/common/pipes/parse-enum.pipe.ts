@@ -57,7 +57,7 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
     }
     if (!this.isEnum(value)) {
       throw this.exceptionFactory(
-        'Validation failed (enum string is expected)',
+        `Validation failed (enum string is expected in "${metadata.data}")`,
       );
     }
     return value;

@@ -50,7 +50,7 @@ export class ParseFloatPipe implements PipeTransform<string> {
     }
     if (!this.isNumeric(value)) {
       throw this.exceptionFactory(
-        'Validation failed (numeric string is expected)',
+        `Validation failed (numeric string is expected in "${metadata.data}")`,
       );
     }
     return parseFloat(value);
