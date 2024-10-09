@@ -287,9 +287,12 @@ export class NestFactoryStatic {
     if (!options) {
       return;
     }
-    const { logger, bufferLogs, autoFlushLogs } = options;
+    const { logger, bufferLogs, autoFlushLogs, loggerPrefix } = options;
     if ((logger as boolean) !== true && !isNil(logger)) {
       Logger.overrideLogger(logger);
+    }
+    if (loggerPrefix) {
+      this.logger.setPrefix(loggerPrefix);
     }
     if (bufferLogs) {
       Logger.attachBuffer();

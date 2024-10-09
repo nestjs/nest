@@ -79,6 +79,13 @@ export interface INestApplication<TServer = any>
   setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this;
 
   /**
+   * Registers a prefix for logger
+   *
+   * @param {string} prefix The prefix for logger
+   */
+  setLoggerPrefix(prefix: string): this;
+
+  /**
    * Register Ws Adapter which will be used inside Gateways.
    * Use when you want to override default `socket.io` library.
    *
