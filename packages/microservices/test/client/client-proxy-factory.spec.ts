@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { ClientProxyFactory } from '../../client/client-proxy-factory';
 import { ClientTCP } from '../../client/client-tcp';
 import { Transport } from '../../enums/transport.enum';
+import { ClientLocalDomain } from '@nestjs/microservices/client';
 import { ClientRedis } from '../../client/client-redis';
 import { ClientNats } from '../../client/client-nats';
 import { ClientMqtt } from '../../client/client-mqtt';
@@ -15,6 +16,13 @@ describe('ClientProxyFactory', () => {
     it(`should create tcp client by default`, () => {
       const proxy = ClientProxyFactory.create({});
       expect(proxy instanceof ClientTCP).to.be.true;
+    });
+
+    it(`should create local domain client`, () => {
+      const proxy = ClientProxyFactory.create({
+        transport: Transport.LOCAL_DOMAIN,
+      });
+      expect(proxy instanceof ClientLocalDomain).to.be.true;
     });
 
     it(`should create redis client`, () => {
