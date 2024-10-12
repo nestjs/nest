@@ -23,6 +23,7 @@ async function executeNpmScriptInSamples(
    */
   const minNodejsVersionBySampleNumber = {
     '34': 18, // we could use `engines.node` from package.json instead of hardcoding
+    '35': 22,
   };
 
   for await (const dir of directories) {
