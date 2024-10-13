@@ -21,9 +21,7 @@ export class KafkaRequestSerializer
 {
   serialize(value: any) {
     const isNotKafkaMessage =
-      isNil(value) ||
-      !isObject(value) ||
-      (!('key' in value) && !('value' in value));
+      isNil(value) || !isObject(value) || !('key' in value && 'value' in value);
 
     if (isNotKafkaMessage) {
       value = { value };
