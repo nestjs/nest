@@ -478,6 +478,56 @@ describe('ValidationPipe', () => {
     });
   });
 
+  describe('option: "validateCustomDecorators" when metadata.type is not `body`', () => {
+    describe('when is set to `true`', () => {
+      it('should transform and validate', async () => {
+        const target = new ValidationPipe({
+          validateCustomDecorators: true,
+        });
+
+        const metadata: ArgumentMetadata = {
+          type: 'custom',
+          metatype: TestModel,
+          data: '',
+        };
+
+        const testObj = { prop1: 'value1', prop2: 'value2' };
+        expect(await target.transform(testObj, metadata)).to.not.be.undefined;
+      });
+    });
+    describe('when is set to `false`', () => {
+      it('should throw an error', async () => {
+        const target = new ValidationPipe({
+          validateCustomDecorators: false,
+        });
+
+        const metadata: ArgumentMetadata = {
+          type: 'custom',
+          metatype: TestModel,
+          data: '',
+        };
+
+        const objNotFollowingTestModel = { prop1: undefined, prop2: 'value2' };
+        expect(await target.transform(objNotFollowingTestModel, metadata)).to
+          .not.be.undefined;
+      });
+    });
+    describe('when is not supplied', () => {
+      it('should transform and validate', async () => {
+        const target = new ValidationPipe({});
+
+        const metadata: ArgumentMetadata = {
+          type: 'custom',
+          metatype: TestModel,
+          data: '',
+        };
+
+        const testObj = { prop1: 'value1', prop2: 'value2' };
+        expect(await target.transform(testObj, metadata)).to.not.be.undefined;
+      });
+    });
+  });
+
   describe('option: "errorHttpStatusCode"', () => {
     describe('when validation fails', () => {
       beforeEach(() => {
