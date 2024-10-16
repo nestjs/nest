@@ -47,6 +47,12 @@ export interface LoggerService {
    * @param levels log levels
    */
   setLogLevels?(levels: LogLevel[]): any;
+
+  /**
+   * Set prefix
+   * @param prefix prefix
+   */
+  setPrefix?(prefix: string): void;
 }
 
 interface LogBufferRecord {
@@ -120,6 +126,10 @@ export class Logger implements LoggerService {
       }
     }
     return Logger.staticInstanceRef;
+  }
+
+  setPrefix(prefix: string): void {
+    this.localInstance?.setPrefix?.(prefix);
   }
 
   /**
