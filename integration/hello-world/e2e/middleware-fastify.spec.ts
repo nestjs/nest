@@ -398,4 +398,113 @@ describe('Middleware (FastifyAdapter)', () => {
       await app.close();
     });
   });
+
+  describe('should work properly when globalPrefix is set', () => {
+    class Middleware implements NestMiddleware {
+      use(request: any, reply: any, next: () => void) {
+        if (request.middlewareExecutionCount === undefined) {
+          request.middlewareExecutionCount = 1;
+        } else {
+          request.middlewareExecutionCount++;
+        }
+        next();
+      }
+    }
+
+    @Controller()
+    class AbcController {
+      @Get('/a')
+      async a(@Req() request: any) {
+        return this.validateExecutionCount({
+          request,
+          expected: 1,
+        });
+      }
+
+      @Get('/')
+      async root(@Req() request: any) {
+        return this.validateExecutionCount({
+          request,
+          expected: 1,
+        });
+      }
+
+      private validateExecutionCount({
+        request,
+        expected,
+      }: {
+        request: any;
+        expected: number;
+      }) {
+        let actual: number | undefined;
+        actual = request.raw.middlewareExecutionCount;
+        actual ??= 0;
+
+        return {
+          success: actual === expected,
+          actual,
+          expected,
+        };
+      }
+    }
+
+    @Module({
+      controllers: [AbcController],
+    })
+    class TestModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer.apply(Middleware).forRoutes(AbcController);
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [TestModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+
+      app.setGlobalPrefix('api', { exclude: ['/'] });
+
+      await app.init();
+    });
+
+    it(`GET forRoutes(/api/a)`, () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/api/a',
+        })
+        .then(({ payload }) =>
+          expect(payload).to.be.eql(
+            JSON.stringify({
+              success: true,
+              actual: 1,
+              expected: 1,
+            }),
+          ),
+        );
+    });
+
+    it(`GET forRoutes(/)`, () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/',
+        })
+        .then(({ payload }) =>
+          expect(payload).to.be.eql(
+            JSON.stringify({
+              success: true,
+              actual: 1,
+              expected: 1,
+            }),
+          ),
+        );
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
 });
