@@ -121,7 +121,7 @@ export class ValidationPipe implements PipeTransform<any> {
     const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
     this.stripProtoKeys(value);
-    let entity = classTransformer.plainToClass(
+    let entity = classTransformer.plainToInstance(
       metatype,
       value,
       this.transformOptions,
