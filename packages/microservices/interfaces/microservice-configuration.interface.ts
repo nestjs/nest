@@ -1,4 +1,4 @@
-import { Type } from '@nestjs/common';
+import { FactoryProvider, InjectionToken, Type } from '@nestjs/common';
 import { ConnectionOptions } from 'tls';
 import { Transport } from '../enums/transport.enum';
 import { ChannelOptions } from '../external/grpc-options.interface';
@@ -31,6 +31,16 @@ export type MicroserviceOptions =
   | RmqOptions
   | KafkaOptions
   | CustomStrategy;
+
+export type AsyncMicroserviceOptions = {
+  inject: InjectionToken[];
+  useFactory: (...args: any[]) => MicroserviceOptions;
+};
+
+export type AsyncOptions<T extends object> = {
+  inject: InjectionToken[];
+  useFactory: (...args: any[]) => T;
+};
 
 /**
  * @publicApi
