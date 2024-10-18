@@ -1,16 +1,19 @@
 import { ClientOptions, CustomClientOptions } from '../../interfaces';
 import { Type, Provider, ModuleMetadata } from '@nestjs/common/interfaces';
 
-export type ClientProvider = ClientOptions | CustomClientOptions;
+export type ClientProvider<ClientProviderCustomOptions = any> =
+  | ClientOptions<ClientProviderCustomOptions>
+  | CustomClientOptions;
 
-export type ClientProviderOptions = ClientProvider & {
-  name: string | symbol;
-};
+export type ClientProviderOptions<ClientProviderCustomOptions> =
+  ClientProvider<ClientProviderCustomOptions> & {
+    name: string | symbol;
+  };
 
-export type ClientsModuleOptions =
-  | Array<ClientProviderOptions>
+export type ClientsModuleOptions<ClientProviderCustomOptions = any> =
+  | Array<ClientProviderOptions<ClientProviderCustomOptions>>
   | {
-      clients: Array<ClientProviderOptions>;
+      clients: Array<ClientProviderOptions<ClientProviderCustomOptions>>;
       isGlobal?: boolean;
     };
 
