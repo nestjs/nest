@@ -33,7 +33,8 @@
     "iterare": "1.2.1",
     "path-to-regexp": "3.3.0",
     "tslib": "2.7.0",
-    "uid": "2.0.2"
+    "uid": "2.0.2",
+    "rxjs": "^7.1.0"
   },
   "devDependencies": {
     "@nestjs/common": "10.4.5"
@@ -44,7 +45,6 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/websockets": "^10.0.0",
     "reflect-metadata": "^0.1.12 || ^0.2.0",
-    "rxjs": "^7.1.0"
   },
   "peerDependenciesMeta": {
     "@nestjs/websockets": {
