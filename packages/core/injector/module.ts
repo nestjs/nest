@@ -653,7 +653,12 @@ export class Module {
 
   private generateUuid(): string {
     const prefix = 'M_';
-    const key = this.name?.toString() ?? this.token?.toString();
+    const key = this.token
+      ? this.token.includes(':')
+        ? this.token.split(':')[1]
+        : this.token
+      : this.name;
+
     return key ? UuidFactory.get(`${prefix}_${key}`) : randomStringGenerator();
   }
 }
