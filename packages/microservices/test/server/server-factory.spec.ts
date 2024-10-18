@@ -3,6 +3,7 @@ import { Transport } from '../../enums/transport.enum';
 import { ServerFactory } from '../../server/server-factory';
 import { ServerGrpc } from '../../server/server-grpc';
 import { ServerKafka } from '../../server/server-kafka';
+import { ServerLocalDomain } from '@nestjs/microservices/server';
 import { ServerMqtt } from '../../server/server-mqtt';
 import { ServerNats } from '../../server/server-nats';
 import { ServerRedis } from '../../server/server-redis';
@@ -13,6 +14,13 @@ describe('ServerFactory', () => {
   describe('create', () => {
     it(`should return tcp server by default`, () => {
       expect(ServerFactory.create({}) instanceof ServerTCP).to.be.true;
+    });
+
+    it(`should return local domain server`, () => {
+      expect(
+        ServerFactory.create({ transport: Transport.LOCAL_DOMAIN }) instanceof
+          ServerLocalDomain,
+      ).to.be.true;
     });
 
     it(`should return redis server`, () => {

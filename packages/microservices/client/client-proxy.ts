@@ -25,6 +25,7 @@ import {
   RedisOptions,
   RmqOptions,
   TcpClientOptions,
+  LocalDomainClientOptions,
   WritePacket,
 } from '../interfaces';
 import { ProducerDeserializer } from '../interfaces/deserializer.interface';
@@ -146,6 +147,7 @@ export abstract class ClientProxy {
             | NatsOptions['options']
             | MqttOptions['options']
             | TcpClientOptions['options']
+            | LocalDomainClientOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
         ).serializer) ||
@@ -161,6 +163,7 @@ export abstract class ClientProxy {
             | NatsOptions['options']
             | MqttOptions['options']
             | TcpClientOptions['options']
+            | LocalDomainClientOptions['options']
             | RmqOptions['options']
             | KafkaOptions['options']
         ).deserializer) ||
