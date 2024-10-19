@@ -45,6 +45,10 @@ describe('Hello world (express instance)', () => {
     });
   });
 
+  it('/HEAD should respond to with a 200', () => {
+    return request(server).head('/hello').expect(200);
+  });
+
   afterEach(async () => {
     await app.close();
   });
