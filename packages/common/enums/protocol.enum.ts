@@ -1,0 +1,15 @@
+export enum Protocol {
+  HTTP = 'http',
+  HTTPS = 'https',
+  FTP = 'ftp',
+  SFTP = 'sftp',
+  WS = 'ws',
+  WSS = 'wss',
+  SMTP = 'smtp',
+  IMAP = 'imap',
+  SSH = 'ssh',
+  UDP = 'udp',
+  TCP = 'tcp',
+  ARP = 'arp',
+  DHCP = 'dhcp',
+}
