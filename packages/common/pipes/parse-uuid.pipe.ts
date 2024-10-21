@@ -62,7 +62,7 @@ export class ParseUUIDPipe implements PipeTransform<string> {
       throw this.exceptionFactory(
         `Validation failed (uuid${
           this.version ? ` v ${this.version}` : ''
-        } is expected)`,
+        } is expected in "${metadata.data}")`,
       );
     }
     return value;
