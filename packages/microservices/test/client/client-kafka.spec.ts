@@ -9,6 +9,8 @@ import {
   EachMessagePayload,
   KafkaMessage,
 } from '../../external/kafka.interface';
+import { Observable } from 'rxjs';
+import { Producer } from 'kafkajs';
 
 describe('ClientKafka', () => {
   const topic = 'test.topic';
@@ -546,6 +548,77 @@ describe('ClientKafka', () => {
       it('should not call callback', () => {
         expect(callback.called).to.be.false;
       });
+    });
+  });
+
+  describe('emitBatch', () => {
+    it(`should return an observable stream`, () => {
+      const stream$ = client.emitBatch(
+        {},
+        {
+          messages: [],
+        },
+      );
+      expect(stream$ instanceof Observable).to.be.true;
+    });
+
+    it(`should call "connect" immediately`, () => {
+      const connectSpy = sinon.spy(client, 'connect');
+      client.emitBatch(
+        {},
+        {
+          messages: [],
+        },
+      );
+      expect(connectSpy.calledOnce).to.be.true;
+    });
+
+    describe('when "connect" throws', () => {
+      it('should return Observable with error', () => {
+        sinon.stub(client, 'connect').callsFake(() => {
+          throw new Error();
+        });
+
+        const stream$ = client.emitBatch(
+          {},
+          {
+            messages: [],
+          },
+        );
+
+        stream$.subscribe({
+          next: () => {},
+          error: err => {
+            expect(err).to.be.instanceof(Error);
+          },
+        });
+      });
+    });
+
+    describe('when is connected', () => {
+      beforeEach(() => {
+        sinon
+          .stub(client, 'connect')
+          .callsFake(() => Promise.resolve({} as Producer));
+      });
+
+      it(`should call dispatchBatchEvent`, () => {
+        const pattern = { test: 3 };
+        const data = { messages: [] };
+        const dispatchBatchEventSpy = sinon
+          .stub()
+          .callsFake(() => Promise.resolve(true));
+        const stream$ = client.emitBatch(pattern, data);
+        client['dispatchBatchEvent'] = dispatchBatchEventSpy;
+        stream$.subscribe(() => {
+          expect(dispatchBatchEventSpy.calledOnce).to.be.true;
+        });
+      });
+    });
+
+    it('should return Observable with error', () => {
+      const err$ = client.emitBatch(null, null);
+      expect(err$).to.be.instanceOf(Observable);
     });
   });
 
