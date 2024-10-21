@@ -50,7 +50,7 @@ interface Sub<T> extends AsyncIterable<T> {
   getMax(): number | undefined;
 }
 
-declare type Subscription = Sub<NatsMsg>;
+export declare type Subscription = Sub<NatsMsg>;
 
 declare enum Events {
   Disconnect = 'disconnect',
