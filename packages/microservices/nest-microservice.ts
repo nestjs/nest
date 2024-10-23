@@ -17,7 +17,10 @@ import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
 import { Transport } from './enums/transport.enum';
 import { CustomTransportStrategy } from './interfaces/custom-transport-strategy.interface';
-import { MicroserviceOptions } from './interfaces/microservice-configuration.interface';
+import {
+  AsyncMicroserviceOptions,
+  MicroserviceOptions,
+} from './interfaces/microservice-configuration.interface';
 import { MicroservicesModule } from './microservices-module';
 import { Server } from './server/server';
 import { ServerFactory } from './server/server-factory';
@@ -43,7 +46,8 @@ export class NestMicroservice
 
   constructor(
     container: NestContainer,
-    config: NestMicroserviceOptions & MicroserviceOptions = {},
+    config: NestMicroserviceOptions &
+      (MicroserviceOptions | AsyncMicroserviceOptions) = {},
     private readonly graphInspector: GraphInspector,
     private readonly applicationConfig: ApplicationConfig,
   ) {
@@ -60,12 +64,22 @@ export class NestMicroservice
     this.selectContextModule();
   }
 
-  public createServer(config: NestMicroserviceOptions & MicroserviceOptions) {
+  public createServer(
+    config: NestMicroserviceOptions &
+      (MicroserviceOptions | AsyncMicroserviceOptions),
+  ) {
     try {
-      this.microserviceConfig = {
-        transport: Transport.TCP,
-        ...config,
-      } as any;
+      if ('useFactory' in config) {
+        const args = config.inject?.map(token =>
+          this.get(token, { strict: false }),
+        );
+        this.microserviceConfig = config.useFactory(...args);
+      } else {
+        this.microserviceConfig = {
+          transport: Transport.TCP,
+          ...config,
+        } as any;
+      }
       const { strategy } = config as any;
       this.server = strategy
         ? strategy
