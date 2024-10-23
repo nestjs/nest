@@ -193,6 +193,8 @@ export interface NatsOptions {
     token?: string;
     yieldTime?: number;
     tokenHandler?: any;
+    gracefulShutdown?: boolean;
+    gracePeriod?: number;
     [key: string]: any;
   };
 }
