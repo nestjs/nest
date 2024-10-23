@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseIntPipe } from '../../pipes/parse-int.pipe';
-import { HttpException } from '../../exceptions';
+import { BadRequestException, HttpException } from '../../exceptions';
 
 class CustomTestError extends HttpException {
   constructor() {
@@ -12,9 +12,7 @@ class CustomTestError extends HttpException {
 describe('ParseIntPipe', () => {
   let target: ParseIntPipe;
   beforeEach(() => {
-    target = new ParseIntPipe({
-      exceptionFactory: (error: any) => new CustomTestError(),
-    });
+    target = new ParseIntPipe();
   });
   describe('transform', () => {
     describe('when validation passes', () => {
@@ -37,14 +35,31 @@ describe('ParseIntPipe', () => {
       });
     });
     describe('when validation fails', () => {
+      it('should mention the field name in the error', async () => {
+        return expect(
+          target.transform('123abc', { data: 'foo' } as ArgumentMetadata),
+        ).to.be.rejectedWith(/.*Validation failed.*"foo".*/);
+      });
       it('should throw an error', async () => {
         return expect(
           target.transform('123abc', {} as ArgumentMetadata),
-        ).to.be.rejectedWith(CustomTestError);
+        ).to.be.rejectedWith(BadRequestException);
       });
       it('should throw an error when number has wrong number encoding', async () => {
         return expect(
           target.transform('0xFF', {} as ArgumentMetadata),
+        ).to.be.rejectedWith(BadRequestException);
+      });
+    });
+    describe('with an exceptionFactory', () => {
+      beforeEach(() => {
+        target = new ParseIntPipe({
+          exceptionFactory: (error: any) => new CustomTestError(),
+        });
+      });
+      it('uses it when the validation fails', async () => {
+        return expect(
+          target.transform('123abc', {} as ArgumentMetadata),
         ).to.be.rejectedWith(CustomTestError);
       });
     });
