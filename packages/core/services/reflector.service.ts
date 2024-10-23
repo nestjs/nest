@@ -127,14 +127,10 @@ export class Reflector {
    * @param targets context (decorated objects) to retrieve metadata from
    *
    */
-  public getAll<T extends ReflectableDecorator<any>>(
-    decorator: T,
+  public getAll<TParam = any, TTransformed = TParam>(
+    decorator: ReflectableDecorator<TParam, TTransformed>,
     targets: (Type<any> | Function)[],
-  ): T extends ReflectableDecorator<infer R>
-    ? R extends Array<any>
-      ? R
-      : R[]
-    : unknown;
+  ): TTransformed extends any[] ? TTransformed : TTransformed[];
   /**
    * Retrieve metadata for a specified key for a specified set of targets.
    *
@@ -169,10 +165,10 @@ export class Reflector {
    * @param targets context (decorated objects) to retrieve metadata from
    *
    */
-  public getAllAndMerge<T extends ReflectableDecorator<any>>(
-    decorator: T,
+  public getAllAndMerge<TParam = any, TTransformed = TParam>(
+    decorator: ReflectableDecorator<TParam, TTransformed>,
     targets: (Type<any> | Function)[],
-  ): T extends ReflectableDecorator<infer R> ? R : unknown;
+  ): TTransformed;
   /**
    * Retrieve metadata for a specified key for a specified set of targets and merge results.
    *
@@ -224,10 +220,10 @@ export class Reflector {
    * @param targets context (decorated objects) to retrieve metadata from
    *
    */
-  public getAllAndOverride<T extends ReflectableDecorator<any>>(
-    decorator: T,
+  public getAllAndOverride<TParam = any, TTransformed = TParam>(
+    decorator: ReflectableDecorator<TParam, TTransformed>,
     targets: (Type<any> | Function)[],
-  ): T extends ReflectableDecorator<infer R> ? R : unknown;
+  ): TTransformed;
   /**
    * Retrieve metadata for a specified key for a specified set of targets and return a first not undefined value.
    *
