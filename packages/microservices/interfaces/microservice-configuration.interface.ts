@@ -57,7 +57,7 @@ interface DefaultLoaderOptions {
 /**
  * @publicApi
  */
-export interface GrpcOptions<GrpcLoaderOptions = any> {
+export interface GrpcOptions<GrpcLoaderOptions = DefaultLoaderOptions> {
   transport?: Transport.GRPC;
   options: {
     url?: string;
@@ -81,7 +81,7 @@ export interface GrpcOptions<GrpcLoaderOptions = any> {
     packageDefinition?: any;
     gracefulShutdown?: boolean;
     onLoadPackageDefinition?: (pkg: any, server: any) => void;
-    loader?: GrpcLoaderOptions | DefaultLoaderOptions;
+    loader?: GrpcLoaderOptions;
   };
 }
 
