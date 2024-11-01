@@ -96,6 +96,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td><a href="https://bloodycase.com/?promocode=NEST" target="_blank"><img src="https://nestjs.com/img/logos/bloodycase-logo.png" width="65" valign="middle" /></a></td>
 <td><a href="https://handsontable.com/docs/react-data-grid/?utm_source=NestJS_GH&utm_medium=sponsorship&utm_campaign=library_sponsorship_2024" target="_blank"><img src="https://nestjs.com/img/logos/handsontable-logo.svg" width="150" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://www.itflashcards.com/" target="_blank"><img src="https://nestjs.com/img/logos/it_flashcards-logo.png" width="170" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://arcjet.com/?ref=nestjs" target="_blank"><img src="https://nestjs.com/img/logos/arcjet-logo.svg" width="170" valign="middle" /></a></td>
 </tr>
 </table>
 
