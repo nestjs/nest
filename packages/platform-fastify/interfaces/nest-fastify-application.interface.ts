@@ -1,4 +1,4 @@
-import { INestApplication, HttpServer } from '@nestjs/common';
+import { HttpServer, INestApplication } from '@nestjs/common';
 import {
   FastifyBodyParser,
   FastifyInstance,
@@ -7,14 +7,14 @@ import {
   FastifyPluginCallback,
   FastifyPluginOptions,
   FastifyRegisterOptions,
-  FastifyRequest,
   FastifyReply,
+  FastifyRequest,
   RawServerBase,
   RawServerDefault,
 } from 'fastify';
 import {
-  Chain as LightMyRequestChain,
   InjectOptions,
+  Chain as LightMyRequestChain,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { FastifyStaticOptions, FastifyViewOptions } from './external';
@@ -98,33 +98,19 @@ export interface NestFastifyApplication<
     opts: FastifyListenOptions,
     callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
-  listen(
-    opts?: FastifyListenOptions,
-  ): Promise<TServer>;
+  listen(opts?: FastifyListenOptions): Promise<TServer>;
   listen(
     callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
-  /**
-   * @deprecated Variadic listen method is deprecated. Please use `.listen(optionsObject, callback)` instead. The variadic signature will be removed in `fastify@5`
-   * @see https://github.com/fastify/fastify/pull/3712
-   */
   listen(
     port: number | string,
     callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
-  /**
-   * @deprecated Variadic listen method is deprecated. Please use `.listen(optionsObject, callback)` instead. The variadic signature will be removed in `fastify@5`
-   * @see https://github.com/fastify/fastify/pull/3712
-   */
   listen(
     port: number | string,
     address: string,
     callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
-  /**
-   * @deprecated Variadic listen method is deprecated. Please use `.listen(optionsObject, callback)` instead. The variadic signature will be removed in `fastify@5`
-   * @see https://github.com/fastify/fastify/pull/3712
-   */
   listen(
     port: number | string,
     address: string,
