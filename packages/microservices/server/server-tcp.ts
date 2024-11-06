@@ -43,10 +43,10 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
 
   constructor(private readonly options: TcpOptions['options']) {
     super();
-    this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
-    this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
+    this.port = this.getOptionsProp(options, 'port', TCP_DEFAULT_PORT);
+    this.host = this.getOptionsProp(options, 'host', TCP_DEFAULT_HOST);
     this.socketClass =
-      this.getOptionsProp(options, 'socketClass') || JsonSocket;
+      this.getOptionsProp(options, 'socketClass', JsonSocket);
     this.tlsOptions = this.getOptionsProp(options, 'tlsOptions');
 
     this.init();
