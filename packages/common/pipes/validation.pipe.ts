@@ -203,6 +203,12 @@ export class ValidationPipe implements PipeTransform<any> {
       return value === true || value === 'true';
     }
     if (metatype === Number) {
+      if (isUndefined(value)) {
+        // This is a workaround to deal with optional numeric values since
+        // optional numerics shouldn't be parsed to a valid number when
+        // they were not defined
+        return undefined;
+      }
       return +value;
     }
     return value;
