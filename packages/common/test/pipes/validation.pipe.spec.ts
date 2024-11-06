@@ -205,6 +205,18 @@ describe('ValidationPipe', () => {
             }),
           ).to.be.equal(+value);
         });
+        it('should parse undefined to undefined', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = undefined;
+
+          expect(
+            await target.transform(value, {
+              metatype: Number,
+              data: 'test',
+              type: 'query',
+            }),
+          ).to.be.undefined;
+        });
       });
       describe('when input is a path parameter (number)', () => {
         it('should parse to number', async () => {
@@ -218,6 +230,18 @@ describe('ValidationPipe', () => {
               type: 'param',
             }),
           ).to.be.equal(+value);
+        });
+        it('should parse undefined to undefined', async () => {
+          target = new ValidationPipe({ transform: true });
+          const value = undefined;
+
+          expect(
+            await target.transform(value, {
+              metatype: Number,
+              data: 'test',
+              type: 'param',
+            }),
+          ).to.be.undefined;
         });
       });
       describe('when input is a query parameter (boolean)', () => {
@@ -474,6 +498,56 @@ describe('ValidationPipe', () => {
           expect(await target.transform(3, objMetadata)).to.be.eql(3);
           expect(await target.transform(true, objMetadata)).to.be.eql(true);
         });
+      });
+    });
+  });
+
+  describe('option: "validateCustomDecorators" when metadata.type is not `body`', () => {
+    describe('when is set to `true`', () => {
+      it('should transform and validate', async () => {
+        const target = new ValidationPipe({
+          validateCustomDecorators: true,
+        });
+
+        const metadata: ArgumentMetadata = {
+          type: 'custom',
+          metatype: TestModel,
+          data: '',
+        };
+
+        const testObj = { prop1: 'value1', prop2: 'value2' };
+        expect(await target.transform(testObj, metadata)).to.not.be.undefined;
+      });
+    });
+    describe('when is set to `false`', () => {
+      it('should throw an error', async () => {
+        const target = new ValidationPipe({
+          validateCustomDecorators: false,
+        });
+
+        const metadata: ArgumentMetadata = {
+          type: 'custom',
+          metatype: TestModel,
+          data: '',
+        };
+
+        const objNotFollowingTestModel = { prop1: undefined, prop2: 'value2' };
+        expect(await target.transform(objNotFollowingTestModel, metadata)).to
+          .not.be.undefined;
+      });
+    });
+    describe('when is not supplied', () => {
+      it('should transform and validate', async () => {
+        const target = new ValidationPipe({});
+
+        const metadata: ArgumentMetadata = {
+          type: 'custom',
+          metatype: TestModel,
+          data: '',
+        };
+
+        const testObj = { prop1: 'value1', prop2: 'value2' };
+        expect(await target.transform(testObj, metadata)).to.not.be.undefined;
       });
     });
   });

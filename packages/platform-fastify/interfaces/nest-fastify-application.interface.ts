@@ -1,19 +1,20 @@
-import { INestApplication, HttpServer } from '@nestjs/common';
+import { HttpServer, INestApplication } from '@nestjs/common';
 import {
   FastifyBodyParser,
   FastifyInstance,
+  FastifyListenOptions,
   FastifyPluginAsync,
   FastifyPluginCallback,
   FastifyPluginOptions,
   FastifyRegisterOptions,
-  FastifyRequest,
   FastifyReply,
+  FastifyRequest,
   RawServerBase,
   RawServerDefault,
 } from 'fastify';
 import {
-  Chain as LightMyRequestChain,
   InjectOptions,
+  Chain as LightMyRequestChain,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { FastifyStaticOptions, FastifyViewOptions } from './external';
@@ -94,18 +95,26 @@ export interface NestFastifyApplication<
    * @returns A Promise that, when resolved, is a reference to the underlying HttpServer.
    */
   listen(
+    opts: FastifyListenOptions,
+    callback?: (err: Error | null, address: string) => void,
+  ): Promise<TServer>;
+  listen(opts?: FastifyListenOptions): Promise<TServer>;
+  listen(
+    callback?: (err: Error | null, address: string) => void,
+  ): Promise<TServer>;
+  listen(
     port: number | string,
-    callback?: (err: Error, address: string) => void,
+    callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
   listen(
     port: number | string,
     address: string,
-    callback?: (err: Error, address: string) => void,
+    callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
   listen(
     port: number | string,
     address: string,
     backlog: number,
-    callback?: (err: Error, address: string) => void,
+    callback?: (err: Error | null, address: string) => void,
   ): Promise<TServer>;
 }

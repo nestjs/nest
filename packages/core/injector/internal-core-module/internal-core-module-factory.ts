@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { ExternalContextCreator } from '../../helpers/external-context-creator';
 import { HttpAdapterHost } from '../../helpers/http-adapter-host';
 import { GraphInspector } from '../../inspector/graph-inspector';
+import { InitializeOnPreviewAllowlist } from '../../inspector/initialize-on-preview.allowlist';
 import { SerializedGraph } from '../../inspector/serialized-graph';
 import { ModuleOverride } from '../../interfaces/module-override.interface';
 import { DependenciesScanner } from '../../scanner';
@@ -41,6 +42,8 @@ export class InternalCoreModuleFactory {
         moduleOverrides,
       );
     };
+
+    InitializeOnPreviewAllowlist.add(InternalCoreModule);
 
     return InternalCoreModule.register([
       {

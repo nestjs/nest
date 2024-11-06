@@ -125,7 +125,6 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     const service = {};
 
     for (const methodName in grpcService.prototype) {
-      let pattern = '';
       let methodHandler = null;
       let streamingType = GrpcMethodStreamingType.NO_STREAMING;
 
@@ -135,32 +134,32 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       if (!isUndefined(methodReqStreaming) && methodReqStreaming) {
         // Try first pattern to be presented, RX streaming pattern would be
         // a preferable pattern to select among a few defined
-        pattern = this.createPattern(
+        methodHandler = this.getMessageHandler(
           name,
           methodName,
           GrpcMethodStreamingType.RX_STREAMING,
+          methodFunction,
         );
-        methodHandler = this.messageHandlers.get(pattern);
         streamingType = GrpcMethodStreamingType.RX_STREAMING;
         // If first pattern didn't match to any of handlers then try
         // pass-through handler to be presented
         if (!methodHandler) {
-          pattern = this.createPattern(
+          methodHandler = this.getMessageHandler(
             name,
             methodName,
             GrpcMethodStreamingType.PT_STREAMING,
+            methodFunction,
           );
-          methodHandler = this.messageHandlers.get(pattern);
           streamingType = GrpcMethodStreamingType.PT_STREAMING;
         }
       } else {
-        pattern = this.createPattern(
+        // Select handler if any presented for No-Streaming pattern
+        methodHandler = this.getMessageHandler(
           name,
           methodName,
           GrpcMethodStreamingType.NO_STREAMING,
+          methodFunction,
         );
-        // Select handler if any presented for No-Streaming pattern
-        methodHandler = this.messageHandlers.get(pattern);
         streamingType = GrpcMethodStreamingType.NO_STREAMING;
       }
       if (!methodHandler) {
@@ -173,6 +172,22 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       );
     }
     return service;
+  }
+
+  getMessageHandler(
+    serviceName: string,
+    methodName: string,
+    streaming: GrpcMethodStreamingType,
+    grpcMethod: { path?: string },
+  ) {
+    let pattern = this.createPattern(serviceName, methodName, streaming);
+    let methodHandler = this.messageHandlers.get(pattern);
+    if (!methodHandler) {
+      const packageServiceName = grpcMethod.path?.split?.('/')[1];
+      pattern = this.createPattern(packageServiceName, methodName, streaming);
+      methodHandler = this.messageHandlers.get(pattern);
+    }
+    return methodHandler;
   }
 
   /**
@@ -245,13 +260,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return async (call: GrpcCall, callback: Function) => {
       const handler = methodHandler(call.request, call.metadata, call);
       const result$ = this.transformToObservable(await handler);
-
-      try {
-        await this.writeObservableToGrpc(result$, call);
-      } catch (err) {
-        call.emit('error', err);
-        return;
-      }
+      await this.writeObservableToGrpc(result$, call);
     };
   }
 
@@ -265,11 +274,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
    * @param call The GRPC call we want to write to.
    * @returns A promise that resolves when we're done writing to the call.
    */
-  public writeObservableToGrpc<T>(
+  private writeObservableToGrpc<T>(
     source: Observable<T>,
     call: GrpcCall<T>,
   ): Promise<void> {
-    return new Promise((resolve, reject) => {
+    // this promise should **not** reject, as we're handling errors in the observable for the Call
+    // the promise is only needed to signal when writing/draining has been completed
+    return new Promise((resolve, _doNotUse) => {
       const valuesWaitingToBeDrained: T[] = [];
       let shouldErrorAfterDraining = false;
       let error: any;
@@ -282,17 +293,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       // If the call is cancelled, unsubscribe from the source
       const cancelHandler = () => {
         subscription.unsubscribe();
-        // The call has been cancelled, so we need to either resolve
-        // or reject the promise. We're resolving in this case because
-        // rejection is noisy. If at any point in the future, we need to
-        // know that cancellation happened, we can either reject or
-        // start resolving with some sort of outcome value.
+        // Calls that are cancelled by the client should be successfully resolved here
         resolve();
       };
       call.on(CANCEL_EVENT, cancelHandler);
       subscription.add(() => call.off(CANCEL_EVENT, cancelHandler));
 
       // In all cases, when we finalize, end the writable stream
+      // being careful that errors and writes must be emitted _before_ this call is ended
       subscription.add(() => call.end());
 
       const drain = () => {
@@ -316,7 +324,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         } else if (shouldErrorAfterDraining) {
           call.emit('error', error);
           subscription.unsubscribe();
-          reject(error);
+          resolve();
         }
       };
 
@@ -341,7 +349,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
               // reject and teardown.
               call.emit('error', err);
               subscription.unsubscribe();
-              reject(err);
+              resolve();
             } else {
               // We're waiting for a drain event, record the
               // error so it can be handled after everything is drained.
@@ -390,12 +398,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const handler = methodHandler(req.asObservable(), call.metadata, call);
       const res = this.transformToObservable(await handler);
       if (isResponseStream) {
-        try {
-          await this.writeObservableToGrpc(res, call);
-        } catch (err) {
-          call.emit('error', err);
-          return;
-        }
+        await this.writeObservableToGrpc(res, call);
       } else {
         const response = await lastValueFrom(
           res.pipe(
@@ -564,14 +567,19 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         ? deepDefinition.service !== false
         : false;
 
+      // grpc namespace object does not have 'format' or 'service' properties defined
+      const isFormatDefined =
+        deepDefinition && !isUndefined(deepDefinition.format);
+
       if (isServiceDefined && isServiceBoolean) {
         accumulator.push({
           name: nameExtended,
           service: deepDefinition,
         });
-      }
-      // Continue recursion until objects end or service definition found
-      else {
+      } else if (isFormatDefined) {
+        // Do nothing
+      } else {
+        // Continue recursion for namespace object until objects end or service definition found
         this.collectDeepServices(nameExtended, deepDefinition, accumulator);
       }
     }

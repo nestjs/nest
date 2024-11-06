@@ -144,7 +144,7 @@ export class SerializedGraph {
       if (typeof value === 'symbol') {
         return value.toString();
       }
-      return typeof value === 'function' ? value.name ?? 'Function' : value;
+      return typeof value === 'function' ? (value.name ?? 'Function') : value;
     };
     return JSON.stringify(this.toJSON(), replacer, 2);
   }

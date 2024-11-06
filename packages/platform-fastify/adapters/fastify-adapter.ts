@@ -32,13 +32,16 @@ import {
   RawServerBase,
   RawServerDefault,
   RequestGenericInterface,
+  RouteOptions,
+  RouteShorthandOptions,
+  HTTPMethods,
   fastify,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
 import { kRouteContext } from 'fastify/lib/symbols';
-import { RouteShorthandMethod } from 'fastify/types/route';
 import * as http2 from 'http2';
 import * as https from 'https';
+import * as http from 'http';
 import {
   InjectOptions,
   Chain as LightMyRequestChain,
@@ -57,10 +60,17 @@ import {
   FastifyViewOptions,
 } from '../interfaces/external';
 
+type FastifyAdapterBaseOptions<
+  Server extends RawServerBase = RawServerDefault,
+  Logger extends FastifyBaseLogger = FastifyBaseLogger,
+> = FastifyServerOptions<Server, Logger> & {
+  skipMiddie?: boolean;
+};
+
 type FastifyHttp2SecureOptions<
   Server extends http2.Http2SecureServer,
   Logger extends FastifyBaseLogger = FastifyBaseLogger,
-> = FastifyServerOptions<Server, Logger> & {
+> = FastifyAdapterBaseOptions<Server, Logger> & {
   http2: true;
   https: http2.SecureServerOptions;
 };
@@ -68,7 +78,7 @@ type FastifyHttp2SecureOptions<
 type FastifyHttp2Options<
   Server extends http2.Http2Server,
   Logger extends FastifyBaseLogger = FastifyBaseLogger,
-> = FastifyServerOptions<Server, Logger> & {
+> = FastifyAdapterBaseOptions<Server, Logger> & {
   http2: true;
   http2SessionTimeout?: number;
 };
@@ -76,8 +86,15 @@ type FastifyHttp2Options<
 type FastifyHttpsOptions<
   Server extends https.Server,
   Logger extends FastifyBaseLogger = FastifyBaseLogger,
-> = FastifyServerOptions<Server, Logger> & {
+> = FastifyAdapterBaseOptions<Server, Logger> & {
   https: https.ServerOptions;
+};
+
+type FastifyHttpOptions<
+  Server extends http.Server,
+  Logger extends FastifyBaseLogger = FastifyBaseLogger,
+> = FastifyAdapterBaseOptions<Server, Logger> & {
+  http: http.ServerOptions;
 };
 
 type VersionedRoute<TRequest, TResponse> = ((
@@ -126,7 +143,7 @@ export class FastifyAdapter<
 
   private _isParserRegistered: boolean;
   private isMiddieRegistered: boolean;
-  private versioningOptions: VersioningOptions;
+  private versioningOptions?: VersioningOptions;
   private readonly versionConstraint = {
     name: 'version',
     validate(value: unknown) {
@@ -166,7 +183,7 @@ export class FastifyAdapter<
     },
     deriveConstraint: (req: FastifyRequest) => {
       // Media Type (Accept Header) Versioning Handler
-      if (this.versioningOptions.type === VersioningType.MEDIA_TYPE) {
+      if (this.versioningOptions?.type === VersioningType.MEDIA_TYPE) {
         const MEDIA_TYPE_HEADER = 'Accept';
         const acceptHeaderValue: string | undefined = (req.headers?.[
           MEDIA_TYPE_HEADER
@@ -181,7 +198,7 @@ export class FastifyAdapter<
           : acceptHeaderVersionParameter.split(this.versioningOptions.key)[1];
       }
       // Header Versioning Handler
-      else if (this.versioningOptions.type === VersioningType.HEADER) {
+      else if (this.versioningOptions?.type === VersioningType.HEADER) {
         const customHeaderVersionParameter: string | string[] | undefined =
           req.headers?.[this.versioningOptions.header] ||
           req.headers?.[this.versioningOptions.header.toLowerCase()];
@@ -191,7 +208,7 @@ export class FastifyAdapter<
           : customHeaderVersionParameter;
       }
       // Custom Versioning Handler
-      else if (this.versioningOptions.type === VersioningType.CUSTOM) {
+      else if (this.versioningOptions?.type === VersioningType.CUSTOM) {
         return this.versioningOptions.extractor(req);
       }
       return undefined;
@@ -209,7 +226,8 @@ export class FastifyAdapter<
       | FastifyHttp2Options<any>
       | FastifyHttp2SecureOptions<any>
       | FastifyHttpsOptions<any>
-      | FastifyServerOptions<TServer>,
+      | FastifyHttpOptions<any>
+      | FastifyAdapterBaseOptions<TServer>,
   ) {
     super();
 
@@ -222,7 +240,12 @@ export class FastifyAdapter<
             },
             ...(instanceOrOptions as FastifyServerOptions),
           });
+
     this.setInstance(instance);
+
+    if ((instanceOrOptions as FastifyAdapterBaseOptions)?.skipMiddie) {
+      this.isMiddieRegistered = true;
+    }
   }
 
   public async init() {
@@ -266,31 +289,35 @@ export class FastifyAdapter<
   }
 
   public get(...args: any[]) {
-    return this.injectRouteOptions('get', ...args);
+    return this.injectRouteOptions('GET', ...args);
   }
 
   public post(...args: any[]) {
-    return this.injectRouteOptions('post', ...args);
+    return this.injectRouteOptions('POST', ...args);
   }
 
   public head(...args: any[]) {
-    return this.injectRouteOptions('head', ...args);
+    return this.injectRouteOptions('HEAD', ...args);
   }
 
   public delete(...args: any[]) {
-    return this.injectRouteOptions('delete', ...args);
+    return this.injectRouteOptions('DELETE', ...args);
   }
 
   public put(...args: any[]) {
-    return this.injectRouteOptions('put', ...args);
+    return this.injectRouteOptions('PUT', ...args);
   }
 
   public patch(...args: any[]) {
-    return this.injectRouteOptions('patch', ...args);
+    return this.injectRouteOptions('PATCH', ...args);
   }
 
   public options(...args: any[]) {
-    return this.injectRouteOptions('options', ...args);
+    return this.injectRouteOptions('OPTIONS', ...args);
+  }
+
+  public search(...args: any[]) {
+    return this.injectRouteOptions('SEARCH', ...args);
   }
 
   public applyVersionFilter(
@@ -656,14 +683,7 @@ export class FastifyAdapter<
   }
 
   private injectRouteOptions(
-    routerMethodKey:
-      | 'get'
-      | 'post'
-      | 'put'
-      | 'delete'
-      | 'options'
-      | 'patch'
-      | 'head',
+    routerMethodKey: Uppercase<HTTPMethods>,
     ...args: any[]
   ) {
     const handlerRef = args[args.length - 1];
@@ -683,6 +703,13 @@ export class FastifyAdapter<
     const hasConfig = !isUndefined(routeConfig);
     const hasConstraints = !isUndefined(routeConstraints);
 
+    const routeToInject: RouteOptions<TServer, TRawRequest, TRawResponse> &
+      RouteShorthandOptions = {
+      method: routerMethodKey,
+      url: args[0],
+      handler: handlerRef,
+    };
+
     if (isVersioned || hasConstraints || hasConfig) {
       const isPathAndRouteTuple = args.length === 2;
       if (isPathAndRouteTuple) {
@@ -701,15 +728,12 @@ export class FastifyAdapter<
             },
           }),
         };
-        const path = args[0];
-        return this.instance[routerMethodKey](path, options, handlerRef);
+
+        const routeToInjectWithOptions = { ...routeToInject, ...options };
+
+        return this.instance.route(routeToInjectWithOptions);
       }
     }
-
-    return this.instance[routerMethodKey](
-      ...(args as Parameters<
-        RouteShorthandMethod<TServer, TRawRequest, TRawResponse>
-      >),
-    );
+    return this.instance.route(routeToInject);
   }
 }

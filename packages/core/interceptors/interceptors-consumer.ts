@@ -30,7 +30,8 @@ export class InterceptorsConsumer {
         return defer(AsyncResource.bind(() => this.transformDeferred(next)));
       }
       const handler: CallHandler = {
-        handle: () => fromPromise(nextFn(i + 1)).pipe(mergeAll()),
+        handle: () =>
+          defer(AsyncResource.bind(() => nextFn(i + 1))).pipe(mergeAll()),
       };
       return interceptors[i].intercept(context, handler);
     };

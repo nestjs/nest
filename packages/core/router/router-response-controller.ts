@@ -8,7 +8,7 @@ import {
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage } from 'http';
 import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
-import { catchError, debounce, map } from 'rxjs/operators';
+import { catchError, concatMap, map } from 'rxjs/operators';
 import {
   AdditionalHeaders,
   WritableHeaderStream,
@@ -128,7 +128,7 @@ export class RouterResponseController {
 
           return { data: message as object | string };
         }),
-        debounce(
+        concatMap(
           message =>
             new Promise<void>(resolve =>
               stream.writeMessage(message, () => resolve()),
@@ -153,6 +153,9 @@ export class RouterResponseController {
 
     request.on('close', () => {
       subscription.unsubscribe();
+      if (!stream.writableEnded) {
+        stream.end();
+      }
     });
   }
 
