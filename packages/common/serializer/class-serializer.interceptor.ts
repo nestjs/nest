@@ -94,7 +94,7 @@ export class ClassSerializerInterceptor implements NestInterceptor {
     if (plainOrClass instanceof options.type) {
       return classTransformer.classToPlain(plainOrClass, options);
     }
-    const instance = classTransformer.plainToClass(
+    const instance = classTransformer.plainToInstance(
       options.type,
       plainOrClass,
       options,
