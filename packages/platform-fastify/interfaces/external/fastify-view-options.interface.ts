@@ -27,4 +27,5 @@ export interface FastifyViewOptions {
   root?: string;
   viewExt?: string;
   propertyName?: string;
+  asyncProperyName?: string;
 }
