@@ -168,7 +168,7 @@ jobs:
   codechecks_benchmarks:
     working_directory: ~/nest
     docker:
-      - image: cimg/node:<< pipeline.parameters.maintenance-node-version >>
+      - image: cimg/node:<< pipeline.parameters.active-node-version >>
     steps:
       - checkout
       - *restore-cache
