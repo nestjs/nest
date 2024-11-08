@@ -79,6 +79,7 @@ function getLongDescription(
     printTableRow('nest', 'Nest-Express'),
     printTableRow('nest-fastify', 'Nest-Fastify'),
     printTableRow('express', 'Express'),
+    printTableRow('ultimate-express', 'UltimateExpress'),
     printTableRow('fastify', 'Fastify'),
   ];
 

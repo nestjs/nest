@@ -17,7 +17,13 @@ const sleep = (time: number) =>
   new Promise(resolve => setTimeout(resolve, time));
 
 const BENCHMARK_PATH = join(__dirname, '../../benchmarks');
-export const LIBS = ['express', 'fastify', 'nest', 'nest-fastify'];
+export const LIBS = [
+  'express',
+  'ultimate-express',
+  'fastify',
+  'nest',
+  'nest-fastify',
+];
 
 async function runBenchmarkOfLib(lib: string): Promise<WrkResults> {
   const libPath = join(BENCHMARK_PATH, `${lib}.js`);
