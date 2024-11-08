@@ -78,9 +78,10 @@ function getLongDescription(
     ['', 'Req/sec', 'Trans/sec', 'Req/sec DIFF', 'Trans/sec DIFF'],
     printTableRow('nest', 'Nest-Express'),
     printTableRow('nest-fastify', 'Nest-Fastify'),
+    printTableRow('nest-ultimate-express', 'Nest-Ultimate-Express'),
     printTableRow('express', 'Express'),
-    printTableRow('ultimate-express', 'UltimateExpress'),
     printTableRow('fastify', 'Fastify'),
+    printTableRow('ultimate-express', 'UltimateExpress'),
   ];
 
   return markdownTable(table);
