@@ -1,4 +1,6 @@
-import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
+import { Injectable } from '../decorators/core/injectable.decorator';
+import { HttpStatus } from '../enums/http-status.enum';
+import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
@@ -30,7 +32,7 @@ export interface ParseDatePipeOptions {
 
 @Injectable()
 export class ParseDatePipe
-  implements PipeTransform<string | Date | undefined | null>
+  implements PipeTransform<string | number | undefined | null>
 {
   protected exceptionFactory: (error: string) => any;
 
@@ -50,7 +52,7 @@ export class ParseDatePipe
    * @param value currently processed route argument
    * @param metadata contains metadata about the currently processed route argument
    */
-  transform(value: string | Date | undefined | null): Date {
+  transform(value: string | number | undefined | null): Date {
     if (this.options.optional && isNil(value)) {
       return this.options.default
         ? this.options.default()
@@ -58,13 +60,13 @@ export class ParseDatePipe
     }
 
     if (!value) {
-      throw this.exceptionFactory('Validation failed (Date is expected)');
+      throw this.exceptionFactory('Validation failed (no Date provided)');
     }
 
     const transformedValue = new Date(value);
 
     if (isNaN(transformedValue.getTime())) {
-      throw this.exceptionFactory('Validation failed (invalid Date provided)');
+      throw this.exceptionFactory('Validation failed (invalid date format)');
     }
 
     return transformedValue;
