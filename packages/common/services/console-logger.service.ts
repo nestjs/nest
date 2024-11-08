@@ -49,24 +49,28 @@ export interface ConsoleLoggerOptions {
   /**
    * Specifies the maximum number of Array, TypedArray, Map, Set, WeakMap, and WeakSet elements to include when formatting.
    * Set to null or Infinity to show all elements. Set to 0 or negative to show no elements.
+   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
    * @default 100
    */
   maxArrayLength?: number;
   /**
    * Specifies the maximum number of characters to include when formatting.
    * Set to null or Infinity to show all elements. Set to 0 or negative to show no characters.
+   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
    * @default 10000.
    */
   maxStringLength?: number;
   /**
    * If enabled, will sort keys while formatting objects.
    * Can also be a custom sorting function.
+   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
    * @default false
    */
   sorted?: boolean | ((a: string, b: string) => number);
   /**
    * Specifies the number of times to recurse while formatting object. T
    * This is useful for inspecting large objects. To recurse up to the maximum call stack size pass Infinity or null.
+   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
    * @default 5
    */
   depth?: number;
@@ -79,6 +83,7 @@ export interface ConsoleLoggerOptions {
   /**
    * The length at which input values are split across multiple lines. Set to Infinity to format the input as a single line (in combination with "compact" set to true).
    * Default Infinity when "compact" is true, 80 otherwise.
+   * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
    */
   breakLength?: number;
 }
@@ -142,7 +147,7 @@ export class ConsoleLogger implements LoggerService {
 
     opts = opts ?? {};
     opts.logLevels ??= DEFAULT_LOG_LEVELS;
-    opts.colors ??= opts.json ? false : true;
+    opts.colors ??= opts.colors ?? (opts.json ? false : true);
     opts.prefix ??= 'Nest';
 
     this.options = opts;
@@ -359,7 +364,10 @@ export class ConsoleLogger implements LoggerService {
       logObject.stack = options.errorStack;
     }
 
-    const formattedMessage = inspect(logObject, this.inspectOptions);
+    const formattedMessage =
+      !this.options.colors && this.inspectOptions.compact === true
+        ? JSON.stringify(logObject, this.stringifyReplacer)
+        : inspect(logObject, this.inspectOptions);
     process[options.writeStreamType ?? 'stdout'].write(`${formattedMessage}\n`);
   }
 
@@ -462,7 +470,7 @@ export class ConsoleLogger implements LoggerService {
       depth: this.options.depth ?? DEFAULT_DEPTH,
       sorted: this.options.sorted,
       showHidden: this.options.showHidden,
-      compact: (this.options.compact ?? this.options.json) ? true : false,
+      compact: this.options.compact ?? (this.options.json ? true : false),
       colors: this.options.colors,
       breakLength,
     };
@@ -475,6 +483,25 @@ export class ConsoleLogger implements LoggerService {
     }
 
     return inspectOptions;
+  }
+
+  protected stringifyReplacer(key: string, value: unknown) {
+    // Mimic util.inspect behavior for JSON logger with compact on and colors off
+    if (typeof value === 'bigint') {
+      return value.toString();
+    }
+    if (typeof value === 'symbol') {
+      return value.toString();
+    }
+
+    if (
+      value instanceof Map ||
+      value instanceof Set ||
+      value instanceof Error
+    ) {
+      return `${inspect(value, this.inspectOptions)}`;
+    }
+    return value;
   }
 
   private getContextAndMessagesToPrint(args: unknown[]) {

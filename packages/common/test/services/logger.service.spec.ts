@@ -125,9 +125,12 @@ describe('Logger', () => {
         Logger.error(error);
 
         expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(`Object:`);
+
         expect(processStderrWriteSpy.firstCall.firstArg).to.include(
-          `{\n  "randomError": true\n}`,
+          `Object(${Object.keys(error).length})`,
+        );
+        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+          `randomError: \x1b[33mtrue`,
         );
       });
 
@@ -181,6 +184,153 @@ describe('Logger', () => {
         expect(processStderrWriteSpy.thirdCall.firstArg).to.equal(stack + '\n');
       });
     });
+
+    describe('when the default logger is used and json mode is enabled', () => {
+      const logger = new ConsoleLogger({ json: true });
+
+      let processStdoutWriteSpy: sinon.SinonSpy;
+      let processStderrWriteSpy: sinon.SinonSpy;
+
+      beforeEach(() => {
+        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+        processStderrWriteSpy = sinon.spy(process.stderr, 'write');
+      });
+
+      afterEach(() => {
+        processStdoutWriteSpy.restore();
+        processStderrWriteSpy.restore();
+      });
+
+      it('should print error with stack as JSON to the console', () => {
+        const errorMessage = 'error message';
+        const error = new Error(errorMessage);
+
+        logger.error(error.message, error.stack);
+
+        const json = JSON.parse(processStderrWriteSpy.firstCall?.firstArg);
+
+        expect(json.pid).to.equal(process.pid);
+        expect(json.level).to.equal('error');
+        expect(json.message).to.equal(errorMessage);
+      });
+      it('should log out to stdout as JSON', () => {
+        const message = 'message 1';
+
+        logger.log(message);
+
+        const json = JSON.parse(processStdoutWriteSpy.firstCall?.firstArg);
+
+        expect(json.pid).to.equal(process.pid);
+        expect(json.level).to.equal('log');
+        expect(json.message).to.equal(message);
+      });
+      it('should log out an error to stderr as JSON', () => {
+        const message = 'message 1';
+
+        logger.error(message);
+
+        const json = JSON.parse(processStderrWriteSpy.firstCall?.firstArg);
+
+        expect(json.pid).to.equal(process.pid);
+        expect(json.level).to.equal('error');
+        expect(json.message).to.equal(message);
+      });
+      it('should log Map object', () => {
+        const map = new Map([
+          ['key1', 'value1'],
+          ['key2', 'value2'],
+        ]);
+
+        logger.log(map);
+
+        const json = JSON.parse(processStdoutWriteSpy.firstCall?.firstArg);
+
+        expect(json.pid).to.equal(process.pid);
+        expect(json.level).to.equal('log');
+        expect(json.message).to.equal(
+          `Map(2) { 'key1' => 'value1', 'key2' => 'value2' }`,
+        );
+      });
+      it('should log Set object', () => {
+        const set = new Set(['value1', 'value2']);
+
+        logger.log(set);
+
+        const json = JSON.parse(processStdoutWriteSpy.firstCall?.firstArg);
+
+        expect(json.pid).to.equal(process.pid);
+        expect(json.level).to.equal('log');
+        expect(json.message).to.equal(`Set(2) { 'value1', 'value2' }`);
+      });
+      it('should log bigint', () => {
+        const bigInt = BigInt(9007199254740991);
+
+        logger.log(bigInt);
+
+        const json = JSON.parse(processStdoutWriteSpy.firstCall?.firstArg);
+
+        expect(json.pid).to.equal(process.pid);
+        expect(json.level).to.equal('log');
+        expect(json.message).to.equal('9007199254740991');
+      });
+      it('should log symbol', () => {
+        const symbol = Symbol('test');
+
+        logger.log(symbol);
+
+        const json = JSON.parse(processStdoutWriteSpy.firstCall?.firstArg);
+
+        expect(json.pid).to.equal(process.pid);
+        expect(json.level).to.equal('log');
+        expect(json.message).to.equal('Symbol(test)');
+      });
+    });
+
+    describe('when the default logger is used, json mode is enabled and compact is false (utils.inspect)', () => {
+      const logger = new ConsoleLogger({ json: true, compact: false });
+
+      let processStdoutWriteSpy: sinon.SinonSpy;
+      let processStderrWriteSpy: sinon.SinonSpy;
+
+      beforeEach(() => {
+        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+        processStderrWriteSpy = sinon.spy(process.stderr, 'write');
+      });
+
+      afterEach(() => {
+        processStdoutWriteSpy.restore();
+        processStderrWriteSpy.restore();
+      });
+
+      it('should log out to stdout as JSON (utils.inspect)', () => {
+        const message = 'message 1';
+
+        logger.log(message);
+
+        const json = convertInspectToJSON(
+          processStdoutWriteSpy.firstCall?.firstArg,
+        );
+
+        expect(json.pid).to.equal(process.pid);
+        expect(json.level).to.equal('log');
+        expect(json.message).to.equal(message);
+      });
+
+      it('should log out an error to stderr as JSON (utils.inspect)', () => {
+        const message = 'message 1';
+
+        logger.error(message);
+
+        const json = convertInspectToJSON(
+          processStderrWriteSpy.firstCall?.firstArg,
+        );
+
+        expect(json.pid).to.equal(process.pid);
+        expect(json.level).to.equal('error');
+        expect(json.message).to.equal(message);
+      });
+    });
+
     describe('when logging is disabled', () => {
       let processStdoutWriteSpy: sinon.SinonSpy;
       let previousLoggerRef: LoggerService;
@@ -568,6 +718,7 @@ describe('Logger', () => {
         expect(processStdoutWriteSpy.called).to.be.false;
       });
     });
+
     describe('when custom logger is being used', () => {
       class CustomLogger implements LoggerService {
         log(message: any, context?: string) {}
@@ -723,7 +874,7 @@ describe('Logger', () => {
         }
       }
 
-      const consoleLogger = new CustomConsoleLogger();
+      const consoleLogger = new CustomConsoleLogger({ colors: false });
       const consoleLoggerSpy = sinon.spy(
         consoleLogger,
         'stringifyMessage' as keyof ConsoleLogger,
@@ -739,30 +890,40 @@ describe('Logger', () => {
 
       expect(consoleLoggerSpy.getCall(0).returnValue).to.equal('str1');
       expect(consoleLoggerSpy.getCall(1).returnValue).to.equal(
-        `Object:
-{
-  "key": "str2"
-}
-`,
+        `Object(1) {
+  key: 'str2'
+}`,
       );
       expect(consoleLoggerSpy.getCall(2).returnValue).to.equal(
-        `Object:
-[
-  "str3"
-]
-`,
+        `Array(1) [
+  'str3'
+]`,
       );
       expect(consoleLoggerSpy.getCall(3).returnValue).to.equal(
-        `Object:
-[
+        `Array(1) [
   {
-    "key": "str4"
+    key: 'str4'
   }
-]
-`,
+]`,
       );
-      expect(consoleLoggerSpy.getCall(4).returnValue).to.equal(null);
-      expect(consoleLoggerSpy.getCall(5).returnValue).to.equal(1);
+      expect(consoleLoggerSpy.getCall(4).returnValue).to.equal('null');
+      expect(consoleLoggerSpy.getCall(5).returnValue).to.equal('1');
     });
   });
 });
+
+function convertInspectToJSON(inspectOutput: string) {
+  let jsonLikeString = inspectOutput
+    .replace(/'([^']+)'/g, '"$1"') // single-quoted strings
+    .replace(/([a-zA-Z0-9_]+):/g, '"$1":') // unquoted object keys
+    .replace(/\bundefined\b/g, 'null')
+    .replace(/\[Function(: [^\]]+)?\]/g, '"[Function]"')
+    .replace(/\[Circular\]/g, '"[Circular]"');
+
+  try {
+    return JSON.parse(jsonLikeString);
+  } catch (error) {
+    console.error('Error parsing the modified inspect output:', error);
+    throw error;
+  }
+}
