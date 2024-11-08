@@ -9,6 +9,7 @@ import {
   Abstract,
   DynamicModule,
   GetOrResolveOptions,
+  SelectOptions,
   Type,
 } from '@nestjs/common/interfaces';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
@@ -88,6 +89,7 @@ export class NestApplicationContext<
    */
   public select<T>(
     moduleType: Type<T> | DynamicModule,
+    selectOptions?: SelectOptions,
   ): INestApplicationContext {
     const modulesContainer = this.container.getModules();
     const contextModuleCtor = this.contextModule.metatype;
@@ -108,9 +110,18 @@ export class NestApplicationContext<
     if (!selectedModule) {
       throw new UnknownModuleException(type.name);
     }
+
+    const options =
+      typeof selectOptions?.abortOnError !== 'undefined'
+        ? {
+            ...this.appOptions,
+            ...selectOptions,
+          }
+        : this.appOptions;
+
     return new NestApplicationContext(
       this.container,
-      this.appOptions,
+      options,
       selectedModule,
       scope,
     );
