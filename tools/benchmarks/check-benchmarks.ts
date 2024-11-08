@@ -103,12 +103,12 @@ function getDiff(
 
     diff[l] = {
       requestsPerSecDiff: getRequestDiff(
-        currentValue.requestsPerSec,
-        baselineValue.requestsPerSec,
+        currentValue?.requestsPerSec,
+        baselineValue?.requestsPerSec,
       ),
       transferPerSecDiff: getTransferDiff(
-        currentValue.transferPerSec,
-        baselineValue.transferPerSec,
+        currentValue?.transferPerSec,
+        baselineValue?.transferPerSec,
       ),
     };
   }
