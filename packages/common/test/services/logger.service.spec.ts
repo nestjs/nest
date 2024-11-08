@@ -913,7 +913,7 @@ describe('Logger', () => {
 });
 
 function convertInspectToJSON(inspectOutput: string) {
-  let jsonLikeString = inspectOutput
+  const jsonLikeString = inspectOutput
     .replace(/'([^']+)'/g, '"$1"') // single-quoted strings
     .replace(/([a-zA-Z0-9_]+):/g, '"$1":') // unquoted object keys
     .replace(/\bundefined\b/g, 'null')
