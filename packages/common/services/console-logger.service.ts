@@ -336,15 +336,17 @@ export class ConsoleLogger implements LoggerService {
     },
   ) {
     type JsonLogObject = {
-      context?: string;
       level: LogLevel;
-      message: unknown;
+      pid: number;
       timestamp: number;
+      message: unknown;
+      context?: string;
       stack?: unknown;
     };
 
     const logObject: JsonLogObject = {
       level: options.logLevel,
+      pid: process.pid,
       timestamp: Date.now(),
       message,
     };
