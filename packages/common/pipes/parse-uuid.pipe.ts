@@ -15,9 +15,25 @@ import { isNil, isString } from '../utils/shared.utils';
  * @publicApi
  */
 export interface ParseUUIDPipeOptions {
+  /**
+   * UUID version to validate
+   */
   version?: '3' | '4' | '5' | '7';
+  /**
+   * The HTTP status code to be used in the response when the validation fails.
+   */
   errorHttpStatusCode?: ErrorHttpStatusCode;
+  /**
+   * A factory function that returns an exception object to be thrown
+   * if validation fails.
+   * @param error Error message
+   * @returns The exception object
+   */
   exceptionFactory?: (errors: string) => any;
+  /**
+   * If true, the pipe will return null or undefined if the value is not provided
+   * @default false
+   */
   optional?: boolean;
 }
 

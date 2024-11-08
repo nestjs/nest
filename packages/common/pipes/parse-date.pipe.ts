@@ -1,0 +1,72 @@
+import { HttpStatus, Injectable, PipeTransform } from '@nestjs/common';
+import {
+  ErrorHttpStatusCode,
+  HttpErrorByCode,
+} from '../utils/http-error-by-code.util';
+import { isNil } from '../utils/shared.utils';
+
+export interface ParseDatePipeOptions {
+  /**
+   * If true, the pipe will return null or undefined if the value is not provided
+   * @default false
+   */
+  optional?: boolean;
+  /**
+   * Default value for the date
+   */
+  default?: () => Date;
+  /**
+   * The HTTP status code to be used in the response when the validation fails.
+   */
+  errorHttpStatusCode?: ErrorHttpStatusCode;
+  /**
+   * A factory function that returns an exception object to be thrown
+   * if validation fails.
+   * @param error Error message
+   * @returns The exception object
+   */
+  exceptionFactory?: (error: string) => any;
+}
+
+@Injectable()
+export class ParseDatePipe
+  implements PipeTransform<string | Date | undefined | null>
+{
+  protected exceptionFactory: (error: string) => any;
+
+  constructor(private readonly options: ParseDatePipeOptions = {}) {
+    const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
+      options;
+
+    this.exceptionFactory =
+      exceptionFactory ||
+      (error => new HttpErrorByCode[errorHttpStatusCode](error));
+  }
+
+  /**
+   * Method that accesses and performs optional transformation on argument for
+   * in-flight requests.
+   *
+   * @param value currently processed route argument
+   * @param metadata contains metadata about the currently processed route argument
+   */
+  transform(value: string | Date | undefined | null): Date {
+    if (this.options.optional && isNil(value)) {
+      return this.options.default
+        ? this.options.default()
+        : (value as undefined | null);
+    }
+
+    if (!value) {
+      throw this.exceptionFactory('Validation failed (Date is expected)');
+    }
+
+    const transformedValue = new Date(value);
+
+    if (isNaN(transformedValue.getTime())) {
+      throw this.exceptionFactory('Validation failed (invalid Date provided)');
+    }
+
+    return transformedValue;
+  }
+}
