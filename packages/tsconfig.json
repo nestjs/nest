@@ -17,6 +17,9 @@
       "path": "./platform-fastify/tsconfig.build.json"
     },
     {
+      "path": "./platform-ultimate-express/tsconfig.build.json"
+    },
+    {
       "path": "./platform-socket.io/tsconfig.build.json"
     },
     {

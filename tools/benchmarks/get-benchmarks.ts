@@ -19,10 +19,11 @@ const sleep = (time: number) =>
 const BENCHMARK_PATH = join(__dirname, '../../benchmarks');
 export const LIBS = [
   'express',
-  'ultimate-express',
   'fastify',
+  'ultimate-express',
   'nest',
   'nest-fastify',
+  'nest-ultimate-express',
 ];
 
 async function runBenchmarkOfLib(lib: string): Promise<WrkResults> {

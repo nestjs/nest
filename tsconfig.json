@@ -30,6 +30,8 @@
       "@nestjs/platform-ws/*": ["./packages/platform-ws/*"],
       "@nestjs/platform-fastify": ["./packages/platform-fastify"],
       "@nestjs/platform-fastify/*": ["./packages/platform-fastify/*"],
+      "@nestjs/platform-ultimate-express": ["./packages/platform-ultimate-express"],
+      "@nestjs/platform-ultimate-express*": ["./packages/platform-ultimate-express*"],
       "@nestjs/platform-socket.io": ["./packages/platform-socket.io"],
       "@nestjs/platform-socket.io/*": ["./packages/platform-socket.io/*"],
     }
