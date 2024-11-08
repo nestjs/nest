@@ -139,6 +139,7 @@ export class ConsoleLogger implements LoggerService {
     @Optional()
     options?: ConsoleLoggerOptions,
   ) {
+    // eslint-disable-next-line prefer-const
     let [context, opts] = isString(contextOrOptions)
       ? [contextOrOptions, options]
       : !!options
