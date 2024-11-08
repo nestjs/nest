@@ -389,12 +389,12 @@ export class DependenciesScanner {
     // Skip "InternalCoreModule" from calculating distance
     modulesGenerator.next();
 
-    const modulesStack = [];
-    const calculateDistance = (moduleRef: Module, distance = 1) => {
-      if (!moduleRef || modulesStack.includes(moduleRef)) {
+    const calculateDistance = (moduleRef: Module, distance = 1, modulesStack = []) => {
+      const localModulesStack = [...modulesStack];
+      if (!moduleRef || localModulesStack.includes(moduleRef)) {
         return;
       }
-      modulesStack.push(moduleRef);
+      localModulesStack.push(moduleRef);
 
       const moduleImports = moduleRef.imports;
       moduleImports.forEach(importedModuleRef => {
@@ -402,7 +402,7 @@ export class DependenciesScanner {
           if (distance > importedModuleRef.distance) {
             importedModuleRef.distance = distance;
           }
-          calculateDistance(importedModuleRef, distance + 1);
+          calculateDistance(importedModuleRef, distance + 1, localModulesStack);
         }
       });
     };
