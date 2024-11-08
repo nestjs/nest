@@ -67,10 +67,10 @@ function getLongDescription(
   function printTableRow(id: string, label: string): string[] {
     return [
       label,
-      current[id].requestsPerSec.toFixed(0),
-      current[id].transferPerSec,
-      baseline ? formatPerc(diff[id].requestsPerSecDiff) : '-',
-      baseline ? formatPerc(diff[id].transferPerSecDiff) : '-',
+      current[id]?.requestsPerSec.toFixed(0),
+      current[id]?.transferPerSec,
+      baseline ? formatPerc(diff[id]?.requestsPerSecDiff) : '-',
+      baseline ? formatPerc(diff[id]?.transferPerSecDiff) : '-',
     ];
   }
 
