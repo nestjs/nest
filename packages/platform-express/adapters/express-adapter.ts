@@ -38,15 +38,7 @@ import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-pa
 import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util';
-
-type VersionedRoute = <
-  TRequest extends Record<string, any> = any,
-  TResponse = any,
->(
-  req: TRequest,
-  res: TResponse,
-  next: () => void,
-) => any;
+import { VersionedRoute } from '@nestjs/common/interfaces/versioned-route.interface';
 
 /**
  * @publicApi

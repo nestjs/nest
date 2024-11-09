@@ -28,19 +28,11 @@ import * as cors from 'cors';
 import * as express from 'ultimate-express';
 import * as https from 'https';
 import { Duplex, pipeline } from 'stream';
-import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface';
-import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface';
+import { NestUltimateExpressBodyParserOptions } from '../interfaces/nest-ultimate-express-body-parser-options.interface';
+import { NestUltimateExpressBodyParserType } from '../interfaces/nest-ultimate-express-body-parser.interface';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util';
-
-type VersionedRoute = <
-  TRequest extends Record<string, any> = any,
-  TResponse = any,
->(
-  req: TRequest,
-  res: TResponse,
-  next: () => void,
-) => any;
+import { VersionedRoute } from '@nestjs/common/interfaces/versioned-route.interface';
 
 /**
  * @publicApi
@@ -237,8 +229,8 @@ export class UltimateExpressAdapter extends AbstractHttpAdapter<
     });
 
     const parserMiddleware = {
-      jsonParser: this.instance.json(bodyParserJsonOptions),
-      urlencodedParser: this.instance.urlencoded(bodyParserUrlencodedOptions),
+      jsonParser: express.json(bodyParserJsonOptions),
+      urlencodedParser: express.urlencoded(bodyParserUrlencodedOptions),
     };
 
     Object.keys(parserMiddleware)
@@ -246,8 +238,8 @@ export class UltimateExpressAdapter extends AbstractHttpAdapter<
       .forEach(parserKey => this.use(parserMiddleware[parserKey]));
   }
 
-  public useBodyParser<Options = NestExpressBodyParserOptions>(
-    type: NestExpressBodyParserType,
+  public useBodyParser<Options = NestUltimateExpressBodyParserOptions>(
+    type: NestUltimateExpressBodyParserType,
     rawBody: boolean,
     options?: Omit<Options, 'verify'>,
   ): this {

@@ -5,7 +5,7 @@ import type { IncomingMessage } from 'http';
  * @see https://github.com/DefinitelyTyped/DefinitelyTyped/blob/dcd1673c4fa18a15ea8cd8ff8af7d563bb6dc8e6/types/body-parser/index.d.ts#L48-L66#L48-L66
  * @publicApi
  */
-export interface NestExpressBodyParserOptions {
+export interface NestUltimateExpressBodyParserOptions {
   /** When set to true, then deflated (compressed) bodies will be inflated; when false, deflated bodies are rejected. Defaults to true. */
   inflate?: boolean | undefined;
 

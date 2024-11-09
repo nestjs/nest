@@ -2,9 +2,10 @@ import { INestApplication, HttpServer } from '@nestjs/common';
 import type { Server as CoreHttpServer } from 'http';
 import type { Server as CoreHttpsServer } from 'https';
 import type { Express } from 'ultimate-express';
-import { NestExpressBodyParserOptions } from './nest-express-body-parser-options.interface';
-import { NestExpressBodyParserType } from './nest-express-body-parser.interface';
+import { NestUltimateExpressBodyParserOptions } from './nest-ultimate-express-body-parser-options.interface';
+import { NestUltimateExpressBodyParserType } from './nest-ultimate-express-body-parser.interface';
 import { ServeStaticOptions } from './serve-static-options.interface';
+import { AbstractHttpAdapter } from '@nestjs/core';
 
 /**
  * Interface describing methods on NestExpressApplication.
@@ -13,7 +14,7 @@ import { ServeStaticOptions } from './serve-static-options.interface';
  *
  * @publicApi
  */
-export interface NestExpressApplication<
+export interface NestUltimateExpressApplication<
   TServer extends CoreHttpServer | CoreHttpsServer = CoreHttpServer,
 > extends INestApplication<TServer> {
   /**
@@ -99,8 +100,8 @@ export interface NestExpressApplication<
    *
    * @returns {this}
    */
-  useBodyParser<Options = NestExpressBodyParserOptions>(
-    parser: NestExpressBodyParserType,
+  useBodyParser<Options = NestUltimateExpressBodyParserOptions>(
+    parser: NestUltimateExpressBodyParserType,
     options?: Omit<Options, 'verify'>,
   ): this;
 
