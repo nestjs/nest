@@ -67,10 +67,10 @@ function getLongDescription(
   function printTableRow(id: string, label: string): string[] {
     return [
       label,
-      current[id].requestsPerSec.toFixed(0),
-      current[id].transferPerSec,
-      baseline ? formatPerc(diff[id].requestsPerSecDiff) : '-',
-      baseline ? formatPerc(diff[id].transferPerSecDiff) : '-',
+      current[id]?.requestsPerSec.toFixed(0),
+      current[id]?.transferPerSec,
+      baseline ? formatPerc(diff[id]?.requestsPerSecDiff) : '-',
+      baseline ? formatPerc(diff[id]?.transferPerSecDiff) : '-',
     ];
   }
 
@@ -103,12 +103,12 @@ function getDiff(
 
     diff[l] = {
       requestsPerSecDiff: getRequestDiff(
-        currentValue.requestsPerSec,
-        baselineValue.requestsPerSec,
+        currentValue?.requestsPerSec,
+        baselineValue?.requestsPerSec,
       ),
       transferPerSecDiff: getTransferDiff(
-        currentValue.transferPerSec,
-        baselineValue.transferPerSec,
+        currentValue?.transferPerSec,
+        baselineValue?.transferPerSec,
       ),
     };
   }
