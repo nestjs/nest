@@ -17,7 +17,11 @@ export interface ModuleMetadata {
    * required in this module.
    */
   imports?: Array<
-    Type<any> | DynamicModule | Promise<DynamicModule> | ForwardReference
+    | Type<any>
+    | DynamicModule
+    | Promise<DynamicModule>
+    | Promise<Type<any>>
+    | ForwardReference
   >;
   /**
    * Optional list of controllers defined in this module which have to be
