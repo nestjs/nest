@@ -1,4 +1,4 @@
-import { ExecutionContext } from '..';
+import { ExecutionContext } from './execution-context.interface';
 
 /**
  * @publicApi
