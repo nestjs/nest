@@ -16,12 +16,8 @@ export type ParamDecoratorEnhancer = ParameterDecorator;
  *
  * @publicApi
  */
-export function createParamDecorator<
-  FactoryData = any,
-  FactoryInput = any,
-  FactoryOutput = any,
->(
-  factory: CustomParamFactory<FactoryData, FactoryInput, FactoryOutput>,
+export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
+  factory: CustomParamFactory<FactoryData, FactoryOutput>,
   enhancers: ParamDecoratorEnhancer[] = [],
 ): (
   ...dataOrPipes: (Type<PipeTransform> | PipeTransform | FactoryData)[]
