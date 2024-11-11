@@ -33,7 +33,7 @@ export const PARAM_ARGS_METADATA = ROUTE_ARGS_METADATA;
 export const REQUEST_PATTERN_METADATA = 'microservices:request_pattern';
 export const REPLY_PATTERN_METADATA = 'microservices:reply_pattern';
 
-export const RQM_DEFAULT_QUEUE = 'default';
+export const RQM_DEFAULT_QUEUE = '';
 export const RQM_DEFAULT_PREFETCH_COUNT = 0;
 export const RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT = false;
 export const RQM_DEFAULT_QUEUE_OPTIONS = {};
