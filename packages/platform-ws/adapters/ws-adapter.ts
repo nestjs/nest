@@ -27,6 +27,9 @@ type WsServerRegistryKey = number;
 type WsServerRegistryEntry = any[];
 type WsData = string | Buffer | ArrayBuffer | Buffer[];
 type WsMessageParser = (data: WsData) => { event: string; data: any } | void;
+type WsAdapterOptions = {
+  messageParser?: WsMessageParser;
+};
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
 
@@ -47,9 +50,16 @@ export class WsAdapter extends AbstractWsAdapter {
     return JSON.parse(data.toString());
   };
 
-  constructor(appOrHttpServer?: INestApplicationContext | any) {
+  constructor(
+    appOrHttpServer?: INestApplicationContext | any,
+    options?: WsAdapterOptions,
+  ) {
     super(appOrHttpServer);
     wsPackage = loadPackage('ws', 'WsAdapter', () => require('ws'));
+
+    if (options?.messageParser) {
+      this.messageParser = options.messageParser;
+    }
   }
 
   public create(

@@ -245,6 +245,34 @@ describe('WebSocketGateway (WsAdapter)', () => {
     );
   });
 
+  it('should set messageParser by using constructor options', async () => {
+    const testingModule = await Test.createTestingModule({
+      providers: [ApplicationGateway],
+    }).compile();
+    app = testingModule.createNestApplication();
+
+    const wsAdapter = new WsAdapter(app, {
+      messageParser: data => {
+        const [event, payload] = JSON.parse(data.toString());
+        return { event, data: payload };
+      },
+    });
+    app.useWebSocketAdapter(wsAdapter);
+    await app.listen(3000);
+
+    ws = new WebSocket('ws://localhost:8080');
+    await new Promise(resolve => ws.on('open', resolve));
+
+    ws.send(JSON.stringify(['push', { test: 'test' }]));
+    await new Promise<void>(resolve =>
+      ws.on('message', data => {
+        expect(JSON.parse(data).data.test).to.be.eql('test');
+        ws.close();
+        resolve();
+      }),
+    );
+  });
+
   afterEach(async function () {
     await app.close();
   });
