@@ -218,17 +218,17 @@ describe('WebSocketGateway (WsAdapter)', () => {
     );
   });
 
-  it('should preprocess message', async () => {
+  it('should set messageParser by using setMessageParser method', async () => {
     const testingModule = await Test.createTestingModule({
       providers: [ApplicationGateway],
     }).compile();
     app = testingModule.createNestApplication();
 
     const wsAdapter = new WsAdapter(app);
-    wsAdapter.setMessagePreprocessor(data => ({
-      event: data[0],
-      data: data[1],
-    }));
+    wsAdapter.setMessageParser(data => {
+      const [event, payload] = JSON.parse(data.toString());
+      return { event, data: payload };
+    });
     app.useWebSocketAdapter(wsAdapter);
     await app.listen(3000);
 

@@ -25,9 +25,8 @@ type HttpServerRegistryKey = number;
 type HttpServerRegistryEntry = any;
 type WsServerRegistryKey = number;
 type WsServerRegistryEntry = any[];
-type WsMessagePreprocessor = (
-  message: any,
-) => { event: string; data: any } | void;
+type WsData = string | Buffer | ArrayBuffer | Buffer[];
+type WsMessageParser = (data: WsData) => { event: string; data: any } | void;
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
 
@@ -44,7 +43,9 @@ export class WsAdapter extends AbstractWsAdapter {
     WsServerRegistryKey,
     WsServerRegistryEntry
   >();
-  protected messagePreprocessor: WsMessagePreprocessor = message => message;
+  protected messageParser: WsMessageParser = data => {
+    return JSON.parse(data.toString());
+  };
 
   constructor(appOrHttpServer?: INestApplicationContext | any) {
     super(appOrHttpServer);
@@ -142,7 +143,7 @@ export class WsAdapter extends AbstractWsAdapter {
     transform: (data: any) => Observable<any>,
   ): Observable<any> {
     try {
-      const message = this.messagePreprocessor(JSON.parse(buffer.data));
+      const message = this.messageParser(buffer.data);
       if (!message) {
         return EMPTY;
       }
@@ -186,8 +187,8 @@ export class WsAdapter extends AbstractWsAdapter {
     this.wsServersRegistry.clear();
   }
 
-  public setMessagePreprocessor(preprocessor: WsMessagePreprocessor) {
-    this.messagePreprocessor = preprocessor;
+  public setMessageParser(parser: WsMessageParser) {
+    this.messageParser = parser;
   }
 
   protected ensureHttpServerExists(
