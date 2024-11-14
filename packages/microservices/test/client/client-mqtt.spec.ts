@@ -10,6 +10,12 @@ describe('ClientMqtt', () => {
   const test = 'test';
   let client: ClientMqtt = new ClientMqtt({});
 
+  describe('getMqttClient', () => {
+    it(`should return "mqttClient"`, async () => {
+      const mqttClient = await client.getMqttClient();
+      expect(mqttClient).to.exist.and.to.equal(client['mqttClient']);
+    });
+  });
   describe('getRequestPattern', () => {
     it(`should leave pattern as it is`, () => {
       expect(client.getRequestPattern(test)).to.equal(test);

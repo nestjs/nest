@@ -94,6 +94,13 @@ export class ClientMqtt extends ClientProxy {
     return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 
+  public async getMqttClient(): Promise<MqttClient> {
+    if (!this.mqttClient) {
+      await this.connect();
+    }
+    return this.mqttClient;
+  }
+
   public handleError(client: MqttClient) {
     client.addListener(
       ERROR_EVENT,
