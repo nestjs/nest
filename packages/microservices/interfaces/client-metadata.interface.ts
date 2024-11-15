@@ -1,7 +1,8 @@
 import { Type } from '@nestjs/common';
+import { ConnectionOptions } from 'tls';
 import { ClientProxy } from '../client';
-import { TcpSocket } from '../helpers';
 import { Transport } from '../enums/transport.enum';
+import { TcpSocket } from '../helpers';
 import { Deserializer } from './deserializer.interface';
 import {
   GrpcOptions,
@@ -12,7 +13,6 @@ import {
   RmqOptions,
 } from './microservice-configuration.interface';
 import { Serializer } from './serializer.interface';
-import { ConnectionOptions } from 'tls';
 
 export type ClientOptions =
   | RedisOptions

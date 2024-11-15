@@ -36,7 +36,7 @@ import { transformPatternToRoute } from '../utils';
  * @publicApi
  */
 export abstract class ClientProxy<
-  EventsMap extends Record<string, Function> = Record<string, Function>,
+  EventsMap extends Record<never, Function> = Record<never, Function>,
   Status extends string = string,
 > {
   protected routingMap = new Map<string, Function>();

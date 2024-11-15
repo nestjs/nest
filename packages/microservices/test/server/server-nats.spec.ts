@@ -4,8 +4,10 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { NatsContext } from '../../ctx-host';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
-import { NatsMsg } from '../../external/nats-client.interface';
 import { ServerNats } from '../../server/server-nats';
+
+// type NatsMsg = import('nats').Msg;
+type NatsMsg = any;
 
 describe('ServerNats', () => {
   let server: ServerNats;
