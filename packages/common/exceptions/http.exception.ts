@@ -2,7 +2,7 @@ import {
   HttpExceptionBody,
   HttpExceptionBodyMessage,
 } from '../interfaces/http/http-exception-body.interface';
-import { isObject, isString } from '../utils/shared.utils';
+import { isNumber, isObject, isString } from '../utils/shared.utils';
 
 export interface HttpExceptionOptions {
   /** original cause of the error */
@@ -115,17 +115,14 @@ export class HttpException extends Error {
     message: HttpExceptionBodyMessage,
     statusCode: number,
   ): HttpExceptionBody;
-
   public static createBody(
     message: HttpExceptionBodyMessage,
     error: string,
     statusCode: number,
   ): HttpExceptionBody;
-
   public static createBody<Body extends Record<string, unknown>>(
     custom: Body,
   ): Body;
-
   public static createBody<Body extends Record<string, unknown>>(
     arg0: null | HttpExceptionBodyMessage | Body,
     arg1?: HttpExceptionBodyMessage | string,
@@ -138,7 +135,7 @@ export class HttpException extends Error {
       };
     }
 
-    if (isString(arg0) || Array.isArray(arg0)) {
+    if (isString(arg0) || Array.isArray(arg0) || isNumber(arg0)) {
       return {
         message: arg0,
         error: arg1 as string,
