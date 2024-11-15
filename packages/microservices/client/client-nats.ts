@@ -1,10 +1,11 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isObject } from '@nestjs/common/utils/shared.utils';
+import { EventEmitter } from 'stream';
 import { NATS_DEFAULT_URL } from '../constants';
 import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-json.deserializer';
 import { EmptyResponseException } from '../errors/empty-response.exception';
-import { Client, NatsMsg } from '../external/nats-client.interface';
+import { NatsEvents, NatsEventsMap, NatsStatus } from '../events/nats.events';
 import { NatsOptions, PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { NatsRecord } from '../record-builders';
 import { NatsRecordSerializer } from '../serializers/nats-record.serializer';
@@ -12,13 +13,27 @@ import { ClientProxy } from './client-proxy';
 
 let natsPackage = {} as any;
 
+// To enable type safety for Nats. This cant be uncommented by default
+// because it would require the user to install the nats package even if they dont use Nats
+// Otherwise, TypeScript would fail to compile the code.
+//
+// type Client = import('nats').NatsConnection;
+// type NatsMsg = import('nats').Msg;
+
+type Client = any;
+type NatsMsg = any;
+
 /**
  * @publicApi
  */
-export class ClientNats extends ClientProxy {
+export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
   protected readonly logger = new Logger(ClientNats.name);
+
   protected natsClient: Client;
-  protected clientConnectionPromise: Promise<Client>;
+  protected connectionPromise: Promise<Client>;
+  protected statusEventEmitter = new EventEmitter<{
+    [key in keyof NatsEvents]: Parameters<NatsEvents[key]>;
+  }>();
 
   constructor(protected readonly options: NatsOptions['options']) {
     super();
@@ -30,22 +45,29 @@ export class ClientNats extends ClientProxy {
 
   public async close() {
     await this.natsClient?.close();
+    this.statusEventEmitter.removeAllListeners();
+
     this.natsClient = null;
-    this.clientConnectionPromise = null;
+    this.connectionPromise = null;
   }
 
   public async connect(): Promise<any> {
-    if (this.clientConnectionPromise) {
-      return this.clientConnectionPromise;
+    if (this.connectionPromise) {
+      return this.connectionPromise;
     }
-    this.clientConnectionPromise = this.createClient();
-    this.natsClient = await this.clientConnectionPromise;
+    this.connectionPromise = this.createClient();
+    this.natsClient = await this.connectionPromise.catch(err => {
+      this.connectionPromise = null;
+      throw err;
+    });
+
+    this._status$.next(NatsStatus.CONNECTED);
     this.handleStatusUpdates(this.natsClient);
     return this.natsClient;
   }
 
   public createClient(): Promise<Client> {
-    const options: any = this.options || ({} as NatsOptions);
+    const options = this.options || ({} as NatsOptions);
     return natsPackage.connect({
       servers: NATS_DEFAULT_URL,
       ...options,
@@ -61,9 +83,43 @@ export class ClientNats extends ClientProxy {
 
       switch (status.type) {
         case 'error':
-        case 'disconnect':
           this.logger.error(
             `NatsError: type: "${status.type}", data: "${data}".`,
+          );
+          break;
+
+        case 'disconnect':
+          this.connectionPromise = Promise.reject(
+            'Error: Connection lost. Trying to reconnect...',
+          );
+          // Prevent unhandled promise rejection
+          this.connectionPromise.catch(() => {});
+
+          this.logger.error(
+            `NatsError: type: "${status.type}", data: "${data}".`,
+          );
+
+          this._status$.next(NatsStatus.DISCONNECTED);
+          this.statusEventEmitter.emit(
+            NatsEventsMap.DISCONNECT,
+            status.data as string,
+          );
+          break;
+
+        case 'reconnecting':
+          this._status$.next(NatsStatus.RECONNECTING);
+          break;
+
+        case 'reconnect':
+          this.connectionPromise = Promise.resolve(client);
+          this.logger.log(
+            `NatsStatus: type: "${status.type}", data: "${data}".`,
+          );
+
+          this._status$.next(NatsStatus.CONNECTED);
+          this.statusEventEmitter.emit(
+            NatsEventsMap.RECONNECT,
+            status.data as string,
           );
           break;
 
@@ -75,6 +131,13 @@ export class ClientNats extends ClientProxy {
           }
           break;
 
+        case 'update':
+          this.logger.log(
+            `NatsStatus: type: "${status.type}", data: "${data}".`,
+          );
+          this.statusEventEmitter.emit(NatsEventsMap.UPDATE, status.data);
+          break;
+
         default:
           this.logger.log(
             `NatsStatus: type: "${status.type}", data: "${data}".`,
@@ -82,6 +145,22 @@ export class ClientNats extends ClientProxy {
           break;
       }
     }
+  }
+
+  public on<
+    EventKey extends keyof NatsEvents = keyof NatsEvents,
+    EventCallback extends NatsEvents[EventKey] = NatsEvents[EventKey],
+  >(event: EventKey, callback: EventCallback) {
+    this.statusEventEmitter.on(event, callback as any);
+  }
+
+  public unwrap<T>(): T {
+    if (!this.natsClient) {
+      throw new Error(
+        'Not initialized. Please call the "connect" method first.',
+      );
+    }
+    return this.natsClient as T;
   }
 
   public createSubscriptionHandler(

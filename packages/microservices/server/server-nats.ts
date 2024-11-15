@@ -1,10 +1,10 @@
-import { isUndefined, isObject } from '@nestjs/common/utils/shared.utils';
+import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { EventEmitter } from 'events';
 import { NATS_DEFAULT_URL, NO_MESSAGE_HANDLER } from '../constants';
 import { NatsContext } from '../ctx-host/nats.context';
 import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer';
 import { Transport } from '../enums';
-import { Client, NatsMsg } from '../external/nats-client.interface';
-import { CustomTransportStrategy } from '../interfaces';
+import { NatsEvents, NatsEventsMap, NatsStatus } from '../events/nats.events';
 import { NatsOptions } from '../interfaces/microservice-configuration.interface';
 import { IncomingRequest } from '../interfaces/packet.interface';
 import { NatsRecord } from '../record-builders';
@@ -13,13 +13,26 @@ import { Server } from './server';
 
 let natsPackage = {} as any;
 
+// To enable type safety for Nats. This cant be uncommented by default
+// because it would require the user to install the nats package even if they dont use Nats
+// Otherwise, TypeScript would fail to compile the code.
+//
+// type Client = import('nats').NatsConnection;
+// type NatsMsg = import('nats').Msg;
+
+type Client = any;
+type NatsMsg = any;
+
 /**
  * @publicApi
  */
-export class ServerNats extends Server implements CustomTransportStrategy {
+export class ServerNats extends Server<NatsEvents, NatsStatus> {
   public readonly transportId = Transport.NATS;
 
   private natsClient: Client;
+  protected statusEventEmitter = new EventEmitter<{
+    [key in keyof NatsEvents]: Parameters<NatsEvents[key]>;
+  }>();
 
   constructor(private readonly options: NatsOptions['options']) {
     super();
@@ -37,6 +50,8 @@ export class ServerNats extends Server implements CustomTransportStrategy {
   ) {
     try {
       this.natsClient = await this.createNatsClient();
+
+      this._status$.next(NatsStatus.CONNECTED);
       this.handleStatusUpdates(this.natsClient);
       this.start(callback);
     } catch (err) {
@@ -65,6 +80,8 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
   public async close() {
     await this.natsClient?.close();
+    this.statusEventEmitter.removeAllListeners();
+
     this.natsClient = null;
   }
 
@@ -142,9 +159,20 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
       switch (status.type) {
         case 'error':
+          this.logger.error(
+            `NatsError: type: "${status.type}", data: "${data}".`,
+          );
+          break;
+
         case 'disconnect':
           this.logger.error(
             `NatsError: type: "${status.type}", data: "${data}".`,
+          );
+
+          this._status$.next(NatsStatus.DISCONNECTED);
+          this.statusEventEmitter.emit(
+            NatsEventsMap.DISCONNECT,
+            status.data as string,
           );
           break;
 
@@ -156,6 +184,29 @@ export class ServerNats extends Server implements CustomTransportStrategy {
           }
           break;
 
+        case 'reconnecting':
+          this._status$.next(NatsStatus.RECONNECTING);
+          break;
+
+        case 'reconnect':
+          this.logger.log(
+            `NatsStatus: type: "${status.type}", data: "${data}".`,
+          );
+
+          this._status$.next(NatsStatus.CONNECTED);
+          this.statusEventEmitter.emit(
+            NatsEventsMap.RECONNECT,
+            status.data as string,
+          );
+          break;
+
+        case 'update':
+          this.logger.log(
+            `NatsStatus: type: "${status.type}", data: "${data}".`,
+          );
+          this.statusEventEmitter.emit(NatsEventsMap.UPDATE, status.data);
+          break;
+
         default:
           this.logger.log(
             `NatsStatus: type: "${status.type}", data: "${data}".`,
@@ -163,6 +214,22 @@ export class ServerNats extends Server implements CustomTransportStrategy {
           break;
       }
     }
+  }
+
+  public unwrap<T>(): T {
+    if (!this.natsClient) {
+      throw new Error(
+        'Not initialized. Please call the "listen"/"startAllMicroservices" method before accessing the server.',
+      );
+    }
+    return this.natsClient as T;
+  }
+
+  public on<
+    EventKey extends keyof NatsEvents = keyof NatsEvents,
+    EventCallback extends NatsEvents[EventKey] = NatsEvents[EventKey],
+  >(event: EventKey, callback: EventCallback) {
+    this.statusEventEmitter.on(event, callback as any);
   }
 
   protected initializeSerializer(options: NatsOptions['options']) {

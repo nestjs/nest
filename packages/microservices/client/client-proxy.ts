@@ -1,17 +1,17 @@
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { isNil } from '@nestjs/common/utils/shared.utils';
 import {
+  throwError as _throw,
   connectable,
   defer,
   fromEvent,
   merge,
   Observable,
   Observer,
+  ReplaySubject,
   Subject,
-  throwError as _throw,
 } from 'rxjs';
-import { map, mergeMap, take } from 'rxjs/operators';
-import { CONNECT_EVENT, ERROR_EVENT } from '../constants';
+import { distinctUntilChanged, map, mergeMap, take } from 'rxjs/operators';
 import { IncomingResponseDeserializer } from '../deserializers/incoming-response.deserializer';
 import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
@@ -32,14 +32,57 @@ import { ProducerSerializer } from '../interfaces/serializer.interface';
 import { IdentitySerializer } from '../serializers/identity.serializer';
 import { transformPatternToRoute } from '../utils';
 
-export abstract class ClientProxy {
-  public abstract connect(): Promise<any>;
-  public abstract close(): any;
-
+/**
+ * @publicApi
+ */
+export abstract class ClientProxy<
+  EventsMap extends Record<string, Function> = Record<string, Function>,
+  Status extends string = string,
+> {
   protected routingMap = new Map<string, Function>();
   protected serializer: ProducerSerializer;
   protected deserializer: ProducerDeserializer;
+  protected _status$ = new ReplaySubject<Status>(1);
 
+  /**
+   * Returns an observable that emits status changes.
+   */
+  public get status(): Observable<Status> {
+    return this._status$.asObservable().pipe(distinctUntilChanged());
+  }
+
+  /**
+   * Establishes the connection to the underlying server/broker.
+   */
+  public abstract connect(): Promise<any>;
+  /**
+   * Closes the underlying connection to the server/broker.
+   */
+  public abstract close(): any;
+  /**
+   * Registers an event listener for the given event.
+   * @param event Event name
+   * @param callback Callback to be executed when the event is emitted
+   */
+  public on<
+    EventKey extends keyof EventsMap = keyof EventsMap,
+    EventCallback extends EventsMap[EventKey] = EventsMap[EventKey],
+  >(event: EventKey, callback: EventCallback) {
+    throw new Error('Method not implemented.');
+  }
+  /**
+   * Returns an instance of the underlying server/broker instance,
+   * or a group of servers if there are more than one.
+   */
+  public abstract unwrap<T>(): T;
+
+  /**
+   * Send a message to the server/broker.
+   * Used for message-driven communication style between microservices.
+   * @param pattern Pattern to identify the message
+   * @param data Data to be sent
+   * @returns Observable with the result
+   */
   public send<TResult = any, TInput = any>(
     pattern: any,
     data: TInput,
@@ -58,6 +101,13 @@ export abstract class ClientProxy {
     );
   }
 
+  /**
+   * Emits an event to the server/broker.
+   * Used for event-driven communication style between microservices.
+   * @param pattern Pattern to identify the event
+   * @param data Data to be sent
+   * @returns Observable that completes when the event is successfully emitted
+   */
   public emit<TResult = any, TInput = any>(
     pattern: any,
     data: TInput,
@@ -114,8 +164,8 @@ export abstract class ClientProxy {
 
   protected connect$(
     instance: any,
-    errorEvent = ERROR_EVENT,
-    connectEvent = CONNECT_EVENT,
+    errorEvent = 'error',
+    connectEvent = 'connect',
   ): Observable<any> {
     const error$ = fromEvent(instance, errorEvent).pipe(
       map((err: any) => {

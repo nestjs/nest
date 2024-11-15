@@ -1,8 +1,10 @@
 import { expect } from 'chai';
 import { Socket } from 'net';
 import * as sinon from 'sinon';
-import { ERROR_EVENT, MESSAGE_EVENT } from '../../constants';
+import { TcpEventsMap } from '../../events/tcp.events';
 import { JsonSocket } from '../../helpers/json-socket';
+
+const MESSAGE_EVENT = 'message';
 
 describe('JsonSocket message parsing', () => {
   const socket = new JsonSocket(new Socket());
@@ -122,7 +124,7 @@ describe('JsonSocket message parsing', () => {
         expect(socket['buffer']).to.deep.equal('');
       });
 
-      it(`should emit ${ERROR_EVENT} event on socket`, () => {
+      it(`should emit ${TcpEventsMap.ERROR} event on socket`, () => {
         const socketEmitSpy: sinon.SinonSpy<any, any> = sinon.spy(
           socket['socket'],
           'emit',
@@ -131,12 +133,13 @@ describe('JsonSocket message parsing', () => {
         socket['onData'](packet);
 
         try {
-          expect(socketEmitSpy.calledOnceWithExactly(ERROR_EVENT, errorMsg)).to
-            .be.true;
+          expect(
+            socketEmitSpy.calledOnceWithExactly(TcpEventsMap.ERROR, errorMsg),
+          ).to.be.true;
         } catch (err) {
           expect(
             socketEmitSpy.calledOnceWithExactly(
-              ERROR_EVENT,
+              TcpEventsMap.ERROR,
               errorMsgNodeBelowV20,
             ),
           ).to.be.true;
@@ -169,7 +172,7 @@ describe('JsonSocket message parsing', () => {
         expect(socket['buffer']).to.deep.equal('');
       });
 
-      it(`should emit ${ERROR_EVENT} event on socket`, () => {
+      it(`should emit ${TcpEventsMap.ERROR} event on socket`, () => {
         const socketEmitSpy: sinon.SinonSpy<any, any> = sinon.spy(
           socket['socket'],
           'emit',
@@ -177,8 +180,9 @@ describe('JsonSocket message parsing', () => {
 
         socket['onData'](packet);
 
-        expect(socketEmitSpy.calledOnceWithExactly(ERROR_EVENT, errorMsg)).to.be
-          .true;
+        expect(
+          socketEmitSpy.calledOnceWithExactly(TcpEventsMap.ERROR, errorMsg),
+        ).to.be.true;
         socketEmitSpy.restore();
       });
 

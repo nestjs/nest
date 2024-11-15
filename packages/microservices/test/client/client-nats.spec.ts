@@ -241,7 +241,7 @@ describe('ClientNats', () => {
     beforeEach(async () => {
       createClientSpy = sinon
         .stub(client, 'createClient')
-        .callsFake(() => ({}) as any);
+        .callsFake(() => Promise.resolve({}));
       handleStatusUpdatesSpy = sinon.spy(client, 'handleStatusUpdates');
 
       await client.connect();
@@ -253,7 +253,7 @@ describe('ClientNats', () => {
     describe('when is not connected', () => {
       beforeEach(async () => {
         client['natsClient'] = null;
-        client['clientConnectionPromise'] = null;
+        client['connectionPromise'] = null;
         await client.connect();
       });
       it('should call "handleStatusUpdatesSpy" once', async () => {

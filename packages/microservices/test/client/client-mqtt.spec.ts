@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { EMPTY } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientMqtt } from '../../client/client-mqtt';
-import { ERROR_EVENT } from '../../constants';
+import { MqttEventsMap } from '../../events/mqtt.events';
 import { ReadPacket } from '../../interfaces';
 import { MqttRecord } from '../../record-builders';
 
@@ -245,7 +245,7 @@ describe('ClientMqtt', () => {
   });
   describe('connect', () => {
     let createClientStub: sinon.SinonStub;
-    let handleErrorsSpy: sinon.SinonSpy;
+    let registerErrorListenerSpy: sinon.SinonSpy;
     let connect$Stub: sinon.SinonStub;
     let mergeCloseEvent: sinon.SinonStub;
 
@@ -255,9 +255,10 @@ describe('ClientMqtt', () => {
           ({
             addListener: () => ({}),
             removeListener: () => ({}),
+            on: () => ({}),
           }) as any,
       );
-      handleErrorsSpy = sinon.spy(client, 'handleError');
+      registerErrorListenerSpy = sinon.spy(client, 'registerErrorListener');
       connect$Stub = sinon.stub(client, 'connect$' as any).callsFake(() => ({
         subscribe: ({ complete }) => complete(),
         pipe() {
@@ -270,7 +271,7 @@ describe('ClientMqtt', () => {
     });
     afterEach(() => {
       createClientStub.restore();
-      handleErrorsSpy.restore();
+      registerErrorListenerSpy.restore();
       connect$Stub.restore();
       mergeCloseEvent.restore();
     });
@@ -279,8 +280,8 @@ describe('ClientMqtt', () => {
         client['mqttClient'] = null;
         await client.connect();
       });
-      it('should call "handleError" once', async () => {
-        expect(handleErrorsSpy.called).to.be.true;
+      it('should call "registerErrorListener" once', async () => {
+        expect(registerErrorListenerSpy.called).to.be.true;
       });
       it('should call "createClient" once', async () => {
         expect(createClientStub.called).to.be.true;
@@ -296,8 +297,8 @@ describe('ClientMqtt', () => {
       it('should not call "createClient"', () => {
         expect(createClientStub.called).to.be.false;
       });
-      it('should not call "handleError"', () => {
-        expect(handleErrorsSpy.called).to.be.false;
+      it('should not call "registerErrorListener"', () => {
+        expect(registerErrorListenerSpy.called).to.be.false;
       });
       it('should not call "connect$"', () => {
         expect(connect$Stub.called).to.be.false;
@@ -316,14 +317,54 @@ describe('ClientMqtt', () => {
       });
     });
   });
-  describe('handleError', () => {
+  describe('registerErrorListener', () => {
     it('should bind error event handler', () => {
       const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
       const emitter = {
-        addListener: callback,
+        on: callback,
       };
-      client.handleError(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
+      client.registerErrorListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(MqttEventsMap.ERROR);
+    });
+  });
+  describe('registerConnectListener', () => {
+    it('should bind connect event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        on: callback,
+      };
+      client.registerConnectListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(MqttEventsMap.CONNECT);
+    });
+  });
+  describe('registerDisconnectListener', () => {
+    it('should bind disconnect event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        on: callback,
+      };
+      client.registerDisconnectListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(MqttEventsMap.DISCONNECT);
+    });
+  });
+  describe('registerOfflineListener', () => {
+    it('should bind offline event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        on: callback,
+      };
+      client.registerOfflineListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(MqttEventsMap.OFFLINE);
+    });
+  });
+  describe('registerCloseListener', () => {
+    it('should bind close event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        on: callback,
+      };
+      client.registerCloseListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(MqttEventsMap.CLOSE);
     });
   });
   describe('dispatchEvent', () => {

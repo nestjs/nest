@@ -2,17 +2,10 @@ import { Logger, Type } from '@nestjs/common';
 import * as net from 'net';
 import { EmptyError, lastValueFrom } from 'rxjs';
 import { share, tap } from 'rxjs/operators';
-import { ConnectionOptions } from 'tls';
-import {
-  CLOSE_EVENT,
-  ECONNREFUSED,
-  ERROR_EVENT,
-  MESSAGE_EVENT,
-  TCP_DEFAULT_HOST,
-  TCP_DEFAULT_PORT,
-} from '../constants';
+import { ConnectionOptions, connect as tlsConnect, TLSSocket } from 'tls';
+import { ECONNREFUSED, TCP_DEFAULT_HOST, TCP_DEFAULT_PORT } from '../constants';
+import { TcpEvents, TcpEventsMap, TcpStatus } from '../events/tcp.events';
 import { JsonSocket, TcpSocket } from '../helpers';
-import { connect as tlsConnect, TLSSocket } from 'tls';
 import { PacketId, ReadPacket, WritePacket } from '../interfaces';
 import { TcpClientOptions } from '../interfaces/client-metadata.interface';
 import { ClientProxy } from './client-proxy';
@@ -20,15 +13,18 @@ import { ClientProxy } from './client-proxy';
 /**
  * @publicApi
  */
-export class ClientTCP extends ClientProxy {
-  protected connection: Promise<any>;
-  private readonly logger = new Logger(ClientTCP.name);
-  private readonly port: number;
-  private readonly host: string;
-  private readonly socketClass: Type<TcpSocket>;
-  private isConnected = false;
-  private socket: TcpSocket;
-  public tlsOptions?: ConnectionOptions;
+export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
+  protected readonly logger = new Logger(ClientTCP.name);
+  protected readonly port: number;
+  protected readonly host: string;
+  protected readonly socketClass: Type<TcpSocket>;
+  protected readonly tlsOptions?: ConnectionOptions;
+  protected socket: TcpSocket;
+  protected connectionPromise: Promise<any>;
+  protected pendingEventListeners: Array<{
+    event: keyof TcpEvents;
+    callback: TcpEvents[keyof TcpEvents];
+  }> = [];
 
   constructor(options: TcpClientOptions['options']) {
     super();
@@ -43,16 +39,22 @@ export class ClientTCP extends ClientProxy {
   }
 
   public connect(): Promise<any> {
-    if (this.connection) {
-      return this.connection;
+    if (this.connectionPromise) {
+      return this.connectionPromise;
     }
     this.socket = this.createSocket();
-    this.bindEvents(this.socket);
+    this.registerConnectListener(this.socket);
+    this.registerCloseListener(this.socket);
+    this.registerErrorListener(this.socket);
+
+    this.pendingEventListeners.forEach(({ event, callback }) =>
+      this.socket.on(event, callback as any),
+    );
+    this.pendingEventListeners = [];
 
     const source$ = this.connect$(this.socket.netSocket).pipe(
       tap(() => {
-        this.isConnected = true;
-        this.socket.on(MESSAGE_EVENT, (buffer: WritePacket & PacketId) =>
+        this.socket.on('message', (buffer: WritePacket & PacketId) =>
           this.handleResponse(buffer),
         );
       }),
@@ -63,14 +65,14 @@ export class ClientTCP extends ClientProxy {
     if (!this.tlsOptions) {
       this.socket.connect(this.port, this.host);
     }
-    this.connection = lastValueFrom(source$).catch(err => {
+    this.connectionPromise = lastValueFrom(source$).catch(err => {
       if (err instanceof EmptyError) {
         return;
       }
       throw err;
     });
 
-    return this.connection;
+    return this.connectionPromise;
   }
 
   public async handleResponse(buffer: unknown): Promise<void> {
@@ -114,14 +116,30 @@ export class ClientTCP extends ClientProxy {
   public close() {
     this.socket && this.socket.end();
     this.handleClose();
+    this.pendingEventListeners = [];
   }
 
-  public bindEvents(socket: TcpSocket) {
-    socket.on(
-      ERROR_EVENT,
-      (err: any) => err.code !== ECONNREFUSED && this.handleError(err),
-    );
-    socket.on(CLOSE_EVENT, () => this.handleClose());
+  public registerConnectListener(socket: TcpSocket) {
+    socket.on(TcpEventsMap.CONNECT, () => {
+      this._status$.next(TcpStatus.CONNECTED);
+    });
+  }
+
+  public registerErrorListener(socket: TcpSocket) {
+    socket.on(TcpEventsMap.ERROR, err => {
+      if (err.code !== ECONNREFUSED) {
+        this.handleError(err);
+      } else {
+        this._status$.next(TcpStatus.DISCONNECTED);
+      }
+    });
+  }
+
+  public registerCloseListener(socket: TcpSocket) {
+    socket.on(TcpEventsMap.CLOSE, () => {
+      this._status$.next(TcpStatus.DISCONNECTED);
+      this.handleClose();
+    });
   }
 
   public handleError(err: any) {
@@ -129,9 +147,8 @@ export class ClientTCP extends ClientProxy {
   }
 
   public handleClose() {
-    this.isConnected = false;
     this.socket = null;
-    this.connection = undefined;
+    this.connectionPromise = undefined;
 
     if (this.routingMap.size > 0) {
       const err = new Error('Connection closed');
@@ -140,6 +157,26 @@ export class ClientTCP extends ClientProxy {
       }
       this.routingMap.clear();
     }
+  }
+
+  public on<
+    EventKey extends keyof TcpEvents = keyof TcpEvents,
+    EventCallback extends TcpEvents[EventKey] = TcpEvents[EventKey],
+  >(event: EventKey, callback: EventCallback) {
+    if (this.socket) {
+      this.socket.on(event, callback as any);
+    } else {
+      this.pendingEventListeners.push({ event, callback });
+    }
+  }
+
+  public unwrap<T>(): T {
+    if (!this.socket) {
+      throw new Error(
+        'Not initialized. Please call the "connect" method first.',
+      );
+    }
+    return this.socket.netSocket as T;
   }
 
   protected publish(

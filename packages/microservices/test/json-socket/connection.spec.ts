@@ -1,10 +1,12 @@
 import { expect } from 'chai';
 import { AddressInfo, createServer, Socket } from 'net';
-import { CONNECT_EVENT, MESSAGE_EVENT } from '../../constants';
+import { TcpEventsMap } from '../../events/tcp.events';
 import { JsonSocket } from '../../helpers/json-socket';
 import { longPayload } from './data/long-payload-with-special-chars';
 import * as helpers from './helpers';
 import { ip } from './helpers';
+
+const MESSAGE_EVENT = 'message';
 
 describe('JsonSocket connection', () => {
   it('should connect, send and receive message', done => {
@@ -179,7 +181,7 @@ describe('JsonSocket connection', () => {
             expect(serverSocket['isClosed']).to.equal(true);
             expect(clientSocket['isClosed']).to.equal(true);
 
-            clientSocket.on(CONNECT_EVENT, () => {
+            clientSocket.on(TcpEventsMap.CONNECT, () => {
               setTimeout(() => {
                 expect(clientSocket['isClosed']).to.equal(false);
 

@@ -17,7 +17,6 @@ import { ClientsContainer } from './container';
 import { ExceptionFiltersContext } from './context/exception-filters-context';
 import { RpcContextCreator } from './context/rpc-context-creator';
 import { RpcProxy } from './context/rpc-proxy';
-import { CustomTransportStrategy } from './interfaces';
 import { ListenersController } from './listeners-controller';
 import { Server } from './server/server';
 
@@ -63,16 +62,13 @@ export class MicroservicesModule<
     );
   }
 
-  public setupListeners(
-    container: NestContainer,
-    server: Server & CustomTransportStrategy,
-  ) {
+  public setupListeners(container: NestContainer, serverInstance: Server) {
     if (!this.listenersController) {
       throw new RuntimeException();
     }
     const modules = container.getModules();
     modules.forEach(({ controllers }, moduleRef) =>
-      this.bindListeners(controllers, server, moduleRef),
+      this.bindListeners(controllers, serverInstance, moduleRef),
     );
   }
 
@@ -92,13 +88,13 @@ export class MicroservicesModule<
 
   public bindListeners(
     controllers: Map<string | symbol | Function, InstanceWrapper<Controller>>,
-    server: Server & CustomTransportStrategy,
+    serverInstance: Server,
     moduleName: string,
   ) {
     controllers.forEach(wrapper =>
       this.listenersController.registerPatternHandlers(
         wrapper,
-        server,
+        serverInstance,
         moduleName,
       ),
     );

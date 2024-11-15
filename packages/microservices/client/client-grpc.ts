@@ -6,23 +6,42 @@ import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
-import { ClientGrpc, GrpcOptions } from '../interfaces';
-import { ClientProxy } from './client-proxy';
-import { GRPC_CANCELLED } from './constants';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import { getGrpcPackageDefinition } from '../helpers';
+import { ClientGrpc, GrpcOptions } from '../interfaces';
+import { ClientProxy } from './client-proxy';
 
-let grpcPackage: any = {};
-let grpcProtoLoaderPackage: any = {};
+const GRPC_CANCELLED = 'Cancelled';
+
+// To enable type safety for gRPC. This cant be uncommented by default
+// because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
+// Otherwise, TypeScript would fail to compile the code.
+//
+// type GrpcClient = import('@grpc/grpc-js').Client;
+// let grpcPackage = {} as typeof import('@grpc/grpc-js');
+// let grpcProtoLoaderPackage = {} as typeof import('@grpc/proto-loader');
+
+type GrpcClient = any;
+let grpcPackage = {} as any;
+let grpcProtoLoaderPackage = {} as any;
 
 /**
  * @publicApi
  */
-export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
+export class ClientGrpcProxy
+  extends ClientProxy<never, never>
+  implements ClientGrpc
+{
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly clients = new Map<string, any>();
   protected readonly url: string;
-  protected grpcClients = [];
+  protected grpcClients: GrpcClient[] = [];
+
+  get status(): never {
+    throw new Error(
+      'The "status" attribute is not supported by the gRPC transport',
+    );
+  }
 
   constructor(protected readonly options: GrpcOptions['options']) {
     super();
@@ -366,5 +385,16 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     throw new Error(
       'Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).',
     );
+  }
+
+  public on<EventKey extends never = never, EventCallback = any>(
+    event: EventKey,
+    callback: EventCallback,
+  ) {
+    throw new Error('Method is not supported in gRPC mode.');
+  }
+
+  public unwrap<T>(): T {
+    throw new Error('Method is not supported in gRPC mode.');
   }
 }

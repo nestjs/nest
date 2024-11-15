@@ -2,14 +2,8 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
-import {
-  CLOSE_EVENT,
-  ECONNREFUSED,
-  ERROR_EVENT,
-  MESSAGE_EVENT,
-  MQTT_DEFAULT_URL,
-} from '../constants';
-import { MqttClient } from '../external/mqtt-client.interface';
+import { ECONNREFUSED, MQTT_DEFAULT_URL } from '../constants';
+import { MqttEvents, MqttEventsMap, MqttStatus } from '../events/mqtt.events';
 import { MqttOptions, ReadPacket, WritePacket } from '../interfaces';
 import {
   MqttRecord,
@@ -20,19 +14,32 @@ import { ClientProxy } from './client-proxy';
 
 let mqttPackage: any = {};
 
+// To enable type safety for MQTT. This cant be uncommented by default
+// because it would require the user to install the mqtt package even if they dont use MQTT
+// Otherwise, TypeScript would fail to compile the code.
+//
+type MqttClient = import('mqtt').MqttClient;
+// type MqttClient = any;
+
 /**
  * @publicApi
  */
-export class ClientMqtt extends ClientProxy {
+export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly subscriptionsCount = new Map<string, number>();
   protected readonly url: string;
   protected mqttClient: MqttClient;
-  protected connection: Promise<any>;
+  protected connectionPromise: Promise<any>;
+  protected isInitialConnection = false;
+  protected isReconnecting = false;
+  protected pendingEventListeners: Array<{
+    event: keyof MqttEvents;
+    callback: MqttEvents[keyof MqttEvents];
+  }> = [];
 
   constructor(protected readonly options: MqttOptions['options']) {
     super();
-    this.url = this.getOptionsProp(this.options, 'url') || MQTT_DEFAULT_URL;
+    this.url = this.getOptionsProp(this.options, 'url') ?? MQTT_DEFAULT_URL;
 
     mqttPackage = loadPackage('mqtt', ClientMqtt.name, () => require('mqtt'));
 
@@ -51,38 +58,49 @@ export class ClientMqtt extends ClientProxy {
   public close() {
     this.mqttClient && this.mqttClient.end();
     this.mqttClient = null;
-    this.connection = null;
+    this.connectionPromise = null;
+    this.pendingEventListeners = [];
   }
 
   public connect(): Promise<any> {
     if (this.mqttClient) {
-      return this.connection;
+      return this.connectionPromise;
     }
     this.mqttClient = this.createClient();
-    this.handleError(this.mqttClient);
+    this.registerErrorListener(this.mqttClient);
+    this.registerOfflineListener(this.mqttClient);
+    this.registerReconnectListener(this.mqttClient);
+    this.registerConnectListener(this.mqttClient);
+    this.registerDisconnectListener(this.mqttClient);
+    this.registerCloseListener(this.mqttClient);
+
+    this.pendingEventListeners.forEach(({ event, callback }) =>
+      this.mqttClient.on(event, callback),
+    );
+    this.pendingEventListeners = [];
 
     const connect$ = this.connect$(this.mqttClient);
-    this.connection = lastValueFrom(
-      this.mergeCloseEvent(this.mqttClient, connect$).pipe(
-        tap(() =>
-          this.mqttClient.on(MESSAGE_EVENT, this.createResponseCallback()),
-        ),
-        share(),
-      ),
+    this.connectionPromise = lastValueFrom(
+      this.mergeCloseEvent(this.mqttClient, connect$).pipe(share()),
     ).catch(err => {
       if (err instanceof EmptyError) {
         return;
       }
       throw err;
     });
-    return this.connection;
+    return this.connectionPromise;
   }
 
   public mergeCloseEvent<T = any>(
     instance: MqttClient,
     source$: Observable<T>,
   ): Observable<T> {
-    const close$ = fromEvent(instance, CLOSE_EVENT).pipe(
+    const close$ = fromEvent(instance, MqttEventsMap.CLOSE).pipe(
+      tap({
+        next: () => {
+          this._status$.next(MqttStatus.CLOSED);
+        },
+      }),
       map((err: any) => {
         throw err;
       }),
@@ -94,11 +112,79 @@ export class ClientMqtt extends ClientProxy {
     return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 
-  public handleError(client: MqttClient) {
-    client.addListener(
-      ERROR_EVENT,
+  public registerErrorListener(client: MqttClient) {
+    client.on(
+      MqttEventsMap.ERROR,
       (err: any) => err.code !== ECONNREFUSED && this.logger.error(err),
     );
+  }
+
+  public registerOfflineListener(client: MqttClient) {
+    client.on(MqttEventsMap.OFFLINE, () => {
+      this.connectionPromise = Promise.reject(
+        'Error: Connection lost. Trying to reconnect...',
+      );
+
+      // Prevent unhandled rejections
+      this.connectionPromise.catch(() => {});
+      this.logger.error('MQTT broker went offline.');
+    });
+  }
+
+  public registerReconnectListener(client: MqttClient) {
+    client.on(MqttEventsMap.RECONNECT, () => {
+      this.isReconnecting = true;
+      this._status$.next(MqttStatus.RECONNECTING);
+
+      this.logger.log('MQTT connection lost. Trying to reconnect...');
+    });
+  }
+
+  public registerDisconnectListener(client: MqttClient) {
+    client.on(MqttEventsMap.DISCONNECT, () => {
+      this._status$.next(MqttStatus.DISCONNECTED);
+    });
+  }
+
+  public registerCloseListener(client: MqttClient) {
+    client.on(MqttEventsMap.CLOSE, () => {
+      this._status$.next(MqttStatus.CLOSED);
+    });
+  }
+
+  public registerConnectListener(client: MqttClient) {
+    client.on(MqttEventsMap.CONNECT, () => {
+      this.isReconnecting = false;
+      this._status$.next(MqttStatus.CONNECTED);
+
+      this.logger.log('Connected to MQTT broker');
+      this.connectionPromise = Promise.resolve();
+
+      if (!this.isInitialConnection) {
+        this.isInitialConnection = true;
+        client.on('message', this.createResponseCallback());
+      }
+    });
+  }
+
+  public on<
+    EventKey extends keyof MqttEvents = keyof MqttEvents,
+    EventCallback extends MqttEvents[EventKey] = MqttEvents[EventKey],
+  >(event: EventKey, callback: EventCallback) {
+    if (this.mqttClient) {
+      this.mqttClient.on(event, callback as any);
+    } else {
+      this.pendingEventListeners.push({ event, callback });
+    }
+  }
+
+  public unwrap<T>(): T {
+    if (!this.mqttClient) {
+      throw new Error(
+        'Not initialized. Please call the "connect" method first.',
+      );
+    }
+    return this.mqttClient as T;
   }
 
   public createResponseCallback(): (channel: string, buffer: Buffer) => any {

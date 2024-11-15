@@ -3,15 +3,18 @@ import { Socket as NetSocket } from 'net';
 import * as sinon from 'sinon';
 import { TLSSocket } from 'tls';
 import { ClientTCP } from '../../client/client-tcp';
-import { ERROR_EVENT } from '../../constants';
+import { TcpEventsMap } from '../../events/tcp.events';
 
 describe('ClientTCP', () => {
   let client: ClientTCP;
-  let socket;
+  let untypedClient: any;
+  let socket: any;
   let createSocketStub: sinon.SinonStub;
 
   beforeEach(() => {
     client = new ClientTCP({});
+    untypedClient = client as any;
+
     const onFakeCallback = (event, callback) =>
       event !== 'error' && event !== 'close' && callback({});
 
@@ -63,7 +66,7 @@ describe('ClientTCP', () => {
     });
   });
   describe('handleResponse', () => {
-    let callback;
+    let callback: sinon.SinonSpy;
     const id = '1';
 
     describe('when disposed', () => {
@@ -106,14 +109,20 @@ describe('ClientTCP', () => {
     });
   });
   describe('connect', () => {
-    let bindEventsSpy: sinon.SinonSpy;
+    let registerConnectListenerSpy: sinon.SinonSpy;
+    let registerErrorListenerSpy: sinon.SinonSpy;
+    let registerCloseListenerSpy: sinon.SinonSpy;
     let connect$Stub: sinon.SinonStub;
 
     beforeEach(async () => {
-      bindEventsSpy = sinon.spy(client, 'bindEvents');
+      registerConnectListenerSpy = sinon.spy(client, 'registerConnectListener');
+      registerErrorListenerSpy = sinon.spy(client, 'registerErrorListener');
+      registerCloseListenerSpy = sinon.spy(client, 'registerCloseListener');
     });
     afterEach(() => {
-      bindEventsSpy.restore();
+      registerConnectListenerSpy.restore();
+      registerErrorListenerSpy.restore();
+      registerCloseListenerSpy.restore;
     });
     describe('when is not connected', () => {
       beforeEach(async () => {
@@ -130,8 +139,14 @@ describe('ClientTCP', () => {
       afterEach(() => {
         connect$Stub.restore();
       });
-      it('should call "bindEvents" once', async () => {
-        expect(bindEventsSpy.called).to.be.true;
+      it('should call "registerConnectListener" once', async () => {
+        expect(registerConnectListenerSpy.called).to.be.true;
+      });
+      it('should call "registerErrorListener" once', async () => {
+        expect(registerErrorListenerSpy.called).to.be.true;
+      });
+      it('should call "registerCloseListener" once', async () => {
+        expect(registerCloseListenerSpy.called).to.be.true;
       });
       it('should call "createSocket" once', async () => {
         expect(createSocketStub.called).to.be.true;
@@ -151,34 +166,31 @@ describe('ClientTCP', () => {
         expect(createSocketStub.called).to.be.false;
       });
       it('should not call "bindEvents"', () => {
-        expect(bindEventsSpy.called).to.be.false;
+        expect(registerConnectListenerSpy.called).to.be.false;
       });
     });
   });
   describe('close', () => {
-    let routingMap;
-    let callback;
+    let routingMap: Map<string, Function>;
+    let callback: sinon.SinonSpy;
 
     beforeEach(() => {
       routingMap = new Map<string, Function>();
       callback = sinon.spy();
       routingMap.set('some id', callback);
-      (client as any).socket = socket;
-      (client as any).isConnected = true;
-      (client as any).routingMap = routingMap;
+
+      untypedClient.socket = socket;
+      untypedClient.routingMap = routingMap;
       client.close();
     });
     it('should end() socket', () => {
       expect(socket.end.called).to.be.true;
     });
-    it('should set "isConnected" to false', () => {
-      expect((client as any).isConnected).to.be.false;
-    });
     it('should set "socket" to null', () => {
-      expect((client as any).socket).to.be.null;
+      expect(untypedClient.socket).to.be.null;
     });
     it('should clear out the routing map', () => {
-      expect((client as any).routingMap.size).to.be.eq(0);
+      expect(untypedClient.routingMap.size).to.be.eq(0);
     });
     it('should call callbacks', () => {
       expect(
@@ -188,14 +200,34 @@ describe('ClientTCP', () => {
       ).to.be.true;
     });
   });
-  describe('bindEvents', () => {
+  describe('registerErrorListener', () => {
     it('should bind error event handler', () => {
       const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
       const emitter = {
         on: callback,
       };
-      client.bindEvents(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
+      client.registerErrorListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(TcpEventsMap.ERROR);
+    });
+  });
+  describe('registerCloseListener', () => {
+    it('should bind close event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        on: callback,
+      };
+      client.registerCloseListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(TcpEventsMap.CLOSE);
+    });
+  });
+  describe('registerConnectListener', () => {
+    it('should bind connect event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        on: callback,
+      };
+      client.registerConnectListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(TcpEventsMap.CONNECT);
     });
   });
   describe('dispatchEvent', () => {
@@ -207,7 +239,7 @@ describe('ClientTCP', () => {
       internalSocket = {
         sendMessage: sendMessageStub,
       };
-      (client as any).socket = internalSocket;
+      untypedClient.socket = internalSocket;
     });
 
     it('should publish packet', async () => {

@@ -233,7 +233,7 @@ describe('ServerRedis', () => {
   describe('createRetryStrategy', () => {
     describe('when is terminated', () => {
       it('should return undefined', () => {
-        (server as any).isExplicitlyTerminated = true;
+        (server as any).isManuallyClosed = true;
         const result = server.createRetryStrategy(0);
         expect(result).to.be.undefined;
       });
@@ -257,7 +257,7 @@ describe('ServerRedis', () => {
     describe('otherwise', () => {
       it('should return delay (ms)', () => {
         (server as any).options = {};
-        (server as any).isExplicitlyTerminated = false;
+        (server as any).isManuallyClosed = false;
         (server as any).options.retryAttempts = 3;
         (server as any).options.retryDelay = 3;
         const result = server.createRetryStrategy(2);

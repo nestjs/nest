@@ -1,9 +1,8 @@
 import { assert, expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
-import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
-import { ServerRMQ } from '../../server/server-rmq';
 import { RmqContext } from '../../ctx-host';
+import { ServerRMQ } from '../../server/server-rmq';
 
 describe('ServerRMQ', () => {
   let server: ServerRMQ;
@@ -13,19 +12,6 @@ describe('ServerRMQ', () => {
 
   beforeEach(() => {
     server = new ServerRMQ({});
-  });
-
-  describe('constructor', () => {
-    it(`should fallback to queueOptions.noAssert when 'noAssert' is undefined`, () => {
-      const queueOptions = {
-        noAssert: true,
-      };
-      const instance = new ServerRMQ({
-        queueOptions,
-      });
-
-      expect(instance).property('noAssert').to.eq(queueOptions.noAssert);
-    });
   });
 
   describe('listen', () => {
@@ -47,6 +33,7 @@ describe('ServerRMQ', () => {
 
       client = {
         on: onStub,
+        once: onStub,
         createChannel: createChannelStub,
       };
       createClient = sinon.stub(server, 'createClient').callsFake(() => client);
@@ -59,17 +46,17 @@ describe('ServerRMQ', () => {
       server.listen(callbackSpy);
       expect(createClient.called).to.be.true;
     });
-    it('should bind "connect" event to handler', () => {
-      server.listen(callbackSpy);
+    it('should bind "connect" event to handler', async () => {
+      await server.listen(callbackSpy);
       expect(onStub.getCall(0).args[0]).to.be.equal('connect');
     });
-    it('should bind "disconnect" event to handler', () => {
-      server.listen(callbackSpy);
-      expect(onStub.getCall(1).args[0]).to.be.equal('disconnect');
+    it('should bind "disconnected" event to handler', async () => {
+      await server.listen(callbackSpy);
+      expect(onStub.getCall(2).args[0]).to.be.equal('disconnect');
     });
-    it('should bind "connectFailed" event to handler', () => {
-      server.listen(callbackSpy);
-      expect(onStub.getCall(2).args[0]).to.be.equal('connectFailed');
+    it('should bind "connectFailed" event to handler', async () => {
+      await server.listen(callbackSpy);
+      expect(onStub.getCall(3).args[0]).to.be.equal('connectFailed');
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', () => {
@@ -201,8 +188,10 @@ describe('ServerRMQ', () => {
     beforeEach(() => {
       (server as any)['queue'] = queue;
       (server as any)['queueOptions'] = queueOptions;
-      (server as any)['isGlobalPrefetchCount'] = isGlobalPrefetchCount;
-      (server as any)['prefetchCount'] = prefetchCount;
+      (server as any)['options'] = {
+        isGlobalPrefetchCount,
+        prefetchCount,
+      };
 
       channel = {
         assertQueue: sinon.spy(() => ({})),
@@ -217,7 +206,10 @@ describe('ServerRMQ', () => {
       expect(channel.assertQueue.calledWith(queue, queueOptions)).to.be.true;
     });
     it('should not call "assertQueue" when noAssert is true', async () => {
-      server['noAssert' as any] = true;
+      server['options' as any] = {
+        ...(server as any)['options'],
+        noAssert: true,
+      };
 
       await server.setupChannel(channel, () => null);
       expect(channel.assertQueue.called).not.to.be.true;

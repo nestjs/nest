@@ -11,22 +11,9 @@ describe('ClientRMQ', function () {
 
   let client: ClientRMQ;
 
-  describe('constructor', () => {
-    it(`should fallback to queueOptions.noAssert when 'noAssert' is undefined`, () => {
-      const queueOptions = {
-        noAssert: true,
-      };
-      const instance = new ClientRMQ({
-        queueOptions,
-      });
-
-      expect(instance).property('noAssert').to.eq(queueOptions.noAssert);
-    });
-  });
-
   describe('connect', () => {
     let createClientStub: sinon.SinonStub;
-    let handleErrorsSpy: sinon.SinonSpy;
+    let registerErrorListenerSpy: sinon.SinonSpy;
     let connect$Stub: sinon.SinonStub;
 
     beforeEach(async () => {
@@ -35,7 +22,7 @@ describe('ClientRMQ', function () {
         addListener: () => ({}),
         removeListener: () => ({}),
       }));
-      handleErrorsSpy = sinon.spy(client, 'handleError');
+      registerErrorListenerSpy = sinon.spy(client, 'registerErrorListener');
       connect$Stub = sinon.stub(client, 'connect$' as any).callsFake(() => ({
         subscribe: resolve => resolve(),
         toPromise() {
@@ -56,8 +43,8 @@ describe('ClientRMQ', function () {
           await client.connect();
         } catch {}
       });
-      it('should call "handleError" once', async () => {
-        expect(handleErrorsSpy.called).to.be.true;
+      it('should call "registerErrorListener" once', async () => {
+        expect(registerErrorListenerSpy.called).to.be.true;
       });
       it('should call "createClient" once', async () => {
         expect(createClientStub.called).to.be.true;
@@ -74,8 +61,8 @@ describe('ClientRMQ', function () {
       it('should not call "createClient"', () => {
         expect(createClientStub.called).to.be.false;
       });
-      it('should not call "handleError"', () => {
-        expect(handleErrorsSpy.called).to.be.false;
+      it('should not call "registerErrorListener"', () => {
+        expect(registerErrorListenerSpy.called).to.be.false;
       });
       it('should not call "connect$"', () => {
         expect(connect$Stub.called).to.be.false;

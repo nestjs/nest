@@ -8,9 +8,15 @@ class TestClientProxy extends ClientProxy {
   protected async dispatchEvent<T = any>(
     packet: ReadPacket<any>,
   ): Promise<any> {}
+
   public async connect() {
     return Promise.resolve();
   }
+
+  public unwrap<T>(): T {
+    throw new Error('Method not implemented.');
+  }
+
   public publish(pattern, callback): any {}
   public async close() {}
 }
