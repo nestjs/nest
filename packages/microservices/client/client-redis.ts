@@ -85,8 +85,6 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       this.pubClient.connect(),
     ]);
     await this.connectionPromise;
-
-    this.subClient.on('message', this.createResponseCallback());
     return this.connectionPromise;
   }
 
