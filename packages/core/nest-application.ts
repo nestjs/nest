@@ -294,8 +294,12 @@ export class NestApplication
   public async listen(port: number | string, hostname: string): Promise<any>;
   public async listen(port: number | string, ...args: any[]): Promise<any> {
     this.assertNotInPreviewMode('listen');
-    !this.isInitialized && (await this.init());
 
+    if (!this.isInitialized) {
+      await this.init();
+    }
+
+    const httpAdapterHost = this.container.getHttpAdapterHostRef();
     return new Promise((resolve, reject) => {
       const errorHandler = (e: any) => {
         this.logger.error(e?.toString?.());
@@ -323,6 +327,8 @@ export class NestApplication
           if (address) {
             this.httpServer.removeListener('error', errorHandler);
             this.isListening = true;
+
+            httpAdapterHost.listening = true;
             resolve(this.httpServer);
           }
           if (isCallbackInOriginalArgs) {
