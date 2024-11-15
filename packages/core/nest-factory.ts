@@ -30,9 +30,6 @@ import { NestApplication } from './nest-application';
 import { NestApplicationContext } from './nest-application-context';
 import { DependenciesScanner } from './scanner';
 
-/**
- * A valid NestJS entry (or 'root') module reference.
- */
 type IEntryNestModule =
   | Type<any>
   | DynamicModule
