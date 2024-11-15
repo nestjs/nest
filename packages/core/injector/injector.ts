@@ -170,6 +170,11 @@ export class Injector {
         inquirer,
       );
     } catch (err) {
+      wrapper.removeInstanceByContextId(
+        this.getContextId(contextId, wrapper),
+        inquirerId,
+      );
+
       settlementSignal.error(err);
       throw err;
     }

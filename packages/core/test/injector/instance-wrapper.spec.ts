@@ -1,6 +1,7 @@
 import { Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { createContextId } from '../../helpers';
 import { STATIC_CONTEXT } from '../../injector/constants';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 
@@ -733,6 +734,53 @@ describe('InstanceWrapper', () => {
           'inquirerId',
         );
         expect(setInstanceByInquirerIdSpy.called).to.be.true;
+      });
+    });
+  });
+
+  describe('removeInstanceByContextId', () => {
+    describe('without inquirer', () => {
+      it('should remove instance for given context', () => {
+        const wrapper = new InstanceWrapper({
+          scope: Scope.TRANSIENT,
+        });
+
+        const contextId = createContextId();
+        wrapper.setInstanceByContextId(contextId, { instance: {} });
+
+        const existingContext = wrapper.getInstanceByContextId(contextId);
+        expect(existingContext.instance).to.be.not.undefined;
+        wrapper.removeInstanceByContextId(contextId);
+
+        const removedContext = wrapper.getInstanceByContextId(contextId);
+        expect(removedContext.instance).to.be.undefined;
+      });
+    });
+
+    describe('when transient and inquirer has been passed', () => {
+      it('should remove instance for given context', () => {
+        const wrapper = new InstanceWrapper({
+          scope: Scope.TRANSIENT,
+        });
+
+        wrapper.setInstanceByContextId(
+          STATIC_CONTEXT,
+          { instance: {} },
+          'inquirerId',
+        );
+
+        const existingContext = wrapper.getInstanceByContextId(
+          STATIC_CONTEXT,
+          'inquirerId',
+        );
+        expect(existingContext.instance).to.be.not.undefined;
+        wrapper.removeInstanceByContextId(STATIC_CONTEXT, 'inquirerId');
+
+        const removedContext = wrapper.getInstanceByContextId(
+          STATIC_CONTEXT,
+          'inquirerId',
+        );
+        expect(removedContext.instance).to.be.undefined;
       });
     });
   });
