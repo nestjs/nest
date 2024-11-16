@@ -34,7 +34,7 @@
     "jest": "29.7.0",
     "nodemon": "3.0.3",
     "prettier": "3.2.5",
-    "supertest": "6.3.3"
+    "supertest": "6.3.4"
   },
   "jest": {
     "moduleFileExtensions": [
