@@ -24,8 +24,9 @@ export class DisconnectedClientController {
         return throwError(() =>
           code === 'ECONNREFUSED' ||
           code === 'CONN_ERR' ||
+          code === 'ENOTFOUND' ||
           code === 'CONNECTION_REFUSED' ||
-          error.message === 'Connection is closed.'
+          error.message.includes('Connection is closed.')
             ? new RequestTimeoutException('ECONNREFUSED')
             : new InternalServerErrorException(),
         );

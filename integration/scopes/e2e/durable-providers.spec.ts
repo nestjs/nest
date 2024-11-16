@@ -33,7 +33,7 @@ describe('Durable providers', () => {
     ) =>
       request(server)
         .get(endpoint)
-        .set({ ['x-tenant-id']: tenantId })
+        .set({ ['x-tenant-id']: String(tenantId) })
         .set({ ['x-force-error']: opts.forceError ? 'true' : 'false' })
         .end((err, res) => {
           if (err) return end(err);
