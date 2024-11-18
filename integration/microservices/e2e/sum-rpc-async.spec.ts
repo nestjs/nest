@@ -4,6 +4,7 @@ import {
   Injectable,
   Module,
 } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
 import {
   AsyncOptions,
   ClientTCP,
@@ -11,11 +12,10 @@ import {
   MessagePattern,
   MicroserviceOptions,
   Payload,
-  TcpClientOptions,
+  TcpOptions,
   Transport,
 } from '@nestjs/microservices';
 import { expect } from 'chai';
-import { NestFactory } from '@nestjs/core';
 
 let port: number;
 
@@ -25,7 +25,7 @@ do {
 
 @Injectable()
 class RpcOptionsProvider {
-  getOptions(): TcpClientOptions {
+  getOptions(): TcpOptions {
     return {
       transport: Transport.TCP,
       options: {
