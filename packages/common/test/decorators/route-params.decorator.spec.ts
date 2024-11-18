@@ -1,7 +1,22 @@
 import { expect } from 'chai';
 import { Body, HostParam, Param, Query, Search } from '../../decorators';
 import { RequestMethod } from '../../enums/request-method.enum';
-import { All, Delete, Get, ParseIntPipe, Patch, Post, Put } from '../../index';
+import {
+  All,
+  Delete,
+  Get,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Put,
+  Propfind,
+  Proppatch,
+  Mkcol,
+  Move,
+  Copy,
+  Lock,
+  Unlock,
+} from '../../index';
 import { ROUTE_ARGS_METADATA } from '../../constants';
 import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
 
@@ -413,5 +428,411 @@ describe('Inheritance', () => {
     expect(method).to.be.eql(requestProps.method);
     expect(pathUsingArray).to.be.eql(requestPathUsingArray);
     expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+  });
+});
+
+describe('@PropFind', () => {
+  const requestPath = 'test';
+  const requestProps = {
+    path: requestPath,
+    method: RequestMethod.PROPFIND,
+  };
+
+  const requestPathUsingArray = ['foo', 'bar'];
+  const requestPropsUsingArray = {
+    path: requestPathUsingArray,
+    method: RequestMethod.PROPFIND,
+  };
+
+  it('should enhance class with expected request metadata', () => {
+    class Test {
+      @Propfind(requestPath)
+      public static test() {}
+
+      @Propfind(requestPathUsingArray)
+      public static testUsingArray() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+    const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
+
+    expect(path).to.be.eql(requestPath);
+    expect(method).to.be.eql(requestProps.method);
+    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
+    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+  });
+
+  it('should set path on "/" by default', () => {
+    class Test {
+      @Propfind()
+      public static test(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+
+      @Propfind([])
+      public static testUsingArray(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+
+    expect(path).to.be.eql('/');
+    expect(pathUsingArray).to.be.eql('/');
+  });
+});
+
+describe('@PropPatch', () => {
+  const requestPath = 'test';
+  const requestProps = {
+    path: requestPath,
+    method: RequestMethod.PROPPATCH,
+  };
+
+  const requestPathUsingArray = ['foo', 'bar'];
+  const requestPropsUsingArray = {
+    path: requestPathUsingArray,
+    method: RequestMethod.PROPPATCH,
+  };
+
+  it('should enhance class with expected request metadata', () => {
+    class Test {
+      @Proppatch(requestPath)
+      public static test() {}
+
+      @Proppatch(requestPathUsingArray)
+      public static testUsingArray() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+    const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
+
+    expect(path).to.be.eql(requestPath);
+    expect(method).to.be.eql(requestProps.method);
+    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
+    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+  });
+
+  it('should set path on "/" by default', () => {
+    class Test {
+      @Proppatch()
+      public static test(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+
+      @Proppatch([])
+      public static testUsingArray(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+
+    expect(path).to.be.eql('/');
+    expect(pathUsingArray).to.be.eql('/');
+  });
+});
+
+describe('@MkCol', () => {
+  const requestPath = 'test';
+  const requestProps = {
+    path: requestPath,
+    method: RequestMethod.MKCOL,
+  };
+
+  const requestPathUsingArray = ['foo', 'bar'];
+  const requestPropsUsingArray = {
+    path: requestPathUsingArray,
+    method: RequestMethod.MKCOL,
+  };
+
+  it('should enhance class with expected request metadata', () => {
+    class Test {
+      @Mkcol(requestPath)
+      public static test() {}
+
+      @Mkcol(requestPathUsingArray)
+      public static testUsingArray() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+    const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
+
+    expect(path).to.be.eql(requestPath);
+    expect(method).to.be.eql(requestProps.method);
+    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
+    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+  });
+
+  it('should set path on "/" by default', () => {
+    class Test {
+      @Mkcol()
+      public static test(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+
+      @Mkcol([])
+      public static testUsingArray(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+
+    expect(path).to.be.eql('/');
+    expect(pathUsingArray).to.be.eql('/');
+  });
+});
+
+describe('@Copy', () => {
+  const requestPath = 'test';
+  const requestProps = {
+    path: requestPath,
+    method: RequestMethod.COPY,
+  };
+
+  const requestPathUsingArray = ['foo', 'bar'];
+  const requestPropsUsingArray = {
+    path: requestPathUsingArray,
+    method: RequestMethod.COPY,
+  };
+
+  it('should enhance class with expected request metadata', () => {
+    class Test {
+      @Copy(requestPath)
+      public static test() {}
+
+      @Copy(requestPathUsingArray)
+      public static testUsingArray() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+    const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
+
+    expect(path).to.be.eql(requestPath);
+    expect(method).to.be.eql(requestProps.method);
+    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
+    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+  });
+
+  it('should set path on "/" by default', () => {
+    class Test {
+      @Copy()
+      public static test(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+
+      @Copy([])
+      public static testUsingArray(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+
+    expect(path).to.be.eql('/');
+    expect(pathUsingArray).to.be.eql('/');
+  });
+});
+
+describe('@Move', () => {
+  const requestPath = 'test';
+  const requestProps = {
+    path: requestPath,
+    method: RequestMethod.MOVE,
+  };
+
+  const requestPathUsingArray = ['foo', 'bar'];
+  const requestPropsUsingArray = {
+    path: requestPathUsingArray,
+    method: RequestMethod.MOVE,
+  };
+
+  it('should enhance class with expected request metadata', () => {
+    class Test {
+      @Move(requestPath)
+      public static test() {}
+
+      @Move(requestPathUsingArray)
+      public static testUsingArray() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+    const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
+
+    expect(path).to.be.eql(requestPath);
+    expect(method).to.be.eql(requestProps.method);
+    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
+    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+  });
+
+  it('should set path on "/" by default', () => {
+    class Test {
+      @Move()
+      public static test(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+
+      @Move([])
+      public static testUsingArray(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+
+    expect(path).to.be.eql('/');
+    expect(pathUsingArray).to.be.eql('/');
+  });
+});
+
+describe('@Lock', () => {
+  const requestPath = 'test';
+  const requestProps = {
+    path: requestPath,
+    method: RequestMethod.LOCK,
+  };
+
+  const requestPathUsingArray = ['foo', 'bar'];
+  const requestPropsUsingArray = {
+    path: requestPathUsingArray,
+    method: RequestMethod.LOCK,
+  };
+
+  it('should enhance class with expected request metadata', () => {
+    class Test {
+      @Lock(requestPath)
+      public static test() {}
+
+      @Lock(requestPathUsingArray)
+      public static testUsingArray() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+    const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
+
+    expect(path).to.be.eql(requestPath);
+    expect(method).to.be.eql(requestProps.method);
+    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
+    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+  });
+
+  it('should set path on "/" by default', () => {
+    class Test {
+      @Lock()
+      public static test(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+
+      @Lock([])
+      public static testUsingArray(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+
+    expect(path).to.be.eql('/');
+    expect(pathUsingArray).to.be.eql('/');
+  });
+});
+
+describe('@Unlock', () => {
+  const requestPath = 'test';
+  const requestProps = {
+    path: requestPath,
+    method: RequestMethod.UNLOCK,
+  };
+
+  const requestPathUsingArray = ['foo', 'bar'];
+  const requestPropsUsingArray = {
+    path: requestPathUsingArray,
+    method: RequestMethod.UNLOCK,
+  };
+
+  it('should enhance class with expected request metadata', () => {
+    class Test {
+      @Unlock(requestPath)
+      public static test() {}
+
+      @Unlock(requestPathUsingArray)
+      public static testUsingArray() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+    const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
+
+    expect(path).to.be.eql(requestPath);
+    expect(method).to.be.eql(requestProps.method);
+    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
+    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+  });
+
+  it('should set path on "/" by default', () => {
+    class Test {
+      @Unlock()
+      public static test(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+
+      @Unlock([])
+      public static testUsingArray(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+
+    expect(path).to.be.eql('/');
+    expect(pathUsingArray).to.be.eql('/');
   });
 });
