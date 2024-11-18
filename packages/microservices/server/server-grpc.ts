@@ -597,7 +597,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   private async createServices(grpcPkg: any, packageName: string) {
     if (!grpcPkg) {
       const invalidPackageError = new InvalidGrpcPackageException(packageName);
-      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+      this.logger.error(invalidPackageError);
       throw invalidPackageError;
     }
 

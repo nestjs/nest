@@ -69,10 +69,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     }
 
     if (this.isExceptionObject(exception)) {
-      return BaseExceptionFilter.logger.error(
-        exception.message,
-        exception.stack,
-      );
+      return BaseExceptionFilter.logger.error(exception);
     }
     return BaseExceptionFilter.logger.error(exception);
   }

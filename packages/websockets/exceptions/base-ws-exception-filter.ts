@@ -47,10 +47,7 @@ export class BaseWsExceptionFilter<TError = any>
     });
 
     if (this.isExceptionObject(exception)) {
-      return BaseWsExceptionFilter.logger.error(
-        exception.message,
-        exception.stack,
-      );
+      return BaseWsExceptionFilter.logger.error(exception);
     }
     return BaseWsExceptionFilter.logger.error(exception);
   }
