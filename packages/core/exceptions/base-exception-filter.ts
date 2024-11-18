@@ -68,9 +68,6 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
       applicationRef.end(response);
     }
 
-    if (this.isExceptionObject(exception)) {
-      return BaseExceptionFilter.logger.error(exception);
-    }
     return BaseExceptionFilter.logger.error(exception);
   }
 
