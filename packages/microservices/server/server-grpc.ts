@@ -411,7 +411,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       } else {
         const response = await lastValueFrom(
           res.pipe(
-            takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
+            takeUntil(fromEvent(call as any, CANCEL_EVENT)),
             catchError(err => {
               callback(err, null);
               return EMPTY;
