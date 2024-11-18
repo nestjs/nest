@@ -23,11 +23,11 @@ let natsPackage = {} as any;
 //
 // type Client = import('nats').NatsConnection;
 // type NatsMsg = import('nats').Msg;
-type Subscription = import('nats').Subscription;
+// type Subscription = import('nats').Subscription;
 
 type Client = any;
 type NatsMsg = any;
-// type Subscription = any;
+type Subscription = any;
 
 /**
  * @publicApi
