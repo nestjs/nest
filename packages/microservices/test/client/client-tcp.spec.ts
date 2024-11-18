@@ -7,11 +7,14 @@ import { ERROR_EVENT } from '../../constants';
 
 describe('ClientTCP', () => {
   let client: ClientTCP;
-  let socket;
+  let untypedClient: any;
+  let socket: any;
   let createSocketStub: sinon.SinonStub;
 
   beforeEach(() => {
     client = new ClientTCP({});
+    untypedClient = client as any;
+
     const onFakeCallback = (event, callback) =>
       event !== 'error' && event !== 'close' && callback({});
 
@@ -163,22 +166,22 @@ describe('ClientTCP', () => {
       routingMap = new Map<string, Function>();
       callback = sinon.spy();
       routingMap.set('some id', callback);
-      (client as any).socket = socket;
-      (client as any).isConnected = true;
-      (client as any).routingMap = routingMap;
+      untypedClient.socket = socket;
+      untypedClient.isConnected = true;
+      untypedClient.routingMap = routingMap;
       client.close();
     });
     it('should end() socket', () => {
       expect(socket.end.called).to.be.true;
     });
     it('should set "isConnected" to false', () => {
-      expect((client as any).isConnected).to.be.false;
+      expect(untypedClient.isConnected).to.be.false;
     });
     it('should set "socket" to null', () => {
-      expect((client as any).socket).to.be.null;
+      expect(untypedClient.socket).to.be.null;
     });
     it('should clear out the routing map', () => {
-      expect((client as any).routingMap.size).to.be.eq(0);
+      expect(untypedClient.routingMap.size).to.be.eq(0);
     });
     it('should call callbacks', () => {
       expect(
@@ -207,7 +210,7 @@ describe('ClientTCP', () => {
       internalSocket = {
         sendMessage: sendMessageStub,
       };
-      (client as any).socket = internalSocket;
+      untypedClient.socket = internalSocket;
     });
 
     it('should publish packet', async () => {

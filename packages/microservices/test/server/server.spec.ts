@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { lastValueFrom, Observable, of, throwError as _throw } from 'rxjs';
+import { throwError as _throw, lastValueFrom, Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
 import { Server } from '../../server/server';
 
@@ -10,6 +10,7 @@ class TestServer extends Server {
 
 describe('Server', () => {
   const server = new TestServer();
+  const untypedServer = server as any;
   const sandbox = sinon.createSandbox();
   const callback = () => {},
     pattern = { test: 'test pattern' };
@@ -26,7 +27,7 @@ describe('Server', () => {
         .value({ set() {}, has() {} });
 
       const messageHandlersSetSpy = sinon.spy(
-        (server as any).messageHandlers,
+        untypedServer.messageHandlers,
         'set',
       );
       const normalizePatternStub = sinon
@@ -49,7 +50,7 @@ describe('Server', () => {
           const nextHandler: any = () => null;
 
           headHandler.next = nextHandler;
-          (server as any)['messageHandlers'] = new Map([
+          untypedServer['messageHandlers'] = new Map([
             [handlerRoute, headHandler],
           ]);
           const normalizePatternStub = sinon
@@ -80,7 +81,7 @@ describe('Server', () => {
       it(`should call 'transformPatternToRoute' with 'string' argument`, () => {
         const inputServerPattern = 'hello';
         const transformedServerPattern = inputServerPattern;
-        (server as any).getRouteFromPattern(inputServerPattern);
+        untypedServer.getRouteFromPattern(inputServerPattern);
 
         expect(normalizePatternStub.args[0][0]).to.be.equal(
           transformedServerPattern,
@@ -95,7 +96,7 @@ describe('Server', () => {
           controller: 'app',
           use: 'getHello',
         };
-        (server as any).getRouteFromPattern(inputServerPattern);
+        untypedServer.getRouteFromPattern(inputServerPattern);
 
         expect(normalizePatternStub.args[0][0]).to.be.deep.equal(
           transformedServerPattern,
@@ -203,12 +204,9 @@ describe('Server', () => {
         .stub(server as any, 'messageHandlers')
         .value({ get() {}, has() {} });
       messageHandlersGetSpy = sinon
-        .stub((server as any).messageHandlers, 'get')
+        .stub(untypedServer.messageHandlers, 'get')
         .returns(callback);
-      messageHandlersHasSpy = sinon.stub(
-        (server as any).messageHandlers,
-        'has',
-      );
+      messageHandlersHasSpy = sinon.stub(untypedServer.messageHandlers, 'has');
 
       sandbox.stub(server as any, 'getRouteFromPattern').returns(handlerRoute);
     });

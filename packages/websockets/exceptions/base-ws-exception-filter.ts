@@ -46,12 +46,6 @@ export class BaseWsExceptionFilter<TError = any>
       message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
     });
 
-    if (this.isExceptionObject(exception)) {
-      return BaseWsExceptionFilter.logger.error(
-        exception.message,
-        exception.stack,
-      );
-    }
     return BaseWsExceptionFilter.logger.error(exception);
   }
 

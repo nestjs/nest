@@ -18,13 +18,15 @@ class NoopLogger extends Logger {
 
 describe('ServerGrpc', () => {
   let server: ServerGrpc;
+  let untypedServer: any;
   let serverMulti: ServerGrpc;
 
   beforeEach(() => {
     server = new ServerGrpc({
       protoPath: join(__dirname, './test.proto'),
       package: 'test',
-    } as any);
+    });
+    untypedServer = server as any;
 
     serverMulti = new ServerGrpc({
       protoPath: ['test.proto', 'test2.proto'],
@@ -50,13 +52,6 @@ describe('ServerGrpc', () => {
       await server.listen(callback);
       await server.close();
       expect(bindEventsStub.called).to.be.true;
-    });
-    it('should call "client.start"', async () => {
-      const client = { start: sinon.spy() };
-      sinon.stub(server, 'createClient').callsFake(async () => client);
-
-      await server.listen(callback);
-      expect(client.start.called).to.be.true;
     });
     it('should call callback', async () => {
       await server.listen(callback);
@@ -95,12 +90,6 @@ describe('ServerGrpc', () => {
       await serverMulti.close();
       expect(bindEventsStub.called).to.be.true;
     });
-    it('should call "client.start"', async () => {
-      const client = { start: sinon.spy() };
-      sinon.stub(serverMulti, 'createClient').callsFake(async () => client);
-      await serverMulti.listen(callback);
-      expect(client.start.called).to.be.true;
-    });
     it('should call callback', async () => {
       await serverMulti.listen(callback);
       await serverMulti.close();
@@ -115,7 +104,7 @@ describe('ServerGrpc', () => {
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', async () => {
         sinon.stub(server, 'lookupPackage').callsFake(() => null);
-        (server as any).logger = new NoopLogger();
+        untypedServer.logger = new NoopLogger();
         try {
           await server.bindEvents();
         } catch (err) {
@@ -140,10 +129,10 @@ describe('ServerGrpc', () => {
           test2: { service: true },
         }));
         sinon.stub(server, 'getServiceNames').callsFake(() => serviceNames);
-        (server as any).grpcClient = { addService: sinon.spy() };
+        untypedServer.grpcClient = { addService: sinon.spy() };
 
         await server.bindEvents();
-        expect((server as any).grpcClient.addService.calledTwice).to.be.true;
+        expect(untypedServer.grpcClient.addService.calledTwice).to.be.true;
       });
     });
   });
@@ -227,7 +216,7 @@ describe('ServerGrpc', () => {
       const spy = sinon
         .stub(server, 'createServiceMethod')
         .callsFake(() => ({}) as any);
-      (server as any).messageHandlers = handlers;
+      untypedServer.messageHandlers = handlers;
       await server.createService(
         {
           prototype: { test: true, test2: true },
@@ -249,7 +238,7 @@ describe('ServerGrpc', () => {
           .returns('test2');
 
         sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
-        (server as any).messageHandlers = handlers;
+        untypedServer.messageHandlers = handlers;
         await server.createService(
           {
             prototype: {
@@ -286,7 +275,7 @@ describe('ServerGrpc', () => {
           .returns('test2');
 
         sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
-        (server as any).messageHandlers = handlers;
+        untypedServer.messageHandlers = handlers;
         await server.createService(
           {
             prototype: {
@@ -317,7 +306,7 @@ describe('ServerGrpc', () => {
       );
       const handlers = new Map([[testPattern, () => ({})]]);
       console.log(handlers.entries());
-      (server as any).messageHandlers = handlers;
+      untypedServer.messageHandlers = handlers;
 
       expect(
         server.getMessageHandler(
@@ -335,7 +324,7 @@ describe('ServerGrpc', () => {
         GrpcMethodStreamingType.NO_STREAMING,
       );
       const handlers = new Map([[testPattern, () => ({})]]);
-      (server as any).messageHandlers = handlers;
+      untypedServer.messageHandlers = handlers;
 
       expect(
         server.getMessageHandler(
@@ -356,7 +345,7 @@ describe('ServerGrpc', () => {
         GrpcMethodStreamingType.NO_STREAMING,
       );
       const handlers = new Map([[testPattern, () => ({})]]);
-      (server as any).messageHandlers = handlers;
+      untypedServer.messageHandlers = handlers;
 
       expect(
         server.getMessageHandler(
@@ -868,7 +857,7 @@ describe('ServerGrpc', () => {
         getPackageDefinitionStub.callsFake(() => {
           throw new Error();
         });
-        (server as any).logger = new NoopLogger();
+        untypedServer.logger = new NoopLogger();
         expect(() => server.loadProto()).to.throws(
           InvalidProtoDefinitionException,
         );
@@ -883,7 +872,7 @@ describe('ServerGrpc', () => {
         forceShutdown: sinon.spy(),
         tryShutdown: sinon.stub().yields(),
       };
-      (server as any).grpcClient = grpcClient;
+      untypedServer.grpcClient = grpcClient;
       await server.close();
       expect(grpcClient.forceShutdown.called).to.be.true;
       expect(grpcClient.tryShutdown.called).to.be.false;
@@ -894,8 +883,8 @@ describe('ServerGrpc', () => {
         forceShutdown: sinon.spy(),
         tryShutdown: sinon.stub().yields(),
       };
-      (server as any).grpcClient = grpcClient;
-      (server as any).options.gracefulShutdown = false;
+      untypedServer.grpcClient = grpcClient;
+      untypedServer.options.gracefulShutdown = false;
       await server.close();
       expect(grpcClient.forceShutdown.called).to.be.true;
       expect(grpcClient.tryShutdown.called).to.be.false;
@@ -906,8 +895,8 @@ describe('ServerGrpc', () => {
         forceShutdown: sinon.spy(),
         tryShutdown: sinon.stub().yields(),
       };
-      (server as any).grpcClient = grpcClient;
-      (server as any).options.gracefulShutdown = true;
+      untypedServer.grpcClient = grpcClient;
+      untypedServer.options.gracefulShutdown = true;
       await server.close();
       expect(grpcClient.forceShutdown.called).to.be.false;
       expect(grpcClient.tryShutdown.called).to.be.true;
@@ -986,7 +975,7 @@ describe('ServerGrpc', () => {
       sinon.stub(server as any, 'messageHandlers').value({ set() {} });
 
       const messageHandlersSetSpy = sinon.spy(
-        (server as any).messageHandlers,
+        untypedServer.messageHandlers,
         'set',
       );
       server.addHandler(pattern, callback as any);

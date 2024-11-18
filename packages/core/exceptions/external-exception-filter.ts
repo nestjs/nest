@@ -5,7 +5,7 @@ export class ExternalExceptionFilter<T = any, R = any> {
 
   catch(exception: T, host: ArgumentsHost): R | Promise<R> {
     if (exception instanceof Error && !(exception instanceof HttpException)) {
-      ExternalExceptionFilter.logger.error(exception.message, exception.stack);
+      ExternalExceptionFilter.logger.error(exception);
     }
     throw exception;
   }

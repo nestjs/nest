@@ -9,6 +9,7 @@ import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('NestContainer', () => {
   let container: NestContainer;
+  let untypedContainer: any;
 
   @Module({})
   class TestModule {}
@@ -19,6 +20,7 @@ describe('NestContainer', () => {
 
   beforeEach(() => {
     container = new NestContainer();
+    untypedContainer = container as any;
   });
 
   it('should "addProvider" throw "UnknownModuleException" when module is not stored in collection', () => {
@@ -53,7 +55,7 @@ describe('NestContainer', () => {
 
   describe('clear', () => {
     it('should call `clear` on modules collection', () => {
-      const clearSpy = sinon.spy((container as any).modules, 'clear');
+      const clearSpy = sinon.spy(untypedContainer.modules, 'clear');
       container.clear();
       expect(clearSpy.called).to.be.true;
     });
@@ -63,7 +65,7 @@ describe('NestContainer', () => {
     it('should not add module if already exists in collection', async () => {
       const modules = new Map();
       const setSpy = sinon.spy(modules, 'set');
-      (container as any).modules = modules;
+      untypedContainer.modules = modules;
 
       await container.addModule(TestModule as any, []);
       await container.addModule(TestModule as any, []);
@@ -89,7 +91,7 @@ describe('NestContainer', () => {
 
       const modules = new Map();
       const setSpy = sinon.spy(modules, 'set');
-      (container as any).modules = modules;
+      untypedContainer.modules = modules;
 
       await container.addModule(TestModule as any, []);
       await container.replaceModule(
@@ -174,7 +176,7 @@ describe('NestContainer', () => {
     beforeEach(() => {
       token = 'token';
       collection = new Map();
-      (container as any).dynamicModulesMetadata = collection;
+      untypedContainer.dynamicModulesMetadata = collection;
     });
     describe('when dynamic metadata exists', () => {
       it('should add to the dynamic metadata collection', () => {
@@ -215,7 +217,7 @@ describe('NestContainer', () => {
   describe('get applicationConfig', () => {
     it('should return ApplicationConfig instance', () => {
       expect(container.applicationConfig).to.be.eql(
-        (container as any)._applicationConfig,
+        untypedContainer._applicationConfig,
       );
     });
   });
@@ -225,7 +227,7 @@ describe('NestContainer', () => {
       const httpAdapter = new NoopHttpAdapter({});
       container.setHttpAdapter(httpAdapter);
 
-      const internalStorage = (container as any).internalProvidersStorage;
+      const internalStorage = untypedContainer.internalProvidersStorage;
       expect(internalStorage.httpAdapter).to.be.eql(httpAdapter);
     });
   });
@@ -244,7 +246,7 @@ describe('NestContainer', () => {
     it('should register core module ref', () => {
       const ref = {} as any;
       container.registerCoreModuleRef(ref);
-      expect((container as any).internalCoreModule).to.be.eql(ref);
+      expect(untypedContainer.internalCoreModule).to.be.eql(ref);
     });
   });
 });

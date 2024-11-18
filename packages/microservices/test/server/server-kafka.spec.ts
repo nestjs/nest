@@ -8,6 +8,7 @@ import {
   KafkaMessage,
 } from '../../external/kafka.interface';
 import { ServerKafka } from '../../server';
+import { objectToMap } from './utils/object-to-map';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -16,9 +17,6 @@ class NoopLogger extends Logger {
 }
 
 describe('ServerKafka', () => {
-  const objectToMap = obj =>
-    new Map(Object.keys(obj).map(i => [i, obj[i]]) as any);
-
   const topic = 'test.topic';
   const replyTopic = 'test.topic.reply';
   const replyPartition = '0';
@@ -84,6 +82,7 @@ describe('ServerKafka', () => {
   };
 
   let server: ServerKafka;
+  let untypedServer: any;
   let callback: sinon.SinonSpy;
   let bindEventsStub: sinon.SinonStub;
   let connect: sinon.SinonSpy;
@@ -92,10 +91,12 @@ describe('ServerKafka', () => {
   let send: sinon.SinonSpy;
   let consumerStub: sinon.SinonStub;
   let producerStub: sinon.SinonStub;
-  let client;
+  let client: any;
 
   beforeEach(() => {
     server = new ServerKafka({});
+    untypedServer = server as any;
+
     callback = sinon.spy();
     connect = sinon.spy();
     subscribe = sinon.spy();
@@ -152,40 +153,40 @@ describe('ServerKafka', () => {
     const consumer = { disconnect: sinon.spy() };
     const producer = { disconnect: sinon.spy() };
     beforeEach(() => {
-      (server as any).consumer = consumer;
-      (server as any).producer = producer;
+      untypedServer.consumer = consumer;
+      untypedServer.producer = producer;
     });
     it('should close server', async () => {
       await server.close();
 
       expect(consumer.disconnect.calledOnce).to.be.true;
       expect(producer.disconnect.calledOnce).to.be.true;
-      expect((server as any).consumer).to.be.null;
-      expect((server as any).producer).to.be.null;
-      expect((server as any).client).to.be.null;
+      expect(untypedServer.consumer).to.be.null;
+      expect(untypedServer.producer).to.be.null;
+      expect(untypedServer.client).to.be.null;
     });
   });
 
   describe('bindEvents', () => {
     it('should not call subscribe nor run on consumer when there are no messageHandlers', async () => {
-      (server as any).logger = new NoopLogger();
+      untypedServer.logger = new NoopLogger();
       await server.listen(callback);
-      await server.bindEvents((server as any).consumer);
+      await server.bindEvents(untypedServer.consumer);
       expect(subscribe.called).to.be.false;
       expect(run.called).to.be.true;
       expect(connect.called).to.be.true;
     });
     it('should call subscribe and run on consumer when there are messageHandlers', async () => {
-      (server as any).logger = new NoopLogger();
+      untypedServer.logger = new NoopLogger();
       await server.listen(callback);
 
       const pattern = 'test';
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [pattern]: handler,
       });
 
-      await server.bindEvents((server as any).consumer);
+      await server.bindEvents(untypedServer.consumer);
 
       expect(subscribe.called).to.be.true;
       expect(
@@ -198,18 +199,18 @@ describe('ServerKafka', () => {
       expect(connect.called).to.be.true;
     });
     it('should call subscribe with options and run on consumer when there are messageHandlers', async () => {
-      (server as any).logger = new NoopLogger();
-      (server as any).options.subscribe = {};
-      (server as any).options.subscribe.fromBeginning = true;
+      untypedServer.logger = new NoopLogger();
+      untypedServer.options.subscribe = {};
+      untypedServer.options.subscribe.fromBeginning = true;
       await server.listen(callback);
 
       const pattern = 'test';
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [pattern]: handler,
       });
 
-      await server.bindEvents((server as any).consumer);
+      await server.bindEvents(untypedServer.consumer);
 
       expect(subscribe.called).to.be.true;
       expect(
@@ -337,7 +338,7 @@ describe('ServerKafka', () => {
     it('should call "handleEvent" if correlation identifier and reply topic are present but the handler is of type eventHandler', async () => {
       const handler = sinon.spy();
       (handler as any).isEventHandler = true;
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [topic]: handler,
       });
       const handleEventSpy = sinon.spy(server, 'handleEvent');
@@ -348,7 +349,7 @@ describe('ServerKafka', () => {
     it('should NOT call "handleEvent" if correlation identifier and reply topic are present but the handler is not of type eventHandler', async () => {
       const handler = sinon.spy();
       (handler as any).isEventHandler = false;
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [topic]: handler,
       });
       const handleEventSpy = sinon.spy(server, 'handleEvent');
@@ -368,7 +369,7 @@ describe('ServerKafka', () => {
 
     it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [topic]: handler,
       });
 

@@ -3,15 +3,15 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerMqtt } from '../../server/server-mqtt';
+import { objectToMap } from './utils/object-to-map';
 
 describe('ServerMqtt', () => {
   let server: ServerMqtt;
-
-  const objectToMap = obj =>
-    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+  let untypedServer: any;
 
   beforeEach(() => {
     server = new ServerMqtt({});
+    untypedServer = server as any;
   });
   describe('listen', () => {
     let onSpy: sinon.SinonSpy;
@@ -53,7 +53,7 @@ describe('ServerMqtt', () => {
   describe('close', () => {
     const mqttClient = { end: sinon.spy() };
     beforeEach(() => {
-      (server as any).mqttClient = mqttClient;
+      untypedServer.mqttClient = mqttClient;
     });
     it('should end mqttClient', () => {
       server.close();
@@ -74,7 +74,7 @@ describe('ServerMqtt', () => {
     it('should subscribe to each pattern', () => {
       const pattern = 'test';
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [pattern]: handler,
       });
       server.bindEvents(mqttClient);
@@ -84,7 +84,7 @@ describe('ServerMqtt', () => {
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
       expect(
-        typeof server.getMessageHandler((server as any).mqttClient),
+        typeof server.getMessageHandler(untypedServer.mqttClient),
       ).to.be.eql('function');
     });
     describe('handler', () => {
@@ -92,7 +92,7 @@ describe('ServerMqtt', () => {
         const handleMessageStub = sinon
           .stub(server, 'handleMessage')
           .callsFake(() => null);
-        (await server.getMessageHandler((server as any).mqttClient))(null);
+        (await server.getMessageHandler(untypedServer.mqttClient))(null);
         expect(handleMessageStub.called).to.be.true;
       });
     });
@@ -133,7 +133,7 @@ describe('ServerMqtt', () => {
     });
     it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
@@ -204,7 +204,7 @@ describe('ServerMqtt', () => {
 
     it('should call handler with expected arguments', () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 

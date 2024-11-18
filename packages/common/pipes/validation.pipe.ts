@@ -121,7 +121,7 @@ export class ValidationPipe implements PipeTransform<any> {
     const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
     this.stripProtoKeys(value);
-    let entity = classTransformer.plainToClass(
+    let entity = classTransformer.plainToInstance(
       metatype,
       value,
       this.transformOptions,
@@ -203,6 +203,12 @@ export class ValidationPipe implements PipeTransform<any> {
       return value === true || value === 'true';
     }
     if (metatype === Number) {
+      if (isUndefined(value)) {
+        // This is a workaround to deal with optional numeric values since
+        // optional numerics shouldn't be parsed to a valid number when
+        // they were not defined
+        return undefined;
+      }
       return +value;
     }
     return value;

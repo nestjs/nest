@@ -149,6 +149,7 @@ describe('ClientKafka', () => {
   };
 
   let client: ClientKafka;
+  let untypedClient: any;
   let callback: sinon.SinonSpy;
   let connect: sinon.SinonSpy;
   let subscribe: sinon.SinonSpy;
@@ -162,6 +163,8 @@ describe('ClientKafka', () => {
 
   beforeEach(() => {
     client = new ClientKafka({});
+    untypedClient = client as any;
+
     callback = sinon.spy();
     connect = sinon.spy();
     subscribe = sinon.spy();
@@ -250,17 +253,17 @@ describe('ClientKafka', () => {
     const consumer = { disconnect: sinon.stub().resolves() };
     const producer = { disconnect: sinon.stub().resolves() };
     beforeEach(() => {
-      (client as any).consumer = consumer;
-      (client as any).producer = producer;
+      untypedClient.consumer = consumer;
+      untypedClient.producer = producer;
     });
     it('should close server', async () => {
       await client.close();
 
       expect(consumer.disconnect.calledOnce).to.be.true;
       expect(producer.disconnect.calledOnce).to.be.true;
-      expect((client as any).consumer).to.be.null;
-      expect((client as any).producer).to.be.null;
-      expect((client as any).client).to.be.null;
+      expect(untypedClient.consumer).to.be.null;
+      expect(untypedClient.producer).to.be.null;
+      expect(untypedClient.client).to.be.null;
     });
   });
 
@@ -298,7 +301,7 @@ describe('ClientKafka', () => {
       });
 
       it('should expect the connection to be reused', async () => {
-        (client as any).initialized = Promise.resolve({});
+        untypedClient.initialized = Promise.resolve({});
 
         await client.connect();
 
@@ -345,7 +348,7 @@ describe('ClientKafka', () => {
       });
 
       it('should expect the connection to be reused', async () => {
-        (client as any).initialized = Promise.resolve({});
+        untypedClient.initialized = Promise.resolve({});
 
         await client.connect();
 
@@ -427,8 +430,8 @@ describe('ClientKafka', () => {
 
   describe('bindTopics', () => {
     it('should bind topics from response patterns', async () => {
-      (client as any).responsePatterns = [replyTopic];
-      (client as any).consumer = kafkaClient.consumer();
+      untypedClient.responsePatterns = [replyTopic];
+      untypedClient.consumer = kafkaClient.consumer();
 
       await client.bindTopics();
 
@@ -442,10 +445,10 @@ describe('ClientKafka', () => {
     });
 
     it('should bind topics from response patterns with options', async () => {
-      (client as any).responsePatterns = [replyTopic];
-      (client as any).consumer = kafkaClient.consumer();
-      (client as any).options.subscribe = {};
-      (client as any).options.subscribe.fromBeginning = true;
+      untypedClient.responsePatterns = [replyTopic];
+      untypedClient.consumer = kafkaClient.consumer();
+      untypedClient.options.subscribe = {};
+      untypedClient.options.subscribe.fromBeginning = true;
 
       await client.bindTopics();
 
@@ -660,7 +663,7 @@ describe('ClientKafka', () => {
         client as any,
         'getReplyTopicPartition',
       );
-      routingMapSetSpy = sinon.spy((client as any).routingMap, 'set');
+      routingMapSetSpy = sinon.spy(untypedClient.routingMap, 'set');
       sendSpy = sinon.spy(() => Promise.resolve());
 
       // stub

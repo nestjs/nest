@@ -3,8 +3,15 @@
  * @see https://github.com/fastify/fastify-static/blob/master/types/index.d.ts
  * @publicApi
  */
-import { RouteOptions, FastifyRequest } from 'fastify';
+import { RouteOptions, FastifyRequest, FastifyReply } from 'fastify';
 import { Stats } from 'fs';
+
+interface SetHeadersResponse {
+  getHeader: FastifyReply['getHeader'];
+  setHeader: FastifyReply['header'];
+  readonly filename: string;
+  statusCode: number;
+}
 
 interface ExtendedInformation {
   fileCount: number;
@@ -33,11 +40,20 @@ interface ListRender {
 }
 
 interface ListOptions {
-  format: 'json' | 'html';
   names: string[];
-  render: ListRender;
   extendedFolderInfo?: boolean;
   jsonFormat?: 'names' | 'extended';
+}
+
+export interface ListOptionsJsonFormat extends ListOptions {
+  format: 'json';
+  // Required when the URL parameter `format=html` exists
+  render?: ListRender;
+}
+
+export interface ListOptionsHtmlFormat extends ListOptions {
+  format: 'html';
+  render: ListRender;
 }
 
 // Passed on to `send`
@@ -55,16 +71,16 @@ interface SendOptions {
 }
 
 export interface FastifyStaticOptions extends SendOptions {
-  root: string | string[];
+  root: string | string[] | URL | URL[];
   prefix?: string;
   prefixAvoidTrailingSlash?: boolean;
   serve?: boolean;
   decorateReply?: boolean;
   schemaHide?: boolean;
-  setHeaders?: (...args: any[]) => void;
+  setHeaders?: (res: SetHeadersResponse, path: string, stat: Stats) => void;
   redirect?: boolean;
   wildcard?: boolean;
-  list?: boolean | ListOptions;
+  list?: boolean | ListOptionsJsonFormat | ListOptionsHtmlFormat;
   allowedPath?: (
     pathName: string,
     root: string,

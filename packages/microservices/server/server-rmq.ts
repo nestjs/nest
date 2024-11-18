@@ -153,6 +153,18 @@ export class ServerRMQ extends Server implements CustomTransportStrategy {
     if (!this.noAssert) {
       await channel.assertQueue(this.queue, this.queueOptions);
     }
+
+    if (this.options.exchange && this.options.routingKey) {
+      await channel.assertExchange(this.options.exchange, 'topic', {
+        durable: true,
+      });
+      await channel.bindQueue(
+        this.queue,
+        this.options.exchange,
+        this.options.routingKey,
+      );
+    }
+
     await channel.prefetch(this.prefetchCount, this.isGlobalPrefetchCount);
     channel.consume(
       this.queue,

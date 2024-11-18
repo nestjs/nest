@@ -1,18 +1,17 @@
 import { assert, expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
-import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
-import { ServerRMQ } from '../../server/server-rmq';
 import { RmqContext } from '../../ctx-host';
+import { ServerRMQ } from '../../server/server-rmq';
+import { objectToMap } from './utils/object-to-map';
 
 describe('ServerRMQ', () => {
   let server: ServerRMQ;
-
-  const objectToMap = obj =>
-    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+  let untypedServer: any;
 
   beforeEach(() => {
     server = new ServerRMQ({});
+    untypedServer = server as any;
   });
 
   describe('constructor', () => {
@@ -88,8 +87,8 @@ describe('ServerRMQ', () => {
     const rmqChannel = { close: sinon.spy() };
 
     beforeEach(() => {
-      (server as any).server = rmqServer;
-      (server as any).channel = rmqChannel;
+      untypedServer.server = rmqServer;
+      untypedServer.channel = rmqChannel;
     });
     it('should close server', () => {
       server.close();
@@ -122,7 +121,7 @@ describe('ServerRMQ', () => {
 
     beforeEach(() => {
       sendMessageStub = sinon.stub(server, 'sendMessage').callsFake(() => ({}));
-      (server as any).channel = channel;
+      untypedServer.channel = channel;
     });
     afterEach(() => {
       channel.nack.resetHistory();
@@ -144,7 +143,7 @@ describe('ServerRMQ', () => {
     });
     it('should call handler if exists in handlers object', async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [pattern]: handler as any,
       });
       await server.handleMessage(msg, '');
@@ -158,7 +157,7 @@ describe('ServerRMQ', () => {
         properties: { correlationId: 1 },
       };
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [pattern]: handler as any,
       });
 
@@ -167,7 +166,7 @@ describe('ServerRMQ', () => {
       });
     });
     it('should negative acknowledge if message does not exists in handlers object and noAck option is false', async () => {
-      (server as any).noAck = false;
+      untypedServer.noAck = false;
       await server.handleMessage(msg, '');
       expect(channel.nack.calledWith(msg, false, false)).to.be.true;
       expect(
@@ -199,10 +198,10 @@ describe('ServerRMQ', () => {
     let channel: any = {};
 
     beforeEach(() => {
-      (server as any)['queue'] = queue;
-      (server as any)['queueOptions'] = queueOptions;
-      (server as any)['isGlobalPrefetchCount'] = isGlobalPrefetchCount;
-      (server as any)['prefetchCount'] = prefetchCount;
+      untypedServer['queue'] = queue;
+      untypedServer['queueOptions'] = queueOptions;
+      untypedServer['isGlobalPrefetchCount'] = isGlobalPrefetchCount;
+      untypedServer['prefetchCount'] = prefetchCount;
 
       channel = {
         assertQueue: sinon.spy(() => ({})),
@@ -270,7 +269,7 @@ describe('ServerRMQ', () => {
 
     it('should call handler with expected arguments', () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
@@ -285,10 +284,10 @@ describe('ServerRMQ', () => {
     it('should negative acknowledge without retrying if key does not exists in handlers object and noAck option is false', () => {
       const nack = sinon.spy();
       const message = { pattern: 'no-exists', data };
-      (server as any).channel = {
+      untypedServer.channel = {
         nack,
       };
-      (server as any).noAck = false;
+      untypedServer.noAck = false;
       server.handleEvent(channel, message, new RmqContext([message, '', '']));
 
       expect(nack.calledWith(message, false, false)).to.be.true;
@@ -297,10 +296,10 @@ describe('ServerRMQ', () => {
     it('should not negative acknowledge if key does not exists in handlers object but noAck option is true', () => {
       const nack = sinon.spy();
       const message = { pattern: 'no-exists', data };
-      (server as any).channel = {
+      untypedServer.channel = {
         nack,
       };
-      (server as any).noAck = true;
+      untypedServer.noAck = true;
       server.handleEvent(channel, message, new RmqContext([message, '', '']));
 
       expect(nack.calledWith(message, false, false)).not.to.be.true;
