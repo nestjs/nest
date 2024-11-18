@@ -54,3 +54,5 @@ export const NO_MESSAGE_HANDLER = `There is no matching message handler defined 
 export const DISCONNECTED_RMQ_MESSAGE = `Disconnected from RMQ. Trying to reconnect.`;
 export const CONNECTION_FAILED_MESSAGE =
   'Connection to transport failed. Trying to reconnect...';
+
+export const NATS_DEFAULT_GRACE_PERIOD = 10000;

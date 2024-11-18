@@ -8,6 +8,7 @@ import {
   KafkaMessage,
 } from '../../external/kafka.interface';
 import { ServerKafka } from '../../server';
+import { objectToMap } from './utils/object-to-map';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -16,9 +17,6 @@ class NoopLogger extends Logger {
 }
 
 describe('ServerKafka', () => {
-  const objectToMap = obj =>
-    new Map(Object.keys(obj).map(i => [i, obj[i]]) as any);
-
   const topic = 'test.topic';
   const replyTopic = 'test.topic.reply';
   const replyPartition = '0';
@@ -84,6 +82,7 @@ describe('ServerKafka', () => {
   };
 
   let server: ServerKafka;
+  let untypedServer: any;
   let callback: sinon.SinonSpy;
   let bindEventsStub: sinon.SinonStub;
   let connect: sinon.SinonSpy;
@@ -94,10 +93,11 @@ describe('ServerKafka', () => {
   let consumerStub: sinon.SinonStub;
   let producerStub: sinon.SinonStub;
   let client: any;
-  let untypedServer: any;
 
   beforeEach(() => {
     server = new ServerKafka({});
+    untypedServer = server as any;
+
     callback = sinon.spy();
     connect = sinon.spy();
     subscribe = sinon.spy();

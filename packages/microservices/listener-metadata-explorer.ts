@@ -39,25 +39,36 @@ export class ListenerMetadataExplorer {
     const instancePrototype = Object.getPrototypeOf(instance);
     return this.metadataScanner
       .getAllMethodNames(instancePrototype)
-      .map(method => this.exploreMethodMetadata(instancePrototype, method))
+      .map(method =>
+        this.exploreMethodMetadata(instance, instancePrototype, method),
+      )
       .filter(metadata => metadata);
   }
 
   public exploreMethodMetadata(
+    instance: Controller,
     instancePrototype: object,
     methodKey: string,
   ): EventOrMessageListenerDefinition {
-    const targetCallback = instancePrototype[methodKey];
+    const prototypeCallback = instancePrototype[methodKey];
     const handlerType = Reflect.getMetadata(
       PATTERN_HANDLER_METADATA,
-      targetCallback,
+      prototypeCallback,
     );
     if (isUndefined(handlerType)) {
       return;
     }
-    const patterns = Reflect.getMetadata(PATTERN_METADATA, targetCallback);
-    const transport = Reflect.getMetadata(TRANSPORT_METADATA, targetCallback);
-    const extras = Reflect.getMetadata(PATTERN_EXTRAS_METADATA, targetCallback);
+    const patterns = Reflect.getMetadata(PATTERN_METADATA, prototypeCallback);
+    const transport = Reflect.getMetadata(
+      TRANSPORT_METADATA,
+      prototypeCallback,
+    );
+    const extras = Reflect.getMetadata(
+      PATTERN_EXTRAS_METADATA,
+      prototypeCallback,
+    );
+
+    const targetCallback = instance[methodKey];
     return {
       methodKey,
       targetCallback,

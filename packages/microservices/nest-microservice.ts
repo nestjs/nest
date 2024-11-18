@@ -16,7 +16,10 @@ import { Injector } from '@nestjs/core/injector/injector';
 import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
 import { Transport } from './enums/transport.enum';
-import { MicroserviceOptions } from './interfaces/microservice-configuration.interface';
+import {
+  AsyncMicroserviceOptions,
+  MicroserviceOptions,
+} from './interfaces/microservice-configuration.interface';
 import { MicroservicesModule } from './microservices-module';
 import { Server } from './server/server';
 import { ServerFactory } from './server/server-factory';
@@ -27,7 +30,7 @@ const { SocketModule } = optionalRequire(
 );
 
 type CompleteMicroserviceOptions = NestMicroserviceOptions &
-  MicroserviceOptions;
+  (MicroserviceOptions | AsyncMicroserviceOptions);
 
 export class NestMicroservice
   extends NestApplicationContext<NestMicroserviceOptions>
@@ -38,7 +41,10 @@ export class NestMicroservice
   });
   private readonly microservicesModule = new MicroservicesModule();
   private readonly socketModule = SocketModule ? new SocketModule() : null;
-  private microserviceConfig: CompleteMicroserviceOptions;
+  private microserviceConfig: Exclude<
+    CompleteMicroserviceOptions,
+    AsyncMicroserviceOptions
+  >;
   private serverInstance: Server;
   private isTerminated = false;
   private wasInitHookCalled = false;
@@ -71,10 +77,14 @@ export class NestMicroservice
 
   public createServer(config: CompleteMicroserviceOptions) {
     try {
-      this.microserviceConfig = {
-        transport: Transport.TCP,
-        ...config,
-      } as CompleteMicroserviceOptions;
+      if ('useFactory' in config) {
+        this.microserviceConfig = this.resolveAsyncOptions(config);
+      } else {
+        this.microserviceConfig = {
+          transport: Transport.TCP,
+          ...config,
+        } as MicroserviceOptions;
+      }
 
       if ('strategy' in config) {
         this.serverInstance = config.strategy as Server;
@@ -298,5 +308,12 @@ export class NestMicroservice
     await this.serverInstance.close();
     this.socketModule && (await this.socketModule.close());
     this.microservicesModule && (await this.microservicesModule.close());
+  }
+
+  protected resolveAsyncOptions(config: AsyncMicroserviceOptions) {
+    const args = config.inject?.map(token =>
+      this.get(token, { strict: false }),
+    );
+    return config.useFactory(...args);
   }
 }

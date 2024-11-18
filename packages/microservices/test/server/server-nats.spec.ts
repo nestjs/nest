@@ -5,18 +5,18 @@ import { NO_MESSAGE_HANDLER } from '../../constants';
 import { NatsContext } from '../../ctx-host';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerNats } from '../../server/server-nats';
+import { objectToMap } from './utils/object-to-map';
 
 // type NatsMsg = import('nats').Msg;
 type NatsMsg = any;
 
 describe('ServerNats', () => {
   let server: ServerNats;
-
-  const objectToMap = obj =>
-    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+  let untypedServer: any;
 
   beforeEach(() => {
     server = new ServerNats({});
+    untypedServer = server as any;
   });
   describe('listen', () => {
     let client: any;
@@ -41,15 +41,66 @@ describe('ServerNats', () => {
   describe('close', () => {
     const natsClient = { close: sinon.spy() };
     beforeEach(() => {
-      (server as any).natsClient = natsClient;
+      untypedServer.natsClient = natsClient;
     });
-    it('should close natsClient', () => {
-      server.close();
+    it('should close natsClient', async () => {
+      await server.close();
       expect(natsClient.close.called).to.be.true;
+    });
+
+    describe('when "gracefulShutdown" is true', () => {
+      const waitForGracePeriod = sinon.spy();
+      const subscriptions = [
+        { unsubscribe: sinon.spy() },
+        { unsubscribe: sinon.spy() },
+      ];
+      beforeEach(() => {
+        (server as any).subscriptions = subscriptions;
+        (server as any).waitForGracePeriod = waitForGracePeriod;
+        (server as any).options.gracefulShutdown = true;
+      });
+
+      it('should unsubscribe all subscriptions', async () => {
+        await server.close();
+        for (const subscription of subscriptions) {
+          expect(subscription.unsubscribe.calledOnce).to.be.true;
+        }
+      });
+
+      it('should call "waitForGracePeriod"', async () => {
+        await server.close();
+        expect(waitForGracePeriod.called).to.be.true;
+      });
+    });
+
+    describe('when "gracefulShutdown" is false', () => {
+      const waitForGracePeriod = sinon.spy();
+      const subscriptions = [
+        { unsubscribe: sinon.spy() },
+        { unsubscribe: sinon.spy() },
+      ];
+      beforeEach(() => {
+        (server as any).subscriptions = subscriptions;
+        (server as any).waitForGracePeriod = waitForGracePeriod;
+        (server as any).options.gracefulShutdown = false;
+      });
+      it('should not unsubscribe all subscriptions', async () => {
+        await server.close();
+        for (const subscription of subscriptions) {
+          expect(subscription.unsubscribe.called).to.be.false;
+        }
+      });
+
+      it('should not call "waitForGracePeriod"', async () => {
+        await server.close();
+        expect(waitForGracePeriod.called).to.be.false;
+      });
     });
   });
   describe('bindEvents', () => {
     let onSpy: sinon.SinonSpy, subscribeSpy: sinon.SinonSpy, natsClient;
+    const pattern = 'test';
+    const messageHandler = sinon.spy();
 
     beforeEach(() => {
       onSpy = sinon.spy();
@@ -58,15 +109,18 @@ describe('ServerNats', () => {
         on: onSpy,
         subscribe: subscribeSpy,
       };
+      untypedServer.messageHandlers = objectToMap({
+        [pattern]: messageHandler,
+      });
     });
     it('should subscribe to each acknowledge patterns', () => {
-      const pattern = 'test';
-      const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
-        [pattern]: handler,
-      });
       server.bindEvents(natsClient);
       expect(subscribeSpy.calledWith(pattern)).to.be.true;
+    });
+
+    it('should fill the subscriptions array properly', () => {
+      server.bindEvents(natsClient);
+      expect(server['subscriptions'].length).to.be.equals(1);
     });
   });
   describe('getMessageHandler', () => {
@@ -129,7 +183,7 @@ describe('ServerNats', () => {
     });
     it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
@@ -202,7 +256,7 @@ describe('ServerNats', () => {
 
     it('should call handler with expected arguments', () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
@@ -226,7 +280,7 @@ describe('ServerNats', () => {
     });
 
     it('should log "disconnect" and "error" statuses as "errors"', async () => {
-      const logErrorSpy = sinon.spy((server as any).logger, 'error');
+      const logErrorSpy = sinon.spy(untypedServer.logger, 'error');
       const serverMock = {
         status: sinon.stub().returns({
           async *[Symbol.asyncIterator]() {
@@ -247,7 +301,7 @@ describe('ServerNats', () => {
       );
     });
     it('should log other statuses as "logs"', async () => {
-      const logSpy = sinon.spy((server as any).logger, 'log');
+      const logSpy = sinon.spy(untypedServer.logger, 'log');
       const serverMock = {
         status: sinon.stub().returns({
           async *[Symbol.asyncIterator]() {

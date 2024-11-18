@@ -1,5 +1,5 @@
-import { Injectable, Optional } from '../decorators/core';
-import { ArgumentMetadata, HttpStatus } from '../index';
+import { Injectable } from '../decorators/core/injectable.decorator';
+import { HttpStatus } from '../enums/http-status.enum';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
 import {
   ErrorHttpStatusCode,
@@ -7,15 +7,16 @@ import {
 } from '../utils/http-error-by-code.util';
 import { isNil } from '../utils/shared.utils';
 
-/**
- * @publicApi
- */
-export interface ParseEnumPipeOptions {
+export interface ParseDatePipeOptions {
   /**
    * If true, the pipe will return null or undefined if the value is not provided
    * @default false
    */
   optional?: boolean;
+  /**
+   * Default value for the date
+   */
+  default?: () => Date;
   /**
    * The HTTP status code to be used in the response when the validation fails.
    */
@@ -29,26 +30,13 @@ export interface ParseEnumPipeOptions {
   exceptionFactory?: (error: string) => any;
 }
 
-/**
- * Defines the built-in ParseEnum Pipe
- *
- * @see [Built-in Pipes](https://docs.nestjs.com/pipes#built-in-pipes)
- *
- * @publicApi
- */
 @Injectable()
-export class ParseEnumPipe<T = any> implements PipeTransform<T> {
+export class ParseDatePipe
+  implements PipeTransform<string | number | undefined | null>
+{
   protected exceptionFactory: (error: string) => any;
-  constructor(
-    protected readonly enumType: T,
-    @Optional() protected readonly options?: ParseEnumPipeOptions,
-  ) {
-    if (!enumType) {
-      throw new Error(
-        `"ParseEnumPipe" requires "enumType" argument specified (to validate input values).`,
-      );
-    }
-    options = options || {};
+
+  constructor(private readonly options: ParseDatePipeOptions = {}) {
     const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
       options;
 
@@ -64,22 +52,23 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
    * @param value currently processed route argument
    * @param metadata contains metadata about the currently processed route argument
    */
-  async transform(value: T, metadata: ArgumentMetadata): Promise<T> {
-    if (isNil(value) && this.options?.optional) {
-      return value;
+  transform(value: string | number | undefined | null): Date {
+    if (this.options.optional && isNil(value)) {
+      return this.options.default
+        ? this.options.default()
+        : (value as undefined | null);
     }
-    if (!this.isEnum(value)) {
-      throw this.exceptionFactory(
-        'Validation failed (enum string is expected)',
-      );
-    }
-    return value;
-  }
 
-  protected isEnum(value: T): boolean {
-    const enumValues = Object.keys(this.enumType).map(
-      item => this.enumType[item],
-    );
-    return enumValues.includes(value);
+    if (!value) {
+      throw this.exceptionFactory('Validation failed (no Date provided)');
+    }
+
+    const transformedValue = new Date(value);
+
+    if (isNaN(transformedValue.getTime())) {
+      throw this.exceptionFactory('Validation failed (invalid date format)');
+    }
+
+    return transformedValue;
   }
 }

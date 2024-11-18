@@ -195,6 +195,18 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       'prefetchCount',
       RQM_DEFAULT_PREFETCH_COUNT,
     );
+
+    if (this.options.exchange && this.options.routingKey) {
+      await channel.assertExchange(this.options.exchange, 'topic', {
+        durable: true,
+      });
+      await channel.bindQueue(
+        this.queue,
+        this.options.exchange,
+        this.options.routingKey,
+      );
+    }
+
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
     channel.consume(
       this.queue,

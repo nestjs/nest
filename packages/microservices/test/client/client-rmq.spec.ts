@@ -10,6 +10,7 @@ describe('ClientRMQ', function () {
   this.retries(10);
 
   let client: ClientRMQ;
+  let untypedClient: any;
 
   describe('connect', () => {
     let createClientStub: sinon.SinonStub;
@@ -18,6 +19,8 @@ describe('ClientRMQ', function () {
 
     beforeEach(async () => {
       client = new ClientRMQ({});
+      untypedClient = client as any;
+
       createClientStub = sinon.stub(client, 'createClient').callsFake(() => ({
         addListener: () => ({}),
         removeListener: () => ({}),
@@ -124,7 +127,7 @@ describe('ClientRMQ', function () {
     beforeEach(() => {
       client['queue'] = queue;
       client['queueOptions'] = queueOptions;
-      (client as any)['options'] = { isGlobalPrefetchCount, prefetchCount };
+      untypedClient['options'] = { isGlobalPrefetchCount, prefetchCount };
 
       channel = {
         assertQueue: sinon.spy(() => ({})),
@@ -185,6 +188,8 @@ describe('ClientRMQ', function () {
 
     beforeEach(() => {
       client = new ClientRMQ({});
+      untypedClient = client as any;
+
       msg = { pattern, data: 'data' };
       connectSpy = sinon.spy(client, 'connect');
       eventSpy = sinon.spy();
@@ -255,7 +260,7 @@ describe('ClientRMQ', function () {
 
       it('should combine packet and static headers', () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = { '1': '123' };
         msg.data = new RmqRecord('data', { headers: requestHeaders });
@@ -270,7 +275,7 @@ describe('ClientRMQ', function () {
 
       it('should prefer packet headers over static headers', () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = { 'client-id': 'override-client-id' };
         msg.data = new RmqRecord('data', { headers: requestHeaders });
@@ -357,8 +362,8 @@ describe('ClientRMQ', function () {
     beforeEach(() => {
       channelCloseSpy = sinon.spy();
       clientCloseSpy = sinon.spy();
-      (client as any).channel = { close: channelCloseSpy };
-      (client as any).client = { close: clientCloseSpy };
+      untypedClient.channel = { close: channelCloseSpy };
+      untypedClient.client = { close: clientCloseSpy };
     });
 
     it('should close channel when it is not null', () => {
@@ -377,12 +382,14 @@ describe('ClientRMQ', function () {
 
     beforeEach(() => {
       client = new ClientRMQ({});
+      untypedClient = client as any;
+
       msg = { pattern: 'pattern', data: 'data' };
       sendToQueueStub = sinon.stub();
       channel = {
         sendToQueue: sendToQueueStub,
       };
-      (client as any).channel = channel;
+      untypedClient.channel = channel;
     });
 
     it('should publish packet', async () => {
@@ -419,7 +426,7 @@ describe('ClientRMQ', function () {
       it('should combine packet and static headers', async () => {
         sendToQueueStub.callsFake((a, b, c, d) => d());
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = { '1': '123' };
         msg.data = new RmqRecord('data', { headers: requestHeaders });
@@ -434,7 +441,7 @@ describe('ClientRMQ', function () {
       it('should prefer packet headers over static headers', async () => {
         sendToQueueStub.callsFake((a, b, c, d) => d());
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = { 'client-id': 'override-client-id' };
         msg.data = new RmqRecord('data', { headers: requestHeaders });

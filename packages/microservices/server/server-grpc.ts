@@ -96,7 +96,6 @@ export class ServerGrpc extends Server<never, never> {
 
   public async start(callback?: () => void) {
     await this.bindEvents();
-    this.grpcClient.start();
     callback();
   }
 
@@ -620,7 +619,7 @@ export class ServerGrpc extends Server<never, never> {
   private async createServices(grpcPkg: any, packageName: string) {
     if (!grpcPkg) {
       const invalidPackageError = new InvalidGrpcPackageException(packageName);
-      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+      this.logger.error(invalidPackageError);
       throw invalidPackageError;
     }
 

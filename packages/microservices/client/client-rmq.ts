@@ -202,6 +202,15 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     if (!this.noAssert) {
       await channel.assertQueue(this.queue, this.queueOptions);
     }
+
+    if (this.options.exchange && this.options.routingKey) {
+      await channel.bindQueue(
+        this.queue,
+        this.options.exchange,
+        this.options.routingKey,
+      );
+    }
+
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
     await this.consumeChannel(channel);
     resolve();

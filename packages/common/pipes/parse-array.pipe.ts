@@ -7,7 +7,7 @@ import {
   PipeTransform,
 } from '../interfaces/features/pipe-transform.interface';
 import { HttpErrorByCode } from '../utils/http-error-by-code.util';
-import { isNil, isUndefined, isString } from '../utils/shared.utils';
+import { isNil, isString, isUndefined } from '../utils/shared.utils';
 import { ValidationPipe, ValidationPipeOptions } from './validation.pipe';
 
 const VALIDATION_ERROR_MESSAGE = 'Validation failed (parsable array expected)';
@@ -21,9 +21,26 @@ export interface ParseArrayOptions
     ValidationPipeOptions,
     'transform' | 'validateCustomDecorators' | 'exceptionFactory'
   > {
+  /**
+   * Type for items to be converted into
+   */
   items?: Type<unknown>;
+  /**
+   * Items separator to split string by
+   * @default ','
+   */
   separator?: string;
+  /**
+   * If true, the pipe will return null or undefined if the value is not provided
+   * @default false
+   */
   optional?: boolean;
+  /**
+   * A factory function that returns an exception object to be thrown
+   * if validation fails.
+   * @param error Error message or object
+   * @returns The exception object
+   */
   exceptionFactory?: (error: any) => any;
 }
 

@@ -1,4 +1,4 @@
-import { Type } from '@nestjs/common';
+import { InjectionToken, Type } from '@nestjs/common';
 import { TlsOptions } from 'tls';
 import { Transport } from '../enums/transport.enum';
 import { ChannelOptions } from '../external/grpc-options.interface';
@@ -31,6 +31,16 @@ export type MicroserviceOptions =
   | RmqOptions
   | KafkaOptions
   | CustomStrategy;
+
+export type AsyncMicroserviceOptions = {
+  inject: InjectionToken[];
+  useFactory: (...args: any[]) => MicroserviceOptions;
+};
+
+export type AsyncOptions<T extends object> = {
+  inject: InjectionToken[];
+  useFactory: (...args: any[]) => T;
+};
 
 /**
  * @publicApi
@@ -193,6 +203,8 @@ export interface NatsOptions {
     token?: string;
     yieldTime?: number;
     tokenHandler?: any;
+    gracefulShutdown?: boolean;
+    gracePeriod?: number;
     [key: string]: any;
   };
 }
@@ -209,6 +221,8 @@ export interface RmqOptions {
     isGlobalPrefetchCount?: boolean;
     queueOptions?: AmqplibQueueOptions;
     socketOptions?: AmqpConnectionManagerSocketOptions;
+    exchange?: string;
+    routingKey?: string;
     noAck?: boolean;
     consumerTag?: string;
     serializer?: Serializer;

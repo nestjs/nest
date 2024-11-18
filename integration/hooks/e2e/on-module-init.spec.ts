@@ -40,10 +40,38 @@ describe('OnModuleInit', () => {
 
   it('should sort modules by distance (topological sort) - DESC order', async () => {
     @Injectable()
+    class CC implements OnModuleInit {
+      public field: string;
+
+      async onModuleInit() {
+        this.field = 'c-field';
+      }
+    }
+
+    @Module({})
+    class C {
+      static forRoot() {
+        return {
+          module: C,
+          global: true,
+          providers: [
+            {
+              provide: CC,
+              useValue: new CC(),
+            },
+          ],
+          exports: [CC],
+        };
+      }
+    }
+
+    @Injectable()
     class BB implements OnModuleInit {
       public field: string;
+      constructor(private cc: CC) {}
+
       async onModuleInit() {
-        this.field = 'b-field';
+        this.field = this.cc.field + '_b-field';
       }
     }
 
@@ -68,14 +96,19 @@ describe('OnModuleInit', () => {
     })
     class A {}
 
+    @Module({
+      imports: [A, C.forRoot()],
+    })
+    class AppModule {}
+
     const module = await Test.createTestingModule({
-      imports: [A],
+      imports: [AppModule],
     }).compile();
 
     const app = module.createNestApplication();
     await app.init();
 
     const instance = module.get(AA);
-    expect(instance.field).to.equal('b-field_a-field');
+    expect(instance.field).to.equal('c-field_b-field_a-field');
   });
 });

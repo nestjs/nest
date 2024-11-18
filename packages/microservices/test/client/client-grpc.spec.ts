@@ -22,6 +22,7 @@ class GrpcService {
 
 describe('ClientGrpcProxy', () => {
   let client: ClientGrpcProxy;
+  let untypedClient: any;
   let clientMulti: ClientGrpcProxy;
 
   beforeEach(() => {
@@ -29,6 +30,7 @@ describe('ClientGrpcProxy', () => {
       protoPath: join(__dirname, './test.proto'),
       package: 'test',
     });
+    untypedClient = client as any;
 
     clientMulti = new ClientGrpcProxy({
       protoPath: ['test.proto', 'test2.proto'],
@@ -42,7 +44,7 @@ describe('ClientGrpcProxy', () => {
   describe('getService', () => {
     describe('when "grpcClient[name]" is nil', () => {
       it('should throw "InvalidGrpcServiceException"', () => {
-        (client as any).grpcClient = {};
+        untypedClient.grpcClient = {};
         expect(() => client.getService('test')).to.throw(
           InvalidGrpcServiceException,
         );
@@ -62,7 +64,7 @@ describe('ClientGrpcProxy', () => {
     });
     describe('when "grpcClient[name]" is not nil', () => {
       it('should create grpcService', () => {
-        (client as any).grpcClients[0] = {
+        untypedClient.grpcClients[0] = {
           test: GrpcService,
         };
         expect(() => client.getService('test')).to.not.throw(
@@ -430,7 +432,7 @@ describe('ClientGrpcProxy', () => {
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', () => {
         sinon.stub(client, 'lookupPackage').callsFake(() => null);
-        (client as any).logger = new NoopLogger();
+        untypedClient.logger = new NoopLogger();
 
         try {
           client.createClients();
@@ -451,7 +453,7 @@ describe('ClientGrpcProxy', () => {
         getPackageDefinitionStub.callsFake(() => {
           throw new Error();
         });
-        (client as any).logger = new NoopLogger();
+        untypedClient.logger = new NoopLogger();
         expect(() => client.loadProto()).to.throws(
           InvalidProtoDefinitionException,
         );
@@ -462,13 +464,13 @@ describe('ClientGrpcProxy', () => {
   describe('close', () => {
     it('should call "close" method', () => {
       const grpcClient = { close: sinon.spy() };
-      (client as any).clients.set('test', grpcClient);
-      (client as any).grpcClients[0] = {};
+      untypedClient.clients.set('test', grpcClient);
+      untypedClient.grpcClients[0] = {};
 
       client.close();
       expect(grpcClient.close.called).to.be.true;
-      expect((client as any).clients.size).to.be.eq(0);
-      expect((client as any).grpcClients.length).to.be.eq(0);
+      expect(untypedClient.clients.size).to.be.eq(0);
+      expect(untypedClient.grpcClients.length).to.be.eq(0);
     });
   });
 

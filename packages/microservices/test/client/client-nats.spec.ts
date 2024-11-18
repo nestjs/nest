@@ -7,6 +7,7 @@ import { NatsRecord } from '../../record-builders';
 
 describe('ClientNats', () => {
   let client: ClientNats;
+  let untypedClient: any;
 
   describe('publish', () => {
     let msg: ReadPacket;
@@ -24,6 +25,8 @@ describe('ClientNats', () => {
 
     beforeEach(() => {
       client = new ClientNats({});
+      untypedClient = client as any;
+
       msg = { pattern, data: 'data' };
       unsubscribeSpy = sinon.spy();
       subscription = {
@@ -39,14 +42,14 @@ describe('ClientNats', () => {
         addListener: () => ({}),
         publish: publishSpy,
       };
-      (client as any).natsClient = natsClient;
+      untypedClient.natsClient = natsClient;
 
       connectSpy = sinon.stub(client, 'connect').callsFake(async () => {
-        (client as any).natsClient = natsClient;
+        untypedClient.natsClient = natsClient;
       });
       createClient = sinon
         .stub(client, 'createClient')
-        .callsFake(() => client as any);
+        .callsFake(() => untypedClient);
     });
     afterEach(() => {
       connectSpy.restore();
@@ -117,7 +120,7 @@ describe('ClientNats', () => {
       });
       it('should combine packet and static headers', () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = createHeaders();
         requestHeaders.set('1', '123');
@@ -132,7 +135,7 @@ describe('ClientNats', () => {
 
       it('should prefer packet headers over static headers', () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = createHeaders();
         requestHeaders.set('client-id', 'override-client-id');
@@ -223,11 +226,12 @@ describe('ClientNats', () => {
   });
   describe('close', () => {
     let natsClose: sinon.SinonSpy;
-    let natsClient;
+    let natsClient: any;
+
     beforeEach(() => {
       natsClose = sinon.spy();
       natsClient = { close: natsClose };
-      (client as any).natsClient = natsClient;
+      untypedClient.natsClient = natsClient;
     });
     it('should close "natsClient" when it is not null', () => {
       client.close();
@@ -288,7 +292,7 @@ describe('ClientNats', () => {
     });
 
     it('should log "disconnect" and "error" statuses as "errors"', async () => {
-      const logErrorSpy = sinon.spy((client as any).logger, 'error');
+      const logErrorSpy = sinon.spy(untypedClient.logger, 'error');
       const clientMock = {
         status: sinon.stub().returns({
           async *[Symbol.asyncIterator]() {
@@ -309,7 +313,7 @@ describe('ClientNats', () => {
       );
     });
     it('should log other statuses as "logs"', async () => {
-      const logSpy = sinon.spy((client as any).logger, 'log');
+      const logSpy = sinon.spy(untypedClient.logger, 'log');
       const clientMock = {
         status: sinon.stub().returns({
           async *[Symbol.asyncIterator]() {
@@ -334,6 +338,8 @@ describe('ClientNats', () => {
 
     beforeEach(() => {
       client = new ClientNats({});
+      untypedClient = client as any;
+
       msg = { pattern: 'pattern', data: 'data' };
       subscribeStub = sinon
         .stub()
@@ -342,7 +348,7 @@ describe('ClientNats', () => {
         publish: sinon.spy(),
         subscribe: subscribeStub,
       };
-      (client as any).natsClient = natsClient;
+      untypedClient.natsClient = natsClient;
     });
 
     it('should publish packet', async () => {
@@ -379,7 +385,7 @@ describe('ClientNats', () => {
 
       it('should combine packet and static headers', () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = createHeaders();
         requestHeaders.set('1', '123');
@@ -396,7 +402,7 @@ describe('ClientNats', () => {
 
       it('should prefer packet headers over static headers', () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = createHeaders();
         requestHeaders.set('client-id', 'override-client-id');

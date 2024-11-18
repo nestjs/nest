@@ -1,6 +1,10 @@
 import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { EventEmitter } from 'events';
-import { NATS_DEFAULT_URL, NO_MESSAGE_HANDLER } from '../constants';
+import {
+  NATS_DEFAULT_GRACE_PERIOD,
+  NATS_DEFAULT_URL,
+  NO_MESSAGE_HANDLER,
+} from '../constants';
 import { NatsContext } from '../ctx-host/nats.context';
 import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer';
 import { Transport } from '../enums';
@@ -19,9 +23,11 @@ let natsPackage = {} as any;
 //
 // type Client = import('nats').NatsConnection;
 // type NatsMsg = import('nats').Msg;
+type Subscription = import('nats').Subscription;
 
 type Client = any;
 type NatsMsg = any;
+// type Subscription = any;
 
 /**
  * @publicApi
@@ -33,6 +39,7 @@ export class ServerNats extends Server<NatsEvents, NatsStatus> {
   protected statusEventEmitter = new EventEmitter<{
     [key in keyof NatsEvents]: Parameters<NatsEvents[key]>;
   }>();
+  private readonly subscriptions: Subscription[] = [];
 
   constructor(private readonly options: NatsOptions['options']) {
     super();
@@ -75,13 +82,36 @@ export class ServerNats extends Server<NatsEvents, NatsStatus> {
       });
 
     const registeredPatterns = [...this.messageHandlers.keys()];
-    registeredPatterns.forEach(channel => subscribe(channel));
+    for (const channel of registeredPatterns) {
+      const sub = subscribe(channel);
+      this.subscriptions.push(sub);
+    }
+  }
+
+  private async waitForGracePeriod() {
+    const gracePeriod = this.getOptionsProp(
+      this.options,
+      'gracePeriod',
+      NATS_DEFAULT_GRACE_PERIOD,
+    );
+    await new Promise<void>(res => {
+      setTimeout(() => {
+        res();
+      }, gracePeriod);
+    });
   }
 
   public async close() {
+    if (!this.natsClient) {
+      return;
+    }
+    const graceful = this.getOptionsProp(this.options, 'gracefulShutdown');
+    if (graceful) {
+      this.subscriptions.forEach(sub => sub.unsubscribe());
+      await this.waitForGracePeriod();
+    }
     await this.natsClient?.close();
     this.statusEventEmitter.removeAllListeners();
-
     this.natsClient = null;
   }
 

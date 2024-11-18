@@ -3,15 +3,15 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerRedis } from '../../server/server-redis';
+import { objectToMap } from './utils/object-to-map';
 
 describe('ServerRedis', () => {
   let server: ServerRedis;
-
-  const objectToMap = obj =>
-    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+  let untypedServer: any;
 
   beforeEach(() => {
     server = new ServerRedis({});
+    untypedServer = server as any;
   });
   describe('listen', () => {
     let onSpy: sinon.SinonSpy;
@@ -56,8 +56,8 @@ describe('ServerRedis', () => {
     const pub = { quit: sinon.spy() };
     const sub = { quit: sinon.spy() };
     beforeEach(() => {
-      (server as any).pubClient = pub;
-      (server as any).subClient = sub;
+      untypedServer.pubClient = pub;
+      untypedServer.subClient = sub;
     });
     it('should close pub & sub server', () => {
       server.close();
@@ -86,8 +86,8 @@ describe('ServerRedis', () => {
       expect(onSpy.getCall(0).args[0]).to.be.equal('message');
     });
     it('should bind "pmessage" event to handler if wildcards are enabled', () => {
-      (server as any).options = {};
-      (server as any).options.wildcards = true;
+      untypedServer.options = {};
+      untypedServer.options.wildcards = true;
 
       server.bindEvents(psub, null);
       expect(onSpy.getCall(0).args[0]).to.be.equal('pmessage');
@@ -96,7 +96,7 @@ describe('ServerRedis', () => {
     it('should "subscribe" to each pattern if wildcards are disabled', () => {
       const pattern = 'test';
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [pattern]: handler,
       });
       server.bindEvents(sub, null);
@@ -104,12 +104,12 @@ describe('ServerRedis', () => {
     });
 
     it('should "psubscribe" to each pattern if wildcards are enabled', () => {
-      (server as any).options = {};
-      (server as any).options.wildcards = true;
+      untypedServer.options = {};
+      untypedServer.options.wildcards = true;
 
       const pattern = 'test';
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [pattern]: handler,
       });
       server.bindEvents(psub, null);
@@ -157,7 +157,7 @@ describe('ServerRedis', () => {
     });
     it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
       sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data }) as any);
@@ -233,35 +233,35 @@ describe('ServerRedis', () => {
   describe('createRetryStrategy', () => {
     describe('when is terminated', () => {
       it('should return undefined', () => {
-        (server as any).isManuallyClosed = true;
+        untypedServer.isManuallyClosed = true;
         const result = server.createRetryStrategy(0);
         expect(result).to.be.undefined;
       });
     });
     describe('when "retryAttempts" does not exist', () => {
       it('should return undefined', () => {
-        (server as any).options.options = {};
-        (server as any).options.options.retryAttempts = undefined;
+        untypedServer.options.options = {};
+        untypedServer.options.options.retryAttempts = undefined;
 
         expect(server.createRetryStrategy(4)).to.be.undefined;
       });
     });
     describe('when "attempts" count is max', () => {
       it('should return undefined', () => {
-        (server as any).options.options = {};
-        (server as any).options.options.retryAttempts = 3;
+        untypedServer.options.options = {};
+        untypedServer.options.options.retryAttempts = 3;
 
         expect(server.createRetryStrategy(4)).to.be.undefined;
       });
     });
     describe('otherwise', () => {
       it('should return delay (ms)', () => {
-        (server as any).options = {};
-        (server as any).isManuallyClosed = false;
-        (server as any).options.retryAttempts = 3;
-        (server as any).options.retryDelay = 3;
+        untypedServer.options = {};
+        untypedServer.isManuallyClosed = false;
+        untypedServer.options.retryAttempts = 3;
+        untypedServer.options.retryDelay = 3;
         const result = server.createRetryStrategy(2);
-        expect(result).to.be.eql((server as any).options.retryDelay);
+        expect(result).to.be.eql(untypedServer.options.retryDelay);
       });
     });
   });
@@ -271,7 +271,7 @@ describe('ServerRedis', () => {
 
     it('should call handler with expected arguments', () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 

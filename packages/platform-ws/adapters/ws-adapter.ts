@@ -25,6 +25,11 @@ type HttpServerRegistryKey = number;
 type HttpServerRegistryEntry = any;
 type WsServerRegistryKey = number;
 type WsServerRegistryEntry = any[];
+type WsData = string | Buffer | ArrayBuffer | Buffer[];
+type WsMessageParser = (data: WsData) => { event: string; data: any } | void;
+type WsAdapterOptions = {
+  messageParser?: WsMessageParser;
+};
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
 
@@ -41,10 +46,20 @@ export class WsAdapter extends AbstractWsAdapter {
     WsServerRegistryKey,
     WsServerRegistryEntry
   >();
+  protected messageParser: WsMessageParser = data => {
+    return JSON.parse(data.toString());
+  };
 
-  constructor(appOrHttpServer?: INestApplicationContext | any) {
+  constructor(
+    appOrHttpServer?: INestApplicationContext | any,
+    options?: WsAdapterOptions,
+  ) {
     super(appOrHttpServer);
     wsPackage = loadPackage('ws', 'WsAdapter', () => require('ws'));
+
+    if (options?.messageParser) {
+      this.messageParser = options.messageParser;
+    }
   }
 
   public create(
@@ -138,7 +153,10 @@ export class WsAdapter extends AbstractWsAdapter {
     transform: (data: any) => Observable<any>,
   ): Observable<any> {
     try {
-      const message = JSON.parse(buffer.data);
+      const message = this.messageParser(buffer.data);
+      if (!message) {
+        return EMPTY;
+      }
       const messageHandler = handlersMap.get(message.event);
       const { callback } = messageHandler;
       return transform(callback(message.data, message.event));
@@ -177,6 +195,10 @@ export class WsAdapter extends AbstractWsAdapter {
     await Promise.all(closeEventSignals);
     this.httpServersRegistry.clear();
     this.wsServersRegistry.clear();
+  }
+
+  public setMessageParser(parser: WsMessageParser) {
+    this.messageParser = parser;
   }
 
   protected ensureHttpServerExists(

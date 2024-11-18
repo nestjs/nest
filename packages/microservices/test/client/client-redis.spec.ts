@@ -6,6 +6,7 @@ import { RedisEventsMap } from '../../events/redis.events';
 describe('ClientRedis', () => {
   const test = 'test';
   const client = new ClientRedis({});
+  const untypedClient = client as any;
 
   describe('getRequestPattern', () => {
     it(`should leave pattern as it is`, () => {
@@ -28,8 +29,8 @@ describe('ClientRedis', () => {
       removeListenerSpy: sinon.SinonSpy,
       unsubscribeSpy: sinon.SinonSpy,
       connectSpy: sinon.SinonSpy,
-      sub: any,
-      pub: any;
+      sub: Record<string, Function>,
+      pub: Record<string, Function>;
 
     beforeEach(() => {
       subscribeSpy = sinon.spy((name, fn) => fn());
@@ -45,8 +46,8 @@ describe('ClientRedis', () => {
         unsubscribe: unsubscribeSpy,
       };
       pub = { publish: publishSpy };
-      (client as any).subClient = sub;
-      (client as any).pubClient = pub;
+      untypedClient.subClient = sub;
+      untypedClient.pubClient = pub;
       connectSpy = sinon.spy(client, 'connect');
     });
     afterEach(() => {
@@ -297,37 +298,37 @@ describe('ClientRedis', () => {
   describe('createRetryStrategy', () => {
     describe('when is terminated', () => {
       it('should return undefined', () => {
-        (client as any).isManuallyClosed = true;
+        untypedClient.isManuallyClosed = true;
         const result = client.createRetryStrategy(0);
         expect(result).to.be.undefined;
       });
     });
     describe('when "retryAttempts" does not exist', () => {
       it('should return undefined', () => {
-        (client as any).isManuallyClosed = false;
-        (client as any).options.options = {};
-        (client as any).options.options.retryAttempts = undefined;
+        untypedClient.isManuallyClosed = false;
+        untypedClient.options.options = {};
+        untypedClient.options.options.retryAttempts = undefined;
         const result = client.createRetryStrategy(1);
         expect(result).to.be.undefined;
       });
     });
     describe('when "attempts" count is max', () => {
       it('should return undefined', () => {
-        (client as any).isManuallyClosed = false;
-        (client as any).options.options = {};
-        (client as any).options.options.retryAttempts = 3;
+        untypedClient.isManuallyClosed = false;
+        untypedClient.options.options = {};
+        untypedClient.options.options.retryAttempts = 3;
         const result = client.createRetryStrategy(4);
         expect(result).to.be.undefined;
       });
     });
     describe('otherwise', () => {
       it('should return delay (ms)', () => {
-        (client as any).options = {};
-        (client as any).isManuallyClosed = false;
-        (client as any).options.retryAttempts = 3;
-        (client as any).options.retryDelay = 3;
+        untypedClient.options = {};
+        untypedClient.isManuallyClosed = false;
+        untypedClient.options.retryAttempts = 3;
+        untypedClient.options.retryDelay = 3;
         const result = client.createRetryStrategy(2);
-        expect(result).to.be.eql((client as any).options.retryDelay);
+        expect(result).to.be.eql(untypedClient.options.retryDelay);
       });
     });
   });
@@ -340,7 +341,7 @@ describe('ClientRedis', () => {
       pubClient = {
         publish: publishStub,
       };
-      (client as any).pubClient = pubClient;
+      untypedClient.pubClient = pubClient;
     });
 
     it('should publish packet', async () => {
