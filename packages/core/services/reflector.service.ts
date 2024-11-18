@@ -130,7 +130,7 @@ export class Reflector {
   public getAll<TParam = any, TTransformed = TParam>(
     decorator: ReflectableDecorator<TParam, TTransformed>,
     targets: (Type<any> | Function)[],
-  ): TTransformed extends any[] ? TTransformed : TTransformed[];
+  ): TTransformed extends Array<any> ? TTransformed : TTransformed[];
   /**
    * Retrieve metadata for a specified key for a specified set of targets.
    *
@@ -168,7 +168,11 @@ export class Reflector {
   public getAllAndMerge<TParam = any, TTransformed = TParam>(
     decorator: ReflectableDecorator<TParam, TTransformed>,
     targets: (Type<any> | Function)[],
-  ): TTransformed;
+  ): TTransformed extends Array<any>
+    ? TTransformed
+    : TTransformed extends object
+      ? TTransformed
+      : TTransformed[];
   /**
    * Retrieve metadata for a specified key for a specified set of targets and merge results.
    *
@@ -197,6 +201,13 @@ export class Reflector {
     ).filter(item => item !== undefined);
 
     if (isEmpty(metadataCollection)) {
+      return metadataCollection as TResult;
+    }
+    if (metadataCollection.length === 1) {
+      const value = metadataCollection[0];
+      if (isObject(value)) {
+        return value as TResult;
+      }
       return metadataCollection as TResult;
     }
     return metadataCollection.reduce((a, b) => {
