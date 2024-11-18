@@ -34,14 +34,14 @@ import { Server } from './server';
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
 // Otherwise, TypeScript would fail to compile the code.
 //
-type AmqpConnectionManager =
-  import('amqp-connection-manager').AmqpConnectionManager;
-type ChannelWrapper = import('amqp-connection-manager').ChannelWrapper;
-type Message = import('amqplib').Message;
+// type AmqpConnectionManager =
+//   import('amqp-connection-manager').AmqpConnectionManager;
+// type ChannelWrapper = import('amqp-connection-manager').ChannelWrapper;
+// type Message = import('amqplib').Message;
 
-// type AmqpConnectionManager = any;
-// type ChannelWrapper = any;
-// type Message = any;
+type AmqpConnectionManager = any;
+type ChannelWrapper = any;
+type Message = any;
 
 let rmqPackage = {} as any; // as typeof import('amqp-connection-manager');
 
