@@ -9,6 +9,7 @@ import { MqttRecord } from '../../record-builders';
 describe('ClientMqtt', () => {
   const test = 'test';
   let client: ClientMqtt = new ClientMqtt({});
+  let untypedClient = client as any;
 
   describe('getRequestPattern', () => {
     it(`should leave pattern as it is`, () => {
@@ -36,6 +37,8 @@ describe('ClientMqtt', () => {
     const id = '1';
     beforeEach(() => {
       client = new ClientMqtt({});
+      untypedClient = client as any;
+
       msg = { pattern, data: 'data' };
       subscribeSpy = sinon.spy((name, fn) => fn());
       publishSpy = sinon.spy();
@@ -51,7 +54,7 @@ describe('ClientMqtt', () => {
         publish: publishSpy,
         addListener: () => ({}),
       };
-      (client as any).mqttClient = mqttClient;
+      untypedClient.mqttClient = mqttClient;
       connectSpy = sinon.stub(client, 'connect');
       assignStub = sinon
         .stub(client, 'assignPacketId' as any)
@@ -132,7 +135,7 @@ describe('ClientMqtt', () => {
       });
       it('should combine packet and static headers', async () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.userProperties = staticHeaders;
+        untypedClient.options.userProperties = staticHeaders;
 
         const requestHeaders = { '1': '123' };
         msg.data = new MqttRecord('data', {
@@ -147,7 +150,7 @@ describe('ClientMqtt', () => {
       });
       it('should prefer packet headers over static headers', async () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = { 'client-id': 'override-client-id' };
         msg.data = new MqttRecord('data', {
@@ -231,14 +234,14 @@ describe('ClientMqtt', () => {
     let endSpy: sinon.SinonSpy;
     beforeEach(() => {
       endSpy = sinon.spy();
-      (client as any).mqttClient = { end: endSpy };
+      untypedClient.mqttClient = { end: endSpy };
     });
     it('should close "pub" when it is not null', () => {
       client.close();
       expect(endSpy.called).to.be.true;
     });
     it('should not close "pub" when it is null', () => {
-      (client as any).mqttClient = null;
+      untypedClient.mqttClient = null;
       client.close();
       expect(endSpy.called).to.be.false;
     });
@@ -332,12 +335,14 @@ describe('ClientMqtt', () => {
 
     beforeEach(() => {
       client = new ClientMqtt({});
+      untypedClient = client as any;
+
       msg = { pattern: 'pattern', data: 'data' };
       publishStub = sinon.stub();
       mqttClient = {
         publish: publishStub,
       };
-      (client as any).mqttClient = mqttClient;
+      untypedClient.mqttClient = mqttClient;
     });
 
     it('should publish packet', async () => {
@@ -373,7 +378,7 @@ describe('ClientMqtt', () => {
       it('should combine packet and static headers', async () => {
         publishStub.callsFake((a, b, c, d) => d());
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.userProperties = staticHeaders;
+        untypedClient.options.userProperties = staticHeaders;
 
         const requestHeaders = { '1': '123' };
         msg.data = new MqttRecord('data', {
@@ -391,7 +396,7 @@ describe('ClientMqtt', () => {
       it('should prefer packet headers over static headers', async () => {
         publishStub.callsFake((a, b, c, d) => d());
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = { 'client-id': 'override-client-id' };
         msg.data = new MqttRecord('data', {
