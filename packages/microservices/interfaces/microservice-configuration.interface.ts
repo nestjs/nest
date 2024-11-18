@@ -209,6 +209,8 @@ export interface RmqOptions {
     isGlobalPrefetchCount?: boolean;
     queueOptions?: AmqplibQueueOptions;
     socketOptions?: AmqpConnectionManagerSocketOptions;
+    exchange?: string;
+    routingKey?: string;
     noAck?: boolean;
     consumerTag?: string;
     serializer?: Serializer;
