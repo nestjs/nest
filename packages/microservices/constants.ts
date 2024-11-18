@@ -71,3 +71,5 @@ export const EADDRINUSE = 'EADDRINUSE';
 
 export const CONNECTION_FAILED_MESSAGE =
   'Connection to transport failed. Trying to reconnect...';
+
+export const NATS_DEFAULT_GRACE_PERIOD = 10000;

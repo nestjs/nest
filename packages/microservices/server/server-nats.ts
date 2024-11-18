@@ -1,9 +1,17 @@
 import { isUndefined, isObject } from '@nestjs/common/utils/shared.utils';
-import { NATS_DEFAULT_URL, NO_MESSAGE_HANDLER } from '../constants';
+import {
+  NATS_DEFAULT_GRACE_PERIOD,
+  NATS_DEFAULT_URL,
+  NO_MESSAGE_HANDLER,
+} from '../constants';
 import { NatsContext } from '../ctx-host/nats.context';
 import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer';
 import { Transport } from '../enums';
-import { Client, NatsMsg } from '../external/nats-client.interface';
+import {
+  Client,
+  NatsMsg,
+  Subscription,
+} from '../external/nats-client.interface';
 import { CustomTransportStrategy } from '../interfaces';
 import { NatsOptions } from '../interfaces/microservice-configuration.interface';
 import { IncomingRequest } from '../interfaces/packet.interface';
@@ -21,12 +29,20 @@ export class ServerNats extends Server implements CustomTransportStrategy {
 
   private natsClient: Client;
 
+  private readonly subscriptions: Subscription[] = [];
+
+  private readonly gracePeriod: number;
+
   constructor(private readonly options: NatsOptions['options']) {
     super();
 
     natsPackage = this.loadPackage('nats', ServerNats.name, () =>
       require('nats'),
     );
+
+    this.gracePeriod =
+      this.getOptionsProp(this.options, 'gracePeriod') ||
+      NATS_DEFAULT_GRACE_PERIOD;
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -60,12 +76,30 @@ export class ServerNats extends Server implements CustomTransportStrategy {
       });
 
     const registeredPatterns = [...this.messageHandlers.keys()];
-    registeredPatterns.forEach(channel => subscribe(channel));
+    for (const channel of registeredPatterns) {
+      const sub = subscribe(channel);
+      this.subscriptions.push(sub);
+    }
+  }
+
+  private async waitForGracePeriod() {
+    await new Promise<void>(res => {
+      setTimeout(() => {
+        res();
+      }, this.gracePeriod);
+    });
   }
 
   public async close() {
-    await this.natsClient?.close();
-    this.natsClient = null;
+    if (this.natsClient) {
+      const graceful = this.getOptionsProp(this.options, 'gracefulShutdown');
+      if (graceful) {
+        this.subscriptions.forEach(sub => sub.unsubscribe());
+        await this.waitForGracePeriod();
+      }
+      await this.natsClient?.close();
+      this.natsClient = null;
+    }
   }
 
   public createNatsClient(): Promise<Client> {
