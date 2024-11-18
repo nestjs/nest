@@ -92,10 +92,10 @@ export class DependenciesScanner {
       overrides: options?.overrides,
     });
     await this.scanModulesForDependencies();
-    this.calculateModulesDistance();
-
     this.addScopedEnhancersMetadata();
     this.container.bindGlobalScope();
+
+    this.calculateModulesDistance();
   }
 
   public async scanForModules({
