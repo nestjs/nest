@@ -89,6 +89,7 @@ describe('ServerKafka', () => {
   let subscribe: sinon.SinonSpy;
   let run: sinon.SinonSpy;
   let send: sinon.SinonSpy;
+  let on: sinon.SinonSpy;
   let consumerStub: sinon.SinonStub;
   let producerStub: sinon.SinonStub;
   let client: any;
@@ -102,18 +103,46 @@ describe('ServerKafka', () => {
     subscribe = sinon.spy();
     run = sinon.spy();
     send = sinon.spy();
+    on = sinon.spy();
 
     consumerStub = sinon.stub(server as any, 'consumer').callsFake(() => {
       return {
         connect,
         subscribe,
         run,
+        on,
+        events: {
+          GROUP_JOIN: 'consumer.group_join',
+          HEARTBEAT: 'consumer.heartbeat',
+          COMMIT_OFFSETS: 'consumer.commit_offsets',
+          FETCH_START: 'consumer.fetch_start',
+          FETCH: 'consumer.fetch',
+          START_BATCH_PROCESS: 'consumer.start_batch_process',
+          END_BATCH_PROCESS: 'consumer.end_batch_process',
+          CONNECT: 'consumer.connect',
+          DISCONNECT: 'consumer.disconnect',
+          STOP: 'consumer.stop',
+          CRASH: 'consumer.crash',
+          REBALANCING: 'consumer.rebalancing',
+          RECEIVED_UNSUBSCRIBED_TOPICS: 'consumer.received_unsubscribed_topics',
+          REQUEST: 'consumer.network.request',
+          REQUEST_TIMEOUT: 'consumer.network.request_timeout',
+          REQUEST_QUEUE_SIZE: 'consumer.network.request_queue_size',
+        },
       };
     });
     producerStub = sinon.stub(server as any, 'producer').callsFake(() => {
       return {
         connect,
         send,
+        on,
+        events: {
+          CONNECT: 'producer.connect',
+          DISCONNECT: 'producer.disconnect',
+          REQUEST: 'producer.network.request',
+          REQUEST_TIMEOUT: 'producer.network.request_timeout',
+          REQUEST_QUEUE_SIZE: 'producer.network.request_queue_size',
+        },
       };
     });
     client = {
@@ -121,6 +150,8 @@ describe('ServerKafka', () => {
       producer: producerStub,
     };
     sinon.stub(server, 'createClient').callsFake(() => client);
+
+    untypedServer = server as any;
   });
 
   describe('listen', () => {
@@ -128,7 +159,8 @@ describe('ServerKafka', () => {
       bindEventsStub = sinon
         .stub(server, 'bindEvents')
         .callsFake(() => ({}) as any);
-      await server.listen(callback);
+
+      await server.listen(err => console.log(err));
       expect(bindEventsStub.called).to.be.true;
     });
     it('should call callback', async () => {

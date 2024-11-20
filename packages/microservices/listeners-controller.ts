@@ -34,12 +34,7 @@ import {
 } from './context/rpc-metadata-constants';
 import { BaseRpcContext } from './ctx-host/base-rpc.context';
 import { Transport } from './enums';
-import {
-  CustomTransportStrategy,
-  MessageHandler,
-  PatternMetadata,
-  RequestContext,
-} from './interfaces';
+import { MessageHandler, PatternMetadata, RequestContext } from './interfaces';
 import { MicroserviceEntrypointMetadata } from './interfaces/microservice-entrypoint-metadata.interface';
 import {
   EventOrMessageListenerDefinition,
@@ -66,7 +61,7 @@ export class ListenersController {
 
   public registerPatternHandlers(
     instanceWrapper: InstanceWrapper<Controller | Injectable>,
-    server: Server & CustomTransportStrategy,
+    serverInstance: Server,
     moduleKey: string,
   ) {
     const { instance } = instanceWrapper;
@@ -75,7 +70,7 @@ export class ListenersController {
     const patternHandlers = this.metadataExplorer.explore(instance as object);
     const moduleRef = this.container.getModuleByKey(moduleKey);
     const defaultCallMetadata =
-      server instanceof ServerGrpc
+      serverInstance instanceof ServerGrpc
         ? DEFAULT_GRPC_CALLBACK_METADATA
         : DEFAULT_CALLBACK_METADATA;
 
@@ -83,8 +78,8 @@ export class ListenersController {
       .filter(
         ({ transport }) =>
           isUndefined(transport) ||
-          isUndefined(server.transportId) ||
-          transport === server.transportId,
+          isUndefined(serverInstance.transportId) ||
+          transport === serverInstance.transportId,
       )
       .reduce((acc, handler) => {
         handler.patterns.forEach(pattern =>
@@ -104,7 +99,7 @@ export class ListenersController {
         this.insertEntrypointDefinition(
           instanceWrapper,
           definition,
-          server.transportId,
+          serverInstance.transportId,
         );
 
         if (isStatic) {
@@ -131,14 +126,19 @@ export class ListenersController {
                 eventHandler,
               );
             };
-            return server.addHandler(
+            return serverInstance.addHandler(
               pattern,
               eventHandler,
               isEventHandler,
               extras,
             );
           } else {
-            return server.addHandler(pattern, proxy, isEventHandler, extras);
+            return serverInstance.addHandler(
+              pattern,
+              proxy,
+              isEventHandler,
+              extras,
+            );
           }
         }
         const asyncHandler = this.createRequestScopedHandler(
@@ -150,7 +150,12 @@ export class ListenersController {
           defaultCallMetadata,
           isEventHandler,
         );
-        server.addHandler(pattern, asyncHandler, isEventHandler, extras);
+        serverInstance.addHandler(
+          pattern,
+          asyncHandler,
+          isEventHandler,
+          extras,
+        );
       });
   }
 

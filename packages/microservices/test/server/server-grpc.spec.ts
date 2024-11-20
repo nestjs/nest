@@ -3,12 +3,13 @@ import { expect } from 'chai';
 import { join } from 'path';
 import { ReplaySubject, Subject, throwError } from 'rxjs';
 import * as sinon from 'sinon';
-import { CANCEL_EVENT } from '../../constants';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
 import * as grpcHelpers from '../../helpers/grpc-helpers';
 import { GrpcMethodStreamingType } from '../../index';
 import { ServerGrpc } from '../../server';
+
+const CANCELLED_EVENT = 'cancelled';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -609,7 +610,7 @@ describe('ServerGrpc', () => {
         const fn = server.createRequestStreamMethod(handler, false);
         const call = {
           on: (event, callback) => {
-            if (event !== CANCEL_EVENT) {
+            if (event !== CANCELLED_EVENT) {
               callback();
             }
           },
@@ -630,7 +631,7 @@ describe('ServerGrpc', () => {
         const fn = server.createRequestStreamMethod(handler, false);
         const call = {
           on: (event, callback) => {
-            if (event !== CANCEL_EVENT) {
+            if (event !== CANCELLED_EVENT) {
               callback();
             }
           },
@@ -666,7 +667,7 @@ describe('ServerGrpc', () => {
           };
 
           const cancel = () => {
-            emitter.dispatchEvent(new Event(CANCEL_EVENT));
+            emitter.dispatchEvent(new Event(CANCELLED_EVENT));
           };
 
           const call = {
@@ -721,7 +722,7 @@ describe('ServerGrpc', () => {
           const fn = server.createRequestStreamMethod(handler, true);
           const call = {
             on: (event, callback) => {
-              if (event !== CANCEL_EVENT) {
+              if (event !== CANCELLED_EVENT) {
                 callback();
               }
             },

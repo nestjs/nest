@@ -389,7 +389,11 @@ export class DependenciesScanner {
     // Skip "InternalCoreModule" from calculating distance
     modulesGenerator.next();
 
-    const calculateDistance = (moduleRef: Module, distance = 1, modulesStack = []) => {
+    const calculateDistance = (
+      moduleRef: Module,
+      distance = 1,
+      modulesStack = [],
+    ) => {
       const localModulesStack = [...modulesStack];
       if (!moduleRef || localModulesStack.includes(moduleRef)) {
         return;

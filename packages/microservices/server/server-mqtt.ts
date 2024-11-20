@@ -1,8 +1,5 @@
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import {
-  CONNECT_EVENT,
-  ERROR_EVENT,
-  MESSAGE_EVENT,
   MQTT_DEFAULT_URL,
   MQTT_SEPARATOR,
   MQTT_WILDCARD_ALL,
@@ -11,9 +8,8 @@ import {
 } from '../constants';
 import { MqttContext } from '../ctx-host/mqtt.context';
 import { Transport } from '../enums';
-import { MqttClient } from '../external/mqtt-client.interface';
+import { MqttEvents, MqttEventsMap, MqttStatus } from '../events/mqtt.events';
 import {
-  CustomTransportStrategy,
   IncomingRequest,
   MessageHandler,
   PacketId,
@@ -26,15 +22,24 @@ import { Server } from './server';
 
 let mqttPackage: any = {};
 
+// To enable type safety for MQTT. This cant be uncommented by default
+// because it would require the user to install the mqtt package even if they dont use MQTT
+// Otherwise, TypeScript would fail to compile the code.
+//
+// type MqttClient = import('mqtt').MqttClient;
+type MqttClient = any;
+
 /**
  * @publicApi
  */
-export class ServerMqtt extends Server implements CustomTransportStrategy {
+export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   public readonly transportId = Transport.MQTT;
-
+  protected readonly url: string;
   protected mqttClient: MqttClient;
-
-  private readonly url: string;
+  protected pendingEventListeners: Array<{
+    event: keyof MqttEvents;
+    callback: MqttEvents[keyof MqttEvents];
+  }> = [];
 
   constructor(private readonly options: MqttOptions['options']) {
     super();
@@ -62,14 +67,23 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
   public start(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
-    this.handleError(this.mqttClient);
+    this.registerErrorListener(this.mqttClient);
+    this.registerReconnectListener(this.mqttClient);
+    this.registerDisconnectListener(this.mqttClient);
+    this.registerCloseListener(this.mqttClient);
+    this.registerConnectListener(this.mqttClient);
+
+    this.pendingEventListeners.forEach(({ event, callback }) =>
+      this.mqttClient.on(event, callback),
+    );
+    this.pendingEventListeners = [];
     this.bindEvents(this.mqttClient);
 
-    this.mqttClient.on(CONNECT_EVENT, () => callback());
+    this.mqttClient.on(MqttEventsMap.CONNECT, () => callback());
   }
 
   public bindEvents(mqttClient: MqttClient) {
-    mqttClient.on(MESSAGE_EVENT, this.getMessageHandler(mqttClient).bind(this));
+    mqttClient.on('message', this.getMessageHandler(mqttClient).bind(this));
 
     const registeredPatterns = [...this.messageHandlers.keys()];
     registeredPatterns.forEach(pattern => {
@@ -83,6 +97,7 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
 
   public close() {
     this.mqttClient && this.mqttClient.end();
+    this.pendingEventListeners = [];
   }
 
   public createMqttClient(): MqttClient {
@@ -216,8 +231,54 @@ export class ServerMqtt extends Server implements CustomTransportStrategy {
     return `${pattern}/reply`;
   }
 
-  public handleError(stream: any) {
-    stream.on(ERROR_EVENT, (err: any) => this.logger.error(err));
+  public registerErrorListener(client: MqttClient) {
+    client.on(MqttEventsMap.ERROR, (err: unknown) => this.logger.error(err));
+  }
+
+  public registerReconnectListener(client: MqttClient) {
+    client.on(MqttEventsMap.RECONNECT, () => {
+      this._status$.next(MqttStatus.RECONNECTING);
+
+      this.logger.log('MQTT connection lost. Trying to reconnect...');
+    });
+  }
+
+  public registerDisconnectListener(client: MqttClient) {
+    client.on(MqttEventsMap.DISCONNECT, () => {
+      this._status$.next(MqttStatus.DISCONNECTED);
+    });
+  }
+
+  public registerCloseListener(client: MqttClient) {
+    client.on(MqttEventsMap.CLOSE, () => {
+      this._status$.next(MqttStatus.CLOSED);
+    });
+  }
+
+  public registerConnectListener(client: MqttClient) {
+    client.on(MqttEventsMap.CONNECT, () => {
+      this._status$.next(MqttStatus.CONNECTED);
+    });
+  }
+
+  public unwrap<T>(): T {
+    if (!this.mqttClient) {
+      throw new Error(
+        'Not initialized. Please call the "listen"/"startAllMicroservices" method before accessing the server.',
+      );
+    }
+    return this.mqttClient as T;
+  }
+
+  public on<
+    EventKey extends keyof MqttEvents = keyof MqttEvents,
+    EventCallback extends MqttEvents[EventKey] = MqttEvents[EventKey],
+  >(event: EventKey, callback: EventCallback) {
+    if (this.mqttClient) {
+      this.mqttClient.on(event, callback as any);
+    } else {
+      this.pendingEventListeners.push({ event, callback });
+    }
   }
 
   protected initializeSerializer(options: MqttOptions['options']) {

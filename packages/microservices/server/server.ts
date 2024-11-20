@@ -8,13 +8,20 @@ import {
   Observable,
   ObservedValueOf,
   of,
+  ReplaySubject,
   Subject,
   Subscription,
 } from 'rxjs';
-import { catchError, finalize, mergeMap } from 'rxjs/operators';
+import {
+  catchError,
+  distinctUntilChanged,
+  finalize,
+  mergeMap,
+} from 'rxjs/operators';
 import { NO_EVENT_HANDLER } from '../constants';
 import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
+import { Transport } from '../enums';
 import {
   ClientOptions,
   KafkaOptions,
@@ -37,11 +44,52 @@ import { transformPatternToRoute } from '../utils';
 /**
  * @publicApi
  */
-export abstract class Server {
+export abstract class Server<
+  EventsMap extends Record<string, Function> = Record<string, Function>,
+  Status extends string = string,
+> {
+  /**
+   * Unique transport identifier.
+   */
+  readonly transportId?: Transport | symbol;
+
   protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger: LoggerService = new Logger(Server.name);
   protected serializer: ConsumerSerializer;
   protected deserializer: ConsumerDeserializer;
+  protected _status$ = new ReplaySubject<Status>(1);
+
+  /**
+   * Returns an observable that emits status changes.
+   */
+  public get status(): Observable<Status> {
+    return this._status$.asObservable().pipe(distinctUntilChanged());
+  }
+
+  /**
+   * Registers an event listener for the given event.
+   * @param event Event name
+   * @param callback Callback to be executed when the event is emitted
+   */
+  public abstract on<
+    EventKey extends keyof EventsMap = keyof EventsMap,
+    EventCallback extends EventsMap[EventKey] = EventsMap[EventKey],
+  >(event: EventKey, callback: EventCallback): any;
+  /**
+   * Returns an instance of the underlying server/broker instance,
+   * or a group of servers if there are more than one.
+   */
+  public abstract unwrap<T>(): T;
+
+  /**
+   * Method called when server is being initialized.
+   * @param callback Function to be called upon initialization
+   */
+  public abstract listen(callback: (...optionalParams: unknown[]) => any): any;
+  /**
+   * Method called when server is being terminated.
+   */
+  public abstract close(): any;
 
   public addHandler(
     pattern: any,

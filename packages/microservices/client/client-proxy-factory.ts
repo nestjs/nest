@@ -1,10 +1,10 @@
 import { Transport } from '../enums/transport.enum';
+import { ClientKafkaProxy } from '../interfaces';
 import {
   ClientOptions,
   CustomClientOptions,
   TcpClientOptions,
 } from '../interfaces/client-metadata.interface';
-import { Closeable } from '../interfaces/closeable.interface';
 import {
   GrpcOptions,
   KafkaOptions,
@@ -23,7 +23,7 @@ import { ClientRMQ } from './client-rmq';
 import { ClientTCP } from './client-tcp';
 
 export interface IClientProxyFactory {
-  create(clientOptions: ClientOptions): ClientProxy & Closeable;
+  create(clientOptions: ClientOptions): ClientProxy;
 }
 
 /**
@@ -33,33 +33,38 @@ export class ClientProxyFactory {
   public static create(
     clientOptions: { transport: Transport.GRPC } & ClientOptions,
   ): ClientGrpcProxy;
-  public static create(clientOptions: ClientOptions): ClientProxy & Closeable;
   public static create(
-    clientOptions: CustomClientOptions,
-  ): ClientProxy & Closeable;
+    clientOptions: { transport: Transport.KAFKA } & ClientOptions,
+  ): ClientKafkaProxy;
+  public static create(clientOptions: ClientOptions): ClientProxy;
+  public static create(clientOptions: CustomClientOptions): ClientProxy;
   public static create(
     clientOptions: ClientOptions | CustomClientOptions,
-  ): ClientProxy & Closeable {
+  ): ClientProxy | ClientGrpcProxy | ClientKafkaProxy {
     if (this.isCustomClientOptions(clientOptions)) {
       const { customClass, options } = clientOptions;
       return new customClass(options);
     }
-    const { transport, options } = clientOptions || {};
+    const { transport, options = {} } = clientOptions ?? { options: {} };
     switch (transport) {
       case Transport.REDIS:
-        return new ClientRedis(options as RedisOptions['options']);
+        return new ClientRedis(
+          options as RedisOptions['options'],
+        ) as ClientProxy;
       case Transport.NATS:
-        return new ClientNats(options as NatsOptions['options']);
+        return new ClientNats(options as NatsOptions['options']) as ClientProxy;
       case Transport.MQTT:
-        return new ClientMqtt(options as MqttOptions['options']);
+        return new ClientMqtt(options as MqttOptions['options']) as ClientProxy;
       case Transport.GRPC:
         return new ClientGrpcProxy(options as GrpcOptions['options']);
       case Transport.RMQ:
-        return new ClientRMQ(options as RmqOptions['options']);
+        return new ClientRMQ(options as RmqOptions['options']) as ClientProxy;
       case Transport.KAFKA:
         return new ClientKafka(options as KafkaOptions['options']);
       default:
-        return new ClientTCP(options as TcpClientOptions['options']);
+        return new ClientTCP(
+          options as TcpClientOptions['options'],
+        ) as ClientProxy;
     }
   }
 

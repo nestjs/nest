@@ -4,6 +4,13 @@ import * as sinon from 'sinon';
 import { Server } from '../../server/server';
 
 class TestServer extends Server {
+  public on<
+    EventKey extends string = string,
+    EventCallback extends Function = Function,
+  >(event: EventKey, callback: EventCallback) {}
+  public unwrap<T>(): T {
+    return null;
+  }
   public listen(callback: () => void) {}
   public close() {}
 }

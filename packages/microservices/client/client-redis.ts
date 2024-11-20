@@ -1,14 +1,19 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { REDIS_DEFAULT_HOST, REDIS_DEFAULT_PORT } from '../constants';
 import {
-  ERROR_EVENT,
-  MESSAGE_EVENT,
-  REDIS_DEFAULT_HOST,
-  REDIS_DEFAULT_PORT,
-} from '../constants';
+  RedisEvents,
+  RedisEventsMap,
+  RedisStatus,
+} from '../events/redis.events';
 import { ReadPacket, RedisOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
 
+// To enable type safety for Redis. This cant be uncommented by default
+// because it would require the user to install the ioredis package even if they dont use Redis
+// Otherwise, TypeScript would fail to compile the code.
+//
+// type Redis = import('ioredis').Redis;
 type Redis = any;
 
 let redisPackage = {} as any;
@@ -16,13 +21,18 @@ let redisPackage = {} as any;
 /**
  * @publicApi
  */
-export class ClientRedis extends ClientProxy {
+export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly subscriptionsCount = new Map<string, number>();
   protected pubClient: Redis;
   protected subClient: Redis;
-  protected connection: Promise<any>;
-  protected isExplicitlyTerminated = false;
+  protected connectionPromise: Promise<any>;
+  protected isManuallyClosed = false;
+  protected wasInitialConnectionSuccessful = false;
+  protected pendingEventListeners: Array<{
+    event: keyof RedisEvents;
+    callback: RedisEvents[keyof RedisEvents];
+  }> = [];
 
   constructor(protected readonly options: RedisOptions['options']) {
     super();
@@ -47,26 +57,35 @@ export class ClientRedis extends ClientProxy {
     this.pubClient && this.pubClient.quit();
     this.subClient && this.subClient.quit();
     this.pubClient = this.subClient = null;
-    this.isExplicitlyTerminated = true;
+    this.isManuallyClosed = true;
+    this.pendingEventListeners = [];
   }
 
   public async connect(): Promise<any> {
     if (this.pubClient && this.subClient) {
-      return this.connection;
+      return this.connectionPromise;
     }
     this.pubClient = this.createClient();
     this.subClient = this.createClient();
-    this.handleError(this.pubClient);
-    this.handleError(this.subClient);
 
-    this.connection = Promise.all([
+    [this.pubClient, this.subClient].forEach((client, index) => {
+      const type = index === 0 ? 'pub' : 'sub';
+      this.registerErrorListener(client);
+      this.registerReconnectListener(client);
+      this.registerReadyListener(client);
+      this.registerEndListener(client);
+      this.pendingEventListeners.forEach(({ event, callback }) =>
+        client.on(event, (...args: [any]) => callback(type, ...args)),
+      );
+    });
+    this.pendingEventListeners = [];
+
+    this.connectionPromise = Promise.all([
       this.subClient.connect(),
       this.pubClient.connect(),
     ]);
-    await this.connection;
-
-    this.subClient.on(MESSAGE_EVENT, this.createResponseCallback());
-    return this.connection;
+    await this.connectionPromise;
+    return this.connectionPromise;
   }
 
   public createClient(): Redis {
@@ -78,8 +97,76 @@ export class ClientRedis extends ClientProxy {
     });
   }
 
-  public handleError(client: Redis) {
-    client.addListener(ERROR_EVENT, (err: any) => this.logger.error(err));
+  public registerErrorListener(client: Redis) {
+    client.addListener(RedisEventsMap.ERROR, (err: any) =>
+      this.logger.error(err),
+    );
+  }
+
+  public registerReconnectListener(client: {
+    on: (event: string, fn: () => void) => void;
+  }) {
+    client.on(RedisEventsMap.RECONNECTING, () => {
+      if (this.isManuallyClosed) {
+        return;
+      }
+
+      this.connectionPromise = Promise.reject(
+        'Error: Connection lost. Trying to reconnect...',
+      );
+
+      // Prevent unhandled rejections
+      this.connectionPromise.catch(() => {});
+
+      this._status$.next(RedisStatus.RECONNECTING);
+
+      if (this.wasInitialConnectionSuccessful) {
+        this.logger.log('Reconnecting to Redis...');
+      }
+    });
+  }
+
+  public registerReadyListener(client: {
+    on: (event: string, fn: () => void) => void;
+  }) {
+    client.on(RedisEventsMap.READY, () => {
+      this.connectionPromise = Promise.resolve();
+      this._status$.next(RedisStatus.CONNECTED);
+
+      this.logger.log('Connected to Redis. Subscribing to channels...');
+
+      if (!this.wasInitialConnectionSuccessful) {
+        this.wasInitialConnectionSuccessful = true;
+        this.subClient.on('message', this.createResponseCallback());
+      }
+    });
+  }
+
+  public registerEndListener(client: {
+    on: (event: string, fn: () => void) => void;
+  }) {
+    client.on('end', () => {
+      if (this.isManuallyClosed) {
+        return;
+      }
+      this._status$.next(RedisStatus.DISCONNECTED);
+
+      if (this.getOptionsProp(this.options, 'retryAttempts') === undefined) {
+        // When retryAttempts is not specified, the connection will not be re-established
+        this.logger.error('Disconnected from Redis.');
+
+        // Clean up client instances and just recreate them when connect is called
+        this.pubClient = this.subClient = null;
+      } else {
+        this.logger.error('Disconnected from Redis.');
+        this.connectionPromise = Promise.reject(
+          'Error: Connection lost. Trying to reconnect...',
+        );
+
+        // Prevent unhandled rejections
+        this.connectionPromise.catch(() => {});
+      }
+    });
   }
 
   public getClientOptions(): Partial<RedisOptions['options']> {
@@ -91,18 +178,42 @@ export class ClientRedis extends ClientProxy {
     };
   }
 
+  public on<
+    EventKey extends keyof RedisEvents = keyof RedisEvents,
+    EventCallback extends RedisEvents[EventKey] = RedisEvents[EventKey],
+  >(event: EventKey, callback: EventCallback) {
+    if (this.subClient && this.pubClient) {
+      this.subClient.on(event, (...args: [any]) => callback('sub', ...args));
+      this.pubClient.on(event, (...args: [any]) => callback('pub', ...args));
+    } else {
+      this.pendingEventListeners.push({ event, callback });
+    }
+  }
+
+  public unwrap<T>(): T {
+    if (!this.pubClient || !this.subClient) {
+      throw new Error(
+        'Not initialized. Please call the "connect" method first.',
+      );
+    }
+    return [this.pubClient, this.subClient] as T;
+  }
+
   public createRetryStrategy(times: number): undefined | number {
-    if (this.isExplicitlyTerminated) {
+    if (this.isManuallyClosed) {
       return undefined;
     }
-    if (
-      !this.getOptionsProp(this.options, 'retryAttempts') ||
-      times > this.getOptionsProp(this.options, 'retryAttempts')
-    ) {
+    if (!this.getOptionsProp(this.options, 'retryAttempts')) {
+      this.logger.error(
+        'Redis connection closed and retry attempts not specified',
+      );
+      return;
+    }
+    if (times > this.getOptionsProp(this.options, 'retryAttempts')) {
       this.logger.error('Retry time exhausted');
       return;
     }
-    return this.getOptionsProp(this.options, 'retryDelay') || 0;
+    return this.getOptionsProp(this.options, 'retryDelay') ?? 5000;
   }
 
   public createResponseCallback(): (

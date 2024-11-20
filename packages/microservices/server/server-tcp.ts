@@ -2,22 +2,19 @@ import { Type } from '@nestjs/common';
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
+import { createServer as tlsCreateServer, TlsOptions } from 'tls';
 import {
-  CLOSE_EVENT,
   EADDRINUSE,
   ECONNREFUSED,
-  ERROR_EVENT,
-  MESSAGE_EVENT,
   NO_MESSAGE_HANDLER,
   TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
 } from '../constants';
 import { TcpContext } from '../ctx-host/tcp.context';
 import { Transport } from '../enums';
+import { TcpEvents, TcpEventsMap, TcpStatus } from '../events/tcp.events';
 import { JsonSocket, TcpSocket } from '../helpers';
-import { createServer as tlsCreateServer } from 'tls';
 import {
-  CustomTransportStrategy,
   IncomingRequest,
   PacketId,
   ReadPacket,
@@ -29,24 +26,26 @@ import { Server } from './server';
 /**
  * @publicApi
  */
-export class ServerTCP extends Server implements CustomTransportStrategy {
+export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   public readonly transportId = Transport.TCP;
 
   protected server: NetSocket;
-
-  private readonly port: number;
-  private readonly host: string;
-  private readonly socketClass: Type<TcpSocket>;
-  private isExplicitlyTerminated = false;
-  private retryAttemptsCount = 0;
-  private tlsOptions?;
+  protected readonly port: number;
+  protected readonly host: string;
+  protected readonly socketClass: Type<TcpSocket>;
+  protected isManuallyTerminated = false;
+  protected retryAttemptsCount = 0;
+  protected tlsOptions?: TlsOptions;
+  protected pendingEventListeners: Array<{
+    event: keyof TcpEvents;
+    callback: TcpEvents[keyof TcpEvents];
+  }> = [];
 
   constructor(private readonly options: TcpOptions['options']) {
     super();
     this.port = this.getOptionsProp(options, 'port', TCP_DEFAULT_PORT);
     this.host = this.getOptionsProp(options, 'host', TCP_DEFAULT_HOST);
-    this.socketClass =
-      this.getOptionsProp(options, 'socketClass', JsonSocket);
+    this.socketClass = this.getOptionsProp(options, 'socketClass', JsonSocket);
     this.tlsOptions = this.getOptionsProp(options, 'tlsOptions');
 
     this.init();
@@ -57,8 +56,10 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   public listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
-    this.server.once(ERROR_EVENT, (err: Record<string, unknown>) => {
+    this.server.once(TcpEventsMap.ERROR, (err: Record<string, unknown>) => {
       if (err?.code === EADDRINUSE || err?.code === ECONNREFUSED) {
+        this._status$.next(TcpStatus.DISCONNECTED);
+
         return callback(err);
       }
     });
@@ -66,17 +67,18 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
   }
 
   public close() {
-    this.isExplicitlyTerminated = true;
+    this.isManuallyTerminated = true;
 
     this.server.close();
+    this.pendingEventListeners = [];
   }
 
   public bindHandler(socket: Socket) {
     const readSocket = this.getSocketInstance(socket);
-    readSocket.on(MESSAGE_EVENT, async (msg: ReadPacket & PacketId) =>
+    readSocket.on('message', async (msg: ReadPacket & PacketId) =>
       this.handleMessage(readSocket, msg),
     );
-    readSocket.on(ERROR_EVENT, this.handleError.bind(this));
+    readSocket.on(TcpEventsMap.ERROR, this.handleError.bind(this));
   }
 
   public async handleMessage(socket: TcpSocket, rawMessage: unknown) {
@@ -89,6 +91,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet, tcpContext);
     }
+
     const handler = this.getHandlerByPattern(pattern);
     if (!handler) {
       const status = 'error';
@@ -115,7 +118,7 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
 
   public handleClose(): undefined | number | NodeJS.Timer {
     if (
-      this.isExplicitlyTerminated ||
+      this.isManuallyTerminated ||
       !this.getOptionsProp(this.options, 'retryAttempts') ||
       this.retryAttemptsCount >=
         this.getOptionsProp(this.options, 'retryAttempts')
@@ -129,7 +132,27 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
     );
   }
 
-  private init() {
+  public unwrap<T>(): T {
+    if (!this.server) {
+      throw new Error(
+        'Not initialized. Please call the "listen"/"startAllMicroservices" method before accessing the server.',
+      );
+    }
+    return this.server as T;
+  }
+
+  public on<
+    EventKey extends keyof TcpEvents = keyof TcpEvents,
+    EventCallback extends TcpEvents[EventKey] = TcpEvents[EventKey],
+  >(event: EventKey, callback: EventCallback) {
+    if (this.server) {
+      this.server.on(event, callback as any);
+    } else {
+      this.pendingEventListeners.push({ event, callback });
+    }
+  }
+
+  protected init() {
     if (this.tlsOptions) {
       // TLS enabled, use tls server
       this.server = tlsCreateServer(
@@ -140,11 +163,39 @@ export class ServerTCP extends Server implements CustomTransportStrategy {
       // TLS disabled, use net server
       this.server = net.createServer(this.bindHandler.bind(this));
     }
-    this.server.on(ERROR_EVENT, this.handleError.bind(this));
-    this.server.on(CLOSE_EVENT, this.handleClose.bind(this));
+    this.registerListeningListener(this.server);
+    this.registerErrorListener(this.server);
+    this.registerCloseListener(this.server);
+
+    this.pendingEventListeners.forEach(({ event, callback }) =>
+      this.server.on(event, callback),
+    );
+    this.pendingEventListeners = [];
   }
 
-  private getSocketInstance(socket: Socket): TcpSocket {
+  protected registerListeningListener(socket: net.Server) {
+    socket.on(TcpEventsMap.LISTENING, () => {
+      this._status$.next(TcpStatus.CONNECTED);
+    });
+  }
+
+  protected registerErrorListener(socket: net.Server) {
+    socket.on(TcpEventsMap.ERROR, err => {
+      if ('code' in err && err.code === ECONNREFUSED) {
+        this._status$.next(TcpStatus.DISCONNECTED);
+      }
+      this.handleError(err as any);
+    });
+  }
+
+  protected registerCloseListener(socket: net.Server) {
+    socket.on(TcpEventsMap.CLOSE, () => {
+      this._status$.next(TcpStatus.DISCONNECTED);
+      this.handleClose();
+    });
+  }
+
+  protected getSocketInstance(socket: Socket): TcpSocket {
     return new this.socketClass(socket);
   }
 }

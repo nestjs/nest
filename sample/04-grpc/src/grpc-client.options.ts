@@ -1,8 +1,8 @@
 import { ReflectionService } from '@grpc/reflection';
-import { ClientOptions, Transport } from '@nestjs/microservices';
+import { GrpcOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 
-export const grpcClientOptions: ClientOptions = {
+export const grpcClientOptions: GrpcOptions = {
   transport: Transport.GRPC,
   options: {
     package: 'hero', // ['hero', 'hero2']

@@ -4,7 +4,7 @@ import {
   Server,
   Socket,
 } from 'net';
-import { ERROR_EVENT } from '../../constants';
+import { TcpEventsMap } from '../../events/tcp.events';
 import { JsonSocket } from '../../helpers/json-socket';
 
 export const ip = '127.0.0.1';
@@ -17,7 +17,7 @@ export function createServer(callback: (err?: any, server?: Server) => void) {
     callback(null, server);
   });
 
-  server.on(ERROR_EVENT, (err: any) => {
+  server.on(TcpEventsMap.ERROR, (err: any) => {
     callback(err);
   });
 }
@@ -40,7 +40,7 @@ export function createClient(
 
   clientSocket.connect(port, ip);
 
-  clientSocket.on(ERROR_EVENT, (err: any) => {
+  clientSocket.on(TcpEventsMap.ERROR, (err: any) => {
     callback(err);
   });
 

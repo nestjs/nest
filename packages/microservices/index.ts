@@ -10,6 +10,7 @@ export * from './client';
 export * from './ctx-host';
 export * from './decorators';
 export * from './enums';
+export * from './events';
 export * from './exceptions';
 export * from './helpers';
 export * from './interfaces';

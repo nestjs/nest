@@ -4,9 +4,11 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { NatsContext } from '../../ctx-host';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
-import { NatsMsg } from '../../external/nats-client.interface';
 import { ServerNats } from '../../server/server-nats';
 import { objectToMap } from './utils/object-to-map';
+
+// type NatsMsg = import('nats').Msg;
+type NatsMsg = any;
 
 describe('ServerNats', () => {
   let server: ServerNats;
@@ -108,7 +110,7 @@ describe('ServerNats', () => {
         subscribe: subscribeSpy,
       };
       untypedServer.messageHandlers = objectToMap({
-        [pattern]: messageHandler
+        [pattern]: messageHandler,
       });
     });
     it('should subscribe to each acknowledge patterns', () => {
