@@ -1,23 +1,23 @@
 import {
-  isObject,
-  isNumber,
   isNil,
+  isNumber,
+  isObject,
   isSymbol,
 } from '@nestjs/common/utils/shared.utils';
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {
+  PATTERN_EXTRAS_METADATA,
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
-  PATTERN_EXTRAS_METADATA,
 } from '../constants';
-import { PatternHandler } from '../enums/pattern-handler.enum';
-import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 import { Transport } from '../enums';
+import { PatternHandler } from '../enums/pattern-handler.enum';
 import {
   InvalidGrpcDecoratorException,
   RpcDecoratorMetadata,
 } from '../errors/invalid-grpc-message-decorator.exception';
+import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',
@@ -141,7 +141,37 @@ export function GrpcStreamMethod(
       method,
       GrpcMethodStreamingType.RX_STREAMING,
     );
-    return MessagePattern(metadata, Transport.GRPC)(target, key, descriptor);
+
+    MessagePattern(metadata, Transport.GRPC)(target, key, descriptor);
+
+    const originalMethod = descriptor.value;
+
+    // Override original method to call the "drainBuffer" method on the first parameter
+    // This is required to avoid premature message emission
+    descriptor.value = async function (
+      this: any,
+      observable: any,
+      ...args: any[]
+    ) {
+      const result = await Promise.resolve(
+        originalMethod.apply(this, [observable, ...args]),
+      );
+
+      // Drain buffer if "drainBuffer" method is available
+      if (observable && observable.drainBuffer) {
+        process.nextTick(() => {
+          observable.drainBuffer();
+        });
+      }
+      return result;
+    };
+
+    // Copy all metadata from the original method to the new one
+    const metadataKeys = Reflect.getMetadataKeys(originalMethod);
+    metadataKeys.forEach(metadataKey => {
+      const metadataValue = Reflect.getMetadata(metadataKey, originalMethod);
+      Reflect.defineMetadata(metadataKey, metadataValue, descriptor.value);
+    });
   };
 }
 
