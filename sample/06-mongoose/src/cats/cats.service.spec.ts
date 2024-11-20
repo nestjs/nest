@@ -2,8 +2,8 @@ import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model, Types } from 'mongoose';
 import { CatsService } from './cats.service';
-import { Cat } from './schemas/cat.schema';
 import { CreateCatDto } from './dto/create-cat.dto';
+import { Cat } from './schemas/cat.schema';
 
 const catModelMock = {
   create: jest.fn(),
@@ -36,7 +36,7 @@ describe('CatsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('create()', () => {
+  describe('create', () => {
     it('should insert a new cat', async () => {
       const mockedCat: CreateCatDto = {
         name: 'Cat #1',
@@ -57,7 +57,7 @@ describe('CatsService', () => {
     });
   });
 
-  describe('findAll()', () => {
+  describe('findAll', () => {
     it('should return all cats', async () => {
       const mockedCats = [
         {
@@ -82,7 +82,7 @@ describe('CatsService', () => {
     });
   });
 
-  describe('findOne()', () => {
+  describe('findOne', () => {
     it('should return one cat', async () => {
       const mockedCat = {
         name: 'Cat #1',
@@ -101,7 +101,7 @@ describe('CatsService', () => {
     });
   });
 
-  describe('update()', () => {
+  describe('update', () => {
     it('should update a cat', async () => {
       const mockedCat = {
         name: 'Cat #1',
@@ -129,7 +129,7 @@ describe('CatsService', () => {
     });
   });
 
-  describe('delete()', () => {
+  describe('delete', () => {
     it('should delete a cat', async () => {
       const mockedCat = {
         name: 'Cat #1',

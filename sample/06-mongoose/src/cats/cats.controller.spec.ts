@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CatsController } from './cats.controller';
-import { CreateCatDto } from './dto/create-cat.dto';
-import { CatsService } from './cats.service';
 import { Types } from 'mongoose';
+import { CatsController } from './cats.controller';
+import { CatsService } from './cats.service';
+import { CreateCatDto } from './dto/create-cat.dto';
 
 const catsServiceMock = {
   create: jest.fn(),
@@ -12,7 +12,7 @@ const catsServiceMock = {
   delete: jest.fn(),
 };
 
-describe('Cats Controller', () => {
+describe('CatsController', () => {
   let controller: CatsController;
   let service: jest.Mocked<CatsService>;
 
@@ -31,7 +31,7 @@ describe('Cats Controller', () => {
     service = module.get(CatsService);
   });
 
-  describe('create()', () => {
+  describe('create', () => {
     it('should create a new cat', async () => {
       const mockedCat = {
         _id: new Types.ObjectId(),
@@ -53,7 +53,7 @@ describe('Cats Controller', () => {
     });
   });
 
-  describe('findAll()', () => {
+  describe('findAll', () => {
     it('should return an array of cats', async () => {
       const mockedCats = [
         {
@@ -84,7 +84,7 @@ describe('Cats Controller', () => {
     });
   });
 
-  describe('findOne()', () => {
+  describe('findOne', () => {
     it('should return a single cat', async () => {
       const mockedCat = {
         _id: new Types.ObjectId(),
@@ -102,7 +102,7 @@ describe('Cats Controller', () => {
     });
   });
 
-  describe('update()', () => {
+  describe('update', () => {
     it('should update a single cat', async () => {
       const mockedCat = {
         _id: new Types.ObjectId(),
@@ -125,7 +125,7 @@ describe('Cats Controller', () => {
     });
   });
 
-  describe('delete()', () => {
+  describe('delete', () => {
     it('should delete a single cat', async () => {
       const mockedCat = {
         _id: new Types.ObjectId(),
