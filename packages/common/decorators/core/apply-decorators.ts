@@ -8,6 +8,42 @@
  * @publicApi
  */
 export function applyDecorators(
+  ...decorators: Array<ClassDecorator>
+): ClassDecorator;
+/**
+ * Function that returns a new decorator that applies all decorators provided by param
+ *
+ * Useful to build new decorators (or a decorator factory) encapsulating multiple decorators related with the same feature
+ *
+ * @param decorators one or more decorators (e.g., `ApplyGuard(...)`)
+ *
+ * @publicApi
+ */
+export function applyDecorators(
+  ...decorators: Array<MethodDecorator>
+): MethodDecorator;
+/**
+ * Function that returns a new decorator that applies all decorators provided by param
+ *
+ * Useful to build new decorators (or a decorator factory) encapsulating multiple decorators related with the same feature
+ *
+ * @param decorators one or more decorators (e.g., `ApplyGuard(...)`)
+ *
+ * @publicApi
+ */
+export function applyDecorators(
+  ...decorators: Array<PropertyDecorator>
+): PropertyDecorator;
+/**
+ * Function that returns a new decorator that applies all decorators provided by param
+ *
+ * Useful to build new decorators (or a decorator factory) encapsulating multiple decorators related with the same feature
+ *
+ * @param decorators one or more decorators (e.g., `ApplyGuard(...)`)
+ *
+ * @publicApi
+ */
+export function applyDecorators(
   ...decorators: Array<ClassDecorator | MethodDecorator | PropertyDecorator>
 ) {
   return <TFunction extends Function, Y>(
