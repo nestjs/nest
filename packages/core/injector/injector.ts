@@ -343,11 +343,20 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
   ): [InjectorDependency[], number[]] {
     const optionalDependenciesIds = [];
-    const isOptionalFactoryDep = (
-      item: InjectionToken | OptionalFactoryDependency,
-    ): item is OptionalFactoryDependency =>
-      !isUndefined((item as OptionalFactoryDependency).token) &&
-      !isUndefined((item as OptionalFactoryDependency).optional);
+
+    /**
+     * Same as the internal utility function `isOptionalFactoryDependency` from `@nestjs/common`.
+     * We are duplicating it here because that one is not supposed to be exported.
+     */
+    function isOptionalFactoryDependency(
+      value: InjectionToken | OptionalFactoryDependency,
+    ): value is OptionalFactoryDependency {
+      return (
+        !isUndefined((value as OptionalFactoryDependency).token) &&
+        !isUndefined((value as OptionalFactoryDependency).optional) &&
+        !(value as any).prototype
+      );
+    }
 
     const mapFactoryProviderInjectArray = (
       item: InjectionToken | OptionalFactoryDependency,
@@ -356,7 +365,7 @@ export class Injector {
       if (typeof item !== 'object') {
         return item;
       }
-      if (isOptionalFactoryDep(item)) {
+      if (isOptionalFactoryDependency(item)) {
         if (item.optional) {
           optionalDependenciesIds.push(index);
         }
