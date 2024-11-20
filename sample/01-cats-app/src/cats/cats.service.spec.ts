@@ -1,53 +1,47 @@
 import { Test } from '@nestjs/testing';
-import { CatsController } from './cats.controller';
 import { CatsService } from './cats.service';
 import { Cat } from './interfaces/cat.interface';
 
-describe('CatsController', () => {
-  let catsController: CatsController;
+describe('CatsService', () => {
   let catsService: CatsService;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
-      controllers: [CatsController],
       providers: [CatsService],
     }).compile();
 
     catsService = moduleRef.get<CatsService>(CatsService);
-    catsController = moduleRef.get<CatsController>(CatsController);
   });
 
   describe('findAll', () => {
     it('should return an array of cats', async () => {
-      const cats: Cat[] = [
+      const result = [
         {
+          name: 'Frajola',
           age: 2,
-          breed: 'Bombay',
-          name: 'Pixel',
+          breed: 'Stray',
         },
       ];
-      // @ts-ignore
-      catsService.cats = cats;
+      //@ts-ignore
+      catsService.cats = result;
 
-      expect(await catsController.findAll()).toBe(cats);
+      await expect(catsService.findAll()).resolves.toBe(result);
     });
   });
 
   describe('create', () => {
     it('should add a new cat', async () => {
       const cat: Cat = {
+        name: 'Frajola',
         age: 2,
-        breed: 'Bombay',
-        name: 'Pixel',
+        breed: 'Stray',
       };
       const expectedCatArray = [cat];
-
-      // @ts-ignore
+      //@ts-ignore
       expect(catsService.cats).toStrictEqual([]);
 
-      await catsController.create(cat);
-
-      // @ts-ignore
+      await catsService.create(cat);
+      //@ts-ignore
       expect(catsService.cats).toStrictEqual(expectedCatArray);
     });
   });
