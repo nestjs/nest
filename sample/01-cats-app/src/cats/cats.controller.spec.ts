@@ -19,17 +19,17 @@ describe('CatsController', () => {
 
   describe('findAll', () => {
     it('should return an array of cats', async () => {
-      const result: Cat[] = [
+      const cats: Cat[] = [
         {
           age: 2,
           breed: 'Bombay',
           name: 'Pixel',
         },
       ];
-      //@ts-ignore
-      catsService.cats = result;
+      // @ts-ignore
+      catsService.cats = cats;
 
-      expect(await catsController.findAll()).toBe(result);
+      expect(await catsController.findAll()).toBe(cats);
     });
   });
 
@@ -42,12 +42,12 @@ describe('CatsController', () => {
       };
       const expectedCatArray = [cat];
 
-      //@ts-ignore
+      // @ts-ignore
       expect(catsService.cats).toStrictEqual([]);
 
       await catsController.create(cat);
 
-      //@ts-ignore
+      // @ts-ignore
       expect(catsService.cats).toStrictEqual(expectedCatArray);
     });
   });
