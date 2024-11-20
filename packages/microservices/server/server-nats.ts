@@ -32,7 +32,10 @@ type Subscription = any;
 /**
  * @publicApi
  */
-export class ServerNats<E = NatsEvents, S = NatsStatus> extends Server<E, S> {
+export class ServerNats<
+  E extends NatsEvents = NatsEvents,
+  S extends NatsStatus = NatsStatus,
+> extends Server<E, S> {
   public readonly transportId = Transport.NATS;
 
   private natsClient: Client;
@@ -58,7 +61,7 @@ export class ServerNats<E = NatsEvents, S = NatsStatus> extends Server<E, S> {
     try {
       this.natsClient = await this.createNatsClient();
 
-      this._status$.next(NatsStatus.CONNECTED);
+      this._status$.next(NatsStatus.CONNECTED as S);
       this.handleStatusUpdates(this.natsClient);
       this.start(callback);
     } catch (err) {
@@ -199,7 +202,7 @@ export class ServerNats<E = NatsEvents, S = NatsStatus> extends Server<E, S> {
             `NatsError: type: "${status.type}", data: "${data}".`,
           );
 
-          this._status$.next(NatsStatus.DISCONNECTED);
+          this._status$.next(NatsStatus.DISCONNECTED as S);
           this.statusEventEmitter.emit(
             NatsEventsMap.DISCONNECT,
             status.data as string,
@@ -215,7 +218,7 @@ export class ServerNats<E = NatsEvents, S = NatsStatus> extends Server<E, S> {
           break;
 
         case 'reconnecting':
-          this._status$.next(NatsStatus.RECONNECTING);
+          this._status$.next(NatsStatus.RECONNECTING as S);
           break;
 
         case 'reconnect':
@@ -223,7 +226,7 @@ export class ServerNats<E = NatsEvents, S = NatsStatus> extends Server<E, S> {
             `NatsStatus: type: "${status.type}", data: "${data}".`,
           );
 
-          this._status$.next(NatsStatus.CONNECTED);
+          this._status$.next(NatsStatus.CONNECTED as S);
           this.statusEventEmitter.emit(
             NatsEventsMap.RECONNECT,
             status.data as string,
@@ -256,8 +259,8 @@ export class ServerNats<E = NatsEvents, S = NatsStatus> extends Server<E, S> {
   }
 
   public on<
-    EventKey extends keyof NatsEvents = keyof NatsEvents,
-    EventCallback extends NatsEvents[EventKey] = NatsEvents[EventKey],
+    EventKey extends keyof E = keyof E,
+    EventCallback extends E[EventKey] = E[EventKey],
   >(event: EventKey, callback: EventCallback) {
     this.statusEventEmitter.on(event, callback as any);
   }
