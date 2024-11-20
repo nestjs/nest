@@ -381,11 +381,10 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       call: GrpcCall,
       callback: (err: unknown, value: unknown) => void,
     ) => {
-      // Needs to be a ReplaySubject in order to buffer messages that come before handler is executed
+      // Needs to be a Proxy in order to buffer messages that come before handler is executed
       // This could happen if handler has any async guards or interceptors registered that would delay
       // the execution.
-      const { subject, next, error, complete } =
-        this.bufferUntilFirstSubscription();
+      const { subject, next, error, complete } = this.bufferUntilDrained();
       call.on('data', (m: any) => next(m));
       call.on('error', (e: any) => {
         // Check if error means that stream ended on other end
@@ -626,42 +625,61 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     }
   }
 
-  private bufferUntilFirstSubscription<T>() {
+  private bufferUntilDrained<T>() {
+    type DrainableSubject<T> = Subject<T> & { drainBuffer: () => void };
+
     const subject = new Subject<T>();
     const replayBuffer = new ReplaySubject<T>();
-    let hasSubscribed = false;
+    let hasDrained = false;
+
+    function drainBuffer(this: DrainableSubject<T>) {
+      if (hasDrained) {
+        return;
+      }
+      hasDrained = true;
+
+      // Replay buffered values to the new subscriber
+      replayBuffer.subscribe({
+        next: val => console.log('emitted', val),
+      });
+      replayBuffer.complete();
+    }
 
     return {
-      subject: new Proxy(subject, {
+      subject: new Proxy<DrainableSubject<T>>(subject as DrainableSubject<T>, {
         get(target, prop, receiver) {
-          if (prop === 'subscribe' && !hasSubscribed) {
-            hasSubscribed = true;
+          if (prop === 'asObservable') {
+            return () => {
+              const stream = subject.asObservable();
 
-            // Replay buffered values to the new subscriber
-            // Schedule this operation in the next tick to let the subscriber
-            // to be registered before emitting values
-            process.nextTick(() => {
-              replayBuffer.subscribe(target);
-              replayBuffer.complete();
-            });
+              // "drainBuffer" will be called before the evaluation of the handler
+              // but after any enhancers have been applied (e.g., `interceptors`)
+              Object.defineProperty(stream, drainBuffer.name, {
+                value: drainBuffer,
+              });
+              return stream;
+            };
           }
-          return Reflect.get(target, prop, receiver);
+          if (hasDrained) {
+            return Reflect.get(target, prop, receiver);
+          }
+          return Reflect.get(replayBuffer, prop, receiver);
         },
       }),
       next: (value: T) => {
-        if (!hasSubscribed) {
+        if (!hasDrained) {
           replayBuffer.next(value);
         }
         subject.next(value);
       },
       error: (err: any) => {
-        if (!hasSubscribed) {
+        if (!hasDrained) {
           replayBuffer.error(err);
         }
         subject.error(err);
       },
       complete: () => {
-        if (!hasSubscribed) {
+        if (!hasDrained) {
           replayBuffer.complete();
           // Replay buffer is no longer needed
           // Return early to allow subject to complete later, after the replay buffer
