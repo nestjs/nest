@@ -32,7 +32,7 @@ type Subscription = any;
 /**
  * @publicApi
  */
-export class ServerNats extends Server<NatsEvents, NatsStatus> {
+export class ServerNats<E = NatsEvents, S = NatsStatus> extends Server<E, S> {
   public readonly transportId = Transport.NATS;
 
   private natsClient: Client;
