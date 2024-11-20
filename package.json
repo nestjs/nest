@@ -107,7 +107,7 @@
     "@types/supertest": "6.0.2",
     "@types/ws": "8.5.13",
     "@typescript-eslint/eslint-plugin": "8.15.0",
-    "@typescript-eslint/parser": "8.14.0",
+    "@typescript-eslint/parser": "8.15.0",
     "amqp-connection-manager": "4.1.14",
     "amqplib": "0.10.4",
     "artillery": "2.0.21",
