@@ -18,9 +18,9 @@ interface ErrorPayload {
    */
   message: string;
   /**
-   * Data that caused the exception.
+   * Message that caused the exception.
    */
-  cause?: unknown;
+  cause?: { pattern: string; data: unknown };
 }
 
 interface BaseWsExceptionFilterOptions {
@@ -47,17 +47,21 @@ export class BaseWsExceptionFilter<TError = any>
 
   public catch(exception: TError, host: ArgumentsHost) {
     const client = host.switchToWs().getClient();
-    const data = host.switchToWs().getData();
-    this.handleError(client, exception, data);
+    const pattern = host.switchToWs().getPattern();
+    const data = host.switchToWs().getPattern();
+    this.handleError(client, exception, {
+      pattern,
+      data,
+    });
   }
 
   public handleError<TClient extends { emit: Function }>(
     client: TClient,
     exception: TError,
-    data: unknown,
+    cause: ErrorPayload['cause'],
   ) {
     if (!(exception instanceof WsException)) {
-      return this.handleUnknownError(exception, client, data);
+      return this.handleUnknownError(exception, client, cause);
     }
 
     const status = 'error';
@@ -73,7 +77,7 @@ export class BaseWsExceptionFilter<TError = any>
     };
 
     if (this.options?.includeCause) {
-      payload.cause = data;
+      payload.cause = cause;
     }
 
     client.emit('exception', payload);
@@ -82,7 +86,7 @@ export class BaseWsExceptionFilter<TError = any>
   public handleUnknownError<TClient extends { emit: Function }>(
     exception: TError,
     client: TClient,
-    data: unknown,
+    data: ErrorPayload['cause'],
   ) {
     const status = 'error';
     const payload: ErrorPayload = {
