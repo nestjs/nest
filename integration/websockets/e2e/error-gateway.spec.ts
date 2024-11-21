@@ -24,8 +24,8 @@ describe('ErrorGateway', () => {
     ws.emit(pattern, data);
 
     await new Promise<void>(resolve =>
-      ws.on('exception', data => {
-        expect(data).to.be.eql({
+      ws.on('exception', error => {
+        expect(error).to.be.eql({
           status: 'error',
           message: 'test',
           cause: {
