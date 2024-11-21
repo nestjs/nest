@@ -116,11 +116,12 @@ export class ValidationPipe implements PipeTransform<any> {
         : value;
     }
     const originalValue = value;
-    value = this.toEmptyIfNil(value);
+    value = this.toEmptyIfNil(value, metatype);
 
     const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
     this.stripProtoKeys(value);
+
     let entity = classTransformer.plainToClass(
       metatype,
       value,
@@ -208,8 +209,24 @@ export class ValidationPipe implements PipeTransform<any> {
     return value;
   }
 
-  protected toEmptyIfNil<T = any, R = any>(value: T): R | {} {
-    return isNil(value) ? {} : value;
+  protected toEmptyIfNil<T = any, R = any>(
+    value: T,
+    metatype: Type<unknown> | object,
+  ): R | {} {
+    if (!isNil(value)) {
+      return value;
+    }
+    if (
+      typeof metatype === 'function' ||
+      (metatype && 'prototype' in metatype && metatype.prototype?.constructor)
+    ) {
+      return {};
+    }
+    // Builder like SWC require empty string to be returned instead of an empty object
+    // when the value is nil and the metatype is not a class instance, but a plain object (enum, for example).
+    // Otherwise, the error will be thrown.
+    // @ref https://github.com/nestjs/nest/issues/12680
+    return '';
   }
 
   protected stripProtoKeys(value: any) {
