@@ -225,7 +225,7 @@ export class ValidationPipe implements PipeTransform<any> {
     // Builder like SWC require empty string to be returned instead of an empty object
     // when the value is nil and the metatype is not a class instance, but a plain object (enum, for example).
     // Otherwise, the error will be thrown.
-    // @ref https://github.com/nestjs/nest/issues/12680
+    // @see https://github.com/nestjs/nest/issues/12680
     return '';
   }
 
