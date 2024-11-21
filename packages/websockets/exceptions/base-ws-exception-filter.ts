@@ -8,7 +8,7 @@ import { isObject } from '@nestjs/common/utils/shared.utils';
 import { MESSAGES } from '@nestjs/core/constants';
 import { WsException } from '../errors/ws-exception';
 
-export interface ErrorPayload {
+export interface ErrorPayload<Cause = { pattern: string; data: unknown }> {
   /**
    * Error message identifier.
    */
@@ -20,7 +20,7 @@ export interface ErrorPayload {
   /**
    * Message that caused the exception.
    */
-  cause?: { pattern: string; data: unknown };
+  cause?: Cause;
 }
 
 interface BaseWsExceptionFilterOptions {
@@ -31,6 +31,13 @@ interface BaseWsExceptionFilterOptions {
    * @default true
    */
   includeCause?: boolean;
+
+  /**
+   * A factory function that can be used to control the shape of the "cause" object.
+   * This is useful when you need a custom structure for the cause object.
+   * @default (pattern, data) => ({ pattern, data })
+   */
+  causeFactory?: (pattern: string, data: unknown) => Record<string, any>;
 }
 
 /**
@@ -43,6 +50,8 @@ export class BaseWsExceptionFilter<TError = any>
 
   constructor(protected readonly options: BaseWsExceptionFilterOptions = {}) {
     this.options.includeCause = this.options.includeCause ?? true;
+    this.options.causeFactory =
+      this.options.causeFactory ?? ((pattern, data) => ({ pattern, data }));
   }
 
   public catch(exception: TError, host: ArgumentsHost) {
@@ -71,13 +80,13 @@ export class BaseWsExceptionFilter<TError = any>
       return client.emit('exception', result);
     }
 
-    const payload: ErrorPayload = {
+    const payload: ErrorPayload<unknown> = {
       status,
       message: result,
     };
 
     if (this.options?.includeCause) {
-      payload.cause = cause;
+      payload.cause = this.options.causeFactory(cause.pattern, cause.data);
     }
 
     client.emit('exception', payload);
@@ -89,13 +98,13 @@ export class BaseWsExceptionFilter<TError = any>
     data: ErrorPayload['cause'],
   ) {
     const status = 'error';
-    const payload: ErrorPayload = {
+    const payload: ErrorPayload<unknown> = {
       status,
       message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
     };
 
     if (this.options?.includeCause) {
-      payload.cause = data;
+      payload.cause = this.options.causeFactory(data.pattern, data.data);
     }
 
     client.emit('exception', payload);
