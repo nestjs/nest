@@ -8,7 +8,7 @@ import { isObject } from '@nestjs/common/utils/shared.utils';
 import { MESSAGES } from '@nestjs/core/constants';
 import { WsException } from '../errors/ws-exception';
 
-interface ErrorPayload {
+export interface ErrorPayload {
   /**
    * Error message identifier.
    */
