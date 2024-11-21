@@ -48,7 +48,7 @@ export class BaseWsExceptionFilter<TError = any>
   public catch(exception: TError, host: ArgumentsHost) {
     const client = host.switchToWs().getClient();
     const pattern = host.switchToWs().getPattern();
-    const data = host.switchToWs().getPattern();
+    const data = host.switchToWs().getData();
     this.handleError(client, exception, {
       pattern,
       data,
