@@ -8,48 +8,93 @@ import { isObject } from '@nestjs/common/utils/shared.utils';
 import { MESSAGES } from '@nestjs/core/constants';
 import { WsException } from '../errors/ws-exception';
 
+interface ErrorPayload {
+  /**
+   * Error message identifier.
+   */
+  status: 'error';
+  /**
+   * Error message.
+   */
+  message: string;
+  /**
+   * Data that caused the exception.
+   */
+  cause?: unknown;
+}
+
+interface BaseWsExceptionFilterOptions {
+  /**
+   * When true, the data that caused the exception will be included in the response.
+   * This is useful when you want to provide additional context to the client, or
+   * when you need to associate the error with a specific request.
+   * @default true
+   */
+  includeCause?: boolean;
+}
+
 /**
  * @publicApi
  */
 export class BaseWsExceptionFilter<TError = any>
   implements WsExceptionFilter<TError>
 {
-  private static readonly logger = new Logger('WsExceptionsHandler');
+  protected static readonly logger = new Logger('WsExceptionsHandler');
+
+  constructor(protected readonly options: BaseWsExceptionFilterOptions = {}) {
+    this.options.includeCause = this.options.includeCause ?? true;
+  }
 
   public catch(exception: TError, host: ArgumentsHost) {
     const client = host.switchToWs().getClient();
-    this.handleError(client, exception);
+    const data = host.switchToWs().getData();
+    this.handleError(client, exception, data);
   }
 
   public handleError<TClient extends { emit: Function }>(
     client: TClient,
     exception: TError,
+    data: unknown,
   ) {
     if (!(exception instanceof WsException)) {
-      return this.handleUnknownError(exception, client);
+      return this.handleUnknownError(exception, client, data);
     }
 
     const status = 'error';
     const result = exception.getError();
-    const message = isObject(result)
-      ? result
-      : {
-          status,
-          message: result,
-        };
 
-    client.emit('exception', message);
+    if (isObject(result)) {
+      return client.emit('exception', result);
+    }
+
+    const payload: ErrorPayload = {
+      status,
+      message: result,
+    };
+
+    if (this.options?.includeCause) {
+      payload.cause = data;
+    }
+
+    client.emit('exception', payload);
   }
 
   public handleUnknownError<TClient extends { emit: Function }>(
     exception: TError,
     client: TClient,
+    data: unknown,
   ) {
     const status = 'error';
-    client.emit('exception', {
+    const payload: ErrorPayload = {
       status,
       message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
-    });
+    };
+
+    if (this.options?.includeCause) {
+      payload.cause = data;
+    }
+
+    client.emit('exception', payload);
 
     if (!(exception instanceof IntrinsicException)) {
       const logger = BaseWsExceptionFilter.logger;
