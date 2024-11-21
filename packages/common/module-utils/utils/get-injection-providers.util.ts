@@ -1,3 +1,4 @@
+import { isUndefined } from '../../utils/shared.utils';
 import {
   InjectionToken,
   Provider,
@@ -6,15 +7,17 @@ import {
 } from '../../interfaces';
 
 /**
- * check if x is OptionalFactoryDependency, based on prototype presence
- * (to avoid classes with a static 'token' field)
- * @param x
- * @returns x is OptionalFactoryDependency
+ * @param value
+ * @returns `true` if value is `OptionalFactoryDependency`
  */
 function isOptionalFactoryDependency(
-  x: InjectionToken | OptionalFactoryDependency,
-): x is OptionalFactoryDependency {
-  return !!((x as any)?.token && !(x as any)?.prototype);
+  value: InjectionToken | OptionalFactoryDependency,
+): value is OptionalFactoryDependency {
+  return (
+    !isUndefined((value as OptionalFactoryDependency).token) &&
+    !isUndefined((value as OptionalFactoryDependency).optional) &&
+    !(value as any).prototype
+  );
 }
 
 const mapInjectToTokens = (t: InjectionToken | OptionalFactoryDependency) =>
