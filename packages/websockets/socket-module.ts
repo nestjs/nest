@@ -1,6 +1,7 @@
 import { NestApplicationOptions } from '@nestjs/common';
 import { InjectionToken } from '@nestjs/common/interfaces';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
@@ -25,7 +26,8 @@ import { WebSocketsController } from './web-sockets-controller';
 
 export class SocketModule<
   THttpServer = any,
-  TAppOptions extends NestApplicationOptions = NestApplicationOptions,
+  TAppOptions extends
+    NestApplicationContextOptions = NestApplicationContextOptions,
 > {
   private readonly socketsContainer = new SocketsContainer();
   private applicationConfig: ApplicationConfig;
@@ -112,7 +114,8 @@ export class SocketModule<
   }
 
   private initializeAdapter() {
-    const forceCloseConnections = this.appOptions.forceCloseConnections;
+    const forceCloseConnections = (this.appOptions as NestApplicationOptions)
+      .forceCloseConnections;
     const adapter = this.applicationConfig.getIoAdapter();
     if (adapter) {
       (adapter as AbstractWsAdapter).forceCloseConnections =
