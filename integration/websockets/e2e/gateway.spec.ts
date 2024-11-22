@@ -1,7 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
+import * as EventSource from 'eventsource';
 import { io } from 'socket.io-client';
+import { AppController as LongConnectionController } from '../../nest-application/sse/src/app.controller';
 import { ApplicationGateway } from '../src/app.gateway';
 import { NamespaceGateway } from '../src/namespace.gateway';
 import { ServerGateway } from '../src/server.gateway';
@@ -96,6 +98,79 @@ describe('WebSocketGateway', () => {
         resolve();
       }),
     );
+  });
+
+  describe('Shared Server for WebSocket and Long-Running Connections', () => {
+    afterEach(() => {});
+    it('should block application shutdown', function (done) {
+      let eventSource;
+
+      (async () => {
+        this.timeout(30000);
+
+        setTimeout(() => {
+          const instance = testingModule.get(ServerGateway);
+          expect(instance.onApplicationShutdown.called).to.be.false;
+          eventSource.close();
+          done();
+        }, 25000);
+
+        const testingModule = await Test.createTestingModule({
+          providers: [ServerGateway],
+          controllers: [LongConnectionController],
+        }).compile();
+        app = testingModule.createNestApplication();
+
+        await app.listen(3000);
+
+        ws = io(`http://localhost:3000`);
+        eventSource = new EventSource(`http://localhost:3000/sse`);
+
+        await new Promise((resolve, reject) => {
+          ws.on('connect', resolve);
+          ws.on('error', reject);
+        });
+
+        await new Promise((resolve, reject) => {
+          eventSource.onmessage = resolve;
+          eventSource.onerror = reject;
+        });
+
+        app.close();
+      })();
+    });
+
+    it('should shutdown application immediately when forceCloseConnections is true', async () => {
+      const testingModule = await Test.createTestingModule({
+        providers: [ServerGateway],
+        controllers: [LongConnectionController],
+      }).compile();
+
+      app = testingModule.createNestApplication({
+        forceCloseConnections: true,
+      });
+
+      await app.listen(3000);
+
+      ws = io(`http://localhost:3000`);
+      const eventSource = new EventSource(`http://localhost:3000/sse`);
+
+      await new Promise((resolve, reject) => {
+        ws.on('connect', resolve);
+        ws.on('error', reject);
+      });
+
+      await new Promise((resolve, reject) => {
+        eventSource.onmessage = resolve;
+        eventSource.onerror = reject;
+      });
+
+      await app.close();
+
+      const instance = testingModule.get(ServerGateway);
+      expect(instance.onApplicationShutdown.called).to.be.true;
+      eventSource.close();
+    });
   });
 
   afterEach(() => app.close());
