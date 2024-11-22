@@ -1,4 +1,9 @@
-import { ArgumentsHost, Logger, WsExceptionFilter } from '@nestjs/common';
+import {
+  ArgumentsHost,
+  IntrinsicException,
+  Logger,
+  WsExceptionFilter,
+} from '@nestjs/common';
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { MESSAGES } from '@nestjs/core/constants';
 import { WsException } from '../errors/ws-exception';
@@ -46,7 +51,10 @@ export class BaseWsExceptionFilter<TError = any>
       message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
     });
 
-    return BaseWsExceptionFilter.logger.error(exception);
+    if (!(exception instanceof IntrinsicException)) {
+      const logger = BaseWsExceptionFilter.logger;
+      logger.error(exception);
+    }
   }
 
   public isExceptionObject(err: any): err is Error {
