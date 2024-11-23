@@ -521,13 +521,6 @@ export class Module {
     this._imports.add(moduleRef);
   }
 
-  /**
-   * @deprecated
-   */
-  public addRelatedModule(module: Module) {
-    this._imports.add(module);
-  }
-
   public replace(toReplace: InjectionToken, options: any) {
     if (options.isProvider && this.hasProvider(toReplace)) {
       const originalProvider = this._providers.get(toReplace);
