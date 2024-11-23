@@ -56,7 +56,7 @@ describe('ListenerMetadataExplorer', () => {
     beforeEach(() => {
       getAllMethodNames = sinon.spy(scanner, 'getAllMethodNames');
     });
-    it(`should call "scanFromPrototype" with expected arguments`, () => {
+    it(`should call "getAllMethodNames" with expected arguments`, () => {
       const obj = new Test();
       instance.explore(obj);
 
