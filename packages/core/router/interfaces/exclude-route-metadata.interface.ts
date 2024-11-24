@@ -16,3 +16,5 @@ export interface ExcludeRouteMetadata {
    */
   requestMethod: RequestMethod;
 }
+
+export type RouteMetadata = ExcludeRouteMetadata;

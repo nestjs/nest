@@ -8,9 +8,11 @@ import {
 import { iterate } from 'iterare';
 import * as pathToRegexp from 'path-to-regexp';
 import { uid } from 'uid';
-import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
+import {
+  ExcludeRouteMetadata,
+  RouteMetadata,
+} from '../router/interfaces/exclude-route-metadata.interface';
 import { isRouteExcluded } from '../router/utils';
-
 export const mapToExcludeRoute = (
   routes: (string | RouteInfo)[],
 ): ExcludeRouteMetadata[] => {
@@ -32,20 +34,28 @@ export const mapToExcludeRoute = (
 
 export const filterMiddleware = <T extends Function | Type<any> = any>(
   middleware: T[],
-  routes: RouteInfo[],
+  includedRoutes: RouteInfo[],
+  excludedRoutes: RouteInfo[],
   httpAdapter: HttpServer,
 ) => {
-  const excludedRoutes = mapToExcludeRoute(routes);
   return iterate([])
     .concat(middleware)
     .filter(isFunction)
-    .map((item: T) => mapToClass(item, excludedRoutes, httpAdapter))
+    .map((item: T) =>
+      mapToClass(
+        item,
+        mapToExcludeRoute(includedRoutes),
+        mapToExcludeRoute(excludedRoutes),
+        httpAdapter,
+      ),
+    )
     .toArray();
 };
 
 export const mapToClass = <T extends Function | Type<any>>(
   middleware: T,
-  excludedRoutes: ExcludeRouteMetadata[],
+  includedRoutes: RouteMetadata[],
+  excludedRoutes: RouteMetadata[],
   httpAdapter: HttpServer,
 ) => {
   if (isMiddlewareClass(middleware)) {
@@ -57,6 +67,7 @@ export const mapToClass = <T extends Function | Type<any>>(
         const [req, _, next] = params as [Record<string, any>, any, Function];
         const isExcluded = isMiddlewareRouteExcluded(
           req,
+          includedRoutes,
           excludedRoutes,
           httpAdapter,
         );
@@ -74,6 +85,7 @@ export const mapToClass = <T extends Function | Type<any>>(
         const [req, _, next] = params as [Record<string, any>, any, Function];
         const isExcluded = isMiddlewareRouteExcluded(
           req,
+          includedRoutes,
           excludedRoutes,
           httpAdapter,
         );
@@ -106,7 +118,8 @@ export function assignToken(metatype: Type<any>, token = uid(21)): Type<any> {
 
 export function isMiddlewareRouteExcluded(
   req: Record<string, any>,
-  excludedRoutes: ExcludeRouteMetadata[],
+  includedRoutes: RouteMetadata[],
+  excludedRoutes: RouteMetadata[],
   httpAdapter: HttpServer,
 ): boolean {
   if (excludedRoutes.length <= 0) {
@@ -120,5 +133,9 @@ export function isMiddlewareRouteExcluded(
       ? originalUrl.slice(0, queryParamsIndex)
       : originalUrl;
 
-  return isRouteExcluded(excludedRoutes, pathname, RequestMethod[reqMethod]);
+  if (includedRoutes.length > 0) {
+    return !isRouteExcluded(includedRoutes, pathname, RequestMethod[reqMethod]);
+  } else {
+    return isRouteExcluded(excludedRoutes, pathname, RequestMethod[reqMethod]);
+  }
 }
