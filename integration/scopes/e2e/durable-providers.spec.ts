@@ -89,6 +89,25 @@ describe('Durable providers', () => {
       expect(result.body).deep.equal({ tenantId: '3' });
     });
 
+    it(`should return the same tenantId both from durable request scoped service and non-durable request scoped service`, async () => {
+      let result: request.Response;
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(1, resolve, '/durable/request-context'),
+      );
+      expect(result.body).deep.equal({
+        durableService: '1',
+        nonDurableService: '1',
+      });
+
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(2, resolve, '/durable/request-context'),
+      );
+      expect(result.body).deep.equal({
+        durableService: '2',
+        nonDurableService: '2',
+      });
+    });
+    
     it(`should not cache durable providers that throw errors`, async () => {
       let result: request.Response;
 

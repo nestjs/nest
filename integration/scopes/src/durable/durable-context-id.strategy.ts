@@ -1,6 +1,11 @@
 import { ContextId, ContextIdStrategy, HostComponentInfo } from '@nestjs/core';
 import { Request } from 'express';
 
+export type TenantContext = {
+  tenantId: string;
+  forceError?: boolean;
+};
+
 const tenants = new Map<string, ContextId>();
 
 export class DurableContextIdStrategy implements ContextIdStrategy {
@@ -17,10 +22,7 @@ export class DurableContextIdStrategy implements ContextIdStrategy {
       tenants.set(tenantId, tenantSubTreeId);
     }
 
-    const payload: {
-      tenantId: string;
-      forceError?: boolean;
-    } = { tenantId };
+    const payload: TenantContext = { tenantId };
     if (forceError) {
       payload.forceError = true;
     }
