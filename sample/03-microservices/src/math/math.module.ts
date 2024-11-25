@@ -5,7 +5,17 @@ import { MathController } from './math.controller';
 
 @Module({
   imports: [
-    ClientsModule.register([{ name: MATH_SERVICE, transport: Transport.TCP }]),
+    ClientsModule.register([
+      {
+        name: MATH_SERVICE,
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            brokers: ['localhost:9092'],
+          },
+        },
+      },
+    ]),
   ],
   controllers: [MathController],
 })

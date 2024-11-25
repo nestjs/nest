@@ -254,7 +254,8 @@ export class Module {
       return this.addCustomProvider(provider, this._providers, enhancerSubtype);
     }
 
-    if (this.isTransientProvider(provider) && this.getProviderByKey(provider)) {
+    const isAlreadyDeclared = this._providers.has(provider);
+    if (this.isTransientProvider(provider) && isAlreadyDeclared) {
       return provider;
     }
 
@@ -295,10 +296,6 @@ export class Module {
           | ExistingProvider
       ).provide,
     );
-  }
-
-  private isTransientProvider(provider: Type<any>): boolean {
-    return getClassScope(provider) === Scope.TRANSIENT;
   }
 
   public addCustomProvider(
@@ -664,5 +661,9 @@ export class Module {
     const prefix = 'M_';
     const key = this.name?.toString() ?? this.token?.toString();
     return key ? UuidFactory.get(`${prefix}_${key}`) : randomStringGenerator();
+  }
+
+  private isTransientProvider(provider: Type<any>): boolean {
+    return getClassScope(provider) === Scope.TRANSIENT;
   }
 }

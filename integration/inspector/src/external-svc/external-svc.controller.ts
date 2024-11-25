@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ExternalSvcService } from './external-svc.service';
 import { CreateExternalSvcDto } from './dto/create-external-svc.dto';
 import { UpdateExternalSvcDto } from './dto/update-external-svc.dto';
+import { ExternalSvcService } from './external-svc.service';
 
 @Controller()
 export class ExternalSvcController {
