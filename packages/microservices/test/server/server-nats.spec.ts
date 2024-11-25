@@ -113,9 +113,24 @@ describe('ServerNats', () => {
         [pattern]: messageHandler,
       });
     });
-    it('should subscribe to each acknowledge patterns', () => {
+
+    it('should subscribe to every pattern', () => {
       server.bindEvents(natsClient);
       expect(subscribeSpy.calledWith(pattern)).to.be.true;
+    });
+
+    it('should use a per pattern queue if provided', () => {
+      const queue = 'test';
+      untypedServer.messageHandlers = objectToMap({
+        [pattern]: Object.assign(messageHandler, {
+          extras: {
+            queue,
+          },
+        }),
+      });
+      server.bindEvents(natsClient);
+      const lastCall = subscribeSpy.lastCall;
+      expect(lastCall.args[1].queue).to.be.eql(queue);
     });
 
     it('should fill the subscriptions array properly', () => {
