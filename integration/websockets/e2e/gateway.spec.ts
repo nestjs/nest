@@ -17,7 +17,7 @@ async function createNestApp(...gateways): Promise<INestApplication> {
 }
 
 describe('WebSocketGateway', () => {
-  let ws, app;
+  let ws: ReturnType<typeof io>, app: INestApplication;
 
   it(`should handle message (2nd port)`, async () => {
     app = await createNestApp(ApplicationGateway);
@@ -100,7 +100,7 @@ describe('WebSocketGateway', () => {
     );
   });
 
-  describe('Shared Server for WebSocket and Long-Running Connections', () => {
+  describe('shared server for WS and Long-Running connections', () => {
     afterEach(() => {});
     it('should block application shutdown', function (done) {
       let eventSource;
@@ -126,7 +126,7 @@ describe('WebSocketGateway', () => {
         ws = io(`http://localhost:3000`);
         eventSource = new EventSource(`http://localhost:3000/sse`);
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           ws.on('connect', resolve);
           ws.on('error', reject);
         });
@@ -155,7 +155,7 @@ describe('WebSocketGateway', () => {
       ws = io(`http://localhost:3000`);
       const eventSource = new EventSource(`http://localhost:3000/sse`);
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         ws.on('connect', resolve);
         ws.on('error', reject);
       });

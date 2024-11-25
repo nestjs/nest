@@ -19,16 +19,16 @@ export abstract class AbstractWsAdapter<
   protected readonly httpServer: any;
   private _forceCloseConnections: boolean;
 
+  public set forceCloseConnections(value: boolean) {
+    this._forceCloseConnections = value;
+  }
+
   constructor(appOrHttpServer?: INestApplicationContext | any) {
     if (appOrHttpServer && appOrHttpServer instanceof NestApplication) {
       this.httpServer = appOrHttpServer.getUnderlyingHttpServer();
     } else {
       this.httpServer = appOrHttpServer;
     }
-  }
-
-  public set forceCloseConnections(value: boolean) {
-    this._forceCloseConnections = value;
   }
 
   public bindClientConnect(server: TServer, callback: Function) {
