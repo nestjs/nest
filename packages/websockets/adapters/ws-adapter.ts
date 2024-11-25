@@ -17,6 +17,7 @@ export abstract class AbstractWsAdapter<
 > implements WebSocketAdapter<TServer, TClient, TOptions>
 {
   protected readonly httpServer: any;
+  private _forceCloseConnections: boolean;
 
   constructor(appOrHttpServer?: INestApplicationContext | any) {
     if (appOrHttpServer && appOrHttpServer instanceof NestApplication) {
@@ -24,6 +25,10 @@ export abstract class AbstractWsAdapter<
     } else {
       this.httpServer = appOrHttpServer;
     }
+  }
+
+  public set forceCloseConnections(value: boolean) {
+    this._forceCloseConnections = value;
   }
 
   public bindClientConnect(server: TServer, callback: Function) {
@@ -35,6 +40,9 @@ export abstract class AbstractWsAdapter<
   }
 
   public async close(server: TServer) {
+    if (this._forceCloseConnections) {
+      return;
+    }
     const isCallable = server && isFunction(server.close);
     isCallable && (await new Promise(resolve => server.close(resolve)));
   }
