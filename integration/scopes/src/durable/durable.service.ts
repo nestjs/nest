@@ -1,4 +1,9 @@
-import { Inject, Injectable, Scope } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  PreconditionFailedException,
+  Scope,
+} from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { TenantContext } from './durable-context-id.strategy';
 
@@ -8,7 +13,11 @@ export class DurableService {
 
   constructor(
     @Inject(REQUEST) private readonly requestPayload: TenantContext,
-  ) {}
+  ) {
+    if (requestPayload.forceError) {
+      throw new PreconditionFailedException('Forced error');
+    }
+  }
 
   greeting() {
     ++this.instanceCounter;

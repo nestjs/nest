@@ -6,6 +6,7 @@ import {
 import {
   EMPTY,
   Observable,
+  ReplaySubject,
   Subject,
   Subscription,
   defaultIfEmpty,
@@ -42,6 +43,9 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
   emit: Function;
 }
 
+/**
+ * @publicApi
+ */
 export class ServerGrpc extends Server implements CustomTransportStrategy {
   public readonly transportId = Transport.GRPC;
 
@@ -122,7 +126,6 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     const service = {};
 
     for (const methodName in grpcService.prototype) {
-      let pattern = '';
       let methodHandler = null;
       let streamingType = GrpcMethodStreamingType.NO_STREAMING;
 
@@ -132,44 +135,60 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       if (!isUndefined(methodReqStreaming) && methodReqStreaming) {
         // Try first pattern to be presented, RX streaming pattern would be
         // a preferable pattern to select among a few defined
-        pattern = this.createPattern(
+        methodHandler = this.getMessageHandler(
           name,
           methodName,
           GrpcMethodStreamingType.RX_STREAMING,
+          methodFunction,
         );
-        methodHandler = this.messageHandlers.get(pattern);
         streamingType = GrpcMethodStreamingType.RX_STREAMING;
         // If first pattern didn't match to any of handlers then try
         // pass-through handler to be presented
         if (!methodHandler) {
-          pattern = this.createPattern(
+          methodHandler = this.getMessageHandler(
             name,
             methodName,
             GrpcMethodStreamingType.PT_STREAMING,
+            methodFunction,
           );
-          methodHandler = this.messageHandlers.get(pattern);
           streamingType = GrpcMethodStreamingType.PT_STREAMING;
         }
       } else {
-        pattern = this.createPattern(
+        // Select handler if any presented for No-Streaming pattern
+        methodHandler = this.getMessageHandler(
           name,
           methodName,
           GrpcMethodStreamingType.NO_STREAMING,
+          methodFunction,
         );
-        // Select handler if any presented for No-Streaming pattern
-        methodHandler = this.messageHandlers.get(pattern);
         streamingType = GrpcMethodStreamingType.NO_STREAMING;
       }
       if (!methodHandler) {
         continue;
       }
-      service[methodName] = await this.createServiceMethod(
+      service[methodName] = this.createServiceMethod(
         methodHandler,
         grpcService.prototype[methodName],
         streamingType,
       );
     }
     return service;
+  }
+
+  public getMessageHandler(
+    serviceName: string,
+    methodName: string,
+    streaming: GrpcMethodStreamingType,
+    grpcMethod: { path?: string },
+  ) {
+    let pattern = this.createPattern(serviceName, methodName, streaming);
+    let methodHandler = this.messageHandlers.get(pattern);
+    if (!methodHandler) {
+      const packageServiceName = grpcMethod.path?.split?.('/')[1];
+      pattern = this.createPattern(packageServiceName, methodName, streaming);
+      methodHandler = this.messageHandlers.get(pattern);
+    }
+    return methodHandler;
   }
 
   /**
@@ -242,13 +261,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     return async (call: GrpcCall, callback: Function) => {
       const handler = methodHandler(call.request, call.metadata, call);
       const result$ = this.transformToObservable(await handler);
-
-      try {
-        await this.writeObservableToGrpc(result$, call);
-      } catch (err) {
-        call.emit('error', err);
-        return;
-      }
+      await this.writeObservableToGrpc(result$, call);
     };
   }
 
@@ -262,11 +275,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
    * @param call The GRPC call we want to write to.
    * @returns A promise that resolves when we're done writing to the call.
    */
-  public writeObservableToGrpc<T>(
+  private writeObservableToGrpc<T>(
     source: Observable<T>,
     call: GrpcCall<T>,
   ): Promise<void> {
-    return new Promise((resolve, reject) => {
+    // This promise should **not** reject, as we're handling errors in the observable for the Call
+    // the promise is only needed to signal when writing/draining has been completed
+    return new Promise((resolve, _doNotUse) => {
       const valuesWaitingToBeDrained: T[] = [];
       let shouldErrorAfterDraining = false;
       let error: any;
@@ -279,17 +294,14 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       // If the call is cancelled, unsubscribe from the source
       const cancelHandler = () => {
         subscription.unsubscribe();
-        // The call has been cancelled, so we need to either resolve
-        // or reject the promise. We're resolving in this case because
-        // rejection is noisy. If at any point in the future, we need to
-        // know that cancellation happened, we can either reject or
-        // start resolving with some sort of outcome value.
+        // Calls that are cancelled by the client should be successfully resolved here
         resolve();
       };
       call.on(CANCEL_EVENT, cancelHandler);
       subscription.add(() => call.off(CANCEL_EVENT, cancelHandler));
 
       // In all cases, when we finalize, end the writable stream
+      // being careful that errors and writes must be emitted _before_ this call is ended
       subscription.add(() => call.end());
 
       const drain = () => {
@@ -313,7 +325,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         } else if (shouldErrorAfterDraining) {
           call.emit('error', error);
           subscription.unsubscribe();
-          reject(error);
+          resolve();
         }
       };
 
@@ -338,7 +350,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
               // reject and teardown.
               call.emit('error', err);
               subscription.unsubscribe();
-              reject(err);
+              resolve();
             } else {
               // We're waiting for a drain event, record the
               // error so it can be handled after everything is drained.
@@ -369,8 +381,11 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       call: GrpcCall,
       callback: (err: unknown, value: unknown) => void,
     ) => {
-      const req = new Subject<any>();
-      call.on('data', (m: any) => req.next(m));
+      // Needs to be a Proxy in order to buffer messages that come before handler is executed
+      // This could happen if handler has any async guards or interceptors registered that would delay
+      // the execution.
+      const { subject, next, error, complete } = this.bufferUntilDrained();
+      call.on('data', (m: any) => next(m));
       call.on('error', (e: any) => {
         // Check if error means that stream ended on other end
         const isCancelledError = String(e).toLowerCase().indexOf('cancelled');
@@ -380,19 +395,18 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
           return;
         }
         // If another error then just pass it along
-        req.error(e);
+        error(e);
       });
-      call.on('end', () => req.complete());
+      call.on('end', () => complete());
 
-      const handler = methodHandler(req.asObservable(), call.metadata, call);
+      const handler = methodHandler(
+        subject.asObservable(),
+        call.metadata,
+        call,
+      );
       const res = this.transformToObservable(await handler);
       if (isResponseStream) {
-        try {
-          await this.writeObservableToGrpc(res, call);
-        } catch (err) {
-          call.emit('error', err);
-          return;
-        }
+        await this.writeObservableToGrpc(res, call);
       } else {
         const response = await lastValueFrom(
           res.pipe(
@@ -420,11 +434,15 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       call: GrpcCall,
       callback: (err: unknown, value: unknown) => void,
     ) => {
+      let handlerStream: Observable<any>;
       if (isResponseStream) {
-        methodHandler(call);
+        handlerStream = this.transformToObservable(await methodHandler(call));
       } else {
-        methodHandler(call, callback);
+        handlerStream = this.transformToObservable(
+          await methodHandler(call, callback),
+        );
       }
+      await lastValueFrom(handlerStream);
     };
   }
 
@@ -463,7 +481,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     this.messageHandlers.set(route, callback);
   }
 
-  public async createClient(): Promise<any> {
+  public async createClient() {
     const channelOptions: ChannelOptions =
       this.options && this.options.channelOptions
         ? this.options.channelOptions
@@ -561,14 +579,19 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         ? deepDefinition.service !== false
         : false;
 
+      // grpc namespace object does not have 'format' or 'service' properties defined
+      const isFormatDefined =
+        deepDefinition && !isUndefined(deepDefinition.format);
+
       if (isServiceDefined && isServiceBoolean) {
         accumulator.push({
           name: nameExtended,
           service: deepDefinition,
         });
-      }
-      // Continue recursion until objects end or service definition found
-      else {
+      } else if (isFormatDefined) {
+        // Do nothing
+      } else {
+        // Continue recursion for namespace object until objects end or service definition found
         this.collectDeepServices(nameExtended, deepDefinition, accumulator);
       }
     }
@@ -600,5 +623,71 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         await this.createService(definition.service, definition.name),
       );
     }
+  }
+
+  private bufferUntilDrained<T>() {
+    type DrainableSubject<T> = Subject<T> & { drainBuffer: () => void };
+
+    const subject = new Subject<T>();
+    const replayBuffer = new ReplaySubject<T>();
+    let hasDrained = false;
+
+    function drainBuffer(this: DrainableSubject<T>) {
+      if (hasDrained) {
+        return;
+      }
+      hasDrained = true;
+
+      // Replay buffered values to the new subscriber
+      replayBuffer.subscribe({
+        next: val => console.log('emitted', val),
+      });
+      replayBuffer.complete();
+    }
+
+    return {
+      subject: new Proxy<DrainableSubject<T>>(subject as DrainableSubject<T>, {
+        get(target, prop, receiver) {
+          if (prop === 'asObservable') {
+            return () => {
+              const stream = subject.asObservable();
+
+              // "drainBuffer" will be called before the evaluation of the handler
+              // but after any enhancers have been applied (e.g., `interceptors`)
+              Object.defineProperty(stream, drainBuffer.name, {
+                value: drainBuffer,
+              });
+              return stream;
+            };
+          }
+          if (hasDrained) {
+            return Reflect.get(target, prop, receiver);
+          }
+          return Reflect.get(replayBuffer, prop, receiver);
+        },
+      }),
+      next: (value: T) => {
+        if (!hasDrained) {
+          replayBuffer.next(value);
+        }
+        subject.next(value);
+      },
+      error: (err: any) => {
+        if (!hasDrained) {
+          replayBuffer.error(err);
+        }
+        subject.error(err);
+      },
+      complete: () => {
+        if (!hasDrained) {
+          replayBuffer.complete();
+          // Replay buffer is no longer needed
+          // Return early to allow subject to complete later, after the replay buffer
+          // has been drained
+          return;
+        }
+        subject.complete();
+      },
+    };
   }
 }

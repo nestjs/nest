@@ -27,10 +27,14 @@ describe('Durable providers', () => {
       tenantId: number,
       end: (err?: any) => void,
       endpoint = '/durable',
+      opts: {
+        forceError: boolean;
+      } = { forceError: false },
     ) =>
       request(server)
         .get(endpoint)
-        .set({ ['x-tenant-id']: tenantId })
+        .set({ ['x-tenant-id']: String(tenantId) })
+        .set({ ['x-force-error']: opts.forceError ? 'true' : 'false' })
         .end((err, res) => {
           if (err) return end(err);
           end(res);
@@ -102,6 +106,23 @@ describe('Durable providers', () => {
         durableService: '2',
         nonDurableService: '2',
       });
+    });
+    
+    it(`should not cache durable providers that throw errors`, async () => {
+      let result: request.Response;
+
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(10, resolve, '/durable/echo', { forceError: true }),
+      );
+
+      expect(result.statusCode).equal(412);
+
+      // The second request should be successful
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(10, resolve, '/durable/echo'),
+      );
+
+      expect(result.body).deep.equal({ tenantId: '10' });
     });
   });
 

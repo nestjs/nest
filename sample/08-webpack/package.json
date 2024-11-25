@@ -14,7 +14,7 @@
   "dependencies": {
     "@nestjs/common": "10.3.2",
     "@nestjs/core": "10.3.2",
-    "@nestjs/platform-express": "10.3.2",
+    "@nestjs/platform-express": "10.3.8",
     "reflect-metadata": "0.2.1",
     "rxjs": "7.8.1",
     "typescript": "5.3.3"
@@ -22,7 +22,7 @@
   "devDependencies": {
     "@nestjs/cli": "10.3.2",
     "@nestjs/schematics": "10.1.1",
-    "@types/node": "20.8.7",
+    "@types/node": "20.17.6",
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",
     "eslint": "8.42.0",
@@ -31,7 +31,7 @@
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "9.5.1",
     "ts-node": "10.9.2",
-    "webpack": "5.90.3",
+    "webpack": "5.94.0",
     "webpack-cli": "5.1.4",
     "webpack-node-externals": "3.0.0"
   }

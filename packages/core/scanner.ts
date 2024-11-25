@@ -522,10 +522,14 @@ export class DependenciesScanner {
   }
 
   public insertExportedProvider(
-    exportedProvider: Type<Injectable>,
+    // TODO: improve the type definition below because it doesn't reflects the real usage of this method
+    exportedProvider: Type<Injectable> | ForwardReference,
     token: string,
   ) {
-    this.container.addExportedProvider(exportedProvider, token);
+    const fulfilledProvider = this.isForwardReference(exportedProvider)
+      ? exportedProvider.forwardRef()
+      : exportedProvider;
+    this.container.addExportedProvider(fulfilledProvider, token);
   }
 
   public insertController(controller: Type<Controller>, token: string) {

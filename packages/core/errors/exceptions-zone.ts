@@ -9,7 +9,7 @@ export class ExceptionsZone {
   public static run(
     callback: () => void,
     teardown: (err: any) => void = DEFAULT_TEARDOWN,
-    autoFlushLogs?: boolean,
+    autoFlushLogs: boolean,
   ) {
     try {
       callback();
@@ -25,7 +25,7 @@ export class ExceptionsZone {
   public static async asyncRun(
     callback: () => Promise<void>,
     teardown: (err: any) => void = DEFAULT_TEARDOWN,
-    autoFlushLogs?: boolean,
+    autoFlushLogs: boolean,
   ) {
     try {
       await callback();

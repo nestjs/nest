@@ -1,4 +1,4 @@
-import { InjectionToken, Scope } from '@nestjs/common';
+import { InjectionToken, Provider, Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { ContextIdFactory } from '../helpers/context-id-factory';
@@ -7,6 +7,7 @@ import { Injector } from '../injector/injector';
 import { InstanceLoader } from '../injector/instance-loader';
 import { GraphInspector } from '../inspector/graph-inspector';
 import { NestApplicationContext } from '../nest-application-context';
+import { setTimeout } from 'timers/promises';
 
 describe('NestApplicationContext', () => {
   class A {}
@@ -14,6 +15,7 @@ describe('NestApplicationContext', () => {
   async function testHelper(
     injectionKey: InjectionToken,
     scope: Scope,
+    additionalProviders: Array<Provider> = [],
   ): Promise<NestApplicationContext> {
     const nestContainer = new NestContainer();
     const injector = new Injector();
@@ -32,6 +34,10 @@ describe('NestApplicationContext', () => {
       },
       moduleRef.token,
     );
+
+    for (const provider of additionalProviders) {
+      nestContainer.addProvider(provider, moduleRef.token);
+    }
 
     nestContainer.addInjectable(
       {
@@ -95,6 +101,58 @@ describe('NestApplicationContext', () => {
       hookStub.restore();
       expect(processUp).to.be.false;
       expect(promisesResolved).to.be.true;
+    });
+
+    it('should defer shutdown until all init hooks are resolved', async () => {
+      const clock = sinon.useFakeTimers({
+        toFake: ['setTimeout'],
+      });
+      const signal = 'SIGTERM';
+
+      const onModuleInitStub = sinon.stub();
+      const onApplicationShutdownStub = sinon.stub();
+
+      class B {
+        async onModuleInit() {
+          await setTimeout(5000);
+          onModuleInitStub();
+        }
+
+        async onApplicationShutdown() {
+          await setTimeout(1000);
+          onApplicationShutdownStub();
+        }
+      }
+
+      const applicationContext = await testHelper(A, Scope.DEFAULT, [
+        { provide: B, useClass: B, scope: Scope.DEFAULT },
+      ]);
+      applicationContext.enableShutdownHooks([signal]);
+
+      const ignoreProcessSignal = () => {
+        // noop to prevent process from exiting
+      };
+      process.on(signal, ignoreProcessSignal);
+
+      const deferredShutdown = async () => {
+        setTimeout(1);
+        process.kill(process.pid, signal);
+      };
+      Promise.all([applicationContext.init(), deferredShutdown()]);
+
+      await clock.nextAsync();
+      expect(onModuleInitStub.called).to.be.false;
+      expect(onApplicationShutdownStub.called).to.be.false;
+
+      await clock.nextAsync();
+      expect(onModuleInitStub.called).to.be.true;
+      expect(onApplicationShutdownStub.called).to.be.false;
+
+      await clock.nextAsync();
+      expect(onModuleInitStub.called).to.be.true;
+      expect(onApplicationShutdownStub.called).to.be.true;
+
+      clock.restore();
     });
   });
 

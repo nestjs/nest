@@ -54,6 +54,7 @@ export class NestApplicationContext<
   private shutdownCleanupRef?: (...args: unknown[]) => unknown;
   private _instanceLinksHost: InstanceLinksHost;
   private _moduleRefsForHooksByDistance?: Array<Module>;
+  private initializationPromise?: Promise<void>;
 
   protected get instanceLinksHost() {
     if (!this._instanceLinksHost) {
@@ -234,8 +235,16 @@ export class NestApplicationContext<
     if (this.isInitialized) {
       return this;
     }
-    await this.callInitHook();
-    await this.callBootstrapHook();
+    this.initializationPromise = new Promise(async (resolve, reject) => {
+      try {
+        await this.callInitHook();
+        await this.callBootstrapHook();
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    });
+    await this.initializationPromise;
 
     this.isInitialized = true;
     return this;
@@ -246,6 +255,7 @@ export class NestApplicationContext<
    * @returns {Promise<void>}
    */
   public async close(signal?: string): Promise<void> {
+    await this.initializationPromise;
     await this.callDestroyHook();
     await this.callBeforeShutdownHook(signal);
     await this.dispose();
@@ -333,6 +343,7 @@ export class NestApplicationContext<
           return;
         }
         receivedSignal = true;
+        await this.initializationPromise;
         await this.callDestroyHook();
         await this.callBeforeShutdownHook(signal);
         await this.dispose();

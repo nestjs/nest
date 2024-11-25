@@ -1,3 +1,4 @@
+import { NestApplicationOptions } from '@nestjs/common';
 import { InjectionToken } from '@nestjs/common/interfaces';
 import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
@@ -113,8 +114,12 @@ export class SocketModule<
   }
 
   private initializeAdapter() {
+    const forceCloseConnections = (this.appOptions as NestApplicationOptions)
+      .forceCloseConnections;
     const adapter = this.applicationConfig.getIoAdapter();
     if (adapter) {
+      (adapter as AbstractWsAdapter).forceCloseConnections =
+        forceCloseConnections;
       this.isAdapterInitialized = true;
       return;
     }
@@ -124,6 +129,7 @@ export class SocketModule<
       () => require('@nestjs/platform-socket.io'),
     );
     const ioAdapter = new IoAdapter(this.httpServer);
+    ioAdapter.forceCloseConnections = forceCloseConnections;
     this.applicationConfig.setIoAdapter(ioAdapter);
 
     this.isAdapterInitialized = true;

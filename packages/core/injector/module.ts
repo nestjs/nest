@@ -12,6 +12,7 @@ import {
   InjectionToken,
   NestModule,
   Provider,
+  Scope,
   Type,
   ValueProvider,
 } from '@nestjs/common/interfaces';
@@ -251,6 +252,11 @@ export class Module {
         this._entryProviderKeys.add(provider.provide);
       }
       return this.addCustomProvider(provider, this._providers, enhancerSubtype);
+    }
+
+    const isAlreadyDeclared = this._providers.has(provider);
+    if (this.isTransientProvider(provider) && isAlreadyDeclared) {
+      return provider;
     }
 
     this._providers.set(
@@ -655,5 +661,9 @@ export class Module {
     const prefix = 'M_';
     const key = this.name?.toString() ?? this.token?.toString();
     return key ? UuidFactory.get(`${prefix}_${key}`) : randomStringGenerator();
+  }
+
+  private isTransientProvider(provider: Type<any>): boolean {
+    return getClassScope(provider) === Scope.TRANSIENT;
   }
 }
