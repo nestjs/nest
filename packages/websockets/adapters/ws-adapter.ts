@@ -23,6 +23,10 @@ export abstract class AbstractWsAdapter<
     this._forceCloseConnections = value;
   }
 
+  public get forceCloseConnections(): boolean {
+    return this._forceCloseConnections;
+  }
+
   constructor(appOrHttpServer?: INestApplicationContext | any) {
     if (appOrHttpServer && appOrHttpServer instanceof NestApplication) {
       this.httpServer = appOrHttpServer.getUnderlyingHttpServer();
@@ -40,9 +44,6 @@ export abstract class AbstractWsAdapter<
   }
 
   public async close(server: TServer) {
-    if (this._forceCloseConnections) {
-      return;
-    }
     const isCallable = server && isFunction(server.close);
     isCallable && (await new Promise(resolve => server.close(resolve)));
   }
