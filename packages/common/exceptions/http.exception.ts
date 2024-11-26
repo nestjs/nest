@@ -139,7 +139,7 @@ export class HttpException extends IntrinsicException {
 
     if (isString(arg0) || Array.isArray(arg0) || isNumber(arg0)) {
       return {
-        message: arg0!,
+        message: arg0,
         error: arg1 as string,
         statusCode: statusCode!,
       };
@@ -153,7 +153,7 @@ export class HttpException extends IntrinsicException {
   ): string {
     return isString(descriptionOrOptions)
       ? descriptionOrOptions
-      : descriptionOrOptions?.description!;
+      : (descriptionOrOptions?.description as string);
   }
 
   public static getHttpExceptionOptionsFrom(

@@ -78,7 +78,7 @@ export class ClientKafka
         'No producer initialized. Please, call the "connect" method first.',
       );
     }
-    return this._producer!;
+    return this._producer;
   }
 
   constructor(protected readonly options: Required<KafkaOptions>['options']) {

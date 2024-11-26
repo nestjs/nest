@@ -167,7 +167,7 @@ export class ListenersController {
       {
         type: 'microservice',
         methodName: definition.methodKey,
-        className: instanceWrapper.metatype?.name!,
+        className: instanceWrapper.metatype?.name as string,
         classNodeId: instanceWrapper.id,
         metadata: {
           key: definition.patterns.toString(),

@@ -393,9 +393,7 @@ describe('ServerKafka', () => {
       await server.handleMessage(payload);
       expect(
         getPublisherSpy.calledWith({
-          id: payload.message!.headers![
-            KafkaHeaders.CORRELATION_ID
-          ]!.toString(),
+          id: payload.message.headers![KafkaHeaders.CORRELATION_ID]!.toString(),
           err: NO_MESSAGE_HANDLER,
         }),
       ).to.be.true;
@@ -455,7 +453,7 @@ describe('ServerKafka', () => {
           response: messageValue,
         },
         replyTopic,
-        undefined!,
+        '',
         correlationId,
       );
 

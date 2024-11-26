@@ -219,7 +219,7 @@ export class GraphInspector {
         targetClassName: target.name,
         sourceClassToken: source.token,
         targetClassToken: target.token,
-        targetModuleName: target.host?.name!,
+        targetModuleName: target.host?.name as string,
         keyOrIndex,
         injectionType,
       },

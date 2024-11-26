@@ -75,7 +75,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   }
 
   public start(callback?: () => void) {
-    Promise.all([this.subClient.connect(), this.pubClient.connect()])
+    void Promise.all([this.subClient.connect(), this.pubClient.connect()])
       .then(() => {
         this.bindEvents(this.subClient, this.pubClient);
         callback?.();

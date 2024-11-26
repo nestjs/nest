@@ -11,7 +11,7 @@ describe('ErrorGateway', () => {
     const testingModule = await Test.createTestingModule({
       providers: [ErrorGateway],
     }).compile();
-    
+
     app = testingModule.createNestApplication();
     await app.listen(3000);
   });

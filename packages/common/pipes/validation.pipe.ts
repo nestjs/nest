@@ -215,7 +215,7 @@ export class ValidationPipe implements PipeTransform<any> {
   }
 
   protected toEmptyIfNil<T = any, R = any>(value: T): R | object {
-    return isNil(value) ? {} : value!;
+    return isNil(value) ? {} : (value as object);
   }
 
   protected stripProtoKeys(value: any) {

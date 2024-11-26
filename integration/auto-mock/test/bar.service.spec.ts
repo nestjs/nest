@@ -4,6 +4,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 import * as sinon from 'sinon';
 import { BarService } from '../src/bar.service';
 import { FooService } from '../src/foo.service';
+
 chai.use(chaiAsPromised);
 const { expect } = chai;
 

@@ -88,7 +88,7 @@ describe('ClientNats', () => {
         callback = sinon.spy();
         assignStub = sinon
           .stub(client, 'assignPacketId' as any)
-          .callsFake(packet => Object.assign(packet!, { id }));
+          .callsFake(packet => Object.assign(packet as object, { id }));
 
         subscription = client['publish'](msg, callback);
         subscription();

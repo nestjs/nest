@@ -314,13 +314,13 @@ export class DependenciesScanner {
       ),
     );
     methodInjectables.forEach(methodInjectable => {
-      methodInjectable.metadata!.forEach(injectable =>
+      methodInjectable.metadata.forEach(injectable =>
         this.insertInjectable(
           injectable,
           token,
           component,
           ENHANCER_KEY_TO_SUBTYPE_MAP[metadataKey],
-          methodInjectable.methodKey!,
+          methodInjectable.methodKey,
         ),
       );
     });

@@ -93,7 +93,7 @@ describe('ClientRedis', () => {
         callback = sinon.spy();
         assignStub = sinon
           .stub(client, 'assignPacketId' as any)
-          .callsFake(packet => Object.assign(packet!, { id }));
+          .callsFake(packet => Object.assign(packet as object, { id }));
 
         getReplyPatternStub = sinon
           .stub(client, 'getReplyPattern')

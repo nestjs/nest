@@ -687,7 +687,7 @@ describe('ClientKafka', () => {
       assignPacketIdStub = sinon
         .stub(client as any, 'assignPacketId')
         .callsFake(packet =>
-          Object.assign(packet!, {
+          Object.assign(packet as object, {
             id: correlationId,
           }),
         );

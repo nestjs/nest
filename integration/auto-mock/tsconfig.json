@@ -10,6 +10,7 @@
     "target": "ES2021",
     "sourceMap": true,
     "allowJs": true,
+    "strictNullChecks": true,
     "outDir": "./dist",
     "paths": {
       "@nestjs/common": ["../../packages/common"],

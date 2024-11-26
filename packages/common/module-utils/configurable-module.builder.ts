@@ -269,7 +269,7 @@ export class ConfigurableModuleBuilder<
         const moduleOptions = {};
         const extrasKeys = Object.keys(extras);
 
-        Object.keys(input!)
+        Object.keys(input as object)
           .filter(key => !extrasKeys.includes(key))
           .forEach(key => {
             moduleOptions[key] = input[key];

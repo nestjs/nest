@@ -365,7 +365,7 @@ export class Injector {
       return item;
     };
     return [
-      wrapper.inject?.map?.(mapFactoryProviderInjectArray)!,
+      wrapper.inject?.map?.(mapFactoryProviderInjectArray) as any[],
       optionalDependenciesIds,
     ];
   }

@@ -32,7 +32,7 @@ export class ServerFactory {
       case Transport.MQTT:
         return new ServerMqtt(options as Required<MqttOptions>['options']);
       case Transport.GRPC:
-        return new ServerGrpc(options as Required<GrpcOptions>['options']);
+        return new ServerGrpc(options);
       case Transport.KAFKA:
         return new ServerKafka(options as Required<KafkaOptions>['options']);
       case Transport.RMQ:

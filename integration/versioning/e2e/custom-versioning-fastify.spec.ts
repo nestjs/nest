@@ -14,7 +14,7 @@ describe('Custom Versioning (fastify)', () => {
       .flatMap(v => v.split(','))
       .map(header => header.match(/v(\d+\.?\d*)\+json$/))
       .filter(match => match && match.length)
-      .map(matchArray => matchArray[1])
+      .map(matchArray => matchArray![1])
       .sort()
       .reverse();
 

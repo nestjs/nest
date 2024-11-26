@@ -40,7 +40,7 @@ export class LazyModuleLoader {
         moduleClassOrDynamicDefinition,
       );
       const moduleInstance = this.modulesContainer.get(token)!;
-      return moduleInstance && this.getTargetModuleRef(moduleInstance)!;
+      return moduleInstance && this.getTargetModuleRef(moduleInstance);
     }
     const lazyModulesContainer =
       this.createLazyModulesContainer(moduleInstances);

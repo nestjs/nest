@@ -112,8 +112,8 @@ export function isMiddlewareRouteExcluded(
   if (excludedRoutes.length <= 0) {
     return false;
   }
-  const reqMethod = httpAdapter.getRequestMethod?.(req)!;
-  const originalUrl = httpAdapter.getRequestUrl?.(req)!;
+  const reqMethod = httpAdapter.getRequestMethod!(req);
+  const originalUrl = httpAdapter.getRequestUrl!(req);
   const queryParamsIndex = originalUrl ? originalUrl.indexOf('?') : -1;
   const pathname =
     queryParamsIndex >= 0

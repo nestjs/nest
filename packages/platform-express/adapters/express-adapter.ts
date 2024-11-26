@@ -268,7 +268,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     options?: Omit<Options, 'verify'>,
   ): this {
     const parserOptions = getBodyParserOptions<Options>(rawBody, options);
-    const parser = bodyparser[type](parserOptions!);
+    const parser = bodyparser[type](parserOptions);
 
     this.use(parser);
 

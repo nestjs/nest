@@ -176,16 +176,16 @@ describe('JsonSocket connection', () => {
       server.once('connection', socket => {
         const serverSocket = new JsonSocket(socket);
 
-        serverSocket!.once('end', () => {
+        serverSocket.once('end', () => {
           setTimeout(() => {
-            expect(serverSocket!['isClosed']).to.equal(true);
-            expect(clientSocket!['isClosed']).to.equal(true);
+            expect(serverSocket['isClosed']).to.equal(true);
+            expect(clientSocket['isClosed']).to.equal(true);
 
-            clientSocket!.on(TcpEventsMap.CONNECT, () => {
+            clientSocket.on(TcpEventsMap.CONNECT, () => {
               setTimeout(() => {
-                expect(clientSocket!['isClosed']).to.equal(false);
+                expect(clientSocket['isClosed']).to.equal(false);
 
-                clientSocket!.end();
+                clientSocket.end();
                 server.close(done);
               }, 10);
             });
@@ -196,11 +196,11 @@ describe('JsonSocket connection', () => {
             }
             const port2 = (address2 as AddressInfo).port;
 
-            clientSocket!.connect(port2, ip);
+            clientSocket.connect(port2, ip);
           }, 10);
         });
 
-        clientSocket!.end();
+        clientSocket.end();
       });
 
       const address1 = server.address();
@@ -209,7 +209,7 @@ describe('JsonSocket connection', () => {
       }
       const port1 = (address1 as AddressInfo).port;
 
-      clientSocket!.connect(port1, ip);
+      clientSocket.connect(port1, ip);
     });
     server.listen();
   });

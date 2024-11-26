@@ -115,7 +115,7 @@ export class ReplContext {
     return typeof token !== 'string'
       ? typeof token === 'function'
         ? token.name
-        : token?.toString()!
+        : (token?.toString() as string)
       : `"${token}"`;
   }
 

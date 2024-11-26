@@ -9,7 +9,7 @@ export class DurableContextIdStrategy implements ContextIdStrategy {
     let tenantSubTreeId: ContextId;
 
     if (tenants.has(tenantId)) {
-      tenantSubTreeId = tenants.get(tenantId);
+      tenantSubTreeId = tenants.get(tenantId)!;
     } else {
       tenantSubTreeId = { id: +tenantId } as ContextId;
       tenants.set(tenantId, tenantSubTreeId);

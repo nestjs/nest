@@ -11,6 +11,7 @@
     "sourceMap": true,
     "allowJs": true,
     "outDir": "./dist",
+    "strictNullChecks": true,
     "paths": {
       "@nestjs/common": ["../../../packages/common"],
       "@nestjs/common/*": ["../../../packages/common/*"],

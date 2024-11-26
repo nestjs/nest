@@ -37,7 +37,7 @@ describe('provider classifier', () => {
     it('should return false if provider is undefined', () => {
       const classProvider = undefined!;
 
-      expect(isClassProvider(classProvider as ClassProvider)!).to.be.false;
+      expect(isClassProvider(classProvider)).to.be.false;
     });
   });
 

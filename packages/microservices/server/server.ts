@@ -219,7 +219,7 @@ export abstract class Server<
     prop: Attribute,
     defaultValue: DefaultValue = undefined as DefaultValue,
   ) {
-    return obj && prop in obj ? obj![prop] : defaultValue;
+    return obj && prop in obj ? (obj as any)[prop] : defaultValue;
   }
 
   protected handleError(error: string) {

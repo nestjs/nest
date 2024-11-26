@@ -20,8 +20,8 @@ let natsPackage = {} as any;
 // type Client = import('nats').NatsConnection;
 // type NatsMsg = import('nats').Msg;
 
-type Client = any;
-type NatsMsg = any;
+type Client = Record<string, any>;
+type NatsMsg = Record<string, any>;
 
 /**
  * @publicApi
@@ -216,12 +216,12 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
         callback,
       );
 
-      const subscription = this.natsClient.subscribe(inbox, {
+      const subscription = this.natsClient!.subscribe(inbox, {
         callback: subscriptionHandler,
       });
 
       const headers = this.mergeHeaders(serializedPacket.headers);
-      this.natsClient.publish(channel, serializedPacket.data, {
+      this.natsClient!.publish(channel, serializedPacket.data, {
         reply: inbox,
         headers,
       });
@@ -240,7 +240,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
     return new Promise<void>((resolve, reject) => {
       try {
-        this.natsClient.publish(pattern, serializedPacket.data, {
+        this.natsClient!.publish(pattern, serializedPacket.data, {
           headers,
         });
         resolve();
