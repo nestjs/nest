@@ -25,7 +25,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
   ) {}
 
   public apply(
-    ...middleware: Array<Type<any> | Function | any>
+    ...middleware: Array<Type<any> | Function>
   ): MiddlewareConfigProxy {
     return new MiddlewareBuilder.ConfigProxy(
       this,
@@ -47,7 +47,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
 
     constructor(
       private readonly builder: MiddlewareBuilder,
-      private readonly middleware: Array<Type<any> | Function | any>,
+      private readonly middleware: Array<Type<any> | Function>,
       private routeInfoPathExtractor: RouteInfoPathExtractor,
     ) {}
 
@@ -108,7 +108,7 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
     }
 
     private removeOverlappedRoutes(routes: RouteInfo[]) {
-      const regexMatchParams = /(:[^\/]*)/g;
+      const regexMatchParams = /(:[^/]*)/g;
       const wildcard = '([^/]*)';
       const routesWithRegex = routes
         .filter(route => route.path.includes(':'))

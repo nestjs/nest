@@ -62,7 +62,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     });
 
     this._status$.next(NatsStatus.CONNECTED);
-    this.handleStatusUpdates(this.natsClient);
+    void this.handleStatusUpdates(this.natsClient);
     return this.natsClient;
   }
 
@@ -167,7 +167,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     packet: ReadPacket & PacketId,
     callback: (packet: WritePacket) => any,
   ) {
-    return async (error: unknown | undefined, natsMsg: NatsMsg) => {
+    return async (error: string | Error | undefined, natsMsg: NatsMsg) => {
       if (error) {
         return callback({
           err: error,

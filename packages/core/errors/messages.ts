@@ -1,4 +1,4 @@
-import type { ForwardReference, Type, DynamicModule } from '@nestjs/common';
+import type { DynamicModule, ForwardReference, Type } from '@nestjs/common';
 import { isNil, isSymbol } from '@nestjs/common/utils/shared.utils';
 import {
   InjectorDependency,
@@ -139,8 +139,7 @@ export const USING_INVALID_CLASS_AS_A_MODULE_MESSAGE = (
   metatypeUsedAsAModule: Type | ForwardReference,
   scope: any[],
 ) => {
-  const metatypeNameQuote =
-    `"${getInstanceName(metatypeUsedAsAModule)}"` || 'that class';
+  const metatypeNameQuote = `"${getInstanceName(metatypeUsedAsAModule)}"`;
 
   return `Classes annotated with @Injectable(), @Catch(), and @Controller() decorators must not appear in the "imports" array of a module.
 Please remove ${metatypeNameQuote} (including forwarded occurrences, if any) from all of the "imports" arrays.

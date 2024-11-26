@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { DynamicModule, Provider } from '../interfaces';
 import { Logger } from '../services/logger.service';
 import { randomStringGenerator } from '../utils/random-string-generator.util';

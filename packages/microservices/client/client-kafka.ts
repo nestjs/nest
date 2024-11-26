@@ -137,6 +137,7 @@ export class ClientKafka
     if (this.initialized) {
       return this.initialized.then(() => this._producer);
     }
+    /* eslint-disable-next-line no-async-promise-executor */
     this.initialized = new Promise(async (resolve, reject) => {
       try {
         this.client = this.createClient();

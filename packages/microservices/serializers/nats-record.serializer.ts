@@ -19,10 +19,10 @@ export class NatsRecordSerializer
     this.jsonCodec = natsPackage.JSONCodec();
   }
 
-  serialize(packet: ReadPacket | any): NatsRecord {
+  serialize(packet: ReadPacket): NatsRecord {
     const natsMessage =
       packet?.data && isObject(packet.data) && packet.data instanceof NatsRecord
-        ? (packet.data as NatsRecord)
+        ? packet.data
         : new NatsRecordBuilder(packet?.data).build();
 
     return {

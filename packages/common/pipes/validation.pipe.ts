@@ -214,7 +214,7 @@ export class ValidationPipe implements PipeTransform<any> {
     return value;
   }
 
-  protected toEmptyIfNil<T = any, R = any>(value: T): R | {} {
+  protected toEmptyIfNil<T = any, R = any>(value: T): R | object {
     return isNil(value) ? {} : value;
   }
 

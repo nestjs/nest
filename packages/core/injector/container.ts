@@ -300,7 +300,7 @@ export class NestContainer {
     this.modules.clear();
   }
 
-  public replace(toReplace: any, options: any & { scope: any[] | null }) {
+  public replace(toReplace: any, options: { scope: any[] | null }) {
     this.modules.forEach(moduleRef => moduleRef.replace(toReplace, options));
   }
 

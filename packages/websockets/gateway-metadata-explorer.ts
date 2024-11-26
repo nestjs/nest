@@ -11,7 +11,7 @@ import { NestGateway } from './interfaces/nest-gateway.interface';
 export interface MessageMappingProperties {
   message: any;
   methodName: string;
-  callback: (...args: any[]) => Observable<any> | Promise<any> | any;
+  callback: (...args: any[]) => Observable<any> | Promise<any>;
 }
 
 export class GatewayMetadataExplorer {

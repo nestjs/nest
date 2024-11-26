@@ -224,7 +224,7 @@ export class NestMicroservice
           this.flushLogs();
         }
         if (err) {
-          return reject(err);
+          return reject(err as Error);
         }
         this.logger.log(MESSAGES.MICROSERVICE_READY);
         resolve(info);

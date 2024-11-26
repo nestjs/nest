@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { DynamicModule } from '../../interfaces';
 import {
   DEFAULT_FACTORY_CLASS_METHOD_KEY,

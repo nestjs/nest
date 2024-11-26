@@ -395,7 +395,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
           ...options,
           headers: this.mergeHeaders(options?.headers),
         },
-        (err: unknown) => (err ? reject(err) : resolve()),
+        (err: unknown) => (err ? reject(err as Error) : resolve()),
       ),
     );
   }

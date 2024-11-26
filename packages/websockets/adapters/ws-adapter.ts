@@ -18,7 +18,7 @@ export abstract class AbstractWsAdapter<
 {
   protected readonly httpServer: any;
 
-  constructor(appOrHttpServer?: INestApplicationContext | any) {
+  constructor(appOrHttpServer?: INestApplicationContext | object) {
     if (appOrHttpServer && appOrHttpServer instanceof NestApplication) {
       this.httpServer = appOrHttpServer.getUnderlyingHttpServer();
     } else {

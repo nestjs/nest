@@ -176,7 +176,7 @@ export class ServerGrpc extends Server<never, never> {
       if (!methodHandler) {
         continue;
       }
-      service[methodName] = await this.createServiceMethod(
+      service[methodName] = this.createServiceMethod(
         methodHandler,
         grpcService.prototype[methodName],
         streamingType,

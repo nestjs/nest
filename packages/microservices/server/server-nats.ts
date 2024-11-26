@@ -62,7 +62,7 @@ export class ServerNats<
       this.natsClient = await this.createNatsClient();
 
       this._status$.next(NatsStatus.CONNECTED as S);
-      this.handleStatusUpdates(this.natsClient);
+      void this.handleStatusUpdates(this.natsClient);
       this.start(callback);
     } catch (err) {
       callback(err);

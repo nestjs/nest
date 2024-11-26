@@ -176,6 +176,7 @@ export class WebSocketsController {
     const adapter = this.config.getIoAdapter();
     const handlers = subscribersMap.map(({ callback, message }) => ({
       message,
+
       callback: callback.bind(instance, client),
     }));
     adapter.bindMessageHandlers(client, handlers, data =>

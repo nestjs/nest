@@ -240,6 +240,7 @@ export class MiddlewareModule<
     collection: Map<InjectionToken, InstanceWrapper>,
   ) {
     const { instance, metatype } = wrapper;
+
     if (isUndefined(instance?.use)) {
       throw new InvalidMiddlewareException(metatype.name);
     }

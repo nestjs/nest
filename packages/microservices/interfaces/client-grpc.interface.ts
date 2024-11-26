@@ -7,7 +7,7 @@ export interface ClientGrpc {
    * @param name Service name
    * @returns gRPC service
    */
-  getService<T extends {}>(name: string): T;
+  getService<T extends object>(name: string): T;
   /**
    * Returns an instance of the given gRPC client.
    * @param name Service name

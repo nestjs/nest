@@ -36,7 +36,7 @@ export function assignMetadata<TParamtype = any, TArgs = any>(
 ) {
   return {
     ...args,
-    [`${paramtype}:${index}`]: {
+    [`${paramtype as string}:${index}`]: {
       index,
       data,
       pipes,

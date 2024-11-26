@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import {
   HttpStatus,
   Logger,
@@ -27,6 +28,7 @@ import {
   FastifyReply,
   FastifyRequest,
   FastifyServerOptions,
+  HTTPMethods,
   RawReplyDefaultExpression,
   RawRequestDefaultExpression,
   RawServerBase,
@@ -34,14 +36,13 @@ import {
   RequestGenericInterface,
   RouteOptions,
   RouteShorthandOptions,
-  HTTPMethods,
   fastify,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
 import { kRouteContext } from 'fastify/lib/symbols';
+import * as http from 'http';
 import * as http2 from 'http2';
 import * as https from 'https';
-import * as http from 'http';
 import {
   InjectOptions,
   Chain as LightMyRequestChain,

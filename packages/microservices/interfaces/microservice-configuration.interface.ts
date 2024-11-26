@@ -47,7 +47,7 @@ export type AsyncOptions<T extends object> = {
  */
 export interface CustomStrategy {
   strategy: CustomTransportStrategy;
-  options?: {};
+  options?: Record<string, any>;
 }
 
 /**

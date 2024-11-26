@@ -8,7 +8,7 @@ export class RouteParamsFactory implements IRouteParamsFactory {
     TResult = any,
   >(
     key: RouteParamtypes | string,
-    data: string | object | any,
+    data: string,
     { req, res, next }: { req: TRequest; res: TResponse; next: Function },
   ): TResult {
     switch (key) {
@@ -25,6 +25,7 @@ export class RouteParamsFactory implements IRouteParamsFactory {
       case RouteParamtypes.PARAM:
         return data ? req.params[data] : req.params;
       case RouteParamtypes.HOST:
+        /* eslint-disable-next-line no-case-declarations */
         const hosts = req.hosts || {};
         return data ? hosts[data] : hosts;
       case RouteParamtypes.QUERY:

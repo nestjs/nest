@@ -48,9 +48,11 @@ export class RouteInfoPathExtractor {
       return Array.isArray(this.excludedGlobalPrefixRoutes)
         ? [
             ...entries,
-            ...this.excludedGlobalPrefixRoutes.map(
-              route => versionPaths + addLeadingSlash(route.path),
-            ),
+            ...this.excludedGlobalPrefixRoutes
+              .map(route =>
+                versionPaths.map(v => v + addLeadingSlash(route.path)),
+              )
+              .flat(),
           ]
         : entries;
     }

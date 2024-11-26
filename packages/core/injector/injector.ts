@@ -11,7 +11,12 @@ import {
   PROPERTY_DEPS_METADATA,
   SELF_DECLARED_DEPS_METADATA,
 } from '@nestjs/common/constants';
-import { Controller, Injectable, Type } from '@nestjs/common/interfaces';
+import {
+  Controller,
+  ForwardReference,
+  Injectable,
+  Type,
+} from '@nestjs/common/interfaces';
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import {
   isFunction,
@@ -297,7 +302,7 @@ export class Injector {
         }
         const paramWrapper = await this.resolveSingleParam<T>(
           wrapper,
-          param,
+          param as Type | string | symbol,
           { index, dependencies },
           moduleRef,
           contextId,
@@ -385,7 +390,7 @@ export class Injector {
 
   public async resolveSingleParam<T>(
     wrapper: InstanceWrapper<T>,
-    param: Type<any> | string | symbol | any,
+    param: Type<any> | string | symbol,
     dependencyContext: InjectorDependencyContext,
     moduleRef: Module,
     contextId = STATIC_CONTEXT,
@@ -416,13 +421,13 @@ export class Injector {
 
   public resolveParamToken<T>(
     wrapper: InstanceWrapper<T>,
-    param: Type<any> | string | symbol | any,
+    param: Type<any> | string | symbol | ForwardReference,
   ) {
-    if (!param.forwardRef) {
-      return param;
+    if (typeof param === 'object' && 'forwardRef' in param) {
+      wrapper.forwardRef = true;
+      return param.forwardRef();
     }
-    wrapper.forwardRef = true;
-    return param.forwardRef();
+    return param;
   }
 
   public async resolveComponentInstance<T>(
@@ -488,7 +493,7 @@ export class Injector {
        * instantiated beforehand.
        */
       instanceHost.donePromise &&
-        instanceHost.donePromise.then(() =>
+        void instanceHost.donePromise.then(() =>
           this.loadProvider(instanceWrapper, moduleRef, contextId, inquirer),
         );
     }
@@ -664,7 +669,7 @@ export class Injector {
           }
           const paramWrapper = await this.resolveSingleParam<T>(
             wrapper,
-            item.name,
+            item.name as string,
             dependencyContext,
             moduleRef,
             contextId,

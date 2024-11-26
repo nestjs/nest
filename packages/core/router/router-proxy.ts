@@ -5,7 +5,7 @@ export type RouterProxyCallback = <TRequest, TResponse>(
   req?: TRequest,
   res?: TResponse,
   next?: () => void,
-) => void;
+) => void | Promise<void>;
 
 export class RouterProxy {
   public createProxy(
@@ -33,7 +33,7 @@ export class RouterProxy {
       req: TRequest,
       res: TResponse,
       next: () => void,
-    ) => void,
+    ) => void | Promise<void>,
     exceptionsHandler: ExceptionsHandler,
   ) {
     return async <TError, TRequest, TResponse>(

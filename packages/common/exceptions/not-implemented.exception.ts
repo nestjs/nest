@@ -34,7 +34,7 @@ export class NotImplementedException extends HttpException {
    * @param error a short description of the HTTP error.
    */
   constructor(
-    objectOrError?: string | object | any,
+    objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Not Implemented',
   ) {
     const { description, httpExceptionOptions } =

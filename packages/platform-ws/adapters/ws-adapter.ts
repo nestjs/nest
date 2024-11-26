@@ -1,6 +1,6 @@
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { normalizePath, isNil } from '@nestjs/common/utils/shared.utils';
+import { isNil, normalizePath } from '@nestjs/common/utils/shared.utils';
 import { AbstractWsAdapter } from '@nestjs/websockets';
 import {
   CLOSE_EVENT,
@@ -46,12 +46,12 @@ export class WsAdapter extends AbstractWsAdapter {
     WsServerRegistryKey,
     WsServerRegistryEntry
   >();
-  protected messageParser: WsMessageParser = data => {
+  protected messageParser: WsMessageParser = (data: WsData) => {
     return JSON.parse(data.toString());
   };
 
   constructor(
-    appOrHttpServer?: INestApplicationContext | any,
+    appOrHttpServer?: INestApplicationContext | object,
     options?: WsAdapterOptions,
   ) {
     super(appOrHttpServer);
@@ -179,7 +179,7 @@ export class WsAdapter extends AbstractWsAdapter {
 
   public async close(server: any) {
     const closeEventSignal = new Promise((resolve, reject) =>
-      server.close(err => (err ? reject(err) : resolve(undefined))),
+      server.close((err: Error) => (err ? reject(err) : resolve(undefined))),
     );
     for (const ws of server.clients) {
       ws.terminate();

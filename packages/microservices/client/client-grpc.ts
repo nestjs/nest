@@ -65,7 +65,7 @@ export class ClientGrpcProxy
     this.grpcClients = this.createClients();
   }
 
-  public getService<T extends {}>(name: string): T {
+  public getService<T extends object>(name: string): T {
     const grpcClient = this.createClientByServiceName(name);
     const clientRef = this.getClient(name);
     if (!clientRef) {
@@ -372,7 +372,9 @@ export class ClientGrpcProxy
   }
 
   protected getClient(name: string): any {
-    return this.grpcClients.find(client => client.hasOwnProperty(name));
+    return this.grpcClients.find(client =>
+      Object.hasOwnProperty.call(client, name),
+    );
   }
 
   protected publish(packet: any, callback: (packet: any) => any): any {
