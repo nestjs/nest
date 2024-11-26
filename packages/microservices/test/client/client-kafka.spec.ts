@@ -647,7 +647,7 @@ describe('ClientKafka', () => {
 
     it('should throw error when the topic is not being consumed', () => {
       client['consumerAssignments'] = {
-        [topic]: undefined,
+        [topic]: undefined!,
       };
 
       expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
@@ -687,7 +687,7 @@ describe('ClientKafka', () => {
       assignPacketIdStub = sinon
         .stub(client as any, 'assignPacketId')
         .callsFake(packet =>
-          Object.assign(packet, {
+          Object.assign(packet!, {
             id: correlationId,
           }),
         );

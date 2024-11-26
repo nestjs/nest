@@ -223,9 +223,9 @@ describe('ServerRedis', () => {
   describe('getClientOptions', () => {
     it('should return options object with "retryStrategy" and call "createRetryStrategy"', () => {
       const createSpy = sinon.spy(server, 'createRetryStrategy');
-      const { retryStrategy } = server.getClientOptions();
+      const { retryStrategy } = server.getClientOptions()!;
       try {
-        retryStrategy(0);
+        retryStrategy!(0);
       } catch {
         // Ignore
       }

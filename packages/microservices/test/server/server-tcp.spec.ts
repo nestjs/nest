@@ -21,7 +21,7 @@ describe('ServerTCP', () => {
       sinon.stub(server, 'getSocketInstance' as any).callsFake(() => socket);
     });
     it('should bind message and error events to handler', () => {
-      server.bindHandler(null);
+      server.bindHandler(null!);
       expect(socket.on.calledTwice).to.be.true;
     });
   });

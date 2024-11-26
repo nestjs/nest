@@ -265,8 +265,8 @@ describe('ServerKafka', () => {
       it('should call "handleMessage"', async () => {
         const handleMessageStub = sinon
           .stub(server, 'handleMessage')
-          .callsFake(() => null);
-        await server.getMessageHandler()(null);
+          .callsFake(() => null!);
+        await server.getMessageHandler()(null!);
         expect(handleMessageStub.called).to.be.true;
       });
     });
@@ -287,7 +287,7 @@ describe('ServerKafka', () => {
         .callsFake(async () => []);
     });
     it(`should return function`, () => {
-      expect(typeof server.getPublisher(null, null, correlationId)).to.be.eql(
+      expect(typeof server.getPublisher(null!, null!, correlationId)).to.be.eql(
         'function',
       );
     });
@@ -393,7 +393,9 @@ describe('ServerKafka', () => {
       await server.handleMessage(payload);
       expect(
         getPublisherSpy.calledWith({
-          id: payload.message.headers[KafkaHeaders.CORRELATION_ID].toString(),
+          id: payload.message!.headers![
+            KafkaHeaders.CORRELATION_ID
+          ]!.toString(),
           err: NO_MESSAGE_HANDLER,
         }),
       ).to.be.true;
@@ -453,7 +455,7 @@ describe('ServerKafka', () => {
           response: messageValue,
         },
         replyTopic,
-        undefined,
+        undefined!,
         correlationId,
       );
 

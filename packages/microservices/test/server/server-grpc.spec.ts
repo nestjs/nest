@@ -731,7 +731,7 @@ describe('ServerGrpc', () => {
             write: sinon.spy(() => true),
           };
 
-          await fn(call as any, null);
+          await fn(call as any, null!);
 
           expect(call.write.called).to.be.true;
           expect(call.end.called).to.be.true;

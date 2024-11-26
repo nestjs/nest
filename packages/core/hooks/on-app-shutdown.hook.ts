@@ -49,7 +49,7 @@ export async function callAppShutdownHook(
   const providers = module.getNonAliasProviders();
   // Module (class) instance is the first element of the providers array
   // Lifecycle hook has to be called once all classes are properly initialized
-  const [_, moduleClassHost] = providers.shift();
+  const [_, moduleClassHost] = providers.shift()!;
   const instances = [
     ...module.controllers,
     ...providers,

@@ -103,11 +103,11 @@ describe('ServerMqtt', () => {
       it('should call "handleMessage"', async () => {
         const handleMessageStub = sinon
           .stub(server, 'handleMessage')
-          .callsFake(() => null);
+          .callsFake(() => null!);
         await server.getMessageHandler(untypedServer.mqttClient)(
-          null,
-          null,
-          null,
+          null!,
+          null!,
+          null!,
         );
         expect(handleMessageStub.called).to.be.true;
       });

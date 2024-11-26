@@ -93,7 +93,7 @@ describe('ClientRedis', () => {
         callback = sinon.spy();
         assignStub = sinon
           .stub(client, 'assignPacketId' as any)
-          .callsFake(packet => Object.assign(packet, { id }));
+          .callsFake(packet => Object.assign(packet!, { id }));
 
         getReplyPatternStub = sinon
           .stub(client, 'getReplyPattern')
@@ -289,9 +289,9 @@ describe('ClientRedis', () => {
   describe('getClientOptions', () => {
     it('should return options object with "retryStrategy" and call "createRetryStrategy"', () => {
       const createSpy = sinon.spy(client, 'createRetryStrategy');
-      const { retryStrategy } = client.getClientOptions();
+      const { retryStrategy } = client.getClientOptions()!;
       try {
-        retryStrategy({} as any);
+        retryStrategy!({} as any);
       } catch {
         // No empty
       }

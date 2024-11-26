@@ -58,7 +58,7 @@ describe('ClientMqtt', () => {
       connectSpy = sinon.stub(client, 'connect');
       assignStub = sinon
         .stub(client, 'assignPacketId' as any)
-        .callsFake(packet => Object.assign(packet, { id }));
+        .callsFake(packet => Object.assign(packet!, { id }));
     });
     afterEach(() => {
       connectSpy.restore();

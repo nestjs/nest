@@ -135,7 +135,7 @@ describe('ClientRMQ', function () {
         assertQueue: sinon.spy(() => ({})),
         prefetch: sinon.spy(),
       };
-      consumeStub = sinon.stub(client, 'consumeChannel').callsFake(() => null);
+      consumeStub = sinon.stub(client, 'consumeChannel').callsFake(() => null!);
     });
     afterEach(() => {
       consumeStub.restore();

@@ -281,7 +281,7 @@ describe('ListenersController', () => {
         patterns: ['findOne'],
         methodKey: 'find',
         isEventHandler: false,
-        targetCallback: null,
+        targetCallback: null!,
         extras: { qos: 2 },
       };
       const transportId = Transport.MQTT;

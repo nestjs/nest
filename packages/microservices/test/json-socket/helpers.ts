@@ -63,7 +63,7 @@ export function createServerAndClient(
       return callback(serverErr);
     }
 
-    createClient(server, (clientErr, clientSocket, serverSocket) => {
+    createClient(server!, (clientErr, clientSocket, serverSocket) => {
       if (clientErr) {
         return callback(clientErr);
       }
@@ -74,7 +74,7 @@ export function createServerAndClient(
 }
 
 export function range(start: number, end: number) {
-  const r = [];
+  const r = [] as number[];
   for (let i = start; i <= end; i++) {
     r.push(i);
   }

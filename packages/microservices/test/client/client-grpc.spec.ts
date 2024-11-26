@@ -365,7 +365,7 @@ describe('ClientGrpcProxy', () => {
         });
 
         subscription.unsubscribe();
-        handler(null, 'a');
+        handler!(null, 'a');
 
         expect(dataSpy.called).to.be.false;
         expect(errorSpy.called).to.be.false;
@@ -416,7 +416,7 @@ describe('ClientGrpcProxy', () => {
         });
 
         subscription.unsubscribe();
-        handler(null, 'a');
+        handler!(null, 'a');
 
         expect(dataSpy.called).to.be.false;
         expect(writeSpy.called).to.be.true;
@@ -476,7 +476,7 @@ describe('ClientGrpcProxy', () => {
 
   describe('publish', () => {
     it('should throw exception', () => {
-      expect(() => client['publish'](null, null)).to.throws(Error);
+      expect(() => client['publish'](null, null!)).to.throws(Error);
     });
   });
 
@@ -504,7 +504,7 @@ describe('ClientGrpcProxy', () => {
     it('should return root package in case package name is not defined', () => {
       const root = {};
 
-      expect(client.lookupPackage(root, undefined)).to.be.equal(root);
+      expect(client.lookupPackage(root, undefined!)).to.be.equal(root);
       expect(client.lookupPackage(root, '')).to.be.equal(root);
     });
   });

@@ -12,18 +12,18 @@ describe('JsonSocket chaining', () => {
         return done(err);
       }
 
-      expect(clientSocket.on(MESSAGE_EVENT, () => {})).to.be.instanceof(
+      expect(clientSocket!.on(MESSAGE_EVENT, () => {})).to.be.instanceof(
         JsonSocket,
       );
-      expect(clientSocket.on(TcpEventsMap.CONNECT, () => {})).to.deep.equal(
+      expect(clientSocket!.on(TcpEventsMap.CONNECT, () => {})).to.deep.equal(
         clientSocket,
       );
       expect(
-        clientSocket.on(MESSAGE_EVENT, () => {}).on('end', () => {}),
+        clientSocket!.on(MESSAGE_EVENT, () => {}).on('end', () => {}),
       ).to.deep.equal(clientSocket);
 
-      clientSocket.end();
-      server.close(done);
+      clientSocket!.end();
+      server!.close(done);
     });
   });
 });

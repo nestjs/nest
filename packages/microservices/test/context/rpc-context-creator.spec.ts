@@ -149,7 +149,7 @@ describe('RpcContextCreator', () => {
 
   describe('createGuardsFn', () => {
     it('should throw exception when "tryActivate" returns false', () => {
-      const guardsFn = contextCreator.createGuardsFn([null], null, null);
+      const guardsFn = contextCreator.createGuardsFn([null], null!, null!)!;
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
       guardsFn([]).catch(err => expect(err).to.not.be.undefined);
     });
@@ -217,12 +217,12 @@ describe('RpcContextCreator', () => {
             {
               index: 1,
               type: 'test',
-              data: null,
+              data: null!,
               pipes: [],
               extractValue: () => null,
             },
           ],
-        );
+        )!;
         await pipesFn([]);
         expect(pipesFn).to.be.a('function');
       });
