@@ -44,7 +44,7 @@ export class ServerNats<
   }>();
   private readonly subscriptions: Subscription[] = [];
 
-  constructor(private readonly options: NatsOptions['options']) {
+  constructor(private readonly options: Required<NatsOptions>['options']) {
     super();
 
     natsPackage = this.loadPackage('nats', ServerNats.name, () =>
@@ -211,7 +211,7 @@ export class ServerNats<
 
         case 'pingTimer':
           if (this.options.debug) {
-            this.logger.debug(
+            this.logger.debug!(
               `NatsStatus: type: "${status.type}", data: "${data}".`,
             );
           }

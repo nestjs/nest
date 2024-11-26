@@ -29,13 +29,13 @@ type NatsMsg = any;
 export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
   protected readonly logger = new Logger(ClientNats.name);
 
-  protected natsClient: Client;
-  protected connectionPromise: Promise<Client>;
+  protected natsClient: Client | null = null;
+  protected connectionPromise: Promise<Client> | null = null;
   protected statusEventEmitter = new EventEmitter<{
     [key in keyof NatsEvents]: Parameters<NatsEvents[key]>;
   }>();
 
-  constructor(protected readonly options: NatsOptions['options']) {
+  constructor(protected readonly options: Required<NatsOptions>['options']) {
     super();
     natsPackage = loadPackage('nats', ClientNats.name, () => require('nats'));
 
@@ -229,6 +229,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       return () => subscription.unsubscribe();
     } catch (err) {
       callback({ err });
+      return () => {};
     }
   }
 

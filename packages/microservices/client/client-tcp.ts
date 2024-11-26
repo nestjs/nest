@@ -19,19 +19,18 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
   protected readonly host: string;
   protected readonly socketClass: Type<TcpSocket>;
   protected readonly tlsOptions?: ConnectionOptions;
-  protected socket: TcpSocket;
-  protected connectionPromise: Promise<any>;
+  protected socket: TcpSocket | null = null;
+  protected connectionPromise: Promise<any> | null = null;
   protected pendingEventListeners: Array<{
     event: keyof TcpEvents;
     callback: TcpEvents[keyof TcpEvents];
   }> = [];
 
-  constructor(options: TcpClientOptions['options']) {
+  constructor(options: Required<TcpClientOptions>['options']) {
     super();
-    this.port = this.getOptionsProp(options, 'port') || TCP_DEFAULT_PORT;
-    this.host = this.getOptionsProp(options, 'host') || TCP_DEFAULT_HOST;
-    this.socketClass =
-      this.getOptionsProp(options, 'socketClass') || JsonSocket;
+    this.port = this.getOptionsProp(options, 'port', TCP_DEFAULT_PORT);
+    this.host = this.getOptionsProp(options, 'host', TCP_DEFAULT_HOST);
+    this.socketClass = this.getOptionsProp(options, 'socketClass', JsonSocket);
     this.tlsOptions = this.getOptionsProp(options, 'tlsOptions');
 
     this.initializeSerializer(options);
@@ -48,13 +47,13 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
     this.registerErrorListener(this.socket);
 
     this.pendingEventListeners.forEach(({ event, callback }) =>
-      this.socket.on(event, callback as any),
+      this.socket!.on(event, callback as any),
     );
     this.pendingEventListeners = [];
 
     const source$ = this.connect$(this.socket.netSocket).pipe(
       tap(() => {
-        this.socket.on('message', (buffer: WritePacket & PacketId) =>
+        this.socket!.on('message', (buffer: WritePacket & PacketId) =>
           this.handleResponse(buffer),
         );
       }),
@@ -105,7 +104,6 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
         ...this.tlsOptions,
         port: this.port,
         host: this.host,
-        socket,
       });
     } else {
       socket = new net.Socket();
@@ -148,7 +146,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
 
   public handleClose() {
     this.socket = null;
-    this.connectionPromise = undefined;
+    this.connectionPromise = null;
 
     if (this.routingMap.size > 0) {
       const err = new Error('Connection closed');
@@ -188,11 +186,12 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
       const serializedPacket = this.serializer.serialize(packet);
 
       this.routingMap.set(packet.id, callback);
-      this.socket.sendMessage(serializedPacket);
+      this.socket!.sendMessage(serializedPacket);
 
       return () => this.routingMap.delete(packet.id);
     } catch (err) {
       callback({ err });
+      return () => {};
     }
   }
 
@@ -202,6 +201,6 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
       ...packet,
       pattern,
     });
-    return this.socket.sendMessage(serializedPacket);
+    return this.socket!.sendMessage(serializedPacket);
   }
 }

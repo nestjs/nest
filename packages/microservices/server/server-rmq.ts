@@ -65,7 +65,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     callback: RmqEvents[keyof RmqEvents];
   }> = [];
 
-  constructor(protected readonly options: RmqOptions['options']) {
+  constructor(protected readonly options: Required<RmqOptions>['options']) {
     super();
     this.urls = this.getOptionsProp(this.options, 'urls') || [RQM_DEFAULT_URL];
     this.queue =
@@ -113,7 +113,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       this._status$.next(RmqStatus.CONNECTED);
       this.channel = this.server.createChannel({
         json: false,
-        setup: (channel: any) => this.setupChannel(channel, callback),
+        setup: (channel: any) => this.setupChannel(channel, callback!),
       });
     });
 

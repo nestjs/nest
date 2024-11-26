@@ -64,7 +64,7 @@ export class NestMicroservice
   ) {
     super(container, config);
 
-    this.injector = new Injector({ preview: config.preview });
+    this.injector = new Injector({ preview: config.preview! });
     this.microservicesModule.register(
       container,
       this.graphInspector,

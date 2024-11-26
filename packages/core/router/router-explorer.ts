@@ -26,15 +26,15 @@ import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
-import {
-  InterceptorsConsumer,
-  InterceptorsContextCreator,
-} from '../interceptors';
 import { GraphInspector } from '../inspector/graph-inspector';
 import {
   Entrypoint,
   HttpEntrypointMetadata,
 } from '../inspector/interfaces/entrypoint.interface';
+import {
+  InterceptorsConsumer,
+  InterceptorsContextCreator,
+} from '../interceptors';
 import { MetadataScanner } from '../metadata-scanner';
 import { PipesConsumer, PipesContextCreator } from '../pipes';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';

@@ -1,8 +1,12 @@
-import { normalizePath, isString } from '@nestjs/common/utils/shared.utils';
+import { Type } from '@nestjs/common';
+import { isString, normalizePath } from '@nestjs/common/utils/shared.utils';
 import { Routes } from '../interfaces/routes.interface';
 
 export function flattenRoutePaths(routes: Routes) {
-  const result = [];
+  const result: Array<{
+    module: Type;
+    path: string;
+  }> = [];
   routes.forEach(item => {
     if (item.module && item.path) {
       result.push({ module: item.module, path: item.path });
@@ -15,7 +19,7 @@ export function flattenRoutePaths(routes: Routes) {
             normalizePath(item.path) + normalizePath(child.path),
           );
         } else {
-          result.push({ path: item.path, module: child });
+          result.push({ path: item.path, module: child as any as Type });
         }
       });
       result.push(...flattenRoutePaths(childrenRef));

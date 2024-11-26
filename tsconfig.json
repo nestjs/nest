@@ -4,6 +4,8 @@
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "removeComments": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true,
     "noLib": false,
     "emitDecoratorMetadata": true,

@@ -33,6 +33,6 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
   }
 
   public getGlobalMetadata<T extends any[]>(): T {
-    return [] as T;
+    return [] as any[] as T;
   }
 }

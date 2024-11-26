@@ -51,8 +51,8 @@ export class MulterModule {
     return [
       this.createAsyncOptionsProvider(options),
       {
-        provide: options.useClass,
-        useClass: options.useClass,
+        provide: options.useClass!,
+        useClass: options.useClass!,
       },
     ];
   }
@@ -71,7 +71,7 @@ export class MulterModule {
       provide: MULTER_MODULE_OPTIONS,
       useFactory: async (optionsFactory: MulterOptionsFactory) =>
         optionsFactory.createMulterOptions(),
-      inject: [options.useExisting || options.useClass],
+      inject: [options.useExisting || options.useClass!],
     };
   }
 }

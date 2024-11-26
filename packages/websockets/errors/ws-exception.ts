@@ -15,9 +15,8 @@ export class WsException extends Error {
     ) {
       this.message = (this.error as Record<string, any>).message;
     } else if (this.constructor) {
-      this.message = this.constructor.name
-        .match(/[A-Z][a-z]+|[0-9]+/g)
-        .join(' ');
+      this.message =
+        this.constructor!.name!.match(/[A-Z][a-z]+|[0-9]+/g)!.join(' ');
     }
   }
 

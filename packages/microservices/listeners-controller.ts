@@ -85,7 +85,7 @@ export class ListenersController {
           acc.push({ ...handler, patterns: [pattern] }),
         );
         return acc;
-      }, [])
+      }, [] as EventOrMessageListenerDefinition[])
       .forEach((definition: EventOrMessageListenerDefinition) => {
         const {
           patterns: [pattern],
@@ -98,7 +98,7 @@ export class ListenersController {
         this.insertEntrypointDefinition(
           instanceWrapper,
           definition,
-          serverInstance.transportId,
+          serverInstance.transportId!,
         );
 
         if (isStatic) {

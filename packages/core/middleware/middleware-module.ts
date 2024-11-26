@@ -338,8 +338,8 @@ export class MiddlewareModule<
   }
 
   private getContextId(request: unknown, isTreeDurable: boolean): ContextId {
-    const contextId = ContextIdFactory.getByRequest(request);
-    if (!request[REQUEST_CONTEXT_ID]) {
+    const contextId = ContextIdFactory.getByRequest(request!);
+    if (!request![REQUEST_CONTEXT_ID]) {
       Object.defineProperty(request, REQUEST_CONTEXT_ID, {
         value: contextId,
         enumerable: false,

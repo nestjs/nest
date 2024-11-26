@@ -156,7 +156,7 @@ export class WebSocketsController {
         .pipe(
           distinctUntilChanged((prev, curr) => compareElementAt(prev, curr, 0)),
         )
-        .subscribe((args: unknown[]) => instance.handleConnection(...args));
+        .subscribe((args: unknown[]) => instance.handleConnection!(...args));
     }
   }
 

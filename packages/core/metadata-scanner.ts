@@ -34,7 +34,10 @@ export class MetadataScanner {
         visitedNames.set(property, true);
 
         // reason: https://github.com/nestjs/nest/pull/10821#issuecomment-1411916533
-        const descriptor = Object.getOwnPropertyDescriptor(prototype, property);
+        const descriptor = Object.getOwnPropertyDescriptor(
+          prototype,
+          property,
+        )!;
 
         if (
           descriptor.set ||

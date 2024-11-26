@@ -91,7 +91,7 @@ export class GraphInspector {
   }
 
   public insertAttachedEnhancer(wrapper: InstanceWrapper) {
-    const existingNode = this.graph.getNodeById(wrapper.id);
+    const existingNode = this.graph.getNodeById(wrapper.id)!;
     existingNode.metadata.global = true;
 
     this.graph.insertAttachedEnhancer(existingNode.id);
@@ -123,12 +123,12 @@ export class GraphInspector {
         sourceModuleName: moduleRef.name,
         durable: wrapper.isDependencyTreeDurable(),
         static: wrapper.isDependencyTreeStatic(),
-        scope: wrapper.scope,
+        scope: wrapper.scope!,
         transient: wrapper.isTransient,
         exported: moduleRef.exports.has(wrapper.token),
         token: wrapper.token,
         subtype: wrapper.subtype,
-        initTime: wrapper.initTime,
+        initTime: wrapper.initTime!,
       },
     });
   }
@@ -168,7 +168,7 @@ export class GraphInspector {
     const moduleRef = this.container.getModuleByKey(entry.moduleToken);
     const sourceInstanceWrapper =
       moduleRef.controllers.get(entry.classRef) ??
-      moduleRef.providers.get(entry.classRef);
+      moduleRef.providers.get(entry.classRef)!;
     const existingSourceNode = this.graph.getNodeById(
       sourceInstanceWrapper.id,
     ) as ClassNode;
@@ -190,7 +190,7 @@ export class GraphInspector {
       });
     } else {
       const name =
-        entry.enhancerRef.constructor?.name ??
+        entry.enhancerRef!.constructor?.name ??
         (entry.enhancerRef as Function).name;
 
       enhancers.push({
@@ -219,7 +219,7 @@ export class GraphInspector {
         targetClassName: target.name,
         sourceClassToken: source.token,
         targetClassToken: target.token,
-        targetModuleName: target.host?.name,
+        targetModuleName: target.host?.name!,
         keyOrIndex,
         injectionType,
       },

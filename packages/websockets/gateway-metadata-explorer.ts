@@ -21,14 +21,14 @@ export class GatewayMetadataExplorer {
     const instancePrototype = Object.getPrototypeOf(instance);
     return this.metadataScanner
       .getAllMethodNames(instancePrototype)
-      .map(method => this.exploreMethodMetadata(instancePrototype, method))
+      .map(method => this.exploreMethodMetadata(instancePrototype, method)!)
       .filter(metadata => metadata);
   }
 
   public exploreMethodMetadata(
     instancePrototype: object,
     methodName: string,
-  ): MessageMappingProperties {
+  ): MessageMappingProperties | null {
     const callback = instancePrototype[methodName];
     const isMessageMapping = Reflect.getMetadata(
       MESSAGE_MAPPING_METADATA,

@@ -28,8 +28,8 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly subscriptionsCount = new Map<string, number>();
   protected readonly url: string;
-  protected mqttClient: MqttClient;
-  protected connectionPromise: Promise<any>;
+  protected mqttClient: MqttClient | null = null;
+  protected connectionPromise: Promise<any> | null = null;
   protected isInitialConnection = false;
   protected isReconnecting = false;
   protected pendingEventListeners: Array<{
@@ -37,7 +37,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     callback: MqttEvents[keyof MqttEvents];
   }> = [];
 
-  constructor(protected readonly options: MqttOptions['options']) {
+  constructor(protected readonly options: Required<MqttOptions>['options']) {
     super();
     this.url = this.getOptionsProp(this.options, 'url') ?? MQTT_DEFAULT_URL;
 
@@ -64,7 +64,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   public connect(): Promise<any> {
     if (this.mqttClient) {
-      return this.connectionPromise;
+      return this.connectionPromise!;
     }
     this.mqttClient = this.createClient();
     this.registerErrorListener(this.mqttClient);
@@ -75,7 +75,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     this.registerCloseListener(this.mqttClient);
 
     this.pendingEventListeners.forEach(({ event, callback }) =>
-      this.mqttClient.on(event, callback),
+      this.mqttClient!.on(event, callback),
     );
     this.pendingEventListeners = [];
 
@@ -233,7 +233,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
         const options = serializedPacket.options;
         delete serializedPacket.options;
 
-        this.mqttClient.publish(
+        this.mqttClient!.publish(
           this.getRequestPattern(pattern),
           JSON.stringify(serializedPacket),
           this.mergePacketOptions(options),
@@ -241,7 +241,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       };
 
       if (subscriptionsCount <= 0) {
-        this.mqttClient.subscribe(
+        this.mqttClient!.subscribe(
           responseChannel,
           (err: any) => !err && publishPacket(),
         );
@@ -255,6 +255,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       };
     } catch (err) {
       callback({ err });
+      return () => {};
     }
   }
 
@@ -267,7 +268,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     delete serializedPacket.options;
 
     return new Promise<void>((resolve, reject) =>
-      this.mqttClient.publish(
+      this.mqttClient!.publish(
         pattern,
         JSON.stringify(serializedPacket),
         this.mergePacketOptions(options),
@@ -277,11 +278,11 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   }
 
   protected unsubscribeFromChannel(channel: string) {
-    const subscriptionCount = this.subscriptionsCount.get(channel);
+    const subscriptionCount = this.subscriptionsCount.get(channel)!;
     this.subscriptionsCount.set(channel, subscriptionCount - 1);
 
     if (subscriptionCount - 1 <= 0) {
-      this.mqttClient.unsubscribe(channel);
+      this.mqttClient!.unsubscribe(channel);
     }
   }
 
