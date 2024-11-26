@@ -338,7 +338,7 @@ export class InstanceWrapper<T = any> {
 
   public isInRequestScope(
     contextId: ContextId,
-    inquirer?: InstanceWrapper | undefined,
+    inquirer?: InstanceWrapper,
   ): boolean {
     const isDependencyTreeStatic = this.isDependencyTreeStatic();
 

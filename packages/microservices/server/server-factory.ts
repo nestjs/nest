@@ -20,19 +20,19 @@ export class ServerFactory {
     >;
     switch (transport) {
       case Transport.REDIS:
-        return new ServerRedis(options as ServerRedis['options']);
+        return new ServerRedis(options);
       case Transport.NATS:
-        return new ServerNats(options as ServerNats['options']);
+        return new ServerNats(options);
       case Transport.MQTT:
-        return new ServerMqtt(options as MqttOptions['options']);
+        return new ServerMqtt(options);
       case Transport.GRPC:
-        return new ServerGrpc(options as ServerGrpc['options']);
+        return new ServerGrpc(options);
       case Transport.KAFKA:
-        return new ServerKafka(options as ServerKafka['options']);
+        return new ServerKafka(options);
       case Transport.RMQ:
-        return new ServerRMQ(options as ServerRMQ['options']);
+        return new ServerRMQ(options);
       default:
-        return new ServerTCP(options as ServerTCP['options']);
+        return new ServerTCP(options);
     }
   }
 }

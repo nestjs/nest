@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-base-to-string */
 import { INestApplication } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { Test } from '@nestjs/testing';
@@ -10,7 +11,7 @@ import { ServerGateway } from '../src/server.gateway';
 import { WsPathGateway } from '../src/ws-path.gateway';
 import { WsPathGateway2 } from '../src/ws-path2.gateway';
 
-async function createNestApp(...gateways): Promise<INestApplication> {
+async function createNestApp(...gateways: any[]): Promise<INestApplication> {
   const testingModule = await Test.createTestingModule({
     providers: gateways,
   }).compile();
@@ -20,7 +21,7 @@ async function createNestApp(...gateways): Promise<INestApplication> {
 }
 
 describe('WebSocketGateway (WsAdapter)', () => {
-  let ws, ws2, app;
+  let ws: WebSocket, ws2: WebSocket, app: INestApplication;
 
   it(`should handle message (2nd port)`, async () => {
     app = await createNestApp(ApplicationGateway);
@@ -39,7 +40,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     );
     await new Promise<void>(resolve =>
       ws.on('message', data => {
-        expect(JSON.parse(data).data.test).to.be.eql('test');
+        expect(JSON.parse(data.toString()).data.test).to.be.eql('test');
         ws.close();
         resolve();
       }),
@@ -63,7 +64,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     );
     await new Promise<void>(resolve =>
       ws.on('message', data => {
-        expect(JSON.parse(data).data.test).to.be.eql('test');
+        expect(JSON.parse(data.toString()).data.test).to.be.eql('test');
         ws.close();
         resolve();
       }),
@@ -90,7 +91,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
       );
       await new Promise<void>(resolve =>
         ws.on('message', data => {
-          expect(JSON.parse(data).data.test).to.be.eql('test');
+          expect(JSON.parse(data.toString()).data.test).to.be.eql('test');
           ws.close();
           resolve();
         }),
@@ -115,7 +116,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     await new Promise<void>(resolve =>
       ws.on('open', () => {
         ws.on('message', data => {
-          expect(JSON.parse(data).data.test).to.be.eql('test');
+          expect(JSON.parse(data.toString()).data.test).to.be.eql('test');
           ws.close();
           resolve();
         });
@@ -132,7 +133,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
 
     await new Promise<void>(resolve => {
       ws2.on('message', data => {
-        expect(JSON.parse(data).data.test).to.be.eql('test');
+        expect(JSON.parse(data.toString()).data.test).to.be.eql('test');
         ws2.close();
         resolve();
       });
@@ -162,7 +163,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     await new Promise<void>(resolve =>
       ws.on('open', () => {
         ws.on('message', data => {
-          expect(JSON.parse(data).data.test).to.be.eql('test');
+          expect(JSON.parse(data.toString()).data.test).to.be.eql('test');
           ws.close();
           resolve();
         });
@@ -179,7 +180,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
 
     await new Promise<void>(resolve => {
       ws2.on('message', data => {
-        expect(JSON.parse(data).data.test).to.be.eql('test');
+        expect(JSON.parse(data.toString()).data.test).to.be.eql('test');
         ws2.close();
         resolve();
       });
@@ -211,7 +212,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     );
     await new Promise<void>(resolve =>
       ws.on('message', data => {
-        expect(JSON.parse(data).data.path).to.be.eql('getClient');
+        expect(JSON.parse(data.toString()).data.path).to.be.eql('getClient');
         ws.close();
         resolve();
       }),
@@ -238,7 +239,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     ws.send(JSON.stringify(['push', { test: 'test' }]));
     await new Promise<void>(resolve =>
       ws.on('message', data => {
-        expect(JSON.parse(data).data.test).to.be.eql('test');
+        expect(JSON.parse(data.toString()).data.test).to.be.eql('test');
         ws.close();
         resolve();
       }),
@@ -266,7 +267,7 @@ describe('WebSocketGateway (WsAdapter)', () => {
     ws.send(JSON.stringify(['push', { test: 'test' }]));
     await new Promise<void>(resolve =>
       ws.on('message', data => {
-        expect(JSON.parse(data).data.test).to.be.eql('test');
+        expect(JSON.parse(data.toString()).data.test).to.be.eql('test');
         ws.close();
         resolve();
       }),

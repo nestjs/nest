@@ -52,7 +52,7 @@ export const mapToClass = <T extends Function | Type<any>>(
     if (excludedRoutes.length <= 0) {
       return middleware;
     }
-    const MiddlewareHost = class extends (middleware as Type<any>) {
+    const MiddlewareHost = class extends middleware {
       use(...params: unknown[]) {
         const [req, _, next] = params as [Record<string, any>, any, Function];
         const isExcluded = isMiddlewareRouteExcluded(

@@ -225,9 +225,8 @@ export class RouterExplorer {
             requestMethod: RequestMethod[
               requestMethod
             ] as keyof typeof RequestMethod,
-            methodVersion: routePathMetadata.methodVersion as VersionValue,
-            controllerVersion:
-              routePathMetadata.controllerVersion as VersionValue,
+            methodVersion: routePathMetadata.methodVersion,
+            controllerVersion: routePathMetadata.controllerVersion,
           },
         };
 

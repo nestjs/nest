@@ -116,7 +116,7 @@ describe('Module', () => {
     const provider = { provide: 'test', useValue: 'test' };
 
     moduleRef.addProvider(provider as any);
-    expect((addCustomProvider as sinon.SinonSpy).called).to.be.true;
+    expect(addCustomProvider.called).to.be.true;
   });
 
   it('should call "addCustomClass" when "useClass" property exists', () => {
@@ -126,7 +126,7 @@ describe('Module', () => {
     const provider = { provide: 'test', useClass: () => null };
 
     moduleRef.addCustomProvider(provider as any, new Map());
-    expect((addCustomClass as sinon.SinonSpy).called).to.be.true;
+    expect(addCustomClass.called).to.be.true;
   });
 
   it('should call "addCustomValue" when "useValue" property exists', () => {
@@ -136,7 +136,7 @@ describe('Module', () => {
     const provider = { provide: 'test', useValue: () => null };
 
     moduleRef.addCustomProvider(provider as any, new Map());
-    expect((addCustomValue as sinon.SinonSpy).called).to.be.true;
+    expect(addCustomValue.called).to.be.true;
   });
 
   it('should call "addCustomValue" when "useValue" property exists but its value is `undefined`', () => {
@@ -146,7 +146,7 @@ describe('Module', () => {
     const provider = { provide: 'test', useValue: undefined };
 
     moduleRef.addCustomProvider(provider as any, new Map());
-    expect((addCustomValue as sinon.SinonSpy).called).to.be.true;
+    expect(addCustomValue.called).to.be.true;
   });
 
   it('should call "addCustomFactory" when "useFactory" property exists', () => {
@@ -156,7 +156,7 @@ describe('Module', () => {
     const provider = { provide: 'test', useFactory: () => null };
 
     moduleRef.addCustomProvider(provider as any, new Map());
-    expect((addCustomFactory as sinon.SinonSpy).called).to.be.true;
+    expect(addCustomFactory.called).to.be.true;
   });
 
   it('should call "addCustomUseExisting" when "useExisting" property exists', () => {
@@ -166,7 +166,7 @@ describe('Module', () => {
     const provider = { provide: 'test', useExisting: () => null };
 
     moduleRef.addCustomUseExisting(provider as any, new Map());
-    expect((addCustomUseExisting as sinon.SinonSpy).called).to.be.true;
+    expect(addCustomUseExisting.called).to.be.true;
   });
 
   describe('addCustomClass', () => {

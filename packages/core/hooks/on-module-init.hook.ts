@@ -59,6 +59,6 @@ export async function callModuleInitHook(module: Module): Promise<void> {
     hasOnModuleInitHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    await (moduleClassInstance as OnModuleInit).onModuleInit();
+    await moduleClassInstance.onModuleInit();
   }
 }

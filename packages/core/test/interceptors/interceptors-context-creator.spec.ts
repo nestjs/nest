@@ -53,7 +53,7 @@ describe('InterceptorsContextCreator', () => {
     };
     applicationConfig = new ApplicationConfig();
     interceptorsContextCreator = new InterceptorsContextCreator(
-      container as any,
+      container,
       applicationConfig,
     );
   });

@@ -48,6 +48,7 @@ describe('Auto-Mocking with token in factory', () => {
     expect(fooServ.foo.called);
   });
   it('cannot mock the dependencies', async () => {
+    /* eslint-disable @typescript-eslint/unbound-method */
     const moduleRef = Test.createTestingModule({
       providers: [BarService],
     }).useMocker(token => {

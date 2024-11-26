@@ -174,7 +174,7 @@ describe('ClientRMQ', function () {
         off: () => ({}),
       };
       client
-        .mergeDisconnectEvent(instance as any, EMPTY)
+        .mergeDisconnectEvent(instance, EMPTY)
         .subscribe({ error: (err: any) => expect(err).to.be.eql(error) });
     });
   });

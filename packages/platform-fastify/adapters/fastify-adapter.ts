@@ -426,7 +426,7 @@ export class FastifyAdapter<
       response.statusCode = statusCode;
       return response;
     }
-    return (response as TReply).code(statusCode);
+    return response.code(statusCode);
   }
 
   public end(response: TReply, message?: string) {

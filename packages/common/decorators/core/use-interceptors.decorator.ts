@@ -37,8 +37,7 @@ export function UseInterceptors(
       interceptor: T,
     ) =>
       interceptor &&
-      (isFunction(interceptor) ||
-        isFunction((interceptor as Record<string, any>).intercept));
+      (isFunction(interceptor) || isFunction(interceptor.intercept));
 
     if (descriptor) {
       validateEach(

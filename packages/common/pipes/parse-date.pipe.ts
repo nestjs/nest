@@ -54,9 +54,7 @@ export class ParseDatePipe
    */
   transform(value: string | number | undefined | null): Date {
     if (this.options.optional && isNil(value)) {
-      return this.options.default
-        ? this.options.default()
-        : (value as undefined | null);
+      return this.options.default ? this.options.default() : value;
     }
 
     if (!value) {

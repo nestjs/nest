@@ -126,7 +126,7 @@ describe('provider classifier', () => {
         useFactory: undefined,
       };
 
-      expect(isFactoryProvider(factoryProvider as FactoryProvider)).to.be.false;
+      expect(isFactoryProvider(factoryProvider)).to.be.false;
     });
   });
 });

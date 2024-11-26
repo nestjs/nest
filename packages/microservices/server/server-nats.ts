@@ -179,7 +179,7 @@ export class ServerNats<
 
     // In case the "reply" topic is not provided, there's no need for a reply.
     // Method returns a noop function instead
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+
     return () => {};
   }
 

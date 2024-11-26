@@ -26,7 +26,7 @@ describe('ListenersController', () => {
     server: any,
     serverTCP: any,
     serverCustom: any,
-    customTransport: Symbol,
+    customTransport: symbol,
     addSpy: sinon.SinonSpy,
     addSpyTCP: sinon.SinonSpy,
     addSpyCustom: sinon.SinonSpy,

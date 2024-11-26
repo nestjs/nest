@@ -98,9 +98,7 @@ describe('ClientsModule', () => {
           createClientOptions: sinon.spy(),
         };
         try {
-          await ((dynamicModule.providers[0] as any).useFactory as any)(
-            optionsFactory,
-          );
+          await (dynamicModule.providers[0] as any).useFactory(optionsFactory);
         } catch (e) {
           console.log(e);
         }

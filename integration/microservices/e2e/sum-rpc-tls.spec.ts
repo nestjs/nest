@@ -2,11 +2,11 @@ import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
+import * as fs from 'fs';
+import * as path from 'path';
 import * as request from 'supertest';
 import { AppController } from '../src/tcp-tls/app.controller';
 import { ApplicationModule } from '../src/tcp-tls/app.module';
-import * as fs from 'fs';
-import * as path from 'path';
 
 describe('RPC TLS transport', () => {
   let server;
@@ -109,7 +109,7 @@ describe('RPC TLS transport', () => {
   });
 
   it(`/POST (event notification)`, done => {
-    request(server)
+    return request(server)
       .post('/notify')
       .send([1, 2, 3, 4, 5])
       .end(() => {

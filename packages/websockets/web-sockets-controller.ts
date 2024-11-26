@@ -235,7 +235,7 @@ export class WebSocketsController {
     instance: NestGateway,
     subscribersMap: MessageMappingProperties[],
   ) {
-    const gatewayClassName = (instance as Object)?.constructor?.name;
+    const gatewayClassName = (instance as object)?.constructor?.name;
     if (!gatewayClassName) {
       return;
     }

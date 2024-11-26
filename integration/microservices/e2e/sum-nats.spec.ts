@@ -84,7 +84,7 @@ describe('NATS transport', () => {
   });
 
   it(`/POST (event notification)`, done => {
-    request(server)
+    return request(server)
       .post('/notify')
       .send([1, 2, 3, 4, 5])
       .end(() => {

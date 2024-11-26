@@ -84,7 +84,7 @@ describe('RouterExecutionContext', () => {
       it('should call "exchangeKeysForValues" with expected arguments', done => {
         const keys = Object.keys(metadata);
 
-        contextCreator.create({ foo: 'bar' }, callback as any, '', '', 0);
+        contextCreator.create({ foo: 'bar' }, callback, '', '', 0);
         expect(exchangeKeysForValuesSpy.called).to.be.true;
         expect(exchangeKeysForValuesSpy.calledWith(keys, metadata)).to.be.true;
         done();
@@ -105,13 +105,7 @@ describe('RouterExecutionContext', () => {
           tryActivateStub = sinon
             .stub(guardsConsumer, 'tryActivate')
             .callsFake(async () => true);
-          proxyContext = contextCreator.create(
-            instance,
-            callback as any,
-            '',
-            '',
-            0,
-          );
+          proxyContext = contextCreator.create(instance, callback, '', '', 0);
         });
         it('should be a function', () => {
           expect(proxyContext).to.be.a('function');

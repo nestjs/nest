@@ -411,7 +411,7 @@ export class DependenciesScanner {
       });
     };
 
-    const rootModule = modulesGenerator.next().value as Module;
+    const rootModule = modulesGenerator.next().value;
     calculateDistance(rootModule);
   }
 
@@ -438,17 +438,11 @@ export class DependenciesScanner {
   public insertProvider(provider: Provider, token: string) {
     const isCustomProvider = this.isCustomProvider(provider);
     if (!isCustomProvider) {
-      return this.container.addProvider(provider as Type<any>, token);
+      return this.container.addProvider(provider, token);
     }
     const applyProvidersMap = this.getApplyProvidersMap();
     const providersKeys = Object.keys(applyProvidersMap);
-    const type = (
-      provider as
-        | ClassProvider
-        | ValueProvider
-        | FactoryProvider
-        | ExistingProvider
-    ).provide;
+    const type = provider.provide;
 
     if (!providersKeys.includes(type as string)) {
       return this.container.addProvider(provider as any, token);

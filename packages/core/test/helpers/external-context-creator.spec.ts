@@ -55,7 +55,7 @@ describe('ExternalContextCreator', () => {
         contextCreator,
         'getContextModuleKey',
       );
-      contextCreator.create({ foo: 'bar' }, callback as any, '', '', null);
+      contextCreator.create({ foo: 'bar' }, callback, '', '', null);
       expect(getContextModuleKeySpy.called).to.be.true;
       done();
     });
@@ -65,13 +65,7 @@ describe('ExternalContextCreator', () => {
 
       beforeEach(() => {
         instance = { foo: 'bar' };
-        proxyContext = contextCreator.create(
-          instance,
-          callback as any,
-          '',
-          '',
-          null,
-        );
+        proxyContext = contextCreator.create(instance, callback, '', '', null);
       });
       it('should be a function', () => {
         expect(proxyContext).to.be.a('function');

@@ -328,7 +328,7 @@ export class ServerGrpc extends Server<never, never> {
       const drain = () => {
         writing = true;
         while (valuesWaitingToBeDrained.length > 0) {
-          const value = valuesWaitingToBeDrained.shift()!;
+          const value = valuesWaitingToBeDrained.shift();
           if (writing) {
             // The first time `call.write` returns false, we need to stop.
             // It wrote the value, but it won't write anything else.

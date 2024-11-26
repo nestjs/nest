@@ -64,8 +64,6 @@ export async function callModuleBootstrapHook(module: Module): Promise<any> {
     hasOnAppBootstrapHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    await (
-      moduleClassInstance as OnApplicationBootstrap
-    ).onApplicationBootstrap();
+    await moduleClassInstance.onApplicationBootstrap();
   }
 }

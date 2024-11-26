@@ -142,7 +142,7 @@ export class ConsoleLogger implements LoggerService {
     // eslint-disable-next-line prefer-const
     let [context, opts] = isString(contextOrOptions)
       ? [contextOrOptions, options]
-      : !!options
+      : options
         ? [undefined, options]
         : [contextOrOptions?.context, contextOrOptions];
 
@@ -515,7 +515,7 @@ export class ConsoleLogger implements LoggerService {
       return { messages: args, context: this.context };
     }
     return {
-      context: lastElement as string,
+      context: lastElement,
       messages: args.slice(0, args.length - 1),
     };
   }
@@ -545,7 +545,7 @@ export class ConsoleLogger implements LoggerService {
       return { messages, context };
     }
     return {
-      stack: lastElement as string,
+      stack: lastElement,
       messages: messages.slice(0, messages.length - 1),
       context,
     };

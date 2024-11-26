@@ -315,7 +315,7 @@ describe('ClientMqtt', () => {
         on: (ev, callback) => callback(error),
         off: () => ({}),
       };
-      client.mergeCloseEvent(instance as any, EMPTY).subscribe({
+      client.mergeCloseEvent(instance, EMPTY).subscribe({
         error: (err: any) => expect(err).to.be.eql(error),
       });
     });

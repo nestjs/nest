@@ -70,8 +70,6 @@ export async function callBeforeAppShutdownHook(
     hasBeforeApplicationShutdownHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    await (
-      moduleClassInstance as BeforeApplicationShutdown
-    ).beforeApplicationShutdown(signal);
+    await moduleClassInstance.beforeApplicationShutdown(signal);
   }
 }

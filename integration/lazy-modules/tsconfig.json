@@ -32,8 +32,7 @@
   },
   "include": [
     "src/**/*",
-    "e2e/**/*",
-    "test/**/*"
+    "e2e/**/*"
   ],
   "exclude": [
     "node_modules",

@@ -69,8 +69,6 @@ export async function callAppShutdownHook(
     hasOnAppShutdownHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    await (moduleClassInstance as OnApplicationShutdown).onApplicationShutdown(
-      signal,
-    );
+    await moduleClassInstance.onApplicationShutdown(signal);
   }
 }

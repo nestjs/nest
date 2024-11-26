@@ -39,7 +39,6 @@ export abstract class AbstractWsAdapter<
     isCallable && (await new Promise(resolve => server.close(resolve)));
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   public async dispose() {}
 
   public abstract create(port: number, options?: TOptions): TServer;

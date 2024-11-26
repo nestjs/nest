@@ -86,11 +86,8 @@ export class HttpException extends Error {
   public initMessage() {
     if (isString(this.response)) {
       this.message = this.response;
-    } else if (
-      isObject(this.response) &&
-      isString((this.response as Record<string, any>).message)
-    ) {
-      this.message = (this.response as Record<string, any>).message;
+    } else if (isObject(this.response) && isString(this.response.message)) {
+      this.message = this.response.message;
     } else if (this.constructor) {
       this.message =
         this.constructor.name.match(/[A-Z][a-z]+|[0-9]+/g)?.join(' ') ??

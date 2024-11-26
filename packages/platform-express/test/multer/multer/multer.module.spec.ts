@@ -76,9 +76,7 @@ describe('MulterModule', () => {
         const optionsFactory = {
           createMulterOptions: sinon.spy(),
         };
-        await ((dynamicModule.providers[0] as any).useFactory as any)(
-          optionsFactory,
-        );
+        await (dynamicModule.providers[0] as any).useFactory(optionsFactory);
         expect(optionsFactory.createMulterOptions.called).to.be.true;
       });
     });
