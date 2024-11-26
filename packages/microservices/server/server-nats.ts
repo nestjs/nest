@@ -77,16 +77,18 @@ export class ServerNats<
   }
 
   public bindEvents(client: Client) {
-    const queue = this.getOptionsProp(this.options, 'queue');
-    const subscribe = (channel: string) =>
+    const subscribe = (channel: string, queue: string) =>
       client.subscribe(channel, {
         queue,
         callback: this.getMessageHandler(channel).bind(this),
       });
 
+    const defaultQueue = this.getOptionsProp(this.options, 'queue');
     const registeredPatterns = [...this.messageHandlers.keys()];
     for (const channel of registeredPatterns) {
-      const sub = subscribe(channel);
+      const handlerRef = this.messageHandlers.get(channel);
+      const queue = handlerRef.extras?.queue ?? defaultQueue;
+      const sub = subscribe(channel, queue);
       this.subscriptions.push(sub);
     }
   }

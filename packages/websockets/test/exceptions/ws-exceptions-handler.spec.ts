@@ -7,7 +7,12 @@ import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
 describe('WsExceptionsHandler', () => {
   let handler: WsExceptionsHandler;
   let emitStub: sinon.SinonStub;
-  let client;
+  let client: {
+    emit: sinon.SinonStub;
+  };
+  let pattern: string;
+  let data: unknown;
+  let executionContextHost: ExecutionContextHost;
 
   beforeEach(() => {
     handler = new WsExceptionsHandler();
@@ -15,47 +20,96 @@ describe('WsExceptionsHandler', () => {
     client = {
       emit: emitStub,
     };
+    pattern = 'test';
+    data = { foo: 'bar' };
+    executionContextHost = new ExecutionContextHost([client, data, pattern]);
+
     client.emit.returns(client);
   });
 
   describe('handle', () => {
-    it('should method emit expected status code message when exception is unknown', () => {
-      handler.handle(new Error(), new ExecutionContextHost([client]));
-      expect(
-        emitStub.calledWith('exception', {
-          status: 'error',
-          message: 'Internal server error',
-        }),
-      ).to.be.true;
-    });
-    describe('when exception is instance of WsException', () => {
-      it('should method emit expected status and json object', () => {
-        const message = {
-          custom: 'Unauthorized',
-        };
-        handler.handle(
-          new WsException(message),
-          new ExecutionContextHost([client]),
-        );
-        expect(emitStub.calledWith('exception', message)).to.be.true;
+    describe('when "includeCause" is set to true (default)', () => {
+      it('should method emit expected status code message when exception is unknown', () => {
+        handler.handle(new Error(), executionContextHost);
+        expect(
+          emitStub.calledWith('exception', {
+            status: 'error',
+            message: 'Internal server error',
+            cause: {
+              pattern,
+              data,
+            },
+          }),
+        ).to.be.true;
       });
-      it('should method emit expected status and transform message to json', () => {
-        const message = 'Unauthorized';
+      describe('when exception is instance of WsException', () => {
+        it('should method emit expected status and json object', () => {
+          const message = {
+            custom: 'Unauthorized',
+          };
+          handler.handle(new WsException(message), executionContextHost);
+          expect(emitStub.calledWith('exception', message)).to.be.true;
+        });
+        it('should method emit expected status and transform message to json', () => {
+          const message = 'Unauthorized';
 
-        handler.handle(
-          new WsException(message),
-          new ExecutionContextHost([client]),
-        );
-        expect(emitStub.calledWith('exception', { message, status: 'error' }))
-          .to.be.true;
+          handler.handle(new WsException(message), executionContextHost);
+          console.log(emitStub.getCall(0).args);
+          expect(
+            emitStub.calledWith('exception', {
+              message,
+              status: 'error',
+              cause: {
+                pattern,
+                data,
+              },
+            }),
+          ).to.be.true;
+        });
       });
     });
+
+    describe('when "includeCause" is set to false', () => {
+      beforeEach(() => {
+        handler = new WsExceptionsHandler({ includeCause: false });
+      });
+
+      it('should method emit expected status code message when exception is unknown', () => {
+        handler.handle(
+          new Error(),
+          new ExecutionContextHost([client, pattern, data]),
+        );
+        expect(
+          emitStub.calledWith('exception', {
+            status: 'error',
+            message: 'Internal server error',
+          }),
+        ).to.be.true;
+      });
+      describe('when exception is instance of WsException', () => {
+        it('should method emit expected status and json object', () => {
+          const message = {
+            custom: 'Unauthorized',
+          };
+          handler.handle(new WsException(message), executionContextHost);
+          expect(emitStub.calledWith('exception', message)).to.be.true;
+        });
+        it('should method emit expected status and transform message to json', () => {
+          const message = 'Unauthorized';
+
+          handler.handle(new WsException(message), executionContextHost);
+          expect(emitStub.calledWith('exception', { message, status: 'error' }))
+            .to.be.true;
+        });
+      });
+    });
+
     describe('when "invokeCustomFilters" returns true', () => {
       beforeEach(() => {
         sinon.stub(handler, 'invokeCustomFilters').returns(true);
       });
       it('should not call `emit`', () => {
-        handler.handle(new WsException(''), new ExecutionContextHost([client]));
+        handler.handle(new WsException(''), executionContextHost);
         expect(emitStub.notCalled).to.be.true;
       });
     });
@@ -77,7 +131,7 @@ describe('WsExceptionsHandler', () => {
       });
     });
     describe('when filters array is not empty', () => {
-      let filters, funcSpy;
+      let filters: any[], funcSpy: sinon.SinonSpy;
       class TestException {}
 
       beforeEach(() => {
