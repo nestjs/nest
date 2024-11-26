@@ -6,16 +6,16 @@ parameters:
     default: false
   legacy-node-version:
     type: string
-    default: '14.21.3'
+    default: '18.20'
   maintenance-node-version:
     type: string
-    default: '16.20'
+    default: '20.5'
   active-node-version:
     type: string
-    default: '18.17'
+    default: '22.11'
   current-node-version:
     type: string
-    default: '20.5'
+    default: '23.3'
 
 aliases:
   - &restore-cache
@@ -121,7 +121,7 @@ jobs:
   lint:
     working_directory: ~/nest
     docker:
-      - image: cimg/node:<< pipeline.parameters.maintenance-node-version >>
+      - image: cimg/node:<< pipeline.parameters.current-node-version >>
     steps:
       - checkout
       - *restore-cache
