@@ -27,7 +27,7 @@ describe('RouterProxy', () => {
       const proxy = routerProxy.createProxy((req, res, next) => {
         throw httpException;
       }, handler);
-      await proxy(null, null, null);
+      await proxy(null, null, null!);
 
       expect(nextStub.calledOnce).to.be.true;
       expect(
@@ -43,7 +43,7 @@ describe('RouterProxy', () => {
         throw httpException;
       }, handler);
 
-      await proxy(null, null, null);
+      await proxy(null, null, null!);
 
       expect(nextStub.calledOnce).to.be.true;
       expect(
@@ -68,7 +68,7 @@ describe('RouterProxy', () => {
         },
         handler,
       );
-      await proxy(null, null, null, null);
+      await proxy(null, null, null, null!);
 
       expect(nextStub.calledOnce).to.be.true;
       expect(
@@ -87,7 +87,7 @@ describe('RouterProxy', () => {
         handler,
       );
 
-      await proxy(null, null, null, null);
+      await proxy(null, null, null, null!);
 
       expect(nextStub.calledOnce).to.be.true;
       expect(

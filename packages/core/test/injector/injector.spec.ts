@@ -167,13 +167,13 @@ describe('Injector', () => {
 
     it('should create prototype of instance', () => {
       injector.loadPrototype(test, moduleDeps.providers);
-      expect(moduleDeps.providers.get('Test').instance).to.deep.equal(
+      expect(moduleDeps.providers.get('Test')!.instance).to.deep.equal(
         Object.create(Test.prototype),
       );
     });
 
     it('should return undefined when collection is nil', () => {
-      const result = injector.loadPrototype(test, null);
+      const result = injector.loadPrototype(test, null!);
       expect(result).to.be.undefined;
     });
 
@@ -201,10 +201,10 @@ describe('Injector', () => {
     it('should throw "RuntimeException" when param is undefined', async () => {
       return expect(
         injector.resolveSingleParam(
-          null,
-          undefined,
+          null!,
+          undefined!,
           { index: 0, dependencies: [] },
-          null,
+          null!,
         ),
       ).to.eventually.be.rejected;
     });
@@ -227,7 +227,7 @@ describe('Injector', () => {
       await injector.loadMiddleware(
         { metatype: { name: '', prototype: {} } } as any,
         collection as any,
-        null,
+        null!,
       );
       expect(loadInstanceSpy.called).to.be.true;
     });
@@ -243,7 +243,7 @@ describe('Injector', () => {
       await injector.loadMiddleware(
         { metatype: { name: '' } } as any,
         collection as any,
-        null,
+        null!,
       );
       expect(loadInstanceSpy.called).to.be.false;
     });
@@ -307,7 +307,7 @@ describe('Injector', () => {
       };
       const result = await injector.lookupComponent(
         collection as any,
-        null,
+        null!,
         { name: metatype.name, index: 0, dependencies: [] },
         wrapper,
       );
@@ -323,7 +323,7 @@ describe('Injector', () => {
       };
       const result = injector.lookupComponent(
         collection as any,
-        null,
+        null!,
         { name, index: 0, dependencies: [] },
         Object.assign(wrapper, {
           name,
@@ -339,7 +339,7 @@ describe('Injector', () => {
       };
       await injector.lookupComponent(
         collection as any,
-        null,
+        null!,
         { name: metatype.name, index: 0, dependencies: [] },
         wrapper,
       );
@@ -420,7 +420,7 @@ describe('Injector', () => {
         injector.lookupComponentInImports(
           moduleFixture as any,
           metatype as any,
-          null,
+          null!,
         ),
       ).to.be.eventually.eq(null);
 
@@ -443,7 +443,7 @@ describe('Injector', () => {
         injector.lookupComponentInImports(
           moduleFixture as any,
           metatype as any,
-          null,
+          null!,
         ),
       ).to.eventually.be.eq(null);
     });
@@ -500,7 +500,7 @@ describe('Injector', () => {
       await injector.lookupComponentInImports(
         moduleFixture as any,
         metatype as any,
-        null,
+        null!,
       );
       expect(loadProvider.called).to.be.false;
     });
@@ -546,7 +546,7 @@ describe('Injector', () => {
   });
 
   describe('resolveComponentInstance', () => {
-    let module;
+    let module: any;
     beforeEach(() => {
       module = {
         providers: [],
@@ -559,7 +559,7 @@ describe('Injector', () => {
 
         const loadStub = sinon
           .stub(injector, 'loadProvider')
-          .callsFake(() => null);
+          .callsFake(() => null!);
         sinon
           .stub(injector, 'lookupComponent')
           .returns(Promise.resolve(wrapper));
@@ -576,7 +576,7 @@ describe('Injector', () => {
         const wrapper = new InstanceWrapper({ isResolved: true });
         const loadStub = sinon
           .stub(injector, 'loadProvider')
-          .callsFake(() => null);
+          .callsFake(() => null!);
 
         sinon
           .stub(injector, 'lookupComponent')
@@ -597,7 +597,7 @@ describe('Injector', () => {
         });
         const loadStub = sinon
           .stub(injector, 'loadProvider')
-          .callsFake(() => null);
+          .callsFake(() => null!);
 
         sinon
           .stub(injector, 'lookupComponent')
@@ -615,7 +615,7 @@ describe('Injector', () => {
 
     describe('when instanceWrapper has async property', () => {
       it('should await instance', async () => {
-        sinon.stub(injector, 'loadProvider').callsFake(() => null);
+        sinon.stub(injector, 'loadProvider').callsFake(() => null!);
 
         const instance = Promise.resolve(true);
         const wrapper = new InstanceWrapper({
@@ -713,7 +713,7 @@ describe('Injector', () => {
       const container = new NestContainer();
       const moduleCtor = class TestModule {};
       const ctx = STATIC_CONTEXT;
-      const { moduleRef } = await container.addModule(moduleCtor, []);
+      const { moduleRef } = (await container.addModule(moduleCtor, []))!;
 
       moduleRef.addProvider({
         provide: TestClass,
@@ -798,7 +798,7 @@ describe('Injector', () => {
       const loadCtorMetadataSpy = sinon.spy(injector, 'loadCtorMetadata');
       await injector.resolveConstructorParams(
         wrapper,
-        null,
+        null!,
         [],
         () => {
           expect(loadCtorMetadataSpy.called).to.be.true;
@@ -818,7 +818,7 @@ describe('Injector', () => {
         injector,
         'loadPropertiesMetadata',
       );
-      await injector.resolveProperties(wrapper, null, null, { id: 2 });
+      await injector.resolveProperties(wrapper, null!, null!, { id: 2 });
       expect(loadPropertiesMetadataSpy.called).to.be.true;
     });
   });

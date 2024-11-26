@@ -356,7 +356,7 @@ describe('Module', () => {
         sinon.stub(moduleRef, 'hasProvider').callsFake(() => true);
         sinon.stub(moduleRef.providers, 'get').callsFake(() => wrapper as any);
 
-        moduleRef.replace(null, { isProvider: true });
+        moduleRef.replace(null!, { isProvider: true });
         expect(wrapper.mergeWith.called).to.be.true;
       });
     });
@@ -371,7 +371,7 @@ describe('Module', () => {
           .stub(moduleRef.injectables, 'get')
           .callsFake(() => wrapper as any);
 
-        moduleRef.replace(null, {});
+        moduleRef.replace(null!, {});
         expect(wrapper.mergeWith.called).to.be.true;
       });
     });

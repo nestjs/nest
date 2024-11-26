@@ -22,7 +22,7 @@ describe('NestApplicationContext', () => {
       injector,
       new GraphInspector(nestContainer),
     );
-    const { moduleRef } = await nestContainer.addModule(class T {}, []);
+    const { moduleRef } = (await nestContainer.addModule(class T {}, []))!;
 
     nestContainer.addProvider(
       {

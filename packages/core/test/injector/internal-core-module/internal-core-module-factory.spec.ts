@@ -12,15 +12,15 @@ describe('InternalCoreModuleFactory', () => {
   it('should return the internal core module definition', () => {
     const moduleDefinition = InternalCoreModuleFactory.create(
       new NestContainer(),
-      null,
-      null,
-      null,
-      null,
+      null!,
+      null!,
+      null!,
+      null!,
     );
 
     expect(moduleDefinition.module).to.equal(InternalCoreModule);
 
-    const providedInjectables = moduleDefinition.providers.map(
+    const providedInjectables = moduleDefinition.providers!.map(
       item => (item as ClassProvider | FactoryProvider).provide,
     );
     expect(providedInjectables).to.deep.equal([
@@ -31,7 +31,7 @@ describe('InternalCoreModuleFactory', () => {
       SerializedGraph,
     ]);
 
-    const lazyModuleLoaderProvider = moduleDefinition.providers.find(
+    const lazyModuleLoaderProvider = moduleDefinition.providers!.find(
       item => (item as FactoryProvider)?.provide === LazyModuleLoader,
     ) as FactoryProvider;
     expect(lazyModuleLoaderProvider.useFactory()).to.be.instanceOf(

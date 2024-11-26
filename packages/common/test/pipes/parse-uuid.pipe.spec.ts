@@ -43,7 +43,10 @@ describe('ParseUUIDPipe', () => {
       });
       it('should not throw an error if the value is undefined/null and optional is true', async () => {
         const target = new ParseUUIDPipe({ optional: true });
-        const value = await target.transform(undefined, {} as ArgumentMetadata);
+        const value = await target.transform(
+          undefined!,
+          {} as ArgumentMetadata,
+        );
         expect(value).to.equal(undefined);
       });
     });
@@ -59,7 +62,7 @@ describe('ParseUUIDPipe', () => {
       it('should throw an error - not a string', async () => {
         target = new ParseUUIDPipe({ exceptionFactory });
         await expect(
-          target.transform(undefined, {} as ArgumentMetadata),
+          target.transform(undefined!, {} as ArgumentMetadata),
         ).to.be.rejectedWith(TestException);
       });
 

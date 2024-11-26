@@ -19,7 +19,7 @@ describe('provider classifier', () => {
 
     it('should return false if useClass is undefined', () => {
       const classProvider: ClassProvider = {
-        useClass: undefined,
+        useClass: undefined!,
         provide: 'token',
       };
 
@@ -35,9 +35,9 @@ describe('provider classifier', () => {
     });
 
     it('should return false if provider is undefined', () => {
-      const classProvider = undefined;
+      const classProvider = undefined!;
 
-      expect(isClassProvider(classProvider as ClassProvider)).to.be.false;
+      expect(isClassProvider(classProvider as ClassProvider)!).to.be.false;
     });
   });
 
@@ -96,7 +96,7 @@ describe('provider classifier', () => {
     });
 
     it('should return false if provider is undefined', () => {
-      const valueProvider = undefined;
+      const valueProvider = undefined!;
 
       expect(isValueProvider(valueProvider as ValueProvider)).to.be.false;
     });
@@ -123,7 +123,7 @@ describe('provider classifier', () => {
     it('should return false if useFactory is undefined', () => {
       const factoryProvider: FactoryProvider = {
         provide: 'token',
-        useFactory: undefined,
+        useFactory: undefined!,
       };
 
       expect(isFactoryProvider(factoryProvider)).to.be.false;

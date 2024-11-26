@@ -1,8 +1,7 @@
-import * as sinon from 'sinon';
 import { expect } from 'chai';
+import { HttpException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseFloatPipe } from '../../pipes/parse-float.pipe';
-import { HttpException } from '../../exceptions';
 
 class CustomTestError extends HttpException {
   constructor() {
@@ -27,7 +26,10 @@ describe('ParseFloatPipe', () => {
       });
       it('should not throw an error if the value is undefined/null and optional is true', async () => {
         const target = new ParseFloatPipe({ optional: true });
-        const value = await target.transform(undefined, {} as ArgumentMetadata);
+        const value = await target.transform(
+          undefined!,
+          {} as ArgumentMetadata,
+        );
         expect(value).to.equal(undefined);
       });
     });

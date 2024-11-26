@@ -98,8 +98,8 @@ describe('RouterExecutionContext', () => {
 
           const canActivateFn = contextCreator.createGuardsFn(
             [1] as any,
-            null,
-            null,
+            null!,
+            null!,
           );
           sinon.stub(contextCreator, 'createGuardsFn').returns(canActivateFn);
           tryActivateStub = sinon
@@ -144,9 +144,9 @@ describe('RouterExecutionContext', () => {
             } catch (e) {
               error = e;
             }
-            expect(error).to.be.instanceOf(ForbiddenException);
-            expect(error.message).to.be.eql('Forbidden resource');
-            expect(error.getResponse()).to.be.eql({
+            expect(error!).to.be.instanceOf(ForbiddenException);
+            expect(error!.message).to.be.eql('Forbidden resource');
+            expect(error!.getResponse()).to.be.eql({
               statusCode: HttpStatus.FORBIDDEN,
               error: 'Forbidden',
               message: FORBIDDEN_MESSAGE,
@@ -287,7 +287,7 @@ describe('RouterExecutionContext', () => {
   });
   describe('createGuardsFn', () => {
     it('should throw ForbiddenException when "tryActivate" returns false', async () => {
-      const guardsFn = contextCreator.createGuardsFn([null], null, null);
+      const guardsFn = contextCreator.createGuardsFn([null!], null!, null!)!;
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
 
       let error: ForbiddenException;
@@ -297,9 +297,9 @@ describe('RouterExecutionContext', () => {
         error = e;
       }
 
-      expect(error).to.be.instanceOf(ForbiddenException);
-      expect(error.message).to.be.eql('Forbidden resource');
-      expect(error.getResponse()).to.be.eql({
+      expect(error!).to.be.instanceOf(ForbiddenException);
+      expect(error!.message).to.be.eql('Forbidden resource');
+      expect(error!.getResponse()).to.be.eql({
         statusCode: HttpStatus.FORBIDDEN,
         message: FORBIDDEN_MESSAGE,
         error: 'Forbidden',
@@ -323,7 +323,7 @@ describe('RouterExecutionContext', () => {
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,
@@ -339,11 +339,11 @@ describe('RouterExecutionContext', () => {
         const response = { render: sinon.spy() };
 
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
-        sinon.stub(contextCreator, 'reflectSse').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,
@@ -391,11 +391,11 @@ describe('RouterExecutionContext', () => {
         const response = { redirect: sinon.spy() };
 
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
-        sinon.stub(contextCreator, 'reflectSse').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,
@@ -411,11 +411,11 @@ describe('RouterExecutionContext', () => {
         const result = Promise.resolve('test');
         const response = {};
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
-        sinon.stub(contextCreator, 'reflectSse').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           false,
           undefined,
           1234,
@@ -441,11 +441,11 @@ describe('RouterExecutionContext', () => {
         const request = new PassThrough();
         request.on = sinon.spy();
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
         sinon.stub(contextCreator, 'reflectSse').returns('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,
@@ -461,11 +461,11 @@ describe('RouterExecutionContext', () => {
         const response = new PassThrough();
         const request = new PassThrough();
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
         sinon.stub(contextCreator, 'reflectSse').returns('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,
@@ -493,11 +493,11 @@ describe('RouterExecutionContext', () => {
         const request = new PassThrough();
         request.on = sinon.spy();
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
         sinon.stub(contextCreator, 'reflectSse').returns('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,

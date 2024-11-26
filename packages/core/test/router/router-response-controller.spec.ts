@@ -189,7 +189,7 @@ describe('RouterResponseController', () => {
         .stub(routerResponseController, 'transformToResult')
         .returns(Promise.resolve({ statusCode: 123, url: 'redirect url' }));
       const result = {};
-      await routerResponseController.redirect(result, null, null);
+      await routerResponseController.redirect(result, null, null!);
       expect(transformToResultSpy.firstCall.args[0]).to.be.equal(result);
     });
     it('should pass the response to redirect', async () => {
@@ -198,7 +198,7 @@ describe('RouterResponseController', () => {
         .returns(Promise.resolve({ statusCode: 123, url: 'redirect url' }));
       const redirectSpy = sinon.spy(adapter, 'redirect');
       const response = {};
-      await routerResponseController.redirect(null, response, null);
+      await routerResponseController.redirect(null, response, null!);
       expect(redirectSpy.firstCall.args[0]).to.be.equal(response);
     });
     describe('status code', () => {

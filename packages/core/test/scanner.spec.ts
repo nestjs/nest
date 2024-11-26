@@ -46,12 +46,12 @@ describe('DependenciesScanner', () => {
   class TestModule {}
 
   @Module({
-    imports: [undefined],
+    imports: [undefined!],
   })
   class UndefinedModule {}
 
   @Module({
-    imports: [null],
+    imports: [null!],
   })
   class InvalidModule {}
 

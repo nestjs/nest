@@ -84,7 +84,7 @@ describe('InterceptorsContextCreator', () => {
   describe('getInterceptorInstance', () => {
     describe('when param is an object', () => {
       it('should return instance', () => {
-        const instance = { intercept: () => null };
+        const instance = { intercept: () => null! };
         expect(
           interceptorsContextCreator.getInterceptorInstance(instance),
         ).to.be.eql(instance);
@@ -106,7 +106,7 @@ describe('InterceptorsContextCreator', () => {
       it('should return null', () => {
         sinon
           .stub(interceptorsContextCreator, 'getInstanceByMetatype')
-          .callsFake(() => null);
+          .callsFake(() => null!);
         expect(
           interceptorsContextCreator.getInterceptorInstance(Interceptor),
         ).to.be.eql(null);
@@ -118,7 +118,7 @@ describe('InterceptorsContextCreator', () => {
     describe('when "moduleContext" is nil', () => {
       it('should return undefined', () => {
         (interceptorsContextCreator as any).moduleContext = undefined;
-        expect(interceptorsContextCreator.getInstanceByMetatype(null)).to.be
+        expect(interceptorsContextCreator.getInstanceByMetatype(null!)).to.be
           .undefined;
       });
     });
