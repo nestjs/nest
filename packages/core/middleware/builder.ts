@@ -1,4 +1,3 @@
-import { flatten } from '@nestjs/common/decorators/core/dependencies.decorator';
 import {
   HttpServer,
   MiddlewareConsumer,
@@ -25,11 +24,11 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
   ) {}
 
   public apply(
-    ...middleware: Array<Type<any> | Function>
+    ...middleware: Array<Type<any> | Function | Array<Type<any> | Function>>
   ): MiddlewareConfigProxy {
     return new MiddlewareBuilder.ConfigProxy(
       this,
-      flatten(middleware),
+      middleware.flat(),
       this.routeInfoPathExtractor,
     );
   }

@@ -6,10 +6,10 @@ import {
   PipeTransform,
 } from '@nestjs/common/interfaces';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
-import { lastValueFrom, isObservable } from 'rxjs';
+import { isObservable, lastValueFrom } from 'rxjs';
 import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context';
-import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { GuardsConsumer, GuardsContextCreator } from '../guards';
+import { FORBIDDEN_MESSAGE } from '../guards/constants';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { ContextId } from '../injector/instance-wrapper';
@@ -106,7 +106,7 @@ export class ExternalContextCreator {
     },
     contextType: TContext = 'http' as TContext,
   ) {
-    const module = this.getContextModuleKey(instance.constructor);
+    const moduleKey = this.getContextModuleKey(instance.constructor);
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<
       TParamsMetadata,
       TContext
@@ -114,21 +114,21 @@ export class ExternalContextCreator {
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
     const guards = this.guardsContextCreator.create(
       instance,
       callback,
-      module,
+      moduleKey,
       contextId,
       inquirerId,
     );
     const exceptionFilter = this.filtersContextCreator.create(
       instance,
-      callback,
-      module,
+      callback as (...args: any[]) => any,
+      moduleKey,
       contextId,
       inquirerId,
     );
@@ -136,13 +136,13 @@ export class ExternalContextCreator {
       ? this.interceptorsContextCreator.create(
           instance,
           callback,
-          module,
+          moduleKey,
           contextId,
           inquirerId,
         )
       : [];
 
-    const paramsMetadata = getParamsMetadata(module, contextId, inquirerId);
+    const paramsMetadata = getParamsMetadata(moduleKey, contextId, inquirerId);
     const paramsOptions = paramsMetadata
       ? this.contextUtils.mergeParamsMetatypes(paramsMetadata, paramtypes)
       : [];

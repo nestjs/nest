@@ -57,8 +57,8 @@ describe('ClientRedis', () => {
       client['publish'](msg, () => {});
       expect(subscribeSpy.calledWith(`${pattern}.reply`)).to.be.true;
     });
-    it('should publish stringified message to request pattern name', async () => {
-      await client['publish'](msg, () => {});
+    it('should publish stringified message to request pattern name', () => {
+      client['publish'](msg, () => {});
       expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).to.be.true;
     });
     describe('on error', () => {
@@ -218,18 +218,19 @@ describe('ClientRedis', () => {
     let createClientSpy: sinon.SinonSpy;
     let registerErrorListenerSpy: sinon.SinonSpy;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       createClientSpy = sinon.stub(client, 'createClient').callsFake(
         () =>
           ({
             on: () => null,
             addListener: () => null,
             removeListener: () => null,
+            connect: () => Promise.resolve(),
           }) as any,
       );
       registerErrorListenerSpy = sinon.spy(client, 'registerErrorListener');
 
-      client.connect();
+      await client.connect();
       client['pubClient'] = null;
     });
     afterEach(() => {
@@ -291,7 +292,9 @@ describe('ClientRedis', () => {
       const { retryStrategy } = client.getClientOptions();
       try {
         retryStrategy({} as any);
-      } catch {}
+      } catch {
+        // No empty
+      }
       expect(createSpy.called).to.be.true;
     });
   });

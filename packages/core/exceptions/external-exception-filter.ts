@@ -7,7 +7,7 @@ export class ExternalExceptionFilter<T = any, R = any> {
     if (exception instanceof Error && !(exception instanceof HttpException)) {
       ExternalExceptionFilter.logger.error(exception);
     }
-    /* eslint-disable-next-line @typescript-eslint/only-throw-error */
+
     throw exception;
   }
 }

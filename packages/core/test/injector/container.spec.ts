@@ -179,18 +179,18 @@ describe('NestContainer', () => {
       untypedContainer.dynamicModulesMetadata = collection;
     });
     describe('when dynamic metadata exists', () => {
-      it('should add to the dynamic metadata collection', () => {
+      it('should add to the dynamic metadata collection', async () => {
         const addSpy = sinon.spy(collection, 'set');
         const dynamicMetadata = { module: null };
 
-        container.addDynamicMetadata(token, dynamicMetadata, []);
+        await container.addDynamicMetadata(token, dynamicMetadata, []);
         expect(addSpy.calledWith(token, dynamicMetadata)).to.be.true;
       });
     });
     describe('when dynamic metadata does not exists', () => {
-      it('should not add to the dynamic metadata collection', () => {
+      it('should not add to the dynamic metadata collection', async () => {
         const addSpy = sinon.spy(collection, 'set');
-        container.addDynamicMetadata(token, null, []);
+        await container.addDynamicMetadata(token, null, []);
         expect(addSpy.called).to.be.false;
       });
     });
@@ -199,16 +199,16 @@ describe('NestContainer', () => {
   class Test {}
   describe('addDynamicModules', () => {
     describe('when array is empty/undefined', () => {
-      it('should not call "addModule"', () => {
+      it('should not call "addModule"', async () => {
         const addModuleSpy = sinon.spy(container, 'addModule');
-        container.addDynamicModules(undefined, []);
+        await container.addDynamicModules(undefined, []);
         expect(addModuleSpy.called).to.be.false;
       });
     });
     describe('when array is not empty/undefined', () => {
-      it('should call "addModule"', () => {
+      it('should call "addModule"', async () => {
         const addModuleSpy = sinon.spy(container, 'addModule');
-        container.addDynamicModules([Test] as any, []);
+        await container.addDynamicModules([Test] as any, []);
         expect(addModuleSpy.called).to.be.true;
       });
     });

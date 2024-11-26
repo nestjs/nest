@@ -50,7 +50,9 @@ export class RouteInfoPathExtractor {
             ...entries,
             ...this.excludedGlobalPrefixRoutes
               .map(route =>
-                versionPaths.map(v => v + addLeadingSlash(route.path)),
+                Array.isArray(versionPaths) && versionPaths.length > 0
+                  ? versionPaths.map(v => v + addLeadingSlash(route.path))
+                  : addLeadingSlash(route.path),
               )
               .flat(),
           ]

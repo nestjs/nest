@@ -26,38 +26,38 @@ describe('ServerMqtt', () => {
       sinon.stub(server, 'createMqttClient').callsFake(() => client);
       callbackSpy = sinon.spy();
     });
-    it('should bind "error" event to handler', () => {
-      server.listen(callbackSpy);
+    it('should bind "error" event to handler', async () => {
+      await server.listen(callbackSpy);
       expect(onSpy.getCall(0).args[0]).to.be.equal('error');
     });
-    it('should bind "reconnect" event to handler', () => {
-      server.listen(callbackSpy);
+    it('should bind "reconnect" event to handler', async () => {
+      await server.listen(callbackSpy);
       expect(onSpy.getCall(1).args[0]).to.be.equal('reconnect');
     });
-    it('should bind "disconnect" event to handler', () => {
-      server.listen(callbackSpy);
+    it('should bind "disconnect" event to handler', async () => {
+      await server.listen(callbackSpy);
       expect(onSpy.getCall(2).args[0]).to.be.equal('disconnect');
     });
-    it('should bind "close" event to handler', () => {
-      server.listen(callbackSpy);
+    it('should bind "close" event to handler', async () => {
+      await server.listen(callbackSpy);
       expect(onSpy.getCall(3).args[0]).to.be.equal('close');
     });
-    it('should bind "connect" event to handler', () => {
-      server.listen(callbackSpy);
+    it('should bind "connect" event to handler', async () => {
+      await server.listen(callbackSpy);
       expect(onSpy.getCall(4).args[0]).to.be.equal('connect');
     });
-    it('should bind "message" event to handler', () => {
-      server.listen(callbackSpy);
+    it('should bind "message" event to handler', async () => {
+      await server.listen(callbackSpy);
       expect(onSpy.getCall(5).args[0]).to.be.equal('message');
     });
     describe('when "start" throws an exception', () => {
-      it('should call callback with a thrown error as an argument', () => {
+      it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
 
         sinon.stub(server, 'start').callsFake(() => {
           throw error;
         });
-        server.listen(callbackSpy);
+        await server.listen(callbackSpy);
         expect(callbackSpy.calledWith(error)).to.be.true;
       });
     });
@@ -104,7 +104,11 @@ describe('ServerMqtt', () => {
         const handleMessageStub = sinon
           .stub(server, 'handleMessage')
           .callsFake(() => null);
-        (await server.getMessageHandler(untypedServer.mqttClient))(null);
+        await server.getMessageHandler(untypedServer.mqttClient)(
+          null,
+          null,
+          null,
+        );
         expect(handleMessageStub.called).to.be.true;
       });
     });
@@ -214,13 +218,13 @@ describe('ServerMqtt', () => {
     const channel = 'test';
     const data = 'test';
 
-    it('should call handler with expected arguments', () => {
+    it('should call handler with expected arguments', async () => {
       const handler = sinon.spy();
       untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
-      server.handleEvent(
+      await server.handleEvent(
         channel,
         { pattern: '', data },
         new BaseRpcContext([]),

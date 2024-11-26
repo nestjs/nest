@@ -162,7 +162,7 @@ describe('ServerRedis', () => {
       });
       sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data }) as any);
 
-      await server.handleMessage(channel, {}, null, channel);
+      await server.handleMessage(channel, '', null, channel);
       expect(handler.calledWith(data)).to.be.true;
     });
   });
@@ -226,7 +226,9 @@ describe('ServerRedis', () => {
       const { retryStrategy } = server.getClientOptions();
       try {
         retryStrategy(0);
-      } catch {}
+      } catch {
+        // Ignore
+      }
       expect(createSpy.called).to.be.true;
     });
   });
@@ -269,13 +271,13 @@ describe('ServerRedis', () => {
     const channel = 'test';
     const data = 'test';
 
-    it('should call handler with expected arguments', () => {
+    it('should call handler with expected arguments', async () => {
       const handler = sinon.spy();
       untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
-      server.handleEvent(
+      await server.handleEvent(
         channel,
         { pattern: '', data },
         new BaseRpcContext([]),

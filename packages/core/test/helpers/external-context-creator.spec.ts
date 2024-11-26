@@ -163,8 +163,8 @@ describe('ExternalContextCreator', () => {
     beforeEach(() => {
       consumerApplySpy = sinon.spy(pipesConsumer, 'apply');
     });
-    it('should call "consumer.apply"', () => {
-      contextCreator.getParamValue(
+    it('should call "consumer.apply"', async () => {
+      await contextCreator.getParamValue(
         value,
         { metatype, type: RouteParamtypes.NEXT, data: null },
         transforms,

@@ -104,7 +104,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 
-  public getMessageHandler(pub: MqttClient): Function {
+  public getMessageHandler(pub: MqttClient) {
     return async (
       channel: string,
       buffer: Buffer,

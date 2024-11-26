@@ -205,8 +205,8 @@ describe('RouterExecutionContext', () => {
       consumerApplySpy = sinon.spy(consumer, 'apply');
     });
     describe('when paramtype is query, body, rawBody or param', () => {
-      it('should call "consumer.apply" with expected arguments', () => {
-        contextCreator.getParamValue(
+      it('should call "consumer.apply" with expected arguments', async () => {
+        await contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.QUERY, data: null },
           transforms,
@@ -219,7 +219,7 @@ describe('RouterExecutionContext', () => {
           ),
         ).to.be.true;
 
-        contextCreator.getParamValue(
+        await contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.BODY, data: null },
           transforms,
@@ -232,7 +232,7 @@ describe('RouterExecutionContext', () => {
           ),
         ).to.be.true;
 
-        contextCreator.getParamValue(
+        await contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.RAW_BODY, data: null },
           transforms,
@@ -245,7 +245,7 @@ describe('RouterExecutionContext', () => {
           ),
         ).to.be.true;
 
-        contextCreator.getParamValue(
+        await contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.PARAM, data: null },
           transforms,

@@ -793,6 +793,7 @@ describe('ClientKafka', () => {
       });
 
       it('should call callback', async () => {
+        /* eslint-disable-next-line no-async-promise-executor */
         return new Promise(async resolve => {
           return client['publish'](readPacket, ({ err }) => resolve(err));
         }).then(err => {
@@ -819,7 +820,7 @@ describe('ClientKafka', () => {
           .stub(client as any, 'getReplyTopicPartition')
           .callsFake(() => '0');
 
-        subscription = await client['publish'](readPacket, callback);
+        subscription = client['publish'](readPacket, callback);
         subscription(payloadDisposed);
       });
 

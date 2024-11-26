@@ -218,13 +218,13 @@ describe('Injector', () => {
       injector.loadInstance = loadInstanceSpy;
     });
 
-    it('should call "loadInstance" when instance is not resolved', () => {
+    it('should call "loadInstance" when instance is not resolved', async () => {
       const collection = {
         get: (...args) => ({}),
         set: (...args) => {},
       };
 
-      injector.loadMiddleware(
+      await injector.loadMiddleware(
         { metatype: { name: '', prototype: {} } } as any,
         collection as any,
         null,
@@ -232,7 +232,7 @@ describe('Injector', () => {
       expect(loadInstanceSpy.called).to.be.true;
     });
 
-    it('should not call "loadInstanceSpy" when instance is not resolved', () => {
+    it('should not call "loadInstanceSpy" when instance is not resolved', async () => {
       const collection = {
         get: (...args) => ({
           instance: {},
@@ -240,7 +240,7 @@ describe('Injector', () => {
         set: (...args) => {},
       };
 
-      injector.loadMiddleware(
+      await injector.loadMiddleware(
         { metatype: { name: '' } } as any,
         collection as any,
         null,

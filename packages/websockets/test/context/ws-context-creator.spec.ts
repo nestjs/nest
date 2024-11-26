@@ -101,7 +101,7 @@ describe('WsContextCreator', () => {
         sinon
           .stub(guardsContextCreator, 'create')
           .callsFake(() => [{ canActivate: () => true }]);
-        const proxy = await contextCreator.create(
+        const proxy = contextCreator.create(
           instance,
           instance.test,
           module,
@@ -113,11 +113,11 @@ describe('WsContextCreator', () => {
         expect(tryActivateSpy.called).to.be.true;
       });
       describe('when can not activate', () => {
-        it('should throw forbidden exception', async () => {
+        it('should throw forbidden exception', () => {
           sinon
             .stub(guardsConsumer, 'tryActivate')
             .callsFake(async () => false);
-          const proxy = await contextCreator.create(
+          const proxy = contextCreator.create(
             instance,
             instance.test,
             module,
@@ -187,8 +187,8 @@ describe('WsContextCreator', () => {
     beforeEach(() => {
       consumerApplySpy = sinon.spy(pipesConsumer, 'apply');
     });
-    it('should call "consumer.apply"', () => {
-      contextCreator.getParamValue(
+    it('should call "consumer.apply"', async () => {
+      await contextCreator.getParamValue(
         value,
         { metatype, type: WsParamtype.PAYLOAD, data: null },
         transforms,

@@ -6,8 +6,8 @@ import * as sinon from 'sinon';
 import { PassThrough, Writable } from 'stream';
 import { HttpStatus, RequestMethod } from '../../../common';
 import { RouterResponseController } from '../../router/router-response-controller';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 import { SseStream } from '../../router/sse-stream';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('RouterResponseController', () => {
   let adapter: NoopHttpAdapter;
@@ -263,7 +263,7 @@ describe('RouterResponseController', () => {
     it('should accept only observables', async () => {
       const result = Promise.resolve('test');
       try {
-        await routerResponseController.sse(
+        routerResponseController.sse(
           result as unknown as any,
           {} as unknown as ServerResponse,
           {} as unknown as IncomingMessage,

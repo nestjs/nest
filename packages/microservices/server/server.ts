@@ -126,7 +126,7 @@ export abstract class Server<
 
   public send(
     stream$: Observable<any>,
-    respond: (data: WritePacket) => Promise<unknown>,
+    respond: (data: WritePacket) => Promise<unknown> | void,
   ): Subscription {
     let dataBuffer: WritePacket[] = null;
     const scheduleOnNextTick = (data: WritePacket) => {

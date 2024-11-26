@@ -572,7 +572,7 @@ describe('ServerGrpc', () => {
   });
 
   describe('createRequestStreamMethod', () => {
-    it('should wrap call into Subject', () => {
+    it('should wrap call into Subject', async () => {
       const handler = sinon.spy();
       const fn = server.createRequestStreamMethod(handler, false);
       const call = {
@@ -581,12 +581,12 @@ describe('ServerGrpc', () => {
         end: sinon.spy(),
         write: sinon.spy(),
       };
-      fn(call as any, sinon.spy());
+      await fn(call as any, sinon.spy());
 
       expect(handler.called).to.be.true;
     });
 
-    it('should wrap call into Subject with metadata', () => {
+    it('should wrap call into Subject with metadata', async () => {
       const handler = sinon.spy();
       const fn = server.createRequestStreamMethod(handler, false);
       const call = {
@@ -598,7 +598,7 @@ describe('ServerGrpc', () => {
           test: '123',
         },
       };
-      fn(call as any, sinon.spy());
+      await fn(call as any, sinon.spy());
 
       expect(handler.called).to.be.true;
       expect(handler.args[0][1]).to.eq(call.metadata);
@@ -705,7 +705,7 @@ describe('ServerGrpc', () => {
           const handlerResult = Promise.resolve(subject);
           const methodHandler = () => handlerResult;
 
-          const serviceMethod = await server.createRequestStreamMethod(
+          const serviceMethod = server.createRequestStreamMethod(
             methodHandler,
             true,
           );
@@ -838,11 +838,11 @@ describe('ServerGrpc', () => {
   });
 
   describe('createStreamCallMethod', () => {
-    it('should pass through to "methodHandler"', () => {
+    it('should pass through to "methodHandler"', async () => {
       const handler = sinon.spy();
       const fn = server.createStreamCallMethod(handler, false);
       const args = [1, 2, 3];
-      fn(args as any, sinon.spy());
+      await fn(args as any, sinon.spy());
 
       expect(handler.calledWith(args)).to.be.true;
     });

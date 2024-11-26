@@ -168,14 +168,14 @@ describe('ServerKafka', () => {
       expect(callback.called).to.be.true;
     });
     describe('when "start" throws an exception', () => {
-      it('should call callback with a thrown error as an argument', () => {
+      it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
 
         const callbackSpy = sinon.spy();
         sinon.stub(server, 'start').callsFake(() => {
           throw error;
         });
-        server.listen(callbackSpy);
+        await server.listen(callbackSpy);
         expect(callbackSpy.calledWith(error)).to.be.true;
       });
     });
@@ -266,7 +266,7 @@ describe('ServerKafka', () => {
         const handleMessageStub = sinon
           .stub(server, 'handleMessage')
           .callsFake(() => null);
-        (await server.getMessageHandler())(null);
+        await server.getMessageHandler()(null);
         expect(handleMessageStub.called).to.be.true;
       });
     });

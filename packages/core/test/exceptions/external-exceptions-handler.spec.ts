@@ -60,13 +60,13 @@ describe('ExternalExceptionsHandler', () => {
           filters = [{ exceptionMetatypes: [TestException], func: funcSpy }];
           (handler as any).filters = filters;
         });
-        it('should call funcSpy', () => {
-          handler.invokeCustomFilters(new TestException(), null);
+        it('should call funcSpy', async () => {
+          await handler.invokeCustomFilters(new TestException(), null);
           expect(funcSpy.notCalled).to.be.false;
         });
-        it('should call funcSpy with exception and response passed as an arguments', () => {
+        it('should call funcSpy with exception and response passed as an arguments', async () => {
           const exception = new TestException();
-          handler.invokeCustomFilters(exception, null);
+          await handler.invokeCustomFilters(exception, null);
           expect(funcSpy.calledWith(exception)).to.be.true;
         });
         it('should return stream', () => {
@@ -81,8 +81,8 @@ describe('ExternalExceptionsHandler', () => {
           ];
           (handler as any).filters = filters;
         });
-        it('should not call funcSpy', () => {
-          handler.invokeCustomFilters(new TestException(), null);
+        it('should not call funcSpy', async () => {
+          await handler.invokeCustomFilters(new TestException(), null);
           expect(funcSpy.notCalled).to.be.true;
         });
         it('should return null', () => {

@@ -22,8 +22,8 @@ describe('isLogLevelEnabled', () => {
   ];
 
   for (const { inputArgs, expectedReturnValue } of tests) {
-    describe(`when log levels = [${inputArgs[1]}]`, () => {
-      describe(`and target level is "${inputArgs[0]}"`, () => {
+    describe(`when log levels = [${inputArgs[1] as string}]`, () => {
+      describe(`and target level is "${inputArgs[0] as string}"`, () => {
         it('should return true', () => {
           expect(
             isLogLevelEnabled(...(inputArgs as [LogLevel, LogLevel[]])),

@@ -203,7 +203,6 @@ describe('InterceptorsConsumer', () => {
             .stub()
             .callsFake(async (ctx, handler) => handler.handle()),
         },
-        ,
       ];
 
       const observable = await consumer.intercept(
