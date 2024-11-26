@@ -3,6 +3,7 @@ import {
   HttpExceptionBodyMessage,
 } from '../interfaces/http/http-exception-body.interface';
 import { isNumber, isObject, isString } from '../utils/shared.utils';
+import { IntrinsicException } from './intrinsic.exception';
 
 export interface HttpExceptionOptions {
   /** original cause of the error */
@@ -23,7 +24,13 @@ export interface DescriptionAndOptions {
  *
  * @publicApi
  */
-export class HttpException extends Error {
+export class HttpException extends IntrinsicException {
+  /**
+   * Exception cause. Indicates the specific original cause of the error.
+   * It is used when catching and re-throwing an error with a more-specific or useful error message in order to still have access to the original error.
+   */
+  public cause: unknown;
+
   /**
    * Instantiate a plain HTTP Exception.
    *
@@ -67,8 +74,6 @@ export class HttpException extends Error {
     this.initName();
     this.initCause();
   }
-
-  public cause: unknown;
 
   /**
    * Configures error chaining support

@@ -5,6 +5,7 @@ import {
   HttpServer,
   HttpStatus,
   Inject,
+  IntrinsicException,
   Logger,
   Optional,
 } from '@nestjs/common';
@@ -68,7 +69,9 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
       applicationRef.end(response);
     }
 
-    return BaseExceptionFilter.logger.error(exception);
+    if (!(exception instanceof IntrinsicException)) {
+      BaseExceptionFilter.logger.error(exception);
+    }
   }
 
   public isExceptionObject(err: any): err is Error {
