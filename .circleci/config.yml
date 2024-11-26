@@ -121,7 +121,7 @@ jobs:
   lint:
     working_directory: ~/nest
     docker:
-      - image: cimg/node:<< pipeline.parameters.current-node-version >>
+      - image: cimg/node:<< pipeline.parameters.active-node-version >>
     steps:
       - checkout
       - *restore-cache
