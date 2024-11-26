@@ -286,7 +286,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   public async sendMessage(
     message: OutgoingResponse,
     replyTopic: string,
-    replyPartition: string,
+    replyPartition: string | undefined | null,
     correlationId: string,
   ): Promise<RecordMetadata[]> {
     const outgoingMessage = await this.serializer.serialize(message.response);
@@ -339,7 +339,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public assignReplyPartition(
-    replyPartition: string,
+    replyPartition: string | null | undefined,
     outgoingMessage: Message,
   ) {
     if (isNil(replyPartition)) {

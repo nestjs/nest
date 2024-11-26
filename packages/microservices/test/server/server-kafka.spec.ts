@@ -453,7 +453,7 @@ describe('ServerKafka', () => {
           response: messageValue,
         },
         replyTopic,
-        '',
+        undefined,
         correlationId,
       );
 
