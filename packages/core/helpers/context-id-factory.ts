@@ -74,7 +74,7 @@ export class ContextIdFactory {
     }
     const contextId = createContextId();
     const resolverObjectOrFunction = this.strategy.attach(contextId, request);
-    if (this.isContextIdResolverWithPayload(resolverObjectOrFunction)) {
+    if (this.isContextIdResolverWithPayload(resolverObjectOrFunction!)) {
       contextId.getParent = resolverObjectOrFunction.resolve;
       contextId.payload = resolverObjectOrFunction.payload;
     } else {

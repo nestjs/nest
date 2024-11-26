@@ -43,7 +43,7 @@ export class ServiceUnavailableException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description,
+        description!,
         HttpStatus.SERVICE_UNAVAILABLE,
       ),
       HttpStatus.SERVICE_UNAVAILABLE,

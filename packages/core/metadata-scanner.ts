@@ -15,7 +15,7 @@ export class MetadataScanner {
    */
   public scanFromPrototype<T extends Injectable, R = any>(
     instance: T,
-    prototype: object,
+    prototype: object | null,
     callback: (name: string) => R,
   ): R[] {
     if (!prototype) {
@@ -81,7 +81,7 @@ export class MetadataScanner {
     }
 
     if (this.cachedScannedPrototypes.has(prototype)) {
-      return this.cachedScannedPrototypes.get(prototype);
+      return this.cachedScannedPrototypes.get(prototype)!;
     }
 
     const visitedNames = new Map<string, boolean>();
@@ -101,8 +101,8 @@ export class MetadataScanner {
         const descriptor = Object.getOwnPropertyDescriptor(prototype, property);
 
         if (
-          descriptor.set ||
-          descriptor.get ||
+          descriptor!.set ||
+          descriptor!.get ||
           isConstructor(property) ||
           !isFunction(prototype[property])
         ) {

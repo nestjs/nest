@@ -66,7 +66,7 @@ export class NestApplicationContext<
   constructor(
     protected readonly container: NestContainer,
     protected readonly appOptions: TOptions = {} as TOptions,
-    private contextModule: Module = null,
+    private contextModule: Module | null = null,
     private readonly scope = new Array<Type<any>>(),
   ) {
     super();
@@ -80,7 +80,7 @@ export class NestApplicationContext<
 
   public selectContextModule() {
     const modules = this.container.getModules().values();
-    this.contextModule = modules.next().value;
+    this.contextModule = modules.next().value!;
   }
 
   /**
@@ -92,7 +92,7 @@ export class NestApplicationContext<
     selectOptions?: SelectOptions,
   ): INestApplicationContext {
     const modulesContainer = this.container.getModules();
-    const contextModuleCtor = this.contextModule.metatype;
+    const contextModuleCtor = this.contextModule!.metatype;
     const scope = this.scope.concat(contextModuleCtor);
 
     const moduleTokenFactory = this.container.getModuleTokenFactory();
@@ -228,7 +228,7 @@ export class NestApplicationContext<
   ): Promise<TResult | Array<TResult>> {
     return this.resolvePerContext<TInput, TResult>(
       typeOrToken,
-      this.contextModule,
+      this.contextModule!,
       contextId,
       options,
     );
@@ -382,7 +382,7 @@ export class NestApplicationContext<
       return;
     }
     this.activeShutdownSignals.forEach(signal => {
-      process.removeListener(signal, this.shutdownCleanupRef);
+      process.removeListener(signal, this.shutdownCleanupRef!);
     });
   }
 

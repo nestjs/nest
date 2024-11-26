@@ -165,7 +165,7 @@ export class GraphInspector {
   }
 
   private insertEnhancerEdge(entry: EnhancerMetadataCacheEntry) {
-    const moduleRef = this.container.getModuleByKey(entry.moduleToken);
+    const moduleRef = this.container.getModuleByKey(entry.moduleToken)!;
     const sourceInstanceWrapper =
       moduleRef.controllers.get(entry.classRef) ??
       moduleRef.providers.get(entry.classRef)!;

@@ -39,8 +39,8 @@ export class LazyModuleLoader {
       const { token } = await this.moduleCompiler.compile(
         moduleClassOrDynamicDefinition,
       );
-      const moduleInstance = this.modulesContainer.get(token);
-      return moduleInstance && this.getTargetModuleRef(moduleInstance);
+      const moduleInstance = this.modulesContainer.get(token)!;
+      return moduleInstance && this.getTargetModuleRef(moduleInstance)!;
     }
     const lazyModulesContainer =
       this.createLazyModulesContainer(moduleInstances);

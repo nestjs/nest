@@ -120,7 +120,7 @@ export class ParseArrayPipe implements PipeTransform {
       if (this.options.stopAtFirstError === false) {
         // strict compare to "false" to make sure
         // that this option is disabled by default
-        let errors = [];
+        let errors: string[] = [];
 
         const targetArray = value as Array<unknown>;
         for (let i = 0; i < targetArray.length; i++) {

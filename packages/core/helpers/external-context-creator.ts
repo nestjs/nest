@@ -208,7 +208,7 @@ export class ExternalContextCreator {
       methodName,
     );
     const contextFactory = this.contextUtils.getContextFactory<TContext>(
-      contextType,
+      contextType!,
       instance,
       instance[methodName],
     );
@@ -232,7 +232,7 @@ export class ExternalContextCreator {
     const handlerMetadata: ExternalHandlerMetadata = {
       argsLength,
       paramtypes,
-      getParamsMetadata,
+      getParamsMetadata: getParamsMetadata as any,
     };
     this.handlerMetadataStorage.set(instance, methodName, handlerMetadata);
     return handlerMetadata;

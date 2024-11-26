@@ -177,7 +177,7 @@ export class RouterExplorer {
       ? this.createRequestScopedHandler(
           instanceWrapper,
           requestMethod,
-          this.container.getModuleByKey(moduleKey),
+          this.container.getModuleByKey(moduleKey)!,
           moduleKey,
           methodName,
         )
@@ -198,7 +198,7 @@ export class RouterExplorer {
     paths.forEach(path => {
       if (
         isVersioned &&
-        routePathMetadata.versioningOptions.type !== VersioningType.URI
+        routePathMetadata.versioningOptions!.type !== VersioningType.URI
       ) {
         // All versioning (except for URI Versioning) is done via the "Version Filter"
         routeHandler = this.applyVersionFilter(
@@ -250,7 +250,7 @@ export class RouterExplorer {
         if (isVersioned) {
           const version = this.routePathFactory.getVersion(routePathMetadata);
           this.logger.log(
-            VERSIONED_ROUTE_MAPPED_MESSAGE(path, requestMethod, version),
+            VERSIONED_ROUTE_MAPPED_MESSAGE(path, requestMethod, version!),
           );
         } else {
           this.logger.log(ROUTE_MAPPED_MESSAGE(path, requestMethod));
@@ -270,7 +270,7 @@ export class RouterExplorer {
     const httpAdapterRef = this.container.getHttpAdapterRef();
     const hosts = Array.isArray(host) ? host : [host];
     const hostRegExps = hosts.map((host: string | RegExp) => {
-      const keys = [];
+      const keys: any[] = [];
       const regexp = pathToRegexp(host, keys);
       return { regexp, keys };
     });
@@ -316,11 +316,11 @@ export class RouterExplorer {
     routePathMetadata: RoutePathMetadata,
     handler: Function,
   ) {
-    const version = this.routePathFactory.getVersion(routePathMetadata);
+    const version = this.routePathFactory.getVersion(routePathMetadata)!;
     return router.applyVersionFilter(
       handler,
       version,
-      routePathMetadata.versioningOptions,
+      routePathMetadata.versioningOptions!,
     );
   }
 

@@ -43,7 +43,7 @@ export class NotAcceptableException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description,
+        description!,
         HttpStatus.NOT_ACCEPTABLE,
       ),
       HttpStatus.NOT_ACCEPTABLE,

@@ -45,7 +45,7 @@ export class UnsupportedMediaTypeException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description,
+        description!,
         HttpStatus.UNSUPPORTED_MEDIA_TYPE,
       ),
       HttpStatus.UNSUPPORTED_MEDIA_TYPE,

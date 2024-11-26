@@ -43,7 +43,7 @@ export class PayloadTooLargeException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description,
+        description!,
         HttpStatus.PAYLOAD_TOO_LARGE,
       ),
       HttpStatus.PAYLOAD_TOO_LARGE,

@@ -43,7 +43,7 @@ export class RequestTimeoutException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description,
+        description!,
         HttpStatus.REQUEST_TIMEOUT,
       ),
       HttpStatus.REQUEST_TIMEOUT,

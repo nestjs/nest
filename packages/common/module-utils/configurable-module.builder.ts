@@ -74,7 +74,11 @@ export class ConfigurableModuleBuilder<
       this.staticMethodKey = parentBuilder.staticMethodKey as StaticMethodKey;
       this.factoryClassMethodKey =
         parentBuilder.factoryClassMethodKey as FactoryClassMethodKey;
-      this.transformModuleDefinition = parentBuilder.transformModuleDefinition;
+      this.transformModuleDefinition =
+        parentBuilder.transformModuleDefinition as (
+          definition: DynamicModule,
+          extraOptions: ExtraModuleDefinitionOptions,
+        ) => DynamicModule;
       this.extras = parentBuilder.extras as ExtraModuleDefinitionOptions;
     }
   }
@@ -186,8 +190,8 @@ export class ConfigurableModuleBuilder<
   }
 
   private constructInjectionTokenString(): string {
-    const moduleNameInSnakeCase = this.options.moduleName
-      .trim()
+    const moduleNameInSnakeCase = this.options
+      .moduleName!.trim()
       .split(/(?=[A-Z])/)
       .join('_')
       .toUpperCase();
@@ -209,7 +213,7 @@ export class ConfigurableModuleBuilder<
       ): DynamicModule {
         const providers: Array<Provider> = [
           {
-            provide: self.options.optionsInjectionToken,
+            provide: self.options.optionsInjectionToken!,
             useValue: this.omitExtras(options, self.extras),
           },
         ];
@@ -265,7 +269,7 @@ export class ConfigurableModuleBuilder<
         const moduleOptions = {};
         const extrasKeys = Object.keys(extras);
 
-        Object.keys(input)
+        Object.keys(input!)
           .filter(key => !extrasKeys.includes(key))
           .forEach(key => {
             moduleOptions[key] = input[key];
@@ -291,8 +295,8 @@ export class ConfigurableModuleBuilder<
         return [
           this.createAsyncOptionsProvider(options),
           {
-            provide: options.useClass,
-            useClass: options.useClass,
+            provide: options.useClass!,
+            useClass: options.useClass!,
           },
         ];
       }
@@ -302,13 +306,13 @@ export class ConfigurableModuleBuilder<
       ): Provider {
         if (options.useFactory) {
           return {
-            provide: self.options.optionsInjectionToken,
+            provide: self.options.optionsInjectionToken!,
             useFactory: options.useFactory,
             inject: options.inject || [],
           };
         }
         return {
-          provide: self.options.optionsInjectionToken,
+          provide: self.options.optionsInjectionToken!,
           useFactory: async (
             optionsFactory: ConfigurableModuleOptionsFactory<
               ModuleOptions,
@@ -318,7 +322,7 @@ export class ConfigurableModuleBuilder<
             await optionsFactory[
               self.factoryClassMethodKey as keyof typeof optionsFactory
             ](),
-          inject: [options.useExisting || options.useClass],
+          inject: [options.useExisting || options.useClass!],
         };
       }
     }

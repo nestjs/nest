@@ -29,7 +29,8 @@ export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
     ): ParameterDecorator =>
     (target, key, index) => {
       const args =
-        Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
+        Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key!) ||
+        {};
 
       const isPipe = (pipe: any) =>
         pipe &&
@@ -53,7 +54,7 @@ export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
           ...(paramPipes as PipeTransform[]),
         ),
         target.constructor,
-        key,
+        key!,
       );
       enhancers.forEach(fn => fn(target, key, index));
     };

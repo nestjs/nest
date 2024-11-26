@@ -48,9 +48,9 @@ export class ValidationPipe implements PipeTransform<any> {
   protected isTransformEnabled: boolean;
   protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
-  protected transformOptions: ClassTransformOptions;
+  protected transformOptions: ClassTransformOptions | undefined;
   protected errorHttpStatusCode: ErrorHttpStatusCode;
-  protected expectedType: Type<any>;
+  protected expectedType: Type<any> | undefined;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
 
@@ -215,7 +215,7 @@ export class ValidationPipe implements PipeTransform<any> {
   }
 
   protected toEmptyIfNil<T = any, R = any>(value: T): R | object {
-    return isNil(value) ? {} : value;
+    return isNil(value) ? {} : value!;
   }
 
   protected stripProtoKeys(value: any) {
@@ -256,7 +256,7 @@ export class ValidationPipe implements PipeTransform<any> {
       .map(error => this.mapChildrenToValidationErrors(error))
       .flatten()
       .filter(item => !!item.constraints)
-      .map(item => Object.values(item.constraints))
+      .map(item => Object.values(item.constraints!))
       .flatten()
       .toArray();
   }
@@ -268,7 +268,7 @@ export class ValidationPipe implements PipeTransform<any> {
     if (!(error.children && error.children.length)) {
       return [error];
     }
-    const validationErrors = [];
+    const validationErrors: ValidationError[] = [];
     parentPath = parentPath
       ? `${parentPath}.${error.property}`
       : error.property;

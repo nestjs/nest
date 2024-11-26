@@ -43,7 +43,7 @@ export class ForbiddenException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description,
+        description!,
         HttpStatus.FORBIDDEN,
       ),
       HttpStatus.FORBIDDEN,

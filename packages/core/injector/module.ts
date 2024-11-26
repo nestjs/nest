@@ -141,8 +141,8 @@ export class Module {
     if (!this._providers.has(this._metatype)) {
       throw new RuntimeException();
     }
-    const module = this._providers.get(this._metatype);
-    return module.instance as NestModule;
+    const moduleRef = this._providers.get(this._metatype);
+    return moduleRef!.instance as NestModule;
   }
 
   get metatype(): Type<any> {

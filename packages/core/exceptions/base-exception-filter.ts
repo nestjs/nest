@@ -26,7 +26,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
   catch(exception: T, host: ArgumentsHost) {
     const applicationRef =
       this.applicationRef ||
-      (this.httpAdapterHost && this.httpAdapterHost.httpAdapter);
+      (this.httpAdapterHost && this.httpAdapterHost.httpAdapter)!;
 
     if (!(exception instanceof HttpException)) {
       return this.handleUnknownError(exception, host, applicationRef);

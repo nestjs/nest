@@ -43,7 +43,7 @@ export class MethodNotAllowedException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description,
+        description!,
         HttpStatus.METHOD_NOT_ALLOWED,
       ),
       HttpStatus.METHOD_NOT_ALLOWED,

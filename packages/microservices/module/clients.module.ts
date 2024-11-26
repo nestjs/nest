@@ -42,10 +42,15 @@ export class ClientsModule {
       [],
     );
     const imports = clientsOptions.reduce(
-      (accImports, option) =>
-        option.imports && !accImports.includes(option.imports)
-          ? accImports.concat(option.imports)
-          : accImports,
+      (accImports, option) => {
+        if (!option.imports) {
+          return accImports;
+        }
+        const toInsert = option.imports.filter(
+          item => !accImports.includes(item),
+        );
+        return accImports.concat(toInsert);
+      },
       [] as Array<
         DynamicModule | Promise<DynamicModule> | ForwardReference | Type
       >,

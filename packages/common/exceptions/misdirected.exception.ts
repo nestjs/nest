@@ -43,7 +43,7 @@ export class MisdirectedException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description,
+        description!,
         HttpStatus.MISDIRECTED,
       ),
       HttpStatus.MISDIRECTED,

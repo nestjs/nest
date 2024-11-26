@@ -85,7 +85,7 @@ export class NestApplication
 
     this.selectContextModule();
     this.registerHttpServer();
-    this.injector = new Injector({ preview: this.appOptions.preview });
+    this.injector = new Injector({ preview: this.appOptions.preview! });
     this.middlewareModule = new MiddlewareModule();
     this.routesResolver = new RoutesResolver(
       this.container,
@@ -182,7 +182,7 @@ export class NestApplication
     }
 
     this.applyOptions();
-    await this.httpAdapter?.init();
+    await this.httpAdapter?.init?.();
 
     const useBodyParser =
       this.appOptions && this.appOptions.bodyParser !== false;
@@ -274,13 +274,13 @@ export class NestApplication
     const [parserType, ...otherArgs] = args;
     const rawBody = !!this.appOptions.rawBody;
 
-    this.httpAdapter.useBodyParser(...[parserType, rawBody, ...otherArgs]);
+    this.httpAdapter.useBodyParser?.(...[parserType, rawBody, ...otherArgs]);
 
     return this;
   }
 
   public enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void {
-    this.httpAdapter.enableCors(options);
+    this.httpAdapter.enableCors(options!);
   }
 
   public enableVersioning(

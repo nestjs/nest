@@ -25,7 +25,7 @@ export class RouteInfoPathExtractor {
       addLeadingSlash(this.applicationConfig.getGlobalPrefix()),
     );
     this.excludedGlobalPrefixRoutes =
-      this.applicationConfig.getGlobalPrefixOptions().exclude;
+      this.applicationConfig.getGlobalPrefixOptions().exclude!;
     this.versioningConfig = this.applicationConfig.getVersioning();
   }
 

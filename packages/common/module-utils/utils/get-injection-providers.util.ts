@@ -1,8 +1,8 @@
 import {
-  InjectionToken,
-  Provider,
   FactoryProvider,
+  InjectionToken,
   OptionalFactoryDependency,
+  Provider,
 } from '../../interfaces';
 
 /**
@@ -31,7 +31,7 @@ export function getInjectionProviders(
   tokens: FactoryProvider['inject'],
 ): Provider[] {
   const result: Provider[] = [];
-  let search: InjectionToken[] = tokens.map(mapInjectToTokens);
+  let search: InjectionToken[] = tokens!.map(mapInjectToTokens);
   while (search.length > 0) {
     const match = (providers ?? []).filter(
       p =>
@@ -42,7 +42,7 @@ export function getInjectionProviders(
     // get injection tokens of the matched providers, if any
     search = match
       .filter(p => (p as any)?.inject)
-      .flatMap(p => (p as FactoryProvider).inject)
+      .flatMap(p => (p as FactoryProvider).inject!)
       .map(mapInjectToTokens);
   }
   return result;

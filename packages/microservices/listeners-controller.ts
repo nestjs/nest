@@ -143,7 +143,7 @@ export class ListenersController {
         const asyncHandler = this.createRequestScopedHandler(
           instanceWrapper,
           pattern,
-          moduleRef,
+          moduleRef!,
           moduleKey,
           methodKey,
           defaultCallMetadata,
@@ -167,7 +167,7 @@ export class ListenersController {
       {
         type: 'microservice',
         methodName: definition.methodKey,
-        className: instanceWrapper.metatype?.name,
+        className: instanceWrapper.metatype?.name!,
         classNodeId: instanceWrapper.id,
         metadata: {
           key: definition.patterns.toString(),

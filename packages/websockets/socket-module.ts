@@ -78,7 +78,7 @@ export class SocketModule<
     moduleName: string,
   ) {
     const { instance, metatype } = wrapper;
-    const metadataKeys = Reflect.getMetadataKeys(metatype);
+    const metadataKeys = Reflect.getMetadataKeys(metatype!);
     if (!metadataKeys.includes(GATEWAY_METADATA)) {
       return;
     }
@@ -87,7 +87,7 @@ export class SocketModule<
     }
     this.webSocketsController.connectGatewayToServer(
       instance as NestGateway,
-      metatype,
+      metatype!,
       moduleName,
       wrapper.id,
     );

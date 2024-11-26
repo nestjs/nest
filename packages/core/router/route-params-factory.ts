@@ -10,7 +10,7 @@ export class RouteParamsFactory implements IRouteParamsFactory {
     key: RouteParamtypes | string,
     data: string,
     { req, res, next }: { req: TRequest; res: TResponse; next: Function },
-  ): TResult {
+  ): TResult | null {
     switch (key) {
       case RouteParamtypes.NEXT:
         return next as any;

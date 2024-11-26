@@ -48,7 +48,8 @@ function createRouteParamDecorator(paramtype: RouteParamtypes) {
   return (data?: ParamData): ParameterDecorator =>
     (target, key, index) => {
       const args =
-        Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
+        Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key!) ||
+        {};
       Reflect.defineMetadata(
         ROUTE_ARGS_METADATA,
         assignMetadata<RouteParamtypes, Record<number, RouteParamMetadata>>(
@@ -58,7 +59,7 @@ function createRouteParamDecorator(paramtype: RouteParamtypes) {
           data,
         ),
         target.constructor,
-        key,
+        key!,
       );
     };
 }
@@ -71,16 +72,16 @@ const createPipesRouteParamDecorator =
   ): ParameterDecorator =>
   (target, key, index) => {
     const args =
-      Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
+      Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key!) || {};
     const hasParamData = isNil(data) || isString(data);
     const paramData = hasParamData ? data : undefined;
     const paramPipes = hasParamData ? pipes : [data, ...pipes];
 
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
-      assignMetadata(args, paramtype, index, paramData, ...paramPipes),
+      assignMetadata(args, paramtype, index, paramData!, ...paramPipes),
       target.constructor,
-      key,
+      key!,
     );
   };
 
@@ -117,7 +118,7 @@ export const Response: (
         RESPONSE_PASSTHROUGH_METADATA,
         options?.passthrough,
         target.constructor,
-        key,
+        key!,
       );
     }
     return createRouteParamDecorator(RouteParamtypes.RESPONSE)()(

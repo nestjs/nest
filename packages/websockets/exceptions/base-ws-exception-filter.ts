@@ -85,8 +85,8 @@ export class BaseWsExceptionFilter<TError = any>
       message: result,
     };
 
-    if (this.options?.includeCause) {
-      payload.cause = this.options.causeFactory(cause.pattern, cause.data);
+    if (this.options?.includeCause && cause) {
+      payload.cause = this.options.causeFactory!(cause.pattern, cause.data);
     }
 
     client.emit('exception', payload);
@@ -103,8 +103,8 @@ export class BaseWsExceptionFilter<TError = any>
       message: MESSAGES.UNKNOWN_EXCEPTION_MESSAGE,
     };
 
-    if (this.options?.includeCause) {
-      payload.cause = this.options.causeFactory(data.pattern, data.data);
+    if (this.options?.includeCause && data) {
+      payload.cause = this.options.causeFactory!(data.pattern, data.data);
     }
 
     client.emit('exception', payload);
