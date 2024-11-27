@@ -179,7 +179,7 @@
     "ws": "8.18.0"
   },
   "engines": {
-    "node": ">= 16"
+    "node": ">= 20"
   },
   "collective": {
     "type": "opencollective",
