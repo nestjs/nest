@@ -68,7 +68,7 @@
     "fast-safe-stringify": "2.1.1",
     "iterare": "1.2.1",
     "object-hash": "3.0.0",
-    "path-to-regexp": "3.2.0",
+    "path-to-regexp": "3.3.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.1",
     "socket.io": "4.8.1",
