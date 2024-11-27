@@ -109,7 +109,7 @@
     "@typescript-eslint/eslint-plugin": "8.15.0",
     "@typescript-eslint/parser": "8.15.0",
     "amqp-connection-manager": "4.1.14",
-    "amqplib": "0.10.4",
+    "amqplib": "0.10.5",
     "artillery": "2.0.21",
     "body-parser": "1.20.3",
     "bytes": "3.1.2",
