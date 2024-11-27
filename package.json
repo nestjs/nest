@@ -40,6 +40,7 @@
     "lint:integration": "eslint 'integration/*/{,!(node_modules)/**/}/*.ts'",
     "lint:packages": "eslint 'packages/**/**.ts' --ignore-pattern 'packages/**/*.spec.ts'",
     "lint:spec": "eslint 'packages/**/**.spec.ts'",
+    "lint:ci": "npm run lint:packages && npm run lint:integration && npm run lint:spec",
     "prerelease": "gulp copy-misc",
     "publish": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --force-publish --access public --exact -m \"chore(@nestjs) publish %s release\"",
     "prepublishOnly": "npm run changelog | pbcopy",

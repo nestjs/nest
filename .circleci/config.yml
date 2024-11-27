@@ -128,7 +128,7 @@ jobs:
       - *install-deps
       - run:
           name: Lint
-          command: npm run lint
+          command: npm run lint:ci
 
   integration_tests:
     working_directory: ~/nest
