@@ -24,7 +24,7 @@
     "@nestjs/core": "10.4.10",
     "@nestjs/jwt": "10.2.0",
     "@nestjs/passport": "10.0.3",
-    "@nestjs/platform-express": "10.4.9",
+    "@nestjs/platform-express": "10.4.10",
     "reflect-metadata": "0.2.1",
     "rimraf": "5.0.10",
     "rxjs": "7.8.1"
