@@ -156,7 +156,7 @@ export class WebSocketsController {
         .pipe(
           distinctUntilChanged((prev, curr) => compareElementAt(prev, curr, 0)),
         )
-        .subscribe((args: unknown[]) => instance.handleConnection(...args));
+        .subscribe((args: unknown[]) => instance.handleConnection!(...args));
     }
   }
 
@@ -176,6 +176,7 @@ export class WebSocketsController {
     const adapter = this.config.getIoAdapter();
     const handlers = subscribersMap.map(({ callback, message }) => ({
       message,
+
       callback: callback.bind(instance, client),
     }));
     adapter.bindMessageHandlers(client, handlers, data =>
@@ -235,7 +236,7 @@ export class WebSocketsController {
     instance: NestGateway,
     subscribersMap: MessageMappingProperties[],
   ) {
-    const gatewayClassName = (instance as Object)?.constructor?.name;
+    const gatewayClassName = (instance as object)?.constructor?.name;
     if (!gatewayClassName) {
       return;
     }

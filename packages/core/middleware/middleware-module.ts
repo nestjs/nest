@@ -149,8 +149,8 @@ export class MiddlewareModule<
     const entriesSortedByDistance = [...configs.entries()].sort(
       ([moduleA], [moduleB]) => {
         return (
-          this.container.getModuleByKey(moduleA).distance -
-          this.container.getModuleByKey(moduleB).distance
+          this.container.getModuleByKey(moduleA)!.distance -
+          this.container.getModuleByKey(moduleB)!.distance
         );
       },
     );
@@ -185,7 +185,7 @@ export class MiddlewareModule<
     applicationRef: any,
   ) {
     const middlewareCollection = [].concat(config.middleware);
-    const moduleRef = this.container.getModuleByKey(moduleKey);
+    const moduleRef = this.container.getModuleByKey(moduleKey)!;
 
     for (const metatype of middlewareCollection) {
       const collection = middlewareContainer.getMiddlewareCollection(moduleKey);
@@ -240,8 +240,9 @@ export class MiddlewareModule<
     collection: Map<InjectionToken, InstanceWrapper>,
   ) {
     const { instance, metatype } = wrapper;
+
     if (isUndefined(instance?.use)) {
-      throw new InvalidMiddlewareException(metatype.name);
+      throw new InvalidMiddlewareException(metatype!.name);
     }
     const isStatic = wrapper.isDependencyTreeStatic();
     if (isStatic) {
@@ -324,12 +325,12 @@ export class MiddlewareModule<
           res: TResponse,
           next: () => void,
         ) => {
-          if (applicationRef.getRequestMethod(req) === requestMethod) {
+          if (applicationRef.getRequestMethod?.(req) === requestMethod) {
             return proxy(req, res, next);
           }
           return next();
         };
-    const pathsToApplyMiddleware = [];
+    const pathsToApplyMiddleware = [] as string[];
     paths.some(path => path.match(/^\/?$/))
       ? pathsToApplyMiddleware.push('/')
       : pathsToApplyMiddleware.push(...paths);
@@ -337,8 +338,8 @@ export class MiddlewareModule<
   }
 
   private getContextId(request: unknown, isTreeDurable: boolean): ContextId {
-    const contextId = ContextIdFactory.getByRequest(request);
-    if (!request[REQUEST_CONTEXT_ID]) {
+    const contextId = ContextIdFactory.getByRequest(request as object);
+    if (!request![REQUEST_CONTEXT_ID]) {
       Object.defineProperty(request, REQUEST_CONTEXT_ID, {
         value: contextId,
         enumerable: false,

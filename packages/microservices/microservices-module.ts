@@ -105,7 +105,7 @@ export class MicroservicesModule<
   ) {
     items.forEach(({ instance, isNotMetatype }) => {
       !isNotMetatype &&
-        this.listenersController.assignClientsToProperties(instance);
+        this.listenersController.assignClientsToProperties(instance as object);
     });
   }
 

@@ -44,7 +44,7 @@ export class ServerNats<
   }>();
   private readonly subscriptions: Subscription[] = [];
 
-  constructor(private readonly options: NatsOptions['options']) {
+  constructor(private readonly options: Required<NatsOptions>['options']) {
     super();
 
     natsPackage = this.loadPackage('nats', ServerNats.name, () =>
@@ -62,7 +62,7 @@ export class ServerNats<
       this.natsClient = await this.createNatsClient();
 
       this._status$.next(NatsStatus.CONNECTED as S);
-      this.handleStatusUpdates(this.natsClient);
+      void this.handleStatusUpdates(this.natsClient);
       this.start(callback);
     } catch (err) {
       callback(err);
@@ -77,16 +77,18 @@ export class ServerNats<
   }
 
   public bindEvents(client: Client) {
-    const queue = this.getOptionsProp(this.options, 'queue');
-    const subscribe = (channel: string) =>
+    const subscribe = (channel: string, queue: string) =>
       client.subscribe(channel, {
         queue,
         callback: this.getMessageHandler(channel).bind(this),
       });
 
+    const defaultQueue = this.getOptionsProp(this.options, 'queue');
     const registeredPatterns = [...this.messageHandlers.keys()];
     for (const channel of registeredPatterns) {
-      const sub = subscribe(channel);
+      const handlerRef = this.messageHandlers.get(channel)!;
+      const queue = handlerRef.extras?.queue ?? defaultQueue;
+      const sub = subscribe(channel, queue);
       this.subscriptions.push(sub);
     }
   }
@@ -179,7 +181,7 @@ export class ServerNats<
 
     // In case the "reply" topic is not provided, there's no need for a reply.
     // Method returns a noop function instead
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+
     return () => {};
   }
 
@@ -211,7 +213,7 @@ export class ServerNats<
 
         case 'pingTimer':
           if (this.options.debug) {
-            this.logger.debug(
+            this.logger.debug!(
               `NatsStatus: type: "${status.type}", data: "${data}".`,
             );
           }

@@ -34,14 +34,14 @@ export class GoneException extends HttpException {
    * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
    */
   constructor(
-    objectOrError?: string | object | any,
+    objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Gone',
   ) {
     const { description, httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
-      HttpException.createBody(objectOrError, description, HttpStatus.GONE),
+      HttpException.createBody(objectOrError, description!, HttpStatus.GONE),
       HttpStatus.GONE,
       httpExceptionOptions,
     );

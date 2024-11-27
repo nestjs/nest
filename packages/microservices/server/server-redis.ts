@@ -38,7 +38,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     callback: RedisEvents[keyof RedisEvents];
   }> = [];
 
-  constructor(protected readonly options: RedisOptions['options']) {
+  constructor(protected readonly options: Required<RedisOptions>['options']) {
     super();
 
     redisPackage = this.loadPackage('ioredis', ServerRedis.name, () =>
@@ -75,10 +75,10 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   }
 
   public start(callback?: () => void) {
-    Promise.all([this.subClient.connect(), this.pubClient.connect()])
+    void Promise.all([this.subClient.connect(), this.pubClient.connect()])
       .then(() => {
         this.bindEvents(this.subClient, this.pubClient);
-        callback();
+        callback?.();
       })
       .catch(callback);
   }
@@ -90,7 +90,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     );
     const subscribePatterns = [...this.messageHandlers.keys()];
     subscribePatterns.forEach(pattern => {
-      const { isEventHandler } = this.messageHandlers.get(pattern);
+      const { isEventHandler } = this.messageHandlers.get(pattern)!;
 
       const channel = isEventHandler
         ? pattern
@@ -122,15 +122,15 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
 
   public getMessageHandler(pub: Redis) {
     return this.options?.wildcards
-      ? (channel: string, pattern: string, buffer: string | any) =>
+      ? (channel: string, pattern: string, buffer: string) =>
           this.handleMessage(channel, buffer, pub, pattern)
-      : (channel: string, buffer: string | any) =>
+      : (channel: string, buffer: string) =>
           this.handleMessage(channel, buffer, pub, channel);
   }
 
   public async handleMessage(
     channel: string,
-    buffer: string | any,
+    buffer: string,
     pub: Redis,
     pattern: string,
   ) {
@@ -258,11 +258,11 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       );
       return;
     }
-    if (times > this.getOptionsProp(this.options, 'retryAttempts')) {
+    if (times > this.getOptionsProp(this.options, 'retryAttempts', 0)) {
       this.logger.error(`Retry time exhausted`);
       return;
     }
-    return this.getOptionsProp(this.options, 'retryDelay') ?? 5000;
+    return this.getOptionsProp(this.options, 'retryDelay', 5000);
   }
 
   public unwrap<T>(): T {

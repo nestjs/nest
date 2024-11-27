@@ -104,7 +104,7 @@ export class NestContainer {
       await this.moduleCompiler.compile(metatype);
     if (this.modules.has(token)) {
       return {
-        moduleRef: this.modules.get(token),
+        moduleRef: this.modules.get(token)!,
         inserted: true,
       };
     }
@@ -159,14 +159,14 @@ export class NestContainer {
   private async setModule(
     { token, dynamicMetadata, type }: ModuleFactory,
     scope: ModuleScope,
-  ): Promise<Module | undefined> {
+  ): Promise<Module> {
     const moduleRef = new Module(type, this);
     moduleRef.token = token;
     moduleRef.initOnPreview = this.shouldInitOnPreview(type);
     this.modules.set(token, moduleRef);
 
-    const updatedScope = [].concat(scope, type);
-    await this.addDynamicMetadata(token, dynamicMetadata, updatedScope);
+    const updatedScope = ([] as ModuleScope).concat(scope, type);
+    await this.addDynamicMetadata(token, dynamicMetadata!, updatedScope);
 
     if (this.isGlobalModule(type, dynamicMetadata)) {
       moduleRef.isGlobal = true;
@@ -187,7 +187,7 @@ export class NestContainer {
     this.dynamicModulesMetadata.set(token, dynamicModuleMetadata);
 
     const { imports } = dynamicModuleMetadata;
-    await this.addDynamicModules(imports, scope);
+    await this.addDynamicModules(imports!, scope);
   }
 
   public async addDynamicModules(modules: any[], scope: Type<any>[]) {
@@ -219,7 +219,7 @@ export class NestContainer {
     return this.moduleCompiler;
   }
 
-  public getModuleByKey(moduleKey: string): Module {
+  public getModuleByKey(moduleKey: string): Module | undefined {
     return this.modules.get(moduleKey);
   }
 
@@ -234,10 +234,10 @@ export class NestContainer {
     if (!this.modules.has(token)) {
       return;
     }
-    const moduleRef = this.modules.get(token);
+    const moduleRef = this.modules.get(token)!;
     const { token: relatedModuleToken } =
       await this.moduleCompiler.compile(relatedModule);
-    const related = this.modules.get(relatedModuleToken);
+    const related = this.modules.get(relatedModuleToken)!;
     moduleRef.addImport(related);
   }
 
@@ -253,7 +253,7 @@ export class NestContainer {
     if (!moduleRef) {
       throw new UnknownModuleException();
     }
-    const providerKey = moduleRef.addProvider(provider, enhancerSubtype);
+    const providerKey = moduleRef.addProvider(provider, enhancerSubtype!);
     const providerRef = moduleRef.getProviderByKey(providerKey);
 
     DiscoverableMetaHostCollection.inspectProvider(this.modules, providerRef);
@@ -270,7 +270,7 @@ export class NestContainer {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
-    const moduleRef = this.modules.get(token);
+    const moduleRef = this.modules.get(token)!;
     return moduleRef.addInjectable(injectable, enhancerSubtype, host);
   }
 
@@ -278,7 +278,7 @@ export class NestContainer {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
-    const moduleRef = this.modules.get(token);
+    const moduleRef = this.modules.get(token)!;
     moduleRef.addExportedProvider(provider);
   }
 
@@ -286,10 +286,10 @@ export class NestContainer {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
-    const moduleRef = this.modules.get(token);
+    const moduleRef = this.modules.get(token)!;
     moduleRef.addController(controller);
 
-    const controllerRef = moduleRef.controllers.get(controller);
+    const controllerRef = moduleRef.controllers.get(controller)!;
     DiscoverableMetaHostCollection.inspectController(
       this.modules,
       controllerRef,
@@ -300,7 +300,7 @@ export class NestContainer {
     this.modules.clear();
   }
 
-  public replace(toReplace: any, options: any & { scope: any[] | null }) {
+  public replace(toReplace: any, options: { scope: any[] | null }) {
     this.modules.forEach(moduleRef => moduleRef.replace(toReplace, options));
   }
 

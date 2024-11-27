@@ -4,7 +4,7 @@ import {
   isObject,
   isSymbol,
 } from '@nestjs/common/utils/shared.utils';
-/* eslint-disable @typescript-eslint/no-use-before-define */
+
 import {
   PATTERN_EXTRAS_METADATA,
   PATTERN_HANDLER_METADATA,
@@ -61,8 +61,9 @@ export const MessagePattern: {
     extras = transportOrExtras;
   } else {
     transport = transportOrExtras as Transport | symbol;
-    extras = maybeExtras;
+    extras = maybeExtras!;
   }
+
   return (
     target: object,
     key: string | symbol,
@@ -71,7 +72,7 @@ export const MessagePattern: {
     try {
       Reflect.defineMetadata(
         PATTERN_METADATA,
-        [].concat(metadata),
+        ([] as any[]).concat(metadata),
         descriptor.value,
       );
       Reflect.defineMetadata(
@@ -100,7 +101,10 @@ export const MessagePattern: {
  */
 export function GrpcMethod(service?: string): MethodDecorator;
 export function GrpcMethod(service: string, method?: string): MethodDecorator;
-export function GrpcMethod(service: string, method?: string): MethodDecorator {
+export function GrpcMethod(
+  service: string | undefined,
+  method?: string,
+): MethodDecorator {
   return (
     target: object,
     key: string | symbol,
@@ -126,7 +130,7 @@ export function GrpcStreamMethod(
   method?: string,
 ): MethodDecorator;
 export function GrpcStreamMethod(
-  service: string,
+  service: string | undefined,
   method?: string,
 ): MethodDecorator {
   return (
@@ -190,7 +194,7 @@ export function GrpcStreamCall(
   method?: string,
 ): MethodDecorator;
 export function GrpcStreamCall(
-  service: string,
+  service: string | undefined,
   method?: string,
 ): MethodDecorator {
   return (

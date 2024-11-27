@@ -720,7 +720,7 @@ describe('ClientKafka', () => {
 
     it('should throw error when the topic is not being consumed', () => {
       client['consumerAssignments'] = {
-        [topic]: undefined,
+        [topic]: undefined!,
       };
 
       expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
@@ -760,7 +760,7 @@ describe('ClientKafka', () => {
       assignPacketIdStub = sinon
         .stub(client as any, 'assignPacketId')
         .callsFake(packet =>
-          Object.assign(packet, {
+          Object.assign(packet as object, {
             id: correlationId,
           }),
         );
@@ -866,6 +866,7 @@ describe('ClientKafka', () => {
       });
 
       it('should call callback', async () => {
+        /* eslint-disable-next-line no-async-promise-executor */
         return new Promise(async resolve => {
           return client['publish'](readPacket, ({ err }) => resolve(err));
         }).then(err => {
@@ -892,7 +893,7 @@ describe('ClientKafka', () => {
           .stub(client as any, 'getReplyTopicPartition')
           .callsFake(() => '0');
 
-        subscription = await client['publish'](readPacket, callback);
+        subscription = client['publish'](readPacket, callback);
         subscription(payloadDisposed);
       });
 

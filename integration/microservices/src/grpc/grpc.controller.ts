@@ -2,15 +2,15 @@ import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
 import {
   Client,
   ClientGrpc,
+  ClientGrpcProxy,
   GrpcMethod,
   GrpcStreamCall,
   GrpcStreamMethod,
-  Transport,
-  ClientGrpcProxy,
   RpcException,
+  Transport,
 } from '@nestjs/microservices';
 import { join } from 'path';
-import { Observable, of, catchError, from, mergeMap } from 'rxjs';
+import { catchError, from, mergeMap, Observable, of } from 'rxjs';
 
 class ErrorHandlingProxy extends ClientGrpcProxy {
   serializeError(err) {
@@ -81,7 +81,7 @@ export class GrpcController {
           });
         },
         error: err => {
-          reject(err);
+          reject(err as Error);
         },
       });
     });

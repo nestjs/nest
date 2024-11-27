@@ -20,8 +20,8 @@ let natsPackage = {} as any;
 // type Client = import('nats').NatsConnection;
 // type NatsMsg = import('nats').Msg;
 
-type Client = any;
-type NatsMsg = any;
+type Client = Record<string, any>;
+type NatsMsg = Record<string, any>;
 
 /**
  * @publicApi
@@ -29,13 +29,13 @@ type NatsMsg = any;
 export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
   protected readonly logger = new Logger(ClientNats.name);
 
-  protected natsClient: Client;
-  protected connectionPromise: Promise<Client>;
+  protected natsClient: Client | null = null;
+  protected connectionPromise: Promise<Client> | null = null;
   protected statusEventEmitter = new EventEmitter<{
     [key in keyof NatsEvents]: Parameters<NatsEvents[key]>;
   }>();
 
-  constructor(protected readonly options: NatsOptions['options']) {
+  constructor(protected readonly options: Required<NatsOptions>['options']) {
     super();
     natsPackage = loadPackage('nats', ClientNats.name, () => require('nats'));
 
@@ -62,7 +62,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     });
 
     this._status$.next(NatsStatus.CONNECTED);
-    this.handleStatusUpdates(this.natsClient);
+    void this.handleStatusUpdates(this.natsClient);
     return this.natsClient;
   }
 
@@ -167,7 +167,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     packet: ReadPacket & PacketId,
     callback: (packet: WritePacket) => any,
   ) {
-    return async (error: unknown | undefined, natsMsg: NatsMsg) => {
+    return async (error: string | Error | undefined, natsMsg: NatsMsg) => {
       if (error) {
         return callback({
           err: error,
@@ -216,12 +216,12 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
         callback,
       );
 
-      const subscription = this.natsClient.subscribe(inbox, {
+      const subscription = this.natsClient!.subscribe(inbox, {
         callback: subscriptionHandler,
       });
 
       const headers = this.mergeHeaders(serializedPacket.headers);
-      this.natsClient.publish(channel, serializedPacket.data, {
+      this.natsClient!.publish(channel, serializedPacket.data, {
         reply: inbox,
         headers,
       });
@@ -229,6 +229,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       return () => subscription.unsubscribe();
     } catch (err) {
       callback({ err });
+      return () => {};
     }
   }
 
@@ -239,7 +240,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
     return new Promise<void>((resolve, reject) => {
       try {
-        this.natsClient.publish(pattern, serializedPacket.data, {
+        this.natsClient!.publish(pattern, serializedPacket.data, {
           headers,
         });
         resolve();

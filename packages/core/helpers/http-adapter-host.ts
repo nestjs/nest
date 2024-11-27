@@ -36,7 +36,7 @@ export class HttpAdapterHost<
    * `const httpAdapter = adapterHost.httpAdapter;`
    */
   get httpAdapter(): T {
-    return this._httpAdapter;
+    return this._httpAdapter as T;
   }
 
   /**

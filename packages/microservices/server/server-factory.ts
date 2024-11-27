@@ -1,8 +1,14 @@
 import { Transport } from '../enums/transport.enum';
 import {
   CustomStrategy,
+  GrpcOptions,
+  KafkaOptions,
   MicroserviceOptions,
   MqttOptions,
+  NatsOptions,
+  RedisOptions,
+  RmqOptions,
+  TcpOptions,
 } from '../interfaces';
 import { ServerGrpc } from './server-grpc';
 import { ServerKafka } from './server-kafka';
@@ -20,19 +26,19 @@ export class ServerFactory {
     >;
     switch (transport) {
       case Transport.REDIS:
-        return new ServerRedis(options as ServerRedis['options']);
+        return new ServerRedis(options as Required<RedisOptions>['options']);
       case Transport.NATS:
-        return new ServerNats(options as ServerNats['options']);
+        return new ServerNats(options as Required<NatsOptions>['options']);
       case Transport.MQTT:
-        return new ServerMqtt(options as MqttOptions['options']);
+        return new ServerMqtt(options as Required<MqttOptions>['options']);
       case Transport.GRPC:
-        return new ServerGrpc(options as ServerGrpc['options']);
+        return new ServerGrpc(options);
       case Transport.KAFKA:
-        return new ServerKafka(options as ServerKafka['options']);
+        return new ServerKafka(options as Required<KafkaOptions>['options']);
       case Transport.RMQ:
-        return new ServerRMQ(options as ServerRMQ['options']);
+        return new ServerRMQ(options as Required<RmqOptions>['options']);
       default:
-        return new ServerTCP(options as ServerTCP['options']);
+        return new ServerTCP(options as Required<TcpOptions>['options']);
     }
   }
 }

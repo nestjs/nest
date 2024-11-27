@@ -80,7 +80,7 @@ export class DiscoverableMetaHostCollection {
     collection: Map<string, Set<InstanceWrapper>>,
   ) {
     if (collection.has(metaKey)) {
-      const wrappers = collection.get(metaKey);
+      const wrappers = collection.get(metaKey)!;
       wrappers.add(instanceWrapper);
     } else {
       const wrappers = new Set<InstanceWrapper>();
@@ -123,7 +123,7 @@ export class DiscoverableMetaHostCollection {
 
     let collection: Map<string, Set<InstanceWrapper>>;
     if (wrapperByMetaKeyMap.has(hostContainerRef)) {
-      collection = wrapperByMetaKeyMap.get(hostContainerRef);
+      collection = wrapperByMetaKeyMap.get(hostContainerRef)!;
     } else {
       collection = new Map<string, Set<InstanceWrapper>>();
       wrapperByMetaKeyMap.set(hostContainerRef, collection);

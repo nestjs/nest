@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { ContextIdFactory } from '@nestjs/core/helpers/context-id-factory';
@@ -60,14 +59,14 @@ export class ListenersController {
   ) {}
 
   public registerPatternHandlers(
-    instanceWrapper: InstanceWrapper<Controller | Injectable>,
+    instanceWrapper: InstanceWrapper<Controller>,
     serverInstance: Server,
     moduleKey: string,
   ) {
     const { instance } = instanceWrapper;
 
     const isStatic = instanceWrapper.isDependencyTreeStatic();
-    const patternHandlers = this.metadataExplorer.explore(instance as object);
+    const patternHandlers = this.metadataExplorer.explore(instance);
     const moduleRef = this.container.getModuleByKey(moduleKey);
     const defaultCallMetadata =
       serverInstance instanceof ServerGrpc
@@ -86,7 +85,7 @@ export class ListenersController {
           acc.push({ ...handler, patterns: [pattern] }),
         );
         return acc;
-      }, [])
+      }, [] as EventOrMessageListenerDefinition[])
       .forEach((definition: EventOrMessageListenerDefinition) => {
         const {
           patterns: [pattern],
@@ -99,12 +98,12 @@ export class ListenersController {
         this.insertEntrypointDefinition(
           instanceWrapper,
           definition,
-          serverInstance.transportId,
+          serverInstance.transportId!,
         );
 
         if (isStatic) {
           const proxy = this.contextCreator.create(
-            instance as object,
+            instance,
             targetCallback,
             moduleKey,
             methodKey,
@@ -144,7 +143,7 @@ export class ListenersController {
         const asyncHandler = this.createRequestScopedHandler(
           instanceWrapper,
           pattern,
-          moduleRef,
+          moduleRef!,
           moduleKey,
           methodKey,
           defaultCallMetadata,
@@ -168,7 +167,7 @@ export class ListenersController {
       {
         type: 'microservice',
         methodName: definition.methodKey,
-        className: instanceWrapper.metatype?.name,
+        className: instanceWrapper.metatype?.name as string,
         classNodeId: instanceWrapper.id,
         metadata: {
           key: definition.patterns.toString(),
@@ -202,24 +201,24 @@ export class ListenersController {
     return currentReturnValue;
   }
 
-  public assignClientsToProperties(instance: Controller | Injectable) {
+  public assignClientsToProperties(instance: Controller) {
     for (const {
       property,
       metadata,
-    } of this.metadataExplorer.scanForClientHooks(instance as object)) {
+    } of this.metadataExplorer.scanForClientHooks(instance)) {
       const client = this.clientFactory.create(metadata);
       this.clientsContainer.addClient(client);
 
-      this.assignClientToInstance(instance as object, property, client);
+      this.assignClientToInstance(instance, property, client);
     }
   }
 
   public assignClientToInstance<T = any>(
-    instance: Controller | Injectable,
+    instance: Controller,
     property: string,
     client: T,
   ) {
-    Reflect.set(instance as object, property, client);
+    Reflect.set(instance, property, client);
   }
 
   public createRequestScopedHandler(

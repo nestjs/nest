@@ -49,21 +49,27 @@ export class ClientProxyFactory {
     switch (transport) {
       case Transport.REDIS:
         return new ClientRedis(
-          options as RedisOptions['options'],
+          options as Required<RedisOptions>['options'],
         ) as ClientProxy;
       case Transport.NATS:
-        return new ClientNats(options as NatsOptions['options']) as ClientProxy;
+        return new ClientNats(
+          options as Required<NatsOptions>['options'],
+        ) as ClientProxy;
       case Transport.MQTT:
-        return new ClientMqtt(options as MqttOptions['options']) as ClientProxy;
+        return new ClientMqtt(
+          options as Required<MqttOptions>['options'],
+        ) as ClientProxy;
       case Transport.GRPC:
         return new ClientGrpcProxy(options as GrpcOptions['options']);
       case Transport.RMQ:
-        return new ClientRMQ(options as RmqOptions['options']) as ClientProxy;
+        return new ClientRMQ(
+          options as Required<RmqOptions>['options'],
+        ) as ClientProxy;
       case Transport.KAFKA:
-        return new ClientKafka(options as KafkaOptions['options']);
+        return new ClientKafka(options as Required<KafkaOptions>['options']);
       default:
         return new ClientTCP(
-          options as TcpClientOptions['options'],
+          options as Required<TcpClientOptions>['options'],
         ) as ClientProxy;
     }
   }

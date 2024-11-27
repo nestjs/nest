@@ -9,7 +9,7 @@ class TestServer extends Server {
     EventCallback extends Function = Function,
   >(event: EventKey, callback: EventCallback) {}
   public unwrap<T>(): T {
-    return null;
+    return null!;
   }
   public listen(callback: () => void) {}
   public close() {}

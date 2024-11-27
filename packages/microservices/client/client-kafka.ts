@@ -82,7 +82,7 @@ export class ClientKafka
   }
 
   get producer(): Producer {
-    if (!this._consumer) {
+    if (!this._producer) {
       throw new Error(
         'No producer initialized. Please, call the "connect" method first.',
       );
@@ -90,7 +90,7 @@ export class ClientKafka
     return this._producer;
   }
 
-  constructor(protected readonly options: KafkaOptions['options']) {
+  constructor(protected readonly options: Required<KafkaOptions>['options']) {
     super();
 
     const clientOptions = this.getOptionsProp(
@@ -144,8 +144,9 @@ export class ClientKafka
 
   public async connect(): Promise<Producer> {
     if (this.initialized) {
-      return this.initialized.then(() => this._producer);
+      return this.initialized.then(() => this._producer!);
     }
+    /* eslint-disable-next-line no-async-promise-executor */
     this.initialized = new Promise(async (resolve, reject) => {
       try {
         this.client = this.createClient();
@@ -168,7 +169,7 @@ export class ClientKafka
             },
           );
 
-          this._consumer = this.client.consumer(consumerOptions);
+          this._consumer = this.client!.consumer(consumerOptions);
           this.registerConsumerEventListeners();
 
           // Set member assignments on join and rebalance
@@ -180,7 +181,7 @@ export class ClientKafka
           await this.bindTopics();
         }
 
-        this._producer = this.client.producer(this.options.producer || {});
+        this._producer = this.client!.producer(this.options.producer || {});
         this.registerProducerEventListeners();
         await this._producer.connect();
 
@@ -189,7 +190,7 @@ export class ClientKafka
         reject(err);
       }
     });
-    return this.initialized.then(() => this._producer);
+    return this.initialized.then(() => this._producer!);
   }
 
   public async bindTopics(): Promise<void> {
@@ -225,13 +226,13 @@ export class ClientKafka
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
     return async (payload: EachMessagePayload) => {
-      const rawMessage = this.parser.parse<KafkaMessage>(
+      const rawMessage = this.parser!.parse<KafkaMessage>(
         Object.assign(payload.message, {
           topic: payload.topic,
           partition: payload.partition,
         }),
       );
-      if (isUndefined(rawMessage.headers[KafkaHeaders.CORRELATION_ID])) {
+      if (isUndefined(rawMessage.headers![KafkaHeaders.CORRELATION_ID])) {
         return;
       }
       const { err, response, isDisposed, id } =
@@ -303,6 +304,9 @@ export class ClientKafka
   }
 
   protected registerConsumerEventListeners() {
+    if (!this._consumer) {
+      return;
+    }
     this._consumer.on(this._consumer.events.CONNECT, () =>
       this._status$.next(KafkaStatus.CONNECTED),
     );
@@ -321,6 +325,9 @@ export class ClientKafka
   }
 
   protected registerProducerEventListeners() {
+    if (!this._producer) {
+      return;
+    }
     this._producer.on(this._producer.events.CONNECT, () =>
       this._status$.next(KafkaStatus.CONNECTED),
     );
@@ -366,7 +373,7 @@ export class ClientKafka
       this.options.send || {},
     );
 
-    return this._producer.send(message);
+    return this._producer!.send(message);
   }
 
   protected getReplyTopicPartition(topic: string): string {
@@ -412,13 +419,14 @@ export class ClientKafka
             this.options.send || {},
           );
 
-          return this._producer.send(message);
+          return this._producer!.send(message);
         })
         .catch(err => errorCallback(err));
 
       return cleanup;
     } catch (err) {
       errorCallback(err);
+      return () => null;
     }
   }
 

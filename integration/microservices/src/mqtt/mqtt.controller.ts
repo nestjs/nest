@@ -138,7 +138,7 @@ export class MqttController {
   }
 
   @MessagePattern('wildcard-message/#')
-  wildcardMessageHandler(data: number[]): number {
+  wildcardMessageHandler(data: number[]): number | undefined {
     if ((data as any).response) {
       return;
     }
@@ -186,7 +186,7 @@ export class MqttController {
   }
 
   @MessagePattern('$share/test-group/shared-wildcard-message/#')
-  sharedWildcardMessageHandler(data: number[]): number {
+  sharedWildcardMessageHandler(data: number[]): number | undefined {
     if ((data as any).response) {
       return;
     }

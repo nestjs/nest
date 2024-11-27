@@ -113,9 +113,24 @@ describe('ServerNats', () => {
         [pattern]: messageHandler,
       });
     });
-    it('should subscribe to each acknowledge patterns', () => {
+
+    it('should subscribe to every pattern', () => {
       server.bindEvents(natsClient);
       expect(subscribeSpy.calledWith(pattern)).to.be.true;
+    });
+
+    it('should use a per pattern queue if provided', () => {
+      const queue = 'test';
+      untypedServer.messageHandlers = objectToMap({
+        [pattern]: Object.assign(messageHandler, {
+          extras: {
+            queue,
+          },
+        }),
+      });
+      server.bindEvents(natsClient);
+      const lastCall = subscribeSpy.lastCall;
+      expect(lastCall.args[1].queue).to.be.eql(queue);
     });
 
     it('should fill the subscriptions array properly', () => {
@@ -125,13 +140,13 @@ describe('ServerNats', () => {
   });
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
-      expect(typeof server.getMessageHandler(null)).to.be.eql('function');
+      expect(typeof server.getMessageHandler(null!)).to.be.eql('function');
     });
     describe('handler', () => {
       it('should call "handleMessage"', async () => {
         const handleMessageStub = sinon
           .stub(server, 'handleMessage')
-          .callsFake(() => null);
+          .callsFake(() => null!);
         await server.getMessageHandler('')('' as any, '');
         expect(handleMessageStub.called).to.be.true;
       });
@@ -254,13 +269,13 @@ describe('ServerNats', () => {
     const channel = 'test';
     const data = 'test';
 
-    it('should call handler with expected arguments', () => {
+    it('should call handler with expected arguments', async () => {
       const handler = sinon.spy();
       untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
-      server.handleEvent(
+      await server.handleEvent(
         channel,
         { pattern: '', data },
         new BaseRpcContext([]),
@@ -275,7 +290,7 @@ describe('ServerNats', () => {
           [Symbol.asyncIterator]: [],
         }),
       };
-      server.handleStatusUpdates(serverMock as any);
+      void server.handleStatusUpdates(serverMock as any);
       expect(serverMock.status.called).to.be.true;
     });
 

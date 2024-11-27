@@ -64,7 +64,7 @@ export class Reflector {
         const value = options.transform
           ? options.transform(metadataValue)
           : metadataValue;
-        SetMetadata(metadataKey, value ?? {})(target, key, descriptor);
+        SetMetadata(metadataKey, value ?? {})(target, key!, descriptor);
       };
 
     decoratorFn.KEY = metadataKey;
@@ -256,7 +256,7 @@ export class Reflector {
   public getAllAndOverride<TResult = any, TKey = any>(
     metadataKeyOrDecorator: TKey,
     targets: (Type<any> | Function)[],
-  ): TResult {
+  ): TResult | undefined {
     for (const target of targets) {
       const result = this.get(metadataKeyOrDecorator, target);
       if (result !== undefined) {

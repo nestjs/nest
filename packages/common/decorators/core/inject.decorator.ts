@@ -41,10 +41,10 @@ export function Inject(
   const injectCallHasArguments = arguments.length > 0;
 
   return (target: object, key: string | symbol | undefined, index?: number) => {
-    let type = token || Reflect.getMetadata('design:type', target, key);
+    let type = token || Reflect.getMetadata('design:type', target, key!);
     // Try to infer the token in a constructor-based injection
     if (!type && !injectCallHasArguments) {
-      type = Reflect.getMetadata(PARAMTYPES_METADATA, target, key)?.[index];
+      type = Reflect.getMetadata(PARAMTYPES_METADATA, target, key!)?.[index!];
     }
 
     if (!isUndefined(index)) {

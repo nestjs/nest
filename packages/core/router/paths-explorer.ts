@@ -47,7 +47,7 @@ export class PathsExplorer {
         }
 
         return acc;
-      }, []);
+      }, [] as RouteDefinition[]);
   }
 
   public exploreMethodMetadata(

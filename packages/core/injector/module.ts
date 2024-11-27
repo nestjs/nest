@@ -129,8 +129,8 @@ export class Module {
   }
 
   get entryProviders(): Array<InstanceWrapper<Injectable>> {
-    return Array.from(this._entryProviderKeys).map(token =>
-      this.providers.get(token),
+    return Array.from(this._entryProviderKeys).map(
+      token => this.providers.get(token)!,
     );
   }
 
@@ -142,8 +142,8 @@ export class Module {
     if (!this._providers.has(this._metatype)) {
       throw new RuntimeException();
     }
-    const module = this._providers.get(this._metatype);
-    return module.instance as NestModule;
+    const moduleRef = this._providers.get(this._metatype);
+    return moduleRef!.instance as NestModule;
   }
 
   get metatype(): Type<any> {
@@ -385,7 +385,7 @@ export class Module {
       new InstanceWrapper({
         token: providerToken,
         name: (providerToken as Function)?.name || providerToken,
-        metatype: null,
+        metatype: null!,
         instance: value,
         isResolved: true,
         async: value instanceof Promise,
@@ -503,7 +503,7 @@ export class Module {
         token: controller,
         name: controller.name,
         metatype: controller,
-        instance: null,
+        instance: null!,
         isResolved: false,
         scope: getClassScope(controller),
         durable: isDurable(controller),
@@ -538,11 +538,11 @@ export class Module {
     if (options.isProvider && this.hasProvider(toReplace)) {
       const originalProvider = this._providers.get(toReplace);
 
-      return originalProvider.mergeWith({ provide: toReplace, ...options });
+      return originalProvider!.mergeWith({ provide: toReplace, ...options });
     } else if (!options.isProvider && this.hasInjectable(toReplace)) {
       const originalInjectable = this._injectables.get(toReplace);
 
-      return originalInjectable.mergeWith({
+      return originalInjectable!.mergeWith({
         provide: toReplace,
         ...options,
       });

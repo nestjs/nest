@@ -47,7 +47,7 @@ describe('WebSocketsController', () => {
 
   beforeEach(() => {
     config = new ApplicationConfig(new NoopAdapter());
-    provider = new SocketServerProvider(null, config);
+    provider = new SocketServerProvider(null!, config);
     graphInspector = new GraphInspector(new NestContainer());
     mockProvider = sinon.mock(provider);
 
@@ -187,12 +187,12 @@ describe('WebSocketsController', () => {
         {
           methodName: 'findOne',
           message: 'find',
-          callback: null,
+          callback: null!,
         },
         {
           methodName: 'create',
           message: 'insert',
-          callback: null,
+          callback: null!,
         },
       ];
       const insertEntrypointDefinitionSpy = sinon.spy(
@@ -337,7 +337,7 @@ describe('WebSocketsController', () => {
         instance,
         gateway,
         handlers,
-        null,
+        null!,
         connection,
       );
       fn(client);
@@ -345,7 +345,7 @@ describe('WebSocketsController', () => {
 
     it('should return function', () => {
       expect(
-        instance.getConnectionHandler(null, null, null, null, null),
+        instance.getConnectionHandler(null!, null!, null!, null!, null!),
       ).to.be.a('function');
     });
     it('should call "next" method of connection object with expected argument', () => {

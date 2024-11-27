@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { expect } from 'chai';
 import {
-  multerExceptions,
   busboyExceptions,
+  multerExceptions,
 } from '../../../multer/multer/multer.constants';
 import { transformException } from '../../../multer/multer/multer.utils';
 
@@ -63,7 +63,7 @@ describe('transformException', () => {
           message: multerExceptions.LIMIT_UNEXPECTED_FILE,
           field: 'foo',
         };
-        expect(transformException(err as any).message).to.equal(
+        expect(transformException(err as any)!.message).to.equal(
           `${multerExceptions.LIMIT_UNEXPECTED_FILE} - foo`,
         );
       });

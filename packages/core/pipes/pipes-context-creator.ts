@@ -41,12 +41,12 @@ export class PipesContextCreator extends ContextCreator {
     inquirerId?: string,
   ): R {
     if (isEmpty(metadata)) {
-      return [] as R;
+      return [] as any[] as R;
     }
     return iterate(metadata)
       .filter((pipe: any) => pipe && (pipe.name || pipe.transform))
       .map(pipe => this.getPipeInstance(pipe, contextId, inquirerId))
-      .filter(pipe => pipe && pipe.transform && isFunction(pipe.transform))
+      .filter(pipe => !!pipe && pipe.transform && isFunction(pipe.transform))
       .toArray() as R;
   }
 
@@ -55,7 +55,7 @@ export class PipesContextCreator extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): PipeTransform | null {
-    const isObject = (pipe as PipeTransform).transform;
+    const isObject = !!(pipe as PipeTransform).transform;
     if (isObject) {
       return pipe as PipeTransform;
     }
@@ -89,7 +89,7 @@ export class PipesContextCreator extends ContextCreator {
     inquirerId?: string,
   ): T {
     if (!this.config) {
-      return [] as T;
+      return [] as unknown[] as T;
     }
     const globalPipes = this.config.getGlobalPipes() as T;
     if (contextId === STATIC_CONTEXT && !inquirerId) {

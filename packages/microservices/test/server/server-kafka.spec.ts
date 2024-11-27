@@ -168,14 +168,14 @@ describe('ServerKafka', () => {
       expect(callback.called).to.be.true;
     });
     describe('when "start" throws an exception', () => {
-      it('should call callback with a thrown error as an argument', () => {
+      it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
 
         const callbackSpy = sinon.spy();
         sinon.stub(server, 'start').callsFake(() => {
           throw error;
         });
-        server.listen(callbackSpy);
+        await server.listen(callbackSpy);
         expect(callbackSpy.calledWith(error)).to.be.true;
       });
     });
@@ -265,8 +265,8 @@ describe('ServerKafka', () => {
       it('should call "handleMessage"', async () => {
         const handleMessageStub = sinon
           .stub(server, 'handleMessage')
-          .callsFake(() => null);
-        (await server.getMessageHandler())(null);
+          .callsFake(() => null!);
+        await server.getMessageHandler()(null!);
         expect(handleMessageStub.called).to.be.true;
       });
     });
@@ -287,7 +287,7 @@ describe('ServerKafka', () => {
         .callsFake(async () => []);
     });
     it(`should return function`, () => {
-      expect(typeof server.getPublisher(null, null, correlationId)).to.be.eql(
+      expect(typeof server.getPublisher(null!, null!, correlationId)).to.be.eql(
         'function',
       );
     });
@@ -393,7 +393,7 @@ describe('ServerKafka', () => {
       await server.handleMessage(payload);
       expect(
         getPublisherSpy.calledWith({
-          id: payload.message.headers[KafkaHeaders.CORRELATION_ID].toString(),
+          id: payload.message.headers![KafkaHeaders.CORRELATION_ID]!.toString(),
           err: NO_MESSAGE_HANDLER,
         }),
       ).to.be.true;

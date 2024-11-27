@@ -84,7 +84,7 @@ describe('ListenerMetadataExplorer', () => {
           test,
           Object.getPrototypeOf(test),
           'testMessage',
-        );
+        )!;
         expect(metadata).to.have.keys([
           'isEventHandler',
           'methodKey',
@@ -101,7 +101,7 @@ describe('ListenerMetadataExplorer', () => {
           test,
           Object.getPrototypeOf(test),
           'testMultipleMessage',
-        );
+        )!;
         expect(metadata).to.have.keys([
           'isEventHandler',
           'methodKey',
@@ -122,7 +122,7 @@ describe('ListenerMetadataExplorer', () => {
           test,
           Object.getPrototypeOf(test),
           'testEvent',
-        );
+        )!;
         expect(metadata).to.have.keys([
           'isEventHandler',
           'methodKey',
@@ -139,7 +139,7 @@ describe('ListenerMetadataExplorer', () => {
           test,
           Object.getPrototypeOf(test),
           'testMultipleEvent',
-        );
+        )!;
         expect(metadata).to.have.keys([
           'isEventHandler',
           'methodKey',

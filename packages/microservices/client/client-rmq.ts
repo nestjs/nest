@@ -68,15 +68,19 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   protected replyQueue: string;
   protected noAssert: boolean;
 
-  constructor(protected readonly options: RmqOptions['options']) {
+  constructor(protected readonly options: Required<RmqOptions>['options']) {
     super();
-    this.queue =
-      this.getOptionsProp(this.options, 'queue') || RQM_DEFAULT_QUEUE;
-    this.queueOptions =
-      this.getOptionsProp(this.options, 'queueOptions') ||
-      RQM_DEFAULT_QUEUE_OPTIONS;
-    this.replyQueue =
-      this.getOptionsProp(this.options, 'replyQueue') || REPLY_QUEUE;
+    this.queue = this.getOptionsProp(this.options, 'queue', RQM_DEFAULT_QUEUE);
+    this.queueOptions = this.getOptionsProp(
+      this.options,
+      'queueOptions',
+      RQM_DEFAULT_QUEUE_OPTIONS,
+    );
+    this.replyQueue = this.getOptionsProp(
+      this.options,
+      'replyQueue',
+      REPLY_QUEUE,
+    );
     this.noAssert =
       this.getOptionsProp(this.options, 'noAssert') ??
       this.queueOptions.noAssert ??
@@ -300,7 +304,10 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   ): Promise<void>;
   public async handleMessage(
     packet: unknown,
-    options: Record<string, unknown> | ((packet: WritePacket) => any),
+    options:
+      | Record<string, unknown>
+      | ((packet: WritePacket) => any)
+      | undefined,
     callback?: (packet: WritePacket) => any,
   ): Promise<void> {
     if (isFunction(options)) {
@@ -313,13 +320,13 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       options,
     );
     if (isDisposed || err) {
-      callback({
+      callback?.({
         err,
         response,
         isDisposed: true,
       });
     }
-    callback({
+    callback?.({
       err,
       response,
     });
@@ -372,6 +379,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       return () => this.responseEmitter.removeListener(correlationId, listener);
     } catch (err) {
       callback({ err });
+      return () => {};
     }
   }
 
@@ -395,7 +403,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
           ...options,
           headers: this.mergeHeaders(options?.headers),
         },
-        (err: unknown) => (err ? reject(err) : resolve()),
+        (err: unknown) => (err ? reject(err as Error) : resolve()),
       ),
     );
   }

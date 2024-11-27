@@ -34,6 +34,6 @@ export class WsProxy {
   ) {
     const host = new ExecutionContextHost(args);
     host.setType('ws');
-    exceptionsHandler.handle(error, host);
+    exceptionsHandler.handle(error as Error, host);
   }
 }

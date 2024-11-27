@@ -104,7 +104,7 @@ describe('RpcContextCreator', () => {
         sinon
           .stub(guardsContextCreator, 'create')
           .callsFake(() => [{ canActivate: () => true }]);
-        const proxy = await contextCreator.create(
+        const proxy = contextCreator.create(
           instance,
           instance.test,
           module,
@@ -121,7 +121,7 @@ describe('RpcContextCreator', () => {
             .stub(guardsConsumer, 'tryActivate')
             .callsFake(async () => false);
 
-          const proxy = await contextCreator.create(
+          const proxy = contextCreator.create(
             instance,
             instance.test,
             module,
@@ -149,7 +149,7 @@ describe('RpcContextCreator', () => {
 
   describe('createGuardsFn', () => {
     it('should throw exception when "tryActivate" returns false', () => {
-      const guardsFn = contextCreator.createGuardsFn([null], null, null);
+      const guardsFn = contextCreator.createGuardsFn([null], null!, null!)!;
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
       guardsFn([]).catch(err => expect(err).to.not.be.undefined);
     });
@@ -193,8 +193,8 @@ describe('RpcContextCreator', () => {
     beforeEach(() => {
       consumerApplySpy = sinon.spy(pipesConsumer, 'apply');
     });
-    it('should call "consumer.apply"', () => {
-      contextCreator.getParamValue(
+    it('should call "consumer.apply"', async () => {
+      await contextCreator.getParamValue(
         value,
         { metatype, type: RpcParamtype.PAYLOAD, data: null },
         transforms,
@@ -217,12 +217,12 @@ describe('RpcContextCreator', () => {
             {
               index: 1,
               type: 'test',
-              data: null,
+              data: null!,
               pipes: [],
               extractValue: () => null,
             },
           ],
-        );
+        )!;
         await pipesFn([]);
         expect(pipesFn).to.be.a('function');
       });

@@ -34,7 +34,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     callback: RedisEvents[keyof RedisEvents];
   }> = [];
 
-  constructor(protected readonly options: RedisOptions['options']) {
+  constructor(protected readonly options: Required<RedisOptions>['options']) {
     super();
 
     redisPackage = loadPackage('ioredis', ClientRedis.name, () =>
@@ -209,11 +209,11 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       );
       return;
     }
-    if (times > this.getOptionsProp(this.options, 'retryAttempts')) {
+    if (times > this.getOptionsProp(this.options, 'retryAttempts', 0)) {
       this.logger.error('Retry time exhausted');
       return;
     }
-    return this.getOptionsProp(this.options, 'retryDelay') ?? 5000;
+    return this.getOptionsProp(this.options, 'retryDelay', 5000);
   }
 
   public createResponseCallback(): (
@@ -280,6 +280,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       };
     } catch (err) {
       callback({ err });
+      return () => {};
     }
   }
 
@@ -295,7 +296,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   }
 
   protected unsubscribeFromChannel(channel: string) {
-    const subscriptionCount = this.subscriptionsCount.get(channel);
+    const subscriptionCount = this.subscriptionsCount.get(channel)!;
     this.subscriptionsCount.set(channel, subscriptionCount - 1);
 
     if (subscriptionCount - 1 <= 0) {

@@ -64,7 +64,7 @@ export class NestMicroservice
   ) {
     super(container, config);
 
-    this.injector = new Injector({ preview: config.preview });
+    this.injector = new Injector({ preview: config.preview! });
     this.microservicesModule.register(
       container,
       this.graphInspector,
@@ -224,7 +224,7 @@ export class NestMicroservice
           this.flushLogs();
         }
         if (err) {
-          return reject(err);
+          return reject(err as Error);
         }
         this.logger.log(MESSAGES.MICROSERVICE_READY);
         resolve(info);

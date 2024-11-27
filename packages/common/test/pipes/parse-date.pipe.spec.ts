@@ -14,12 +14,12 @@ describe('ParseDatePipe', () => {
       it('should return a valid date object', () => {
         const date = new Date().toISOString();
 
-        const transformedDate = target.transform(date);
+        const transformedDate = target.transform(date)!;
         expect(transformedDate).to.be.instanceOf(Date);
         expect(transformedDate.toISOString()).to.equal(date);
 
         const asNumber = transformedDate.getTime();
-        const transformedNumber = target.transform(asNumber);
+        const transformedNumber = target.transform(asNumber)!;
         expect(transformedNumber).to.be.instanceOf(Date);
         expect(transformedNumber.getTime()).to.equal(asNumber);
       });

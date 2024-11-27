@@ -25,7 +25,7 @@ export class DeepHashedModuleOpaqueKeyFactory
 
     const key = `${moduleId}_${moduleName}`;
     if (this.moduleTokenCache.has(key)) {
-      return this.moduleTokenCache.get(key);
+      return this.moduleTokenCache.get(key)!;
     }
 
     const hash = this.hashString(key);

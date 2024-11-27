@@ -46,12 +46,12 @@ describe('DependenciesScanner', () => {
   class TestModule {}
 
   @Module({
-    imports: [undefined],
+    imports: [undefined!],
   })
   class UndefinedModule {}
 
   @Module({
-    imports: [null],
+    imports: [null!],
   })
   class InvalidModule {}
 
@@ -393,11 +393,11 @@ describe('DependenciesScanner', () => {
   });
 
   describe('insertModule', () => {
-    it('should call forwardRef() when forwardRef property exists', () => {
+    it('should call forwardRef() when forwardRef property exists', async () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
-      const module = { forwardRef: sinon.spy() };
-      scanner.insertModule(module, []);
+      const module = { forwardRef: sinon.stub().returns(class {}) };
+      await scanner.insertModule(module, []);
 
       expect(module.forwardRef.called).to.be.true;
     });
@@ -730,9 +730,9 @@ describe('DependenciesScanner', () => {
     });
   });
   describe('scanForModules', () => {
-    it('should throw an exception when the imports array includes undefined', () => {
+    it('should throw an exception when the imports array includes undefined', async () => {
       try {
-        scanner.scanForModules({
+        await scanner.scanForModules({
           moduleDefinition: UndefinedModule,
           scope: [UndefinedModule],
         });
@@ -740,9 +740,9 @@ describe('DependenciesScanner', () => {
         expect(exception instanceof UndefinedModuleException).to.be.true;
       }
     });
-    it('should throw an exception when the imports array includes an invalid value', () => {
+    it('should throw an exception when the imports array includes an invalid value', async () => {
       try {
-        scanner.scanForModules({
+        await scanner.scanForModules({
           moduleDefinition: InvalidModule,
           scope: [InvalidModule],
         });

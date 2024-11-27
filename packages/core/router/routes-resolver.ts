@@ -70,7 +70,7 @@ export class RoutesResolver implements Resolver {
   ) {
     const modules = this.container.getModules();
     modules.forEach(({ controllers, metatype }, moduleName) => {
-      const modulePath = this.getModulePathMetadata(metatype);
+      const modulePath = this.getModulePathMetadata(metatype)!;
       this.registerRouters(
         controllers,
         moduleName,
@@ -91,12 +91,12 @@ export class RoutesResolver implements Resolver {
     routes.forEach(instanceWrapper => {
       const { metatype } = instanceWrapper;
 
-      const host = this.getHostMetadata(metatype);
+      const host = this.getHostMetadata(metatype!);
       const routerPaths = this.routerExplorer.extractRouterPath(
         metatype as Type<any>,
       );
-      const controllerVersion = this.getVersionMetadata(metatype);
-      const controllerName = metatype.name;
+      const controllerVersion = this.getVersionMetadata(metatype!);
+      const controllerName = metatype!.name;
 
       routerPaths.forEach(path => {
         const pathsToLog = this.routePathFactory.create({
@@ -132,7 +132,7 @@ export class RoutesResolver implements Resolver {
           instanceWrapper,
           moduleName,
           applicationRef,
-          host,
+          host!,
           routePathMetadata,
         );
       });

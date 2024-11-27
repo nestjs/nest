@@ -44,7 +44,9 @@ describe('ClientRMQ', function () {
         try {
           client['client'] = null;
           await client.connect();
-        } catch {}
+        } catch {
+          // Ignore
+        }
       });
       it('should call "registerErrorListener" once', async () => {
         expect(registerErrorListenerSpy.called).to.be.true;
@@ -133,7 +135,7 @@ describe('ClientRMQ', function () {
         assertQueue: sinon.spy(() => ({})),
         prefetch: sinon.spy(),
       };
-      consumeStub = sinon.stub(client, 'consumeChannel').callsFake(() => null);
+      consumeStub = sinon.stub(client, 'consumeChannel').callsFake(() => null!);
     });
     afterEach(() => {
       consumeStub.restore();
@@ -174,7 +176,7 @@ describe('ClientRMQ', function () {
         off: () => ({}),
       };
       client
-        .mergeDisconnectEvent(instance as any, EMPTY)
+        .mergeDisconnectEvent(instance, EMPTY)
         .subscribe({ error: (err: any) => expect(err).to.be.eql(error) });
     });
   });
@@ -232,7 +234,7 @@ describe('ClientRMQ', function () {
           on: sinon.spy(),
         } as any as EventEmitter;
 
-        subscription = await client['publish'](msg, sinon.spy());
+        subscription = client['publish'](msg, sinon.spy());
         subscription();
       });
       it('should unsubscribe', () => {

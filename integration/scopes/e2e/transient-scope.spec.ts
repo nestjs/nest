@@ -41,36 +41,36 @@ describe('Transient scope', () => {
       const performHttpCall = end =>
         request(server)
           .get('/hello')
-          .end((err, res) => {
+          .end(err => {
             if (err) return end(err);
             end();
           });
-      await new Promise(resolve => performHttpCall(resolve));
-      await new Promise(resolve => performHttpCall(resolve));
-      await new Promise(resolve => performHttpCall(resolve));
+      await new Promise<any>(resolve => performHttpCall(resolve));
+      await new Promise<any>(resolve => performHttpCall(resolve));
+      await new Promise<any>(resolve => performHttpCall(resolve));
     });
 
-    it(`should create controller for each request`, async () => {
+    it(`should create controller for each request`, () => {
       expect(HelloController.COUNTER).to.be.eql(3);
     });
 
-    it(`should create service for each request`, async () => {
+    it(`should create service for each request`, () => {
       expect(UsersService.COUNTER).to.be.eql(3);
     });
 
-    it(`should create provider for each inquirer`, async () => {
+    it(`should create provider for each inquirer`, () => {
       expect(Meta.COUNTER).to.be.eql(7);
     });
 
-    it(`should create transient pipe for each controller (3 requests, 1 static)`, async () => {
+    it(`should create transient pipe for each controller (3 requests, 1 static)`, () => {
       expect(UserByIdPipe.COUNTER).to.be.eql(4);
     });
 
-    it(`should create transient interceptor for each controller (3 requests, 1 static)`, async () => {
+    it(`should create transient interceptor for each controller (3 requests, 1 static)`, () => {
       expect(Interceptor.COUNTER).to.be.eql(4);
     });
 
-    it(`should create transient guard for each controller (3 requests, 1 static)`, async () => {
+    it(`should create transient guard for each controller (3 requests, 1 static)`, () => {
       expect(Guard.COUNTER).to.be.eql(4);
     });
   });

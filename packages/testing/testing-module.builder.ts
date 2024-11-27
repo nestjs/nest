@@ -160,7 +160,7 @@ export class TestingModuleBuilder {
 
   private getRootModule() {
     const modules = this.container.getModules().values();
-    return modules.next().value;
+    return modules.next().value!;
   }
 
   private async createInstancesOfDependencies(

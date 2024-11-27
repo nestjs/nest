@@ -50,11 +50,13 @@ export class KafkaParser {
     let result = value.toString();
     const startChar = result.charAt(0);
 
-    // only try to parse objects and arrays
+    // Only try to parse objects and arrays
     if (startChar === '{' || startChar === '[') {
       try {
         result = JSON.parse(value.toString());
-      } catch (e) {}
+      } catch (e) {
+        // Do nothing
+      }
     }
     return result;
   }
