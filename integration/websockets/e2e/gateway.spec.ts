@@ -103,9 +103,9 @@ describe('WebSocketGateway', () => {
   describe('shared server for WS and Long-Running connections', () => {
     afterEach(() => {});
     it('should block application shutdown', function (done) {
-      let eventSource;
+      let eventSource: EventSource;
 
-      (async () => {
+      void (async () => {
         this.timeout(30000);
 
         setTimeout(() => {
@@ -136,7 +136,7 @@ describe('WebSocketGateway', () => {
           eventSource.onerror = reject;
         });
 
-        app.close();
+        await app.close();
       })();
     });
 
