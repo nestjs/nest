@@ -177,10 +177,28 @@ export abstract class ClientProxy<
   }
 
   protected getOptionsProp<
-    T extends ClientOptions['options'],
-    K extends keyof T,
-  >(obj: T, prop: K, defaultValue: T[K] = undefined) {
-    return obj && prop in obj ? obj[prop] : defaultValue;
+    Options extends ClientOptions['options'],
+    Attribute extends keyof Options,
+  >(obj: Options, prop: Attribute): Options[Attribute];
+  protected getOptionsProp<
+    Options extends ClientOptions['options'],
+    Attribute extends keyof Options,
+    DefaultValue extends Options[Attribute] = Options[Attribute],
+  >(
+    obj: Options,
+    prop: Attribute,
+    defaultValue: DefaultValue,
+  ): Required<Options>[Attribute];
+  protected getOptionsProp<
+    Options extends ClientOptions['options'],
+    Attribute extends keyof Options,
+    DefaultValue extends Options[Attribute] = Options[Attribute],
+  >(
+    obj: Options,
+    prop: Attribute,
+    defaultValue: DefaultValue = undefined as DefaultValue,
+  ) {
+    return obj && prop in obj ? (obj as any)[prop] : defaultValue;
   }
 
   protected normalizePattern(pattern: MsPattern): string {
@@ -190,30 +208,26 @@ export abstract class ClientProxy<
   protected initializeSerializer(options: ClientOptions['options']) {
     this.serializer =
       (options &&
-        (
-          options as
-            | RedisOptions['options']
-            | NatsOptions['options']
-            | MqttOptions['options']
-            | TcpClientOptions['options']
-            | RmqOptions['options']
-            | KafkaOptions['options']
-        ).serializer) ||
+        (options as
+          | RedisOptions['options']
+          | NatsOptions['options']
+          | MqttOptions['options']
+          | TcpClientOptions['options']
+          | RmqOptions['options']
+          | KafkaOptions['options'])!.serializer) ||
       new IdentitySerializer();
   }
 
   protected initializeDeserializer(options: ClientOptions['options']) {
     this.deserializer =
       (options &&
-        (
-          options as
-            | RedisOptions['options']
-            | NatsOptions['options']
-            | MqttOptions['options']
-            | TcpClientOptions['options']
-            | RmqOptions['options']
-            | KafkaOptions['options']
-        ).deserializer) ||
+        (options as
+          | RedisOptions['options']
+          | NatsOptions['options']
+          | MqttOptions['options']
+          | TcpClientOptions['options']
+          | RmqOptions['options']
+          | KafkaOptions['options'])!.deserializer) ||
       new IncomingResponseDeserializer();
   }
 }

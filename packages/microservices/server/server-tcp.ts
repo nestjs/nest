@@ -41,7 +41,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     callback: TcpEvents[keyof TcpEvents];
   }> = [];
 
-  constructor(private readonly options: TcpOptions['options']) {
+  constructor(private readonly options: Required<TcpOptions>['options']) {
     super();
     this.port = this.getOptionsProp(options, 'port', TCP_DEFAULT_PORT);
     this.host = this.getOptionsProp(options, 'host', TCP_DEFAULT_HOST);
@@ -121,14 +121,14 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       this.isManuallyTerminated ||
       !this.getOptionsProp(this.options, 'retryAttempts') ||
       this.retryAttemptsCount >=
-        this.getOptionsProp(this.options, 'retryAttempts')
+        this.getOptionsProp(this.options, 'retryAttempts', 0)
     ) {
       return undefined;
     }
     ++this.retryAttemptsCount;
     return setTimeout(
       () => this.server.listen(this.port, this.host),
-      this.getOptionsProp(this.options, 'retryDelay') || 0,
+      this.getOptionsProp(this.options, 'retryDelay', 0),
     );
   }
 

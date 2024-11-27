@@ -10,6 +10,7 @@ export class ExternalExceptionFilter<T = any, R = any> {
     ) {
       ExternalExceptionFilter.logger.error(exception);
     }
+
     throw exception;
   }
 }

@@ -123,7 +123,7 @@ describe('Shared utils', () => {
     });
     it('should return empty path', () => {
       expect(addLeadingSlash('')).to.be.eql('');
-      expect(addLeadingSlash(null)).to.be.eql('');
+      expect(addLeadingSlash(null!)).to.be.eql('');
       expect(addLeadingSlash(undefined)).to.be.eql('');
     });
   });
@@ -140,7 +140,7 @@ describe('Shared utils', () => {
     });
     it('should return / for empty path', () => {
       expect(normalizePath('')).to.be.eql('/');
-      expect(normalizePath(null)).to.be.eql('/');
+      expect(normalizePath(null!)).to.be.eql('/');
       expect(normalizePath(undefined)).to.be.eql('/');
     });
   });

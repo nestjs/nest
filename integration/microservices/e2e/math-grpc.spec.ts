@@ -180,7 +180,7 @@ describe('GRPC transport', () => {
 
         stream.on('error', err => {
           if (err.code !== GRPC.status.CANCELLED) {
-            reject(err);
+            reject(err as Error);
           }
         });
 

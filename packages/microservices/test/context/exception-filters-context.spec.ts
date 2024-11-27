@@ -34,7 +34,7 @@ describe('ExceptionFiltersContext', () => {
         const filter = exceptionFilter.create(
           new EmptyMetadata(),
           () => ({}) as any,
-          undefined,
+          undefined!,
         );
         expect((filter as any).filters).to.be.empty;
       });
@@ -47,7 +47,7 @@ describe('ExceptionFiltersContext', () => {
         const filter = exceptionFilter.create(
           new WithMetadata(),
           () => ({}) as any,
-          undefined,
+          undefined!,
         );
         expect((filter as any).filters).to.not.be.empty;
       });

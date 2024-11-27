@@ -15,7 +15,7 @@ const rawBodyParser = (
 
 export function getBodyParserOptions<Options = NestExpressBodyParserOptions>(
   rawBody: boolean,
-  options?: Omit<Options, 'verify'> | undefined,
+  options?: Omit<Options, 'verify'>,
 ): Options {
   let parserOptions: Options = (options || {}) as Options;
 

@@ -1,5 +1,5 @@
 import { INestApplication } from '@nestjs/common';
-import { IncomingMessage, request, RequestOptions } from 'http';
+import { IncomingMessage, request } from 'http';
 import { URL } from 'url';
 
 export const getHttpBaseOptions = async (
@@ -10,7 +10,7 @@ export const getHttpBaseOptions = async (
 };
 
 export const sendCanceledHttpRequest = async (url: URL) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(resolve => {
     const req = request(url, res => {
       // close the request once we get the first response of data
       res.on('data', () => {
@@ -29,7 +29,7 @@ export const sendHttpRequest = async (url: URL) => {
     const req = request(url, res => {
       // this makes sure that the response actually starts and is read. We could verify this value against the same
       // that is in an earlier test, but all we care about in _this_ test is that the status code is 200
-      res.on('data', chunk => {
+      res.on('data', () => {
         // no op
       });
       // fail the test if something goes wrong

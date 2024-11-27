@@ -41,9 +41,9 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     callback: MqttEvents[keyof MqttEvents];
   }> = [];
 
-  constructor(private readonly options: MqttOptions['options']) {
+  constructor(private readonly options: Required<MqttOptions>['options']) {
     super();
-    this.url = this.getOptionsProp(options, 'url') || MQTT_DEFAULT_URL;
+    this.url = this.getOptionsProp(options, 'url', MQTT_DEFAULT_URL);
 
     mqttPackage = this.loadPackage('mqtt', ServerMqtt.name, () =>
       require('mqtt'),
@@ -87,7 +87,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
 
     const registeredPatterns = [...this.messageHandlers.keys()];
     registeredPatterns.forEach(pattern => {
-      const { isEventHandler } = this.messageHandlers.get(pattern);
+      const { isEventHandler } = this.messageHandlers.get(pattern)!;
       mqttClient.subscribe(
         isEventHandler ? pattern : this.getRequestPattern(pattern),
         this.getOptionsProp(this.options, 'subscribeOptions'),
@@ -104,7 +104,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 
-  public getMessageHandler(pub: MqttClient): Function {
+  public getMessageHandler(pub: MqttClient) {
     return async (
       channel: string,
       buffer: Buffer,
@@ -120,7 +120,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   ): Promise<any> {
     const rawPacket = this.parseMessage(buffer.toString());
     const packet = await this.deserializer.deserialize(rawPacket, { channel });
-    const mqttContext = new MqttContext([channel, originalPacket]);
+    const mqttContext = new MqttContext([channel, originalPacket!]);
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet, mqttContext);
     }

@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ExceptionFilter } from '../../../common';
 import { Catch } from '../../../common/decorators/core/catch.decorator';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
 import { ApplicationConfig } from '../../application-config';
@@ -38,7 +37,7 @@ describe('ExternalExceptionFilterContext', () => {
         const filter = exceptionFilter.create(
           new EmptyMetadata(),
           () => ({}) as any,
-          undefined,
+          undefined!,
         );
         expect((filter as any).filters).to.be.empty;
       });
@@ -51,7 +50,7 @@ describe('ExternalExceptionFilterContext', () => {
         const filter = exceptionFilter.create(
           new WithMetadata(),
           () => ({}) as any,
-          undefined,
+          undefined!,
         );
         expect((filter as any).filters).to.not.be.empty;
       });

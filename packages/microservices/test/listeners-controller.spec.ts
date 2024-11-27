@@ -26,7 +26,7 @@ describe('ListenersController', () => {
     server: any,
     serverTCP: any,
     serverCustom: any,
-    customTransport: Symbol,
+    customTransport: symbol,
     addSpy: sinon.SinonSpy,
     addSpyTCP: sinon.SinonSpy,
     addSpyCustom: sinon.SinonSpy,
@@ -281,7 +281,7 @@ describe('ListenersController', () => {
         patterns: ['findOne'],
         methodKey: 'find',
         isEventHandler: false,
-        targetCallback: null,
+        targetCallback: null!,
         extras: { qos: 2 },
       };
       const transportId = Transport.MQTT;

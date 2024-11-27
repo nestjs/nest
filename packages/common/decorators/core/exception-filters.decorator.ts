@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-use-before-define */
 import { EXCEPTION_FILTERS_METADATA } from '../../constants';
 import { ExceptionFilter } from '../../index';
 import { extendArrayMetadata } from '../../utils/extend-metadata.util';
@@ -40,9 +39,7 @@ function addExceptionFiltersMetadata(
   ) => {
     const isFilterValid = <T extends Function | Record<string, any>>(
       filter: T,
-    ) =>
-      filter &&
-      (isFunction(filter) || isFunction((filter as Record<string, any>).catch));
+    ) => filter && (isFunction(filter) || isFunction(filter.catch));
 
     if (descriptor) {
       validateEach(

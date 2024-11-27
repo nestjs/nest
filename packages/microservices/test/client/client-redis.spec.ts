@@ -57,8 +57,8 @@ describe('ClientRedis', () => {
       client['publish'](msg, () => {});
       expect(subscribeSpy.calledWith(`${pattern}.reply`)).to.be.true;
     });
-    it('should publish stringified message to request pattern name', async () => {
-      await client['publish'](msg, () => {});
+    it('should publish stringified message to request pattern name', () => {
+      client['publish'](msg, () => {});
       expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).to.be.true;
     });
     describe('on error', () => {
@@ -93,7 +93,7 @@ describe('ClientRedis', () => {
         callback = sinon.spy();
         assignStub = sinon
           .stub(client, 'assignPacketId' as any)
-          .callsFake(packet => Object.assign(packet, { id }));
+          .callsFake(packet => Object.assign(packet as object, { id }));
 
         getReplyPatternStub = sinon
           .stub(client, 'getReplyPattern')
@@ -218,18 +218,19 @@ describe('ClientRedis', () => {
     let createClientSpy: sinon.SinonSpy;
     let registerErrorListenerSpy: sinon.SinonSpy;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       createClientSpy = sinon.stub(client, 'createClient').callsFake(
         () =>
           ({
             on: () => null,
             addListener: () => null,
             removeListener: () => null,
+            connect: () => Promise.resolve(),
           }) as any,
       );
       registerErrorListenerSpy = sinon.spy(client, 'registerErrorListener');
 
-      client.connect();
+      await client.connect();
       client['pubClient'] = null;
     });
     afterEach(() => {
@@ -288,10 +289,12 @@ describe('ClientRedis', () => {
   describe('getClientOptions', () => {
     it('should return options object with "retryStrategy" and call "createRetryStrategy"', () => {
       const createSpy = sinon.spy(client, 'createRetryStrategy');
-      const { retryStrategy } = client.getClientOptions();
+      const { retryStrategy } = client.getClientOptions()!;
       try {
-        retryStrategy({} as any);
-      } catch {}
+        retryStrategy!({} as any);
+      } catch {
+        // No empty
+      }
       expect(createSpy.called).to.be.true;
     });
   });

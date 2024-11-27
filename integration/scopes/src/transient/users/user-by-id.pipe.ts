@@ -1,9 +1,4 @@
-import {
-  ArgumentMetadata,
-  Injectable,
-  PipeTransform,
-  Scope,
-} from '@nestjs/common';
+import { Injectable, PipeTransform, Scope } from '@nestjs/common';
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class UserByIdPipe implements PipeTransform<string> {
@@ -12,7 +7,7 @@ export class UserByIdPipe implements PipeTransform<string> {
     UserByIdPipe.COUNTER++;
   }
 
-  transform(value: string, metadata: ArgumentMetadata) {
+  transform(value: string) {
     return value;
   }
 }

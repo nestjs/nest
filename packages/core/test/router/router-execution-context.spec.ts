@@ -84,7 +84,7 @@ describe('RouterExecutionContext', () => {
       it('should call "exchangeKeysForValues" with expected arguments', done => {
         const keys = Object.keys(metadata);
 
-        contextCreator.create({ foo: 'bar' }, callback as any, '', '', 0);
+        contextCreator.create({ foo: 'bar' }, callback, '', '', 0);
         expect(exchangeKeysForValuesSpy.called).to.be.true;
         expect(exchangeKeysForValuesSpy.calledWith(keys, metadata)).to.be.true;
         done();
@@ -98,20 +98,14 @@ describe('RouterExecutionContext', () => {
 
           const canActivateFn = contextCreator.createGuardsFn(
             [1] as any,
-            null,
-            null,
+            null!,
+            null!,
           );
           sinon.stub(contextCreator, 'createGuardsFn').returns(canActivateFn);
           tryActivateStub = sinon
             .stub(guardsConsumer, 'tryActivate')
             .callsFake(async () => true);
-          proxyContext = contextCreator.create(
-            instance,
-            callback as any,
-            '',
-            '',
-            0,
-          );
+          proxyContext = contextCreator.create(instance, callback, '', '', 0);
         });
         it('should be a function', () => {
           expect(proxyContext).to.be.a('function');
@@ -150,9 +144,9 @@ describe('RouterExecutionContext', () => {
             } catch (e) {
               error = e;
             }
-            expect(error).to.be.instanceOf(ForbiddenException);
-            expect(error.message).to.be.eql('Forbidden resource');
-            expect(error.getResponse()).to.be.eql({
+            expect(error!).to.be.instanceOf(ForbiddenException);
+            expect(error!.message).to.be.eql('Forbidden resource');
+            expect(error!.getResponse()).to.be.eql({
               statusCode: HttpStatus.FORBIDDEN,
               error: 'Forbidden',
               message: FORBIDDEN_MESSAGE,
@@ -211,8 +205,8 @@ describe('RouterExecutionContext', () => {
       consumerApplySpy = sinon.spy(consumer, 'apply');
     });
     describe('when paramtype is query, body, rawBody or param', () => {
-      it('should call "consumer.apply" with expected arguments', () => {
-        contextCreator.getParamValue(
+      it('should call "consumer.apply" with expected arguments', async () => {
+        await contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.QUERY, data: null },
           transforms,
@@ -225,7 +219,7 @@ describe('RouterExecutionContext', () => {
           ),
         ).to.be.true;
 
-        contextCreator.getParamValue(
+        await contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.BODY, data: null },
           transforms,
@@ -238,7 +232,7 @@ describe('RouterExecutionContext', () => {
           ),
         ).to.be.true;
 
-        contextCreator.getParamValue(
+        await contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.RAW_BODY, data: null },
           transforms,
@@ -251,7 +245,7 @@ describe('RouterExecutionContext', () => {
           ),
         ).to.be.true;
 
-        contextCreator.getParamValue(
+        await contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.PARAM, data: null },
           transforms,
@@ -293,7 +287,7 @@ describe('RouterExecutionContext', () => {
   });
   describe('createGuardsFn', () => {
     it('should throw ForbiddenException when "tryActivate" returns false', async () => {
-      const guardsFn = contextCreator.createGuardsFn([null], null, null);
+      const guardsFn = contextCreator.createGuardsFn([null!], null!, null!)!;
       sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
 
       let error: ForbiddenException;
@@ -303,9 +297,9 @@ describe('RouterExecutionContext', () => {
         error = e;
       }
 
-      expect(error).to.be.instanceOf(ForbiddenException);
-      expect(error.message).to.be.eql('Forbidden resource');
-      expect(error.getResponse()).to.be.eql({
+      expect(error!).to.be.instanceOf(ForbiddenException);
+      expect(error!.message).to.be.eql('Forbidden resource');
+      expect(error!.getResponse()).to.be.eql({
         statusCode: HttpStatus.FORBIDDEN,
         message: FORBIDDEN_MESSAGE,
         error: 'Forbidden',
@@ -329,7 +323,7 @@ describe('RouterExecutionContext', () => {
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,
@@ -345,11 +339,11 @@ describe('RouterExecutionContext', () => {
         const response = { render: sinon.spy() };
 
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
-        sinon.stub(contextCreator, 'reflectSse').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,
@@ -397,11 +391,11 @@ describe('RouterExecutionContext', () => {
         const response = { redirect: sinon.spy() };
 
         sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
-        sinon.stub(contextCreator, 'reflectSse').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,
@@ -417,11 +411,11 @@ describe('RouterExecutionContext', () => {
         const result = Promise.resolve('test');
         const response = {};
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
-        sinon.stub(contextCreator, 'reflectSse').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
+        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           false,
           undefined,
           1234,
@@ -447,11 +441,11 @@ describe('RouterExecutionContext', () => {
         const request = new PassThrough();
         request.on = sinon.spy();
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
         sinon.stub(contextCreator, 'reflectSse').returns('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,
@@ -467,11 +461,11 @@ describe('RouterExecutionContext', () => {
         const response = new PassThrough();
         const request = new PassThrough();
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
         sinon.stub(contextCreator, 'reflectSse').returns('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,
@@ -499,11 +493,11 @@ describe('RouterExecutionContext', () => {
         const request = new PassThrough();
         request.on = sinon.spy();
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined);
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
         sinon.stub(contextCreator, 'reflectSse').returns('/');
 
         const handler = contextCreator.createHandleResponseFn(
-          null,
+          null!,
           true,
           undefined,
           200,

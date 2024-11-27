@@ -108,7 +108,9 @@ export class ParseArrayPipe implements PipeTransform {
         if (this.options.items !== String) {
           try {
             item = JSON.parse(item);
-          } catch {}
+          } catch {
+            // Do nothing
+          }
         }
         if (isExpectedTypePrimitive) {
           return this.validatePrimitive(item, index);
@@ -118,16 +120,16 @@ export class ParseArrayPipe implements PipeTransform {
       if (this.options.stopAtFirstError === false) {
         // strict compare to "false" to make sure
         // that this option is disabled by default
-        let errors = [];
+        let errors: string[] = [];
 
         const targetArray = value as Array<unknown>;
         for (let i = 0; i < targetArray.length; i++) {
           try {
             targetArray[i] = await toClassInstance(targetArray[i]);
           } catch (err) {
-            let message: string[] | unknown;
-            if ((err as any).getResponse) {
-              const response = (err as any).getResponse();
+            let message: string[] | string;
+            if (err.getResponse) {
+              const response = err.getResponse();
               if (Array.isArray(response.message)) {
                 message = response.message.map(
                   (item: string) => `[${i}] ${item}`,

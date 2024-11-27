@@ -39,4 +39,4 @@ async function bootstrap() {
   process.kill(process.pid, SIGNAL);
 }
 
-bootstrap();
+void bootstrap();

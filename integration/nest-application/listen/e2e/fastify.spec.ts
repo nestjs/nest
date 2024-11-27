@@ -16,7 +16,7 @@ describe('Listen (Fastify Application)', () => {
   });
 
   afterEach(async () => {
-    app.close();
+    await app.close();
   });
 
   it('should resolve with httpServer on success', async () => {

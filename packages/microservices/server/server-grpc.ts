@@ -63,7 +63,7 @@ export class ServerGrpc extends Server<never, never> {
     );
   }
 
-  constructor(private readonly options: GrpcOptions['options']) {
+  constructor(private readonly options: Readonly<GrpcOptions>['options']) {
     super();
     this.url = this.getOptionsProp(options, 'url') || GRPC_DEFAULT_URL;
 
@@ -96,7 +96,7 @@ export class ServerGrpc extends Server<never, never> {
 
   public async start(callback?: () => void) {
     await this.bindEvents();
-    callback();
+    callback?.();
   }
 
   public async bindEvents() {
@@ -136,7 +136,7 @@ export class ServerGrpc extends Server<never, never> {
     const service = {};
 
     for (const methodName in grpcService.prototype) {
-      let methodHandler = null;
+      let methodHandler: MessageHandler | null = null;
       let streamingType = GrpcMethodStreamingType.NO_STREAMING;
 
       const methodFunction = grpcService.prototype[methodName];
@@ -176,7 +176,7 @@ export class ServerGrpc extends Server<never, never> {
       if (!methodHandler) {
         continue;
       }
-      service[methodName] = await this.createServiceMethod(
+      service[methodName] = this.createServiceMethod(
         methodHandler,
         grpcService.prototype[methodName],
         streamingType,
@@ -190,13 +190,13 @@ export class ServerGrpc extends Server<never, never> {
     methodName: string,
     streaming: GrpcMethodStreamingType,
     grpcMethod: { path?: string },
-  ) {
+  ): MessageHandler {
     let pattern = this.createPattern(serviceName, methodName, streaming);
-    let methodHandler = this.messageHandlers.get(pattern);
+    let methodHandler = this.messageHandlers.get(pattern)!;
     if (!methodHandler) {
       const packageServiceName = grpcMethod.path?.split?.('/')[1];
-      pattern = this.createPattern(packageServiceName, methodName, streaming);
-      methodHandler = this.messageHandlers.get(pattern);
+      pattern = this.createPattern(packageServiceName!, methodName, streaming);
+      methodHandler = this.messageHandlers.get(pattern)!;
     }
     return methodHandler;
   }
@@ -328,7 +328,7 @@ export class ServerGrpc extends Server<never, never> {
       const drain = () => {
         writing = true;
         while (valuesWaitingToBeDrained.length > 0) {
-          const value = valuesWaitingToBeDrained.shift()!;
+          const value = valuesWaitingToBeDrained.shift();
           if (writing) {
             // The first time `call.write` returns false, we need to stop.
             // It wrote the value, but it won't write anything else.

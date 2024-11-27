@@ -91,7 +91,7 @@ describe.skip('Kafka transport', function () {
   });
 
   it(`/POST (async event notification)`, done => {
-    request(server)
+    void request(server)
       .post('/notify')
       .send()
       .end(() => {
@@ -123,7 +123,7 @@ describe.skip('Kafka transport', function () {
   });
 
   it(`/POST (sync command create user) Concurrency Test`, async () => {
-    const promises = [];
+    const promises = [] as Array<Promise<any>>;
     for (let concurrencyKey = 0; concurrencyKey < 100; concurrencyKey++) {
       const innerUserDto = JSON.parse(JSON.stringify(userDto));
       innerUserDto.name += `+${concurrencyKey}`;

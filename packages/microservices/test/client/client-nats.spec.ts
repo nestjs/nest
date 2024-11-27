@@ -88,7 +88,7 @@ describe('ClientNats', () => {
         callback = sinon.spy();
         assignStub = sinon
           .stub(client, 'assignPacketId' as any)
-          .callsFake(packet => Object.assign(packet, { id }));
+          .callsFake(packet => Object.assign(packet as object, { id }));
 
         subscription = client['publish'](msg, callback);
         subscription();
@@ -233,8 +233,8 @@ describe('ClientNats', () => {
       natsClient = { close: natsClose };
       untypedClient.natsClient = natsClient;
     });
-    it('should close "natsClient" when it is not null', () => {
-      client.close();
+    it('should close "natsClient" when it is not null', async () => {
+      await client.close();
       expect(natsClose.called).to.be.true;
     });
   });
@@ -287,7 +287,7 @@ describe('ClientNats', () => {
           [Symbol.asyncIterator]: [],
         }),
       };
-      client.handleStatusUpdates(clientMock as any);
+      void client.handleStatusUpdates(clientMock as any);
       expect(clientMock.status.called).to.be.true;
     });
 
@@ -361,29 +361,29 @@ describe('ClientNats', () => {
       subscribeStub.callsFake((channel, options) =>
         options.callback(new Error()),
       );
-      client['dispatchEvent'](msg).catch(err =>
+      await client['dispatchEvent'](msg).catch(err =>
         expect(err).to.be.instanceOf(Error),
       );
     });
 
     describe('headers', () => {
-      it('should not generate headers if none are configured', () => {
-        client['dispatchEvent'](msg);
+      it('should not generate headers if none are configured', async () => {
+        await client['dispatchEvent'](msg);
         expect(natsClient.publish.getCall(0).args[2].headers).to.be.undefined;
       });
 
-      it('should send packet headers', () => {
+      it('should send packet headers', async () => {
         const requestHeaders = createHeaders();
         requestHeaders.set('1', '123');
         msg.data = new NatsRecord('data', requestHeaders);
 
-        client['dispatchEvent'](msg);
+        await client['dispatchEvent'](msg);
         expect(natsClient.publish.getCall(0).args[2].headers.get('1')).to.eql(
           '123',
         );
       });
 
-      it('should combine packet and static headers', () => {
+      it('should combine packet and static headers', async () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
         untypedClient.options.headers = staticHeaders;
 
@@ -391,7 +391,7 @@ describe('ClientNats', () => {
         requestHeaders.set('1', '123');
         msg.data = new NatsRecord('data', requestHeaders);
 
-        client['dispatchEvent'](msg);
+        await client['dispatchEvent'](msg);
         expect(
           natsClient.publish.getCall(0).args[2].headers.get('client-id'),
         ).to.eql('some-client-id');
@@ -400,7 +400,7 @@ describe('ClientNats', () => {
         );
       });
 
-      it('should prefer packet headers over static headers', () => {
+      it('should prefer packet headers over static headers', async () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
         untypedClient.options.headers = staticHeaders;
 
@@ -408,7 +408,7 @@ describe('ClientNats', () => {
         requestHeaders.set('client-id', 'override-client-id');
         msg.data = new NatsRecord('data', requestHeaders);
 
-        client['dispatchEvent'](msg);
+        await client['dispatchEvent'](msg);
         expect(
           natsClient.publish.getCall(0).args[2].headers.get('client-id'),
         ).to.eql('override-client-id');

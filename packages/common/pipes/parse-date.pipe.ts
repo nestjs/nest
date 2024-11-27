@@ -52,11 +52,11 @@ export class ParseDatePipe
    * @param value currently processed route argument
    * @param metadata contains metadata about the currently processed route argument
    */
-  transform(value: string | number | undefined | null): Date {
+  transform(
+    value: string | number | undefined | null,
+  ): Date | null | undefined {
     if (this.options.optional && isNil(value)) {
-      return this.options.default
-        ? this.options.default()
-        : (value as undefined | null);
+      return this.options.default ? this.options.default() : value;
     }
 
     if (!value) {

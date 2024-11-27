@@ -102,7 +102,7 @@ export abstract class Server<
     callback.extras = extras;
 
     if (this.messageHandlers.has(normalizedPattern) && isEventHandler) {
-      const headRef = this.messageHandlers.get(normalizedPattern);
+      const headRef = this.messageHandlers.get(normalizedPattern)!;
       const getTail = (handler: MessageHandler) =>
         handler?.next ? getTail(handler.next) : handler;
 
@@ -120,20 +120,21 @@ export abstract class Server<
   public getHandlerByPattern(pattern: string): MessageHandler | null {
     const route = this.getRouteFromPattern(pattern);
     return this.messageHandlers.has(route)
-      ? this.messageHandlers.get(route)
+      ? this.messageHandlers.get(route)!
       : null;
   }
 
   public send(
     stream$: Observable<any>,
-    respond: (data: WritePacket) => unknown | Promise<unknown>,
+    respond: (data: WritePacket) => Promise<unknown> | void,
   ): Subscription {
-    let dataBuffer: WritePacket[] = null;
+    let dataBuffer: WritePacket[] | null = null;
+
     const scheduleOnNextTick = (data: WritePacket) => {
       if (!dataBuffer) {
         dataBuffer = [data];
         process.nextTick(async () => {
-          for (const item of dataBuffer) {
+          for (const item of dataBuffer!) {
             await respond(item);
           }
           dataBuffer = null;
@@ -197,10 +198,28 @@ export abstract class Server<
   }
 
   public getOptionsProp<
-    T extends MicroserviceOptions['options'],
-    K extends keyof T,
-  >(obj: T, prop: K, defaultValue: T[K] = undefined) {
-    return obj && prop in obj ? obj[prop] : defaultValue;
+    Options extends MicroserviceOptions['options'],
+    Attribute extends keyof Options,
+  >(obj: Options, prop: Attribute): Options[Attribute];
+  public getOptionsProp<
+    Options extends MicroserviceOptions['options'],
+    Attribute extends keyof Options,
+    DefaultValue extends Options[Attribute] = Options[Attribute],
+  >(
+    obj: Options,
+    prop: Attribute,
+    defaultValue: DefaultValue,
+  ): Required<Options>[Attribute];
+  public getOptionsProp<
+    Options extends MicroserviceOptions['options'],
+    Attribute extends keyof Options,
+    DefaultValue extends Options[Attribute] = Options[Attribute],
+  >(
+    obj: Options,
+    prop: Attribute,
+    defaultValue: DefaultValue = undefined as DefaultValue,
+  ) {
+    return obj && prop in obj ? (obj as any)[prop] : defaultValue;
   }
 
   protected handleError(error: string) {
@@ -218,30 +237,26 @@ export abstract class Server<
   protected initializeSerializer(options: ClientOptions['options']) {
     this.serializer =
       (options &&
-        (
-          options as
-            | RedisOptions['options']
-            | NatsOptions['options']
-            | MqttOptions['options']
-            | TcpOptions['options']
-            | RmqOptions['options']
-            | KafkaOptions['options']
-        ).serializer) ||
+        (options as
+          | RedisOptions['options']
+          | NatsOptions['options']
+          | MqttOptions['options']
+          | TcpOptions['options']
+          | RmqOptions['options']
+          | KafkaOptions['options'])!.serializer) ||
       new IdentitySerializer();
   }
 
   protected initializeDeserializer(options: ClientOptions['options']) {
     this.deserializer =
-      (options &&
-        (
-          options as
-            | RedisOptions['options']
-            | NatsOptions['options']
-            | MqttOptions['options']
-            | TcpOptions['options']
-            | RmqOptions['options']
-            | KafkaOptions['options']
-        ).deserializer) ||
+      (options! &&
+        (options as
+          | RedisOptions['options']
+          | NatsOptions['options']
+          | MqttOptions['options']
+          | TcpOptions['options']
+          | RmqOptions['options']
+          | KafkaOptions['options'])!.deserializer) ||
       new IncomingRequestDeserializer();
   }
 

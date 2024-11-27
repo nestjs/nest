@@ -6,7 +6,7 @@ export class CircularModule {
     const a = {
       module: CircularModule,
       providers: [InputService],
-      b: null,
+      b: null as any,
     };
     a.b = a;
     return a;

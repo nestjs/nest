@@ -65,8 +65,8 @@ export class InstanceWrapper<T = any> {
   public readonly isAlias: boolean = false;
   public readonly subtype?: EnhancerSubtype;
   public scope?: Scope = Scope.DEFAULT;
-  public metatype: Type<T> | Function;
-  public inject?: FactoryProvider['inject'];
+  public metatype: Type<T> | Function | null;
+  public inject?: FactoryProvider['inject'] | null;
   public forwardRef?: boolean;
   public durable?: boolean;
   public initTime?: number;
@@ -109,7 +109,7 @@ export class InstanceWrapper<T = any> {
   }
 
   get isFactory(): boolean {
-    return this.metatype && !isNil(this.inject);
+    return !!this.metatype && !isNil(this.inject);
   }
 
   get isTransient(): boolean {
@@ -133,10 +133,10 @@ export class InstanceWrapper<T = any> {
     contextId: ContextId,
     inquirerId: string,
   ): InstancePerContext<T> {
-    let collectionPerContext = this.transientMap.get(inquirerId);
+    let collectionPerContext = this.transientMap!.get(inquirerId);
     if (!collectionPerContext) {
       collectionPerContext = new WeakMap();
-      this.transientMap.set(inquirerId, collectionPerContext);
+      this.transientMap!.set(inquirerId, collectionPerContext);
     }
     const instancePerContext = collectionPerContext.get(contextId);
     return instancePerContext
@@ -160,10 +160,10 @@ export class InstanceWrapper<T = any> {
     inquirerId: string,
     value: InstancePerContext<T>,
   ) {
-    let collection = this.transientMap.get(inquirerId);
+    let collection = this.transientMap!.get(inquirerId);
     if (!collection) {
       collection = new WeakMap();
-      this.transientMap.set(inquirerId, collection);
+      this.transientMap!.set(inquirerId, collection);
     }
     collection.set(contextId, value);
   }
@@ -176,7 +176,7 @@ export class InstanceWrapper<T = any> {
   }
 
   public getCtorMetadata(): InstanceWrapper[] {
-    return this[INSTANCE_METADATA_SYMBOL].dependencies;
+    return this[INSTANCE_METADATA_SYMBOL].dependencies!;
   }
 
   public addPropertiesMetadata(key: symbol | string, wrapper: InstanceWrapper) {
@@ -190,7 +190,7 @@ export class InstanceWrapper<T = any> {
   }
 
   public getPropertiesMetadata(): PropertyMetadata[] {
-    return this[INSTANCE_METADATA_SYMBOL].properties;
+    return this[INSTANCE_METADATA_SYMBOL].properties!;
   }
 
   public addEnhancerMetadata(wrapper: InstanceWrapper) {
@@ -201,7 +201,7 @@ export class InstanceWrapper<T = any> {
   }
 
   public getEnhancersMetadata(): InstanceWrapper[] {
-    return this[INSTANCE_METADATA_SYMBOL].enhancers;
+    return this[INSTANCE_METADATA_SYMBOL].enhancers!;
   }
 
   public isDependencyTreeDurable(lookupRegistry: string[] = []): boolean {
@@ -299,12 +299,12 @@ export class InstanceWrapper<T = any> {
     }
     const instancePerContext: InstancePerContext<T> = {
       ...staticInstance,
-      instance: undefined,
+      instance: undefined!,
       isResolved: false,
       isPending: false,
     };
     if (this.isNewable()) {
-      instancePerContext.instance = Object.create(this.metatype.prototype);
+      instancePerContext.instance = Object.create(this.metatype!.prototype);
     }
     this.setInstanceByContextId(contextId, instancePerContext);
     return instancePerContext;
@@ -317,12 +317,12 @@ export class InstanceWrapper<T = any> {
     const staticInstance = this.getInstanceByContextId(STATIC_CONTEXT);
     const instancePerContext: InstancePerContext<T> = {
       ...staticInstance,
-      instance: undefined,
+      instance: undefined!,
       isResolved: false,
       isPending: false,
     };
     if (this.isNewable()) {
-      instancePerContext.instance = Object.create(this.metatype.prototype);
+      instancePerContext.instance = Object.create(this.metatype!.prototype);
     }
     this.setInstanceByInquirerId(contextId, inquirerId, instancePerContext);
     return instancePerContext;
@@ -333,12 +333,12 @@ export class InstanceWrapper<T = any> {
     if (!this.isNewable() || host.isResolved) {
       return;
     }
-    return Object.create(this.metatype.prototype);
+    return Object.create(this.metatype!.prototype);
   }
 
   public isInRequestScope(
     contextId: ContextId,
-    inquirer?: InstanceWrapper | undefined,
+    inquirer?: InstanceWrapper,
   ): boolean {
     const isDependencyTreeStatic = this.isDependencyTreeStatic();
 
@@ -353,8 +353,9 @@ export class InstanceWrapper<T = any> {
     contextId: ContextId,
     inquirer: InstanceWrapper | undefined,
   ): boolean {
-    const isInquirerRequestScoped =
-      inquirer && !inquirer.isDependencyTreeStatic();
+    const isInquirerRequestScoped = !!(
+      inquirer && !inquirer.isDependencyTreeStatic()
+    );
 
     return (
       this.isDependencyTreeStatic() &&
@@ -372,7 +373,7 @@ export class InstanceWrapper<T = any> {
     return (
       this.isDependencyTreeStatic() &&
       contextId !== STATIC_CONTEXT &&
-      (isSelfRequested || (inquirer && inquirer.scope === Scope.TRANSIENT))
+      (isSelfRequested || !!(inquirer && inquirer.scope === Scope.TRANSIENT))
     );
   }
 
@@ -435,7 +436,7 @@ export class InstanceWrapper<T = any> {
     Object.assign(this, wrapperPartial);
 
     this.setInstanceByContextId(STATIC_CONTEXT, {
-      instance,
+      instance: instance as T,
       isResolved,
     });
     this.scope === Scope.TRANSIENT && (this.transientMap = new Map());

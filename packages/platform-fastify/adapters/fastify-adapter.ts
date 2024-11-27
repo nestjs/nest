@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import {
   HttpStatus,
   Logger,
@@ -27,6 +28,7 @@ import {
   FastifyReply,
   FastifyRequest,
   FastifyServerOptions,
+  HTTPMethods,
   RawReplyDefaultExpression,
   RawRequestDefaultExpression,
   RawServerBase,
@@ -34,14 +36,13 @@ import {
   RequestGenericInterface,
   RouteOptions,
   RouteShorthandOptions,
-  HTTPMethods,
   fastify,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
 import { kRouteContext } from 'fastify/lib/symbols';
+import * as http from 'http';
 import * as http2 from 'http2';
 import * as https from 'https';
-import * as http from 'http';
 import {
   InjectOptions,
   Chain as LightMyRequestChain,
@@ -159,7 +160,7 @@ export class FastifyAdapter<
       return {
         get(version: string | Array<string>) {
           if (Array.isArray(version)) {
-            return versions.get(version.find(v => versions.has(v))) || null;
+            return versions.get(version.find(v => versions.has(v))!) || null;
           }
           return versions.get(version) || null;
         },
@@ -427,11 +428,11 @@ export class FastifyAdapter<
       response.statusCode = statusCode;
       return response;
     }
-    return (response as TReply).code(statusCode);
+    return (response as { code: Function }).code(statusCode);
   }
 
   public end(response: TReply, message?: string) {
-    response.raw.end(message);
+    response.raw.end(message!);
   }
 
   public render(
@@ -475,7 +476,7 @@ export class FastifyAdapter<
   public inject(
     opts?: InjectOptions | string,
   ): LightMyRequestChain | Promise<LightMyRequestResponse> {
-    return this.instance.inject(opts);
+    return this.instance.inject(opts!);
   }
 
   public async close() {
@@ -539,7 +540,7 @@ export class FastifyAdapter<
   }
 
   public getRequestMethod(request: TRequest): string {
-    return request.raw ? request.raw.method : request.method;
+    return request.raw ? request.raw.method! : request.method;
   }
 
   public getRequestUrl(request: TRequest): string;
@@ -586,7 +587,7 @@ export class FastifyAdapter<
       type,
       parserOptions,
       (
-        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
+        req: RawBodyRequest<FastifyRequest<any, TServer, TRawRequest>>,
         body: Buffer,
         done,
       ) => {
@@ -719,7 +720,7 @@ export class FastifyAdapter<
   }
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {
-    return rawRequest.originalUrl || rawRequest.url;
+    return rawRequest.originalUrl || rawRequest.url!;
   }
 
   private injectRouteOptions(

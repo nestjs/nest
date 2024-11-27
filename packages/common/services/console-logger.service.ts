@@ -142,7 +142,7 @@ export class ConsoleLogger implements LoggerService {
     // eslint-disable-next-line prefer-const
     let [context, opts] = isString(contextOrOptions)
       ? [contextOrOptions, options]
-      : !!options
+      : options
         ? [undefined, options]
         : [contextOrOptions?.context, contextOrOptions];
 
@@ -192,7 +192,7 @@ export class ConsoleLogger implements LoggerService {
       this.getContextAndStackAndMessagesToPrint([message, ...optionalParams]);
 
     this.printMessages(messages, context, 'error', 'stderr', stack);
-    this.printStackTrace(stack);
+    this.printStackTrace(stack!);
   }
 
   /**
@@ -444,7 +444,7 @@ export class ConsoleLogger implements LoggerService {
     const includeTimestamp =
       ConsoleLogger.lastTimestampAt && this.options?.timestamp;
     const result = includeTimestamp
-      ? this.formatTimestampDiff(Date.now() - ConsoleLogger.lastTimestampAt)
+      ? this.formatTimestampDiff(Date.now() - ConsoleLogger.lastTimestampAt!)
       : '';
     ConsoleLogger.lastTimestampAt = Date.now();
     return result;
@@ -515,7 +515,7 @@ export class ConsoleLogger implements LoggerService {
       return { messages: args, context: this.context };
     }
     return {
-      context: lastElement as string,
+      context: lastElement,
       messages: args.slice(0, args.length - 1),
     };
   }
@@ -545,7 +545,7 @@ export class ConsoleLogger implements LoggerService {
       return { messages, context };
     }
     return {
-      stack: lastElement as string,
+      stack: lastElement,
       messages: messages.slice(0, messages.length - 1),
       context,
     };
@@ -556,7 +556,7 @@ export class ConsoleLogger implements LoggerService {
       return false;
     }
 
-    return /^(.)+\n\s+at .+:\d+:\d+/.test(stack);
+    return /^(.)+\n\s+at .+:\d+:\d+/.test(stack!);
   }
 
   private getColorByLogLevel(level: LogLevel) {

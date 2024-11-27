@@ -43,7 +43,7 @@ export class ClientGrpcProxy
     );
   }
 
-  constructor(protected readonly options: GrpcOptions['options']) {
+  constructor(protected readonly options: Required<GrpcOptions>['options']) {
     super();
     this.url = this.getOptionsProp(options, 'url') || GRPC_DEFAULT_URL;
 
@@ -65,7 +65,7 @@ export class ClientGrpcProxy
     this.grpcClients = this.createClients();
   }
 
-  public getService<T extends {}>(name: string): T {
+  public getService<T extends object>(name: string): T {
     const grpcClient = this.createClientByServiceName(name);
     const clientRef = this.getClient(name);
     if (!clientRef) {
@@ -166,10 +166,10 @@ export class ClientGrpcProxy
     methodName: string,
   ): (...args: any[]) => Observable<any> {
     return (...args: any[]) => {
-      const isRequestStream = client[methodName].requestStream;
+      const isRequestStream = client![methodName].requestStream;
       const stream = new Observable(observer => {
         let isClientCanceled = false;
-        let upstreamSubscription: Subscription;
+        let upstreamSubscription: Subscription | null = null;
 
         const upstreamSubjectOrData = args[0];
         const maybeMetadata = args[1];
@@ -179,8 +179,8 @@ export class ClientGrpcProxy
 
         const call =
           isRequestStream && isUpstreamSubject
-            ? client[methodName](maybeMetadata)
-            : client[methodName](...args);
+            ? client![methodName](maybeMetadata)
+            : client![methodName](...args);
 
         if (isRequestStream && isUpstreamSubject) {
           upstreamSubscription = upstreamSubjectOrData.subscribe(
@@ -295,7 +295,7 @@ export class ClientGrpcProxy
   public createClients(): any[] {
     const grpcContext = this.loadProto();
     const packageOption = this.getOptionsProp(this.options, 'package');
-    const grpcPackages = [];
+    const grpcPackages: any[] = [];
     const packageNames = Array.isArray(packageOption)
       ? packageOption
       : [packageOption];
@@ -372,7 +372,9 @@ export class ClientGrpcProxy
   }
 
   protected getClient(name: string): any {
-    return this.grpcClients.find(client => client.hasOwnProperty(name));
+    return this.grpcClients.find(client =>
+      Object.hasOwnProperty.call(client, name),
+    );
   }
 
   protected publish(packet: any, callback: (packet: any) => any): any {

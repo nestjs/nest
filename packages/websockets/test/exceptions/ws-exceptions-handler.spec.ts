@@ -121,13 +121,13 @@ describe('WsExceptionsHandler', () => {
       expect((handler as any).filters).to.be.eql(filters);
     });
     it('should throw exception when passed argument is not an array', () => {
-      expect(() => handler.setCustomFilters(null)).to.throw();
+      expect(() => handler.setCustomFilters(null!)).to.throw();
     });
   });
   describe('invokeCustomFilters', () => {
     describe('when filters array is empty', () => {
       it('should return false', () => {
-        expect(handler.invokeCustomFilters(null, null)).to.be.false;
+        expect(handler.invokeCustomFilters(null, null!)).to.be.false;
       });
     });
     describe('when filters array is not empty', () => {
@@ -143,7 +143,7 @@ describe('WsExceptionsHandler', () => {
           (handler as any).filters = filters;
         });
         it('should call funcSpy', () => {
-          handler.invokeCustomFilters(new TestException(), null);
+          handler.invokeCustomFilters(new TestException(), null!);
           expect(funcSpy.notCalled).to.be.false;
         });
         it('should call funcSpy with exception and response passed as an arguments', () => {
@@ -154,17 +154,17 @@ describe('WsExceptionsHandler', () => {
           expect(funcSpy.calledWith(exception, res)).to.be.true;
         });
         it('should return true', () => {
-          expect(handler.invokeCustomFilters(new TestException(), null)).to.be
+          expect(handler.invokeCustomFilters(new TestException(), null!)).to.be
             .true;
         });
       });
       describe('when filter does not exists in filters array', () => {
         it('should not call funcSpy', () => {
-          handler.invokeCustomFilters(new TestException(), null);
+          handler.invokeCustomFilters(new TestException(), null!);
           expect(funcSpy.notCalled).to.be.true;
         });
         it('should return false', () => {
-          expect(handler.invokeCustomFilters(new TestException(), null)).to.be
+          expect(handler.invokeCustomFilters(new TestException(), null!)).to.be
             .false;
         });
       });

@@ -58,22 +58,22 @@ describe('ClientMqtt', () => {
       connectSpy = sinon.stub(client, 'connect');
       assignStub = sinon
         .stub(client, 'assignPacketId' as any)
-        .callsFake(packet => Object.assign(packet, { id }));
+        .callsFake(packet => Object.assign(packet as object, { id }));
     });
     afterEach(() => {
       connectSpy.restore();
       assignStub.restore();
     });
     it('should subscribe to response pattern name', async () => {
-      await client['publish'](msg, () => {});
+      client['publish'](msg, () => {});
       expect(subscribeSpy.calledWith(`${pattern}/reply`)).to.be.true;
     });
     it('should publish stringified message to request pattern name', async () => {
-      await client['publish'](msg, () => {});
+      client['publish'](msg, () => {});
       expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).to.be.true;
     });
     it('should add callback to routing map', async () => {
-      await client['publish'](msg, () => {});
+      client['publish'](msg, () => {});
       expect(client['routingMap'].has(id)).to.be.true;
     });
     describe('on error', () => {
@@ -103,7 +103,7 @@ describe('ClientMqtt', () => {
         getResponsePatternStub = sinon
           .stub(client, 'getResponsePattern')
           .callsFake(() => channel);
-        subscription = await client['publish'](msg, callback);
+        subscription = client['publish'](msg, callback);
         subscription(channel, JSON.stringify({ isDisposed: true, id }));
       });
       afterEach(() => {
@@ -119,7 +119,7 @@ describe('ClientMqtt', () => {
     });
     describe('headers', () => {
       it('should not generate headers if none are configured', async () => {
-        await client['publish'](msg, () => {});
+        client['publish'](msg, () => {});
         expect(publishSpy.getCall(0).args[2]).to.be.undefined;
       });
       it('should send packet headers', async () => {
@@ -128,7 +128,7 @@ describe('ClientMqtt', () => {
           properties: { userProperties: requestHeaders },
         });
 
-        await client['publish'](msg, () => {});
+        client['publish'](msg, () => {});
         expect(publishSpy.getCall(0).args[2].properties.userProperties).to.eql(
           requestHeaders,
         );
@@ -142,7 +142,7 @@ describe('ClientMqtt', () => {
           properties: { userProperties: requestHeaders },
         });
 
-        await client['publish'](msg, () => {});
+        client['publish'](msg, () => {});
         expect(publishSpy.getCall(0).args[2].properties.userProperties).to.eql({
           ...staticHeaders,
           ...requestHeaders,
@@ -157,7 +157,7 @@ describe('ClientMqtt', () => {
           properties: { userProperties: requestHeaders },
         });
 
-        await client['publish'](msg, () => {});
+        client['publish'](msg, () => {});
         expect(publishSpy.getCall(0).args[2].properties.userProperties).to.eql(
           requestHeaders,
         );
@@ -315,7 +315,7 @@ describe('ClientMqtt', () => {
         on: (ev, callback) => callback(error),
         off: () => ({}),
       };
-      client.mergeCloseEvent(instance as any, EMPTY).subscribe({
+      client.mergeCloseEvent(instance, EMPTY).subscribe({
         error: (err: any) => expect(err).to.be.eql(error),
       });
     });

@@ -11,6 +11,7 @@
     "sourceMap": true,
     "allowJs": true,
     "outDir": "./dist",
+    "strictNullChecks": true,
     "paths": {
       "@nestjs/common": ["../../../packages/common"],
       "@nestjs/common/*": ["../../../packages/common/*"],
@@ -20,8 +21,8 @@
       "@nestjs/microservices/*": ["../../../packages/microservices/*"],
       "@nestjs/websockets": ["../../../packages/websockets"],
       "@nestjs/websockets/*": ["../../../packages/websockets/*"],
-      "@nestjs/testing": ["../../../packages/websockets"],
-      "@nestjs/testing/*": ["../../../packages/websockets/*"],
+      "@nestjs/testing": ["../../../packages/testing"],
+      "@nestjs/testing/*": ["../../../packages/testing/*"],
       "@nestjs/platform-express": ["../../../packages/platform-express"],
       "@nestjs/platform-express/*": ["../../../packages/platform-express/*"],
       "@nestjs/platform-socket.io": ["../../../packages/platform-socket.io"],

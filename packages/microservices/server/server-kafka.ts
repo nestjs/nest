@@ -39,23 +39,28 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   public readonly transportId = Transport.KAFKA;
 
   protected logger = new Logger(ServerKafka.name);
-  protected client: Kafka = null;
-  protected consumer: Consumer = null;
-  protected producer: Producer = null;
-  protected parser: KafkaParser = null;
+  protected client: Kafka | null = null;
+  protected consumer: Consumer | null = null;
+  protected producer: Producer | null = null;
+  protected parser: KafkaParser | null = null;
   protected brokers: string[] | BrokersFunction;
   protected clientId: string;
   protected groupId: string;
 
-  constructor(protected readonly options: KafkaOptions['options']) {
+  constructor(protected readonly options: Required<KafkaOptions>['options']) {
     super();
 
-    const clientOptions =
-      this.getOptionsProp(this.options, 'client') || ({} as KafkaConfig);
-    const consumerOptions =
-      this.getOptionsProp(this.options, 'consumer') || ({} as ConsumerConfig);
-    const postfixId =
-      this.getOptionsProp(this.options, 'postfixId') ?? '-server';
+    const clientOptions = this.getOptionsProp(
+      this.options,
+      'client',
+      {} as KafkaConfig,
+    );
+    const consumerOptions = this.getOptionsProp(
+      this.options,
+      'consumer',
+      {} as ConsumerConfig,
+    );
+    const postfixId = this.getOptionsProp(this.options, 'postfixId', '-server');
 
     this.brokers = clientOptions.brokers || [KAFKA_DEFAULT_BROKER];
 
@@ -98,8 +103,8 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     const consumerOptions = Object.assign(this.options.consumer || {}, {
       groupId: this.groupId,
     });
-    this.consumer = this.client.consumer(consumerOptions);
-    this.producer = this.client.producer(this.options.producer);
+    this.consumer = this.client!.consumer(consumerOptions);
+    this.producer = this.client!.producer(this.options.producer);
     this.registerConsumerEventListeners();
     this.registerProducerEventListeners();
 
@@ -110,6 +115,9 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   protected registerConsumerEventListeners() {
+    if (!this.consumer) {
+      return;
+    }
     this.consumer.on(this.consumer.events.CONNECT, () =>
       this._status$.next(KafkaStatus.CONNECTED),
     );
@@ -128,6 +136,9 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   protected registerProducerEventListeners() {
+    if (!this.producer) {
+      return;
+    }
     this.producer.on(this.producer.events.CONNECT, () =>
       this._status$.next(KafkaStatus.CONNECTED),
     );
@@ -151,7 +162,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     const consumerSubscribeOptions = this.options.subscribe || {};
 
     if (registeredPatterns.length > 0) {
-      await this.consumer.subscribe({
+      await this.consumer!.subscribe({
         ...consumerSubscribeOptions,
         topics: registeredPatterns,
       });
@@ -178,7 +189,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
 
   public async handleMessage(payload: EachMessagePayload) {
     const channel = payload.topic;
-    const rawMessage = this.parser.parse<KafkaMessage>(
+    const rawMessage = this.parser!.parse<KafkaMessage>(
       Object.assign(payload.message, {
         topic: payload.topic,
         partition: payload.partition,
@@ -194,9 +205,9 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       rawMessage,
       payload.partition,
       payload.topic,
-      this.consumer,
+      this.consumer!,
       payload.heartbeat,
-      this.producer,
+      this.producer!,
     ]);
     const handler = this.getHandlerByPattern(packet.pattern);
     // if the correlation id or reply topic is not set
@@ -275,7 +286,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   public async sendMessage(
     message: OutgoingResponse,
     replyTopic: string,
-    replyPartition: string,
+    replyPartition: string | undefined | null,
     correlationId: string,
   ): Promise<RecordMetadata[]> {
     const outgoingMessage = await this.serializer.serialize(message.response);
@@ -291,7 +302,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       },
       this.options.send || {},
     );
-    return this.producer.send(replyMessage);
+    return this.producer!.send(replyMessage);
   }
 
   public assignIsDisposedHeader(
@@ -301,7 +312,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     if (!outgoingResponse.isDisposed) {
       return;
     }
-    outgoingMessage.headers[KafkaHeaders.NEST_IS_DISPOSED] = Buffer.alloc(1);
+    outgoingMessage.headers![KafkaHeaders.NEST_IS_DISPOSED] = Buffer.alloc(1);
   }
 
   public assignErrorHeader(
@@ -315,7 +326,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       typeof outgoingResponse.err === 'object'
         ? JSON.stringify(outgoingResponse.err)
         : outgoingResponse.err;
-    outgoingMessage.headers[KafkaHeaders.NEST_ERR] =
+    outgoingMessage.headers![KafkaHeaders.NEST_ERR] =
       Buffer.from(stringifiedError);
   }
 
@@ -323,12 +334,12 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     correlationId: string,
     outgoingMessage: Message,
   ) {
-    outgoingMessage.headers[KafkaHeaders.CORRELATION_ID] =
+    outgoingMessage.headers![KafkaHeaders.CORRELATION_ID] =
       Buffer.from(correlationId);
   }
 
   public assignReplyPartition(
-    replyPartition: string,
+    replyPartition: string | null | undefined,
     outgoingMessage: Message,
   ) {
     if (isNil(replyPartition)) {

@@ -140,13 +140,13 @@ describe('ServerNats', () => {
   });
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
-      expect(typeof server.getMessageHandler(null)).to.be.eql('function');
+      expect(typeof server.getMessageHandler(null!)).to.be.eql('function');
     });
     describe('handler', () => {
       it('should call "handleMessage"', async () => {
         const handleMessageStub = sinon
           .stub(server, 'handleMessage')
-          .callsFake(() => null);
+          .callsFake(() => null!);
         await server.getMessageHandler('')('' as any, '');
         expect(handleMessageStub.called).to.be.true;
       });
@@ -269,13 +269,13 @@ describe('ServerNats', () => {
     const channel = 'test';
     const data = 'test';
 
-    it('should call handler with expected arguments', () => {
+    it('should call handler with expected arguments', async () => {
       const handler = sinon.spy();
       untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
-      server.handleEvent(
+      await server.handleEvent(
         channel,
         { pattern: '', data },
         new BaseRpcContext([]),
@@ -290,7 +290,7 @@ describe('ServerNats', () => {
           [Symbol.asyncIterator]: [],
         }),
       };
-      server.handleStatusUpdates(serverMock as any);
+      void server.handleStatusUpdates(serverMock as any);
       expect(serverMock.status.called).to.be.true;
     });
 

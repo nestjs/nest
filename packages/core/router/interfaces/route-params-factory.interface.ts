@@ -9,5 +9,5 @@ export interface IRouteParamsFactory {
     key: RouteParamtypes | string,
     data: any,
     { req, res, next }: { req: TRequest; res: TResponse; next: Function },
-  ): TResult;
+  ): TResult | null;
 }

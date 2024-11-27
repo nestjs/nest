@@ -76,7 +76,7 @@ describe('GraphInspector', () => {
           metadata: {
             injectionType: 'constructor',
             keyOrIndex: 0,
-            sourceClassName: instanceWrapper.metatype.name,
+            sourceClassName: instanceWrapper.metatype!.name,
             sourceClassToken: instanceWrapper.token,
             sourceModuleName: 'TestModule',
             targetClassName: param1.name,
@@ -92,7 +92,7 @@ describe('GraphInspector', () => {
           metadata: {
             injectionType: 'constructor',
             keyOrIndex: 1,
-            sourceClassName: instanceWrapper.metatype.name,
+            sourceClassName: instanceWrapper.metatype!.name,
             sourceClassToken: instanceWrapper.token,
             sourceModuleName: 'TestModule',
             targetClassName: param2.name,
@@ -129,7 +129,7 @@ describe('GraphInspector', () => {
     class RandomPipe {}
 
     it('should inspect all modules', async () => {
-      const { moduleRef } = await container.addModule(TestModule, []);
+      const { moduleRef } = (await container.addModule(TestModule, []))!;
       moduleRef.addController(AController);
 
       const subtype = 'interceptor';
@@ -203,7 +203,7 @@ describe('GraphInspector', () => {
           initTime: 100,
         },
       };
-      const insertedNode = graph.insertNode(nodeDefinition);
+      const insertedNode = graph.insertNode(nodeDefinition)!;
 
       graphInspector.insertAttachedEnhancer(instanceWrapper);
 

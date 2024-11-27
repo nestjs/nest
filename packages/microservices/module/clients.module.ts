@@ -1,8 +1,10 @@
 import {
   DynamicModule,
+  ForwardReference,
   Module,
   OnApplicationShutdown,
   Provider,
+  Type,
 } from '@nestjs/common';
 import { ClientProxy, ClientProxyFactory } from '../client';
 import {
@@ -40,11 +42,18 @@ export class ClientsModule {
       [],
     );
     const imports = clientsOptions.reduce(
-      (accImports, option) =>
-        option.imports && !accImports.includes(option.imports)
-          ? accImports.concat(option.imports)
-          : accImports,
-      [],
+      (accImports, option) => {
+        if (!option.imports) {
+          return accImports;
+        }
+        const toInsert = option.imports.filter(
+          item => !accImports.includes(item),
+        );
+        return accImports.concat(toInsert);
+      },
+      [] as Array<
+        DynamicModule | Promise<DynamicModule> | ForwardReference | Type
+      >,
     );
     return {
       module: ClientsModule,
@@ -64,8 +73,8 @@ export class ClientsModule {
     return [
       this.createAsyncOptionsProvider(options),
       {
-        provide: options.useClass,
-        useClass: options.useClass,
+        provide: options.useClass!,
+        useClass: options.useClass!,
       },
     ];
   }
@@ -86,7 +95,7 @@ export class ClientsModule {
         (optionsFactory: ClientsModuleOptionsFactory) =>
           optionsFactory.createClientOptions(),
       ),
-      inject: [options.useExisting || options.useClass],
+      inject: [options.useExisting || options.useClass!],
     };
   }
 
@@ -94,7 +103,7 @@ export class ClientsModule {
     useFactory: ClientsProviderAsyncOptions['useFactory'],
   ) {
     return async (...args: any[]) => {
-      const clientOptions = await useFactory(...args);
+      const clientOptions = await useFactory!(...args);
       const clientProxyRef = ClientProxyFactory.create(clientOptions);
       return this.assignOnAppShutdownHook(clientProxyRef);
     };

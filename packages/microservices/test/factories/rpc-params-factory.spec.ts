@@ -16,7 +16,7 @@ describe('RpcParamsFactory', () => {
       describe(`RpcParamtype.PAYLOAD`, () => {
         it('should return a message payload object', () => {
           expect(
-            factory.exchangeKeyForValue(RpcParamtype.PAYLOAD, null, args),
+            factory.exchangeKeyForValue(RpcParamtype.PAYLOAD, null!, args),
           ).to.be.eql(payload);
         });
         it('should return a message payload object with parameter extraction', () => {
@@ -28,19 +28,21 @@ describe('RpcParamsFactory', () => {
       describe(`RpcParamtype.CONTEXT`, () => {
         it('should return a ctx object', () => {
           expect(
-            factory.exchangeKeyForValue(RpcParamtype.CONTEXT, null, args),
+            factory.exchangeKeyForValue(RpcParamtype.CONTEXT, null!, args),
           ).to.be.eql(ctx);
         });
       });
     });
     describe('when key is not available', () => {
       it('should return null', () => {
-        expect(factory.exchangeKeyForValue(-1, null, [])).to.be.eql(null);
+        expect(factory.exchangeKeyForValue(-1, null!, [])).to.be.eql(null);
       });
     });
     describe('when args are not available', () => {
       it('should return null', () => {
-        expect(factory.exchangeKeyForValue(null, null, null)).to.be.eql(null);
+        expect(factory.exchangeKeyForValue(null!, null!, null!)).to.be.eql(
+          null,
+        );
       });
     });
   });

@@ -112,7 +112,7 @@ describe('ConfigurableModuleBuilder', () => {
         provideInjectionTokensFrom[2],
       );
       expect(MODULE_OPTIONS_TOKEN).to.equal('RANDOM_TEST_MODULE_OPTIONS');
-      expect((definition.providers[0] as any).provide).to.equal(
+      expect((definition.providers![0] as any).provide).to.equal(
         'RANDOM_TEST_MODULE_OPTIONS',
       );
 

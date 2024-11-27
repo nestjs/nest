@@ -467,7 +467,6 @@ describe('Logger', () => {
 
         // named class
         class Test {
-          #privateField = 'private field';
           publicField = 'public field';
         }
         logger.log(Test);
@@ -830,7 +829,7 @@ describe('Logger', () => {
           contextMessage: string,
           timestampDiff: string,
         ) {
-          return `Prefix: ${message}`;
+          return `Prefix: ${message as string}`;
         }
       }
 
