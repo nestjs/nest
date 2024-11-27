@@ -23,7 +23,7 @@ export class MaxFileSizeValidator extends FileValidator<
         return this.validationOptions.message(this.validationOptions.maxSize);
       }
 
-      return this.validationOptions.message;
+      return this.validationOptions.message!;
     }
 
     return `Validation failed (expected size is less than ${this.validationOptions.maxSize})`;

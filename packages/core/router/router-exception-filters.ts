@@ -2,6 +2,7 @@ import { HttpServer } from '@nestjs/common';
 import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
 import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context';
 import { ExceptionsHandler } from '../exceptions/exceptions-handler';
@@ -9,7 +10,6 @@ import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
 import { RouterProxyCallback } from './router-proxy';
-import { iterate } from 'iterare';
 
 export class RouterExceptionFilters extends BaseExceptionFilterContext {
   constructor(
@@ -23,11 +23,11 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
   public create(
     instance: Controller,
     callback: RouterProxyCallback,
-    moduleKey: string,
+    moduleKey: string | undefined,
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): ExceptionsHandler {
-    this.moduleContext = moduleKey;
+    this.moduleContext = moduleKey!;
 
     const exceptionHandler = new ExceptionsHandler(this.applicationRef);
     const filters = this.createContext(

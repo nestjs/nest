@@ -16,7 +16,7 @@ export class GuardsConsumer {
       return true;
     }
     const context = this.createContext(args, instance, callback);
-    context.setType<TContext>(type);
+    context.setType<TContext>(type!);
 
     for (const guard of guards) {
       const result = guard.canActivate(context);

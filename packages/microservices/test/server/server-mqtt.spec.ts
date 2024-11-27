@@ -3,15 +3,15 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerMqtt } from '../../server/server-mqtt';
+import { objectToMap } from './utils/object-to-map';
 
 describe('ServerMqtt', () => {
   let server: ServerMqtt;
-
-  const objectToMap = obj =>
-    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+  let untypedServer: any;
 
   beforeEach(() => {
     server = new ServerMqtt({});
+    untypedServer = server as any;
   });
   describe('listen', () => {
     let onSpy: sinon.SinonSpy;
@@ -26,26 +26,38 @@ describe('ServerMqtt', () => {
       sinon.stub(server, 'createMqttClient').callsFake(() => client);
       callbackSpy = sinon.spy();
     });
-    it('should bind "error" event to handler', () => {
-      server.listen(callbackSpy);
+    it('should bind "error" event to handler', async () => {
+      await server.listen(callbackSpy);
       expect(onSpy.getCall(0).args[0]).to.be.equal('error');
     });
-    it('should bind "message" event to handler', () => {
-      server.listen(callbackSpy);
-      expect(onSpy.getCall(1).args[0]).to.be.equal('message');
+    it('should bind "reconnect" event to handler', async () => {
+      await server.listen(callbackSpy);
+      expect(onSpy.getCall(1).args[0]).to.be.equal('reconnect');
     });
-    it('should bind "connect" event to handler', () => {
-      server.listen(callbackSpy);
-      expect(onSpy.getCall(2).args[0]).to.be.equal('connect');
+    it('should bind "disconnect" event to handler', async () => {
+      await server.listen(callbackSpy);
+      expect(onSpy.getCall(2).args[0]).to.be.equal('disconnect');
+    });
+    it('should bind "close" event to handler', async () => {
+      await server.listen(callbackSpy);
+      expect(onSpy.getCall(3).args[0]).to.be.equal('close');
+    });
+    it('should bind "connect" event to handler', async () => {
+      await server.listen(callbackSpy);
+      expect(onSpy.getCall(4).args[0]).to.be.equal('connect');
+    });
+    it('should bind "message" event to handler', async () => {
+      await server.listen(callbackSpy);
+      expect(onSpy.getCall(5).args[0]).to.be.equal('message');
     });
     describe('when "start" throws an exception', () => {
-      it('should call callback with a thrown error as an argument', () => {
+      it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
 
         sinon.stub(server, 'start').callsFake(() => {
           throw error;
         });
-        server.listen(callbackSpy);
+        await server.listen(callbackSpy);
         expect(callbackSpy.calledWith(error)).to.be.true;
       });
     });
@@ -53,7 +65,7 @@ describe('ServerMqtt', () => {
   describe('close', () => {
     const mqttClient = { end: sinon.spy() };
     beforeEach(() => {
-      (server as any).mqttClient = mqttClient;
+      untypedServer.mqttClient = mqttClient;
     });
     it('should end mqttClient', () => {
       server.close();
@@ -74,7 +86,7 @@ describe('ServerMqtt', () => {
     it('should subscribe to each pattern', () => {
       const pattern = 'test';
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [pattern]: handler,
       });
       server.bindEvents(mqttClient);
@@ -84,15 +96,19 @@ describe('ServerMqtt', () => {
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
       expect(
-        typeof server.getMessageHandler((server as any).mqttClient),
+        typeof server.getMessageHandler(untypedServer.mqttClient),
       ).to.be.eql('function');
     });
     describe('handler', () => {
       it('should call "handleMessage"', async () => {
         const handleMessageStub = sinon
           .stub(server, 'handleMessage')
-          .callsFake(() => null);
-        (await server.getMessageHandler((server as any).mqttClient))(null);
+          .callsFake(() => null!);
+        await server.getMessageHandler(untypedServer.mqttClient)(
+          null!,
+          null!,
+          null!,
+        );
         expect(handleMessageStub.called).to.be.true;
       });
     });
@@ -133,7 +149,7 @@ describe('ServerMqtt', () => {
     });
     it(`should call handler with expected arguments`, async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
@@ -202,13 +218,13 @@ describe('ServerMqtt', () => {
     const channel = 'test';
     const data = 'test';
 
-    it('should call handler with expected arguments', () => {
+    it('should call handler with expected arguments', async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
-      server.handleEvent(
+      await server.handleEvent(
         channel,
         { pattern: '', data },
         new BaseRpcContext([]),

@@ -71,6 +71,7 @@ describe('ListenerMetadataExplorer', () => {
     });
     it(`should return undefined when "handlerType" metadata is undefined`, () => {
       const metadata = instance.exploreMethodMetadata(
+        test,
         Object.getPrototypeOf(test),
         'noPattern',
       );
@@ -80,9 +81,10 @@ describe('ListenerMetadataExplorer', () => {
     describe('@MessagePattern', () => {
       it(`should return pattern properties when "handlerType" metadata is not undefined`, () => {
         const metadata = instance.exploreMethodMetadata(
+          test,
           Object.getPrototypeOf(test),
           'testMessage',
-        );
+        )!;
         expect(metadata).to.have.keys([
           'isEventHandler',
           'methodKey',
@@ -96,9 +98,10 @@ describe('ListenerMetadataExplorer', () => {
       });
       it(`should return multiple patterns when more than one is declared`, () => {
         const metadata = instance.exploreMethodMetadata(
+          test,
           Object.getPrototypeOf(test),
           'testMultipleMessage',
-        );
+        )!;
         expect(metadata).to.have.keys([
           'isEventHandler',
           'methodKey',
@@ -116,9 +119,10 @@ describe('ListenerMetadataExplorer', () => {
     describe('@EventPattern', () => {
       it(`should return pattern properties when "handlerType" metadata is not undefined`, () => {
         const metadata = instance.exploreMethodMetadata(
+          test,
           Object.getPrototypeOf(test),
           'testEvent',
-        );
+        )!;
         expect(metadata).to.have.keys([
           'isEventHandler',
           'methodKey',
@@ -132,9 +136,10 @@ describe('ListenerMetadataExplorer', () => {
       });
       it(`should return multiple patterns when more than one is declared`, () => {
         const metadata = instance.exploreMethodMetadata(
+          test,
           Object.getPrototypeOf(test),
           'testMultipleEvent',
-        );
+        )!;
         expect(metadata).to.have.keys([
           'isEventHandler',
           'methodKey',

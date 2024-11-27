@@ -1,41 +1,48 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ModuleTokenFactory } from '../../injector/module-token-factory';
+import { DeepHashedModuleOpaqueKeyFactory } from '../../../injector/opaque-key-factory/deep-hashed-module-opaque-key-factory';
 
-describe('ModuleTokenFactory', () => {
+describe('DeepHashedModuleOpaqueKeyFactory', () => {
   const moduleId = 'constId';
-  let factory: ModuleTokenFactory;
+  let factory: DeepHashedModuleOpaqueKeyFactory;
 
   beforeEach(() => {
-    factory = new ModuleTokenFactory();
+    factory = new DeepHashedModuleOpaqueKeyFactory();
     sinon.stub(factory, 'getModuleId').returns(moduleId);
   });
-  describe('create', () => {
+  describe('createForStatic', () => {
     class Module {}
+
     it('should return expected token', () => {
       const type = Module;
-      const token1 = factory.create(type, undefined);
-      const token2 = factory.create(type, undefined);
+      const token1 = factory.createForStatic(type);
+      const token2 = factory.createForStatic(type);
       expect(token1).to.be.deep.eq(token2);
     });
+  });
+  describe('createForDynamic', () => {
+    class Module {}
+
     it('should include dynamic metadata', () => {
       const type = Module;
-      const token1 = factory.create(type, {
+      const token1 = factory.createForDynamic(type, {
         providers: [{}],
       } as any);
-      const token2 = factory.create(type, {
+      const token2 = factory.createForDynamic(type, {
         providers: [{}],
       } as any);
 
       expect(token1).to.be.deep.eq(token2);
     });
   });
+
   describe('getModuleName', () => {
     it('should map module metatype to name', () => {
       const metatype = () => {};
       expect(factory.getModuleName(metatype as any)).to.be.eql(metatype.name);
     });
   });
+
   describe('getStringifiedOpaqueToken', () => {
     describe('when metadata exists', () => {
       it('should return hash', () => {
@@ -80,6 +87,7 @@ describe('ModuleTokenFactory', () => {
         );
       });
     });
+
     describe('when metadata does not exist', () => {
       it('should return empty string', () => {
         expect(factory.getStringifiedOpaqueToken(undefined)).to.be.eql('');

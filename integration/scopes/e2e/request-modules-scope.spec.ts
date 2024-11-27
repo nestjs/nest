@@ -24,16 +24,16 @@ describe('Request scope (modules propagation)', () => {
       const performHttpCall = end =>
         request(server)
           .get('/hello')
-          .end((err, res) => {
+          .end(err => {
             if (err) return end(err);
             end();
           });
-      await new Promise(resolve => performHttpCall(resolve));
-      await new Promise(resolve => performHttpCall(resolve));
-      await new Promise(resolve => performHttpCall(resolve));
+      await new Promise<any>(resolve => performHttpCall(resolve));
+      await new Promise<any>(resolve => performHttpCall(resolve));
+      await new Promise<any>(resolve => performHttpCall(resolve));
     });
 
-    it(`should not fail`, async () => {
+    it(`should not fail`, () => {
       expect(RequestChainService.COUNTER).to.be.eql(3);
     });
   });

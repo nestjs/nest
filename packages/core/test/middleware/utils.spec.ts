@@ -75,12 +75,12 @@ describe('middleware utils', () => {
         expect(metatype).to.not.eql(fnMiddleware);
       });
       it('should define a `use` method', () => {
-        const metatype = mapToClass(fnMiddleware, [], noopAdapter) as Type<any>;
+        const metatype = mapToClass(fnMiddleware, [], noopAdapter);
         expect(new metatype().use).to.exist;
       });
       it('should encapsulate a function', () => {
         const spy = sinon.spy();
-        const metatype = mapToClass(spy, [], noopAdapter) as Type<any>;
+        const metatype = mapToClass(spy, [], noopAdapter);
         new metatype().use();
         expect(spy.called).to.be.true;
       });

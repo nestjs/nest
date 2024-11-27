@@ -1,10 +1,9 @@
 import { expect } from 'chai';
 import {
-  PATTERN_METADATA,
   PATTERN_EXTRAS_METADATA,
+  PATTERN_METADATA,
   TRANSPORT_METADATA,
 } from '../../constants';
-import { Transport } from '../../enums/transport.enum';
 import {
   GrpcMethod,
   GrpcMethodStreamingType,
@@ -12,6 +11,7 @@ import {
   GrpcStreamMethod,
   MessagePattern,
 } from '../../decorators/message-pattern.decorator';
+import { Transport } from '../../enums/transport.enum';
 
 describe('@MessagePattern', () => {
   const pattern = { role: 'test' };
@@ -61,7 +61,7 @@ describe('@MessagePattern', () => {
           Reflect.defineMetadata(
             PATTERN_EXTRAS_METADATA,
             additionalExtras,
-            descriptor.value,
+            descriptor.value!,
           )
       )())
       public static test() {}

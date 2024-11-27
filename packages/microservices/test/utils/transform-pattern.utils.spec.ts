@@ -44,7 +44,7 @@ describe('transformPatternToRoute', () => {
             controller: 'app',
             id: 150,
           },
-        ];
+        ] as MsPattern[];
 
         const expectedResults = [
           JSON.stringify(testPatterns[0]),
@@ -71,7 +71,7 @@ describe('transformPatternToRoute', () => {
             use: { p1: 'path1', p2: 'path2', id: 160 },
             controller: 'app',
           },
-        ];
+        ] as MsPattern[];
 
         const expectedResults = [
           JSON.stringify(testPatterns[0]),
@@ -98,7 +98,7 @@ describe('transformPatternToRoute', () => {
             use: { p1: 'path1', p2: { pp1: 'ppath1' } },
             controller: { p1: { pp1: 'ppath1', id: 180 } },
           },
-        ];
+        ] as MsPattern[];
 
         const expectedResults = [
           JSON.stringify(testPatterns[0]),

@@ -1,9 +1,9 @@
+import { INestApplication } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as express from 'express';
 import { AppModule } from '../src/app.module';
-import { INestApplication } from '@nestjs/common';
 
 describe('Listen (Express Application)', () => {
   let testModule: TestingModule;
@@ -17,7 +17,7 @@ describe('Listen (Express Application)', () => {
   });
 
   afterEach(async () => {
-    app.close();
+    await app.close();
   });
 
   it('should resolve with httpServer on success', async () => {

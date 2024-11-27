@@ -164,6 +164,8 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
       durable: isDurable(type),
       host: moduleRef,
     });
+
+    /* eslint-disable-next-line no-async-promise-executor */
     return new Promise<T>(async (resolve, reject) => {
       try {
         const callback = async (instances: any[]) => {

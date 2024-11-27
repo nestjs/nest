@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { ConfigurableModuleAsyncOptions } from './configurable-module-async-options.interface';
 import { ConfigurableModuleCls } from './configurable-module-cls.interface';
 

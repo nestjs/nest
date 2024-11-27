@@ -7,7 +7,7 @@ export class FastifyController {
   getRawBody(@Req() req: RawBodyRequest<FastifyRequest>) {
     return {
       parsed: req.body,
-      raw: req.rawBody.toString(),
+      raw: req.rawBody!.toString(),
     };
   }
 }

@@ -1,8 +1,11 @@
 import {
+  DynamicModule,
+  ForwardReference,
   HttpServer,
   INestApplication,
   INestApplicationContext,
   INestMicroservice,
+  Type,
 } from '@nestjs/common';
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
@@ -27,6 +30,12 @@ import { NestApplication } from './nest-application';
 import { NestApplicationContext } from './nest-application-context';
 import { DependenciesScanner } from './scanner';
 
+type IEntryNestModule =
+  | Type<any>
+  | DynamicModule
+  | ForwardReference
+  | Promise<IEntryNestModule>;
+
 /**
  * @publicApi
  */
@@ -47,7 +56,7 @@ export class NestFactoryStatic {
    * contains a reference to the NestApplication instance.
    */
   public async create<T extends INestApplication = INestApplication>(
-    module: any,
+    module: IEntryNestModule,
     options?: NestApplicationOptions,
   ): Promise<T>;
   /**
@@ -62,22 +71,22 @@ export class NestFactoryStatic {
    * contains a reference to the NestApplication instance.
    */
   public async create<T extends INestApplication = INestApplication>(
-    module: any,
+    module: IEntryNestModule,
     httpAdapter: AbstractHttpAdapter,
     options?: NestApplicationOptions,
   ): Promise<T>;
   public async create<T extends INestApplication = INestApplication>(
-    moduleCls: any,
+    moduleCls: IEntryNestModule,
     serverOrOptions?: AbstractHttpAdapter | NestApplicationOptions,
     options?: NestApplicationOptions,
   ): Promise<T> {
-    const [httpServer, appOptions] = this.isHttpServer(serverOrOptions)
+    const [httpServer, appOptions] = this.isHttpServer(serverOrOptions!)
       ? [serverOrOptions, options]
       : [this.createHttpAdapter(), serverOrOptions];
 
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
-    const graphInspector = this.createGraphInspector(appOptions, container);
+    const graphInspector = this.createGraphInspector(appOptions!, container);
 
     this.setAbortOnError(serverOrOptions, options);
     this.registerLoggerConfiguration(appOptions);
@@ -112,7 +121,7 @@ export class NestFactoryStatic {
    * contains a reference to the NestMicroservice instance.
    */
   public async createMicroservice<T extends object>(
-    moduleCls: any,
+    moduleCls: IEntryNestModule,
     options?: NestMicroserviceOptions & T,
   ): Promise<INestMicroservice> {
     const { NestMicroservice } = loadPackage(
@@ -122,7 +131,7 @@ export class NestFactoryStatic {
     );
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
-    const graphInspector = this.createGraphInspector(options, container);
+    const graphInspector = this.createGraphInspector(options!, container);
 
     this.setAbortOnError(options);
     this.registerLoggerConfiguration(options);
@@ -154,12 +163,12 @@ export class NestFactoryStatic {
    * contains a reference to the NestApplicationContext instance.
    */
   public async createApplicationContext(
-    moduleCls: any,
+    moduleCls: IEntryNestModule,
     options?: NestApplicationContextOptions,
   ): Promise<INestApplicationContext> {
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig);
-    const graphInspector = this.createGraphInspector(options, container);
+    const graphInspector = this.createGraphInspector(options!, container);
 
     this.setAbortOnError(options);
     this.registerLoggerConfiguration(options);
@@ -194,13 +203,13 @@ export class NestFactoryStatic {
     graphInspector: GraphInspector,
     config = new ApplicationConfig(),
     options: NestApplicationContextOptions = {},
-    httpServer: HttpServer = null,
+    httpServer: HttpServer | null = null,
   ) {
     UuidFactory.mode = options.snapshot
       ? UuidFactoryMode.Deterministic
       : UuidFactoryMode.Random;
 
-    const injector = new Injector({ preview: options.preview });
+    const injector = new Injector({ preview: options.preview! });
     const instanceLoader = new InstanceLoader(
       container,
       injector,
@@ -216,7 +225,7 @@ export class NestFactoryStatic {
     container.setHttpAdapter(httpServer);
 
     const teardown = this.abortOnError === false ? rethrow : undefined;
-    await httpServer?.init();
+    await httpServer?.init?.();
     try {
       this.logger.log(MESSAGES.APPLICATION_START);
 
@@ -318,7 +327,7 @@ export class NestFactoryStatic {
     serverOrOptions?: AbstractHttpAdapter | NestApplicationOptions,
     options?: NestApplicationContextOptions | NestApplicationOptions,
   ) {
-    this.abortOnError = this.isHttpServer(serverOrOptions)
+    this.abortOnError = this.isHttpServer(serverOrOptions!)
       ? !(options && options.abortOnError === false)
       : !(serverOrOptions && serverOrOptions.abortOnError === false);
   }

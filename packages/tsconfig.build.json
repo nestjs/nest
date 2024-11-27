@@ -16,7 +16,9 @@
     "sourceMap": false,
     "allowJs": false,
     "strict": true,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "strictPropertyInitialization": false,
     "types": ["node"]
   }
 }

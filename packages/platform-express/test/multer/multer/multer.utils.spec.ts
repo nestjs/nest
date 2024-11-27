@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { expect } from 'chai';
 import {
-  multerExceptions,
   busboyExceptions,
+  multerExceptions,
 } from '../../../multer/multer/multer.constants';
 import { transformException } from '../../../multer/multer/multer.utils';
 
@@ -54,6 +54,17 @@ describe('transformException', () => {
         };
         expect(transformException(err as any)).to.be.instanceof(
           BadRequestException,
+        );
+      });
+    });
+    describe(`and has a 'field' property`, () => {
+      it('should return the field propery appended to the error message', () => {
+        const err = {
+          message: multerExceptions.LIMIT_UNEXPECTED_FILE,
+          field: 'foo',
+        };
+        expect(transformException(err as any)!.message).to.equal(
+          `${multerExceptions.LIMIT_UNEXPECTED_FILE} - foo`,
         );
       });
     });

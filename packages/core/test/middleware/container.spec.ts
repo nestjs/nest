@@ -47,7 +47,7 @@ describe('MiddlewareContainer', () => {
       },
     ];
     container.insertConfig(config, 'Module');
-    expect([...container.getConfigurations().get('Module')]).to.deep.equal(
+    expect([...container.getConfigurations().get('Module')!]).to.deep.equal(
       config,
     );
   });
@@ -68,7 +68,7 @@ describe('MiddlewareContainer', () => {
 
     expect(collection.size).to.eql(config.length);
     expect(insertedMiddleware).to.be.instanceOf(InstanceWrapper);
-    expect(insertedMiddleware.scope).to.be.undefined;
-    expect(insertedMiddleware.metatype).to.be.eql(TestMiddleware);
+    expect(insertedMiddleware!.scope).to.be.undefined;
+    expect(insertedMiddleware!.metatype).to.be.eql(TestMiddleware);
   });
 });

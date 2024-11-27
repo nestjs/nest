@@ -53,19 +53,19 @@ export abstract class AbstractInstanceResolver {
           each: options.each,
         })
       : this.instanceLinksHost.get(typeOrToken, {
-          each: options.each,
+          each: options?.each,
         });
 
     const pluckInstance = async (instanceLink: InstanceLink) => {
       const { wrapperRef, collection } = instanceLink;
       if (wrapperRef.isDependencyTreeStatic() && !wrapperRef.isTransient) {
-        return this.get(typeOrToken, { strict: options.strict });
+        return this.get(typeOrToken, { strict: options?.strict });
       }
 
       const ctorHost = wrapperRef.instance || { constructor: typeOrToken };
       const instance = await this.injector.loadPerContext(
         ctorHost,
-        wrapperRef.host,
+        wrapperRef.host!,
         collection,
         contextId,
         wrapperRef,

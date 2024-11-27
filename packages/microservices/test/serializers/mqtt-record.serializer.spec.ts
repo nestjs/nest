@@ -19,15 +19,18 @@ describe('MqttRecordSerializer', () => {
 
       expect(
         instance.serialize({
+          pattern: 'pattern',
           data: mqttMessage,
         }),
       ).to.deep.eq({
+        pattern: 'pattern',
         options: { qos: 1, retain: true, dup: true, properties: {} },
         data: { value: 'string' },
       });
     });
     it('should act as an identity function if msg is not an instance of MqttRecord class', () => {
       const packet = {
+        pattern: 'pattern',
         data: { random: true },
       };
       expect(instance.serialize(packet)).to.eq(packet);

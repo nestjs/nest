@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { applyDecorators, UseGuards } from '../../decorators';
 import { GUARDS_METADATA } from '../../constants';
+import { applyDecorators, UseGuards } from '../../decorators';
 import { CanActivate } from '../../interfaces';
 
 describe('applyDecorators', () => {

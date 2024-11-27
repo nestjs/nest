@@ -101,7 +101,7 @@ export class SerializedGraph {
 
   public insertEntrypoint<T>(definition: Entrypoint<T>, parentId: string) {
     if (this.entrypoints.has(parentId)) {
-      const existingCollection = this.entrypoints.get(parentId);
+      const existingCollection = this.entrypoints.get(parentId)!;
       existingCollection.push(definition);
     } else {
       this.entrypoints.set(parentId, [definition]);

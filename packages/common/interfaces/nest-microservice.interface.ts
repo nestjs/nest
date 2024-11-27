@@ -1,3 +1,4 @@
+import { Observable } from 'rxjs';
 import { ExceptionFilter } from './exceptions/exception-filter.interface';
 import { CanActivate } from './features/can-activate.interface';
 import { NestInterceptor } from './features/nest-interceptor.interface';
@@ -19,8 +20,8 @@ export interface INestMicroservice extends INestApplicationContext {
   listen(): Promise<any>;
 
   /**
-   * Register Ws Adapter which will be used inside Gateways.
-   * Use when you want to override default `socket.io` library.
+   * Registers a web socket adapter that will be used for Gateways.
+   * Use to override the default `socket.io` library.
    *
    * @param {WebSocketAdapter} adapter
    * @returns {this}
@@ -28,37 +29,64 @@ export interface INestMicroservice extends INestApplicationContext {
   useWebSocketAdapter(adapter: WebSocketAdapter): this;
 
   /**
-   * Registers exception filters as global filters (will be used within every message pattern handler)
+   * Registers global exception filters (will be used for every pattern handler).
    *
    * @param {...ExceptionFilter} filters
    */
   useGlobalFilters(...filters: ExceptionFilter[]): this;
 
   /**
-   * Registers pipes as global pipes (will be used within every message pattern handler)
+   * Registers global pipes (will be used for every pattern handler).
    *
    * @param {...PipeTransform} pipes
    */
   useGlobalPipes(...pipes: PipeTransform<any>[]): this;
 
   /**
-   * Registers interceptors as global interceptors (will be used within every message pattern handler)
+   * Registers global interceptors (will be used for every pattern handler).
    *
    * @param {...NestInterceptor} interceptors
    */
   useGlobalInterceptors(...interceptors: NestInterceptor[]): this;
 
   /**
-   * Registers guards as global guards (will be used within every message pattern handler)
+   * Registers global guards (will be used for every pattern handler).
    *
    * @param {...CanActivate} guards
    */
   useGlobalGuards(...guards: CanActivate[]): this;
 
   /**
-   * Terminates the application
+   * Terminates the application.
    *
    * @returns {Promise<void>}
    */
   close(): Promise<void>;
+
+  /**
+   * Returns an observable that emits status changes.
+   *
+   * @returns {Observable<string>}
+   */
+  status: Observable<string>;
+
+  /**
+   * Registers an event listener for the given event.
+   * @param event Event name
+   * @param callback Callback to be executed when the event is emitted
+   */
+  on<
+    EventsMap extends Record<string, Function> = Record<string, Function>,
+    EventKey extends keyof EventsMap = keyof EventsMap,
+    EventCallback extends EventsMap[EventKey] = EventsMap[EventKey],
+  >(
+    event: EventKey,
+    callback: EventCallback,
+  ): void;
+
+  /**
+   * Returns an instance of the underlying server/broker instance,
+   * or a group of servers if there are more than one.
+   */
+  unwrap<T>(): T;
 }

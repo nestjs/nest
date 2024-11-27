@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common/interfaces';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
 import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import { ContextIdFactory } from '@nestjs/core/helpers/context-id-factory';
@@ -34,12 +33,7 @@ import {
 } from './context/rpc-metadata-constants';
 import { BaseRpcContext } from './ctx-host/base-rpc.context';
 import { Transport } from './enums';
-import {
-  CustomTransportStrategy,
-  MessageHandler,
-  PatternMetadata,
-  RequestContext,
-} from './interfaces';
+import { MessageHandler, PatternMetadata, RequestContext } from './interfaces';
 import { MicroserviceEntrypointMetadata } from './interfaces/microservice-entrypoint-metadata.interface';
 import {
   EventOrMessageListenerDefinition,
@@ -65,17 +59,17 @@ export class ListenersController {
   ) {}
 
   public registerPatternHandlers(
-    instanceWrapper: InstanceWrapper<Controller | Injectable>,
-    server: Server & CustomTransportStrategy,
+    instanceWrapper: InstanceWrapper<Controller>,
+    serverInstance: Server,
     moduleKey: string,
   ) {
     const { instance } = instanceWrapper;
 
     const isStatic = instanceWrapper.isDependencyTreeStatic();
-    const patternHandlers = this.metadataExplorer.explore(instance as object);
+    const patternHandlers = this.metadataExplorer.explore(instance);
     const moduleRef = this.container.getModuleByKey(moduleKey);
     const defaultCallMetadata =
-      server instanceof ServerGrpc
+      serverInstance instanceof ServerGrpc
         ? DEFAULT_GRPC_CALLBACK_METADATA
         : DEFAULT_CALLBACK_METADATA;
 
@@ -83,15 +77,15 @@ export class ListenersController {
       .filter(
         ({ transport }) =>
           isUndefined(transport) ||
-          isUndefined(server.transportId) ||
-          transport === server.transportId,
+          isUndefined(serverInstance.transportId) ||
+          transport === serverInstance.transportId,
       )
       .reduce((acc, handler) => {
         handler.patterns.forEach(pattern =>
           acc.push({ ...handler, patterns: [pattern] }),
         );
         return acc;
-      }, [])
+      }, [] as EventOrMessageListenerDefinition[])
       .forEach((definition: EventOrMessageListenerDefinition) => {
         const {
           patterns: [pattern],
@@ -104,12 +98,12 @@ export class ListenersController {
         this.insertEntrypointDefinition(
           instanceWrapper,
           definition,
-          server.transportId,
+          serverInstance.transportId!,
         );
 
         if (isStatic) {
           const proxy = this.contextCreator.create(
-            instance as object,
+            instance,
             targetCallback,
             moduleKey,
             methodKey,
@@ -131,26 +125,36 @@ export class ListenersController {
                 eventHandler,
               );
             };
-            return server.addHandler(
+            return serverInstance.addHandler(
               pattern,
               eventHandler,
               isEventHandler,
               extras,
             );
           } else {
-            return server.addHandler(pattern, proxy, isEventHandler, extras);
+            return serverInstance.addHandler(
+              pattern,
+              proxy,
+              isEventHandler,
+              extras,
+            );
           }
         }
         const asyncHandler = this.createRequestScopedHandler(
           instanceWrapper,
           pattern,
-          moduleRef,
+          moduleRef!,
           moduleKey,
           methodKey,
           defaultCallMetadata,
           isEventHandler,
         );
-        server.addHandler(pattern, asyncHandler, isEventHandler, extras);
+        serverInstance.addHandler(
+          pattern,
+          asyncHandler,
+          isEventHandler,
+          extras,
+        );
       });
   }
 
@@ -163,7 +167,7 @@ export class ListenersController {
       {
         type: 'microservice',
         methodName: definition.methodKey,
-        className: instanceWrapper.metatype?.name,
+        className: instanceWrapper.metatype?.name as string,
         classNodeId: instanceWrapper.id,
         metadata: {
           key: definition.patterns.toString(),
@@ -197,24 +201,24 @@ export class ListenersController {
     return currentReturnValue;
   }
 
-  public assignClientsToProperties(instance: Controller | Injectable) {
+  public assignClientsToProperties(instance: Controller) {
     for (const {
       property,
       metadata,
-    } of this.metadataExplorer.scanForClientHooks(instance as object)) {
+    } of this.metadataExplorer.scanForClientHooks(instance)) {
       const client = this.clientFactory.create(metadata);
       this.clientsContainer.addClient(client);
 
-      this.assignClientToInstance(instance as object, property, client);
+      this.assignClientToInstance(instance, property, client);
     }
   }
 
   public assignClientToInstance<T = any>(
-    instance: Controller | Injectable,
+    instance: Controller,
     property: string,
     client: T,
   ) {
-    Reflect.set(instance as object, property, client);
+    Reflect.set(instance, property, client);
   }
 
   public createRequestScopedHandler(

@@ -1,5 +1,5 @@
 import { Injectable, Module, forwardRef } from '@nestjs/common';
-import { BModule, BProvider } from './b.module';
+import { BModule } from './b.module';
 
 @Injectable()
 export class AProvider {}

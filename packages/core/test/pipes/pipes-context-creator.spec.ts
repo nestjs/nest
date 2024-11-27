@@ -20,7 +20,7 @@ describe('PipesContextCreator', () => {
   describe('createConcreteContext', () => {
     describe('when metadata is empty or undefined', () => {
       it('should return empty array', () => {
-        expect(creator.createConcreteContext(undefined)).to.be.deep.equal([]);
+        expect(creator.createConcreteContext(undefined!)).to.be.deep.equal([]);
         expect(creator.createConcreteContext([])).to.be.deep.equal([]);
       });
     });
@@ -49,7 +49,7 @@ describe('PipesContextCreator', () => {
         expect(creator.getPipeInstance(Pipe)).to.be.eql(wrapper.instance);
       });
       it('should return null', () => {
-        sinon.stub(creator, 'getInstanceByMetatype').callsFake(() => null);
+        sinon.stub(creator, 'getInstanceByMetatype').callsFake(() => null!);
         expect(creator.getPipeInstance(Pipe)).to.be.eql(null);
       });
     });
@@ -59,7 +59,7 @@ describe('PipesContextCreator', () => {
     describe('when "moduleContext" is nil', () => {
       it('should return undefined', () => {
         (creator as any).moduleContext = undefined;
-        expect(creator.getInstanceByMetatype(null)).to.be.undefined;
+        expect(creator.getInstanceByMetatype(null!)).to.be.undefined;
       });
     });
     describe('when "moduleContext" is not nil', () => {
@@ -70,7 +70,7 @@ describe('PipesContextCreator', () => {
       describe('and when module exists', () => {
         it('should return undefined', () => {
           sinon.stub(container.getModules(), 'get').callsFake(() => undefined);
-          expect(creator.getInstanceByMetatype(null)).to.be.undefined;
+          expect(creator.getInstanceByMetatype(null!)).to.be.undefined;
         });
       });
 

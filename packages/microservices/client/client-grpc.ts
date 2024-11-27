@@ -6,25 +6,44 @@ import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidGrpcServiceException } from '../errors/invalid-grpc-service.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
-import { ClientGrpc, GrpcOptions } from '../interfaces';
-import { ClientProxy } from './client-proxy';
-import { GRPC_CANCELLED } from './constants';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import { getGrpcPackageDefinition } from '../helpers';
+import { ClientGrpc, GrpcOptions } from '../interfaces';
+import { ClientProxy } from './client-proxy';
 
-let grpcPackage: any = {};
-let grpcProtoLoaderPackage: any = {};
+const GRPC_CANCELLED = 'Cancelled';
+
+// To enable type safety for gRPC. This cant be uncommented by default
+// because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
+// Otherwise, TypeScript would fail to compile the code.
+//
+// type GrpcClient = import('@grpc/grpc-js').Client;
+// let grpcPackage = {} as typeof import('@grpc/grpc-js');
+// let grpcProtoLoaderPackage = {} as typeof import('@grpc/proto-loader');
+
+type GrpcClient = any;
+let grpcPackage = {} as any;
+let grpcProtoLoaderPackage = {} as any;
 
 /**
  * @publicApi
  */
-export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
+export class ClientGrpcProxy
+  extends ClientProxy<never, never>
+  implements ClientGrpc
+{
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly clients = new Map<string, any>();
   protected readonly url: string;
-  protected grpcClients = [];
+  protected grpcClients: GrpcClient[] = [];
 
-  constructor(protected readonly options: GrpcOptions['options']) {
+  get status(): never {
+    throw new Error(
+      'The "status" attribute is not supported by the gRPC transport',
+    );
+  }
+
+  constructor(protected readonly options: Required<GrpcOptions>['options']) {
     super();
     this.url = this.getOptionsProp(options, 'url') || GRPC_DEFAULT_URL;
 
@@ -46,7 +65,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     this.grpcClients = this.createClients();
   }
 
-  public getService<T extends {}>(name: string): T {
+  public getService<T extends object>(name: string): T {
     const grpcClient = this.createClientByServiceName(name);
     const clientRef = this.getClient(name);
     if (!clientRef) {
@@ -147,10 +166,10 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     methodName: string,
   ): (...args: any[]) => Observable<any> {
     return (...args: any[]) => {
-      const isRequestStream = client[methodName].requestStream;
+      const isRequestStream = client![methodName].requestStream;
       const stream = new Observable(observer => {
         let isClientCanceled = false;
-        let upstreamSubscription: Subscription;
+        let upstreamSubscription: Subscription | null = null;
 
         const upstreamSubjectOrData = args[0];
         const maybeMetadata = args[1];
@@ -160,8 +179,8 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
 
         const call =
           isRequestStream && isUpstreamSubject
-            ? client[methodName](maybeMetadata)
-            : client[methodName](...args);
+            ? client![methodName](maybeMetadata)
+            : client![methodName](...args);
 
         if (isRequestStream && isUpstreamSubject) {
           upstreamSubscription = upstreamSubjectOrData.subscribe(
@@ -276,7 +295,7 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   public createClients(): any[] {
     const grpcContext = this.loadProto();
     const packageOption = this.getOptionsProp(this.options, 'package');
-    const grpcPackages = [];
+    const grpcPackages: any[] = [];
     const packageNames = Array.isArray(packageOption)
       ? packageOption
       : [packageOption];
@@ -353,7 +372,9 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
   }
 
   protected getClient(name: string): any {
-    return this.grpcClients.find(client => client.hasOwnProperty(name));
+    return this.grpcClients.find(client =>
+      Object.hasOwnProperty.call(client, name),
+    );
   }
 
   protected publish(packet: any, callback: (packet: any) => any): any {
@@ -366,5 +387,16 @@ export class ClientGrpcProxy extends ClientProxy implements ClientGrpc {
     throw new Error(
       'Method is not supported in gRPC mode. Use ClientGrpc instead (learn more in the documentation).',
     );
+  }
+
+  public on<EventKey extends never = never, EventCallback = any>(
+    event: EventKey,
+    callback: EventCallback,
+  ) {
+    throw new Error('Method is not supported in gRPC mode.');
+  }
+
+  public unwrap<T>(): T {
+    throw new Error('Method is not supported in gRPC mode.');
   }
 }

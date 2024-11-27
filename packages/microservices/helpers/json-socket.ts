@@ -1,7 +1,10 @@
 import { Buffer } from 'buffer';
 import { StringDecoder } from 'string_decoder';
 import { CorruptedPacketLengthException } from '../errors/corrupted-packet-length.exception';
+import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception';
 import { TcpSocket } from './tcp-socket';
+
+const MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
 
 export class JsonSocket extends TcpSocket {
   private contentLength: number | null = null;
@@ -20,7 +23,12 @@ export class JsonSocket extends TcpSocket {
       : dataRaw;
     this.buffer += data;
 
-    if (this.contentLength == null) {
+    if (this.buffer.length > MAX_BUFFER_SIZE) {
+      this.buffer = '';
+      throw new MaxPacketLengthExceededException(this.buffer.length);
+    }
+
+    if (this.contentLength === null) {
       const i = this.buffer.indexOf(this.delimiter);
       /**
        * Check if the buffer has the delimiter (#),

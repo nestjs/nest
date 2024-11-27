@@ -1,4 +1,4 @@
-import type { ForwardReference, Type, DynamicModule } from '@nestjs/common';
+import type { DynamicModule, ForwardReference, Type } from '@nestjs/common';
 import { isNil, isSymbol } from '@nestjs/common/utils/shared.utils';
 import {
   InjectorDependency,
@@ -54,7 +54,7 @@ const getDependencyName = (
  * Tries to get the class name. As fallback it returns 'current'.
  * @param module The module which should get displayed
  */
-const getModuleName = (module: Module) =>
+const getModuleName = (module: Module | undefined) =>
   (module && getInstanceName(module.metatype)) || 'current';
 
 const stringifyScope = (scope: any[]): string =>
@@ -63,10 +63,10 @@ const stringifyScope = (scope: any[]): string =>
 export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   type: string | symbol,
   unknownDependencyContext: InjectorDependencyContext,
-  module: Module,
+  moduleRef: Module | undefined,
 ) => {
   const { index, name, dependencies, key } = unknownDependencyContext;
-  const moduleName = getModuleName(module);
+  const moduleName = getModuleName(moduleRef);
   const dependencyName = getDependencyName(name, 'dependency');
 
   const potentialSolutions =
@@ -93,7 +93,7 @@ Potential solutions:
   let message = `Nest can't resolve dependencies of the ${type.toString()}`;
 
   if (isNil(index)) {
-    message += `. Please make sure that the "${key.toString()}" property is available in the current context.${potentialSolutions}`;
+    message += `. Please make sure that the "${key!.toString()}" property is available in the current context.${potentialSolutions}`;
     return message;
   }
   const dependenciesName = (dependencies || []).map(dependencyName =>
@@ -139,8 +139,7 @@ export const USING_INVALID_CLASS_AS_A_MODULE_MESSAGE = (
   metatypeUsedAsAModule: Type | ForwardReference,
   scope: any[],
 ) => {
-  const metatypeNameQuote =
-    `"${getInstanceName(metatypeUsedAsAModule)}"` || 'that class';
+  const metatypeNameQuote = `"${getInstanceName(metatypeUsedAsAModule)}"`;
 
   return `Classes annotated with @Injectable(), @Catch(), and @Controller() decorators must not appear in the "imports" array of a module.
 Please remove ${metatypeNameQuote} (including forwarded occurrences, if any) from all of the "imports" arrays.

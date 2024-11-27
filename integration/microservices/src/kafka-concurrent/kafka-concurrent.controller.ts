@@ -17,7 +17,7 @@ import { SumDto } from './dto/sum.dto';
  */
 const explicitPartitioner = () => {
   return ({ message }: PartitionerArgs) => {
-    return parseFloat(message.headers.toPartition.toString());
+    return parseFloat(message.headers!.toPartition!.toString());
   };
 };
 

@@ -5,6 +5,7 @@ import {
   HttpServer,
   HttpStatus,
   Inject,
+  IntrinsicException,
   Logger,
   Optional,
 } from '@nestjs/common';
@@ -25,7 +26,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
   catch(exception: T, host: ArgumentsHost) {
     const applicationRef =
       this.applicationRef ||
-      (this.httpAdapterHost && this.httpAdapterHost.httpAdapter);
+      (this.httpAdapterHost && this.httpAdapterHost.httpAdapter)!;
 
     if (!(exception instanceof HttpException)) {
       return this.handleUnknownError(exception, host, applicationRef);
@@ -68,13 +69,9 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
       applicationRef.end(response);
     }
 
-    if (this.isExceptionObject(exception)) {
-      return BaseExceptionFilter.logger.error(
-        exception.message,
-        exception.stack,
-      );
+    if (!(exception instanceof IntrinsicException)) {
+      BaseExceptionFilter.logger.error(exception);
     }
-    return BaseExceptionFilter.logger.error(exception);
   }
 
   public isExceptionObject(err: any): err is Error {

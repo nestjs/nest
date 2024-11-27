@@ -1,16 +1,13 @@
 import { ClientProxy } from './client/client-proxy';
-import { Closeable } from './interfaces/closeable.interface';
-
-export type CloseableClient = Closeable & ClientProxy;
 
 export class ClientsContainer {
-  private clients: CloseableClient[] = [];
+  private clients: ClientProxy[] = [];
 
-  public getAllClients(): CloseableClient[] {
+  public getAllClients(): ClientProxy[] {
     return this.clients;
   }
 
-  public addClient(client: CloseableClient) {
+  public addClient(client: ClientProxy) {
     this.clients.push(client);
   }
 

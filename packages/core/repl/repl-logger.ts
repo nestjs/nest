@@ -11,7 +11,7 @@ export class ReplLogger extends ConsoleLogger {
   ];
 
   log(_message: any, context?: string) {
-    if (ReplLogger.ignoredContexts.includes(context)) {
+    if (ReplLogger.ignoredContexts.includes(context!)) {
       return;
     }
     // eslint-disable-next-line

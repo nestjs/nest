@@ -1,6 +1,6 @@
 export * from './client-grpc.interface';
+export * from './client-kafka-proxy.interface';
 export * from './client-metadata.interface';
-export * from './closeable.interface';
 export * from './custom-transport-strategy.interface';
 export * from './deserializer.interface';
 export * from './message-handler.interface';

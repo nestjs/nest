@@ -35,7 +35,6 @@ export interface ModuleMetadata {
    */
   exports?: Array<
     | DynamicModule
-    | Promise<DynamicModule>
     | string
     | symbol
     | Provider

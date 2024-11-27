@@ -21,7 +21,7 @@ describe('kafka reply partition assigner', () => {
     getPreviousAssignment = sinon.spy(assigner, 'getPreviousAssignment');
 
     // reset previous assignments
-    (client as any).consumerAssignments = {};
+    client.consumerAssignments = {};
   });
 
   describe('assign', () => {
@@ -259,7 +259,7 @@ describe('kafka reply partition assigner', () => {
   describe('protocol', () => {
     it('returns the assigner name and metadata', () => {
       // set previous assignments
-      (client as any).consumerAssignments = {
+      client.consumerAssignments = {
         'topic-A': 0,
         'topic-B': 1,
       };
@@ -276,7 +276,7 @@ describe('kafka reply partition assigner', () => {
           topics,
           userData: Buffer.from(
             JSON.stringify({
-              previousAssignment: (client as any).consumerAssignments,
+              previousAssignment: client.consumerAssignments,
             }),
           ),
         }),

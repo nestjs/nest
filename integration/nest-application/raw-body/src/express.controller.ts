@@ -7,7 +7,7 @@ export class ExpressController {
   getRawBody(@Req() req: RawBodyRequest<Request>) {
     return {
       parsed: req.body,
-      raw: req.rawBody.toString(),
+      raw: req.rawBody!.toString(),
     };
   }
 }

@@ -26,15 +26,15 @@ import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
-import {
-  InterceptorsConsumer,
-  InterceptorsContextCreator,
-} from '../interceptors';
 import { GraphInspector } from '../inspector/graph-inspector';
 import {
   Entrypoint,
   HttpEntrypointMetadata,
 } from '../inspector/interfaces/entrypoint.interface';
+import {
+  InterceptorsConsumer,
+  InterceptorsContextCreator,
+} from '../interceptors';
 import { MetadataScanner } from '../metadata-scanner';
 import { PipesConsumer, PipesContextCreator } from '../pipes';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
@@ -177,7 +177,7 @@ export class RouterExplorer {
       ? this.createRequestScopedHandler(
           instanceWrapper,
           requestMethod,
-          this.container.getModuleByKey(moduleKey),
+          this.container.getModuleByKey(moduleKey)!,
           moduleKey,
           methodName,
         )
@@ -198,7 +198,7 @@ export class RouterExplorer {
     paths.forEach(path => {
       if (
         isVersioned &&
-        routePathMetadata.versioningOptions.type !== VersioningType.URI
+        routePathMetadata.versioningOptions!.type !== VersioningType.URI
       ) {
         // All versioning (except for URI Versioning) is done via the "Version Filter"
         routeHandler = this.applyVersionFilter(
@@ -225,9 +225,8 @@ export class RouterExplorer {
             requestMethod: RequestMethod[
               requestMethod
             ] as keyof typeof RequestMethod,
-            methodVersion: routePathMetadata.methodVersion as VersionValue,
-            controllerVersion:
-              routePathMetadata.controllerVersion as VersionValue,
+            methodVersion: routePathMetadata.methodVersion,
+            controllerVersion: routePathMetadata.controllerVersion,
           },
         };
 
@@ -251,7 +250,7 @@ export class RouterExplorer {
         if (isVersioned) {
           const version = this.routePathFactory.getVersion(routePathMetadata);
           this.logger.log(
-            VERSIONED_ROUTE_MAPPED_MESSAGE(path, requestMethod, version),
+            VERSIONED_ROUTE_MAPPED_MESSAGE(path, requestMethod, version!),
           );
         } else {
           this.logger.log(ROUTE_MAPPED_MESSAGE(path, requestMethod));
@@ -271,7 +270,7 @@ export class RouterExplorer {
     const httpAdapterRef = this.container.getHttpAdapterRef();
     const hosts = Array.isArray(host) ? host : [host];
     const hostRegExps = hosts.map((host: string | RegExp) => {
-      const keys = [];
+      const keys: any[] = [];
       const regexp = pathToRegexp(host, keys);
       return { regexp, keys };
     });
@@ -317,11 +316,11 @@ export class RouterExplorer {
     routePathMetadata: RoutePathMetadata,
     handler: Function,
   ) {
-    const version = this.routePathFactory.getVersion(routePathMetadata);
+    const version = this.routePathFactory.getVersion(routePathMetadata)!;
     return router.applyVersionFilter(
       handler,
       version,
-      routePathMetadata.versioningOptions,
+      routePathMetadata.versioningOptions!,
     );
   }
 

@@ -2,7 +2,7 @@ import { Type } from '../type.interface';
 import { ClassTransformOptions } from './class-transform-options.interface';
 
 export interface TransformerPackage {
-  plainToClass<T>(
+  plainToInstance<T>(
     cls: Type<T>,
     plain: unknown,
     options?: ClassTransformOptions,

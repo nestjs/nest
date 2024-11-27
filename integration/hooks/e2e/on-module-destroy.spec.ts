@@ -43,10 +43,7 @@ describe('OnModuleDestroy', () => {
   it('should sort modules by distance (topological sort) - DESC order', async () => {
     @Injectable()
     class BB implements OnModuleDestroy {
-      public field: string;
-      async onModuleDestroy() {
-        this.field = 'b-field';
-      }
+      onModuleDestroy = Sinon.spy();
     }
 
     @Module({
@@ -57,13 +54,10 @@ describe('OnModuleDestroy', () => {
 
     @Injectable()
     class AA implements OnModuleDestroy {
-      public field: string;
       constructor(private bb: BB) {}
-
-      async onModuleDestroy() {
-        this.field = this.bb.field + '_a-field';
-      }
+      onModuleDestroy = Sinon.spy();
     }
+
     @Module({
       imports: [B],
       providers: [AA],
@@ -78,7 +72,8 @@ describe('OnModuleDestroy', () => {
     await app.init();
     await app.close();
 
-    const instance = module.get(AA);
-    expect(instance.field).to.equal('b-field_a-field');
+    const aa = module.get(AA);
+    const bb = module.get(BB);
+    Sinon.assert.callOrder(aa.onModuleDestroy, bb.onModuleDestroy);
   });
 });

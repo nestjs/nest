@@ -34,7 +34,7 @@ export class InternalServerErrorException extends HttpException {
    * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
    */
   constructor(
-    objectOrError?: string | object | any,
+    objectOrError?: any,
     descriptionOrOptions:
       | string
       | HttpExceptionOptions = 'Internal Server Error',
@@ -45,7 +45,7 @@ export class InternalServerErrorException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description,
+        description!,
         HttpStatus.INTERNAL_SERVER_ERROR,
       ),
       HttpStatus.INTERNAL_SERVER_ERROR,

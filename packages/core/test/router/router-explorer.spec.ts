@@ -72,13 +72,13 @@ describe('RouterExplorer', () => {
     exceptionsFilter = new RouterExceptionFilters(
       container,
       applicationConfig,
-      null,
+      null!,
     );
     routerBuilder = new RouterExplorer(
       new MetadataScanner(),
       container,
       injector,
-      null,
+      null!,
       exceptionsFilter,
       applicationConfig,
       routePathFactory,
@@ -99,9 +99,9 @@ describe('RouterExplorer', () => {
       ];
 
       routerBuilder.applyPathsToRouterProxy(
-        null,
+        null!,
         paths as any,
-        null,
+        null!,
         '',
         {},
         '',
@@ -126,9 +126,9 @@ describe('RouterExplorer', () => {
         versioningOptions: { type: VersioningType.URI },
       };
       routerBuilder.applyPathsToRouterProxy(
-        null,
+        null!,
         paths as any,
-        null,
+        null!,
         '',
         routePathMetadata,
         '1',
@@ -197,7 +197,7 @@ describe('RouterExplorer', () => {
           moduleKey,
           methodKey,
         );
-        await handler(null, null, null);
+        await handler(null!, null, null!);
 
         expect(nextSpy.called).to.be.true;
         expect(nextSpy.getCall(0).args[0]).to.be.instanceOf(Error);
@@ -229,8 +229,8 @@ describe('RouterExplorer', () => {
       expect(
         router.applyVersionFilter.calledOnceWithExactly(
           handler,
-          routePathMetadata.methodVersion,
-          routePathMetadata.versioningOptions,
+          routePathMetadata.methodVersion!,
+          routePathMetadata.versioningOptions!,
         ),
       ).to.be.true;
 

@@ -17,17 +17,17 @@ export class WebhooksExplorer {
       const { name } = this.discoveryService.getMetadataByDecorator(
         Webhook,
         wrapper,
-      );
+      )!;
       return {
         name,
         handlers: this.metadataScanner
-          .getAllMethodNames(wrapper.metatype.prototype)
+          .getAllMethodNames(wrapper.metatype!.prototype)
           .map(methodName => {
             const { event } = this.discoveryService.getMetadataByDecorator(
               WebhookHandler,
               wrapper,
               methodName,
-            );
+            )!;
             return {
               methodName,
               event,

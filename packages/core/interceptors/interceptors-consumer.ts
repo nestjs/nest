@@ -23,7 +23,7 @@ export class InterceptorsConsumer {
       return next();
     }
     const context = this.createContext(args, instance, callback);
-    context.setType<TContext>(type);
+    context.setType<TContext>(type!);
 
     const nextFn = async (i = 0) => {
       if (i >= interceptors.length) {

@@ -1,13 +1,12 @@
-import type { Server } from 'http';
 import {
   HttpStatus,
   InternalServerErrorException,
   Logger,
   RequestMethod,
   StreamableFile,
+  VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
-  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { VersionValue } from '@nestjs/common/interfaces';
 import {
@@ -24,13 +23,14 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
+import * as bodyparser from 'body-parser';
 import {
   json as bodyParserJson,
   urlencoded as bodyParserUrlencoded,
 } from 'body-parser';
-import * as bodyparser from 'body-parser';
 import * as cors from 'cors';
 import * as express from 'express';
+import type { Server } from 'http';
 import * as http from 'http';
 import * as https from 'https';
 import { Duplex, pipeline } from 'stream';
@@ -94,7 +94,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
           body.errorHandler(err, response);
         }),
         response,
-        (err: Error) => {
+        (err: any) => {
           if (err) {
             body.errorLogger(err);
           }
@@ -218,7 +218,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public enableCors(options: CorsOptions | CorsOptionsDelegate<any>) {
-    return this.use(cors(options));
+    return this.use(cors(options as any));
   }
 
   public createMiddlewareFactory(
@@ -233,7 +233,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     const isHttpsEnabled = options && options.httpsOptions;
     if (isHttpsEnabled) {
       this.httpServer = https.createServer(
-        options.httpsOptions,
+        options.httpsOptions!,
         this.getInstance(),
       );
     } else {
@@ -246,8 +246,8 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
-    const bodyParserJsonOptions = getBodyParserOptions(rawBody);
-    const bodyParserUrlencodedOptions = getBodyParserOptions(rawBody, {
+    const bodyParserJsonOptions = getBodyParserOptions(rawBody!);
+    const bodyParserUrlencodedOptions = getBodyParserOptions(rawBody!, {
       extended: true,
     });
 
@@ -260,7 +260,9 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       .forEach(parserKey => this.use(parserMiddleware[parserKey]));
   }
 
-  public useBodyParser<Options = NestExpressBodyParserOptions>(
+  public useBodyParser<
+    Options extends NestExpressBodyParserOptions = NestExpressBodyParserOptions,
+  >(
     type: NestExpressBodyParserType,
     rawBody: boolean,
     options?: Omit<Options, 'verify'>,
@@ -425,6 +427,8 @@ export class ExpressAdapter extends AbstractHttpAdapter<
 
       return handlerForHeaderVersioning;
     }
+
+    throw new Error('Unsupported versioning options');
   }
 
   private trackOpenConnections() {

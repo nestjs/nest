@@ -39,7 +39,7 @@ describe('Circular transient scope', () => {
       const performHttpCall = end =>
         request(server)
           .get('/hello')
-          .end((err, res) => {
+          .end(err => {
             if (err) return end(err);
             end();
           });

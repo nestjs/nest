@@ -1,7 +1,9 @@
-import { CONNECT_EVENT, MESSAGE_EVENT } from '../../constants';
+import { expect } from 'chai';
+import { TcpEventsMap } from '../../events/tcp.events';
 import { JsonSocket } from '../../helpers/json-socket';
 import * as helpers from './helpers';
-import { expect } from 'chai';
+
+const MESSAGE_EVENT = 'message';
 
 describe('JsonSocket chaining', () => {
   it('should return the instance when subscribing to event', done => {
@@ -10,18 +12,18 @@ describe('JsonSocket chaining', () => {
         return done(err);
       }
 
-      expect(clientSocket.on(MESSAGE_EVENT, () => {})).to.be.instanceof(
+      expect(clientSocket!.on(MESSAGE_EVENT, () => {})).to.be.instanceof(
         JsonSocket,
       );
-      expect(clientSocket.on(CONNECT_EVENT, () => {})).to.deep.equal(
+      expect(clientSocket!.on(TcpEventsMap.CONNECT, () => {})).to.deep.equal(
         clientSocket,
       );
       expect(
-        clientSocket.on(MESSAGE_EVENT, () => {}).on('end', () => {}),
+        clientSocket!.on(MESSAGE_EVENT, () => {}).on('end', () => {}),
       ).to.deep.equal(clientSocket);
 
-      clientSocket.end();
-      server.close(done);
+      clientSocket!.end();
+      server!.close(done);
     });
   });
 });

@@ -16,7 +16,7 @@ describe('GuardsConsumer', () => {
           [],
           [],
           { constructor: null },
-          null,
+          null!,
         );
         expect(canActivate).to.be.true;
       });
@@ -28,7 +28,7 @@ describe('GuardsConsumer', () => {
             [...guards, { canActivate: () => false }],
             [],
             { constructor: null },
-            null,
+            null!,
           );
           expect(canActivate).to.be.false;
         });
@@ -39,7 +39,7 @@ describe('GuardsConsumer', () => {
             guards,
             [],
             { constructor: null },
-            null,
+            null!,
           );
           expect(canActivate).to.be.true;
         });

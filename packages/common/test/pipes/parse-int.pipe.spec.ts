@@ -1,7 +1,7 @@
 import { expect } from 'chai';
+import { HttpException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseIntPipe } from '../../pipes/parse-int.pipe';
-import { HttpException } from '../../exceptions';
 
 class CustomTestError extends HttpException {
   constructor() {
@@ -32,7 +32,10 @@ describe('ParseIntPipe', () => {
       });
       it('should not throw an error if the value is undefined/null and optional is true', async () => {
         const target = new ParseIntPipe({ optional: true });
-        const value = await target.transform(undefined, {} as ArgumentMetadata);
+        const value = await target.transform(
+          undefined!,
+          {} as ArgumentMetadata,
+        );
         expect(value).to.equal(undefined);
       });
     });

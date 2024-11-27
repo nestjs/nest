@@ -34,7 +34,7 @@ export class GatewayTimeoutException extends HttpException {
    * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
    */
   constructor(
-    objectOrError?: string | object | any,
+    objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Gateway Timeout',
   ) {
     const { description, httpExceptionOptions } =
@@ -43,7 +43,7 @@ export class GatewayTimeoutException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description,
+        description!,
         HttpStatus.GATEWAY_TIMEOUT,
       ),
       HttpStatus.GATEWAY_TIMEOUT,

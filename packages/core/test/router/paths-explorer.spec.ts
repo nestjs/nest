@@ -89,7 +89,7 @@ describe('PathsExplorer', () => {
         instance,
         instanceProto,
         'getTest',
-      );
+      )!;
 
       expect(route.path).to.eql(['/test']);
       expect(route.requestMethod).to.eql(RequestMethod.GET);
@@ -104,7 +104,7 @@ describe('PathsExplorer', () => {
         instance,
         instanceProto,
         'getTest',
-      );
+      )!;
 
       expect(route.path).to.eql(['/test']);
       expect(route.requestMethod).to.eql(RequestMethod.GET);
@@ -119,7 +119,7 @@ describe('PathsExplorer', () => {
         instance,
         instanceProto,
         'getTestUsingArray',
-      );
+      )!;
 
       expect(route.path).to.eql(['/foo', '/bar']);
       expect(route.requestMethod).to.eql(RequestMethod.GET);
@@ -134,7 +134,7 @@ describe('PathsExplorer', () => {
         instance,
         instanceProto,
         'getTestUsingArray',
-      );
+      )!;
 
       expect(route.path).to.eql(['/foo', '/bar']);
       expect(route.requestMethod).to.eql(RequestMethod.GET);
@@ -153,7 +153,7 @@ describe('PathsExplorer', () => {
           instance,
           instanceProto,
           'getTest',
-        );
+        )!;
 
         expect(route.targetCallback).to.eq(newImpl);
         expect(route.path).to.eql(['/test']);
@@ -171,7 +171,7 @@ describe('PathsExplorer', () => {
           instance,
           instanceProto,
           'getTest',
-        );
+        )!;
 
         expect(route.targetCallback).to.eq(newImpl);
         expect(route.path).to.eql(['/test']);
@@ -189,7 +189,7 @@ describe('PathsExplorer', () => {
           instance,
           instanceProto,
           'getTestUsingArray',
-        );
+        )!;
 
         expect(route.targetCallback).to.eq(newImpl);
         expect(route.path).to.eql(['/foo', '/bar']);
@@ -207,7 +207,7 @@ describe('PathsExplorer', () => {
           instance,
           instanceProto,
           'getTestUsingArray',
-        );
+        )!;
 
         expect(route.targetCallback).to.eq(newImpl);
         expect(route.path).to.eql(['/foo', '/bar']);

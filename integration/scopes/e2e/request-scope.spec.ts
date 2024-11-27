@@ -40,38 +40,38 @@ describe('Request scope', () => {
       const performHttpCall = end =>
         request(server)
           .get('/hello')
-          .end((err, res) => {
+          .end(err => {
             if (err) return end(err);
             end();
           });
-      await new Promise(resolve => performHttpCall(resolve));
-      await new Promise(resolve => performHttpCall(resolve));
-      await new Promise(resolve => performHttpCall(resolve));
+      await new Promise<any>(resolve => performHttpCall(resolve));
+      await new Promise<any>(resolve => performHttpCall(resolve));
+      await new Promise<any>(resolve => performHttpCall(resolve));
     });
 
-    it(`should create controller for each request`, async () => {
+    it(`should create controller for each request`, () => {
       expect(HelloController.COUNTER).to.be.eql(3);
     });
 
-    it(`should create service for each request`, async () => {
+    it(`should create service for each request`, () => {
       expect(UsersService.COUNTER).to.be.eql(3);
     });
 
-    it(`should share static provider across requests`, async () => {
+    it(`should share static provider across requests`, () => {
       expect(Meta.COUNTER).to.be.eql(1);
     });
 
-    it(`should create request scoped pipe for each request`, async () => {
+    it(`should create request scoped pipe for each request`, () => {
       expect(UserByIdPipe.COUNTER).to.be.eql(3);
       expect(UserByIdPipe.REQUEST_SCOPED_DATA).to.deep.equal([1, 1, 1]);
     });
 
-    it(`should create request scoped interceptor for each request`, async () => {
+    it(`should create request scoped interceptor for each request`, () => {
       expect(Interceptor.COUNTER).to.be.eql(3);
       expect(Interceptor.REQUEST_SCOPED_DATA).to.deep.equal([1, 1, 1]);
     });
 
-    it(`should create request scoped guard for each request`, async () => {
+    it(`should create request scoped guard for each request`, () => {
       expect(Guard.COUNTER).to.be.eql(3);
       expect(Guard.REQUEST_SCOPED_DATA).to.deep.equal([1, 1, 1]);
     });

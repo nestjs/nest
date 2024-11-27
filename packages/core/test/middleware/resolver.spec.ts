@@ -24,7 +24,7 @@ describe('MiddlewareResolver', () => {
     mockContainer = sinon.mock(container);
   });
 
-  it('should resolve middleware instances from container', () => {
+  it('should resolve middleware instances from container', async () => {
     const loadMiddleware = sinon.stub(resolver['injector'], 'loadMiddleware');
     const middleware = new Map();
     const wrapper = {
@@ -35,7 +35,7 @@ describe('MiddlewareResolver', () => {
 
     const module = { metatype: { name: '' } } as any;
     mockContainer.expects('getMiddlewareCollection').returns(middleware);
-    resolver.resolveInstances(module, null);
+    await resolver.resolveInstances(module, null!);
 
     expect(loadMiddleware.callCount).to.be.equal(middleware.size);
     expect(loadMiddleware.calledWith(wrapper as any, middleware, module)).to.be

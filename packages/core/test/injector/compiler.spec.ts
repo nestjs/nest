@@ -1,28 +1,30 @@
 import { expect } from 'chai';
 import { ModuleCompiler } from '../../injector/compiler';
+import { ByReferenceModuleOpaqueKeyFactory } from '../../injector/opaque-key-factory/by-reference-module-opaque-key-factory';
 
 describe('ModuleCompiler', () => {
   let compiler: ModuleCompiler;
   beforeEach(() => {
-    compiler = new ModuleCompiler();
+    compiler = new ModuleCompiler(new ByReferenceModuleOpaqueKeyFactory());
   });
 
   describe('extractMetadata', () => {
     describe('when module is a dynamic module', () => {
-      it('should return object with "type" and "dynamicMetadata" property', async () => {
+      it('should return object with "type" and "dynamicMetadata" property', () => {
         const obj = { module: 'test', providers: [] };
         const { module, ...dynamicMetadata } = obj;
-        expect(await compiler.extractMetadata(obj as any)).to.be.deep.equal({
+        expect(compiler.extractMetadata(obj as any)).to.be.deep.equal({
           type: module,
           dynamicMetadata,
         });
       });
     });
     describe('when module is a not dynamic module', () => {
-      it('should return object with "type" property', async () => {
+      it('should return object with "type" property', () => {
         const type = 'test';
-        expect(await compiler.extractMetadata(type as any)).to.be.deep.equal({
+        expect(compiler.extractMetadata(type as any)).to.be.deep.equal({
           type,
+          dynamicMetadata: undefined,
         });
       });
     });

@@ -1,14 +1,8 @@
 import { Buffer } from 'buffer';
 import { Socket } from 'net';
-import {
-  CLOSE_EVENT,
-  CONNECT_EVENT,
-  DATA_EVENT,
-  ERROR_EVENT,
-  MESSAGE_EVENT,
-} from '../constants';
-import { NetSocketClosedException } from '../errors/net-socket-closed.exception';
 import { InvalidJSONFormatException } from '../errors/invalid-json-format.exception';
+import { NetSocketClosedException } from '../errors/net-socket-closed.exception';
+import { TcpEventsMap } from '../events/tcp.events';
 
 export abstract class TcpSocket {
   private isClosed = false;
@@ -18,10 +12,10 @@ export abstract class TcpSocket {
   }
 
   constructor(public readonly socket: Socket) {
-    this.socket.on(DATA_EVENT, this.onData.bind(this));
-    this.socket.on(CONNECT_EVENT, () => (this.isClosed = false));
-    this.socket.on(CLOSE_EVENT, () => (this.isClosed = true));
-    this.socket.on(ERROR_EVENT, () => (this.isClosed = true));
+    this.socket.on('data', this.onData.bind(this));
+    this.socket.on(TcpEventsMap.CONNECT, () => (this.isClosed = false));
+    this.socket.on(TcpEventsMap.CLOSE, () => (this.isClosed = true));
+    this.socket.on(TcpEventsMap.ERROR, () => (this.isClosed = true));
   }
 
   public connect(port: number, host: string) {
@@ -52,18 +46,21 @@ export abstract class TcpSocket {
     this.handleSend(message, callback);
   }
 
-  protected abstract handleSend(message: any, callback?: (err?: any) => void);
+  protected abstract handleSend(
+    message: any,
+    callback?: (err?: any) => void,
+  ): any;
 
   private onData(data: Buffer) {
     try {
       this.handleData(data);
     } catch (e) {
-      this.socket.emit(ERROR_EVENT, e.message);
+      this.socket.emit(TcpEventsMap.ERROR, e.message);
       this.socket.end();
     }
   }
 
-  protected abstract handleData(data: Buffer | string);
+  protected abstract handleData(data: Buffer | string): any;
 
   protected emitMessage(data: string) {
     let message: Record<string, unknown>;
@@ -73,6 +70,6 @@ export abstract class TcpSocket {
       throw new InvalidJSONFormatException(e, data);
     }
     message = message || {};
-    this.socket.emit(MESSAGE_EVENT, message);
+    this.socket.emit('message', message);
   }
 }

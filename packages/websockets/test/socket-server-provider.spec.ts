@@ -38,7 +38,7 @@ describe('SocketServerProvider', () => {
       const server = { test: 'test' };
       mockContainer.expects('getOneByConfig').returns(server);
 
-      const result = instance.scanForSocketServer({ namespace: null }, port);
+      const result = instance.scanForSocketServer({ namespace: null! }, port);
 
       expect(createSocketServerSpy.called).to.be.false;
       expect(result).to.eq(server);

@@ -35,7 +35,7 @@ export class RecipesResolver {
     @Args('newRecipeData') newRecipeData: NewRecipeInput,
   ): Promise<Recipe> {
     const recipe = await this.recipesService.create(newRecipeData);
-    pubSub.publish('recipeAdded', { recipeAdded: recipe });
+    void pubSub.publish('recipeAdded', { recipeAdded: recipe });
     return recipe;
   }
 

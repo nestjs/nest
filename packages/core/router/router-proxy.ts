@@ -2,10 +2,10 @@ import { ExceptionsHandler } from '../exceptions/exceptions-handler';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 
 export type RouterProxyCallback = <TRequest, TResponse>(
-  req?: TRequest,
-  res?: TResponse,
-  next?: () => void,
-) => void;
+  req: TRequest,
+  res: TResponse,
+  next: () => void,
+) => void | Promise<void>;
 
 export class RouterProxy {
   public createProxy(
@@ -33,7 +33,7 @@ export class RouterProxy {
       req: TRequest,
       res: TResponse,
       next: () => void,
-    ) => void,
+    ) => void | Promise<void>,
     exceptionsHandler: ExceptionsHandler,
   ) {
     return async <TError, TRequest, TResponse>(

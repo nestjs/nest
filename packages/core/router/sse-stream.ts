@@ -51,7 +51,7 @@ export type HeaderStream = WritableHeaderStream & ReadHeaders;
  * If this stream is piped to an HTTP Response, it will set appropriate headers.
  */
 export class SseStream extends Transform {
-  private lastEventId: number = null;
+  private lastEventId: number | null = null;
 
   constructor(req?: IncomingMessage) {
     super({ objectMode: true });
@@ -83,7 +83,7 @@ export class SseStream extends Transform {
         // NGINX support https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/#x-accel-buffering
         'X-Accel-Buffering': 'no',
       });
-      destination.flushHeaders();
+      destination.flushHeaders?.();
     }
 
     destination.write('\n');
@@ -112,8 +112,8 @@ export class SseStream extends Transform {
     cb: (error: Error | null | undefined) => void,
   ) {
     if (!message.id) {
-      this.lastEventId++;
-      message.id = this.lastEventId.toString();
+      this.lastEventId!++;
+      message.id = this.lastEventId!.toString();
     }
 
     if (!this.write(message, 'utf-8')) {

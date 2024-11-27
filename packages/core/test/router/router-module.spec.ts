@@ -7,7 +7,6 @@ import {
   ROUTES,
   targetModulesByContainer,
 } from '../../router/router-module';
-import { FactoryProvider } from '@nestjs/common';
 
 class TestModuleClass {}
 
@@ -29,7 +28,7 @@ describe('RouterModule', () => {
   });
   describe('when instantiated', () => {
     it('should update the "targetModulesByContainer" weak map', () => {
-      const moduleRef = new Module(TestModuleClass, new NestContainer(null));
+      const moduleRef = new Module(TestModuleClass, new NestContainer(null!));
       const container = new ModulesContainer([
         [TestModuleClass.name, moduleRef],
       ]);
@@ -45,7 +44,8 @@ describe('RouterModule', () => {
         },
       ]);
 
-      expect(targetModulesByContainer.get(container).has(moduleRef)).to.be.true;
+      expect(targetModulesByContainer.get(container)!.has(moduleRef)).to.be
+        .true;
     });
   });
 });

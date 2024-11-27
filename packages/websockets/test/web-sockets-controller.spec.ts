@@ -33,6 +33,7 @@ class NoopAdapter extends AbstractWsAdapter {
 
 describe('WebSocketsController', () => {
   let instance: WebSocketsController;
+  let untypedInstance: any;
   let provider: SocketServerProvider,
     graphInspector: GraphInspector,
     config: ApplicationConfig,
@@ -46,7 +47,7 @@ describe('WebSocketsController', () => {
 
   beforeEach(() => {
     config = new ApplicationConfig(new NoopAdapter());
-    provider = new SocketServerProvider(null, config);
+    provider = new SocketServerProvider(null!, config);
     graphInspector = new GraphInspector(new NestContainer());
     mockProvider = sinon.mock(provider);
 
@@ -58,6 +59,7 @@ describe('WebSocketsController', () => {
       contextCreator as any,
       graphInspector,
     );
+    untypedInstance = instance as any;
   });
   describe('connectGatewayToServer', () => {
     let subscribeToServerEvents: sinon.SinonSpy;
@@ -70,7 +72,7 @@ describe('WebSocketsController', () => {
 
     beforeEach(() => {
       subscribeToServerEvents = sinon.spy();
-      (instance as any).subscribeToServerEvents = subscribeToServerEvents;
+      untypedInstance.subscribeToServerEvents = subscribeToServerEvents;
     });
     it('should throw "InvalidSocketPortException" when port is not a number', () => {
       Reflect.defineMetadata(PORT_METADATA, 'test', InvalidGateway);
@@ -126,7 +128,7 @@ describe('WebSocketsController', () => {
       gateway = new Test();
       explorer = new GatewayMetadataExplorer(new MetadataScanner());
       mockExplorer = sinon.mock(explorer);
-      (instance as any).metadataExplorer = explorer;
+      untypedInstance.metadataExplorer = explorer;
 
       handlers = [
         {
@@ -185,12 +187,12 @@ describe('WebSocketsController', () => {
         {
           methodName: 'findOne',
           message: 'find',
-          callback: null,
+          callback: null!,
         },
         {
           methodName: 'create',
           message: 'insert',
-          callback: null,
+          callback: null!,
         },
       ];
       const insertEntrypointDefinitionSpy = sinon.spy(
@@ -264,32 +266,32 @@ describe('WebSocketsController', () => {
         disconnect: {},
         connection: {},
       };
-      (instance as any).subscribeInitEvent = subscribeInitEvent;
-      (instance as any).getConnectionHandler = getConnectionHandler;
-      (instance as any).subscribeConnectionEvent = subscribeConnectionEvent;
-      (instance as any).subscribeDisconnectEvent = subscribeDisconnectEvent;
+      untypedInstance.subscribeInitEvent = subscribeInitEvent;
+      untypedInstance.getConnectionHandler = getConnectionHandler;
+      untypedInstance.subscribeConnectionEvent = subscribeConnectionEvent;
+      untypedInstance.subscribeDisconnectEvent = subscribeDisconnectEvent;
     });
 
     it('should call "subscribeConnectionEvent" with expected arguments', () => {
-      instance.subscribeEvents(gateway, handlers, server as any);
+      instance.subscribeEvents(gateway, handlers, server);
       expect(subscribeConnectionEvent.calledWith(gateway, server.connection)).to
         .be.true;
     });
     it('should call "subscribeDisconnectEvent" with expected arguments', () => {
-      instance.subscribeEvents(gateway, handlers, server as any);
+      instance.subscribeEvents(gateway, handlers, server);
       expect(subscribeDisconnectEvent.calledWith(gateway, server.disconnect)).to
         .be.true;
     });
     it('should call "subscribeInitEvent" with expected arguments', () => {
-      instance.subscribeEvents(gateway, handlers, server as any);
+      instance.subscribeEvents(gateway, handlers, server);
       expect(subscribeInitEvent.calledWith(gateway, server.init)).to.be.true;
     });
     it('should bind connection handler to server', () => {
-      instance.subscribeEvents(gateway, handlers, server as any);
+      instance.subscribeEvents(gateway, handlers, server);
       expect(onSpy.calledWith('connection', getConnectionHandler())).to.be.true;
     });
     it('should call "getConnectionHandler" with expected arguments', () => {
-      instance.subscribeEvents(gateway, handlers, server as any);
+      instance.subscribeEvents(gateway, handlers, server);
       expect(
         getConnectionHandler.calledWith(
           instance,
@@ -327,15 +329,15 @@ describe('WebSocketsController', () => {
       client = {
         on: onSpy,
       };
-      (instance as any).subscribeDisconnectEvent = subscribeDisconnectEvent;
-      (instance as any).subscribeConnectionEvent = subscribeConnectionEvent;
-      (instance as any).subscribeMessages = subscribeMessages;
+      untypedInstance.subscribeDisconnectEvent = subscribeDisconnectEvent;
+      untypedInstance.subscribeConnectionEvent = subscribeConnectionEvent;
+      untypedInstance.subscribeMessages = subscribeMessages;
 
       fn = instance.getConnectionHandler(
         instance,
         gateway,
         handlers,
-        null,
+        null!,
         connection,
       );
       fn(client);
@@ -343,7 +345,7 @@ describe('WebSocketsController', () => {
 
     it('should return function', () => {
       expect(
-        instance.getConnectionHandler(null, null, null, null, null),
+        instance.getConnectionHandler(null!, null!, null!, null!, null!),
       ).to.be.a('function');
     });
     it('should call "next" method of connection object with expected argument', () => {
@@ -359,7 +361,7 @@ describe('WebSocketsController', () => {
   });
   describe('subscribeInitEvent', () => {
     const gateway = new Test();
-    let event, subscribe: sinon.SinonSpy;
+    let event: any, subscribe: sinon.SinonSpy;
 
     beforeEach(() => {
       subscribe = sinon.spy();

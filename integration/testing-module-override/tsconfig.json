@@ -11,7 +11,25 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": {
+      "@nestjs/common": ["../../packages/common"],
+      "@nestjs/common/*": ["../../packages/common/*"],
+      "@nestjs/core": ["../../packages/core"],
+      "@nestjs/core/*": ["../../packages/core/*"],
+      "@nestjs/microservices": ["../../packages/microservices"],
+      "@nestjs/microservices/*": ["../../packages/microservices/*"],
+      "@nestjs/websockets": ["../../packages/websockets"],
+      "@nestjs/websockets/*": ["../../packages/websockets/*"],
+      "@nestjs/testing": ["../../packages/testing"],
+      "@nestjs/testing/*": ["../../packages/testing/*"],
+      "@nestjs/platform-express": ["../../packages/platform-express"],
+      "@nestjs/platform-express/*": ["../../packages/platform-express/*"],
+      "@nestjs/platform-socket.io": ["../../packages/platform-socket.io"],
+      "@nestjs/platform-socket.io/*": ["../../packages/platform-socket.io/*"],
+      "@nestjs/platform-ws": ["../../packages/platform-ws"],
+      "@nestjs/platform-ws/*": ["../../packages/platform-ws/*"]
+    }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "e2e/**/*"],
 }

@@ -42,7 +42,10 @@ export class RoutesMapper {
       return this.getRouteInfoFromObject(controllerOrRoute);
     }
 
-    return this.getRouteInfoFromController(controllerOrRoute, routePathOrPaths);
+    return this.getRouteInfoFromController(
+      controllerOrRoute,
+      routePathOrPaths!,
+    );
   }
 
   private getRouteInfoFromPath(routePath: string): RouteInfo[] {
@@ -109,7 +112,7 @@ export class RoutesMapper {
         return routeInfo;
       });
 
-    return []
+    return ([] as string[])
       .concat(routePath)
       .map(routePath =>
         controllerPaths

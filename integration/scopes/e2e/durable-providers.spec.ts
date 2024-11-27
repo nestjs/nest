@@ -107,7 +107,7 @@ describe('Durable providers', () => {
         nonDurableService: '2',
       });
     });
-    
+
     it(`should not cache durable providers that throw errors`, async () => {
       let result: request.Response;
 

@@ -24,6 +24,7 @@ describe('PipesConsumer', () => {
       ];
     });
     it('should call all transform functions', done => {
+      /* eslint-disable-next-line @typescript-eslint/no-floating-promises */
       consumer.apply(value, { metatype, type, data }, transforms).then(() => {
         expect(
           transforms.reduce(
@@ -31,11 +32,13 @@ describe('PipesConsumer', () => {
             true,
           ),
         ).to.be.true;
+
         done();
       });
     });
     it('should return expected result', done => {
       const expectedResult = 3;
+      /* eslint-disable-next-line @typescript-eslint/no-floating-promises */
       consumer
         .apply(value, { metatype, type, data }, transforms)
         .then(result => {

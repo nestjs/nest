@@ -100,7 +100,7 @@ export interface GatewayMetadata {
    * might be used for sticky-session. Defaults to not sending any cookie.
    * @default false
    */
-  cookie?: any | boolean;
+  cookie?: any;
   /**
    * The options that will be forwarded to the cors module
    */

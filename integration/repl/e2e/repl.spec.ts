@@ -1,14 +1,14 @@
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import { repl } from '@nestjs/core';
-import { ReplContext } from '@nestjs/core/repl/repl-context';
 import {
-  HelpReplFn,
+  DebugReplFn,
   GetReplFn,
+  HelpReplFn,
+  MethodsReplFn,
   ResolveReplFn,
   SelectReplFn,
-  DebugReplFn,
-  MethodsReplFn,
 } from '@nestjs/core/repl/native-functions';
+import { ReplContext } from '@nestjs/core/repl/repl-context';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { AppModule } from '../src/app.module';
@@ -34,7 +34,7 @@ describe('REPL', () => {
     server.context;
     let outputText = '';
     sinon.stub(process.stdout, 'write').callsFake(text => {
-      outputText += text;
+      outputText += text as string;
       return true;
     });
     server.emit('line', 'get(UsersService)');
@@ -63,7 +63,7 @@ ${PROMPT}`);
     server.context;
     let outputText = '';
     sinon.stub(process.stdout, 'write').callsFake(text => {
-      outputText += text;
+      outputText += text as string;
       return true;
     });
     server.emit('line', '$(UsersService)');
@@ -92,7 +92,7 @@ ${PROMPT}`);
 
     let outputText = '';
     sinon.stub(process.stdout, 'write').callsFake(text => {
-      outputText += text;
+      outputText += text as string;
       return true;
     });
     server.emit('line', 'debug(UsersModule)');
@@ -115,7 +115,7 @@ ${PROMPT}`,
 
     let outputText = '';
     sinon.stub(process.stdout, 'write').callsFake(text => {
-      outputText += text;
+      outputText += text as string;
       return true;
     });
     server.emit('line', 'methods("UsersRepository")');
@@ -153,7 +153,7 @@ ${PROMPT}`,
       ).fnDefinition;
       let outputText = '';
       sinon.stub(process.stdout, 'write').callsFake(text => {
-        outputText += text;
+        outputText += text as string;
         return true;
       });
 
@@ -172,7 +172,7 @@ ${PROMPT}`);
       ).fnDefinition;
       let outputText = '';
       sinon.stub(process.stdout, 'write').callsFake(text => {
-        outputText += text;
+        outputText += text as string;
         return true;
       });
 
@@ -191,7 +191,7 @@ ${PROMPT}`);
       ).fnDefinition;
       let outputText = '';
       sinon.stub(process.stdout, 'write').callsFake(text => {
-        outputText += text;
+        outputText += text as string;
         return true;
       });
 
@@ -210,7 +210,7 @@ ${PROMPT}`);
       ).fnDefinition;
       let outputText = '';
       sinon.stub(process.stdout, 'write').callsFake(text => {
-        outputText += text;
+        outputText += text as string;
         return true;
       });
 
@@ -229,7 +229,7 @@ ${PROMPT}`);
       ).fnDefinition;
       let outputText = '';
       sinon.stub(process.stdout, 'write').callsFake(text => {
-        outputText += text;
+        outputText += text as string;
         return true;
       });
 
@@ -248,7 +248,7 @@ ${PROMPT}`);
       ).fnDefinition;
       let outputText = '';
       sinon.stub(process.stdout, 'write').callsFake(text => {
-        outputText += text;
+        outputText += text as string;
         return true;
       });
 

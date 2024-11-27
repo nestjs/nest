@@ -16,12 +16,8 @@ export type ParamDecoratorEnhancer = ParameterDecorator;
  *
  * @publicApi
  */
-export function createParamDecorator<
-  FactoryData = any,
-  FactoryInput = any,
-  FactoryOutput = any,
->(
-  factory: CustomParamFactory<FactoryData, FactoryInput, FactoryOutput>,
+export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
+  factory: CustomParamFactory<FactoryData, FactoryOutput>,
   enhancers: ParamDecoratorEnhancer[] = [],
 ): (
   ...dataOrPipes: (Type<PipeTransform> | PipeTransform | FactoryData)[]
@@ -33,7 +29,8 @@ export function createParamDecorator<
     ): ParameterDecorator =>
     (target, key, index) => {
       const args =
-        Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key) || {};
+        Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key!) ||
+        {};
 
       const isPipe = (pipe: any) =>
         pipe &&
@@ -57,7 +54,7 @@ export function createParamDecorator<
           ...(paramPipes as PipeTransform[]),
         ),
         target.constructor,
-        key,
+        key!,
       );
       enhancers.forEach(fn => fn(target, key, index));
     };

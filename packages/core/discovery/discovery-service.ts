@@ -67,7 +67,7 @@ export class DiscoveryService {
             metadataKey,
           );
         }
-        SetMetadata(metadataKey, opts ?? {})(target, key, descriptor);
+        SetMetadata(metadataKey, opts ?? {})(target, key!, descriptor);
       };
 
     decoratorFn.KEY = metadataKey;
@@ -88,7 +88,7 @@ export class DiscoveryService {
     if ('metadataKey' in options) {
       const providers = DiscoverableMetaHostCollection.getProvidersByMetaKey(
         this.modulesContainer,
-        options.metadataKey,
+        options.metadataKey!,
       );
       return Array.from(providers);
     }
@@ -112,7 +112,7 @@ export class DiscoveryService {
       const controllers =
         DiscoverableMetaHostCollection.getControllersByMetaKey(
           this.modulesContainer,
-          options.metadataKey,
+          options.metadataKey!,
         );
       return Array.from(controllers);
     }
@@ -154,7 +154,7 @@ export class DiscoveryService {
       const moduleRefs = [...this.modulesContainer.values()];
       return moduleRefs;
     }
-    const whitelisted = this.includeWhitelisted(options.include);
+    const whitelisted = this.includeWhitelisted(options.include!);
     return whitelisted;
   }
 

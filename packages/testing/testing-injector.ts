@@ -59,6 +59,12 @@ export class TestingInjector extends Injector {
           metatype: wrapper.metatype,
         });
         const internalCoreModule = this.container.getInternalCoreModuleRef();
+        if (!internalCoreModule) {
+          throw new Error(
+            'Expected to have internal core module reference at this point.',
+          );
+        }
+
         internalCoreModule.addCustomProvider(
           {
             provide: name,

@@ -26,7 +26,7 @@ describe('ClientsModule', () => {
       expect(dynamicModule.module).to.be.eql(ClientsModule);
     });
     it('should return an expected providers array', () => {
-      const provider = dynamicModule.providers.find(
+      const provider = dynamicModule.providers!.find(
         p => 'useValue' in p && p.provide === 'test',
       ) as ValueProvider;
       expect(provider).to.not.be.undefined;
@@ -56,7 +56,7 @@ describe('ClientsModule', () => {
         expect(dynamicModule.exports).to.be.eq(dynamicModule.providers);
         expect(dynamicModule.providers).to.be.have.length(1);
 
-        const provider = dynamicModule.providers[0] as FactoryProvider;
+        const provider = dynamicModule.providers![0] as FactoryProvider;
         expect(provider.provide).to.be.eql('test');
         expect(provider.inject).to.be.deep.eq([]);
         expect(provider.useFactory).to.be.an.instanceOf(Function);
@@ -82,7 +82,8 @@ describe('ClientsModule', () => {
         expect(dynamicModule.imports).to.be.deep.eq([]);
         expect(dynamicModule.providers).to.be.have.length(2);
 
-        const classTestProvider = dynamicModule.providers[0] as FactoryProvider;
+        const classTestProvider = dynamicModule
+          .providers![0] as FactoryProvider;
         expect(classTestProvider.provide).to.be.eql('classTest');
         expect(classTestProvider.inject).to.be.deep.eq([ClientOptionService]);
         expect(classTestProvider.useFactory).to.be.an.instanceOf(Function);
@@ -98,9 +99,7 @@ describe('ClientsModule', () => {
           createClientOptions: sinon.spy(),
         };
         try {
-          await ((dynamicModule.providers[0] as any).useFactory as any)(
-            optionsFactory,
-          );
+          await (dynamicModule.providers![0] as any).useFactory(optionsFactory);
         } catch (e) {
           console.log(e);
         }
@@ -116,7 +115,8 @@ describe('ClientsModule', () => {
         dynamicModule = ClientsModule.registerAsync([asyncOptions as any]);
         expect(dynamicModule.providers).to.have.length(1);
         expect(dynamicModule.imports).to.be.deep.eq([]);
-        const classTestProvider = dynamicModule.providers[0] as FactoryProvider;
+        const classTestProvider = dynamicModule
+          .providers![0] as FactoryProvider;
         expect(classTestProvider.useFactory).to.be.an.instanceOf(Function);
       });
     });

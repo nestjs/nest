@@ -11,9 +11,7 @@ import { TenantContext } from './durable-context-id.strategy';
 export class DurableService {
   public instanceCounter = 0;
 
-  constructor(
-    @Inject(REQUEST) private readonly requestPayload: TenantContext,
-  ) {
+  constructor(@Inject(REQUEST) private readonly requestPayload: TenantContext) {
     if (requestPayload.forceError) {
       throw new PreconditionFailedException('Forced error');
     }

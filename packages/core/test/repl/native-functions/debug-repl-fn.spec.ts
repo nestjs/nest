@@ -18,14 +18,14 @@ describe('DebugReplFn', () => {
 
   before(async () => {
     const container = new NestContainer();
-    const { moduleRef: aModuleRef } = await container.addModule(
+    const { moduleRef: aModuleRef } = (await container.addModule(
       class ModuleA {},
       [],
-    );
-    const { moduleRef: bModuleRef } = await container.addModule(
+    ))!;
+    const { moduleRef: bModuleRef } = (await container.addModule(
       class ModuleB {},
       [],
-    );
+    ))!;
 
     container.addController(class ControllerA {}, aModuleRef.token);
     container.addProvider(class ProviderA1 {}, aModuleRef.token);

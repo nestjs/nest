@@ -18,7 +18,7 @@ export class HostController {
 
   @Get('async')
   async asyncGreeting(@HostParam('tenant') tenant: string): Promise<string> {
-    return `${await this.hostService.greeting()} tenant=${tenant}`;
+    return `${this.hostService.greeting()} tenant=${tenant}`;
   }
 
   @Get('stream')

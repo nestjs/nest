@@ -1,8 +1,8 @@
+import { FactoryProvider } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { MULTER_MODULE_OPTIONS } from '../../../multer/files.constants';
 import { MulterModule } from '../../../multer/multer.module';
-import { FactoryProvider } from '@nestjs/common';
 
 describe('MulterModule', () => {
   describe('register', () => {
@@ -16,7 +16,7 @@ describe('MulterModule', () => {
       expect(dynamicModule.imports).to.be.undefined;
       expect(dynamicModule.exports).to.include(MULTER_MODULE_OPTIONS);
 
-      const moduleOptionsProvider = dynamicModule.providers.find(
+      const moduleOptionsProvider = dynamicModule.providers!.find(
         p => 'useFactory' in p && p.provide === MULTER_MODULE_OPTIONS,
       ) as FactoryProvider;
       expect(moduleOptionsProvider).to.not.be.undefined;
@@ -76,9 +76,7 @@ describe('MulterModule', () => {
         const optionsFactory = {
           createMulterOptions: sinon.spy(),
         };
-        await ((dynamicModule.providers[0] as any).useFactory as any)(
-          optionsFactory,
-        );
+        await (dynamicModule.providers![0] as any).useFactory(optionsFactory);
         expect(optionsFactory.createMulterOptions.called).to.be.true;
       });
     });
