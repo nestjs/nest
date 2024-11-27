@@ -639,8 +639,10 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       hasDrained = true;
 
       // Replay buffered values to the new subscriber
-      replayBuffer.subscribe(subject);
-      replayBuffer.complete();
+      setImmediate(() => {
+        replayBuffer.subscribe(subject);
+        replayBuffer.complete();
+      });
     }
 
     return {
