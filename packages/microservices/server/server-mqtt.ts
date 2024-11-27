@@ -1,4 +1,4 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
 import {
   MQTT_DEFAULT_URL,
   MQTT_SEPARATOR,
@@ -149,14 +149,18 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   public getPublisher(client: MqttClient, pattern: any, id: string): any {
     return (response: any) => {
       Object.assign(response, { id });
-      const outgoingResponse: Partial<MqttRecord> =
-        this.serializer.serialize(response);
-      const options = outgoingResponse.options;
-      delete outgoingResponse.options;
 
+      const options =
+        isObject(response?.data) && response.data instanceof MqttRecord
+          ? (response.data as MqttRecord)?.options
+          : {};
+      delete response?.data?.options;
+
+      const outgoingResponse: string | Buffer =
+        this.serializer.serialize(response);
       return client.publish(
         this.getReplyPattern(pattern),
-        JSON.stringify(outgoingResponse),
+        outgoingResponse,
         options,
       );
     };
