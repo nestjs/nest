@@ -33,7 +33,7 @@
     "@nestjs/cli": "10.4.8",
     "@nestjs/schematics": "10.2.3",
     "@nestjs/testing": "10.4.9",
-    "@types/amqplib": "0.10.4",
+    "@types/amqplib": "0.10.5",
     "@types/express": "4.17.21",
     "@types/node": "20.17.6",
     "@types/supertest": "6.0.2",
