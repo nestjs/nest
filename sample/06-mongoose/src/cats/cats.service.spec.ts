@@ -10,7 +10,7 @@ const catModelMock = {
   find: jest.fn(),
   findOne: jest.fn(),
   findByIdAndUpdate: jest.fn(),
-  findByIdAndRemove: jest.fn(),
+  findByIdAndDelete: jest.fn(),
 };
 
 describe('CatsService', () => {
