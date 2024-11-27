@@ -27,6 +27,7 @@ services:
   mysql:
     image: mysql:8.3.0
     environment:
+      MYSQL_ROOT_HOST: '%'
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: test
     ports:

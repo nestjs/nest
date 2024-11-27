@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
-import { ECONNREFUSED, MQTT_DEFAULT_URL } from '../constants';
+import { ECONNREFUSED, ENOTFOUND, MQTT_DEFAULT_URL } from '../constants';
 import { MqttEvents, MqttEventsMap, MqttStatus } from '../events/mqtt.events';
 import { MqttOptions, ReadPacket, WritePacket } from '../interfaces';
 import {
@@ -55,8 +55,10 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     return `${pattern}/reply`;
   }
 
-  public close() {
-    this.mqttClient && this.mqttClient.end();
+  public async close() {
+    if (this.mqttClient) {
+      await this.mqttClient.endAsync();
+    }
     this.mqttClient = null;
     this.connectionPromise = null;
     this.pendingEventListeners = [];
@@ -113,10 +115,12 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   }
 
   public registerErrorListener(client: MqttClient) {
-    client.on(
-      MqttEventsMap.ERROR,
-      (err: any) => err.code !== ECONNREFUSED && this.logger.error(err),
-    );
+    client.on(MqttEventsMap.ERROR, (err: any) => {
+      if (err.code === ECONNREFUSED || err.code === ENOTFOUND) {
+        return;
+      }
+      this.logger.error(err);
+    });
   }
 
   public registerOfflineListener(client: MqttClient) {

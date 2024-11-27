@@ -25,6 +25,7 @@ export const RQM_DEFAULT_NO_ASSERT = false;
 export const ECONNREFUSED = 'ECONNREFUSED';
 export const CONN_ERR = 'CONN_ERR';
 export const EADDRINUSE = 'EADDRINUSE';
+export const ENOTFOUND = 'ENOTFOUND';
 
 export const PATTERN_METADATA = 'microservices:pattern';
 export const PATTERN_EXTRAS_METADATA = 'microservices:pattern_extras';

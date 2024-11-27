@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxyFactory } from '@nestjs/microservices';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 
 @Controller()
 export class DisconnectedClientController {
@@ -30,6 +30,9 @@ export class DisconnectedClientController {
             ? new RequestTimeoutException('ECONNREFUSED')
             : new InternalServerErrorException(),
         );
+      }),
+      tap({
+        error: () => client.close(),
       }),
     );
   }
