@@ -1,6 +1,14 @@
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import {
+  throwError as _throw,
+  connectable,
+  defer,
+  Observable,
+  Subject,
+} from 'rxjs';
+import { mergeMap } from 'rxjs/operators';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -9,6 +17,7 @@ import {
 import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deserializer';
 import { KafkaHeaders } from '../enums';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
+import { InvalidMessageException } from '../errors/invalid-message.exception';
 import { KafkaStatus } from '../events';
 import {
   BrokersFunction,
@@ -249,6 +258,24 @@ export class ClientKafka
     return this.consumerAssignments;
   }
 
+  public emitBatch<TResult = any, TInput = any>(
+    pattern: any,
+    data: { messages: TInput[] },
+  ): Observable<TResult> {
+    if (isNil(pattern) || isNil(data)) {
+      return _throw(() => new InvalidMessageException());
+    }
+    const source = defer(async () => this.connect()).pipe(
+      mergeMap(() => this.dispatchBatchEvent({ pattern, data })),
+    );
+    const connectableSource = connectable(source, {
+      connector: () => new Subject(),
+      resetOnDisconnect: false,
+    });
+    connectableSource.connect();
+    return connectableSource;
+  }
+
   public commitOffsets(
     topicPartitions: TopicPartitionOffsetAndMetadata[],
   ): Promise<void> {
@@ -266,6 +293,13 @@ export class ClientKafka
       );
     }
     return this.client as T;
+  }
+
+  public on<
+    EventKey extends string | number | symbol = string | number | symbol,
+    EventCallback = any,
+  >(event: EventKey, callback: EventCallback) {
+    throw new Error('Method is not supported for Kafka client');
   }
 
   protected registerConsumerEventListeners() {
@@ -293,6 +327,30 @@ export class ClientKafka
     this._producer.on(this._producer.events.DISCONNECT, () =>
       this._status$.next(KafkaStatus.DISCONNECTED),
     );
+  }
+
+  protected async dispatchBatchEvent<TInput = any>(
+    packets: ReadPacket<{ messages: TInput[] }>,
+  ): Promise<any> {
+    if (packets.data.messages.length === 0) {
+      return;
+    }
+    const pattern = this.normalizePattern(packets.pattern);
+    const outgoingEvents = await Promise.all(
+      packets.data.messages.map(message => {
+        return this.serializer.serialize(message as any, { pattern });
+      }),
+    );
+
+    const message = Object.assign(
+      {
+        topic: pattern,
+        messages: outgoingEvents,
+      },
+      this.options.send || {},
+    );
+
+    return this.producer.send(message);
   }
 
   protected async dispatchEvent(packet: OutgoingEvent): Promise<any> {
@@ -391,12 +449,5 @@ export class ClientKafka
   protected initializeDeserializer(options: KafkaOptions['options']) {
     this.deserializer =
       (options && options.deserializer) || new KafkaResponseDeserializer();
-  }
-
-  public on<
-    EventKey extends string | number | symbol = string | number | symbol,
-    EventCallback = any,
-  >(event: EventKey, callback: EventCallback) {
-    throw new Error('Method is not supported for Kafka client');
   }
 }

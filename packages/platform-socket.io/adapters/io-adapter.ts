@@ -82,4 +82,12 @@ export class IoAdapter extends AbstractWsAdapter {
     }
     return { data: payload };
   }
+
+  public close(server: Server) {
+    if (this.forceCloseConnections && server.httpServer === this.httpServer) {
+      return;
+    }
+
+    return super.close(server);
+  }
 }

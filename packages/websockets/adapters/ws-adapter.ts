@@ -17,6 +17,15 @@ export abstract class AbstractWsAdapter<
 > implements WebSocketAdapter<TServer, TClient, TOptions>
 {
   protected readonly httpServer: any;
+  private _forceCloseConnections: boolean;
+
+  public set forceCloseConnections(value: boolean) {
+    this._forceCloseConnections = value;
+  }
+
+  public get forceCloseConnections(): boolean {
+    return this._forceCloseConnections;
+  }
 
   constructor(appOrHttpServer?: INestApplicationContext | any) {
     if (appOrHttpServer && appOrHttpServer instanceof NestApplication) {

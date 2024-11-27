@@ -1,23 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Types } from 'mongoose';
 import { CatsController } from './cats.controller';
-import { CreateCatDto } from './dto/create-cat.dto';
 import { CatsService } from './cats.service';
+import { CreateCatDto } from './dto/create-cat.dto';
 
-describe('Cats Controller', () => {
+const catsServiceMock = {
+  create: jest.fn(),
+  findAll: jest.fn(),
+  findOne: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+};
+
+describe('CatsController', () => {
   let controller: CatsController;
-  let service: CatsService;
-  const createCatDto: CreateCatDto = {
-    name: 'Cat #1',
-    breed: 'Breed #1',
-    age: 4,
-  };
-
-  const mockCat = {
-    name: 'Cat #1',
-    breed: 'Breed #1',
-    age: 4,
-    _id: 'a id',
-  };
+  let service: jest.Mocked<CatsService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -25,65 +22,124 @@ describe('Cats Controller', () => {
       providers: [
         {
           provide: CatsService,
-          useValue: {
-            findAll: jest.fn().mockResolvedValue([
-              {
-                name: 'Cat #1',
-                breed: 'Bread #1',
-                age: 4,
-              },
-              {
-                name: 'Cat #2',
-                breed: 'Breed #2',
-                age: 3,
-              },
-              {
-                name: 'Cat #3',
-                breed: 'Breed #3',
-                age: 2,
-              },
-            ]),
-            create: jest.fn().mockResolvedValue(createCatDto),
-          },
+          useValue: catsServiceMock,
         },
       ],
     }).compile();
 
-    controller = module.get<CatsController>(CatsController);
-    service = module.get<CatsService>(CatsService);
+    controller = module.get(CatsController);
+    service = module.get(CatsService);
   });
 
-  describe('create()', () => {
+  describe('create', () => {
     it('should create a new cat', async () => {
-      const createSpy = jest
-        .spyOn(service, 'create')
-        .mockResolvedValueOnce(mockCat);
+      const mockedCat = {
+        _id: new Types.ObjectId(),
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      service.create.mockResolvedValueOnce(mockedCat);
 
-      await controller.create(createCatDto);
-      expect(createSpy).toHaveBeenCalledWith(createCatDto);
+      const createCatDto: CreateCatDto = {
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      const result = await controller.create(createCatDto);
+
+      expect(result).toEqual(mockedCat);
+      expect(service.create).toHaveBeenCalledWith(createCatDto);
     });
   });
 
-  describe('findAll()', () => {
+  describe('findAll', () => {
     it('should return an array of cats', async () => {
-      expect(controller.findAll()).resolves.toEqual([
+      const mockedCats = [
         {
+          _id: new Types.ObjectId(),
           name: 'Cat #1',
           breed: 'Bread #1',
           age: 4,
         },
         {
+          _id: new Types.ObjectId(),
           name: 'Cat #2',
           breed: 'Breed #2',
           age: 3,
         },
         {
+          _id: new Types.ObjectId(),
           name: 'Cat #3',
           breed: 'Breed #3',
           age: 2,
         },
-      ]);
+      ];
+      service.findAll.mockResolvedValueOnce(mockedCats);
+
+      const result = await controller.findAll();
+
+      expect(result).toEqual(mockedCats);
       expect(service.findAll).toHaveBeenCalled();
+    });
+  });
+
+  describe('findOne', () => {
+    it('should return a single cat', async () => {
+      const mockedCat = {
+        _id: new Types.ObjectId(),
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      service.findOne.mockResolvedValueOnce(mockedCat);
+
+      const id = new Types.ObjectId().toString();
+      const result = await controller.findOne(id);
+
+      expect(result).toEqual(mockedCat);
+      expect(service.findOne).toHaveBeenCalledWith(id);
+    });
+  });
+
+  describe('update', () => {
+    it('should update a single cat', async () => {
+      const mockedCat = {
+        _id: new Types.ObjectId(),
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      service.update.mockResolvedValueOnce(mockedCat);
+
+      const id = new Types.ObjectId().toString();
+      const updateCatDto: CreateCatDto = {
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      const result = await controller.update(id, updateCatDto);
+
+      expect(result).toEqual(mockedCat);
+      expect(service.update).toHaveBeenCalledWith(id, updateCatDto);
+    });
+  });
+
+  describe('delete', () => {
+    it('should delete a single cat', async () => {
+      const mockedCat = {
+        _id: new Types.ObjectId(),
+        name: 'Cat #1',
+        breed: 'Breed #1',
+        age: 4,
+      };
+      service.delete.mockResolvedValueOnce(mockedCat);
+
+      const id = new Types.ObjectId().toString();
+      const result = await controller.delete(id);
+
+      expect(result).toEqual(mockedCat);
+      expect(service.delete).toHaveBeenCalledWith(id);
     });
   });
 });

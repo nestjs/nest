@@ -296,15 +296,22 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       return undefined;
     }
 
-    return {
-      ...requestOptions,
-      properties: {
-        ...requestOptions?.properties,
+    // Cant just spread objects as MQTT won't deliver
+    // any message with empty object as "userProperties" field
+    // @url https://github.com/nestjs/nest/issues/14079
+    let options: MqttRecordOptions = {};
+    if (requestOptions) {
+      options = { ...requestOptions };
+    }
+    if (this.options?.userProperties) {
+      options.properties = {
+        ...options.properties,
         userProperties: {
           ...this.options?.userProperties,
-          ...requestOptions?.properties?.userProperties,
+          ...options.properties?.userProperties,
         },
-      },
-    };
+      };
+    }
+    return options;
   }
 }

@@ -1,5 +1,5 @@
 import * as childProcess from 'child_process';
-import * as clc from 'cli-color';
+import { blue, magenta } from 'ansis';
 import * as log from 'fancy-log';
 import { task } from 'gulp';
 import { resolve } from 'path';
@@ -13,9 +13,35 @@ async function executeNpmScriptInSamples(
   script: string,
   appendScript?: string,
 ) {
+  const nodejsVersionMajorSlice = Number.parseInt(process.versions.node);
+
   const directories = getDirs(samplePath);
 
+  /**
+   * A dictionary that maps the sample number to the minimum Node.js version
+   * required to execute any scripts.
+   */
+  const minNodejsVersionBySampleNumber = {
+    '34': 18, // we could use `engines.node` from package.json instead of hardcoding
+    '35': 22,
+  };
+
   for await (const dir of directories) {
+    const sampleIdentifier = dir.match(/\d+/)?.[0];
+    const minNodejsVersionForDir =
+      sampleIdentifier && sampleIdentifier in minNodejsVersionBySampleNumber
+        ? minNodejsVersionBySampleNumber[sampleIdentifier]
+        : undefined;
+    const isOnDesiredMinNodejsVersion = minNodejsVersionForDir
+      ? nodejsVersionMajorSlice >= minNodejsVersionForDir
+      : true;
+    if (!isOnDesiredMinNodejsVersion) {
+      console.info(
+        `Skipping sample ${sampleIdentifier} because it requires Node.js version v${minNodejsVersionForDir}`,
+      );
+      continue;
+    }
+
     // Check if the sample is a multi-application sample
     const isSingleApplicationSample = containsPackageJson(dir);
     if (!isSingleApplicationSample) {
@@ -43,7 +69,7 @@ async function executeNPMScriptInDirectory(
   appendScript?: string,
 ) {
   const dirName = dir.replace(resolve(__dirname, '../../../'), '');
-  log.info(`Running ${clc.blue(script)} in ${clc.magenta(dirName)}`);
+  log.info(`Running ${blue(script)} in ${magenta(dirName)}`);
   try {
     const result = await exec(
       `${script} --prefix ${dir} ${appendScript ? '-- ' + appendScript : ''}`,
@@ -52,7 +78,7 @@ async function executeNPMScriptInDirectory(
     //   cwd: join(process.cwd(), dir),
     // });
 
-    log.info(`Finished running ${clc.blue(script)} in ${clc.magenta(dirName)}`);
+    log.info(`Finished running ${blue(script)} in ${magenta(dirName)}`);
     if (result.stderr) {
       log.error(result.stderr);
     }
@@ -60,7 +86,7 @@ async function executeNPMScriptInDirectory(
       log.error(result.stdout);
     }
   } catch (err) {
-    log.error(`Failed running ${clc.blue(script)} in ${clc.magenta(dirName)}`);
+    log.error(`Failed running ${blue(script)} in ${magenta(dirName)}`);
     if (err.stderr) {
       log.error(err.stderr);
     }
