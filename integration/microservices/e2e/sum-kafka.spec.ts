@@ -91,7 +91,7 @@ describe.skip('Kafka transport', function () {
   });
 
   it(`/POST (async event notification)`, done => {
-    return request(server)
+    void request(server)
       .post('/notify')
       .send()
       .end(() => {
