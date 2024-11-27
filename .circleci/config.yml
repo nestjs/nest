@@ -9,7 +9,7 @@ parameters:
     default: '18.20'
   maintenance-node-version:
     type: string
-    default: '20.5'
+    default: '20.18'
   active-node-version:
     type: string
     default: '22.11'

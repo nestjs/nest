@@ -163,9 +163,7 @@ export function GrpcStreamMethod(
 
       // Drain buffer if "drainBuffer" method is available
       if (observable && observable.drainBuffer) {
-        process.nextTick(() => {
-          observable.drainBuffer();
-        });
+        observable.drainBuffer();
       }
       return result;
     };

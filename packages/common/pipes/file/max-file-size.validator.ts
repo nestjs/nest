@@ -17,7 +17,7 @@ export class MaxFileSizeValidator extends FileValidator<
   MaxFileSizeValidatorOptions,
   IFile
 > {
-  buildErrorMessage(): string {
+  buildErrorMessage(file?: IFile): string {
     if ('message' in this.validationOptions) {
       if (typeof this.validationOptions.message === 'function') {
         return this.validationOptions.message(this.validationOptions.maxSize);
@@ -26,6 +26,9 @@ export class MaxFileSizeValidator extends FileValidator<
       return this.validationOptions.message!;
     }
 
+    if (file?.size) {
+      return `Validation failed (current file size is ${file.size}, expected size is less than ${this.validationOptions.maxSize})`;
+    }
     return `Validation failed (expected size is less than ${this.validationOptions.maxSize})`;
   }
 

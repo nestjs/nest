@@ -349,7 +349,7 @@ export class MiddlewareModule<
 
       const requestProviderValue = isTreeDurable
         ? contextId.payload
-        : Object.assign(request!, contextId.payload);
+        : Object.assign(request as object, contextId.payload);
       this.container.registerRequestProvider(requestProviderValue, contextId);
     }
     return contextId;

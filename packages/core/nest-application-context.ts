@@ -253,6 +253,7 @@ export class NestApplicationContext<
     if (this.isInitialized) {
       return this;
     }
+    /* eslint-disable-next-line no-async-promise-executor */
     this.initializationPromise = new Promise(async (resolve, reject) => {
       try {
         await this.callInitHook();
