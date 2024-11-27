@@ -32,7 +32,7 @@ describe('ClientMqtt', () => {
       unsubscribeSpy: sinon.SinonSpy,
       connectSpy: sinon.SinonStub,
       assignStub: sinon.SinonStub,
-      mqttClient;
+      mqttClient: any;
 
     const id = '1';
     beforeEach(() => {
@@ -234,15 +234,15 @@ describe('ClientMqtt', () => {
     let endSpy: sinon.SinonSpy;
     beforeEach(() => {
       endSpy = sinon.spy();
-      untypedClient.mqttClient = { end: endSpy };
+      untypedClient.mqttClient = { endAsync: endSpy };
     });
-    it('should close "pub" when it is not null', () => {
-      client.close();
+    it('should close "pub" when it is not null', async () => {
+      await client.close();
       expect(endSpy.called).to.be.true;
     });
-    it('should not close "pub" when it is null', () => {
+    it('should not close "pub" when it is null', async () => {
       untypedClient.mqttClient = null;
-      client.close();
+      await client.close();
       expect(endSpy.called).to.be.false;
     });
   });
