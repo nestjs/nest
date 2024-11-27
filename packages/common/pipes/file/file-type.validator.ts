@@ -20,7 +20,10 @@ export class FileTypeValidator extends FileValidator<
   FileTypeValidatorOptions,
   IFile
 > {
-  buildErrorMessage(): string {
+  buildErrorMessage(file?: IFile): string {
+    if (file?.mimetype) {
+      return `Validation failed (current file type is ${file.mimetype}, expected type is ${this.validationOptions.fileType})`;
+    }
     return `Validation failed (expected type is ${this.validationOptions.fileType})`;
   }
 

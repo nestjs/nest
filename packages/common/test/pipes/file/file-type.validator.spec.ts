@@ -93,5 +93,19 @@ describe('FileTypeValidator', () => {
         `Validation failed (expected type is ${fileType})`,
       );
     });
+
+    it('should include the file type in the error message when a file is provided', () => {
+      const currentFileType = 'image/png';
+      const fileType = 'image/jpeg';
+      const fileTypeValidator = new FileTypeValidator({
+        fileType,
+      });
+
+      const file = { mimetype: currentFileType } as any;
+
+      expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
+        `Validation failed (current file type is ${currentFileType}, expected type is ${fileType})`,
+      );
+    });
   });
 });
