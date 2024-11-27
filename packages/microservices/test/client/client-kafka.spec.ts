@@ -1,4 +1,6 @@
 import { expect } from 'chai';
+import { Producer } from 'kafkajs';
+import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientKafka } from '../../client/client-kafka';
 import { NO_MESSAGE_HANDLER } from '../../constants';
@@ -9,8 +11,6 @@ import {
   EachMessagePayload,
   KafkaMessage,
 } from '../../external/kafka.interface';
-import { Observable } from 'rxjs';
-import { Producer } from 'kafkajs';
 
 describe('ClientKafka', () => {
   const topic = 'test.topic';
@@ -638,7 +638,7 @@ describe('ClientKafka', () => {
     });
 
     it('should return Observable with error', () => {
-      const err$ = client.emitBatch(null, null);
+      const err$ = client.emitBatch(null, null!);
       expect(err$).to.be.instanceOf(Observable);
     });
   });
