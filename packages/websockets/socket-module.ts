@@ -119,7 +119,7 @@ export class SocketModule<
     const adapter = this.applicationConfig.getIoAdapter();
     if (adapter) {
       (adapter as AbstractWsAdapter).forceCloseConnections =
-        forceCloseConnections;
+        forceCloseConnections!;
       this.isAdapterInitialized = true;
       return;
     }

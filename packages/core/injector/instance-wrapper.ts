@@ -176,7 +176,7 @@ export class InstanceWrapper<T = any> {
   }
 
   public removeInstanceByInquirerId(contextId: ContextId, inquirerId: string) {
-    const collection = this.transientMap.get(inquirerId);
+    const collection = this.transientMap!.get(inquirerId);
     if (!collection) {
       return;
     }
