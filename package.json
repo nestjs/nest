@@ -37,7 +37,7 @@
     "test:docker:down": "docker-compose -f integration/docker-compose.yml down",
     "lint": "concurrently 'npm run lint:packages' 'npm run lint:integration' 'npm run lint:spec'",
     "lint:fix": "concurrently 'npm run lint:packages -- --fix' 'npm run lint:integration -- --fix' 'npm run lint:spec -- --fix'",
-    "lint:integration": "node --max-old-space-size=4096 ./node_modules/.bin/eslint 'integration/*/{,!(node_modules)/**/}/*.ts'",
+    "lint:integration": "node --max-old-space-size=4096 ./node_modules/.bin/eslint 'integration/**/*.ts'",
     "lint:packages": "node --max-old-space-size=4096 ./node_modules/.bin/eslint 'packages/**/**.ts' --ignore-pattern 'packages/**/*.spec.ts'",
     "lint:spec": "node --max-old-space-size=4096 ./node_modules/.bin/eslint 'packages/**/**.spec.ts'",
     "lint:ci": "npm run lint:packages && npm run lint:integration && npm run lint:spec",
