@@ -24,9 +24,9 @@
     "@nestjs/core": "10.4.9",
     "@nestjs/platform-express": "10.4.9",
     "bull": "4.10.4",
-    "dotenv": "16.4.1",
+    "dotenv": "16.4.5",
     "reflect-metadata": "0.2.1",
-    "rimraf": "5.0.5",
+    "rimraf": "5.0.10",
     "rxjs": "7.8.1"
   },
   "devDependencies": {
