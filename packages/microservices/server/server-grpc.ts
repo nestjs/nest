@@ -639,9 +639,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       hasDrained = true;
 
       // Replay buffered values to the new subscriber
-      replayBuffer.subscribe({
-        next: val => console.log('emitted', val),
-      });
+      replayBuffer.subscribe(subject);
       replayBuffer.complete();
     }
 
