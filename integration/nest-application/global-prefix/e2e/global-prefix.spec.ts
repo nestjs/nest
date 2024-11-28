@@ -127,7 +127,7 @@ describe('Global prefix', () => {
 
     await request(server)
       .get('/api/test/params')
-      .expect(200, { '0': 'params', tenantId: 'test' });
+      .expect(200, { tenantId: 'test', path: ['params'] });
   });
 
   it(`should execute middleware only once`, async () => {

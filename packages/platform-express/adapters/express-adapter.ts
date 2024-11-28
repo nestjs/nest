@@ -23,6 +23,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
+import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter';
 import * as bodyparser from 'body-parser';
 import {
   json as bodyParserJson,
@@ -224,9 +225,19 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   public createMiddlewareFactory(
     requestMethod: RequestMethod,
   ): (path: string, callback: Function) => any {
-    return this.routerMethodFactory
-      .get(this.instance, requestMethod)
-      .bind(this.instance);
+    return (path: string, callback: Function) => {
+      try {
+        const convertedPath = LegacyRouteConverter.tryConvert(path);
+        return this.routerMethodFactory
+          .get(this.instance, requestMethod)
+          .call(this.instance, convertedPath, callback);
+      } catch (e) {
+        if (e instanceof TypeError) {
+          LegacyRouteConverter.printError(path);
+        }
+        throw e;
+      }
+    };
   }
 
   public initHttpServer(options: NestApplicationOptions) {

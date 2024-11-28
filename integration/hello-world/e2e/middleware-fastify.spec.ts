@@ -15,9 +15,9 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { AppModule } from '../src/app.module';
-import * as request from 'supertest';
 import { FastifyRequest } from 'fastify';
+import * as request from 'supertest';
+import { AppModule } from '../src/app.module';
 
 describe('Middleware (FastifyAdapter)', () => {
   let app: NestFastifyApplication;
@@ -34,6 +34,11 @@ describe('Middleware (FastifyAdapter)', () => {
     class TestController {
       @Get('express_style_wildcard/wildcard_nested')
       express_style_wildcard() {
+        return RETURN_VALUE;
+      }
+
+      @Get('legacy_style_wildcard/wildcard_nested')
+      legacy_style_wildcard() {
         return RETURN_VALUE;
       }
 
@@ -76,9 +81,13 @@ describe('Middleware (FastifyAdapter)', () => {
           .apply((req, res, next) => res.end(INCLUDED_VALUE))
           .forRoutes({ path: 'tests/included', method: RequestMethod.POST })
           .apply((req, res, next) => res.end(REQ_URL_VALUE))
-          .forRoutes('req/url/(.*)')
+          .forRoutes('req/url/*')
           .apply((req, res, next) => res.end(WILDCARD_VALUE))
-          .forRoutes('express_style_wildcard/*', 'tests/(.*)')
+          .forRoutes(
+            'express_style_wildcard/*',
+            'tests/*path',
+            'legacy_style_wildcard/(.*)',
+          )
           .apply((req, res, next) => res.end(QUERY_VALUE))
           .forRoutes('query')
           .apply((req, res, next) => next())
@@ -87,7 +96,7 @@ describe('Middleware (FastifyAdapter)', () => {
           .forRoutes(TestController)
           .apply((req, res, next) => res.end(RETURN_VALUE))
           .exclude({ path: QUERY_VALUE, method: -1 as any })
-          .forRoutes('(.*)');
+          .forRoutes('*');
       }
     }
 
@@ -101,7 +110,7 @@ describe('Middleware (FastifyAdapter)', () => {
       await app.init();
     });
 
-    it(`forRoutes((.*))`, () => {
+    it(`forRoutes(*)`, () => {
       return app
         .inject({
           method: 'GET',
@@ -143,7 +152,7 @@ describe('Middleware (FastifyAdapter)', () => {
         .then(({ payload }) => expect(payload).to.be.eql(QUERY_VALUE));
     });
 
-    it(`forRoutes(tests/(.*))`, () => {
+    it(`forRoutes(tests/*path)`, () => {
       return app
         .inject({
           method: 'GET',
@@ -157,6 +166,15 @@ describe('Middleware (FastifyAdapter)', () => {
         .inject({
           method: 'GET',
           url: '/express_style_wildcard/wildcard_nested',
+        })
+        .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+    });
+
+    it(`forRoutes(legacy_style_wildcard/*)`, () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/legacy_style_wildcard/wildcard_nested',
         })
         .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
     });
