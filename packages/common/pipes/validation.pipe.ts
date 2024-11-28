@@ -206,6 +206,9 @@ export class ValidationPipe implements PipeTransform<any> {
     if (metatype === Number) {
       return +value;
     }
+    if (metatype === String) {
+      return String(value);
+    }
     return value;
   }
 
