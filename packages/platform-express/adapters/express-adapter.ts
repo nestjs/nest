@@ -144,7 +144,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     return response.headersSent;
   }
 
-  public getHeader?(response: any, name: string) {
+  public getHeader(response: any, name: string) {
     return response.get(name);
   }
 
@@ -152,8 +152,20 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     return response.set(name, value);
   }
 
-  public appendHeader?(response: any, name: string, value: string) {
+  public appendHeader(response: any, name: string, value: string) {
     return response.append(name, value);
+  }
+
+  public normalizePath(path: string): string {
+    try {
+      const convertedPath = LegacyRouteConverter.tryConvert(path);
+      return convertedPath;
+    } catch (e) {
+      if (e instanceof TypeError) {
+        LegacyRouteConverter.printError(path);
+      }
+      throw e;
+    }
   }
 
   public listen(port: string | number, callback?: () => void): Server;

@@ -39,7 +39,6 @@ import { MetadataScanner } from '../metadata-scanner';
 import { PipesConsumer, PipesContextCreator } from '../pipes';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
 import { RoutePathMetadata } from './interfaces/route-path-metadata.interface';
-import { LegacyRouteConverter } from './legacy-route-converter';
 import { PathsExplorer } from './paths-explorer';
 import { REQUEST_CONTEXT_ID } from './request/request-constants';
 import { RouteParamsFactory } from './route-params-factory';
@@ -232,15 +231,10 @@ export class RouterExplorer {
         };
 
         this.copyMetadataToCallback(targetCallback, routeHandler);
-        try {
-          const convertedPath = LegacyRouteConverter.tryConvert(path);
-          routerMethodRef(convertedPath, routeHandler);
-        } catch (e) {
-          if (e instanceof TypeError) {
-            LegacyRouteConverter.printError(path);
-          }
-          throw e;
-        }
+        const normalizedPath = router.normalizePath
+          ? router.normalizePath(path)
+          : path;
+        routerMethodRef(normalizedPath, routeHandler);
 
         this.graphInspector.insertEntrypointDefinition<HttpEntrypointMetadata>(
           entrypointDefinition,
