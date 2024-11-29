@@ -206,10 +206,7 @@ export class ValidationPipe implements PipeTransform<any> {
     if (metatype === Number) {
       return +value;
     }
-    if (metatype === String) {
-      if (isUndefined(value)) {
-        return undefined;
-      }
+    if (metatype === String && !isUndefined(value)) {
       return String(value);
     }
     return value;
