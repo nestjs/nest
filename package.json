@@ -124,7 +124,7 @@
     "coveralls": "3.1.1",
     "delete-empty": "3.0.0",
     "engine.io-client": "6.6.2",
-    "eslint": "8.57.1",
+    "eslint": "9.15.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-import": "2.31.0",
     "eventsource": "2.0.2",
