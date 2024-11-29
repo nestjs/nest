@@ -237,7 +237,7 @@ describe('middleware utils', () => {
               excludedRoutes,
               adapter,
             ),
-          ).to.be.false;
+          ).to.be.true;
         });
 
         it('should exclude when path does not match included static route', () => {
@@ -273,7 +273,7 @@ describe('middleware utils', () => {
               excludedRoutes,
               adapter,
             ),
-          ).to.be.false;
+          ).to.be.true;
         });
       });
 
@@ -338,7 +338,7 @@ describe('middleware utils', () => {
               excludedRoutes,
               adapter,
             ),
-          ).to.be.false;
+          ).to.be.true;
         });
 
         it('should exclude when path matches excluded but not included', () => {

@@ -12,7 +12,7 @@ import {
   ExcludeRouteMetadata,
   RouteMetadata,
 } from '../router/interfaces/exclude-route-metadata.interface';
-import { isRouteExcluded } from '../router/utils';
+import { isMethodMatch, isRouteExcluded } from '../router/utils';
 export const mapToExcludeRoute = (
   routes: (string | RouteInfo)[],
 ): ExcludeRouteMetadata[] => {
@@ -133,9 +133,30 @@ export function isMiddlewareRouteExcluded(
       ? originalUrl.slice(0, queryParamsIndex)
       : originalUrl;
 
-  if (includedRoutes.length > 0) {
-    return !isRouteExcluded(includedRoutes, pathname, RequestMethod[reqMethod]);
-  } else {
-    return isRouteExcluded(excludedRoutes, pathname, RequestMethod[reqMethod]);
+  let isExcluded = false;
+  for (const route of excludedRoutes) {
+    if (
+      pathname === route.path &&
+      isMethodMatch(route.requestMethod, RequestMethod[reqMethod])
+    ) {
+      return true;
+    } else {
+      isExcluded = isRouteExcluded(
+        excludedRoutes,
+        pathname,
+        RequestMethod[reqMethod],
+      );
+    }
   }
+
+  for (const route of includedRoutes) {
+    if (
+      pathname === route.path &&
+      isMethodMatch(route.requestMethod, RequestMethod[reqMethod])
+    ) {
+      return false;
+    }
+  }
+
+  return isExcluded;
 }

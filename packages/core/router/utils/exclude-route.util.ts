@@ -22,18 +22,9 @@ export function isRouteExcluded(
   });
 }
 
-export function isRouteIncluded(
-  excludedRoutes: ExcludeRouteMetadata[],
-  path: string,
+export function isMethodMatch(
+  routeMethod: RequestMethod,
   requestMethod?: RequestMethod,
-) {
-  return excludedRoutes.some(route => {
-    if (
-      isRequestMethodAll(route.requestMethod) ||
-      route.requestMethod === requestMethod
-    ) {
-      return route.pathRegex.exec(addLeadingSlash(path)) && route.path !== path;
-    }
-    return false;
-  });
+): boolean {
+  return isRequestMethodAll(routeMethod) || routeMethod === requestMethod;
 }

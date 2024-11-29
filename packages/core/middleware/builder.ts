@@ -11,10 +11,9 @@ import {
 } from '@nestjs/common/interfaces/middleware';
 import { stripEndSlash } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
-import { isRouteIncluded } from '../router/utils';
 import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
-import { filterMiddleware, mapToExcludeRoute } from './utils';
+import { filterMiddleware } from './utils';
 
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();
@@ -86,18 +85,10 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
       const flattedRoutes = this.getRoutesFlatList(routes);
       const forRoutes = this.removeOverlappedRoutes(flattedRoutes);
 
-      const includedRoutes = flattedRoutes.filter(route =>
-        isRouteIncluded(
-          mapToExcludeRoute(this.excludedRoutes),
-          route.path,
-          route.method,
-        ),
-      );
-
       const configuration = {
         middleware: filterMiddleware(
           this.middleware,
-          includedRoutes,
+          flattedRoutes,
           this.excludedRoutes,
           this.builder.getHttpAdapter(),
         ),
