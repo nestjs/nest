@@ -28,7 +28,7 @@
     "@nestjs/core": "10.x",
     "@nestjs/platform-express": "10.x",
     "delay": "6.x",
-    "reflect-metadata": "0.2.0",
+    "reflect-metadata": "0.2.2",
     "rxjs": "7.x",
     "superjson": "2.x"
   },
