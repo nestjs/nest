@@ -629,7 +629,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     type DrainableSubject<T> = Subject<T> & { drainBuffer: () => void };
 
     const subject = new Subject<T>();
-    const replayBuffer = new ReplaySubject<T>();
+    let replayBuffer = new ReplaySubject<T>();
     let hasDrained = false;
 
     function drainBuffer(this: DrainableSubject<T>) {
@@ -640,8 +640,9 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
       // Replay buffered values to the new subscriber
       setImmediate(() => {
-        replayBuffer.subscribe(subject);
-        replayBuffer.complete();
+        const subcription = replayBuffer.subscribe(subject);
+        subcription.unsubscribe();
+        replayBuffer = null;
       });
     }
 
