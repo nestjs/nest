@@ -24,7 +24,7 @@
     "@nestjs/platform-express": "10.4.12",
     "@nestjs/sequelize": "10.0.1",
     "mysql2": "3.9.8",
-    "reflect-metadata": "0.2.1",
+    "reflect-metadata": "0.2.2",
     "rimraf": "5.0.10",
     "rxjs": "7.8.1",
     "sequelize": "6.37.5",
