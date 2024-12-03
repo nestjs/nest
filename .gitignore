@@ -1,4 +1,5 @@
 packages/*/package-lock.json
+sample/*/package-lock.json
 
 # dependencies
 node_modules/
@@ -10,7 +11,7 @@ node_modules/
 /.devcontainer
 /.classpath
 /.project
-/.settings 
+/.settings
 *.code-workspace
 
 # Vim
