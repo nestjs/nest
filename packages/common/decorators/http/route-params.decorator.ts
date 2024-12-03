@@ -511,22 +511,6 @@ export function Body(
 /**
  * Route handler parameter decorator. Extracts the `rawBody` Buffer
  * property from the `req` object and populates the decorated parameter with that value.
- *
- * For example:
- * ```typescript
- * async create(@RawBody() rawBody: Buffer | undefined)
- * ```
- *
- * @see [Request object](https://docs.nestjs.com/controllers#request-object)
- * @see [Raw body](https://docs.nestjs.com/faq/raw-body)
- *
- * @publicApi
- */
-export function RawBody(): ParameterDecorator;
-
-/**
- * Route handler parameter decorator. Extracts the `rawBody` Buffer
- * property from the `req` object and populates the decorated parameter with that value.
  * Also applies pipes to the bound rawBody parameter.
  *
  * For example:
