@@ -25,14 +25,14 @@ export class LegacyRouteConverter {
       if (normalizedRoute !== '/(.*)/') {
         this.printWarning(route);
       }
-      return route.replace('(.*)', '*path');
+      return route.replace('(.*)', '{*path}');
     }
     if (normalizedRoute.endsWith('/*/')) {
       // Skip printing warning for the "all" wildcard.
       if (normalizedRoute !== '/*/') {
         this.printWarning(route);
       }
-      return route.replace('*', '*path');
+      return route.replace('*', '{*path}');
     }
     if (normalizedRoute.endsWith('/+/')) {
       this.printWarning(route);
