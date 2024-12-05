@@ -346,9 +346,7 @@ export class MiddlewareModule<
         configurable: false,
       });
 
-      const requestProviderValue = isTreeDurable
-        ? contextId.payload
-        : Object.assign(request, contextId.payload);
+      const requestProviderValue = Object.assign(request, contextId.payload);
       this.container.registerRequestProvider(requestProviderValue, contextId);
     }
     return contextId;

@@ -28,4 +28,9 @@ export class DurableController {
       nonDurableService: this.nonDurableService.getTenantId(),
     };
   }
+
+  @Get('request-headers')
+  getRequestHeaders() {
+    return this.durableService.getRequestHeaders();
+  }
 }

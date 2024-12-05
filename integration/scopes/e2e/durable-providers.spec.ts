@@ -107,7 +107,7 @@ describe('Durable providers', () => {
         nonDurableService: '2',
       });
     });
-    
+
     it(`should not cache durable providers that throw errors`, async () => {
       let result: request.Response;
 
@@ -123,6 +123,14 @@ describe('Durable providers', () => {
       );
 
       expect(result.body).deep.equal({ tenantId: '10' });
+    });
+
+    it(`should inject headers from request`, async () => {
+      let result: request.Response;
+      result = await new Promise<request.Response>(resolve =>
+        performHttpCall(1, resolve, '/durable/request-headers'),
+      );
+      expect(result.body).deep.contain({ 'x-tenant-id': '1' });
     });
   });
 
