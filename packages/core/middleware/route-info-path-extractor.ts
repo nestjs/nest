@@ -71,7 +71,9 @@ export class RouteInfoPathExtractor {
   }
 
   private isAWildcard(path: string): boolean {
-    return ['*', '/*', '/*/', '(.*)', '/(.*)'].includes(path);
+    return ['*', '/*', '/*/', '*path', '/*path', '(.*)', '/(.*)'].includes(
+      path,
+    );
   }
 
   private extractNonWildcardPathsFrom({

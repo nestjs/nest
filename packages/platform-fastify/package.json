@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/platform-fastify",
-  "version": "10.4.11",
+  "version": "11.0.0-next.1",
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-fastify)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -23,7 +23,7 @@
     "@fastify/middie": "9.0.2",
     "fastify": "5.1.0",
     "light-my-request": "6.3.0",
-    "path-to-regexp": "3.3.0",
+    "path-to-regexp": "8.2.0",
     "tslib": "2.7.0"
   },
   "peerDependencies": {

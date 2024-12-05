@@ -143,6 +143,10 @@ export abstract class AbstractHttpAdapter<
     return this.instance as T;
   }
 
+  public normalizePath(path: string): string {
+    return path;
+  }
+
   abstract close();
   abstract initHttpServer(options: NestApplicationOptions);
   abstract useStaticAssets(...args: any[]);
@@ -158,11 +162,7 @@ export abstract class AbstractHttpAdapter<
   abstract setErrorHandler(handler: Function, prefix?: string);
   abstract setNotFoundHandler(handler: Function, prefix?: string);
   abstract isHeadersSent(response: any);
-  // TODO remove optional signature (v11)
-  abstract getHeader?(response: any, name: string);
   abstract setHeader(response: any, name: string, value: string);
-  // TODO remove optional signature (v11)
-  abstract appendHeader?(response: any, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string, rawBody?: boolean);
   abstract enableCors(
     options: CorsOptions | CorsOptionsDelegate<TRequest>,

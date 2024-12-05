@@ -50,6 +50,16 @@ class TestController {
     return RETURN_VALUE;
   }
 
+  @Get('legacy-wildcard/overview')
+  testLegacyWildcard() {
+    return RETURN_VALUE;
+  }
+
+  @Get('splat-wildcard/overview')
+  testSplatWildcard() {
+    return RETURN_VALUE;
+  }
+
   @Get('overview/:id')
   overviewById() {
     return RETURN_VALUE;
@@ -64,10 +74,17 @@ class TestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req, res, next) => res.end(MIDDLEWARE_VALUE))
-      .exclude('test', 'overview/:id', 'wildcard/(.*)', {
-        path: 'middleware',
-        method: RequestMethod.POST,
-      })
+      .exclude(
+        'test',
+        'overview/:id',
+        'wildcard/*',
+        'legacy-wildcard/(.*)',
+        'splat-wildcard/*splat',
+        {
+          path: 'middleware',
+          method: RequestMethod.POST,
+        },
+      )
       .forRoutes('*');
   }
 }
@@ -123,6 +140,18 @@ describe('Exclude middleware (fastify)', () => {
   it(`should exclude "/wildcard/overview" endpoint (by wildcard)`, () => {
     return request(app.getHttpServer())
       .get('/wildcard/overview')
+      .expect(200, RETURN_VALUE);
+  });
+
+  it(`should exclude "/legacy-wildcard/overview" endpoint (by wildcard, legacy syntax)`, () => {
+    return request(app.getHttpServer())
+      .get('/legacy-wildcard/overview')
+      .expect(200, RETURN_VALUE);
+  });
+
+  it(`should exclude "/splat-wildcard/overview" endpoint (by wildcard, new syntax)`, () => {
+    return request(app.getHttpServer())
+      .get('/splat-wildcard/overview')
       .expect(200, RETURN_VALUE);
   });
 

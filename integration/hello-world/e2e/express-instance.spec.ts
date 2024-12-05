@@ -3,10 +3,11 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import * as express from 'express';
 import * as request from 'supertest';
+import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 
 describe('Hello world (express instance)', () => {
-  let server;
+  let server: App;
   let app: INestApplication;
 
   beforeEach(async () => {

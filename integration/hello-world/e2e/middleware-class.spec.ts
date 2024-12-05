@@ -8,9 +8,9 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { Response } from 'express';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { Response } from 'express';
 
 const INCLUDED_VALUE = 'test_included';
 const RETURN_VALUE = 'test';

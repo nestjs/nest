@@ -102,4 +102,5 @@ export interface HttpServer<
     version: VersionValue,
     versioningOptions: VersioningOptions,
   ): (req: TRequest, res: TResponse, next: () => void) => Function;
+  normalizePath?(path: string): string;
 }
