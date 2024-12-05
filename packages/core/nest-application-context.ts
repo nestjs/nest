@@ -439,7 +439,10 @@ export class NestApplicationContext<
    * modules and children.
    */
   protected async callShutdownHook(signal?: string): Promise<void> {
-    const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
+    const modulesSortedByDistance = [
+      ...this.getModulesToTriggerHooksOn(),
+    ].reverse();
+
     for (const module of modulesSortedByDistance) {
       await callAppShutdownHook(module, signal);
     }
@@ -450,7 +453,10 @@ export class NestApplicationContext<
    * modules and children.
    */
   protected async callBeforeShutdownHook(signal?: string): Promise<void> {
-    const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
+    const modulesSortedByDistance = [
+      ...this.getModulesToTriggerHooksOn(),
+    ].reverse();
+
     for (const module of modulesSortedByDistance) {
       await callBeforeAppShutdownHook(module, signal);
     }
