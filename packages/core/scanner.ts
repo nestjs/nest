@@ -93,9 +93,13 @@ export class DependenciesScanner {
     });
     await this.scanModulesForDependencies();
     this.addScopedEnhancersMetadata();
-    this.container.bindGlobalScope();
 
+    // Modules distance calculation should be done after all modules are scanned
+    // but before global modules are registered (linked to all modules).
+    // Global modules have their distance set to -1 anyway.
     this.calculateModulesDistance();
+
+    this.container.bindGlobalScope();
   }
 
   public async scanForModules({
