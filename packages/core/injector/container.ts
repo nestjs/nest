@@ -171,9 +171,9 @@ export class NestContainer {
     if (this.isGlobalModule(type, dynamicMetadata)) {
       moduleRef.isGlobal = true;
 
-      // Set global module distance to -1 to ensure their lifecycle hooks
+      // Set global module distance to MAX_VALUE to ensure their lifecycle hooks
       // are always executed first (when initializing the application)
-      moduleRef.distance = -1;
+      moduleRef.distance = Number.MAX_VALUE;
       this.addGlobalModule(moduleRef);
     }
 
