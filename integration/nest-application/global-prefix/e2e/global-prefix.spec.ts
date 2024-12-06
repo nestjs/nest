@@ -130,6 +130,17 @@ describe('Global prefix', () => {
       .expect(200, { '0': 'params', tenantId: 'test' });
   });
 
+  it(`should get the params in the global prefix with exclude option`, async () => {
+    app.setGlobalPrefix('/api/:tenantId', { exclude: ['/'] });
+
+    server = app.getHttpServer();
+    await app.init();
+
+    await request(server)
+      .get('/api/test/params')
+      .expect(200, { '0': 'params', tenantId: 'test' });
+  });
+
   it(`should execute middleware only once`, async () => {
     app.setGlobalPrefix('/api', { exclude: ['/'] });
 
