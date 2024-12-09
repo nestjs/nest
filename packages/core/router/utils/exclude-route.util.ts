@@ -21,3 +21,10 @@ export function isRouteExcluded(
     return false;
   });
 }
+
+export function isMethodMatch(
+  routeMethod: RequestMethod,
+  requestMethod?: RequestMethod,
+): boolean {
+  return isRequestMethodAll(routeMethod) || routeMethod === requestMethod;
+}
