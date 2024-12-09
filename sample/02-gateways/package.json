@@ -50,7 +50,7 @@
     "prettier": "3.4.2",
     "redis": "4.6.13",
     "supertest": "6.3.4",
-    "ts-jest": "29.1.2",
+    "ts-jest": "29.2.5",
     "ts-loader": "9.5.1",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
