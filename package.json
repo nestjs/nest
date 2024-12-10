@@ -131,7 +131,7 @@
     "fancy-log": "2.0.0",
     "fastify": "4.28.1",
     "graphql": "16.9.0",
-    "graphql-tools": "9.0.5",
+    "graphql-tools": "9.0.6",
     "graphql-subscriptions": "2.0.0",
     "gulp": "5.0.0",
     "gulp-clang-format": "1.0.27",
