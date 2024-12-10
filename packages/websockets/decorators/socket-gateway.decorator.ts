@@ -8,15 +8,17 @@ import { GatewayMetadata } from '../interfaces';
  * @publicApi
  */
 export function WebSocketGateway(port?: number): ClassDecorator;
-export function WebSocketGateway<
-  T extends Record<string, any> = GatewayMetadata,
->(options?: T): ClassDecorator;
-export function WebSocketGateway<
-  T extends Record<string, any> = GatewayMetadata,
->(port?: number, options?: T): ClassDecorator;
-export function WebSocketGateway<
-  T extends Record<string, any> = GatewayMetadata,
->(portOrOptions?: number | T, options?: T): ClassDecorator {
+export function WebSocketGateway<T extends GatewayMetadata>(
+  options?: T,
+): ClassDecorator;
+export function WebSocketGateway<T extends GatewayMetadata>(
+  port?: number,
+  options?: T,
+): ClassDecorator;
+export function WebSocketGateway<T extends GatewayMetadata>(
+  portOrOptions?: number | T,
+  options?: T,
+): ClassDecorator {
   const isPortInt = Number.isInteger(portOrOptions as number);
   // eslint-disable-next-line prefer-const
   let [port, opt] = isPortInt ? [portOrOptions, options] : [0, portOrOptions];
