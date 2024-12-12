@@ -72,7 +72,7 @@ export class TestingInjector extends Injector {
           },
           internalCoreModule.providers,
         );
-        internalCoreModule.addExportedProvider(name);
+        internalCoreModule.addExportedProviderOrModule(name);
         return newWrapper;
       } else {
         throw err;

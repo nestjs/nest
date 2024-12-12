@@ -274,7 +274,7 @@ export class DependenciesScanner {
       )!,
     ];
     exports.forEach(exportedProvider =>
-      this.insertExportedProvider(exportedProvider, token),
+      this.insertExportedProviderOrModule(exportedProvider, token),
     );
   }
 
@@ -532,15 +532,14 @@ export class DependenciesScanner {
     }
   }
 
-  public insertExportedProvider(
-    // TODO: improve the type definition below because it doesn't reflects the real usage of this method
-    exportedProvider: Type<Injectable> | ForwardReference,
+  public insertExportedProviderOrModule(
+    toExport: ForwardReference | DynamicModule | Type<unknown>,
     token: string,
   ) {
-    const fulfilledProvider = this.isForwardReference(exportedProvider)
-      ? exportedProvider.forwardRef()
-      : exportedProvider;
-    this.container.addExportedProvider(fulfilledProvider, token);
+    const fulfilledProvider = this.isForwardReference(toExport)
+      ? toExport.forwardRef()
+      : toExport;
+    this.container.addExportedProviderOrModule(fulfilledProvider, token);
   }
 
   public insertController(controller: Type<Controller>, token: string) {
