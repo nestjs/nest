@@ -332,7 +332,7 @@ describe('Module', () => {
         'addCustomExportedProvider',
       );
 
-      moduleRef.addExportedProvider({ provide: 'test' } as any);
+      moduleRef.addExportedProviderOrModule({ provide: 'test' } as any);
       expect(addCustomExportedProviderSpy.called).to.be.true;
     });
     it('should support symbols', () => {
@@ -341,7 +341,7 @@ describe('Module', () => {
         'addCustomExportedProvider',
       );
       const symb = Symbol('test');
-      moduleRef.addExportedProvider({ provide: symb } as any);
+      moduleRef.addExportedProviderOrModule({ provide: symb } as any);
       expect(addCustomExportedProviderSpy.called).to.be.true;
       expect(untypedModuleRef._exports.has(symb)).to.be.true;
     });

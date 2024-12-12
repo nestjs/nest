@@ -29,6 +29,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   protected readonly logger = new Logger(ClientProxy.name);
   protected readonly subscriptionsCount = new Map<string, number>();
   protected readonly url: string;
+  /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
   protected mqttClient: MqttClient | null = null;
   protected connectionPromise: Promise<any> | null = null;
   protected isInitialConnection = false;

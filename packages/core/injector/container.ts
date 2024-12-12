@@ -278,12 +278,15 @@ export class NestContainer {
     return moduleRef.addInjectable(injectable, enhancerSubtype, host);
   }
 
-  public addExportedProvider(provider: Type<any>, token: string) {
+  public addExportedProviderOrModule(
+    toExport: Type<any> | DynamicModule,
+    token: string,
+  ) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
     const moduleRef = this.modules.get(token)!;
-    moduleRef.addExportedProvider(provider);
+    moduleRef.addExportedProviderOrModule(toExport);
   }
 
   public addController(controller: Type<any>, token: string) {
