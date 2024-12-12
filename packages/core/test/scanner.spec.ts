@@ -95,7 +95,7 @@ describe('DependenciesScanner', () => {
 
   it('should "insertProvider" call twice (2 components) container method "addProvider"', async () => {
     const expectation = mockContainer.expects('addProvider').twice();
-    const stub = sinon.stub(scanner, 'insertExportedProvider');
+    const stub = sinon.stub(scanner, 'insertExportedProviderOrModule');
 
     await scanner.scan(TestModule);
     expectation.verify();
@@ -108,7 +108,7 @@ describe('DependenciesScanner', () => {
     expectation.verify();
   });
 
-  it('should "insertExportedProvider" call once (1 component) container method "addExportedProviderOrModule"', async () => {
+  it('should "insertExportedProviderOrModule" call once (1 component) container method "addExportedProviderOrModule"', async () => {
     const expectation = mockContainer
       .expects('addExportedProviderOrModule')
       .once();
