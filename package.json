@@ -127,7 +127,7 @@
     "eslint": "8.57.1",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-import": "2.31.0",
-    "eventsource": "2.0.2",
+    "eventsource": "3.0.1",
     "fancy-log": "2.0.0",
     "fastify": "4.28.1",
     "graphql": "16.9.0",
