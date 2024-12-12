@@ -41,10 +41,10 @@ describe('NestContainer', () => {
     );
   });
 
-  it('should "addExportedProvider" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addExportedProvider(null!, 'TestModule')).throw(
-      UnknownModuleException,
-    );
+  it('should "addExportedProviderOrModule" throw "UnknownModuleException" when module is not stored in collection', () => {
+    expect(() =>
+      container.addExportedProviderOrModule(null!, 'TestModule'),
+    ).throw(UnknownModuleException);
   });
 
   it('should "addInjectable" throw "UnknownModuleException" when module is not stored in collection', () => {
