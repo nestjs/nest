@@ -19,8 +19,8 @@ let mqttPackage: any = {};
 // because it would require the user to install the mqtt package even if they dont use MQTT
 // Otherwise, TypeScript would fail to compile the code.
 //
-type MqttClient = import('mqtt').MqttClient;
-// type MqttClient = any;
+// type MqttClient = import('mqtt').MqttClient;
+type MqttClient = any;
 
 /**
  * @publicApi
