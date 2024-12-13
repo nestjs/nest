@@ -23,7 +23,7 @@
     "@nestjs/core": "10.4.15",
     "@nestjs/platform-express": "10.4.15",
     "@nestjs/typeorm": "10.0.2",
-    "mysql2": "3.9.8",
+    "mysql2": "3.11.5",
     "reflect-metadata": "0.2.2",
     "rimraf": "5.0.10",
     "rxjs": "7.8.1",
