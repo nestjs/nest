@@ -17,6 +17,7 @@ import {
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
+import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter';
 import {
   FastifyBaseLogger,
   FastifyBodyParser,
@@ -34,6 +35,7 @@ import {
   RawServerBase,
   RawServerDefault,
   RequestGenericInterface,
+  RouteGenericInterface,
   RouteOptions,
   RouteShorthandOptions,
   fastify,
@@ -48,7 +50,7 @@ import {
   Chain as LightMyRequestChain,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
-import * as pathToRegexp from 'path-to-regexp';
+import { pathToRegexp } from 'path-to-regexp';
 // `querystring` is used internally in fastify for registering urlencoded body parser.
 import { parse as querystringParse } from 'querystring';
 import {
@@ -130,16 +132,18 @@ export class FastifyAdapter<
     TRawRequest
   > = FastifyRequest<RequestGenericInterface, TServer, TRawRequest>,
   TReply extends FastifyReply<
+    RouteGenericInterface,
     TServer,
     TRawRequest,
     TRawResponse
-  > = FastifyReply<TServer, TRawRequest, TRawResponse>,
+  > = FastifyReply<RouteGenericInterface, TServer, TRawRequest, TRawResponse>,
   TInstance extends FastifyInstance<
     TServer,
     TRawRequest,
     TRawResponse
   > = FastifyInstance<TServer, TRawRequest, TRawResponse>,
 > extends AbstractHttpAdapter<TServer, TRequest, TReply> {
+  protected readonly logger = new Logger(FastifyAdapter.name);
   protected readonly instance: TInstance;
   protected _pathPrefix?: string;
 
@@ -468,7 +472,7 @@ export class FastifyAdapter<
     plugin: TRegister['0'],
     opts?: TRegister['1'],
   ) {
-    return this.instance.register(plugin, opts);
+    return (this.instance.register as any)(plugin, opts);
   }
 
   public inject(): LightMyRequestChain;
@@ -619,39 +623,46 @@ export class FastifyAdapter<
       const hasEndOfStringCharacter = path.endsWith('$');
       path = hasEndOfStringCharacter ? path.slice(0, -1) : path;
 
-      let normalizedPath = path.endsWith('/*')
-        ? `${path.slice(0, -1)}(.*)`
-        : path;
+      let normalizedPath = LegacyRouteConverter.tryConvert(path);
 
-      // Fallback to "(.*)" to support plugins like GraphQL
-      normalizedPath = normalizedPath === '/(.*)' ? '(.*)' : normalizedPath;
+      // Fallback to "*path" to support plugins like GraphQL
+      normalizedPath = normalizedPath === '/*path' ? '*path' : normalizedPath;
 
       // Normalize the path to support the prefix if it set in application
       normalizedPath =
         this._pathPrefix && !normalizedPath.startsWith(this._pathPrefix)
-          ? `${this._pathPrefix}${normalizedPath}(.*)`
+          ? `${this._pathPrefix}${normalizedPath}*path`
           : normalizedPath;
 
-      let re = pathToRegexp(normalizedPath);
-      re = hasEndOfStringCharacter ? new RegExp(re.source + '$', re.flags) : re;
+      try {
+        let { regexp: re } = pathToRegexp(normalizedPath);
+        re = hasEndOfStringCharacter
+          ? new RegExp(re.source + '$', re.flags)
+          : re;
 
-      // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
-      // ref https://github.com/fastify/middie/pull/55
-      this.instance.use(
-        normalizedPath,
-        (req: any, res: any, next: Function) => {
-          const queryParamsIndex = req.originalUrl.indexOf('?');
-          const pathname =
-            queryParamsIndex >= 0
-              ? req.originalUrl.slice(0, queryParamsIndex)
-              : req.originalUrl;
+        // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
+        // ref https://github.com/fastify/middie/pull/55
+        this.instance.use(
+          normalizedPath,
+          (req: any, res: any, next: Function) => {
+            const queryParamsIndex = req.originalUrl.indexOf('?');
+            const pathname =
+              queryParamsIndex >= 0
+                ? req.originalUrl.slice(0, queryParamsIndex)
+                : req.originalUrl;
 
-          if (!re.exec(pathname + '/') && normalizedPath) {
-            return next();
-          }
-          return callback(req, res, next);
-        },
-      );
+            if (!re.exec(pathname + '/') && normalizedPath) {
+              return next();
+            }
+            return callback(req, res, next);
+          },
+        );
+      } catch (e) {
+        if (e instanceof TypeError) {
+          LegacyRouteConverter.printError(path);
+        }
+        throw e;
+      }
     };
   }
 

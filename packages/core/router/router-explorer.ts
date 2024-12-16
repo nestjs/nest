@@ -10,7 +10,7 @@ import {
   addLeadingSlash,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import * as pathToRegexp from 'path-to-regexp';
+import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer, GuardsContextCreator } from '../guards';
@@ -231,7 +231,10 @@ export class RouterExplorer {
         };
 
         this.copyMetadataToCallback(targetCallback, routeHandler);
-        routerMethodRef(path, routeHandler);
+        const normalizedPath = router.normalizePath
+          ? router.normalizePath(path)
+          : path;
+        routerMethodRef(normalizedPath, routeHandler);
 
         this.graphInspector.insertEntrypointDefinition<HttpEntrypointMetadata>(
           entrypointDefinition,
@@ -270,9 +273,19 @@ export class RouterExplorer {
     const httpAdapterRef = this.container.getHttpAdapterRef();
     const hosts = Array.isArray(host) ? host : [host];
     const hostRegExps = hosts.map((host: string | RegExp) => {
-      const keys: any[] = [];
-      const regexp = pathToRegexp(host, keys);
-      return { regexp, keys };
+      if (typeof host === 'string') {
+        try {
+          return pathToRegexp(host);
+        } catch (e) {
+          if (e instanceof TypeError) {
+            this.logger.error(
+              `Unsupported host "${host}" syntax. In past releases, ?, *, and + were used to denote optional or repeating path parameters. The latest version of "path-to-regexp" now requires the use of named parameters. For example, instead of using a route like /users/* to capture all routes starting with "/users", you should use /users/*path. Please see the migration guide for more information.`,
+            );
+          }
+          throw e;
+        }
+      }
+      return { regexp: host, keys: [] };
     });
 
     const unsupportedFilteringErrorMessage = Array.isArray(host)

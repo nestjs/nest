@@ -1,6 +1,7 @@
-import { RequestMethod, Type } from '@nestjs/common';
+import { RequestMethod } from '@nestjs/common';
 import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
+import { pathToRegexp } from 'path-to-regexp';
 import * as sinon from 'sinon';
 import {
   assignToken,
@@ -11,7 +12,6 @@ import {
   mapToExcludeRoute,
 } from '../../middleware/utils';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
-import * as pathToRegexp from 'path-to-regexp';
 
 describe('middleware utils', () => {
   const noopAdapter = new NoopHttpAdapter({});
@@ -30,12 +30,12 @@ describe('middleware utils', () => {
         {
           path: stringRoute,
           requestMethod: RequestMethod.ALL,
-          pathRegex: pathToRegexp(addLeadingSlash(stringRoute)),
+          pathRegex: pathToRegexp(addLeadingSlash(stringRoute)).regexp,
         },
         {
           path: routeInfo.path,
           requestMethod: routeInfo.method,
-          pathRegex: pathToRegexp(addLeadingSlash(routeInfo.path)),
+          pathRegex: pathToRegexp(addLeadingSlash(routeInfo.path)).regexp,
         },
       ]);
     });
@@ -121,7 +121,20 @@ describe('middleware utils', () => {
       sinon.stub(adapter, 'getRequestMethod').callsFake(() => 'GET');
       sinon.stub(adapter, 'getRequestUrl').callsFake(() => '/cats/3');
     });
-    describe('when route is excluded', () => {
+    describe('when route is excluded (new syntax *path)', () => {
+      const path = '/cats/*path';
+      const excludedRoutes = mapToExcludeRoute([
+        {
+          path,
+          method: RequestMethod.GET,
+        },
+      ]);
+      it('should return true', () => {
+        expect(isMiddlewareRouteExcluded({}, excludedRoutes, adapter)).to.be
+          .true;
+      });
+    });
+    describe('when route is excluded (legacy syntax (.*))', () => {
       const path = '/cats/(.*)';
       const excludedRoutes = mapToExcludeRoute([
         {
