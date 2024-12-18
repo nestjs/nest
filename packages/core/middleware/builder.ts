@@ -84,9 +84,11 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
 
       const flattedRoutes = this.getRoutesFlatList(routes);
       const forRoutes = this.removeOverlappedRoutes(flattedRoutes);
+
       const configuration = {
         middleware: filterMiddleware(
           this.middleware,
+          flattedRoutes,
           this.excludedRoutes,
           this.builder.getHttpAdapter(),
         ),
