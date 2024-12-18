@@ -97,7 +97,22 @@ describe('KafkaRequestSerializer', () => {
         }),
       ).to.deep.eq({
         headers: {},
-        value: 'string',
+        value: JSON.stringify({
+          value: 'string',
+        }),
+      });
+    });
+
+    it('kafka message without value', async () => {
+      expect(
+        await instance.serialize({
+          key: 'string',
+        }),
+      ).to.deep.eq({
+        headers: {},
+        value: JSON.stringify({
+          key: 'string',
+        }),
       });
     });
 
