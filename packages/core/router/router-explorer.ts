@@ -279,7 +279,7 @@ export class RouterExplorer {
         } catch (e) {
           if (e instanceof TypeError) {
             this.logger.error(
-              `Unsupported host "${host}" syntax. In past releases, ?, *, and + were used to denote optional or repeating path parameters. The latest version of "path-to-regexp" now requires the use of named parameters. For example, instead of using a route like /users/* to capture all routes starting with "/users", you should use /users/*path. Please see the migration guide for more information.`,
+              `Unsupported host "${host}" syntax. In past releases, ?, *, and + were used to denote optional or repeating path parameters. The latest version of "path-to-regexp" now requires the use of named parameters. For example, instead of using a route like /users/* to capture all routes starting with "/users", you should use /users/{*path}. Please see the migration guide for more information.`,
             );
           }
           throw e;

@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 
 const UNSUPPORTED_PATH_MESSAGE = (text: TemplateStringsArray, route: string) =>
-  `Unsupported route path: "${route}". In previous versions, the symbols ?, *, and + were used to denote optional or repeating path parameters. The latest version of "path-to-regexp" now requires the use of named parameters. For example, instead of using a route like /users/* to capture all routes starting with "/users", you should use /users/*path. For more details, refer to the migration guide.`;
+  `Unsupported route path: "${route}". In previous versions, the symbols ?, *, and + were used to denote optional or repeating path parameters. The latest version of "path-to-regexp" now requires the use of named parameters. For example, instead of using a route like /users/* to capture all routes starting with "/users", you should use /users/{*path}. For more details, refer to the migration guide.`;
 
 export class LegacyRouteConverter {
   private static readonly logger = new Logger(LegacyRouteConverter.name);
