@@ -4,9 +4,13 @@ import { RouteParamsFactory } from '../../router/route-params-factory';
 
 describe('RouteParamsFactory', () => {
   let factory: RouteParamsFactory;
+  let untypedFactory: any;
+
   beforeEach(() => {
     factory = new RouteParamsFactory();
+    untypedFactory = factory as any;
   });
+
   describe('exchangeKeyForValue', () => {
     const res = {};
     const next = () => ({});
@@ -37,14 +41,14 @@ describe('RouteParamsFactory', () => {
       describe(`RouteParamtypes.NEXT`, () => {
         it('should return next object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(RouteParamtypes.NEXT, ...args),
+            untypedFactory.exchangeKeyForValue(RouteParamtypes.NEXT, ...args),
           ).to.be.eql(next);
         });
       });
       describe(`RouteParamtypes.RESPONSE`, () => {
         it('should return response object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(
+            untypedFactory.exchangeKeyForValue(
               RouteParamtypes.RESPONSE,
               ...args,
             ),
@@ -54,7 +58,7 @@ describe('RouteParamsFactory', () => {
       describe(`RouteParamtypes.REQUEST`, () => {
         it('should return request object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(
+            untypedFactory.exchangeKeyForValue(
               RouteParamtypes.REQUEST,
               ...args,
             ),
@@ -64,14 +68,14 @@ describe('RouteParamsFactory', () => {
       describe(`RouteParamtypes.BODY`, () => {
         it('should return body object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(RouteParamtypes.BODY, ...args),
+            untypedFactory.exchangeKeyForValue(RouteParamtypes.BODY, ...args),
           ).to.be.eql(req.body);
         });
       });
       describe(`RouteParamtypes.RAW_BODY`, () => {
         it('should return rawBody buffer', () => {
           expect(
-            (factory as any).exchangeKeyForValue(
+            untypedFactory.exchangeKeyForValue(
               RouteParamtypes.RAW_BODY,
               ...args,
             ),
@@ -81,7 +85,7 @@ describe('RouteParamsFactory', () => {
       describe(`RouteParamtypes.HEADERS`, () => {
         it('should return headers object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(
+            untypedFactory.exchangeKeyForValue(
               RouteParamtypes.HEADERS,
               ...args,
             ),
@@ -91,14 +95,14 @@ describe('RouteParamsFactory', () => {
       describe(`RouteParamtypes.IP`, () => {
         it('should return ip property', () => {
           expect(
-            (factory as any).exchangeKeyForValue(RouteParamtypes.IP, ...args),
+            untypedFactory.exchangeKeyForValue(RouteParamtypes.IP, ...args),
           ).to.be.equal(req.ip);
         });
       });
       describe(`RouteParamtypes.SESSION`, () => {
         it('should return session object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(
+            untypedFactory.exchangeKeyForValue(
               RouteParamtypes.SESSION,
               ...args,
             ),
@@ -108,50 +112,41 @@ describe('RouteParamsFactory', () => {
       describe(`RouteParamtypes.QUERY`, () => {
         it('should return query object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(
-              RouteParamtypes.QUERY,
-              ...args,
-            ),
+            untypedFactory.exchangeKeyForValue(RouteParamtypes.QUERY, ...args),
           ).to.be.eql(req.query);
         });
       });
       describe(`RouteParamtypes.PARAM`, () => {
         it('should return params object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(
-              RouteParamtypes.PARAM,
-              ...args,
-            ),
+            untypedFactory.exchangeKeyForValue(RouteParamtypes.PARAM, ...args),
           ).to.be.eql(req.params);
         });
       });
       describe(`RouteParamtypes.HOST`, () => {
         it('should return hosts object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(RouteParamtypes.HOST, ...args),
+            untypedFactory.exchangeKeyForValue(RouteParamtypes.HOST, ...args),
           ).to.be.eql(req.hosts);
         });
       });
       describe(`RouteParamtypes.FILE`, () => {
         it('should return file object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(RouteParamtypes.FILE, ...args),
+            untypedFactory.exchangeKeyForValue(RouteParamtypes.FILE, ...args),
           ).to.be.eql(req.file);
         });
       });
       describe(`RouteParamtypes.FILES`, () => {
         it('should return files object', () => {
           expect(
-            (factory as any).exchangeKeyForValue(
-              RouteParamtypes.FILES,
-              ...args,
-            ),
+            untypedFactory.exchangeKeyForValue(RouteParamtypes.FILES, ...args),
           ).to.be.eql(req.files);
         });
       });
       describe('not available', () => {
         it('should return null', () => {
-          expect((factory as any).exchangeKeyForValue(-1, ...args)).to.be.eql(
+          expect(untypedFactory.exchangeKeyForValue(-1, ...args)).to.be.eql(
             null,
           );
         });

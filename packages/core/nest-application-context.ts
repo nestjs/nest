@@ -9,6 +9,7 @@ import {
   Abstract,
   DynamicModule,
   GetOrResolveOptions,
+  SelectOptions,
   Type,
 } from '@nestjs/common/interfaces';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
@@ -50,7 +51,7 @@ export class NestApplicationContext<
 
   private shouldFlushLogsOnOverride = false;
   private readonly activeShutdownSignals = new Array<string>();
-  private readonly moduleCompiler = new ModuleCompiler();
+  private readonly moduleCompiler: ModuleCompiler;
   private shutdownCleanupRef?: (...args: unknown[]) => unknown;
   private _instanceLinksHost: InstanceLinksHost;
   private _moduleRefsForHooksByDistance?: Array<Module>;
@@ -66,11 +67,12 @@ export class NestApplicationContext<
   constructor(
     protected readonly container: NestContainer,
     protected readonly appOptions: TOptions = {} as TOptions,
-    private contextModule: Module = null,
+    private contextModule: Module | null = null,
     private readonly scope = new Array<Type<any>>(),
   ) {
     super();
     this.injector = new Injector();
+    this.moduleCompiler = container.getModuleCompiler();
 
     if (this.appOptions.preview) {
       this.printInPreviewModeWarning();
@@ -79,7 +81,7 @@ export class NestApplicationContext<
 
   public selectContextModule() {
     const modules = this.container.getModules().values();
-    this.contextModule = modules.next().value;
+    this.contextModule = modules.next().value!;
   }
 
   /**
@@ -88,23 +90,39 @@ export class NestApplicationContext<
    */
   public select<T>(
     moduleType: Type<T> | DynamicModule,
+    selectOptions?: SelectOptions,
   ): INestApplicationContext {
     const modulesContainer = this.container.getModules();
-    const contextModuleCtor = this.contextModule.metatype;
+    const contextModuleCtor = this.contextModule!.metatype;
     const scope = this.scope.concat(contextModuleCtor);
 
     const moduleTokenFactory = this.container.getModuleTokenFactory();
     const { type, dynamicMetadata } =
       this.moduleCompiler.extractMetadata(moduleType);
-    const token = moduleTokenFactory.create(type, dynamicMetadata);
+    const token = dynamicMetadata
+      ? moduleTokenFactory.createForDynamic(
+          type,
+          dynamicMetadata,
+          moduleType as DynamicModule,
+        )
+      : moduleTokenFactory.createForStatic(type, moduleType as Type);
 
     const selectedModule = modulesContainer.get(token);
     if (!selectedModule) {
       throw new UnknownModuleException(type.name);
     }
+
+    const options =
+      typeof selectOptions?.abortOnError !== 'undefined'
+        ? {
+            ...this.appOptions,
+            ...selectOptions,
+          }
+        : this.appOptions;
+
     return new NestApplicationContext(
       this.container,
-      this.appOptions,
+      options,
       selectedModule,
       scope,
     );
@@ -211,7 +229,7 @@ export class NestApplicationContext<
   ): Promise<TResult | Array<TResult>> {
     return this.resolvePerContext<TInput, TResult>(
       typeOrToken,
-      this.contextModule,
+      this.contextModule!,
       contextId,
       options,
     );
@@ -235,6 +253,7 @@ export class NestApplicationContext<
     if (this.isInitialized) {
       return this;
     }
+    /* eslint-disable-next-line no-async-promise-executor */
     this.initializationPromise = new Promise(async (resolve, reject) => {
       try {
         await this.callInitHook();
@@ -375,7 +394,7 @@ export class NestApplicationContext<
       return;
     }
     this.activeShutdownSignals.forEach(signal => {
-      process.removeListener(signal, this.shutdownCleanupRef);
+      process.removeListener(signal, this.shutdownCleanupRef!);
     });
   }
 
@@ -395,7 +414,10 @@ export class NestApplicationContext<
    * modules and its children.
    */
   protected async callDestroyHook(): Promise<void> {
-    const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
+    const modulesSortedByDistance = [
+      ...this.getModulesToTriggerHooksOn(),
+    ].reverse();
+
     for (const module of modulesSortedByDistance) {
       await callModuleDestroyHook(module);
     }
@@ -417,7 +439,10 @@ export class NestApplicationContext<
    * modules and children.
    */
   protected async callShutdownHook(signal?: string): Promise<void> {
-    const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
+    const modulesSortedByDistance = [
+      ...this.getModulesToTriggerHooksOn(),
+    ].reverse();
+
     for (const module of modulesSortedByDistance) {
       await callAppShutdownHook(module, signal);
     }
@@ -428,7 +453,10 @@ export class NestApplicationContext<
    * modules and children.
    */
   protected async callBeforeShutdownHook(signal?: string): Promise<void> {
-    const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
+    const modulesSortedByDistance = [
+      ...this.getModulesToTriggerHooksOn(),
+    ].reverse();
+
     for (const module of modulesSortedByDistance) {
       await callBeforeAppShutdownHook(module, signal);
     }

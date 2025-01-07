@@ -48,9 +48,9 @@ export class ValidationPipe implements PipeTransform<any> {
   protected isTransformEnabled: boolean;
   protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
-  protected transformOptions: ClassTransformOptions;
+  protected transformOptions: ClassTransformOptions | undefined;
   protected errorHttpStatusCode: ErrorHttpStatusCode;
-  protected expectedType: Type<any>;
+  protected expectedType: Type<any> | undefined;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
 
@@ -121,8 +121,7 @@ export class ValidationPipe implements PipeTransform<any> {
     const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
     this.stripProtoKeys(value);
-
-    let entity = classTransformer.plainToClass(
+    let entity = classTransformer.plainToInstance(
       metatype,
       value,
       this.transformOptions,
@@ -204,6 +203,12 @@ export class ValidationPipe implements PipeTransform<any> {
       return value === true || value === 'true';
     }
     if (metatype === Number) {
+      if (isUndefined(value)) {
+        // This is a workaround to deal with optional numeric values since
+        // optional numerics shouldn't be parsed to a valid number when
+        // they were not defined
+        return undefined;
+      }
       return +value;
     }
     if (metatype === String && !isUndefined(value)) {
@@ -212,18 +217,18 @@ export class ValidationPipe implements PipeTransform<any> {
     return value;
   }
 
-  protected toEmptyIfNil<T = any, R = any>(
+  protected toEmptyIfNil<T = any, R = T>(
     value: T,
     metatype: Type<unknown> | object,
-  ): R | {} {
+  ): R | object | string {
     if (!isNil(value)) {
-      return value;
+      return value as any as R;
     }
     if (
       typeof metatype === 'function' ||
       (metatype && 'prototype' in metatype && metatype.prototype?.constructor)
     ) {
-      return {};
+      return {} as object;
     }
     // Builder like SWC require empty string to be returned instead of an empty object
     // when the value is nil and the metatype is not a class instance, but a plain object (enum, for example).
@@ -270,7 +275,7 @@ export class ValidationPipe implements PipeTransform<any> {
       .map(error => this.mapChildrenToValidationErrors(error))
       .flatten()
       .filter(item => !!item.constraints)
-      .map(item => Object.values(item.constraints))
+      .map(item => Object.values(item.constraints!))
       .flatten()
       .toArray();
   }
@@ -282,7 +287,7 @@ export class ValidationPipe implements PipeTransform<any> {
     if (!(error.children && error.children.length)) {
       return [error];
     }
-    const validationErrors = [];
+    const validationErrors: ValidationError[] = [];
     parentPath = parentPath
       ? `${parentPath}.${error.property}`
       : error.property;

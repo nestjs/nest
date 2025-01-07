@@ -12,8 +12,8 @@ export class ExecutionContextHost implements ExecutionContext {
 
   constructor(
     private readonly args: any[],
-    private readonly constructorRef: Type<any> = null,
-    private readonly handler: Function = null,
+    private readonly constructorRef: Type<any> | null = null,
+    private readonly handler: Function | null = null,
   ) {}
 
   setType<TContext extends string = ContextType>(type: TContext) {
@@ -25,11 +25,11 @@ export class ExecutionContextHost implements ExecutionContext {
   }
 
   getClass<T = any>(): Type<T> {
-    return this.constructorRef;
+    return this.constructorRef!;
   }
 
   getHandler(): Function {
-    return this.handler;
+    return this.handler!;
   }
 
   getArgs<T extends Array<any> = any[]>(): T {

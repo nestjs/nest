@@ -14,23 +14,30 @@ import {
   lastValueFrom,
 } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
-import {
-  CANCEL_EVENT,
-  GRPC_DEFAULT_PROTO_LOADER,
-  GRPC_DEFAULT_URL,
-} from '../constants';
+import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
 import { GrpcMethodStreamingType } from '../decorators';
 import { Transport } from '../enums';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
 import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import { getGrpcPackageDefinition } from '../helpers';
-import { CustomTransportStrategy, MessageHandler } from '../interfaces';
+import { MessageHandler } from '../interfaces';
 import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
-let grpcPackage: any = {};
-let grpcProtoLoaderPackage: any = {};
+const CANCELLED_EVENT = 'cancelled';
+
+// To enable type safety for gRPC. This cant be uncommented by default
+// because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
+// Otherwise, TypeScript would fail to compile the code.
+//
+// type GrpcServer = import('@grpc/grpc-js').Server;
+// let grpcPackage = {} as typeof import('@grpc/grpc-js');
+// let grpcProtoLoaderPackage = {} as typeof import('@grpc/proto-loader');
+
+type GrpcServer = any;
+let grpcPackage = {} as any;
+let grpcProtoLoaderPackage = {} as any;
 
 interface GrpcCall<TRequest = any, TMetadata = any> {
   request: TRequest;
@@ -46,13 +53,18 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
 /**
  * @publicApi
  */
-export class ServerGrpc extends Server implements CustomTransportStrategy {
+export class ServerGrpc extends Server<never, never> {
   public readonly transportId = Transport.GRPC;
+  protected readonly url: string;
+  protected grpcClient: GrpcServer;
 
-  private readonly url: string;
-  private grpcClient: any;
+  get status(): never {
+    throw new Error(
+      'The "status" attribute is not supported by the gRPC transport',
+    );
+  }
 
-  constructor(private readonly options: GrpcOptions['options']) {
+  constructor(private readonly options: Readonly<GrpcOptions>['options']) {
     super();
     this.url = this.getOptionsProp(options, 'url') || GRPC_DEFAULT_URL;
 
@@ -85,8 +97,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
   public async start(callback?: () => void) {
     await this.bindEvents();
-    this.grpcClient.start();
-    callback();
+    callback?.();
   }
 
   public async bindEvents() {
@@ -126,7 +137,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     const service = {};
 
     for (const methodName in grpcService.prototype) {
-      let methodHandler = null;
+      let methodHandler: MessageHandler | null = null;
       let streamingType = GrpcMethodStreamingType.NO_STREAMING;
 
       const methodFunction = grpcService.prototype[methodName];
@@ -180,13 +191,13 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     methodName: string,
     streaming: GrpcMethodStreamingType,
     grpcMethod: { path?: string },
-  ) {
+  ): MessageHandler {
     let pattern = this.createPattern(serviceName, methodName, streaming);
-    let methodHandler = this.messageHandlers.get(pattern);
+    let methodHandler = this.messageHandlers.get(pattern)!;
     if (!methodHandler) {
       const packageServiceName = grpcMethod.path?.split?.('/')[1];
-      pattern = this.createPattern(packageServiceName, methodName, streaming);
-      methodHandler = this.messageHandlers.get(pattern);
+      pattern = this.createPattern(packageServiceName!, methodName, streaming);
+      methodHandler = this.messageHandlers.get(pattern)!;
     }
     return methodHandler;
   }
@@ -265,6 +276,17 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     };
   }
 
+  public unwrap<T>(): T {
+    throw new Error('Method is not supported for gRPC transport');
+  }
+
+  public on<
+    EventKey extends string | number | symbol = string | number | symbol,
+    EventCallback = any,
+  >(event: EventKey, callback: EventCallback) {
+    throw new Error('Method is not supported in gRPC mode.');
+  }
+
   /**
    * Writes an observable to a GRPC call.
    *
@@ -297,8 +319,8 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
         // Calls that are cancelled by the client should be successfully resolved here
         resolve();
       };
-      call.on(CANCEL_EVENT, cancelHandler);
-      subscription.add(() => call.off(CANCEL_EVENT, cancelHandler));
+      call.on(CANCELLED_EVENT, cancelHandler);
+      subscription.add(() => call.off(CANCELLED_EVENT, cancelHandler));
 
       // In all cases, when we finalize, end the writable stream
       // being careful that errors and writes must be emitted _before_ this call is ended
@@ -307,7 +329,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       const drain = () => {
         writing = true;
         while (valuesWaitingToBeDrained.length > 0) {
-          const value = valuesWaitingToBeDrained.shift()!;
+          const value = valuesWaitingToBeDrained.shift();
           if (writing) {
             // The first time `call.write` returns false, we need to stop.
             // It wrote the value, but it won't write anything else.
@@ -414,7 +436,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
       } else {
         const response = await lastValueFrom(
           res.pipe(
-            takeUntil(fromEvent(call as any, CANCEL_EVENT)),
+            takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
             catchError(err => {
               callback(err, null);
               return EMPTY;
@@ -613,7 +635,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
   private async createServices(grpcPkg: any, packageName: string) {
     if (!grpcPkg) {
       const invalidPackageError = new InvalidGrpcPackageException(packageName);
-      this.logger.error(invalidPackageError.message, invalidPackageError.stack);
+      this.logger.error(invalidPackageError);
       throw invalidPackageError;
     }
 
@@ -633,7 +655,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
     type DrainableSubject<T> = Subject<T> & { drainBuffer: () => void };
 
     const subject = new Subject<T>();
-    let replayBuffer = new ReplaySubject<T>();
+    let replayBuffer: ReplaySubject<T> | null = new ReplaySubject<T>();
     let hasDrained = false;
 
     function drainBuffer(this: DrainableSubject<T>) {
@@ -644,7 +666,7 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
 
       // Replay buffered values to the new subscriber
       setImmediate(() => {
-        const subcription = replayBuffer.subscribe(subject);
+        const subcription = replayBuffer!.subscribe(subject);
         subcription.unsubscribe();
         replayBuffer = null;
       });
@@ -668,24 +690,24 @@ export class ServerGrpc extends Server implements CustomTransportStrategy {
           if (hasDrained) {
             return Reflect.get(target, prop, receiver);
           }
-          return Reflect.get(replayBuffer, prop, receiver);
+          return Reflect.get(replayBuffer!, prop, receiver);
         },
       }),
       next: (value: T) => {
         if (!hasDrained) {
-          replayBuffer.next(value);
+          replayBuffer!.next(value);
         }
         subject.next(value);
       },
       error: (err: any) => {
         if (!hasDrained) {
-          replayBuffer.error(err);
+          replayBuffer!.error(err);
         }
         subject.error(err);
       },
       complete: () => {
         if (!hasDrained) {
-          replayBuffer.complete();
+          replayBuffer!.complete();
           // Replay buffer is no longer needed
           // Return early to allow subject to complete later, after the replay buffer
           // has been drained

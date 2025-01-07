@@ -23,10 +23,7 @@ describe('OnApplicationShutdown', () => {
   it('should sort modules by distance (topological sort) - DESC order', async () => {
     @Injectable()
     class BB implements OnApplicationShutdown {
-      public field: string;
-      async onApplicationShutdown() {
-        this.field = 'b-field';
-      }
+      onApplicationShutdown = Sinon.spy();
     }
 
     @Module({
@@ -37,12 +34,8 @@ describe('OnApplicationShutdown', () => {
 
     @Injectable()
     class AA implements OnApplicationShutdown {
-      public field: string;
       constructor(private bb: BB) {}
-
-      async onApplicationShutdown() {
-        this.field = this.bb.field + '_a-field';
-      }
+      onApplicationShutdown = Sinon.spy();
     }
     @Module({
       imports: [B],
@@ -58,7 +51,8 @@ describe('OnApplicationShutdown', () => {
     await app.init();
     await app.close();
 
-    const instance = module.get(AA);
-    expect(instance.field).to.equal('b-field_a-field');
+    const aa = module.get(AA);
+    const bb = module.get(BB);
+    Sinon.assert.callOrder(aa.onApplicationShutdown, bb.onApplicationShutdown);
   });
 });

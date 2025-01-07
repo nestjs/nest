@@ -4,6 +4,7 @@ import {
   GLOBAL_MODULE_METADATA,
 } from '@nestjs/common/constants';
 import { Injectable, Type } from '@nestjs/common/interfaces';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { ApplicationConfig } from '../application-config';
 import { DiscoverableMetaHostCollection } from '../discovery/discoverable-meta-host-collection';
 import {
@@ -19,16 +20,16 @@ import { ContextId } from './instance-wrapper';
 import { InternalCoreModule } from './internal-core-module/internal-core-module';
 import { InternalProvidersStorage } from './internal-providers-storage';
 import { Module } from './module';
-import { ModuleTokenFactory } from './module-token-factory';
 import { ModulesContainer } from './modules-container';
+import { ByReferenceModuleOpaqueKeyFactory } from './opaque-key-factory/by-reference-module-opaque-key-factory';
+import { DeepHashedModuleOpaqueKeyFactory } from './opaque-key-factory/deep-hashed-module-opaque-key-factory';
+import { ModuleOpaqueKeyFactory } from './opaque-key-factory/interfaces/module-opaque-key-factory.interface';
 
 type ModuleMetatype = Type<any> | DynamicModule | Promise<DynamicModule>;
 type ModuleScope = Type<any>[];
 
 export class NestContainer {
   private readonly globalModules = new Set<Module>();
-  private readonly moduleTokenFactory = new ModuleTokenFactory();
-  private readonly moduleCompiler = new ModuleCompiler(this.moduleTokenFactory);
   private readonly modules = new ModulesContainer();
   private readonly dynamicModulesMetadata = new Map<
     string,
@@ -36,11 +37,27 @@ export class NestContainer {
   >();
   private readonly internalProvidersStorage = new InternalProvidersStorage();
   private readonly _serializedGraph = new SerializedGraph();
+  private moduleCompiler: ModuleCompiler;
   private internalCoreModule: Module;
 
   constructor(
-    private readonly _applicationConfig: ApplicationConfig = undefined,
-  ) {}
+    private readonly _applicationConfig:
+      | ApplicationConfig
+      | undefined = undefined,
+    private readonly _contextOptions:
+      | NestApplicationContextOptions
+      | undefined = undefined,
+  ) {
+    const moduleOpaqueKeyFactory =
+      this._contextOptions?.moduleIdGeneratorAlgorithm === 'deep-hash'
+        ? new DeepHashedModuleOpaqueKeyFactory()
+        : new ByReferenceModuleOpaqueKeyFactory({
+            keyGenerationStrategy: this._contextOptions?.snapshot
+              ? 'shallow'
+              : 'random',
+          });
+    this.moduleCompiler = new ModuleCompiler(moduleOpaqueKeyFactory);
+  }
 
   get serializedGraph(): SerializedGraph {
     return this._serializedGraph;
@@ -87,7 +104,7 @@ export class NestContainer {
       await this.moduleCompiler.compile(metatype);
     if (this.modules.has(token)) {
       return {
-        moduleRef: this.modules.get(token),
+        moduleRef: this.modules.get(token)!,
         inserted: true,
       };
     }
@@ -142,17 +159,21 @@ export class NestContainer {
   private async setModule(
     { token, dynamicMetadata, type }: ModuleFactory,
     scope: ModuleScope,
-  ): Promise<Module | undefined> {
+  ): Promise<Module> {
     const moduleRef = new Module(type, this);
     moduleRef.token = token;
     moduleRef.initOnPreview = this.shouldInitOnPreview(type);
     this.modules.set(token, moduleRef);
 
-    const updatedScope = [].concat(scope, type);
-    await this.addDynamicMetadata(token, dynamicMetadata, updatedScope);
+    const updatedScope = ([] as ModuleScope).concat(scope, type);
+    await this.addDynamicMetadata(token, dynamicMetadata!, updatedScope);
 
     if (this.isGlobalModule(type, dynamicMetadata)) {
       moduleRef.isGlobal = true;
+
+      // Set global module distance to MAX_VALUE to ensure their lifecycle hooks
+      // are always executed first (when initializing the application)
+      moduleRef.distance = Number.MAX_VALUE;
       this.addGlobalModule(moduleRef);
     }
 
@@ -170,7 +191,7 @@ export class NestContainer {
     this.dynamicModulesMetadata.set(token, dynamicModuleMetadata);
 
     const { imports } = dynamicModuleMetadata;
-    await this.addDynamicModules(imports, scope);
+    await this.addDynamicModules(imports!, scope);
   }
 
   public async addDynamicModules(modules: any[], scope: Type<any>[]) {
@@ -202,7 +223,7 @@ export class NestContainer {
     return this.moduleCompiler;
   }
 
-  public getModuleByKey(moduleKey: string): Module {
+  public getModuleByKey(moduleKey: string): Module | undefined {
     return this.modules.get(moduleKey);
   }
 
@@ -217,10 +238,10 @@ export class NestContainer {
     if (!this.modules.has(token)) {
       return;
     }
-    const moduleRef = this.modules.get(token);
+    const moduleRef = this.modules.get(token)!;
     const { token: relatedModuleToken } =
       await this.moduleCompiler.compile(relatedModule);
-    const related = this.modules.get(relatedModuleToken);
+    const related = this.modules.get(relatedModuleToken)!;
     moduleRef.addImport(related);
   }
 
@@ -236,7 +257,7 @@ export class NestContainer {
     if (!moduleRef) {
       throw new UnknownModuleException();
     }
-    const providerKey = moduleRef.addProvider(provider, enhancerSubtype);
+    const providerKey = moduleRef.addProvider(provider, enhancerSubtype!);
     const providerRef = moduleRef.getProviderByKey(providerKey);
 
     DiscoverableMetaHostCollection.inspectProvider(this.modules, providerRef);
@@ -253,26 +274,29 @@ export class NestContainer {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
-    const moduleRef = this.modules.get(token);
+    const moduleRef = this.modules.get(token)!;
     return moduleRef.addInjectable(injectable, enhancerSubtype, host);
   }
 
-  public addExportedProvider(provider: Type<any>, token: string) {
+  public addExportedProviderOrModule(
+    toExport: Type<any> | DynamicModule,
+    token: string,
+  ) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
-    const moduleRef = this.modules.get(token);
-    moduleRef.addExportedProvider(provider);
+    const moduleRef = this.modules.get(token)!;
+    moduleRef.addExportedProviderOrModule(toExport);
   }
 
   public addController(controller: Type<any>, token: string) {
     if (!this.modules.has(token)) {
       throw new UnknownModuleException();
     }
-    const moduleRef = this.modules.get(token);
+    const moduleRef = this.modules.get(token)!;
     moduleRef.addController(controller);
 
-    const controllerRef = moduleRef.controllers.get(controller);
+    const controllerRef = moduleRef.controllers.get(controller)!;
     DiscoverableMetaHostCollection.inspectController(
       this.modules,
       controllerRef,
@@ -283,7 +307,7 @@ export class NestContainer {
     this.modules.clear();
   }
 
-  public replace(toReplace: any, options: any & { scope: any[] | null }) {
+  public replace(toReplace: any, options: { scope: any[] | null }) {
     this.modules.forEach(moduleRef => moduleRef.replace(toReplace, options));
   }
 
@@ -321,8 +345,8 @@ export class NestContainer {
     this.modules[InternalCoreModule.name] = moduleRef;
   }
 
-  public getModuleTokenFactory(): ModuleTokenFactory {
-    return this.moduleTokenFactory;
+  public getModuleTokenFactory(): ModuleOpaqueKeyFactory {
+    return this.moduleCompiler.moduleOpaqueKeyFactory;
   }
 
   public registerRequestProvider<T = any>(request: T, contextId: ContextId) {

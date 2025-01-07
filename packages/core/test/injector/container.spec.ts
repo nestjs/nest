@@ -9,6 +9,7 @@ import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
 
 describe('NestContainer', () => {
   let container: NestContainer;
+  let untypedContainer: any;
 
   @Module({})
   class TestModule {}
@@ -19,6 +20,7 @@ describe('NestContainer', () => {
 
   beforeEach(() => {
     container = new NestContainer();
+    untypedContainer = container as any;
   });
 
   it('should "addProvider" throw "UnknownModuleException" when module is not stored in collection', () => {
@@ -28,32 +30,32 @@ describe('NestContainer', () => {
   });
 
   it('should "addProvider" throw "CircularDependencyException" when provider is nil', () => {
-    expect(() => container.addProvider(null, 'TestModule')).throw(
+    expect(() => container.addProvider(null!, 'TestModule')).throw(
       CircularDependencyException,
     );
   });
 
   it('should "addController" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addController(null, 'TestModule')).throw(
+    expect(() => container.addController(null!, 'TestModule')).throw(
       UnknownModuleException,
     );
   });
 
-  it('should "addExportedProvider" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addExportedProvider(null, 'TestModule')).throw(
-      UnknownModuleException,
-    );
+  it('should "addExportedProviderOrModule" throw "UnknownModuleException" when module is not stored in collection', () => {
+    expect(() =>
+      container.addExportedProviderOrModule(null!, 'TestModule'),
+    ).throw(UnknownModuleException);
   });
 
   it('should "addInjectable" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addInjectable(null, 'TestModule', null)).throw(
+    expect(() => container.addInjectable(null!, 'TestModule', null!)).throw(
       UnknownModuleException,
     );
   });
 
   describe('clear', () => {
     it('should call `clear` on modules collection', () => {
-      const clearSpy = sinon.spy((container as any).modules, 'clear');
+      const clearSpy = sinon.spy(untypedContainer.modules, 'clear');
       container.clear();
       expect(clearSpy.called).to.be.true;
     });
@@ -63,7 +65,7 @@ describe('NestContainer', () => {
     it('should not add module if already exists in collection', async () => {
       const modules = new Map();
       const setSpy = sinon.spy(modules, 'set');
-      (container as any).modules = modules;
+      untypedContainer.modules = modules;
 
       await container.addModule(TestModule as any, []);
       await container.addModule(TestModule as any, []);
@@ -72,7 +74,7 @@ describe('NestContainer', () => {
     });
 
     it('should throw an exception when metatype is not defined', () => {
-      expect(container.addModule(undefined, [])).to.eventually.throws();
+      expect(container.addModule(undefined!, [])).to.eventually.throws();
     });
 
     it('should add global module when module is global', async () => {
@@ -89,7 +91,7 @@ describe('NestContainer', () => {
 
       const modules = new Map();
       const setSpy = sinon.spy(modules, 'set');
-      (container as any).modules = modules;
+      untypedContainer.modules = modules;
 
       await container.addModule(TestModule as any, []);
       await container.replaceModule(
@@ -102,7 +104,7 @@ describe('NestContainer', () => {
     });
 
     it('should throw an exception when metatype is not defined', () => {
-      expect(container.addModule(undefined, [])).to.eventually.throws();
+      expect(container.addModule(undefined!, [])).to.eventually.throws();
     });
 
     it('should add global module when module is global', async () => {
@@ -154,7 +156,7 @@ describe('NestContainer', () => {
     describe('when "module" is not "globalModule"', () => {
       it('should call "addImport"', () => {
         const module = { addImport: sinon.spy() };
-        container.bindGlobalModuleToModule(module as any, null);
+        container.bindGlobalModuleToModule(module as any, null!);
         expect(module.addImport.calledOnce).to.be.true;
       });
     });
@@ -174,21 +176,21 @@ describe('NestContainer', () => {
     beforeEach(() => {
       token = 'token';
       collection = new Map();
-      (container as any).dynamicModulesMetadata = collection;
+      untypedContainer.dynamicModulesMetadata = collection;
     });
     describe('when dynamic metadata exists', () => {
-      it('should add to the dynamic metadata collection', () => {
+      it('should add to the dynamic metadata collection', async () => {
         const addSpy = sinon.spy(collection, 'set');
-        const dynamicMetadata = { module: null };
+        const dynamicMetadata = { module: null! };
 
-        container.addDynamicMetadata(token, dynamicMetadata, []);
+        await container.addDynamicMetadata(token, dynamicMetadata, []);
         expect(addSpy.calledWith(token, dynamicMetadata)).to.be.true;
       });
     });
     describe('when dynamic metadata does not exists', () => {
-      it('should not add to the dynamic metadata collection', () => {
+      it('should not add to the dynamic metadata collection', async () => {
         const addSpy = sinon.spy(collection, 'set');
-        container.addDynamicMetadata(token, null, []);
+        await container.addDynamicMetadata(token, null!, []);
         expect(addSpy.called).to.be.false;
       });
     });
@@ -197,16 +199,16 @@ describe('NestContainer', () => {
   class Test {}
   describe('addDynamicModules', () => {
     describe('when array is empty/undefined', () => {
-      it('should not call "addModule"', () => {
+      it('should not call "addModule"', async () => {
         const addModuleSpy = sinon.spy(container, 'addModule');
-        container.addDynamicModules(undefined, []);
+        await container.addDynamicModules(undefined!, []);
         expect(addModuleSpy.called).to.be.false;
       });
     });
     describe('when array is not empty/undefined', () => {
-      it('should call "addModule"', () => {
+      it('should call "addModule"', async () => {
         const addModuleSpy = sinon.spy(container, 'addModule');
-        container.addDynamicModules([Test] as any, []);
+        await container.addDynamicModules([Test] as any, []);
         expect(addModuleSpy.called).to.be.true;
       });
     });
@@ -215,7 +217,7 @@ describe('NestContainer', () => {
   describe('get applicationConfig', () => {
     it('should return ApplicationConfig instance', () => {
       expect(container.applicationConfig).to.be.eql(
-        (container as any)._applicationConfig,
+        untypedContainer._applicationConfig,
       );
     });
   });
@@ -225,7 +227,7 @@ describe('NestContainer', () => {
       const httpAdapter = new NoopHttpAdapter({});
       container.setHttpAdapter(httpAdapter);
 
-      const internalStorage = (container as any).internalProvidersStorage;
+      const internalStorage = untypedContainer.internalProvidersStorage;
       expect(internalStorage.httpAdapter).to.be.eql(httpAdapter);
     });
   });
@@ -244,7 +246,7 @@ describe('NestContainer', () => {
     it('should register core module ref', () => {
       const ref = {} as any;
       container.registerCoreModuleRef(ref);
-      expect((container as any).internalCoreModule).to.be.eql(ref);
+      expect(untypedContainer.internalCoreModule).to.be.eql(ref);
     });
   });
 });

@@ -50,7 +50,7 @@ export class ApplicationConfig {
   }
 
   public getIoAdapter(): WebSocketAdapter {
-    return this.ioAdapter;
+    return this.ioAdapter!;
   }
 
   public addGlobalPipe(pipe: PipeTransform<any>) {

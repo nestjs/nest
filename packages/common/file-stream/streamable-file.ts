@@ -1,9 +1,9 @@
 import { Readable } from 'stream';
 import { types } from 'util';
 import { HttpStatus } from '../enums';
+import { Logger } from '../services';
 import { isFunction } from '../utils/shared.utils';
 import { StreamableFileOptions, StreamableHandlerResponse } from './interfaces';
-import { Logger } from '../services';
 
 /**
  * @see [Streaming files](https://docs.nestjs.com/techniques/streaming-files)
@@ -31,7 +31,7 @@ export class StreamableFile {
   };
 
   protected logError: (err: Error) => void = (err: Error) => {
-    this.logger.error(err.message, err.stack);
+    this.logger.error(err);
   };
 
   constructor(buffer: Uint8Array, options?: StreamableFileOptions);

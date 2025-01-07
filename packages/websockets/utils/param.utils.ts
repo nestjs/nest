@@ -11,12 +11,13 @@ export function createWsParamDecorator(
   return (...pipes: (Type<PipeTransform> | PipeTransform)[]) =>
     (target, key, index) => {
       const args =
-        Reflect.getMetadata(PARAM_ARGS_METADATA, target.constructor, key) || {};
+        Reflect.getMetadata(PARAM_ARGS_METADATA, target.constructor, key!) ||
+        {};
       Reflect.defineMetadata(
         PARAM_ARGS_METADATA,
         assignMetadata(args, paramtype, index, undefined, ...pipes),
         target.constructor,
-        key,
+        key!,
       );
     };
 }
@@ -29,15 +30,15 @@ export const createPipesWsParamDecorator =
   ): ParameterDecorator =>
   (target, key, index) => {
     const args =
-      Reflect.getMetadata(PARAM_ARGS_METADATA, target.constructor, key) || {};
+      Reflect.getMetadata(PARAM_ARGS_METADATA, target.constructor, key!) || {};
     const hasParamData = isNil(data) || isString(data);
     const paramData = hasParamData ? data : undefined;
     const paramPipes = hasParamData ? pipes : [data, ...pipes];
 
     Reflect.defineMetadata(
       PARAM_ARGS_METADATA,
-      assignMetadata(args, paramtype, index, paramData, ...paramPipes),
+      assignMetadata(args, paramtype, index, paramData!, ...paramPipes),
       target.constructor,
-      key,
+      key!,
     );
   };

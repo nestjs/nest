@@ -78,7 +78,7 @@ export class RouterModule {
   private updateTargetModulesCache(moduleCtor: Type<unknown>) {
     let moduleClassSet: WeakSet<ModuleClass>;
     if (targetModulesByContainer.has(this.modulesContainer)) {
-      moduleClassSet = targetModulesByContainer.get(this.modulesContainer);
+      moduleClassSet = targetModulesByContainer.get(this.modulesContainer)!;
     } else {
       moduleClassSet = new WeakSet<ModuleClass>();
       targetModulesByContainer.set(this.modulesContainer, moduleClassSet);

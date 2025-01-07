@@ -42,14 +42,16 @@ export class GuardsContextCreator extends ContextCreator {
     inquirerId?: string,
   ): R {
     if (isEmpty(metadata)) {
-      return [] as R;
+      return [] as unknown[] as R;
     }
     return iterate(metadata)
       .filter((guard: any) => guard && (guard.name || guard.canActivate))
       .map(guard =>
         this.getGuardInstance(guard as Function, contextId, inquirerId),
       )
-      .filter((guard: CanActivate) => guard && isFunction(guard.canActivate))
+      .filter(
+        (guard: CanActivate | null) => !!guard && isFunction(guard.canActivate),
+      )
       .toArray() as R;
   }
 
@@ -58,7 +60,7 @@ export class GuardsContextCreator extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): CanActivate | null {
-    const isObject = (metatype as CanActivate).canActivate;
+    const isObject = !!(metatype as CanActivate).canActivate;
     if (isObject) {
       return metatype as CanActivate;
     }
@@ -95,7 +97,7 @@ export class GuardsContextCreator extends ContextCreator {
     inquirerId?: string,
   ): T {
     if (!this.config) {
-      return [] as T;
+      return [] as unknown[] as T;
     }
     const globalGuards = this.config.getGlobalGuards() as T;
     if (contextId === STATIC_CONTEXT && !inquirerId) {

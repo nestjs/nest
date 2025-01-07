@@ -8,13 +8,20 @@ import {
   Observable,
   ObservedValueOf,
   of,
+  ReplaySubject,
   Subject,
   Subscription,
 } from 'rxjs';
-import { catchError, finalize, mergeMap } from 'rxjs/operators';
+import {
+  catchError,
+  distinctUntilChanged,
+  finalize,
+  mergeMap,
+} from 'rxjs/operators';
 import { NO_EVENT_HANDLER } from '../constants';
 import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
+import { Transport } from '../enums';
 import {
   ClientOptions,
   KafkaOptions,
@@ -37,11 +44,52 @@ import { transformPatternToRoute } from '../utils';
 /**
  * @publicApi
  */
-export abstract class Server {
+export abstract class Server<
+  EventsMap extends Record<string, Function> = Record<string, Function>,
+  Status extends string = string,
+> {
+  /**
+   * Unique transport identifier.
+   */
+  readonly transportId?: Transport | symbol;
+
   protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger: LoggerService = new Logger(Server.name);
   protected serializer: ConsumerSerializer;
   protected deserializer: ConsumerDeserializer;
+  protected _status$ = new ReplaySubject<Status>(1);
+
+  /**
+   * Returns an observable that emits status changes.
+   */
+  public get status(): Observable<Status> {
+    return this._status$.asObservable().pipe(distinctUntilChanged());
+  }
+
+  /**
+   * Registers an event listener for the given event.
+   * @param event Event name
+   * @param callback Callback to be executed when the event is emitted
+   */
+  public abstract on<
+    EventKey extends keyof EventsMap = keyof EventsMap,
+    EventCallback extends EventsMap[EventKey] = EventsMap[EventKey],
+  >(event: EventKey, callback: EventCallback): any;
+  /**
+   * Returns an instance of the underlying server/broker instance,
+   * or a group of servers if there are more than one.
+   */
+  public abstract unwrap<T>(): T;
+
+  /**
+   * Method called when server is being initialized.
+   * @param callback Function to be called upon initialization
+   */
+  public abstract listen(callback: (...optionalParams: unknown[]) => any): any;
+  /**
+   * Method called when server is being terminated.
+   */
+  public abstract close(): any;
 
   public addHandler(
     pattern: any,
@@ -54,7 +102,7 @@ export abstract class Server {
     callback.extras = extras;
 
     if (this.messageHandlers.has(normalizedPattern) && isEventHandler) {
-      const headRef = this.messageHandlers.get(normalizedPattern);
+      const headRef = this.messageHandlers.get(normalizedPattern)!;
       const getTail = (handler: MessageHandler) =>
         handler?.next ? getTail(handler.next) : handler;
 
@@ -72,20 +120,21 @@ export abstract class Server {
   public getHandlerByPattern(pattern: string): MessageHandler | null {
     const route = this.getRouteFromPattern(pattern);
     return this.messageHandlers.has(route)
-      ? this.messageHandlers.get(route)
+      ? this.messageHandlers.get(route)!
       : null;
   }
 
   public send(
     stream$: Observable<any>,
-    respond: (data: WritePacket) => unknown | Promise<unknown>,
+    respond: (data: WritePacket) => Promise<unknown> | void,
   ): Subscription {
-    let dataBuffer: WritePacket[] = null;
+    let dataBuffer: WritePacket[] | null = null;
+
     const scheduleOnNextTick = (data: WritePacket) => {
       if (!dataBuffer) {
         dataBuffer = [data];
         process.nextTick(async () => {
-          for (const item of dataBuffer) {
+          for (const item of dataBuffer!) {
             await respond(item);
           }
           dataBuffer = null;
@@ -149,10 +198,28 @@ export abstract class Server {
   }
 
   public getOptionsProp<
-    T extends MicroserviceOptions['options'],
-    K extends keyof T,
-  >(obj: T, prop: K, defaultValue: T[K] = undefined) {
-    return obj && prop in obj ? obj[prop] : defaultValue;
+    Options extends MicroserviceOptions['options'],
+    Attribute extends keyof Options,
+  >(obj: Options, prop: Attribute): Options[Attribute];
+  public getOptionsProp<
+    Options extends MicroserviceOptions['options'],
+    Attribute extends keyof Options,
+    DefaultValue extends Options[Attribute] = Options[Attribute],
+  >(
+    obj: Options,
+    prop: Attribute,
+    defaultValue: DefaultValue,
+  ): Required<Options>[Attribute];
+  public getOptionsProp<
+    Options extends MicroserviceOptions['options'],
+    Attribute extends keyof Options,
+    DefaultValue extends Options[Attribute] = Options[Attribute],
+  >(
+    obj: Options,
+    prop: Attribute,
+    defaultValue: DefaultValue = undefined as DefaultValue,
+  ) {
+    return obj && prop in obj ? (obj as any)[prop] : defaultValue;
   }
 
   protected handleError(error: string) {
@@ -170,30 +237,26 @@ export abstract class Server {
   protected initializeSerializer(options: ClientOptions['options']) {
     this.serializer =
       (options &&
-        (
-          options as
-            | RedisOptions['options']
-            | NatsOptions['options']
-            | MqttOptions['options']
-            | TcpOptions['options']
-            | RmqOptions['options']
-            | KafkaOptions['options']
-        ).serializer) ||
+        (options as
+          | RedisOptions['options']
+          | NatsOptions['options']
+          | MqttOptions['options']
+          | TcpOptions['options']
+          | RmqOptions['options']
+          | KafkaOptions['options'])!.serializer) ||
       new IdentitySerializer();
   }
 
   protected initializeDeserializer(options: ClientOptions['options']) {
     this.deserializer =
-      (options &&
-        (
-          options as
-            | RedisOptions['options']
-            | NatsOptions['options']
-            | MqttOptions['options']
-            | TcpOptions['options']
-            | RmqOptions['options']
-            | KafkaOptions['options']
-        ).deserializer) ||
+      (options! &&
+        (options as
+          | RedisOptions['options']
+          | NatsOptions['options']
+          | MqttOptions['options']
+          | TcpOptions['options']
+          | RmqOptions['options']
+          | KafkaOptions['options'])!.deserializer) ||
       new IncomingRequestDeserializer();
   }
 

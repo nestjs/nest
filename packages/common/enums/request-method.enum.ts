@@ -8,4 +8,11 @@ export enum RequestMethod {
   OPTIONS,
   HEAD,
   SEARCH,
+  PROPFIND,
+  PROPPATCH,
+  MKCOL,
+  COPY,
+  MOVE,
+  LOCK,
+  UNLOCK,
 }

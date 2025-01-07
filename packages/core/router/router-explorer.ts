@@ -10,7 +10,7 @@ import {
   addLeadingSlash,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
-import * as pathToRegexp from 'path-to-regexp';
+import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer, GuardsContextCreator } from '../guards';
@@ -26,15 +26,15 @@ import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
-import {
-  InterceptorsConsumer,
-  InterceptorsContextCreator,
-} from '../interceptors';
 import { GraphInspector } from '../inspector/graph-inspector';
 import {
   Entrypoint,
   HttpEntrypointMetadata,
 } from '../inspector/interfaces/entrypoint.interface';
+import {
+  InterceptorsConsumer,
+  InterceptorsContextCreator,
+} from '../interceptors';
 import { MetadataScanner } from '../metadata-scanner';
 import { PipesConsumer, PipesContextCreator } from '../pipes';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
@@ -177,7 +177,7 @@ export class RouterExplorer {
       ? this.createRequestScopedHandler(
           instanceWrapper,
           requestMethod,
-          this.container.getModuleByKey(moduleKey),
+          this.container.getModuleByKey(moduleKey)!,
           moduleKey,
           methodName,
         )
@@ -198,7 +198,7 @@ export class RouterExplorer {
     paths.forEach(path => {
       if (
         isVersioned &&
-        routePathMetadata.versioningOptions.type !== VersioningType.URI
+        routePathMetadata.versioningOptions!.type !== VersioningType.URI
       ) {
         // All versioning (except for URI Versioning) is done via the "Version Filter"
         routeHandler = this.applyVersionFilter(
@@ -225,14 +225,16 @@ export class RouterExplorer {
             requestMethod: RequestMethod[
               requestMethod
             ] as keyof typeof RequestMethod,
-            methodVersion: routePathMetadata.methodVersion as VersionValue,
-            controllerVersion:
-              routePathMetadata.controllerVersion as VersionValue,
+            methodVersion: routePathMetadata.methodVersion,
+            controllerVersion: routePathMetadata.controllerVersion,
           },
         };
 
         this.copyMetadataToCallback(targetCallback, routeHandler);
-        routerMethodRef(path, routeHandler);
+        const normalizedPath = router.normalizePath
+          ? router.normalizePath(path)
+          : path;
+        routerMethodRef(normalizedPath, routeHandler);
 
         this.graphInspector.insertEntrypointDefinition<HttpEntrypointMetadata>(
           entrypointDefinition,
@@ -251,7 +253,7 @@ export class RouterExplorer {
         if (isVersioned) {
           const version = this.routePathFactory.getVersion(routePathMetadata);
           this.logger.log(
-            VERSIONED_ROUTE_MAPPED_MESSAGE(path, requestMethod, version),
+            VERSIONED_ROUTE_MAPPED_MESSAGE(path, requestMethod, version!),
           );
         } else {
           this.logger.log(ROUTE_MAPPED_MESSAGE(path, requestMethod));
@@ -271,9 +273,19 @@ export class RouterExplorer {
     const httpAdapterRef = this.container.getHttpAdapterRef();
     const hosts = Array.isArray(host) ? host : [host];
     const hostRegExps = hosts.map((host: string | RegExp) => {
-      const keys = [];
-      const regexp = pathToRegexp(host, keys);
-      return { regexp, keys };
+      if (typeof host === 'string') {
+        try {
+          return pathToRegexp(host);
+        } catch (e) {
+          if (e instanceof TypeError) {
+            this.logger.error(
+              `Unsupported host "${host}" syntax. In past releases, ?, *, and + were used to denote optional or repeating path parameters. The latest version of "path-to-regexp" now requires the use of named parameters. For example, instead of using a route like /users/* to capture all routes starting with "/users", you should use /users/*path. Please see the migration guide for more information.`,
+            );
+          }
+          throw e;
+        }
+      }
+      return { regexp: host, keys: [] };
     });
 
     const unsupportedFilteringErrorMessage = Array.isArray(host)
@@ -317,11 +329,11 @@ export class RouterExplorer {
     routePathMetadata: RoutePathMetadata,
     handler: Function,
   ) {
-    const version = this.routePathFactory.getVersion(routePathMetadata);
+    const version = this.routePathFactory.getVersion(routePathMetadata)!;
     return router.applyVersionFilter(
       handler,
       version,
-      routePathMetadata.versioningOptions,
+      routePathMetadata.versioningOptions!,
     );
   }
 

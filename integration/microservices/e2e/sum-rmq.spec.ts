@@ -85,7 +85,7 @@ describe('RabbitMQ transport', () => {
   }).timeout(10000);
 
   it(`/POST (event notification)`, done => {
-    request(server)
+    void request(server)
       .post('/notify')
       .send([1, 2, 3, 4, 5])
       .end(() => {

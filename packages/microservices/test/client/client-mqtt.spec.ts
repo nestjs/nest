@@ -2,13 +2,14 @@ import { expect } from 'chai';
 import { EMPTY } from 'rxjs';
 import * as sinon from 'sinon';
 import { ClientMqtt } from '../../client/client-mqtt';
-import { ERROR_EVENT } from '../../constants';
+import { MqttEventsMap } from '../../events/mqtt.events';
 import { ReadPacket } from '../../interfaces';
 import { MqttRecord } from '../../record-builders';
 
 describe('ClientMqtt', () => {
   const test = 'test';
   let client: ClientMqtt = new ClientMqtt({});
+  let untypedClient = client as any;
 
   describe('getRequestPattern', () => {
     it(`should leave pattern as it is`, () => {
@@ -31,11 +32,13 @@ describe('ClientMqtt', () => {
       unsubscribeSpy: sinon.SinonSpy,
       connectSpy: sinon.SinonStub,
       assignStub: sinon.SinonStub,
-      mqttClient;
+      mqttClient: any;
 
     const id = '1';
     beforeEach(() => {
       client = new ClientMqtt({});
+      untypedClient = client as any;
+
       msg = { pattern, data: 'data' };
       subscribeSpy = sinon.spy((name, fn) => fn());
       publishSpy = sinon.spy();
@@ -51,26 +54,26 @@ describe('ClientMqtt', () => {
         publish: publishSpy,
         addListener: () => ({}),
       };
-      (client as any).mqttClient = mqttClient;
+      untypedClient.mqttClient = mqttClient;
       connectSpy = sinon.stub(client, 'connect');
       assignStub = sinon
         .stub(client, 'assignPacketId' as any)
-        .callsFake(packet => Object.assign(packet, { id }));
+        .callsFake(packet => Object.assign(packet as object, { id }));
     });
     afterEach(() => {
       connectSpy.restore();
       assignStub.restore();
     });
     it('should subscribe to response pattern name', async () => {
-      await client['publish'](msg, () => {});
+      client['publish'](msg, () => {});
       expect(subscribeSpy.calledWith(`${pattern}/reply`)).to.be.true;
     });
     it('should publish stringified message to request pattern name', async () => {
-      await client['publish'](msg, () => {});
+      client['publish'](msg, () => {});
       expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).to.be.true;
     });
     it('should add callback to routing map', async () => {
-      await client['publish'](msg, () => {});
+      client['publish'](msg, () => {});
       expect(client['routingMap'].has(id)).to.be.true;
     });
     describe('on error', () => {
@@ -100,7 +103,7 @@ describe('ClientMqtt', () => {
         getResponsePatternStub = sinon
           .stub(client, 'getResponsePattern')
           .callsFake(() => channel);
-        subscription = await client['publish'](msg, callback);
+        subscription = client['publish'](msg, callback);
         subscription(channel, JSON.stringify({ isDisposed: true, id }));
       });
       afterEach(() => {
@@ -116,7 +119,7 @@ describe('ClientMqtt', () => {
     });
     describe('headers', () => {
       it('should not generate headers if none are configured', async () => {
-        await client['publish'](msg, () => {});
+        client['publish'](msg, () => {});
         expect(publishSpy.getCall(0).args[2]).to.be.undefined;
       });
       it('should send packet headers', async () => {
@@ -125,21 +128,21 @@ describe('ClientMqtt', () => {
           properties: { userProperties: requestHeaders },
         });
 
-        await client['publish'](msg, () => {});
+        client['publish'](msg, () => {});
         expect(publishSpy.getCall(0).args[2].properties.userProperties).to.eql(
           requestHeaders,
         );
       });
       it('should combine packet and static headers', async () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.userProperties = staticHeaders;
+        untypedClient.options.userProperties = staticHeaders;
 
         const requestHeaders = { '1': '123' };
         msg.data = new MqttRecord('data', {
           properties: { userProperties: requestHeaders },
         });
 
-        await client['publish'](msg, () => {});
+        client['publish'](msg, () => {});
         expect(publishSpy.getCall(0).args[2].properties.userProperties).to.eql({
           ...staticHeaders,
           ...requestHeaders,
@@ -147,14 +150,14 @@ describe('ClientMqtt', () => {
       });
       it('should prefer packet headers over static headers', async () => {
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = { 'client-id': 'override-client-id' };
         msg.data = new MqttRecord('data', {
           properties: { userProperties: requestHeaders },
         });
 
-        await client['publish'](msg, () => {});
+        client['publish'](msg, () => {});
         expect(publishSpy.getCall(0).args[2].properties.userProperties).to.eql(
           requestHeaders,
         );
@@ -231,21 +234,21 @@ describe('ClientMqtt', () => {
     let endSpy: sinon.SinonSpy;
     beforeEach(() => {
       endSpy = sinon.spy();
-      (client as any).mqttClient = { end: endSpy };
+      untypedClient.mqttClient = { endAsync: endSpy };
     });
-    it('should close "pub" when it is not null', () => {
-      client.close();
+    it('should close "pub" when it is not null', async () => {
+      await client.close();
       expect(endSpy.called).to.be.true;
     });
-    it('should not close "pub" when it is null', () => {
-      (client as any).mqttClient = null;
-      client.close();
+    it('should not close "pub" when it is null', async () => {
+      untypedClient.mqttClient = null;
+      await client.close();
       expect(endSpy.called).to.be.false;
     });
   });
   describe('connect', () => {
     let createClientStub: sinon.SinonStub;
-    let handleErrorsSpy: sinon.SinonSpy;
+    let registerErrorListenerSpy: sinon.SinonSpy;
     let connect$Stub: sinon.SinonStub;
     let mergeCloseEvent: sinon.SinonStub;
 
@@ -255,9 +258,10 @@ describe('ClientMqtt', () => {
           ({
             addListener: () => ({}),
             removeListener: () => ({}),
+            on: () => ({}),
           }) as any,
       );
-      handleErrorsSpy = sinon.spy(client, 'handleError');
+      registerErrorListenerSpy = sinon.spy(client, 'registerErrorListener');
       connect$Stub = sinon.stub(client, 'connect$' as any).callsFake(() => ({
         subscribe: ({ complete }) => complete(),
         pipe() {
@@ -270,7 +274,7 @@ describe('ClientMqtt', () => {
     });
     afterEach(() => {
       createClientStub.restore();
-      handleErrorsSpy.restore();
+      registerErrorListenerSpy.restore();
       connect$Stub.restore();
       mergeCloseEvent.restore();
     });
@@ -279,8 +283,8 @@ describe('ClientMqtt', () => {
         client['mqttClient'] = null;
         await client.connect();
       });
-      it('should call "handleError" once', async () => {
-        expect(handleErrorsSpy.called).to.be.true;
+      it('should call "registerErrorListener" once', async () => {
+        expect(registerErrorListenerSpy.called).to.be.true;
       });
       it('should call "createClient" once', async () => {
         expect(createClientStub.called).to.be.true;
@@ -296,8 +300,8 @@ describe('ClientMqtt', () => {
       it('should not call "createClient"', () => {
         expect(createClientStub.called).to.be.false;
       });
-      it('should not call "handleError"', () => {
-        expect(handleErrorsSpy.called).to.be.false;
+      it('should not call "registerErrorListener"', () => {
+        expect(registerErrorListenerSpy.called).to.be.false;
       });
       it('should not call "connect$"', () => {
         expect(connect$Stub.called).to.be.false;
@@ -311,19 +315,59 @@ describe('ClientMqtt', () => {
         on: (ev, callback) => callback(error),
         off: () => ({}),
       };
-      client.mergeCloseEvent(instance as any, EMPTY).subscribe({
+      client.mergeCloseEvent(instance, EMPTY).subscribe({
         error: (err: any) => expect(err).to.be.eql(error),
       });
     });
   });
-  describe('handleError', () => {
+  describe('registerErrorListener', () => {
     it('should bind error event handler', () => {
       const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
       const emitter = {
-        addListener: callback,
+        on: callback,
       };
-      client.handleError(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(ERROR_EVENT);
+      client.registerErrorListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(MqttEventsMap.ERROR);
+    });
+  });
+  describe('registerConnectListener', () => {
+    it('should bind connect event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        on: callback,
+      };
+      client.registerConnectListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(MqttEventsMap.CONNECT);
+    });
+  });
+  describe('registerDisconnectListener', () => {
+    it('should bind disconnect event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        on: callback,
+      };
+      client.registerDisconnectListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(MqttEventsMap.DISCONNECT);
+    });
+  });
+  describe('registerOfflineListener', () => {
+    it('should bind offline event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        on: callback,
+      };
+      client.registerOfflineListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(MqttEventsMap.OFFLINE);
+    });
+  });
+  describe('registerCloseListener', () => {
+    it('should bind close event handler', () => {
+      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const emitter = {
+        on: callback,
+      };
+      client.registerCloseListener(emitter as any);
+      expect(callback.getCall(0).args[0]).to.be.eql(MqttEventsMap.CLOSE);
     });
   });
   describe('dispatchEvent', () => {
@@ -332,12 +376,14 @@ describe('ClientMqtt', () => {
 
     beforeEach(() => {
       client = new ClientMqtt({});
+      untypedClient = client as any;
+
       msg = { pattern: 'pattern', data: 'data' };
       publishStub = sinon.stub();
       mqttClient = {
         publish: publishStub,
       };
-      (client as any).mqttClient = mqttClient;
+      untypedClient.mqttClient = mqttClient;
     });
 
     it('should publish packet', async () => {
@@ -373,7 +419,7 @@ describe('ClientMqtt', () => {
       it('should combine packet and static headers', async () => {
         publishStub.callsFake((a, b, c, d) => d());
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.userProperties = staticHeaders;
+        untypedClient.options.userProperties = staticHeaders;
 
         const requestHeaders = { '1': '123' };
         msg.data = new MqttRecord('data', {
@@ -391,7 +437,7 @@ describe('ClientMqtt', () => {
       it('should prefer packet headers over static headers', async () => {
         publishStub.callsFake((a, b, c, d) => d());
         const staticHeaders = { 'client-id': 'some-client-id' };
-        (client as any).options.headers = staticHeaders;
+        untypedClient.options.headers = staticHeaders;
 
         const requestHeaders = { 'client-id': 'override-client-id' };
         msg.data = new MqttRecord('data', {

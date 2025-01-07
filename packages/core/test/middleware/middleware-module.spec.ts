@@ -91,7 +91,7 @@ describe('MiddlewareModule', () => {
         configureSpy.calledWith(
           new MiddlewareBuilder(
             (middlewareModule as any).routesMapper,
-            undefined,
+            undefined!,
             new RouteInfoPathExtractor(new ApplicationConfig()),
           ),
         ),

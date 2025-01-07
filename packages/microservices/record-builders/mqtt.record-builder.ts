@@ -18,9 +18,9 @@ export interface MqttRecordOptions {
    *  MQTT 5.0 properties object
    */
   properties?: {
-    payloadFormatIndicator?: number;
+    payloadFormatIndicator?: boolean;
     messageExpiryInterval?: number;
-    topicAlias?: string;
+    topicAlias?: number;
     responseTopic?: string;
     correlationData?: Buffer;
     userProperties?: Record<string, string | string[]>;

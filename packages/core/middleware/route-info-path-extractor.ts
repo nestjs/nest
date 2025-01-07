@@ -25,7 +25,7 @@ export class RouteInfoPathExtractor {
       addLeadingSlash(this.applicationConfig.getGlobalPrefix()),
     );
     this.excludedGlobalPrefixRoutes =
-      this.applicationConfig.getGlobalPrefixOptions().exclude;
+      this.applicationConfig.getGlobalPrefixOptions().exclude!;
     this.versioningConfig = this.applicationConfig.getVersioning();
   }
 
@@ -48,9 +48,13 @@ export class RouteInfoPathExtractor {
       return Array.isArray(this.excludedGlobalPrefixRoutes)
         ? [
             ...entries,
-            ...this.excludedGlobalPrefixRoutes.map(
-              route => versionPaths + addLeadingSlash(route.path),
-            ),
+            ...this.excludedGlobalPrefixRoutes
+              .map(route =>
+                Array.isArray(versionPaths) && versionPaths.length > 0
+                  ? versionPaths.map(v => v + addLeadingSlash(route.path))
+                  : addLeadingSlash(route.path),
+              )
+              .flat(),
           ]
         : entries;
     }
@@ -67,7 +71,9 @@ export class RouteInfoPathExtractor {
   }
 
   private isAWildcard(path: string): boolean {
-    return ['*', '/*', '/*/', '(.*)', '/(.*)'].includes(path);
+    return ['*', '/*', '/*/', '*path', '/*path', '(.*)', '/(.*)'].includes(
+      path,
+    );
   }
 
   private extractNonWildcardPathsFrom({

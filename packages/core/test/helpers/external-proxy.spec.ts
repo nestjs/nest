@@ -21,26 +21,24 @@ describe('ExternalErrorProxy', () => {
       expect(typeof proxy === 'function').to.be.true;
     });
 
-    it('should method encapsulate callback passed as argument', () => {
+    it('should method encapsulate callback passed as argument', async () => {
       const expectation = handlerMock.expects('next').once();
       const proxy = externalErrorProxy.createProxy((req, res, next) => {
         throw new HttpException('test', 500);
       }, handler);
-      proxy(null, null, null);
+      await proxy(null, null, null);
       expectation.verify();
     });
 
-    it('should method encapsulate async callback passed as argument', done => {
+    it('should method encapsulate async callback passed as argument', async () => {
       const expectation = handlerMock.expects('next').once();
       const proxy = externalErrorProxy.createProxy(async (req, res, next) => {
         throw new HttpException('test', 500);
       }, handler);
-      proxy(null, null, null);
 
-      setTimeout(() => {
-        expectation.verify();
-        done();
-      }, 0);
+      await proxy(null, null, null);
+
+      expectation.verify();
     });
   });
 });

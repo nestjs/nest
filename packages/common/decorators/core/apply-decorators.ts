@@ -22,8 +22,8 @@ export function applyDecorators(
       }
       (decorator as MethodDecorator | PropertyDecorator)(
         target,
-        propertyKey,
-        descriptor,
+        propertyKey!,
+        descriptor!,
       );
     }
   };

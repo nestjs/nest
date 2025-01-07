@@ -100,7 +100,7 @@ describe.skip('Kafka concurrent', function () {
       }
     }
 
-    if (topicMetadata && topicMetadata.topics.length > 0) {
+    if (topicMetadata! && topicMetadata.topics.length > 0) {
       // we have topics, how many partitions do they have?
       for (const topic of topicMetadata.topics) {
         if (topic.partitions.length < numbersOfServers) {

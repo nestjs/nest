@@ -15,6 +15,8 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
+import { FastifyRequest } from 'fastify';
+import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 
 describe('Middleware (FastifyAdapter)', () => {
@@ -32,6 +34,11 @@ describe('Middleware (FastifyAdapter)', () => {
     class TestController {
       @Get('express_style_wildcard/wildcard_nested')
       express_style_wildcard() {
+        return RETURN_VALUE;
+      }
+
+      @Get('legacy_style_wildcard/wildcard_nested')
+      legacy_style_wildcard() {
         return RETURN_VALUE;
       }
 
@@ -74,9 +81,13 @@ describe('Middleware (FastifyAdapter)', () => {
           .apply((req, res, next) => res.end(INCLUDED_VALUE))
           .forRoutes({ path: 'tests/included', method: RequestMethod.POST })
           .apply((req, res, next) => res.end(REQ_URL_VALUE))
-          .forRoutes('req/url/(.*)')
+          .forRoutes('req/url/*')
           .apply((req, res, next) => res.end(WILDCARD_VALUE))
-          .forRoutes('express_style_wildcard/*', 'tests/(.*)')
+          .forRoutes(
+            'express_style_wildcard/*',
+            'tests/*path',
+            'legacy_style_wildcard/(.*)',
+          )
           .apply((req, res, next) => res.end(QUERY_VALUE))
           .forRoutes('query')
           .apply((req, res, next) => next())
@@ -85,7 +96,7 @@ describe('Middleware (FastifyAdapter)', () => {
           .forRoutes(TestController)
           .apply((req, res, next) => res.end(RETURN_VALUE))
           .exclude({ path: QUERY_VALUE, method: -1 as any })
-          .forRoutes('(.*)');
+          .forRoutes('*');
       }
     }
 
@@ -99,7 +110,7 @@ describe('Middleware (FastifyAdapter)', () => {
       await app.init();
     });
 
-    it(`forRoutes((.*))`, () => {
+    it(`forRoutes(*)`, () => {
       return app
         .inject({
           method: 'GET',
@@ -141,7 +152,7 @@ describe('Middleware (FastifyAdapter)', () => {
         .then(({ payload }) => expect(payload).to.be.eql(QUERY_VALUE));
     });
 
-    it(`forRoutes(tests/(.*))`, () => {
+    it(`forRoutes(tests/*path)`, () => {
       return app
         .inject({
           method: 'GET',
@@ -155,6 +166,15 @@ describe('Middleware (FastifyAdapter)', () => {
         .inject({
           method: 'GET',
           url: '/express_style_wildcard/wildcard_nested',
+        })
+        .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+    });
+
+    it(`forRoutes(legacy_style_wildcard/*)`, () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/legacy_style_wildcard/wildcard_nested',
         })
         .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
     });
@@ -392,6 +412,135 @@ describe('Middleware (FastifyAdapter)', () => {
             }),
           ),
         );
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
+
+  describe('should have data attached in middleware', () => {
+    @Controller()
+    class DataController {
+      @Get('data')
+      async data(@Req() req: FastifyRequest['raw']) {
+        return {
+          success: true,
+          extras: req?.['raw']?.extras,
+          pong: req?.['raw']?.headers?.ping,
+        };
+      }
+      @Get('pong')
+      async pong(@Req() req: FastifyRequest['raw']) {
+        return { success: true, pong: req?.['raw']?.headers?.ping };
+      }
+
+      @Get('')
+      async rootPath(@Req() req: FastifyRequest['raw']) {
+        return { success: true, root: true };
+      }
+    }
+
+    @Module({
+      controllers: [DataController],
+    })
+    class DataModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            req.extras = { data: 'Data attached in middleware' };
+            req.headers['ping'] = 'pong';
+            next();
+          })
+          .forRoutes('*');
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [DataModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    });
+
+    it(`GET forRoutes('*') with global prefix`, async () => {
+      app.setGlobalPrefix('/api');
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+      return app
+        .inject({
+          method: 'GET',
+          url: '/api/pong',
+        })
+        .then(({ payload }) =>
+          expect(payload).to.be.eql(
+            JSON.stringify({
+              success: true,
+              pong: 'pong',
+            }),
+          ),
+        );
+    });
+
+    it(`GET forRoutes('*') without prefix config`, async () => {
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+      return app
+        .inject({
+          method: 'GET',
+          url: '/pong',
+        })
+        .then(({ payload }) =>
+          expect(payload).to.be.eql(
+            JSON.stringify({
+              success: true,
+              pong: 'pong',
+            }),
+          ),
+        );
+    });
+
+    it(`GET forRoutes('*') with global prefix and exclude patterns`, async () => {
+      app.setGlobalPrefix('/api', { exclude: ['/'] });
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/')
+        .expect(200, { success: true, root: true });
+    });
+
+    it(`GET forRoutes('*') with global prefix and global prefix options`, async () => {
+      app.setGlobalPrefix('/api', { exclude: ['/'] });
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/api/data')
+        .expect(200, {
+          success: true,
+          extras: { data: 'Data attached in middleware' },
+          pong: 'pong',
+        });
+      await request(app.getHttpServer())
+        .get('/')
+        .expect(200, { success: true, root: true });
+    });
+
+    it(`GET forRoutes('*') with global prefix that not starts with /`, async () => {
+      app.setGlobalPrefix('api');
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/api/data')
+        .expect(200, {
+          success: true,
+          extras: { data: 'Data attached in middleware' },
+          pong: 'pong',
+        });
+      await request(app.getHttpServer()).get('/').expect(404);
     });
 
     afterEach(async () => {

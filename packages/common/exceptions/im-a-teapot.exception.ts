@@ -37,7 +37,7 @@ export class ImATeapotException extends HttpException {
    * @param descriptionOrOptions either a short description of the HTTP error or an options object used to provide an underlying error cause
    */
   constructor(
-    objectOrError?: string | object | any,
+    objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = `I'm a teapot`,
   ) {
     const { description, httpExceptionOptions } =
@@ -46,7 +46,7 @@ export class ImATeapotException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description,
+        description!,
         HttpStatus.I_AM_A_TEAPOT,
       ),
       HttpStatus.I_AM_A_TEAPOT,

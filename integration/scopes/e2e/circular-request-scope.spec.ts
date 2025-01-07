@@ -48,19 +48,19 @@ describe('Circular request scope', () => {
       await new Promise(resolve => performHttpCall(resolve));
     });
 
-    it(`should create controller for each request`, async () => {
+    it(`should create controller for each request`, () => {
       expect(HelloController.COUNTER).to.be.eql(3);
     });
 
-    it(`should create service for each request`, async () => {
+    it(`should create service for each request`, () => {
       expect(UsersService.COUNTER).to.be.eql(3);
     });
 
-    it(`should create service for each request`, async () => {
+    it(`should create service for each request`, () => {
       expect(HelloService.COUNTER).to.be.eql(3);
     });
 
-    it(`should create provider for each inquirer`, async () => {
+    it(`should create provider for each inquirer`, () => {
       expect(Meta.COUNTER).to.be.eql(3);
     });
   });

@@ -6,27 +6,38 @@ import {
   isString,
 } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
-import * as pathToRegexp from 'path-to-regexp';
+import { pathToRegexp } from 'path-to-regexp';
 import { uid } from 'uid';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
+import { LegacyRouteConverter } from '../router/legacy-route-converter';
 import { isRouteExcluded } from '../router/utils';
 
 export const mapToExcludeRoute = (
   routes: (string | RouteInfo)[],
 ): ExcludeRouteMetadata[] => {
   return routes.map(route => {
-    if (isString(route)) {
+    const originalPath = isString(route) ? route : route.path;
+    const path = LegacyRouteConverter.tryConvert(originalPath);
+
+    try {
+      if (isString(route)) {
+        return {
+          path,
+          requestMethod: RequestMethod.ALL,
+          pathRegex: pathToRegexp(addLeadingSlash(path)).regexp,
+        };
+      }
       return {
-        path: route,
-        requestMethod: RequestMethod.ALL,
-        pathRegex: pathToRegexp(addLeadingSlash(route)),
+        path,
+        requestMethod: route.method,
+        pathRegex: pathToRegexp(addLeadingSlash(path)).regexp,
       };
+    } catch (e) {
+      if (e instanceof TypeError) {
+        LegacyRouteConverter.printError(originalPath);
+      }
+      throw e;
     }
-    return {
-      path: route.path,
-      requestMethod: route.method,
-      pathRegex: pathToRegexp(addLeadingSlash(route.path)),
-    };
   });
 };
 
@@ -52,7 +63,7 @@ export const mapToClass = <T extends Function | Type<any>>(
     if (excludedRoutes.length <= 0) {
       return middleware;
     }
-    const MiddlewareHost = class extends (middleware as Type<any>) {
+    const MiddlewareHost = class extends middleware {
       use(...params: unknown[]) {
         const [req, _, next] = params as [Record<string, any>, any, Function];
         const isExcluded = isMiddlewareRouteExcluded(
@@ -112,9 +123,9 @@ export function isMiddlewareRouteExcluded(
   if (excludedRoutes.length <= 0) {
     return false;
   }
-  const reqMethod = httpAdapter.getRequestMethod(req);
-  const originalUrl = httpAdapter.getRequestUrl(req);
-  const queryParamsIndex = originalUrl && originalUrl.indexOf('?');
+  const reqMethod = httpAdapter.getRequestMethod!(req);
+  const originalUrl = httpAdapter.getRequestUrl!(req);
+  const queryParamsIndex = originalUrl ? originalUrl.indexOf('?') : -1;
   const pathname =
     queryParamsIndex >= 0
       ? originalUrl.slice(0, queryParamsIndex)

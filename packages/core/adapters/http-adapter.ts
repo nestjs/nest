@@ -19,7 +19,6 @@ export abstract class AbstractHttpAdapter<
 
   constructor(protected instance?: any) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   public async init() {}
 
   public use(...args: any[]) {
@@ -62,6 +61,48 @@ export abstract class AbstractHttpAdapter<
     return this.instance.patch(...args);
   }
 
+  public propfind(handler: RequestHandler);
+  public propfind(path: any, handler: RequestHandler);
+  public propfind(...args: any[]) {
+    return this.instance.propfind(...args);
+  }
+
+  public proppatch(handler: RequestHandler);
+  public proppatch(path: any, handler: RequestHandler);
+  public proppatch(...args: any[]) {
+    return this.instance.proppatch(...args);
+  }
+
+  public mkcol(handler: RequestHandler);
+  public mkcol(path: any, handler: RequestHandler);
+  public mkcol(...args: any[]) {
+    return this.instance.mkcol(...args);
+  }
+
+  public copy(handler: RequestHandler);
+  public copy(path: any, handler: RequestHandler);
+  public copy(...args: any[]) {
+    return this.instance.copy(...args);
+  }
+
+  public move(handler: RequestHandler);
+  public move(path: any, handler: RequestHandler);
+  public move(...args: any[]) {
+    return this.instance.move(...args);
+  }
+
+  public lock(handler: RequestHandler);
+  public lock(path: any, handler: RequestHandler);
+  public lock(...args: any[]) {
+    return this.instance.lock(...args);
+  }
+
+  public unlock(handler: RequestHandler);
+  public unlock(path: any, handler: RequestHandler);
+  public unlock(...args: any[]) {
+    return this.instance.unlock(...args);
+  }
+
   public all(handler: RequestHandler);
   public all(path: any, handler: RequestHandler);
   public all(...args: any[]) {
@@ -87,7 +128,7 @@ export abstract class AbstractHttpAdapter<
   }
 
   public getHttpServer(): TServer {
-    return this.httpServer as TServer;
+    return this.httpServer;
   }
 
   public setHttpServer(httpServer: TServer) {
@@ -100,6 +141,10 @@ export abstract class AbstractHttpAdapter<
 
   public getInstance<T = any>(): T {
     return this.instance as T;
+  }
+
+  public normalizePath(path: string): string {
+    return path;
   }
 
   abstract close();
@@ -117,11 +162,7 @@ export abstract class AbstractHttpAdapter<
   abstract setErrorHandler(handler: Function, prefix?: string);
   abstract setNotFoundHandler(handler: Function, prefix?: string);
   abstract isHeadersSent(response: any);
-  // TODO remove optional signature (v11)
-  abstract getHeader?(response: any, name: string);
   abstract setHeader(response: any, name: string, value: string);
-  // TODO remove optional signature (v11)
-  abstract appendHeader?(response: any, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string, rawBody?: boolean);
   abstract enableCors(
     options: CorsOptions | CorsOptionsDelegate<TRequest>,

@@ -119,7 +119,7 @@ export class Logger implements LoggerService {
         return this.registerLocalInstanceRef();
       }
     }
-    return Logger.staticInstanceRef;
+    return Logger.staticInstanceRef!;
   }
 
   /**
@@ -303,12 +303,12 @@ export class Logger implements LoggerService {
   static overrideLogger(logger: LoggerService | LogLevel[] | boolean) {
     if (Array.isArray(logger)) {
       Logger.logLevels = logger;
-      return this.staticInstanceRef?.setLogLevels(logger);
+      return this.staticInstanceRef?.setLogLevels?.(logger);
     }
     if (isObject(logger)) {
       if (logger instanceof Logger && logger.constructor !== Logger) {
         const errorMessage = `Using the "extends Logger" instruction is not allowed in Nest v9. Please, use "extends ConsoleLogger" instead.`;
-        this.staticInstanceRef.error(errorMessage);
+        this.staticInstanceRef?.error(errorMessage);
         throw new Error(errorMessage);
       }
       this.staticInstanceRef = logger as LoggerService;
@@ -326,7 +326,7 @@ export class Logger implements LoggerService {
     if (this.localInstanceRef) {
       return this.localInstanceRef;
     }
-    this.localInstanceRef = new ConsoleLogger(this.context, {
+    this.localInstanceRef = new ConsoleLogger(this.context!, {
       timestamp: this.options?.timestamp,
       logLevels: Logger.logLevels,
     });

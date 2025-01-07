@@ -51,7 +51,7 @@ export async function callBeforeAppShutdownHook(
   signal?: string,
 ): Promise<void> {
   const providers = module.getNonAliasProviders();
-  const [_, moduleClassHost] = providers.shift();
+  const [_, moduleClassHost] = providers.shift()!;
   const instances = [
     ...module.controllers,
     ...providers,
@@ -70,8 +70,6 @@ export async function callBeforeAppShutdownHook(
     hasBeforeApplicationShutdownHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    await (
-      moduleClassInstance as BeforeApplicationShutdown
-    ).beforeApplicationShutdown(signal);
+    await moduleClassInstance.beforeApplicationShutdown(signal);
   }
 }

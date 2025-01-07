@@ -2,7 +2,8 @@ import {
   HttpExceptionBody,
   HttpExceptionBodyMessage,
 } from '../interfaces/http/http-exception-body.interface';
-import { isObject, isString } from '../utils/shared.utils';
+import { isNumber, isObject, isString } from '../utils/shared.utils';
+import { IntrinsicException } from './intrinsic.exception';
 
 export interface HttpExceptionOptions {
   /** original cause of the error */
@@ -23,7 +24,13 @@ export interface DescriptionAndOptions {
  *
  * @publicApi
  */
-export class HttpException extends Error {
+export class HttpException extends IntrinsicException {
+  /**
+   * Exception cause. Indicates the specific original cause of the error.
+   * It is used when catching and re-throwing an error with a more-specific or useful error message in order to still have access to the original error.
+   */
+  public cause: unknown;
+
   /**
    * Instantiate a plain HTTP Exception.
    *
@@ -68,8 +75,6 @@ export class HttpException extends Error {
     this.initCause();
   }
 
-  public cause: unknown;
-
   /**
    * Configures error chaining support
    *
@@ -86,11 +91,8 @@ export class HttpException extends Error {
   public initMessage() {
     if (isString(this.response)) {
       this.message = this.response;
-    } else if (
-      isObject(this.response) &&
-      isString((this.response as Record<string, any>).message)
-    ) {
-      this.message = (this.response as Record<string, any>).message;
+    } else if (isObject(this.response) && isString(this.response.message)) {
+      this.message = this.response.message;
     } else if (this.constructor) {
       this.message =
         this.constructor.name.match(/[A-Z][a-z]+|[0-9]+/g)?.join(' ') ??
@@ -115,17 +117,14 @@ export class HttpException extends Error {
     message: HttpExceptionBodyMessage,
     statusCode: number,
   ): HttpExceptionBody;
-
   public static createBody(
     message: HttpExceptionBodyMessage,
     error: string,
     statusCode: number,
   ): HttpExceptionBody;
-
   public static createBody<Body extends Record<string, unknown>>(
     custom: Body,
   ): Body;
-
   public static createBody<Body extends Record<string, unknown>>(
     arg0: null | HttpExceptionBodyMessage | Body,
     arg1?: HttpExceptionBodyMessage | string,
@@ -133,16 +132,16 @@ export class HttpException extends Error {
   ): HttpExceptionBody | Body {
     if (!arg0) {
       return {
-        message: arg1,
-        statusCode: statusCode,
+        message: arg1!,
+        statusCode: statusCode!,
       };
     }
 
-    if (isString(arg0) || Array.isArray(arg0)) {
+    if (isString(arg0) || Array.isArray(arg0) || isNumber(arg0)) {
       return {
         message: arg0,
         error: arg1 as string,
-        statusCode: statusCode,
+        statusCode: statusCode!,
       };
     }
 
@@ -154,7 +153,7 @@ export class HttpException extends Error {
   ): string {
     return isString(descriptionOrOptions)
       ? descriptionOrOptions
-      : descriptionOrOptions?.description;
+      : (descriptionOrOptions?.description as string);
   }
 
   public static getHttpExceptionOptionsFrom(

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import {
   HttpStatus,
   Logger,
@@ -16,6 +17,7 @@ import {
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
+import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter';
 import {
   FastifyBaseLogger,
   FastifyBodyParser,
@@ -27,27 +29,28 @@ import {
   FastifyReply,
   FastifyRequest,
   FastifyServerOptions,
+  HTTPMethods,
   RawReplyDefaultExpression,
   RawRequestDefaultExpression,
   RawServerBase,
   RawServerDefault,
   RequestGenericInterface,
+  RouteGenericInterface,
   RouteOptions,
   RouteShorthandOptions,
-  HTTPMethods,
   fastify,
 } from 'fastify';
 import * as Reply from 'fastify/lib/reply';
 import { kRouteContext } from 'fastify/lib/symbols';
+import * as http from 'http';
 import * as http2 from 'http2';
 import * as https from 'https';
-import * as http from 'http';
 import {
   InjectOptions,
   Chain as LightMyRequestChain,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
-import * as pathToRegexp from 'path-to-regexp';
+import { pathToRegexp } from 'path-to-regexp';
 // `querystring` is used internally in fastify for registering urlencoded body parser.
 import { parse as querystringParse } from 'querystring';
 import {
@@ -129,17 +132,20 @@ export class FastifyAdapter<
     TRawRequest
   > = FastifyRequest<RequestGenericInterface, TServer, TRawRequest>,
   TReply extends FastifyReply<
+    RouteGenericInterface,
     TServer,
     TRawRequest,
     TRawResponse
-  > = FastifyReply<TServer, TRawRequest, TRawResponse>,
+  > = FastifyReply<RouteGenericInterface, TServer, TRawRequest, TRawResponse>,
   TInstance extends FastifyInstance<
     TServer,
     TRawRequest,
     TRawResponse
   > = FastifyInstance<TServer, TRawRequest, TRawResponse>,
 > extends AbstractHttpAdapter<TServer, TRequest, TReply> {
+  protected readonly logger = new Logger(FastifyAdapter.name);
   protected readonly instance: TInstance;
+  protected _pathPrefix?: string;
 
   private _isParserRegistered: boolean;
   private isMiddieRegistered: boolean;
@@ -158,7 +164,7 @@ export class FastifyAdapter<
       return {
         get(version: string | Array<string>) {
           if (Array.isArray(version)) {
-            return versions.get(version.find(v => versions.has(v))) || null;
+            return versions.get(version.find(v => versions.has(v))!) || null;
           }
           return versions.get(version) || null;
         },
@@ -320,6 +326,34 @@ export class FastifyAdapter<
     return this.injectRouteOptions('SEARCH', ...args);
   }
 
+  public propfind(...args: any[]) {
+    return this.injectRouteOptions('PROPFIND', ...args);
+  }
+
+  public proppatch(...args: any[]) {
+    return this.injectRouteOptions('PROPPATCH', ...args);
+  }
+
+  public mkcol(...args: any[]) {
+    return this.injectRouteOptions('MKCOL', ...args);
+  }
+
+  public copy(...args: any[]) {
+    return this.injectRouteOptions('COPY', ...args);
+  }
+
+  public move(...args: any[]) {
+    return this.injectRouteOptions('MOVE', ...args);
+  }
+
+  public lock(...args: any[]) {
+    return this.injectRouteOptions('LOCK', ...args);
+  }
+
+  public unlock(...args: any[]) {
+    return this.injectRouteOptions('UNLOCK', ...args);
+  }
+
   public applyVersionFilter(
     handler: Function,
     version: VersionValue,
@@ -398,11 +432,11 @@ export class FastifyAdapter<
       response.statusCode = statusCode;
       return response;
     }
-    return (response as TReply).code(statusCode);
+    return (response as { code: Function }).code(statusCode);
   }
 
   public end(response: TReply, message?: string) {
-    response.raw.end(message);
+    response.raw.end(message!);
   }
 
   public render(
@@ -434,11 +468,12 @@ export class FastifyAdapter<
     return this.instance as unknown as T;
   }
 
-  public register<TRegister extends Parameters<FastifyRegister<TInstance>>>(
-    plugin: TRegister['0'],
-    opts?: TRegister['1'],
-  ) {
-    return this.instance.register(plugin, opts);
+  public register<
+    TRegister extends Parameters<
+      FastifyRegister<FastifyInstance<TServer, TRawRequest, TRawResponse>>
+    >,
+  >(plugin: TRegister['0'], opts?: TRegister['1']) {
+    return (this.instance.register as any)(plugin, opts);
   }
 
   public inject(): LightMyRequestChain;
@@ -446,7 +481,7 @@ export class FastifyAdapter<
   public inject(
     opts?: InjectOptions | string,
   ): LightMyRequestChain | Promise<LightMyRequestResponse> {
-    return this.instance.inject(opts);
+    return this.instance.inject(opts!);
   }
 
   public async close() {
@@ -510,7 +545,7 @@ export class FastifyAdapter<
   }
 
   public getRequestMethod(request: TRequest): string {
-    return request.raw ? request.raw.method : request.method;
+    return request.raw ? request.raw.method! : request.method;
   }
 
   public getRequestUrl(request: TRequest): string;
@@ -535,6 +570,11 @@ export class FastifyAdapter<
     this.registerJsonContentParser(rawBody);
 
     this._isParserRegistered = true;
+    this._pathPrefix = prefix
+      ? !prefix.startsWith('/')
+        ? `/${prefix}`
+        : prefix
+      : undefined;
   }
 
   public useBodyParser(
@@ -552,7 +592,7 @@ export class FastifyAdapter<
       type,
       parserOptions,
       (
-        req: RawBodyRequest<FastifyRequest<unknown, TServer, TRawRequest>>,
+        req: RawBodyRequest<FastifyRequest<any, TServer, TRawRequest>>,
         body: Buffer,
         done,
       ) => {
@@ -584,33 +624,46 @@ export class FastifyAdapter<
       const hasEndOfStringCharacter = path.endsWith('$');
       path = hasEndOfStringCharacter ? path.slice(0, -1) : path;
 
-      let normalizedPath = path.endsWith('/*')
-        ? `${path.slice(0, -1)}(.*)`
-        : path;
+      let normalizedPath = LegacyRouteConverter.tryConvert(path);
 
-      // Fallback to "(.*)" to support plugins like GraphQL
-      normalizedPath = normalizedPath === '/(.*)' ? '(.*)' : normalizedPath;
+      // Fallback to "*path" to support plugins like GraphQL
+      normalizedPath = normalizedPath === '/*path' ? '*path' : normalizedPath;
 
-      let re = pathToRegexp(normalizedPath);
-      re = hasEndOfStringCharacter ? new RegExp(re.source + '$', re.flags) : re;
+      // Normalize the path to support the prefix if it set in application
+      normalizedPath =
+        this._pathPrefix && !normalizedPath.startsWith(this._pathPrefix)
+          ? `${this._pathPrefix}${normalizedPath}*path`
+          : normalizedPath;
 
-      // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
-      // ref https://github.com/fastify/middie/pull/55
-      this.instance.use(
-        normalizedPath,
-        (req: any, res: any, next: Function) => {
-          const queryParamsIndex = req.originalUrl.indexOf('?');
-          const pathname =
-            queryParamsIndex >= 0
-              ? req.originalUrl.slice(0, queryParamsIndex)
-              : req.originalUrl;
+      try {
+        let { regexp: re } = pathToRegexp(normalizedPath);
+        re = hasEndOfStringCharacter
+          ? new RegExp(re.source + '$', re.flags)
+          : re;
 
-          if (!re.exec(pathname + '/') && normalizedPath) {
-            return next();
-          }
-          return callback(req, res, next);
-        },
-      );
+        // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
+        // ref https://github.com/fastify/middie/pull/55
+        this.instance.use(
+          normalizedPath,
+          (req: any, res: any, next: Function) => {
+            const queryParamsIndex = req.originalUrl.indexOf('?');
+            const pathname =
+              queryParamsIndex >= 0
+                ? req.originalUrl.slice(0, queryParamsIndex)
+                : req.originalUrl;
+
+            if (!re.exec(pathname + '/') && normalizedPath) {
+              return next();
+            }
+            return callback(req, res, next);
+          },
+        );
+      } catch (e) {
+        if (e instanceof TypeError) {
+          LegacyRouteConverter.printError(path);
+        }
+        throw e;
+      }
     };
   }
 
@@ -679,7 +732,7 @@ export class FastifyAdapter<
   }
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {
-    return rawRequest.originalUrl || rawRequest.url;
+    return rawRequest.originalUrl || rawRequest.url!;
   }
 
   private injectRouteOptions(

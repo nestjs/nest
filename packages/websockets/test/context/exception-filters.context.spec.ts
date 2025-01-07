@@ -6,7 +6,6 @@ import { NestContainer } from '../../../core/injector/container';
 import { ExceptionFiltersContext } from '../../context/exception-filters-context';
 
 describe('ExceptionFiltersContext', () => {
-  let moduleName: string;
   let exceptionFilter: ExceptionFiltersContext;
 
   class CustomException {}
@@ -16,7 +15,6 @@ describe('ExceptionFiltersContext', () => {
   }
 
   beforeEach(() => {
-    moduleName = 'Test';
     exceptionFilter = new ExceptionFiltersContext(new NestContainer() as any);
   });
   describe('create', () => {

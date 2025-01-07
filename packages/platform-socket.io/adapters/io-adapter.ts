@@ -67,7 +67,7 @@ export class IoAdapter extends AbstractWsAdapter {
   public mapPayload(payload: unknown): { data: any; ack?: Function } {
     if (!Array.isArray(payload)) {
       if (isFunction(payload)) {
-        return { data: undefined, ack: payload as Function };
+        return { data: undefined, ack: payload };
       }
       return { data: payload };
     }
@@ -83,7 +83,7 @@ export class IoAdapter extends AbstractWsAdapter {
     return { data: payload };
   }
 
-  public close(server: Server) {
+  public async close(server: Server): Promise<void> {
     if (this.forceCloseConnections && server.httpServer === this.httpServer) {
       return;
     }

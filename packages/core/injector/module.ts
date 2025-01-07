@@ -129,8 +129,8 @@ export class Module {
   }
 
   get entryProviders(): Array<InstanceWrapper<Injectable>> {
-    return Array.from(this._entryProviderKeys).map(token =>
-      this.providers.get(token),
+    return Array.from(this._entryProviderKeys).map(
+      token => this.providers.get(token)!,
     );
   }
 
@@ -142,8 +142,8 @@ export class Module {
     if (!this._providers.has(this._metatype)) {
       throw new RuntimeException();
     }
-    const module = this._providers.get(this._metatype);
-    return module.instance as NestModule;
+    const moduleRef = this._providers.get(this._metatype);
+    return moduleRef!.instance as NestModule;
   }
 
   get metatype(): Type<any> {
@@ -385,7 +385,7 @@ export class Module {
       new InstanceWrapper({
         token: providerToken,
         name: (providerToken as Function)?.name || providerToken,
-        metatype: null,
+        metatype: null!,
         instance: value,
         isResolved: true,
         async: value instanceof Promise,
@@ -447,21 +447,21 @@ export class Module {
     );
   }
 
-  public addExportedProvider(
-    provider: Provider | string | symbol | DynamicModule,
+  public addExportedProviderOrModule(
+    toExport: Provider | string | symbol | DynamicModule,
   ) {
     const addExportedUnit = (token: InjectionToken) =>
       this._exports.add(this.validateExportedProvider(token));
 
-    if (this.isCustomProvider(provider as any)) {
-      return this.addCustomExportedProvider(provider as any);
-    } else if (isString(provider) || isSymbol(provider)) {
-      return addExportedUnit(provider);
-    } else if (this.isDynamicModule(provider)) {
-      const { module: moduleClassRef } = provider;
+    if (this.isCustomProvider(toExport as any)) {
+      return this.addCustomExportedProvider(toExport as any);
+    } else if (isString(toExport) || isSymbol(toExport)) {
+      return addExportedUnit(toExport);
+    } else if (this.isDynamicModule(toExport)) {
+      const { module: moduleClassRef } = toExport;
       return addExportedUnit(moduleClassRef);
     }
-    addExportedUnit(provider as Type<any>);
+    addExportedUnit(toExport as Type<any>);
   }
 
   public addCustomExportedProvider(
@@ -503,7 +503,7 @@ export class Module {
         token: controller,
         name: controller.name,
         metatype: controller,
-        instance: null,
+        instance: null!,
         isResolved: false,
         scope: getClassScope(controller),
         durable: isDurable(controller),
@@ -527,22 +527,15 @@ export class Module {
     this._imports.add(moduleRef);
   }
 
-  /**
-   * @deprecated
-   */
-  public addRelatedModule(module: Module) {
-    this._imports.add(module);
-  }
-
   public replace(toReplace: InjectionToken, options: any) {
     if (options.isProvider && this.hasProvider(toReplace)) {
       const originalProvider = this._providers.get(toReplace);
 
-      return originalProvider.mergeWith({ provide: toReplace, ...options });
+      return originalProvider!.mergeWith({ provide: toReplace, ...options });
     } else if (!options.isProvider && this.hasInjectable(toReplace)) {
       const originalInjectable = this._injectables.get(toReplace);
 
-      return originalInjectable.mergeWith({
+      return originalInjectable!.mergeWith({
         provide: toReplace,
         ...options,
       });
@@ -659,7 +652,12 @@ export class Module {
 
   private generateUuid(): string {
     const prefix = 'M_';
-    const key = this.name?.toString() ?? this.token?.toString();
+    const key = this.token
+      ? this.token.includes(':')
+        ? this.token.split(':')[1]
+        : this.token
+      : this.name;
+
     return key ? UuidFactory.get(`${prefix}_${key}`) : randomStringGenerator();
   }
 

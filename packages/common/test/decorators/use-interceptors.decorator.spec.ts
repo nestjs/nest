@@ -44,7 +44,7 @@ describe('@UseInterceptors', () => {
     try {
       UseInterceptors({
         intercept() {
-          return null;
+          return null!;
         },
       })({ name: 'target' } as any);
     } catch (e) {

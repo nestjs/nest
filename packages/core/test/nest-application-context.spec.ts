@@ -1,13 +1,13 @@
 import { InjectionToken, Provider, Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { setTimeout } from 'timers/promises';
 import { ContextIdFactory } from '../helpers/context-id-factory';
 import { NestContainer } from '../injector/container';
 import { Injector } from '../injector/injector';
 import { InstanceLoader } from '../injector/instance-loader';
 import { GraphInspector } from '../inspector/graph-inspector';
 import { NestApplicationContext } from '../nest-application-context';
-import { setTimeout } from 'timers/promises';
 
 describe('NestApplicationContext', () => {
   class A {}
@@ -24,7 +24,7 @@ describe('NestApplicationContext', () => {
       injector,
       new GraphInspector(nestContainer),
     );
-    const { moduleRef } = await nestContainer.addModule(class T {}, []);
+    const { moduleRef } = (await nestContainer.addModule(class T {}, []))!;
 
     nestContainer.addProvider(
       {
@@ -135,10 +135,10 @@ describe('NestApplicationContext', () => {
       process.on(signal, ignoreProcessSignal);
 
       const deferredShutdown = async () => {
-        setTimeout(1);
+        await setTimeout(1);
         process.kill(process.pid, signal);
       };
-      Promise.all([applicationContext.init(), deferredShutdown()]);
+      void Promise.all([applicationContext.init(), deferredShutdown()]);
 
       await clock.nextAsync();
       expect(onModuleInitStub.called).to.be.false;

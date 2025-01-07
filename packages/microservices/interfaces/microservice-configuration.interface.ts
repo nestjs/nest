@@ -1,5 +1,5 @@
-import { Type } from '@nestjs/common';
-import { ConnectionOptions } from 'tls';
+import { InjectionToken, Type } from '@nestjs/common';
+import { TlsOptions } from 'tls';
 import { Transport } from '../enums/transport.enum';
 import { ChannelOptions } from '../external/grpc-options.interface';
 import {
@@ -32,12 +32,22 @@ export type MicroserviceOptions =
   | KafkaOptions
   | CustomStrategy;
 
+export type AsyncMicroserviceOptions = {
+  inject: InjectionToken[];
+  useFactory: (...args: any[]) => MicroserviceOptions;
+};
+
+export type AsyncOptions<T extends object> = {
+  inject: InjectionToken[];
+  useFactory: (...args: any[]) => T;
+};
+
 /**
  * @publicApi
  */
 export interface CustomStrategy {
   strategy: CustomTransportStrategy;
-  options?: {};
+  options?: Record<string, any>;
 }
 
 /**
@@ -94,7 +104,7 @@ export interface TcpOptions {
     retryAttempts?: number;
     retryDelay?: number;
     serializer?: Serializer;
-    tlsOptions?: ConnectionOptions;
+    tlsOptions?: TlsOptions;
     deserializer?: Deserializer;
     socketClass?: Type<TcpSocket>;
   };
@@ -193,6 +203,8 @@ export interface NatsOptions {
     token?: string;
     yieldTime?: number;
     tokenHandler?: any;
+    gracefulShutdown?: boolean;
+    gracePeriod?: number;
     [key: string]: any;
   };
 }
@@ -209,6 +221,8 @@ export interface RmqOptions {
     isGlobalPrefetchCount?: boolean;
     queueOptions?: AmqplibQueueOptions;
     socketOptions?: AmqpConnectionManagerSocketOptions;
+    exchange?: string;
+    routingKey?: string;
     noAck?: boolean;
     consumerTag?: string;
     serializer?: Serializer;

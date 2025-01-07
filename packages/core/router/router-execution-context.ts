@@ -304,7 +304,7 @@ export class RouterExecutionContext {
         const customExtractValue = this.contextUtils.getCustomFactory(
           factory,
           data,
-          contextFactory,
+          contextFactory!,
         );
         return { index, extractValue: customExtractValue, type, data, pipes };
       }
@@ -315,7 +315,7 @@ export class RouterExecutionContext {
         next: Function,
       ) =>
         this.paramsFactory.exchangeKeyForValue(numericType, data, {
-          req,
+          req: req as Record<string, any>,
           res,
           next,
         });
@@ -359,7 +359,7 @@ export class RouterExecutionContext {
     instance: Controller,
     callback: (...args: any[]) => any,
     contextType?: TContext,
-  ): (args: any[]) => Promise<void> | null {
+  ): ((args: any[]) => Promise<void>) | null {
     const canActivateFn = async (args: any[]) => {
       const canActivate = await this.guardsConsumer.tryActivate<TContext>(
         guards,
@@ -447,7 +447,7 @@ export class RouterExecutionContext {
           result,
           (res as any).raw || res,
           (req as any).raw || req,
-          { additionalHeaders: res.getHeaders?.() },
+          { additionalHeaders: res.getHeaders?.() as any },
         );
       };
     }

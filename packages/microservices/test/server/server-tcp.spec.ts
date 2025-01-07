@@ -3,31 +3,32 @@ import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerTCP } from '../../server/server-tcp';
+import { objectToMap } from './utils/object-to-map';
 
 describe('ServerTCP', () => {
   let server: ServerTCP;
-
-  const objectToMap = obj =>
-    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+  let untypedServer: any;
 
   beforeEach(() => {
     server = new ServerTCP({});
+    untypedServer = server as any;
   });
 
   describe('bindHandler', () => {
     const socket = { on: sinon.spy() };
+
     beforeEach(() => {
       sinon.stub(server, 'getSocketInstance' as any).callsFake(() => socket);
     });
     it('should bind message and error events to handler', () => {
-      server.bindHandler(null);
+      server.bindHandler(null!);
       expect(socket.on.calledTwice).to.be.true;
     });
   });
   describe('close', () => {
     const tcpServer = { close: sinon.spy() };
     beforeEach(() => {
-      (server as any).server = tcpServer;
+      untypedServer.server = tcpServer;
     });
     it('should close server', () => {
       server.close();
@@ -37,15 +38,15 @@ describe('ServerTCP', () => {
   describe('listen', () => {
     const serverMock = { listen: sinon.spy(), once: sinon.spy() };
     beforeEach(() => {
-      (server as any).server = serverMock;
+      untypedServer.server = serverMock;
     });
     it('should call native listen method with expected arguments', () => {
       const callback = () => {};
       server.listen(callback);
       expect(
         serverMock.listen.calledWith(
-          (server as any).port,
-          (server as any).host,
+          untypedServer.port,
+          untypedServer.host,
           callback,
         ),
       ).to.be.true;
@@ -75,7 +76,7 @@ describe('ServerTCP', () => {
     });
     it('should call handler if exists in handlers object', async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [msg.pattern]: handler as any,
       });
       await server.handleMessage(socket, msg);
@@ -85,33 +86,33 @@ describe('ServerTCP', () => {
   describe('handleClose', () => {
     describe('when is terminated', () => {
       it('should return undefined', () => {
-        (server as any).isExplicitlyTerminated = true;
+        untypedServer.isExplicitlyTerminated = true;
         const result = server.handleClose();
         expect(result).to.be.undefined;
       });
     });
     describe('when "retryAttempts" does not exist', () => {
       it('should return undefined', () => {
-        (server as any).options.retryAttempts = undefined;
+        untypedServer.options.retryAttempts = undefined;
         const result = server.handleClose();
         expect(result).to.be.undefined;
       });
     });
     describe('when "retryAttemptsCount" count is max', () => {
       it('should return undefined', () => {
-        (server as any).options.retryAttempts = 3;
-        (server as any).retryAttemptsCount = 3;
+        untypedServer.options.retryAttempts = 3;
+        untypedServer.retryAttemptsCount = 3;
         const result = server.handleClose();
         expect(result).to.be.undefined;
       });
     });
     describe('otherwise', () => {
       it('should return delay (ms)', () => {
-        (server as any).options = {};
-        (server as any).isExplicitlyTerminated = false;
-        (server as any).options.retryAttempts = 3;
-        (server as any).retryAttemptsCount = 2;
-        (server as any).options.retryDelay = 3;
+        untypedServer.options = {};
+        untypedServer.isExplicitlyTerminated = false;
+        untypedServer.options.retryAttempts = 3;
+        untypedServer.retryAttemptsCount = 2;
+        untypedServer.options.retryDelay = 3;
         const result = server.handleClose();
         expect(result).to.be.not.undefined;
       });
@@ -122,13 +123,13 @@ describe('ServerTCP', () => {
     const channel = 'test';
     const data = 'test';
 
-    it('should call handler with expected arguments', () => {
+    it('should call handler with expected arguments', async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
-      server.handleEvent(
+      await server.handleEvent(
         channel,
         { pattern: '', data },
         new BaseRpcContext([]),

@@ -28,7 +28,7 @@ describe('InterceptorsConsumer', () => {
         next = sinon.spy();
       });
       it('should call next()', async () => {
-        await consumer.intercept([], null, { constructor: null }, null, next);
+        await consumer.intercept([], null!, { constructor: null }, null!, next);
         expect(next.calledOnce).to.be.true;
       });
     });
@@ -40,9 +40,9 @@ describe('InterceptorsConsumer', () => {
       it('does not call `intercept` (lazy evaluation)', async () => {
         await consumer.intercept(
           interceptors,
-          null,
+          null!,
           { constructor: null },
-          null,
+          null!,
           next,
         );
 
@@ -52,9 +52,9 @@ describe('InterceptorsConsumer', () => {
       it('should call every `intercept` method when subscribe', async () => {
         const intercepted = await consumer.intercept(
           interceptors,
-          null,
+          null!,
           { constructor: null },
-          null,
+          null!,
           next,
         );
         await transformToResult(intercepted);
@@ -65,9 +65,9 @@ describe('InterceptorsConsumer', () => {
       it('should not call `next` (lazy evaluation)', async () => {
         await consumer.intercept(
           interceptors,
-          null,
+          null!,
           { constructor: null },
-          null,
+          null!,
           next,
         );
         expect(next.called).to.be.false;
@@ -75,9 +75,9 @@ describe('InterceptorsConsumer', () => {
       it('should call `next` when subscribe', async () => {
         const intercepted = await consumer.intercept(
           interceptors,
-          null,
+          null!,
           { constructor: null },
-          null,
+          null!,
           next,
         );
         await transformToResult(intercepted);
@@ -97,13 +97,13 @@ describe('InterceptorsConsumer', () => {
           }
         }
         const next = () => {
-          return Promise.resolve(storage.getStore().value);
+          return Promise.resolve(storage.getStore()!.value);
         };
         const intercepted = await consumer.intercept(
           [new StorageInterceptor()],
-          null,
+          null!,
           { constructor: null },
-          null,
+          null!,
           next,
         );
         const result = await transformToResult(intercepted);
@@ -131,9 +131,9 @@ describe('InterceptorsConsumer', () => {
         }
         const intercepted = await consumer.intercept(
           [new RetryInterceptor()],
-          null,
+          null!,
           { constructor: null },
-          null,
+          null!,
           next,
         );
         expect(await transformToResult(intercepted)).to.equal(3);
@@ -203,14 +203,13 @@ describe('InterceptorsConsumer', () => {
             .stub()
             .callsFake(async (ctx, handler) => handler.handle()),
         },
-        ,
       ];
 
       const observable = await consumer.intercept(
         testInterceptors,
-        null,
+        null!,
         { constructor: null },
-        null,
+        null!,
         async () => 1,
       );
 

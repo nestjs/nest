@@ -35,8 +35,7 @@ export function UsePipes(
     descriptor?: TypedPropertyDescriptor<any>,
   ) => {
     const isPipeValid = <T extends Function | Record<string, any>>(pipe: T) =>
-      pipe &&
-      (isFunction(pipe) || isFunction((pipe as Record<string, any>).transform));
+      pipe && (isFunction(pipe) || isFunction(pipe.transform));
 
     if (descriptor) {
       extendArrayMetadata(PIPES_METADATA, pipes, descriptor.value);

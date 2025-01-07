@@ -1,7 +1,10 @@
 import { ShutdownSignal } from '../enums/shutdown-signal.enum';
 import { LoggerService, LogLevel } from '../services/logger.service';
 import { DynamicModule } from './modules';
+import { NestApplicationContextOptions } from './nest-application-context-options.interface';
 import { Type } from './type.interface';
+
+export type SelectOptions = Pick<NestApplicationContextOptions, 'abortOnError'>;
 
 export interface GetOrResolveOptions {
   /**
@@ -27,7 +30,10 @@ export interface INestApplicationContext {
    * Allows navigating through the modules tree, for example, to pull out a specific instance from the selected module.
    * @returns {INestApplicationContext}
    */
-  select<T>(module: Type<T> | DynamicModule): INestApplicationContext;
+  select<T>(
+    module: Type<T> | DynamicModule,
+    options?: SelectOptions,
+  ): INestApplicationContext;
 
   /**
    * Retrieves an instance of either injectable or controller, otherwise, throws exception.

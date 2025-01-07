@@ -34,9 +34,7 @@ export function UseGuards(
     descriptor?: TypedPropertyDescriptor<any>,
   ) => {
     const isGuardValid = <T extends Function | Record<string, any>>(guard: T) =>
-      guard &&
-      (isFunction(guard) ||
-        isFunction((guard as Record<string, any>).canActivate));
+      guard && (isFunction(guard) || isFunction(guard.canActivate));
 
     if (descriptor) {
       validateEach(

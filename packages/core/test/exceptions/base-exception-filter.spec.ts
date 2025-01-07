@@ -33,7 +33,7 @@ describe('BaseExceptionFilterContext', () => {
         expect(filter.getFilterInstance(Filter)).to.be.eql(wrapper.instance);
       });
       it('should return null', () => {
-        sinon.stub(filter, 'getInstanceByMetatype').callsFake(() => null);
+        sinon.stub(filter, 'getInstanceByMetatype').callsFake(() => null!);
         expect(filter.getFilterInstance(Filter)).to.be.eql(null);
       });
     });
@@ -43,7 +43,7 @@ describe('BaseExceptionFilterContext', () => {
     describe('when "moduleContext" is nil', () => {
       it('should return undefined', () => {
         (filter as any).moduleContext = undefined;
-        expect(filter.getInstanceByMetatype(null)).to.be.undefined;
+        expect(filter.getInstanceByMetatype(null!)).to.be.undefined;
       });
     });
     describe('when "moduleContext" is not nil', () => {
@@ -54,7 +54,7 @@ describe('BaseExceptionFilterContext', () => {
       describe('and when module exists', () => {
         it('should return undefined', () => {
           sinon.stub(container.getModules(), 'get').callsFake(() => undefined);
-          expect(filter.getInstanceByMetatype(null)).to.be.undefined;
+          expect(filter.getInstanceByMetatype(null!)).to.be.undefined;
         });
       });
 

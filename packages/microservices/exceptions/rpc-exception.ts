@@ -19,7 +19,7 @@ export class RpcException extends Error {
       this.message = (this.error as Record<string, any>).message;
     } else if (this.constructor) {
       this.message = this.constructor.name
-        .match(/[A-Z][a-z]+|[0-9]+/g)
+        .match(/[A-Z][a-z]+|[0-9]+/g)!
         .join(' ');
     }
   }

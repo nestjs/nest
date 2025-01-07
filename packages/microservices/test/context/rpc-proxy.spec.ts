@@ -18,7 +18,7 @@ describe('RpcProxy', () => {
 
   describe('create', () => {
     it('should method return thunk', async () => {
-      const proxy = await routerProxy.create(async data => of(true), handler);
+      const proxy = routerProxy.create(async data => of(true), handler);
       expect(typeof proxy === 'function').to.be.true;
     });
 

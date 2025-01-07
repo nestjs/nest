@@ -15,7 +15,7 @@ export class SocketsContainer {
     options: T,
   ): ServerAndEventStreamsHost {
     const uniqueToken = this.generateHashByOptions(options);
-    return this.serverAndEventStreamsHosts.get(uniqueToken);
+    return this.serverAndEventStreamsHosts.get(uniqueToken)!;
   }
 
   public addOne<T extends GatewayMetadata = any>(

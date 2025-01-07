@@ -21,10 +21,10 @@ export class MiddlewareContainer {
     moduleKey: string,
   ): Map<InjectionToken, InstanceWrapper> {
     if (!this.middleware.has(moduleKey)) {
-      const moduleRef = this.container.getModuleByKey(moduleKey);
+      const moduleRef = this.container.getModuleByKey(moduleKey)!;
       this.middleware.set(moduleKey, moduleRef.middlewares);
     }
-    return this.middleware.get(moduleKey);
+    return this.middleware.get(moduleKey)!;
   }
 
   public getConfigurations(): Map<string, Set<MiddlewareConfiguration>> {
@@ -36,7 +36,7 @@ export class MiddlewareContainer {
     moduleKey: string,
   ) {
     const middleware = this.getMiddlewareCollection(moduleKey);
-    const targetConfig = this.getTargetConfig(moduleKey);
+    const targetConfig = this.getTargetConfig(moduleKey)!;
 
     const configurations = configList || [];
     const insertMiddleware = <T extends Type<unknown>>(metatype: T) => {

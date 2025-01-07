@@ -27,7 +27,7 @@ export abstract class ContextCreator {
     const methodMetadata = this.reflectMethodMetadata<T>(callback, metadataKey);
     return [
       ...this.createConcreteContext<T, R>(
-        globalMetadata || ([] as T),
+        globalMetadata || ([] as unknown[] as T),
         contextId,
         inquirerId,
       ),

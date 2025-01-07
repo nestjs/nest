@@ -60,5 +60,18 @@ describe('MaxFileSizeValidator', () => {
         `Validation failed (expected size is less than ${oneKb})`,
       );
     });
+
+    it('should include the file size in the error message when a file is provided', () => {
+      const currentFileSize = oneKb + 1;
+      const maxFileSizeValidator = new MaxFileSizeValidator({
+        maxSize: oneKb,
+      });
+
+      const file = { size: currentFileSize } as any;
+
+      expect(maxFileSizeValidator.buildErrorMessage(file)).to.equal(
+        `Validation failed (current file size is ${currentFileSize}, expected size is less than ${oneKb})`,
+      );
+    });
   });
 });

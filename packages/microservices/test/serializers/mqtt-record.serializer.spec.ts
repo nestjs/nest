@@ -8,7 +8,7 @@ describe('MqttRecordSerializer', () => {
     instance = new MqttRecordSerializer();
   });
   describe('serialize', () => {
-    it('should parse mqtt record instance', () => {
+    it('should parse mqtt record instance to a string, ignoring options', () => {
       const mqttMessage = new MqttRecordBuilder()
         .setData({ value: 'string' })
         .setQoS(1)
@@ -19,18 +19,22 @@ describe('MqttRecordSerializer', () => {
 
       expect(
         instance.serialize({
+          pattern: 'pattern',
           data: mqttMessage,
         }),
-      ).to.deep.eq({
-        options: { qos: 1, retain: true, dup: true, properties: {} },
-        data: { value: 'string' },
-      });
+      ).to.deep.eq(
+        JSON.stringify({
+          pattern: 'pattern',
+          data: { value: 'string' },
+        }),
+      );
     });
     it('should act as an identity function if msg is not an instance of MqttRecord class', () => {
       const packet = {
+        pattern: 'pattern',
         data: { random: true },
       };
-      expect(instance.serialize(packet)).to.eq(packet);
+      expect(instance.serialize(packet)).to.eq(JSON.stringify(packet));
     });
   });
 });

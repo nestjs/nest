@@ -42,7 +42,7 @@ describe('GraphQL request scoped', () => {
             ],
           },
         })
-        .end((err, res) => {
+        .end(err => {
           if (err) return end(err);
           end();
         });

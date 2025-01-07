@@ -2,6 +2,14 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import {
+  throwError as _throw,
+  connectable,
+  defer,
+  Observable,
+  Subject,
+} from 'rxjs';
+import { mergeMap } from 'rxjs/operators';
+import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
   KAFKA_DEFAULT_GROUP,
@@ -9,6 +17,8 @@ import {
 import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deserializer';
 import { KafkaHeaders } from '../enums';
 import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
+import { InvalidMessageException } from '../errors/invalid-message.exception';
+import { KafkaStatus } from '../events';
 import {
   BrokersFunction,
   Consumer,
@@ -27,7 +37,9 @@ import {
   KafkaReplyPartitionAssigner,
 } from '../helpers';
 import {
+  ClientKafkaProxy,
   KafkaOptions,
+  MsPattern,
   OutgoingEvent,
   ReadPacket,
   WritePacket,
@@ -37,26 +49,18 @@ import {
   KafkaRequestSerializer,
 } from '../serializers/kafka-request.serializer';
 import { ClientProxy } from './client-proxy';
-import {
-  connectable,
-  defer,
-  Observable,
-  Subject,
-  throwError as _throw,
-} from 'rxjs';
-import { mergeMap } from 'rxjs/operators';
-import { InvalidMessageException } from '../errors/invalid-message.exception';
 
 let kafkaPackage: any = {};
 
 /**
  * @publicApi
  */
-export class ClientKafka extends ClientProxy {
+export class ClientKafka
+  extends ClientProxy<never, KafkaStatus>
+  implements ClientKafkaProxy
+{
   protected logger = new Logger(ClientKafka.name);
   protected client: Kafka | null = null;
-  protected consumer: Consumer | null = null;
-  protected producer: Producer | null = null;
   protected parser: KafkaParser | null = null;
   protected initialized: Promise<void> | null = null;
   protected responsePatterns: string[] = [];
@@ -65,8 +69,28 @@ export class ClientKafka extends ClientProxy {
   protected clientId: string;
   protected groupId: string;
   protected producerOnlyMode: boolean;
+  protected _consumer: Consumer | null = null;
+  protected _producer: Producer | null = null;
 
-  constructor(protected readonly options: KafkaOptions['options']) {
+  get consumer(): Consumer {
+    if (!this._consumer) {
+      throw new Error(
+        'No consumer initialized. Please, call the "connect" method first.',
+      );
+    }
+    return this._consumer;
+  }
+
+  get producer(): Producer {
+    if (!this._producer) {
+      throw new Error(
+        'No producer initialized. Please, call the "connect" method first.',
+      );
+    }
+    return this._producer;
+  }
+
+  constructor(protected readonly options: Required<KafkaOptions>['options']) {
     super();
 
     const clientOptions = this.getOptionsProp(
@@ -104,28 +128,28 @@ export class ClientKafka extends ClientProxy {
     this.initializeDeserializer(options);
   }
 
-  public subscribeToResponseOf(pattern: any): void {
-    const request = this.normalizePattern(pattern);
+  public subscribeToResponseOf(pattern: unknown): void {
+    const request = this.normalizePattern(pattern as MsPattern);
     this.responsePatterns.push(this.getResponsePatternName(request));
   }
 
   public async close(): Promise<void> {
-    this.producer && (await this.producer.disconnect());
-    this.consumer && (await this.consumer.disconnect());
-    this.producer = null;
-    this.consumer = null;
+    this._producer && (await this._producer.disconnect());
+    this._consumer && (await this._consumer.disconnect());
+    this._producer = null;
+    this._consumer = null;
     this.initialized = null;
     this.client = null;
   }
 
   public async connect(): Promise<Producer> {
     if (this.initialized) {
-      return this.initialized.then(() => this.producer);
+      return this.initialized.then(() => this._producer!);
     }
+    /* eslint-disable-next-line no-async-promise-executor */
     this.initialized = new Promise(async (resolve, reject) => {
       try {
         this.client = this.createClient();
-
         if (!this.producerOnlyMode) {
           const partitionAssigners = [
             (
@@ -145,42 +169,45 @@ export class ClientKafka extends ClientProxy {
             },
           );
 
-          this.consumer = this.client.consumer(consumerOptions);
-          // set member assignments on join and rebalance
-          this.consumer.on(
-            this.consumer.events.GROUP_JOIN,
+          this._consumer = this.client!.consumer(consumerOptions);
+          this.registerConsumerEventListeners();
+
+          // Set member assignments on join and rebalance
+          this._consumer.on(
+            this._consumer.events.GROUP_JOIN,
             this.setConsumerAssignments.bind(this),
           );
-          await this.consumer.connect();
+          await this._consumer.connect();
           await this.bindTopics();
         }
 
-        this.producer = this.client.producer(this.options.producer || {});
-        await this.producer.connect();
+        this._producer = this.client!.producer(this.options.producer || {});
+        this.registerProducerEventListeners();
+        await this._producer.connect();
 
         resolve();
       } catch (err) {
         reject(err);
       }
     });
-    return this.initialized.then(() => this.producer);
+    return this.initialized.then(() => this._producer!);
   }
 
   public async bindTopics(): Promise<void> {
-    if (!this.consumer) {
+    if (!this._consumer) {
       throw Error('No consumer initialized');
     }
 
     const consumerSubscribeOptions = this.options.subscribe || {};
 
     if (this.responsePatterns.length > 0) {
-      await this.consumer.subscribe({
+      await this._consumer.subscribe({
         ...consumerSubscribeOptions,
         topics: this.responsePatterns,
       });
     }
 
-    await this.consumer.run(
+    await this._consumer.run(
       Object.assign(this.options.run || {}, {
         eachMessage: this.createResponseCallback(),
       }),
@@ -199,13 +226,13 @@ export class ClientKafka extends ClientProxy {
 
   public createResponseCallback(): (payload: EachMessagePayload) => any {
     return async (payload: EachMessagePayload) => {
-      const rawMessage = this.parser.parse<KafkaMessage>(
+      const rawMessage = this.parser!.parse<KafkaMessage>(
         Object.assign(payload.message, {
           topic: payload.topic,
           partition: payload.partition,
         }),
       );
-      if (isUndefined(rawMessage.headers[KafkaHeaders.CORRELATION_ID])) {
+      if (isUndefined(rawMessage.headers![KafkaHeaders.CORRELATION_ID])) {
         return;
       }
       const { err, response, isDisposed, id } =
@@ -253,11 +280,60 @@ export class ClientKafka extends ClientProxy {
   public commitOffsets(
     topicPartitions: TopicPartitionOffsetAndMetadata[],
   ): Promise<void> {
-    if (this.consumer) {
-      return this.consumer.commitOffsets(topicPartitions);
+    if (this._consumer) {
+      return this._consumer.commitOffsets(topicPartitions);
     } else {
       throw new Error('No consumer initialized');
     }
+  }
+
+  public unwrap<T>(): T {
+    if (!this.client) {
+      throw new Error(
+        'Not initialized. Please call the "connect" method first.',
+      );
+    }
+    return this.client as T;
+  }
+
+  public on<
+    EventKey extends string | number | symbol = string | number | symbol,
+    EventCallback = any,
+  >(event: EventKey, callback: EventCallback) {
+    throw new Error('Method is not supported for Kafka client');
+  }
+
+  protected registerConsumerEventListeners() {
+    if (!this._consumer) {
+      return;
+    }
+    this._consumer.on(this._consumer.events.CONNECT, () =>
+      this._status$.next(KafkaStatus.CONNECTED),
+    );
+    this._consumer.on(this._consumer.events.DISCONNECT, () =>
+      this._status$.next(KafkaStatus.DISCONNECTED),
+    );
+    this._consumer.on(this._consumer.events.REBALANCING, () =>
+      this._status$.next(KafkaStatus.REBALANCING),
+    );
+    this._consumer.on(this._consumer.events.STOP, () =>
+      this._status$.next(KafkaStatus.STOPPED),
+    );
+    this.consumer.on(this._consumer.events.CRASH, () =>
+      this._status$.next(KafkaStatus.CRASHED),
+    );
+  }
+
+  protected registerProducerEventListeners() {
+    if (!this._producer) {
+      return;
+    }
+    this._producer.on(this._producer.events.CONNECT, () =>
+      this._status$.next(KafkaStatus.CONNECTED),
+    );
+    this._producer.on(this._producer.events.DISCONNECT, () =>
+      this._status$.next(KafkaStatus.DISCONNECTED),
+    );
   }
 
   protected async dispatchBatchEvent<TInput = any>(
@@ -297,7 +373,7 @@ export class ClientKafka extends ClientProxy {
       this.options.send || {},
     );
 
-    return this.producer.send(message);
+    return this._producer!.send(message);
   }
 
   protected getReplyTopicPartition(topic: string): string {
@@ -306,7 +382,7 @@ export class ClientKafka extends ClientProxy {
       throw new InvalidKafkaClientTopicException(topic);
     }
 
-    // get the minimum partition
+    // Get the minimum partition
     return minimumPartition.toString();
   }
 
@@ -343,13 +419,14 @@ export class ClientKafka extends ClientProxy {
             this.options.send || {},
           );
 
-          return this.producer.send(message);
+          return this._producer!.send(message);
         })
         .catch(err => errorCallback(err));
 
       return cleanup;
     } catch (err) {
       errorCallback(err);
+      return () => null;
     }
   }
 
@@ -360,7 +437,7 @@ export class ClientKafka extends ClientProxy {
   protected setConsumerAssignments(data: ConsumerGroupJoinEvent): void {
     const consumerAssignments: { [key: string]: number } = {};
 
-    // only need to set the minimum
+    // Only need to set the minimum
     Object.keys(data.payload.memberAssignment).forEach(topic => {
       const memberPartitions = data.payload.memberAssignment[topic];
 

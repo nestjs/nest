@@ -1,31 +1,17 @@
 import { assert, expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
-import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
-import { ServerRMQ } from '../../server/server-rmq';
 import { RmqContext } from '../../ctx-host';
+import { ServerRMQ } from '../../server/server-rmq';
+import { objectToMap } from './utils/object-to-map';
 
 describe('ServerRMQ', () => {
   let server: ServerRMQ;
-
-  const objectToMap = obj =>
-    new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
+  let untypedServer: any;
 
   beforeEach(() => {
     server = new ServerRMQ({});
-  });
-
-  describe('constructor', () => {
-    it(`should fallback to queueOptions.noAssert when 'noAssert' is undefined`, () => {
-      const queueOptions = {
-        noAssert: true,
-      };
-      const instance = new ServerRMQ({
-        queueOptions,
-      });
-
-      expect(instance).property('noAssert').to.eq(queueOptions.noAssert);
-    });
+    untypedServer = server as any;
   });
 
   describe('listen', () => {
@@ -47,6 +33,7 @@ describe('ServerRMQ', () => {
 
       client = {
         on: onStub,
+        once: onStub,
         createChannel: createChannelStub,
       };
       createClient = sinon.stub(server, 'createClient').callsFake(() => client);
@@ -55,30 +42,30 @@ describe('ServerRMQ', () => {
     afterEach(() => {
       setupChannelStub.restore();
     });
-    it('should call "createClient"', () => {
-      server.listen(callbackSpy);
+    it('should call "createClient"', async () => {
+      await server.listen(callbackSpy);
       expect(createClient.called).to.be.true;
     });
-    it('should bind "connect" event to handler', () => {
-      server.listen(callbackSpy);
+    it('should bind "connect" event to handler', async () => {
+      await server.listen(callbackSpy);
       expect(onStub.getCall(0).args[0]).to.be.equal('connect');
     });
-    it('should bind "disconnect" event to handler', () => {
-      server.listen(callbackSpy);
-      expect(onStub.getCall(1).args[0]).to.be.equal('disconnect');
+    it('should bind "disconnected" event to handler', async () => {
+      await server.listen(callbackSpy);
+      expect(onStub.getCall(2).args[0]).to.be.equal('disconnect');
     });
-    it('should bind "connectFailed" event to handler', () => {
-      server.listen(callbackSpy);
-      expect(onStub.getCall(2).args[0]).to.be.equal('connectFailed');
+    it('should bind "connectFailed" event to handler', async () => {
+      await server.listen(callbackSpy);
+      expect(onStub.getCall(3).args[0]).to.be.equal('connectFailed');
     });
     describe('when "start" throws an exception', () => {
-      it('should call callback with a thrown error as an argument', () => {
+      it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
 
         sinon.stub(server, 'start').callsFake(() => {
           throw error;
         });
-        server.listen(callbackSpy);
+        await server.listen(callbackSpy);
         expect(callbackSpy.calledWith(error)).to.be.true;
       });
     });
@@ -88,8 +75,8 @@ describe('ServerRMQ', () => {
     const rmqChannel = { close: sinon.spy() };
 
     beforeEach(() => {
-      (server as any).server = rmqServer;
-      (server as any).channel = rmqChannel;
+      untypedServer.server = rmqServer;
+      untypedServer.channel = rmqChannel;
     });
     it('should close server', () => {
       server.close();
@@ -122,7 +109,7 @@ describe('ServerRMQ', () => {
 
     beforeEach(() => {
       sendMessageStub = sinon.stub(server, 'sendMessage').callsFake(() => ({}));
-      (server as any).channel = channel;
+      untypedServer.channel = channel;
     });
     afterEach(() => {
       channel.nack.resetHistory();
@@ -144,7 +131,7 @@ describe('ServerRMQ', () => {
     });
     it('should call handler if exists in handlers object', async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [pattern]: handler as any,
       });
       await server.handleMessage(msg, '');
@@ -158,7 +145,7 @@ describe('ServerRMQ', () => {
         properties: { correlationId: 1 },
       };
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [pattern]: handler as any,
       });
 
@@ -167,7 +154,7 @@ describe('ServerRMQ', () => {
       });
     });
     it('should negative acknowledge if message does not exists in handlers object and noAck option is false', async () => {
-      (server as any).noAck = false;
+      untypedServer.noAck = false;
       await server.handleMessage(msg, '');
       expect(channel.nack.calledWith(msg, false, false)).to.be.true;
       expect(
@@ -199,10 +186,12 @@ describe('ServerRMQ', () => {
     let channel: any = {};
 
     beforeEach(() => {
-      (server as any)['queue'] = queue;
-      (server as any)['queueOptions'] = queueOptions;
-      (server as any)['isGlobalPrefetchCount'] = isGlobalPrefetchCount;
-      (server as any)['prefetchCount'] = prefetchCount;
+      untypedServer['queue'] = queue;
+      untypedServer['queueOptions'] = queueOptions;
+      untypedServer['options'] = {
+        isGlobalPrefetchCount,
+        prefetchCount,
+      };
 
       channel = {
         assertQueue: sinon.spy(() => ({})),
@@ -217,7 +206,10 @@ describe('ServerRMQ', () => {
       expect(channel.assertQueue.calledWith(queue, queueOptions)).to.be.true;
     });
     it('should not call "assertQueue" when noAssert is true', async () => {
-      server['noAssert' as any] = true;
+      server['options' as any] = {
+        ...(server as any)['options'],
+        noAssert: true,
+      };
 
       await server.setupChannel(channel, () => null);
       expect(channel.assertQueue.called).not.to.be.true;
@@ -268,13 +260,13 @@ describe('ServerRMQ', () => {
     const channel = 'test';
     const data = 'test';
 
-    it('should call handler with expected arguments', () => {
+    it('should call handler with expected arguments', async () => {
       const handler = sinon.spy();
-      (server as any).messageHandlers = objectToMap({
+      untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
 
-      server.handleEvent(
+      await server.handleEvent(
         channel,
         { pattern: '', data },
         new RmqContext([{}, {}, '']),
@@ -282,26 +274,34 @@ describe('ServerRMQ', () => {
       expect(handler.calledWith(data)).to.be.true;
     });
 
-    it('should negative acknowledge without retrying if key does not exists in handlers object and noAck option is false', () => {
+    it('should negative acknowledge without retrying if key does not exists in handlers object and noAck option is false', async () => {
       const nack = sinon.spy();
       const message = { pattern: 'no-exists', data };
-      (server as any).channel = {
+      untypedServer.channel = {
         nack,
       };
-      (server as any).noAck = false;
-      server.handleEvent(channel, message, new RmqContext([message, '', '']));
+      untypedServer.noAck = false;
+      await server.handleEvent(
+        channel,
+        message,
+        new RmqContext([message, '', '']),
+      );
 
       expect(nack.calledWith(message, false, false)).to.be.true;
     });
 
-    it('should not negative acknowledge if key does not exists in handlers object but noAck option is true', () => {
+    it('should not negative acknowledge if key does not exists in handlers object but noAck option is true', async () => {
       const nack = sinon.spy();
       const message = { pattern: 'no-exists', data };
-      (server as any).channel = {
+      untypedServer.channel = {
         nack,
       };
-      (server as any).noAck = true;
-      server.handleEvent(channel, message, new RmqContext([message, '', '']));
+      untypedServer.noAck = true;
+      await server.handleEvent(
+        channel,
+        message,
+        new RmqContext([message, '', '']),
+      );
 
       expect(nack.calledWith(message, false, false)).not.to.be.true;
     });

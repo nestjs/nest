@@ -1,6 +1,6 @@
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { normalizePath, isNil } from '@nestjs/common/utils/shared.utils';
+import { isNil, normalizePath } from '@nestjs/common/utils/shared.utils';
 import { AbstractWsAdapter } from '@nestjs/websockets';
 import {
   CLOSE_EVENT,
@@ -25,6 +25,11 @@ type HttpServerRegistryKey = number;
 type HttpServerRegistryEntry = any;
 type WsServerRegistryKey = number;
 type WsServerRegistryEntry = any[];
+type WsData = string | Buffer | ArrayBuffer | Buffer[];
+type WsMessageParser = (data: WsData) => { event: string; data: any } | void;
+type WsAdapterOptions = {
+  messageParser?: WsMessageParser;
+};
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
 
@@ -41,10 +46,20 @@ export class WsAdapter extends AbstractWsAdapter {
     WsServerRegistryKey,
     WsServerRegistryEntry
   >();
+  protected messageParser: WsMessageParser = (data: WsData) => {
+    return JSON.parse(data.toString());
+  };
 
-  constructor(appOrHttpServer?: INestApplicationContext | any) {
+  constructor(
+    appOrHttpServer?: INestApplicationContext | object,
+    options?: WsAdapterOptions,
+  ) {
     super(appOrHttpServer);
     wsPackage = loadPackage('ws', 'WsAdapter', () => require('ws'));
+
+    if (options?.messageParser) {
+      this.messageParser = options.messageParser;
+    }
   }
 
   public create(
@@ -55,7 +70,11 @@ export class WsAdapter extends AbstractWsAdapter {
       path?: string;
     },
   ) {
-    const { server, path, ...wsOptions } = options;
+    const { server, path, ...wsOptions } = options as {
+      namespace?: string;
+      server?: any;
+      path?: string;
+    };
     if (wsOptions?.namespace) {
       const error = new Error(
         '"WsAdapter" does not support namespaces. If you need namespaces in your project, consider using the "@nestjs/platform-socket.io" package instead.',
@@ -73,7 +92,7 @@ export class WsAdapter extends AbstractWsAdapter {
         }),
       );
 
-      this.addWsServerToRegistry(wsServer, port, path);
+      this.addWsServerToRegistry(wsServer, port, path!);
       return wsServer;
     }
 
@@ -138,8 +157,11 @@ export class WsAdapter extends AbstractWsAdapter {
     transform: (data: any) => Observable<any>,
   ): Observable<any> {
     try {
-      const message = JSON.parse(buffer.data);
-      const messageHandler = handlersMap.get(message.event);
+      const message = this.messageParser(buffer.data);
+      if (!message) {
+        return EMPTY;
+      }
+      const messageHandler = handlersMap.get(message.event)!;
       const { callback } = messageHandler;
       return transform(callback(message.data, message.event));
     } catch {
@@ -161,7 +183,7 @@ export class WsAdapter extends AbstractWsAdapter {
 
   public async close(server: any) {
     const closeEventSignal = new Promise((resolve, reject) =>
-      server.close(err => (err ? reject(err) : resolve(undefined))),
+      server.close((err: Error) => (err ? reject(err) : resolve(undefined))),
     );
     for (const ws of server.clients) {
       ws.terminate();
@@ -179,6 +201,10 @@ export class WsAdapter extends AbstractWsAdapter {
     this.wsServersRegistry.clear();
   }
 
+  public setMessageParser(parser: WsMessageParser) {
+    this.messageParser = parser;
+  }
+
   protected ensureHttpServerExists(
     port: number,
     httpServer = http.createServer(),
@@ -191,8 +217,8 @@ export class WsAdapter extends AbstractWsAdapter {
     httpServer.on('upgrade', (request, socket, head) => {
       try {
         const baseUrl = 'ws://' + request.headers.host + '/';
-        const pathname = new URL(request.url, baseUrl).pathname;
-        const wsServersCollection = this.wsServersRegistry.get(port);
+        const pathname = new URL(request.url!, baseUrl).pathname;
+        const wsServersCollection = this.wsServersRegistry.get(port)!;
 
         let isRequestDelegated = false;
         for (const wsServer of wsServersCollection) {

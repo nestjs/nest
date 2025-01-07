@@ -4,8 +4,8 @@ import {
   PATTERN_METADATA,
   TRANSPORT_METADATA,
 } from '../../constants';
-import { Transport } from '../../enums/transport.enum';
 import { EventPattern } from '../../decorators/event-pattern.decorator';
+import { Transport } from '../../enums/transport.enum';
 
 describe('@EventPattern', () => {
   const pattern = { role: 'test' };
@@ -79,7 +79,7 @@ describe('@EventPattern', () => {
           Reflect.defineMetadata(
             PATTERN_EXTRAS_METADATA,
             additionalExtras,
-            descriptor.value,
+            descriptor.value!,
           )
       )())
       public static test() {}

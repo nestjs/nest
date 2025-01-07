@@ -13,7 +13,7 @@ export class ExternalErrorProxy {
         return await targetCallback(...args);
       } catch (e) {
         const host = new ExecutionContextHost(args);
-        host.setType<TContext>(type);
+        host.setType<TContext>(type!);
         return exceptionsHandler.next(e, host);
       }
     };

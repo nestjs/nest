@@ -7,7 +7,7 @@ import {
   PipeTransform,
 } from '../interfaces/features/pipe-transform.interface';
 import { HttpErrorByCode } from '../utils/http-error-by-code.util';
-import { isNil, isUndefined, isString } from '../utils/shared.utils';
+import { isNil, isString, isUndefined } from '../utils/shared.utils';
 import { ValidationPipe, ValidationPipeOptions } from './validation.pipe';
 
 const VALIDATION_ERROR_MESSAGE = 'Validation failed (parsable array expected)';
@@ -21,9 +21,26 @@ export interface ParseArrayOptions
     ValidationPipeOptions,
     'transform' | 'validateCustomDecorators' | 'exceptionFactory'
   > {
+  /**
+   * Type for items to be converted into
+   */
   items?: Type<unknown>;
+  /**
+   * Items separator to split string by
+   * @default ','
+   */
   separator?: string;
+  /**
+   * If true, the pipe will return null or undefined if the value is not provided
+   * @default false
+   */
   optional?: boolean;
+  /**
+   * A factory function that returns an exception object to be thrown
+   * if validation fails.
+   * @param error Error message or object
+   * @returns The exception object
+   */
   exceptionFactory?: (error: any) => any;
 }
 
@@ -91,7 +108,9 @@ export class ParseArrayPipe implements PipeTransform {
         if (this.options.items !== String) {
           try {
             item = JSON.parse(item);
-          } catch {}
+          } catch {
+            // Do nothing
+          }
         }
         if (isExpectedTypePrimitive) {
           return this.validatePrimitive(item, index);
@@ -101,16 +120,16 @@ export class ParseArrayPipe implements PipeTransform {
       if (this.options.stopAtFirstError === false) {
         // strict compare to "false" to make sure
         // that this option is disabled by default
-        let errors = [];
+        let errors: string[] = [];
 
         const targetArray = value as Array<unknown>;
         for (let i = 0; i < targetArray.length; i++) {
           try {
             targetArray[i] = await toClassInstance(targetArray[i]);
           } catch (err) {
-            let message: string[] | unknown;
-            if ((err as any).getResponse) {
-              const response = (err as any).getResponse();
+            let message: string[] | string;
+            if (err.getResponse) {
+              const response = err.getResponse();
               if (Array.isArray(response.message)) {
                 message = response.message.map(
                   (item: string) => `[${i}] ${item}`,
