@@ -42,7 +42,7 @@
     "@types/supertest": "6.x",
     "@typescript-eslint/eslint-plugin": "8.x",
     "@typescript-eslint/parser": "8.x",
-    "eslint": "8.x",
+    "eslint": "9.x",
     "eslint-config-prettier": "9.x",
     "eslint-plugin-prettier": "5.x",
     "jest": "29.7.0",
