@@ -24,7 +24,7 @@ describe('Sse (Express Application)', () => {
           fetch(input, {
             ...init,
             headers: {
-              ...init.headers,
+              ...init?.headers,
               connection: 'keep-alive',
             },
           }),
@@ -68,7 +68,7 @@ describe('Sse (Express Application)', () => {
           fetch(input, {
             ...init,
             headers: {
-              ...init.headers,
+              ...init?.headers,
               connection: 'keep-alive',
             },
           }),

@@ -29,7 +29,7 @@ describe('Sse (Fastify Application)', () => {
           fetch(input, {
             ...init,
             headers: {
-              ...init.headers,
+              ...init?.headers,
               connection: 'keep-alive',
             },
           }),
@@ -75,7 +75,7 @@ describe('Sse (Fastify Application)', () => {
           fetch(input, {
             ...init,
             headers: {
-              ...init.headers,
+              ...init?.headers,
               connection: 'keep-alive',
             },
           }),
