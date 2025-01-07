@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as EventSource from 'eventsource';
+import { EventSource } from 'eventsource';
 import { io } from 'socket.io-client';
 import { AppController as LongConnectionController } from '../../nest-application/sse/src/app.controller';
 import { ApplicationGateway } from '../src/app.gateway';

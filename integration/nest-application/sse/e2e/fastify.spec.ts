@@ -4,7 +4,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as EventSource from 'eventsource';
+import { EventSource } from 'eventsource';
 import { AppModule } from '../src/app.module';
 
 describe('Sse (Fastify Application)', () => {
@@ -25,7 +25,14 @@ describe('Sse (Fastify Application)', () => {
       const url = await app.getUrl();
 
       eventSource = new EventSource(url + '/sse', {
-        headers: { connection: 'keep-alive' },
+        fetch: (input, init) =>
+          fetch(input, {
+            ...init,
+            headers: {
+              ...init.headers,
+              connection: 'keep-alive',
+            },
+          }),
       });
     });
 
@@ -64,7 +71,14 @@ describe('Sse (Fastify Application)', () => {
       const url = await app.getUrl();
 
       eventSource = new EventSource(url + '/sse', {
-        headers: { connection: 'keep-alive' },
+        fetch: (input, init) =>
+          fetch(input, {
+            ...init,
+            headers: {
+              ...init.headers,
+              connection: 'keep-alive',
+            },
+          }),
       });
     });
 
