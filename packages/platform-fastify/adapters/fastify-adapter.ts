@@ -34,6 +34,7 @@ import {
   RawServerBase,
   RawServerDefault,
   RequestGenericInterface,
+  RouteGenericInterface,
   RouteOptions,
   RouteShorthandOptions,
   fastify,
@@ -130,10 +131,11 @@ export class FastifyAdapter<
     TRawRequest
   > = FastifyRequest<RequestGenericInterface, TServer, TRawRequest>,
   TReply extends FastifyReply<
+    RouteGenericInterface,
     TServer,
     TRawRequest,
     TRawResponse
-  > = FastifyReply<TServer, TRawRequest, TRawResponse>,
+  > = FastifyReply<RouteGenericInterface, TServer, TRawRequest, TRawResponse>,
   TInstance extends FastifyInstance<
     TServer,
     TRawRequest,
@@ -464,11 +466,12 @@ export class FastifyAdapter<
     return this.instance as unknown as T;
   }
 
-  public register<TRegister extends Parameters<FastifyRegister<TInstance>>>(
-    plugin: TRegister['0'],
-    opts?: TRegister['1'],
-  ) {
-    return this.instance.register(plugin, opts);
+  public register<
+    TRegister extends Parameters<
+      FastifyRegister<FastifyInstance<TServer, TRawRequest, TRawResponse>>
+    >,
+  >(plugin: TRegister['0'], opts?: TRegister['1']) {
+    return (this.instance.register as any)(plugin, opts);
   }
 
   public inject(): LightMyRequestChain;

@@ -22,7 +22,7 @@
     "@nestjs/common": "10.x",
     "@nestjs/core": "10.x",
     "@nestjs/platform-express": "10.x",
-    "reflect-metadata": "0.2.0",
+    "reflect-metadata": "0.2.2",
     "rxjs": "7.x",
     "superjson": "2.x"
   },
@@ -44,6 +44,6 @@
     "ts-loader": "9.x",
     "ts-node": "10.x",
     "tsconfig-paths": "4.x",
-    "typescript": "5.5.x"
+    "typescript": "5.7.x"
   }
 }

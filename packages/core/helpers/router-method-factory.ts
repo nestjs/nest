@@ -1,7 +1,7 @@
 import { HttpServer } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
 
-const REQUEST_METHOD_MAP = {
+export const REQUEST_METHOD_MAP = {
   [RequestMethod.GET]: 'get',
   [RequestMethod.POST]: 'post',
   [RequestMethod.PUT]: 'put',
