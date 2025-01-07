@@ -26,6 +26,11 @@ class TestController {
     return RETURN_VALUE;
   }
 
+  @Get('legacy-wildcard/overview')
+  legacyWildcard() {
+    return RETURN_VALUE;
+  }
+
   @Get('exclude')
   exclude() {
     return EXCLUDE_VALUE;
@@ -40,7 +45,7 @@ class TestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply((req, res, next) => res.send(WILDCARD_VALUE))
-      .forRoutes('tests/*')
+      .forRoutes('tests/*path', 'legacy-wildcard/*')
       .apply((req, res, next) => res.send(SCOPED_VALUE))
       .exclude('exclude')
       .forRoutes(TestController)
@@ -83,6 +88,13 @@ describe('Middleware', () => {
     app = await createApp();
     return request(app.getHttpServer())
       .get('/tests/wildcard')
+      .expect(200, WILDCARD_VALUE);
+  });
+
+  it(`forRoutes(legacy-wildcard/*)`, async () => {
+    app = await createApp();
+    return request(app.getHttpServer())
+      .get('/legacy-wildcard/overview')
       .expect(200, WILDCARD_VALUE);
   });
 
