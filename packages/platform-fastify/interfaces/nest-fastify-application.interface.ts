@@ -1,3 +1,4 @@
+import { FastifyCorsOptions } from '@fastify/cors';
 import { HttpServer, INestApplication } from '@nestjs/common';
 import {
   FastifyBodyParser,
@@ -74,6 +75,13 @@ export interface NestFastifyApplication<
    * @returns {this}
    */
   useStaticAssets(options: FastifyStaticOptions): this;
+
+  /**
+   * Enables CORS (Cross-Origin Resource Sharing)
+   *
+   * @returns {void}
+   */
+  enableCors(options?: FastifyCorsOptions): void;
 
   /**
    * Sets a view engine for templates (views), for example: `pug`, `handlebars`, or `ejs`.

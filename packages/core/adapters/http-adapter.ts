@@ -1,9 +1,5 @@
 import { HttpServer, RequestMethod, VersioningOptions } from '@nestjs/common';
 import { RequestHandler, VersionValue } from '@nestjs/common/interfaces';
-import {
-  CorsOptions,
-  CorsOptionsDelegate,
-} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
 
 /**
@@ -164,10 +160,7 @@ export abstract class AbstractHttpAdapter<
   abstract isHeadersSent(response: any);
   abstract setHeader(response: any, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string, rawBody?: boolean);
-  abstract enableCors(
-    options: CorsOptions | CorsOptionsDelegate<TRequest>,
-    prefix?: string,
-  );
+  abstract enableCors(options?: any, prefix?: string);
   abstract createMiddlewareFactory(
     requestMethod: RequestMethod,
   ):
