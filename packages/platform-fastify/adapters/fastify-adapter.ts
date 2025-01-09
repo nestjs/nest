@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
+import { FastifyCorsOptions } from '@fastify/cors';
 import {
   HttpStatus,
   Logger,
@@ -10,10 +10,6 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { VersionValue } from '@nestjs/common/interfaces';
-import {
-  CorsOptions,
-  CorsOptionsDelegate,
-} from '@nestjs/common/interfaces/external/cors-options.interface';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
@@ -554,7 +550,7 @@ export class FastifyAdapter<
     return this.getRequestOriginalUrl(request.raw || request);
   }
 
-  public enableCors(options: CorsOptions | CorsOptionsDelegate<TRequest>) {
+  public enableCors(options?: FastifyCorsOptions) {
     this.register(
       import('@fastify/cors') as Parameters<TInstance['register']>[0],
       options,
