@@ -122,7 +122,7 @@
     "clang-format": "1.8.0",
     "concurrently": "9.1.2",
     "conventional-changelog": "6.0.0",
-    "core-js": "3.39.0",
+    "core-js": "3.40.0",
     "coveralls": "3.1.1",
     "delete-empty": "3.0.0",
     "engine.io-client": "6.6.2",
