@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import { FastifyCorsOptions } from '@fastify/cors';
 import {
   HttpStatus,

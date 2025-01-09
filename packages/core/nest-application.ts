@@ -274,7 +274,7 @@ export class NestApplication
   }
 
   public enableCors(options?: any): void {
-    this.httpAdapter.enableCors(options!);
+    this.httpAdapter.enableCors(options);
   }
 
   public enableVersioning(
