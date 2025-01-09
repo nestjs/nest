@@ -60,7 +60,7 @@
   },
   "dependencies": {
     "@nuxtjs/opencollective": "0.3.2",
-    "ansis": "3.4.0",
+    "ansis": "3.7.0",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.1",
     "cors": "2.8.5",
