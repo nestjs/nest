@@ -151,7 +151,7 @@
     "kafkajs": "2.2.4",
     "lerna": "2.11.0",
     "lerna-changelog": "2.2.0",
-    "light-my-request": "6.3.0",
+    "light-my-request": "6.5.1",
     "lint-staged": "15.3.0",
     "markdown-table": "2.0.0",
     "mocha": "10.8.2",
