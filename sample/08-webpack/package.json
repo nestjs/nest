@@ -22,7 +22,7 @@
   "devDependencies": {
     "@nestjs/cli": "10.4.9",
     "@nestjs/schematics": "10.2.3",
-    "@types/node": "22.10.5",
+    "@types/node": "22.10.6",
     "@typescript-eslint/eslint-plugin": "5.62.0",
     "@typescript-eslint/parser": "5.62.0",
     "eslint": "9.18.0",
