@@ -1,6 +1,7 @@
 name: "\U0001F680 Feature Request"
 description: "I have a suggestion \U0001F63B!"
 labels: ["type: enhancement :wolf:", "needs triage"]
+type: feature
 body:
   - type: markdown
     attributes:

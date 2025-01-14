@@ -2,6 +2,7 @@ title: "perf: "
 name: "\U0001F525 Suggestion for Improving Performance"
 description: "I have a suggestion that might improve the performance of Nest \U00002728"
 labels: ["type: enhancement :wolf:", "needs triage"]
+type: task
 body:
   - type: checkboxes
     attributes:
