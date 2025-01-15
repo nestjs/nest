@@ -135,7 +135,7 @@
     "fastify": "5.2.1",
     "globals": "15.14.0",
     "graphql": "16.9.0",
-    "graphql-subscriptions": "2.0.0",
+    "graphql-subscriptions": "3.0.0",
     "graphql-tools": "9.0.11",
     "gulp": "5.0.0",
     "gulp-clang-format": "1.0.27",
