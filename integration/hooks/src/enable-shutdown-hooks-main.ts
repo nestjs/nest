@@ -37,6 +37,10 @@ async function bootstrap() {
 
   await app.listen(1800);
   process.kill(process.pid, SIGNAL);
+
+  process.on('exit', () => {
+    console.log('node exit event called');
+  });
 }
 
 void bootstrap();
