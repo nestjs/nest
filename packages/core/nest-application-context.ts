@@ -368,7 +368,7 @@ export class NestApplicationContext<
         await this.dispose();
         await this.callShutdownHook(signal);
         signals.forEach(sig => process.removeListener(sig, cleanup));
-        process.kill(process.pid, signal);
+        process.exit(0);
       } catch (err) {
         Logger.error(
           MESSAGES.ERROR_DURING_SHUTDOWN,
