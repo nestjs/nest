@@ -34,6 +34,7 @@ import * as express from 'express';
 import type { Server } from 'http';
 import * as http from 'http';
 import * as https from 'https';
+import { pathToRegexp } from 'path-to-regexp';
 import { Duplex, pipeline } from 'stream';
 import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface';
 import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface';
@@ -159,6 +160,8 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   public normalizePath(path: string): string {
     try {
       const convertedPath = LegacyRouteConverter.tryConvert(path);
+      // Call "pathToRegexp" to trigger a TypeError if the path is invalid
+      pathToRegexp(convertedPath);
       return convertedPath;
     } catch (e) {
       if (e instanceof TypeError) {

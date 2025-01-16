@@ -14,7 +14,7 @@ export class LegacyRouteConverter {
    * @returns The converted route, or the original route if it cannot be converted.
    */
   static tryConvert(route: string): string {
-    // Normalize path to eliminate additional conditions.
+    // Normalize path to eliminate additional if statements.
     const routeWithLeadingSlash = route.startsWith('/') ? route : `/${route}`;
     const normalizedRoute = route.endsWith('/')
       ? routeWithLeadingSlash
@@ -27,6 +27,7 @@ export class LegacyRouteConverter {
       }
       return route.replace('(.*)', '{*path}');
     }
+
     if (normalizedRoute.endsWith('/*/')) {
       // Skip printing warning for the "all" wildcard.
       if (normalizedRoute !== '/*/') {
@@ -34,10 +35,21 @@ export class LegacyRouteConverter {
       }
       return route.replace('*', '{*path}');
     }
+
     if (normalizedRoute.endsWith('/+/')) {
       this.printWarning(route);
       return route.replace('/+', '/*path');
     }
+
+    // When route includes any wildcard segments in the middle.
+    if (normalizedRoute.includes('/*/')) {
+      this.printWarning(route);
+      // Replace each /*/ segment with a named parameter using different name for each segment.
+      return route.replaceAll('/*/', (match, offset) => {
+        return `/*path${offset}/`;
+      });
+    }
+
     return route;
   }
 
@@ -47,7 +59,7 @@ export class LegacyRouteConverter {
 
   static printWarning(route: string): void {
     this.logger.warn(
-      UNSUPPORTED_PATH_MESSAGE`${route}` + ' Attempting to convert...',
+      UNSUPPORTED_PATH_MESSAGE`${route}` + ' Attempting to auto-convert...',
     );
   }
 }
