@@ -40,7 +40,7 @@ describe('CatsService', () => {
       //@ts-ignore
       expect(catsService.cats).toStrictEqual([]);
 
-      await catsService.create(cat);
+      catsService.create(cat);
       //@ts-ignore
       expect(catsService.cats).toStrictEqual(expectedCatArray);
     });

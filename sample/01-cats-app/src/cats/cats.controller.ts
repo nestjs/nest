@@ -27,6 +27,7 @@ export class CatsController {
     @Param('id', new ParseIntPipe())
     id: number,
   ) {
-    // get by ID logic
+    // Retrieve a Cat instance by ID
+    console.log(id);
   }
 }
