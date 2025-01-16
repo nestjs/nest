@@ -14,6 +14,7 @@ describe('enableShutdownHooks', () => {
       .map((call: string) => call.trim());
     expect(calls[0]).to.equal('beforeApplicationShutdown SIGHUP');
     expect(calls[1]).to.equal('onApplicationShutdown SIGHUP');
+    expect(calls[2]).to.equal('node exit event called');
     done();
   }).timeout(10000);
 
