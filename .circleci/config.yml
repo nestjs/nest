@@ -29,7 +29,7 @@ aliases:
   - &install-deps
     run:
       name: Install dependencies
-      command: npm ci --legacy-peer-deps
+      command: npm install --legacy-peer-deps
   - &build-packages
     run:
       name: Build
