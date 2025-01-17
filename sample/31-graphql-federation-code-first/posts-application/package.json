@@ -24,10 +24,10 @@
     "@apollo/server": "4.11.3",
     "@apollo/subgraph": "2.9.3",
     "@nestjs/apollo": "12.2.2",
-    "@nestjs/common": "10.4.15",
-    "@nestjs/core": "10.4.15",
+    "@nestjs/common": "11.0.1",
+    "@nestjs/core": "11.0.1",
     "@nestjs/graphql": "12.2.2",
-    "@nestjs/platform-express": "10.4.15",
+    "@nestjs/platform-express": "11.0.1",
     "graphql": "16.8.1",
     "graphql-tools": "9.0.11",
     "reflect-metadata": "0.2.2",
@@ -36,15 +36,15 @@
     "ts-morph": "25.0.0"
   },
   "devDependencies": {
-    "@nestjs/cli": "10.4.9",
+    "@eslint/eslintrc": "3.2.0", 
+    "@eslint/js": "9.18.0",
+    "@nestjs/cli": "11.0.0",
     "@nestjs/schematics": "10.2.3",
-    "@nestjs/testing": "10.4.15",
+    "@nestjs/testing": "11.0.1",
     "@types/express": "4.17.21",
     "@types/jest": "29.5.14",
     "@types/node": "22.10.6",
     "@types/supertest": "6.0.2",
-    "@typescript-eslint/eslint-plugin": "5.62.0",
-    "@typescript-eslint/parser": "5.62.0",
     "eslint": "9.18.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-prettier": "5.2.2",
@@ -55,7 +55,8 @@
     "ts-loader": "9.5.2",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "typescript-eslint": "8.20.0"
   },
   "jest": {
     "moduleFileExtensions": [
