@@ -37,9 +37,9 @@
     "ts-morph": "25.0.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.2.0", 
+    "@eslint/eslintrc": "3.2.0",
     "@eslint/js": "9.18.0",
-    "@nestjs/cli": "11.0.0",
+    "@nestjs/cli": "10.4.9",
     "@nestjs/schematics": "10.2.3",
     "@nestjs/testing": "11.0.1",
     "@types/express": "4.17.21",
