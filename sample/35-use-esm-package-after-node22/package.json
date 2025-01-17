@@ -19,9 +19,9 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
   },
   "dependencies": {
-    "@nestjs/common": "10.x",
-    "@nestjs/core": "10.x",
-    "@nestjs/platform-express": "10.x",
+    "@nestjs/common": "11.x",
+    "@nestjs/core": "11.x",
+    "@nestjs/platform-express": "11.x",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.x",
     "superjson": "2.x"
@@ -29,14 +29,14 @@
   "devDependencies": {
     "@nestjs/cli": "10.x",
     "@nestjs/schematics": "10.x",
-    "@nestjs/testing": "10.x",
-    "@types/express": "4.x",
+    "@nestjs/testing": "11.x",
+    "@types/express": "5.x",
     "@types/node": "22.x",
     "@types/supertest": "6.x",
     "@typescript-eslint/eslint-plugin": "8.x",
     "@typescript-eslint/parser": "8.x",
     "eslint": "9.x",
-    "eslint-config-prettier": "9.x",
+    "eslint-config-prettier": "10.x",
     "eslint-plugin-prettier": "5.x",
     "prettier": "3.x",
     "source-map-support": "0.5.21",
