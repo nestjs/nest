@@ -1,7 +1,7 @@
-import { Resolver, Query, Mutation, Args, Subscription } from '@nestjs/graphql';
-import { PostsService } from './posts.service';
-import { Post, NewPost, UpdatePost } from 'src/graphql.schema';
+import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
+import { NewPost, Post, UpdatePost } from 'src/graphql.schema';
+import { PostsService } from './posts.service';
 
 const pubSub = new PubSub();
 
@@ -38,6 +38,6 @@ export class PostsResolvers {
 
   @Subscription('postCreated')
   postCreated() {
-    return pubSub.asyncIterator('postCreated');
+    return pubSub.asyncIterableIterator('postCreated');
   }
 }

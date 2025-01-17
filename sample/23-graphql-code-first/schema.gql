@@ -4,7 +4,7 @@
 
 directive @upper on FIELD_DEFINITION
 
-"""recipe """
+"""recipe"""
 type Recipe {
   id: ID!
   description: String

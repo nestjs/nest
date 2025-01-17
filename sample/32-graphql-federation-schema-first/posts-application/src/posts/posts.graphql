@@ -13,4 +13,5 @@ extend type User @key(fields: "id") {
 
 extend type Query {
   getPosts: [Post]
+  findPost(id: ID!): Post
 }
