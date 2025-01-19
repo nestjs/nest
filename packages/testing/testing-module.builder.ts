@@ -28,7 +28,7 @@ import { TestingModule } from './testing-module';
  */
 export class TestingModuleBuilder {
   private readonly applicationConfig = new ApplicationConfig();
-  private readonly container = new NestContainer(this.applicationConfig);
+  private readonly container: NestContainer;
   private readonly overloadsMap = new Map();
   private readonly moduleOverloadsMap = new Map<
     ModuleDefinition,
@@ -41,7 +41,9 @@ export class TestingModuleBuilder {
   constructor(
     private readonly metadataScanner: MetadataScanner,
     metadata: ModuleMetadata,
+    contextOptions: NestApplicationContextOptions | undefined = undefined,
   ) {
+    this.container = new NestContainer(this.applicationConfig, contextOptions);
     this.module = this.createModule(metadata);
   }
 
