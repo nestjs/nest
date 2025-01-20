@@ -1,6 +1,7 @@
 name: "\U0001F4A5 Regression"
 description: "Report an unexpected while upgrading your Nest application!"
 labels: ["type: bug :sob:", "needs triage"]
+type: bug
 body:
   - type: markdown
     attributes:
