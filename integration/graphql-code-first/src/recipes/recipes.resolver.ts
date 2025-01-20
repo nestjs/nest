@@ -46,6 +46,6 @@ export class RecipesResolver {
 
   @Subscription(returns => Recipe)
   recipeAdded() {
-    return pubSub.asyncIterator('recipeAdded');
+    return pubSub.asyncIterableIterator('recipeAdded');
   }
 }
