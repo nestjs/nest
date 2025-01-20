@@ -27,7 +27,7 @@
     "superjson": "2.x"
   },
   "devDependencies": {
-    "@nestjs/cli": "10.x",
+    "@nestjs/cli": "11.x",
     "@nestjs/schematics": "11.x",
     "@nestjs/testing": "11.x",
     "@types/express": "5.x",
