@@ -95,7 +95,7 @@
     "@nestjs/apollo": "13.0.1",
     "@nestjs/graphql": "13.0.1",
     "@nestjs/mongoose": "10.1.0",
-    "@nestjs/typeorm": "10.0.2",
+    "@nestjs/typeorm": "11.0.0",
     "@types/amqplib": "0.10.6",
     "@types/bytes": "3.1.5",
     "@types/chai": "4.3.20",
