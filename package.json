@@ -65,7 +65,7 @@
     "class-validator": "0.14.1",
     "cors": "2.8.5",
     "express": "5.0.1",
-    "fast-json-stringify": "6.0.0",
+    "fast-json-stringify": "6.0.1",
     "fast-safe-stringify": "2.1.1",
     "iterare": "1.2.1",
     "object-hash": "3.0.0",
