@@ -24,11 +24,6 @@ import {
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
 import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter';
-import * as bodyparser from 'body-parser';
-import {
-  json as bodyParserJson,
-  urlencoded as bodyParserUrlencoded,
-} from 'body-parser';
 import * as cors from 'cors';
 import * as express from 'express';
 import type { Server } from 'http';
@@ -278,8 +273,8 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     });
 
     const parserMiddleware = {
-      jsonParser: bodyParserJson(bodyParserJsonOptions),
-      urlencodedParser: bodyParserUrlencoded(bodyParserUrlencodedOptions),
+      jsonParser: express.json(bodyParserJsonOptions),
+      urlencodedParser: express.urlencoded(bodyParserUrlencodedOptions),
     };
     Object.keys(parserMiddleware)
       .filter(parser => !this.isMiddlewareApplied(parser))
@@ -294,7 +289,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     options?: Omit<Options, 'verify'>,
   ): this {
     const parserOptions = getBodyParserOptions<Options>(rawBody, options);
-    const parser = bodyparser[type](parserOptions);
+    const parser = express[type](parserOptions);
 
     this.use(parser);
 
