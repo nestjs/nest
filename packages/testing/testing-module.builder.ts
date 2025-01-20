@@ -26,9 +26,17 @@ import { TestingModule } from './testing-module';
 /**
  * @publicApi
  */
+export type TestingModuleOptions = Pick<
+  NestApplicationContextOptions,
+  'moduleIdGeneratorAlgorithm'
+>;
+
+/**
+ * @publicApi
+ */
 export class TestingModuleBuilder {
   private readonly applicationConfig = new ApplicationConfig();
-  private readonly container = new NestContainer(this.applicationConfig);
+  private readonly container: NestContainer;
   private readonly overloadsMap = new Map();
   private readonly moduleOverloadsMap = new Map<
     ModuleDefinition,
@@ -41,7 +49,9 @@ export class TestingModuleBuilder {
   constructor(
     private readonly metadataScanner: MetadataScanner,
     metadata: ModuleMetadata,
+    options?: TestingModuleOptions,
   ) {
+    this.container = new NestContainer(this.applicationConfig, options);
     this.module = this.createModule(metadata);
   }
 
