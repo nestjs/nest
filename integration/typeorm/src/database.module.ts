@@ -18,7 +18,6 @@ export class DatabaseModule {
           database: 'test',
           entities: [Photo],
           synchronize: true,
-          keepConnectionAlive: true,
           retryAttempts: 2,
           retryDelay: 1000,
         }),

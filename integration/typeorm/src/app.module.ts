@@ -14,7 +14,6 @@ import { PhotoModule } from './photo/photo.module';
       database: 'test',
       entities: [Photo],
       synchronize: true,
-      keepConnectionAlive: true,
       retryAttempts: 2,
       retryDelay: 1000,
     }),
