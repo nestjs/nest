@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/core",
-  "version": "11.0.2",
+  "version": "11.0.3",
   "description": "Nest - modern, fast, powerful node.js web framework (@core)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
@@ -39,7 +39,7 @@
     "uid": "2.0.2"
   },
   "devDependencies": {
-    "@nestjs/common": "11.0.2"
+    "@nestjs/common": "11.0.3"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.0.0",
