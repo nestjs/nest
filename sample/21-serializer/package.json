@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "11.0.2",
     "@nestjs/core": "11.0.2",
-    "@nestjs/platform-express": "11.0.1",
+    "@nestjs/platform-express": "11.0.2",
     "class-transformer": "0.5.1",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.0.1",
