@@ -19,7 +19,7 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/bull": "11.0.0",
+    "@nestjs/bull": "11.0.1",
     "@nestjs/common": "11.0.3",
     "@nestjs/core": "11.0.3",
     "@nestjs/platform-express": "11.0.3",
