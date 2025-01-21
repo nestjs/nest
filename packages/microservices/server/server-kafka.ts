@@ -245,7 +245,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
         'Not initialized. Please call the "listen"/"startAllMicroservices" method before accessing the server.',
       );
     }
-    return this.client as T;
+    return [this.client, this.consumer, this.producer] as T;
   }
 
   public on<
