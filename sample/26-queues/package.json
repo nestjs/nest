@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/bull": "11.0.1",
     "@nestjs/common": "11.0.4",
-    "@nestjs/core": "11.0.3",
+    "@nestjs/core": "11.0.4",
     "@nestjs/platform-express": "11.0.4",
     "bull": "4.16.5",
     "dotenv": "16.4.7",

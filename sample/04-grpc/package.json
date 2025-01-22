@@ -22,7 +22,7 @@
     "@grpc/grpc-js": "1.12.5",
     "@grpc/reflection": "1.0.4",
     "@nestjs/common": "11.0.4",
-    "@nestjs/core": "11.0.3",
+    "@nestjs/core": "11.0.4",
     "@nestjs/microservices": "11.0.4",
     "@nestjs/platform-express": "11.0.4",
     "class-transformer": "0.5.1",
