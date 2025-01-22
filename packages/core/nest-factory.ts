@@ -85,7 +85,7 @@ export class NestFactoryStatic {
       : [this.createHttpAdapter(), serverOrOptions];
 
     const applicationConfig = new ApplicationConfig();
-    const container = new NestContainer(applicationConfig);
+    const container = new NestContainer(applicationConfig, appOptions);
     const graphInspector = this.createGraphInspector(appOptions!, container);
 
     this.setAbortOnError(serverOrOptions, options);
@@ -130,7 +130,7 @@ export class NestFactoryStatic {
       () => require('@nestjs/microservices'),
     );
     const applicationConfig = new ApplicationConfig();
-    const container = new NestContainer(applicationConfig);
+    const container = new NestContainer(applicationConfig, options);
     const graphInspector = this.createGraphInspector(options!, container);
 
     this.setAbortOnError(options);
@@ -167,7 +167,7 @@ export class NestFactoryStatic {
     options?: NestApplicationContextOptions,
   ): Promise<INestApplicationContext> {
     const applicationConfig = new ApplicationConfig();
-    const container = new NestContainer(applicationConfig);
+    const container = new NestContainer(applicationConfig, options);
     const graphInspector = this.createGraphInspector(options!, container);
 
     this.setAbortOnError(options);
