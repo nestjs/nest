@@ -25,7 +25,7 @@
     "@apollo/subgraph": "2.9.3",
     "@nestjs/apollo": "13.0.2",
     "@nestjs/common": "11.0.4",
-    "@nestjs/core": "11.0.3",
+    "@nestjs/core": "11.0.4",
     "@nestjs/graphql": "13.0.2",
     "@nestjs/platform-express": "11.0.4",
     "graphql": "16.10.0",
