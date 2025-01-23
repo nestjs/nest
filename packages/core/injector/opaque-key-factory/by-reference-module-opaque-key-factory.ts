@@ -44,9 +44,10 @@ export class ByReferenceModuleOpaqueKeyFactory
     if (this.keyGenerationStrategy === 'random') {
       moduleId = this.generateRandomString();
     } else {
+      const delimiter = ':';
       moduleId = dynamicMetadata
-        ? `${this.generateRandomString()}:${this.hashString(moduleCls.name + JSON.stringify(dynamicMetadata))}`
-        : `${this.generateRandomString()}:${this.hashString(moduleCls.toString())}`;
+        ? `${this.generateRandomString()}${delimiter}${this.hashString(moduleCls.name + JSON.stringify(dynamicMetadata))}`
+        : `${this.generateRandomString()}${delimiter}${this.hashString(moduleCls.toString())}`;
     }
 
     originalRef[K_MODULE_ID] = moduleId;
