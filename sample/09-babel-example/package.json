@@ -14,10 +14,10 @@
   },
   "dependencies": {
     "@nestjs/common": "11.0.5",
-    "@nestjs/core": "11.0.4",
-    "@nestjs/platform-express": "11.0.4",
-    "@nestjs/microservices": "11.0.4",
-    "@nestjs/websockets": "11.0.4",
+    "@nestjs/core": "11.0.5",
+    "@nestjs/platform-express": "11.0.5",
+    "@nestjs/microservices": "11.0.5",
+    "@nestjs/websockets": "11.0.5",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.1"
   },
