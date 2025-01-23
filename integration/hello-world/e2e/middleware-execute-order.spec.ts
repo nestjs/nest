@@ -1,20 +1,46 @@
-import { INestApplication, MiddlewareConsumer, Module } from '@nestjs/common';
+import {
+  Global,
+  INestApplication,
+  MiddlewareConsumer,
+  Module,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 
 const RETURN_VALUE_A = 'test_A';
 const RETURN_VALUE_B = 'test_B';
+const RETURN_VALUE_X = 'test_X';
+const RETURN_VALUE_GLOBAL = 'test_GLOBAL';
 
-@Module({
-  imports: [],
-})
+@Global()
+@Module({})
+class GlobalModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(RETURN_VALUE_GLOBAL))
+      .forRoutes('ping');
+  }
+}
+
+@Module({ imports: [GlobalModule] })
+class ModuleX {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(RETURN_VALUE_X))
+      .forRoutes('hello')
+      .apply((req, res, next) => res.send(RETURN_VALUE_X))
+      .forRoutes('ping');
+  }
+}
+
+@Module({ imports: [ModuleX] })
 class ModuleA {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply((req, res, next) => {
-        res.send(RETURN_VALUE_A);
-      })
-      .forRoutes('hello');
+      .apply((req, res, next) => res.send(RETURN_VALUE_A))
+      .forRoutes('hello')
+      .apply((req, res, next) => res.send(RETURN_VALUE_A))
+      .forRoutes('ping');
   }
 }
 
@@ -24,10 +50,10 @@ class ModuleA {
 class ModuleB {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply((req, res, next) => {
-        res.send(RETURN_VALUE_B);
-      })
-      .forRoutes('hello');
+      .apply((req, res, next) => res.send(RETURN_VALUE_B))
+      .forRoutes('hello')
+      .apply((req, res, next) => res.send(RETURN_VALUE_B))
+      .forRoutes('ping');
   }
 }
 
@@ -53,6 +79,12 @@ describe('Middleware (execution order)', () => {
     return request(app.getHttpServer())
       .get('/hello')
       .expect(200, RETURN_VALUE_B);
+  });
+
+  it('should execute global middleware first', () => {
+    return request(app.getHttpServer())
+      .get('/ping')
+      .expect(200, RETURN_VALUE_GLOBAL);
   });
 
   afterEach(async () => {

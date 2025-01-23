@@ -148,10 +148,16 @@ export class MiddlewareModule<
 
     const entriesSortedByDistance = [...configs.entries()].sort(
       ([moduleA], [moduleB]) => {
-        return (
-          this.container.getModuleByKey(moduleA)!.distance -
-          this.container.getModuleByKey(moduleB)!.distance
-        );
+        const moduleARef = this.container.getModuleByKey(moduleA)!;
+        const moduleBRef = this.container.getModuleByKey(moduleB)!;
+        if (moduleARef.distance === Number.MAX_VALUE) {
+          return -1;
+        }
+        if (moduleBRef.distance === Number.MAX_VALUE) {
+          return 1;
+        }
+
+        return moduleARef.distance - moduleBRef.distance;
       },
     );
     for (const [moduleRef, moduleConfigurations] of entriesSortedByDistance) {
