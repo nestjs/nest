@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@nestjs/bull": "11.0.1",
-    "@nestjs/common": "11.0.4",
+    "@nestjs/common": "11.0.5",
     "@nestjs/core": "11.0.4",
     "@nestjs/platform-express": "11.0.4",
     "bull": "4.16.5",
@@ -34,7 +34,7 @@
     "@eslint/js": "9.18.0",
     "@nestjs/cli": "11.0.2",
     "@nestjs/schematics": "11.0.0",
-    "@nestjs/testing": "11.0.4",
+    "@nestjs/testing": "11.0.5",
     "@types/bull": "4.10.4",
     "@types/express": "5.0.0",
     "@types/jest": "29.5.14",

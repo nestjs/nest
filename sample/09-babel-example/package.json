@@ -13,7 +13,7 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "11.0.4",
+    "@nestjs/common": "11.0.5",
     "@nestjs/core": "11.0.4",
     "@nestjs/platform-express": "11.0.4",
     "@nestjs/microservices": "11.0.4",
@@ -30,7 +30,7 @@
     "@babel/preset-env": "7.26.0",
     "@babel/register": "7.25.9",
     "@babel/runtime": "7.26.0",
-    "@nestjs/testing": "11.0.4",
+    "@nestjs/testing": "11.0.5",
     "jest": "29.7.0",
     "nodemon": "3.1.9",
     "prettier": "3.4.2",
