@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.2.0",
-    "@eslint/js": "9.18.0",
+    "@eslint/js": "9.19.0",
     "@nestjs/cli": "11.0.2",
     "@nestjs/schematics": "11.0.0",
     "@types/node": "22.10.10",
@@ -39,7 +39,7 @@
     "ts-loader": "9.5.2",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
-    "eslint": "9.18.0",
+    "eslint": "9.19.0",
     "eslint-plugin-prettier": "5.2.3",
     "globals": "15.14.0",
     "typescript": "5.7.3",

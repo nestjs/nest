@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.2.0",
-    "@eslint/js": "9.18.0",
+    "@eslint/js": "9.19.0",
     "@nestjs/cli": "11.0.2",
     "@nestjs/schematics": "11.0.0",
     "@nestjs/testing": "11.0.5",
@@ -44,7 +44,7 @@
     "@types/jest": "29.5.14",
     "@types/node": "22.10.10",
     "@types/supertest": "6.0.2",
-    "eslint": "9.18.0",
+    "eslint": "9.19.0",
     "eslint-config-prettier": "10.0.1",
     "eslint-plugin-prettier": "5.2.3",
     "globals": "15.14.0",
