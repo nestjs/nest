@@ -71,9 +71,13 @@ export class RouteInfoPathExtractor {
   }
 
   private isAWildcard(path: string): boolean {
-    return ['*', '/*', '/*/', '*path', '/*path', '(.*)', '/(.*)'].includes(
-      path,
-    );
+    const isSimpleWildcard = ['*', '/*', '/*/', '(.*)', '/(.*)'];
+    if (isSimpleWildcard.includes(path)) {
+      return true;
+    }
+
+    const wildcardRegexp = /^\/\{.*\}.*|^\/\*.*$/;
+    return wildcardRegexp.test(path);
   }
 
   private extractNonWildcardPathsFrom({
