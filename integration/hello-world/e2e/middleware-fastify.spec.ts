@@ -450,9 +450,14 @@ describe('Middleware (FastifyAdapter)', () => {
           .apply((req, res, next) => {
             req.extras = { data: 'Data attached in middleware' };
             req.headers['ping'] = 'pong';
+
+            // When global prefix is set and the route is the root path
+            if (req.originalUrl === '/api') {
+              return res.end(JSON.stringify({ success: true, pong: 'pong' }));
+            }
             next();
           })
-          .forRoutes('*');
+          .forRoutes('{*path}');
       }
     }
 
@@ -464,7 +469,7 @@ describe('Middleware (FastifyAdapter)', () => {
       ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
     });
 
-    it(`GET forRoutes('*') with global prefix`, async () => {
+    it(`GET forRoutes('{*path}') with global prefix (route: /api/pong)`, async () => {
       app.setGlobalPrefix('/api');
       await app.init();
       await app.getHttpAdapter().getInstance().ready();
@@ -483,7 +488,26 @@ describe('Middleware (FastifyAdapter)', () => {
         );
     });
 
-    it(`GET forRoutes('*') without prefix config`, async () => {
+    it(`GET forRoutes('{*path}') with global prefix (route: /api)`, async () => {
+      app.setGlobalPrefix('/api');
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+      return app
+        .inject({
+          method: 'GET',
+          url: '/api',
+        })
+        .then(({ payload }) =>
+          expect(payload).to.be.eql(
+            JSON.stringify({
+              success: true,
+              pong: 'pong',
+            }),
+          ),
+        );
+    });
+
+    it(`GET forRoutes('{*path}') without prefix config`, async () => {
       await app.init();
       await app.getHttpAdapter().getInstance().ready();
       return app
@@ -501,7 +525,7 @@ describe('Middleware (FastifyAdapter)', () => {
         );
     });
 
-    it(`GET forRoutes('*') with global prefix and exclude patterns`, async () => {
+    it(`GET forRoutes('{*path}') with global prefix and exclude patterns`, async () => {
       app.setGlobalPrefix('/api', { exclude: ['/'] });
       await app.init();
       await app.getHttpAdapter().getInstance().ready();
@@ -511,7 +535,7 @@ describe('Middleware (FastifyAdapter)', () => {
         .expect(200, { success: true, root: true });
     });
 
-    it(`GET forRoutes('*') with global prefix and global prefix options`, async () => {
+    it(`GET forRoutes('{*path}') with global prefix and global prefix options`, async () => {
       app.setGlobalPrefix('/api', { exclude: ['/'] });
       await app.init();
       await app.getHttpAdapter().getInstance().ready();
@@ -528,7 +552,7 @@ describe('Middleware (FastifyAdapter)', () => {
         .expect(200, { success: true, root: true });
     });
 
-    it(`GET forRoutes('*') with global prefix that not starts with /`, async () => {
+    it(`GET forRoutes('{*path}') with global prefix that not starts with /`, async () => {
       app.setGlobalPrefix('api');
       await app.init();
       await app.getHttpAdapter().getInstance().ready();
