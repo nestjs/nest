@@ -22,7 +22,17 @@ class GlobalModule {
   }
 }
 
-@Module({ imports: [GlobalModule] })
+@Global()
+@Module({})
+class GlobalModule2 {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply((req, res, next) => res.send(RETURN_VALUE_GLOBAL + '2'))
+      .forRoutes('ping');
+  }
+}
+
+@Module({ imports: [GlobalModule, GlobalModule2] })
 class ModuleX {
   configure(consumer: MiddlewareConsumer) {
     consumer
