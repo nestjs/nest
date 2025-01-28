@@ -150,13 +150,17 @@ export class MiddlewareModule<
       ([moduleA], [moduleB]) => {
         const moduleARef = this.container.getModuleByKey(moduleA)!;
         const moduleBRef = this.container.getModuleByKey(moduleB)!;
-        if (moduleARef.distance === Number.MAX_VALUE) {
+        const isModuleAGlobal = moduleARef.distance === Number.MAX_VALUE;
+        const isModuleBGlobal = moduleBRef.distance === Number.MAX_VALUE;
+        if (isModuleAGlobal && isModuleBGlobal) {
+          return 0;
+        }
+        if (isModuleAGlobal) {
           return -1;
         }
-        if (moduleBRef.distance === Number.MAX_VALUE) {
+        if (isModuleBGlobal) {
           return 1;
         }
-
         return moduleARef.distance - moduleBRef.distance;
       },
     );
