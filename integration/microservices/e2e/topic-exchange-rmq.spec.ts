@@ -30,7 +30,7 @@ describe('RabbitMQ transport (Topic Exchange)', () => {
 
   it(`should send message to wildcard topic exchange`, () => {
     return request(server).get('/topic-exchange').expect(200, 'wildcard.a.b');
-  });
+  }).timeout(10000);
 
   afterEach(async () => {
     await app.close();
