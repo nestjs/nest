@@ -18,7 +18,7 @@ export class RMQTopicExchangeController {
       transport: Transport.RMQ,
       options: {
         urls: [`amqp://localhost:5672`],
-        queue: 'test',
+        queue: 'test2',
         topicExchange: 'test',
       },
     });

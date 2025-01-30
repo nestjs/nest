@@ -20,7 +20,7 @@ describe('RabbitMQ transport (Topic Exchange)', () => {
       transport: Transport.RMQ,
       options: {
         urls: [`amqp://0.0.0.0:5672`],
-        queue: 'test',
+        queue: 'test2',
         topicExchange: 'test',
       },
     });
