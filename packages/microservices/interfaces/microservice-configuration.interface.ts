@@ -232,6 +232,13 @@ export interface RmqOptions {
     headers?: Record<string, string>;
     noAssert?: boolean;
     /**
+     * Set only if you want to use Topic Exchange for routing messages to queues.
+     * Enabling this will allow you to use wildcards (*, #) as message and event patterns.
+     * Topic exchange can have any arbitrary name, but it should be the same for the producer (client) and consumer (server).
+     * @see https://www.rabbitmq.com/tutorials/tutorial-five-python#topic-exchange
+     */
+    topicExchange?: string;
+    /**
      * Maximum number of connection attempts.
      * Applies only to the consumer configuration.
      * -1 === infinite

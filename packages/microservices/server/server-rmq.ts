@@ -21,7 +21,7 @@ import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events';
 import { RmqUrl } from '../external/rmq-url.interface';
-import { RmqOptions } from '../interfaces';
+import { MessageHandler, RmqOptions } from '../interfaces';
 import {
   IncomingRequest,
   OutgoingResponse,
@@ -53,13 +53,14 @@ const INFINITE_CONNECTION_ATTEMPTS = -1;
 export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   public readonly transportId = Transport.RMQ;
 
-  protected server: AmqpConnectionManager = null;
-  protected channel: ChannelWrapper = null;
+  protected server: AmqpConnectionManager | null = null;
+  protected channel: ChannelWrapper | null = null;
   protected connectionAttempts = 0;
   protected readonly urls: string[] | RmqUrl[];
   protected readonly queue: string;
   protected readonly noAck: boolean;
   protected readonly queueOptions: any;
+  protected readonly wildcardHandlers = new Map<RegExp, MessageHandler>();
   protected pendingEventListeners: Array<{
     event: keyof RmqEvents;
     callback: RmqEvents[keyof RmqEvents];
@@ -106,12 +107,12 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     callback?: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
     this.server = this.createClient();
-    this.server.once(RmqEventsMap.CONNECT, () => {
+    this.server!.once(RmqEventsMap.CONNECT, () => {
       if (this.channel) {
         return;
       }
       this._status$.next(RmqStatus.CONNECTED);
-      this.channel = this.server.createChannel({
+      this.channel = this.server!.createChannel({
         json: false,
         setup: (channel: any) => this.setupChannel(channel, callback!),
       });
@@ -126,12 +127,12 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     this.registerConnectListener();
     this.registerDisconnectListener();
     this.pendingEventListeners.forEach(({ event, callback }) =>
-      this.server.on(event, callback),
+      this.server!.on(event, callback),
     );
     this.pendingEventListeners = [];
 
     const connectFailedEvent = 'connectFailed';
-    this.server.once(connectFailedEvent, (error: Record<string, unknown>) => {
+    this.server!.once(connectFailedEvent, (error: Record<string, unknown>) => {
       this._status$.next(RmqStatus.DISCONNECTED);
 
       this.logger.error(CONNECTION_FAILED_MESSAGE);
@@ -162,13 +163,13 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   }
 
   private registerConnectListener() {
-    this.server.on(RmqEventsMap.CONNECT, (err: any) => {
+    this.server!.on(RmqEventsMap.CONNECT, (err: any) => {
       this._status$.next(RmqStatus.CONNECTED);
     });
   }
 
   private registerDisconnectListener() {
-    this.server.on(RmqEventsMap.DISCONNECT, (err: any) => {
+    this.server!.on(RmqEventsMap.DISCONNECT, (err: any) => {
       this._status$.next(RmqStatus.DISCONNECTED);
       this.logger.error(DISCONNECTED_RMQ_MESSAGE);
       this.logger.error(err);
@@ -205,6 +206,21 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         this.options.exchange,
         this.options.routingKey,
       );
+    }
+
+    // When "Topic exchange" is used, we need to bind the queue to the exchange
+    // with all the routing keys used by the handlers
+    if (this.options.topicExchange) {
+      const routingKeys = Array.from(this.getHandlers().keys());
+      await Promise.all(
+        routingKeys.map(routingKey =>
+          channel.bindQueue(this.queue, this.options.topicExchange, routingKey),
+        ),
+      );
+
+      // "Topic exchange" supports wildcards, so we need to initialize wildcard handlers
+      // otherwise we would not be able to associate the incoming messages with the handlers
+      this.initializeWildcardHandlersIfExist();
     }
 
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
@@ -246,7 +262,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     if (!handler) {
       if (!this.noAck) {
         this.logger.warn(RQM_NO_MESSAGE_HANDLER`${pattern}`);
-        this.channel.nack(rmqContext.getMessage() as Message, false, false);
+        this.channel!.nack(rmqContext.getMessage() as Message, false, false);
       }
       const status = 'error';
       const noHandlerPacket = {
@@ -277,7 +293,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   ): Promise<any> {
     const handler = this.getHandlerByPattern(pattern);
     if (!handler && !this.noAck) {
-      this.channel.nack(context.getMessage() as Message, false, false);
+      this.channel!.nack(context.getMessage() as Message, false, false);
       return this.logger.warn(RQM_NO_EVENT_HANDLER`${pattern}`);
     }
     return super.handleEvent(pattern, packet, context);
@@ -295,7 +311,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     delete outgoingResponse.options;
 
     const buffer = Buffer.from(JSON.stringify(outgoingResponse));
-    this.channel.sendToQueue(replyTo, buffer, { correlationId, ...options });
+    const sendOptions = { correlationId, ...options };
+    this.channel!.sendToQueue(replyTo, buffer, sendOptions);
   }
 
   public unwrap<T>(): T {
@@ -318,6 +335,31 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     }
   }
 
+  public getHandlerByPattern(pattern: string): MessageHandler | null {
+    if (!this.options.topicExchange) {
+      // When "Topic exchange" is not used, wildcards are not supported
+      // so we can fallback to the default behavior
+      return super.getHandlerByPattern(pattern);
+    }
+
+    // Search for non-wildcard handler first
+    const handler = super.getHandlerByPattern(pattern);
+    if (handler) {
+      return handler;
+    }
+
+    // Search for wildcard handler
+    if (this.wildcardHandlers.size === 0) {
+      return null;
+    }
+    for (const [regex, handler] of this.wildcardHandlers) {
+      if (regex.test(pattern)) {
+        return handler;
+      }
+    }
+    return null;
+  }
+
   protected initializeSerializer(options: RmqOptions['options']) {
     this.serializer = options?.serializer ?? new RmqRecordSerializer();
   }
@@ -328,5 +370,29 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     } catch {
       return content.toString();
     }
+  }
+
+  private initializeWildcardHandlersIfExist() {
+    if (this.wildcardHandlers.size !== 0) {
+      return;
+    }
+    const handlers = this.getHandlers();
+
+    handlers.forEach((handler, pattern) => {
+      const regex = this.convertRoutingKeyToRegex(pattern);
+      if (regex) {
+        this.wildcardHandlers.set(regex, handler);
+      }
+    });
+  }
+
+  private convertRoutingKeyToRegex(routingKey: string): RegExp | undefined {
+    if (!routingKey.includes('#') && !routingKey.includes('*')) {
+      return;
+    }
+    let regexPattern = routingKey.replace(/\./g, '\\.');
+    regexPattern = regexPattern.replace(/\*/g, '[^.]+');
+    regexPattern = regexPattern.replace(/#/g, '.*');
+    return new RegExp(`^${regexPattern}$`);
   }
 }
