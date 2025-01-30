@@ -390,7 +390,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     if (!routingKey.includes('#') && !routingKey.includes('*')) {
       return;
     }
-    let regexPattern = routingKey.replace(/\./g, '\\.');
+    let regexPattern = routingKey.replace(/\\/g, '\\\\').replace(/\./g, '\\.');
     regexPattern = regexPattern.replace(/\*/g, '[^.]+');
     regexPattern = regexPattern.replace(/#/g, '.*');
     return new RegExp(`^${regexPattern}$`);
