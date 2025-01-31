@@ -117,9 +117,11 @@ describe('Shared utils', () => {
   describe('addLeadingSlash', () => {
     it('should return the validated path ("add / if not exists")', () => {
       expect(addLeadingSlash('nope')).to.be.eql('/nope');
+      expect(addLeadingSlash('{:nope}')).to.be.eql('/{:nope}');
     });
     it('should return the same path', () => {
       expect(addLeadingSlash('/nope')).to.be.eql('/nope');
+      expect(addLeadingSlash('{/:nope}')).to.be.eql('{/:nope}');
     });
     it('should return empty path', () => {
       expect(addLeadingSlash('')).to.be.eql('');
