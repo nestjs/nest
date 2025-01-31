@@ -19,7 +19,7 @@ export class RMQTopicExchangeController {
       options: {
         urls: [`amqp://localhost:5672`],
         queue: 'test2',
-        topicExchange: 'test',
+        wildcards: true,
       },
     });
   }

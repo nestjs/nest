@@ -39,10 +39,12 @@ import { Server } from './server';
 //   import('amqp-connection-manager').AmqpConnectionManager;
 // type ChannelWrapper = import('amqp-connection-manager').ChannelWrapper;
 // type Message = import('amqplib').Message;
+// type Channel = import('amqplib').Channel | import('amqplib').ConfirmChannel;
 
 type AmqpConnectionManager = any;
 type ChannelWrapper = any;
 type Message = any;
+type Channel = any;
 
 let rmqPackage = {} as any; // as typeof import('amqp-connection-manager');
 
@@ -115,7 +117,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       this._status$.next(RmqStatus.CONNECTED);
       this.channel = this.server!.createChannel({
         json: false,
-        setup: (channel: any) => this.setupChannel(channel, callback!),
+        setup: (channel: Channel) => this.setupChannel(channel, callback!),
       });
     });
 
@@ -177,7 +179,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     });
   }
 
-  public async setupChannel(channel: any, callback: Function) {
+  public async setupChannel(channel: Channel, callback: Function) {
     const noAssert =
       this.getOptionsProp(this.options, 'noAssert') ??
       this.queueOptions.noAssert ??
@@ -198,36 +200,44 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       RQM_DEFAULT_PREFETCH_COUNT,
     );
 
-    if (this.options.exchange && this.options.routingKey) {
-      await channel.assertExchange(this.options.exchange, 'topic', {
+    if (this.options.exchange || this.options.wildcards) {
+      // Use queue name as exchange name if exchange is not provided and "wildcards" is set to true
+      const exchange = this.getOptionsProp(
+        this.options,
+        'exchange',
+        this.options.queue,
+      );
+      const exchangeType = this.getOptionsProp(
+        this.options,
+        'exchangeType',
+        'topic',
+      );
+      await channel.assertExchange(exchange, exchangeType, {
         durable: true,
       });
-      await channel.bindQueue(
-        this.queue,
-        this.options.exchange,
-        this.options.routingKey,
-      );
-    }
 
-    // When "Topic exchange" is used, we need to bind the queue to the exchange
-    // with all the routing keys used by the handlers
-    if (this.options.topicExchange) {
-      const routingKeys = Array.from(this.getHandlers().keys());
-      await Promise.all(
-        routingKeys.map(routingKey =>
-          channel.bindQueue(this.queue, this.options.topicExchange, routingKey),
-        ),
-      );
+      if (this.options.routingKey) {
+        await channel.bindQueue(this.queue, exchange, this.options.routingKey);
+      }
 
-      // "Topic exchange" supports wildcards, so we need to initialize wildcard handlers
-      // otherwise we would not be able to associate the incoming messages with the handlers
-      this.initializeWildcardHandlersIfExist();
+      if (this.options.wildcards) {
+        const routingKeys = Array.from(this.getHandlers().keys());
+        await Promise.all(
+          routingKeys.map(routingKey =>
+            channel.bindQueue(this.queue, exchange, routingKey),
+          ),
+        );
+
+        // When "wildcards" is set to true,  we need to initialize wildcard handlers
+        // otherwise we would not be able to associate the incoming messages with the handlers
+        this.initializeWildcardHandlersIfExist();
+      }
     }
 
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
     channel.consume(
       this.queue,
-      (msg: Record<string, any>) => this.handleMessage(msg, channel),
+      (msg: Record<string, any> | null) => this.handleMessage(msg!, channel),
       {
         noAck: this.noAck,
         consumerTag: this.getOptionsProp(
@@ -337,9 +347,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   }
 
   public getHandlerByPattern(pattern: string): MessageHandler | null {
-    if (!this.options.topicExchange) {
-      // When "Topic exchange" is not used, wildcards are not supported
-      // so we can fallback to the default behavior
+    if (!this.options.wildcards) {
       return super.getHandlerByPattern(pattern);
     }
 

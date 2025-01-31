@@ -216,6 +216,22 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       );
     }
 
+    if (this.options.wildcards) {
+      const exchange = this.getOptionsProp(
+        this.options,
+        'exchange',
+        this.options.queue,
+      );
+      const exchangeType = this.getOptionsProp(
+        this.options,
+        'exchangeType',
+        'topic',
+      );
+      await channel.assertExchange(exchange, exchangeType, {
+        durable: true,
+      });
+    }
+
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
     await this.consumeChannel(channel);
     resolve();
@@ -374,12 +390,21 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
         correlationId,
       };
 
-      if (this.options.topicExchange) {
+      if (this.options.wildcards) {
         const stringifiedPattern = isString(message.pattern)
           ? message.pattern
           : JSON.stringify(message.pattern);
+
+        // The exchange is the same as the queue when wildcards are enabled
+        // and the exchange is not explicitly set
+        const exchange = this.getOptionsProp(
+          this.options,
+          'exchange',
+          this.queue,
+        );
+
         this.channel!.publish(
-          this.options.topicExchange,
+          exchange,
           stringifiedPattern,
           content,
           sendOptions,
@@ -417,9 +442,11 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       const errorCallback = (err: unknown) =>
         err ? reject(err as Error) : resolve();
 
-      return this.options.topicExchange
+      return this.options.wildcards
         ? this.channel!.publish(
-            this.options.topicExchange,
+            // The exchange is the same as the queue when wildcards are enabled
+            // and the exchange is not explicitly set
+            this.getOptionsProp(this.options, 'exchange', this.queue),
             isString(packet.pattern)
               ? packet.pattern
               : JSON.stringify(packet.pattern),

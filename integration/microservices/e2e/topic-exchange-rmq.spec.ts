@@ -4,7 +4,7 @@ import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
 import { RMQTopicExchangeController } from '../src/rmq/topic-exchange-rmq.controller';
 
-describe('RabbitMQ transport (Topic Exchange)', () => {
+describe('RabbitMQ transport (Topic Exchange - wildcards)', () => {
   let server: any;
   let app: INestApplication;
 
@@ -21,7 +21,7 @@ describe('RabbitMQ transport (Topic Exchange)', () => {
       options: {
         urls: [`amqp://0.0.0.0:5672`],
         queue: 'test2',
-        topicExchange: 'test',
+        wildcards: true,
       },
     });
     await app.startAllMicroservices();
@@ -30,7 +30,7 @@ describe('RabbitMQ transport (Topic Exchange)', () => {
 
   it(`should send message to wildcard topic exchange`, () => {
     return request(server).get('/topic-exchange').expect(200, 'wildcard.a.b');
-  }).timeout(10000);
+  });
 
   afterEach(async () => {
     await app.close();
