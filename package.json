@@ -80,7 +80,7 @@
   "devDependencies": {
     "@apollo/server": "4.11.3",
     "@codechecks/client": "0.1.12",
-    "@commitlint/cli": "19.6.1",
+    "@commitlint/cli": "19.7.1",
     "@commitlint/config-angular": "19.7.0",
     "@eslint/eslintrc": "3.2.0",
     "@eslint/js": "9.19.0",
