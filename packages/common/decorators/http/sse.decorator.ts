@@ -6,7 +6,7 @@ import { RequestMethod } from '../../enums/request-method.enum';
  *
  * @publicApi
  */
-export function Sse(path?: string): MethodDecorator {
+export function Sse(path?: string, method?: RequestMethod): MethodDecorator {
   return (
     target: object,
     key: string | symbol,
@@ -17,7 +17,7 @@ export function Sse(path?: string): MethodDecorator {
     Reflect.defineMetadata(PATH_METADATA, path, descriptor.value);
     Reflect.defineMetadata(
       METHOD_METADATA,
-      RequestMethod.GET,
+      method ?? RequestMethod.GET,
       descriptor.value,
     );
     Reflect.defineMetadata(SSE_METADATA, true, descriptor.value);
