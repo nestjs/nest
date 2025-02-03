@@ -174,7 +174,7 @@
     "ts-node": "10.9.2",
     "typeorm": "0.3.20",
     "typescript": "5.7.3",
-    "typescript-eslint": "8.22.0",
+    "typescript-eslint": "8.23.0",
     "wrk": "1.2.1",
     "ws": "8.18.0"
   },

@@ -50,7 +50,7 @@
     "eslint-config-prettier": "10.0.1",
     "eslint-plugin-import": "2.31.0",
     "typescript": "5.7.3",
-    "typescript-eslint": "8.22.0"
+    "typescript-eslint": "8.23.0"
   },
   "jest": {
     "moduleFileExtensions": [
