@@ -471,9 +471,9 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     const app = this.getInstance();
     return (
       !!app._router &&
-      !!app._router.stack &&
-      isFunction(app._router.stack.filter) &&
-      app._router.stack.some(
+      !!app.router.stack &&
+      isFunction(app.router.stack.filter) &&
+      app.router.stack.some(
         (layer: any) => layer && layer.handle && layer.handle.name === name,
       )
     );
