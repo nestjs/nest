@@ -143,6 +143,13 @@ export class ValidationPipe implements PipeTransform<any> {
     if (errors.length > 0) {
       throw await this.exceptionFactory(errors);
     }
+
+    if (originalValue === undefined && originalEntity === '') {
+      // Since SWC requires empty string for validation (to avoid an error),
+      // a fallback is needed to revert to the original value (when undefined).
+      // @see https://github.com/nestjs/nest/issues/14430
+      return originalValue;
+    }
     if (isPrimitive) {
       // if the value is a primitive value and the validation process has been successfully completed
       // we have to revert the original value passed through the pipe
@@ -155,6 +162,7 @@ export class ValidationPipe implements PipeTransform<any> {
       // if the value was originally undefined or null, revert it back
       return originalValue;
     }
+
     // we check if the number of keys of the "validatorOptions" is higher than 1 (instead of 0)
     // because the "forbidUnknownValues" now fallbacks to "false" (in case it wasn't explicitly specified)
     const shouldTransformToPlain =
@@ -230,7 +238,7 @@ export class ValidationPipe implements PipeTransform<any> {
     ) {
       return {} as object;
     }
-    // Builder like SWC require empty string to be returned instead of an empty object
+    // SWC requires empty string to be returned instead of an empty object
     // when the value is nil and the metatype is not a class instance, but a plain object (enum, for example).
     // Otherwise, the error will be thrown.
     // @see https://github.com/nestjs/nest/issues/12680
