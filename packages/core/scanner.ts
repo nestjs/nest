@@ -399,6 +399,7 @@ export class DependenciesScanner {
     // Skip "InternalCoreModule" from calculating distance
     modulesGenerator.next();
 
+    const evaluatedGlobalModules: Module[] = [];
     const calculateDistance = (
       moduleRef: Module,
       distance = 1,
@@ -409,6 +410,15 @@ export class DependenciesScanner {
         return;
       }
       localModulesStack.push(moduleRef);
+
+      if (moduleRef.isGlobal) {
+        // Global modules form circular relationships with other global modules
+        // so we should not calculate distance for their children modules more than once
+        if (evaluatedGlobalModules.includes(moduleRef)) {
+          return;
+        }
+        evaluatedGlobalModules.push(moduleRef);
+      }
 
       const moduleImports = moduleRef.imports;
       moduleImports.forEach(importedModuleRef => {
