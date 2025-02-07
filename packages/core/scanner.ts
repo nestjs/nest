@@ -399,7 +399,7 @@ export class DependenciesScanner {
     // Skip "InternalCoreModule" from calculating distance
     modulesGenerator.next();
 
-    const evaluatedGlobalModules: Module[] = [];
+    const evaluatedGlobalModules = new Set<Module>();
     const calculateDistance = (
       moduleRef: Module,
       distance = 1,
@@ -414,10 +414,10 @@ export class DependenciesScanner {
       if (moduleRef.isGlobal) {
         // Global modules form circular relationships with other global modules
         // so we should not calculate distance for their children modules more than once
-        if (evaluatedGlobalModules.includes(moduleRef)) {
+        if (evaluatedGlobalModules.has(moduleRef)) {
           return;
         }
-        evaluatedGlobalModules.push(moduleRef);
+        evaluatedGlobalModules.add(moduleRef);
       }
 
       const moduleImports = moduleRef.imports;
