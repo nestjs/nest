@@ -23,7 +23,7 @@ export class TopologyTree {
   }
 
   private traverseAndMapToTree(node: TreeNode<Module>, depth = 1) {
-    if (!node.value.imports) {
+    if (!node.value?.imports) {
       return;
     }
     node.value.imports.forEach(child => {
