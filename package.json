@@ -136,7 +136,7 @@
     "globals": "15.14.0",
     "graphql": "16.10.0",
     "graphql-subscriptions": "3.0.0",
-    "graphql-tools": "9.0.11",
+    "graphql-tools": "9.0.13",
     "gulp": "5.0.0",
     "gulp-clang-format": "1.0.27",
     "gulp-clean": "0.4.0",
