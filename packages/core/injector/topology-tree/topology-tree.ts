@@ -3,23 +3,15 @@ import { TreeNode } from './tree-node';
 
 export class TopologyTree {
   private root: TreeNode<Module>;
-  private links: Map<
-    Module,
-    {
-      node: TreeNode<Module>;
-      depth: number;
-    }
-  > = new Map();
+  private links: Map<Module, TreeNode<Module>> = new Map();
 
-  static from(root: Module) {
-    const tree = new TopologyTree();
-    tree.root = new TreeNode<Module>({
-      value: root,
+  constructor(moduleRef: Module) {
+    this.root = new TreeNode<Module>({
+      value: moduleRef,
       parent: null,
     });
-
-    tree.traverseAndCloneTree(tree.root);
-    return tree;
+    this.links.set(moduleRef, this.root);
+    this.traverseAndCloneTree(this.root);
   }
 
   public walk(callback: (value: Module, depth: number) => void) {
@@ -37,9 +29,9 @@ export class TopologyTree {
       }
       if (this.links.has(child)) {
         const existingSubtree = this.links.get(child)!;
-        if (existingSubtree.depth < depth) {
-          existingSubtree.node.relink(node);
-          existingSubtree.depth = depth;
+        const existingDepth = existingSubtree.getDepth({ stopOn: node.value });
+        if (existingDepth < depth) {
+          existingSubtree.relink(node);
         }
         return;
       }
@@ -49,10 +41,8 @@ export class TopologyTree {
         parent: node,
       });
       node.addChild(childNode);
-      this.links.set(child, {
-        node: childNode,
-        depth,
-      });
+
+      this.links.set(child, childNode);
 
       this.traverseAndCloneTree(childNode, depth + 1);
     });

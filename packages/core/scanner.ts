@@ -402,7 +402,7 @@ export class DependenciesScanner {
     const rootModule = modulesGenerator.next().value!;
 
     // Convert modules to an acyclic connected graph
-    const tree = TopologyTree.from(rootModule);
+    const tree = new TopologyTree(rootModule);
     tree.walk((moduleRef, depth) => {
       if (moduleRef.isGlobal) {
         return;
