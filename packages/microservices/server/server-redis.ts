@@ -11,7 +11,7 @@ import {
   RedisEventsMap,
   RedisStatus,
 } from '../events/redis.events';
-import { IncomingRequest, RedisOptions } from '../interfaces';
+import { IncomingRequest, RedisOptions, TransportId } from '../interfaces';
 import { Server } from './server';
 
 // To enable type safety for Redis. This cant be uncommented by default
@@ -27,7 +27,7 @@ let redisPackage = {} as any;
  * @publicApi
  */
 export class ServerRedis extends Server<RedisEvents, RedisStatus> {
-  public readonly transportId = Transport.REDIS;
+  public transportId: TransportId = Transport.REDIS;
 
   protected subClient: Redis;
   protected pubClient: Redis;

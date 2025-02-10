@@ -22,7 +22,10 @@ import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definit
 import { ChannelOptions } from '../external/grpc-options.interface';
 import { getGrpcPackageDefinition } from '../helpers';
 import { MessageHandler } from '../interfaces';
-import { GrpcOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  GrpcOptions,
+  TransportId,
+} from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 const CANCELLED_EVENT = 'cancelled';
@@ -54,7 +57,7 @@ interface GrpcCall<TRequest = any, TMetadata = any> {
  * @publicApi
  */
 export class ServerGrpc extends Server<never, never> {
-  public readonly transportId = Transport.GRPC;
+  public transportId: TransportId = Transport.GRPC;
   protected readonly url: string;
   protected grpcClient: GrpcServer;
 
