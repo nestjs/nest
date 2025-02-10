@@ -32,6 +32,8 @@ export type MicroserviceOptions =
   | KafkaOptions
   | CustomStrategy;
 
+export type TransportId = Transport | symbol;
+
 export type AsyncMicroserviceOptions = {
   inject: InjectionToken[];
   useFactory: (...args: any[]) => MicroserviceOptions;
@@ -55,6 +57,7 @@ export interface CustomStrategy {
  */
 export interface GrpcOptions {
   transport?: Transport.GRPC;
+  transportId?: TransportId;
   options: {
     url?: string;
     maxSendMessageLength?: number;
@@ -98,6 +101,7 @@ export interface GrpcOptions {
  */
 export interface TcpOptions {
   transport?: Transport.TCP;
+  transportId?: TransportId;
   options?: {
     host?: string;
     port?: number;
@@ -115,6 +119,7 @@ export interface TcpOptions {
  */
 export interface RedisOptions {
   transport?: Transport.REDIS;
+  transportId?: TransportId;
   options?: {
     host?: string;
     port?: number;
@@ -134,6 +139,7 @@ export interface RedisOptions {
  */
 export interface MqttOptions {
   transport?: Transport.MQTT;
+  transportId?: TransportId;
   options?: MqttClientOptions & {
     url?: string;
     serializer?: Serializer;
@@ -165,6 +171,7 @@ export interface MqttOptions {
  */
 export interface NatsOptions {
   transport?: Transport.NATS;
+  transportId?: TransportId;
   options?: {
     headers?: Record<string, string>;
     authenticator?: any;
@@ -214,6 +221,7 @@ export interface NatsOptions {
  */
 export interface RmqOptions {
   transport?: Transport.RMQ;
+  transportId?: TransportId;
   options?: {
     urls?: string[] | RmqUrl[];
     queue?: string;
@@ -253,6 +261,7 @@ export interface KafkaParserConfig {
  */
 export interface KafkaOptions {
   transport?: Transport.KAFKA;
+  transportId?: TransportId;
   options?: {
     /**
      * Defaults to `"-server"` on server side and `"-client"` on client side.
@@ -269,4 +278,8 @@ export interface KafkaOptions {
     parser?: KafkaParserConfig;
     producerOnlyMode?: boolean;
   };
+}
+
+export interface BuildServerSettings {
+  transportId?: TransportId;
 }
