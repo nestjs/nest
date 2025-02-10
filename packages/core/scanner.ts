@@ -396,7 +396,8 @@ export class DependenciesScanner {
 
   public calculateModulesDistance() {
     const modulesGenerator = this.container.getModules().values();
-    // Skip "InternalCoreModule" from calculating distance
+    // Skip "InternalCoreModule"
+    // The second element is the actual root module
     modulesGenerator.next();
 
     const rootModule = modulesGenerator.next().value!;
