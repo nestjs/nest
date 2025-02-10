@@ -11,7 +11,7 @@ export class TopologyTree {
       parent: null,
     });
     this.links.set(moduleRef, this.root);
-    this.traverseAndCloneTree(this.root);
+    this.traverseAndMapToTree(this.root);
   }
 
   public walk(callback: (value: Module, depth: number) => void) {
@@ -22,7 +22,7 @@ export class TopologyTree {
     walkNode(this.root);
   }
 
-  private traverseAndCloneTree(node: TreeNode<Module>, depth = 1) {
+  private traverseAndMapToTree(node: TreeNode<Module>, depth = 1) {
     node.value.imports.forEach(child => {
       if (!child) {
         return;
@@ -48,7 +48,7 @@ export class TopologyTree {
 
       this.links.set(child, childNode);
 
-      this.traverseAndCloneTree(childNode, depth + 1);
+      this.traverseAndMapToTree(childNode, depth + 1);
     });
   }
 }
