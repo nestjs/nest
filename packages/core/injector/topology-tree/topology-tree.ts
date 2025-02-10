@@ -29,7 +29,11 @@ export class TopologyTree {
       }
       if (this.links.has(child)) {
         const existingSubtree = this.links.get(child)!;
-        const existingDepth = existingSubtree.getDepth({ stopOn: node.value });
+
+        if (node.hasCycleWith(child)) {
+          return;
+        }
+        const existingDepth = existingSubtree.getDepth();
         if (existingDepth < depth) {
           existingSubtree.relink(node);
         }

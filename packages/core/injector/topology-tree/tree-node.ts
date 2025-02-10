@@ -17,7 +17,47 @@ export class TreeNode<T> {
   }
 
   relink(parent: TreeNode<T>) {
+    this.parent?.removeChild(this);
+
     this.parent = parent;
     this.parent.addChild(this);
+  }
+
+  getDepth() {
+    const visited = new Set<TreeNode<T>>();
+
+    let depth = 0;
+    let current: TreeNode<T> | null = this;
+
+    while (current) {
+      depth++;
+      current = current.parent;
+
+      // Stop on cycle
+      if (visited.has(current!)) {
+        return -1;
+      }
+      visited.add(current!);
+    }
+    return depth;
+  }
+
+  hasCycleWith(target: T) {
+    const visited = new Set<TreeNode<T>>();
+
+    let current: TreeNode<T> | null = this;
+
+    while (current) {
+      if (current.value === target) {
+        return true;
+      }
+      current = current.parent;
+
+      if (visited.has(current!)) {
+        return false;
+      }
+      visited.add(current!);
+    }
+    return false;
   }
 }
