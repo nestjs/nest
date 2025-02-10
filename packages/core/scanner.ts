@@ -401,6 +401,9 @@ export class DependenciesScanner {
     modulesGenerator.next();
 
     const rootModule = modulesGenerator.next().value!;
+    if (!rootModule) {
+      return;
+    }
 
     // Convert modules to an acyclic connected graph
     const tree = new TopologyTree(rootModule);
