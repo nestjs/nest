@@ -50,6 +50,7 @@ import { NestContainer } from './injector/container';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { InternalCoreModuleFactory } from './injector/internal-core-module/internal-core-module-factory';
 import { Module } from './injector/module';
+import { TopologyTree } from './injector/topology-tree/topology-tree';
 import { GraphInspector } from './inspector/graph-inspector';
 import { UuidFactory } from './inspector/uuid-factory';
 import { ModuleDefinition } from './interfaces/module-definition.interface';
@@ -395,37 +396,19 @@ export class DependenciesScanner {
 
   public calculateModulesDistance() {
     const modulesGenerator = this.container.getModules().values();
-
     // Skip "InternalCoreModule" from calculating distance
     modulesGenerator.next();
 
-    const calculateDistance = (
-      moduleRef: Module,
-      distance = 1,
-      modulesStack: Module[] = [],
-    ) => {
-      const localModulesStack = [...modulesStack];
-      if (!moduleRef || localModulesStack.includes(moduleRef)) {
+    const rootModule = modulesGenerator.next().value!;
+
+    // Convert modules to an acyclic connected graph
+    const tree = TopologyTree.from(rootModule);
+    tree.walk((moduleRef, depth) => {
+      if (moduleRef.isGlobal) {
         return;
       }
-      localModulesStack.push(moduleRef);
-
-      const moduleImports = moduleRef.imports;
-      moduleImports.forEach(importedModuleRef => {
-        if (importedModuleRef) {
-          if (
-            distance > importedModuleRef.distance &&
-            !importedModuleRef.isGlobal
-          ) {
-            importedModuleRef.distance = distance;
-          }
-          calculateDistance(importedModuleRef, distance + 1, localModulesStack);
-        }
-      });
-    };
-
-    const rootModule = modulesGenerator.next().value;
-    calculateDistance(rootModule!);
+      moduleRef.distance = depth;
+    });
   }
 
   public async insertImport(related: any, token: string, context: string) {
