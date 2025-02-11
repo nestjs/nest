@@ -25,7 +25,7 @@
     "@nestjs/cli": "11.0.2",
     "@nestjs/schematics": "11.0.0",
     "@types/node": "22.13.1",
-    "eslint": "9.20.0",
+    "eslint": "9.20.1",
     "eslint-plugin-prettier": "5.2.3",
     "globals": "15.14.0",
     "start-server-webpack-plugin": "2.2.5",
