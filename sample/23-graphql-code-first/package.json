@@ -42,7 +42,7 @@
     "@types/express": "5.0.0",
     "@types/node": "22.13.1",
     "@types/supertest": "6.0.2",
-    "eslint": "9.20.0",
+    "eslint": "9.20.1",
     "eslint-plugin-prettier": "5.2.3",
     "eslint-plugin-import": "2.31.0",
     "globals": "15.14.0",
