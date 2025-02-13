@@ -32,6 +32,10 @@ export class RouteInfoPathExtractor {
   public extractPathsFrom({ path, method, version }: RouteInfo): string[] {
     const versionPaths = this.extractVersionPathFrom(version);
 
+    if (this.prefixPath && path === '/*') {
+      path = '/*path';
+    }
+
     if (this.isAWildcard(path)) {
       const entries =
         versionPaths.length > 0
