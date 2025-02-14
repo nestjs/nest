@@ -5,7 +5,7 @@ import * as sinon from 'sinon';
 
 afterEach(() => sinon.restore());
 
-describe.only('ExpressAdapter', () => {
+describe('ExpressAdapter', () => {
   describe('registerParserMiddleware', () => {
     it('should register the express built-in parsers for json and urlencoded payloads', () => {
       const expressInstance = express();
