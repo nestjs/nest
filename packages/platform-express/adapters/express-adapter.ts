@@ -470,7 +470,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   private isMiddlewareApplied(name: string): boolean {
     const app = this.getInstance();
     return (
-      !!app._router &&
+      !!app.router &&
       !!app.router.stack &&
       isFunction(app.router.stack.filter) &&
       app.router.stack.some(
