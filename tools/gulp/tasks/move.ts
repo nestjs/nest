@@ -3,11 +3,7 @@ import { join } from 'path';
 import { samplePath } from '../config';
 import { containsPackageJson, getDirs } from '../util/task-helpers';
 
-const distFiles = src([
-  'packages/**/*',
-  '!packages/**/*.ts',
-  'packages/**/*.d.ts',
-]);
+const distFiles = src(['packages/**/*.js', 'packages/**/*.d.ts']);
 
 /**
  * Moves the compiled nest files into "node_module" folder.
