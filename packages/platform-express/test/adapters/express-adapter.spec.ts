@@ -3,9 +3,9 @@ import { expect } from 'chai';
 import * as express from 'express';
 import * as sinon from 'sinon';
 
-afterEach(() => sinon.restore());
-
 describe('ExpressAdapter', () => {
+  afterEach(() => sinon.restore());
+
   describe('registerParserMiddleware', () => {
     it('should register the express built-in parsers for json and urlencoded payloads', () => {
       const expressInstance = express();
