@@ -24,7 +24,7 @@
     "@nestjs/apollo": "13.0.2",
     "@nestjs/common": "11.0.10",
     "@nestjs/core": "11.0.10",
-    "@nestjs/graphql": "13.0.2",
+    "@nestjs/graphql": "13.0.3",
     "@nestjs/platform-express": "11.0.10",
     "@prisma/client": "6.3.1",
     "class-transformer": "0.5.1",
