@@ -17,7 +17,7 @@
     "@nestjs/core": "11.0.9",
     "@nestjs/platform-express": "11.0.9",
     "@nestjs/microservices": "11.0.9",
-    "@nestjs/websockets": "11.0.9",
+    "@nestjs/websockets": "11.0.10",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.1"
   },
@@ -30,7 +30,7 @@
     "@babel/preset-env": "7.26.9",
     "@babel/register": "7.25.9",
     "@babel/runtime": "7.26.9",
-    "@nestjs/testing": "11.0.9",
+    "@nestjs/testing": "11.0.10",
     "jest": "29.7.0",
     "nodemon": "3.1.9",
     "prettier": "3.5.1",
