@@ -19,10 +19,10 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "11.0.9",
-    "@nestjs/core": "11.0.9",
+    "@nestjs/common": "11.0.10",
+    "@nestjs/core": "11.0.10",
     "@nestjs/mongoose": "11.0.1",
-    "@nestjs/platform-express": "11.0.9",
+    "@nestjs/platform-express": "11.0.10",
     "mongoose": "8.10.1",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.0.1",
