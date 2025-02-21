@@ -48,8 +48,8 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { pathToRegexp } from 'path-to-regexp';
-// `querystring` is used internally in fastify for registering urlencoded body parser.
-import { parse as querystringParse } from 'querystring';
+// Fastify uses `fast-querystring` internally to quickly parse URL query strings.
+import { parse as querystringParse } from 'fast-querystring';
 import {
   FASTIFY_ROUTE_CONFIG_METADATA,
   FASTIFY_ROUTE_CONSTRAINTS_METADATA,
