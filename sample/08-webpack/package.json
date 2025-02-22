@@ -21,11 +21,11 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.2.0",
-    "@eslint/js": "9.20.0",
+    "@eslint/js": "9.21.0",
     "@nestjs/cli": "11.0.4",
     "@nestjs/schematics": "11.0.1",
     "@types/node": "22.13.4",
-    "eslint": "9.20.1",
+    "eslint": "9.21.0",
     "eslint-plugin-prettier": "5.2.3",
     "globals": "15.15.0",
     "start-server-webpack-plugin": "2.2.5",
