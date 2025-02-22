@@ -29,7 +29,7 @@
     "graphql": "16.10.0",
     "mercurius": "16.0.1",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.1"
+    "rxjs": "7.8.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.2.0",

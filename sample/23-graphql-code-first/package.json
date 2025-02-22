@@ -31,7 +31,7 @@
     "graphql-query-complexity": "1.0.0",
     "graphql-subscriptions": "3.0.0",
     "reflect-metadata": "0.2.2",
-    "rxjs": "7.8.1"
+    "rxjs": "7.8.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.2.0",
