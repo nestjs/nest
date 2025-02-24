@@ -44,8 +44,8 @@
     "@types/express": "5.0.0",
     "@types/node": "22.13.5",
     "@types/supertest": "6.0.2",
-    "@typescript-eslint/eslint-plugin": "8.24.1",
-    "@typescript-eslint/parser": "8.24.1",
+    "@typescript-eslint/eslint-plugin": "8.25.0",
+    "@typescript-eslint/parser": "8.25.0",
     "eslint": "9.21.0",
     "eslint-config-prettier": "10.0.1",
     "eslint-plugin-import": "2.31.0",
@@ -61,6 +61,6 @@
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.7.3",
-    "typescript-eslint": "8.24.1"
+    "typescript-eslint": "8.25.0"
   }
 }
