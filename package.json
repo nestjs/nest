@@ -176,7 +176,7 @@
     "typescript": "5.7.3",
     "typescript-eslint": "8.24.1",
     "wrk": "1.2.1",
-    "ws": "8.18.0"
+    "ws": "8.18.1"
   },
   "engines": {
     "node": ">= 20"
