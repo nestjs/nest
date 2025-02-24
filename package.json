@@ -101,7 +101,7 @@
     "@types/chai": "4.3.20",
     "@types/chai-as-promised": "7.1.8",
     "@types/cors": "2.8.17",
-    "@types/eslint__js": "8.42.3",
+    "@types/eslint__js": "9.14.0",
     "@types/express": "5.0.0",
     "@types/gulp": "4.0.17",
     "@types/http-errors": "2.0.4",
