@@ -760,6 +760,10 @@ export class FastifyAdapter<
       handler: handlerRef,
     };
 
+    if (this.instance.supportedMethods.indexOf(routerMethodKey) > -1) {
+      this.instance.addHttpMethod(routerMethodKey, { hasBody: true });
+    }
+
     if (isVersioned || hasConstraints || hasConfig) {
       const isPathAndRouteTuple = args.length === 2;
       if (isPathAndRouteTuple) {
