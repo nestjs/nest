@@ -20,9 +20,9 @@
   },
   "dependencies": {
     "@nestjs/bull": "11.0.2",
-    "@nestjs/common": "11.0.10",
-    "@nestjs/core": "11.0.10",
-    "@nestjs/platform-express": "11.0.10",
+    "@nestjs/common": "11.0.11",
+    "@nestjs/core": "11.0.11",
+    "@nestjs/platform-express": "11.0.11",
     "bull": "4.16.5",
     "dotenv": "16.4.7",
     "reflect-metadata": "0.2.2",
