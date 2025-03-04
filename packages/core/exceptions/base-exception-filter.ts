@@ -83,6 +83,15 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
    * @param err error object
    */
   public isHttpError(err: any): err is { statusCode: number; message: string } {
-    return err?.statusCode && err?.message;
+    if (!err || typeof err !== 'object') {
+      return false;
+    }
+
+    return (
+      typeof err.expose === 'boolean' &&
+      typeof err.statusCode === 'number' &&
+      err.status === err.statusCode &&
+      err instanceof Error
+    );
   }
 }
