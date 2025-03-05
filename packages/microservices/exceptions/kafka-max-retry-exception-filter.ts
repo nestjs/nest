@@ -70,7 +70,9 @@ export class KafkaMaxRetryExceptionFilter extends BaseExceptionFilter {
     const offset = message.offset;
 
     if (!topic || partition === undefined || offset === undefined) {
-      throw new Error('Incomplete Kafka message context for committing offset.');
+      throw new Error(
+        'Incomplete Kafka message context for committing offset.',
+      );
     }
 
     // Example commitOffsets call. Adjust according to the actual API.
