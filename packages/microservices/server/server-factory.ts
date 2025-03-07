@@ -1,5 +1,6 @@
 import { Transport } from '../enums/transport.enum';
 import {
+  BuildServerSettings,
   CustomStrategy,
   GrpcOptions,
   KafkaOptions,
@@ -20,25 +21,48 @@ import { ServerTCP } from './server-tcp';
 
 export class ServerFactory {
   public static create(microserviceOptions: MicroserviceOptions) {
-    const { transport, options } = microserviceOptions as Exclude<
+    const { transport, transportId, options } = microserviceOptions as Exclude<
       MicroserviceOptions,
       CustomStrategy
     >;
+
+    const buildServerSettings: BuildServerSettings = {
+      transportId,
+    };
+
     switch (transport) {
       case Transport.REDIS:
-        return new ServerRedis(options as Required<RedisOptions>['options']);
+        return new ServerRedis(
+          options as Required<RedisOptions>['options'],
+          buildServerSettings,
+        );
       case Transport.NATS:
-        return new ServerNats(options as Required<NatsOptions>['options']);
+        return new ServerNats(
+          options as Required<NatsOptions>['options'],
+          buildServerSettings,
+        );
       case Transport.MQTT:
-        return new ServerMqtt(options as Required<MqttOptions>['options']);
+        return new ServerMqtt(
+          options as Required<MqttOptions>['options'],
+          buildServerSettings,
+        );
       case Transport.GRPC:
-        return new ServerGrpc(options);
+        return new ServerGrpc(options, buildServerSettings);
       case Transport.KAFKA:
-        return new ServerKafka(options as Required<KafkaOptions>['options']);
+        return new ServerKafka(
+          options as Required<KafkaOptions>['options'],
+          buildServerSettings,
+        );
       case Transport.RMQ:
-        return new ServerRMQ(options as Required<RmqOptions>['options']);
+        return new ServerRMQ(
+          options as Required<RmqOptions>['options'],
+          buildServerSettings,
+        );
       default:
-        return new ServerTCP(options as Required<TcpOptions>['options']);
+        return new ServerTCP(
+          options as Required<TcpOptions>['options'],
+          buildServerSettings,
+        );
     }
   }
 }

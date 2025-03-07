@@ -21,7 +21,7 @@ import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events';
 import { RmqUrl } from '../external/rmq-url.interface';
-import { RmqOptions } from '../interfaces';
+import { BuildServerSettings, RmqOptions, TransportId } from '../interfaces';
 import {
   IncomingRequest,
   OutgoingResponse,
@@ -51,7 +51,7 @@ const INFINITE_CONNECTION_ATTEMPTS = -1;
  * @publicApi
  */
 export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
-  public readonly transportId = Transport.RMQ;
+  public readonly transportId: TransportId = Transport.RMQ;
 
   protected server: AmqpConnectionManager = null;
   protected channel: ChannelWrapper = null;
@@ -65,8 +65,12 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     callback: RmqEvents[keyof RmqEvents];
   }> = [];
 
-  constructor(protected readonly options: Required<RmqOptions>['options']) {
+  constructor(
+    protected readonly options: Required<RmqOptions>['options'],
+    buildServerSettings?: BuildServerSettings,
+  ) {
     super();
+    this.transportId = buildServerSettings?.transportId ?? Transport.RMQ;
     this.urls = this.getOptionsProp(this.options, 'urls') || [RQM_DEFAULT_URL];
     this.queue =
       this.getOptionsProp(this.options, 'queue') || RQM_DEFAULT_QUEUE;
