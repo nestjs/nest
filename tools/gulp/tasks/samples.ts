@@ -1,5 +1,5 @@
-import * as childProcess from 'child_process';
 import { blue, magenta } from 'ansis';
+import * as childProcess from 'child_process';
 import * as log from 'fancy-log';
 import { task } from 'gulp';
 import { resolve } from 'path';
@@ -17,10 +17,17 @@ async function executeNpmScriptInSamples(
 
   const directories = getDirs(samplePath);
 
-  /**
-   * A dictionary that maps the sample number to the minimum Node.js version
-   * required to execute any scripts.
-   */
+  // TODO: temporarily ignore Prisma sample as require('.')
+  // leads to Module '"@prisma/client"' has no exported member 'Post' error
+  const prismaSampleIndex = directories.indexOf(
+    `${samplePath}/22-graphql-prisma`,
+  );
+  if (prismaSampleIndex !== -1) {
+    directories.splice(prismaSampleIndex, 1);
+  }
+
+  // A dictionary that maps the sample number to the minimum Node.js version
+  // required to execute any scripts.
   const minNodejsVersionBySampleNumber = {
     '34': 18, // we could use `engines.node` from package.json instead of hardcoding
     '35': 22,
