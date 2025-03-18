@@ -85,6 +85,28 @@ describe('@EventPattern', () => {
       public static test() {}
     }
 
+    type TestComponent6EventTypes = {
+      'event-pattern-foo': { foo: string };
+      'event-pattern-bar': { bar: number };
+    };
+
+    // Static tests exclusively for type safety:
+    class TypeTestComponent {
+      @EventPattern<TestComponent6EventTypes>('event-pattern-foo')
+      testFoo(_event: { foo: string }, _additionalArg: string) {}
+
+      @EventPattern<TestComponent6EventTypes>('event-pattern-bar')
+      testBar(_event: { bar: number }) {}
+
+      // @ts-expect-error -- `foo` should be a string, not a number
+      @EventPattern<TestComponent6EventTypes>('event-pattern-foo')
+      testFooMismatch(_event: { foo: number }) {}
+
+      // @ts-expect-error -- `_event` should be `{ foo: string; }`, not a string
+      @EventPattern<TestComponent6EventTypes>('event-pattern-foo')
+      testFooMismatch2(_event: string) {}
+    }
+
     it(`should enhance method with ${PATTERN_METADATA} metadata`, () => {
       const [metadataArg] = Reflect.getMetadata(
         PATTERN_METADATA,
