@@ -81,7 +81,7 @@
     "@apollo/server": "4.11.3",
     "@codechecks/client": "0.1.12",
     "@commitlint/cli": "19.8.0",
-    "@commitlint/config-angular": "19.7.1",
+    "@commitlint/config-angular": "19.8.0",
     "@eslint/eslintrc": "3.3.0",
     "@eslint/js": "9.21.0",
     "@fastify/cors": "11.0.0",
