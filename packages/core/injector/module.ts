@@ -668,6 +668,7 @@ export class Module {
   private isTransientProvider(provider: Type<any>): boolean {
     return getClassScope(provider) === Scope.TRANSIENT;
   }
+
   private isRequestScopeProvider(provider: Type<any>): boolean {
     return getClassScope(provider) === Scope.REQUEST;
   }
