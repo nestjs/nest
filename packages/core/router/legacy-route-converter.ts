@@ -11,19 +11,30 @@ export class LegacyRouteConverter {
    * path-to-regexp used by Express>=v5 and @fastify/middie>=v9 no longer support unnamed wildcards.
    * This method attempts to convert the old syntax to the new one, and logs an error if it fails.
    * @param route The route to convert.
+   * @param options Options object.
    * @returns The converted route, or the original route if it cannot be converted.
    */
-  static tryConvert(route: string): string {
+  static tryConvert(
+    route: string,
+    options?: {
+      logs?: boolean;
+    },
+  ): string {
     // Normalize path to eliminate additional if statements.
     const routeWithLeadingSlash = route.startsWith('/') ? route : `/${route}`;
     const normalizedRoute = route.endsWith('/')
       ? routeWithLeadingSlash
       : `${routeWithLeadingSlash}/`;
 
+    const loggingEnabled = options?.logs ?? true;
+    const printWarning = loggingEnabled
+      ? this.printWarning.bind(this)
+      : () => {};
+
     if (normalizedRoute.endsWith('/(.*)/')) {
       // Skip printing warning for the "all" wildcard.
       if (normalizedRoute !== '/(.*)/') {
-        this.printWarning(route);
+        printWarning(route);
       }
       return route.replace('(.*)', '{*path}');
     }
@@ -31,19 +42,19 @@ export class LegacyRouteConverter {
     if (normalizedRoute.endsWith('/*/')) {
       // Skip printing warning for the "all" wildcard.
       if (normalizedRoute !== '/*/') {
-        this.printWarning(route);
+        printWarning(route);
       }
       return route.replace('*', '{*path}');
     }
 
     if (normalizedRoute.endsWith('/+/')) {
-      this.printWarning(route);
+      printWarning(route);
       return route.replace('/+', '/*path');
     }
 
     // When route includes any wildcard segments in the middle.
     if (normalizedRoute.includes('/*/')) {
-      this.printWarning(route);
+      printWarning(route);
       // Replace each /*/ segment with a named parameter using different name for each segment.
       return route.replaceAll('/*/', (match, offset) => {
         return `/*path${offset}/`;
