@@ -255,7 +255,11 @@ export class Module {
     }
 
     const isAlreadyDeclared = this._providers.has(provider);
-    if (this.isTransientProvider(provider) && isAlreadyDeclared) {
+    if (
+      (this.isTransientProvider(provider) ||
+        this.isRequestScopeProvider(provider)) &&
+      isAlreadyDeclared
+    ) {
       return provider;
     }
 
@@ -663,5 +667,9 @@ export class Module {
 
   private isTransientProvider(provider: Type<any>): boolean {
     return getClassScope(provider) === Scope.TRANSIENT;
+  }
+
+  private isRequestScopeProvider(provider: Type<any>): boolean {
+    return getClassScope(provider) === Scope.REQUEST;
   }
 }
