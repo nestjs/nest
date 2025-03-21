@@ -20,14 +20,18 @@ import {
   ReadPacket,
   WritePacket,
 } from '../interfaces';
-import { TcpOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  BuildServerSettings,
+  TcpOptions,
+  TransportId,
+} from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 /**
  * @publicApi
  */
 export class ServerTCP extends Server<TcpEvents, TcpStatus> {
-  public readonly transportId = Transport.TCP;
+  public readonly transportId: TransportId = Transport.TCP;
 
   protected server: NetSocket;
   protected readonly port: number;
@@ -41,8 +45,13 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     callback: TcpEvents[keyof TcpEvents];
   }> = [];
 
-  constructor(private readonly options: Required<TcpOptions>['options']) {
+  constructor(
+    private readonly options: Required<TcpOptions>['options'],
+    buildServerSettings?: BuildServerSettings,
+  ) {
     super();
+    this.transportId = buildServerSettings?.transportId ?? Transport.TCP;
+
     this.port = this.getOptionsProp(options, 'port', TCP_DEFAULT_PORT);
     this.host = this.getOptionsProp(options, 'host', TCP_DEFAULT_HOST);
     this.socketClass = this.getOptionsProp(options, 'socketClass', JsonSocket);

@@ -11,7 +11,12 @@ import {
   RedisEventsMap,
   RedisStatus,
 } from '../events/redis.events';
-import { IncomingRequest, RedisOptions } from '../interfaces';
+import {
+  BuildServerSettings,
+  IncomingRequest,
+  RedisOptions,
+  TransportId,
+} from '../interfaces';
 import { Server } from './server';
 
 // To enable type safety for Redis. This cant be uncommented by default
@@ -27,7 +32,7 @@ let redisPackage = {} as any;
  * @publicApi
  */
 export class ServerRedis extends Server<RedisEvents, RedisStatus> {
-  public readonly transportId = Transport.REDIS;
+  public readonly transportId: TransportId = Transport.REDIS;
 
   protected subClient: Redis;
   protected pubClient: Redis;
@@ -38,8 +43,12 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     callback: RedisEvents[keyof RedisEvents];
   }> = [];
 
-  constructor(protected readonly options: Required<RedisOptions>['options']) {
+  constructor(
+    protected readonly options: Required<RedisOptions>['options'],
+    buildServerSettings?: BuildServerSettings,
+  ) {
     super();
+    this.transportId = buildServerSettings?.transportId ?? Transport.REDIS;
 
     redisPackage = this.loadPackage('ioredis', ServerRedis.name, () =>
       require('ioredis'),
