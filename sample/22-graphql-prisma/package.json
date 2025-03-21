@@ -54,7 +54,7 @@
     "jest": "29.7.0",
     "prettier": "3.5.3",
     "prisma": "^6.2.1",
-    "supertest": "7.0.0",
+    "supertest": "7.1.0",
     "ts-jest": "29.2.6",
     "ts-loader": "9.5.2",
     "ts-morph": "25.0.1",
