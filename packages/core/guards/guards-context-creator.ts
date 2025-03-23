@@ -8,7 +8,7 @@ import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import {
   GUARDS_METADATA,
   type Controller,
-  isEmpty,
+  isEmptyArray,
   isFunction,
 } from '@nestjs/common/internal';
 import type { Type } from '@nestjs/common';
@@ -45,7 +45,7 @@ export class GuardsContextCreator extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): R {
-    if (isEmpty(metadata)) {
+    if (isEmptyArray(metadata)) {
       return [] as unknown[] as R;
     }
     return iterate(metadata)

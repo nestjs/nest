@@ -10,7 +10,7 @@ import { RouterProxyCallback } from './router-proxy.js';
 import {
   EXCEPTION_FILTERS_METADATA,
   type Controller,
-  isEmpty,
+  isEmptyArray,
 } from '@nestjs/common/internal';
 
 export class RouterExceptionFilters extends BaseExceptionFilterContext {
@@ -39,7 +39,7 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
       contextId,
       inquirerId,
     );
-    if (isEmpty(filters)) {
+    if (isEmptyArray(filters)) {
       return exceptionHandler;
     }
     exceptionHandler.setCustomFilters(filters.reverse());

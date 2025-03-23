@@ -6,7 +6,7 @@ import type {
 import {
   type Controller,
   CUSTOM_ROUTE_ARGS_METADATA,
-  isEmpty,
+  isEmptyArray,
   PARAMTYPES_METADATA,
 } from '@nestjs/common/internal';
 import {
@@ -279,7 +279,7 @@ export class WsContextCreator {
     metadata: ArgumentMetadata,
     pipes: PipeTransform[],
   ): Promise<any> {
-    return isEmpty(pipes)
+    return isEmptyArray(pipes)
       ? value
       : this.pipesConsumer.apply(value, metadata, pipes);
   }

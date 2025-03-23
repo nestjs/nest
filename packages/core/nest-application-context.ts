@@ -29,7 +29,7 @@ import {
   type SelectOptions,
   type ShutdownHooksOptions,
   type NestApplicationContextOptions,
-  isEmpty,
+  isEmptyArray,
 } from '@nestjs/common/internal';
 
 /**
@@ -317,7 +317,7 @@ export class NestApplicationContext<
     signals: (ShutdownSignal | string)[] = [],
     options: ShutdownHooksOptions = {},
   ): this {
-    if (isEmpty(signals)) {
+    if (isEmptyArray(signals)) {
       signals = Object.values(ShutdownSignal);
     } else {
       // given signals array should be unique because

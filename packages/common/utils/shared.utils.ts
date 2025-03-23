@@ -55,7 +55,14 @@ export const isNil = (val: unknown): val is null | undefined =>
   isUndefined(val) || val === null;
 
 export const isEmpty = (array: unknown): boolean =>
-  !(Array.isArray(array) && array.length > 0);
+  array == null || (Array.isArray(array) && array.length === 0);
+
+export const isEmptyArray = (array: unknown): boolean => {
+  if (!Array.isArray(array)) {
+    return false;
+  }
+  return array.length === 0;
+};
 
 export const isSymbol = (val: unknown): val is symbol =>
   typeof val === 'symbol';
