@@ -1,6 +1,6 @@
 import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
 import { Controller, NestInterceptor, Type } from '@nestjs/common/interfaces';
-import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
+import { isEmptyArray, isFunction } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
 import { ContextCreator } from '../helpers/context-creator';
@@ -40,7 +40,7 @@ export class InterceptorsContextCreator extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): R {
-    if (isEmpty(metadata)) {
+    if (isEmptyArray(metadata)) {
       return [] as any[] as R;
     }
     return iterate(metadata)
