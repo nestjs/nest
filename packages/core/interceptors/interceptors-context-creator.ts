@@ -7,7 +7,7 @@ import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import {
   INTERCEPTORS_METADATA,
   type Controller,
-  isEmpty,
+  isEmptyArray,
   isFunction,
 } from '@nestjs/common/internal';
 import type { NestInterceptor, Type } from '@nestjs/common';
@@ -44,7 +44,7 @@ export class InterceptorsContextCreator extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): R {
-    if (isEmpty(metadata)) {
+    if (isEmptyArray(metadata)) {
       return [] as any[] as R;
     }
     return iterate(metadata)

@@ -7,7 +7,7 @@ import {
 import {
   CUSTOM_ROUTE_ARGS_METADATA,
   type Controller,
-  isEmpty,
+  isEmptyArray,
 } from '@nestjs/common/internal';
 import { isObservable, lastValueFrom } from 'rxjs';
 import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context.js';
@@ -334,7 +334,7 @@ export class ExternalContextCreator {
     metadata: ArgumentMetadata,
     pipes: PipeTransform[],
   ): Promise<any> {
-    return isEmpty(pipes)
+    return isEmptyArray(pipes)
       ? value
       : this.pipesConsumer.apply(value, metadata, pipes);
   }

@@ -2,7 +2,7 @@ import type { ContextType, PipeTransform } from '@nestjs/common';
 import {
   type Controller,
   CUSTOM_ROUTE_ARGS_METADATA,
-  isEmpty,
+  isEmptyArray,
   PARAMTYPES_METADATA,
 } from '@nestjs/common/internal';
 import {
@@ -280,7 +280,7 @@ export class RpcContextCreator {
     { metatype, type, data }: { metatype: any; type: any; data: any },
     pipes: PipeTransform[],
   ): Promise<any> {
-    return isEmpty(pipes)
+    return isEmptyArray(pipes)
       ? value
       : this.pipesConsumer.apply(value, { metatype, type, data }, pipes);
   }

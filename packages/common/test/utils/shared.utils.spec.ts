@@ -1,7 +1,7 @@
 import {
   addLeadingSlash,
   isConstructor,
-  isEmpty,
+  isEmptyArray,
   isFunction,
   isNil,
   isNumber,
@@ -198,20 +198,36 @@ describe('Shared utils', () => {
     });
   });
 
-  describe('isEmpty', () => {
-    it('should return true when array is empty or not exists', () => {
-      expect(isEmpty([])).toBe(true);
-      expect(isEmpty(null)).toBe(true);
-      expect(isEmpty(undefined)).toBe(true);
+  describe('isEmptyArray', () => {
+    it('should return true when array is empty', () => {
+      expect(isEmptyArray([])).toBe(true);
     });
+
     it('should return false when array is not empty', () => {
-      expect(isEmpty([1, 2])).toBe(false);
+      expect(isEmptyArray([1, 2])).toBe(false);
+      expect(isEmptyArray(['a', 'b', 'c'])).toBe(false);
+      expect(isEmptyArray([{}])).toBe(false);
     });
-    it('should return true for non-array values', () => {
-      expect(isEmpty({})).to.be.true;
-      expect(isEmpty('')).to.be.true;
-      expect(isEmpty(0)).to.be.true;
-      expect(isEmpty(false)).to.be.true;
+
+    it('should return false for non-array values', () => {
+      expect(isEmptyArray(null)).toBe(false);
+      expect(isEmptyArray(undefined)).toBe(false);
+      expect(isEmptyArray({})).toBe(false);
+      expect(isEmptyArray('')).to.be.false;
+      expect(isEmptyArray(0)).to.be.false;
+      expect(isEmptyArray(false)).to.be.false;
+      expect(isEmptyArray(Symbol())).to.be.false;
+      expect(isEmptyArray(() => {})).to.be.false;
+    });
+
+    it('should return false for array-like objects', () => {
+      expect(isEmptyArray({ length: 0 })).to.be.false;
+      expect(isEmptyArray({ length: 1 })).to.be.false;
+    });
+
+    it('should return false for sparse arrays', () => {
+      const sparseArray = new Array(3);
+      expect(isEmptyArray(sparseArray)).to.be.false;
     });
   });
 

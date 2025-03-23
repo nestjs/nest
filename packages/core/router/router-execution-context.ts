@@ -16,7 +16,7 @@ import {
   CUSTOM_ROUTE_ARGS_METADATA,
   HEADERS_METADATA,
   HTTP_CODE_METADATA,
-  isEmpty,
+  isEmptyArray,
   isString,
   REDIRECT_METADATA,
   RENDER_METADATA,
@@ -244,7 +244,7 @@ export class RouterExecutionContext {
       httpCode ?? this.responseController.getStatusByMethod(requestMethod);
 
     const responseHeaders = this.reflectResponseHeaders(callback);
-    const hasCustomHeaders = !isEmpty(responseHeaders);
+    const hasCustomHeaders = !isEmptyArray(responseHeaders);
     const handlerMetadata: HandlerMetadata = {
       argsLength,
       fnHandleResponse,
@@ -341,7 +341,7 @@ export class RouterExecutionContext {
     metadata: ArgumentMetadata,
     pipes: PipeTransform[],
   ): Promise<unknown> {
-    if (!isEmpty(pipes)) {
+    if (!isEmptyArray(pipes)) {
       return this.pipesConsumer.apply(value, metadata, pipes);
     }
     return value;

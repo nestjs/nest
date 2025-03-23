@@ -3,7 +3,7 @@ import { ExternalExceptionFilter } from './external-exception-filter.js';
 import {
   type ExceptionFilterMetadata,
   selectExceptionFilterMetadata,
-  isEmpty,
+  isEmptyArray,
 } from '@nestjs/common/internal';
 import type { ArgumentsHost } from '@nestjs/common';
 
@@ -29,7 +29,7 @@ export class ExternalExceptionsHandler extends ExternalExceptionFilter {
     exception: T,
     host: ArgumentsHost,
   ): Promise<any> | null {
-    if (isEmpty(this.filters)) {
+    if (isEmptyArray(this.filters)) {
       return null;
     }
 

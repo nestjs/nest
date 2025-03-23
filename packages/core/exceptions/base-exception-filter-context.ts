@@ -5,7 +5,7 @@ import { NestContainer } from '../injector/container.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import {
   FILTER_CATCH_EXCEPTIONS,
-  isEmpty,
+  isEmptyArray,
   isFunction,
 } from '@nestjs/common/internal';
 import type { Type, ExceptionFilter } from '@nestjs/common';
@@ -22,7 +22,7 @@ export class BaseExceptionFilterContext extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): R {
-    if (isEmpty(metadata)) {
+    if (isEmptyArray(metadata)) {
       return [] as any[] as R;
     }
     return iterate(metadata)

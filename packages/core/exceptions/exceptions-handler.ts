@@ -4,7 +4,7 @@ import { BaseExceptionFilter } from './base-exception-filter.js';
 import {
   type ExceptionFilterMetadata,
   selectExceptionFilterMetadata,
-  isEmpty,
+  isEmptyArray,
 } from '@nestjs/common/internal';
 import type { ArgumentsHost } from '@nestjs/common';
 
@@ -29,7 +29,7 @@ export class ExceptionsHandler extends BaseExceptionFilter {
     exception: T,
     ctx: ArgumentsHost,
   ): boolean {
-    if (isEmpty(this.filters)) {
+    if (isEmptyArray(this.filters)) {
       return false;
     }
 
