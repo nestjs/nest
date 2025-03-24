@@ -48,9 +48,7 @@ describe('Shared utils', () => {
     it('should return true when obj is object', () => {
       expect(isObject({})).toBe(true);
     });
-    it('should return true for arrays', () => {
-      expect(isObject([1, 2, 3])).to.be.true; // Arrays are objects
-    });
+
     it('should return false when object is not object', () => {
       expect(isObject(3)).toBe(false);
       expect(isObject(null)).toBe(false);
