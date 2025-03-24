@@ -54,6 +54,16 @@ export const isConstructor = (val: unknown): boolean => val === 'constructor';
 export const isNil = (val: unknown): val is null | undefined =>
   isUndefined(val) || val === null;
 
+export const isEmpty = (value: unknown): boolean => {
+  if (isNil(value)) {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.length === 0;
+  }
+  return false;
+};
+
 export const isEmptyArray = (array: unknown): boolean => {
   if (isNil(array)) {
     return true;
