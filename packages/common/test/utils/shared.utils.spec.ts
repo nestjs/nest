@@ -200,8 +200,10 @@ describe('Shared utils', () => {
   });
 
   describe('isEmptyArray', () => {
-    it('should return true when array is empty', () => {
+    it('should return true when array is empty or not exists', () => {
       expect(isEmptyArray([])).to.be.true;
+      expect(isEmptyArray(null)).to.be.true;
+      expect(isEmptyArray(undefined)).to.be.true;
     });
 
     it('should return false when array is not empty', () => {
@@ -211,8 +213,6 @@ describe('Shared utils', () => {
     });
 
     it('should return false for non-array values', () => {
-      expect(isEmptyArray(null)).to.be.false;
-      expect(isEmptyArray(undefined)).to.be.false;
       expect(isEmptyArray({})).to.be.false;
       expect(isEmptyArray('')).to.be.false;
       expect(isEmptyArray(0)).to.be.false;
