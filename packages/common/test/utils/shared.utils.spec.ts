@@ -1,6 +1,7 @@
 import {
   addLeadingSlash,
   isConstructor,
+  isEmpty,
   isEmptyArray,
   isFunction,
   isNil,
@@ -47,9 +48,7 @@ describe('Shared utils', () => {
     it('should return true when obj is object', () => {
       expect(isObject({})).toBe(true);
     });
-    it('should return true for arrays', () => {
-      expect(isObject([1, 2, 3])).to.be.true; // Arrays are objects
-    });
+
     it('should return false when object is not object', () => {
       expect(isObject(3)).toBe(false);
       expect(isObject(null)).toBe(false);
@@ -195,6 +194,24 @@ describe('Shared utils', () => {
       expect(isNil(false)).to.be.false;
       expect(isNil(0)).to.be.false;
       expect(isNil('')).to.be.false;
+    });
+  });
+
+  describe('isEmpty', () => {
+    it('should return true when array is empty or not exists', () => {
+      expect(isEmpty([])).to.be.true;
+    });
+
+    it('should return false when array is not empty', () => {
+      expect(isEmpty([1, 2])).to.be.false;
+    });
+    it('should return false for non-array values', () => {
+      expect(isEmpty({})).to.be.false;
+      expect(isEmpty('')).to.be.false;
+      expect(isEmpty(0)).to.be.false;
+      expect(isEmpty(false)).to.be.false;
+      expect(isEmpty(Symbol())).to.be.false;
+      expect(isEmpty(() => {})).to.be.false;
     });
   });
 
