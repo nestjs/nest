@@ -255,13 +255,4 @@ describe('Shared utils', () => {
       expect(stripEndSlash('/cats')).to.equal('/cats');
     });
   });
-
-  describe('stripEndSlash', () => {
-    it('should strip end slash if present', () => {
-      expect(stripEndSlash('/cats/')).to.equal('/cats');
-    });
-    it('should return the same path if no trailing slash exists', () => {
-      expect(stripEndSlash('/cats')).to.equal('/cats');
-    });
-  });
 });
