@@ -40,7 +40,7 @@
     "@nestjs/schematics": "11.0.2",
     "@nestjs/testing": "11.0.12",
     "@types/express": "5.0.1",
-    "@types/node": "22.13.12",
+    "@types/node": "22.13.13",
     "@types/supertest": "6.0.2",
     "eslint": "9.23.0",
     "eslint-plugin-prettier": "5.2.4",
