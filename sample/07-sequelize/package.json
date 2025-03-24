@@ -32,7 +32,7 @@
     "typescript": "5.7.3"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.3.0",
+    "@eslint/eslintrc": "3.3.1",
     "@eslint/js": "9.23.0",
     "@nestjs/cli": "11.0.5",
     "@nestjs/schematics": "11.0.2",
