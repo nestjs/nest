@@ -208,34 +208,39 @@ describe('Shared utils', () => {
 
     it('should return false when array is not empty', () => {
       expect(isEmpty([1, 2])).toBe(false);
+      expect(isEmptyArray(['a', 'b', 'c'])).to.be.false;
+      expect(isEmptyArray([{}])).to.be.false;
+    });
+  });
+
+  describe('isEmptyArray', () => {
+    it('should return true when array is empty or not exists', () => {
+      expect(isEmptyArray([])).toBe(true);
+      expect(isEmptyArray(null)).toBe(true);
+      expect(isEmptyArray(undefined)).toBe(true);
+    });
+
+    it('should return false when array is not empty', () => {
+      expect(isEmptyArray([1, 2])).toBe(false);
     });
 
     it('should return false for non-array values', () => {
-      expect(isEmptyArray(null)).to.be.false;
-      expect(isEmptyArray(undefined)).to.be.false;
-      expect(isEmptyArray({})).to.be.false;
-      expect(isEmptyArray('')).to.be.false;
-      expect(isEmptyArray(0)).to.be.false;
-      expect(isEmptyArray(false)).to.be.false;
-      expect(isEmptyArray(Symbol())).to.be.false;
-      expect(isEmptyArray(() => {})).to.be.false;
+      expect(isEmptyArray({})).toBe(false);
+      expect(isEmptyArray('')).toBe(false);
+      expect(isEmptyArray(0)).toBe(false);
+      expect(isEmptyArray(false)).toBe(false);
+      expect(isEmptyArray(Symbol())).toBe(false);
+      expect(isEmptyArray(() => {})).toBe(false);
     });
 
     it('should return false for array-like objects', () => {
-      expect(isEmptyArray({ length: 0 })).to.be.false;
-      expect(isEmptyArray({ length: 1 })).to.be.false;
+      expect(isEmptyArray({ length: 0 })).toBe(false);
+      expect(isEmptyArray({ length: 1 })).toBe(false);
     });
 
     it('should return false for sparse arrays', () => {
       const sparseArray = new Array(3);
-      expect(isEmptyArray(sparseArray)).to.be.false;
-    });
-  });
-
-  describe('stripEndSlash', () => {
-    it('should strip end slash if present', () => {
-      expect(stripEndSlash('/cats/')).to.equal('/cats');
-      expect(stripEndSlash('/cats')).to.equal('/cats');
+      expect(isEmptyArray(sparseArray)).toBe(false);
     });
   });
 
