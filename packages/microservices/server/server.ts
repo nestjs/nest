@@ -128,21 +128,25 @@ export abstract class Server<
     stream$: Observable<any>,
     respond: (data: WritePacket) => Promise<unknown> | void,
   ): Subscription {
-    let dataBuffer: WritePacket[] | null = null;
-
+    const dataQueue: WritePacket[] = [];
+    let isProcessing = false;
     const scheduleOnNextTick = (data: WritePacket) => {
-      if (!dataBuffer) {
-        dataBuffer = [data];
-        process.nextTick(async () => {
-          for (const item of dataBuffer!) {
-            await respond(item);
-          }
-          dataBuffer = null;
-        });
-      } else if (!data.isDisposed) {
-        dataBuffer = dataBuffer.concat(data);
+      if (data.isDisposed && dataQueue.length > 0) {
+        dataQueue[dataQueue.length - 1].isDisposed = true;
       } else {
-        dataBuffer[dataBuffer.length - 1].isDisposed = data.isDisposed;
+        dataQueue.push(data);
+      }
+      if (!isProcessing) {
+        isProcessing = true;
+        process.nextTick(async () => {
+          while (dataQueue.length > 0) {
+            const packet = dataQueue.shift();
+            if (packet) {
+              await respond(packet);
+            }
+          }
+          isProcessing = false;
+        });
       }
     };
     return stream$
