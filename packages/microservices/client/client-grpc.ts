@@ -66,7 +66,7 @@ export class ClientGrpcProxy
   }
 
   public getService<T extends object>(name: string): T {
-    const grpcClient = this.createClientByServiceName(name);
+    const grpcClient = this.getClientByServiceName(name);
     const clientRef = this.getClient(name);
     if (!clientRef) {
       throw new InvalidGrpcServiceException(name);
