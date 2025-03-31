@@ -1,4 +1,3 @@
-import { FileTypeValidator } from './file-type.validator';
 import { MagicFileTypeValidator } from './magic-file-type.validator';
 import { FileValidator } from './file-validator.interface';
 import {
@@ -20,10 +19,6 @@ export class ParseFilePipeBuilder {
   }
 
   addFileTypeValidator(options: FileTypeValidatorOptions) {
-    return this.addValidator(new FileTypeValidator(options));
-  }
-
-  addMagicFileTypeValidator(options: FileTypeValidatorOptions) {
     return this.addValidator(new MagicFileTypeValidator(options));
   }
 
