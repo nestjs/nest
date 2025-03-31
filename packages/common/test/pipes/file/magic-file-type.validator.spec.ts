@@ -143,6 +143,36 @@ describe('MagicFileTypeValidator', () => {
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
+
+    it('should return false when the file buffer does not match any known type', async () => {
+      const fileTypeValidator = new MagicFileTypeValidator({
+        fileType: 'unknown/type',
+      });
+
+      const unknownBuffer = Buffer.from([
+        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+      ]);
+      const requestFile = {
+        mimetype: 'unknown/type',
+        buffer: unknownBuffer,
+      } as IFileWithBuffer;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
+    });
+
+    it('should return false when the buffer is empty', async () => {
+      const fileTypeValidator = new MagicFileTypeValidator({
+        fileType: 'image/jpeg',
+      });
+
+      const emptyBuffer = Buffer.from([]);
+      const requestFile = {
+        mimetype: 'image/jpeg',
+        buffer: emptyBuffer,
+      } as IFileWithBuffer;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
+    });
   });
 
   describe('buildErrorMessage', () => {
