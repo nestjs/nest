@@ -1,7 +1,5 @@
-import {
-  FileTypeValidator,
-  FileTypeValidatorOptions,
-} from './file-type.validator';
+import { FileTypeValidator } from './file-type.validator';
+import { MagicFileTypeValidator } from './magic-file-type.validator';
 import { FileValidator } from './file-validator.interface';
 import {
   MaxFileSizeValidator,
@@ -9,6 +7,7 @@ import {
 } from './max-file-size.validator';
 import { ParseFileOptions } from './parse-file-options.interface';
 import { ParseFilePipe } from './parse-file.pipe';
+import { FileTypeValidatorOptions } from './interfaces';
 
 /**
  * @publicApi
@@ -22,6 +21,10 @@ export class ParseFilePipeBuilder {
 
   addFileTypeValidator(options: FileTypeValidatorOptions) {
     return this.addValidator(new FileTypeValidator(options));
+  }
+
+  addMagicFileTypeValidator(options: FileTypeValidatorOptions) {
+    return this.addValidator(new MagicFileTypeValidator(options));
   }
 
   addValidator(validator: FileValidator) {
