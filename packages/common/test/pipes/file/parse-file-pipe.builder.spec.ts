@@ -4,6 +4,7 @@ import {
   FileValidator,
   MaxFileSizeValidator,
   ParseFilePipeBuilder,
+  MagicFileTypeValidator,
 } from '../../../pipes';
 
 describe('ParseFilePipeBuilder', () => {
@@ -47,6 +48,21 @@ describe('ParseFilePipeBuilder', () => {
 
         expect(parseFilePipe.getValidators()).to.deep.include(
           new FileTypeValidator(options),
+        );
+      });
+    });
+
+    describe('when addMagicFileTypeValidator was chained', () => {
+      it('should return a ParseFilePipe with MagicFileTypeValidator and given options', () => {
+        const options = {
+          fileType: 'image/jpeg',
+        };
+        const parseFilePipe = parseFilePipeBuilder
+          .addMagicFileTypeValidator(options)
+          .build();
+
+        expect(parseFilePipe.getValidators()).to.deep.include(
+          new MagicFileTypeValidator(options),
         );
       });
     });
