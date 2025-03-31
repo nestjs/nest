@@ -32,8 +32,8 @@ export class MagicFileTypeValidator extends FileValidator<
     }
 
     try {
-      const fileTypeFromBufferFn = await fileTypePromise;
-      const fileType = await fileTypeFromBufferFn(file.buffer);
+      const fileTypeFromBuffer = await fileTypePromise;
+      const fileType = await fileTypeFromBuffer(file.buffer);
       if (!fileType) {
         return false;
       }
