@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import {
-  FileTypeValidator,
   FileValidator,
   MaxFileSizeValidator,
   ParseFilePipeBuilder,
@@ -38,27 +37,12 @@ describe('ParseFilePipeBuilder', () => {
     });
 
     describe('when addFileTypeValidator was chained', () => {
-      it('should return a ParseFilePipe with FileTypeValidator and given options', () => {
-        const options = {
-          fileType: 'image/jpeg',
-        };
-        const parseFilePipe = parseFilePipeBuilder
-          .addFileTypeValidator(options)
-          .build();
-
-        expect(parseFilePipe.getValidators()).to.deep.include(
-          new FileTypeValidator(options),
-        );
-      });
-    });
-
-    describe('when addMagicFileTypeValidator was chained', () => {
       it('should return a ParseFilePipe with MagicFileTypeValidator and given options', () => {
         const options = {
           fileType: 'image/jpeg',
         };
         const parseFilePipe = parseFilePipeBuilder
-          .addMagicFileTypeValidator(options)
+          .addFileTypeValidator(options)
           .build();
 
         expect(parseFilePipe.getValidators()).to.deep.include(
