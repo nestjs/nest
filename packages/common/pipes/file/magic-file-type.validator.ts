@@ -1,6 +1,10 @@
+import { loadEsm } from 'load-esm';
 import { FileValidator } from './file-validator.interface';
 import { FileTypeValidatorOptions, IFileWithBuffer } from './interfaces';
-import { fileTypeFromBuffer } from 'file-type';
+
+const fileTypePromise = loadEsm('file-type').then(
+  module => module.fileTypeFromBuffer,
+);
 
 /**
  * Defines the built-in MagicFileType Validator. It validates incoming files by examining
@@ -28,7 +32,8 @@ export class MagicFileTypeValidator extends FileValidator<
     }
 
     try {
-      const fileType = await fileTypeFromBuffer(file.buffer);
+      const fileTypeFromBufferFn = await fileTypePromise;
+      const fileType = await fileTypeFromBufferFn(file.buffer);
       if (!fileType) {
         return false;
       }
