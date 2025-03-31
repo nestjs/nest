@@ -1,9 +1,5 @@
 import { FileValidator } from './file-validator.interface';
-import { IFile } from './interfaces';
-
-export type FileTypeValidatorOptions = {
-  fileType: string | RegExp;
-};
+import { FileTypeValidatorOptions, IFile } from './interfaces';
 
 /**
  * Defines the built-in FileType File Validator. It validates incoming files mime-type
