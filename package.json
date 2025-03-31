@@ -67,7 +67,9 @@
     "express": "5.1.0",
     "fast-json-stringify": "6.0.1",
     "fast-safe-stringify": "2.1.1",
+    "file-type": "20.4.1",
     "iterare": "1.2.1",
+    "load-esm": "1.0.2",
     "object-hash": "3.0.0",
     "path-to-regexp": "8.2.0",
     "reflect-metadata": "0.2.2",
@@ -75,8 +77,7 @@
     "socket.io": "4.8.1",
     "tslib": "2.8.1",
     "uid": "2.0.2",
-    "uuid": "11.1.0",
-    "file-type": "20.4.1"
+    "uuid": "11.1.0"
   },
   "devDependencies": {
     "@apollo/server": "4.12.0",
