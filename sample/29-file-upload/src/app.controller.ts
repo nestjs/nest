@@ -39,7 +39,7 @@ export class AppController {
     @Body() body: SampleDto,
     @UploadedFile(
       new ParseFilePipeBuilder()
-        .addypeValidator({
+        .addFileTypeValidator({
           fileType: 'json',
         })
         .build({
@@ -60,7 +60,7 @@ export class AppController {
     @Body() body: SampleDto,
     @UploadedFile(
       new ParseFilePipeBuilder()
-        .addFileTlidator({
+        .addFileTypeValidator({
           fileType: 'jpg',
         })
         .build(),
