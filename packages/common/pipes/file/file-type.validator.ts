@@ -22,28 +22,24 @@ export class FileTypeValidator extends FileValidator<
   }
 
   async isValid(file?: IFile): Promise<boolean> {
-    if (!this.validationOptions || !file || !file.buffer) {
+    if (
+      Object.keys(this.validationOptions).length === 0 ||
+      !file ||
+      !file.buffer ||
+      !file.mimetype
+    ) {
       return false;
     }
 
     try {
       const { fileTypeFromBuffer } = await import('file-type');
 
-      const fileType = await fileTypeFromBuffer(file?.buffer);
+      const fileType = await fileTypeFromBuffer(file.buffer);
       if (!fileType) {
         return false;
       }
 
-      const detectedMimeType = fileType.mime;
-
-      if (this.validationOptions.fileType instanceof RegExp) {
-        return this.validationOptions.fileType.test(detectedMimeType);
-      }
-
-      return (
-        detectedMimeType === this.validationOptions.fileType ||
-        detectedMimeType.endsWith(this.validationOptions.fileType)
-      );
+      return !!fileType.mime.match(this.validationOptions.fileType);
     } catch {
       return false;
     }
