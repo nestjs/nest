@@ -26,7 +26,7 @@ export class FileTypeValidator extends FileValidator<
       return true;
     }
 
-    if (!file || !file.buffer || !file.mimetype) {
+    if (!file || !file?.buffer || !file?.mimetype) {
       return false;
     }
 
