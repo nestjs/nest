@@ -1,4 +1,4 @@
-export * from './magic-file-type.validator';
+export * from './file-type.validator';
 export * from './file-validator.interface';
 export * from './max-file-size.validator';
 export * from './parse-file-options.interface';
