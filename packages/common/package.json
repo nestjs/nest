@@ -20,7 +20,6 @@
   "dependencies": {
     "file-type": "20.4.1",
     "iterare": "1.2.1",
-    "load-esm": "1.0.2",
     "tslib": "2.8.1",
     "uid": "2.0.2"
   },
