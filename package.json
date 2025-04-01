@@ -47,7 +47,8 @@
     "publish:next": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=next --access public --skip-git -m \"chore(@nestjs) publish %s release\"",
     "publish:rc": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=rc --access public -m \"chore(@nestjs) publish %s release\"",
     "publish:test": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --force-publish --access public --npm-tag=test --skip-git -m \"chore(@nestjs) publish %s release\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:file": "mocha"
   },
   "lint-staged": {
     "**/*.ts": [
@@ -68,7 +69,6 @@
     "fast-safe-stringify": "2.1.1",
     "file-type": "20.4.1",
     "iterare": "1.2.1",
-    "load-esm": "1.0.2",
     "object-hash": "3.0.0",
     "path-to-regexp": "3.3.0",
     "reflect-metadata": "0.2.2",
