@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "cors": "2.8.5",
-    "express": "5.0.1",
+    "express": "5.1.0",
     "multer": "1.4.5-lts.2",
     "path-to-regexp": "8.2.0",
     "tslib": "2.8.1"
