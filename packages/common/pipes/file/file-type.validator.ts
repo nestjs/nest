@@ -22,12 +22,11 @@ export class FileTypeValidator extends FileValidator<
   }
 
   async isValid(file?: IFile): Promise<boolean> {
-    if (
-      Object.keys(this.validationOptions).length === 0 ||
-      !file ||
-      !file.buffer ||
-      !file.mimetype
-    ) {
+    if (!this.validationOptions) {
+      return true;
+    }
+
+    if (!file || !file.buffer || !file.mimetype) {
       return false;
     }
 
