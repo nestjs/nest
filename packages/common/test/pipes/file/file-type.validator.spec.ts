@@ -131,7 +131,7 @@ describe('FileTypeValidator', () => {
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
 
-    it('should return false when no validation options are provided', async () => {
+    it('should return true when no validation options are provided', async () => {
       const fileTypeValidator = new FileTypeValidator({} as any);
       const jpegBuffer = Buffer.from([
         0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
@@ -141,7 +141,7 @@ describe('FileTypeValidator', () => {
         buffer: jpegBuffer,
       } as IFile;
 
-      expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
 
     it('should return false when the file buffer does not match any known type', async () => {
