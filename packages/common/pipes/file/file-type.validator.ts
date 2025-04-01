@@ -31,7 +31,9 @@ export class FileTypeValidator extends FileValidator<
     }
 
     try {
-      const { fileTypeFromBuffer } = await import('file-type');
+      const { fileTypeFromBuffer } = await Promise.resolve().then(() =>
+        require('file-type'),
+      );
 
       const fileType = await fileTypeFromBuffer(file.buffer);
       if (!fileType) {
