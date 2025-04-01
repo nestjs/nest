@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { FileTypeValidator } from '../../../pipes/file/file-type.validator';
-import { IFile } from '../../../../common/pipes/file/interfaces/file.interface';
+import { IFile } from '../../../../common/pipes/file/interfaces';
+import { FileTypeValidator } from '../../../pipes';
 
 describe('FileTypeValidator', () => {
   describe('isValid', () => {
