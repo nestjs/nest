@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { MagicFileTypeValidator } from '../../../pipes/file/magic-file-type.validator';
-import { IFileWithBuffer } from '@nestjs/common/pipes/file/interfaces';
+import { FileTypeValidator } from '../../../pipes/file/file-type.validator';
+import { IFile } from '../../../../common/pipes/file/interfaces/file.interface';
 
-describe('MagicFileTypeValidator', () => {
+describe('FileTypeValidator', () => {
   describe('isValid', () => {
     it('should return true when the file buffer matches the specified type', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: 'image/jpeg',
       });
 
@@ -15,13 +15,13 @@ describe('MagicFileTypeValidator', () => {
       const requestFile = {
         mimetype: 'image/jpeg',
         buffer: jpegBuffer,
-      } as IFileWithBuffer;
+      } as IFile;
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
 
     it('should return true when the file buffer matches the specified file extension', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: 'jpeg',
       });
 
@@ -31,12 +31,12 @@ describe('MagicFileTypeValidator', () => {
       const requestFile = {
         mimetype: 'image/jpeg',
         buffer: jpegBuffer,
-      } as IFileWithBuffer;
+      } as IFile;
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
 
     it('should return true when the file buffer matches the specified regexp', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: /^image\//,
       });
 
@@ -46,13 +46,13 @@ describe('MagicFileTypeValidator', () => {
       const requestFile = {
         mimetype: 'image/jpeg',
         buffer: jpegBuffer,
-      } as IFileWithBuffer;
+      } as IFile;
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
 
     it('should return false when the file buffer does not match the specified type', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: 'image/jpeg',
       });
 
@@ -62,13 +62,13 @@ describe('MagicFileTypeValidator', () => {
       const requestFile = {
         mimetype: 'image/jpeg', // Spoofed mimetype
         buffer: pngBuffer,
-      } as IFileWithBuffer;
+      } as IFile;
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
 
     it('should return false when the file buffer does not match the specified file extension', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: 'jpeg',
       });
 
@@ -78,25 +78,25 @@ describe('MagicFileTypeValidator', () => {
       const requestFile = {
         mimetype: 'image/png',
         buffer: pngBuffer,
-      } as IFileWithBuffer;
+      } as IFile;
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
 
     it('should return false when no buffer is provided', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: 'image/jpeg',
       });
 
       const requestFile = {
         mimetype: 'image/jpeg',
-      } as IFileWithBuffer;
+      } as IFile;
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
 
     it('should return false when no file is provided', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: 'image/jpeg',
       });
 
@@ -104,19 +104,19 @@ describe('MagicFileTypeValidator', () => {
     });
 
     it('should return false when no buffer is provided', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: 'image/jpeg',
       });
 
       const requestFile = {
         mimetype: 'image/jpeg',
-      } as IFileWithBuffer;
+      } as IFile;
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
 
     it('should return true when the file buffer matches the specified regexp', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: /^image\//,
       });
 
@@ -126,26 +126,26 @@ describe('MagicFileTypeValidator', () => {
       const requestFile = {
         mimetype: 'image/jpeg',
         buffer: jpegBuffer,
-      } as IFileWithBuffer;
+      } as IFile;
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
 
     it('should return false when no validation options are provided', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({} as any);
+      const fileTypeValidator = new FileTypeValidator({} as any);
       const jpegBuffer = Buffer.from([
         0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
       ]);
       const requestFile = {
         mimetype: 'image/jpeg',
         buffer: jpegBuffer,
-      } as IFileWithBuffer;
+      } as IFile;
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
 
     it('should return false when the file buffer does not match any known type', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: 'unknown/type',
       });
 
@@ -155,13 +155,13 @@ describe('MagicFileTypeValidator', () => {
       const requestFile = {
         mimetype: 'unknown/type',
         buffer: unknownBuffer,
-      } as IFileWithBuffer;
+      } as IFile;
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
 
     it('should return false when the buffer is empty', async () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: 'image/jpeg',
       });
 
@@ -169,7 +169,7 @@ describe('MagicFileTypeValidator', () => {
       const requestFile = {
         mimetype: 'image/jpeg',
         buffer: emptyBuffer,
-      } as IFileWithBuffer;
+      } as IFile;
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
@@ -178,7 +178,7 @@ describe('MagicFileTypeValidator', () => {
   describe('buildErrorMessage', () => {
     it('should return a string with the format "Validation failed (expected type is #fileType)"', () => {
       const fileType = 'image/jpeg';
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType,
       });
 
@@ -190,11 +190,11 @@ describe('MagicFileTypeValidator', () => {
     it('should include the file type in the error message when a file is provided', () => {
       const currentFileType = 'image/png';
       const fileType = 'image/jpeg';
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType,
       });
 
-      const file = { mimetype: currentFileType } as IFileWithBuffer;
+      const file = { mimetype: currentFileType } as IFile;
 
       expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
         `Validation failed (detected file type is ${currentFileType}, expected type is ${fileType})`,
@@ -202,10 +202,10 @@ describe('MagicFileTypeValidator', () => {
     });
 
     it('should handle regexp file type in error message', () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: /^image\//,
       });
-      const file = { mimetype: 'application/pdf' } as IFileWithBuffer;
+      const file = { mimetype: 'application/pdf' } as IFile;
 
       expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
         `Validation failed (detected file type is application/pdf, expected type is /^image\\//)`,
@@ -213,10 +213,10 @@ describe('MagicFileTypeValidator', () => {
     });
 
     it('should handle file extension in error message', () => {
-      const fileTypeValidator = new MagicFileTypeValidator({
+      const fileTypeValidator = new FileTypeValidator({
         fileType: 'jpeg',
       });
-      const file = { mimetype: 'image/png' } as IFileWithBuffer;
+      const file = { mimetype: 'image/png' } as IFile;
 
       expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
         'Validation failed (detected file type is image/png, expected type is jpeg)',

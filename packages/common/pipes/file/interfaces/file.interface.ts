@@ -1,10 +1,7 @@
 export interface IFile {
   mimetype: string;
   size: number;
-}
-
-export interface IFileWithBuffer extends IFile {
-  buffer: Buffer;
+  buffer?: Buffer;
 }
 
 export type FileTypeValidatorOptions = {

@@ -1,4 +1,4 @@
-import { MagicFileTypeValidator } from './magic-file-type.validator';
+import { FileTypeValidator } from './file-type.validator';
 import { FileValidator } from './file-validator.interface';
 import {
   MaxFileSizeValidator,
@@ -19,7 +19,7 @@ export class ParseFilePipeBuilder {
   }
 
   addFileTypeValidator(options: FileTypeValidatorOptions) {
-    return this.addValidator(new MagicFileTypeValidator(options));
+    return this.addValidator(new FileTypeValidator(options));
   }
 
   addValidator(validator: FileValidator) {

@@ -3,7 +3,7 @@ import {
   FileValidator,
   MaxFileSizeValidator,
   ParseFilePipeBuilder,
-  MagicFileTypeValidator,
+  FileTypeValidator,
 } from '../../../pipes';
 
 describe('ParseFilePipeBuilder', () => {
@@ -37,7 +37,7 @@ describe('ParseFilePipeBuilder', () => {
     });
 
     describe('when addFileTypeValidator was chained', () => {
-      it('should return a ParseFilePipe with MagicFileTypeValidator and given options', () => {
+      it('should return a ParseFilePipe with FileTypeValidator and given options', () => {
         const options = {
           fileType: 'image/jpeg',
         };
@@ -46,7 +46,7 @@ describe('ParseFilePipeBuilder', () => {
           .build();
 
         expect(parseFilePipe.getValidators()).to.deep.include(
-          new MagicFileTypeValidator(options),
+          new FileTypeValidator(options),
         );
       });
     });
