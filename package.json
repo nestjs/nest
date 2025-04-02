@@ -109,7 +109,7 @@
     "@types/node": "22.13.15",
     "@types/sinon": "17.0.4",
     "@types/supertest": "6.0.3",
-    "@types/ws": "8.18.0",
+    "@types/ws": "8.18.1",
     "amqp-connection-manager": "4.1.14",
     "amqplib": "0.10.7",
     "artillery": "2.0.22",
