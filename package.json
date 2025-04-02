@@ -129,7 +129,7 @@
     "eslint": "9.23.0",
     "eslint-config-prettier": "10.1.1",
     "eslint-plugin-import": "2.31.0",
-    "eslint-plugin-prettier": "5.2.5",
+    "eslint-plugin-prettier": "5.2.6",
     "eventsource": "3.0.6",
     "fancy-log": "2.0.0",
     "fastify": "5.2.2",
