@@ -76,4 +76,48 @@ describe('OnModuleDestroy', () => {
     const bb = module.get(BB);
     Sinon.assert.callOrder(aa.onModuleDestroy, bb.onModuleDestroy);
   });
+
+  it('should sort components within a single module by injection hierarchy - ASC order', async () => {
+    @Injectable()
+    class A implements OnModuleDestroy {
+      onModuleDestroy = Sinon.spy();
+    }
+
+    @Injectable()
+    class AHost implements OnModuleDestroy {
+      constructor(private a: A) {}
+      onModuleDestroy = Sinon.spy();
+    }
+
+    @Injectable()
+    class Composition implements OnModuleDestroy {
+      constructor(
+        private a: A,
+        private host: AHost,
+      ) {}
+      onModuleDestroy = Sinon.spy();
+    }
+
+    @Module({
+      providers: [AHost, A, Composition],
+    })
+    class AModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [AModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    const child = module.get(A);
+    const parent = module.get(AHost);
+    const composition = module.get(Composition);
+    Sinon.assert.callOrder(
+      composition.onModuleDestroy,
+      parent.onModuleDestroy,
+      child.onModuleDestroy,
+    );
+  });
 });

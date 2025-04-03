@@ -82,4 +82,48 @@ describe('OnApplicationBootstrap', () => {
     const instance = module.get(AA);
     expect(instance.field).to.equal('b-field_a-field');
   });
+
+  it('should sort components within a single module by injection hierarchy - DESC order', async () => {
+    @Injectable()
+    class A implements OnApplicationBootstrap {
+      onApplicationBootstrap = Sinon.spy();
+    }
+
+    @Injectable()
+    class AHost implements OnApplicationBootstrap {
+      constructor(private a: A) {}
+      onApplicationBootstrap = Sinon.spy();
+    }
+
+    @Injectable()
+    class Composition implements OnApplicationBootstrap {
+      constructor(
+        private a: A,
+        private host: AHost,
+      ) {}
+      onApplicationBootstrap = Sinon.spy();
+    }
+
+    @Module({
+      providers: [AHost, A, Composition],
+    })
+    class AModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [AModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    const child = module.get(A);
+    const parent = module.get(AHost);
+    const composition = module.get(Composition);
+    Sinon.assert.callOrder(
+      child.onApplicationBootstrap,
+      parent.onApplicationBootstrap,
+      composition.onApplicationBootstrap,
+    );
+  });
 });

@@ -111,4 +111,48 @@ describe('OnModuleInit', () => {
     const instance = module.get(AA);
     expect(instance.field).to.equal('c-field_b-field_a-field');
   });
+
+  it('should sort components within a single module by injection hierarchy - DESC order', async () => {
+    @Injectable()
+    class A implements OnModuleInit {
+      onModuleInit = Sinon.spy();
+    }
+
+    @Injectable()
+    class AHost implements OnModuleInit {
+      constructor(private a: A) {}
+      onModuleInit = Sinon.spy();
+    }
+
+    @Injectable()
+    class Composition implements OnModuleInit {
+      constructor(
+        private a: A,
+        private host: AHost,
+      ) {}
+      onModuleInit = Sinon.spy();
+    }
+
+    @Module({
+      providers: [AHost, A, Composition],
+    })
+    class AModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [AModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    const child = module.get(A);
+    const parent = module.get(AHost);
+    const composition = module.get(Composition);
+    Sinon.assert.callOrder(
+      child.onModuleInit,
+      parent.onModuleInit,
+      composition.onModuleInit,
+    );
+  });
 });

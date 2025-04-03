@@ -1,12 +1,9 @@
 import { OnApplicationShutdown } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
-import {
-  getNonTransientInstances,
-  getTransientInstances,
-} from '../injector/helpers/transient-instances';
-import { InstanceWrapper } from '../injector/instance-wrapper';
 import { Module } from '../injector/module';
+import { getInstancesGroupedByHierarchyLevel } from './utils/get-instances-grouped-by-hierarchy-level';
+import { getSortedHierarchyLevels } from './utils/get-sorted-hierarchy-levels';
 
 /**
  * Checks if the given instance has the `onApplicationShutdown` function
@@ -22,10 +19,7 @@ function hasOnAppShutdownHook(
 /**
  * Calls the given instances
  */
-function callOperator(
-  instances: InstanceWrapper[],
-  signal?: string,
-): Promise<any>[] {
+function callOperator(instances: unknown[], signal?: string): Promise<any>[] {
   return iterate(instances)
     .filter(instance => !isNil(instance))
     .filter(hasOnAppShutdownHook)
@@ -39,29 +33,28 @@ function callOperator(
  * Calls the `onApplicationShutdown` function on the module and its children
  * (providers / controllers).
  *
- * @param module The module which will be initialized
+ * @param moduleRef The module which will be initialized
  * @param signal
  */
 export async function callAppShutdownHook(
-  module: Module,
+  moduleRef: Module,
   signal?: string,
 ): Promise<any> {
-  const providers = module.getNonAliasProviders();
+  const providers = moduleRef.getNonAliasProviders();
   // Module (class) instance is the first element of the providers array
   // Lifecycle hook has to be called once all classes are properly initialized
   const [_, moduleClassHost] = providers.shift()!;
-  const instances = [
-    ...module.controllers,
-    ...providers,
-    ...module.injectables,
-    ...module.middlewares,
-  ];
+  const groupedInstances = getInstancesGroupedByHierarchyLevel(
+    moduleRef.controllers,
+    moduleRef.injectables,
+    moduleRef.middlewares,
+    providers,
+  );
 
-  const nonTransientInstances = getNonTransientInstances(instances);
-  await Promise.all(callOperator(nonTransientInstances, signal));
-  const transientInstances = getTransientInstances(instances);
-  await Promise.all(callOperator(transientInstances, signal));
-
+  const levels = getSortedHierarchyLevels(groupedInstances, 'DESC');
+  for (const level of levels) {
+    await Promise.all(callOperator(groupedInstances.get(level)!, signal));
+  }
   // Call the instance itself
   const moduleClassInstance = moduleClassHost.instance;
   if (
