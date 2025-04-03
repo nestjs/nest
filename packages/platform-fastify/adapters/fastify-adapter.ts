@@ -627,10 +627,12 @@ export class FastifyAdapter<
       normalizedPath = normalizedPath === '/*path' ? '*path' : normalizedPath;
 
       // Normalize the path to support the prefix if it set in application
-      normalizedPath =
-        this._pathPrefix && !normalizedPath.startsWith(this._pathPrefix)
-          ? `${this._pathPrefix}${normalizedPath}*path`
-          : normalizedPath;
+      if (this._pathPrefix && !normalizedPath.startsWith(this._pathPrefix)) {
+        normalizedPath = `${this._pathPrefix}${normalizedPath}`;
+        if (normalizedPath.endsWith('/')) {
+          normalizedPath = `${normalizedPath}{*path}`;
+        }
+      }
 
       try {
         let { regexp: re } = pathToRegexp(normalizedPath);
