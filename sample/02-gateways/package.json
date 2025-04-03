@@ -40,22 +40,22 @@
     "@nestjs/testing": "11.0.12",
     "@types/express": "5.0.1",
     "@types/jest": "29.5.14",
-    "@types/node": "22.13.13",
+    "@types/node": "22.14.0",
     "@types/supertest": "6.0.3",
     "@types/ws": "8.5.13",
     "eslint": "9.23.0",
-    "eslint-plugin-prettier": "5.2.5",
+    "eslint-plugin-prettier": "5.2.6",
     "globals": "16.0.0",
     "jest": "29.7.0",
     "prettier": "3.5.3",
     "redis": "4.7.0",
     "supertest": "7.1.0",
-    "ts-jest": "29.3.0",
+    "ts-jest": "29.3.1",
     "ts-loader": "9.5.2",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.7.3",
-    "typescript-eslint": "8.28.0"
+    "typescript-eslint": "8.29.0"
   },
   "jest": {
     "moduleFileExtensions": [

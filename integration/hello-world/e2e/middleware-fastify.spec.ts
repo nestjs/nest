@@ -5,6 +5,7 @@ import {
   Module,
   NestMiddleware,
   NestModule,
+  Param,
   Query,
   Req,
   RequestMethod,
@@ -439,6 +440,11 @@ describe('Middleware (FastifyAdapter)', () => {
       async rootPath(@Req() req: FastifyRequest['raw']) {
         return { success: true, root: true };
       }
+
+      @Get('record/:id')
+      async record(@Req() req: FastifyRequest['raw'], @Param('id') id: string) {
+        return { success: true, record: id };
+      }
     }
 
     @Module({
@@ -533,6 +539,32 @@ describe('Middleware (FastifyAdapter)', () => {
       await request(app.getHttpServer())
         .get('/')
         .expect(200, { success: true, root: true });
+    });
+
+    it(`GET forRoutes('{*path}') with global prefix and exclude pattern with wildcard`, async () => {
+      app.setGlobalPrefix('/api', { exclude: ['/record/{*path}'] });
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/api/pong')
+        .expect(200, { success: true, pong: 'pong' });
+      await request(app.getHttpServer())
+        .get('/record/abc123')
+        .expect(200, { success: true, record: 'abc123' });
+    });
+
+    it(`GET forRoutes('{*path}') with global prefix and exclude pattern with parameter`, async () => {
+      app.setGlobalPrefix('/api', { exclude: ['/record/:id'] });
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/record/abc123')
+        .expect(200, { success: true, record: 'abc123' });
+      await request(app.getHttpServer())
+        .get('/api/pong')
+        .expect(200, { success: true, pong: 'pong' });
     });
 
     it(`GET forRoutes('{*path}') with global prefix and global prefix options`, async () => {
