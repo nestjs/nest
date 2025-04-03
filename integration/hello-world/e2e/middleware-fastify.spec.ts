@@ -441,7 +441,7 @@ describe('Middleware (FastifyAdapter)', () => {
         return { success: true, root: true };
       }
 
-      @Get(':id')
+      @Get('record/:id')
       async record(@Req() req: FastifyRequest['raw'], @Param('id') id: string) {
         return { success: true, record: id };
       }
@@ -542,25 +542,25 @@ describe('Middleware (FastifyAdapter)', () => {
     });
 
     it(`GET forRoutes('{*path}') with global prefix and exclude pattern with wildcard`, async () => {
-      app.setGlobalPrefix('/api', { exclude: ['/{*path}'] });
+      app.setGlobalPrefix('/api', { exclude: ['/record/{*path}'] });
       await app.init();
       await app.getHttpAdapter().getInstance().ready();
 
       await request(app.getHttpServer())
-        .get('/pong')
+        .get('/api/pong')
         .expect(200, { success: true, pong: 'pong' });
       await request(app.getHttpServer())
-        .get('/api/abc123')
-        .expect(200, { success: true, pong: 'abc123' });
+        .get('/record/abc123')
+        .expect(200, { success: true, record: 'abc123' });
     });
 
     it(`GET forRoutes('{*path}') with global prefix and exclude pattern with parameter`, async () => {
-      app.setGlobalPrefix('/api', { exclude: ['/:id'] });
+      app.setGlobalPrefix('/api', { exclude: ['/record/:id'] });
       await app.init();
       await app.getHttpAdapter().getInstance().ready();
 
       await request(app.getHttpServer())
-        .get('/abc123')
+        .get('/record/abc123')
         .expect(200, { success: true, record: 'abc123' });
       await request(app.getHttpServer())
         .get('/api/pong')
