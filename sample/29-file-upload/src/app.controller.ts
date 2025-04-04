@@ -40,7 +40,7 @@ export class AppController {
     @UploadedFile(
       new ParseFilePipeBuilder()
         .addFileTypeValidator({
-          fileType: 'json',
+          fileType: 'jpeg',
         })
         .build({
           fileIsRequired: false,

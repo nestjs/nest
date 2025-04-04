@@ -1,7 +1,4 @@
-import {
-  FileTypeValidator,
-  FileTypeValidatorOptions,
-} from './file-type.validator';
+import { FileTypeValidator } from './file-type.validator';
 import { FileValidator } from './file-validator.interface';
 import {
   MaxFileSizeValidator,
@@ -9,6 +6,7 @@ import {
 } from './max-file-size.validator';
 import { ParseFileOptions } from './parse-file-options.interface';
 import { ParseFilePipe } from './parse-file.pipe';
+import { FileTypeValidatorOptions } from './interfaces';
 
 /**
  * @publicApi

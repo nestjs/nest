@@ -1,16 +1,11 @@
+import * as fileTypeChecker from 'file-type-checker';
 import { FileValidator } from './file-validator.interface';
-import { IFile } from './interfaces';
-
-export type FileTypeValidatorOptions = {
-  fileType: string | RegExp;
-};
+import { FileTypeValidatorOptions, IFile } from './interfaces';
 
 /**
- * Defines the built-in FileType File Validator. It validates incoming files mime-type
- * matching a string or a regular expression. Note that this validator uses a naive strategy
- * to check the mime-type and could be fooled if the client provided a file with renamed extension.
- * (for instance, renaming a 'malicious.bat' to 'malicious.jpeg'). To handle such security issues
- * with more reliability, consider checking against the file's [magic-numbers](https://en.wikipedia.org/wiki/Magic_number_%28programming%29)
+ * Defines the built-in FileTypeValidator. It validates incoming files by examining
+ * their magic numbers using the file-type package, providing more reliable file type validation
+ * than just checking the mimetype string.
  *
  * @see [File Validators](https://docs.nestjs.com/techniques/file-upload#validators)
  *
@@ -22,7 +17,7 @@ export class FileTypeValidator extends FileValidator<
 > {
   buildErrorMessage(file?: IFile): string {
     if (file?.mimetype) {
-      return `Validation failed (current file type is ${file.mimetype}, expected type is ${this.validationOptions.fileType})`;
+      return `Validation failed (detected file type is ${file.mimetype}, expected type is ${this.validationOptions.fileType})`;
     }
     return `Validation failed (expected type is ${this.validationOptions.fileType})`;
   }
@@ -32,10 +27,26 @@ export class FileTypeValidator extends FileValidator<
       return true;
     }
 
-    return (
-      !!file &&
-      'mimetype' in file &&
-      !!file.mimetype.match(this.validationOptions.fileType)
-    );
+    const isFileValid = !!file && 'mimetype' in file;
+
+    if (this.validationOptions.skipMagicNumbersValidation) {
+      return (
+        isFileValid && !!file.mimetype.match(this.validationOptions.fileType)
+      );
+    }
+
+    if (!isFileValid || !file.buffer) {
+      return false;
+    }
+
+    try {
+      const fileType = fileTypeChecker.detectFile(file.buffer);
+
+      return (
+        !!fileType && !!fileType.mimeType.match(this.validationOptions.fileType)
+      );
+    } catch {
+      return false;
+    }
   }
 }
