@@ -43,20 +43,6 @@ describe('E2E FileTest', () => {
       });
   });
 
-  it('should allow for file uploads that pass validation without using magic numbers validation', async () => {
-    return request(app.getHttpServer())
-      .post('/file/pass-validation-skip-magic-numbers-validation')
-      .attach('file', './package.json')
-      .field('name', 'test')
-      .expect(201)
-      .expect({
-        body: {
-          name: 'test',
-        },
-        file: readFileSync('./package.json').toString(),
-      });
-  });
-
   it('should throw for file uploads that do not pass validation', async () => {
     return request(app.getHttpServer())
       .post('/file/fail-validation')

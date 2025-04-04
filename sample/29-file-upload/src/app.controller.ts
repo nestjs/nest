@@ -55,28 +55,6 @@ export class AppController {
   }
 
   @UseInterceptors(FileInterceptor('file'))
-  @Post('file/pass-validation-skip-magic-numbers-validation')
-  uploadFileAndPassValidationWithoutMagicNumbersValidation(
-    @Body() body: SampleDto,
-    @UploadedFile(
-      new ParseFilePipeBuilder()
-        .addFileTypeValidator({
-          fileType: 'json',
-          skipMagicNumbersValidation: true,
-        })
-        .build({
-          fileIsRequired: false,
-        }),
-    )
-    file?: Express.Multer.File,
-  ) {
-    return {
-      body,
-      file: file?.buffer.toString(),
-    };
-  }
-
-  @UseInterceptors(FileInterceptor('file'))
   @Post('file/fail-validation')
   uploadFileAndFailValidation(
     @Body() body: SampleDto,
