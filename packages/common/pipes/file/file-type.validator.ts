@@ -1,3 +1,4 @@
+import * as fileTypeChecker from 'file-type-checker';
 import { FileValidator } from './file-validator.interface';
 import { FileTypeValidatorOptions, IFile } from './interfaces';
 
@@ -26,19 +27,24 @@ export class FileTypeValidator extends FileValidator<
       return true;
     }
 
-    if (!file || !file?.buffer || !file?.mimetype) {
+    const isFileValid = !!file && 'mimetype' in file;
+
+    if (this.validationOptions.skipMagicNumbersValidation) {
+      return (
+        isFileValid && !!file.mimetype.match(this.validationOptions.fileType)
+      );
+    }
+
+    if (!isFileValid || !file.buffer) {
       return false;
     }
 
     try {
-      const { fileTypeFromBuffer } = await import('file-type');
+      const fileType = fileTypeChecker.detectFile(file.buffer);
 
-      const fileType = await fileTypeFromBuffer(file.buffer);
-      if (!fileType) {
-        return false;
-      }
-
-      return !!fileType.mime.match(this.validationOptions.fileType);
+      return (
+        !!fileType && !!fileType.mimeType.match(this.validationOptions.fileType)
+      );
     } catch {
       return false;
     }

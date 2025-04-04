@@ -40,7 +40,29 @@ export class AppController {
     @UploadedFile(
       new ParseFilePipeBuilder()
         .addFileTypeValidator({
+          fileType: 'jpeg',
+        })
+        .build({
+          fileIsRequired: false,
+        }),
+    )
+    file?: Express.Multer.File,
+  ) {
+    return {
+      body,
+      file: file?.buffer.toString(),
+    };
+  }
+
+  @UseInterceptors(FileInterceptor('file'))
+  @Post('file/pass-validation-skip-magic-numbers-validation')
+  uploadFileAndPassValidationWithoutMagicNumbersValidation(
+    @Body() body: SampleDto,
+    @UploadedFile(
+      new ParseFilePipeBuilder()
+        .addFileTypeValidator({
           fileType: 'json',
+          skipMagicNumbersValidation: true,
         })
         .build({
           fileIsRequired: false,
