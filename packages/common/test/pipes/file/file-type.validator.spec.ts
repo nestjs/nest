@@ -144,6 +144,19 @@ describe('FileTypeValidator', () => {
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
 
+    it('should skip magic numbers validation when the skipMagicNumbersValidation is true', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/jpeg',
+        skipMagicNumbersValidation: true,
+      });
+
+      const requestFile = {
+        mimetype: 'image/jpeg',
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
+    });
+
     it('should return false when the file buffer does not match any known type', async () => {
       const fileTypeValidator = new FileTypeValidator({
         fileType: 'unknown/type',

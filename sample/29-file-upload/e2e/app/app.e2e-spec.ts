@@ -32,6 +32,20 @@ describe('E2E FileTest', () => {
   it('should allow for file uploads that pass validation', async () => {
     return request(app.getHttpServer())
       .post('/file/pass-validation')
+      .attach('file', './resources/nestjs.jpg')
+      .field('name', 'test')
+      .expect(201)
+      .expect({
+        body: {
+          name: 'test',
+        },
+        file: readFileSync('./resources/nestjs.jpg').toString(),
+      });
+  });
+
+  it('should allow for file uploads that pass validation without using magic numbers validation', async () => {
+    return request(app.getHttpServer())
+      .post('/file/pass-validation-skip-magic-numbers-validation')
       .attach('file', './package.json')
       .field('name', 'test')
       .expect(201)
