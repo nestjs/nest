@@ -2,7 +2,7 @@
   <a href="https://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
   <p align="center">효율적이고 확장 가능한 서버 사이드 애플리케이션을 위한 혁신적 <a href="https://nodejs.org" target="_blank">Node.js</a> 프레임워크.</p>

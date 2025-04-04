@@ -2,7 +2,7 @@
   <a href="https://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
   <p align="center">用于构建高效且可扩展的服务器端应用程序的渐进式 <a href="https://nodejs.cn" target="blank">Node.js</a> 框架，深受 <a href="https://angular.cn" target="_blank">Angular</a> 的启发。</p>
