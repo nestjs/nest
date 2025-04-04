@@ -21,7 +21,7 @@ export class FileTypeValidator extends FileValidator<
     return `Validation failed (expected type is ${this.validationOptions.fileType})`;
   }
 
-  async isValid(file?: IFile): Promise<boolean> {
+  isValid(file?: IFile): boolean {
     if (!this.validationOptions) {
       return true;
     }
