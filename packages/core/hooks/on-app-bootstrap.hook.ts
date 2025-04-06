@@ -1,4 +1,4 @@
-import { OnApplicationBootstrap } from '@nestjs/common';
+import { Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import {
@@ -22,21 +22,23 @@ function hasOnAppBootstrapHook(
 }
 
 /**
- * Creates non-blocking promises for all instances
+ * Schedules hooks to run asynchronously without blocking
  */
-function createNonBlockingPromises(instances: InstanceWrapper[]): Promise<void> {
-  // We wrap the original callOperator in Promise.resolve to ensure it doesn't block
+function scheduleHooksAsynchronously(instances: InstanceWrapper[]): Promise<void> {
   return Promise.resolve().then(() => {
-    // Start all hooks but don't wait for their completion
     iterate(instances)
       .filter(instance => !isNil(instance))
       .filter(hasOnAppBootstrapHook)
       .forEach(instance => {
-        // Use Promise.resolve to ensure these run asynchronously
         Promise.resolve().then(() => {
-          // Error handling to prevent unhandled rejections
           (instance as any as OnApplicationBootstrap).onApplicationBootstrap()
-            .catch(err => console.error('Error in onApplicationBootstrap hook:', err));
+            .catch(err => {
+              Logger.error(
+                'Error in onApplicationBootstrap hook', 
+                err?.stack, 
+                instance.name,
+              );
+            });
         });
       });
   });
@@ -44,7 +46,7 @@ function createNonBlockingPromises(instances: InstanceWrapper[]): Promise<void> 
 
 /**
  * Calls the `onApplicationBootstrap` function on the module and its children
- * (providers / controllers) asynchronously.
+ * (providers / controllers) without blocking the application startup.
  *
  * @param module The module which will be initialized
  */
@@ -61,10 +63,10 @@ export async function callModuleBootstrapHook(module: Module): Promise<any> {
   ];
 
   const nonTransientInstances = getNonTransientInstances(instances);
-  await createNonBlockingPromises(nonTransientInstances);
+  await scheduleHooksAsynchronously(nonTransientInstances);
   
   const transientInstances = getTransientInstances(instances);
-  await createNonBlockingPromises(transientInstances);
+  await scheduleHooksAsynchronously(transientInstances);
 
   // Call the instance itself
   const moduleClassInstance = moduleClassHost.instance;
@@ -73,10 +75,15 @@ export async function callModuleBootstrapHook(module: Module): Promise<any> {
     hasOnAppBootstrapHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    // Use Promise.resolve to make the module class hook non-blocking too
     Promise.resolve().then(() => {
       moduleClassInstance.onApplicationBootstrap()
-        .catch(err => console.error('Error in module onApplicationBootstrap hook:', err));
+        .catch(err => {
+          Logger.error(
+            'Error in module onApplicationBootstrap hook', 
+            err?.stack, 
+            moduleClassHost.name,
+          );
+        });
     });
   }
 }
