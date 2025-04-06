@@ -22,21 +22,29 @@ function hasOnAppBootstrapHook(
 }
 
 /**
- * Calls the given instances
+ * Creates non-blocking promises for all instances
  */
-function callOperator(instances: InstanceWrapper[]): Promise<any>[] {
-  return iterate(instances)
-    .filter(instance => !isNil(instance))
-    .filter(hasOnAppBootstrapHook)
-    .map(async instance =>
-      (instance as any as OnApplicationBootstrap).onApplicationBootstrap(),
-    )
-    .toArray();
+function createNonBlockingPromises(instances: InstanceWrapper[]): Promise<void> {
+  // We wrap the original callOperator in Promise.resolve to ensure it doesn't block
+  return Promise.resolve().then(() => {
+    // Start all hooks but don't wait for their completion
+    iterate(instances)
+      .filter(instance => !isNil(instance))
+      .filter(hasOnAppBootstrapHook)
+      .forEach(instance => {
+        // Use Promise.resolve to ensure these run asynchronously
+        Promise.resolve().then(() => {
+          // Error handling to prevent unhandled rejections
+          (instance as any as OnApplicationBootstrap).onApplicationBootstrap()
+            .catch(err => console.error('Error in onApplicationBootstrap hook:', err));
+        });
+      });
+  });
 }
 
 /**
  * Calls the `onApplicationBootstrap` function on the module and its children
- * (providers / controllers).
+ * (providers / controllers) asynchronously.
  *
  * @param module The module which will be initialized
  */
@@ -53,9 +61,10 @@ export async function callModuleBootstrapHook(module: Module): Promise<any> {
   ];
 
   const nonTransientInstances = getNonTransientInstances(instances);
-  await Promise.all(callOperator(nonTransientInstances));
+  await createNonBlockingPromises(nonTransientInstances);
+  
   const transientInstances = getTransientInstances(instances);
-  await Promise.all(callOperator(transientInstances));
+  await createNonBlockingPromises(transientInstances);
 
   // Call the instance itself
   const moduleClassInstance = moduleClassHost.instance;
@@ -64,6 +73,10 @@ export async function callModuleBootstrapHook(module: Module): Promise<any> {
     hasOnAppBootstrapHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    await moduleClassInstance.onApplicationBootstrap();
+    // Use Promise.resolve to make the module class hook non-blocking too
+    Promise.resolve().then(() => {
+      moduleClassInstance.onApplicationBootstrap()
+        .catch(err => console.error('Error in module onApplicationBootstrap hook:', err));
+    });
   }
 }
