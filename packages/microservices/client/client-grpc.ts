@@ -126,7 +126,7 @@ export class ClientGrpcProxy
       return {};
     }
     const keepaliveKeys: Record<
-      keyof GrpcOptions['options']['keepalive'],
+      keyof NonNullable<GrpcOptions['options']['keepalive']>,
       string
     > = {
       keepaliveTimeMs: 'grpc.keepalive_time_ms',
