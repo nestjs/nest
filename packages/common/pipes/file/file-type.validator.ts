@@ -1,6 +1,13 @@
-import * as fileTypeChecker from 'file-type-checker';
 import { FileValidator } from './file-validator.interface';
 import { FileTypeValidatorOptions, IFile } from './interfaces';
+
+const importEsmPackage = async (
+  packageName: string,
+): Promise<typeof import('file-type')> =>
+  // eslint-disable-next-line @typescript-eslint/no-implied-eval
+  new Function(`return import('${packageName}')`)().then(
+    (loadedModule: any) => loadedModule['default'] ?? loadedModule,
+  );
 
 /**
  * Defines the built-in FileTypeValidator. It validates incoming files by examining
@@ -22,7 +29,7 @@ export class FileTypeValidator extends FileValidator<
     return `Validation failed (expected type is ${this.validationOptions.fileType})`;
   }
 
-  isValid(file?: IFile): boolean {
+  async isValid(file?: IFile): Promise<boolean> {
     if (!this.validationOptions) {
       return true;
     }
@@ -40,10 +47,12 @@ export class FileTypeValidator extends FileValidator<
     }
 
     try {
-      const fileType = fileTypeChecker.detectFile(file.buffer);
+      const { fileTypeFromBuffer } = await importEsmPackage('file-type');
+
+      const fileType = await fileTypeFromBuffer(file.buffer);
 
       return (
-        !!fileType && !!fileType.mimeType.match(this.validationOptions.fileType)
+        !!fileType && !!fileType.mime.match(this.validationOptions.fileType)
       );
     } catch {
       return false;
