@@ -19,9 +19,9 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "11.0.13",
-    "@nestjs/core": "11.0.13",
-    "@nestjs/platform-express": "11.0.13",
+    "@nestjs/common": "11.0.14",
+    "@nestjs/core": "11.0.14",
+    "@nestjs/platform-express": "11.0.14",
     "hbs": "4.2.0",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.0.1",
@@ -32,7 +32,7 @@
     "@eslint/js": "9.24.0",
     "@nestjs/cli": "11.0.6",
     "@nestjs/schematics": "11.0.4",
-    "@nestjs/testing": "11.0.13",
+    "@nestjs/testing": "11.0.14",
     "@types/express": "5.0.1",
     "@types/node": "22.14.0",
     "@types/supertest": "6.0.3",
