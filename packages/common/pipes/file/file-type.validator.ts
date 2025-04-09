@@ -1,14 +1,6 @@
 import { FileValidator } from './file-validator.interface';
 import { FileTypeValidatorOptions, IFile } from './interfaces';
 
-const importEsmPackage = async (
-  packageName: string,
-): Promise<typeof import('file-type')> =>
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
-  new Function(`return import('${packageName}')`)().then(
-    (loadedModule: any) => loadedModule['default'] ?? loadedModule,
-  );
-
 /**
  * Defines the built-in FileTypeValidator. It validates incoming files by examining
  * their magic numbers using the file-type package, providing more reliable file type validation
@@ -47,7 +39,9 @@ export class FileTypeValidator extends FileValidator<
     }
 
     try {
-      const { fileTypeFromBuffer } = await importEsmPackage('file-type');
+      const { fileTypeFromBuffer } = (await eval(
+        'import ("file-type")',
+      )) as typeof import('file-type');
 
       const fileType = await fileTypeFromBuffer(file.buffer);
 
