@@ -762,7 +762,7 @@ export class FastifyAdapter<
       handler: handlerRef,
     };
 
-    if (this.instance.supportedMethods.indexOf(routerMethodKey) > -1) {
+    if (this.instance.supportedMethods.indexOf(routerMethodKey) === -1) {
       this.instance.addHttpMethod(routerMethodKey, { hasBody: true });
     }
 
