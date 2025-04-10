@@ -20,9 +20,9 @@
   },
   "dependencies": {
     "@nestjs/common": "11.0.15",
-    "@nestjs/core": "11.0.14",
+    "@nestjs/core": "11.0.15",
     "@nestjs/event-emitter": "3.0.1",
-    "@nestjs/platform-express": "11.0.14",
+    "@nestjs/platform-express": "11.0.15",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.0.1",
     "rxjs": "7.8.2"

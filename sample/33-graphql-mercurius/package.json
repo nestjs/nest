@@ -20,10 +20,10 @@
   },
   "dependencies": {
     "@nestjs/common": "11.0.15",
-    "@nestjs/core": "11.0.14",
+    "@nestjs/core": "11.0.15",
     "@nestjs/graphql": "13.0.4",
     "@nestjs/mercurius": "13.0.4",
-    "@nestjs/platform-fastify": "11.0.14",
+    "@nestjs/platform-fastify": "11.0.15",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.1",
     "graphql": "16.10.0",
