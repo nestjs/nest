@@ -23,10 +23,10 @@
   "dependencies": {
     "@apollo/gateway": "2.10.1",
     "@apollo/server": "^4.11.3",
-    "@nestjs/apollo": "13.0.4",
+    "@nestjs/apollo": "13.1.0",
     "@nestjs/common": "11.0.15",
     "@nestjs/core": "11.0.15",
-    "@nestjs/graphql": "13.0.4",
+    "@nestjs/graphql": "13.1.0",
     "@nestjs/platform-express": "11.0.15",
     "graphql": "16.10.0",
     "graphql-tools": "9.0.18",
