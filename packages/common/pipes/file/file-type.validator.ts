@@ -1,5 +1,16 @@
 import { FileValidator } from './file-validator.interface';
-import { FileTypeValidatorOptions, IFile } from './interfaces';
+import { IFile } from './interfaces';
+
+export type FileTypeValidatorOptions = {
+  fileType: string | RegExp;
+
+  /**
+   * If `true`, the validator will skip the magic numbers validation.
+   * This can be useful when you can't identify some files as there are no common magic numbers available for some file types.
+   * @default false
+   */
+  skipMagicNumbersValidation?: boolean;
+};
 
 /**
  * Defines the built-in FileTypeValidator. It validates incoming files by examining
