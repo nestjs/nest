@@ -257,5 +257,27 @@ describe('FileTypeValidator', () => {
         'Validation failed (current file type is image/png, expected type is jpeg)',
       );
     });
+
+    it('should handle regexp file type in error message', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: /^image\//,
+      });
+      const file = { mimetype: 'application/pdf' } as IFile;
+
+      expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
+        `Validation failed (current file type is application/pdf, expected type is /^image\\//)`,
+      );
+    });
+
+    it('should handle file extension in error message', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'jpeg',
+      });
+      const file = { mimetype: 'image/png' } as IFile;
+
+      expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
+        'Validation failed (current file type is image/png, expected type is jpeg)',
+      );
+    });
   });
 });
