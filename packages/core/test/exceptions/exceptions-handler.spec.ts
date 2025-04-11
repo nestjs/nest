@@ -3,6 +3,7 @@ import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
 import { expect } from 'chai';
 import * as createHttpError from 'http-errors';
 import * as sinon from 'sinon';
+import fastifyErrors from '@fastify/error';
 import { AbstractHttpAdapter } from '../../adapters';
 import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
@@ -48,6 +49,38 @@ describe('ExceptionsHandler', () => {
     });
     it('should send expected response status code and message when exception is unknown', () => {
       handler.next(new Error(), new ExecutionContextHost([0, response]));
+
+      expect(statusStub.calledWith(500)).to.be.true;
+      expect(
+        jsonStub.calledWith({
+          statusCode: 500,
+          message: 'Internal server error',
+        }),
+      ).to.be.true;
+    });
+    it('should treat fastify errors as http errors', () => {
+      const fastifyError = fastifyErrors.createError(
+        'FST_ERR_CTP_EMPTY_JSON_BODY',
+        "Body cannot be empty when content-type is set to 'application/json'",
+        400,
+      )();
+      handler.next(fastifyError, new ExecutionContextHost([0, response]));
+
+      expect(statusStub.calledWith(400)).to.be.true;
+      expect(
+        jsonStub.calledWith({
+          statusCode: 400,
+          message:
+            "Body cannot be empty when content-type is set to 'application/json'",
+        }),
+      ).to.be.true;
+    });
+    it('should not treat errors from external API calls as errors from "http-errors" library', () => {
+      const apiCallError = Object.assign(
+        new Error('Some external API call failed'),
+        { status: 400 },
+      );
+      handler.next(apiCallError, new ExecutionContextHost([0, response]));
 
       expect(statusStub.calledWith(500)).to.be.true;
       expect(
