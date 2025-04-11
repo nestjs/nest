@@ -27,8 +27,7 @@
     "class-validator": "*",
     "file-type": "^20.4.1",
     "reflect-metadata": "^0.1.12 || ^0.2.0",
-    "rxjs": "^7.1.0",
-    "file-type": "20.4.1"
+    "rxjs": "^7.1.0"
   },
   "peerDependenciesMeta": {
     "class-validator": {
