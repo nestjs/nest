@@ -3,14 +3,19 @@ import { IFile } from './interfaces';
 
 export type FileTypeValidatorOptions = {
   fileType: string | RegExp;
+
+  /**
+   * If `true`, the validator will skip the magic numbers validation.
+   * This can be useful when you can't identify some files as there are no common magic numbers available for some file types.
+   * @default false
+   */
+  skipMagicNumbersValidation?: boolean;
 };
 
 /**
- * Defines the built-in FileType File Validator. It validates incoming files mime-type
- * matching a string or a regular expression. Note that this validator uses a naive strategy
- * to check the mime-type and could be fooled if the client provided a file with renamed extension.
- * (for instance, renaming a 'malicious.bat' to 'malicious.jpeg'). To handle such security issues
- * with more reliability, consider checking against the file's [magic-numbers](https://en.wikipedia.org/wiki/Magic_number_%28programming%29)
+ * Defines the built-in FileTypeValidator. It validates incoming files by examining
+ * their magic numbers using the file-type package, providing more reliable file type validation
+ * than just checking the mimetype string.
  *
  * @see [File Validators](https://docs.nestjs.com/techniques/file-upload#validators)
  *
@@ -27,15 +32,35 @@ export class FileTypeValidator extends FileValidator<
     return `Validation failed (expected type is ${this.validationOptions.fileType})`;
   }
 
-  isValid(file?: IFile): boolean {
+  async isValid(file?: IFile): Promise<boolean> {
     if (!this.validationOptions) {
       return true;
     }
 
-    return (
-      !!file &&
-      'mimetype' in file &&
-      !!file.mimetype.match(this.validationOptions.fileType)
-    );
+    const isFileValid = !!file && 'mimetype' in file;
+
+    if (this.validationOptions.skipMagicNumbersValidation) {
+      return (
+        isFileValid && !!file.mimetype.match(this.validationOptions.fileType)
+      );
+    }
+
+    if (!isFileValid || !file.buffer) {
+      return false;
+    }
+
+    try {
+      const { fileTypeFromBuffer } = (await eval(
+        'import ("file-type")',
+      )) as typeof import('file-type');
+
+      const fileType = await fileTypeFromBuffer(file.buffer);
+
+      return (
+        !!fileType && !!fileType.mime.match(this.validationOptions.fileType)
+      );
+    } catch {
+      return false;
+    }
   }
 }
