@@ -3,7 +3,3 @@ export interface IFile {
   size: number;
   buffer?: Buffer;
 }
-
-export type FileTypeValidatorOptions = {
-  fileType: string | RegExp;
-};
