@@ -150,29 +150,13 @@ export function GrpcStreamMethod(
 
     const originalMethod = descriptor.value;
 
-    // Override original method to call the "drainBuffer" method on the first parameter
-    // This is required to avoid premature message emission
-    descriptor.value = async function (
-      this: any,
-      observable: any,
-      ...args: any[]
-    ) {
-      const result = await Promise.resolve(
-        originalMethod.apply(this, [observable, ...args]),
-      );
-
-      // Drain buffer if "drainBuffer" method is available
-      if (observable && observable.drainBuffer) {
-        observable.drainBuffer();
-      }
-      return result;
-    };
-
     // Copy all metadata from the original method to the new one
     const metadataKeys = Reflect.getMetadataKeys(originalMethod);
+
     metadataKeys.forEach(metadataKey => {
       const metadataValue = Reflect.getMetadata(metadataKey, originalMethod);
-      Reflect.defineMetadata(metadataKey, metadataValue, descriptor.value);
+
+      Reflect.defineMetadata(metadataKey, metadataValue, originalMethod);
     });
   };
 }

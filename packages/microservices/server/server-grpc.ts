@@ -403,12 +403,13 @@ export class ServerGrpc extends Server<never, never> {
       call: GrpcCall,
       callback: (err: unknown, value: unknown) => void,
     ) => {
-      // Needs to be a Proxy in order to buffer messages that come before handler is executed
+      // Needs to be a reply subject in order to buffer messages that come before handler is executed
       // This could happen if handler has any async guards or interceptors registered that would delay
       // the execution.
-      const { subject, next, error, complete, cleanup } =
-        this.bufferUntilDrained();
-      call.on('data', (m: any) => next(m));
+      const replayBuffer = new ReplaySubject();
+      // const { subject, next, error, complete } = this.getReplaySubject();
+
+      call.on('data', (m: any) => replayBuffer.next(m));
       call.on('error', (e: any) => {
         // Check if error means that stream ended on other end
         const isCancelledError = String(e).toLowerCase().indexOf('cancelled');
@@ -418,15 +419,14 @@ export class ServerGrpc extends Server<never, never> {
           return;
         }
         // If another error then just pass it along
-        error(e);
+        replayBuffer.error(e);
       });
       call.on('end', () => {
-        complete();
-        cleanup();
+        replayBuffer.complete();
       });
 
       const handler = methodHandler(
-        subject.asObservable(),
+        replayBuffer.asObservable(),
         call.metadata,
         call,
       );
@@ -649,78 +649,5 @@ export class ServerGrpc extends Server<never, never> {
         await this.createService(definition.service, definition.name),
       );
     }
-  }
-
-  private bufferUntilDrained<T>() {
-    type DrainableSubject<T> = Subject<T> & { drainBuffer: () => void };
-
-    const subject = new Subject<T>();
-    let replayBuffer: ReplaySubject<T> | null = new ReplaySubject<T>();
-    let hasDrained = false;
-
-    function drainBuffer(this: DrainableSubject<T>) {
-      if (hasDrained || !replayBuffer) {
-        return;
-      }
-      hasDrained = true;
-
-      // Replay buffered values to the new subscriber
-      setImmediate(() => {
-        const subcription = replayBuffer!.subscribe(subject);
-        subcription.unsubscribe();
-        replayBuffer = null;
-      });
-    }
-
-    return {
-      subject: new Proxy<DrainableSubject<T>>(subject as DrainableSubject<T>, {
-        get(target, prop, receiver) {
-          if (prop === 'asObservable') {
-            return () => {
-              const stream = subject.asObservable();
-
-              // "drainBuffer" will be called before the evaluation of the handler
-              // but after any enhancers have been applied (e.g., `interceptors`)
-              Object.defineProperty(stream, drainBuffer.name, {
-                value: drainBuffer,
-              });
-              return stream;
-            };
-          }
-          if (hasDrained) {
-            return Reflect.get(target, prop, receiver);
-          }
-          return Reflect.get(replayBuffer!, prop, receiver);
-        },
-      }),
-      next: (value: T) => {
-        if (!hasDrained) {
-          replayBuffer!.next(value);
-        }
-        subject.next(value);
-      },
-      error: (err: any) => {
-        if (!hasDrained) {
-          replayBuffer!.error(err);
-        }
-        subject.error(err);
-      },
-      complete: () => {
-        if (!hasDrained) {
-          replayBuffer!.complete();
-          // Replay buffer is no longer needed
-          // Return early to allow subject to complete later, after the replay buffer
-          // has been drained
-          return;
-        }
-        subject.complete();
-      },
-      cleanup: () => {
-        if (hasDrained) {
-          return;
-        }
-        replayBuffer = null;
-      },
-    };
   }
 }
