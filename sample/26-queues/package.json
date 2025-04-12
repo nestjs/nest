@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@nestjs/bull": "11.0.2",
-    "@nestjs/common": "11.0.15",
+    "@nestjs/common": "11.0.16",
     "@nestjs/core": "11.0.16",
     "@nestjs/platform-express": "11.0.16",
     "bull": "4.16.5",
