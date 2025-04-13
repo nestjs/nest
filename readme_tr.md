@@ -5,58 +5,58 @@
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A progressive <a href="https://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+  <p align="center">Verimli ve ölçeklenebilir sunucu tarafı uygulamaları oluşturmak için modern bir <a href="https://nodejs.org" target="_blank">Node.js</a> framework'ü.</p>
     <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Versiyonu" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Paket Lisansı" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM İndirmeleri" /></a>
 <a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
 <a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
+<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Open Collective Destekçileri" /></a>
+<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Open Collective Sponsorları" /></a>
+  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Bağış-PayPal-ff3f59.svg"/></a>
+    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Bizi%20Destekleyin-Open%20Collective-41B883.svg" alt="Bizi Destekleyin"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Takip%20Et"></a>
 </p>
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+## Açıklama
 
-Nest is a framework for building efficient, scalable <a href="https://nodejs.org" target="_blank">Node.js</a> server-side applications. It uses modern JavaScript, is built with <a href="https://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).
+Nest, verimli ve ölçeklenebilir <a href="https://nodejs.org" target="_blank">Node.js</a> sunucu tarafı uygulamaları oluşturmak için bir framework'tür. Modern JavaScript kullanır, <a href="https://www.typescriptlang.org" target="_blank">TypeScript</a> ile geliştirilmiştir (saf JavaScript ile uyumluluğu korur) ve OOP (Nesne Yönelimli Programlama), FP (Fonksiyonel Programlama) ve FRP (Fonksiyonel Reaktif Programlama) unsurlarını birleştirir.
 
-<p>Under the hood, Nest makes use of <a href="https://expressjs.com/" target="_blank">Express</a>, but also provides compatibility with a wide range of other libraries, like <a href="https://github.com/fastify/fastify" target="_blank">Fastify</a>, allowing for easy use of the myriad of third-party plugins which are available.</p>
+<p>Arka planda, Nest <a href="https://expressjs.com/" target="_blank">Express</a>'i kullanır, ancak aynı zamanda <a href="https://github.com/fastify/fastify" target="_blank">Fastify</a> gibi birçok başka kütüphane ile uyumluluk sağlar. Bu, mevcut olan sayısız üçüncü taraf eklentiyi kolayca kullanmayı mümkün kılar.</p>
 
-## Philosophy
+## Felsefe
 
-<p>In recent years, thanks to Node.js, JavaScript has become the “lingua franca” of the web for both front and backend applications, giving rise to awesome projects like <a href="https://angular.io/" target="_blank">Angular</a>, <a href="https://github.com/facebook/react" target="_blank">React</a>, and <a href="https://github.com/vuejs/vue" target="_blank">Vue</a>, which improve developer productivity and enable the construction of fast, testable, and extensible frontend applications. However, on the server-side, while there are a lot of superb libraries, helpers, and tools for Node, none of them effectively solve the main problem - the architecture.</p>
-<p>Nest aims to provide an application architecture out of the box which allows for effortless creation of highly testable, scalable, and loosely coupled and easily maintainable applications. The architecture is heavily inspired by Angular.</p>
+<p>Son yıllarda, Node.js sayesinde, JavaScript hem ön uç hem de arka uç uygulamaları için web'in "lingua franca"sı haline geldi ve <a href="https://angular.io/" target="_blank">Angular</a>, <a href="https://github.com/facebook/react" target="_blank">React</a> ve <a href="https://github.com/vuejs/vue" target="_blank">Vue</a> gibi harika projelerin ortaya çıkmasına yol açtı. Bu projeler, geliştirici verimliliğini artırır ve hızlı, test edilebilir ve genişletilebilir ön uç uygulamaları oluşturmayı mümkün kılar. Ancak, sunucu tarafında, Node için birçok mükemmel kütüphane, yardımcı araç ve araç seti olmasına rağmen, hiçbiri ana sorunu - mimariyi - etkili bir şekilde çözmez.</p>
+<p>Nest, kutudan çıktığı gibi yüksek derecede test edilebilir, ölçeklenebilir, gevşek bağlı ve kolayca sürdürülebilir uygulamalar oluşturmayı sağlayan bir uygulama mimarisi sunmayı amaçlar. Mimari, büyük ölçüde Angular'dan ilham almıştır.</p>
 
-## Getting started
+## Başlarken
 
-- To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
+- [Kılavuzu](https://docs.nestjs.com) kontrol etmek için [docs.nestjs.com](https://docs.nestjs.com) adresini ziyaret edin. :books:
+- To check out the [guide](Readme.md), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
 - 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
 - [가이드](readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. :books:
 - [ガイド](readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 :books:
-- [Kılavuzu](readme_tr.md) kontrol etmek için [docs.nestjs.com](https://docs.nestjs.com) adresini ziyaret edin. :books:
 
-## Questions
+## Sorular
 
-For questions and support please use the official [Discord channel](https://discord.gg/G7Qnnhy). The issue list of this repo is **exclusively** for bug reports and feature requests.
+Sorular ve destek için lütfen resmi [Discord kanalı](https://discord.gg/G7Qnnhy) kullanın. Bu depo için sorun listesi **yalnızca** hata raporları ve özellik istekleri içindir.
 
-## Issues
+## Sorunlar
 
-Please make sure to read the [Issue Reporting Checklist](https://github.com/nestjs/nest/blob/master/CONTRIBUTING.md#-submitting-an-issue) before opening an issue. Issues not conforming to the guidelines may be closed immediately.
+Lütfen bir sorun açmadan önce [Sorun Bildirme Kontrol Listesini](https://github.com/nestjs/nest/blob/master/CONTRIBUTING.md#-submitting-an-issue) okuyun. Yönergelere uymayan sorunlar hemen kapatılabilir.
 
-## Consulting
+## Danışmanlık
 
-With official support, you can get expert help straight from Nest core team. We provide dedicated technical support, migration strategies, advice on best practices (and design decisions), PR reviews, and team augmentation. Read more about [support here](https://enterprise.nestjs.com).
+Resmi destekle, doğrudan Nest çekirdek ekibinden uzman yardımı alabilirsiniz. Özel teknik destek, geçiş stratejileri, en iyi uygulamalar (ve tasarım kararları) hakkında tavsiyeler, PR incelemeleri ve ekip genişletme hizmetleri sunuyoruz. [Destek hakkında daha fazla bilgi edinin](https://enterprise.nestjs.com).
 
-## Support
+## Destek
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support from the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Nest, MIT lisanslı bir açık kaynak projesidir. Harika destekçiler ve sponsorlar sayesinde büyüyebilir. Onlara katılmak isterseniz, lütfen [buradan daha fazla bilgi edinin](https://docs.nestjs.com/support).
 
-#### Principal Sponsors
+#### Ana Sponsorlar
 
 <table style="text-align:center;">
 <tr>
@@ -69,7 +69,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 </tr>
 </table>
 
-#### Gold Sponsors
+#### Altın Sponsorlar
 
 <table style="text-align:center;">
 <tr>
@@ -88,7 +88,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 </tr>
 </table>
 
-#### Silver Sponsors
+#### Gümüş Sponsorlar
 
 <table style="text-align:center;">
 <tr>
@@ -101,7 +101,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 </tr>
 </table>
 
-#### Sponsors
+#### Sponsorlar
 
 <table>
 <tr>
@@ -137,16 +137,16 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 </tr>
 </table>
 
-## Backers
+## Destekçiler
 
 <a href="https://opencollective.com/nest" target="_blank"><img src="https://opencollective.com/nest/backers.svg?width=1000"></a>
 
-## Stay in touch
+## İletişimde Kalın
 
-- Author - [Kamil Myśliwiec](https://x.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
+- Yazar - [Kamil Myśliwiec](https://x.com/kammysliwiec)
+- Web Sitesi - [https://nestjs.com](https://nestjs.com/)
 - X - [@nestframework](https://x.com/nestframework)
 
-## License
+## Lisans
 
-Nest is [MIT licensed](LICENSE).
+Nest [MIT lisansı](LICENSE) ile lisanslanmıştır.
