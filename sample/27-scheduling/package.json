@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "11.0.16",
     "@nestjs/core": "11.0.16",
-    "@nestjs/platform-express": "11.0.16",
+    "@nestjs/platform-express": "11.0.17",
     "@nestjs/schedule": "5.0.1",
     "dotenv": "16.5.0",
     "reflect-metadata": "0.2.2",
