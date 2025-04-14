@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import {
-  FileTypeValidator,
   FileValidator,
   MaxFileSizeValidator,
   ParseFilePipeBuilder,
+  FileTypeValidator,
 } from '../../../pipes';
 
 describe('ParseFilePipeBuilder', () => {
