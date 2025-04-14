@@ -21,7 +21,7 @@
   "dependencies": {
     "@grpc/grpc-js": "1.13.3",
     "@grpc/reflection": "1.0.4",
-    "@nestjs/common": "11.0.15",
+    "@nestjs/common": "11.0.16",
     "@nestjs/core": "11.0.16",
     "@nestjs/microservices": "11.0.16",
     "@nestjs/platform-express": "11.0.16",
