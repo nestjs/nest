@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "11.0.16",
     "@nestjs/core": "11.0.16",
-    "@nestjs/platform-express": "11.0.16",
+    "@nestjs/platform-express": "11.0.17",
     "@nestjs/platform-ws": "11.0.16",
     "@nestjs/websockets": "11.0.16",
     "class-transformer": "0.5.1",
