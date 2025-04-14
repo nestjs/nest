@@ -35,6 +35,9 @@
     },
     "class-transformer": {
       "optional": true
+    },
+    "file-type": {
+      "optional": true
     }
   }
 }

@@ -210,7 +210,7 @@ describe('FileTypeValidator', () => {
       const file = { mimetype: currentFileType } as IFile;
 
       expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
-        `Validation failed (detected file type is ${currentFileType}, expected type is ${fileType})`,
+        `Validation failed (current file type is ${currentFileType}, expected type is ${fileType})`,
       );
     });
 
@@ -221,7 +221,7 @@ describe('FileTypeValidator', () => {
       const file = { mimetype: 'application/pdf' } as IFile;
 
       expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
-        `Validation failed (detected file type is application/pdf, expected type is /^image\\//)`,
+        `Validation failed (current file type is application/pdf, expected type is /^image\\//)`,
       );
     });
 
@@ -232,7 +232,7 @@ describe('FileTypeValidator', () => {
       const file = { mimetype: 'image/png' } as IFile;
 
       expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
-        'Validation failed (detected file type is image/png, expected type is jpeg)',
+        'Validation failed (current file type is image/png, expected type is jpeg)',
       );
     });
 
