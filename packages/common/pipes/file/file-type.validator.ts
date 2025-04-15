@@ -25,19 +25,6 @@ export class FileTypeValidator extends FileValidator<
   FileTypeValidatorOptions,
   IFile
 > {
-  constructor(validationOptions: FileTypeValidatorOptions) {
-    super(validationOptions);
-
-    // check if file-type is installed
-    try {
-      require.resolve('file-type');
-    } catch (e) {
-      throw new Error(
-        `FileTypeValidator requires the file-type package. Please install it: npm i file-type`,
-      );
-    }
-  }
-
   buildErrorMessage(file?: IFile): string {
     if (file?.mimetype) {
       return `Validation failed (current file type is ${file.mimetype}, expected type is ${this.validationOptions.fileType})`;
