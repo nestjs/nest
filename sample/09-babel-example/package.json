@@ -16,7 +16,7 @@
     "@nestjs/common": "11.0.17",
     "@nestjs/core": "11.0.17",
     "@nestjs/platform-express": "11.0.17",
-    "@nestjs/microservices": "11.0.17",
+    "@nestjs/microservices": "11.0.18",
     "@nestjs/websockets": "11.0.17",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"
