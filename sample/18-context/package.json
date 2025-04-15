@@ -19,8 +19,8 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "11.0.16",
-    "@nestjs/core": "11.0.16",
+    "@nestjs/common": "11.0.17",
+    "@nestjs/core": "11.0.17",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.0.1",
     "rxjs": "7.8.2"
@@ -43,6 +43,6 @@
     "eslint-plugin-prettier": "5.2.6",
     "globals": "16.0.0",
     "typescript": "5.7.3",
-    "typescript-eslint": "8.29.1"
+    "typescript-eslint": "8.30.1"
   }
 }

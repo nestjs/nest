@@ -21,10 +21,10 @@
   "dependencies": {
     "@grpc/grpc-js": "1.13.3",
     "@grpc/reflection": "1.0.4",
-    "@nestjs/common": "11.0.16",
-    "@nestjs/core": "11.0.16",
-    "@nestjs/microservices": "11.0.16",
-    "@nestjs/platform-express": "11.0.16",
+    "@nestjs/common": "11.0.17",
+    "@nestjs/core": "11.0.17",
+    "@nestjs/microservices": "11.0.17",
+    "@nestjs/platform-express": "11.0.17",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.1",
     "reflect-metadata": "0.2.2",
@@ -36,7 +36,7 @@
     "@eslint/js": "9.24.0",
     "@nestjs/cli": "11.0.6",
     "@nestjs/schematics": "11.0.5",
-    "@nestjs/testing": "11.0.16",
+    "@nestjs/testing": "11.0.17",
     "@types/express": "5.0.1",
     "@types/node": "22.14.1",
     "@types/supertest": "6.0.3",
@@ -51,6 +51,6 @@
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.7.3",
-    "typescript-eslint": "8.29.1"
+    "typescript-eslint": "8.30.1"
   }
 }

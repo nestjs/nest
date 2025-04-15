@@ -23,10 +23,10 @@
     "@apollo/server": "4.12.0",
     "@apollo/subgraph": "2.10.1",
     "@nestjs/apollo": "13.1.0",
-    "@nestjs/common": "11.0.16",
-    "@nestjs/core": "11.0.16",
+    "@nestjs/common": "11.0.17",
+    "@nestjs/core": "11.0.17",
     "@nestjs/graphql": "13.1.0",
-    "@nestjs/platform-express": "11.0.16",
+    "@nestjs/platform-express": "11.0.17",
     "graphql": "16.10.0",
     "graphql-tools": "9.0.18",
     "reflect-metadata": "0.2.2",
@@ -39,7 +39,7 @@
     "@eslint/js": "9.24.0",
     "@nestjs/cli": "11.0.6",
     "@nestjs/schematics": "11.0.5",
-    "@nestjs/testing": "11.0.16",
+    "@nestjs/testing": "11.0.17",
     "@types/express": "5.0.1",
     "@types/jest": "29.5.14",
     "@types/node": "22.14.1",
@@ -57,7 +57,7 @@
     "tsconfig-paths": "4.2.0",
     "typescript": "5.7.3",
     "webpack": "5.99.5",
-    "typescript-eslint": "8.29.1"
+    "typescript-eslint": "8.30.1"
   },
   "jest": {
     "moduleFileExtensions": [
