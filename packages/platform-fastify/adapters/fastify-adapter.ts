@@ -25,6 +25,7 @@ import {
   FastifyRegister,
   FastifyReply,
   FastifyRequest,
+  FastifySchema,
   FastifyServerOptions,
   HTTPMethods,
   RawReplyDefaultExpression,
@@ -53,6 +54,7 @@ import { parse as querystringParse } from 'fast-querystring';
 import {
   FASTIFY_ROUTE_CONFIG_METADATA,
   FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+  FASTIFY_SCHEMA_METADATA,
 } from '../constants';
 import { NestFastifyBodyParserOptions } from '../interfaces';
 import {
@@ -752,8 +754,14 @@ export class FastifyAdapter<
       handlerRef,
     );
 
+    const routeSchema = Reflect.getMetadata(
+      FASTIFY_SCHEMA_METADATA,
+      handlerRef,
+    );
+
     const hasConfig = !isUndefined(routeConfig);
     const hasConstraints = !isUndefined(routeConstraints);
+    const hasSchema = !isUndefined(routeSchema);
 
     const routeToInject: RouteOptions<TServer, TRawRequest, TRawResponse> &
       RouteShorthandOptions = {
@@ -781,6 +789,11 @@ export class FastifyAdapter<
           ...(hasConfig && {
             config: {
               ...routeConfig,
+            },
+          }),
+          ...(hasSchema && {
+            schema: {
+              ...routeSchema,
             },
           }),
         };
