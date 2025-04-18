@@ -2,22 +2,42 @@ import { expect } from 'chai';
 import { IFile } from '../../../../common/pipes/file/interfaces';
 import { FileTypeValidator } from '../../../pipes';
 
+const pngBuffer = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49,
+  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
+  0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44,
+  0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0d,
+  0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42,
+  0x60, 0x82,
+]);
+
+const jpegBuffer = Buffer.from([
+  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
+]);
+
 describe('FileTypeValidator', () => {
   describe('isValid', () => {
-    it('should return true when the file buffer matches the specified type', async () => {
-      const fileTypeValidator = new FileTypeValidator({
-        fileType: 'image/jpeg',
+    describe('support file types', () => {
+      async function testFileByMimeType(mimeType, fileData) {
+        const fileTypeValidator = new FileTypeValidator({
+          fileType: mimeType,
+        });
+
+        const requestFile = {
+          mimetype: mimeType,
+          buffer: fileData,
+        } as IFile;
+
+        expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
+      }
+
+      it('should be able to validate a JPEG file', () => {
+        return testFileByMimeType('image/jpeg', jpegBuffer);
       });
 
-      const jpegBuffer = Buffer.from([
-        0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
-      ]);
-      const requestFile = {
-        mimetype: 'image/jpeg',
-        buffer: jpegBuffer,
-      } as IFile;
-
-      expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
+      it('should be able to validate a PNG file', () => {
+        return testFileByMimeType('image/png', pngBuffer);
+      });
     });
 
     it('should return true when the file buffer matches the specified file extension', async () => {
@@ -25,9 +45,6 @@ describe('FileTypeValidator', () => {
         fileType: 'jpeg',
       });
 
-      const jpegBuffer = Buffer.from([
-        0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
-      ]);
       const requestFile = {
         mimetype: 'image/jpeg',
         buffer: jpegBuffer,
