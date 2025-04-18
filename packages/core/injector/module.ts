@@ -247,20 +247,37 @@ export class Module {
     enhancerSubtype: EnhancerSubtype,
   ): InjectionToken;
   public addProvider(provider: Provider, enhancerSubtype?: EnhancerSubtype) {
+    const token = this.isCustomProvider(provider) ? provider.provide : provider;
+
+    // Check for duplicate providers with the same token
+    if (this._providers.has(token)) {
+      // Skip the check for transient or request-scoped providers as per original behavior
+      const isCustom = this.isCustomProvider(provider);
+      const metatype = isCustom
+        ? this.isCustomClass(provider)
+          ? provider.useClass
+          : null
+        : (provider as Type<Injectable>);
+
+      if (
+        metatype &&
+        !this.isTransientProvider(metatype) &&
+        !this.isRequestScopeProvider(metatype)
+      ) {
+        const providerName = isCustom
+          ? provider.provide.toString()
+          : (provider as Type<Injectable>).name;
+        throw new RuntimeException(
+          `Duplicate provider found in module ${this._metatype.name}. Provider "${providerName}" was already registered.`,
+        );
+      }
+    }
+
     if (this.isCustomProvider(provider)) {
       if (this.isEntryProvider(provider.provide)) {
         this._entryProviderKeys.add(provider.provide);
       }
       return this.addCustomProvider(provider, this._providers, enhancerSubtype);
-    }
-
-    const isAlreadyDeclared = this._providers.has(provider);
-    if (
-      (this.isTransientProvider(provider) ||
-        this.isRequestScopeProvider(provider)) &&
-      isAlreadyDeclared
-    ) {
-      return provider;
     }
 
     this._providers.set(
