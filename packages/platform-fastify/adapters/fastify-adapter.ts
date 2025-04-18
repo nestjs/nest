@@ -774,7 +774,7 @@ export class FastifyAdapter<
       this.instance.addHttpMethod(routerMethodKey, { hasBody: true });
     }
 
-    if (isVersioned || hasConstraints || hasConfig) {
+    if (isVersioned || hasConstraints || hasConfig || hasSchema) {
       const isPathAndRouteTuple = args.length === 2;
       if (isPathAndRouteTuple) {
         const constraints = {
