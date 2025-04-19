@@ -1,3 +1,7 @@
 {
-  "extends": "../../../tsconfig.spec.json"
+  "extends": "../../../tsconfig.spec.json",
+  "compilerOptions": {
+    "module": "node16",
+    "esModuleInterop": true
+  }
 }
