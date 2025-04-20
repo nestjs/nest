@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { Schema } from '../../decorators/schema.decorator';
+import { RouteSchema } from '../../decorators/route-schema.decorator';
 import { FASTIFY_SCHEMA_METADATA } from '../../constants';
 
-describe('@Schema', () => {
+describe('@RouteSchema', () => {
   describe('has a metadata schema', () => {
     const schema = {
       body: {
@@ -15,7 +15,7 @@ describe('@Schema', () => {
     };
     class TestSchema {
       schema;
-      @Schema(schema)
+      @RouteSchema(schema)
       public static test() {}
     }
 
@@ -32,7 +32,7 @@ describe('@Schema', () => {
     const schema = {};
     class TestSchema {
       schema;
-      @Schema(schema)
+      @RouteSchema(schema)
       public static test() {}
     }
     it('should handle an empty schema', () => {
@@ -48,7 +48,7 @@ describe('@Schema', () => {
     const schema = undefined;
     class TestSchema {
       schema;
-      @Schema(schema)
+      @RouteSchema(schema)
       public static test() {}
     }
     it('should handle an empty schema', () => {

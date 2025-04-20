@@ -7,5 +7,5 @@ import { RouteShorthandOptions } from 'fastify';
  *
  * @param schema See {@link https://fastify.dev/docs/latest/Reference/Validation-and-Serialization/}
  */
-export const Schema = (schema: RouteShorthandOptions['schema']) =>
+export const RouteSchema = (schema: RouteShorthandOptions['schema']) =>
   SetMetadata(FASTIFY_SCHEMA_METADATA, schema);
