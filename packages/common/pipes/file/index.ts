@@ -4,3 +4,6 @@ export * from './max-file-size.validator';
 export * from './parse-file-options.interface';
 export * from './parse-file.pipe';
 export * from './parse-file-pipe.builder';
+export * from './parse-file-fields-options.interface';
+export * from './parse-file-fields.pipe';
+export * from './group-files.pipe';
