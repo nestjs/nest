@@ -203,6 +203,36 @@ describe('FileTypeValidator', () => {
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
+
+    it('should return true when fallbackToMimetype is enabled and mimetype matches', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'text/plain',
+        fallbackToMimetype: true,
+      });
+
+      const shortText = Buffer.from('ok');
+      const requestFile = {
+        mimetype: 'text/plain',
+        buffer: shortText,
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
+    });
+
+    it('should return false when fallbackToMimetype is enabled but mimetype does not match', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'application/json',
+        fallbackToMimetype: true,
+      });
+
+      const shortText = Buffer.from('ok');
+      const requestFile = {
+        mimetype: 'text/plain',
+        buffer: shortText,
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
+    });
   });
 
   describe('buildErrorMessage', () => {
@@ -251,6 +281,35 @@ describe('FileTypeValidator', () => {
       expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
         'Validation failed (current file type is image/png, expected type is jpeg)',
       );
+    });
+
+    it('should return false for text file with small buffer and correct mimetype but fail magic number validation', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'text/plain',
+      });
+
+      const textBuffer = Buffer.from('hi'); // too short to identify
+      const requestFile = {
+        mimetype: 'text/plain',
+        buffer: textBuffer,
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
+    });
+
+    it('should fail validation for text/csv when magic number detection is enabled', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'text/csv',
+        skipMagicNumbersValidation: false,
+      });
+
+      const csvFile = Buffer.from('name,age\nJohn,30');
+      const requestFile = {
+        mimetype: 'text/csv',
+        buffer: csvFile,
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
   });
 });
