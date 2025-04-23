@@ -37,7 +37,7 @@
     "@eslint/js": "9.25.1",
     "@nestjs/cli": "11.0.6",
     "@nestjs/schematics": "11.0.5",
-    "@nestjs/testing": "11.0.20",
+    "@nestjs/testing": "11.0.21",
     "@types/express": "5.0.1",
     "@types/node": "22.14.1",
     "@types/supertest": "6.0.3",
