@@ -30,7 +30,7 @@ import type { Server } from 'http';
 import * as http from 'http';
 import * as https from 'https';
 import { pathToRegexp } from 'path-to-regexp';
-import { Duplex, pipeline } from 'stream';
+import { Duplex, Writable } from 'stream';
 import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface';
 import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
@@ -86,17 +86,13 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       ) {
         response.setHeader('Content-Length', streamHeaders.length);
       }
-      return pipeline(
-        body.getStream().once('error', (err: Error) => {
-          body.errorHandler(err, response);
-        }),
-        response,
-        (err: any) => {
-          if (err) {
-            body.errorLogger(err);
-          }
-        },
-      );
+      const stream = body.getStream();
+      stream.once('error', err => {
+        body.errorHandler(err, response);
+      });
+      return stream
+        .pipe<Writable>(response)
+        .on('error', (err: Error) => body.errorLogger(err));
     }
     const responseContentType = response.getHeader('Content-Type');
     if (
