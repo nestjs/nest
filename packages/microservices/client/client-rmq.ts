@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { isFunction, isString } from '@nestjs/common/utils/shared.utils';
 import { EventEmitter } from 'events';
 import {
   EmptyError,
@@ -55,8 +56,8 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   protected readonly logger = new Logger(ClientProxy.name);
   protected connection$: ReplaySubject<any>;
   protected connectionPromise: Promise<void>;
-  protected client: AmqpConnectionManager = null;
-  protected channel: ChannelWrapper = null;
+  protected client: AmqpConnectionManager | null = null;
+  protected channel: ChannelWrapper | null = null;
   protected pendingEventListeners: Array<{
     event: keyof RmqEvents;
     callback: RmqEvents[keyof RmqEvents];
@@ -113,7 +114,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     this.registerDisconnectListener(this.client);
     this.registerConnectListener(this.client);
     this.pendingEventListeners.forEach(({ event, callback }) =>
-      this.client.on(event, callback),
+      this.client!.on(event, callback),
     );
     this.pendingEventListeners = [];
 
@@ -140,7 +141,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
   public createChannel(): Promise<void> {
     return new Promise(resolve => {
-      this.channel = this.client.createChannel({
+      this.channel = this.client!.createChannel({
         json: false,
         setup: (channel: Channel) => this.setupChannel(channel, resolve),
       });
@@ -215,6 +216,22 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       );
     }
 
+    if (this.options.wildcards) {
+      const exchange = this.getOptionsProp(
+        this.options,
+        'exchange',
+        this.options.queue,
+      );
+      const exchangeType = this.getOptionsProp(
+        this.options,
+        'exchangeType',
+        'topic',
+      );
+      await channel.assertExchange(exchange, exchangeType, {
+        durable: true,
+      });
+    }
+
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
     await this.consumeChannel(channel);
     resolve();
@@ -224,8 +241,8 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
     await channel.consume(
       this.replyQueue,
-      (msg: ConsumeMessage) =>
-        this.responseEmitter.emit(msg.properties.correlationId, msg),
+      (msg: ConsumeMessage | null) =>
+        this.responseEmitter.emit(msg!.properties.correlationId, msg),
       {
         noAck,
       },
@@ -359,23 +376,44 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       delete serializedPacket.options;
 
       this.responseEmitter.on(correlationId, listener);
-      this.channel
-        .sendToQueue(
+
+      const content = Buffer.from(JSON.stringify(serializedPacket));
+      const sendOptions = {
+        replyTo: this.replyQueue,
+        persistent: this.getOptionsProp(
+          this.options,
+          'persistent',
+          RQM_DEFAULT_PERSISTENT,
+        ),
+        ...options,
+        headers: this.mergeHeaders(options?.headers),
+        correlationId,
+      };
+
+      if (this.options.wildcards) {
+        const stringifiedPattern = isString(message.pattern)
+          ? message.pattern
+          : JSON.stringify(message.pattern);
+
+        // The exchange is the same as the queue when wildcards are enabled
+        // and the exchange is not explicitly set
+        const exchange = this.getOptionsProp(
+          this.options,
+          'exchange',
           this.queue,
-          Buffer.from(JSON.stringify(serializedPacket)),
-          {
-            replyTo: this.replyQueue,
-            persistent: this.getOptionsProp(
-              this.options,
-              'persistent',
-              RQM_DEFAULT_PERSISTENT,
-            ),
-            ...options,
-            headers: this.mergeHeaders(options?.headers),
-            correlationId,
-          },
-        )
-        .catch(err => callback({ err }));
+        );
+
+        this.channel!.publish(
+          exchange,
+          stringifiedPattern,
+          content,
+          sendOptions,
+        ).catch(err => callback({ err }));
+      } else {
+        this.channel!.sendToQueue(this.queue, content, sendOptions).catch(err =>
+          callback({ err }),
+        );
+      }
       return () => this.responseEmitter.removeListener(correlationId, listener);
     } catch (err) {
       callback({ err });
@@ -390,22 +428,39 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     const options = serializedPacket.options;
     delete serializedPacket.options;
 
-    return new Promise<void>((resolve, reject) =>
-      this.channel.sendToQueue(
-        this.queue,
-        Buffer.from(JSON.stringify(serializedPacket)),
-        {
-          persistent: this.getOptionsProp(
-            this.options,
-            'persistent',
-            RQM_DEFAULT_PERSISTENT,
-          ),
-          ...options,
-          headers: this.mergeHeaders(options?.headers),
-        },
-        (err: unknown) => (err ? reject(err as Error) : resolve()),
-      ),
-    );
+    return new Promise<void>((resolve, reject) => {
+      const content = Buffer.from(JSON.stringify(serializedPacket));
+      const sendOptions = {
+        persistent: this.getOptionsProp(
+          this.options,
+          'persistent',
+          RQM_DEFAULT_PERSISTENT,
+        ),
+        ...options,
+        headers: this.mergeHeaders(options?.headers),
+      };
+      const errorCallback = (err: unknown) =>
+        err ? reject(err as Error) : resolve();
+
+      return this.options.wildcards
+        ? this.channel!.publish(
+            // The exchange is the same as the queue when wildcards are enabled
+            // and the exchange is not explicitly set
+            this.getOptionsProp(this.options, 'exchange', this.queue),
+            isString(packet.pattern)
+              ? packet.pattern
+              : JSON.stringify(packet.pattern),
+            content,
+            sendOptions,
+            errorCallback,
+          )
+        : this.channel!.sendToQueue(
+            this.queue,
+            content,
+            sendOptions,
+            errorCallback,
+          );
+    });
   }
 
   protected initializeSerializer(options: RmqOptions['options']) {
