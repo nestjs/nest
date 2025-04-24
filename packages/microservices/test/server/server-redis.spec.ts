@@ -59,8 +59,8 @@ describe('ServerRedis', () => {
       untypedServer.pubClient = pub;
       untypedServer.subClient = sub;
     });
-    it('should close pub & sub server', () => {
-      server.close();
+    it('should close pub & sub server', async () => {
+      await server.close();
 
       expect(pub.quit.called).to.be.true;
       expect(sub.quit.called).to.be.true;
