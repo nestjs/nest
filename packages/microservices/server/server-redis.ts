@@ -104,10 +104,10 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     });
   }
 
-  public close() {
+  public async close() {
     this.isManuallyClosed = true;
-    this.pubClient && this.pubClient.quit();
-    this.subClient && this.subClient.quit();
+    this.pubClient && (await this.pubClient.quit());
+    this.subClient && (await this.subClient.quit());
     this.pendingEventListeners = [];
   }
 
