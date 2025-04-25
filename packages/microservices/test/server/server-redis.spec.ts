@@ -53,8 +53,8 @@ describe('ServerRedis', () => {
     });
   });
   describe('close', () => {
-    const pub = { quit: sinon.spy() };
-    const sub = { quit: sinon.spy() };
+    const pub = { quit: sinon.stub().resolves() };
+    const sub = { quit: sinon.stub().resolves() };
     beforeEach(() => {
       untypedServer.pubClient = pub;
       untypedServer.subClient = sub;
@@ -62,8 +62,8 @@ describe('ServerRedis', () => {
     it('should close pub & sub server', async () => {
       await server.close();
 
-      expect(pub.quit.called).to.be.true;
-      expect(sub.quit.called).to.be.true;
+      expect(pub.quit.calledOnce).to.be.true;
+      expect(sub.quit.calledOnce).to.be.true;
     });
   });
   describe('handleConnection', () => {
