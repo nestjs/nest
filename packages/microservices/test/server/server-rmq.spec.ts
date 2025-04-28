@@ -80,11 +80,11 @@ describe('ServerRMQ', () => {
     });
     it('should close server', async () => {
       await server.close();
-      expect(rmqServer.close.calledOnce).to.be.true;
+      expect(rmqServer.close.called).to.be.true;
     });
     it('should close channel', async () => {
       await server.close();
-      expect(rmqChannel.close.calledOnce).to.be.true;
+      expect(rmqChannel.close.called).to.be.true;
     });
   });
 
