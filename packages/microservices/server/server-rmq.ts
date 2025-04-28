@@ -135,25 +135,28 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     this.pendingEventListeners = [];
 
     const connectFailedEvent = 'connectFailed';
-    this.server!.once(connectFailedEvent, async (error: Record<string, unknown>) => {
-      this._status$.next(RmqStatus.DISCONNECTED);
+    this.server!.once(
+      connectFailedEvent,
+      async (error: Record<string, unknown>) => {
+        this._status$.next(RmqStatus.DISCONNECTED);
 
-      this.logger.error(CONNECTION_FAILED_MESSAGE);
-      if (error?.err) {
-        this.logger.error(error.err);
-      }
-      const isReconnecting = !!this.channel;
-      if (
-        maxConnectionAttempts === INFINITE_CONNECTION_ATTEMPTS ||
-        isReconnecting
-      ) {
-        return;
-      }
-      if (++this.connectionAttempts === maxConnectionAttempts) {
-        await this.close();
-        callback?.(error.err ?? new Error(CONNECTION_FAILED_MESSAGE));
-      }
-    });
+        this.logger.error(CONNECTION_FAILED_MESSAGE);
+        if (error?.err) {
+          this.logger.error(error.err);
+        }
+        const isReconnecting = !!this.channel;
+        if (
+          maxConnectionAttempts === INFINITE_CONNECTION_ATTEMPTS ||
+          isReconnecting
+        ) {
+          return;
+        }
+        if (++this.connectionAttempts === maxConnectionAttempts) {
+          await this.close();
+          callback?.(error.err ?? new Error(CONNECTION_FAILED_MESSAGE));
+        }
+      },
+    );
   }
 
   public createClient<T = any>(): T {
