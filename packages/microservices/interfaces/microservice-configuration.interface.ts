@@ -242,7 +242,7 @@ export interface RmqOptions {
      */
     socketOptions?: AmqpConnectionManagerSocketOptions;
     /**
-     * Iif true, the broker won’t expect an acknowledgement of messages delivered to this consumer; i.e., it will dequeue messages as soon as they’ve been sent down the wire.
+     * If true, the broker won’t expect an acknowledgement of messages delivered to this consumer; i.e., it will dequeue messages as soon as they’ve been sent down the wire.
      * @default false
      */
     noAck?: boolean;
