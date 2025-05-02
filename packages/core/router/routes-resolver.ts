@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   HOST_METADATA,
   MODULE_PATH,
@@ -185,9 +189,22 @@ export class RoutesResolver implements Resolver {
       // encoding, e.g. '%FF' (#8915)
       case err instanceof SyntaxError || err instanceof URIError:
         return new BadRequestException(err.message);
+      case this.isHttpFastifyError(err):
+        return new HttpException(err.message, err.statusCode);
       default:
         return err;
     }
+  }
+
+  private isHttpFastifyError(
+    error: any,
+  ): error is Error & { statusCode: number } {
+    // condition based on this code - https://github.com/fastify/fastify-error/blob/d669b150a82968322f9f7be992b2f6b463272de3/index.js#L22
+    return (
+      error.statusCode !== undefined &&
+      error instanceof Error &&
+      error.name === 'FastifyError'
+    );
   }
 
   private getModulePathMetadata(metatype: Type<unknown>): string | undefined {
