@@ -286,7 +286,7 @@ export interface RmqOptions {
      * Type of the exchange
      * @default 'topic'
      */
-    exchangeType?: 'direct' | 'fanout' | 'topic' | 'headers';
+    exchangeType?: string;
     /**
      * Additional routing key for the topic exchange.
      */
