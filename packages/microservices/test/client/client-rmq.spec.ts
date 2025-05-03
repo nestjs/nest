@@ -368,13 +368,13 @@ describe('ClientRMQ', function () {
       untypedClient.client = { close: clientCloseSpy };
     });
 
-    it('should close channel when it is not null', () => {
-      client.close();
+    it('should close channel when it is not null', async () => {
+      await client.close();
       expect(channelCloseSpy.called).to.be.true;
     });
 
-    it('should close client when it is not null', () => {
-      client.close();
+    it('should close client when it is not null', async () => {
+      await client.close();
       expect(clientCloseSpy.called).to.be.true;
     });
   });

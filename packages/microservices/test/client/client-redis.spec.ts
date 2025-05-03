@@ -195,22 +195,22 @@ describe('ClientRedis', () => {
       untypedClient.pubClient = pub;
       untypedClient.subClient = sub;
     });
-    it('should close "pub" when it is not null', () => {
-      client.close();
+    it('should close "pub" when it is not null', async () => {
+      await client.close();
       expect(pubClose.called).to.be.true;
     });
-    it('should not close "pub" when it is null', () => {
+    it('should not close "pub" when it is null', async () => {
       untypedClient.pubClient = null;
-      client.close();
+      await client.close();
       expect(pubClose.called).to.be.false;
     });
-    it('should close "sub" when it is not null', () => {
-      client.close();
+    it('should close "sub" when it is not null', async () => {
+      await client.close();
       expect(subClose.called).to.be.true;
     });
-    it('should not close "sub" when it is null', () => {
+    it('should not close "sub" when it is null', async () => {
       untypedClient.subClient = null;
-      client.close();
+      await client.close();
       expect(subClose.called).to.be.false;
     });
   });
