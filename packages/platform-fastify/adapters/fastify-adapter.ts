@@ -525,7 +525,7 @@ export class FastifyAdapter<
     return response.sent;
   }
 
-  public getHeader?(response: any, name: string) {
+  public getHeader(response: any, name: string) {
     return response.getHeader(name);
   }
 
@@ -533,7 +533,7 @@ export class FastifyAdapter<
     return response.header(name, value);
   }
 
-  public appendHeader?(response: any, name: string, value: string) {
+  public appendHeader(response: any, name: string, value: string) {
     response.header(name, value);
   }
 
