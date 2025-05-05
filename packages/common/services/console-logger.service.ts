@@ -12,6 +12,9 @@ import { isLogLevelEnabled } from './utils';
 
 const DEFAULT_DEPTH = 5;
 
+/**
+ * @publicApi
+ */
 export interface ConsoleLoggerOptions {
   /**
    * Enabled log levels.
@@ -106,6 +109,9 @@ const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
   month: '2-digit',
 });
 
+/**
+ * @publicApi
+ */
 @Injectable()
 export class ConsoleLogger implements LoggerService {
   /**
