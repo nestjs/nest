@@ -3,7 +3,7 @@ import { isObject } from '../utils/shared.utils';
 import { ConsoleLogger } from './console-logger.service';
 import { isLogLevelEnabled } from './utils';
 
-const LOG_LEVELS = [
+export const LOG_LEVELS = [
   'verbose',
   'debug',
   'log',
@@ -16,38 +16,6 @@ const LOG_LEVELS = [
  * @publicApi
  */
 export type LogLevel = (typeof LOG_LEVELS)[number];
-
-/**
- * @publicApi
- */
-export function isLogLevel(maybeLogLevel: any): maybeLogLevel is LogLevel {
-  return LOG_LEVELS.includes(maybeLogLevel);
-}
-
-/**
- * @publicApi
- */
-export function filterLogLevels(parseableString = ''): LogLevel[] {
-  const sanitizedSring = parseableString.replaceAll(' ', '').toLowerCase();
-
-  if (sanitizedSring[0] === '>') {
-    const orEqual = sanitizedSring[1] === '=';
-
-    const logLevelIndex = (LOG_LEVELS as string[]).indexOf(
-      sanitizedSring.substring(orEqual ? 2 : 1),
-    );
-
-    if (logLevelIndex === -1) {
-      throw new Error(`parse error (unknown log level): ${sanitizedSring}`);
-    }
-
-    return LOG_LEVELS.slice(orEqual ? logLevelIndex : logLevelIndex + 1);
-  } else if (sanitizedSring.includes(',')) {
-    return sanitizedSring.split(',').filter(isLogLevel);
-  }
-
-  return isLogLevel(sanitizedSring) ? [sanitizedSring] : LOG_LEVELS;
-}
 
 /**
  * @publicApi
