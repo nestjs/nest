@@ -113,7 +113,7 @@
     "@types/supertest": "6.0.3",
     "@types/ws": "8.18.1",
     "amqp-connection-manager": "4.1.14",
-    "amqplib": "0.10.7",
+    "amqplib": "0.10.8",
     "artillery": "2.0.22",
     "body-parser": "2.2.0",
     "bytes": "3.1.2",
