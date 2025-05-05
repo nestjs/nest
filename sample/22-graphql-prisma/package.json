@@ -28,7 +28,7 @@
     "@nestjs/platform-express": "11.1.0",
     "@prisma/client": "6.7.0",
     "class-transformer": "0.5.1",
-    "class-validator": "0.14.1",
+    "class-validator": "0.14.2",
     "graphql": "16.10.0",
     "graphql-subscriptions": "3.0.0",
     "reflect-metadata": "0.2.2",
