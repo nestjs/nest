@@ -229,6 +229,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       );
       await channel.assertExchange(exchange, exchangeType, {
         durable: true,
+        arguments: this.getOptionsProp(this.options, 'exchangeArguments', {}),
       });
     }
 
