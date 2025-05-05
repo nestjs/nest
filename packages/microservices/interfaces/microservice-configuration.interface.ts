@@ -288,6 +288,10 @@ export interface RmqOptions {
      */
     exchangeType?: 'direct' | 'fanout' | 'topic' | 'headers';
     /**
+     * Exchange arguments
+     */
+    exchangeArguments?: Record<string, string>;
+    /**
      * Additional routing key for the topic exchange.
      */
     routingKey?: string;
