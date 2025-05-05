@@ -8,7 +8,7 @@ import {
   isUndefined,
 } from '../utils/shared.utils';
 import { LoggerService, LogLevel } from './logger.service';
-import { isLogLevelEnabled } from './utils';
+import { isLogLevelEnabled } from './utils/is-log-level-enabled.util';
 
 const DEFAULT_DEPTH = 5;
 
