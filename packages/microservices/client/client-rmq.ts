@@ -96,9 +96,9 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     this.initializeDeserializer(options);
   }
 
-  public close(): void {
-    this.channel && this.channel.close();
-    this.client && this.client.close();
+  public async close(): Promise<void> {
+    this.channel && (await this.channel.close());
+    this.client && (await this.client.close());
     this.channel = null;
     this.client = null;
     this.pendingEventListeners = [];
