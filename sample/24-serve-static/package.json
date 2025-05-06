@@ -49,6 +49,6 @@
     "eslint-plugin-prettier": "5.4.0",
     "globals": "16.0.0",
     "typescript": "5.7.3",
-    "typescript-eslint": "8.31.1"
+    "typescript-eslint": "8.32.0"
   }
 }
