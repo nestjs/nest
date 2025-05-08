@@ -108,7 +108,7 @@
     "@types/gulp": "4.0.17",
     "@types/http-errors": "2.0.4",
     "@types/mocha": "10.0.10",
-    "@types/node": "22.15.9",
+    "@types/node": "22.15.15",
     "@types/sinon": "17.0.4",
     "@types/supertest": "6.0.3",
     "@types/ws": "8.18.1",
