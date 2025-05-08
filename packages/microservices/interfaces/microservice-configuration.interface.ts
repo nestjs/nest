@@ -283,10 +283,11 @@ export interface RmqOptions {
      */
     exchange?: string;
     /**
-     * Type of the exchange
+     * Type of the exchange.
+     * Accepts the AMQP standard types ('direct', 'fanout', 'topic', 'headers') or any custom exchange type name provided as a string literal.
      * @default 'topic'
      */
-    exchangeType?: string;
+    exchangeType?: 'direct' | 'fanout' | 'topic' | 'headers' | (string & {});
     /**
      * Additional routing key for the topic exchange.
      */
