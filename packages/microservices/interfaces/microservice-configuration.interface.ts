@@ -242,7 +242,7 @@ export interface RmqOptions {
      */
     socketOptions?: AmqpConnectionManagerSocketOptions;
     /**
-     * Iif true, the broker won’t expect an acknowledgement of messages delivered to this consumer; i.e., it will dequeue messages as soon as they’ve been sent down the wire.
+     * If true, the broker won’t expect an acknowledgement of messages delivered to this consumer; i.e., it will dequeue messages as soon as they’ve been sent down the wire.
      * @default false
      */
     noAck?: boolean;
@@ -283,10 +283,11 @@ export interface RmqOptions {
      */
     exchange?: string;
     /**
-     * Type of the exchange
+     * Type of the exchange.
+     * Accepts the AMQP standard types ('direct', 'fanout', 'topic', 'headers') or any custom exchange type name provided as a string literal.
      * @default 'topic'
      */
-    exchangeType?: 'direct' | 'fanout' | 'topic' | 'headers';
+    exchangeType?: 'direct' | 'fanout' | 'topic' | 'headers' | (string & {});
     /**
      * Exchange arguments
      */
