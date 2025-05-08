@@ -135,7 +135,7 @@
     "eventsource": "3.0.6",
     "fancy-log": "2.0.0",
     "fastify": "5.3.2",
-    "globals": "16.0.0",
+    "globals": "16.1.0",
     "graphql": "16.11.0",
     "graphql-subscriptions": "3.0.0",
     "graphql-tools": "9.0.18",
