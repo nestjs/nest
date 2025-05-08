@@ -20,14 +20,17 @@ import {
   ReadPacket,
   WritePacket,
 } from '../interfaces';
-import { TcpOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  TcpOptions,
+  TransportId,
+} from '../interfaces/microservice-configuration.interface';
 import { Server } from './server';
 
 /**
  * @publicApi
  */
 export class ServerTCP extends Server<TcpEvents, TcpStatus> {
-  public readonly transportId = Transport.TCP;
+  public transportId: TransportId = Transport.TCP;
 
   protected server: NetSocket;
   protected readonly port: number;
