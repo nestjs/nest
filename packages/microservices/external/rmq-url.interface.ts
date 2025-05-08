@@ -68,10 +68,3 @@ export interface AmqplibQueueOptions {
   maxPriority?: number;
   [key: string]: any;
 }
-
-type AmqpMainExchangeType = 'direct' | 'fanout' | 'topic' | 'headers';
-
-/**
- * @publicApi
- */
-export type AmqpExchangeType = AmqpMainExchangeType | (string & {});

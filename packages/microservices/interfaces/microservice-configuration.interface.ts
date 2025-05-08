@@ -14,7 +14,6 @@ import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
 import { IORedisOptions } from '../external/redis.interface';
 import {
   AmqpConnectionManagerSocketOptions,
-  AmqpExchangeType,
   AmqplibQueueOptions,
   RmqUrl,
 } from '../external/rmq-url.interface';
@@ -287,7 +286,7 @@ export interface RmqOptions {
      * Type of the exchange
      * @default 'topic'
      */
-    exchangeType?: AmqpExchangeType;
+    exchangeType?: string;
     /**
      * Additional routing key for the topic exchange.
      */
