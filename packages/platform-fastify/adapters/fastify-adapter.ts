@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import { FastifyCorsOptions } from '@fastify/cors';
 import {
+  BadRequestException,
+  HttpException,
   HttpStatus,
   Logger,
   RawBodyRequest,
@@ -18,6 +20,7 @@ import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter
 import {
   FastifyBaseLogger,
   FastifyBodyParser,
+  FastifyError,
   FastifyInstance,
   FastifyListenOptions,
   FastifyPluginAsync,
@@ -668,6 +671,25 @@ export class FastifyAdapter<
 
   public getType(): string {
     return 'fastify';
+  }
+
+  public mapException(error: unknown): unknown {
+    if (this.isHttpFastifyError(error)) {
+      return new HttpException(error.message, error.statusCode);
+    }
+
+    return error;
+  }
+
+  private isHttpFastifyError(
+    error: any,
+  ): error is Error & { statusCode: number } {
+    // condition based on this code - https://github.com/fastify/fastify-error/blob/d669b150a82968322f9f7be992b2f6b463272de3/index.js#L22
+    return (
+      error.statusCode !== undefined &&
+      error instanceof Error &&
+      error.name === 'FastifyError'
+    );
   }
 
   protected registerWithPrefix(
