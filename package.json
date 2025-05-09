@@ -102,7 +102,7 @@
     "@types/bytes": "3.1.5",
     "@types/chai": "4.3.20",
     "@types/chai-as-promised": "7.1.8",
-    "@types/cors": "2.8.17",
+    "@types/cors": "2.8.18",
     "@types/eslint__js": "8.42.3",
     "@types/express": "5.0.1",
     "@types/gulp": "4.0.17",
