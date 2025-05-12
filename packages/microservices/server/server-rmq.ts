@@ -22,7 +22,7 @@ import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events';
 import { RmqUrl } from '../external/rmq-url.interface';
-import { MessageHandler, RmqOptions } from '../interfaces';
+import { MessageHandler, RmqOptions, TransportId } from '../interfaces';
 import {
   IncomingRequest,
   OutgoingResponse,
@@ -54,7 +54,7 @@ const INFINITE_CONNECTION_ATTEMPTS = -1;
  * @publicApi
  */
 export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
-  public readonly transportId = Transport.RMQ;
+  public transportId: TransportId = Transport.RMQ;
 
   protected server: AmqpConnectionManager | null = null;
   protected channel: ChannelWrapper | null = null;

@@ -1,7 +1,6 @@
 import { Transport } from '../enums/transport.enum';
 import {
   CustomStrategy,
-  GrpcOptions,
   KafkaOptions,
   MicroserviceOptions,
   MqttOptions,

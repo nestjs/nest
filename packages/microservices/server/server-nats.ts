@@ -9,7 +9,10 @@ import { NatsContext } from '../ctx-host/nats.context';
 import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer';
 import { Transport } from '../enums';
 import { NatsEvents, NatsEventsMap, NatsStatus } from '../events/nats.events';
-import { NatsOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  NatsOptions,
+  TransportId,
+} from '../interfaces/microservice-configuration.interface';
 import { IncomingRequest } from '../interfaces/packet.interface';
 import { NatsRecord } from '../record-builders';
 import { NatsRecordSerializer } from '../serializers/nats-record.serializer';
@@ -36,7 +39,7 @@ export class ServerNats<
   E extends NatsEvents = NatsEvents,
   S extends NatsStatus = NatsStatus,
 > extends Server<E, S> {
-  public readonly transportId = Transport.NATS;
+  public transportId: TransportId = Transport.NATS;
 
   private natsClient: Client;
   protected statusEventEmitter = new EventEmitter<{

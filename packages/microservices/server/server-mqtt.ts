@@ -15,7 +15,10 @@ import {
   PacketId,
   ReadPacket,
 } from '../interfaces';
-import { MqttOptions } from '../interfaces/microservice-configuration.interface';
+import {
+  MqttOptions,
+  TransportId,
+} from '../interfaces/microservice-configuration.interface';
 import { MqttRecord } from '../record-builders/mqtt.record-builder';
 import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer';
 import { Server } from './server';
@@ -33,7 +36,7 @@ type MqttClient = any;
  * @publicApi
  */
 export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
-  public readonly transportId = Transport.MQTT;
+  public transportId: TransportId = Transport.MQTT;
   protected readonly url: string;
   protected mqttClient: MqttClient;
   protected pendingEventListeners: Array<{

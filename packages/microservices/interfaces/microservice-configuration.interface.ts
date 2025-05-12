@@ -32,6 +32,8 @@ export type MicroserviceOptions =
   | KafkaOptions
   | CustomStrategy;
 
+export type TransportId = Transport | symbol;
+
 export type AsyncMicroserviceOptions = {
   inject: InjectionToken[];
   useFactory: (...args: any[]) => MicroserviceOptions;
