@@ -47,7 +47,7 @@ export interface ConfigurableModuleAsyncOptions<
   >;
   /**
    * Function returning options (or a Promise resolving to options) to configure the
-   * cache module.
+   * module.
    */
   useFactory?: (...args: any[]) => Promise<ModuleOptions> | ModuleOptions;
   /**
