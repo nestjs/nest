@@ -26,7 +26,12 @@ import {
   RecordMetadata,
 } from '../external/kafka.interface';
 import { KafkaLogger, KafkaParser } from '../helpers';
-import { KafkaOptions, OutgoingResponse, ReadPacket } from '../interfaces';
+import {
+  KafkaOptions,
+  OutgoingResponse,
+  ReadPacket,
+  TransportId,
+} from '../interfaces';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
 import { Server } from './server';
 
@@ -36,7 +41,7 @@ let kafkaPackage: any = {};
  * @publicApi
  */
 export class ServerKafka extends Server<never, KafkaStatus> {
-  public readonly transportId = Transport.KAFKA;
+  public transportId: TransportId = Transport.KAFKA;
 
   protected logger = new Logger(ServerKafka.name);
   protected client: Kafka | null = null;

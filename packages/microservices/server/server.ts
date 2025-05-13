@@ -51,13 +51,21 @@ export abstract class Server<
   /**
    * Unique transport identifier.
    */
-  readonly transportId?: Transport | symbol;
+  public transportId?: Transport | symbol;
 
   protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger: LoggerService = new Logger(Server.name);
   protected serializer: ConsumerSerializer;
   protected deserializer: ConsumerDeserializer;
   protected _status$ = new ReplaySubject<Status>(1);
+
+  /**
+   *  Sets the transport identifier.
+   *  @param transportId Unique transport identifier.
+   */
+  public setTransportId(transportId: Transport | symbol): void {
+    this.transportId = transportId;
+  }
 
   /**
    * Returns an observable that emits status changes.
