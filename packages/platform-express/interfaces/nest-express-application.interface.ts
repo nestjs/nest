@@ -26,7 +26,6 @@ export interface NestExpressApplication<
    * @returns {HttpServer}
    */
   getHttpAdapter(): HttpServer<Express.Request, Express.Response, Express>;
-
   /**
    * Starts the application.
    *
@@ -41,7 +40,6 @@ export interface NestExpressApplication<
     hostname: string,
     callback?: () => void,
   ): Promise<TServer>;
-
   /**
    * A wrapper function around native `express.set()` method.
    *
@@ -51,7 +49,6 @@ export interface NestExpressApplication<
    * @returns {this}
    */
   set(...args: any[]): this;
-
   /**
    * A wrapper function around native `express.engine()` method.
    * @example
@@ -60,7 +57,6 @@ export interface NestExpressApplication<
    * @returns {this}
    */
   engine(...args: any[]): this;
-
   /**
    * A wrapper function around native `express.enable()` method.
    * @example
@@ -69,7 +65,6 @@ export interface NestExpressApplication<
    * @returns {this}
    */
   enable(...args: any[]): this;
-
   /**
    * A wrapper function around native `express.disable()` method.
    *
@@ -79,7 +74,6 @@ export interface NestExpressApplication<
    * @returns {this}
    */
   disable(...args: any[]): this;
-
   useStaticAssets(options: ServeStaticOptions): this;
   /**
    * Sets a base directory for public assets.
@@ -89,9 +83,7 @@ export interface NestExpressApplication<
    * @returns {this}
    */
   useStaticAssets(path: string, options?: ServeStaticOptions): this;
-
   enableCors(options?: CorsOptions | CorsOptionsDelegate<any>): void;
-
   /**
    * Register Express body parsers on the fly. Will respect
    * the application's `rawBody` option.
@@ -109,7 +101,6 @@ export interface NestExpressApplication<
     parser: NestExpressBodyParserType,
     options?: Omit<Options, 'verify'>,
   ): this;
-
   /**
    * Sets one or multiple base directories for templates (views).
    *
@@ -119,7 +110,6 @@ export interface NestExpressApplication<
    * @returns {this}
    */
   setBaseViewsDir(path: string | string[]): this;
-
   /**
    * Sets a view engine for templates (views).
    * @example
@@ -128,7 +118,6 @@ export interface NestExpressApplication<
    * @returns {this}
    */
   setViewEngine(engine: string): this;
-
   /**
    * Sets app-level globals for view templates.
    *
@@ -140,4 +129,14 @@ export interface NestExpressApplication<
    * @returns {this}
    */
   setLocal(key: string, value: any): this;
+
+  /**
+   * Enables case-insensitive query parameter handling by normalizing query parameter keys to lowercase.
+   *
+   * @example
+   * app.enableCaseInsensitiveQueries();
+   *
+   * @returns {this}
+   */
+  enableCaseInsensitiveQueries(): this;
 }

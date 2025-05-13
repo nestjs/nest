@@ -59,6 +59,39 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     super(instance || express());
   }
 
+  public enableCaseInsensitiveQueries(): this {
+    const normalizeQuery = (
+      req: express.Request,
+      res: express.Response,
+      next: express.NextFunction,
+    ) => {
+      const originalQuery = { ...req.query } as Record<string, any>;
+      const normalizedQuery = this.normalizeQueryObject(originalQuery);
+      Object.defineProperty(req, 'query', {
+        get() {
+          return normalizedQuery;
+        },
+        configurable: true,
+      });
+      next();
+    };
+    this.use(normalizeQuery);
+    return this;
+  }
+
+  private normalizeQueryObject(obj: Record<string, any>): Record<string, any> {
+    return Object.fromEntries(
+      Object.entries(obj).map(([key, value]) => [
+        key.toLowerCase(),
+        this.isObject(value) ? this.normalizeQueryObject(value) : value,
+      ]),
+    );
+  }
+
+  private isObject(value: any): value is Record<string, any> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+  }
+
   public reply(response: any, body: any, statusCode?: number) {
     if (statusCode) {
       response.status(statusCode);
