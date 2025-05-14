@@ -22,7 +22,7 @@
     "@fastify/formbody": "8.0.2",
     "@fastify/middie": "9.0.3",
     "fast-querystring": "1.1.2",
-    "fastify": "5.3.2",
+    "fastify": "5.3.3",
     "light-my-request": "6.6.0",
     "path-to-regexp": "8.2.0",
     "tslib": "2.8.1"
