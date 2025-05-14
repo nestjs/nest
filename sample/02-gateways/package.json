@@ -21,9 +21,9 @@
   "dependencies": {
     "@nestjs/common": "11.1.0",
     "@nestjs/core": "11.1.0",
-    "@nestjs/platform-express": "11.1.0",
-    "@nestjs/platform-socket.io": "11.1.0",
-    "@nestjs/websockets": "11.1.0",
+    "@nestjs/platform-express": "11.1.1",
+    "@nestjs/platform-socket.io": "11.1.1",
+    "@nestjs/websockets": "11.1.1",
     "@socket.io/redis-adapter": "8.3.0",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.2",
