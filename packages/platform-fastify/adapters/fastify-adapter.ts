@@ -53,6 +53,7 @@ import { parse as querystringParse } from 'fast-querystring';
 import {
   FASTIFY_ROUTE_CONFIG_METADATA,
   FASTIFY_ROUTE_CONSTRAINTS_METADATA,
+  FASTIFY_ROUTE_SCHEMA_METADATA,
 } from '../constants';
 import { NestFastifyBodyParserOptions } from '../interfaces';
 import {
@@ -752,9 +753,14 @@ export class FastifyAdapter<
       handlerRef,
     );
 
+    const routeSchema = Reflect.getMetadata(
+      FASTIFY_ROUTE_SCHEMA_METADATA,
+      handlerRef,
+    );
+
     const hasConfig = !isUndefined(routeConfig);
     const hasConstraints = !isUndefined(routeConstraints);
-
+    const hasSchema = !isUndefined(routeSchema);
     const routeToInject: RouteOptions<TServer, TRawRequest, TRawResponse> &
       RouteShorthandOptions = {
       method: routerMethodKey,
@@ -766,7 +772,7 @@ export class FastifyAdapter<
       this.instance.addHttpMethod(routerMethodKey, { hasBody: true });
     }
 
-    if (isVersioned || hasConstraints || hasConfig) {
+    if (isVersioned || hasConstraints || hasConfig || hasSchema) {
       const isPathAndRouteTuple = args.length === 2;
       if (isPathAndRouteTuple) {
         const constraints = {
@@ -782,6 +788,9 @@ export class FastifyAdapter<
             config: {
               ...routeConfig,
             },
+          }),
+          ...(hasSchema && {
+            schema: routeSchema,
           }),
         };
 
