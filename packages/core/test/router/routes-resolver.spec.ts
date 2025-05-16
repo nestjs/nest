@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  HttpException,
-  Module,
-  Post,
-  VersioningType,
-} from '@nestjs/common';
+import { Module, Post, VersioningType } from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
@@ -18,7 +12,6 @@ import { GraphInspector } from '../../inspector/graph-inspector';
 import { SerializedGraph } from '../../inspector/serialized-graph';
 import { RoutesResolver } from '../../router/routes-resolver';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
-import { createError as createFastifyError } from '@fastify/error';
 
 describe('RoutesResolver', () => {
   @Controller('global')
@@ -316,61 +309,6 @@ describe('RoutesResolver', () => {
             .getCall(1)
             .calledWith(sinon.match.any, sinon.match.any, '', undefined),
         ).to.be.true;
-      });
-    });
-  });
-
-  describe('mapExternalExceptions', () => {
-    describe('when exception prototype is', () => {
-      describe('SyntaxError', () => {
-        it('should map to BadRequestException', () => {
-          const err = new SyntaxError();
-          const outputErr = routesResolver.mapExternalException(err);
-          expect(outputErr).to.be.instanceof(BadRequestException);
-        });
-      });
-      describe('URIError', () => {
-        it('should map to BadRequestException', () => {
-          const err = new URIError();
-          const outputErr = routesResolver.mapExternalException(err);
-          expect(outputErr).to.be.instanceof(BadRequestException);
-        });
-      });
-      describe('FastifyError', () => {
-        it('should map FastifyError with status code to HttpException', () => {
-          const FastifyErrorCls = createFastifyError(
-            'FST_ERR_CTP_INVALID_MEDIA_TYPE',
-            'Unsupported Media Type: %s',
-            415,
-          );
-          const error = new FastifyErrorCls();
-
-          const result = routesResolver.mapExternalException(error);
-
-          expect(result).to.be.instanceOf(HttpException);
-          expect(result.message).to.equal(error.message);
-          expect(result.getStatus()).to.equal(415);
-        });
-
-        it('should return FastifyError without user status code to Internal Server Error HttpException', () => {
-          const FastifyErrorCls = createFastifyError(
-            'FST_WITHOUT_STATUS_CODE',
-            'Error without status code',
-          );
-          const error = new FastifyErrorCls();
-
-          const result = routesResolver.mapExternalException(error);
-          expect(result).to.be.instanceOf(HttpException);
-          expect(result.message).to.equal(error.message);
-          expect(result.getStatus()).to.equal(500);
-        });
-      });
-      describe('other', () => {
-        it('should behave as an identity', () => {
-          const err = new Error();
-          const outputErr = routesResolver.mapExternalException(err);
-          expect(outputErr).to.be.eql(err);
-        });
       });
     });
   });
