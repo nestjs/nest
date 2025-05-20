@@ -54,10 +54,10 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   }
 
   public async close() {
+    this.isManuallyClosed = true;
     this.pubClient && (await this.pubClient.quit());
     this.subClient && (await this.subClient.quit());
     this.pubClient = this.subClient = null;
-    this.isManuallyClosed = true;
     this.pendingEventListeners = [];
   }
 
