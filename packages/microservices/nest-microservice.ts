@@ -78,22 +78,29 @@ export class NestMicroservice
   public createServer(config: CompleteMicroserviceOptions) {
     try {
       if ('useFactory' in config) {
-        this.microserviceConfig = this.resolveAsyncOptions(config);
+        const resolvedConfig = this.resolveAsyncOptions(config);
+        this.microserviceConfig = resolvedConfig;
+
+        // Inject custom strategy
+        if ('strategy' in resolvedConfig) {
+          this.serverInstance = resolvedConfig.strategy as Server;
+          return;
+        }
       } else {
         this.microserviceConfig = {
           transport: Transport.TCP,
           ...config,
         } as MicroserviceOptions;
+
+        if ('strategy' in config) {
+          this.serverInstance = config.strategy as Server;
+          return;
+        }
       }
 
-      if ('strategy' in config) {
-        this.serverInstance = config.strategy as Server;
-        return;
-      } else {
-        this.serverInstance = ServerFactory.create(
-          this.microserviceConfig,
-        ) as Server;
-      }
+      this.serverInstance = ServerFactory.create(
+        this.microserviceConfig,
+      ) as Server;
     } catch (e) {
       this.logger.error(e);
       throw e;
