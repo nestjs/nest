@@ -213,6 +213,36 @@ describe('ClientRedis', () => {
       await client.close();
       expect(subClose.called).to.be.false;
     });
+    it('should have isManuallyClosed set to true when "end" event is handled during close', async () => {
+      let endHandler: Function | undefined;
+      sub.on = (event, handler) => {
+        if (event === 'end') endHandler = handler;
+      };
+      sub.quit = async () => {
+        if (endHandler) {
+          endHandler();
+          expect(untypedClient.isManuallyClosed).to.be.true;
+        }
+      };
+      client.registerEndListener(sub);
+      await client.close();
+    });
+
+    it('should not log error when "end" event is handled during close', async () => {
+      let endHandler: Function | undefined;
+      const logError = sinon.spy(untypedClient.logger, 'error');
+      sub.on = (event, handler) => {
+        if (event === 'end') endHandler = handler;
+      };
+      sub.quit = async () => {
+        if (endHandler) {
+          endHandler();
+        }
+      };
+      client.registerEndListener(sub);
+      await client.close();
+      expect(logError.called).to.be.false;
+    });
   });
   describe('connect', () => {
     let createClientSpy: sinon.SinonSpy;
