@@ -43,7 +43,7 @@
     "@nestjs/testing": "11.1.1",
     "@types/express": "5.0.2",
     "@types/jest": "29.5.14",
-    "@types/node": "22.15.19",
+    "@types/node": "22.15.21",
     "@types/supertest": "6.0.3",
     "eslint": "9.27.0",
     "eslint-config-prettier": "10.1.5",
