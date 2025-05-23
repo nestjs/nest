@@ -7,7 +7,7 @@ import {
   Controller,
   PipeTransform,
 } from '@nestjs/common/interfaces';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { isEmptyArray } from '@nestjs/common/utils/shared.utils';
 import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards/constants';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
@@ -271,7 +271,7 @@ export class WsContextCreator {
     { metatype, type, data }: { metatype: any; type: any; data: any },
     pipes: PipeTransform[],
   ): Promise<any> {
-    return isEmpty(pipes)
+    return isEmptyArray(pipes)
       ? value
       : this.pipesConsumer.apply(value, { metatype, type, data }, pipes);
   }
