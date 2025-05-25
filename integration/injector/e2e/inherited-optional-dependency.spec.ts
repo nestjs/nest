@@ -48,7 +48,7 @@ describe('Inherited optional dependency', () => {
   /**
    * You can see details on this issue here: https://github.com/nestjs/nest/issues/2581
    */
-  describe('when a dependency with an @Optional() parameter inherited from a parent is missing', () => {
+  describe('when the parent has an @Optional() parameter', () => {
     it('should throw an UnknownDependenciesException due to the missing dependency', async () => {
       const module = Test.createTestingModule({
         imports: [NeededModule, FooModule],
