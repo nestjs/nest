@@ -21,7 +21,7 @@
     "body-parser": "1.20.3",
     "cors": "2.8.5",
     "express": "4.21.2",
-    "multer": "1.4.4-lts.1",
+    "multer": "2.0.0",
     "tslib": "2.8.1"
   },
   "devDependencies": {
