@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "moduleResolution": "node16",
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "removeComments": true,
