@@ -1,3 +1,4 @@
+import * as nats from '@nats-io/nats-core';
 import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
 import {
   ClientProxy,
@@ -11,7 +12,6 @@ import {
   RpcException,
   Transport,
 } from '@nestjs/microservices';
-import * as nats from 'nats';
 import { from, lastValueFrom, Observable, of, throwError } from 'rxjs';
 import { catchError, scan } from 'rxjs/operators';
 import { NatsService } from './nats.service';

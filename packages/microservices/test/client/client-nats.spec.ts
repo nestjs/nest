@@ -1,5 +1,5 @@
+import { headers as createHeaders } from '@nats-io/nats-core';
 import { expect } from 'chai';
-import { headers as createHeaders, JSONCodec } from 'nats';
 import * as sinon from 'sinon';
 import { ClientNats } from '../../client/client-nats';
 import { ReadPacket } from '../../interfaces';
@@ -157,7 +157,8 @@ describe('ClientNats', () => {
       id: '1',
     };
     const natsMessage = {
-      data: JSONCodec().encode(responseMessage),
+      data: JSON.stringify(responseMessage),
+      json: () => responseMessage,
     };
 
     let callback: sinon.SinonSpy, subscription;
@@ -183,10 +184,13 @@ describe('ClientNats', () => {
         callback = sinon.spy();
         subscription = client.createSubscriptionHandler(msg, callback);
         subscription(undefined, {
-          data: JSONCodec().encode({
+          data: JSON.stringify({
             ...responseMessage,
             isDisposed: true,
           }),
+          json: function () {
+            return JSON.parse(this.data);
+          },
         });
       });
 
@@ -212,7 +216,7 @@ describe('ClientNats', () => {
           callback,
         );
         subscription(undefined, {
-          data: JSONCodec().encode({
+          data: JSON.stringify({
             ...responseMessage,
             isDisposed: true,
           }),
@@ -245,7 +249,7 @@ describe('ClientNats', () => {
     beforeEach(async () => {
       createClientSpy = sinon
         .stub(client, 'createClient')
-        .callsFake(() => Promise.resolve({}));
+        .callsFake(() => Promise.resolve<any>({}));
       handleStatusUpdatesSpy = sinon.spy(client, 'handleStatusUpdates');
 
       await client.connect();

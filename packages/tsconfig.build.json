@@ -2,6 +2,7 @@
   "compilerOptions": {
     "composite": true,
     "module": "commonjs",
+    "moduleResolution": "node16",
     "declaration": true,
     "noImplicitAny": false,
     "skipLibCheck": true,

@@ -24,9 +24,9 @@ let natsPackage = {} as any;
 // because it would require the user to install the nats package even if they dont use Nats
 // Otherwise, TypeScript would fail to compile the code.
 //
-// type Client = import('nats').NatsConnection;
-// type NatsMsg = import('nats').Msg;
-// type Subscription = import('nats').Subscription;
+// type Client = import('@nats-io/transport-node').NatsConnection;
+// type NatsMsg = import('@nats-io/transport-node').Msg;
+// type Subscription = import('@nats-io/transport-node').Subscription;
 
 type Client = any;
 type NatsMsg = any;
@@ -41,7 +41,7 @@ export class ServerNats<
 > extends Server<E, S> {
   public transportId: TransportId = Transport.NATS;
 
-  private natsClient: Client;
+  private natsClient: Client | null;
   protected statusEventEmitter = new EventEmitter<{
     [key in keyof NatsEvents]: Parameters<NatsEvents[key]>;
   }>();
@@ -50,8 +50,10 @@ export class ServerNats<
   constructor(private readonly options: Required<NatsOptions>['options']) {
     super();
 
-    natsPackage = this.loadPackage('nats', ServerNats.name, () =>
-      require('nats'),
+    natsPackage = this.loadPackage(
+      '@nats-io/transport-node',
+      ServerNats.name,
+      () => require('@nats-io/transport-node'),
     );
 
     this.initializeSerializer(options);
@@ -75,7 +77,7 @@ export class ServerNats<
   public start(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
-    this.bindEvents(this.natsClient);
+    this.bindEvents(this.natsClient!);
     callback();
   }
 
@@ -146,7 +148,7 @@ export class ServerNats<
     const replyTo = natsMsg.reply;
 
     const natsCtx = new NatsContext([callerSubject, natsMsg.headers]);
-    const message = await this.deserializer.deserialize(rawMessage, {
+    const message = await this.deserializer.deserialize(natsMsg, {
       channel,
       replyTo,
     });
@@ -176,7 +178,7 @@ export class ServerNats<
         Object.assign(response, { id });
         const outgoingResponse: NatsRecord =
           this.serializer.serialize(response);
-        return natsMsg.respond(outgoingResponse.data, {
+        natsMsg.respond(outgoingResponse.data, {
           headers: outgoingResponse.headers,
         });
       };
@@ -190,34 +192,24 @@ export class ServerNats<
 
   public async handleStatusUpdates(client: Client) {
     for await (const status of client.status()) {
-      const data =
-        status.data && isObject(status.data)
-          ? JSON.stringify(status.data)
-          : status.data;
-
       switch (status.type) {
         case 'error':
           this.logger.error(
-            `NatsError: type: "${status.type}", data: "${data}".`,
+            `NatsError: type: "${status.type}", error: "${status.error}".`,
           );
           break;
 
         case 'disconnect':
-          this.logger.error(
-            `NatsError: type: "${status.type}", data: "${data}".`,
-          );
+          this.logger.error(`NatsError: type: "${status.type}".`);
 
           this._status$.next(NatsStatus.DISCONNECTED as S);
-          this.statusEventEmitter.emit(
-            NatsEventsMap.DISCONNECT,
-            status.data as string,
-          );
+          this.statusEventEmitter.emit(NatsEventsMap.DISCONNECT, status.server);
           break;
 
-        case 'pingTimer':
+        case 'ping':
           if (this.options.debug) {
             this.logger.debug!(
-              `NatsStatus: type: "${status.type}", data: "${data}".`,
+              `NatsStatus: type: "${status.type}", pending pings: "${status.pendingPings}".`,
             );
           }
           break;
@@ -227,25 +219,26 @@ export class ServerNats<
           break;
 
         case 'reconnect':
-          this.logger.log(
-            `NatsStatus: type: "${status.type}", data: "${data}".`,
-          );
+          this.logger.log(`NatsStatus: type: "${status.type}".`);
 
           this._status$.next(NatsStatus.CONNECTED as S);
-          this.statusEventEmitter.emit(
-            NatsEventsMap.RECONNECT,
-            status.data as string,
-          );
+          this.statusEventEmitter.emit(NatsEventsMap.RECONNECT, status.server);
           break;
 
         case 'update':
           this.logger.log(
-            `NatsStatus: type: "${status.type}", data: "${data}".`,
+            `NatsStatus: type: "${status.type}", added: "${status.added}", deleted: "${status.deleted}".`,
           );
-          this.statusEventEmitter.emit(NatsEventsMap.UPDATE, status.data);
+          this.statusEventEmitter.emit(NatsEventsMap.UPDATE, undefined);
           break;
 
         default:
+          const data =
+            'data' in status && isObject(status.data)
+              ? JSON.stringify(status.data)
+              : 'data' in status
+                ? status.data
+                : '';
           this.logger.log(
             `NatsStatus: type: "${status.type}", data: "${data}".`,
           );
