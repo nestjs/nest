@@ -41,8 +41,14 @@ export class ParseDatePipe
       options;
 
     this.exceptionFactory =
-      exceptionFactory ||
-      (error => new HttpErrorByCode[errorHttpStatusCode](error));
+       exceptionFactory ||
+       ((error) => {
+          const ExceptionCtor = (HttpErrorByCode as any)[errorHttpStatusCode];
+          if (ExceptionCtor) {
+             return new ExceptionCtor(error);
+          }
+          return new Error(error);
+       });
   }
 
   /**
