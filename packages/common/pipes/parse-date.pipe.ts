@@ -54,6 +54,7 @@ export class ParseDatePipe
    */
   transform(
     value: string | number | undefined | null,
+    metadata?: any
   ): Date | null | undefined {
     if (this.options.optional && isNil(value)) {
       return this.options.default ? this.options.default() : value;
@@ -66,7 +67,13 @@ export class ParseDatePipe
     const transformedValue = new Date(value);
 
     if (isNaN(transformedValue.getTime())) {
-      throw this.exceptionFactory('Validation failed (invalid date format)');
+       const exception = this.exceptionFactory(
+          "Validation failed (invalid date format)"
+       );
+       if (!(exception instanceof Error)) {
+          throw new Error("exceptionFactory must return an Error instance");
+       }
+       throw exception;
     }
 
     return transformedValue;
