@@ -59,6 +59,46 @@ describe('NestApplication', () => {
         (microservice as any).applicationConfig.getGlobalInterceptors().length,
       ).to.equal(1);
     });
+
+    it('should immediately initialize microservice by default', () => {
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const instance = new NestApplication(
+        container,
+        new NoopHttpAdapter({}),
+        applicationConfig,
+        new GraphInspector(container),
+        {},
+      );
+
+      const microservice = instance.connectMicroservice<MicroserviceOptions>(
+        {},
+        {},
+      );
+
+      expect((microservice as any).isInitialized).to.be.true;
+      expect((microservice as any).wasInitHookCalled).to.be.true;
+    });
+
+    it('should defer microservice initialization when deferInitialization is true', () => {
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const instance = new NestApplication(
+        container,
+        new NoopHttpAdapter({}),
+        applicationConfig,
+        new GraphInspector(container),
+        {},
+      );
+
+      const microservice = instance.connectMicroservice<MicroserviceOptions>(
+        {},
+        { deferInitialization: true },
+      );
+
+      expect((microservice as any).isInitialized).to.be.false;
+      expect((microservice as any).wasInitHookCalled).to.be.false;
+    });
   });
   describe('Global Prefix', () => {
     it('should get correct global prefix options', () => {

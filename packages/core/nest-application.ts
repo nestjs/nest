@@ -232,9 +232,12 @@ export class NestApplication
       this.graphInspector,
       applicationConfig,
     );
-    instance.registerListeners();
-    instance.setIsInitialized(true);
-    instance.setIsInitHookCalled(true);
+
+    if (!hybridAppOptions.deferInitialization) {
+      instance.registerListeners();
+      instance.setIsInitialized(true);
+      instance.setIsInitHookCalled(true);
+    }
 
     this.microservices.push(instance);
     return instance;
