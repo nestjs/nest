@@ -72,8 +72,7 @@ export class FileTypeValidator extends FileValidator<
     if (!isFileValid || !file.buffer) return false;
 
     try {
-      const { fileTypeFromBuffer } =
-        await loadEsm<typeof import('file-type')>('file-type');
+      const { fileTypeFromBuffer } = await loadEsm<any>('file-type');
       const fileType = await fileTypeFromBuffer(file.buffer);
 
       if (fileType) {
