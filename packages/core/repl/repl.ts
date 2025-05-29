@@ -32,5 +32,9 @@ export async function repl(
 
   defineDefaultCommandsOnRepl(replServer);
 
+  replServer.on('exit', async () => {
+    await app.close();
+  });
+
   return replServer;
 }
