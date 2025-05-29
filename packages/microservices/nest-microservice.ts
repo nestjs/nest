@@ -146,7 +146,7 @@ export class NestMicroservice
   public useWebSocketAdapter(adapter: WebSocketAdapter): this {
     if (this.isInitialized) {
       this.logger.warn(
-        'WebSocket adapter registered after initialization will not be applied.',
+        'Cannot apply WebSocket adapter: registration must occur before initialization.',
       );
     }
     this.applicationConfig.setIoAdapter(adapter);
@@ -161,7 +161,7 @@ export class NestMicroservice
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
     if (this.isInitialized) {
       this.logger.warn(
-        'Global filters registered after initialization will not be applied.',
+        'Cannot apply global exception filters: registration must occur before initialization.',
       );
     }
     this.applicationConfig.useGlobalFilters(...filters);
@@ -203,7 +203,7 @@ export class NestMicroservice
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
     if (this.isInitialized) {
       this.logger.warn(
-        'Global interceptors registered after initialization will not be applied.',
+        'Cannot apply global interceptors: registration must occur before initialization.',
       );
     }
     this.applicationConfig.useGlobalInterceptors(...interceptors);
@@ -219,7 +219,7 @@ export class NestMicroservice
   public useGlobalGuards(...guards: CanActivate[]): this {
     if (this.isInitialized) {
       this.logger.warn(
-        'Global guards registered after initialization will not be applied.',
+       'Cannot apply global guards: registration must occur before initialization.',
       );
     }
     this.applicationConfig.useGlobalGuards(...guards);
