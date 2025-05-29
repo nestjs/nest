@@ -14,7 +14,7 @@ export interface StreamableFileOptions {
   /**
    * The value that will be used for the `Content-Disposition` response header.
    */
-  disposition?: string;
+  disposition?: string | string[];
   /**
    * The value that will be used for the `Content-Length` response header.
    */
