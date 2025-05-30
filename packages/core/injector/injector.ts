@@ -145,7 +145,7 @@ export class Injector {
     }
     try {
       const t0 = this.getNowTimestamp();
-      const callback = async (instances: unknown[]) => {
+      const callback = async (instances: unknown[], depth = 0) => {
         const properties = await this.resolveProperties(
           wrapper,
           moduleRef,
@@ -162,6 +162,8 @@ export class Injector {
           inquirer,
         );
         this.applyProperties(instance, properties);
+
+        wrapper.hierarchyLevel = depth + 1;
         wrapper.initTime = this.getNowTimestamp() - t0;
         settlementSignal.complete();
       };
@@ -272,7 +274,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     moduleRef: Module,
     inject: InjectorDependency[] | undefined,
-    callback: (args: unknown[]) => void | Promise<void>,
+    callback: (args: unknown[], depth?: number) => void | Promise<void>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
@@ -296,6 +298,7 @@ export class Injector {
       : this.getClassDependencies(wrapper);
 
     let isResolved = true;
+    let depth = 0;
     const resolveParam = async (param: unknown, index: number) => {
       try {
         if (this.isInquirer(param, parentInquirer)) {
@@ -314,6 +317,10 @@ export class Injector {
           inquirer,
           index,
         );
+        if (paramWrapper.hierarchyLevel > depth) {
+          depth = paramWrapper.hierarchyLevel;
+        }
+
         const instanceHost = paramWrapper.getInstanceByContextId(
           this.getContextId(contextId, paramWrapper),
           inquirerId,
@@ -331,7 +338,7 @@ export class Injector {
       }
     };
     const instances = await Promise.all(dependencies.map(resolveParam));
-    isResolved && (await callback(instances));
+    isResolved && (await callback(instances, depth));
   }
 
   public getClassDependencies<T>(
