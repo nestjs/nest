@@ -219,7 +219,7 @@ export class NestMicroservice
   public useGlobalGuards(...guards: CanActivate[]): this {
     if (this.isInitialized) {
       this.logger.warn(
-       'Cannot apply global guards: registration must occur before initialization.',
+        'Cannot apply global guards: registration must occur before initialization.',
       );
     }
     this.applicationConfig.useGlobalGuards(...guards);
