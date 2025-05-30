@@ -1,6 +1,6 @@
+import { loadEsm } from 'load-esm';
 import { FileValidator } from './file-validator.interface';
 import { IFile } from './interfaces';
-import { loadEsm } from 'load-esm';
 
 export type FileTypeValidatorOptions = {
   fileType: string | RegExp;
@@ -72,8 +72,7 @@ export class FileTypeValidator extends FileValidator<
     if (!isFileValid || !file.buffer) return false;
 
     try {
-      const { fileTypeFromBuffer } =
-        await loadEsm<typeof import('file-type')>('file-type');
+      const { fileTypeFromBuffer } = await loadEsm('file-type');
       const fileType = await fileTypeFromBuffer(file.buffer);
 
       if (fileType) {
