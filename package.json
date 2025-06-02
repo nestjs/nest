@@ -139,7 +139,7 @@
     "graphql": "16.11.0",
     "graphql-subscriptions": "3.0.0",
     "graphql-tools": "9.0.18",
-    "gulp": "5.0.0",
+    "gulp": "5.0.1",
     "gulp-clang-format": "1.0.27",
     "gulp-clean": "0.4.0",
     "gulp-sourcemaps": "3.0.0",
