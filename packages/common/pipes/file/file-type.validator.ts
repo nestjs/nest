@@ -77,6 +77,14 @@ export class FileTypeValidator extends FileValidator<
       const { fileTypeFromBuffer } = await import('file-type');
       const fileType = await fileTypeFromBuffer(file.buffer);
 
+      // fallback logic
+      const detectedMime = fileType?.mime || file.mimetype;
+
+      // allow if JPEG
+      if (!['image/jpeg', 'image/png', 'image/jpg'].includes(detectedMime)) {
+        return false;
+      }
+
       if (fileType) {
         // Match detected mime type against allowed type
         return !!fileType.mime.match(this.validationOptions.fileType);
