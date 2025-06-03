@@ -40,13 +40,20 @@ describe('ParseFilePipeBuilder', () => {
       it('should return a ParseFilePipe with FileTypeValidator and given options', () => {
         const options = {
           fileType: 'image/jpeg',
+          mimeTypeFallback: true,
         };
         const parseFilePipe = parseFilePipeBuilder
           .addFileTypeValidator(options)
           .build();
 
-        expect(parseFilePipe.getValidators()).to.deep.include(
-          new FileTypeValidator(options),
+        const validators = parseFilePipe.getValidators();
+        const fileTypeValidator = validators.find(
+          v => v instanceof FileTypeValidator,
+        );
+
+        expect(fileTypeValidator).to.exist;
+        expect((fileTypeValidator as any).validationOptions).to.deep.equal(
+          options,
         );
       });
     });
@@ -98,6 +105,80 @@ describe('ParseFilePipeBuilder', () => {
         expect(pipeWithFileTypeValidator.getValidators()).not.to.deep.equal(
           pipeWithMaxSizeValidator.getValidators(),
         );
+      });
+    });
+
+    describe('when addFileTypeValidator was chained with enhanced fallback logic', () => {
+      it('should validate a file with octet-stream mimetype and known extension (e.g., .csv)', async () => {
+        const options = {
+          fileType: 'text/csv',
+          fallbackToMimetype: true,
+        };
+
+        const file: any = {
+          mimetype: 'application/octet-stream',
+          size: 100,
+          buffer: Buffer.from('some,data\nanother,row'),
+          originalname: 'sample.csv',
+        };
+
+        const parseFilePipe = parseFilePipeBuilder
+          .addFileTypeValidator(options)
+          .build();
+
+        const validators = parseFilePipe.getValidators();
+        const validator = validators.find(v => v instanceof FileTypeValidator);
+
+        expect(validator).to.exist;
+        expect(await validator?.isValid(file)).to.be.true;
+      });
+
+      it('should fail validation if octet-stream file has unknown extension (e.g., .xyz)', async () => {
+        const options = {
+          fileType: 'application/json',
+          fallbackToMimetype: true,
+        };
+
+        const file: any = {
+          mimetype: 'application/octet-stream',
+          size: 100,
+          buffer: Buffer.from('{}'),
+          originalname: 'unknown.xyz',
+        };
+
+        const parseFilePipe = parseFilePipeBuilder
+          .addFileTypeValidator(options)
+          .build();
+
+        const validators = parseFilePipe.getValidators();
+        const validator = validators.find(v => v instanceof FileTypeValidator);
+
+        expect(validator).to.exist;
+        expect(await validator?.isValid(file)).to.be.false;
+      });
+
+      it('should validate a file using mimetype fallback when magic number fails', async () => {
+        const options = {
+          fileType: 'application/json',
+          fallbackToMimetype: true,
+        };
+
+        const file: any = {
+          mimetype: 'application/json',
+          size: 100,
+          buffer: Buffer.from('{}'), // Insufficient for magic number detection
+          originalname: 'data.json',
+        };
+
+        const parseFilePipe = parseFilePipeBuilder
+          .addFileTypeValidator(options)
+          .build();
+
+        const validators = parseFilePipe.getValidators();
+        const validator = validators.find(v => v instanceof FileTypeValidator);
+
+        expect(validator).to.exist;
+        expect(await validator?.isValid(file)).to.be.true;
       });
     });
   });

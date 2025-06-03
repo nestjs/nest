@@ -72,8 +72,9 @@ export class FileTypeValidator extends FileValidator<
     if (!isFileValid || !file.buffer) return false;
 
     try {
-      const { fileTypeFromBuffer } =
-        await loadEsm<typeof import('file-type')>('file-type');
+      // const { fileTypeFromBuffer } =
+      //   await loadEsm<typeof import('file-type')>('file-type');
+      const { fileTypeFromBuffer } = await import('file-type');
       const fileType = await fileTypeFromBuffer(file.buffer);
 
       if (fileType) {
@@ -81,14 +82,44 @@ export class FileTypeValidator extends FileValidator<
         return !!fileType.mime.match(this.validationOptions.fileType);
       }
 
+      if (this.validationOptions.fallbackToMimetype) {
+        if (file.mimetype.match(this.validationOptions.fileType)) {
+          return true;
+        }
+
+        // 5. Additional fallback: check extension for `application/octet-stream`
+        if (file.mimetype === 'application/octet-stream') {
+          const extension = file.originalname?.split('.').pop()?.toLowerCase();
+
+          // Add more extensions and their MIME mappings as needed
+          const extensionMimeMap: Record<string, string> = {
+            csv: 'text/csv',
+            txt: 'text/plain',
+            docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            pdf: 'application/pdf',
+            json: 'application/json',
+          };
+
+          const inferredMime = extensionMimeMap[extension || ''];
+
+          if (
+            inferredMime &&
+            inferredMime.match(this.validationOptions.fileType)
+          ) {
+            return true;
+          }
+        }
+      }
+
       /**
        * Fallback logic: If file-type cannot detect magic number (e.g. file too small),
        * Optionally fall back to mimetype string for compatibility.
        * This is useful for plain text, CSVs, or files without recognizable signatures.
        */
-      if (this.validationOptions.fallbackToMimetype) {
-        return !!file.mimetype.match(this.validationOptions.fileType);
-      }
+      // if (this.validationOptions.fallbackToMimetype) {
+      //   return !!file.mimetype.match(this.validationOptions.fileType);
+      // }
       return false;
     } catch {
       return false;
