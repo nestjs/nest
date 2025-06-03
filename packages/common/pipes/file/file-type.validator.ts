@@ -71,14 +71,14 @@ export class FileTypeValidator extends FileValidator<
 
     if (!isFileValid || !file.buffer) return false;
 
+    let detectedMime: string | undefined;
+
     try {
       // const { fileTypeFromBuffer } =
       //   await loadEsm<typeof import('file-type')>('file-type');
       const { fileTypeFromBuffer } = await import('file-type');
       const fileType = await fileTypeFromBuffer(file.buffer);
-
-      // fallback logic
-      const detectedMime = fileType?.mime || file.mimetype;
+      detectedMime = fileType?.mime || file.mimetype;
 
       // allow if JPEG
       if (!['image/jpeg', 'image/png', 'image/jpg'].includes(detectedMime)) {
