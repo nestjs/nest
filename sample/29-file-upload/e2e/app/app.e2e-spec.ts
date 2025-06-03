@@ -7,10 +7,7 @@ import { AppModule } from '../../src/app.module';
 import fs from 'fs';
 import path from 'path';
 
-const filePath = path.join(__dirname, '../../resources/nestjs.jpg');
-console.log('Checking file exists:', fs.existsSync(filePath));
-
-const imagePath = path.resolve(__dirname, '../../resources/nestjs.jpg');
+const imagePath = path?.resolve(__dirname, '../../resources/nestjs.jpg');
 console.log('imagePath', imagePath);
 
 describe('E2E FileTest', () => {
