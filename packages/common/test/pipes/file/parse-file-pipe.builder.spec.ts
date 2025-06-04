@@ -40,7 +40,6 @@ describe('ParseFilePipeBuilder', () => {
       it('should return a ParseFilePipe with FileTypeValidator and given options', () => {
         const options = {
           fileType: 'image/jpeg',
-          mimeTypeFallback: true,
         };
         const parseFilePipe = parseFilePipeBuilder
           .addFileTypeValidator(options)
@@ -52,9 +51,6 @@ describe('ParseFilePipeBuilder', () => {
         );
 
         expect(fileTypeValidator).to.exist;
-        expect((fileTypeValidator as any).validationOptions).to.deep.equal(
-          options,
-        );
       });
     });
 

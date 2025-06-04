@@ -4,9 +4,6 @@ import { readFileSync } from 'fs';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 
-import fs from 'fs';
-import path from 'path';
-
 describe('E2E FileTest', () => {
   let app: INestApplication;
 
@@ -33,20 +30,17 @@ describe('E2E FileTest', () => {
   });
 
   it('should allow for file uploads that pass validation', async () => {
-    return (
-      request(app.getHttpServer())
-        .post('/file/pass-validation')
-        //.attach('file', './resources/nestjs.jpg')
-        .attach('file', path.join(__dirname, '../../resources/nestjs.jpg'))
-        .field('name', 'test')
-        .expect(201)
-        .expect({
-          body: {
-            name: 'test',
-          },
-          file: readFileSync('./resources/nestjs.jpg').toString(),
-        })
-    );
+    return request(app.getHttpServer())
+      .post('/file/pass-validation')
+      .attach('file', './resources/nestjs.jpg')
+      .field('name', 'test')
+      .expect(201)
+      .expect({
+        body: {
+          name: 'test',
+        },
+        file: readFileSync('./resources/nestjs.jpg').toString(),
+      });
   });
 
   it('should throw for file uploads that do not pass validation', async () => {
