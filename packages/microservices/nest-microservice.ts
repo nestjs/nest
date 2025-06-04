@@ -144,6 +144,11 @@ export class NestMicroservice
    * @returns {this}
    */
   public useWebSocketAdapter(adapter: WebSocketAdapter): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Cannot apply WebSocket adapter: registration must occur before initialization.',
+      );
+    }
     this.applicationConfig.setIoAdapter(adapter);
     return this;
   }
@@ -154,6 +159,11 @@ export class NestMicroservice
    * @param {...ExceptionFilter} filters
    */
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Cannot apply global exception filters: registration must occur before initialization.',
+      );
+    }
     this.applicationConfig.useGlobalFilters(...filters);
     filters.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -170,6 +180,11 @@ export class NestMicroservice
    * @param {...PipeTransform} pipes
    */
   public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Global pipes registered after initialization will not be applied.',
+      );
+    }
     this.applicationConfig.useGlobalPipes(...pipes);
     pipes.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -186,6 +201,11 @@ export class NestMicroservice
    * @param {...NestInterceptor} interceptors
    */
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Cannot apply global interceptors: registration must occur before initialization.',
+      );
+    }
     this.applicationConfig.useGlobalInterceptors(...interceptors);
     interceptors.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -197,6 +217,11 @@ export class NestMicroservice
   }
 
   public useGlobalGuards(...guards: CanActivate[]): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Cannot apply global guards: registration must occur before initialization.',
+      );
+    }
     this.applicationConfig.useGlobalGuards(...guards);
     guards.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
