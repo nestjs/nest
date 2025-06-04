@@ -7,9 +7,6 @@ import { AppModule } from '../../src/app.module';
 import fs from 'fs';
 import path from 'path';
 
-const imagePath = path?.resolve(__dirname, '../../resources/nestjs.jpg');
-console.log('imagePath', imagePath);
-
 describe('E2E FileTest', () => {
   let app: INestApplication;
 
