@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { JSONCodec } from 'nats';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { NatsContext } from '../../ctx-host';
@@ -7,7 +6,7 @@ import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerNats } from '../../server/server-nats';
 import { objectToMap } from './utils/object-to-map';
 
-// type NatsMsg = import('nats').Msg;
+// type NatsMsg = import('@nats-io/nats-core').Msg;
 type NatsMsg = any;
 
 describe('ServerNats', () => {
@@ -164,18 +163,19 @@ describe('ServerNats', () => {
     });
     it('should call "handleEvent" if identifier is not present', async () => {
       const handleEventSpy = sinon.spy(server, 'handleEvent');
-      const data = JSONCodec().encode({ id: 10 });
+      const data = JSON.stringify({ id: 10 });
       const natsMsg: NatsMsg = {
         data,
         subject: channel,
         sid: +id,
         respond: sinon.spy(),
+        json: () => JSON.parse(data),
       };
       await server.handleMessage(channel, natsMsg);
       expect(handleEventSpy.called).to.be.true;
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern does not exist in messageHandlers object`, async () => {
-      const data = JSONCodec().encode({
+      const data = JSON.stringify({
         id,
         pattern: 'test',
         data: 'test',
@@ -185,6 +185,7 @@ describe('ServerNats', () => {
         subject: channel,
         sid: +id,
         respond: sinon.spy(),
+        json: () => JSON.parse(data),
       };
 
       await server.handleMessage(channel, natsMsg);
@@ -205,7 +206,7 @@ describe('ServerNats', () => {
       const headers = {};
       const natsContext = new NatsContext([channel, headers]);
 
-      const data = JSONCodec().encode({
+      const data = JSON.stringify({
         pattern: channel,
         data: 'test',
         id,
@@ -216,6 +217,7 @@ describe('ServerNats', () => {
         sid: +id,
         respond: sinon.spy(),
         headers,
+        json: () => JSON.parse(data),
       };
       await server.handleMessage(channel, natsMsg);
       expect(handler.calledWith('test', natsContext)).to.be.true;
@@ -230,6 +232,7 @@ describe('ServerNats', () => {
         subject: '',
         sid: +id,
         respond: sinon.spy(),
+        json: () => JSON.parse(''),
       };
       expect(typeof server.getPublisher(natsMsg, id)).to.be.eql('function');
     });
@@ -241,13 +244,13 @@ describe('ServerNats', () => {
         sid: +id,
         respond: sinon.spy(),
         reply: replyTo,
-      };
+      } as NatsMsg;
       const publisher = server.getPublisher(natsMsg, id);
 
       const respond = 'test';
       publisher({ respond, id });
-      expect(natsMsg.respond.calledWith(JSONCodec().encode({ respond, id }))).to
-        .be.true;
+      expect(natsMsg.respond.calledWith(JSON.stringify({ respond, id }))).to.be
+        .true;
     });
     it(`should not call "publish" when replyTo NOT provided`, () => {
       const replyTo = undefined;
@@ -257,7 +260,7 @@ describe('ServerNats', () => {
         reply: replyTo,
         sid: +id,
         respond: sinon.spy(),
-      };
+      } as NatsMsg;
       const publisher = server.getPublisher(natsMsg, id);
 
       const respond = 'test';

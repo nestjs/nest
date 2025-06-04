@@ -1,30 +1,23 @@
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { NatsCodec } from '../external/nats-codec.interface';
 import { IncomingEvent, IncomingRequest } from '../interfaces';
 import { IncomingRequestDeserializer } from './incoming-request.deserializer';
 
-let natsPackage = {} as any;
+// To enable type safety for Nats. This cant be uncommented by default
+// because it would require the user to install the nats package even if they dont use Nats
+// Otherwise, TypeScript would fail to compile the code.
+//
+// type NatsMsg = import('@nats-io/transport-node').Msg;
+
+type NatsMsg = any;
 
 /**
  * @publicApi
  */
 export class NatsRequestJSONDeserializer extends IncomingRequestDeserializer {
-  private readonly jsonCodec: NatsCodec<unknown>;
-
-  constructor() {
-    super();
-
-    natsPackage = loadPackage('nats', NatsRequestJSONDeserializer.name, () =>
-      require('nats'),
-    );
-    this.jsonCodec = natsPackage.JSONCodec();
-  }
-
   deserialize(
-    value: Uint8Array,
+    value: NatsMsg,
     options?: Record<string, any>,
   ): IncomingRequest | IncomingEvent {
-    const decodedRequest = this.jsonCodec.decode(value);
+    const decodedRequest = value.json();
     return super.deserialize(decodedRequest, options);
   }
 }
