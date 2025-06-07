@@ -82,6 +82,15 @@ export class InstanceWrapper<T = any> {
     | undefined;
   private isTreeStatic: boolean | undefined;
   private isTreeDurable: boolean | undefined;
+  private _hierarchyLevel = 0;
+
+  get hierarchyLevel(): number {
+    return this._hierarchyLevel;
+  }
+
+  set hierarchyLevel(level: number) {
+    this._hierarchyLevel = level;
+  }
 
   constructor(
     metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>> = {},
