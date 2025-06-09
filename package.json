@@ -123,7 +123,7 @@
     "chai-as-promised": "7.1.2",
     "clang-format": "1.8.0",
     "concurrently": "9.1.2",
-    "conventional-changelog": "7.0.2",
+    "conventional-changelog": "7.1.0",
     "core-js": "3.42.0",
     "coveralls": "3.1.1",
     "delete-empty": "3.0.0",
