@@ -1,7 +1,7 @@
 import { HttpServer } from '@nestjs/common';
 import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { isEmptyArray } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
 import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context';
@@ -37,7 +37,7 @@ export class RouterExceptionFilters extends BaseExceptionFilterContext {
       contextId,
       inquirerId,
     );
-    if (isEmpty(filters)) {
+    if (isEmptyArray(filters)) {
       return exceptionHandler;
     }
     exceptionHandler.setCustomFilters(filters.reverse());
