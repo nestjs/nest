@@ -134,7 +134,7 @@
     "eslint-plugin-prettier": "5.4.1",
     "eventsource": "4.0.0",
     "fancy-log": "2.0.0",
-    "fastify": "5.3.3",
+    "fastify": "5.4.0",
     "globals": "16.2.0",
     "graphql": "16.11.0",
     "graphql-subscriptions": "3.0.0",
