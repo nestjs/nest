@@ -172,7 +172,7 @@
     "socket.io-client": "4.8.1",
     "subscriptions-transport-ws": "0.11.0",
     "supertest": "7.1.1",
-    "ts-morph": "25.0.1",
+    "ts-morph": "26.0.0",
     "ts-node": "10.9.2",
     "typeorm": "0.3.24",
     "typescript": "5.7.3",
