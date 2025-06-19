@@ -21,6 +21,9 @@ export const RQM_DEFAULT_QUEUE_OPTIONS = {};
 export const RQM_DEFAULT_NOACK = true;
 export const RQM_DEFAULT_PERSISTENT = false;
 export const RQM_DEFAULT_NO_ASSERT = false;
+export const RMQ_SEPARATOR = '.';
+export const RMQ_WILDCARD_SINGLE = '*';
+export const RMQ_WILDCARD_ALL = '#';
 
 export const ECONNREFUSED = 'ECONNREFUSED';
 export const CONN_ERR = 'CONN_ERR';
