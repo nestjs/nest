@@ -311,9 +311,7 @@ describe('ServerRMQ', () => {
     let matchRmqPattern: (pattern: string, routingKey: string) => boolean;
 
     beforeEach(() => {
-      matchRmqPattern = (untypedServer as any).matchRmqPattern.bind(
-        untypedServer,
-      );
+      matchRmqPattern = untypedServer.matchRmqPattern.bind(untypedServer);
     });
 
     describe('exact matches', () => {
