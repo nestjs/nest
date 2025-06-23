@@ -48,7 +48,7 @@
     "tsconfig-paths": "4.2.0",
     "eslint": "9.29.0",
     "eslint-config-prettier": "10.1.5",
-    "eslint-plugin-import": "2.31.0",
+    "eslint-plugin-import": "2.32.0",
     "eslint-plugin-prettier": "5.5.0",
     "globals": "16.2.0",
     "typescript": "5.7.3",
