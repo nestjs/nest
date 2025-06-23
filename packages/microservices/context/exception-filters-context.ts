@@ -1,6 +1,6 @@
 import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
 import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { isEmptyArray } from '@nestjs/common/utils/shared.utils';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context';
 import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
@@ -38,7 +38,7 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
       contextId,
       inquirerId,
     );
-    if (isEmpty(filters)) {
+    if (isEmptyArray(filters)) {
       return exceptionHandler;
     }
     exceptionHandler.setCustomFilters(filters.reverse());
