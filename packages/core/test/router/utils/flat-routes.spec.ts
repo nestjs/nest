@@ -17,6 +17,12 @@ describe('flattenRoutePaths', () => {
     @Module({})
     class ChildModule4 {}
     @Module({})
+    class ChildModule5 {}
+    @Module({})
+    class ChildModule6 {}
+    @Module({})
+    class ChildParentPathModule {}
+    @Module({})
     class ParentChildModule {}
     @Module({})
     class ChildChildModule2 {}
@@ -70,6 +76,25 @@ describe('flattenRoutePaths', () => {
               ChildModule4,
             ],
           },
+          {
+            path: 'child3',
+            children: [
+              {
+                path: '',
+                module: ChildModule5,
+                children: [{ path: 'child', module: ChildParentPathModule }],
+              },
+            ],
+          },
+          {
+            path: 'child4',
+            children: [
+              {
+                path: '/',
+                module: ChildModule6,
+              },
+            ],
+          },
         ],
       },
       { path: '/v1', children: [AuthModule, CatsModule, DogsModule] },
@@ -91,6 +116,9 @@ describe('flattenRoutePaths', () => {
       },
       { path: '/parent/child2', module: ChildModule4 },
       { path: '/parent/child2/child', module: ChildModule3 },
+      { path: '/parent/child3', module: ChildModule5 },
+      { path: '/parent/child3/child', module: ChildParentPathModule },
+      { path: '/parent/child4', module: ChildModule6 },
       { path: '/v1', module: AuthModule },
       { path: '/v1', module: CatsModule },
       { path: '/v1', module: DogsModule },
