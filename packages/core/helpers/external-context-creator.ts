@@ -5,7 +5,7 @@ import {
   Controller,
   PipeTransform,
 } from '@nestjs/common/interfaces';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { isEmptyArray } from '@nestjs/common/utils/shared.utils';
 import { isObservable, lastValueFrom } from 'rxjs';
 import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context';
 import { GuardsConsumer, GuardsContextCreator } from '../guards';
@@ -323,7 +323,7 @@ export class ExternalContextCreator {
     { metatype, type, data }: { metatype: any; type: any; data: any },
     pipes: PipeTransform[],
   ): Promise<any> {
-    return isEmpty(pipes)
+    return isEmptyArray(pipes)
       ? value
       : this.pipesConsumer.apply(value, { metatype, type, data }, pipes);
   }
