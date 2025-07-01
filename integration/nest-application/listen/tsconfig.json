@@ -26,16 +26,13 @@
       "@nestjs/platform-express": ["../../../packages/platform-express"],
       "@nestjs/platform-express/*": ["../../../packages/platform-express/*"],
       "@nestjs/platform-socket.io": ["../../../packages/platform-socket.io"],
-      "@nestjs/platform-socket.io/*": ["../../../packages/platform-socket.io/*"],
+      "@nestjs/platform-socket.io/*": [
+        "../../../packages/platform-socket.io/*"
+      ],
       "@nestjs/platform-ws": ["../../../packages/platform-ws"],
       "@nestjs/platform-ws/*": ["../../../packages/platform-ws/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "e2e/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-  ]
+  "include": ["src/**/*", "e2e/**/*"],
+  "exclude": ["node_modules"]
 }

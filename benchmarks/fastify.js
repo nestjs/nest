@@ -3,5 +3,5 @@
 const fastify = require('fastify')();
 fastify.get('/', async (req, reply) => reply.send('Hello world'));
 fastify.listen({
-  port: 3000
+  port: 3000,
 });

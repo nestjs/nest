@@ -10,7 +10,7 @@ const projectDir = __dirname;
 const tsconfigPath = path.join(projectDir, 'tools/gulp/tsconfig.json');
 
 require('ts-node').register({
-  project: tsconfigPath
+  project: tsconfigPath,
 });
 
 require('./tools/gulp/gulpfile');
