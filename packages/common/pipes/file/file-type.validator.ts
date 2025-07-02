@@ -63,7 +63,7 @@ export class FileTypeValidator extends FileValidator<
     const isFileValid = !!file && 'mimetype' in file;
 
     // Skip magic number validation if set
-    if (this.validationOptions.skipMagicNumbersValidation) {
+    if (this.validationOptions?.skipMagicNumbersValidation) {
       return (
         isFileValid && !!file.mimetype.match(this.validationOptions.fileType)
       );
