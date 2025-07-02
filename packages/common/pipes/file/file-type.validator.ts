@@ -56,40 +56,42 @@ export class FileTypeValidator extends FileValidator<
   }
 
   async isValid(file?: IFile): Promise<boolean> {
-    if (!this.validationOptions) {
-      return true;
-    }
-
     const isFileValid = !!file && 'mimetype' in file;
+    console.log('isFileValid', isFileValid);
 
-    // Skip magic number validation if set
-    if (this.validationOptions?.skipMagicNumbersValidation) {
-      return (
-        isFileValid && !!file.mimetype.match(this.validationOptions.fileType)
-      );
+    if (!isFileValid || !file.buffer) {
+      console.log('Fallback path hit');
+      if (
+        this.validationOptions?.fallbackToMimetype ||
+        this.validationOptions?.skipMagicNumbersValidation
+      ) {
+        return !!file?.mimetype?.match(this.validationOptions.fileType);
+      }
+      return false;
     }
 
-    if (!isFileValid || !file.buffer) return false;
+    if (this.validationOptions?.skipMagicNumbersValidation) {
+      console.log('Skipping magic number check');
+      return !!file.mimetype.match(this.validationOptions.fileType);
+    }
 
     try {
       const { fileTypeFromBuffer } = await loadEsm<any>('file-type');
       const fileType = await fileTypeFromBuffer(file.buffer);
+      console.log('Detected fileType:', fileType);
 
       if (fileType) {
-        // Match detected mime type against allowed type
         return !!fileType.mime.match(this.validationOptions.fileType);
       }
 
-      /**
-       * Fallback logic: If file-type cannot detect magic number (e.g. file too small),
-       * Optionally fall back to mimetype string for compatibility.
-       * This is useful for plain text, CSVs, or files without recognizable signatures.
-       */
-      if (this.validationOptions.fallbackToMimetype) {
+      if (this.validationOptions?.fallbackToMimetype) {
+        console.log('Fallback to mimetype:', file.mimetype);
         return !!file.mimetype.match(this.validationOptions.fileType);
       }
+
       return false;
-    } catch {
+    } catch (err) {
+      console.error('Error in fileTypeFromBuffer:', err);
       return false;
     }
   }
