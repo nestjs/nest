@@ -67,7 +67,6 @@
     "express": "5.1.0",
     "fast-json-stringify": "6.0.1",
     "fast-safe-stringify": "2.1.1",
-    "file-type": "21.0.0",
     "iterare": "1.2.1",
     "load-esm": "1.0.2",
     "object-hash": "3.0.0",
@@ -176,6 +175,7 @@
     "ts-node": "10.9.2",
     "typeorm": "0.3.25",
     "typescript": "5.7.3",
+    "file-type" : "21.0.0",
     "typescript-eslint": "8.35.1",
     "wrk": "1.2.1",
     "ws": "8.18.3"
