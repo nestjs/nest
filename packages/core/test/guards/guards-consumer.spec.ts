@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import { GuardsConsumer } from '../../guards/guards-consumer';
+import { AsyncLocalStorage } from 'async_hooks';
 
 describe('GuardsConsumer', () => {
   let consumer: GuardsConsumer;
@@ -42,6 +43,34 @@ describe('GuardsConsumer', () => {
             null!,
           );
           expect(canActivate).to.be.true;
+        });
+      });
+      describe('when sync guards initialize AsyncLocalStorages', () => {
+        it('should keep local storages accessible', async () => {
+          const storage1 = new AsyncLocalStorage<number>();
+          const storage2 = new AsyncLocalStorage<number>();
+          const canActivate = await consumer.tryActivate(
+            [
+              {
+                canActivate: () => {
+                  storage1.enterWith(1);
+                  return true;
+                },
+              },
+              {
+                canActivate: () => {
+                  storage2.enterWith(2);
+                  return true;
+                },
+              },
+            ],
+            [],
+            { constructor: null },
+            null!,
+          );
+          expect(canActivate).to.be.true;
+          expect(storage1.getStore()).to.equal(1);
+          expect(storage2.getStore()).to.equal(2);
         });
       });
     });
