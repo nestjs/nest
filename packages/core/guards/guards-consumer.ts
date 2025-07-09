@@ -20,6 +20,12 @@ export class GuardsConsumer {
 
     for (const guard of guards) {
       const result = guard.canActivate(context);
+      if (typeof result === 'boolean') {
+        if (!result) {
+          return false;
+        }
+        continue;
+      }
       if (await this.pickResult(result)) {
         continue;
       }
