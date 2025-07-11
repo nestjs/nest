@@ -13,11 +13,6 @@
     "allowJs": true,
     "outDir": "./dist"
   },
-  "include": [
-    "src/**/*",
-    "e2e/**/*"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["src/**/*", "e2e/**/*"],
+  "exclude": ["node_modules"]
 }

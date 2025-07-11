@@ -31,5 +31,5 @@
       "@nestjs/platform-ws/*": ["../../packages/platform-ws/*"]
     }
   },
-  "include": ["src/**/*", "e2e/**/*"],
+  "include": ["src/**/*", "e2e/**/*"]
 }
