@@ -554,7 +554,7 @@ export class Module {
     return this._injectables.has(token);
   }
 
-  public getProviderByKey<T = any>(name: InjectionToken): InstanceWrapper<T> {
+  public getProviderByKey<T = any>(name: InjectionToken<T>): InstanceWrapper<T> {
     return this._providers.get(name) as InstanceWrapper<T>;
   }
 
