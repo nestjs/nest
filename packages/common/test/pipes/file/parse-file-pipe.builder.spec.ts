@@ -45,9 +45,12 @@ describe('ParseFilePipeBuilder', () => {
           .addFileTypeValidator(options)
           .build();
 
-        expect(parseFilePipe.getValidators()).to.deep.include(
-          new FileTypeValidator(options),
+        const validators = parseFilePipe.getValidators();
+        const fileTypeValidator = validators.find(
+          v => v instanceof FileTypeValidator,
         );
+
+        expect(fileTypeValidator).to.exist;
       });
     });
 

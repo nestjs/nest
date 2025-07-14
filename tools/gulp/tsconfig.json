@@ -12,13 +12,9 @@
     "noEmitOnError": true,
     "noImplicitAny": false,
     "target": "ES2021",
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "typeRoots": ["./typings", "../../node_modules/@types/"],
-    "baseUrl": ".",
+    "baseUrl": "."
   },
-  "files": [
-    "gulpfile.ts"
-  ]
+  "files": ["gulpfile.ts"]
 }

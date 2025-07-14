@@ -31,12 +31,6 @@
       "@nestjs/platform-ws/*": ["../../packages/platform-ws/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "e2e/**/*",
-    "test/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-  ]
+  "include": ["src/**/*", "e2e/**/*", "test/**/*"],
+  "exclude": ["node_modules"]
 }

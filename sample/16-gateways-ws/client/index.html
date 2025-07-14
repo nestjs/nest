@@ -2,7 +2,7 @@
   <head>
     <script>
       const socket = new WebSocket('ws://localhost:8080');
-      socket.onopen = function() {
+      socket.onopen = function () {
         console.log('Connected');
         socket.send(
           JSON.stringify({
@@ -10,7 +10,7 @@
             data: 'test',
           }),
         );
-        socket.onmessage = function(data) {
+        socket.onmessage = function (data) {
           console.log(data);
         };
       };

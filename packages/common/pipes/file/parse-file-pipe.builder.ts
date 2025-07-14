@@ -21,7 +21,12 @@ export class ParseFilePipeBuilder {
   }
 
   addFileTypeValidator(options: FileTypeValidatorOptions) {
-    return this.addValidator(new FileTypeValidator(options));
+    const enhancedOptions = {
+      ...options,
+      mimeTypeFallback: true, // Enables fallback to file extension if mime-type is `application/octet-stream`
+    };
+
+    return this.addValidator(new FileTypeValidator(enhancedOptions));
   }
 
   addValidator(validator: FileValidator) {

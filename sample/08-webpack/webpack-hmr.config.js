@@ -1,6 +1,6 @@
 const nodeExternals = require('webpack-node-externals');
 
-module.exports = function(options, webpack) {
+module.exports = function (options, webpack) {
   return {
     ...options,
     entry: ['webpack/hot/poll?100', options.entry],
