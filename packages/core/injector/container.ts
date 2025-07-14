@@ -67,6 +67,10 @@ export class NestContainer {
     return this._applicationConfig;
   }
 
+  get contextOptions(): NestApplicationContextOptions | undefined {
+    return this._contextOptions;
+  }
+
   public setHttpAdapter(httpAdapter: any) {
     this.internalProvidersStorage.httpAdapter = httpAdapter;
 

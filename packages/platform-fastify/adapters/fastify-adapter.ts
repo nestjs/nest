@@ -145,6 +145,16 @@ export class FastifyAdapter<
   protected _pathPrefix?: string;
 
   private _isParserRegistered: boolean;
+  private onRequestHook?: (
+    request: TRequest,
+    reply: TReply,
+    done: (err?: Error) => void,
+  ) => void | Promise<void>;
+  private onResponseHook?: (
+    request: TRequest,
+    reply: TReply,
+    done: (err?: Error) => void,
+  ) => void | Promise<void>;
   private isMiddieRegistered: boolean;
   private versioningOptions?: VersioningOptions;
   private readonly versionConstraint = {
@@ -249,6 +259,42 @@ export class FastifyAdapter<
     if ((instanceOrOptions as FastifyAdapterBaseOptions)?.skipMiddie) {
       this.isMiddieRegistered = true;
     }
+
+    this.instance.addHook('onRequest', (request, reply, done) => {
+      if (this.onRequestHook) {
+        this.onRequestHook(request as TRequest, reply as TReply, done);
+      } else {
+        done();
+      }
+    });
+
+    this.instance.addHook('onResponse', (request, reply, done) => {
+      if (this.onResponseHook) {
+        this.onResponseHook(request as TRequest, reply as TReply, done);
+      } else {
+        done();
+      }
+    });
+  }
+
+  public setOnRequestHook(
+    hook: (
+      request: TRequest,
+      reply: TReply,
+      done: (err?: Error) => void,
+    ) => void | Promise<void>,
+  ) {
+    this.onRequestHook = hook;
+  }
+
+  public setOnResponseHook(
+    hook: (
+      request: TRequest,
+      reply: TReply,
+      done: (err?: Error) => void,
+    ) => void | Promise<void>,
+  ) {
+    this.onResponseHook = hook;
   }
 
   public async init() {

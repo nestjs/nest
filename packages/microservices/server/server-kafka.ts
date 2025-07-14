@@ -187,9 +187,16 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     replyTopic: string,
     replyPartition: string,
     correlationId: string,
+    context: KafkaContext,
   ): (data: any) => Promise<RecordMetadata[]> {
     return (data: any) =>
-      this.sendMessage(data, replyTopic, replyPartition, correlationId);
+      this.sendMessage(
+        data,
+        replyTopic,
+        replyPartition,
+        correlationId,
+        context,
+      );
   }
 
   public async handleMessage(payload: EachMessagePayload) {
@@ -225,6 +232,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       replyTopic,
       replyPartition,
       correlationId,
+      kafkaContext,
     );
 
     if (!handler) {
@@ -233,15 +241,20 @@ export class ServerKafka extends Server<never, KafkaStatus> {
         err: NO_MESSAGE_HANDLER,
       });
     }
+    return this.onProcessingStartHook(
+      this.transportId,
+      kafkaContext,
+      async () => {
+        const response$ = this.transformToObservable(
+          handler(packet.data, kafkaContext),
+        );
 
-    const response$ = this.transformToObservable(
-      handler(packet.data, kafkaContext),
+        const replayStream$ = new ReplaySubject();
+        await this.combineStreamsAndThrowIfRetriable(response$, replayStream$);
+
+        this.send(replayStream$, publish);
+      },
     );
-
-    const replayStream$ = new ReplaySubject();
-    await this.combineStreamsAndThrowIfRetriable(response$, replayStream$);
-
-    this.send(replayStream$, publish);
   }
 
   public unwrap<T>(): T {
@@ -293,6 +306,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     replyTopic: string,
     replyPartition: string | undefined | null,
     correlationId: string,
+    context: KafkaContext,
   ): Promise<RecordMetadata[]> {
     const outgoingMessage = await this.serializer.serialize(message.response);
     this.assignReplyPartition(replyPartition, outgoingMessage);
@@ -307,7 +321,9 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       },
       this.options.send || {},
     );
-    return this.producer!.send(replyMessage);
+    return this.producer!.send(replyMessage).finally(() => {
+      this.onProcessingEndHook?.(this.transportId, context);
+    });
   }
 
   public assignIsDisposedHeader(
@@ -362,10 +378,14 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     if (!handler) {
       return this.logger.error(NO_EVENT_HANDLER`${pattern}`);
     }
-    const resultOrStream = await handler(packet.data, context);
-    if (isObservable(resultOrStream)) {
-      await lastValueFrom(resultOrStream);
-    }
+
+    return this.onProcessingStartHook(this.transportId, context, async () => {
+      const resultOrStream = await handler(packet.data, context);
+      if (isObservable(resultOrStream)) {
+        await lastValueFrom(resultOrStream);
+        this.onProcessingEndHook?.(this.transportId, context);
+      }
+    });
   }
 
   protected initializeSerializer(options: KafkaOptions['options']) {

@@ -57,15 +57,20 @@ export abstract class Server<
   protected readonly logger: LoggerService = new Logger(Server.name);
   protected serializer: ConsumerSerializer;
   protected deserializer: ConsumerDeserializer;
+  protected onProcessingStartHook: (
+    transportId: Transport | symbol,
+    context: BaseRpcContext,
+    done: () => Promise<any>,
+  ) => void = (
+    transportId: Transport | symbol,
+    context: BaseRpcContext,
+    done: () => Promise<any>,
+  ) => done();
+  protected onProcessingEndHook: (
+    transportId: Transport | symbol,
+    context: BaseRpcContext,
+  ) => void;
   protected _status$ = new ReplaySubject<Status>(1);
-
-  /**
-   *  Sets the transport identifier.
-   *  @param transportId Unique transport identifier.
-   */
-  public setTransportId(transportId: Transport | symbol): void {
-    this.transportId = transportId;
-  }
 
   /**
    * Returns an observable that emits status changes.
@@ -83,6 +88,7 @@ export abstract class Server<
     EventKey extends keyof EventsMap = keyof EventsMap,
     EventCallback extends EventsMap[EventKey] = EventsMap[EventKey],
   >(event: EventKey, callback: EventCallback): any;
+
   /**
    * Returns an instance of the underlying server/broker instance,
    * or a group of servers if there are more than one.
@@ -94,10 +100,41 @@ export abstract class Server<
    * @param callback Function to be called upon initialization
    */
   public abstract listen(callback: (...optionalParams: unknown[]) => any): any;
+
   /**
    * Method called when server is being terminated.
    */
   public abstract close(): any;
+
+  /**
+   * Sets the transport identifier.
+   * @param transportId Unique transport identifier.
+   */
+  public setTransportId(transportId: Transport | symbol): void {
+    this.transportId = transportId;
+  }
+
+  /**
+   * Sets a hook that will be called when processing starts.
+   */
+  public setOnProcessingStartHook(
+    hook: (
+      transportId: Transport | symbol,
+      context: unknown,
+      done: () => Promise<any>,
+    ) => void,
+  ): void {
+    this.onProcessingStartHook = hook;
+  }
+
+  /**
+   * Sets a hook that will be called when processing ends.
+   */
+  public setOnProcessingEndHook(
+    hook: (transportId: Transport | symbol, context: unknown) => void,
+  ): void {
+    this.onProcessingEndHook = hook;
+  }
 
   public addHandler(
     pattern: any,
@@ -177,14 +214,25 @@ export abstract class Server<
     if (!handler) {
       return this.logger.error(NO_EVENT_HANDLER`${pattern}`);
     }
-    const resultOrStream = await handler(packet.data, context);
-    if (isObservable(resultOrStream)) {
-      const connectableSource = connectable(resultOrStream, {
-        connector: () => new Subject(),
-        resetOnDisconnect: false,
-      });
-      connectableSource.connect();
-    }
+    return this.onProcessingStartHook(this.transportId!, context, async () => {
+      const resultOrStream = await handler(packet.data, context);
+      if (isObservable(resultOrStream)) {
+        const connectableSource = connectable(
+          resultOrStream.pipe(
+            finalize(() =>
+              this.onProcessingEndHook?.(this.transportId!, context),
+            ),
+          ),
+          {
+            connector: () => new Subject(),
+            resetOnDisconnect: false,
+          },
+        );
+        connectableSource.connect();
+      } else {
+        this.onProcessingEndHook?.(this.transportId!, context);
+      }
+    });
   }
 
   public transformToObservable<T>(

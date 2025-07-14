@@ -50,7 +50,11 @@ export class MicroservicesModule<
       new InterceptorsConsumer(),
     );
 
-    const injector = new Injector();
+    const injector = new Injector({
+      preview: container.contextOptions?.preview!,
+      instanceDecorator:
+        container.contextOptions?.instrument?.instanceDecorator,
+    });
     this.listenersController = new ListenersController(
       this.clientsContainer,
       contextCreator,

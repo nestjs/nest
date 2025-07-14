@@ -84,8 +84,26 @@ export interface InjectorDependencyContext {
 
 export class Injector {
   private logger: LoggerService = new Logger('InjectorLogger');
+  private readonly instanceDecorator: (target: unknown) => unknown = (
+    target: unknown,
+  ) => target;
 
-  constructor(private readonly options?: { preview: boolean }) {}
+  constructor(
+    private readonly options?: {
+      /**
+       * Whether to enable preview mode.
+       */
+      preview: boolean;
+      /**
+       * Function to decorate a freshly created instance.
+       */
+      instanceDecorator?: (target: unknown) => unknown;
+    },
+  ) {
+    if (options?.instanceDecorator) {
+      this.instanceDecorator = options.instanceDecorator;
+    }
+  }
 
   public loadPrototype<T>(
     { token }: InstanceWrapper<T>,
@@ -768,11 +786,14 @@ export class Injector {
             new (metatype as Type<any>)(...instances),
           )
         : new (metatype as Type<any>)(...instances);
+
+      instanceHost.instance = this.instanceDecorator(instanceHost.instance);
     } else if (isInContext) {
       const factoryReturnValue = (targetMetatype.metatype as any as Function)(
         ...instances,
       );
       instanceHost.instance = await factoryReturnValue;
+      instanceHost.instance = this.instanceDecorator(instanceHost.instance);
     }
     instanceHost.isResolved = true;
     return instanceHost.instance;

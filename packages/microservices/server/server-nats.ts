@@ -153,7 +153,11 @@ export class ServerNats<
     if (isUndefined((message as IncomingRequest).id)) {
       return this.handleEvent(channel, message, natsCtx);
     }
-    const publish = this.getPublisher(natsMsg, (message as IncomingRequest).id);
+    const publish = this.getPublisher(
+      natsMsg,
+      (message as IncomingRequest).id,
+      natsCtx,
+    );
     const handler = this.getHandlerByPattern(channel);
     if (!handler) {
       const status = 'error';
@@ -164,18 +168,22 @@ export class ServerNats<
       };
       return publish(noHandlerPacket);
     }
-    const response$ = this.transformToObservable(
-      await handler(message.data, natsCtx),
-    );
-    response$ && this.send(response$, publish);
+    return this.onProcessingStartHook(this.transportId, natsCtx, async () => {
+      const response$ = this.transformToObservable(
+        await handler(message.data, natsCtx),
+      );
+      response$ && this.send(response$, publish);
+    });
   }
 
-  public getPublisher(natsMsg: NatsMsg, id: string) {
+  public getPublisher(natsMsg: NatsMsg, id: string, ctx: NatsContext) {
     if (natsMsg.reply) {
       return (response: any) => {
         Object.assign(response, { id });
         const outgoingResponse: NatsRecord =
           this.serializer.serialize(response);
+
+        this.onProcessingEndHook?.(this.transportId, ctx);
         return natsMsg.respond(outgoingResponse.data, {
           headers: outgoingResponse.headers,
         });

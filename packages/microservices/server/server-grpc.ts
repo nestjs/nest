@@ -180,6 +180,11 @@ export class ServerGrpc extends Server<never, never> {
       if (!methodHandler) {
         continue;
       }
+
+      Object.defineProperty(methodHandler, 'name', {
+        value: methodName,
+        writable: false,
+      });
       service[methodName] = this.createServiceMethod(
         methodHandler,
         grpcService.prototype[methodName],
@@ -263,19 +268,36 @@ export class ServerGrpc extends Server<never, never> {
 
   public createUnaryServiceMethod(methodHandler: Function): Function {
     return async (call: GrpcCall, callback: Function) => {
-      const handler = methodHandler(call.request, call.metadata, call);
-      this.transformToObservable(await handler).subscribe({
-        next: async data => callback(null, await data),
-        error: (err: any) => callback(err),
-      });
+      return this.onProcessingStartHook(
+        this.transportId,
+        { ...call, operationId: methodHandler.name } as any,
+        async () => {
+          const handler = methodHandler(call.request, call.metadata, call);
+          this.transformToObservable(await handler).subscribe({
+            next: async data => callback(null, await data),
+            error: (err: any) => callback(err),
+            complete: () => {
+              this.onProcessingEndHook?.(this.transportId, call.request);
+            },
+          });
+        },
+      );
     };
   }
 
   public createStreamServiceMethod(methodHandler: Function): Function {
     return async (call: GrpcCall, callback: Function) => {
-      const handler = methodHandler(call.request, call.metadata, call);
-      const result$ = this.transformToObservable(await handler);
-      await this.writeObservableToGrpc(result$, call);
+      return this.onProcessingStartHook(
+        this.transportId,
+        { ...call, operationId: methodHandler.name } as any,
+        async () => {
+          const handler = methodHandler(call.request, call.metadata, call);
+          const result$ = this.transformToObservable(await handler);
+          await this.writeObservableToGrpc(result$, call);
+
+          this.onProcessingEndHook?.(this.transportId, call.request);
+        },
+      );
     };
   }
 
@@ -406,52 +428,62 @@ export class ServerGrpc extends Server<never, never> {
       call: GrpcCall,
       callback: (err: unknown, value: unknown) => void,
     ) => {
-      // Needs to be a Proxy in order to buffer messages that come before handler is executed
-      // This could happen if handler has any async guards or interceptors registered that would delay
-      // the execution.
-      const { subject, next, error, complete, cleanup } =
-        this.bufferUntilDrained();
-      call.on('data', (m: any) => next(m));
-      call.on('error', (e: any) => {
-        // Check if error means that stream ended on other end
-        const isCancelledError = String(e).toLowerCase().indexOf('cancelled');
+      return this.onProcessingStartHook(
+        this.transportId,
+        { ...call, operationId: methodHandler.name } as any,
+        async () => {
+          // Needs to be a Proxy in order to buffer messages that come before handler is executed
+          // This could happen if handler has any async guards or interceptors registered that would delay
+          // the execution.
+          const { subject, next, error, complete, cleanup } =
+            this.bufferUntilDrained();
+          call.on('data', (m: any) => next(m));
+          call.on('error', (e: any) => {
+            // Check if error means that stream ended on other end
+            const isCancelledError = String(e)
+              .toLowerCase()
+              .indexOf('cancelled');
 
-        if (isCancelledError) {
-          call.end();
-          return;
-        }
-        // If another error then just pass it along
-        error(e);
-      });
-      call.on('end', () => {
-        complete();
-        cleanup();
-      });
+            if (isCancelledError) {
+              call.end();
+              return;
+            }
+            // If another error then just pass it along
+            error(e);
+          });
+          call.on('end', () => {
+            complete();
+            cleanup();
 
-      const handler = methodHandler(
-        subject.asObservable(),
-        call.metadata,
-        call,
+            this.onProcessingEndHook?.(this.transportId, call.request);
+          });
+
+          const handler = methodHandler(
+            subject.asObservable(),
+            call.metadata,
+            call,
+          );
+          const res = this.transformToObservable(await handler);
+          if (isResponseStream) {
+            await this.writeObservableToGrpc(res, call);
+          } else {
+            const response = await lastValueFrom(
+              res.pipe(
+                takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
+                catchError(err => {
+                  callback(err, null);
+                  return EMPTY;
+                }),
+                defaultIfEmpty(undefined),
+              ),
+            );
+
+            if (!isUndefined(response)) {
+              callback(null, response);
+            }
+          }
+        },
       );
-      const res = this.transformToObservable(await handler);
-      if (isResponseStream) {
-        await this.writeObservableToGrpc(res, call);
-      } else {
-        const response = await lastValueFrom(
-          res.pipe(
-            takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
-            catchError(err => {
-              callback(err, null);
-              return EMPTY;
-            }),
-            defaultIfEmpty(undefined),
-          ),
-        );
-
-        if (!isUndefined(response)) {
-          callback(null, response);
-        }
-      }
     };
   }
 
@@ -463,15 +495,25 @@ export class ServerGrpc extends Server<never, never> {
       call: GrpcCall,
       callback: (err: unknown, value: unknown) => void,
     ) => {
-      let handlerStream: Observable<any>;
-      if (isResponseStream) {
-        handlerStream = this.transformToObservable(await methodHandler(call));
-      } else {
-        handlerStream = this.transformToObservable(
-          await methodHandler(call, callback),
-        );
-      }
-      await lastValueFrom(handlerStream);
+      return this.onProcessingStartHook(
+        this.transportId,
+        { ...call, operationId: methodHandler.name } as any,
+        async () => {
+          let handlerStream: Observable<any>;
+          if (isResponseStream) {
+            handlerStream = this.transformToObservable(
+              await methodHandler(call),
+            );
+          } else {
+            handlerStream = this.transformToObservable(
+              await methodHandler(call, callback),
+            );
+          }
+          await lastValueFrom(handlerStream).finally(() => {
+            this.onProcessingEndHook?.(this.transportId, call.request);
+          });
+        },
+      );
     };
   }
 

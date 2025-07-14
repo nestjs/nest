@@ -54,9 +54,50 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(ExpressAdapter.name);
   private readonly openConnections = new Set<Duplex>();
+  private onRequestHook?: (
+    req: express.Request,
+    res: express.Response,
+    done: () => void,
+  ) => Promise<void> | void;
+  private onResponseHook?: (
+    req: express.Request,
+    res: express.Response,
+  ) => Promise<void> | void;
 
   constructor(instance?: any) {
     super(instance || express());
+    this.instance!.use((req, res, next) => {
+      if (this.onResponseHook) {
+        res.on('finish', () => {
+          this.onResponseHook!.apply(this, [req, res]);
+        });
+      }
+
+      if (this.onRequestHook) {
+        this.onRequestHook.apply(this, [req, res, next]);
+      } else {
+        next();
+      }
+    });
+  }
+
+  public setOnRequestHook(
+    onRequestHook: (
+      req: express.Request,
+      res: express.Response,
+      done: () => void,
+    ) => Promise<void> | void,
+  ) {
+    this.onRequestHook = onRequestHook;
+  }
+
+  public setOnResponseHook(
+    onResponseHook: (
+      req: express.Request,
+      res: express.Response,
+    ) => Promise<void> | void,
+  ) {
+    this.onResponseHook = onResponseHook;
   }
 
   public reply(response: any, body: any, statusCode?: number) {

@@ -105,18 +105,26 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       });
       return socket.sendMessage(noHandlerPacket);
     }
-    const response$ = this.transformToObservable(
-      await handler(packet.data, tcpContext),
-    );
-
-    response$ &&
-      this.send(response$, data => {
-        Object.assign(data, { id: (packet as IncomingRequest).id });
-        const outgoingResponse = this.serializer.serialize(
-          data as WritePacket & PacketId,
+    return this.onProcessingStartHook(
+      this.transportId,
+      tcpContext,
+      async () => {
+        const response$ = this.transformToObservable(
+          await handler(packet.data, tcpContext),
         );
-        socket.sendMessage(outgoingResponse);
-      });
+
+        response$ &&
+          this.send(response$, data => {
+            Object.assign(data, { id: (packet as IncomingRequest).id });
+            const outgoingResponse = this.serializer.serialize(
+              data as WritePacket & PacketId,
+            );
+
+            this.onProcessingEndHook?.(this.transportId, tcpContext);
+            socket.sendMessage(outgoingResponse);
+          });
+      },
+    );
   }
 
   public handleClose(): undefined | number | NodeJS.Timer {

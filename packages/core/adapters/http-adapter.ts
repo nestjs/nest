@@ -12,6 +12,9 @@ export abstract class AbstractHttpAdapter<
 > implements HttpServer<TRequest, TResponse>
 {
   protected httpServer: TServer;
+  protected onRouteTriggered:
+    | ((requestMethod: RequestMethod, path: string) => void)
+    | undefined;
 
   constructor(protected instance?: any) {}
 
@@ -143,6 +146,16 @@ export abstract class AbstractHttpAdapter<
     return path;
   }
 
+  public setOnRouteTriggered(
+    onRouteTriggered: (requestMethod: RequestMethod, path: string) => void,
+  ) {
+    this.onRouteTriggered = onRouteTriggered;
+  }
+
+  public getOnRouteTriggered() {
+    return this.onRouteTriggered;
+  }
+
   abstract close();
   abstract initHttpServer(options: NestApplicationOptions);
   abstract useStaticAssets(...args: any[]);
@@ -174,4 +187,6 @@ export abstract class AbstractHttpAdapter<
     version: VersionValue,
     versioningOptions: VersioningOptions,
   ): (req: TRequest, res: TResponse, next: () => void) => Function;
+  abstract setOnRequestHook?(onRequestHook: Function): void;
+  abstract setOnResponseHook?(onResponseHook: Function): void;
 }
