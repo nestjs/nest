@@ -71,7 +71,7 @@ export interface ConsoleLoggerOptions {
    */
   sorted?: boolean | ((a: string, b: string) => number);
   /**
-   * Specifies the number of times to recurse while formatting object. T
+   * Specifies the number of times to recurse while formatting object.
    * This is useful for inspecting large objects. To recurse up to the maximum call stack size pass Infinity or null.
    * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
    * @default 5
