@@ -69,12 +69,12 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     this.instance!.use((req, res, next) => {
       if (this.onResponseHook) {
         res.on('finish', () => {
-          this.onResponseHook!.apply(this, [req, res]);
+          void this.onResponseHook!.apply(this, [req, res]);
         });
       }
 
       if (this.onRequestHook) {
-        this.onRequestHook.apply(this, [req, res, next]);
+        void this.onRequestHook.apply(this, [req, res, next]);
       } else {
         next();
       }
