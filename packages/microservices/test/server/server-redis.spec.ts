@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
+import { RedisContext } from '../../ctx-host';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
 import { ServerRedis } from '../../server/server-redis';
 import { objectToMap } from './utils/object-to-map';
@@ -172,16 +173,19 @@ describe('ServerRedis', () => {
 
     const id = '1';
     const pattern = 'test';
+    const context = new RedisContext([] as any);
 
     beforeEach(() => {
       publisherSpy = sinon.spy();
       pub = {
         publish: publisherSpy,
       };
-      publisher = server.getPublisher(pub, pattern, id);
+      publisher = server.getPublisher(pub, pattern, id, context);
     });
     it(`should return function`, () => {
-      expect(typeof server.getPublisher(null, null, id)).to.be.eql('function');
+      expect(typeof server.getPublisher(null, null, id, context)).to.be.eql(
+        'function',
+      );
     });
     it(`should call "publish" with expected arguments`, () => {
       const respond = 'test';

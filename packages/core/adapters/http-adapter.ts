@@ -156,6 +156,10 @@ export abstract class AbstractHttpAdapter<
     return this.onRouteTriggered;
   }
 
+  public setOnRequestHook(onRequestHook: Function): void {}
+
+  public setOnResponseHook(onResponseHook: Function): void {}
+
   abstract close();
   abstract initHttpServer(options: NestApplicationOptions);
   abstract useStaticAssets(...args: any[]);
@@ -187,6 +191,4 @@ export abstract class AbstractHttpAdapter<
     version: VersionValue,
     versioningOptions: VersioningOptions,
   ): (req: TRequest, res: TResponse, next: () => void) => Function;
-  abstract setOnRequestHook?(onRequestHook: Function): void;
-  abstract setOnResponseHook?(onResponseHook: Function): void;
 }
