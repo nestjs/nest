@@ -165,22 +165,6 @@ jobs:
           name: Integration tests
           command: npm run test:integration
 
-  codechecks_benchmarks:
-    working_directory: ~/nest
-    docker:
-      - image: cimg/node:<< pipeline.parameters.maintenance-node-version >>
-    steps:
-      - checkout
-      - *restore-cache
-      - *install-deps
-      - *build-packages
-      - run:
-          name: Install native wrk
-          command: .circleci/install-wrk.sh
-      - run:
-          name: Run codechecks with benchmarks
-          command: yarn codechecks:benchmarks
-
   samples:
     working_directory: ~/nest
     docker:
