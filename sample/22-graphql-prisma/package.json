@@ -50,7 +50,7 @@
     "eslint-config-prettier": "10.1.5",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-prettier": "5.5.1",
-    "globals": "16.2.0",
+    "globals": "16.3.0",
     "jest": "29.7.0",
     "prettier": "3.6.2",
     "prisma": "^6.2.1",
