@@ -347,6 +347,23 @@ export class ConsoleLogger implements LoggerService {
       errorStack?: unknown;
     },
   ) {
+    const logObject = this.getJsonLogObject(message, options);
+    const formattedMessage =
+      !this.options.colors && this.inspectOptions.compact === true
+        ? JSON.stringify(logObject, this.stringifyReplacer)
+        : inspect(logObject, this.inspectOptions);
+    process[options.writeStreamType ?? 'stdout'].write(`${formattedMessage}\n`);
+  }
+
+  protected getJsonLogObject(
+    message: unknown,
+    options: {
+      context: string;
+      logLevel: LogLevel;
+      writeStreamType?: 'stdout' | 'stderr';
+      errorStack?: unknown;
+    },
+  ) {
     type JsonLogObject = {
       level: LogLevel;
       pid: number;
@@ -370,12 +387,7 @@ export class ConsoleLogger implements LoggerService {
     if (options.errorStack) {
       logObject.stack = options.errorStack;
     }
-
-    const formattedMessage =
-      !this.options.colors && this.inspectOptions.compact === true
-        ? JSON.stringify(logObject, this.stringifyReplacer)
-        : inspect(logObject, this.inspectOptions);
-    process[options.writeStreamType ?? 'stdout'].write(`${formattedMessage}\n`);
+    return logObject;
   }
 
   protected formatPid(pid: number) {

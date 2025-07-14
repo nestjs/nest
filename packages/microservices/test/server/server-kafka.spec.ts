@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { AssertionError, expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
+import { KafkaContext } from '../../ctx-host';
 import { KafkaHeaders } from '../../enums';
 import {
   EachMessagePayload,
@@ -273,6 +274,7 @@ describe('ServerKafka', () => {
   });
 
   describe('getPublisher', () => {
+    const context = new KafkaContext([] as any);
     let sendMessageStub: sinon.SinonStub;
     let publisher;
 
@@ -281,15 +283,16 @@ describe('ServerKafka', () => {
         replyTopic,
         replyPartition,
         correlationId,
+        context,
       );
       sendMessageStub = sinon
         .stub(server, 'sendMessage')
         .callsFake(async () => []);
     });
     it(`should return function`, () => {
-      expect(typeof server.getPublisher(null!, null!, correlationId)).to.be.eql(
-        'function',
-      );
+      expect(
+        typeof server.getPublisher(null!, null!, correlationId, context),
+      ).to.be.eql('function');
     });
     it(`should call "publish" with expected arguments`, () => {
       const data = {
@@ -411,10 +414,11 @@ describe('ServerKafka', () => {
   });
 
   describe('sendMessage', () => {
+    const context = new KafkaContext([] as any);
     let sendSpy: sinon.SinonSpy;
 
     beforeEach(() => {
-      sendSpy = sinon.spy();
+      sendSpy = sinon.stub().callsFake(() => Promise.resolve());
       sinon.stub(server as any, 'producer').value({
         send: sendSpy,
       });
@@ -429,6 +433,7 @@ describe('ServerKafka', () => {
         replyTopic,
         replyPartition,
         correlationId,
+        context,
       );
 
       expect(
@@ -455,6 +460,7 @@ describe('ServerKafka', () => {
         replyTopic,
         undefined,
         correlationId,
+        context,
       );
 
       expect(
@@ -480,6 +486,7 @@ describe('ServerKafka', () => {
         replyTopic,
         replyPartition,
         correlationId,
+        context,
       );
 
       expect(
@@ -507,6 +514,7 @@ describe('ServerKafka', () => {
         replyTopic,
         replyPartition,
         correlationId,
+        context,
       );
 
       expect(

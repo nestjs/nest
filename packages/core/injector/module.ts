@@ -384,13 +384,16 @@ export class Module {
     enhancerSubtype?: EnhancerSubtype,
   ) {
     const { useValue: value, provide: providerToken } = provider;
+
+    const instanceDecorator =
+      this.container.contextOptions?.instrument?.instanceDecorator;
     collection.set(
       providerToken,
       new InstanceWrapper({
         token: providerToken,
         name: (providerToken as Function)?.name || providerToken,
         metatype: null!,
-        instance: value,
+        instance: instanceDecorator ? instanceDecorator(value) : value,
         isResolved: true,
         async: value instanceof Promise,
         host: this,

@@ -129,7 +129,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     }
     const publish = this.getPublisher(
       pub,
-      channel,
+      mqttContext,
       (packet as IncomingRequest).id,
     );
     const handler = this.getHandlerByPattern(channel);
@@ -143,13 +143,23 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       };
       return publish(noHandlerPacket);
     }
-    const response$ = this.transformToObservable(
-      await handler(packet.data, mqttContext),
+    return this.onProcessingStartHook(
+      this.transportId,
+      mqttContext,
+      async () => {
+        const response$ = this.transformToObservable(
+          await handler(packet.data, mqttContext),
+        );
+        response$ && this.send(response$, publish);
+      },
     );
-    response$ && this.send(response$, publish);
   }
 
-  public getPublisher(client: MqttClient, pattern: any, id: string): any {
+  public getPublisher(
+    client: MqttClient,
+    context: MqttContext,
+    id: string,
+  ): any {
     return (response: any) => {
       Object.assign(response, { id });
 
@@ -161,8 +171,10 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
 
       const outgoingResponse: string | Buffer =
         this.serializer.serialize(response);
+
+      this.onProcessingEndHook?.(this.transportId, context);
       return client.publish(
-        this.getReplyPattern(pattern),
+        this.getReplyPattern(context.getTopic()),
         outgoingResponse,
         options,
       );

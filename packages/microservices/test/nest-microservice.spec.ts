@@ -1,11 +1,11 @@
+import { ApplicationConfig } from '@nestjs/core/application-config';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
+import { Transport } from '@nestjs/microservices/enums';
+import { AsyncMicroserviceOptions } from '@nestjs/microservices/interfaces';
 import { NestMicroservice } from '@nestjs/microservices/nest-microservice';
 import { Server, ServerTCP } from '@nestjs/microservices/server';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { Transport } from '@nestjs/microservices/enums';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { AsyncMicroserviceOptions } from '@nestjs/microservices/interfaces';
 
 const createMockGraphInspector = (): GraphInspector =>
   ({
@@ -23,7 +23,10 @@ const createMockAppConfig = (): ApplicationConfig =>
 
 const mockContainer = {
   getModuleCompiler: sinon.stub(),
-  getModules: () => new Map(),
+  getModules: () =>
+    Object.assign(new Map(), {
+      addRpcTarget: sinon.spy(),
+    }),
   get: () => null,
   getHttpAdapterHost: () => undefined,
 } as any;

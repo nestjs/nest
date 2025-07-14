@@ -222,6 +222,7 @@ describe('ServerNats', () => {
     });
   });
   describe('getPublisher', () => {
+    const context = new NatsContext([] as any);
     const id = '1';
 
     it(`should return function`, () => {
@@ -231,7 +232,9 @@ describe('ServerNats', () => {
         sid: +id,
         respond: sinon.spy(),
       };
-      expect(typeof server.getPublisher(natsMsg, id)).to.be.eql('function');
+      expect(typeof server.getPublisher(natsMsg, id, context)).to.be.eql(
+        'function',
+      );
     });
     it(`should call "respond" when reply topic provided`, () => {
       const replyTo = 'test';
@@ -242,7 +245,7 @@ describe('ServerNats', () => {
         respond: sinon.spy(),
         reply: replyTo,
       };
-      const publisher = server.getPublisher(natsMsg, id);
+      const publisher = server.getPublisher(natsMsg, id, context);
 
       const respond = 'test';
       publisher({ respond, id });
@@ -258,7 +261,7 @@ describe('ServerNats', () => {
         sid: +id,
         respond: sinon.spy(),
       };
-      const publisher = server.getPublisher(natsMsg, id);
+      const publisher = server.getPublisher(natsMsg, id, context);
 
       const respond = 'test';
       publisher({ respond, id });

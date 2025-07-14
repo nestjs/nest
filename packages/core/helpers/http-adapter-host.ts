@@ -1,4 +1,4 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable, ReplaySubject, Subject } from 'rxjs';
 import { AbstractHttpAdapter } from '../adapters/http-adapter';
 
 /**
@@ -18,6 +18,7 @@ export class HttpAdapterHost<
 > {
   private _httpAdapter?: T;
   private _listen$ = new Subject<void>();
+  private _init$ = new ReplaySubject<void>();
   private isListening = false;
 
   /**
@@ -27,6 +28,9 @@ export class HttpAdapterHost<
    */
   set httpAdapter(httpAdapter: T) {
     this._httpAdapter = httpAdapter;
+
+    this._init$.next();
+    this._init$.complete();
   }
 
   /**
@@ -45,6 +49,14 @@ export class HttpAdapterHost<
    */
   get listen$(): Observable<void> {
     return this._listen$.asObservable();
+  }
+
+  /**
+   * Observable that allows to subscribe to the `init` event.
+   * This event is emitted when the HTTP application is initialized.
+   */
+  get init$(): Observable<void> {
+    return this._init$.asObservable();
   }
 
   /**

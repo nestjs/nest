@@ -64,7 +64,10 @@ export class NestMicroservice
   ) {
     super(container, config);
 
-    this.injector = new Injector({ preview: config.preview! });
+    this.injector = new Injector({
+      preview: config.preview!,
+      instanceDecorator: config.instrument?.instanceDecorator,
+    });
     this.microservicesModule.register(
       container,
       this.graphInspector,
@@ -73,6 +76,9 @@ export class NestMicroservice
     );
     this.createServer(config);
     this.selectContextModule();
+
+    const modulesContainer = this.container.getModules();
+    modulesContainer.addRpcTarget(this.serverInstance);
   }
 
   public createServer(config: CompleteMicroserviceOptions) {

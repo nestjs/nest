@@ -292,16 +292,28 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         noHandlerPacket,
         properties.replyTo,
         properties.correlationId,
+        rmqContext,
       );
     }
-    const response$ = this.transformToObservable(
-      await handler(packet.data, rmqContext),
+    return this.onProcessingStartHook(
+      this.transportId,
+      rmqContext,
+      async () => {
+        const response$ = this.transformToObservable(
+          await handler(packet.data, rmqContext),
+        );
+
+        const publish = <T>(data: T) =>
+          this.sendMessage(
+            data,
+            properties.replyTo,
+            properties.correlationId,
+            rmqContext,
+          );
+
+        response$ && this.send(response$, publish);
+      },
     );
-
-    const publish = <T>(data: T) =>
-      this.sendMessage(data, properties.replyTo, properties.correlationId);
-
-    response$ && this.send(response$, publish);
   }
 
   public async handleEvent(
@@ -321,6 +333,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     message: T,
     replyTo: any,
     correlationId: string,
+    context: RmqContext,
   ): void {
     const outgoingResponse = this.serializer.serialize(
       message as unknown as OutgoingResponse,
@@ -330,6 +343,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
 
     const buffer = Buffer.from(JSON.stringify(outgoingResponse));
     const sendOptions = { correlationId, ...options };
+
+    this.onProcessingEndHook?.(this.transportId, context);
     this.channel!.sendToQueue(replyTo, buffer, sendOptions);
   }
 

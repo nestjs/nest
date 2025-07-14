@@ -231,6 +231,8 @@ describe('ServerRMQ', () => {
   });
 
   describe('sendMessage', () => {
+    const context = new RmqContext([] as any);
+
     let channel: any;
 
     beforeEach(() => {
@@ -245,7 +247,7 @@ describe('ServerRMQ', () => {
       const replyTo = 'test';
       const correlationId = '0';
 
-      server.sendMessage(message, replyTo, correlationId);
+      server.sendMessage(message, replyTo, correlationId, context);
       expect(
         channel.sendToQueue.calledWith(
           replyTo,

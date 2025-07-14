@@ -27,7 +27,11 @@ export class InternalCoreModuleFactory {
       const logger = new Logger(LazyModuleLoader.name, {
         timestamp: false,
       });
-      const injector = new Injector();
+      const injector = new Injector({
+        preview: container.contextOptions?.preview!,
+        instanceDecorator:
+          container.contextOptions?.instrument?.instanceDecorator,
+      });
       const instanceLoader = new InstanceLoader(
         container,
         injector,

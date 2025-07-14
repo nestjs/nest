@@ -101,14 +101,14 @@ export class RouterExplorer {
   public explore<T extends HttpServer = any>(
     instanceWrapper: InstanceWrapper,
     moduleKey: string,
-    applicationRef: T,
+    httpAdapterRef: T,
     host: string | RegExp | Array<string | RegExp>,
     routePathMetadata: RoutePathMetadata,
   ) {
     const { instance } = instanceWrapper;
     const routerPaths = this.pathsExplorer.scanForPaths(instance);
     this.applyPathsToRouterProxy(
-      applicationRef,
+      httpAdapterRef,
       routerPaths,
       instanceWrapper,
       moduleKey,
@@ -234,7 +234,17 @@ export class RouterExplorer {
         const normalizedPath = router.normalizePath
           ? router.normalizePath(path)
           : path;
-        routerMethodRef(normalizedPath, routeHandler);
+
+        const httpAdapter = this.container.getHttpAdapterRef();
+        const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
+        if (onRouteTriggered) {
+          routerMethodRef(normalizedPath, (...args: unknown[]) => {
+            onRouteTriggered(requestMethod, path);
+            return routeHandler(...args);
+          });
+        } else {
+          routerMethodRef(normalizedPath, routeHandler);
+        }
 
         this.graphInspector.insertEntrypointDefinition<HttpEntrypointMetadata>(
           entrypointDefinition,

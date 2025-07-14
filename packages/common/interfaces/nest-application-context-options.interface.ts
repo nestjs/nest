@@ -53,4 +53,18 @@ export class NestApplicationContextOptions {
    * @default 'reference'
    */
   moduleIdGeneratorAlgorithm?: 'deep-hash' | 'reference';
+
+  /**
+   * Instrument the application context.
+   * This option allows you to add custom instrumentation to the application context.
+   */
+  instrument?: {
+    /**
+     * Function that decorates each instance created by the application context.
+     * This function can be used to add custom properties or methods to the instance.
+     * @param instance The instance to decorate.
+     * @returns The decorated instance.
+     */
+    instanceDecorator: (instance: unknown) => unknown;
+  };
 }

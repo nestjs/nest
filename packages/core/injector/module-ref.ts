@@ -23,7 +23,7 @@ export interface ModuleRefGetOrResolveOpts {
 }
 
 export abstract class ModuleRef extends AbstractInstanceResolver {
-  protected readonly injector = new Injector();
+  protected readonly injector: Injector;
   private _instanceLinksHost: InstanceLinksHost;
 
   protected get instanceLinksHost() {
@@ -35,6 +35,12 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
 
   constructor(protected readonly container: NestContainer) {
     super();
+
+    this.injector = new Injector({
+      preview: container.contextOptions?.preview!,
+      instanceDecorator:
+        container.contextOptions?.instrument?.instanceDecorator,
+    });
   }
 
   /**

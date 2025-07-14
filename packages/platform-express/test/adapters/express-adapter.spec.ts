@@ -19,6 +19,7 @@ describe('ExpressAdapter', () => {
         .returns(urlencodedInstance);
       const useSpy = sinon.spy(expressInstance, 'use');
       const expressAdapter = new ExpressAdapter(expressInstance);
+      useSpy.resetHistory();
 
       expressAdapter.registerParserMiddleware();
 
@@ -37,6 +38,7 @@ describe('ExpressAdapter', () => {
       expressInstance.use(function urlencodedParser() {});
       const useSpy = sinon.spy(expressInstance, 'use');
       const expressAdapter = new ExpressAdapter(expressInstance);
+      useSpy.resetHistory();
 
       expressAdapter.registerParserMiddleware();
 

@@ -145,6 +145,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       pub,
       channel,
       (packet as IncomingRequest).id,
+      redisCtx,
     );
     const handler = this.getHandlerByPattern(channel);
 
@@ -157,17 +158,24 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       };
       return publish(noHandlerPacket);
     }
-    const response$ = this.transformToObservable(
-      await handler(packet.data, redisCtx),
+    return this.onProcessingStartHook?.(
+      this.transportId,
+      redisCtx,
+      async () => {
+        const response$ = this.transformToObservable(
+          await handler(packet.data, redisCtx),
+        );
+        response$ && this.send(response$, publish);
+      },
     );
-    response$ && this.send(response$, publish);
   }
 
-  public getPublisher(pub: Redis, pattern: any, id: string) {
+  public getPublisher(pub: Redis, pattern: any, id: string, ctx: RedisContext) {
     return (response: any) => {
       Object.assign(response, { id });
       const outgoingResponse = this.serializer.serialize(response);
 
+      this.onProcessingEndHook?.(this.transportId, ctx);
       return pub.publish(
         this.getReplyPattern(pattern),
         JSON.stringify(outgoingResponse),
