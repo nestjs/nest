@@ -78,7 +78,21 @@ export class TestingModule extends NestApplicationContext {
       this.graphInspector,
       appOptions,
     );
-    return this.createAdapterProxy<T>(instance, httpAdapter);
+    const proxy = this.createAdapterProxy<T>(instance, httpAdapter);
+
+    // Auto-initialize adapters that have an init method for testing convenience
+    if (typeof (httpAdapter as any)?.init === 'function') {
+      const originalInit = (proxy as any).init;
+      (proxy as any).init = async function (this: any) {
+        await (httpAdapter as any).init();
+        if (originalInit) {
+          return originalInit.call(this);
+        }
+        return this;
+      };
+    }
+
+    return proxy;
   }
 
   public createNestMicroservice<T extends object>(
