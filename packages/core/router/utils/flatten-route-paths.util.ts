@@ -14,7 +14,7 @@ export function flattenRoutePaths(routes: Routes) {
     if (item.children) {
       const childrenRef = item.children as Routes;
       childrenRef.forEach(child => {
-        if (!isString(child) && child.path) {
+        if (!isString(child) && isString(child.path)) {
           child.path = normalizePath(
             normalizePath(item.path) + normalizePath(child.path),
           );
