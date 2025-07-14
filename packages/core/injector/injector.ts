@@ -42,6 +42,7 @@ import {
 } from './instance-wrapper';
 import { Module } from './module';
 import { SettlementSignal } from './settlement-signal';
+import { Barrier } from '../helpers/barrier';
 
 /**
  * The type of an injectable dependency
@@ -295,10 +296,16 @@ export class Injector {
       ? this.getFactoryProviderDependencies(wrapper)
       : this.getClassDependencies(wrapper);
 
+    const paramBarrier = new Barrier(dependencies.length);
     let isResolved = true;
     const resolveParam = async (param: unknown, index: number) => {
       try {
         if (this.isInquirer(param, parentInquirer)) {
+          /*
+           * Signal the barrier to make sure other dependencies do not get stuck waiting forever.
+           */
+          paramBarrier.signal();
+
           return parentInquirer && parentInquirer.instance;
         }
         if (inquirer?.isTransient && parentInquirer) {
@@ -314,15 +321,36 @@ export class Injector {
           inquirer,
           index,
         );
-        const instanceHost = paramWrapper.getInstanceByContextId(
-          this.getContextId(contextId, paramWrapper),
+
+        /*
+         * Ensure that all instance wrappers are resolved at this point before we continue.
+         * Otherwise the staticity of `wrapper`'s dependency tree may be evaluated incorrectly
+         * and result in undefined / null injection.
+         */
+        await paramBarrier.signalAndWait();
+
+        const paramWrapperWithInstance = await this.resolveComponentHost(
+          moduleRef,
+          paramWrapper,
+          contextId,
+          inquirer,
+        );
+        const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
+          this.getContextId(contextId, paramWrapperWithInstance),
           inquirerId,
         );
-        if (!instanceHost.isResolved && !paramWrapper.forwardRef) {
+        if (!instanceHost.isResolved && !paramWrapperWithInstance.forwardRef) {
           isResolved = false;
         }
         return instanceHost?.instance;
       } catch (err) {
+        /*
+         * Signal the barrier to make sure other dependencies do not get stuck waiting forever. We
+         * do not care if this occurs after `Barrier.signalAndWait()` is called in the `try` block
+         * because the barrier will always have been resolved by then.
+         */
+        paramBarrier.signal();
+
         const isOptional = optionalDependenciesIds.includes(index);
         if (!isOptional) {
           throw err;
@@ -422,7 +450,7 @@ export class Injector {
       );
     }
     const token = this.resolveParamToken(wrapper, param);
-    return this.resolveComponentInstance<T>(
+    return this.resolveComponentWrapper(
       moduleRef,
       token,
       dependencyContext,
@@ -444,7 +472,7 @@ export class Injector {
     return param;
   }
 
-  public async resolveComponentInstance<T>(
+  public async resolveComponentWrapper<T>(
     moduleRef: Module,
     token: InjectionToken,
     dependencyContext: InjectorDependencyContext,
@@ -456,7 +484,7 @@ export class Injector {
     this.printResolvingDependenciesLog(token, inquirer);
     this.printLookingForProviderLog(token, moduleRef);
     const providers = moduleRef.providers;
-    const instanceWrapper = await this.lookupComponent(
+    return this.lookupComponent(
       providers,
       moduleRef,
       { ...dependencyContext, name: token },
@@ -464,13 +492,6 @@ export class Injector {
       contextId,
       inquirer,
       keyOrIndex,
-    );
-
-    return this.resolveComponentHost(
-      moduleRef,
-      instanceWrapper,
-      contextId,
-      inquirer,
     );
   }
 
@@ -671,6 +692,7 @@ export class Injector {
       return this.loadPropertiesMetadata(metadata, contextId, inquirer);
     }
     const properties = this.reflectProperties(wrapper.metatype as Type<any>);
+    const propertyBarrier = new Barrier(properties.length);
     const instances = await Promise.all(
       properties.map(async (item: PropertyDependency) => {
         try {
@@ -679,6 +701,11 @@ export class Injector {
             name: item.name as Function | string | symbol,
           };
           if (this.isInquirer(item.name, parentInquirer)) {
+            /*
+             * Signal the barrier to make sure other dependencies do not get stuck waiting forever.
+             */
+            propertyBarrier.signal();
+
             return parentInquirer && parentInquirer.instance;
           }
           const paramWrapper = await this.resolveSingleParam<T>(
@@ -690,16 +717,37 @@ export class Injector {
             inquirer,
             item.key,
           );
-          if (!paramWrapper) {
+
+          /*
+           * Ensure that all instance wrappers are resolved at this point before we continue.
+           * Otherwise the staticity of `wrapper`'s dependency tree may be evaluated incorrectly
+           * and result in undefined / null injection.
+           */
+          await propertyBarrier.signalAndWait();
+
+          const paramWrapperWithInstance = await this.resolveComponentHost(
+            moduleRef,
+            paramWrapper,
+            contextId,
+            inquirer,
+          );
+          if (!paramWrapperWithInstance) {
             return undefined;
           }
           const inquirerId = this.getInquirerId(inquirer);
-          const instanceHost = paramWrapper.getInstanceByContextId(
-            this.getContextId(contextId, paramWrapper),
+          const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
+            this.getContextId(contextId, paramWrapperWithInstance),
             inquirerId,
           );
           return instanceHost.instance;
         } catch (err) {
+          /*
+           * Signal the barrier to make sure other dependencies do not get stuck waiting forever. We
+           * do not care if this occurs after `Barrier.signalAndWait()` is called in the `try` block
+           * because the barrier will always have been resolved by then.
+           */
+          propertyBarrier.signal();
+
           if (!item.isOptional) {
             throw err;
           }
