@@ -79,20 +79,7 @@ export class TestingModule extends NestApplicationContext {
       appOptions,
     );
     const proxy = this.createAdapterProxy<T>(instance, httpAdapter);
-
-    // Auto-initialize adapters that have an init method for testing convenience
-    if (typeof (httpAdapter as any)?.init === 'function') {
-      const originalInit = (proxy as any).init;
-      (proxy as any).init = async function (this: any) {
-        await (httpAdapter as any).init();
-        if (originalInit) {
-          return originalInit.call(this);
-        }
-        return this;
-      };
-    }
-
-    return proxy;
+    return this.patchAppProxyInit(proxy, httpAdapter);
   }
 
   public createNestMicroservice<T extends object>(
@@ -126,6 +113,23 @@ export class TestingModule extends NestApplicationContext {
       return;
     }
     Logger.overrideLogger(options.logger);
+  }
+
+  private patchAppProxyInit<T>(
+    proxy: T,
+    httpAdapter: HttpServer | AbstractHttpAdapter,
+  ): T {
+    if (typeof (httpAdapter as any)?.init === 'function') {
+      const originalInit = (proxy as any).init;
+      (proxy as any).init = async function (this: any) {
+        await (httpAdapter as any).init();
+        if (originalInit) {
+          return originalInit.call(this);
+        }
+        return this;
+      };
+    }
+    return proxy;
   }
 
   private createAdapterProxy<T>(app: NestApplication, adapter: HttpServer): T {
