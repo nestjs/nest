@@ -124,7 +124,7 @@
     "clang-format": "1.8.0",
     "concurrently": "9.2.0",
     "conventional-changelog": "7.1.0",
-    "core-js": "3.43.0",
+    "core-js": "3.44.0",
     "coveralls": "3.1.1",
     "delete-empty": "3.0.0",
     "engine.io-client": "6.6.3",
