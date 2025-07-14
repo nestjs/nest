@@ -306,4 +306,128 @@ describe('ServerRMQ', () => {
       expect(nack.calledWith(message, false, false)).not.to.be.true;
     });
   });
+
+  describe('matchRmqPattern', () => {
+    let matchRmqPattern: (pattern: string, routingKey: string) => boolean;
+
+    beforeEach(() => {
+      matchRmqPattern = untypedServer.matchRmqPattern.bind(untypedServer);
+    });
+
+    describe('exact matches', () => {
+      it('should match identical patterns', () => {
+        expect(matchRmqPattern('user.created', 'user.created')).to.be.true;
+        expect(matchRmqPattern('order.updated', 'order.updated')).to.be.true;
+      });
+
+      it('should not match different patterns', () => {
+        expect(matchRmqPattern('user.created', 'user.updated')).to.be.false;
+        expect(matchRmqPattern('order.created', 'user.created')).to.be.false;
+      });
+
+      it('should handle patterns with $ character (original issue)', () => {
+        expect(
+          matchRmqPattern('$internal.plugin.status', '$internal.plugin.status'),
+        ).to.be.true;
+        expect(
+          matchRmqPattern(
+            '$internal.plugin.0.status',
+            '$internal.plugin.0.status',
+          ),
+        ).to.be.true;
+        expect(matchRmqPattern('user.$special.event', 'user.$special.event')).to
+          .be.true;
+      });
+    });
+
+    describe('single wildcard (*)', () => {
+      it('should match single segments', () => {
+        expect(matchRmqPattern('user.*', 'user.created')).to.be.true;
+        expect(matchRmqPattern('user.*', 'user.updated')).to.be.true;
+        expect(matchRmqPattern('*.created', 'user.created')).to.be.true;
+        expect(matchRmqPattern('*.created', 'order.created')).to.be.true;
+      });
+
+      it('should not match when segment counts differ', () => {
+        expect(matchRmqPattern('user.*', 'user.profile.created')).to.be.false;
+        expect(matchRmqPattern('*.created', 'user.profile.created')).to.be
+          .false;
+      });
+
+      it('should handle patterns with $ and *', () => {
+        expect(
+          matchRmqPattern(
+            '$internal.plugin.*.status',
+            '$internal.plugin.0.status',
+          ),
+        ).to.be.true;
+        expect(
+          matchRmqPattern(
+            '$internal.plugin.*.status',
+            '$internal.plugin.1.status',
+          ),
+        ).to.be.true;
+        expect(matchRmqPattern('$internal.*.status', '$internal.plugin.status'))
+          .to.be.true;
+      });
+
+      it('should handle multiple * wildcards', () => {
+        expect(matchRmqPattern('*.*.created', 'user.profile.created')).to.be
+          .true;
+        expect(matchRmqPattern('*.*.created', 'order.item.created')).to.be.true;
+        expect(matchRmqPattern('*.*.created', 'user.created')).to.be.false;
+      });
+    });
+
+    describe('catch all wildcard (#)', () => {
+      it('should match when # is at the end', () => {
+        expect(matchRmqPattern('user.#', 'user.created')).to.be.true;
+        expect(matchRmqPattern('user.#', 'user.profile.created')).to.be.true;
+        expect(matchRmqPattern('user.#', 'user.profile.details.updated')).to.be
+          .true;
+      });
+
+      it('should handle patterns with $ and #', () => {
+        expect(matchRmqPattern('$internal.#', '$internal.plugin.status')).to.be
+          .true;
+        expect(matchRmqPattern('$internal.#', '$internal.plugin.0.status')).to
+          .be.true;
+        expect(
+          matchRmqPattern('$internal.plugin.#', '$internal.plugin.0.status'),
+        ).to.be.true;
+      });
+
+      it('should handle # at the beginning', () => {
+        expect(matchRmqPattern('#', 'user.created')).to.be.true;
+        expect(matchRmqPattern('#', 'user.profile.created')).to.be.true;
+        expect(matchRmqPattern('#', 'created')).to.be.true;
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should handle empty routing key', () => {
+        expect(matchRmqPattern('user.created', '')).to.be.false;
+        expect(matchRmqPattern('*', '')).to.be.false;
+        expect(matchRmqPattern('#', '')).to.be.true;
+      });
+
+      it('should handle single segments', () => {
+        expect(matchRmqPattern('user', 'user')).to.be.true;
+        expect(matchRmqPattern('*', 'user')).to.be.true;
+        expect(matchRmqPattern('#', 'user')).to.be.true;
+      });
+
+      it('should handle complex $ patterns that previously failed', () => {
+        expect(
+          matchRmqPattern(
+            '$exchange.*.routing.#',
+            '$exchange.topic.routing.key.test',
+          ),
+        ).to.be.true;
+        expect(matchRmqPattern('$sys.#', '$sys.broker.clients')).to.be.true;
+        expect(matchRmqPattern('$SYS.#', '$SYS.broker.load.messages.received'))
+          .to.be.true;
+      });
+    });
+  });
 });

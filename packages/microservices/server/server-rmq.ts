@@ -8,6 +8,9 @@ import {
   CONNECTION_FAILED_MESSAGE,
   DISCONNECTED_RMQ_MESSAGE,
   NO_MESSAGE_HANDLER,
+  RMQ_SEPARATOR,
+  RMQ_WILDCARD_ALL,
+  RMQ_WILDCARD_SINGLE,
   RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
   RQM_DEFAULT_NOACK,
   RQM_DEFAULT_NO_ASSERT,
@@ -63,7 +66,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   protected readonly queue: string;
   protected readonly noAck: boolean;
   protected readonly queueOptions: any;
-  protected readonly wildcardHandlers = new Map<RegExp, MessageHandler>();
+  protected readonly wildcardHandlers = new Map<string, MessageHandler>();
   protected pendingEventListeners: Array<{
     event: keyof RmqEvents;
     callback: RmqEvents[keyof RmqEvents];
@@ -365,8 +368,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     if (this.wildcardHandlers.size === 0) {
       return null;
     }
-    for (const [regex, handler] of this.wildcardHandlers) {
-      if (regex.test(pattern)) {
+    for (const [wildcardPattern, handler] of this.wildcardHandlers) {
+      if (this.matchRmqPattern(wildcardPattern, pattern)) {
         return handler;
       }
     }
@@ -392,20 +395,46 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     const handlers = this.getHandlers();
 
     handlers.forEach((handler, pattern) => {
-      const regex = this.convertRoutingKeyToRegex(pattern);
-      if (regex) {
-        this.wildcardHandlers.set(regex, handler);
+      if (
+        pattern.includes(RMQ_WILDCARD_ALL) ||
+        pattern.includes(RMQ_WILDCARD_SINGLE)
+      ) {
+        this.wildcardHandlers.set(pattern, handler);
       }
     });
   }
 
-  private convertRoutingKeyToRegex(routingKey: string): RegExp | undefined {
-    if (!routingKey.includes('#') && !routingKey.includes('*')) {
-      return;
+  private matchRmqPattern(pattern: string, routingKey: string): boolean {
+    if (!routingKey) {
+      return pattern === RMQ_WILDCARD_ALL;
     }
-    let regexPattern = routingKey.replace(/\\/g, '\\\\').replace(/\./g, '\\.');
-    regexPattern = regexPattern.replace(/\*/g, '[^.]+');
-    regexPattern = regexPattern.replace(/#/g, '.*');
-    return new RegExp(`^${regexPattern}$`);
+
+    const patternSegments = pattern.split(RMQ_SEPARATOR);
+    const routingKeySegments = routingKey.split(RMQ_SEPARATOR);
+
+    const patternSegmentsLength = patternSegments.length;
+    const routingKeySegmentsLength = routingKeySegments.length;
+    const lastIndex = patternSegmentsLength - 1;
+
+    for (const [i, currentPattern] of patternSegments.entries()) {
+      const currentRoutingKey = routingKeySegments[i];
+
+      if (!currentRoutingKey && !currentPattern) {
+        continue;
+      }
+      if (!currentRoutingKey && currentPattern !== RMQ_WILDCARD_ALL) {
+        return false;
+      }
+      if (currentPattern === RMQ_WILDCARD_ALL) {
+        return i === lastIndex;
+      }
+      if (
+        currentPattern !== RMQ_WILDCARD_SINGLE &&
+        currentPattern !== currentRoutingKey
+      ) {
+        return false;
+      }
+    }
+    return patternSegmentsLength === routingKeySegmentsLength;
   }
 }
