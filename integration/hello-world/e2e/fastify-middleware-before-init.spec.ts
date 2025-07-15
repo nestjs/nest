@@ -46,14 +46,14 @@ describe('Middleware before init (FastifyAdapter)', () => {
     configure(consumer: MiddlewareConsumer) {
       consumer
         .apply((req, res, next) => {
-          req.headers['x-middleware'] = 'applied';
+          res.setHeader('x-middleware', 'applied');
           next();
         })
         .forRoutes('*');
     }
   }
 
-  describe('should throw helpful error when middleware is registered before init', () => {
+  describe('should queue middleware when registered before init', () => {
     beforeEach(async () => {
       const module = await Test.createTestingModule({
         imports: [TestModule],
@@ -63,23 +63,34 @@ describe('Middleware before init (FastifyAdapter)', () => {
         new FastifyAdapter(),
       );
 
-      // This should throw a helpful error message
-      let errorMessage = '';
-      try {
-        app.use((req, res, next) => {
-          req.headers['x-global-middleware'] = 'applied';
-          next();
-        });
-      } catch (error) {
-        errorMessage = error.message;
-      }
+      // Register middleware before init - should be queued
+      app.use((req, res, next) => {
+        res.setHeader('x-global-middleware', 'applied');
+        next();
+      });
 
-      expect(errorMessage).to.equal('this.instance.use is not a function');
-      // The helpful error message is logged, not thrown
+      // Now init the app - queued middleware should be registered
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
     });
 
-    it('should display clear error message', () => {
-      // Test is complete in beforeEach
+    it('should apply queued middleware after init', () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/test',
+        })
+        .then(({ statusCode, payload, headers }) => {
+          expect(statusCode).to.equal(200);
+          expect(JSON.parse(payload)).to.deep.equal({ data: 'test_data' });
+          // Verify both module-level and global middleware were applied
+          expect(headers['x-middleware']).to.equal('applied');
+          expect(headers['x-global-middleware']).to.equal('applied');
+        });
+    });
+
+    afterEach(async () => {
+      await app.close();
     });
   });
 
@@ -98,7 +109,7 @@ describe('Middleware before init (FastifyAdapter)', () => {
 
       // Now middleware registration should work
       app.use((req, res, next) => {
-        req.headers['x-global-middleware'] = 'applied';
+        res.setHeader('x-global-middleware', 'applied');
         next();
       });
 

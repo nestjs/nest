@@ -146,6 +146,7 @@ export class FastifyAdapter<
 
   private _isParserRegistered: boolean;
   private isMiddieRegistered: boolean;
+  private pendingMiddlewares: Array<{ args: any[] }> = [];
   private versioningOptions?: VersioningOptions;
   private readonly versionConstraint = {
     name: 'version',
@@ -256,6 +257,14 @@ export class FastifyAdapter<
       return;
     }
     await this.registerMiddie();
+
+    // Register any pending middlewares that were added before init
+    if (this.pendingMiddlewares.length > 0) {
+      for (const { args } of this.pendingMiddlewares) {
+        (this.instance.use as any)(...args);
+      }
+      this.pendingMiddlewares = [];
+    }
   }
 
   public listen(port: string | number, callback?: () => void): void;
@@ -672,18 +681,12 @@ export class FastifyAdapter<
 
   public use(...args: any[]) {
     // Fastify requires @fastify/middie plugin to be registered before middleware can be used.
-    // Unlike Express, middleware registration in Fastify must happen after initialization.
-    // We provide a helpful error message to guide developers to call app.init() first.
+    // If middie is not registered yet, we queue the middleware and register it later during init.
     if (!this.isMiddieRegistered) {
-      Logger.warn(
-        'Middleware registration requires the "@fastify/middie" plugin to be registered first. ' +
-          'Make sure to call app.init() before registering middleware with the Fastify adapter. ' +
-          'See https://github.com/nestjs/nest/issues/15310 for more details.',
-        FastifyAdapter.name,
-      );
-      throw new TypeError('this.instance.use is not a function');
+      this.pendingMiddlewares.push({ args });
+      return this;
     }
-    return super.use(...args);
+    return (this.instance.use as any)(...args);
   }
 
   protected registerWithPrefix(
