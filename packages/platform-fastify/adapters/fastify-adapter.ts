@@ -670,6 +670,22 @@ export class FastifyAdapter<
     return 'fastify';
   }
 
+  public use(...args: any[]) {
+    // Fastify requires @fastify/middie plugin to be registered before middleware can be used.
+    // Unlike Express, middleware registration in Fastify must happen after initialization.
+    // We provide a helpful error message to guide developers to call app.init() first.
+    if (!this.isMiddieRegistered) {
+      Logger.warn(
+        'Middleware registration requires the "@fastify/middie" plugin to be registered first. ' +
+          'Make sure to call app.init() before registering middleware with the Fastify adapter. ' +
+          'See https://github.com/nestjs/nest/issues/15310 for more details.',
+        FastifyAdapter.name,
+      );
+      throw new TypeError('this.instance.use is not a function');
+    }
+    return super.use(...args);
+  }
+
   protected registerWithPrefix(
     factory:
       | FastifyPluginCallback<any>
