@@ -56,7 +56,7 @@
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.7.3",
-    "webpack": "5.99.9",
+    "webpack": "5.100.1",
     "typescript-eslint": "8.37.0"
   },
   "jest": {
