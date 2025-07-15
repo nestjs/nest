@@ -15,7 +15,7 @@ describe('PipesConsumer', () => {
     beforeEach(() => {
       value = 0;
       data = null;
-      (metatype = {}), (type = RouteParamtypes.QUERY);
+      ((metatype = {}), (type = RouteParamtypes.QUERY));
       stringifiedType = 'query';
       transforms = [
         createPipe(sinon.stub().callsFake(val => val + 1)),
