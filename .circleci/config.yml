@@ -204,6 +204,3 @@ workflows:
       - samples:
           requires:
             - build
-      - codechecks_benchmarks:
-          requires:
-            - build
