@@ -26,7 +26,7 @@
     "@nestjs/core": "11.1.3",
     "@nestjs/graphql": "13.1.0",
     "@nestjs/platform-express": "11.1.3",
-    "@prisma/client": "6.11.1",
+    "@prisma/client": "6.12.0",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.2",
     "graphql": "16.10.0",
