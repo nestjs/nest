@@ -19,9 +19,9 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.3",
-    "@nestjs/core": "11.1.3",
-    "@nestjs/platform-fastify": "11.1.3",
+    "@nestjs/common": "11.1.4",
+    "@nestjs/core": "11.1.4",
+    "@nestjs/platform-fastify": "11.1.4",
     "@fastify/static": "8.2.0",
     "handlebars": "4.7.8",
     "@fastify/view": "11.1.0",
@@ -34,7 +34,7 @@
     "@eslint/js": "9.31.0",
     "@nestjs/cli": "11.0.7",
     "@nestjs/schematics": "11.0.5",
-    "@nestjs/testing": "11.1.3",
+    "@nestjs/testing": "11.1.4",
     "@types/express": "5.0.3",
     "@types/node": "22.16.3",
     "@types/supertest": "6.0.3",
