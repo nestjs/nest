@@ -157,6 +157,7 @@ export class FastifyAdapter<
     done: (err?: Error) => void,
   ) => void | Promise<void>;
   private isMiddieRegistered: boolean;
+  private pendingMiddlewares: Array<{ args: any[] }> = [];
   private versioningOptions?: VersioningOptions;
   private readonly versionConstraint = {
     name: 'version',
@@ -303,6 +304,14 @@ export class FastifyAdapter<
       return;
     }
     await this.registerMiddie();
+
+    // Register any pending middlewares that were added before init
+    if (this.pendingMiddlewares.length > 0) {
+      for (const { args } of this.pendingMiddlewares) {
+        (this.instance.use as any)(...args);
+      }
+      this.pendingMiddlewares = [];
+    }
   }
 
   public listen(port: string | number, callback?: () => void): void;
@@ -715,6 +724,16 @@ export class FastifyAdapter<
 
   public getType(): string {
     return 'fastify';
+  }
+
+  public use(...args: any[]) {
+    // Fastify requires @fastify/middie plugin to be registered before middleware can be used.
+    // If middie is not registered yet, we queue the middleware and register it later during init.
+    if (!this.isMiddieRegistered) {
+      this.pendingMiddlewares.push({ args });
+      return this;
+    }
+    return (this.instance.use as any)(...args);
   }
 
   protected registerWithPrefix(
