@@ -2197,22 +2197,6 @@
       },
       "id": "1976848738"
     },
-    "-2105726668": {
-      "source": "-1803759743",
-      "target": "1010833816",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "PropertiesModule",
-        "sourceClassName": "PropertiesService",
-        "targetClassName": "token",
-        "sourceClassToken": "PropertiesService",
-        "targetClassToken": "token",
-        "targetModuleName": "PropertiesModule",
-        "keyOrIndex": "token",
-        "injectionType": "property"
-      },
-      "id": "-2105726668"
-    },
     "-21463590": {
       "source": "-1378706112",
       "target": "1004276345",
@@ -2228,6 +2212,22 @@
         "injectionType": "constructor"
       },
       "id": "-21463590"
+    },
+    "-2105726668": {
+      "source": "-1803759743",
+      "target": "1010833816",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "PropertiesModule",
+        "sourceClassName": "PropertiesService",
+        "targetClassName": "token",
+        "sourceClassToken": "PropertiesService",
+        "targetClassToken": "token",
+        "targetModuleName": "PropertiesModule",
+        "keyOrIndex": "token",
+        "injectionType": "property"
+      },
+      "id": "-2105726668"
     },
     "-1657371464": {
       "source": "-1673986099",
