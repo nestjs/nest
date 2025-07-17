@@ -59,9 +59,9 @@ Nest는 MIT License 오픈 소스 프로젝트이며, 감사하게도 후원자�
 
 ## 연락처
 
-* Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-* Website - [https://nestjs.com](https://nestjs.com/)
-* Twitter - [@nestframework](https://twitter.com/nestframework)
+* 저자 - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+* 웹사이트 - [https://nestjs.com](https://nestjs.com/)
+* X - [@nestframework](https://twitter.com/nestframework)
 
 ## 라이센스
 
