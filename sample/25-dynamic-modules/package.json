@@ -47,7 +47,7 @@
     "eslint": "9.31.0",
     "eslint-config-prettier": "10.1.5",
     "eslint-plugin-import": "2.32.0",
-    "typescript": "5.7.3",
+    "typescript": "5.8.3",
     "typescript-eslint": "8.38.0"
   },
   "jest": {

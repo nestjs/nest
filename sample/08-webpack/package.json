@@ -17,7 +17,7 @@
     "@nestjs/platform-express": "11.1.5",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
-    "typescript": "5.7.3"
+    "typescript": "5.8.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.1",
