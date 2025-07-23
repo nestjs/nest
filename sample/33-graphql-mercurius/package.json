@@ -19,11 +19,11 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.4",
-    "@nestjs/core": "11.1.4",
+    "@nestjs/common": "11.1.5",
+    "@nestjs/core": "11.1.5",
     "@nestjs/graphql": "13.1.0",
     "@nestjs/mercurius": "13.1.0",
-    "@nestjs/platform-fastify": "11.1.4",
+    "@nestjs/platform-fastify": "11.1.5",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.2",
     "graphql": "16.10.0",
@@ -36,7 +36,7 @@
     "@eslint/js": "9.31.0",
     "@nestjs/cli": "11.0.7",
     "@nestjs/schematics": "11.0.5",
-    "@nestjs/testing": "11.1.4",
+    "@nestjs/testing": "11.1.5",
     "@types/express": "5.0.3",
     "@types/node": "22.16.5",
     "@types/supertest": "6.0.3",
