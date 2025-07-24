@@ -83,6 +83,10 @@ export class IoAdapter extends AbstractWsAdapter {
     return { data: payload };
   }
 
+  public bindClientDisconnect(client: Socket, callback: Function) {
+    client.on(DISCONNECT_EVENT, (reason: string) => callback(reason));
+  }
+
   public async close(server: Server): Promise<void> {
     if (this.forceCloseConnections && server.httpServer === this.httpServer) {
       return;
