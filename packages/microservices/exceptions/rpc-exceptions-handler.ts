@@ -37,6 +37,12 @@ export class RpcExceptionsHandler extends BaseRpcExceptionFilter {
     exception: T,
     host: ArgumentsHost,
   ): Observable<any> | null {
+    const filters = this.filters.filter(
+      filter => filter.exceptionMetatypes?.length === 0,
+    );
+    if (filters.length > 0) {
+      return filters[0].func(exception, host);
+    }
     if (isEmpty(this.filters)) {
       return null;
     }
