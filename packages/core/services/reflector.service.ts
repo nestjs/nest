@@ -1,5 +1,5 @@
 import { CustomDecorator, SetMetadata, Type } from '@nestjs/common';
-import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
+import { isEmptyArray, isObject } from '@nestjs/common/utils/shared.utils';
 import { uid } from 'uid';
 
 /**
@@ -200,7 +200,7 @@ export class Reflector {
       targets,
     ).filter(item => item !== undefined);
 
-    if (isEmpty(metadataCollection)) {
+    if (isEmptyArray(metadataCollection)) {
       return metadataCollection as TResult;
     }
     if (metadataCollection.length === 1) {
