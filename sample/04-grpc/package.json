@@ -43,7 +43,7 @@
     "eslint": "9.31.0",
     "eslint-plugin-prettier": "5.5.3",
     "globals": "16.3.0",
-    "jest": "29.7.0",
+    "jest": "30.0.5",
     "prettier": "3.6.2",
     "supertest": "7.1.4",
     "ts-jest": "29.4.0",
