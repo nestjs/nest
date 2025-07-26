@@ -121,13 +121,13 @@ describe('DependenciesScanner', () => {
     class OverwrittenTestComponent {}
 
     @Controller('')
-    class OverwrittenControlerOne {}
+    class OverwrittenControllerOne {}
 
     @Controller('')
     class OverwrittenControllerTwo {}
 
     @Module({
-      controllers: [OverwrittenControlerOne],
+      controllers: [OverwrittenControllerOne],
       providers: [OverwrittenTestComponent],
     })
     class OverwrittenModuleOne {}
@@ -152,7 +152,7 @@ describe('DependenciesScanner', () => {
     class OverrideControllerTwo {}
 
     @Module({
-      controllers: [OverwrittenControlerOne],
+      controllers: [OverwrittenControllerOne],
       providers: [OverrideTestComponent],
     })
     class OverrideModuleOne {}
