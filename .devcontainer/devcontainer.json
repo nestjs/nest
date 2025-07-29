@@ -1,0 +1,8 @@
+{
+  "name": "NestJS Codespace",
+  "customizations": {},
+  "features": {},
+  "hostRequirements": {
+    "memory": "64gb"
+  }
+}
