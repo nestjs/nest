@@ -296,7 +296,7 @@ export class Injector {
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
   ) {
-    let inquirerId = this.getInquirerId(inquirer);
+    const inquirerId = this.getInquirerId(inquirer);
     const metadata = wrapper.getCtorMetadata();
 
     if (metadata && contextId !== STATIC_CONTEXT) {
