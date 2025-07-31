@@ -30,8 +30,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "3.3.1",
     "@eslint/js": "9.31.0",
-    "@nestjs/cli": "11.0.8",
-    "@nestjs/schematics": "11.0.5",
+    "@nestjs/cli": "11.0.9",
+    "@nestjs/schematics": "11.0.6",
     "@nestjs/testing": "11.1.5",
     "@types/express": "5.0.3",
     "@types/jest": "29.5.14",
