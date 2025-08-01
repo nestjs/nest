@@ -12,6 +12,7 @@ import {
   ERROR_EVENT,
 } from '@nestjs/websockets/internal';
 import type { MessageMappingProperties } from '@nestjs/websockets';
+import { pathToRegexp, Key } from 'path-to-regexp';
 import { mergeMapBounded } from '../utils/merge-map-bounded.util.js';
 
 enum READY_STATE {
@@ -49,6 +50,23 @@ type WsAdapterOptions = {
    */
   maxSendBufferSize?: number;
 };
+
+/**
+ * Extended WebSocket server type with dynamic path matching support
+ */
+interface WsServerWithPath {
+  path: string;
+  pathRegexp?: RegExp;
+  pathKeys?: Key[];
+  isStaticPath?: boolean;
+  handleUpgrade: (
+    request: any,
+    socket: any,
+    head: any,
+    callback: (ws: unknown) => void,
+  ) => void;
+  emit: (event: string, ...args: any[]) => void;
+}
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
 // How many messages of a client are handled at the same time. Kept here, like
@@ -398,8 +416,49 @@ export class WsAdapter extends AbstractWsAdapter {
 
         let isRequestDelegated = false;
         for (const wsServer of wsServersCollection) {
-          if (pathname === wsServer.path) {
+          const wsServerWithPath = wsServer as WsServerWithPath;
+          let pathMatch = false;
+          const pathParams: Record<string, string> = {};
+
+          if (wsServerWithPath.isStaticPath !== false) {
+            pathMatch = pathname === wsServerWithPath.path;
+          } else {
+            // Dynamic path matching using path-to-regexp
+            const match = wsServerWithPath.pathRegexp!.exec(pathname);
+            if (match) {
+              pathMatch = true;
+
+              if (
+                wsServerWithPath.pathKeys &&
+                wsServerWithPath.pathKeys.length > 0
+              ) {
+                wsServerWithPath.pathKeys.forEach((key, index) => {
+                  const paramValue = match[index + 1];
+                  if (paramValue !== undefined) {
+                    pathParams[key.name] = decodeURIComponent(paramValue);
+                  }
+                });
+              }
+            }
+          }
+
+          if (pathMatch) {
+            // Inject
+            if (Object.keys(pathParams).length > 0) {
+              (request as any).params = pathParams;
+
+              this.logger.debug(
+                `WebSocket connection matched dynamic path "${wsServerWithPath.path}" with params:`,
+                pathParams,
+              );
+            }
+
             wsServer.handleUpgrade(request, socket, head, (ws: unknown) => {
+              if (Object.keys(pathParams).length > 0) {
+                (ws as any)._pathParams = pathParams;
+                (ws as any).upgradeReq = request;
+              }
+
               wsServer.emit('connection', ws, request);
             });
             isRequestDelegated = true;
@@ -430,9 +489,39 @@ export class WsAdapter extends AbstractWsAdapter {
     path: string,
   ) {
     const entries = this.wsServersRegistry.get(port) ?? [];
-    entries.push(wsServer);
+    const normalizedPath = normalizePath(path);
 
-    wsServer.path = normalizePath(path);
+    // Prepare path matching
+    const wsServerWithPath = wsServer as unknown as WsServerWithPath;
+    wsServerWithPath.path = normalizedPath;
+
+    const isDynamicPath =
+      normalizedPath.includes(':') ||
+      normalizedPath.includes('*') ||
+      normalizedPath.includes('(');
+
+    if (isDynamicPath) {
+      try {
+        const pathRegexpResult = pathToRegexp(normalizedPath);
+        wsServerWithPath.pathRegexp = pathRegexpResult.regexp;
+        wsServerWithPath.pathKeys = pathRegexpResult.keys || [];
+        wsServerWithPath.isStaticPath = false;
+
+        this.logger.log(
+          `Registered WebSocket server with dynamic path: ${normalizedPath} on port ${port}`,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Failed to compile dynamic path "${normalizedPath}": ${error.message}`,
+          error.stack,
+        );
+        wsServerWithPath.isStaticPath = true;
+      }
+    } else {
+      wsServerWithPath.isStaticPath = true;
+    }
+
+    entries.push(wsServerWithPath);
     this.wsServersRegistry.set(port, entries);
   }
 }
