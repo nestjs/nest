@@ -18,7 +18,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@fastify/cors": "11.0.1",
+    "@fastify/cors": "11.1.0",
     "@fastify/formbody": "8.0.2",
     "@fastify/middie": "9.0.3",
     "fast-querystring": "1.1.2",
