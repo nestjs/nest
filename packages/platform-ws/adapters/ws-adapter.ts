@@ -49,6 +49,26 @@ interface WsServerWithPath {
   emit: (event: string, ...args: any[]) => void;
 }
 
+/**
+ * Path matching result containing matched servers and extracted parameters
+ */
+interface PathMatchResult {
+  server: WsServerWithPath;
+  params: Record<string, string>;
+}
+
+/**
+ * Optimized path matcher for efficient WebSocket route resolution
+ */
+interface PathMatcher {
+  staticPaths: Map<string, WsServerWithPath[]>;
+  dynamicPaths: Array<{
+    server: WsServerWithPath;
+    pathRegexp: RegExp;
+    pathKeys: Key[];
+  }>;
+}
+
 const UNDERLYING_HTTP_SERVER_PORT = 0;
 
 /**
@@ -63,6 +83,10 @@ export class WsAdapter extends AbstractWsAdapter {
   protected readonly wsServersRegistry = new Map<
     WsServerRegistryKey,
     WsServerRegistryEntry
+  >();
+  protected readonly pathMatchersCache = new Map<
+    WsServerRegistryKey,
+    PathMatcher
   >();
   protected messageParser: WsMessageParser = (data: WsData) => {
     return JSON.parse(data.toString());
@@ -217,6 +241,8 @@ export class WsAdapter extends AbstractWsAdapter {
     await Promise.all(closeEventSignals);
     this.httpServersRegistry.clear();
     this.wsServersRegistry.clear();
+    // Clear path matcher cache to prevent memory leaks
+    this.pathMatchersCache.clear();
   }
 
   public setMessageParser(parser: WsMessageParser) {
@@ -236,58 +262,32 @@ export class WsAdapter extends AbstractWsAdapter {
       try {
         const baseUrl = 'ws://' + request.headers.host + '/';
         const pathname = new URL(request.url!, baseUrl).pathname;
-        const wsServersCollection = this.wsServersRegistry.get(port)!;
+        const pathMatcher = this.getOrCreatePathMatcher(port);
+        const matchResult = this.matchPath(pathname, pathMatcher);
 
         let isRequestDelegated = false;
-        for (const wsServer of wsServersCollection) {
-          const wsServerWithPath = wsServer as WsServerWithPath;
-          let pathMatch = false;
-          const pathParams: Record<string, string> = {};
+        if (matchResult) {
+          const { server, params } = matchResult;
 
-          if (wsServerWithPath.isStaticPath !== false) {
-            pathMatch = pathname === wsServerWithPath.path;
-          } else {
-            // Dynamic path matching using path-to-regexp
-            const match = wsServerWithPath.pathRegexp!.exec(pathname);
-            if (match) {
-              pathMatch = true;
+          // Inject path parameters if any
+          if (Object.keys(params).length > 0) {
+            (request as any).params = params;
 
-              if (
-                wsServerWithPath.pathKeys &&
-                wsServerWithPath.pathKeys.length > 0
-              ) {
-                wsServerWithPath.pathKeys.forEach((key, index) => {
-                  const paramValue = match[index + 1];
-                  if (paramValue !== undefined) {
-                    pathParams[key.name] = decodeURIComponent(paramValue);
-                  }
-                });
-              }
-            }
+            this.logger.debug(
+              `WebSocket connection matched dynamic path "${server.path}" with params:`,
+              params,
+            );
           }
 
-          if (pathMatch) {
-            // Inject
-            if (Object.keys(pathParams).length > 0) {
-              (request as any).params = pathParams;
-
-              this.logger.debug(
-                `WebSocket connection matched dynamic path "${wsServerWithPath.path}" with params:`,
-                pathParams,
-              );
+          server.handleUpgrade(request, socket, head, (ws: unknown) => {
+            if (Object.keys(params).length > 0) {
+              (ws as any)._pathParams = params;
+              (ws as any).upgradeReq = request;
             }
 
-            wsServer.handleUpgrade(request, socket, head, (ws: unknown) => {
-              if (Object.keys(pathParams).length > 0) {
-                (ws as any)._pathParams = pathParams;
-                (ws as any).upgradeReq = request;
-              }
-
-              wsServer.emit('connection', ws, request);
-            });
-            isRequestDelegated = true;
-            break;
-          }
+            server.emit('connection', ws, request);
+          });
+          isRequestDelegated = true;
         }
         if (!isRequestDelegated) {
           socket.destroy();
@@ -297,6 +297,116 @@ export class WsAdapter extends AbstractWsAdapter {
       }
     });
     return httpServer;
+  }
+
+  /**
+   * Get or create an optimized path matcher for the specified port
+   */
+  protected getOrCreatePathMatcher(port: number): PathMatcher {
+    let pathMatcher = this.pathMatchersCache.get(port);
+    if (!pathMatcher) {
+      const wsServersCollection = this.wsServersRegistry.get(port) || [];
+      pathMatcher = this.createPathMatcher(
+        wsServersCollection as WsServerWithPath[],
+      );
+      this.pathMatchersCache.set(port, pathMatcher);
+    }
+    return pathMatcher;
+  }
+
+  /**
+   * Create an optimized path matcher from WebSocket servers
+   */
+  protected createPathMatcher(servers: WsServerWithPath[]): PathMatcher {
+    const matcher: PathMatcher = {
+      staticPaths: new Map(),
+      dynamicPaths: [],
+    };
+
+    let staticCount = 0;
+    let dynamicCount = 0;
+
+    for (const server of servers) {
+      if (server.isStaticPath !== false) {
+        // Static path - use Map for O(1) lookup
+        const existing = matcher.staticPaths.get(server.path) || [];
+        existing.push(server);
+        matcher.staticPaths.set(server.path, existing);
+        staticCount++;
+      } else {
+        // Dynamic path - store for sequential matching
+        matcher.dynamicPaths.push({
+          server,
+          pathRegexp: server.pathRegexp!,
+          pathKeys: server.pathKeys || [],
+        });
+        dynamicCount++;
+      }
+    }
+
+    // Sort dynamic paths by complexity (simpler patterns first for better performance)
+    matcher.dynamicPaths.sort((a, b) => {
+      const aComplexity =
+        (a.pathKeys?.length || 0) + (a.server.path.split('/').length || 0);
+      const bComplexity =
+        (b.pathKeys?.length || 0) + (b.server.path.split('/').length || 0);
+      return aComplexity - bComplexity;
+    });
+
+    this.logger.log(
+      `Created optimized path matcher: ${staticCount} static paths, ${dynamicCount} dynamic paths`,
+    );
+
+    return matcher;
+  }
+
+  /**
+   * Match a pathname against the optimized path matcher
+   * Returns the first matching server and extracted parameters
+   */
+  protected matchPath(
+    pathname: string,
+    matcher: PathMatcher,
+  ): PathMatchResult | null {
+    // First try static paths (O(1) lookup)
+    const staticServers = matcher.staticPaths.get(pathname);
+    if (staticServers && staticServers.length > 0) {
+      return {
+        server: staticServers[0], // Return first matching static server
+        params: {},
+      };
+    }
+
+    // Then try dynamic paths (ordered by complexity)
+    for (const { server, pathRegexp, pathKeys } of matcher.dynamicPaths) {
+      const match = pathRegexp.exec(pathname);
+      if (match) {
+        const params: Record<string, string> = {};
+
+        // Extract path parameters
+        pathKeys.forEach((key, index) => {
+          const paramValue = match[index + 1];
+          if (paramValue !== undefined) {
+            try {
+              params[key.name] = decodeURIComponent(paramValue);
+            } catch (error) {
+              // Fallback to raw value if decoding fails
+              params[key.name] = paramValue;
+              this.logger.warn(
+                `Failed to decode path parameter "${key.name}": ${paramValue}`,
+              );
+            }
+          }
+        });
+
+        return {
+          server,
+          params,
+        };
+      }
+    }
+
+    return null;
   }
 
   protected addWsServerToRegistry<T extends Record<'path', string> = any>(
@@ -339,5 +449,8 @@ export class WsAdapter extends AbstractWsAdapter {
 
     entries.push(wsServerWithPath);
     this.wsServersRegistry.set(port, entries);
+
+    // Invalidate path matcher cache for this port
+    this.pathMatchersCache.delete(port);
   }
 }
