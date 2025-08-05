@@ -50,9 +50,14 @@ class TransientProvider {}
 class RequestProvider {}
 
 @Injectable()
+class ForeignTransientProvider {}
+
+@Injectable()
 export class Dependant {
   constructor(
     private readonly transientProvider: TransientProvider,
+
+    private readonly foreignTransientProvider: ForeignTransientProvider,
 
     @Inject(RequestProvider)
     private readonly requestProvider: RequestProvider,
@@ -60,9 +65,25 @@ export class Dependant {
 
   public checkDependencies() {
     expect(this.transientProvider).to.be.instanceOf(TransientProvider);
+    expect(this.foreignTransientProvider).to.be.instanceOf(
+      ForeignTransientProvider,
+    );
     expect(this.requestProvider).to.be.instanceOf(RequestProvider);
   }
 }
+
+@Global()
+@Module({
+  providers: [
+    {
+      provide: ForeignTransientProvider,
+      scope: Scope.TRANSIENT,
+      useClass: ForeignTransientProvider,
+    },
+  ],
+  exports: [ForeignTransientProvider],
+})
+export class ModuleWithForeignTransientProvider {}
 
 @Global()
 @Module({
@@ -98,6 +119,12 @@ export class GlobalModuleWithRequestProvider {}
 
 @Module({
   imports: [
+    /*
+     * ForeginTransientProvider will be resolved quickly because its host module is imported first.
+     * IMPORTANT: Do not move this module, otherwise we may not catch future regressions.
+     */
+    ModuleWithForeignTransientProvider,
+
     GlobalModule1,
     GlobalModule2,
     GlobalModule3,
@@ -115,7 +142,7 @@ export class GlobalModuleWithRequestProvider {}
 export class AppModule {}
 
 describe('Many global modules', () => {
-  it('should inject request-scoped useFactory provider and transient-scoped useClass provider from different modules', async () => {
+  it('should inject request-scoped and transient-scoped providers from different modules', async () => {
     const moduleBuilder = Test.createTestingModule({
       imports: [AppModule],
     });
