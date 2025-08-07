@@ -75,6 +75,22 @@ describe('KafkaRequestSerializer', () => {
       });
     });
 
+    it('complex object with inherited .toString()', async () => {
+      class ComplexParent {
+        private readonly name = 'complexParent';
+        public toString(): string {
+          return this.name;
+        }
+      }
+
+      class ComplexChild extends ComplexParent {}
+
+      expect(await instance.serialize(new ComplexChild())).to.deep.eq({
+        headers: {},
+        value: 'complexParent',
+      });
+    });
+
     it('complex object without .toString()', async () => {
       class ComplexWithOutToString {
         private readonly name = 'complex';
@@ -83,7 +99,7 @@ describe('KafkaRequestSerializer', () => {
       expect(await instance.serialize(new ComplexWithOutToString())).to.deep.eq(
         {
           headers: {},
-          value: '[object Object]',
+          value: '{"name":"complex"}',
         },
       );
     });
