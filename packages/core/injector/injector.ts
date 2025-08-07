@@ -32,6 +32,7 @@ import { CircularDependencyException } from '../errors/exceptions';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
+import { Barrier } from '../helpers/barrier';
 import { STATIC_CONTEXT } from './constants';
 import { INQUIRER } from './inquirer';
 import {
@@ -42,7 +43,6 @@ import {
 } from './instance-wrapper';
 import { Module } from './module';
 import { SettlementSignal } from './settlement-signal';
-import { Barrier } from '../helpers/barrier';
 
 /**
  * The type of an injectable dependency
@@ -296,7 +296,7 @@ export class Injector {
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
   ) {
-    let inquirerId = this.getInquirerId(inquirer);
+    const inquirerId = this.getInquirerId(inquirer);
     const metadata = wrapper.getCtorMetadata();
 
     if (metadata && contextId !== STATIC_CONTEXT) {
@@ -327,8 +327,10 @@ export class Injector {
           return parentInquirer && parentInquirer.instance;
         }
         if (inquirer?.isTransient && parentInquirer) {
-          inquirer = parentInquirer;
-          inquirerId = this.getInquirerId(parentInquirer);
+          // When `inquirer` is transient too, inherit the parent inquirer
+          // This is required to ensure that transient providers are only resolved
+          // when requested
+          inquirer.attachRootInquirer(parentInquirer);
         }
         const paramWrapper = await this.resolveSingleParam<T>(
           wrapper,
