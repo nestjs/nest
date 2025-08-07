@@ -682,14 +682,11 @@ export class Injector {
         inquirerId,
       );
       if (!instanceHost.isResolved && !instanceWrapperRef.forwardRef) {
-        wrapper.settlementSignal?.insertRef(instanceWrapperRef.id);
-
-        await this.loadProvider(
-          instanceWrapperRef,
-          relatedModule,
-          contextId,
-          wrapper,
-        );
+        /*
+         * Provider will be loaded shortly in resolveComponentHost() once we pass the current
+         * Barrier. We cannot load it here because doing so could incorrectly evaluate the
+         * staticity of the dependency tree and lead to undefined / null injection.
+         */
         break;
       }
     }

@@ -447,63 +447,6 @@ describe('Injector', () => {
         ),
       ).to.eventually.be.eq(null);
     });
-
-    it('should call "loadProvider" when component is not resolved', async () => {
-      const moduleFixture = {
-        imports: new Map([
-          [
-            'key',
-            {
-              providers: {
-                has: () => true,
-                get: () =>
-                  new InstanceWrapper({
-                    isResolved: false,
-                  }),
-              },
-              exports: {
-                has: () => true,
-              },
-              imports: new Map(),
-            },
-          ],
-        ] as any),
-      };
-      await injector.lookupComponentInImports(
-        moduleFixture as any,
-        metatype as any,
-        new InstanceWrapper(),
-      );
-      expect(loadProvider.called).to.be.true;
-    });
-
-    it('should not call "loadProvider" when component is resolved', async () => {
-      const moduleFixture = {
-        relatedModules: new Map([
-          [
-            'key',
-            {
-              providers: {
-                has: () => true,
-                get: () => ({
-                  isResolved: true,
-                }),
-              },
-              exports: {
-                has: () => true,
-              },
-              relatedModules: new Map(),
-            },
-          ],
-        ] as any),
-      };
-      await injector.lookupComponentInImports(
-        moduleFixture as any,
-        metatype as any,
-        null!,
-      );
-      expect(loadProvider.called).to.be.false;
-    });
   });
 
   describe('resolveParamToken', () => {
