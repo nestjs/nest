@@ -23,7 +23,7 @@
     "@nestjs/common": "11.1.5",
     "@nestjs/core": "11.1.5",
     "@nestjs/platform-express": "11.1.5",
-    "cache-manager": "7.1.0",
+    "cache-manager": "7.1.1",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.2",
     "reflect-metadata": "0.2.2",
