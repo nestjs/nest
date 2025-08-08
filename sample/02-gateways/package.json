@@ -48,7 +48,7 @@
     "globals": "16.3.0",
     "jest": "29.7.0",
     "prettier": "3.6.2",
-    "redis": "5.7.0",
+    "redis": "5.8.0",
     "supertest": "7.1.4",
     "ts-jest": "29.4.1",
     "ts-loader": "9.5.2",
