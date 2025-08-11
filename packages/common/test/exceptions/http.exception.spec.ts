@@ -25,6 +25,7 @@ import {
   UnprocessableEntityException,
   UnsupportedMediaTypeException,
 } from '../../exceptions';
+import { HttpStatus } from '@nestjs/common';
 
 describe('HttpException', () => {
   describe('getResponse', () => {
@@ -266,6 +267,68 @@ describe('HttpException', () => {
 
         expect(cause).to.be.eql(errorCause);
       });
+    });
+  });
+
+  describe('when exception is created with a string and a description', () => {
+    it('should return a response with a message, error and status code', () => {
+      const exception = new HttpException('Forbidden', HttpStatus.FORBIDDEN);
+      expect(exception.getResponse()).to.deep.equal('Forbidden');
+    });
+
+    it('should return a response with a message, error, status code and description', () => {
+      const exception = new HttpException('Forbidden', HttpStatus.FORBIDDEN, {
+        description: 'some description',
+      });
+      expect(exception.getResponse()).to.deep.equal('Forbidden');
+    });
+  });
+
+  describe('when exception is created with a string and a cause', () => {
+    it('should set a cause', () => {
+      const error = new Error('An internal error cause');
+      const exception = new HttpException(
+        'Bad request',
+        HttpStatus.BAD_REQUEST,
+        { cause: error },
+      );
+      expect(exception.cause).to.equal(error);
+    });
+  });
+
+  describe('when exception is created with an errorCode', () => {
+    it('should set an errorCode', () => {
+      const exception = new HttpException(
+        'Bad request',
+        HttpStatus.BAD_REQUEST,
+        {
+          errorCode: 'BAD_REQUEST_CODE',
+        },
+      );
+      expect(exception.errorCode).to.equal('BAD_REQUEST_CODE');
+    });
+
+    it('should be included in the response body when createBody is called', () => {
+      const body = HttpException.createBody(
+        'Bad Request',
+        'Error',
+        400,
+        'BAD_REQUEST_CODE',
+      );
+      expect(body.errorCode).to.equal('BAD_REQUEST_CODE');
+    });
+  });
+
+  describe('when exception is thrown', () => {
+    it('should return a response with a status code and a message', () => {
+      const exception = new BadRequestException('error');
+      const response = exception.getResponse();
+      const message = {
+        statusCode: 400,
+        error: 'Bad Request',
+        message: 'error',
+      };
+      expect(message).to.deep.equal(response);
     });
   });
 });

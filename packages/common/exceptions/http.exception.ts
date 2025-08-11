@@ -9,6 +9,7 @@ export interface HttpExceptionOptions {
   /** original cause of the error */
   cause?: unknown;
   description?: string;
+  errorCode?: string;
 }
 
 export interface DescriptionAndOptions {
@@ -30,6 +31,7 @@ export class HttpException extends IntrinsicException {
    * It is used when catching and re-throwing an error with a more-specific or useful error message in order to still have access to the original error.
    */
   public cause: unknown;
+  public errorCode?: string;
 
   /**
    * Instantiate a plain HTTP Exception.
@@ -73,6 +75,7 @@ export class HttpException extends IntrinsicException {
     this.initMessage();
     this.initName();
     this.initCause();
+    this.initErrorCode();
   }
 
   /**
@@ -85,6 +88,12 @@ export class HttpException extends IntrinsicException {
     if (this.options?.cause) {
       this.cause = this.options.cause;
       return;
+    }
+  }
+
+  public initErrorCode(): void {
+    if (this.options?.errorCode) {
+      this.errorCode = this.options.errorCode;
     }
   }
 
@@ -122,6 +131,12 @@ export class HttpException extends IntrinsicException {
     error: string,
     statusCode: number,
   ): HttpExceptionBody;
+  public static createBody(
+    message: HttpExceptionBodyMessage,
+    error: string,
+    statusCode: number,
+    errorCode?: string,
+  ): HttpExceptionBody;
   public static createBody<Body extends Record<string, unknown>>(
     custom: Body,
   ): Body;
@@ -129,20 +144,29 @@ export class HttpException extends IntrinsicException {
     arg0: null | HttpExceptionBodyMessage | Body,
     arg1?: HttpExceptionBodyMessage | string,
     statusCode?: number,
+    errorCode?: string,
   ): HttpExceptionBody | Body {
     if (!arg0) {
-      return {
+      const body: HttpExceptionBody = {
         message: arg1!,
         statusCode: statusCode!,
       };
+      if (errorCode) {
+        body.errorCode = errorCode;
+      }
+      return body;
     }
 
     if (isString(arg0) || Array.isArray(arg0) || isNumber(arg0)) {
-      return {
+      const body: HttpExceptionBody = {
         message: arg0,
         error: arg1 as string,
         statusCode: statusCode!,
       };
+      if (errorCode) {
+        body.errorCode = errorCode;
+      }
+      return body;
     }
 
     return arg0;
