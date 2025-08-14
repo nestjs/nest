@@ -1,7 +1,7 @@
 import { CanActivate } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { Controller, Type } from '@nestjs/common/interfaces';
-import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
+import { isEmptyArray, isFunction } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config';
 import { ContextCreator } from '../helpers/context-creator';
@@ -41,7 +41,7 @@ export class GuardsContextCreator extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): R {
-    if (isEmpty(metadata)) {
+    if (isEmptyArray(metadata)) {
       return [] as unknown[] as R;
     }
     return iterate(metadata)
