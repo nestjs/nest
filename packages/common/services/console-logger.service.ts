@@ -44,6 +44,12 @@ export interface ConsoleLoggerOptions {
    */
   context?: string;
   /**
+   * If enabled, will force the use of console.log/console.error instead of process.stdout/stderr.write.
+   * This is useful for test environments like Jest that can buffer console calls.
+   * @default false
+   */
+  forceConsole?: boolean;
+  /**
    * If enabled, will print the log message in a single line, even if it is an object with multiple properties.
    * If set to a number, the most n inner elements are united on a single line as long as all properties fit into breakLength. Short array elements are also grouped together.
    * Default true when `json` is enabled, false otherwise.
@@ -334,7 +340,15 @@ export class ConsoleLogger implements LoggerService {
         timestampDiff,
       );
 
-      process[writeStreamType ?? 'stdout'].write(formattedMessage);
+      if (this.options.forceConsole) {
+        if (writeStreamType === 'stderr') {
+          console.error(formattedMessage.trim());
+        } else {
+          console.log(formattedMessage.trim());
+        }
+      } else {
+        process[writeStreamType ?? 'stdout'].write(formattedMessage);
+      }
     });
   }
 
@@ -352,7 +366,17 @@ export class ConsoleLogger implements LoggerService {
       !this.options.colors && this.inspectOptions.compact === true
         ? JSON.stringify(logObject, this.stringifyReplacer)
         : inspect(logObject, this.inspectOptions);
-    process[options.writeStreamType ?? 'stdout'].write(`${formattedMessage}\n`);
+    if (this.options.forceConsole) {
+      if (options.writeStreamType === 'stderr') {
+        console.error(formattedMessage);
+      } else {
+        console.log(formattedMessage);
+      }
+    } else {
+      process[options.writeStreamType ?? 'stdout'].write(
+        `${formattedMessage}\n`,
+      );
+    }
   }
 
   protected getJsonLogObject(
@@ -455,7 +479,11 @@ export class ConsoleLogger implements LoggerService {
     if (!stack || this.options.json) {
       return;
     }
-    process.stderr.write(`${stack}\n`);
+    if (this.options.forceConsole) {
+      console.error(stack);
+    } else {
+      process.stderr.write(`${stack}\n`);
+    }
   }
 
   protected updateAndGetTimestampDiff(): string {
