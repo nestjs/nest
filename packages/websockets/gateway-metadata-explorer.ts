@@ -10,6 +10,7 @@ import {
 import { NestGateway } from './interfaces/nest-gateway.interface';
 import { ParamsMetadata } from '@nestjs/core/helpers/interfaces';
 import { WsParamtype } from './enums/ws-paramtype.enum';
+import { ContextUtils } from '@nestjs/core/helpers/context-utils';
 
 export interface MessageMappingProperties {
   message: any;
@@ -19,6 +20,7 @@ export interface MessageMappingProperties {
 }
 
 export class GatewayMetadataExplorer {
+  private readonly contextUtils = new ContextUtils();
   constructor(private readonly metadataScanner: MetadataScanner) {}
 
   public explore(instance: NestGateway): MessageMappingProperties[] {
@@ -68,9 +70,12 @@ export class GatewayMetadataExplorer {
     if (!paramsMetadata) {
       return false;
     }
+    const metadataKeys = Object.keys(paramsMetadata);
+    return metadataKeys.some(key => {
+      const type = this.contextUtils.mapParamType(key);
 
-    const params = Object.values(paramsMetadata);
-    return params.some((param: any) => param.type === WsParamtype.ACK);
+      return (Number(type) as WsParamtype) === WsParamtype.ACK;
+    });
   }
 
   public *scanForServerHooks(instance: NestGateway): IterableIterator<string> {

@@ -1,3 +1,4 @@
+import { isFunction } from '@nestjs/common/utils/shared.utils';
 import { WsParamtype } from '../enums/ws-paramtype.enum';
 
 export class WsParamsFactory {
@@ -14,6 +15,9 @@ export class WsParamsFactory {
         return args[0];
       case WsParamtype.PAYLOAD:
         return data ? args[1]?.[data] : args[1];
+      case WsParamtype.ACK: {
+        return args.find(arg => isFunction(arg));
+      }
       default:
         return null;
     }
