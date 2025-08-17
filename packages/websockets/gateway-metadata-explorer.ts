@@ -5,13 +5,17 @@ import {
   GATEWAY_SERVER_METADATA,
   MESSAGE_MAPPING_METADATA,
   MESSAGE_METADATA,
+  PARAM_ARGS_METADATA,
 } from './constants';
 import { NestGateway } from './interfaces/nest-gateway.interface';
+import { ParamsMetadata } from '@nestjs/core/helpers/interfaces';
+import { WsParamtype } from './enums/ws-paramtype.enum';
 
 export interface MessageMappingProperties {
   message: any;
   methodName: string;
   callback: (...args: any[]) => Observable<any> | Promise<any>;
+  isAckHandledManually: boolean;
 }
 
 export class GatewayMetadataExplorer {
@@ -38,11 +42,35 @@ export class GatewayMetadataExplorer {
       return null;
     }
     const message = Reflect.getMetadata(MESSAGE_METADATA, callback);
+    const isAckHandledManually = this.hasAckDecorator(
+      instancePrototype,
+      methodName,
+    );
+
     return {
       callback,
       message,
       methodName,
+      isAckHandledManually,
     };
+  }
+
+  private hasAckDecorator(
+    instancePrototype: object,
+    methodName: string,
+  ): boolean {
+    const paramsMetadata: ParamsMetadata = Reflect.getMetadata(
+      PARAM_ARGS_METADATA,
+      instancePrototype.constructor,
+      methodName,
+    );
+
+    if (!paramsMetadata) {
+      return false;
+    }
+
+    const params = Object.values(paramsMetadata);
+    return params.some((param: any) => param.type === WsParamtype.ACK);
   }
 
   public *scanForServerHooks(instance: NestGateway): IterableIterator<string> {
