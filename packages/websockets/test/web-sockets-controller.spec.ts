@@ -417,7 +417,6 @@ describe('WebSocketsController', () => {
       expect(subscribe.called).to.be.true;
     });
   });
-
   describe('subscribeMessages', () => {
     const gateway = new Test();
 
