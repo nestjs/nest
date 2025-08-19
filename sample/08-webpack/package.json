@@ -24,7 +24,7 @@
     "@eslint/js": "9.31.0",
     "@nestjs/cli": "11.0.10",
     "@nestjs/schematics": "11.0.7",
-    "@types/node": "22.17.1",
+    "@types/node": "22.17.2",
     "eslint": "9.31.0",
     "eslint-plugin-prettier": "5.5.4",
     "globals": "16.3.0",
