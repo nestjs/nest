@@ -91,7 +91,7 @@
     "@fastify/middie": "9.0.3",
     "@fastify/multipart": "9.0.3",
     "@fastify/static": "8.2.0",
-    "@fastify/view": "11.1.0",
+    "@fastify/view": "11.1.1",
     "@grpc/grpc-js": "1.13.4",
     "@grpc/proto-loader": "0.8.0",
     "@nestjs/apollo": "13.1.0",
