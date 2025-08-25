@@ -114,7 +114,7 @@
     "@types/ws": "8.18.1",
     "amqp-connection-manager": "4.1.14",
     "amqplib": "0.10.8",
-    "artillery": "2.0.23",
+    "artillery": "2.0.24",
     "body-parser": "2.2.0",
     "bytes": "3.1.2",
     "cache-manager": "7.1.1",
