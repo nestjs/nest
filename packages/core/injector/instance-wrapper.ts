@@ -439,7 +439,11 @@ export class InstanceWrapper<T = any> {
     const instances = [...this.transientMap.values()];
     return iterate(instances)
       .map(item => item.get(STATIC_CONTEXT))
-      .filter(item => !!item)
+      .filter(item => {
+        // Only return items that have an actual instance
+        // This prevents calling lifecycle hooks on non-instantiated transient services
+        return !!item && !!item.instance;
+      })
       .toArray();
   }
 
