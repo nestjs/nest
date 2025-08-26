@@ -440,9 +440,9 @@ export class InstanceWrapper<T = any> {
     return iterate(instances)
       .map(item => item.get(STATIC_CONTEXT))
       .filter(item => {
-        // Only return items that have an actual instance
+        // Only return items that have been properly resolved (constructor called)
         // This prevents calling lifecycle hooks on non-instantiated transient services
-        return !!item && !!item.instance;
+        return item && item.isResolved;
       })
       .toArray();
   }
