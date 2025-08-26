@@ -122,7 +122,7 @@
     "chai": "4.5.0",
     "chai-as-promised": "7.1.2",
     "clang-format": "1.8.0",
-    "concurrently": "9.2.0",
+    "concurrently": "9.2.1",
     "conventional-changelog": "7.1.1",
     "core-js": "3.45.1",
     "coveralls": "3.1.1",
