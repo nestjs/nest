@@ -1,6 +1,6 @@
 import { inspect, InspectOptions } from 'util';
 import { Injectable, Optional } from '../decorators/core';
-import { clc, yellow } from '../utils/cli-colors.util';
+import { clc, yellow, isColorAllowed } from '../utils/cli-colors.util';
 import {
   isFunction,
   isPlainObject,
@@ -154,7 +154,7 @@ export class ConsoleLogger implements LoggerService {
 
     opts = opts ?? {};
     opts.logLevels ??= DEFAULT_LOG_LEVELS;
-    opts.colors ??= opts.colors ?? (opts.json ? false : true);
+    opts.colors ??= opts.colors ?? (opts.json ? false : isColorAllowed());
     opts.prefix ??= 'Nest';
 
     this.options = opts;
