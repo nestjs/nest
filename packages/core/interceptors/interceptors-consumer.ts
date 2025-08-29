@@ -4,7 +4,7 @@ import {
   ContextType,
   Controller,
 } from '@nestjs/common/interfaces';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { isEmptyArray } from '@nestjs/common/utils/shared.utils';
 import { AsyncResource } from 'async_hooks';
 import { Observable, defer, from as fromPromise } from 'rxjs';
 import { mergeAll, switchMap } from 'rxjs/operators';
@@ -19,7 +19,7 @@ export class InterceptorsConsumer {
     next: () => Promise<unknown>,
     type?: TContext,
   ): Promise<unknown> {
-    if (isEmpty(interceptors)) {
+    if (isEmptyArray(interceptors)) {
       return next();
     }
     const context = this.createContext(args, instance, callback);
