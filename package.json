@@ -156,7 +156,7 @@
     "light-my-request": "6.6.0",
     "lint-staged": "16.1.5",
     "markdown-table": "2.0.0",
-    "mocha": "11.7.1",
+    "mocha": "11.7.2",
     "mongoose": "8.18.0",
     "mqtt": "5.14.0",
     "multer": "2.0.2",
