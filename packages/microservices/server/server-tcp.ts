@@ -82,7 +82,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     readSocket.on('message', async (msg: ReadPacket & PacketId) =>
       this.handleMessage(readSocket, msg),
     );
-    readSocket.on(TcpEventsMap.ERROR, err=>{
+    readSocket.on(TcpEventsMap.ERROR, err => {
       const invalidError = new InvalidTcpDataReceptionException(err);
       this.handleError(invalidError)
     });
