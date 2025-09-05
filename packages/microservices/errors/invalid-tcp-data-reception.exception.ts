@@ -2,7 +2,9 @@ import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.excepti
 
 export class InvalidTcpDataReceptionException extends RuntimeException {
   constructor(err: string) {
-    const _errMsg = err.includes('Corrupted length value') ? 'Corrupted length value of the received data supplied in a packet.' : 'The invalid received message from tcp server.';
+    const _errMsg = err.includes('Corrupted length value') 
+      ? 'Corrupted length value of the received data supplied in a packet.' 
+      : 'The invalid received message from tcp server.';
     super(_errMsg);
   }
 }
