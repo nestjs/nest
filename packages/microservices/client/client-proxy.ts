@@ -11,7 +11,13 @@ import {
   ReplaySubject,
   Subject,
 } from 'rxjs';
-import { distinctUntilChanged, map, mergeMap, take } from 'rxjs/operators';
+import {
+  distinctUntilChanged,
+  map,
+  mergeMap,
+  shareReplay,
+  take,
+} from 'rxjs/operators';
 import { IncomingResponseDeserializer } from '../deserializers/incoming-response.deserializer';
 import { InvalidMessageException } from '../errors/invalid-message.exception';
 import {
@@ -115,14 +121,23 @@ export abstract class ClientProxy<
     if (isNil(pattern) || isNil(data)) {
       return _throw(() => new InvalidMessageException());
     }
-    const source = defer(async () => this.connect()).pipe(
-      mergeMap(() => this.dispatchEvent({ pattern, data })),
+
+    const dispatchObservable = defer(() =>
+      this.dispatchEvent({ pattern, data }),
     );
+    const source = this.shouldCacheDispatch()
+      ? defer(async () => this.connect()).pipe(
+          mergeMap(() => dispatchObservable.pipe(shareReplay(1))),
+        )
+      : defer(async () => this.connect()).pipe(
+          mergeMap(() => dispatchObservable),
+        );
     const connectableSource = connectable(source, {
       connector: () => new Subject(),
       resetOnDisconnect: false,
     });
     connectableSource.connect();
+
     return connectableSource;
   }
 
@@ -132,6 +147,45 @@ export abstract class ClientProxy<
   ): () => void;
 
   protected abstract dispatchEvent<T = any>(packet: ReadPacket): Promise<T>;
+
+  /**
+   * Determines whether the dispatch observable should be cached to avoid
+   * reinitializing connections on each subscription.
+   *
+   * This method provides an opt-in mechanism for custom transport implementations
+   * that manage persistent connections (e.g., Azure Service Bus, Kafka, custom message brokers)
+   * to improve performance by reusing the same dispatch observable across multiple
+   * subscriptions to the same emit() call.
+   *
+   * When enabled, the dispatch observable is cached using RxJS shareReplay(1),
+   * which means:
+   * - The connection is established only once per emit() call
+   * - Multiple subscribers to the same observable share the same dispatch execution
+   * - Subsequent subscriptions receive the cached result without re-executing dispatchEvent()
+   *
+   * This is particularly beneficial for transport implementations where:
+   * - Connection establishment is expensive
+   * - The underlying client maintains persistent connections
+   * - Multiple consumers need to subscribe to the same event emission
+   *
+   * @returns {boolean} true if the dispatch observable should be cached, false otherwise
+   *
+   * @example
+   * ```typescript
+   * export class ServiceBusClientProxy extends ClientProxy {
+   *   protected shouldCacheDispatch(): boolean {
+   *     return true; // Enable caching for persistent connections
+   *   }
+   *
+   *   // ... rest of implementation
+   * }
+   * ```
+   *
+   * @since 11.1.6
+   */
+  protected shouldCacheDispatch(): boolean {
+    return false;
+  }
 
   protected createObserver<T>(
     observer: Observer<T>,
