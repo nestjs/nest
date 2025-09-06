@@ -1,6 +1,6 @@
 import { CanActivate } from '@nestjs/common';
 import { ContextType, Controller } from '@nestjs/common/interfaces';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { isEmptyArray } from '@nestjs/common/utils/shared.utils';
 import { lastValueFrom, Observable } from 'rxjs';
 import { ExecutionContextHost } from '../helpers/execution-context-host';
 
@@ -12,7 +12,7 @@ export class GuardsConsumer {
     callback: (...args: unknown[]) => unknown,
     type?: TContext,
   ): Promise<boolean> {
-    if (!guards || isEmpty(guards)) {
+    if (!guards || isEmptyArray(guards)) {
       return true;
     }
     const context = this.createContext(args, instance, callback);
