@@ -127,7 +127,8 @@ Potential solutions:
   @Module({
     imports: [ /* the Module containing "MISSING_DEP" */ ]
   })
-`);
+
+For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors`);
       }
     });
   });
