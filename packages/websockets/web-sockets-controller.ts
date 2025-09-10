@@ -140,7 +140,9 @@ export class WebSocketsController {
 
       const disconnectHook = adapter.bindClientDisconnect;
       disconnectHook &&
-        disconnectHook.call(adapter, client, () => disconnect.next(client));
+        disconnectHook.call(adapter, client, (reason?: string) =>
+          disconnect.next({ client, reason }),
+        );
     };
   }
 
@@ -163,8 +165,21 @@ export class WebSocketsController {
   public subscribeDisconnectEvent(instance: NestGateway, event: Subject<any>) {
     if (instance.handleDisconnect) {
       event
-        .pipe(distinctUntilChanged())
-        .subscribe(instance.handleDisconnect.bind(instance));
+        .pipe(
+          distinctUntilChanged((prev, curr) => {
+            const prevClient = prev?.client || prev;
+            const currClient = curr?.client || curr;
+            return prevClient === currClient;
+          }),
+        )
+        .subscribe((data: any) => {
+          if (data && typeof data === 'object' && 'client' in data) {
+            instance.handleDisconnect!(data.client, data.reason);
+          } else {
+            // Backward compatibility: if it's just the client
+            instance.handleDisconnect!(data);
+          }
+        });
     }
   }
 
