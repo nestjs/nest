@@ -835,12 +835,14 @@ export class Injector {
         : new (metatype as Type<any>)(...instances);
 
       instanceHost.instance = this.instanceDecorator(instanceHost.instance);
+      instanceHost.isConstructorCalled = true;
     } else if (isInContext) {
       const factoryReturnValue = (targetMetatype.metatype as any as Function)(
         ...instances,
       );
       instanceHost.instance = await factoryReturnValue;
       instanceHost.instance = this.instanceDecorator(instanceHost.instance);
+      instanceHost.isConstructorCalled = true;
     }
     instanceHost.isResolved = true;
     return instanceHost.instance;
