@@ -91,6 +91,10 @@ export class NestFactoryStatic {
     this.setAbortOnError(serverOrOptions, options);
     this.registerLoggerConfiguration(appOptions);
 
+    if (appOptions?.routeRewrites) {
+      applicationConfig.setRouteRewrites(appOptions.routeRewrites);
+    }
+
     await this.initialize(
       moduleCls,
       container,

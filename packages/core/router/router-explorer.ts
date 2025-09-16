@@ -62,6 +62,7 @@ export class RouterExplorer {
     timestamp: true,
   });
   private readonly exceptionFiltersCache = new WeakMap();
+  private routeRewritesRegistered = false;
 
   constructor(
     metadataScanner: MetadataScanner,
@@ -69,20 +70,23 @@ export class RouterExplorer {
     private readonly injector: Injector,
     private readonly routerProxy: RouterProxy,
     private readonly exceptionsFilter: ExceptionsFilter,
-    config: ApplicationConfig,
+    private readonly config: ApplicationConfig,
     private readonly routePathFactory: RoutePathFactory,
     private readonly graphInspector: GraphInspector,
   ) {
     this.pathsExplorer = new PathsExplorer(metadataScanner);
 
     const routeParamsFactory = new RouteParamsFactory();
-    const pipesContextCreator = new PipesContextCreator(container, config);
+    const pipesContextCreator = new PipesContextCreator(container, this.config);
     const pipesConsumer = new PipesConsumer();
-    const guardsContextCreator = new GuardsContextCreator(container, config);
+    const guardsContextCreator = new GuardsContextCreator(
+      container,
+      this.config,
+    );
     const guardsConsumer = new GuardsConsumer();
     const interceptorsContextCreator = new InterceptorsContextCreator(
       container,
-      config,
+      this.config,
     );
     const interceptorsConsumer = new InterceptorsConsumer();
 
@@ -137,6 +141,9 @@ export class RouterExplorer {
     routePathMetadata: RoutePathMetadata,
     host: string | RegExp | Array<string | RegExp>,
   ) {
+    // Register route rewrites once before processing any routes
+    this.registerRouteRewrites(router);
+
     (routeDefinitions || []).forEach(routeDefinition => {
       const { version: methodVersion } = routeDefinition;
       routePathMetadata.methodVersion = methodVersion;
@@ -459,5 +466,68 @@ export class RouterExplorer {
         targetCallback,
       );
     }
+  }
+
+  private registerRouteRewrites<T extends HttpServer>(router: T) {
+    if (this.routeRewritesRegistered) {
+      return;
+    }
+
+    const routeRewrites = this.config.getRouteRewrites();
+    if (!routeRewrites || routeRewrites.length === 0) {
+      this.routeRewritesRegistered = true;
+      return;
+    }
+
+    const prefix = this.config.getGlobalPrefix();
+    const basePath = addLeadingSlash(prefix);
+
+    routeRewrites.forEach(rewrite => {
+      const { from, to, methods, statusCode = 301 } = rewrite;
+
+      const fromPath =
+        basePath && !from.startsWith(basePath)
+          ? addLeadingSlash(basePath + from)
+          : addLeadingSlash(from);
+
+      const redirectHandler = (req: any, res: any) => {
+        res.redirect(statusCode, to);
+      };
+
+      // Register for specific methods or all methods
+      if (methods !== undefined) {
+        const methodArray = Array.isArray(methods) ? methods : [methods];
+        methodArray.forEach(method => {
+          const routerMethod = this.routerMethodFactory.get(router, method);
+          if (routerMethod) {
+            routerMethod.call(router, fromPath, redirectHandler);
+            this.logger.log(
+              `Route rewrite registered: ${RequestMethod[method]} ${fromPath} -> ${to} (${statusCode})`,
+            );
+          }
+        });
+      } else {
+        // Register for all HTTP methods
+        [
+          RequestMethod.GET,
+          RequestMethod.POST,
+          RequestMethod.PUT,
+          RequestMethod.DELETE,
+          RequestMethod.PATCH,
+          RequestMethod.HEAD,
+          RequestMethod.OPTIONS,
+        ].forEach(method => {
+          const routerMethod = this.routerMethodFactory.get(router, method);
+          if (routerMethod) {
+            routerMethod.call(router, fromPath, redirectHandler);
+          }
+        });
+        this.logger.log(
+          `Route rewrite registered: ${fromPath} -> ${to} (${statusCode})`,
+        );
+      }
+    });
+
+    this.routeRewritesRegistered = true;
   }
 }

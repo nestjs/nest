@@ -4,6 +4,7 @@ import {
 } from './external/cors-options.interface';
 import { HttpsOptions } from './external/https-options.interface';
 import { NestApplicationContextOptions } from './nest-application-context-options.interface';
+import { RouteRewriteOptions } from './route-rewrite-options.interface';
 
 /**
  * @publicApi
@@ -30,4 +31,8 @@ export interface NestApplicationOptions extends NestApplicationContextOptions {
    * keep-alive connections in the HTTP adapter.
    */
   forceCloseConnections?: boolean;
+  /**
+   * Route rewrite configurations. Allows routing requests from old paths to new paths.
+   */
+  routeRewrites?: RouteRewriteOptions[];
 }

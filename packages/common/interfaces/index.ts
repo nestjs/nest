@@ -27,3 +27,4 @@ export * from './scope-options.interface';
 export * from './type.interface';
 export * from './version-options.interface';
 export * from './websockets/web-socket-adapter.interface';
+export * from './route-rewrite-options.interface';

@@ -262,4 +262,253 @@ describe('RouterExplorer', () => {
       ).to.be.equal('test_metadata_value');
     });
   });
+
+  describe('registerRouteRewrites', () => {
+    let mockHttpAdapter: any;
+
+    beforeEach(() => {
+      mockHttpAdapter = {
+        get: sinon.stub(),
+        post: sinon.stub(),
+        put: sinon.stub(),
+        delete: sinon.stub(),
+        patch: sinon.stub(),
+        head: sinon.stub(),
+        options: sinon.stub(),
+        use: sinon.stub(),
+      };
+
+      // Reset the routeRewritesRegistered flag for each test
+      (routerBuilder as any).routeRewritesRegistered = false;
+    });
+
+    it('should register route rewrites when applyPathsToRouterProxy is called', () => {
+      const routeRewrites = [
+        { from: '/old-path', to: '/new-path', statusCode: 301 },
+        {
+          from: '/another-old',
+          to: '/another-new',
+          methods: RequestMethod.GET,
+        },
+      ];
+      applicationConfig.setRouteRewrites(routeRewrites);
+
+      routerBuilder.applyPathsToRouterProxy(
+        mockHttpAdapter,
+        [],
+        {} as InstanceWrapper,
+        'TestModule',
+        {} as RoutePathMetadata,
+        '',
+      );
+
+      expect(mockHttpAdapter.get.called).to.be.true;
+    });
+
+    it('should not register route rewrites when none are configured', () => {
+      applicationConfig.setRouteRewrites([]);
+
+      routerBuilder.applyPathsToRouterProxy(
+        mockHttpAdapter,
+        [],
+        {} as InstanceWrapper,
+        'TestModule',
+        {} as RoutePathMetadata,
+        '',
+      );
+
+      expect(mockHttpAdapter.get.called).to.be.false;
+    });
+
+    it('should register route rewrites only once', () => {
+      const routeRewrites = [{ from: '/old-path', to: '/new-path' }];
+      applicationConfig.setRouteRewrites(routeRewrites);
+
+      routerBuilder.applyPathsToRouterProxy(
+        mockHttpAdapter,
+        [],
+        {} as InstanceWrapper,
+        'TestModule',
+        {} as RoutePathMetadata,
+        '',
+      );
+
+      routerBuilder.applyPathsToRouterProxy(
+        mockHttpAdapter,
+        [],
+        {} as InstanceWrapper,
+        'TestModule',
+        {} as RoutePathMetadata,
+        '',
+      );
+
+      expect(mockHttpAdapter.get.callCount).to.be.equal(1);
+    });
+
+    it('should register for all HTTP methods when no methods specified', () => {
+      const routeRewrites = [{ from: '/old', to: '/new' }];
+      applicationConfig.setRouteRewrites(routeRewrites);
+
+      // Reset flag
+      (routerBuilder as any).routeRewritesRegistered = false;
+
+      routerBuilder.applyPathsToRouterProxy(
+        mockHttpAdapter,
+        [],
+        {} as InstanceWrapper,
+        'TestModule',
+        {} as RoutePathMetadata,
+        '',
+      );
+
+      // All HTTP methods should be registered
+      expect(mockHttpAdapter.get.called).to.be.true;
+      expect(mockHttpAdapter.post.called).to.be.true;
+      expect(mockHttpAdapter.delete.called).to.be.true;
+    });
+
+    it('should register only specified single method', () => {
+      const routeRewrites = [
+        { from: '/specific', to: '/new-specific', methods: RequestMethod.GET },
+      ];
+      applicationConfig.setRouteRewrites(routeRewrites);
+
+      // Reset flag
+      (routerBuilder as any).routeRewritesRegistered = false;
+
+      routerBuilder.applyPathsToRouterProxy(
+        mockHttpAdapter,
+        [],
+        {} as InstanceWrapper,
+        'TestModule',
+        {} as RoutePathMetadata,
+        '',
+      );
+
+      // Only GET method should be registered
+      expect(mockHttpAdapter.get.callCount).to.be.equal(1);
+      expect(mockHttpAdapter.post.callCount).to.be.equal(0);
+      expect(mockHttpAdapter.delete.callCount).to.be.equal(0);
+    });
+
+    it('should register multiple specified methods', () => {
+      const routeRewrites = [
+        {
+          from: '/multi',
+          to: '/new-multi',
+          methods: [RequestMethod.GET, RequestMethod.POST],
+        },
+      ];
+      applicationConfig.setRouteRewrites(routeRewrites);
+
+      // Reset flag
+      (routerBuilder as any).routeRewritesRegistered = false;
+      mockHttpAdapter.put.resetHistory();
+
+      routerBuilder.applyPathsToRouterProxy(
+        mockHttpAdapter,
+        [],
+        {} as InstanceWrapper,
+        'TestModule',
+        {} as RoutePathMetadata,
+        '',
+      );
+
+      // GET and POST methods should be registered
+      expect(mockHttpAdapter.get.callCount).to.be.equal(1);
+      expect(mockHttpAdapter.post.callCount).to.be.equal(1);
+      expect(mockHttpAdapter.delete.callCount).to.be.equal(0);
+      expect(mockHttpAdapter.put.callCount).to.be.equal(0);
+    });
+
+    it('should use 301 status code by default', () => {
+      const routeRewrites = [{ from: '/temp', to: '/maintenance' }];
+      applicationConfig.setRouteRewrites(routeRewrites);
+
+      // Reset flag
+      (routerBuilder as any).routeRewritesRegistered = false;
+
+      routerBuilder.applyPathsToRouterProxy(
+        mockHttpAdapter,
+        [],
+        {} as InstanceWrapper,
+        'TestModule',
+        {} as RoutePathMetadata,
+        '',
+      );
+
+      // Verify the redirect handler uses 301 by default
+      expect(mockHttpAdapter.get.called).to.be.true;
+      const redirectHandler = mockHttpAdapter.get.firstCall.args[1];
+
+      const mockResponse = { redirect: sinon.spy() };
+      redirectHandler({}, mockResponse);
+
+      expect(mockResponse.redirect.calledWith(301, '/maintenance')).to.be.true;
+    });
+
+    it('should use custom status code when provided', () => {
+      const routeRewrites = [
+        { from: '/temporary', to: '/temp-page', statusCode: 302 },
+      ];
+      applicationConfig.setRouteRewrites(routeRewrites);
+
+      // Reset flag
+      (routerBuilder as any).routeRewritesRegistered = false;
+
+      routerBuilder.applyPathsToRouterProxy(
+        mockHttpAdapter,
+        [],
+        {} as InstanceWrapper,
+        'TestModule',
+        {} as RoutePathMetadata,
+        '',
+      );
+
+      // Verify the redirect handler uses custom status code
+      expect(mockHttpAdapter.get.called).to.be.true;
+      const redirectHandler = mockHttpAdapter.get.firstCall.args[1];
+
+      const mockResponse = { redirect: sinon.spy() };
+      redirectHandler({}, mockResponse);
+
+      expect(mockResponse.redirect.calledWith(302, '/temp-page')).to.be.true;
+    });
+
+    it('should handle complex scenario with methods and statusCode', () => {
+      const routeRewrites = [
+        {
+          from: '/complex',
+          to: '/new-complex',
+          methods: RequestMethod.PUT,
+          statusCode: 308,
+        },
+      ];
+      applicationConfig.setRouteRewrites(routeRewrites);
+
+      // Reset flag
+      (routerBuilder as any).routeRewritesRegistered = false;
+
+      routerBuilder.applyPathsToRouterProxy(
+        mockHttpAdapter,
+        [],
+        {} as InstanceWrapper,
+        'TestModule',
+        {} as RoutePathMetadata,
+        '',
+      );
+
+      // Only PUT method should be registered
+      expect(mockHttpAdapter.put.callCount).to.be.equal(1);
+      expect(mockHttpAdapter.get.callCount).to.be.equal(0);
+      expect(mockHttpAdapter.post.callCount).to.be.equal(0);
+
+      // Verify custom status code
+      const redirectHandler = mockHttpAdapter.put.firstCall.args[1];
+      const mockResponse = { redirect: sinon.spy() };
+      redirectHandler({}, mockResponse);
+
+      expect(mockResponse.redirect.calledWith(308, '/new-complex')).to.be.true;
+    });
+  });
 });

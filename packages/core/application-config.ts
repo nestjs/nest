@@ -6,7 +6,10 @@ import {
   VersioningOptions,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
+import {
+  GlobalPrefixOptions,
+  RouteRewriteOptions,
+} from '@nestjs/common/interfaces';
 import { InstanceWrapper } from './injector/instance-wrapper';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
 
@@ -24,6 +27,7 @@ export class ApplicationConfig {
   private readonly globalRequestInterceptors: InstanceWrapper<NestInterceptor>[] =
     [];
   private readonly globalRequestGuards: InstanceWrapper<CanActivate>[] = [];
+  private routeRewrites: RouteRewriteOptions[] = [];
 
   constructor(private ioAdapter: WebSocketAdapter | null = null) {}
 
@@ -146,5 +150,13 @@ export class ApplicationConfig {
 
   public getVersioning(): VersioningOptions | undefined {
     return this.versioningOptions;
+  }
+
+  public setRouteRewrites(routeRewrites: RouteRewriteOptions[]): void {
+    this.routeRewrites = routeRewrites;
+  }
+
+  public getRouteRewrites(): RouteRewriteOptions[] {
+    return this.routeRewrites;
   }
 }
