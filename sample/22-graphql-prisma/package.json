@@ -42,7 +42,7 @@
     "@nestjs/schematics": "11.0.7",
     "@nestjs/testing": "11.1.6",
     "@types/express": "5.0.3",
-    "@types/node": "22.18.1",
+    "@types/node": "22.18.4",
     "@types/supertest": "6.0.3",
     "@typescript-eslint/eslint-plugin": "8.43.0",
     "@typescript-eslint/parser": "8.43.0",
