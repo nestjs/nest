@@ -135,6 +135,7 @@ describe('WebSocketsController', () => {
           message: 'message',
           methodName: 'methodName',
           callback: handlerCallback,
+          isAckHandledManually: false,
         },
       ];
       server = { server: 'test' };
@@ -173,6 +174,7 @@ describe('WebSocketsController', () => {
           message: 'message',
           methodName: 'methodName',
           callback: messageHandlerCallback,
+          isAckHandledManually: false,
         },
       ]);
     });
@@ -188,11 +190,13 @@ describe('WebSocketsController', () => {
           methodName: 'findOne',
           message: 'find',
           callback: null!,
+          isAckHandledManually: false,
         },
         {
           methodName: 'create',
           message: 'insert',
           callback: null!,
+          isAckHandledManually: false,
         },
       ];
       const insertEntrypointDefinitionSpy = sinon.spy(
@@ -423,13 +427,39 @@ describe('WebSocketsController', () => {
       client = { on: onSpy, off: onSpy };
 
       handlers = [
-        { message: 'test', callback: { bind: () => 'testCallback' } },
-        { message: 'test2', callback: { bind: () => 'testCallback2' } },
+        {
+          message: 'test',
+          callback: { bind: () => 'testCallback' },
+          isAckHandledManually: true,
+        },
+        {
+          message: 'test2',
+          callback: { bind: () => 'testCallback2' },
+          isAckHandledManually: false,
+        },
       ];
     });
     it('should bind each handler to client', () => {
       instance.subscribeMessages(handlers, client, gateway);
       expect(onSpy.calledTwice).to.be.true;
+    });
+    it('should pass "isAckHandledManually" flag to the adapter', () => {
+      const adapter = config.getIoAdapter();
+      const bindMessageHandlersSpy = sinon.spy(adapter, 'bindMessageHandlers');
+
+      instance.subscribeMessages(handlers, client, gateway);
+
+      const handlersPassedToAdapter = bindMessageHandlersSpy.firstCall.args[1];
+
+      expect(handlersPassedToAdapter[0].message).to.equal(handlers[0].message);
+      expect(handlersPassedToAdapter[0].isAckHandledManually).to.equal(
+        handlers[0].isAckHandledManually,
+      );
+
+      expect(handlersPassedToAdapter[1].message).to.equal(handlers[1].message);
+      expect(handlersPassedToAdapter[1].isAckHandledManually).to.equal(
+        handlers[1].isAckHandledManually,
+      );
     });
   });
   describe('pickResult', () => {
