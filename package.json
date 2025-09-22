@@ -174,7 +174,7 @@
     "supertest": "7.1.4",
     "ts-morph": "27.0.0",
     "ts-node": "10.9.2",
-    "typeorm": "0.3.26",
+    "typeorm": "0.3.27",
     "typescript": "5.9.2",
     "typescript-eslint": "8.44.0",
     "wrk": "1.2.1",
