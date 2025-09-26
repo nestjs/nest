@@ -82,8 +82,8 @@
   "devDependencies": {
     "@apollo/server": "4.12.2",
     "@codechecks/client": "0.1.12",
-    "@commitlint/cli": "19.8.1",
-    "@commitlint/config-angular": "19.8.1",
+    "@commitlint/cli": "20.0.0",
+    "@commitlint/config-angular": "20.0.0",
     "@eslint/eslintrc": "3.3.1",
     "@eslint/js": "9.35.0",
     "@fastify/cors": "11.1.0",
