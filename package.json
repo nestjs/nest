@@ -112,7 +112,7 @@
     "@types/sinon": "17.0.4",
     "@types/supertest": "6.0.3",
     "@types/ws": "8.18.1",
-    "amqp-connection-manager": "4.1.14",
+    "amqp-connection-manager": "4.1.15",
     "amqplib": "0.10.9",
     "artillery": "2.0.26",
     "body-parser": "2.2.0",
