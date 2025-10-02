@@ -41,5 +41,38 @@ describe('WebSocketGateway (ack)', () => {
     );
   });
 
+  it('should handle manual ack for async operations when @Ack() is used (success case)', async () => {
+    app = await createNestApp(AckGateway);
+    await app.listen(3000);
+
+    ws = io('http://localhost:8080');
+    const payload = { shouldSucceed: true };
+
+    await new Promise<void>(resolve =>
+      ws.emit('manual-ack', payload, response => {
+        expect(response).to.eql({ status: 'success', data: payload });
+        resolve();
+      }),
+    );
+  });
+
+  it('should handle manual ack for async operations when @Ack() is used (error case)', async () => {
+    app = await createNestApp(AckGateway);
+    await app.listen(3000);
+
+    ws = io('http://localhost:8080');
+    const payload = { shouldSucceed: false };
+
+    await new Promise<void>(resolve =>
+      ws.emit('manual-ack', payload, response => {
+        expect(response).to.eql({
+          status: 'error',
+          message: 'Operation failed',
+        });
+        resolve();
+      }),
+    );
+  });
+
   afterEach(() => app.close());
 });
