@@ -73,7 +73,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td><a href="https://www.redhat.com" target="_blank"><img src="https://nestjs.com/img/logos/red-hat-logo.svg" width="200" valign="middle" /></a></td>
 <td><a href="https://github.com/Sanofi-IADC" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/sanofi.png" width="180" valign="middle" /></a></td>
 <td><a href="https://nx.dev" target="_blank"><img src="https://nestjs.com/img/logos/nx-logo.png" height="45" valign="middle" /></a></td>
-<td><a href="https://intrinsic.ventures/" target="_blank"><img src="https://nestjs.com/img/logos/intrinisic-logo.png" width="210" valign="middle" /></a></td>
+<td><a href="https://intrinsic.ventures/" target="_blank"><img src="https://nestjs.com/img/logos/intrinsic-logo.png" width="210" valign="middle" /></a></td>
 <td><a href="https://jetbrains.com/" target="_blank"><img src="https://nestjs.com/img/logos/jetbrains-logo.svg" width="90" valign="middle" /></a></td>
 </tr>
 <tr>
