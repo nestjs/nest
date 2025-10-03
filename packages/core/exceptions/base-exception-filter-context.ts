@@ -1,7 +1,7 @@
 import { FILTER_CATCH_EXCEPTIONS } from '@nestjs/common/constants';
 import { Type } from '@nestjs/common/interfaces';
 import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';
-import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
+import { isEmptyArray, isFunction } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
 import { ContextCreator } from '../helpers/context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
@@ -20,7 +20,7 @@ export class BaseExceptionFilterContext extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): R {
-    if (isEmpty(metadata)) {
+    if (isEmptyArray(metadata)) {
       return [] as any[] as R;
     }
     return iterate(metadata)

@@ -18,7 +18,7 @@ import {
 import { RouteParamMetadata } from '@nestjs/common/decorators';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { ContextType, Controller } from '@nestjs/common/interfaces';
-import { isEmpty, isString } from '@nestjs/common/utils/shared.utils';
+import { isEmptyArray, isString } from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage } from 'http';
 import { Observable } from 'rxjs';
 import {
@@ -238,7 +238,7 @@ export class RouterExecutionContext {
       : this.responseController.getStatusByMethod(requestMethod);
 
     const responseHeaders = this.reflectResponseHeaders(callback);
-    const hasCustomHeaders = !isEmpty(responseHeaders);
+    const hasCustomHeaders = !isEmptyArray(responseHeaders);
     const handlerMetadata: HandlerMetadata = {
       argsLength,
       fnHandleResponse,
@@ -332,7 +332,7 @@ export class RouterExecutionContext {
     }: { metatype: unknown; type: RouteParamtypes; data: unknown },
     pipes: PipeTransform[],
   ): Promise<unknown> {
-    if (!isEmpty(pipes)) {
+    if (!isEmptyArray(pipes)) {
       return this.pipesConsumer.apply(
         value,
         { metatype, type, data } as any,
