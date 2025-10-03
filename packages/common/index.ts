@@ -68,3 +68,4 @@ export * from './pipes';
 export * from './serializer';
 export * from './services';
 export * from './utils';
+export * from './circuit-breaker';
