@@ -81,6 +81,7 @@
   },
   "devDependencies": {
     "@apollo/server": "4.12.2",
+    "@as-integrations/express5": "1.1.2",
     "@codechecks/client": "0.1.12",
     "@commitlint/cli": "20.1.0",
     "@commitlint/config-angular": "20.0.0",
