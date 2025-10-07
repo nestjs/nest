@@ -223,8 +223,12 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         arguments: this.getOptionsProp(this.options, 'exchangeArguments', {}),
       });
 
-      if (this.options.routingKey) {
-        await channel.bindQueue(this.queue, exchange, this.options.routingKey);
+      if (this.options.routingKey || this.options.exchangeType === 'fanout') {
+        await channel.bindQueue(
+          this.queue,
+          exchange,
+          this.options.exchangeType === 'fanout' ? '' : this.options.routingKey,
+        );
       }
 
       if (this.options.wildcards) {

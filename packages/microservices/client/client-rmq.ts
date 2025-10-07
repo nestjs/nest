@@ -208,11 +208,14 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       await channel.assertQueue(this.queue, this.queueOptions);
     }
 
-    if (this.options.exchange && this.options.routingKey) {
+    if (
+      this.options.exchange &&
+      (this.options.routingKey || this.options.exchangeType === 'fanout')
+    ) {
       await channel.bindQueue(
         this.queue,
         this.options.exchange,
-        this.options.routingKey,
+        this.options.exchangeType === 'fanout' ? '' : this.options.routingKey,
       );
     }
 
@@ -391,7 +394,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
         correlationId,
       };
 
-      if (this.options.wildcards) {
+      if (this.options.wildcards || this.options.exchangeType === 'fanout') {
         const stringifiedPattern = isString(message.pattern)
           ? message.pattern
           : JSON.stringify(message.pattern);
@@ -443,7 +446,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       const errorCallback = (err: unknown) =>
         err ? reject(err as Error) : resolve();
 
-      return this.options.wildcards
+      return this.options.wildcards || this.options.exchangeType === 'fanout'
         ? this.channel!.publish(
             // The exchange is the same as the queue when wildcards are enabled
             // and the exchange is not explicitly set
