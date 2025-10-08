@@ -89,3 +89,7 @@ describe('UserService', () => {
     });
   });
 });
+it('should define findAll method', () => {
+  const service = new UsersService(null as any);
+  expect(typeof service.findAll).toBe('function');
+});
