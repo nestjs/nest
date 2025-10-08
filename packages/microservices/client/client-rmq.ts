@@ -204,22 +204,19 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       this.getOptionsProp(this.options, 'isGlobalPrefetchCount') ||
       RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
 
-    if (!this.noAssert) {
-      await channel.assertQueue(this.queue, this.queueOptions);
-    }
+    if (!this.options.wildcards && this.options.exchangeType !== 'fanout') {
+      if (!this.noAssert) {
+        await channel.assertQueue(this.queue, this.queueOptions);
+      }
 
-    if (
-      this.options.exchange &&
-      (this.options.routingKey || this.options.exchangeType === 'fanout')
-    ) {
-      await channel.bindQueue(
-        this.queue,
-        this.options.exchange,
-        this.options.exchangeType === 'fanout' ? '' : this.options.routingKey,
-      );
-    }
-
-    if (this.options.wildcards) {
+      if (this.options.exchange && this.options.routingKey) {
+        await channel.bindQueue(
+          this.queue,
+          this.options.exchange,
+          this.options.exchangeType === 'fanout' ? '' : this.options.routingKey,
+        );
+      }
+    } else {
       const exchange = this.getOptionsProp(
         this.options,
         'exchange',
