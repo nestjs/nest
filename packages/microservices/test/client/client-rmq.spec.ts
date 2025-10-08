@@ -125,7 +125,6 @@ describe('ClientRMQ', function () {
     const prefetchCount = 10;
 
     let consumeStub: sinon.SinonStub;
-    let bindQueueStub: sinon.SinonStub;
     let channel: any = {};
 
     beforeEach(() => {
@@ -136,9 +135,9 @@ describe('ClientRMQ', function () {
       channel = {
         assertQueue: sinon.spy(() => ({})),
         prefetch: sinon.spy(),
-        bindQueue: bindQueueStub,
+        bindQueue: sinon.spy(),
+        assertExchange: sinon.spy(),
       };
-      bindQueueStub = sinon.stub();
       consumeStub = sinon.stub(client, 'consumeChannel').callsFake(() => null!);
     });
     afterEach(() => {
@@ -150,17 +149,33 @@ describe('ClientRMQ', function () {
       await client.setupChannel(channel, () => null);
       expect(channel.assertQueue.calledWith(queue, queueOptions)).to.be.true;
     });
-    it('should call "bindQueue" with exchangeType is fanout', async () => {
-      untypedClient['options']['exchangeType'] = 'fanout';
-      untypedClient['options']['exchange'] = exchange;
-      await client.setupChannel(channel, () => null);
-      expect(channel.bindQueue.calledWith(queue, exchange, '')).to.be.true;
-    });
     it('should not call "assertQueue" when noAssert is true', async () => {
       client['noAssert'] = true;
 
       await client.setupChannel(channel, () => null);
       expect(channel.assertQueue.called).not.to.be.true;
+    });
+    it('should not call "assertQueue" when exchangeType is fanout', async () => {
+      untypedClient['options']['exchangeType'] = 'fanout';
+      untypedClient['options']['exchange'] = exchange;
+      await client.setupChannel(channel, () => null);
+      expect(channel.assertQueue.called).not.to.be.true;
+    });
+    it('should not call "assertQueue" when wildcards is true', async () => {
+      untypedClient['options']['wildcards'] = true;
+      await client.setupChannel(channel, () => null);
+      expect(channel.assertQueue.called).not.to.be.true;
+    });
+    it('should not call "bindQueue" when exchangeType is fanout', async () => {
+      untypedClient['options']['exchangeType'] = 'fanout';
+      untypedClient['options']['exchange'] = exchange;
+      await client.setupChannel(channel, () => null);
+      expect(channel.bindQueue.called).not.to.be.true;
+    });
+    it('should not call "bindQueue" when wildcards is true', async () => {
+      untypedClient['options']['wildcards'] = true;
+      await client.setupChannel(channel, () => null);
+      expect(channel.bindQueue.called).not.to.be.true;
     });
     it('should call "prefetch" with prefetchCount and "isGlobalPrefetchCount"', async () => {
       await client.setupChannel(channel, () => null);
