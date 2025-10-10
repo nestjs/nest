@@ -43,7 +43,19 @@ export enum HttpStatus {
   EXPECTATION_FAILED = 417,
   I_AM_A_TEAPOT = 418,
   MISDIRECTED = 421,
+   /**
+   * Official RFC 9110 name for the 422 status code.
+   * @see https://www.rfc-editor.org/rfc/rfc9110.html#name-422-unprocessable-content
+   */
+  UNPROCESSABLE_CONTENT = 422,
+
+  /**
+   * @deprecated The name "Unprocessable Entity" is deprecated in favor of "Unprocessable Content" (RFC 9110).
+   * It will be removed in a future major version.
+   * @see https://www.rfc-editor.org/rfc/rfc9110.html#name-422-unprocessable-content
+   */
   UNPROCESSABLE_ENTITY = 422,
+  // ...
   LOCKED = 423,
   FAILED_DEPENDENCY = 424,
   PRECONDITION_REQUIRED = 428,
