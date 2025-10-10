@@ -179,6 +179,7 @@ describe('ServerRMQ', () => {
   });
   describe('setupChannel', () => {
     const queue = 'test';
+    const exchange = 'test.exchange';
     const queueOptions = {};
     const isGlobalPrefetchCount = true;
     const prefetchCount = 10;
@@ -197,6 +198,8 @@ describe('ServerRMQ', () => {
         assertQueue: sinon.spy(() => ({})),
         prefetch: sinon.spy(),
         consume: sinon.spy(),
+        assertExchange: sinon.spy(() => ({})),
+        bindQueue: sinon.spy(),
       };
     });
     it('should call "assertQueue" with queue and queue options when noAssert is false', async () => {
@@ -213,6 +216,15 @@ describe('ServerRMQ', () => {
 
       await server.setupChannel(channel, () => null);
       expect(channel.assertQueue.called).not.to.be.true;
+    });
+    it('should call "bindQueue" with exchangeType is fanout', async () => {
+      server['options' as any] = {
+        ...(server as any)['options'],
+        exchangeType: 'fanout',
+        exchange: exchange,
+      };
+      await server.setupChannel(channel, () => null);
+      expect(channel.bindQueue.calledWith(queue, exchange, '')).to.be.true;
     });
     it('should call "prefetch" with prefetchCount and "isGlobalPrefetchCount"', async () => {
       await server.setupChannel(channel, () => null);
