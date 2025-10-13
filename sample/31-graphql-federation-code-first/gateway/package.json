@@ -31,7 +31,7 @@
     "reflect-metadata": "0.2.2",
     "rimraf": "6.0.1",
     "rxjs": "7.8.2",
-    "ts-morph": "27.0.0"
+    "ts-morph": "27.0.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.1",
