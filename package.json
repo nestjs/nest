@@ -155,7 +155,7 @@
     "lerna": "8.2.4",
     "lerna-changelog": "2.2.0",
     "light-my-request": "6.6.0",
-    "lint-staged": "16.2.3",
+    "lint-staged": "16.2.4",
     "markdown-table": "2.0.0",
     "mocha": "11.7.4",
     "mongoose": "8.19.1",
