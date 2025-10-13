@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "11.1.6",
     "@nestjs/core": "11.1.6",
-    "@nestjs/serve-static": "5.0.3",
+    "@nestjs/serve-static": "5.0.4",
     "@nestjs/platform-express": "11.1.6",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.2",
