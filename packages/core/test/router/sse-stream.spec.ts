@@ -160,6 +160,34 @@ data: hello
     });
   });
 
+  it('sets custom status code when provided', callback => {
+    const sse = new SseStream();
+    const sink = new Sink(
+      (status: number, headers: string | OutgoingHttpHeaders) => {
+        expect(status).to.equal(404);
+        callback();
+        return sink;
+      },
+    );
+
+    sse.pipe(sink, {
+      statusCode: 404,
+    });
+  });
+
+  it('defaults to 200 status code when not provided', callback => {
+    const sse = new SseStream();
+    const sink = new Sink(
+      (status: number, headers: string | OutgoingHttpHeaders) => {
+        expect(status).to.equal(200);
+        callback();
+        return sink;
+      },
+    );
+
+    sse.pipe(sink);
+  });
+
   it('allows an eventsource to connect', callback => {
     let sse: SseStream;
     const server = createServer((req, res) => {
