@@ -119,6 +119,7 @@ describe('ClientRMQ', function () {
 
   describe('setupChannel', () => {
     const queue = 'test';
+    const exchange = 'test.exchange';
     const queueOptions = {};
     const isGlobalPrefetchCount = true;
     const prefetchCount = 10;
@@ -134,6 +135,8 @@ describe('ClientRMQ', function () {
       channel = {
         assertQueue: sinon.spy(() => ({})),
         prefetch: sinon.spy(),
+        bindQueue: sinon.spy(),
+        assertExchange: sinon.spy(),
       };
       consumeStub = sinon.stub(client, 'consumeChannel').callsFake(() => null!);
     });
@@ -151,6 +154,28 @@ describe('ClientRMQ', function () {
 
       await client.setupChannel(channel, () => null);
       expect(channel.assertQueue.called).not.to.be.true;
+    });
+    it('should not call "assertQueue" when exchangeType is fanout', async () => {
+      untypedClient['options']['exchangeType'] = 'fanout';
+      untypedClient['options']['exchange'] = exchange;
+      await client.setupChannel(channel, () => null);
+      expect(channel.assertQueue.called).not.to.be.true;
+    });
+    it('should not call "assertQueue" when wildcards is true', async () => {
+      untypedClient['options']['wildcards'] = true;
+      await client.setupChannel(channel, () => null);
+      expect(channel.assertQueue.called).not.to.be.true;
+    });
+    it('should not call "bindQueue" when exchangeType is fanout', async () => {
+      untypedClient['options']['exchangeType'] = 'fanout';
+      untypedClient['options']['exchange'] = exchange;
+      await client.setupChannel(channel, () => null);
+      expect(channel.bindQueue.called).not.to.be.true;
+    });
+    it('should not call "bindQueue" when wildcards is true', async () => {
+      untypedClient['options']['wildcards'] = true;
+      await client.setupChannel(channel, () => null);
+      expect(channel.bindQueue.called).not.to.be.true;
     });
     it('should call "prefetch" with prefetchCount and "isGlobalPrefetchCount"', async () => {
       await client.setupChannel(channel, () => null);
@@ -183,9 +208,11 @@ describe('ClientRMQ', function () {
 
   describe('publish', () => {
     const pattern = 'test';
+    const exchange = 'test.exchange';
     let msg: ReadPacket;
     let connectSpy: sinon.SinonSpy,
       sendToQueueStub: sinon.SinonStub,
+      publishStub: sinon.SinonStub,
       eventSpy: sinon.SinonSpy;
 
     beforeEach(() => {
@@ -196,9 +223,11 @@ describe('ClientRMQ', function () {
       connectSpy = sinon.spy(client, 'connect');
       eventSpy = sinon.spy();
       sendToQueueStub = sinon.stub().callsFake(() => ({ catch: sinon.spy() }));
+      publishStub = sinon.stub().callsFake(() => ({ catch: sinon.spy() }));
 
       client['channel'] = {
         sendToQueue: sendToQueueStub,
+        publish: publishStub,
       };
       client['responseEmitter'] = new EventEmitter();
       client['responseEmitter'].on(pattern, eventSpy);
@@ -212,6 +241,14 @@ describe('ClientRMQ', function () {
       client['publish'](msg, () => {
         expect(sendToQueueStub.called).to.be.true;
         expect(sendToQueueStub.getCall(0).args[0]).to.be.eql(client['queue']);
+      });
+    });
+    it('should send message to exchange when exchangeType is fanout', async () => {
+      untypedClient['options']['exchangeType'] = 'fanout';
+      untypedClient['options']['exchange'] = exchange;
+      client['publish'](msg, () => {
+        expect(publishStub.called).to.be.true;
+        expect(publishStub.getCall(0).args[0]).to.be.eql(exchange);
       });
     });
 
@@ -380,7 +417,8 @@ describe('ClientRMQ', function () {
   });
   describe('dispatchEvent', () => {
     let msg: ReadPacket;
-    let sendToQueueStub: sinon.SinonStub, channel;
+    const exchange = 'test.exchange';
+    let sendToQueueStub: sinon.SinonStub, publishStub: sinon.SinonStub, channel;
 
     beforeEach(() => {
       client = new ClientRMQ({});
@@ -388,8 +426,10 @@ describe('ClientRMQ', function () {
 
       msg = { pattern: 'pattern', data: 'data' };
       sendToQueueStub = sinon.stub();
+      publishStub = sinon.stub();
       channel = {
         sendToQueue: sendToQueueStub,
+        publish: publishStub,
       };
       untypedClient.channel = channel;
     });
@@ -399,6 +439,15 @@ describe('ClientRMQ', function () {
       await client['dispatchEvent'](msg);
 
       expect(sendToQueueStub.called).to.be.true;
+    });
+    it('should publish packet to exchange when exchangeType is fanout', async () => {
+      untypedClient['options']['exchangeType'] = 'fanout';
+      untypedClient['options']['exchange'] = exchange;
+      publishStub.callsFake((a, b, c, d, f) => f());
+      await client['dispatchEvent'](msg);
+
+      expect(publishStub.called).to.be.true;
+      expect(publishStub.getCall(0).args[0]).to.be.eql(exchange);
     });
     it('should throw error', async () => {
       sendToQueueStub.callsFake((a, b, c, d) => d(new Error()));

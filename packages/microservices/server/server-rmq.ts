@@ -191,8 +191,16 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       this.queueOptions.noAssert ??
       RQM_DEFAULT_NO_ASSERT;
 
-    if (!noAssert) {
-      await channel.assertQueue(this.queue, this.queueOptions);
+    let createdQueue: string;
+
+    if (this.queue === RQM_DEFAULT_QUEUE || !noAssert) {
+      const { queue } = await channel.assertQueue(
+        this.queue,
+        this.queueOptions,
+      );
+      createdQueue = queue;
+    } else {
+      createdQueue = this.queue;
     }
 
     const isGlobalPrefetchCount = this.getOptionsProp(
@@ -223,15 +231,19 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         arguments: this.getOptionsProp(this.options, 'exchangeArguments', {}),
       });
 
-      if (this.options.routingKey) {
-        await channel.bindQueue(this.queue, exchange, this.options.routingKey);
+      if (this.options.routingKey || this.options.exchangeType === 'fanout') {
+        await channel.bindQueue(
+          createdQueue,
+          exchange,
+          this.options.exchangeType === 'fanout' ? '' : this.options.routingKey,
+        );
       }
 
       if (this.options.wildcards) {
         const routingKeys = Array.from(this.getHandlers().keys());
         await Promise.all(
           routingKeys.map(routingKey =>
-            channel.bindQueue(this.queue, exchange, routingKey),
+            channel.bindQueue(createdQueue, exchange, routingKey),
           ),
         );
 
@@ -243,7 +255,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
 
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
     channel.consume(
-      this.queue,
+      createdQueue,
       (msg: Record<string, any> | null) => this.handleMessage(msg!, channel),
       {
         noAck: this.noAck,
