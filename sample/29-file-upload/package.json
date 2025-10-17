@@ -37,7 +37,7 @@
     "@types/express": "5.0.3",
     "@types/jest": "30.0.0",
     "@types/multer": "2.0.0",
-    "@types/node": "22.18.10",
+    "@types/node": "22.18.11",
     "@types/supertest": "6.0.3",
     "jest": "30.2.0",
     "prettier": "3.6.2",
