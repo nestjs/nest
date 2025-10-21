@@ -123,7 +123,7 @@ export class RouterResponseController {
     // Extract custom status code from response if it was set
     const customStatusCode = (response as any).statusCode;
     const pipeOptions =
-      customStatusCode && customStatusCode !== 200
+      typeof customStatusCode !== 'undefined'
         ? { ...options, statusCode: customStatusCode }
         : options;
 
