@@ -296,7 +296,6 @@ export class Injector {
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
   ) {
-    const inquirerId = this.getInquirerId(inquirer);
     const metadata = wrapper.getCtorMetadata();
 
     if (metadata && contextId !== STATIC_CONTEXT) {
@@ -349,15 +348,21 @@ export class Injector {
          */
         await paramBarrier.signalAndWait();
 
+        const effectiveInquirer = this.getEffectiveInquirer(
+          paramWrapper,
+          inquirer,
+          parentInquirer,
+          contextId,
+        );
         const paramWrapperWithInstance = await this.resolveComponentHost(
           moduleRef,
           paramWrapper,
           contextId,
-          inquirer,
+          effectiveInquirer,
         );
         const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
           this.getContextId(contextId, paramWrapperWithInstance),
-          inquirerId,
+          this.getInquirerId(effectiveInquirer),
         );
         if (!instanceHost.isResolved && !paramWrapperWithInstance.forwardRef) {
           isResolved = false;
@@ -742,19 +747,24 @@ export class Injector {
            */
           await propertyBarrier.signalAndWait();
 
+          const effectivePropertyInquirer = this.getEffectiveInquirer(
+            paramWrapper,
+            inquirer,
+            parentInquirer,
+            contextId,
+          );
           const paramWrapperWithInstance = await this.resolveComponentHost(
             moduleRef,
             paramWrapper,
             contextId,
-            inquirer,
+            effectivePropertyInquirer,
           );
           if (!paramWrapperWithInstance) {
             return undefined;
           }
-          const inquirerId = this.getInquirerId(inquirer);
           const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
             this.getContextId(contextId, paramWrapperWithInstance),
-            inquirerId,
+            this.getInquirerId(effectivePropertyInquirer),
           );
           return instanceHost.instance;
         } catch (err) {
@@ -904,14 +914,20 @@ export class Injector {
         ),
       ),
     );
-    const inquirerId = this.getInquirerId(inquirer);
-    return hosts.map(
-      item =>
-        item?.getInstanceByContextId(
-          this.getContextId(contextId, item),
-          inquirerId,
-        ).instance,
-    );
+    return hosts.map((item, index) => {
+      const dependency = metadata[index];
+      const effectiveInquirer = this.getEffectiveInquirer(
+        dependency,
+        inquirer,
+        parentInquirer,
+        contextId,
+      );
+
+      return item?.getInstanceByContextId(
+        this.getContextId(contextId, item),
+        this.getInquirerId(effectiveInquirer),
+      ).instance;
+    });
   }
 
   public async loadPropertiesMetadata(
@@ -947,6 +963,27 @@ export class Injector {
     return inquirer ? inquirer.id : undefined;
   }
 
+  /**
+   * For nested TRANSIENT dependencies (TRANSIENT -> TRANSIENT) in non-static contexts,
+   * returns parentInquirer to ensure each parent TRANSIENT gets its own instance.
+   * This is necessary because in REQUEST/DURABLE scopes, the same TRANSIENT wrapper
+   * can be used by multiple parents, causing nested TRANSIENTs to be shared incorrectly.
+   * For non-TRANSIENT -> TRANSIENT, returns inquirer (current wrapper being created).
+   */
+  private getEffectiveInquirer(
+    dependency: InstanceWrapper | undefined,
+    inquirer: InstanceWrapper | undefined,
+    parentInquirer: InstanceWrapper | undefined,
+    contextId: ContextId,
+  ): InstanceWrapper | undefined {
+    return dependency?.isTransient &&
+      inquirer?.isTransient &&
+      parentInquirer &&
+      contextId !== STATIC_CONTEXT
+      ? parentInquirer
+      : inquirer;
+  }
+
   private resolveScopedComponentHost(
     item: InstanceWrapper,
     contextId: ContextId,
@@ -955,7 +992,12 @@ export class Injector {
   ) {
     return this.isInquirerRequest(item, parentInquirer)
       ? parentInquirer
-      : this.resolveComponentHost(item.host!, item, contextId, inquirer);
+      : this.resolveComponentHost(
+          item.host!,
+          item,
+          contextId,
+          this.getEffectiveInquirer(item, inquirer, parentInquirer, contextId),
+        );
   }
 
   private isInquirerRequest(
