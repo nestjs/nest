@@ -8,7 +8,7 @@
   <p align="center">A progressive <a href="https://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
     <p align="center">
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://github.com/nestjs/nest/blob/master/LICENSE" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
 <a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
 <a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
@@ -78,10 +78,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 </tr>
 <tr>
 <td><a href="https://snyk.co/nestjs" target="_blank"><img src="https://nestjs.com/img/logos/snyk-logo-black.png" width="185" valign="middle" /></a></td>
-<td><a href="https://fuseautotech.com/" target="_blank"><img src="https://nestjs.com/img/logos/fuse-logo.svg" width="105" valign="middle" /></a></td>
-<td><a href="https://ridicorp.com/career/" target="_blank"><img src="https://nestjs.com/img/logos/ridi-logo.svg" width="105" valign="middle" /></a></td>
 <td><a href="https://www.movavi.com/imovie-for-windows.html" target="_blank"><img src="https://nestjs.com/img/logos/movavi-logo.svg" width="105" valign="middle" /></a></td>
-<td><a href="https://skunk.team" target="_blank"><img src="https://nestjs.com/img/logos/skunk-logo.png" height="60" valign="middle" /></a></td>
 </tr>
 </table>
 
@@ -91,10 +88,10 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <tr>
 <td><a href="https://www.mercedes-benz.com/" target="_blank"><img src="https://nestjs.com/img/logos/mercedes-logo.png" width="100" valign="middle" /></a></td>
 <td><a href="https://www.dinii.jp/" target="_blank"><img src="https://nestjs.com/img/logos/dinii-logo.png" width="65" valign="middle" /></a></td>
-<td><a href="https://bloodycase.com/?promocode=NEST" target="_blank"><img src="https://nestjs.com/img/logos/bloodycase-logo.png" width="65" valign="middle" /></a></td>
 <td><a href="https://handsontable.com/docs/react-data-grid/?utm_source=NestJS_GH&utm_medium=sponsorship&utm_campaign=library_sponsorship_2024" target="_blank"><img src="https://nestjs.com/img/logos/handsontable-dark-logo.svg#2" width="150" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://www.itflashcards.com/" target="_blank"><img src="https://nestjs.com/img/logos/it_flashcards-logo.png" width="170" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://arcjet.com/?ref=nestjs" target="_blank"><img src="https://nestjs.com/img/logos/arcjet-logo.svg" width="170" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://crawljobs.com" target="_blank"><img src="https://nestjs.com/img/logos/crawljobs-logo.svg" width="130" valign="middle" /></a></td>
 </tr>
 </table>
 
@@ -118,19 +115,16 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td align="center" valign="middle"><a href="https://triplecore.io" target="_blank"><img src="https://nestjs.com/img/logos/triplecore-logo.svg" width="50" valign="middle" /></a></td>
 </tr>
 <tr>
-<td align="center" valign="middle"><a href="https://thecasinowizard.com/bonuses/no-deposit-bonuses/" target="_blank"><img src="https://nestjs.com/img/logos/casinowizard-logo.png" width="120" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://polygon-software.ch/" target="_blank"><img src="https://nestjs.com/img/logos/polygon-logo.svg" width="120" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://boringowl.io/" target="_blank"><img src="https://nestjs.com/img/logos/boringowl-logo.svg" width="120" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://nordbot.app/" target="_blank"><img src="https://nestjs.com/img/logos/nordbot-logo.png" width="120" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://doppio.sh/" target="_blank"><img src="https://nestjs.com/img/logos/dopiosh-logo.png" width="50" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://www.hingehealth.com/" target="_blank"><img src="https://nestjs.com/img/logos/hinge-health-logo.svg" width="100" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://www.tripoffice.com/" target="_blank"><img src="https://nestjs.com/img/logos/tripoffice-logo.png" width="140" valign="middle" /></a></td>
 </tr>
 <tr>
-<td align="center" valign="middle"><a href="https://julienferand.dev/" target="_blank"><img src="https://nestjs.com/img/logos/julienferand-logo.jpeg" width="55" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://www.tripoffice.com/" target="_blank"><img src="https://nestjs.com/img/logos/tripoffice-logo.png" width="140" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://solcellsforetag.se/" target="_blank"><img src="https://nestjs.com/img/logos/solcellsforetag-logo.svg" width="140" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://www.route4me.com/" target="_blank"><img src="https://nestjs.com/img/logos/route4me-logo.svg" width="100" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://www.slotsup.com/" target="_blank"><img src="https://nestjs.com/img/logos/slotsup-logo.png" width="60" valign="middle" /></a></td>
 </tr>
 </table>
 
