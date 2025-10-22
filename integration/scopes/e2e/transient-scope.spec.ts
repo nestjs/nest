@@ -2,6 +2,7 @@ import { INestApplication, Injectable, Scope } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
+import { NestedTransientModule } from '../src/nested-transient/nested-transient.module';
 import { Guard } from '../src/transient/guards/request-scoped.guard';
 import { HelloController } from '../src/transient/hello.controller';
 import { HelloModule } from '../src/transient/hello.module';
@@ -133,6 +134,55 @@ describe('Transient scope', () => {
       );
       expect(firstService1.loggerService.context).to.equal('FirstService');
       expect(firstService1.deepTransient.initialized).to.be.true;
+    });
+
+    after(async () => {
+      await app.close();
+    });
+  });
+
+  describe('when nested transient providers are used in request scope', () => {
+    let server: any;
+    let app: INestApplication;
+
+    before(async () => {
+      const module = await Test.createTestingModule({
+        imports: [NestedTransientModule],
+      }).compile();
+
+      app = module.createNestApplication();
+      server = app.getHttpServer();
+      await app.init();
+    });
+
+    describe('when handling HTTP requests', () => {
+      let response: any;
+
+      before(async () => {
+        const performHttpCall = () =>
+          new Promise<any>((resolve, reject) => {
+            request(server)
+              .get('/nested-transient')
+              .end((err, res) => {
+                if (err) return reject(err);
+                resolve(res);
+              });
+          });
+
+        response = await performHttpCall();
+      });
+
+      it('should isolate nested transient instances for each parent service', () => {
+        expect(response.body.firstServiceContext).to.equal(
+          'NESTED-FirstService',
+        );
+        expect(response.body.secondServiceContext).to.equal(
+          'NESTED-SecondService',
+        );
+        expect(response.body.firstServiceNestedId).to.not.equal(
+          response.body.secondServiceNestedId,
+        );
+      });
     });
 
     after(async () => {
