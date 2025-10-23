@@ -844,9 +844,7 @@ export class FastifyAdapter<
       if (isPathAndRouteTuple) {
         const constraints = {
           ...(hasConstraints && routeConstraints),
-          ...(isVersioned && {
-            version: handlerRef.version,
-          }),
+          ...(isVersioned && { version: handlerRef.version }),
         };
 
         const options: any = {
@@ -854,14 +852,11 @@ export class FastifyAdapter<
           ...(hasSchema && { schema: routeSchema }),
         };
 
-        if (constraints && Object.keys(constraints).length > 0) {
-          options.config = {
-            routerOptions: { constraints },
-            ...(options.config || {}),
-          };
-        }
-
-        const routeToInjectWithOptions = { ...routeToInject, ...options };
+        const routeToInjectWithOptions = {
+          ...routeToInject,
+          ...options,
+          ...(Object.keys(constraints).length > 0 && { constraints }),
+        };
 
         return this.instance.route(routeToInjectWithOptions);
       }
