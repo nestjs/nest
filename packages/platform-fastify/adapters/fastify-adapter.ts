@@ -250,10 +250,12 @@ export class FastifyAdapter<
       instanceOrOptions && (instanceOrOptions as TInstance).server
         ? instanceOrOptions
         : fastify({
-            constraints: {
-              version: this.versionConstraint as any,
+            routerOptions: {
+              constraints: {
+                version: this.versionConstraint as any,
+              },
             },
-            ...(instanceOrOptions as FastifyServerOptions),
+            ...((instanceOrOptions as FastifyServerOptions) || {}),
           });
 
     this.setInstance(instance);
@@ -847,17 +849,17 @@ export class FastifyAdapter<
           }),
         };
 
-        const options = {
-          constraints,
-          ...(hasConfig && {
-            config: {
-              ...routeConfig,
-            },
-          }),
-          ...(hasSchema && {
-            schema: routeSchema,
-          }),
+        const options: any = {
+          ...(hasConfig && { config: { ...routeConfig } }),
+          ...(hasSchema && { schema: routeSchema }),
         };
+
+        if (constraints && Object.keys(constraints).length > 0) {
+          options.config = {
+            routerOptions: { constraints },
+            ...(options.config || {}),
+          };
+        }
 
         const routeToInjectWithOptions = { ...routeToInject, ...options };
 
