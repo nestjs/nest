@@ -250,10 +250,13 @@ export class FastifyAdapter<
       instanceOrOptions && (instanceOrOptions as TInstance).server
         ? instanceOrOptions
         : fastify({
-            constraints: {
-              version: this.versionConstraint as any,
-            },
             ...(instanceOrOptions as FastifyServerOptions),
+            routerOptions: {
+              ...(instanceOrOptions as FastifyServerOptions)?.routerOptions,
+              constraints: {
+                version: this.versionConstraint as any,
+              },
+            },
           });
 
     this.setInstance(instance);
