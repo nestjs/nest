@@ -24,8 +24,9 @@ export class JsonSocket extends TcpSocket {
     this.buffer += data;
 
     if (this.buffer.length > MAX_BUFFER_SIZE) {
+      const bufferLength = this.buffer.length;
       this.buffer = '';
-      throw new MaxPacketLengthExceededException(this.buffer.length);
+      throw new MaxPacketLengthExceededException(bufferLength);
     }
 
     if (this.contentLength === null) {

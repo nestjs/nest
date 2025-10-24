@@ -72,7 +72,7 @@ export class WebSocketsController {
   ) {
     const nativeMessageHandlers = this.metadataExplorer.explore(instance);
     const messageHandlers = nativeMessageHandlers.map(
-      ({ callback, message, methodName }) => ({
+      ({ callback, isAckHandledManually, message, methodName }) => ({
         message,
         methodName,
         callback: this.contextCreator.create(
@@ -81,6 +81,7 @@ export class WebSocketsController {
           moduleKey,
           methodName,
         ),
+        isAckHandledManually,
       }),
     );
 
@@ -174,10 +175,13 @@ export class WebSocketsController {
     instance: NestGateway,
   ) {
     const adapter = this.config.getIoAdapter();
-    const handlers = subscribersMap.map(({ callback, message }) => ({
-      message,
-      callback: callback.bind(instance, client),
-    }));
+    const handlers = subscribersMap.map(
+      ({ callback, message, isAckHandledManually }) => ({
+        message,
+        callback: callback.bind(instance, client),
+        isAckHandledManually,
+      }),
+    );
     adapter.bindMessageHandlers(client, handlers, data =>
       fromPromise(this.pickResult(data)).pipe(mergeAll()),
     );

@@ -7,5 +7,6 @@ import { RouteShorthandOptions } from 'fastify';
  *
  * @param config See {@link https://fastify.dev/docs/latest/Reference/Routes/#constraints}
  */
-export const RouteConstraints = (config: RouteShorthandOptions['config']) =>
-  SetMetadata(FASTIFY_ROUTE_CONSTRAINTS_METADATA, config);
+export const RouteConstraints = (
+  config: RouteShorthandOptions['constraints'],
+) => SetMetadata(FASTIFY_ROUTE_CONSTRAINTS_METADATA, config);

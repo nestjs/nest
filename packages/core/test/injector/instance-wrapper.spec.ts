@@ -896,15 +896,63 @@ describe('InstanceWrapper', () => {
       });
     });
     describe('when instance is transient', () => {
-      it('should return all static instances', () => {
+      it('should return instances where constructor was called', () => {
         const wrapper = new InstanceWrapper({
           scope: Scope.TRANSIENT,
         });
         const instanceHost = {
           instance: {},
+          isConstructorCalled: true,
         };
         wrapper.setInstanceByInquirerId(STATIC_CONTEXT, 'test', instanceHost);
         expect(wrapper.getStaticTransientInstances()).to.be.eql([instanceHost]);
+      });
+
+      describe('lifecycle hooks on transient services', () => {
+        // Tests for issue #15553: prevent lifecycle hooks on non-instantiated transient services
+        it('should filter out instances created with Object.create (prototype only)', () => {
+          const wrapper = new InstanceWrapper({
+            scope: Scope.TRANSIENT,
+          });
+          // Simulates what happens in cloneTransientInstance
+          const prototypeOnlyInstance = {
+            instance: Object.create({}),
+            isResolved: true, // This is set to true incorrectly in injector.ts
+            isConstructorCalled: false, // But constructor was never called
+          };
+          wrapper.setInstanceByInquirerId(
+            STATIC_CONTEXT,
+            'inquirer',
+            prototypeOnlyInstance,
+          );
+
+          // Should not include this instance for lifecycle hooks
+          expect(wrapper.getStaticTransientInstances()).to.be.eql([]);
+        });
+
+        it('should include instances where constructor was actually invoked', () => {
+          class TestService {}
+          const wrapper = new InstanceWrapper({
+            scope: Scope.TRANSIENT,
+            metatype: TestService,
+          });
+          // Simulates what happens after instantiateClass
+          const properInstance = {
+            instance: new TestService(),
+            isResolved: true,
+            isConstructorCalled: true,
+          };
+          wrapper.setInstanceByInquirerId(
+            STATIC_CONTEXT,
+            'inquirer',
+            properInstance,
+          );
+
+          // Should include this instance for lifecycle hooks
+          expect(wrapper.getStaticTransientInstances()).to.be.eql([
+            properInstance,
+          ]);
+        });
       });
     });
   });

@@ -1,7 +1,7 @@
+import { getModelToken } from '@nestjs/sequelize';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from './models/user.model';
 import { UsersService } from './users.service';
-import { getModelToken } from '@nestjs/sequelize';
 
 const usersArray = [
   {
@@ -74,7 +74,7 @@ describe('UserService', () => {
     it('should get a single user', () => {
       const findSpy = jest.spyOn(model, 'findOne');
       expect(service.findOne('1'));
-      expect(findSpy).toBeCalledWith({ where: { id: '1' } });
+      expect(findSpy).toHaveBeenCalledWith({ where: { id: '1' } });
     });
   });
 
@@ -84,7 +84,7 @@ describe('UserService', () => {
         destroy: jest.fn(),
       } as any);
       const retVal = await service.remove('2');
-      expect(findSpy).toBeCalledWith({ where: { id: '2' } });
+      expect(findSpy).toHaveBeenCalledWith({ where: { id: '2' } });
       expect(retVal).toBeUndefined();
     });
   });

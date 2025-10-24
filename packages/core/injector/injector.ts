@@ -32,6 +32,7 @@ import { CircularDependencyException } from '../errors/exceptions';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
+import { Barrier } from '../helpers/barrier';
 import { STATIC_CONTEXT } from './constants';
 import { INQUIRER } from './inquirer';
 import {
@@ -42,7 +43,6 @@ import {
 } from './instance-wrapper';
 import { Module } from './module';
 import { SettlementSignal } from './settlement-signal';
-import { Barrier } from '../helpers/barrier';
 
 /**
  * The type of an injectable dependency
@@ -296,7 +296,7 @@ export class Injector {
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
   ) {
-    let inquirerId = this.getInquirerId(inquirer);
+    const inquirerId = this.getInquirerId(inquirer);
     const metadata = wrapper.getCtorMetadata();
 
     if (metadata && contextId !== STATIC_CONTEXT) {
@@ -327,8 +327,10 @@ export class Injector {
           return parentInquirer && parentInquirer.instance;
         }
         if (inquirer?.isTransient && parentInquirer) {
-          inquirer = parentInquirer;
-          inquirerId = this.getInquirerId(parentInquirer);
+          // When `inquirer` is transient too, inherit the parent inquirer
+          // This is required to ensure that transient providers are only resolved
+          // when requested
+          inquirer.attachRootInquirer(parentInquirer);
         }
         const paramWrapper = await this.resolveSingleParam<T>(
           wrapper,
@@ -680,14 +682,11 @@ export class Injector {
         inquirerId,
       );
       if (!instanceHost.isResolved && !instanceWrapperRef.forwardRef) {
-        wrapper.settlementSignal?.insertRef(instanceWrapperRef.id);
-
-        await this.loadProvider(
-          instanceWrapperRef,
-          relatedModule,
-          contextId,
-          wrapper,
-        );
+        /*
+         * Provider will be loaded shortly in resolveComponentHost() once we pass the current
+         * Barrier. We cannot load it here because doing so could incorrectly evaluate the
+         * staticity of the dependency tree and lead to undefined / null injection.
+         */
         break;
       }
     }
@@ -836,12 +835,14 @@ export class Injector {
         : new (metatype as Type<any>)(...instances);
 
       instanceHost.instance = this.instanceDecorator(instanceHost.instance);
+      instanceHost.isConstructorCalled = true;
     } else if (isInContext) {
       const factoryReturnValue = (targetMetatype.metatype as any as Function)(
         ...instances,
       );
       instanceHost.instance = await factoryReturnValue;
       instanceHost.instance = this.instanceDecorator(instanceHost.instance);
+      instanceHost.isConstructorCalled = true;
     }
     instanceHost.isResolved = true;
     return instanceHost.instance;

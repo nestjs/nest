@@ -1,5 +1,6 @@
 import { blue, magenta } from 'ansis';
 import * as childProcess from 'child_process';
+import { execFile as execFileCb } from 'child_process';
 import * as log from 'fancy-log';
 import { task } from 'gulp';
 import { resolve } from 'path';
@@ -8,6 +9,7 @@ import { samplePath } from '../config';
 import { containsPackageJson, getDirs } from '../util/task-helpers';
 
 const exec = promisify(childProcess.exec);
+const execFile = promisify(execFileCb);
 
 async function executeNpmScriptInSamples(
   script: string,
@@ -78,12 +80,17 @@ async function executeNPMScriptInDirectory(
   const dirName = dir.replace(resolve(__dirname, '../../../'), '');
   log.info(`Running ${blue(script)} in ${magenta(dirName)}`);
   try {
-    const result = await exec(
-      `${script} --prefix ${dir} ${appendScript ? '-- ' + appendScript : ''}`,
-    );
-    // const result = await exec(`npx npm-check-updates -u`, {
-    //   cwd: join(process.cwd(), dir),
-    // });
+    // Split the script into command and arguments
+    const scriptParts = script.split(' ').filter(Boolean);
+    const command = scriptParts[0];
+    const args = scriptParts.slice(1);
+    // Add --prefix and dir
+    args.push('--prefix', dir);
+    // If appendScript is provided, split and append
+    if (appendScript) {
+      args.push('--', ...appendScript.split(' ').filter(Boolean));
+    }
+    const result = await execFile(command, args);
 
     log.info(`Finished running ${blue(script)} in ${magenta(dirName)}`);
     if (result.stderr) {

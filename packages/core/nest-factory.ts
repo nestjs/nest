@@ -10,6 +10,7 @@ import {
 import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+import { ConsoleLogger } from '@nestjs/common/services/console-logger.service';
 import { Logger } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
@@ -299,9 +300,14 @@ export class NestFactoryStatic {
     if (!options) {
       return;
     }
-    const { logger, bufferLogs, autoFlushLogs } = options;
+    const { logger, bufferLogs, autoFlushLogs, forceConsole } = options;
     if ((logger as boolean) !== true && !isNil(logger)) {
       Logger.overrideLogger(logger);
+    } else if (forceConsole) {
+      // If no custom logger is provided but forceConsole is true,
+      // create a ConsoleLogger with forceConsole option
+      const consoleLogger = new ConsoleLogger({ forceConsole: true });
+      Logger.overrideLogger(consoleLogger);
     }
     if (bufferLogs) {
       Logger.attachBuffer();

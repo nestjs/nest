@@ -2263,6 +2263,22 @@
       },
       "id": "-1303681274"
     },
+    "-831049991": {
+      "source": "594986539",
+      "target": "-1721730431",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "InputModule",
+        "sourceClassName": "InputService",
+        "targetClassName": "CircularService",
+        "sourceClassToken": "InputService",
+        "targetClassToken": "CircularService",
+        "targetModuleName": "CircularModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "-831049991"
+    },
     "-886102564": {
       "source": "208171089",
       "target": "671882984",
@@ -2279,6 +2295,22 @@
         "internal": true
       },
       "id": "-886102564"
+    },
+    "-2146943494": {
+      "source": "-234035039",
+      "target": "928565345",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "RequestChainModule",
+        "sourceClassName": "RequestChainService",
+        "targetClassName": "HelperService",
+        "sourceClassToken": "RequestChainService",
+        "targetClassToken": "HelperService",
+        "targetModuleName": "HelperModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "-2146943494"
     },
     "-2003045613": {
       "source": "-377928898",
@@ -2311,38 +2343,6 @@
         "injectionType": "constructor"
       },
       "id": "-881420795"
-    },
-    "-831049991": {
-      "source": "594986539",
-      "target": "-1721730431",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "InputModule",
-        "sourceClassName": "InputService",
-        "targetClassName": "CircularService",
-        "sourceClassToken": "InputService",
-        "targetClassToken": "CircularService",
-        "targetModuleName": "CircularModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "-831049991"
-    },
-    "-2146943494": {
-      "source": "-234035039",
-      "target": "928565345",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "RequestChainModule",
-        "sourceClassName": "RequestChainService",
-        "targetClassName": "HelperService",
-        "sourceClassToken": "RequestChainService",
-        "targetClassToken": "HelperService",
-        "targetModuleName": "HelperModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "-2146943494"
     },
     "-1816180282": {
       "source": "-848516688",
