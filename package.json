@@ -99,7 +99,7 @@
     "@nestjs/graphql": "13.2.0",
     "@nestjs/mongoose": "11.0.3",
     "@nestjs/typeorm": "11.0.0",
-    "@types/amqplib": "0.10.7",
+    "@types/amqplib": "0.10.8",
     "@types/bytes": "3.1.5",
     "@types/chai": "4.3.20",
     "@types/chai-as-promised": "7.1.8",
