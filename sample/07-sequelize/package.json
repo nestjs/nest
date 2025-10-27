@@ -37,7 +37,7 @@
     "@nestjs/cli": "11.0.10",
     "@nestjs/schematics": "11.0.9",
     "@nestjs/testing": "11.1.7",
-    "@types/express": "5.0.3",
+    "@types/express": "5.0.4",
     "@types/jest": "30.0.0",
     "@types/node": "22.18.12",
     "@types/supertest": "6.0.3",
