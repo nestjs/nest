@@ -20,9 +20,9 @@
   },
   "dependencies": {
     "@nestjs/cache-manager": "3.0.1",
-    "@nestjs/common": "11.1.7",
+    "@nestjs/common": "11.1.8",
     "@nestjs/core": "11.1.8",
-    "@nestjs/platform-express": "11.1.7",
+    "@nestjs/platform-express": "11.1.8",
     "cache-manager": "7.2.4",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.2",

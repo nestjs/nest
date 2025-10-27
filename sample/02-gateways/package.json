@@ -19,11 +19,11 @@
     "test:e2e": "jest --config ./e2e/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.7",
+    "@nestjs/common": "11.1.8",
     "@nestjs/core": "11.1.8",
-    "@nestjs/platform-express": "11.1.7",
-    "@nestjs/platform-socket.io": "11.1.7",
-    "@nestjs/websockets": "11.1.7",
+    "@nestjs/platform-express": "11.1.8",
+    "@nestjs/platform-socket.io": "11.1.8",
+    "@nestjs/websockets": "11.1.8",
     "@socket.io/redis-adapter": "8.3.0",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.2",
