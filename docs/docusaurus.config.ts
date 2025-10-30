@@ -61,19 +61,32 @@ const config: Config = {
     ],
   ],
 
-  // Temporarily disabled TypeDoc plugin - uncomment to generate API docs
-  // plugins: [
-  //   [
-  //     'docusaurus-plugin-typedoc',
-  //     {
-  //       entryPoints: ['../packages/core/index.ts', '../packages/common/index.ts'],
-  //       tsconfig: '../tsconfig.json',
-  //       out: 'docs/api',
-  //       exclude: ['../integration/**/*', '../sample/**/*', '**/*.spec.ts'],
-  //       skipErrorChecking: true,
-  //     },
-  //   ],
-  // ],
+  plugins: [
+    [
+      'docusaurus-plugin-typedoc',
+      {
+        entryPoints: [
+          '../packages/core/index.ts',
+          '../packages/common/index.ts',
+        ],
+        tsconfig: '../tsconfig.json',
+        out: 'docs/api',
+        exclude: [
+          '../integration/**/*',
+          '../sample/**/*',
+          '**/*.spec.ts',
+          '**/test/**/*',
+          '**/__tests__/**/*',
+        ],
+        skipErrorChecking: true,
+        excludePrivate: true,
+        excludeProtected: false,
+        excludeExternals: true,
+        readme: 'none',
+        plugin: ['typedoc-plugin-markdown'],
+      },
+    ],
+  ],
 
   themes: ['@docusaurus/theme-live-codeblock'],
 
