@@ -45,7 +45,7 @@
     "globals": "16.4.0",
     "jest": "30.2.0",
     "prettier": "3.6.2",
-    "rimraf": "6.0.1",
+    "rimraf": "6.1.0",
     "supertest": "7.1.4",
     "ts-jest": "29.4.5",
     "ts-loader": "9.5.4",
