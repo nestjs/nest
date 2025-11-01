@@ -1,4 +1,4 @@
-import { InjectionToken, Provider, Scope } from '@nestjs/common';
+import { InjectionToken, Provider, Scope, Injectable } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { setTimeout } from 'timers/promises';
@@ -373,6 +373,66 @@ describe('NestApplicationContext', () => {
         expect(a1).not.equal(a2);
         expect(a2).equal(a3);
       });
+    });
+  });
+
+  describe('implicit request scope via enhancers', () => {
+    it('get() should throw when dependency tree is not static (request-scoped enhancer attached)', async () => {
+      class Host {}
+      @Injectable({ scope: Scope.REQUEST })
+      class ReqScopedPipe {}
+
+      const nestContainer = new NestContainer();
+      const injector = new Injector();
+      const instanceLoader = new InstanceLoader(
+        nestContainer,
+        injector,
+        new GraphInspector(nestContainer),
+      );
+      const { moduleRef } = (await nestContainer.addModule(class T {}, []))!;
+
+      // Register Host as a controller (matches real-world controller case)
+      nestContainer.addController(Host, moduleRef.token);
+
+      // Register a request-scoped injectable and attach it as an enhancer to Host
+      // This simulates a method-level pipe/guard/interceptor making Host implicitly request-scoped
+      nestContainer.addInjectable(ReqScopedPipe, moduleRef.token, 'pipe', Host);
+
+      const modules = nestContainer.getModules();
+      await instanceLoader.createInstancesOfDependencies(modules);
+
+      const appCtx = new NestApplicationContext(nestContainer);
+
+      // With a non-static dependency tree, get() should refuse and instruct to use resolve()
+      expect(() => appCtx.get(Host)).to.throw();
+    });
+
+    it('resolve() should instantiate when dependency tree is not static (request-scoped enhancer attached)', async () => {
+      class Host {}
+      @Injectable({ scope: Scope.REQUEST })
+      class ReqScopedPipe {}
+
+      const nestContainer = new NestContainer();
+      const injector = new Injector();
+      const instanceLoader = new InstanceLoader(
+        nestContainer,
+        injector,
+        new GraphInspector(nestContainer),
+      );
+      const { moduleRef } = (await nestContainer.addModule(class T {}, []))!;
+
+      // Register Host as a controller
+      nestContainer.addController(Host, moduleRef.token);
+
+      nestContainer.addInjectable(ReqScopedPipe, moduleRef.token, 'pipe', Host);
+
+      const modules = nestContainer.getModules();
+      await instanceLoader.createInstancesOfDependencies(modules);
+
+      const appCtx = new NestApplicationContext(nestContainer);
+
+      const instance = await appCtx.resolve(Host);
+      expect(instance).instanceOf(Host);
     });
   });
 });
