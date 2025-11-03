@@ -27,7 +27,7 @@
     "@nestjs/common": "11.x",
     "@nestjs/core": "11.x",
     "@nestjs/platform-express": "11.x",
-    "delay": "6.x",
+    "delay": "7.x",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.x",
     "superjson": "2.x"
