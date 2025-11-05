@@ -52,7 +52,7 @@
     "eslint-plugin-prettier": "5.5.4",
     "globals": "16.5.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.46.2"
+    "typescript-eslint": "8.46.3"
   },
   "jest": {
     "moduleFileExtensions": [
