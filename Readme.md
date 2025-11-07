@@ -49,7 +49,7 @@ Please make sure to read the [Issue Reporting Checklist](https://github.com/nest
 
 ## Consulting
 
-With official support, you can get expert help straight from Nest core team. We provide dedicated technical support, migration strategies, advice on best practices (and design decisions), PR reviews, and team augmentation. Read more about [support here](https://enterprise.nestjs.com).
+With official support, you can get expert help straight from the Nest core team. We provide dedicated technical support, migration strategies, advice on best practices (and design decisions), PR reviews, and team augmentation. Read more about [support here](https://enterprise.nestjs.com).
 
 ## Support
 
