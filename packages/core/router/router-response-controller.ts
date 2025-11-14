@@ -99,12 +99,12 @@ export class RouterResponseController {
     this.applicationRef.status(response, statusCode);
   }
 
-  public sse<
+  public async sse<
     TInput extends Observable<unknown> = any,
     TResponse extends WritableHeaderStream = any,
     TRequest extends IncomingMessage = any,
   >(
-    result: TInput,
+    result: TInput | Promise<TInput>,
     response: TResponse,
     request: TRequest,
     options?: { additionalHeaders: AdditionalHeaders },
@@ -114,12 +114,22 @@ export class RouterResponseController {
       return;
     }
 
-    this.assertObservable(result);
+    const observableResult = await Promise.resolve(result);
+
+    this.assertObservable(observableResult);
 
     const stream = new SseStream(request);
-    stream.pipe(response, options);
 
-    const subscription = result
+    // Extract custom status code from response if it was set
+    const customStatusCode = (response as any).statusCode;
+    const pipeOptions =
+      typeof customStatusCode !== 'undefined'
+        ? { ...options, statusCode: customStatusCode }
+        : options;
+
+    stream.pipe(response, pipeOptions);
+
+    const subscription = observableResult
       .pipe(
         map((message): MessageEvent => {
           if (isObject(message)) {
