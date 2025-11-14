@@ -19,3 +19,10 @@ npm-debug.log
 
 # dist
 /dist
+
+# frontend build files (uncomment if you don't want to commit frontend files)
+# /public/*
+# !/public/README.md
+
+# uploads
+/uploads

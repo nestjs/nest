@@ -26,9 +26,11 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "mongoose": "8.19.3",
+    "puppeteer": "^24.30.0",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.0",
-    "rxjs": "7.8.2"
+    "rxjs": "7.8.2",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.1",
@@ -40,6 +42,7 @@
     "@types/jest": "30.0.0",
     "@types/node": "24.10.1",
     "@types/supertest": "6.0.3",
+    "@types/uuid": "^11.0.0",
     "eslint": "9.39.1",
     "eslint-plugin-prettier": "5.5.4",
     "globals": "16.5.0",

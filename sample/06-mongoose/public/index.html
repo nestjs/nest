@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>报表导出测试 - NestJS</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #1976d2;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+        }
+        button {
+            background-color: #1976d2;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        button:hover:not(:disabled) {
+            background-color: #1565c0;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .status.pending {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .status.processing {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .status.completed {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.failed {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .task-list {
+            margin-top: 20px;
+        }
+        .task-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .task-item.completed {
+            background-color: #e8f5e9;
+        }
+        .task-item.failed {
+            background-color: #ffebee;
+        }
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .task-id {
+            font-family: monospace;
+            color: #666;
+            font-size: 12px;
+        }
+        .task-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            font-size: 14px;
+        }
+        .task-info span {
+            color: #666;
+        }
+        .task-info strong {
+            color: #333;
+        }
+        .download-btn {
+            background-color: #28a745;
+            margin-top: 10px;
+        }
+        .download-btn:hover:not(:disabled) {
+            background-color: #218838;
+        }
+        .error {
+            color: #dc3545;
+            background-color: #f8d7da;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #155724;
+            background-color: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #1976d2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 报表导出测试</h1>
+        
+        <h2>创建导出任务</h2>
+        <form id="exportForm">
+            <div class="form-group">
+                <label for="startTime">开始时间 *</label>
+                <input type="datetime-local" id="startTime" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="endTime">结束时间 *</label>
+                <input type="datetime-local" id="endTime" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="assetId">资产ID *</label>
+                <input type="text" id="assetId" value="asset123" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="reportPage">报表页面URL *</label>
+                <input type="text" id="reportPage" value="http://localhost:3000" required>
+                <small style="color: #666; display: block; margin-top: 5px;">
+                    示例: http://localhost:3000 或 /report-page
+                </small>
+            </div>
+            
+            <div class="form-group">
+                <label for="taskName">任务名称（可选）</label>
+                <input type="text" id="taskName" placeholder="例如：月度报表">
+            </div>
+            
+            <button type="submit" id="submitBtn">创建导出任务</button>
+        </form>
+        
+        <div id="statusMessage"></div>
+    </div>
+    
+    <div class="container">
+        <h2>任务列表</h2>
+        <button onclick="loadTaskList()" style="margin-bottom: 20px;">刷新列表</button>
+        <div id="taskList" class="task-list">
+            <p style="color: #666;">暂无任务，点击上方按钮创建任务</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/report-export';
+        let pollingIntervals = {}; // 存储轮询定时器
+
+        // 设置默认时间（当前时间的前后30天）
+        function setDefaultTimes() {
+            const now = new Date();
+            const startTime = new Date(now);
+            startTime.setDate(startTime.getDate() - 30);
+            const endTime = new Date(now);
+            
+            document.getElementById('startTime').value = formatDateTimeLocal(startTime);
+            document.getElementById('endTime').value = formatDateTimeLocal(endTime);
+        }
+
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // 表单提交
+        document.getElementById('exportForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '创建中... <span class="loading"></span>';
+            statusMessage.innerHTML = '';
+            
+            try {
+                const formData = {
+                    startTime: new Date(document.getElementById('startTime').value).toISOString(),
+                    endTime: new Date(document.getElementById('endTime').value).toISOString(),
+                    assetId: document.getElementById('assetId').value,
+                    reportPage: document.getElementById('reportPage').value,
+                };
+                
+                const taskName = document.getElementById('taskName').value;
+                if (taskName) {
+                    formData.taskName = taskName;
+                }
+                
+                const response = await fetch(API_BASE, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || '创建任务失败');
+                }
+                
+                const task = await response.json();
+                
+                statusMessage.innerHTML = `
+                    <div class="success">
+                        ✅ 任务创建成功！任务ID: ${task._id}
+                    </div>
+                `;
+                
+                // 开始轮询任务状态
+                startPolling(task._id);
+                
+                // 刷新任务列表
+                setTimeout(() => loadTaskList(), 1000);
+                
+            } catch (error) {
+                statusMessage.innerHTML = `
+                    <div class="error">
+                        ❌ 错误: ${error.message}
+                    </div>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '创建导出任务';
+            }
+        });
+
+        // 开始轮询任务状态
+        function startPolling(taskId) {
+            // 如果已经在轮询，先清除
+            if (pollingIntervals[taskId]) {
+                clearInterval(pollingIntervals[taskId]);
+            }
+            
+            pollingIntervals[taskId] = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/${taskId}`);
+                    if (!response.ok) {
+                        throw new Error('获取任务状态失败');
+                    }
+                    
+                    const task = await response.json();
+                    
+                    // 更新任务列表中的状态
+                    updateTaskInList(task);
+                    
+                    // 如果任务完成或失败，停止轮询
+                    if (task.status === 'completed') {
+                        clearInterval(pollingIntervals[taskId]);
+                        delete pollingIntervals[taskId];
+                        
+                        // 自动下载
+                        downloadFile(taskId);
+                        
+                        // 显示成功消息
+                        showStatusMessage(`✅ 任务 ${taskId} 已完成，正在下载...`, 'success');
+                    } else if (task.status === 'failed') {
+                        clearInterval(pollingIntervals[taskId]);
+                        delete pollingIntervals[taskId];
+                        
+                        showStatusMessage(`❌ 任务 ${taskId} 失败: ${task.errorMessage || '未知错误'}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('轮询错误:', error);
+                }
+            }, 2000); // 每2秒轮询一次
+        }
+
+        // 下载文件
+        function downloadFile(taskId) {
+            const downloadUrl = `${API_BASE}/download/${taskId}`;
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `report_${taskId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 加载任务列表
+        async function loadTaskList() {
+            const taskList = document.getElementById('taskList');
+            taskList.innerHTML = '<p>加载中...</p>';
+            
+            try {
+                const response = await fetch(API_BASE);
+                if (!response.ok) {
+                    throw new Error('获取任务列表失败');
+                }
+                
+                const data = await response.json();
+                const tasks = data.tasks || [];
+                
+                if (tasks.length === 0) {
+                    taskList.innerHTML = '<p style="color: #666;">暂无任务</p>';
+                    return;
+                }
+                
+                taskList.innerHTML = tasks.map(task => createTaskItem(task)).join('');
+                
+                // 为所有未完成的任务启动轮询
+                tasks.forEach(task => {
+                    if (task.status === 'pending' || task.status === 'processing') {
+                        if (!pollingIntervals[task._id]) {
+                            startPolling(task._id);
+                        }
+                    }
+                });
+                
+            } catch (error) {
+                taskList.innerHTML = `<div class="error">错误: ${error.message}</div>`;
+            }
+        }
+
+        // 创建任务项HTML
+        function createTaskItem(task) {
+            const statusClass = task.status;
+            const statusText = {
+                pending: '⏳ 待处理',
+                processing: '🔄 处理中',
+                completed: '✅ 已完成',
+                failed: '❌ 失败'
+            };
+            
+            const startTime = new Date(task.startTime).toLocaleString('zh-CN');
+            const endTime = new Date(task.endTime).toLocaleString('zh-CN');
+            const createdAt = new Date(task.createdAt).toLocaleString('zh-CN');
+            
+            return `
+                <div class="task-item ${statusClass}">
+                    <div class="task-header">
+                        <div>
+                            <strong>${task.taskName || '未命名任务'}</strong>
+                            <span class="status ${statusClass}">${statusText[task.status]}</span>
+                        </div>
+                        <div class="task-id">ID: ${task._id}</div>
+                    </div>
+                    <div class="task-info">
+                        <div><span>资产ID:</span> <strong>${task.assetId}</strong></div>
+                        <div><span>开始时间:</span> <strong>${startTime}</strong></div>
+                        <div><span>结束时间:</span> <strong>${endTime}</strong></div>
+                        <div><span>创建时间:</span> <strong>${createdAt}</strong></div>
+                        <div><span>报表页面:</span> <strong>${task.reportPage}</strong></div>
+                    </div>
+                    ${task.status === 'completed' && task.downloadUrl ? `
+                        <button class="download-btn" onclick="downloadFile('${task._id}')">
+                            📥 下载PDF
+                        </button>
+                    ` : ''}
+                    ${task.status === 'failed' && task.errorMessage ? `
+                        <div class="error" style="margin-top: 10px;">
+                            错误: ${task.errorMessage}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // 更新任务列表中的任务
+        function updateTaskInList(task) {
+            const taskItems = document.querySelectorAll('.task-item');
+            taskItems.forEach(item => {
+                const taskId = item.querySelector('.task-id')?.textContent.split(': ')[1];
+                if (taskId === task._id) {
+                    item.outerHTML = createTaskItem(task);
+                }
+            });
+        }
+
+        // 显示状态消息
+        function showStatusMessage(message, type) {
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.innerHTML = `
+                <div class="${type}">
+                    ${message}
+                </div>
+            `;
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            setDefaultTimes();
+            loadTaskList();
+        });
+    </script>
+</body>
+</html>
