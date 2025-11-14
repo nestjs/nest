@@ -2,10 +2,17 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync } from 'fs';
 import { AppModule } from './app.module';
+import { logger } from './common/logger';
 
 async function bootstrap() {
+  // 确保日志目录存在
+  const logsDir = join(process.cwd(), 'logs');
+  if (!existsSync(logsDir)) {
+    mkdirSync(logsDir, { recursive: true });
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   
   // 设置全局路由前缀（API 接口）
@@ -55,8 +62,17 @@ async function bootstrap() {
   });
   
   await app.listen(3000);
-  console.log(`Application is running on: ${await app.getUrl()}`);
-  console.log(`Frontend files served from: ${publicPath}`);
-  console.log(`API endpoints available at: ${await app.getUrl()}/api`);
+  const url = await app.getUrl();
+  logger.info('应用启动成功', {
+    url,
+    publicPath,
+    apiUrl: `${url}/api`,
+  });
 }
-bootstrap();
+bootstrap().catch((error) => {
+  logger.error('应用启动失败', {
+    error: error.message,
+    stack: error.stack,
+  });
+  process.exit(1);
+});

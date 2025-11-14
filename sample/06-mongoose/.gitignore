@@ -26,3 +26,6 @@ npm-debug.log
 
 # uploads
 /uploads
+
+# logs
+/logs

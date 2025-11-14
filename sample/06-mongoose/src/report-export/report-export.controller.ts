@@ -44,6 +44,15 @@ export class ReportExportController {
   }
 
   /**
+   * 获取队列状态
+   * @route GET /api/report-export/queue/status
+   */
+  @Get('queue/status')
+  async getQueueStatus() {
+    return this.reportExportService.getQueueStatus();
+  }
+
+  /**
    * 获取单个任务详情
    * @route GET /api/report-export/:id
    */
