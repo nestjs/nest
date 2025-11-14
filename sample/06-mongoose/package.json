@@ -23,6 +23,8 @@
     "@nestjs/core": "11.1.8",
     "@nestjs/mongoose": "11.0.3",
     "@nestjs/platform-express": "11.1.8",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "mongoose": "8.19.3",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.0",
