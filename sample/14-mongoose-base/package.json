@@ -19,27 +19,27 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.8",
-    "@nestjs/core": "11.1.8",
-    "@nestjs/platform-express": "11.1.8",
-    "mongoose": "8.19.2",
+    "@nestjs/common": "11.1.9",
+    "@nestjs/core": "11.1.9",
+    "@nestjs/platform-express": "11.1.9",
+    "mongoose": "8.20.0",
     "reflect-metadata": "0.2.2",
-    "rimraf": "6.1.0",
+    "rimraf": "6.1.2",
     "rxjs": "7.8.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.1",
-    "@eslint/js": "9.38.0",
-    "@nestjs/cli": "11.0.10",
+    "@eslint/js": "9.39.1",
+    "@nestjs/cli": "11.0.12",
     "@nestjs/schematics": "11.0.9",
-    "@nestjs/testing": "11.1.8",
+    "@nestjs/testing": "11.1.9",
     "@types/express": "5.0.5",
     "@types/jest": "30.0.0",
-    "@types/node": "24.10.0",
+    "@types/node": "24.10.1",
     "@types/supertest": "6.0.3",
-    "eslint": "9.38.0",
+    "eslint": "9.39.1",
     "eslint-plugin-prettier": "5.5.4",
-    "globals": "16.4.0",
+    "globals": "16.5.0",
     "jest": "30.2.0",
     "prettier": "3.6.2",
     "supertest": "7.1.4",
@@ -48,7 +48,7 @@
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.46.2"
+    "typescript-eslint": "8.46.3"
   },
   "jest": {
     "moduleFileExtensions": [

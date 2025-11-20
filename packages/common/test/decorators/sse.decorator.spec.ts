@@ -8,6 +8,9 @@ describe('@Sse', () => {
   class Test {
     @Sse(prefix)
     public static test() {}
+
+    @Sse(prefix, { method: RequestMethod.POST })
+    public static testUsingOptions() {}
   }
 
   it('should enhance method with expected http status code', () => {
@@ -18,6 +21,16 @@ describe('@Sse', () => {
     expect(method).to.be.eql(RequestMethod.GET);
 
     const metadata = Reflect.getMetadata(SSE_METADATA, Test.test);
+    expect(metadata).to.be.eql(true);
+  });
+  it('should enhance method with expected http status code and method from options', () => {
+    const path = Reflect.getMetadata(PATH_METADATA, Test.testUsingOptions);
+    expect(path).to.be.eql('/prefix');
+
+    const method = Reflect.getMetadata(METHOD_METADATA, Test.testUsingOptions);
+    expect(method).to.be.eql(RequestMethod.POST);
+
+    const metadata = Reflect.getMetadata(SSE_METADATA, Test.testUsingOptions);
     expect(metadata).to.be.eql(true);
   });
 });

@@ -29,7 +29,8 @@ export abstract class AbstractInstanceResolver {
     const pluckInstance = ({ wrapperRef }: InstanceLink) => {
       if (
         wrapperRef.scope === Scope.REQUEST ||
-        wrapperRef.scope === Scope.TRANSIENT
+        wrapperRef.scope === Scope.TRANSIENT ||
+        !wrapperRef.isDependencyTreeStatic()
       ) {
         throw new InvalidClassScopeException(typeOrToken);
       }
