@@ -146,7 +146,7 @@
     "gulp-sourcemaps": "3.0.0",
     "gulp-typescript": "5.0.1",
     "gulp-watch": "5.0.1",
-    "http-errors": "2.0.0",
+    "http-errors": "2.0.1",
     "husky": "9.1.7",
     "imports-loader": "5.0.0",
     "ioredis": "5.8.2",
