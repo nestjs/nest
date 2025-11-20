@@ -32,7 +32,7 @@
     "graphql": "16.10.0",
     "graphql-tools": "9.0.24",
     "reflect-metadata": "0.2.2",
-    "rimraf": "6.1.0",
+    "rimraf": "6.1.2",
     "rxjs": "7.8.2",
     "ts-morph": "27.0.2"
   },
