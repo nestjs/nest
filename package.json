@@ -67,7 +67,7 @@
     "express": "5.1.0",
     "fast-json-stringify": "6.1.1",
     "fast-safe-stringify": "2.1.1",
-    "file-type": "21.1.0",
+    "file-type": "21.1.1",
     "iterare": "1.2.1",
     "load-esm": "1.0.3",
     "object-hash": "3.0.0",

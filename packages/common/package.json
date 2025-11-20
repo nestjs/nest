@@ -18,7 +18,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "file-type": "21.1.0",
+    "file-type": "21.1.1",
     "iterare": "1.2.1",
     "load-esm": "1.0.3",
     "tslib": "2.8.1",
