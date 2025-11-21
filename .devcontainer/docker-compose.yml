@@ -1,0 +1,59 @@
+services:
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+      - /var/run/docker.sock:/var/run/docker-host.sock
+    environment:
+      - NODE_ENV=development
+      - npm_config_legacy_peer_deps=true
+      - DOCKER_HOST=unix:///var/run/docker-host.sock
+    working_dir: /workspace
+    command: sleep infinity
+    networks:
+      - nestjs-dev
+
+  # Redis for caching and session storage
+  redis:
+    container_name: nestjs-dev-redis
+    image: redis:7-alpine
+    ports:
+      - "16379:6379"
+    networks:
+      - nestjs-dev
+    restart: unless-stopped
+
+  # NATS for messaging
+  nats:
+    container_name: nestjs-dev-nats
+    image: nats:2.10-alpine
+    ports:
+      - "14223:4222"
+      - "16222:6222"
+      - "18222:8222"
+    command: ["--cluster_name", "nestjs-dev", "--http_port", "8222"]
+    networks:
+      - nestjs-dev
+    restart: unless-stopped
+
+  # MySQL for relational database testing
+  mysql:
+    container_name: nestjs-dev-mysql
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test
+      MYSQL_USER: nestjs
+      MYSQL_PASSWORD: nestjs
+    ports:
+      - "13306:3306"
+    networks:
+      - nestjs-dev
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
+networks:
+  nestjs-dev:
+    driver: bridge
