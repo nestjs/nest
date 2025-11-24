@@ -80,7 +80,7 @@
     "uuid": "13.0.0"
   },
   "devDependencies": {
-    "@apollo/server": "5.1.0",
+    "@apollo/server": "5.2.0",
     "@as-integrations/express5": "1.1.2",
     "@codechecks/client": "0.1.12",
     "@commitlint/cli": "20.1.0",
