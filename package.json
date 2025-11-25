@@ -116,7 +116,7 @@
     "amqp-connection-manager": "5.0.0",
     "amqplib": "0.10.9",
     "artillery": "2.0.27",
-    "body-parser": "2.2.0",
+    "body-parser": "2.2.1",
     "bytes": "3.1.2",
     "cache-manager": "7.2.5",
     "cache-manager-redis-store": "3.0.1",
