@@ -76,7 +76,6 @@ export class ListenersController {
     patternHandlers
       .filter(
         ({ transport }) =>
-          isUndefined(transport) ||
           isUndefined(serverInstance.transportId) ||
           transport === serverInstance.transportId,
       )
