@@ -165,7 +165,7 @@
     "nats": "2.29.3",
     "nodemon": "3.1.11",
     "nyc": "14.1.1",
-    "prettier": "3.6.2",
+    "prettier": "3.7.1",
     "redis": "5.10.0",
     "rxjs-compat": "6.6.7",
     "sinon": "21.0.0",
