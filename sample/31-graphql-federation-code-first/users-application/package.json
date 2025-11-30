@@ -35,7 +35,7 @@
     "ts-morph": "27.0.2"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.3.1",
+    "@eslint/eslintrc": "3.3.3",
     "@eslint/js": "9.39.1",
     "@nestjs/cli": "11.0.14",
     "@nestjs/schematics": "11.0.9",
