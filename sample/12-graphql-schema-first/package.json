@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@apollo/server": "5.2.0",
-    "@graphql-tools/utils": "10.10.3",
+    "@graphql-tools/utils": "10.11.0",
     "@nestjs/apollo": "13.2.1",
     "@nestjs/common": "11.1.9",
     "@nestjs/core": "11.1.9",
