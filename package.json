@@ -85,7 +85,7 @@
     "@codechecks/client": "0.1.12",
     "@commitlint/cli": "20.1.0",
     "@commitlint/config-angular": "20.0.0",
-    "@eslint/eslintrc": "3.3.1",
+    "@eslint/eslintrc": "3.3.3",
     "@eslint/js": "9.39.1",
     "@fastify/cors": "11.1.0",
     "@fastify/formbody": "8.0.2",
