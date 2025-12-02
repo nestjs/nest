@@ -152,16 +152,12 @@ export function GrpcStreamMethod(
 
     // Override original method to call the "drainBuffer" method on the first parameter
     // This is required to avoid premature message emission
-    descriptor.value = async function (
-      this: any,
-      observable: any,
-      ...args: any[]
-    ) {
-      const result = await Promise.resolve(
-        originalMethod.apply(this, [observable, ...args]),
-      );
+    descriptor.value = function (this: any, observable: any, ...args: any[]) {
+      const result = originalMethod.apply(this, [observable, ...args]);
 
-      // Drain buffer if "drainBuffer" method is available
+      // Drain buffer immediately after method invocation
+      // This must happen synchronously to ensure buffered messages are replayed
+      // before the handler starts processing (but after any enhancers have run)
       if (observable && observable.drainBuffer) {
         observable.drainBuffer();
       }
