@@ -267,5 +267,45 @@ describe('HttpException', () => {
         expect(cause).to.be.eql(errorCause);
       });
     });
+
+    it('preserves default description when using a built-in exception with options containing only cause', () => {
+      const testCases: [Type<HttpException>, number, string][] = [
+        [BadRequestException, 400, 'Bad Request'],
+        [UnauthorizedException, 401, 'Unauthorized'],
+        [ForbiddenException, 403, 'Forbidden'],
+        [NotFoundException, 404, 'Not Found'],
+        [MethodNotAllowedException, 405, 'Method Not Allowed'],
+        [NotAcceptableException, 406, 'Not Acceptable'],
+        [RequestTimeoutException, 408, 'Request Timeout'],
+        [ConflictException, 409, 'Conflict'],
+        [GoneException, 410, 'Gone'],
+        [PreconditionFailedException, 412, 'Precondition Failed'],
+        [PayloadTooLargeException, 413, 'Payload Too Large'],
+        [UnsupportedMediaTypeException, 415, 'Unsupported Media Type'],
+        [ImATeapotException, 418, "I'm a teapot"],
+        [MisdirectedException, 421, 'Misdirected'],
+        [UnprocessableEntityException, 422, 'Unprocessable Entity'],
+        [InternalServerErrorException, 500, 'Internal Server Error'],
+        [NotImplementedException, 501, 'Not Implemented'],
+        [BadGatewayException, 502, 'Bad Gateway'],
+        [ServiceUnavailableException, 503, 'Service Unavailable'],
+        [GatewayTimeoutException, 504, 'Gateway Timeout'],
+        [HttpVersionNotSupportedException, 505, 'HTTP Version Not Supported'],
+      ];
+
+      testCases.forEach(
+        ([ExceptionClass, expectedStatus, expectedDescription]) => {
+          const error = new ExceptionClass(customDescription, {
+            cause: errorCause,
+          });
+
+          expect(error.getResponse()).to.be.eql({
+            message: customDescription,
+            error: expectedDescription,
+            statusCode: expectedStatus,
+          });
+        },
+      );
+    });
   });
 });

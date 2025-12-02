@@ -37,13 +37,13 @@ export class NotAcceptableException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Not Acceptable',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Not Acceptable', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.NOT_ACCEPTABLE,
       ),
       HttpStatus.NOT_ACCEPTABLE,
