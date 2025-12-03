@@ -39,13 +39,13 @@ export class UnprocessableEntityException extends HttpException {
       | string
       | HttpExceptionOptions = 'Unprocessable Entity',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Unprocessable Entity', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.UNPROCESSABLE_ENTITY,
       ),
       HttpStatus.UNPROCESSABLE_ENTITY,

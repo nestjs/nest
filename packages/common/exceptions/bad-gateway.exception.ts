@@ -37,13 +37,13 @@ export class BadGatewayException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Bad Gateway',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Bad Gateway', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.BAD_GATEWAY,
       ),
       HttpStatus.BAD_GATEWAY,

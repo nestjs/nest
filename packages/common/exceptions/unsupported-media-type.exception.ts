@@ -39,13 +39,13 @@ export class UnsupportedMediaTypeException extends HttpException {
       | string
       | HttpExceptionOptions = 'Unsupported Media Type',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Unsupported Media Type', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.UNSUPPORTED_MEDIA_TYPE,
       ),
       HttpStatus.UNSUPPORTED_MEDIA_TYPE,

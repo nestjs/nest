@@ -37,13 +37,13 @@ export class PreconditionFailedException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Precondition Failed',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Precondition Failed', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.PRECONDITION_FAILED,
       ),
       HttpStatus.PRECONDITION_FAILED,
