@@ -69,7 +69,14 @@ export class FileTypeValidator extends FileValidator<
       );
     }
 
-    if (!isFileValid || !file.buffer) return false;
+    if (!isFileValid) return false;
+
+    if (!file.buffer) {
+      if (this.validationOptions.fallbackToMimetype) {
+        return !!file.mimetype.match(this.validationOptions.fileType);
+      }
+      return false;
+    }
 
     try {
       const { fileTypeFromBuffer } =
