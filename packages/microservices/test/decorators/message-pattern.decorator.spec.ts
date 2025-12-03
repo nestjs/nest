@@ -247,6 +247,46 @@ describe('@GrpcStreamMethod', () => {
       streaming: GrpcMethodStreamingType.RX_STREAMING,
     });
   });
+
+  it('should not wrap return value in a Promise', () => {
+    const returnValue = { type: 'observable' };
+
+    class TestServiceWithReturn {
+      @GrpcStreamMethod()
+      public streamMethod() {
+        return returnValue;
+      }
+    }
+
+    const svc = new TestServiceWithReturn();
+    const result = svc.streamMethod();
+
+    // Result should be the original return value, not a Promise
+    expect(result).to.equal(returnValue);
+    expect(result).to.not.be.instanceOf(Promise);
+  });
+
+  it('should call drainBuffer before method execution', () => {
+    const callOrder: string[] = [];
+    const mockObservable = {
+      drainBuffer: () => {
+        callOrder.push('drainBuffer');
+      },
+    };
+
+    class TestServiceDrain {
+      @GrpcStreamMethod()
+      public streamMethod(_observable: any) {
+        callOrder.push('method');
+        return { result: 'test' };
+      }
+    }
+
+    const svc = new TestServiceDrain();
+    svc.streamMethod(mockObservable);
+
+    expect(callOrder).to.deep.equal(['drainBuffer', 'method']);
+  });
 });
 
 describe('@GrpcStreamCall', () => {
