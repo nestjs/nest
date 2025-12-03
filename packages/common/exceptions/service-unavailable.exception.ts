@@ -37,13 +37,13 @@ export class ServiceUnavailableException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Service Unavailable',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Service Unavailable', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.SERVICE_UNAVAILABLE,
       ),
       HttpStatus.SERVICE_UNAVAILABLE,

@@ -37,13 +37,13 @@ export class GatewayTimeoutException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Gateway Timeout',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Gateway Timeout', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.GATEWAY_TIMEOUT,
       ),
       HttpStatus.GATEWAY_TIMEOUT,
