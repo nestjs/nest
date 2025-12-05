@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <a href="https://nestjs.com/" target="_blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
@@ -49,7 +49,7 @@ Please make sure to read the [Issue Reporting Checklist](https://github.com/nest
 
 ## Consulting
 
-With official support, you can get expert help straight from Nest core team. We provide dedicated technical support, migration strategies, advice on best practices (and design decisions), PR reviews, and team augmentation. Read more about [support here](https://enterprise.nestjs.com).
+With official support, you can get expert help straight from the Nest core team. We provide dedicated technical support, migration strategies, advice on best practices (and design decisions), PR reviews, and team augmentation. Read more about [support here](https://enterprise.nestjs.com).
 
 ## Support
 
@@ -92,6 +92,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td align="center" valign="middle"><a href="https://www.itflashcards.com/" target="_blank"><img src="https://nestjs.com/img/logos/it_flashcards-logo.png" width="170" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://arcjet.com/?ref=nestjs" target="_blank"><img src="https://nestjs.com/img/logos/arcjet-logo.svg" width="170" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://crawljobs.com" target="_blank"><img src="https://nestjs.com/img/logos/crawljobs-logo.svg" width="130" valign="middle" /></a></td>
+</tr><tr>
+<td align="center" valign="middle"><a href="https://pandektes.com" target="_blank"><img src="https://nestjs.com/img/logos/pandektes-logo.png" width="65" valign="middle" /></a></td>
 </tr>
 </table>
 
