@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import { expect } from 'chai';
 import { Type } from '../../../common';
 import {

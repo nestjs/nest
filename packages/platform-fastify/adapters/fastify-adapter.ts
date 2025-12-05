@@ -122,8 +122,8 @@ type FastifyRawRequest<TServer extends RawServerBase> =
 export class FastifyAdapter<
   TServer extends RawServerBase = RawServerDefault,
   TRawRequest extends FastifyRawRequest<TServer> = FastifyRawRequest<TServer>,
-  TRawResponse extends
-    RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>,
+  TRawResponse extends RawReplyDefaultExpression<TServer> =
+    RawReplyDefaultExpression<TServer>,
   TRequest extends FastifyRequest<
     RequestGenericInterface,
     TServer,
@@ -135,11 +135,8 @@ export class FastifyAdapter<
     TRawRequest,
     TRawResponse
   > = FastifyReply<RouteGenericInterface, TServer, TRawRequest, TRawResponse>,
-  TInstance extends FastifyInstance<
-    TServer,
-    TRawRequest,
-    TRawResponse
-  > = FastifyInstance<TServer, TRawRequest, TRawResponse>,
+  TInstance extends FastifyInstance<TServer, TRawRequest, TRawResponse> =
+    FastifyInstance<TServer, TRawRequest, TRawResponse>,
 > extends AbstractHttpAdapter<TServer, TRequest, TReply> {
   protected readonly logger = new Logger(FastifyAdapter.name);
   protected readonly instance: TInstance;

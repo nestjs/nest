@@ -38,9 +38,9 @@ import { Module } from './injector/module';
  * @publicApi
  */
 export class NestApplicationContext<
-    TOptions extends
-      NestApplicationContextOptions = NestApplicationContextOptions,
-  >
+  TOptions extends NestApplicationContextOptions =
+    NestApplicationContextOptions,
+>
   extends AbstractInstanceResolver
   implements INestApplicationContext
 {
