@@ -1,4 +1,4 @@
-import { InjectionToken, Provider, Scope, Injectable } from '@nestjs/common';
+import { Injectable, InjectionToken, Provider, Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { setTimeout } from 'timers/promises';
@@ -153,6 +153,56 @@ describe('NestApplicationContext', () => {
       expect(onApplicationShutdownStub.called).to.be.true;
 
       clock.restore();
+    });
+
+    it('should use process.exit when useProcessExit option is enabled', async () => {
+      const signal = 'SIGTERM';
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      const processExitStub = sinon.stub(process, 'exit');
+      const processKillStub = sinon.stub(process, 'kill');
+
+      applicationContext.enableShutdownHooks([signal], {
+        useProcessExit: true,
+      });
+
+      const hookStub = sinon
+        .stub(applicationContext as any, 'callShutdownHook')
+        .callsFake(async () => undefined);
+
+      const shutdownCleanupRef = applicationContext['shutdownCleanupRef']!;
+      await shutdownCleanupRef(signal);
+
+      hookStub.restore();
+      processExitStub.restore();
+      processKillStub.restore();
+
+      expect(processExitStub.calledOnceWith(0)).to.be.true;
+      expect(processKillStub.called).to.be.false;
+    });
+
+    it('should use process.kill when useProcessExit option is not enabled', async () => {
+      const signal = 'SIGTERM';
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      const processExitStub = sinon.stub(process, 'exit');
+      const processKillStub = sinon.stub(process, 'kill');
+
+      applicationContext.enableShutdownHooks([signal]);
+
+      const hookStub = sinon
+        .stub(applicationContext as any, 'callShutdownHook')
+        .callsFake(async () => undefined);
+
+      const shutdownCleanupRef = applicationContext['shutdownCleanupRef']!;
+      await shutdownCleanupRef(signal);
+
+      hookStub.restore();
+      processExitStub.restore();
+      processKillStub.restore();
+
+      expect(processKillStub.calledOnceWith(process.pid, signal)).to.be.true;
+      expect(processExitStub.called).to.be.false;
     });
   });
 
