@@ -24,6 +24,7 @@ export * from './nest-application-options.interface';
 export * from './nest-application.interface';
 export * from './nest-microservice.interface';
 export * from './scope-options.interface';
+export * from './shutdown-hooks-options.interface';
 export * from './type.interface';
 export * from './version-options.interface';
 export * from './websockets/web-socket-adapter.interface';
