@@ -30,26 +30,6 @@ RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /
   && apt-get install -y docker-ce-cli docker-compose-plugin \
   && rm -rf /var/lib/apt/lists/*
 
-# Install global npm packages for development
-RUN npm install -g \
-  # TypeScript tooling
-  typescript \
-  ts-node \
-  nodemon \
-  # Testing tools
-  mocha \
-  nyc \
-  # Linting and formatting
-  eslint \
-  prettier \
-  # Development utilities
-  concurrently \
-  cross-env \
-  # Package management
-  lerna \
-  # Build tools
-  gulp-cli
-
 # Set npm configuration for NestJS
 RUN npm config set legacy-peer-deps true
 
