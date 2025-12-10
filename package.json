@@ -87,7 +87,7 @@
     "@commitlint/config-angular": "20.2.0",
     "@eslint/eslintrc": "3.3.3",
     "@eslint/js": "9.39.1",
-    "@fastify/cors": "11.1.0",
+    "@fastify/cors": "11.2.0",
     "@fastify/formbody": "8.0.2",
     "@fastify/middie": "9.0.3",
     "@fastify/multipart": "9.3.0",
