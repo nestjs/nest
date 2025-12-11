@@ -18,9 +18,9 @@ export interface RoutePathMetadata {
   globalPrefix?: string;
 
   /**
-   * Module-level path registered through the "RouterModule".
+   * Module-level path or paths registered through the "RouterModule".
    */
-  modulePath?: string;
+  modulePath?: string | string[];
 
   /**
    * Controller-level version (e.g., @Controller({ version: '1.0' }) = "1.0").

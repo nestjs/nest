@@ -21,6 +21,12 @@ describe('flattenRoutePaths', () => {
     @Module({})
     class ChildModule6 {}
     @Module({})
+    class ChildModule7 {}
+    @Module({})
+    class ChildModule8 {}
+    @Module({})
+    class ChildModule9 {}
+    @Module({})
     class ChildParentPathModule {}
     @Module({})
     class ParentChildModule {}
@@ -95,6 +101,23 @@ describe('flattenRoutePaths', () => {
               },
             ],
           },
+          {
+            path: ['/child5', '/child6', '/child7'],
+            children: [
+              {
+                path: '',
+                module: ChildModule7,
+              },
+              {
+                path: '/child8',
+                module: ChildModule8,
+              },
+              {
+                path: ['/child9', '/child10'],
+                module: ChildModule9,
+              },
+            ],
+          },
         ],
       },
       { path: '/v1', children: [AuthModule, CatsModule, DogsModule] },
@@ -119,6 +142,29 @@ describe('flattenRoutePaths', () => {
       { path: '/parent/child3', module: ChildModule5 },
       { path: '/parent/child3/child', module: ChildParentPathModule },
       { path: '/parent/child4', module: ChildModule6 },
+      {
+        path: ['/parent/child5', '/parent/child6', '/parent/child7'],
+        module: ChildModule7,
+      },
+      {
+        path: [
+          '/parent/child5/child8',
+          '/parent/child6/child8',
+          '/parent/child7/child8',
+        ],
+        module: ChildModule8,
+      },
+      {
+        path: [
+          '/parent/child5/child9',
+          '/parent/child5/child10',
+          '/parent/child6/child9',
+          '/parent/child6/child10',
+          '/parent/child7/child9',
+          '/parent/child7/child10',
+        ],
+        module: ChildModule9,
+      },
       { path: '/v1', module: AuthModule },
       { path: '/v1', module: CatsModule },
       { path: '/v1', module: DogsModule },
@@ -127,6 +173,8 @@ describe('flattenRoutePaths', () => {
       { path: '/v3', module: AuthModule3 },
       { path: '/v3', module: CatsModule3 },
     ];
-    expect(flattenRoutePaths(routes)).to.be.eql(expectedRoutes);
+    const result = flattenRoutePaths(routes);
+    console.log(result);
+    expect(result).to.be.eql(expectedRoutes);
   });
 });

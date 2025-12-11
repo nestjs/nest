@@ -30,6 +30,13 @@ export const addLeadingSlash = (path?: string): string =>
       : path
     : '';
 
+export const normalizePaths = (paths: string | string[]): string[] => {
+  if (Array.isArray(paths)) {
+    return paths.map(path => normalizePath(path));
+  }
+  return [normalizePath(paths)];
+};
+
 export const normalizePath = (path?: string): string =>
   path
     ? path.startsWith('/')

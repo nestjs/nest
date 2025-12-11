@@ -1,6 +1,6 @@
 import { DynamicModule, Inject, Module, Type } from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants';
-import { normalizePath } from '@nestjs/common/utils/shared.utils';
+import { normalizePaths } from '@nestjs/common/utils/shared.utils';
 import { Module as ModuleClass } from '../injector/module';
 import { ModulesContainer } from '../injector/modules-container';
 import { Routes, RouteTree } from './interfaces';
@@ -58,15 +58,15 @@ export class RouterModule {
   private initialize() {
     const flattenedRoutes = flattenRoutePaths(this.routes);
     flattenedRoutes.forEach(route => {
-      const modulePath = normalizePath(route.path);
-      this.registerModulePathMetadata(route.module, modulePath);
+      const modulePaths = normalizePaths(route.path);
+      this.registerModulePathMetadata(route.module, modulePaths);
       this.updateTargetModulesCache(route.module);
     });
   }
 
   private registerModulePathMetadata(
     moduleCtor: Type<unknown>,
-    modulePath: string,
+    modulePath: string | string[],
   ) {
     Reflect.defineMetadata(
       MODULE_PATH + this.modulesContainer.applicationId,

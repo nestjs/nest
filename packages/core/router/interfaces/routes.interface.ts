@@ -1,7 +1,7 @@
 import { Type } from '@nestjs/common';
 
 export interface RouteTree {
-  path: string;
+  path: string | string[];
   module?: Type<any>;
   children?: (RouteTree | Type<any>)[];
 }

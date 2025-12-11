@@ -48,7 +48,10 @@ describe('RouterModule', () => {
     },
   ];
   const routes2: Routes = [
-    { path: 'v1', children: [AuthModule, PaymentsModule, NoSlashModule] },
+    {
+      path: ['v1', 'v2'],
+      children: [AuthModule, PaymentsModule, NoSlashModule],
+    },
   ];
 
   @Module({
@@ -90,6 +93,12 @@ describe('RouterModule', () => {
   it('should hit the "NoSlashController"', async () => {
     return request(app.getHttpServer())
       .get('/v1/no-slash-controller')
+      .expect(200, 'NoSlashController');
+  });
+
+  it('should hit the "NoSlashController on v2"', async () => {
+    return request(app.getHttpServer())
+      .get('/v2/no-slash-controller')
       .expect(200, 'NoSlashController');
   });
 
