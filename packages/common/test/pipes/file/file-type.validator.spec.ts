@@ -337,5 +337,17 @@ describe('FileTypeValidator', () => {
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
+
+    it('should include the file type in the custom error message when a file is provided', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'text/csv',
+        message: 'invalid type',
+      });
+      const requestFile = { mimetype: 'image/png' } as IFile;
+
+      expect(fileTypeValidator.buildErrorMessage(requestFile)).to.equal(
+        'invalid type',
+      );
+    });
   });
 });
