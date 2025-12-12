@@ -3,7 +3,26 @@ import { IFile } from './interfaces';
 import { loadEsm } from 'load-esm';
 
 export type FileTypeValidatorOptions = {
+  /**
+   * Expected file type(s) for validation. Can be a string (MIME type)
+   * or a regular expression to match multiple types.
+   *
+   * @example
+   * // Match a single MIME type
+   * fileType: 'image/png'
+   *
+   * @example
+   * // Match multiple types using RegExp
+   * fileType: /^image\/(png|jpeg)$/
+   */
   fileType: string | RegExp;
+
+  /**
+   * Custom error message displayed when file type validation fails
+   * @example
+   * new FileTypeValidator({ fileType: 'image/png', message: 'Only PNG allowed' })
+   */
+  message?: string;
 
   /**
    * If `true`, the validator will skip the magic numbers validation.
@@ -34,6 +53,10 @@ export class FileTypeValidator extends FileValidator<
 > {
   buildErrorMessage(file?: IFile): string {
     const expected = this.validationOptions.fileType;
+
+    if ('message' in this.validationOptions) {
+      return this.validationOptions.message!;
+    }
 
     if (file?.mimetype) {
       const baseMessage = `Validation failed (current file type is ${file.mimetype}, expected type is ${expected})`;
