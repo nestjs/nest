@@ -8,8 +8,8 @@
     "build:dev": "nest build --watch --webpack --webpackPath webpack-hmr.config.js",
     "start": "node dist/main",
     "lint": "eslint '{src,apps,libs,test}/**/*.ts' --fix",
-    "test": "echo 'No tests implemented yet.'",
-    "test:e2e": "echo 'No e2e tests implemented yet.'"
+    "test": "jest",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@nestjs/common": "11.1.9",
@@ -24,16 +24,22 @@
     "@eslint/js": "9.39.1",
     "@nestjs/cli": "11.0.14",
     "@nestjs/schematics": "11.0.9",
-    "@types/node": "24.10.3",
+    "@nestjs/testing": "^11.1.9",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.10.3",
+    "@types/supertest": "^6.0.3",
     "eslint": "9.39.1",
     "eslint-plugin-prettier": "5.5.4",
     "globals": "16.5.0",
+    "jest": "^30.2.0",
     "start-server-webpack-plugin": "2.2.5",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.6",
     "ts-loader": "9.5.4",
     "ts-node": "10.9.2",
+    "typescript-eslint": "8.49.0",
     "webpack": "5.103.0",
     "webpack-cli": "6.0.1",
-    "webpack-node-externals": "3.0.0",
-    "typescript-eslint": "8.49.0"
+    "webpack-node-externals": "3.0.0"
   }
 }
