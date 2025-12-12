@@ -2,7 +2,27 @@ import { FileValidator } from './file-validator.interface';
 import { IFile } from './interfaces';
 
 export type MaxFileSizeValidatorOptions = {
+  /**
+   * Maximum allowed file size in bytes.
+   */
   maxSize: number;
+
+  /**
+   * Custom error message returned when file size validation fails.
+   * This can be either a static string or a function that receives the `maxSize` value
+   * and returns a dynamic message.
+   *
+   * @example
+   * // Static message
+   * new MaxFileSizeValidator({ maxSize: 1000, message: 'File size exceeds the limit' })
+   *
+   * @example
+   * // Dynamic message based on maxSize
+   * new MaxFileSizeValidator({
+   *   maxSize: 1000,
+   *   message: (max) => `Maximum allowed file size is ${max} bytes`
+   * })
+   */
   message?: string | ((maxSize: number) => string);
 };
 
