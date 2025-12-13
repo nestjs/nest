@@ -20,9 +20,9 @@ export type FileTypeValidatorOptions = {
   /**
    * Custom error message displayed when file type validation fails
    * @example
-   * new FileTypeValidator({ fileType: 'image/png', message: 'Only PNG allowed' })
+   * new FileTypeValidator({ fileType: 'image/png', errorMessage: 'Only PNG allowed' })
    */
-  message?: string;
+  errorMessage?: string;
 
   /**
    * If `true`, the validator will skip the magic numbers validation.
@@ -54,8 +54,8 @@ export class FileTypeValidator extends FileValidator<
   buildErrorMessage(file?: IFile): string {
     const expected = this.validationOptions.fileType;
 
-    if ('message' in this.validationOptions) {
-      return this.validationOptions.message!;
+    if (this.validationOptions.errorMessage) {
+      return this.validationOptions.errorMessage;
     }
 
     if (file?.mimetype) {
