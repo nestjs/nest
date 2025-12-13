@@ -19,6 +19,13 @@ describe('StreamableFile', () => {
       expect(streamableFile.getStream()).to.equal(stream);
     });
   });
+  describe('when input is neither Uint8Array nor has pipe method', () => {
+    it('should not set stream property', () => {
+      const invalidInput = { notPipe: true };
+      const streamableFile = new StreamableFile(invalidInput as any);
+      expect(streamableFile.getStream()).to.be.undefined;
+    });
+  });
   describe('when options is empty', () => {
     it('should return application/octet-stream for type and undefined for others', () => {
       const stream = new Readable();
@@ -153,6 +160,23 @@ describe('StreamableFile', () => {
       const stream = new Readable();
       const streamableFile = new StreamableFile(stream);
       expect(streamableFile.errorLogger).to.be.a('function');
+    });
+
+    describe('default error logger behavior', () => {
+      it('should call logger.error with the error', () => {
+        const stream = new Readable();
+        const streamableFile = new StreamableFile(stream);
+        const loggerErrorStub = sinon.stub(
+          (streamableFile as any).logger,
+          'error',
+        );
+        const error = new Error('test error');
+
+        streamableFile.errorLogger(error);
+
+        expect(loggerErrorStub.calledOnceWith(error)).to.be.true;
+        loggerErrorStub.restore();
+      });
     });
   });
 
