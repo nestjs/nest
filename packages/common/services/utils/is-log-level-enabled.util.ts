@@ -27,10 +27,10 @@ export function isLogLevelEnabled(
 
   let highestLogLevelValue = -Infinity;
   for (const level of logLevels) {
-   const v = LOG_LEVEL_VALUES[level];
-   if (v > highestLogLevelValue) highestLogLevelValue = v;
+    const v = LOG_LEVEL_VALUES[level];
+    if (v > highestLogLevelValue) highestLogLevelValue = v;
   }
-  
+
   const targetLevelValue = LOG_LEVEL_VALUES[targetLevel];
   return targetLevelValue >= highestLogLevelValue;
 }
