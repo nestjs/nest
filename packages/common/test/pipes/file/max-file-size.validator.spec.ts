@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { MaxFileSizeValidator } from '../../../pipes';
+import { IFile } from '@nestjs/common/pipes/file/interfaces';
 
 describe('MaxFileSizeValidator', () => {
   const oneKb = 1024;
@@ -71,6 +72,32 @@ describe('MaxFileSizeValidator', () => {
 
       expect(maxFileSizeValidator.buildErrorMessage(file)).to.equal(
         `Validation failed (current file size is ${currentFileSize}, expected size is less than ${oneKb})`,
+      );
+    });
+
+    it('should support deprecated message option', async () => {
+      const currentFileSize = oneKb + 1;
+      const maxFileSizeValidator = new MaxFileSizeValidator({
+        maxSize: oneKb,
+        message: 'File size exceeds the limit',
+      });
+      const requestFile = { size: currentFileSize } as IFile;
+
+      expect(maxFileSizeValidator.buildErrorMessage(requestFile)).to.equal(
+        'File size exceeds the limit',
+      );
+    });
+
+    it('should return a custom error message when the file size exceeds the limit', async () => {
+      const currentFileSize = oneKb + 1;
+      const maxFileSizeValidator = new MaxFileSizeValidator({
+        maxSize: oneKb,
+        errorMessage: 'File size exceeds the limit',
+      });
+      const requestFile = { size: currentFileSize } as IFile;
+
+      expect(maxFileSizeValidator.buildErrorMessage(requestFile)).to.equal(
+        'File size exceeds the limit',
       );
     });
   });
