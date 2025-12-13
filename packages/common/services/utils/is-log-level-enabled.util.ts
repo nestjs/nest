@@ -32,7 +32,5 @@ export function isLogLevelEnabled(
   }
   
   const targetLevelValue = LOG_LEVEL_VALUES[targetLevel];
-
   return targetLevelValue >= highestLogLevelValue;
-
 }
