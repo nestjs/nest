@@ -8,22 +8,26 @@ export type MaxFileSizeValidatorOptions = {
   maxSize: number;
 
   /**
+   * @deprecated Use `errorMessage` instead.
+   */
+  message?: string | ((maxSize: number) => string);
+
+  /**
    * Custom error message returned when file size validation fails.
    * This can be either a static string or a function that receives the `maxSize` value
    * and returns a dynamic message.
-   *
    * @example
    * // Static message
-   * new MaxFileSizeValidator({ maxSize: 1000, message: 'File size exceeds the limit' })
+   * new MaxFileSizeValidator({ maxSize: 1000, errorMessage: 'File size exceeds the limit' })
    *
    * @example
    * // Dynamic message based on maxSize
    * new MaxFileSizeValidator({
    *   maxSize: 1000,
-   *   message: (max) => `Maximum allowed file size is ${max} bytes`
+   *   errorMessage: (maxSize) => `Maximum allowed file size is ${maxSize} bytes`
    * })
    */
-  message?: string | ((maxSize: number) => string);
+  errorMessage?: string | ((maxSize: number) => string);
 };
 
 /**
@@ -38,12 +42,13 @@ export class MaxFileSizeValidator extends FileValidator<
   IFile
 > {
   buildErrorMessage(file?: IFile): string {
-    if ('message' in this.validationOptions) {
-      if (typeof this.validationOptions.message === 'function') {
-        return this.validationOptions.message(this.validationOptions.maxSize);
-      }
+    const errorMessage =
+      this.validationOptions.errorMessage ?? this.validationOptions.message;
 
-      return this.validationOptions.message!;
+    if (errorMessage) {
+      return typeof errorMessage === 'function'
+        ? errorMessage(this.validationOptions.maxSize)
+        : errorMessage;
     }
 
     if (file?.size) {
