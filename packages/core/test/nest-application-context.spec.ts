@@ -485,4 +485,64 @@ describe('NestApplicationContext', () => {
       expect(instance).instanceOf(Host);
     });
   });
+
+  describe('resolve with each: true', () => {
+    it('should resolve all default-scoped providers registered under the same token', async () => {
+      class Service1 {}
+      class Service2 {}
+      class Service3 {}
+      const TOKEN = 'MULTI_TOKEN';
+
+      const nestContainer = new NestContainer();
+      const injector = new Injector();
+      const instanceLoader = new InstanceLoader(
+        nestContainer,
+        injector,
+        new GraphInspector(nestContainer),
+      );
+
+      // Create three modules, each with a provider under the same token
+      const { moduleRef: module1 } = (await nestContainer.addModule(
+        class Module1 {},
+        [],
+      ))!;
+      const { moduleRef: module2 } = (await nestContainer.addModule(
+        class Module2 {},
+        [],
+      ))!;
+      const { moduleRef: module3 } = (await nestContainer.addModule(
+        class Module3 {},
+        [],
+      ))!;
+
+      nestContainer.addProvider(
+        { provide: TOKEN, useClass: Service1 },
+        module1.token,
+      );
+      nestContainer.addProvider(
+        { provide: TOKEN, useClass: Service2 },
+        module2.token,
+      );
+      nestContainer.addProvider(
+        { provide: TOKEN, useClass: Service3 },
+        module3.token,
+      );
+
+      const modules = nestContainer.getModules();
+      await instanceLoader.createInstancesOfDependencies(modules);
+
+      const appCtx = new NestApplicationContext(nestContainer);
+
+      const instances = await appCtx.resolve(TOKEN, undefined, {
+        strict: false,
+        each: true,
+      });
+
+      expect(instances).to.be.an('array');
+      expect(instances).to.have.length(3);
+      expect(instances[0]).to.be.instanceOf(Service1);
+      expect(instances[1]).to.be.instanceOf(Service2);
+      expect(instances[2]).to.be.instanceOf(Service3);
+    });
+  });
 });
