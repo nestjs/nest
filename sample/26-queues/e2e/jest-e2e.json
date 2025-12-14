@@ -5,6 +5,5 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
-  "testEnvironment": "node",
-  "testTimeout": 30000
+  "testEnvironment": "node"
 }

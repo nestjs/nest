@@ -2,38 +2,56 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
+import { getQueueToken } from '@nestjs/bull';
 
 describe('Audio (e2e)', () => {
   let app: INestApplication;
 
+  // Mock queue that doesn't need Redis
+  const mockQueue = {
+    add: jest.fn().mockResolvedValue({ id: 1 }),
+    process: jest.fn(),
+    on: jest.fn(),
+  };
+
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(getQueueToken('audio'))
+      .useValue(mockQueue)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
-  }, 30000); // 30 second timeout for setup
+  });
 
   afterAll(async () => {
     await app.close();
-  }, 30000); // 30 second timeout for teardown
+  });
 
   describe('POST /audio/transcode', () => {
     it('should accept transcode request and return 201', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/audio/transcode')
+        .expect(201);
+
+      expect(mockQueue.add).toHaveBeenCalled();
+    });
+
+    it('should queue the job successfully', async () => {
+      mockQueue.add.mockClear();
+
       await request(app.getHttpServer())
         .post('/audio/transcode')
         .expect(201);
-    }, 10000); // 10 second timeout
 
-    it('should return correct status code for valid request', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/audio/transcode');
-      
-      expect(response.status).toBe(201);
-    }, 10000);
+      expect(mockQueue.add).toHaveBeenCalledWith('transcode', {});
+    });
 
     it('should handle multiple concurrent requests', async () => {
+      mockQueue.add.mockClear();
+
       const requests = [
         request(app.getHttpServer()).post('/audio/transcode'),
         request(app.getHttpServer()).post('/audio/transcode'),
@@ -41,21 +59,17 @@ describe('Audio (e2e)', () => {
       ];
 
       const responses = await Promise.all(requests);
+      
       responses.forEach(response => {
         expect(response.status).toBe(201);
       });
-    }, 15000); // 15 seconds for concurrent
 
-    it('should handle requests without errors', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/audio/transcode');
-      
-      expect(response.error).toBeFalsy();
-    }, 10000);
+      expect(mockQueue.add).toHaveBeenCalledTimes(3);
+    });
   });
 
   describe('GET /audio', () => {
-    it('should return method not allowed for GET', async () => {
+    it('should return 404 for GET request', async () => {
       await request(app.getHttpServer())
         .get('/audio')
         .expect(404);
@@ -63,17 +77,17 @@ describe('Audio (e2e)', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle missing route gracefully', async () => {
+    it('should handle invalid routes', async () => {
       await request(app.getHttpServer())
         .post('/audio/invalid')
         .expect(404);
     });
 
-    it('should accept POST requests to valid endpoint', async () => {
+    it('should accept POST to transcode endpoint', async () => {
       const response = await request(app.getHttpServer())
         .post('/audio/transcode');
       
-      expect([200, 201]).toContain(response.status);
-    }, 10000);
+      expect(response.status).toBe(201);
+    });
   });
 });
