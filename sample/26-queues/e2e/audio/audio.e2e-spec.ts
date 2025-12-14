@@ -46,7 +46,10 @@ describe('Audio (e2e)', () => {
         .post('/audio/transcode')
         .expect(201);
 
-      expect(mockQueue.add).toHaveBeenCalledWith('transcode', {});
+      expect(mockQueue.add).toHaveBeenCalledWith(
+        'transcode',
+        expect.objectContaining({ file: expect.any(String) })
+      );
     });
 
     it('should handle multiple concurrent requests', async () => {
