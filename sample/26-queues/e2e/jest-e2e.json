@@ -1,13 +1,10 @@
 {
-  "moduleFileExtensions": ["ts", "tsx", "js", "json"],
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testRegex": ".*\\.e2e-spec\\.ts$",
   "transform": {
-    "^.+\\.tsx?$": "ts-jest"
+    "^.+\\.(t|j)s$": "ts-jest"
   },
-  "testRegex": "/e2e/.*\\.(e2e-test|e2e-spec).(ts|tsx|js)$",
-  "collectCoverageFrom": [
-    "src/**/*.{js,jsx,tsx,ts}",
-    "!**/node_modules/**",
-    "!**/vendor/**"
-  ],
-  "coverageReporters": ["json", "lcov"]
+  "testEnvironment": "node",
+  "testTimeout": 30000
 }
