@@ -1,6 +1,11 @@
+import { FileValidatorContext } from './file-validator-context.interface';
 import { FileValidator } from './file-validator.interface';
 import { IFile } from './interfaces';
 import { loadEsm } from 'load-esm';
+
+type FileTypeValidatorContext = FileValidatorContext<
+  Omit<FileTypeValidatorOptions, 'errorMessage'>
+>;
 
 export type FileTypeValidatorOptions = {
   /**
@@ -19,10 +24,22 @@ export type FileTypeValidatorOptions = {
 
   /**
    * Custom error message displayed when file type validation fails
+   * Can be provided as a static string, or as a factory function
+   * that receives the validation context (file and validator configuration)
+   * and returns a dynamic error message.
+   *
    * @example
+   * // Static message
    * new FileTypeValidator({ fileType: 'image/png', errorMessage: 'Only PNG allowed' })
+   *
+   * @example
+   * // Dynamic message based on file object and validator configuration
+   * new FileTypeValidator({
+   *   fileType: 'image/png',
+   *   errorMessage: ctx => `Received file type '${ctx.file?.mimetype}', but expected '${ctx.config.fileType}'`
+   * })
    */
-  errorMessage?: string;
+  errorMessage?: string | ((ctx: FileTypeValidatorContext) => string);
 
   /**
    * If `true`, the validator will skip the magic numbers validation.
@@ -52,14 +69,16 @@ export class FileTypeValidator extends FileValidator<
   IFile
 > {
   buildErrorMessage(file?: IFile): string {
-    const expected = this.validationOptions.fileType;
+    const { errorMessage, ...config } = this.validationOptions;
 
-    if (this.validationOptions.errorMessage) {
-      return this.validationOptions.errorMessage;
+    if (errorMessage) {
+      return typeof errorMessage === 'function'
+        ? errorMessage({ file, config })
+        : errorMessage;
     }
 
     if (file?.mimetype) {
-      const baseMessage = `Validation failed (current file type is ${file.mimetype}, expected type is ${expected})`;
+      const baseMessage = `Validation failed (current file type is ${file.mimetype}, expected type is ${this.validationOptions.fileType})`;
 
       /**
        * If fallbackToMimetype is enabled, this means the validator failed to detect the file type
@@ -75,7 +94,7 @@ export class FileTypeValidator extends FileValidator<
       return baseMessage;
     }
 
-    return `Validation failed (expected type is ${expected})`;
+    return `Validation failed (expected type is ${this.validationOptions.fileType})`;
   }
 
   async isValid(file?: IFile): Promise<boolean> {
