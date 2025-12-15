@@ -169,7 +169,7 @@ jobs:
     working_directory: ~/nest
     docker:
       - image: cimg/node:<< pipeline.parameters.maintenance-node-version >>
-      - image: redis:7-alpine
+      - image: redis:8-alpine
         name: redis
     environment:
       DISABLE_OPENCOLLECTIVE: 'true'
