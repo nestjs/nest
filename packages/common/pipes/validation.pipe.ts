@@ -260,6 +260,8 @@ export class ValidationPipe implements PipeTransform<any> {
       return;
     }
     delete value.__proto__;
+    delete value.constructor;
+    delete value.prototype;
     for (const key in value) {
       this.stripProtoKeys(value[key]);
     }
