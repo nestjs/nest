@@ -247,6 +247,18 @@ describe('@GrpcStreamMethod', () => {
       streaming: GrpcMethodStreamingType.RX_STREAMING,
     });
   });
+
+  it('should return Observable directly (not wrapped in Promise) when called method directly', () => {
+    class TestService {
+      @GrpcStreamMethod()
+      test(data$: any) {
+        return data$;
+      }
+    }
+    const service = new TestService();
+    const result = service.test({});
+    expect(result).to.not.have.property('then');
+  });
 });
 
 describe('@GrpcStreamCall', () => {
