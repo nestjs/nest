@@ -79,8 +79,9 @@ export class FileTypeValidator extends FileValidator<
     }
 
     try {
+      const fileTypePath = require.resolve('file-type');
       const { fileTypeFromBuffer } =
-        await loadEsm<typeof import('file-type')>('file-type');
+        await loadEsm<typeof import('file-type')>(fileTypePath);
       const fileType = await fileTypeFromBuffer(file.buffer);
 
       if (fileType) {
