@@ -371,7 +371,7 @@ data: test
       const result = of('test');
       const response = new Sink();
       const request = new PassThrough();
-      routerResponseController.sse(
+      void routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
@@ -396,7 +396,7 @@ data: test
       const request = new Writable();
       request._write = () => {};
 
-      routerResponseController.sse(
+      void routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
@@ -413,7 +413,7 @@ data: test
       const request = new Writable();
       request._write = () => {};
 
-      routerResponseController.sse(
+      void routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
@@ -430,7 +430,7 @@ data: test
       request._write = () => {};
 
       try {
-        routerResponseController.sse(
+        void routerResponseController.sse(
           result as unknown as Observable<string>,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
@@ -493,7 +493,7 @@ data: test
         const request = new Writable();
         request._write = () => {};
 
-        routerResponseController.sse(
+        void routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
@@ -520,7 +520,7 @@ data: test
         const request = new Writable();
         request._write = () => {};
 
-        routerResponseController.sse(
+        void routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
@@ -555,7 +555,7 @@ data: test
         const result = new Subject();
         const response = new Sink();
         const request = new PassThrough();
-        routerResponseController.sse(
+        void routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
