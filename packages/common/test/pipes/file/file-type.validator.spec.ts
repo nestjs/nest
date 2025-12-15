@@ -338,15 +338,34 @@ describe('FileTypeValidator', () => {
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
 
-    it('should return a custom error message when the file type does not match', async () => {
+    it('should return a static custom error message when the file type does not match', async () => {
+      const expectedFileType = 'image/png';
+      const actualFileType = 'text/csv';
+
       const fileTypeValidator = new FileTypeValidator({
-        fileType: 'text/csv',
+        fileType: expectedFileType,
         errorMessage: 'invalid type',
       });
-      const requestFile = { mimetype: 'image/png' } as IFile;
+      const requestFile = { mimetype: actualFileType } as IFile;
 
       expect(fileTypeValidator.buildErrorMessage(requestFile)).to.equal(
         'invalid type',
+      );
+    });
+
+    it('should return a dynamic custom error message based on context when the file type does not match', async () => {
+      const expectedFileType = 'image/png';
+      const actualFileType = 'text/csv';
+
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: expectedFileType,
+        errorMessage: ctx =>
+          `Received file type '${ctx.file?.mimetype}', but expected '${ctx.config.fileType}'.`,
+      });
+      const requestFile = { mimetype: actualFileType } as IFile;
+
+      expect(fileTypeValidator.buildErrorMessage(requestFile)).to.equal(
+        `Received file type '${actualFileType}', but expected '${expectedFileType}'.`,
       );
     });
   });

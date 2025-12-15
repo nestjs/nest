@@ -88,7 +88,7 @@ describe('MaxFileSizeValidator', () => {
       );
     });
 
-    it('should return a custom error message when the file size exceeds the limit', async () => {
+    it('should return a static custom error message when the file size exceeds the limit', async () => {
       const currentFileSize = oneKb + 1;
       const maxFileSizeValidator = new MaxFileSizeValidator({
         maxSize: oneKb,
@@ -98,6 +98,20 @@ describe('MaxFileSizeValidator', () => {
 
       expect(maxFileSizeValidator.buildErrorMessage(requestFile)).to.equal(
         'File size exceeds the limit',
+      );
+    });
+
+    it('should return a dynamic custom error message based on context when the file size exceeds the limit', async () => {
+      const currentFileSize = oneKb + 1;
+      const maxFileSizeValidator = new MaxFileSizeValidator({
+        maxSize: oneKb,
+        errorMessage: ctx =>
+          `Received file size is ${ctx.file?.size}, but it must be smaller than ${ctx.config.maxSize}.`,
+      });
+      const requestFile = { size: currentFileSize } as IFile;
+
+      expect(maxFileSizeValidator.buildErrorMessage(requestFile)).to.equal(
+        `Received file size is ${currentFileSize}, but it must be smaller than ${oneKb}.`,
       );
     });
   });
