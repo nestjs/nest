@@ -10,9 +10,7 @@ import { ModuleOpaqueKeyFactory } from './interfaces/module-opaque-key-factory.i
 const CLASS_STR = 'class ';
 const CLASS_STR_LEN = CLASS_STR.length;
 
-export class DeepHashedModuleOpaqueKeyFactory
-  implements ModuleOpaqueKeyFactory
-{
+export class DeepHashedModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory {
   private readonly moduleIdsCache = new WeakMap<Type<unknown>, string>();
   private readonly moduleTokenCache = new Map<string, string>();
   private readonly logger = new Logger(DeepHashedModuleOpaqueKeyFactory.name, {

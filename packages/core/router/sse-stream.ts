@@ -66,11 +66,13 @@ export class SseStream extends Transform {
     destination: T,
     options?: {
       additionalHeaders?: AdditionalHeaders;
+      statusCode?: number;
       end?: boolean;
     },
   ): T {
     if (destination.writeHead) {
-      destination.writeHead(200, {
+      const statusCode = options?.statusCode ?? 200;
+      destination.writeHead(statusCode, {
         ...options?.additionalHeaders,
         // See https://github.com/dunglas/mercure/blob/master/hub/subscribe.go#L124-L130
         'Content-Type': 'text/event-stream',

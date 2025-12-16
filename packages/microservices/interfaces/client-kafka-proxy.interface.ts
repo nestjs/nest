@@ -6,8 +6,10 @@ import {
   TopicPartitionOffsetAndMetadata,
 } from '../external/kafka.interface';
 
-export interface ClientKafkaProxy
-  extends Omit<ClientProxy<never, KafkaStatus>, 'on'> {
+export interface ClientKafkaProxy extends Omit<
+  ClientProxy<never, KafkaStatus>,
+  'on'
+> {
   /**
    * Reference to the Kafka consumer instance.
    */

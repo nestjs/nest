@@ -69,11 +69,24 @@ export class FileTypeValidator extends FileValidator<
       );
     }
 
-    if (!isFileValid || !file.buffer) return false;
+    if (!isFileValid) return false;
+
+    if (!file.buffer) {
+      if (this.validationOptions.fallbackToMimetype) {
+        return !!file.mimetype.match(this.validationOptions.fileType);
+      }
+      return false;
+    }
 
     try {
+      let fileTypePath: string;
+      try {
+        fileTypePath = require.resolve('file-type');
+      } catch {
+        fileTypePath = 'file-type';
+      }
       const { fileTypeFromBuffer } =
-        await loadEsm<typeof import('file-type')>('file-type');
+        await loadEsm<typeof import('file-type')>(fileTypePath);
       const fileType = await fileTypeFromBuffer(file.buffer);
 
       if (fileType) {

@@ -18,8 +18,10 @@ export interface ClientsModuleOptionsFactory {
   createClientOptions(): Promise<ClientProvider> | ClientProvider;
 }
 
-export interface ClientsProviderAsyncOptions
-  extends Pick<ModuleMetadata, 'imports'> {
+export interface ClientsProviderAsyncOptions extends Pick<
+  ModuleMetadata,
+  'imports'
+> {
   useExisting?: Type<ClientsModuleOptionsFactory>;
   useClass?: Type<ClientsModuleOptionsFactory>;
   useFactory?: (...args: any[]) => Promise<ClientProvider> | ClientProvider;

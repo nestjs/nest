@@ -434,7 +434,7 @@ export class RouterExecutionContext {
     }
     const isSseHandler = !!this.reflectSse(callback);
     if (isSseHandler) {
-      return <
+      return async <
         TResult extends Observable<unknown> = any,
         TResponse extends HeaderStream = any,
         TRequest extends IncomingMessage = any,
@@ -443,7 +443,7 @@ export class RouterExecutionContext {
         res: TResponse,
         req: TRequest,
       ) => {
-        this.responseController.sse(
+        await this.responseController.sse(
           result,
           (res as any).raw || res,
           (req as any).raw || req,
