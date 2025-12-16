@@ -13,5 +13,9 @@
     "incremental": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "types": [
+    "node",
+    "jest",
+  ]
 }
