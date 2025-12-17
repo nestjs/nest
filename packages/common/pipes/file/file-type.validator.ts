@@ -1,6 +1,9 @@
+import { Logger } from '../../services/logger.service';
 import { FileValidator } from './file-validator.interface';
 import { IFile } from './interfaces';
 import { loadEsm } from 'load-esm';
+
+const logger = new Logger('FileTypeValidator');
 
 export type FileTypeValidatorOptions = {
   fileType: string | RegExp;
@@ -103,7 +106,27 @@ export class FileTypeValidator extends FileValidator<
         return !!file.mimetype.match(this.validationOptions.fileType);
       }
       return false;
-    } catch {
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      // Check for common ESM loading issues
+      if (
+        errorMessage.includes('ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING') ||
+        errorMessage.includes('Cannot find module') ||
+        errorMessage.includes('ERR_MODULE_NOT_FOUND')
+      ) {
+        logger.warn(
+          `Failed to load "file-type" package for magic number validation. ` +
+            `If using Jest, run with NODE_OPTIONS="--experimental-vm-modules". ` +
+            `Error: ${errorMessage}`,
+        );
+      }
+
+      // Fallback to mimetype if enabled
+      if (this.validationOptions.fallbackToMimetype) {
+        return !!file.mimetype.match(this.validationOptions.fileType);
+      }
       return false;
     }
   }
