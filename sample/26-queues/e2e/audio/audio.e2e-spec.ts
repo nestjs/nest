@@ -27,13 +27,12 @@ describe('AudioController (e2e)', () => {
     });
 
     it('should handle multiple concurrent requests', async () => {
-  const requests = Array.from({ length: 3 }, () =>
-    request(app.getHttpServer()).post('/audio/transcode').expect(201),
-  );
+      const requests = Array.from({ length: 3 }, () =>
+        request(app.getHttpServer()).post('/audio/transcode').expect(201),
+      );
 
-  await Promise.all(requests);
-});
-
+      await Promise.all(requests);
+    });
 
     it('should reject GET requests', () => {
       return request(app.getHttpServer())
