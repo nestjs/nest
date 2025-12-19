@@ -417,7 +417,11 @@ export class InstanceWrapper<T = any> {
       contextId === STATIC_CONTEXT &&
       (!this.isTransient ||
         (isStaticTransient && !!inquirer && !inquirer.isTransient) ||
-        (isStaticTransient && !!rootInquirer && !rootInquirer.isTransient))
+        (isStaticTransient && !!rootInquirer && !rootInquirer.isTransient) ||
+        (isStaticTransient &&
+          !!inquirer &&
+          inquirer.isTransient &&
+          !rootInquirer))
     );
   }
 

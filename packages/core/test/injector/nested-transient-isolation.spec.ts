@@ -190,4 +190,83 @@ describe('Nested Transient Isolation', () => {
       );
     });
   });
+
+  describe('when DEFAULT scoped provider depends on nested TRANSIENT chain', () => {
+    @Injectable({ scope: Scope.TRANSIENT })
+    class NestedTransientService {
+      public static constructorCalled = false;
+      public readonly value = 'nested-initialized';
+
+      constructor() {
+        NestedTransientService.constructorCalled = true;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class TransientService {
+      public static constructorCalled = false;
+
+      constructor(public readonly nested: NestedTransientService) {
+        TransientService.constructorCalled = true;
+      }
+    }
+
+    @Injectable()
+    class DefaultScopedParent {
+      constructor(public readonly transient: TransientService) {}
+    }
+
+    let nestedTransientWrapper: InstanceWrapper;
+    let transientWrapper: InstanceWrapper;
+    let parentWrapper: InstanceWrapper;
+
+    beforeEach(() => {
+      NestedTransientService.constructorCalled = false;
+      TransientService.constructorCalled = false;
+
+      nestedTransientWrapper = new InstanceWrapper({
+        name: NestedTransientService.name,
+        token: NestedTransientService,
+        metatype: NestedTransientService,
+        scope: Scope.TRANSIENT,
+        host: module,
+      });
+
+      transientWrapper = new InstanceWrapper({
+        name: TransientService.name,
+        token: TransientService,
+        metatype: TransientService,
+        scope: Scope.TRANSIENT,
+        host: module,
+      });
+
+      parentWrapper = new InstanceWrapper({
+        name: DefaultScopedParent.name,
+        token: DefaultScopedParent,
+        metatype: DefaultScopedParent,
+        scope: Scope.DEFAULT,
+        host: module,
+      });
+
+      module.providers.set(NestedTransientService, nestedTransientWrapper);
+      module.providers.set(TransientService, transientWrapper);
+      module.providers.set(DefaultScopedParent, parentWrapper);
+    });
+
+    it('should instantiate nested TRANSIENT providers from DEFAULT scope', async () => {
+      await injector.loadInstance(parentWrapper, module.providers, module);
+
+      const parentInstance = parentWrapper.instance;
+
+      expect(TransientService.constructorCalled).to.be.true;
+      expect(NestedTransientService.constructorCalled).to.be.true;
+      expect(parentInstance.transient).to.be.instanceOf(TransientService);
+      expect(parentInstance.transient.nested).to.be.instanceOf(
+        NestedTransientService,
+      );
+      expect(parentInstance.transient.nested.value).to.equal(
+        'nested-initialized',
+      );
+    });
+  });
 });
