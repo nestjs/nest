@@ -408,17 +408,36 @@ export class InstanceWrapper<T = any> {
     contextId: ContextId,
     inquirer: InstanceWrapper | undefined,
   ): boolean {
+    if (!this.isDependencyTreeStatic() || contextId !== STATIC_CONTEXT) {
+      return false;
+    }
+
+    // Non-transient provider in static context
+    if (!this.isTransient) {
+      return true;
+    }
+
     const isInquirerRequestScoped =
       inquirer && !inquirer.isDependencyTreeStatic();
     const isStaticTransient = this.isTransient && !isInquirerRequestScoped;
     const rootInquirer = inquirer?.getRootInquirer();
-    return (
-      this.isDependencyTreeStatic() &&
-      contextId === STATIC_CONTEXT &&
-      (!this.isTransient ||
-        (isStaticTransient && !!inquirer && !inquirer.isTransient) ||
-        (isStaticTransient && !!rootInquirer && !rootInquirer.isTransient))
-    );
+
+    // Transient provider inquired by non-transient (e.g., DEFAULT -> TRANSIENT)
+    if (isStaticTransient && inquirer && !inquirer.isTransient) {
+      return true;
+    }
+
+    // Nested transient with non-transient root (e.g., DEFAULT -> TRANSIENT -> TRANSIENT)
+    if (isStaticTransient && rootInquirer && !rootInquirer.isTransient) {
+      return true;
+    }
+
+    // Nested transient during initial instantiation (rootInquirer not yet set)
+    if (isStaticTransient && inquirer?.isTransient && !rootInquirer) {
+      return true;
+    }
+
+    return false;
   }
 
   public attachRootInquirer(inquirer: InstanceWrapper) {
