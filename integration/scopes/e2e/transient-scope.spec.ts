@@ -141,6 +141,51 @@ describe('Transient scope', () => {
     });
   });
 
+  describe('when DEFAULT scoped provider has deeply nested TRANSIENT chain', () => {
+    let app: INestApplication;
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class DeepNestedTransient {
+      public static constructorCalled = false;
+
+      constructor() {
+        DeepNestedTransient.constructorCalled = true;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class MiddleTransient {
+      constructor(public readonly nested: DeepNestedTransient) {}
+    }
+
+    @Injectable()
+    class RootService {
+      constructor(public readonly middle: MiddleTransient) {}
+    }
+
+    before(async () => {
+      DeepNestedTransient.constructorCalled = false;
+
+      const module = await Test.createTestingModule({
+        providers: [RootService, MiddleTransient, DeepNestedTransient],
+      }).compile();
+
+      app = module.createNestApplication();
+      await app.init();
+    });
+
+    it('should call constructor of deeply nested TRANSIENT provider', () => {
+      const rootService = app.get(RootService);
+
+      expect(DeepNestedTransient.constructorCalled).to.be.true;
+      expect(rootService.middle.nested).to.be.instanceOf(DeepNestedTransient);
+    });
+
+    after(async () => {
+      await app.close();
+    });
+  });
+
   describe('when nested transient providers are used in request scope', () => {
     let server: any;
     let app: INestApplication;
