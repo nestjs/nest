@@ -31,7 +31,7 @@
     "rxjs": "7.8.2"
   },
   "devDependencies": {
-    "run-script-webpack-plugin": "0.2.0",
+    "run-script-webpack-plugin": "0.2.3",
     "webpack": "5.97.1",
     "webpack-node-externals": "3.0.0",
     "@eslint/eslintrc": "3.3.3",
