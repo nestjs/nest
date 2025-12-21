@@ -117,8 +117,8 @@ export class FileTypeValidator extends FileValidator<
         errorMessage.includes('ERR_MODULE_NOT_FOUND')
       ) {
         logger.warn(
-          `Failed to load "file-type" package for magic number validation. ` +
-            `If using Jest, run with NODE_OPTIONS="--experimental-vm-modules". ` +
+          `Failed to load the "file-type" package for magic number validation. ` +
+            `If you are using Jest, run it with NODE_OPTIONS="--experimental-vm-modules". ` +
             `Error: ${errorMessage}`,
         );
       }
