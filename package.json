@@ -184,7 +184,8 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.52.0",
     "wrk": "1.2.1",
-    "ws": "8.19.0"
+    "ws": "8.19.0",
+    "zod": "^4.2.1"
   },
   "engines": {
     "node": ">= 20"
