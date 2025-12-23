@@ -259,6 +259,24 @@ describe('FileTypeValidator', () => {
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
+
+    it('should return true when magic number mismatches but fallbackToMimetype is enabled and mimetype matches', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'text/csv',
+        fallbackToMimetype: true,
+      });
+
+      const jpegBuffer = Buffer.from([
+        0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
+      ]);
+
+      const requestFile = {
+        mimetype: 'text/csv',
+        buffer: jpegBuffer,
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
+    });
   });
 
   describe('buildErrorMessage', () => {

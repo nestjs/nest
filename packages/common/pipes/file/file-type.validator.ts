@@ -135,7 +135,9 @@ export class FileTypeValidator extends FileValidator<
 
       if (fileType) {
         // Match detected mime type against allowed type
-        return !!fileType.mime.match(this.validationOptions.fileType);
+        if (fileType.mime.match(this.validationOptions.fileType)) {
+          return true;
+        }
       }
 
       /**
