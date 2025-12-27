@@ -118,6 +118,64 @@ describe('StandardSchemaValidationPipe with Zod (e2e)', () => {
         })
         .expect(400);
     });
+
+    it('should create user with valid nested address', () => {
+      return request(server)
+        .post('/users')
+        .send({
+          name: 'John Doe',
+          email: 'john@example.com',
+          address: {
+            street: '123 Main St',
+            city: 'New York',
+            zipCode: '10001',
+            country: 'US',
+          },
+        })
+        .expect(201)
+        .expect(res => {
+          expect(res.body.success).to.equal(true);
+          expect(res.body.data.address.street).to.equal('123 Main St');
+          expect(res.body.data.address.city).to.equal('New York');
+          expect(res.body.data.address.zipCode).to.equal('10001');
+          expect(res.body.data.address.country).to.equal('US');
+        });
+    });
+
+    it('should reject invalid nested address zipCode', () => {
+      return request(server)
+        .post('/users')
+        .send({
+          name: 'John Doe',
+          email: 'john@example.com',
+          address: {
+            street: '123 Main St',
+            city: 'New York',
+            zipCode: 'invalid',
+            country: 'US',
+          },
+        })
+        .expect(400)
+        .expect(res => {
+          expect(res.body.message).to.be.an('array');
+          expect(res.body.message.some((m: string) => m.includes('zip'))).to.be
+            .true;
+        });
+    });
+
+    it('should reject incomplete nested address', () => {
+      return request(server)
+        .post('/users')
+        .send({
+          name: 'John Doe',
+          email: 'john@example.com',
+          address: {
+            street: '123 Main St',
+            // missing city, zipCode, country
+          },
+        })
+        .expect(400);
+    });
   });
 
   describe('POST /users/query', () => {

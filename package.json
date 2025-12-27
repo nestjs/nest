@@ -98,6 +98,7 @@
     "@nestjs/apollo": "13.2.3",
     "@nestjs/graphql": "13.2.3",
     "@nestjs/mongoose": "11.0.4",
+    "@nestjs/swagger": "11.2.3",
     "@nestjs/typeorm": "11.0.0",
     "@types/amqplib": "0.10.8",
     "@types/bytes": "3.1.5",
