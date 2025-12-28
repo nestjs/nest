@@ -553,9 +553,13 @@ export class Injector {
        * instantiated beforehand.
        */
       instanceHost.donePromise &&
-        void instanceHost.donePromise.then(() =>
-          this.loadProvider(instanceWrapper, moduleRef, contextId, inquirer),
-        );
+        void instanceHost.donePromise
+          .then(() =>
+            this.loadProvider(instanceWrapper, moduleRef, contextId, inquirer),
+          )
+          .catch(err => {
+            instanceWrapper.settlementSignal?.error(err);
+          });
     }
     if (instanceWrapper.async) {
       const host = instanceWrapper.getInstanceByContextId(
