@@ -8,9 +8,11 @@ import { ContextCreator } from '../helpers/context-creator';
 import { STATIC_CONTEXT } from '../injector/constants';
 import { NestContainer } from '../injector/container';
 import { InstanceWrapper } from '../injector/instance-wrapper';
+import { Module } from '../injector/module';
 
 export class GuardsContextCreator extends ContextCreator {
   private moduleContext: string;
+  private moduleRefCache: Module | undefined;
 
   constructor(
     private readonly container: NestContainer,
@@ -27,6 +29,7 @@ export class GuardsContextCreator extends ContextCreator {
     inquirerId?: string,
   ): CanActivate[] {
     this.moduleContext = module;
+    this.moduleRefCache = this.container.getModules().get(module);
     return this.createContext(
       instance,
       callback,
@@ -80,16 +83,11 @@ export class GuardsContextCreator extends ContextCreator {
   public getInstanceByMetatype(
     metatype: Type<unknown>,
   ): InstanceWrapper | undefined {
-    if (!this.moduleContext) {
-      return;
+    if (!this.moduleRefCache) {
+      this.moduleRefCache = this.container.getModules().get(this.moduleContext);
+      if (!this.moduleRefCache) return undefined;
     }
-    const collection = this.container.getModules();
-    const moduleRef = collection.get(this.moduleContext);
-    if (!moduleRef) {
-      return;
-    }
-    const injectables = moduleRef.injectables;
-    return injectables.get(metatype);
+    return this.moduleRefCache.injectables.get(metatype);
   }
 
   public getGlobalMetadata<T extends unknown[]>(
