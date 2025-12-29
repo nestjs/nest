@@ -98,6 +98,7 @@
     "@nestjs/apollo": "13.2.3",
     "@nestjs/graphql": "13.2.3",
     "@nestjs/mongoose": "11.0.4",
+    "@nestjs/swagger": "11.2.3",
     "@nestjs/typeorm": "11.0.0",
     "@types/amqplib": "0.10.8",
     "@types/bytes": "3.1.5",
@@ -184,7 +185,8 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.50.1",
     "wrk": "1.2.1",
-    "ws": "8.18.3"
+    "ws": "8.18.3",
+    "zod": "^4.2.1"
   },
   "engines": {
     "node": ">= 20"
