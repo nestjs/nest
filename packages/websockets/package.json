@@ -32,5 +32,6 @@
     "@nestjs/platform-socket.io": {
       "optional": true
     }
-  }
+  },
+  "gitHead": "bcb4747f7598a9d2655c8184a6d729ebefa07fbd"
 }

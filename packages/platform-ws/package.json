@@ -25,5 +25,6 @@
     "@nestjs/common": "^11.0.0",
     "@nestjs/websockets": "^11.0.0",
     "rxjs": "^7.1.0"
-  }
+  },
+  "gitHead": "bcb4747f7598a9d2655c8184a6d729ebefa07fbd"
 }
