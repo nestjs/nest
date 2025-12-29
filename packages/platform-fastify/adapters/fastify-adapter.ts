@@ -50,6 +50,7 @@ import {
 import { pathToRegexp } from 'path-to-regexp';
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';
+import { safeDecodeURI } from 'find-my-way/lib/url-sanitizer';
 import {
   FASTIFY_ROUTE_CONFIG_METADATA,
   FASTIFY_ROUTE_CONSTRAINTS_METADATA,
@@ -60,6 +61,7 @@ import {
   FastifyStaticOptions,
   FastifyViewOptions,
 } from '../interfaces/external';
+import middie from './middie/fastify-middie';
 
 type FastifyAdapterBaseOptions<
   Server extends RawServerBase = RawServerDefault,
@@ -702,10 +704,11 @@ export class FastifyAdapter<
           normalizedPath,
           (req: any, res: any, next: Function) => {
             const queryParamsIndex = req.originalUrl.indexOf('?');
-            const pathname =
+            let pathname =
               queryParamsIndex >= 0
                 ? req.originalUrl.slice(0, queryParamsIndex)
                 : req.originalUrl;
+            pathname = safeDecodeURI(pathname).path;
 
             if (!re.exec(pathname + '/') && normalizedPath) {
               return next();
@@ -791,9 +794,7 @@ export class FastifyAdapter<
 
   private async registerMiddie() {
     this.isMiddieRegistered = true;
-    await this.register(
-      import('@fastify/middie') as Parameters<TInstance['register']>[0],
-    );
+    await this.register(middie as Parameters<TInstance['register']>[0]);
   }
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {

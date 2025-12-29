@@ -208,6 +208,15 @@ describe('Middleware (FastifyAdapter)', () => {
         .then(({ payload }) => expect(payload).to.be.eql(INCLUDED_VALUE));
     });
 
+    it(`GET forRoutes(POST /tests/%69ncluded) - ensure middleware is executed correctly with encoded characters`, () => {
+      return app
+        .inject({
+          method: 'POST',
+          url: '/tests/%69ncluded', // 'i' character is encoded
+        })
+        .then(({ payload }) => expect(payload).to.be.eql(INCLUDED_VALUE));
+    });
+
     afterEach(async () => {
       await app.close();
     });
