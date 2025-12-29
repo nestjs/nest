@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-this-alias */
+/* eslint-disable @typescript-eslint/no-namespace */
 import {
   FastifyInstance,
   FastifyPluginCallback,
@@ -304,6 +306,7 @@ function fastifyMiddie(
   next();
 }
 
+/* @eslint-disable-next-line @typescript-eslint/no-namespace */
 declare namespace fastifyMiddie {
   export interface FastifyMiddieOptions {
     hook?:
