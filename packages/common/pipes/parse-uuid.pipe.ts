@@ -45,7 +45,7 @@ export interface ParseUUIDPipeOptions {
  * @publicApi
  */
 @Injectable()
-export class ParseUUIDPipe implements PipeTransform<string> {
+export class ParseUUIDPipe implements PipeTransform {
   protected static uuidRegExps = {
     3: /^[0-9A-F]{8}-[0-9A-F]{4}-3[0-9A-F]{3}-[0-9A-F]{4}-[0-9A-F]{12}$/i,
     4: /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i,
@@ -70,7 +70,10 @@ export class ParseUUIDPipe implements PipeTransform<string> {
       (error => new HttpErrorByCode[errorHttpStatusCode](error));
   }
 
-  async transform(value: string, metadata: ArgumentMetadata): Promise<string> {
+  async transform(
+    value: unknown,
+    metadata: ArgumentMetadata,
+  ): Promise<string | undefined | null> {
     if (isNil(value) && this.options?.optional) {
       return value;
     }
@@ -81,7 +84,7 @@ export class ParseUUIDPipe implements PipeTransform<string> {
         } is expected)`,
       );
     }
-    return value;
+    return value as string;
   }
 
   protected isUUID(str: unknown, version = 'all') {
