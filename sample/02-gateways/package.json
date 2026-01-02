@@ -45,7 +45,7 @@
     "@types/ws": "8.5.13",
     "eslint": "9.39.2",
     "eslint-plugin-prettier": "5.5.4",
-    "globals": "16.5.0",
+    "globals": "17.0.0",
     "jest": "30.2.0",
     "prettier": "3.7.4",
     "redis": "5.10.0",
