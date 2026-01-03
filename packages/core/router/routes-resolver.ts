@@ -89,7 +89,7 @@ export class RoutesResolver implements Resolver {
     routes: Map<string | symbol | Function, InstanceWrapper<Controller>>,
     moduleName: string,
     globalPrefix: string,
-    modulePath: string,
+    modulePath: string | string[],
     applicationRef: HttpServer,
   ) {
     routes.forEach(instanceWrapper => {
@@ -207,7 +207,9 @@ export class RoutesResolver implements Resolver {
     );
   }
 
-  private getModulePathMetadata(metatype: Type<unknown>): string | undefined {
+  private getModulePathMetadata(
+    metatype: Type<unknown>,
+  ): string | string[] | undefined {
     const modulesContainer = this.container.getModules();
     const modulePath = Reflect.getMetadata(
       MODULE_PATH + modulesContainer.applicationId,
