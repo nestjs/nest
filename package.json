@@ -89,7 +89,7 @@
     "@eslint/js": "9.39.2",
     "@fastify/cors": "11.2.0",
     "@fastify/formbody": "8.0.2",
-    "@fastify/middie": "9.0.3",
+    "@fastify/middie": "9.1.0",
     "@fastify/multipart": "9.3.0",
     "@fastify/static": "9.0.0",
     "@fastify/view": "11.1.1",
