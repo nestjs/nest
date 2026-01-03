@@ -40,13 +40,13 @@ export class ImATeapotException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = `I'm a teapot`,
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = `I'm a teapot`, httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.I_AM_A_TEAPOT,
       ),
       HttpStatus.I_AM_A_TEAPOT,
