@@ -215,7 +215,6 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public close() {
-    this.logger.log('[DEBUG] Adapter close called');
     this.isShuttingDown = true;
     this.closeOpenConnections();
 
@@ -291,7 +290,6 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public initHttpServer(options: NestApplicationOptions) {
-    this.logger.log('[DEBUG] initHttpServer called with:', options);
     const isHttpsEnabled = options && options.httpsOptions;
     if (isHttpsEnabled) {
       this.httpServer = https.createServer(
@@ -303,13 +301,8 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     }
 
     if (options?.gracefulShutdown) {
-      this.logger.log('[DEBUG] Registering graceful shutdown middleware');
       this.instance.use((req: any, res: any, next: any) => {
-        this.logger.log(
-          `[DEBUG] Middleware hit. isShuttingDown: ${this.isShuttingDown}`,
-        );
         if (this.isShuttingDown) {
-          this.logger.log('🛑 Middleware Intercepted Request! Sending 503...');
           res.set('Connection', 'close');
           res.status(503).send('Service Unavailable');
         } else {
