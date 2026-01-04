@@ -55,6 +55,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   private readonly logger = new Logger(ExpressAdapter.name);
   private readonly openConnections = new Set<Duplex>();
   private readonly registeredPrefixes = new Set<string>();
+  private isShuttingDown = false;
   private onRequestHook?: (
     req: express.Request,
     res: express.Response,
@@ -243,6 +244,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public close() {
+    this.isShuttingDown = true;
     this.closeOpenConnections();
 
     if (!this.httpServer) {
@@ -317,6 +319,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public initHttpServer(options: NestApplicationOptions) {
+    this.logger.log('[DEBUG] initHttpServer called with:', options);
     const isHttpsEnabled = options && options.httpsOptions;
     if (isHttpsEnabled) {
       this.httpServer = https.createServer(
@@ -325,6 +328,22 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       );
     } else {
       this.httpServer = http.createServer(this.getInstance());
+    }
+
+    if (options?.gracefulShutdown) {
+      this.logger.log('[DEBUG] Registering graceful shutdown middleware');
+      this.instance.use((req: any, res: any, next: any) => {
+        this.logger.log(
+          `[DEBUG] Middleware hit. isShuttingDown: ${this.isShuttingDown}`,
+        );
+        if (this.isShuttingDown) {
+          this.logger.log('🛑 Middleware Intercepted Request! Sending 503...');
+          res.set('Connection', 'close');
+          res.status(503).send('Service Unavailable');
+        } else {
+          next();
+        }
+      });
     }
 
     if (options?.forceCloseConnections) {

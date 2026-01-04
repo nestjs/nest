@@ -30,4 +30,11 @@ export interface NestApplicationOptions extends NestApplicationContextOptions {
    * keep-alive connections in the HTTP adapter.
    */
   forceCloseConnections?: boolean;
+  /**
+   * Whether to enable graceful shutdown behavior.
+   * When enabled, the server will return 503 Service Unavailable for new requests
+   * during the shutdown process, but allow existing in-flight requests to complete.
+   * @default false
+   */
+  gracefulShutdown?: boolean;
 }

@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "baseUrl": ".",
+    "paths": {
+      "@nestjs/common": ["../../packages/common/index.ts"],
+      "@nestjs/core": ["../../packages/core/index.ts"],
+      "@nestjs/platform-express": ["../../packages/platform-express/index.ts"],
+      "@nestjs/testing": ["../../packages/testing/index.ts"]
+    }
+  },
+  "include": ["e2e/**/*.ts", "src/**/*.ts"]
+}
