@@ -153,7 +153,7 @@
     "http-errors": "2.0.1",
     "husky": "9.1.7",
     "imports-loader": "5.0.0",
-    "ioredis": "5.8.2",
+    "ioredis": "5.9.0",
     "json-loader": "0.5.7",
     "kafkajs": "2.2.4",
     "lerna": "9.0.3",
