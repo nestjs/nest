@@ -177,7 +177,7 @@
     "sinon-chai": "3.7.0",
     "socket.io-client": "4.8.3",
     "subscriptions-transport-ws": "0.11.0",
-    "supertest": "7.1.4",
+    "supertest": "7.2.2",
     "ts-morph": "27.0.2",
     "ts-node": "10.9.2",
     "typeorm": "0.3.28",
