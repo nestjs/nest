@@ -43,7 +43,7 @@
     "prerelease": "gulp copy-misc",
     "publish": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --force-publish --access public --exact -m \"chore(@nestjs) publish %s release\"",
     "prepublishOnly": "npm run changelog | pbcopy",
-    "publish:legacy": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=legacy --access public -m \"chore(@nestjs) publish %s release\"",
+    "publish:legacy": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=legacy --force-publish --access public -m \"chore(@nestjs) publish %s release\"",
     "publish:beta": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=beta --access public -m \"chore(@nestjs) publish %s release\"",
     "publish:next": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=next --access public --skip-git -m \"chore(@nestjs) publish %s release\"",
     "publish:rc": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --npm-tag=rc --access public -m \"chore(@nestjs) publish %s release\"",
