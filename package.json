@@ -64,7 +64,7 @@
     "class-transformer": "0.5.1",
     "class-validator": "0.14.3",
     "cors": "2.8.5",
-    "express": "5.2.1",
+    "express": "5.2.2",
     "fast-json-stringify": "6.1.1",
     "fast-safe-stringify": "2.1.1",
     "file-type": "21.3.0",
