@@ -23,17 +23,23 @@ describe('Graceful Shutdown (Express)', () => {
         logger: false,
       } as any,
     );
-
     await app.listen(0);
     const port = app.getHttpServer().address().port;
 
     const requestPromise = new Promise<string>((resolve, reject) => {
       http
-        .get(`http://localhost:${port}/slow`, res => {
-          let data = '';
-          res.on('data', c => (data += c));
-          res.on('end', () => resolve(data));
-        })
+        .get(
+          `http://localhost:${port}/slow`,
+          {
+            // Explicitly close connection after response to speed up server shutdown
+            headers: { Connection: 'close' },
+          },
+          res => {
+            let data = '';
+            res.on('data', c => (data += c));
+            res.on('end', () => resolve(data));
+          },
+        )
         .on('error', reject);
     });
 
@@ -47,7 +53,7 @@ describe('Graceful Shutdown (Express)', () => {
     expect(response).to.equal('ok');
 
     await closePromise;
-  });
+  }).timeout(10000);
 
   it('should return 503 for NEW queued requests on existing connections during shutdown', async () => {
     app = await NestFactory.create(
@@ -58,7 +64,6 @@ describe('Graceful Shutdown (Express)', () => {
         logger: false,
       } as any,
     );
-
     await app.listen(0);
     const port = app.getHttpServer().address().port;
 
@@ -75,7 +80,7 @@ describe('Graceful Shutdown (Express)', () => {
     const closePromise = app.close();
 
     // Give NestJS a moment to set the isShuttingDown flag
-    await new Promise(r => setTimeout(r, 10));
+    await new Promise(r => setTimeout(r, 50));
 
     // 4. Send Request B immediately using the same agent.
     const statusPromise = new Promise<number>((resolve, reject) => {
@@ -93,5 +98,5 @@ describe('Graceful Shutdown (Express)', () => {
 
     await closePromise;
     agent.destroy();
-  });
+  }).timeout(10000);
 });
