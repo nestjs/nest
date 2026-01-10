@@ -56,5 +56,6 @@
     "@nestjs/platform-express": {
       "optional": true
     }
-  }
+  },
+  "gitHead": "a2d4a7586573f5965935525be5ce757fc502b154"
 }
