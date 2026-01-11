@@ -127,4 +127,56 @@ describe('RoutesMapper', () => {
       ],
     );
   });
+
+  @Controller('test')
+  class TestControllerWithMultipleModulePaths {
+    @Get('hello')
+    hello() {
+      return 'Hello';
+    }
+
+    @Version('2')
+    @Get('versioned')
+    versioned() {
+      return 'Versioned';
+    }
+  }
+
+  it('should map a controller with multiple module paths to the corresponding route info objects', () => {
+    // Simulate a controller that is registered under multiple module paths
+    const mockModuleRef = {
+      metatype: class MockModule {},
+      controllers: new Map(),
+    } as any;
+
+    mockModuleRef.controllers.set(TestControllerWithMultipleModulePaths, {});
+
+    // Mock the getModulePath to return multiple paths
+    const originalGetModulePath = (mapper as any).getModulePath;
+    (mapper as any).getModulePath = () => ['/api/v1', '/api/v2'];
+
+    try {
+      const result = mapper.mapRouteToRouteInfo(
+        TestControllerWithMultipleModulePaths,
+      );
+
+      expect(result).to.deep.equal([
+        { path: '/api/v1/test/hello', method: RequestMethod.GET },
+        { path: '/api/v2/test/hello', method: RequestMethod.GET },
+        {
+          path: '/api/v1/test/versioned',
+          method: RequestMethod.GET,
+          version: '2',
+        },
+        {
+          path: '/api/v2/test/versioned',
+          method: RequestMethod.GET,
+          version: '2',
+        },
+      ]);
+    } finally {
+      // Restore original method
+      (mapper as any).getModulePath = originalGetModulePath;
+    }
+  });
 });
