@@ -37,13 +37,13 @@ export class PayloadTooLargeException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Payload Too Large',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Payload Too Large', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.PAYLOAD_TOO_LARGE,
       ),
       HttpStatus.PAYLOAD_TOO_LARGE,
