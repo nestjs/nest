@@ -45,7 +45,7 @@
     "@types/node": "24.10.7",
     "@types/supertest": "6.0.3",
     "eslint": "9.39.2",
-    "eslint-plugin-prettier": "5.5.4",
+    "eslint-plugin-prettier": "5.5.5",
     "globals": "17.0.0",
     "jest": "30.2.0",
     "prettier": "3.7.4",

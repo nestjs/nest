@@ -26,7 +26,7 @@
     "@nestjs/schematics": "11.0.9",
     "@types/node": "24.10.7",
     "eslint": "9.39.2",
-    "eslint-plugin-prettier": "5.5.4",
+    "eslint-plugin-prettier": "5.5.5",
     "globals": "17.0.0",
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "9.5.4",
