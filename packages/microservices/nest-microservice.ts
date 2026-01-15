@@ -373,7 +373,7 @@ export class NestMicroservice
     if (this.appOptions.instrument?.instanceDecorator) {
       return instances.map(
         instance =>
-          this.appOptions.instrument!.instanceDecorator!(instance) as T,
+          this.appOptions.instrument!.instanceDecorator(instance) as T,
       );
     }
     return instances;
