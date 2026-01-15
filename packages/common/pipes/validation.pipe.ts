@@ -260,17 +260,25 @@ export class ValidationPipe implements PipeTransform<any> {
       return;
     }
 
+    // Delete dangerous prototype pollution keys
+    delete value.__proto__;
+    delete value.prototype;
+
+    // Only delete constructor if it's NOT a built-in type
+    const constructorType = value?.constructor;
+    if (constructorType && !builtInTypes.includes(constructorType)) {
+      delete value.constructor;
+    }
+
+    // Recursively process nested objects
     if (Array.isArray(value)) {
       for (const v of value) {
         this.stripProtoKeys(v);
       }
-      return;
-    }
-    delete value.__proto__;
-    delete value.constructor;
-    delete value.prototype;
-    for (const key in value) {
-      this.stripProtoKeys(value[key]);
+    } else {
+      for (const key in value) {
+        this.stripProtoKeys(value[key]);
+      }
     }
   }
 
