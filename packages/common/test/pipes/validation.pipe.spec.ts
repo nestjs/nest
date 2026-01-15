@@ -609,4 +609,97 @@ describe('ValidationPipe', () => {
       expect(await target.transform(testObj, m)).to.deep.equal(testObj);
     });
   });
+  describe('stripProtoKeys', () => {
+    beforeEach(() => {
+      target = new ValidationPipe();
+    });
+
+    describe('with built-in JavaScript primitives', () => {
+      it('should not throw error when processing Date objects', () => {
+        const value = { date: new Date() };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+
+      it('should not throw error when processing RegExp objects', () => {
+        const value = { regex: /test/i };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+
+      it('should not throw error when processing Error objects', () => {
+        const value = { error: new Error('test') };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+
+      it('should not throw error when processing Map objects', () => {
+        const value = { map: new Map() };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+
+      it('should not throw error when processing Set objects', () => {
+        const value = { set: new Set() };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+
+      it('should preserve Date object properties', () => {
+        const date = new Date();
+        const value = { date };
+        target['stripProtoKeys'](value);
+        expect(value.date).to.equal(date);
+        expect(value.date.constructor).to.equal(Date);
+      });
+    });
+
+    describe('with plain objects', () => {
+      it('should still strip constructor from regular objects', () => {
+        const value = { nested: { constructor: 'malicious' } };
+        target['stripProtoKeys'](value);
+        expect(value.nested).to.not.have.property('constructor');
+      });
+
+      it('should strip __proto__ from objects', () => {
+        const value = { __proto__: { malicious: 'code' } };
+        target['stripProtoKeys'](value);
+        expect(value).to.not.have.property('__proto__');
+      });
+
+      it('should strip prototype from objects', () => {
+        const value = { prototype: { malicious: 'code' } };
+        target['stripProtoKeys'](value);
+        expect(value).to.not.have.property('prototype');
+      });
+
+      it('should recursively strip nested objects', () => {
+        const value = {
+          level1: {
+            constructor: 'malicious',
+            level2: {
+              constructor: 'alsoMalicious',
+            },
+          },
+        };
+        target['stripProtoKeys'](value);
+        expect(value.level1).to.not.have.property('constructor');
+        expect(value.level1.level2).to.not.have.property('constructor');
+      });
+    });
+
+    describe('with arrays', () => {
+      it('should process arrays recursively', () => {
+        const value = {
+          items: [
+            { constructor: 'malicious' },
+            { constructor: 'alsoMalicious' },
+          ],
+        };
+        target['stripProtoKeys'](value);
+        expect(value.items[0]).to.not.have.property('constructor');
+        expect(value.items[1]).to.not.have.property('constructor');
+      });
+
+      it('should not throw error when array contains Date objects', () => {
+        const value = { dates: [new Date(), new Date()] };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+    });
+  });
 });

@@ -253,6 +253,13 @@ export class ValidationPipe implements PipeTransform<any> {
     ) {
       return;
     }
+
+    // Skip built-in JavaScript primitives to avoid Jest useFakeTimers conflicts
+    const builtInTypes = [Date, RegExp, Error, Map, Set, WeakMap, WeakSet];
+    if (builtInTypes.some(type => value instanceof type)) {
+      return;
+    }
+
     if (Array.isArray(value)) {
       for (const v of value) {
         this.stripProtoKeys(v);
