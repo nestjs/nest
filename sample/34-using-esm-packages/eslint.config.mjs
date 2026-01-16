@@ -38,7 +38,7 @@ export default tseslint.config(
       '@typescript-eslint/require-await': 'warn',
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/unbound-method': 'warn',
-      '@typescript-eslint/no-implied-eval': 'warn'
+      '@typescript-eslint/no-implied-eval': 'warn',
     },
   },
 );

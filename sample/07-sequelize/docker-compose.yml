@@ -1,4 +1,4 @@
-version: "3"
+version: '3'
 
 services:
   mysql:
@@ -8,4 +8,4 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: test
     ports:
-      - "3306:3306"
+      - '3306:3306'

@@ -35,10 +35,10 @@ Nest는 효율적이고 확장 가능한 <a href="https://nodejs.org" target="_b
 
 ## 시작하기
 
-* To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
-* 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
-* [가이드](readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. :books:
-* [ガイド](readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 :books:
+- To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
+- 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
+- [가이드](readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. :books:
+- [ガイド](readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 :books:
 
 ## 질문
 
@@ -59,9 +59,9 @@ Nest는 MIT License 오픈 소스 프로젝트이며, 감사하게도 후원자�
 
 ## 연락처
 
-* 저자 - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-* 웹사이트 - [https://nestjs.com](https://nestjs.com/)
-* X - [@nestframework](https://twitter.com/nestframework)
+- 저자 - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
+- 웹사이트 - [https://nestjs.com](https://nestjs.com/)
+- X - [@nestframework](https://twitter.com/nestframework)
 
 ## 라이센스
 

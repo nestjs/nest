@@ -34,7 +34,7 @@
       "@nestjs/platform-fastify": ["./packages/platform-fastify"],
       "@nestjs/platform-fastify/*": ["./packages/platform-fastify/*"],
       "@nestjs/platform-socket.io": ["./packages/platform-socket.io"],
-      "@nestjs/platform-socket.io/*": ["./packages/platform-socket.io/*"],
+      "@nestjs/platform-socket.io/*": ["./packages/platform-socket.io/*"]
     }
   },
   "include": ["packages/**/*", "integration/**/*"],

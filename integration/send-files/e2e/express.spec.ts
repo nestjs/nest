@@ -74,14 +74,11 @@ describe('Express FileSend', () => {
     return request(app.getHttpServer()).get('/file/not/exist').expect(400);
   });
   // TODO: temporarily turned off (flaky test)
-  it.skip(
-    'should allow for the client to end the response and be able to make another',
-    async () => {
-      await app.listen(0);
-      const url = await getHttpBaseOptions(app);
-      await sendCanceledHttpRequest(new URL('/file/slow', url));
-      const res = await sendHttpRequest(new URL('/file/stream', url));
-      expect(res.statusCode).to.be.eq(200);
-    },
-  ).timeout(5000);
+  it.skip('should allow for the client to end the response and be able to make another', async () => {
+    await app.listen(0);
+    const url = await getHttpBaseOptions(app);
+    await sendCanceledHttpRequest(new URL('/file/slow', url));
+    const res = await sendHttpRequest(new URL('/file/stream', url));
+    expect(res.statusCode).to.be.eq(200);
+  }).timeout(5000);
 });

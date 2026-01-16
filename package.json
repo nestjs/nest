@@ -26,7 +26,7 @@
     "build:samples": "gulp install:samples && npm run build && npm run move:samples && gulp build:samples && gulp test:samples && gulp test:e2e:samples",
     "codechecks:benchmarks": "codechecks ./tools/benchmarks/check-benchmarks.ts",
     "coverage": "nyc report --reporter=text-lcov | coveralls -v",
-    "format": "prettier \"**/*.ts\" \"packages/**/*.json\" --ignore-path ./.prettierignore --write && git status",
+    "format": "oxfmt && git status",
     "postinstall": "opencollective",
     "test": "mocha packages/**/*.spec.ts",
     "test:dev": "mocha -w --watch-files \"packages\" packages/**/*.spec.ts",
@@ -35,12 +35,9 @@
     "test:integration": "mocha --reporter-option maxDiffSize=0 \"integration/*/{,!(node_modules)/**/}/*.spec.ts\"",
     "test:docker:up": "docker-compose -f integration/docker-compose.yml up -d",
     "test:docker:down": "docker-compose -f integration/docker-compose.yml down",
-    "lint": "concurrently 'npm run lint:packages' 'npm run lint:integration' 'npm run lint:spec'",
-    "lint:fix": "concurrently 'npm run lint:packages -- --fix' 'npm run lint:integration -- --fix' 'npm run lint:spec -- --fix'",
-    "lint:integration": "node --max-old-space-size=4096 ./node_modules/.bin/eslint 'integration/**/*.ts'",
-    "lint:packages": "node --max-old-space-size=4096 ./node_modules/.bin/eslint 'packages/**/**.ts' --ignore-pattern 'packages/**/*.spec.ts'",
-    "lint:spec": "node --max-old-space-size=4096 ./node_modules/.bin/eslint 'packages/**/**.spec.ts'",
-    "lint:ci": "concurrently 'npm run lint:packages' 'npm run lint:spec'",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "lint:ci": "oxlint packages/**/**.ts",
     "prerelease": "gulp copy-misc",
     "publish": "npm run prerelease && npm run build:prod && ./node_modules/.bin/lerna publish --force-publish --exact -m \"chore(release): publish %s release\"",
     "prepublishOnly": "npm run changelog | pbcopy",
@@ -51,11 +48,8 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "**/*.ts": [
-      "prettier --ignore-path ./.prettierignore --write"
-    ],
-    "packages/**/*.json": [
-      "prettier --ignore-path ./.prettierignore --write"
+    "*": [
+      "oxfmt"
     ]
   },
   "dependencies": {
@@ -85,8 +79,6 @@
     "@codechecks/client": "0.1.12",
     "@commitlint/cli": "20.3.1",
     "@commitlint/config-angular": "20.3.1",
-    "@eslint/eslintrc": "3.3.3",
-    "@eslint/js": "9.39.2",
     "@fastify/cors": "11.2.0",
     "@fastify/formbody": "8.0.2",
     "@fastify/middie": "9.1.0",
@@ -104,7 +96,6 @@
     "@types/chai": "4.3.20",
     "@types/chai-as-promised": "7.1.8",
     "@types/cors": "2.8.19",
-    "@types/eslint__js": "8.42.3",
     "@types/express": "5.0.6",
     "@types/gulp": "4.0.18",
     "@types/http-errors": "2.0.5",
@@ -113,8 +104,6 @@
     "@types/sinon": "21.0.0",
     "@types/supertest": "6.0.3",
     "@types/ws": "8.18.1",
-    "@typescript-eslint/eslint-plugin": "8.53.0",
-    "@typescript-eslint/parser": "8.53.0",
     "amqp-connection-manager": "5.0.0",
     "amqplib": "0.10.9",
     "artillery": "2.0.27",
@@ -125,16 +114,11 @@
     "chai": "4.5.0",
     "chai-as-promised": "7.1.2",
     "clang-format": "1.8.0",
-    "concurrently": "9.2.1",
     "conventional-changelog": "7.1.1",
     "core-js": "3.47.0",
     "coveralls": "3.1.1",
     "delete-empty": "3.0.0",
     "engine.io-client": "6.6.4",
-    "eslint": "9.39.2",
-    "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-import": "2.32.0",
-    "eslint-plugin-prettier": "5.5.5",
     "eventsource": "4.1.0",
     "fancy-log": "2.0.0",
     "fastify": "5.6.2",
@@ -169,7 +153,9 @@
     "nats": "2.29.3",
     "nodemon": "3.1.11",
     "nyc": "14.1.1",
-    "prettier": "^3.7.4",
+    "oxfmt": "^0.24.0",
+    "oxlint": "^1.39.0",
+    "oxlint-tsgolint": "^0.11.1",
     "redis": "5.10.0",
     "reusify": "1.1.0",
     "rxjs-compat": "6.6.7",
@@ -182,7 +168,6 @@
     "ts-node": "10.9.2",
     "typeorm": "0.3.28",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.53.0",
     "wrk": "1.2.1",
     "ws": "8.19.0"
   },

@@ -21,7 +21,6 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-
 ### [English](Readme.md)
 
 ## 介绍
@@ -37,8 +36,8 @@
 
 ## 开始
 
-* 要查看 [指南](https://docs.nestjs.cn), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
-* 要查看 [English指南](https://docs.nestjs.com), 请访问 [docs.nestjs.com](https://docs.nestjs.com). :books:
+- 要查看 [指南](https://docs.nestjs.cn), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
+- 要查看 [English指南](https://docs.nestjs.com), 请访问 [docs.nestjs.com](https://docs.nestjs.com). :books:
 
 ### 国内开发者交流群
 
@@ -59,10 +58,10 @@ Nest是一个MIT许可的开源项目。它的发展得益于赞助商和支持�
 
 ## 相关人员
 
-* 作者 - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-* 网站 - [https://nestjs.com](https://nestjs.com/)
-* Twitter - [@nestframework](https://twitter.com/nestframework)
+- 作者 - [Kamil Myśliwiec](https://kamilmysliwiec.com)
+- 网站 - [https://nestjs.com](https://nestjs.com/)
+- Twitter - [@nestframework](https://twitter.com/nestframework)
 
 ## License
 
-  Nest is [MIT licensed](LICENSE).
+Nest is [MIT licensed](LICENSE).

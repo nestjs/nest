@@ -4,7 +4,9 @@
 
 directive @upper on FIELD_DEFINITION
 
-"""recipe"""
+"""
+recipe
+"""
 type Recipe {
   id: ID!
   description: String
@@ -13,7 +15,9 @@ type Recipe {
   title: String!
 }
 
-"""Date custom scalar type"""
+"""
+Date custom scalar type
+"""
 scalar Date
 
 type Query {

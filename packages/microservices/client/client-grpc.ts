@@ -275,13 +275,16 @@ export class ClientGrpcProxy
         });
       }
       return new Observable(observer => {
-        const call = client[methodName](...args, (error: any, data: any) => {
-          if (error) {
-            return observer.error(this.serializeError(error));
-          }
-          observer.next(data);
-          observer.complete();
-        });
+        const call = client[methodName](
+          ...args,
+          (error: any, data: any) => {
+            if (error) {
+              return observer.error(this.serializeError(error));
+            }
+            observer.next(data);
+            observer.complete();
+          },
+        );
 
         return () => {
           if (!call.finished) {

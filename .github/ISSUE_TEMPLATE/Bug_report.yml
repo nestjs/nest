@@ -1,6 +1,6 @@
 name: "\U0001F41B Bug Report"
 description: "If something isn't working as expected \U0001F914"
-labels: ["needs triage"]
+labels: ['needs triage']
 type: bug
 body:
   - type: markdown
@@ -21,25 +21,25 @@ body:
 
   - type: checkboxes
     attributes:
-      label: "Is there an existing issue for this?"
-      description: "Please search [here](../issues?q=is%3Aissue) to see if an issue already exists for the bug you encountered"
+      label: 'Is there an existing issue for this?'
+      description: 'Please search [here](../issues?q=is%3Aissue) to see if an issue already exists for the bug you encountered'
       options:
-      - label: "I have searched the existing issues"
-        required: true
+        - label: 'I have searched the existing issues'
+          required: true
 
   - type: textarea
     validations:
       required: true
     attributes:
-      label: "Current behavior"
-      description: "How the issue manifests?"
+      label: 'Current behavior'
+      description: 'How the issue manifests?'
 
   - type: input
     validations:
       required: true
     attributes:
-      label: "Minimum reproduction code"
-      placeholder: "https://github.com/..."
+      label: 'Minimum reproduction code'
+      placeholder: 'https://github.com/...'
       description: |
         An URL to some Git repository/[StackBlitz](https://stackblitz.com/fork/github/nestjs/typescript-starter)/[CodeSandbox](https://codesandbox.io/s/github/nestjs/typescript-starter/tree/master) project that reproduces your issue. [What is a minimum reproduction?](https://jmcdo29.github.io/wtf-is-a-minimum-reproduction)
 
@@ -48,7 +48,7 @@ body:
 
   - type: textarea
     attributes:
-      label: "Steps to reproduce"
+      label: 'Steps to reproduce'
       description: |
         How the issue manifests?
         You could leave this blank if you already write this in your reproduction code
@@ -61,22 +61,22 @@ body:
     validations:
       required: true
     attributes:
-      label: "Expected behavior"
-      description: "A clear and concise description of what you expected to happened (or code)"
+      label: 'Expected behavior'
+      description: 'A clear and concise description of what you expected to happened (or code)'
 
   - type: input
     attributes:
-      label: "NestJS version"
+      label: 'NestJS version'
       description: |
         Which exact version of `@nestjs/core` package are you using?
         **Tip**: Make sure that all of yours `@nestjs/*` dependencies are in sync!
-      placeholder: "10.0.0"
+      placeholder: '10.0.0'
 
   - type: textarea
     validations:
       required: true
     attributes:
-      label: "Packages versions"
+      label: 'Packages versions'
       description: |
         You could leave your whole `package.json` dependencies list here, or just indicate which version of `@nestjs/*` you are using
         **Tip**: run _npx nest info_
@@ -87,15 +87,15 @@ body:
 
   - type: input
     attributes:
-      label: "Node.js version"
-      description: "Which version of Node.js are you using?"
-      placeholder: "24.0.0"
+      label: 'Node.js version'
+      description: 'Which version of Node.js are you using?'
+      placeholder: '24.0.0'
 
   - type: checkboxes
     validations:
       required: true
     attributes:
-      label: "In which operating systems have you tested?"
+      label: 'In which operating systems have you tested?'
       options:
         - label: macOS
         - label: Windows
@@ -108,7 +108,7 @@ body:
 
   - type: textarea
     attributes:
-      label: "Other"
+      label: 'Other'
       description: |
         Anything else relevant? eg: Logs, OS version, IDE, package manager, etc.
         **Tip:** You can attach images, recordings or log files by clicking this area to highlight it and then dragging files in

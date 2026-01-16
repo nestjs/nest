@@ -8,6 +8,6 @@ export class UsersService {
   ];
 
   findById(id: number) {
-    return this.users.find((user) => user.id === Number(id));
+    return this.users.find(user => user.id === Number(id));
   }
 }

@@ -183,7 +183,6 @@ jobs:
           name: Build all samples
           command: npm run build:samples
 
-
 workflows:
   build-and-test:
     jobs:
@@ -209,4 +208,3 @@ workflows:
       - samples:
           requires:
             - build
-
