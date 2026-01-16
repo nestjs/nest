@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": ["benchmarks/**/*"],
+  "ignorePatterns": ["benchmarks/**/*", "**/fixtures/*.json"],
   "singleQuote": true,
   "arrowParens": "avoid",
   "trailingComma": "all",

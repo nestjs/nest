@@ -2719,7 +2719,9 @@
         "metadata": {
           "key": "createExternalSvc",
           "transportId": "TCP",
-          "patterns": ["createExternalSvc"],
+          "patterns": [
+            "createExternalSvc"
+          ],
           "isEventHandler": false,
           "extras": {}
         },
@@ -2733,7 +2735,9 @@
         "metadata": {
           "key": "findAllExternalSvc",
           "transportId": "TCP",
-          "patterns": ["findAllExternalSvc"],
+          "patterns": [
+            "findAllExternalSvc"
+          ],
           "isEventHandler": false,
           "extras": {}
         },
@@ -2747,7 +2751,9 @@
         "metadata": {
           "key": "findOneExternalSvc",
           "transportId": "TCP",
-          "patterns": ["findOneExternalSvc"],
+          "patterns": [
+            "findOneExternalSvc"
+          ],
           "isEventHandler": false,
           "extras": {}
         },
@@ -2761,7 +2767,9 @@
         "metadata": {
           "key": "updateExternalSvc",
           "transportId": "TCP",
-          "patterns": ["updateExternalSvc"],
+          "patterns": [
+            "updateExternalSvc"
+          ],
           "isEventHandler": false,
           "extras": {}
         },
@@ -2775,7 +2783,9 @@
         "metadata": {
           "key": "removeExternalSvc",
           "transportId": "TCP",
-          "patterns": ["removeExternalSvc"],
+          "patterns": [
+            "removeExternalSvc"
+          ],
           "isEventHandler": false,
           "extras": {}
         },
