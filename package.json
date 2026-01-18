@@ -68,6 +68,7 @@
     "fast-json-stringify": "6.3.0",
     "fast-safe-stringify": "2.1.1",
     "file-type": "21.3.0",
+    "h3": "2.0.1-rc.14",
     "iterare": "1.2.1",
     "load-esm": "1.0.3",
     "object-hash": "3.0.0",
