@@ -609,4 +609,133 @@ describe('ValidationPipe', () => {
       expect(await target.transform(testObj, m)).to.deep.equal(testObj);
     });
   });
+  describe('stripProtoKeys', () => {
+    beforeEach(() => {
+      target = new ValidationPipe();
+    });
+
+    describe('with built-in JavaScript primitives', () => {
+      it('should not throw error when processing Date objects', () => {
+        const value = { date: new Date() };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+
+      it('should not throw error when processing RegExp objects', () => {
+        const value = { regex: /test/i };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+
+      it('should not throw error when processing Error objects', () => {
+        const value = { error: new Error('test') };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+
+      it('should not throw error when processing Map objects', () => {
+        const value = { map: new Map() };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+
+      it('should not throw error when processing Set objects', () => {
+        const value = { set: new Set() };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+
+      it('should preserve Date object properties', () => {
+        const date = new Date();
+        const value = { date };
+        target['stripProtoKeys'](value);
+        expect(value.date).to.equal(date);
+        expect(value.date.constructor).to.equal(Date);
+      });
+    });
+
+    describe('with plain objects', () => {
+      it('should still strip constructor from regular objects', () => {
+        const value = { nested: { constructor: 'malicious' } };
+        target['stripProtoKeys'](value);
+        // Check if 'constructor' is NOT an own property
+        expect(value.nested).to.not.have.ownProperty('constructor');
+      });
+
+      it('should strip __proto__ from objects', () => {
+        const value = { __proto__: { malicious: 'code' } };
+        target['stripProtoKeys'](value);
+        expect(value).to.not.have.ownProperty('__proto__');
+      });
+
+      it('should strip prototype from objects', () => {
+        const value = { prototype: { malicious: 'code' } };
+        target['stripProtoKeys'](value);
+        expect(value).to.not.have.ownProperty('prototype');
+      });
+
+      it('should recursively strip nested objects', () => {
+        const value = {
+          level1: {
+            constructor: 'malicious',
+            level2: {
+              constructor: 'alsoMalicious',
+            },
+          },
+        };
+        target['stripProtoKeys'](value);
+        expect(value.level1).to.not.have.ownProperty('constructor');
+        expect(value.level1.level2).to.not.have.ownProperty('constructor');
+      });
+    });
+
+    describe('with arrays', () => {
+      it('should process arrays recursively', () => {
+        const value = {
+          items: [
+            { constructor: 'malicious' },
+            { constructor: 'alsoMalicious' },
+          ],
+        };
+        target['stripProtoKeys'](value);
+        expect(value.items[0]).to.not.have.ownProperty('constructor');
+        expect(value.items[1]).to.not.have.ownProperty('constructor');
+      });
+
+      it('should not throw error when array contains Date objects', () => {
+        const value = { dates: [new Date(), new Date()] };
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+    });
+
+    describe('Issue #16195: Jest useFakeTimers compatibility', () => {
+      beforeEach(() => {
+        target = new ValidationPipe();
+      });
+
+      it('should handle Date objects with non-configurable constructor', () => {
+        const value = { date: new Date() };
+
+        // Make constructor non-configurable like Jest does
+        Object.defineProperty(value.date, 'constructor', {
+          value: Date,
+          writable: false,
+          enumerable: false,
+          configurable: false,
+        });
+
+        // This should NOT throw "Cannot delete property 'constructor'"
+        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+      });
+
+      it('should not attempt to delete constructor from built-in types', () => {
+        const testCases = [
+          { date: new Date() },
+          { regex: /test/i },
+          { error: new Error('test') },
+          { map: new Map() },
+          { set: new Set() },
+        ];
+
+        testCases.forEach(testCase => {
+          expect(() => target['stripProtoKeys'](testCase)).to.not.throw();
+        });
+      });
+    });
+  });
 });
