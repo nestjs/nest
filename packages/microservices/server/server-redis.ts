@@ -116,6 +116,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       port: REDIS_DEFAULT_PORT,
       host: REDIS_DEFAULT_HOST,
       ...this.getClientOptions(),
+      clientInfoTag: this.getClientInfoTag(),
       lazyConnect: true,
     });
   }
@@ -291,6 +292,17 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       this.pubClient.on(event, (...args: [any]) => callback('pub', ...args));
     } else {
       this.pendingEventListeners.push({ event, callback });
+    }
+  }
+
+  protected getClientInfoTag(): string {
+    try {
+      // Try to get NestJS version from package.json
+      const nestVersion = require('@nestjs/microservices/package.json').version;
+      return `nestjs_v${nestVersion}`;
+    } catch {
+      // Fallback if version cannot be determined
+      return 'nestjs';
     }
   }
 }

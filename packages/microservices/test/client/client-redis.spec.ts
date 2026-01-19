@@ -390,4 +390,10 @@ describe('ClientRedis', () => {
       );
     });
   });
+  describe('getClientInfoTag', () => {
+    it('should return nestjs version tag when package.json is available', () => {
+      const result = client['getClientInfoTag']();
+      expect(result).to.match(/^nestjs_v\d+\.\d+\.\d+$/);
+    });
+  });
 });

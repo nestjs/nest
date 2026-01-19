@@ -93,6 +93,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       host: REDIS_DEFAULT_HOST,
       port: REDIS_DEFAULT_PORT,
       ...this.getClientOptions(),
+      clientInfoTag: this.getClientInfoTag(),
       lazyConnect: true,
     });
   }
@@ -301,6 +302,17 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
     if (subscriptionCount - 1 <= 0) {
       this.subClient.unsubscribe(channel);
+    }
+  }
+
+  protected getClientInfoTag(): string {
+    try {
+      // Try to get NestJS version from package.json
+      const nestVersion = require('@nestjs/microservices/package.json').version;
+      return `nestjs_v${nestVersion}`;
+    } catch {
+      // Fallback if version cannot be determined
+      return 'nestjs';
     }
   }
 }
