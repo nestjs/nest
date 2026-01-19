@@ -44,7 +44,7 @@ let classTransformer: TransformerPackage = {} as any;
  * @publicApi
  */
 @Injectable()
-export class ValidationPipe implements PipeTransform<any> {
+export class ValidationPipe implements PipeTransform {
   protected isTransformEnabled: boolean;
   protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
@@ -104,7 +104,7 @@ export class ValidationPipe implements PipeTransform<any> {
     );
   }
 
-  public async transform(value: any, metadata: ArgumentMetadata) {
+  public async transform(value: unknown, metadata: ArgumentMetadata) {
     if (this.expectedType) {
       metadata = { ...metadata, metatype: this.expectedType };
     }
@@ -191,7 +191,7 @@ export class ValidationPipe implements PipeTransform<any> {
     return !types.some(t => metatype === t) && !isNil(metatype);
   }
 
-  protected transformPrimitive(value: any, metadata: ArgumentMetadata) {
+  protected transformPrimitive(value: unknown, metadata: ArgumentMetadata) {
     if (!metadata.data) {
       // leave top-level query/param objects unmodified
       return value;
@@ -217,7 +217,7 @@ export class ValidationPipe implements PipeTransform<any> {
         // they were not defined
         return undefined;
       }
-      return +value;
+      return +(value as any);
     }
     if (metatype === String && !isUndefined(value)) {
       return String(value);
@@ -226,7 +226,7 @@ export class ValidationPipe implements PipeTransform<any> {
   }
 
   protected toEmptyIfNil<T = any, R = T>(
-    value: T,
+    value: unknown,
     metatype: Type<unknown> | object,
   ): R | object | string {
     if (!isNil(value)) {
