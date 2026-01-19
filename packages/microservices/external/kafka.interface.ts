@@ -57,9 +57,16 @@ type Mechanism = {
   authenticationProvider: (args: AuthenticationProviderArgs) => Authenticator;
 };
 
+export interface TlsOptions {
+  ca?: string | Uint8Array;
+  cert?: string | Uint8Array;
+  key?: string | Uint8Array;
+  rejectUnauthorized?: boolean;
+}
+
 export interface KafkaConfig {
   brokers: string[] | BrokersFunction;
-  ssl?: tls.ConnectionOptions | boolean;
+  ssl?: boolean | TlsOptions;
   sasl?: SASLOptions | Mechanism;
   clientId?: string;
   connectionTimeout?: number;
@@ -79,8 +86,14 @@ export interface ISocketFactoryArgs {
   ssl: tls.ConnectionOptions;
   onConnect: () => void;
 }
+export interface KafkaSocket {
+  write(data: Uint8Array): void;
+  end(): void;
+  destroy(): void;
+  on(event: string, listener: (...args: any[]) => void): void;
+}
 
-export type ISocketFactory = (args: ISocketFactoryArgs) => net.Socket;
+export type ISocketFactory = (args: ISocketFactoryArgs) => KafkaSocket;
 
 export interface OauthbearerProviderResponse {
   value: string;
@@ -118,9 +131,12 @@ export interface ProducerConfig {
   maxInFlightRequests?: number;
 }
 
+export type BinaryData = Uint8Array;
+
+
 export interface Message {
-  key?: Buffer | string | null;
-  value: Buffer | string | null;
+  key?: BinaryData | string | null;
+  value: BinaryData | string | null;
   partition?: number;
   headers?: IHeaders;
   timestamp?: string;
