@@ -113,7 +113,7 @@
     "@types/sinon": "21.0.0",
     "@types/supertest": "6.0.3",
     "@types/ws": "8.18.1",
-    "@typescript-eslint/eslint-plugin": "8.53.0",
+    "@typescript-eslint/eslint-plugin": "8.53.1",
     "@typescript-eslint/parser": "8.53.0",
     "amqp-connection-manager": "5.0.0",
     "amqplib": "0.10.9",
