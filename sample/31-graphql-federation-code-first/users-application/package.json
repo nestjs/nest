@@ -57,7 +57,7 @@
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
     "webpack": "5.104.1",
-    "typescript-eslint": "8.53.0"
+    "typescript-eslint": "8.53.1"
   },
   "jest": {
     "moduleFileExtensions": [
