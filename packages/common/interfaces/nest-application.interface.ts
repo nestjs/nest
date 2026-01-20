@@ -163,4 +163,12 @@ export interface INestApplication<
    * @returns {Promise<void>}
    */
   close(): Promise<void>;
+
+  /**
+   * Sets compatibility flags on the application
+   *
+   * @params {string} The flag to set
+   * @params {string} The value of the flag
+   */
+  set(flag, value): void;
 }
