@@ -90,7 +90,7 @@
     "@fastify/cors": "11.2.0",
     "@fastify/formbody": "8.0.2",
     "@fastify/middie": "9.1.0",
-    "@fastify/multipart": "9.3.0",
+    "@fastify/multipart": "9.4.0",
     "@fastify/static": "9.0.0",
     "@fastify/view": "11.1.1",
     "@grpc/grpc-js": "1.14.3",
