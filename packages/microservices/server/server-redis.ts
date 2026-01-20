@@ -116,7 +116,11 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       port: REDIS_DEFAULT_PORT,
       host: REDIS_DEFAULT_HOST,
       ...this.getClientOptions(),
-      clientInfoTag: this.getClientInfoTag(),
+      clientInfoTag: this.getOptionsProp(
+        this.options,
+        'clientInfoTag',
+        this.getClientInfoTag(),
+      ),
       lazyConnect: true,
     });
   }

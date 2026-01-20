@@ -390,6 +390,23 @@ describe('ClientRedis', () => {
       );
     });
   });
+
+  describe('createClient', () => {
+    it('should use default clientInfoTag when not provided', () => {
+      const clientWithoutTag = new ClientRedis({});
+      const redisClient = clientWithoutTag.createClient();
+
+      expect(redisClient).to.be.ok;
+    });
+
+    it('should use custom clientInfoTag when provided', () => {
+      const clientWithTag = new ClientRedis({ clientInfoTag: 'my-app' });
+      const redisClient = clientWithTag.createClient();
+
+      expect(redisClient).to.be.ok;
+    });
+  });
+
   describe('getClientInfoTag', () => {
     it('should return nestjs version tag when package.json is available', () => {
       const result = client['getClientInfoTag']();

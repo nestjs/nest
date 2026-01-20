@@ -289,6 +289,23 @@ describe('ServerRedis', () => {
       expect(handler.calledWith(data)).to.be.true;
     });
   });
+
+  describe('createRedisClient', () => {
+    it('should use default clientInfoTag when not provided', () => {
+      const serverWithoutTag = new ServerRedis({});
+      const redisClient = serverWithoutTag.createRedisClient();
+
+      expect(redisClient).to.be.ok;
+    });
+
+    it('should use custom clientInfoTag when provided', () => {
+      const serverWithTag = new ServerRedis({ clientInfoTag: 'my-app' });
+      const redisClient = serverWithTag.createRedisClient();
+
+      expect(redisClient).to.be.ok;
+    });
+  });
+
   describe('getClientInfoTag', () => {
     it('should return nestjs version tag when package.json is available', () => {
       const result = server['getClientInfoTag']();

@@ -93,7 +93,11 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       host: REDIS_DEFAULT_HOST,
       port: REDIS_DEFAULT_PORT,
       ...this.getClientOptions(),
-      clientInfoTag: this.getClientInfoTag(),
+      clientInfoTag: this.getOptionsProp(
+        this.options,
+        'clientInfoTag',
+        this.getClientInfoTag(),
+      ),
       lazyConnect: true,
     });
   }
