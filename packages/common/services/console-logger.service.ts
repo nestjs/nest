@@ -522,10 +522,10 @@ export class ConsoleLogger implements LoggerService {
       breakLength,
     };
 
-    if (this.options.maxArrayLength) {
+    if (typeof this.options.maxArrayLength !== 'undefined') {
       inspectOptions.maxArrayLength = this.options.maxArrayLength;
     }
-    if (this.options.maxStringLength) {
+    if (typeof this.options.maxStringLength !== 'undefined') {
       inspectOptions.maxStringLength = this.options.maxStringLength;
     }
 
