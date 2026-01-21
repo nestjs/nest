@@ -19,9 +19,9 @@
     "test:e2e": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --config ./e2e/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.11",
-    "@nestjs/core": "11.1.11",
-    "@nestjs/platform-express": "11.1.11",
+    "@nestjs/common": "11.1.12",
+    "@nestjs/core": "11.1.12",
+    "@nestjs/platform-express": "11.1.12",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.3",
     "reflect-metadata": "0.2.2",
@@ -31,16 +31,16 @@
   "devDependencies": {
     "@eslint/eslintrc": "3.3.3",
     "@eslint/js": "9.39.2",
-    "@nestjs/cli": "11.0.14",
+    "@nestjs/cli": "11.0.16",
     "@nestjs/schematics": "11.0.9",
-    "@nestjs/testing": "11.1.11",
+    "@nestjs/testing": "11.1.12",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
     "@types/multer": "2.0.0",
-    "@types/node": "24.10.8",
+    "@types/node": "24.10.9",
     "@types/supertest": "6.0.3",
     "jest": "30.2.0",
-    "prettier": "3.7.4",
+    "prettier": "3.8.0",
     "supertest": "7.2.2",
     "ts-jest": "29.4.6",
     "ts-loader": "9.5.4",
@@ -52,7 +52,7 @@
     "eslint-plugin-prettier": "5.5.5",
     "globals": "17.0.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.53.0"
+    "typescript-eslint": "8.53.1"
   },
   "jest": {
     "moduleFileExtensions": [

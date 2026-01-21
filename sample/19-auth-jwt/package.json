@@ -20,11 +20,11 @@
     "test:e2e": "jest --config ./e2e/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.11",
-    "@nestjs/core": "11.1.11",
+    "@nestjs/common": "11.1.12",
+    "@nestjs/core": "11.1.12",
     "@nestjs/jwt": "11.0.2",
     "@nestjs/passport": "11.0.5",
-    "@nestjs/platform-express": "11.1.11",
+    "@nestjs/platform-express": "11.1.12",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.2",
     "rxjs": "7.8.2"
@@ -32,25 +32,25 @@
   "devDependencies": {
     "@eslint/eslintrc": "3.3.3",
     "@eslint/js": "9.39.2",
-    "@nestjs/cli": "11.0.14",
+    "@nestjs/cli": "11.0.16",
     "@nestjs/schematics": "11.0.9",
-    "@nestjs/testing": "11.1.11",
+    "@nestjs/testing": "11.1.12",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
-    "@types/node": "24.10.8",
+    "@types/node": "24.10.9",
     "@types/supertest": "6.0.3",
     "eslint": "9.39.2",
     "eslint-plugin-prettier": "5.5.5",
     "globals": "17.0.0",
     "jest": "30.2.0",
-    "prettier": "3.7.4",
+    "prettier": "3.8.0",
     "supertest": "7.2.2",
     "ts-jest": "29.4.6",
     "ts-loader": "9.5.4",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.53.0"
+    "typescript-eslint": "8.53.1"
   },
   "jest": {
     "moduleFileExtensions": [
