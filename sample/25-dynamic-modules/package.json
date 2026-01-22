@@ -38,7 +38,7 @@
     "@types/node": "24.10.9",
     "@types/supertest": "6.0.3",
     "jest": "30.2.0",
-    "prettier": "3.8.0",
+    "prettier": "3.8.1",
     "supertest": "7.2.2",
     "ts-jest": "29.4.6",
     "ts-loader": "9.5.4",
