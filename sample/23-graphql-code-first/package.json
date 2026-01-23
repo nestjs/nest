@@ -45,7 +45,7 @@
     "eslint": "9.39.2",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-prettier": "5.5.5",
-    "globals": "17.0.0",
+    "globals": "17.1.0",
     "jest": "30.2.0",
     "prettier": "3.8.1",
     "rimraf": "6.1.2",
