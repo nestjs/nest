@@ -27,7 +27,7 @@
     "@types/node": "24.10.9",
     "eslint": "9.39.2",
     "eslint-plugin-prettier": "5.5.5",
-    "globals": "17.0.0",
+    "globals": "17.1.0",
     "start-server-webpack-plugin": "2.2.5",
     "ts-loader": "9.5.4",
     "ts-node": "10.9.2",
