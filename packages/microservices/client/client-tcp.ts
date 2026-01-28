@@ -113,7 +113,9 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
     // Pass maxBufferSize only if socketClass is JsonSocket
     // For custom socket classes, users should handle maxBufferSize in their own implementation
     if (this.maxBufferSize !== undefined && this.socketClass === JsonSocket) {
-      return new this.socketClass(socket, this.maxBufferSize);
+      return new this.socketClass(socket, {
+        maxBufferSize: this.maxBufferSize,
+      });
     }
     return new this.socketClass(socket);
   }

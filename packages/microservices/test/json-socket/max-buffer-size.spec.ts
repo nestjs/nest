@@ -43,13 +43,17 @@ describe('JsonSocket maxBufferSize', () => {
   describe('custom maxBufferSize', () => {
     it('should use custom maxBufferSize when provided', () => {
       const customSize = 1000;
-      const socket = new JsonSocket(new Socket(), customSize);
+      const socket = new JsonSocket(new Socket(), {
+        maxBufferSize: customSize,
+      });
       expect(socket['maxBufferSize']).to.equal(customSize);
     });
 
     it('should accept data up to custom maxBufferSize', () => {
       const customSize = 1000;
-      const socket = new JsonSocket(new Socket(), customSize);
+      const socket = new JsonSocket(new Socket(), {
+        maxBufferSize: customSize,
+      });
       // Account for header length (number + '#')
       // For 1000, header is "1000#" = 5 characters
       const headerOverhead = 5;
@@ -65,7 +69,9 @@ describe('JsonSocket maxBufferSize', () => {
 
     it('should throw MaxPacketLengthExceededException when exceeding custom maxBufferSize', () => {
       const customSize = 1000;
-      const socket = new JsonSocket(new Socket(), customSize);
+      const socket = new JsonSocket(new Socket(), {
+        maxBufferSize: customSize,
+      });
       const largeData = 'x'.repeat(customSize + 1);
       const packet = `${largeData.length}#${largeData}`;
 
@@ -76,7 +82,9 @@ describe('JsonSocket maxBufferSize', () => {
 
     it('should throw MaxPacketLengthExceededException with correct buffer length', () => {
       const customSize = 1000;
-      const socket = new JsonSocket(new Socket(), customSize);
+      const socket = new JsonSocket(new Socket(), {
+        maxBufferSize: customSize,
+      });
       const largeData = 'x'.repeat(customSize + 100);
       const packet = `${largeData.length}#${largeData}`;
       // Total buffer size will be: header length (5) + data length (1100) = 1105
@@ -95,7 +103,9 @@ describe('JsonSocket maxBufferSize', () => {
   describe('chunked data exceeding maxBufferSize', () => {
     it('should throw MaxPacketLengthExceededException when chunked data exceeds limit', () => {
       const customSize = 100;
-      const socket = new JsonSocket(new Socket(), customSize);
+      const socket = new JsonSocket(new Socket(), {
+        maxBufferSize: customSize,
+      });
 
       // Send data in chunks without a valid header delimiter
       // This will accumulate in the buffer without being processed
@@ -112,7 +122,9 @@ describe('JsonSocket maxBufferSize', () => {
 
     it('should clear buffer after throwing MaxPacketLengthExceededException', () => {
       const customSize = 100;
-      const socket = new JsonSocket(new Socket(), customSize);
+      const socket = new JsonSocket(new Socket(), {
+        maxBufferSize: customSize,
+      });
       const largeData = 'x'.repeat(customSize + 1);
       const packet = `${largeData.length}#${largeData}`;
 
@@ -129,7 +141,9 @@ describe('JsonSocket maxBufferSize', () => {
   describe('error handling when maxBufferSize exceeded', () => {
     it(`should emit ${TcpEventsMap.ERROR} event when maxBufferSize is exceeded`, () => {
       const customSize = 100;
-      const socket = new JsonSocket(new Socket(), customSize);
+      const socket = new JsonSocket(new Socket(), {
+        maxBufferSize: customSize,
+      });
       const socketEmitSpy: sinon.SinonSpy<any, any> = sinon.spy(
         socket['socket'],
         'emit',
@@ -147,7 +161,9 @@ describe('JsonSocket maxBufferSize', () => {
 
     it(`should send a FIN packet when maxBufferSize is exceeded`, () => {
       const customSize = 100;
-      const socket = new JsonSocket(new Socket(), customSize);
+      const socket = new JsonSocket(new Socket(), {
+        maxBufferSize: customSize,
+      });
       const socketEndSpy = sinon.spy(socket['socket'], 'end');
 
       const largeData = 'x'.repeat(customSize + 1);
@@ -162,7 +178,7 @@ describe('JsonSocket maxBufferSize', () => {
 
   describe('edge cases', () => {
     it('should handle maxBufferSize of 0', () => {
-      const socket = new JsonSocket(new Socket(), 0);
+      const socket = new JsonSocket(new Socket(), { maxBufferSize: 0 });
       expect(socket['maxBufferSize']).to.equal(0);
 
       const packet = '5#"test"';
@@ -173,7 +189,9 @@ describe('JsonSocket maxBufferSize', () => {
 
     it('should handle very large custom maxBufferSize', () => {
       const veryLargeSize = 10 * 1024 * 1024; // 10MB in characters
-      const socket = new JsonSocket(new Socket(), veryLargeSize);
+      const socket = new JsonSocket(new Socket(), {
+        maxBufferSize: veryLargeSize,
+      });
       expect(socket['maxBufferSize']).to.equal(veryLargeSize);
 
       // Account for header length (number + '#')
@@ -191,7 +209,9 @@ describe('JsonSocket maxBufferSize', () => {
 
     it('should handle maxBufferSize exactly at the limit', () => {
       const customSize = 100;
-      const socket = new JsonSocket(new Socket(), customSize);
+      const socket = new JsonSocket(new Socket(), {
+        maxBufferSize: customSize,
+      });
       // Account for header: "100#" = 4 characters
       // So data can be 100 - 4 = 96 characters to stay at limit
       const headerOverhead = 4;

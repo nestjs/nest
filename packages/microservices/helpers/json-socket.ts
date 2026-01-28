@@ -6,6 +6,10 @@ import { TcpSocket } from './tcp-socket';
 
 const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
 
+export interface JsonSocketOptions {
+  maxBufferSize?: number;
+}
+
 export class JsonSocket extends TcpSocket {
   private contentLength: number | null = null;
   private buffer = '';
@@ -14,9 +18,9 @@ export class JsonSocket extends TcpSocket {
   private readonly delimiter = '#';
   private readonly maxBufferSize: number;
 
-  constructor(socket: any, maxBufferSize?: number) {
+  constructor(socket: any, options?: JsonSocketOptions) {
     super(socket);
-    this.maxBufferSize = maxBufferSize ?? DEFAULT_MAX_BUFFER_SIZE;
+    this.maxBufferSize = options?.maxBufferSize ?? DEFAULT_MAX_BUFFER_SIZE;
   }
 
   protected handleSend(message: any, callback?: (err?: any) => void) {
