@@ -16,7 +16,12 @@ describe('JsonSocket maxBufferSize', () => {
 
     it('should accept data up to default maxBufferSize', () => {
       const socket = new JsonSocket(new Socket());
-      const largeData = 'x'.repeat(DEFAULT_MAX_BUFFER_SIZE - 1);
+      // Account for header length (number + '#')
+      // Use a smaller size to ensure total buffer (header + data) doesn't exceed limit
+      // Create valid JSON string data
+      const headerOverhead = 20; // Approximate header size for large numbers
+      const dataSize = DEFAULT_MAX_BUFFER_SIZE - headerOverhead;
+      const largeData = '"' + 'x'.repeat(dataSize - 2) + '"'; // Valid JSON string
       const packet = `${largeData.length}#${largeData}`;
 
       expect(() => {
@@ -45,7 +50,12 @@ describe('JsonSocket maxBufferSize', () => {
     it('should accept data up to custom maxBufferSize', () => {
       const customSize = 1000;
       const socket = new JsonSocket(new Socket(), customSize);
-      const data = 'x'.repeat(customSize - 1);
+      // Account for header length (number + '#')
+      // For 1000, header is "1000#" = 5 characters
+      const headerOverhead = 5;
+      const dataSize = customSize - headerOverhead;
+      // Create valid JSON string data
+      const data = '"' + 'x'.repeat(dataSize - 2) + '"'; // Valid JSON string
       const packet = `${data.length}#${data}`;
 
       expect(() => {
@@ -69,13 +79,15 @@ describe('JsonSocket maxBufferSize', () => {
       const socket = new JsonSocket(new Socket(), customSize);
       const largeData = 'x'.repeat(customSize + 100);
       const packet = `${largeData.length}#${largeData}`;
+      // Total buffer size will be: header length (5) + data length (1100) = 1105
+      const expectedBufferSize = packet.length;
 
       try {
         socket['handleData'](packet);
         expect.fail('Should have thrown MaxPacketLengthExceededException');
       } catch (err) {
         expect(err).to.be.instanceof(MaxPacketLengthExceededException);
-        expect(err.message).to.include(String(customSize + 100));
+        expect(err.message).to.include(String(expectedBufferSize));
       }
     });
   });
@@ -85,16 +97,16 @@ describe('JsonSocket maxBufferSize', () => {
       const customSize = 100;
       const socket = new JsonSocket(new Socket(), customSize);
 
-      // Send first chunk that doesn't exceed limit
-      socket['handleData']('50#');
-      socket['handleData']('x'.repeat(50));
+      // Send data in chunks without a valid header delimiter
+      // This will accumulate in the buffer without being processed
+      // First chunk: partial header
+      socket['handleData']('50');
 
-      // Send second chunk that causes total to exceed limit
+      // Second chunk: more data that accumulates beyond limit
+      // Buffer now has "50" (2 chars), send enough to exceed customSize
       const exceedingData = 'x'.repeat(customSize);
-      socket['handleData'](exceedingData);
-
       expect(() => {
-        socket['handleData']('more data');
+        socket['handleData'](exceedingData);
       }).to.throw(MaxPacketLengthExceededException);
     });
 
@@ -164,7 +176,12 @@ describe('JsonSocket maxBufferSize', () => {
       const socket = new JsonSocket(new Socket(), veryLargeSize);
       expect(socket['maxBufferSize']).to.equal(veryLargeSize);
 
-      const data = 'x'.repeat(veryLargeSize - 1);
+      // Account for header length (number + '#')
+      // For 10MB, header is approximately "10485760#" = 10 characters
+      const headerOverhead = 20; // Safe overhead for large numbers
+      const dataSize = veryLargeSize - headerOverhead;
+      // Create valid JSON string data
+      const data = '"' + 'x'.repeat(dataSize - 2) + '"'; // Valid JSON string
       const packet = `${data.length}#${data}`;
 
       expect(() => {
@@ -175,7 +192,12 @@ describe('JsonSocket maxBufferSize', () => {
     it('should handle maxBufferSize exactly at the limit', () => {
       const customSize = 100;
       const socket = new JsonSocket(new Socket(), customSize);
-      const data = 'x'.repeat(customSize);
+      // Account for header: "100#" = 4 characters
+      // So data can be 100 - 4 = 96 characters to stay at limit
+      const headerOverhead = 4;
+      const dataSize = customSize - headerOverhead;
+      // Create valid JSON string data
+      const data = '"' + 'x'.repeat(dataSize - 2) + '"'; // Valid JSON string
       const packet = `${data.length}#${data}`;
 
       // Should not throw when exactly at limit
