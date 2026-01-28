@@ -37,13 +37,13 @@ export class MethodNotAllowedException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Method Not Allowed',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Method Not Allowed', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.METHOD_NOT_ALLOWED,
       ),
       HttpStatus.METHOD_NOT_ALLOWED,
