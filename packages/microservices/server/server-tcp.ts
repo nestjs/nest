@@ -37,6 +37,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   protected readonly port: number;
   protected readonly host: string;
   protected readonly socketClass: Type<TcpSocket>;
+  protected readonly maxBufferSize?: number;
   protected isManuallyTerminated = false;
   protected retryAttemptsCount = 0;
   protected tlsOptions?: TlsOptions;
@@ -51,6 +52,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     this.host = this.getOptionsProp(options, 'host', TCP_DEFAULT_HOST);
     this.socketClass = this.getOptionsProp(options, 'socketClass', JsonSocket);
     this.tlsOptions = this.getOptionsProp(options, 'tlsOptions');
+    this.maxBufferSize = this.getOptionsProp(options, 'maxBufferSize');
 
     this.init();
     this.initializeSerializer(options);
@@ -211,6 +213,13 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   }
 
   protected getSocketInstance(socket: Socket): TcpSocket {
+    // Pass maxBufferSize only if socketClass is JsonSocket
+    // For custom socket classes, users should handle maxBufferSize in their own implementation
+    if (this.maxBufferSize !== undefined && this.socketClass === JsonSocket) {
+      return new this.socketClass(socket, {
+        maxBufferSize: this.maxBufferSize,
+      });
+    }
     return new this.socketClass(socket);
   }
 }

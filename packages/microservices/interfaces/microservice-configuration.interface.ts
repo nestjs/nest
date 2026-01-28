@@ -109,6 +109,11 @@ export interface TcpOptions {
     tlsOptions?: TlsOptions;
     deserializer?: Deserializer;
     socketClass?: Type<TcpSocket>;
+    /**
+     * Maximum buffer size in characters (default: 128MB in characters, i.e., (512 * 1024 * 1024) / 4).
+     * This limit prevents memory exhaustion when receiving large TCP messages.
+     */
+    maxBufferSize?: number;
   };
 }
 

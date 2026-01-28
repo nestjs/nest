@@ -4,6 +4,7 @@ import * as sinon from 'sinon';
 import { TLSSocket } from 'tls';
 import { ClientTCP } from '../../client/client-tcp';
 import { TcpEventsMap } from '../../events/tcp.events';
+import { TcpSocket } from '../../helpers/tcp-socket';
 
 describe('ClientTCP', () => {
   let client: ClientTCP;
@@ -258,6 +259,55 @@ describe('ClientTCP', () => {
     it('should not upgrade to TLS, if not requested', () => {
       const jsonSocket = new ClientTCP({}).createSocket();
       expect(jsonSocket.socket).instanceOf(NetSocket);
+    });
+  });
+
+  describe('maxBufferSize', () => {
+    const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4;
+
+    describe('when maxBufferSize is not provided', () => {
+      it('should use default maxBufferSize', () => {
+        const client = new ClientTCP({});
+        const socket = client.createSocket();
+        expect(socket['maxBufferSize']).to.equal(DEFAULT_MAX_BUFFER_SIZE);
+      });
+    });
+
+    describe('when maxBufferSize is provided', () => {
+      it('should use custom maxBufferSize', () => {
+        const customSize = 5000;
+        const client = new ClientTCP({ maxBufferSize: customSize });
+        const socket = client.createSocket();
+        expect(socket['maxBufferSize']).to.equal(customSize);
+      });
+
+      it('should pass maxBufferSize to JsonSocket', () => {
+        const customSize = 10000;
+        const client = new ClientTCP({ maxBufferSize: customSize });
+        const socket = client.createSocket();
+        expect(socket['maxBufferSize']).to.equal(customSize);
+      });
+    });
+
+    describe('when custom socketClass is provided', () => {
+      it('should not pass maxBufferSize to custom socket class', () => {
+        class CustomSocket extends TcpSocket {
+          constructor(socket: any) {
+            super(socket);
+          }
+          protected handleSend() {}
+          protected handleData() {}
+        }
+
+        const client = new ClientTCP({
+          socketClass: CustomSocket as any,
+          maxBufferSize: 5000,
+        });
+        const socket = client.createSocket();
+        expect(socket).to.be.instanceOf(CustomSocket);
+        // Custom socket should not have maxBufferSize property
+        expect(socket['maxBufferSize']).to.be.undefined;
+      });
     });
   });
 });

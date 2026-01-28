@@ -19,6 +19,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
   protected readonly host: string;
   protected readonly socketClass: Type<TcpSocket>;
   protected readonly tlsOptions?: ConnectionOptions;
+  protected readonly maxBufferSize?: number;
   protected socket: TcpSocket | null = null;
   protected connectionPromise: Promise<any> | null = null;
   protected pendingEventListeners: Array<{
@@ -32,6 +33,7 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
     this.host = this.getOptionsProp(options, 'host', TCP_DEFAULT_HOST);
     this.socketClass = this.getOptionsProp(options, 'socketClass', JsonSocket);
     this.tlsOptions = this.getOptionsProp(options, 'tlsOptions');
+    this.maxBufferSize = this.getOptionsProp(options, 'maxBufferSize');
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -107,6 +109,13 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
       });
     } else {
       socket = new net.Socket();
+    }
+    // Pass maxBufferSize only if socketClass is JsonSocket
+    // For custom socket classes, users should handle maxBufferSize in their own implementation
+    if (this.maxBufferSize !== undefined && this.socketClass === JsonSocket) {
+      return new this.socketClass(socket, {
+        maxBufferSize: this.maxBufferSize,
+      });
     }
     return new this.socketClass(socket);
   }
