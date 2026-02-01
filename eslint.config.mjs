@@ -38,14 +38,14 @@ export default tseslint.config(
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'warn',
-      "@typescript-eslint/no-misused-promises": [
-        "error",
+      '@typescript-eslint/no-misused-promises': [
+        'error',
         {
-          "checksVoidReturn": false,
-          "checksConditionals": false
-        }
+          checksVoidReturn: false,
+          checksConditionals: false,
+        },
       ],
-      "@typescript-eslint/require-await": "off",
+      '@typescript-eslint/require-await': 'off',
       '@typescript-eslint/prefer-promise-reject-errors': 'off',
       '@typescript-eslint/no-base-to-string': 'off',
       '@typescript-eslint/unbound-method': 'off',

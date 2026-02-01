@@ -1,0 +1,18 @@
+{
+  "name": "@nestjs/benchmarks",
+  "version": "1.0.0",
+  "description": "Nest - modern, fast, powerful node.js web framework (@benchmarks)",
+  "license": "ISC",
+  "scripts": {
+    "benchmarks": "tsc && node dist/main.js"
+  },
+  "dependencies": {
+    "@nestjs/platform-express": "^11.1.12",
+    "@nestjs/platform-fastify": "^11.1.12"
+  },
+  "devDependencies": {
+    "@types/autocannon": "^7.12.7",
+    "autocannon": "^8.0.0",
+    "typescript": "^5.9.3"
+  }
+}
