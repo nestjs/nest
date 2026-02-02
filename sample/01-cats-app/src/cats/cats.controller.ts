@@ -13,7 +13,7 @@ export class CatsController {
 
   @Post()
   @Roles(['admin'])
-  async create(@Body() createCatDto: CreateCatDto) {
+  create(@Body() createCatDto: CreateCatDto) {
     this.catsService.create(createCatDto);
   }
 
