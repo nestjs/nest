@@ -37,7 +37,6 @@ function parseNumber(value: string | undefined, fallback: number): number {
 
 function parseArgs(argv: string[]): Args {
   const args: Args = { ...DEFAULTS };
-  const only: Framework[] = [];
 
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i];
@@ -82,9 +81,6 @@ function parseArgs(argv: string[]): Args {
 
 function printHelpAndExit(code: number): never {
   // Keep this simple so `npm run benchmarks` works without extra args.
-  // You can optionally narrow execution with `--framework` or `--only`.
-  // Example: `npm run benchmarks -- --framework fastify`
-  // Example: `npm run benchmarks -- --only express,fastify`
   // Tuning: `--connections`, `--duration`, `--pipelining`, `--port`, `--path`
   // Notes: The benchmark spawns the framework server as a child process and
   // runs autocannon against it.

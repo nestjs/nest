@@ -16,6 +16,6 @@
 
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "sourceMap": true,
+    "sourceMap": true
   },
 }
