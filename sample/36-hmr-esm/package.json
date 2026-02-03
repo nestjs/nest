@@ -41,7 +41,7 @@
     "@nestjs/testing": "11.1.12",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
-    "@types/node": "24.10.9",
+    "@types/node": "24.10.10",
     "@types/supertest": "6.0.3",
     "@types/webpack-env": "1.18.8",
     "jest": "30.2.0",
