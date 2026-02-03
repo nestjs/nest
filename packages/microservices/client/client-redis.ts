@@ -8,6 +8,7 @@ import {
 } from '../events/redis.events';
 import { ReadPacket, RedisOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
+import { getRedisClientInfoTag } from './redis-client-info.util';
 
 // To enable type safety for Redis. This cant be uncommented by default
 // because it would require the user to install the ioredis package even if they dont use Redis
@@ -96,7 +97,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       clientInfoTag: this.getOptionsProp(
         this.options,
         'clientInfoTag',
-        this.getClientInfoTag(),
+        getRedisClientInfoTag(),
       ),
       lazyConnect: true,
     });
@@ -306,17 +307,6 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
     if (subscriptionCount - 1 <= 0) {
       this.subClient.unsubscribe(channel);
-    }
-  }
-
-  protected getClientInfoTag(): string {
-    try {
-      // Try to get NestJS version from package.json
-      const nestVersion = require('@nestjs/microservices/package.json').version;
-      return `nestjs_v${nestVersion}`;
-    } catch {
-      // Fallback if version cannot be determined
-      return 'nestjs';
     }
   }
 }
