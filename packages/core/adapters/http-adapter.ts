@@ -159,6 +159,8 @@ export abstract class AbstractHttpAdapter<
 
   public setOnResponseHook(onResponseHook: Function): void {}
 
+  public beforeClose(): void {}
+
   abstract close();
   abstract initHttpServer(options: NestApplicationOptions);
   abstract useStaticAssets(...args: any[]);

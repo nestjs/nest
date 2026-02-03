@@ -94,6 +94,10 @@ export class NestApplication
     );
   }
 
+  protected async prepareClose(): Promise<void> {
+    this.httpAdapter && (await this.httpAdapter.beforeClose?.());
+  }
+
   protected async dispose(): Promise<void> {
     this.socketModule && (await this.socketModule.close());
     this.microservicesModule && (await this.microservicesModule.close());
