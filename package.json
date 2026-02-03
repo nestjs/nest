@@ -125,7 +125,7 @@
     "chai-as-promised": "7.1.2",
     "concurrently": "9.2.1",
     "conventional-changelog": "7.1.1",
-    "coveralls-next": "^6.0.1",
+    "coveralls-next": "6.0.1",
     "delete-empty": "3.0.0",
     "eslint": "9.39.2",
     "eslint-config-prettier": "10.1.8",
