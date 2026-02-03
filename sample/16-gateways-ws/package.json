@@ -39,7 +39,7 @@
     "@nestjs/schematics": "11.0.9",
     "@nestjs/testing": "11.1.12",
     "@types/express": "5.0.6",
-    "@types/node": "24.10.9",
+    "@types/node": "24.10.10",
     "@types/supertest": "6.0.3",
     "jest": "30.2.0",
     "prettier": "3.8.1",
