@@ -90,10 +90,21 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
 
     const registeredPatterns = [...this.messageHandlers.keys()];
     registeredPatterns.forEach(pattern => {
-      const { isEventHandler } = this.messageHandlers.get(pattern)!;
+      const handler = this.messageHandlers.get(pattern)!;
+      const { isEventHandler, extras } = handler;
+
+      const globalSubscribeOptions = this.getOptionsProp(
+        this.options,
+        'subscribeOptions',
+      );
+      const subscribeOptions =
+        extras?.qos !== undefined
+          ? { ...globalSubscribeOptions, qos: extras.qos }
+          : globalSubscribeOptions;
+
       mqttClient.subscribe(
         isEventHandler ? pattern : this.getRequestPattern(pattern),
-        this.getOptionsProp(this.options, 'subscribeOptions'),
+        subscribeOptions,
       );
     });
   }
