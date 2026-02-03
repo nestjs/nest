@@ -243,6 +243,10 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     return this.httpServer.listen(port, ...args);
   }
 
+  public beforeClose() {
+    this.isShuttingDown = true;
+  }
+
   public close() {
     this.isShuttingDown = true;
     this.closeOpenConnections();

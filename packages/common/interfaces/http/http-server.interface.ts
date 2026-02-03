@@ -94,6 +94,7 @@ export interface HttpServer<
   getHttpServer(): any;
   initHttpServer(options: NestApplicationOptions): void;
   close(): any;
+  beforeClose?(): any;
   getType(): string;
   init?(): Promise<void>;
   applyVersionFilter(

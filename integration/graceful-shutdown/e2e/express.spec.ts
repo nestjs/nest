@@ -15,14 +15,10 @@ describe('Graceful Shutdown (Express)', () => {
   });
 
   it('should allow in-flight requests to complete when gracefulShutdown is enabled', async () => {
-    app = await NestFactory.create(
-      AppModule,
-      new ExpressAdapter() as any,
-      {
-        gracefulShutdown: true,
-        logger: false,
-      } as any,
-    );
+    app = await NestFactory.create(AppModule, new ExpressAdapter() as any, {
+      gracefulShutdown: true,
+      logger: false,
+    });
     await app.listen(0);
     const port = app.getHttpServer().address().port;
 
@@ -56,14 +52,10 @@ describe('Graceful Shutdown (Express)', () => {
   }).timeout(10000);
 
   it('should return 503 for NEW queued requests on existing connections during shutdown', async () => {
-    app = await NestFactory.create(
-      AppModule,
-      new ExpressAdapter() as any,
-      {
-        gracefulShutdown: true,
-        logger: false,
-      } as any,
-    );
+    app = await NestFactory.create(AppModule, new ExpressAdapter() as any, {
+      gracefulShutdown: true,
+      logger: false,
+    });
     await app.listen(0);
     const port = app.getHttpServer().address().port;
 
@@ -79,8 +71,8 @@ describe('Graceful Shutdown (Express)', () => {
     // 3. Trigger Shutdown (don't await yet)
     const closePromise = app.close();
 
-    // Give NestJS a moment to set the isShuttingDown flag
-    await new Promise(r => setTimeout(r, 50));
+    // Allow the microtask for prepareClose() to flush (sets isShuttingDown)
+    await new Promise(r => setTimeout(r, 0));
 
     // 4. Send Request B immediately using the same agent.
     const statusPromise = new Promise<number>((resolve, reject) => {

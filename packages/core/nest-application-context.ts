@@ -267,6 +267,7 @@ export class NestApplicationContext<
    */
   public async close(signal?: string): Promise<void> {
     await this.initializationPromise;
+    await this.prepareClose();
     await this.callDestroyHook();
     await this.callBeforeShutdownHook(signal);
     await this.dispose();
@@ -334,6 +335,12 @@ export class NestApplicationContext<
     return this;
   }
 
+  protected async prepareClose(): Promise<void> {
+    // Nest application context has no server
+    // to signal, therefore just call a noop
+    return Promise.resolve();
+  }
+
   protected async dispose(): Promise<void> {
     // Nest application context has no server
     // to dispose, therefore just call a noop
@@ -361,6 +368,7 @@ export class NestApplicationContext<
         }
         receivedSignal = true;
         await this.initializationPromise;
+        await this.prepareClose();
         await this.callDestroyHook();
         await this.callBeforeShutdownHook(signal);
         await this.dispose();
