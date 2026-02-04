@@ -574,7 +574,7 @@ export class ConsoleLogger implements LoggerService {
             stack: args[1] as string,
             context: this.context,
           }
-        : this.getContextAndMessagesToPrint(args);
+        : { ...this.getContextAndMessagesToPrint(args) };
     }
 
     const { messages, context } = this.getContextAndMessagesToPrint(args);
