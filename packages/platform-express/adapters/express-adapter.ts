@@ -333,7 +333,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       this.httpServer = http.createServer(this.getInstance());
     }
 
-    if (options?.gracefulShutdown) {
+    if (options?.return503OnClosing) {
       this.instance.use((req: any, res: any, next: any) => {
         if (this.isShuttingDown) {
           res.set('Connection', 'close');

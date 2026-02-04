@@ -14,9 +14,9 @@ describe('Graceful Shutdown (Express)', () => {
     }
   });
 
-  it('should allow in-flight requests to complete when gracefulShutdown is enabled', async () => {
+  it('should allow in-flight requests to complete when return503OnClosing is enabled', async () => {
     app = await NestFactory.create(AppModule, new ExpressAdapter() as any, {
-      gracefulShutdown: true,
+      return503OnClosing: true,
       logger: false,
     });
     await app.listen(0);
@@ -53,7 +53,7 @@ describe('Graceful Shutdown (Express)', () => {
 
   it('should return 503 for NEW queued requests on existing connections during shutdown', async () => {
     app = await NestFactory.create(AppModule, new ExpressAdapter() as any, {
-      gracefulShutdown: true,
+      return503OnClosing: true,
       logger: false,
     });
     await app.listen(0);
