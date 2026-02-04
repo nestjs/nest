@@ -19,9 +19,9 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.12",
-    "@nestjs/core": "11.1.12",
-    "@nestjs/platform-express": "11.1.12",
+    "@nestjs/common": "11.1.13",
+    "@nestjs/core": "11.1.13",
+    "@nestjs/platform-express": "11.1.13",
     "dotenv": "17.2.3",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.2",
@@ -32,13 +32,13 @@
     "@eslint/js": "9.39.2",
     "@nestjs/cli": "11.0.16",
     "@nestjs/schematics": "11.0.9",
-    "@nestjs/testing": "11.1.12",
+    "@nestjs/testing": "11.1.13",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
-    "@types/node": "24.10.9",
+    "@types/node": "24.10.10",
     "@types/supertest": "6.0.3",
     "jest": "30.2.0",
-    "prettier": "3.8.0",
+    "prettier": "3.8.1",
     "supertest": "7.2.2",
     "ts-jest": "29.4.6",
     "ts-loader": "9.5.4",
@@ -48,7 +48,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-import": "2.32.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.53.1"
+    "typescript-eslint": "8.54.0"
   },
   "jest": {
     "moduleFileExtensions": [

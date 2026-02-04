@@ -39,6 +39,12 @@ let classValidator: ValidatorPackage = {} as any;
 let classTransformer: TransformerPackage = {} as any;
 
 /**
+ * Built-in JavaScript types that should be excluded from prototype stripping
+ * to avoid conflicts with test frameworks like Jest's useFakeTimers
+ */
+const BUILT_IN_TYPES = [Date, RegExp, Error, Map, Set, WeakMap, WeakSet];
+
+/**
  * @see [Validation](https://docs.nestjs.com/techniques/validation)
  *
  * @publicApi
@@ -66,7 +72,7 @@ export class ValidationPipe implements PipeTransform<any> {
       ...validatorOptions
     } = options;
 
-    // @see https://github.com/nestjs/nest/issues/10683#issuecomment-1413690508
+    // @see [https://github.com/nestjs/nest/issues/10683#issuecomment-1413690508](https://github.com/nestjs/nest/issues/10683#issuecomment-1413690508)
     this.validatorOptions = { forbidUnknownValues: false, ...validatorOptions };
 
     this.isTransformEnabled = !!transform;
@@ -147,7 +153,7 @@ export class ValidationPipe implements PipeTransform<any> {
     if (originalValue === undefined && originalEntity === '') {
       // Since SWC requires empty string for validation (to avoid an error),
       // a fallback is needed to revert to the original value (when undefined).
-      // @see https://github.com/nestjs/nest/issues/14430
+      // @see [https://github.com/nestjs/nest/issues/14430](https://github.com/nestjs/nest/issues/14430)
       return originalValue;
     }
     if (isPrimitive) {
@@ -241,7 +247,7 @@ export class ValidationPipe implements PipeTransform<any> {
     // SWC requires empty string to be returned instead of an empty object
     // when the value is nil and the metatype is not a class instance, but a plain object (enum, for example).
     // Otherwise, the error will be thrown.
-    // @see https://github.com/nestjs/nest/issues/12680
+    // @see [https://github.com/nestjs/nest/issues/12680](https://github.com/nestjs/nest/issues/12680)
     return '';
   }
 
@@ -253,15 +259,29 @@ export class ValidationPipe implements PipeTransform<any> {
     ) {
       return;
     }
+
+    // Skip built-in JavaScript primitives to avoid Jest useFakeTimers conflicts
+    if (BUILT_IN_TYPES.some(type => value instanceof type)) {
+      return;
+    }
+
     if (Array.isArray(value)) {
       for (const v of value) {
         this.stripProtoKeys(v);
       }
       return;
     }
+
+    // Delete dangerous prototype pollution keys
     delete value.__proto__;
-    delete value.constructor;
     delete value.prototype;
+
+    // Only delete constructor if it's NOT a built-in type
+    const constructorType = value?.constructor;
+    if (constructorType && !BUILT_IN_TYPES.includes(constructorType)) {
+      delete value.constructor;
+    }
+
     for (const key in value) {
       this.stripProtoKeys(value[key]);
     }

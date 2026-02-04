@@ -1,7 +1,9 @@
 import { expect } from 'chai';
+import { Socket as NetSocket } from 'net';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
+import { TcpSocket } from '../../helpers/tcp-socket';
 import { ServerTCP } from '../../server/server-tcp';
 import { objectToMap } from './utils/object-to-map';
 
@@ -135,6 +137,59 @@ describe('ServerTCP', () => {
         new BaseRpcContext([]),
       );
       expect(handler.calledWith(data)).to.be.true;
+    });
+  });
+
+  describe('maxBufferSize', () => {
+    const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4;
+
+    describe('when maxBufferSize is not provided', () => {
+      it('should use default maxBufferSize', () => {
+        const server = new ServerTCP({});
+        const socket = new NetSocket();
+        const jsonSocket = server['getSocketInstance'](socket);
+        expect(jsonSocket['maxBufferSize']).to.equal(DEFAULT_MAX_BUFFER_SIZE);
+      });
+    });
+
+    describe('when maxBufferSize is provided', () => {
+      it('should use custom maxBufferSize', () => {
+        const customSize = 5000;
+        const server = new ServerTCP({ maxBufferSize: customSize });
+        const socket = new NetSocket();
+        const jsonSocket = server['getSocketInstance'](socket);
+        expect(jsonSocket['maxBufferSize']).to.equal(customSize);
+      });
+
+      it('should pass maxBufferSize to JsonSocket', () => {
+        const customSize = 10000;
+        const server = new ServerTCP({ maxBufferSize: customSize });
+        const socket = new NetSocket();
+        const jsonSocket = server['getSocketInstance'](socket);
+        expect(jsonSocket['maxBufferSize']).to.equal(customSize);
+      });
+    });
+
+    describe('when custom socketClass is provided', () => {
+      it('should not pass maxBufferSize to custom socket class', () => {
+        class CustomSocket extends TcpSocket {
+          constructor(socket: any) {
+            super(socket);
+          }
+          protected handleSend() {}
+          protected handleData() {}
+        }
+
+        const server = new ServerTCP({
+          socketClass: CustomSocket as any,
+          maxBufferSize: 5000,
+        });
+        const socket = new NetSocket();
+        const customSocket = server['getSocketInstance'](socket);
+        expect(customSocket).to.be.instanceOf(CustomSocket);
+        // Custom socket should not have maxBufferSize property
+        expect(customSocket['maxBufferSize']).to.be.undefined;
+      });
     });
   });
 });

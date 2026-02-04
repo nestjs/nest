@@ -619,7 +619,7 @@ export class Injector {
       moduleRef,
       dependencyContext.name!,
       wrapper,
-      [],
+      new Set<string>(),
       contextId,
       inquirer,
       keyOrIndex,
@@ -639,7 +639,7 @@ export class Injector {
     moduleRef: Module,
     name: InjectionToken,
     wrapper: InstanceWrapper,
-    moduleRegistry: any[] = [],
+    moduleRegistry: Set<string> = new Set<string>(),
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
     keyOrIndex?: symbol | string | number,
@@ -657,11 +657,11 @@ export class Injector {
       );
     }
     for (const relatedModule of children) {
-      if (moduleRegistry.includes(relatedModule.id)) {
+      if (moduleRegistry.has(relatedModule.id)) {
         continue;
       }
       this.printLookingForProviderLog(name, relatedModule);
-      moduleRegistry.push(relatedModule.id);
+      moduleRegistry.add(relatedModule.id);
 
       const { providers, exports } = relatedModule;
       if (!exports.has(name) || !providers.has(name)) {

@@ -151,7 +151,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     EventKey extends keyof NatsEvents = keyof NatsEvents,
     EventCallback extends NatsEvents[EventKey] = NatsEvents[EventKey],
   >(event: EventKey, callback: EventCallback) {
-    this.statusEventEmitter.on(event, callback as any);
+    this.statusEventEmitter.on(event as string | symbol, callback as any);
   }
 
   public unwrap<T>(): T {

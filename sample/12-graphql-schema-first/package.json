@@ -19,13 +19,13 @@
     "test:e2e": "jest --config ./e2e/jest-e2e.json"
   },
   "dependencies": {
-    "@apollo/server": "5.2.0",
+    "@apollo/server": "5.3.0",
     "@graphql-tools/utils": "11.0.0",
     "@nestjs/apollo": "13.2.3",
-    "@nestjs/common": "11.1.12",
-    "@nestjs/core": "11.1.12",
+    "@nestjs/common": "11.1.13",
+    "@nestjs/core": "11.1.13",
     "@nestjs/graphql": "13.2.3",
-    "@nestjs/platform-express": "11.1.12",
+    "@nestjs/platform-express": "11.1.13",
     "class-transformer": "0.5.1",
     "class-validator": "0.14.3",
     "graphql": "16.10.0",
@@ -39,16 +39,16 @@
     "@eslint/js": "9.39.2",
     "@nestjs/cli": "11.0.16",
     "@nestjs/schematics": "11.0.9",
-    "@nestjs/testing": "11.1.12",
+    "@nestjs/testing": "11.1.13",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
-    "@types/node": "24.10.9",
+    "@types/node": "24.10.10",
     "@types/supertest": "6.0.3",
     "eslint": "9.39.2",
     "eslint-plugin-prettier": "5.5.5",
-    "globals": "17.0.0",
+    "globals": "17.3.0",
     "jest": "30.2.0",
-    "prettier": "3.8.0",
+    "prettier": "3.8.1",
     "supertest": "7.2.2",
     "ts-jest": "29.4.6",
     "ts-loader": "9.5.4",
@@ -56,7 +56,7 @@
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.53.1"
+    "typescript-eslint": "8.54.0"
   },
   "jest": {
     "moduleFileExtensions": [
