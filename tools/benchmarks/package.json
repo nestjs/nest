@@ -10,7 +10,7 @@
     "@nestjs/common": "^11.1.12",
     "@nestjs/core": "^11.1.12",
     "@nestjs/platform-express": "^11.1.12",
-    "@nestjs/platform-fastify": "^11.1.12",
+    "@nestjs/platform-fastify": "^11.1.13",
     "express": "^5.2.1",
     "fastify": "^5.7.4",
     "reflect-metadata": "^0.2.2",
