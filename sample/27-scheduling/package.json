@@ -22,7 +22,7 @@
     "@nestjs/common": "11.1.13",
     "@nestjs/core": "11.1.13",
     "@nestjs/platform-express": "11.1.13",
-    "@nestjs/schedule": "6.1.0",
+    "@nestjs/schedule": "6.1.1",
     "dotenv": "17.2.3",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.2",
