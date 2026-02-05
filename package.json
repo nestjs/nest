@@ -80,7 +80,7 @@
     "uuid": "13.0.0"
   },
   "devDependencies": {
-    "@apollo/server": "5.3.0",
+    "@apollo/server": "5.4.0",
     "@as-integrations/express5": "1.1.2",
     "@commitlint/cli": "20.4.1",
     "@commitlint/config-angular": "20.4.1",
