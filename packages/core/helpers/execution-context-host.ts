@@ -9,6 +9,9 @@ import {
 
 export class ExecutionContextHost implements ExecutionContext {
   private contextType = 'http';
+  private httpCache?: HttpArgumentsHost;
+  private rpcCache?: RpcArgumentsHost;
+  private wsCache?: WsArgumentsHost;
 
   constructor(
     private readonly args: any[],
@@ -41,25 +44,34 @@ export class ExecutionContextHost implements ExecutionContext {
   }
 
   switchToRpc(): RpcArgumentsHost {
-    return Object.assign(this, {
-      getData: () => this.getArgByIndex(0),
-      getContext: () => this.getArgByIndex(1),
-    });
+    if (!this.rpcCache) {
+      this.rpcCache = Object.assign(this, {
+        getData: () => this.getArgByIndex(0),
+        getContext: () => this.getArgByIndex(1),
+      });
+    }
+    return this.rpcCache;
   }
 
   switchToHttp(): HttpArgumentsHost {
-    return Object.assign(this, {
-      getRequest: () => this.getArgByIndex(0),
-      getResponse: () => this.getArgByIndex(1),
-      getNext: () => this.getArgByIndex(2),
-    });
+    if (!this.httpCache) {
+      this.httpCache = Object.assign(this, {
+        getRequest: () => this.getArgByIndex(0),
+        getResponse: () => this.getArgByIndex(1),
+        getNext: () => this.getArgByIndex(2),
+      });
+    }
+    return this.httpCache;
   }
 
   switchToWs(): WsArgumentsHost {
-    return Object.assign(this, {
-      getClient: () => this.getArgByIndex(0),
-      getData: () => this.getArgByIndex(1),
-      getPattern: () => this.getArgByIndex(this.getArgs().length - 1),
-    });
+    if (!this.wsCache) {
+      this.wsCache = Object.assign(this, {
+        getClient: () => this.getArgByIndex(0),
+        getData: () => this.getArgByIndex(1),
+        getPattern: () => this.getArgByIndex(this.getArgs().length - 1),
+      });
+    }
+    return this.wsCache;
   }
 }

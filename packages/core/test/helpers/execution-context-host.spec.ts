@@ -48,6 +48,12 @@ describe('ExecutionContextHost', () => {
       expect(proxy.getData()).to.be.eq(args[0]);
       expect(proxy.getContext()).to.be.eq(args[1]);
     });
+
+    it('should return cached proxy on subsequent calls', () => {
+      const proxy1 = contextHost.switchToRpc();
+      const proxy2 = contextHost.switchToRpc();
+      expect(proxy1).to.equal(proxy2);
+    });
   });
 
   describe('switchToHttp', () => {
@@ -60,6 +66,12 @@ describe('ExecutionContextHost', () => {
       expect(proxy.getResponse()).to.be.eq(args[1]);
       expect(proxy.getNext()).to.be.eq(args[2]);
     });
+
+    it('should return cached proxy on subsequent calls', () => {
+      const proxy1 = contextHost.switchToHttp();
+      const proxy2 = contextHost.switchToHttp();
+      expect(proxy1).to.equal(proxy2);
+    });
   });
 
   describe('switchToWs', () => {
@@ -69,6 +81,12 @@ describe('ExecutionContextHost', () => {
       expect(proxy.getClient).to.be.a('function');
       expect(proxy.getClient()).to.be.eq(args[0]);
       expect(proxy.getData()).to.be.eq(args[1]);
+    });
+
+    it('should return cached proxy on subsequent calls', () => {
+      const proxy1 = contextHost.switchToWs();
+      const proxy2 = contextHost.switchToWs();
+      expect(proxy1).to.equal(proxy2);
     });
   });
 });
