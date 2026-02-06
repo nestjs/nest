@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsDefined,
+  IsNotEmpty,
   IsOptional,
   IsString,
   ValidateNested,
@@ -180,6 +181,86 @@ describe('ValidationPipe', () => {
             'test.0.prop2 must be a boolean value',
           ]);
         }
+      });
+
+      describe('when errorFormat is "grouped"', () => {
+        beforeEach(() => {
+          target = new ValidationPipe({ errorFormat: 'grouped' });
+        });
+
+        it('should return grouped errors with property paths as keys', async () => {
+          try {
+            const model = new TestModelWithNested();
+            model.test = new TestModel2();
+            await target.transform(model, {
+              type: 'body',
+              metatype: TestModelWithNested,
+            });
+          } catch (err) {
+            expect(err.getResponse().message).to.be.eql({
+              prop: ['prop must be a string'],
+              'test.prop1': ['prop1 must be a string'],
+              'test.prop2': ['prop2 must be a boolean value'],
+            });
+          }
+        });
+
+        it('should return grouped errors for nested arrays', async () => {
+          try {
+            const model = new TestModelForNestedArrayValidation();
+            model.test = [new TestModel2()];
+            await target.transform(model, {
+              type: 'body',
+              metatype: TestModelForNestedArrayValidation,
+            });
+          } catch (err) {
+            expect(err.getResponse().message).to.be.eql({
+              prop: ['prop must be a string'],
+              'test.0.prop1': ['prop1 must be a string'],
+              'test.0.prop2': ['prop2 must be a boolean value'],
+            });
+          }
+        });
+
+        class NestedChildWithCustomMessage {
+          @IsNotEmpty({ message: 'Name is required' })
+          @IsString({ message: 'Name must be a string' })
+          name: string;
+        }
+
+        class ParentWithCustomMessage {
+          @IsString()
+          title: string;
+
+          @IsDefined()
+          @Type(() => NestedChildWithCustomMessage)
+          @ValidateNested()
+          child: NestedChildWithCustomMessage;
+        }
+
+        it('should preserve custom validation messages without prepending parent path', async () => {
+          try {
+            const model = new ParentWithCustomMessage();
+            model.child = new NestedChildWithCustomMessage();
+            await target.transform(model, {
+              type: 'body',
+              metatype: ParentWithCustomMessage,
+            });
+          } catch (err) {
+            const message = err.getResponse().message;
+            expect(message.title).to.be.eql(['title must be a string']);
+            // Custom messages should be preserved without 'child.' prefix in the message itself
+            expect(message['child.name']).to.have.members([
+              'Name is required',
+              'Name must be a string',
+            ]);
+            // Verify custom messages don't have parent path prepended
+            expect(message['child.name']).to.not.include.members([
+              'child.Name is required',
+              'child.Name must be a string',
+            ]);
+          }
+        });
       });
     });
     describe('when validation transforms', () => {
