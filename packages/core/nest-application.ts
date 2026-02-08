@@ -205,9 +205,12 @@ export class NestApplication
   public async registerRouter() {
     await this.registerMiddleware(this.httpAdapter);
 
-    const prefix = this.config.getGlobalPrefix();
-    const basePath = addLeadingSlash(prefix);
-    this.routesResolver.resolve(this.httpAdapter, basePath);
+    const prefixes = this.config.getGlobalPrefixes();
+    const basePaths =
+      prefixes.length > 0
+        ? prefixes.map(prefix => addLeadingSlash(prefix))
+        : [''];
+    this.routesResolver.resolve(this.httpAdapter, basePaths);
   }
 
   public async registerRouterHooks() {
@@ -374,7 +377,10 @@ export class NestApplication
     return `${this.getProtocol()}://${host}:${address.port}`;
   }
 
-  public setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this {
+  public setGlobalPrefix(
+    prefix: string | string[],
+    options?: GlobalPrefixOptions,
+  ): this {
     this.config.setGlobalPrefix(prefix);
     if (options) {
       const exclude = options?.exclude
