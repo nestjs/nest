@@ -54,6 +54,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(ExpressAdapter.name);
   private readonly openConnections = new Set<Duplex>();
+  private isShuttingDown = false;
   private onRequestHook?: (
     req: express.Request,
     res: express.Response,
@@ -213,7 +214,12 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     return this.httpServer.listen(port, ...args);
   }
 
+  public beforeClose() {
+    this.isShuttingDown = true;
+  }
+
   public close() {
+    this.isShuttingDown = true;
     this.closeOpenConnections();
 
     if (!this.httpServer) {
@@ -296,6 +302,17 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       );
     } else {
       this.httpServer = http.createServer(this.getInstance());
+    }
+
+    if (options?.return503OnClosing) {
+      this.instance.use((req: any, res: any, next: any) => {
+        if (this.isShuttingDown) {
+          res.set('Connection', 'close');
+          res.status(503).send('Service Unavailable');
+        } else {
+          next();
+        }
+      });
     }
 
     if (options?.forceCloseConnections) {
