@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
+import { Injectable } from '@nestjs/common/interfaces/injectable.interface.js';
 import {
   isConstructor,
   isFunction,
   isNil,
-} from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/utils/shared.utils.js';
 
 export class MetadataScanner {
   private readonly cachedScannedPrototypes: Map<object, string[]> = new Map();

@@ -1,15 +1,15 @@
 import { expect } from 'chai';
-import { Version, VersioningType } from '../../../common';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
+import { Version, VersioningType } from '../../../common/index.js';
+import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import {
   Get,
   RequestMapping,
-} from '../../../common/decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { MiddlewareConfiguration } from '../../../common/interfaces';
-import { ApplicationConfig } from '../../application-config';
-import { NestContainer } from '../../injector/container';
-import { RoutesMapper } from '../../middleware/routes-mapper';
+} from '../../../common/decorators/http/request-mapping.decorator.js';
+import { RequestMethod } from '../../../common/enums/request-method.enum.js';
+import { MiddlewareConfiguration } from '../../../common/interfaces/index.js';
+import { ApplicationConfig } from '../../application-config.js';
+import { NestContainer } from '../../injector/container.js';
+import { RoutesMapper } from '../../middleware/routes-mapper.js';
 
 describe('RoutesMapper', () => {
   @Controller('test')

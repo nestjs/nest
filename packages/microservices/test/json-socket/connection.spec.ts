@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { AddressInfo, createServer, Socket } from 'net';
-import { TcpEventsMap } from '../../events/tcp.events';
-import { JsonSocket } from '../../helpers/json-socket';
-import { longPayload } from './data/long-payload-with-special-chars';
-import * as helpers from './helpers';
-import { ip } from './helpers';
+import { TcpEventsMap } from '../../events/tcp.events.js';
+import { JsonSocket } from '../../helpers/json-socket.js';
+import { longPayload } from './data/long-payload-with-special-chars.js';
+import * as helpers from './helpers.js';
+import { ip } from './helpers.js';
 
 const MESSAGE_EVENT = 'message';
 

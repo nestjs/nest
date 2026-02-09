@@ -7,8 +7,8 @@ import { expect } from 'chai';
 import {
   busboyExceptions,
   multerExceptions,
-} from '../../../multer/multer/multer.constants';
-import { transformException } from '../../../multer/multer/multer.utils';
+} from '../../../multer/multer/multer.constants.js';
+import { transformException } from '../../../multer/multer/multer.utils.js';
 
 describe('transformException', () => {
   describe('if error does not exist', () => {

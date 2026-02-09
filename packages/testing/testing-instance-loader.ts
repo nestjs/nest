@@ -1,7 +1,7 @@
-import { InstanceLoader } from '@nestjs/core/injector/instance-loader';
-import { Module } from '@nestjs/core/injector/module';
-import { MockFactory } from './interfaces';
-import { TestingInjector } from './testing-injector';
+import { InstanceLoader } from '@nestjs/core/injector/instance-loader.js';
+import { Module } from '@nestjs/core/injector/module.js';
+import { MockFactory } from './interfaces/index.js';
+import { TestingInjector } from './testing-injector.js';
 
 export class TestingInstanceLoader extends InstanceLoader<TestingInjector> {
   public async createInstancesOfDependencies(

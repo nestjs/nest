@@ -6,8 +6,8 @@ import {
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { RawServerDefault } from 'fastify';
-import * as request from 'supertest';
-import { ErrorsController } from '../src/errors/errors.controller';
+import request from 'supertest';
+import { ErrorsController } from '../src/errors/errors.controller.js';
 
 describe('Error messages', () => {
   let server: RawServerDefault;

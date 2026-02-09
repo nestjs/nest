@@ -1,7 +1,7 @@
 import { InjectionToken, Type } from '@nestjs/common';
 import { TlsOptions } from 'tls';
-import { Transport } from '../enums/transport.enum';
-import { ChannelOptions } from '../external/grpc-options.interface';
+import { Transport } from '../enums/transport.enum.js';
+import { ChannelOptions } from '../external/grpc-options.interface.js';
 import {
   ConsumerConfig,
   ConsumerRunConfig,
@@ -9,18 +9,18 @@ import {
   KafkaConfig,
   ProducerConfig,
   ProducerRecord,
-} from '../external/kafka.interface';
-import { MqttClientOptions, QoS } from '../external/mqtt-options.interface';
-import { IORedisOptions } from '../external/redis.interface';
+} from '../external/kafka.interface.js';
+import { MqttClientOptions, QoS } from '../external/mqtt-options.interface.js';
+import { IORedisOptions } from '../external/redis.interface.js';
 import {
   AmqpConnectionManagerSocketOptions,
   AmqplibQueueOptions,
   RmqUrl,
-} from '../external/rmq-url.interface';
-import { TcpSocket } from '../helpers';
-import { CustomTransportStrategy } from './custom-transport-strategy.interface';
-import { Deserializer } from './deserializer.interface';
-import { Serializer } from './serializer.interface';
+} from '../external/rmq-url.interface.js';
+import { TcpSocket } from '../helpers/index.js';
+import { CustomTransportStrategy } from './custom-transport-strategy.interface.js';
+import { Deserializer } from './deserializer.interface.js';
+import { Serializer } from './serializer.interface.js';
 
 export type MicroserviceOptions =
   | GrpcOptions

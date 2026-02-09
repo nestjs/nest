@@ -1,5 +1,5 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { isNil } from '@nestjs/common/utils/shared.utils';
+import { Logger } from '@nestjs/common/services/logger.service.js';
+import { isNil } from '@nestjs/common/utils/shared.utils.js';
 import { isObservable, lastValueFrom, Observable, ReplaySubject } from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
@@ -7,12 +7,12 @@ import {
   KAFKA_DEFAULT_GROUP,
   NO_EVENT_HANDLER,
   NO_MESSAGE_HANDLER,
-} from '../constants';
-import { KafkaContext } from '../ctx-host';
-import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer';
-import { KafkaHeaders, Transport } from '../enums';
-import { KafkaStatus } from '../events';
-import { KafkaRetriableException } from '../exceptions';
+} from '../constants.js';
+import { KafkaContext } from '../ctx-host/index.js';
+import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer.js';
+import { KafkaHeaders, Transport } from '../enums/index.js';
+import { KafkaStatus } from '../events/index.js';
+import { KafkaRetriableException } from '../exceptions/index.js';
 import {
   BrokersFunction,
   Consumer,
@@ -24,16 +24,16 @@ import {
   Message,
   Producer,
   RecordMetadata,
-} from '../external/kafka.interface';
-import { KafkaLogger, KafkaParser } from '../helpers';
+} from '../external/kafka.interface.js';
+import { KafkaLogger, KafkaParser } from '../helpers/index.js';
 import {
   KafkaOptions,
   OutgoingResponse,
   ReadPacket,
   TransportId,
-} from '../interfaces';
-import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
-import { Server } from './server';
+} from '../interfaces/index.js';
+import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
+import { Server } from './server.js';
 
 let kafkaPackage: any = {};
 
@@ -75,8 +75,10 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
     this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
 
-    kafkaPackage = this.loadPackage('kafkajs', ServerKafka.name, () =>
-      require('kafkajs'),
+    kafkaPackage = this.loadPackage(
+      'kafkajs',
+      ServerKafka.name,
+      () => import('kafkajs'),
     );
 
     this.parser = new KafkaParser((options && options.parser) || undefined);
@@ -89,7 +91,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ): Promise<void> {
     try {
-      this.client = this.createClient();
+      this.client = await this.createClient();
       await this.start(callback);
     } catch (err) {
       callback(err);
@@ -152,7 +154,8 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     );
   }
 
-  public createClient<T = any>(): T {
+  public async createClient<T = any>(): Promise<T> {
+    kafkaPackage = await kafkaPackage;
     return new kafkaPackage.Kafka(
       Object.assign(
         { logCreator: KafkaLogger.bind(null, this.logger) },

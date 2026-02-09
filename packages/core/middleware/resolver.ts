@@ -1,8 +1,8 @@
 import { InjectionToken } from '@nestjs/common';
-import { Injector } from '../injector/injector';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
-import { MiddlewareContainer } from './container';
+import { Injector } from '../injector/injector.js';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import { Module } from '../injector/module.js';
+import { MiddlewareContainer } from './container.js';
 
 export class MiddlewareResolver {
   constructor(

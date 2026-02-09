@@ -8,33 +8,33 @@ import {
   VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
-import { VersionValue } from '@nestjs/common/interfaces';
 import {
   CorsOptions,
   CorsOptionsDelegate,
-} from '@nestjs/common/interfaces/external/cors-options.interface';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+} from '@nestjs/common/interfaces/external/cors-options.interface.js';
+import { VersionValue } from '@nestjs/common/interfaces/index.js';
+import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface.js';
 import {
   isFunction,
   isNil,
   isObject,
   isString,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
-import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
-import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
-import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter';
-import * as cors from 'cors';
-import * as express from 'express';
+} from '@nestjs/common/utils/shared.utils.js';
+import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter.js';
+import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory.js';
+import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter.js';
+import cors from 'cors';
+import express from 'express';
 import type { Server } from 'http';
 import * as http from 'http';
 import * as https from 'https';
 import { pathToRegexp } from 'path-to-regexp';
 import { Duplex, Writable } from 'stream';
-import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface';
-import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface';
-import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
-import { getBodyParserOptions } from './utils/get-body-parser-options.util';
+import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface.js';
+import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface.js';
+import { ServeStaticOptions } from '../interfaces/serve-static-options.interface.js';
+import { getBodyParserOptions } from './utils/get-body-parser-options.util.js';
 
 type VersionedRoute = <
   TRequest extends Record<string, any> = any,

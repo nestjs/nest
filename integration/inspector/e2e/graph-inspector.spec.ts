@@ -1,15 +1,15 @@
 import { ValidationPipe } from '@nestjs/common';
-import { Injector } from '@nestjs/core/injector/injector';
-import { SerializedGraph } from '@nestjs/core/inspector/serialized-graph';
+import { Injector } from '@nestjs/core/injector/injector.js';
+import { SerializedGraph } from '@nestjs/core/inspector/serialized-graph.js';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import * as sinon from 'sinon';
-import { AppModule } from '../src/app.module';
-import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter';
-import { TimeoutInterceptor } from '../src/common/interceptors/timeout.interceptor';
+import { AppModule } from '../src/app.module.js';
+import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter.js';
+import { TimeoutInterceptor } from '../src/common/interceptors/timeout.interceptor.js';
 
 describe('Graph inspector', () => {
   let testingModule: TestingModule;
@@ -27,12 +27,12 @@ describe('Graph inspector', () => {
 
     // Update snapshot:
     // writeFileSync(
-    //   join(__dirname, 'fixtures', 'pre-init-graph.json'),
+    //   join(import.meta.dirname, 'fixtures', 'pre-init-graph.json'),
     //   graph.toString(),
     // );
 
     const snapshot = readFileSync(
-      join(__dirname, 'fixtures', 'pre-init-graph.json'),
+      join(import.meta.dirname, 'fixtures', 'pre-init-graph.json'),
       'utf-8',
     );
 
@@ -55,12 +55,12 @@ describe('Graph inspector', () => {
 
     // Update snapshot:
     // writeFileSync(
-    //   join(__dirname, 'fixtures', 'post-init-graph.json'),
+    //   join(import.meta.dirname, 'fixtures', 'post-init-graph.json'),
     //   graph.toString(),
     // );
 
     const snapshot = readFileSync(
-      join(__dirname, 'fixtures', 'post-init-graph.json'),
+      join(import.meta.dirname, 'fixtures', 'post-init-graph.json'),
       'utf-8',
     );
 

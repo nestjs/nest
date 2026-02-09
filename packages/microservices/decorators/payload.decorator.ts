@@ -1,6 +1,6 @@
 import { PipeTransform, Type } from '@nestjs/common';
-import { RpcParamtype } from '../enums/rpc-paramtype.enum';
-import { createPipesRpcParamDecorator } from '../utils/param.utils';
+import { RpcParamtype } from '../enums/rpc-paramtype.enum.js';
+import { createPipesRpcParamDecorator } from '../utils/param.utils.js';
 
 /**
  * Microservice message pattern payload parameter decorator.

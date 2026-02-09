@@ -2,8 +2,8 @@ import { expect } from 'chai';
 import { EMPTY, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import * as sinon from 'sinon';
-import { RpcException } from '../../exceptions/rpc-exception';
-import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler';
+import { RpcException } from '../../exceptions/rpc-exception.js';
+import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler.js';
 
 describe('RpcExceptionsHandler', () => {
   let handler: RpcExceptionsHandler;

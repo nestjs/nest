@@ -1,13 +1,13 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as request from 'supertest';
-import { Guard } from '../src/hello/guards/request-scoped.guard';
-import { HelloController } from '../src/hello/hello.controller';
-import { HelloModule } from '../src/hello/hello.module';
-import { Interceptor } from '../src/hello/interceptors/logging.interceptor';
-import { UserByIdPipe } from '../src/hello/users/user-by-id.pipe';
-import { UsersService } from '../src/hello/users/users.service';
+import request from 'supertest';
+import { Guard } from '../src/hello/guards/request-scoped.guard.js';
+import { HelloController } from '../src/hello/hello.controller.js';
+import { HelloModule } from '../src/hello/hello.module.js';
+import { Interceptor } from '../src/hello/interceptors/logging.interceptor.js';
+import { UserByIdPipe } from '../src/hello/users/user-by-id.pipe.js';
+import { UsersService } from '../src/hello/users/users.service.js';
 
 class Meta {
   static COUNTER = 0;

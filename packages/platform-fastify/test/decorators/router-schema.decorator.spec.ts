@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { FASTIFY_ROUTE_SCHEMA_METADATA } from '../../constants';
-import { RouteSchema } from '../../decorators/route-schema.decorator';
+import { FASTIFY_ROUTE_SCHEMA_METADATA } from '../../constants.js';
+import { RouteSchema } from '../../decorators/route-schema.decorator.js';
 
 describe('@RouteSchema', () => {
   const routeSchema = { body: 'testValue' };

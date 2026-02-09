@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { BadRequestException } from '../../exceptions';
-import { ParseDatePipe } from '../../pipes/parse-date.pipe';
+import { BadRequestException } from '../../exceptions/index.js';
+import { ParseDatePipe } from '../../pipes/parse-date.pipe.js';
 
 describe('ParseDatePipe', () => {
   let target: ParseDatePipe;

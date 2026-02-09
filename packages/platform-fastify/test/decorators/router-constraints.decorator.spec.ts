@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { FASTIFY_ROUTE_CONSTRAINTS_METADATA } from '../../constants';
-import { RouteConstraints } from '../../decorators/route-constraints.decorator';
+import { FASTIFY_ROUTE_CONSTRAINTS_METADATA } from '../../constants.js';
+import { RouteConstraints } from '../../decorators/route-constraints.decorator.js';
 
 describe('@RouteConstraints', () => {
   describe('has version constraints', () => {

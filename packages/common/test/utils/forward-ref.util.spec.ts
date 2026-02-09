@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { forwardRef } from '../../utils/forward-ref.util';
+import { forwardRef } from '../../utils/forward-ref.util.js';
 
 describe('forwardRef', () => {
   it('should return object with forwardRef property', () => {

@@ -1,11 +1,11 @@
-import { NestContainer } from '@nestjs/core/injector/container';
+import { NestContainer } from '@nestjs/core/injector/container.js';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Catch } from '../../../common/decorators/core/catch.decorator';
-import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
-import { ApplicationConfig } from '../../../core/application-config';
-import { InstanceWrapper } from '../../../core/injector/instance-wrapper';
-import { ExceptionFiltersContext } from '../../context/exception-filters-context';
+import { Catch } from '../../../common/decorators/core/catch.decorator.js';
+import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator.js';
+import { ApplicationConfig } from '../../../core/application-config.js';
+import { InstanceWrapper } from '../../../core/injector/instance-wrapper.js';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context.js';
 
 describe('ExceptionFiltersContext', () => {
   let applicationConfig: ApplicationConfig;

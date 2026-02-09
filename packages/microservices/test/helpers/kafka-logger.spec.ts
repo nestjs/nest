@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { logLevel } from '../../external/kafka.interface';
-import { KafkaLogger } from '../../helpers/kafka-logger';
+import { logLevel } from '../../external/kafka.interface.js';
+import { KafkaLogger } from '../../helpers/kafka-logger.js';
 
 const namespace = 'namespace';
 const label = 'label';

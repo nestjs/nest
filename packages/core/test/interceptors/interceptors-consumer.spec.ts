@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { expect } from 'chai';
 import { Observable, defer, lastValueFrom, merge, of, retry } from 'rxjs';
 import * as sinon from 'sinon';
-import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
+import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
 
 describe('InterceptorsConsumer', () => {
   let consumer: InterceptorsConsumer;

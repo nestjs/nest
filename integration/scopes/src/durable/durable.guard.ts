@@ -4,7 +4,7 @@ import {
   Injectable,
   Scope,
 } from '@nestjs/common';
-import { DurableService } from './durable.service';
+import { DurableService } from './durable.service.js';
 
 @Injectable({ scope: Scope.REQUEST, durable: true })
 export class DurableGuard implements CanActivate {

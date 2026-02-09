@@ -2,9 +2,9 @@ import { Scope } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
-import { ScopedModule, STATIC_FACTORY } from '../src/scoped/scoped.module';
-import { ScopedService } from '../src/scoped/scoped.service';
-import { TransientService } from '../src/scoped/transient.service';
+import { ScopedModule, STATIC_FACTORY } from '../src/scoped/scoped.module.js';
+import { ScopedService } from '../src/scoped/scoped.service.js';
+import { TransientService } from '../src/scoped/transient.service.js';
 
 describe('Providers introspection', () => {
   let testingModule: TestingModule;

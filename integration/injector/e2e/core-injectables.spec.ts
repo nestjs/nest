@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
-import { CoreInjectablesModule } from '../src/core-injectables/core-injectables.module';
+import { CoreInjectablesModule } from '../src/core-injectables/core-injectables.module.js';
 import { ApplicationConfig, ModuleRef } from '@nestjs/core';
 
 describe('Core Injectables', () => {

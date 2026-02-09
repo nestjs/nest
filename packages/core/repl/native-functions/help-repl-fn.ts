@@ -1,7 +1,7 @@
 import { iterate } from 'iterare';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
-import { ReplFunction } from '../repl-function';
-import type { ReplFnDefinition } from '../repl.interfaces';
+import { clc } from '@nestjs/common/utils/cli-colors.util.js';
+import { ReplFunction } from '../repl-function.js';
+import type { ReplFnDefinition } from '../repl.interfaces.js';
 
 export class HelpReplFn extends ReplFunction {
   public fnDefinition: ReplFnDefinition = {

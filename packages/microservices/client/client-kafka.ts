@@ -1,6 +1,6 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { Logger } from '@nestjs/common/services/logger.service.js';
+import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
+import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import {
   throwError as _throw,
   connectable,
@@ -13,12 +13,12 @@ import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
   KAFKA_DEFAULT_GROUP,
-} from '../constants';
-import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deserializer';
-import { KafkaHeaders } from '../enums';
-import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception';
-import { InvalidMessageException } from '../errors/invalid-message.exception';
-import { KafkaStatus } from '../events';
+} from '../constants.js';
+import { KafkaResponseDeserializer } from '../deserializers/kafka-response.deserializer.js';
+import { KafkaHeaders } from '../enums/index.js';
+import { InvalidKafkaClientTopicException } from '../errors/invalid-kafka-client-topic.exception.js';
+import { InvalidMessageException } from '../errors/invalid-message.exception.js';
+import { KafkaStatus } from '../events/index.js';
 import {
   BrokersFunction,
   Consumer,
@@ -30,12 +30,12 @@ import {
   KafkaMessage,
   Producer,
   TopicPartitionOffsetAndMetadata,
-} from '../external/kafka.interface';
+} from '../external/kafka.interface.js';
 import {
   KafkaLogger,
   KafkaParser,
   KafkaReplyPartitionAssigner,
-} from '../helpers';
+} from '../helpers/index.js';
 import {
   ClientKafkaProxy,
   KafkaOptions,
@@ -43,12 +43,12 @@ import {
   OutgoingEvent,
   ReadPacket,
   WritePacket,
-} from '../interfaces';
+} from '../interfaces/index.js';
 import {
   KafkaRequest,
   KafkaRequestSerializer,
-} from '../serializers/kafka-request.serializer';
-import { ClientProxy } from './client-proxy';
+} from '../serializers/kafka-request.serializer.js';
+import { ClientProxy } from './client-proxy.js';
 
 let kafkaPackage: any = {};
 
@@ -118,8 +118,10 @@ export class ClientKafka
       (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
     this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
 
-    kafkaPackage = loadPackage('kafkajs', ClientKafka.name, () =>
-      require('kafkajs'),
+    kafkaPackage = loadPackage(
+      'kafkajs',
+      ClientKafka.name,
+      () => import('kafkajs'),
     );
 
     this.parser = new KafkaParser((options && options.parser) || undefined);
@@ -149,7 +151,7 @@ export class ClientKafka
     /* eslint-disable-next-line no-async-promise-executor */
     this.initialized = new Promise(async (resolve, reject) => {
       try {
-        this.client = this.createClient();
+        this.client = await this.createClient();
         if (!this.producerOnlyMode) {
           const partitionAssigners = [
             (
@@ -214,7 +216,8 @@ export class ClientKafka
     );
   }
 
-  public createClient<T = any>(): T {
+  public async createClient<T = any>(): Promise<T> {
+    kafkaPackage = await kafkaPackage;
     const kafkaConfig: KafkaConfig = Object.assign(
       { logCreator: KafkaLogger.bind(null, this.logger) },
       this.options.client,

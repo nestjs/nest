@@ -1,27 +1,31 @@
-import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import {
   MQTT_DEFAULT_URL,
   MQTT_SEPARATOR,
   MQTT_WILDCARD_ALL,
   MQTT_WILDCARD_SINGLE,
   NO_MESSAGE_HANDLER,
-} from '../constants';
-import { MqttContext } from '../ctx-host/mqtt.context';
-import { Transport } from '../enums';
-import { MqttEvents, MqttEventsMap, MqttStatus } from '../events/mqtt.events';
+} from '../constants.js';
+import { MqttContext } from '../ctx-host/mqtt.context.js';
+import { Transport } from '../enums/index.js';
+import {
+  MqttEvents,
+  MqttEventsMap,
+  MqttStatus,
+} from '../events/mqtt.events.js';
 import {
   IncomingRequest,
   MessageHandler,
   PacketId,
   ReadPacket,
-} from '../interfaces';
+} from '../interfaces/index.js';
 import {
   MqttOptions,
   TransportId,
-} from '../interfaces/microservice-configuration.interface';
-import { MqttRecord } from '../record-builders/mqtt.record-builder';
-import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer';
-import { Server } from './server';
+} from '../interfaces/microservice-configuration.interface.js';
+import { MqttRecord } from '../record-builders/mqtt.record-builder.js';
+import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer.js';
+import { Server } from './server.js';
 
 let mqttPackage: any = {};
 
@@ -48,8 +52,10 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     super();
     this.url = this.getOptionsProp(options, 'url', MQTT_DEFAULT_URL);
 
-    mqttPackage = this.loadPackage('mqtt', ServerMqtt.name, () =>
-      require('mqtt'),
+    mqttPackage = this.loadPackage(
+      'mqtt',
+      ServerMqtt.name,
+      () => import('mqtt'),
     );
 
     this.initializeSerializer(options);
@@ -60,7 +66,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
     try {
-      this.mqttClient = this.createMqttClient();
+      this.mqttClient = await this.createMqttClient();
       this.start(callback);
     } catch (err) {
       callback(err);
@@ -114,7 +120,8 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     this.pendingEventListeners = [];
   }
 
-  public createMqttClient(): MqttClient {
+  public async createMqttClient(): Promise<MqttClient> {
+    mqttPackage = await mqttPackage;
     return mqttPackage.connect(this.url, this.options as MqttOptions);
   }
 

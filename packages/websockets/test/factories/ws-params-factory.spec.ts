@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { WsParamtype } from '../../enums/ws-paramtype.enum';
-import { WsParamsFactory } from '../../factories/ws-params-factory';
+import { WsParamtype } from '../../enums/ws-paramtype.enum.js';
+import { WsParamsFactory } from '../../factories/ws-params-factory.js';
 
 describe('WsParamsFactory', () => {
   let factory: WsParamsFactory;

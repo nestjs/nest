@@ -1,9 +1,9 @@
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
-import { Transport } from '@nestjs/microservices/enums';
-import { AsyncMicroserviceOptions } from '@nestjs/microservices/interfaces';
-import { NestMicroservice } from '@nestjs/microservices/nest-microservice';
-import { Server, ServerTCP } from '@nestjs/microservices/server';
+import { ApplicationConfig } from '@nestjs/core/application-config.js';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector.js';
+import { Transport } from '@nestjs/microservices/enums/index.js';
+import { AsyncMicroserviceOptions } from '@nestjs/microservices/interfaces/index.js';
+import { NestMicroservice } from '@nestjs/microservices/nest-microservice.js';
+import { Server, ServerTCP } from '@nestjs/microservices/server/index.js';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 

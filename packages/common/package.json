@@ -17,6 +17,12 @@
     "access": "public"
   },
   "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*": "./*"
+  },
   "dependencies": {
     "file-type": "21.3.0",
     "iterare": "1.2.1",

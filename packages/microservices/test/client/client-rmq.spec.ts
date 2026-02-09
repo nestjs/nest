@@ -2,9 +2,9 @@ import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import { EMPTY } from 'rxjs';
 import * as sinon from 'sinon';
-import { ClientRMQ } from '../../client/client-rmq';
-import { ReadPacket } from '../../interfaces';
-import { RmqRecord } from '../../record-builders';
+import { ClientRMQ } from '../../client/client-rmq.js';
+import { ReadPacket } from '../../interfaces/index.js';
+import { RmqRecord } from '../../record-builders/index.js';
 
 describe('ClientRMQ', function () {
   this.retries(10);

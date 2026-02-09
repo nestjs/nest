@@ -1,9 +1,9 @@
 import { assert, expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_MESSAGE_HANDLER, RQM_DEFAULT_QUEUE } from '../../constants';
-import { RmqContext } from '../../ctx-host';
-import { ServerRMQ } from '../../server/server-rmq';
-import { objectToMap } from './utils/object-to-map';
+import { NO_MESSAGE_HANDLER, RQM_DEFAULT_QUEUE } from '../../constants.js';
+import { RmqContext } from '../../ctx-host/index.js';
+import { ServerRMQ } from '../../server/server-rmq.js';
+import { objectToMap } from './utils/object-to-map.js';
 
 describe('ServerRMQ', () => {
   let server: ServerRMQ;

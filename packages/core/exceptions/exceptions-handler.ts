@@ -1,10 +1,10 @@
 import { HttpException } from '@nestjs/common';
-import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface';
-import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface';
-import { selectExceptionFilterMetadata } from '@nestjs/common/utils/select-exception-filter-metadata.util';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
-import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception';
-import { BaseExceptionFilter } from './base-exception-filter';
+import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface.js';
+import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface.js';
+import { selectExceptionFilterMetadata } from '@nestjs/common/utils/select-exception-filter-metadata.util.js';
+import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
+import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception.js';
+import { BaseExceptionFilter } from './base-exception-filter.js';
 
 export class ExceptionsHandler extends BaseExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];

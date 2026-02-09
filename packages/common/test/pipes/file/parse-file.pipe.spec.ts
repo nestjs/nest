@@ -1,6 +1,9 @@
-import { HttpStatus } from '../../../enums';
-import { BadRequestException, ConflictException } from '../../../exceptions';
-import { FileValidator, ParseFilePipe } from '../../../pipes';
+import { HttpStatus } from '../../../enums/index.js';
+import {
+  BadRequestException,
+  ConflictException,
+} from '../../../exceptions/index.js';
+import { FileValidator, ParseFilePipe } from '../../../pipes/index.js';
 import { expect } from 'chai';
 
 class AlwaysValidValidator extends FileValidator {

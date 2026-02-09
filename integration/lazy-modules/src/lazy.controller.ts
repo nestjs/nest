@@ -7,20 +7,20 @@ export class LazyController {
 
   @Get('transient')
   async exec() {
-    const { TransientLazyModule } = await import('./transient.module');
+    const { TransientLazyModule } = await import('./transient.module.js');
     const moduleRef = await this.lazyLoadModule.load(() => TransientLazyModule);
 
-    const { TransientService } = await import('./transient.service');
+    const { TransientService } = await import('./transient.service.js');
     const _service = await moduleRef.resolve(TransientService);
 
     return _service.eager();
   }
   @Get('request')
   async execRequestScope() {
-    const { RequestLazyModule } = await import('./request.module');
+    const { RequestLazyModule } = await import('./request.module.js');
     const moduleRef = await this.lazyLoadModule.load(() => RequestLazyModule);
 
-    const { RequestService } = await import('./request.service');
+    const { RequestService } = await import('./request.service.js');
     const _service = await moduleRef.resolve(RequestService);
 
     return _service.eager();

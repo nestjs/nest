@@ -37,7 +37,9 @@ describe('REPL process', function () {
 
   beforeEach(async function () {
     this.timeout(15000);
-    replProcess = spawn('ts-node', ['../src/repl.ts'], { cwd: __dirname });
+    replProcess = spawn('ts-node', ['../src/repl.ts'], {
+      cwd: import.meta.dirname,
+    });
     await waitForReplToStart(replProcess, PROMPT);
   });
 

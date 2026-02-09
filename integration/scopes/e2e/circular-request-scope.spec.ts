@@ -1,11 +1,11 @@
 import { INestApplication, Scope } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as request from 'supertest';
-import { HelloController } from '../src/circular-hello/hello.controller';
-import { HelloModule } from '../src/circular-hello/hello.module';
-import { HelloService } from '../src/circular-hello/hello.service';
-import { UsersService } from '../src/circular-hello/users/users.service';
+import request from 'supertest';
+import { HelloController } from '../src/circular-hello/hello.controller.js';
+import { HelloModule } from '../src/circular-hello/hello.module.js';
+import { HelloService } from '../src/circular-hello/hello.service.js';
+import { UsersService } from '../src/circular-hello/users/users.service.js';
 
 class Meta {
   static COUNTER = 0;

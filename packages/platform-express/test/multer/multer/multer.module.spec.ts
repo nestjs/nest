@@ -1,8 +1,8 @@
 import { FactoryProvider } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { MULTER_MODULE_OPTIONS } from '../../../multer/files.constants';
-import { MulterModule } from '../../../multer/multer.module';
+import { MULTER_MODULE_OPTIONS } from '../../../multer/files.constants.js';
+import { MulterModule } from '../../../multer/multer.module.js';
 
 describe('MulterModule', () => {
   describe('register', () => {

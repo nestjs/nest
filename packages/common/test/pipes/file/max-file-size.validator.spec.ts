@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { MaxFileSizeValidator } from '../../../pipes';
-import { IFile } from '@nestjs/common/pipes/file/interfaces';
+import { MaxFileSizeValidator } from '../../../pipes/index.js';
+import { IFile } from '@nestjs/common/pipes/file/interfaces/index.js';
 
 describe('MaxFileSizeValidator', () => {
   const oneKb = 1024;

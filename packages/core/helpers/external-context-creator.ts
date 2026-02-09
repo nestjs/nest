@@ -1,29 +1,29 @@
 import { ForbiddenException, ParamData } from '@nestjs/common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '@nestjs/common/constants.js';
 import {
   ContextType,
   Controller,
   PipeTransform,
-} from '@nestjs/common/interfaces';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/interfaces/index.js';
+import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
 import { isObservable, lastValueFrom } from 'rxjs';
-import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context';
-import { GuardsConsumer, GuardsContextCreator } from '../guards';
-import { FORBIDDEN_MESSAGE } from '../guards/constants';
-import { STATIC_CONTEXT } from '../injector/constants';
-import { NestContainer } from '../injector/container';
-import { ContextId } from '../injector/instance-wrapper';
-import { ModulesContainer } from '../injector/modules-container';
+import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context.js';
+import { GuardsConsumer, GuardsContextCreator } from '../guards/index.js';
+import { FORBIDDEN_MESSAGE } from '../guards/constants.js';
+import { STATIC_CONTEXT } from '../injector/constants.js';
+import { NestContainer } from '../injector/container.js';
+import { ContextId } from '../injector/instance-wrapper.js';
+import { ModulesContainer } from '../injector/modules-container.js';
 import {
   InterceptorsConsumer,
   InterceptorsContextCreator,
-} from '../interceptors';
-import { PipesConsumer, PipesContextCreator } from '../pipes';
-import { ContextUtils, ParamProperties } from './context-utils';
-import { ExternalErrorProxy } from './external-proxy';
-import { HandlerMetadataStorage } from './handler-metadata-storage';
-import { ExternalHandlerMetadata } from './interfaces/external-handler-metadata.interface';
-import { ParamsMetadata } from './interfaces/params-metadata.interface';
+} from '../interceptors/index.js';
+import { PipesConsumer, PipesContextCreator } from '../pipes/index.js';
+import { ContextUtils, ParamProperties } from './context-utils.js';
+import { ExternalErrorProxy } from './external-proxy.js';
+import { HandlerMetadataStorage } from './handler-metadata-storage.js';
+import { ExternalHandlerMetadata } from './interfaces/external-handler-metadata.interface.js';
+import { ParamsMetadata } from './interfaces/params-metadata.interface.js';
 
 export interface ParamsFactory {
   exchangeKeyForValue(type: number, data: ParamData, args: any): any;

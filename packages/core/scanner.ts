@@ -11,7 +11,7 @@ import {
   MODULE_METADATA,
   PIPES_METADATA,
   ROUTE_ARGS_METADATA,
-} from '@nestjs/common/constants';
+} from '@nestjs/common/constants.js';
 import {
   CanActivate,
   ClassProvider,
@@ -26,36 +26,36 @@ import {
   Scope,
   Type,
   ValueProvider,
-} from '@nestjs/common/interfaces';
+} from '@nestjs/common/interfaces/index.js';
 import {
   isFunction,
   isNil,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
-import { ApplicationConfig } from './application-config';
+import { ApplicationConfig } from './application-config.js';
 import {
   APP_FILTER,
   APP_GUARD,
   APP_INTERCEPTOR,
   APP_PIPE,
   ENHANCER_TOKEN_TO_SUBTYPE_MAP,
-} from './constants';
-import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception';
-import { InvalidClassModuleException } from './errors/exceptions/invalid-class-module.exception';
-import { InvalidModuleException } from './errors/exceptions/invalid-module.exception';
-import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception';
-import { getClassScope } from './helpers/get-class-scope';
-import { NestContainer } from './injector/container';
-import { InstanceWrapper } from './injector/instance-wrapper';
-import { InternalCoreModuleFactory } from './injector/internal-core-module/internal-core-module-factory';
-import { Module } from './injector/module';
-import { TopologyTree } from './injector/topology-tree/topology-tree';
-import { GraphInspector } from './inspector/graph-inspector';
-import { UuidFactory } from './inspector/uuid-factory';
-import { ModuleDefinition } from './interfaces/module-definition.interface';
-import { ModuleOverride } from './interfaces/module-override.interface';
-import { MetadataScanner } from './metadata-scanner';
+} from './constants.js';
+import { CircularDependencyException } from './errors/exceptions/circular-dependency.exception.js';
+import { InvalidClassModuleException } from './errors/exceptions/invalid-class-module.exception.js';
+import { InvalidModuleException } from './errors/exceptions/invalid-module.exception.js';
+import { UndefinedModuleException } from './errors/exceptions/undefined-module.exception.js';
+import { getClassScope } from './helpers/get-class-scope.js';
+import { NestContainer } from './injector/container.js';
+import { InstanceWrapper } from './injector/instance-wrapper.js';
+import { InternalCoreModuleFactory } from './injector/internal-core-module/internal-core-module-factory.js';
+import { Module } from './injector/module.js';
+import { TopologyTree } from './injector/topology-tree/topology-tree.js';
+import { GraphInspector } from './inspector/graph-inspector.js';
+import { UuidFactory } from './inspector/uuid-factory.js';
+import { ModuleDefinition } from './interfaces/module-definition.interface.js';
+import { ModuleOverride } from './interfaces/module-override.interface.js';
+import { MetadataScanner } from './metadata-scanner.js';
 
 interface ApplicationProviderWrapper {
   moduleKey: string;

@@ -2,9 +2,9 @@ import { expect } from 'chai';
 import { Socket as NetSocket } from 'net';
 import * as sinon from 'sinon';
 import { TLSSocket } from 'tls';
-import { ClientTCP } from '../../client/client-tcp';
-import { TcpEventsMap } from '../../events/tcp.events';
-import { TcpSocket } from '../../helpers/tcp-socket';
+import { ClientTCP } from '../../client/client-tcp.js';
+import { TcpEventsMap } from '../../events/tcp.events.js';
+import { TcpSocket } from '../../helpers/tcp-socket.js';
 
 describe('ClientTCP', () => {
   let client: ClientTCP;

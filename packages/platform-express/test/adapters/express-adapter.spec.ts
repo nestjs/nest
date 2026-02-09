@@ -1,6 +1,6 @@
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { expect } from 'chai';
-import * as express from 'express';
+import express from 'express';
 import * as sinon from 'sinon';
 
 describe('ExpressAdapter', () => {

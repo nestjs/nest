@@ -1,6 +1,6 @@
-import { SetMetadata } from '../../decorators';
-import { ClassSerializerContextOptions } from '../class-serializer.interfaces';
-import { CLASS_SERIALIZER_OPTIONS } from '../class-serializer.constants';
+import { SetMetadata } from '../../decorators/index.js';
+import { ClassSerializerContextOptions } from '../class-serializer.interfaces.js';
+import { CLASS_SERIALIZER_OPTIONS } from '../class-serializer.constants.js';
 
 /**
  * @publicApi

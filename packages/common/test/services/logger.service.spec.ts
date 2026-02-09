@@ -1,6 +1,11 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ConsoleLogger, Logger, LoggerService, LogLevel } from '../../services';
+import {
+  ConsoleLogger,
+  Logger,
+  LoggerService,
+  LogLevel,
+} from '../../services/index.js';
 
 describe('Logger', () => {
   describe('[static methods]', () => {

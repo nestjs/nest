@@ -2,7 +2,7 @@ import {
   isObject,
   isString,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/utils/shared.utils.js';
 import {
   EMPTY,
   Observable,
@@ -14,19 +14,19 @@ import {
   lastValueFrom,
 } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
-import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
-import { GrpcMethodStreamingType } from '../decorators';
-import { Transport } from '../enums';
-import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
-import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
-import { ChannelOptions } from '../external/grpc-options.interface';
-import { getGrpcPackageDefinition } from '../helpers';
-import { MessageHandler } from '../interfaces';
+import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants.js';
+import { GrpcMethodStreamingType } from '../decorators/index.js';
+import { Transport } from '../enums/index.js';
+import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception.js';
+import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception.js';
+import { ChannelOptions } from '../external/grpc-options.interface.js';
+import { getGrpcPackageDefinition } from '../helpers/index.js';
+import { MessageHandler } from '../interfaces/index.js';
 import {
   GrpcOptions,
   TransportId,
-} from '../interfaces/microservice-configuration.interface';
-import { Server } from './server';
+} from '../interfaces/microservice-configuration.interface.js';
+import { Server } from './server.js';
 
 const CANCELLED_EVENT = 'cancelled';
 
@@ -74,16 +74,13 @@ export class ServerGrpc extends Server<never, never> {
     const protoLoader =
       this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
 
-    grpcPackage = this.loadPackage('@grpc/grpc-js', ServerGrpc.name, () =>
-      require('@grpc/grpc-js'),
+    grpcPackage = this.loadPackageSynchronously(
+      '@grpc/grpc-js',
+      ServerGrpc.name,
     );
-    grpcProtoLoaderPackage = this.loadPackage(
+    grpcProtoLoaderPackage = this.loadPackageSynchronously(
       protoLoader,
       ServerGrpc.name,
-      () =>
-        protoLoader === GRPC_DEFAULT_PROTO_LOADER
-          ? require('@grpc/proto-loader')
-          : require(protoLoader),
     );
   }
 

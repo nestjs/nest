@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { IdentityDeserializer } from '../../deserializers/identity.deserializer';
+import { IdentityDeserializer } from '../../deserializers/identity.deserializer.js';
 
 describe('IdentityDeserializer', () => {
   let instance: IdentityDeserializer;

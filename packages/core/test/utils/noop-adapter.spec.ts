@@ -1,6 +1,6 @@
 import { RequestMethod, VersioningOptions } from '@nestjs/common';
-import { VersionValue } from '@nestjs/common/interfaces';
-import { AbstractHttpAdapter } from '../../adapters';
+import { VersionValue } from '@nestjs/common/interfaces/index.js';
+import { AbstractHttpAdapter } from '../../adapters/index.js';
 
 export class NoopHttpAdapter extends AbstractHttpAdapter {
   constructor(instance: any) {

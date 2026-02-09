@@ -1,23 +1,27 @@
 import { Catch, Injectable } from '@nestjs/common';
 import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { GUARDS_METADATA } from '../../common/constants';
-import { Controller } from '../../common/decorators/core/controller.decorator';
-import { UseGuards } from '../../common/decorators/core/use-guards.decorator';
-import { Module } from '../../common/decorators/modules/module.decorator';
-import { Scope } from '../../common/interfaces';
-import { ApplicationConfig } from '../application-config';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '../constants';
-import { InvalidClassModuleException } from '../errors/exceptions/invalid-class-module.exception';
-import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception';
-import { UndefinedModuleException } from '../errors/exceptions/undefined-module.exception';
-import { NestContainer } from '../injector/container';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { GraphInspector } from '../inspector/graph-inspector';
-import { ModuleOverride } from '../interfaces/module-override.interface';
-import { MetadataScanner } from '../metadata-scanner';
-import { DependenciesScanner } from '../scanner';
-import Sinon = require('sinon');
+import Sinon, * as sinon from 'sinon';
+import { GUARDS_METADATA } from '../../common/constants.js';
+import { Controller } from '../../common/decorators/core/controller.decorator.js';
+import { UseGuards } from '../../common/decorators/core/use-guards.decorator.js';
+import { Module } from '../../common/decorators/modules/module.decorator.js';
+import { Scope } from '../../common/interfaces/index.js';
+import { ApplicationConfig } from '../application-config.js';
+import {
+  APP_FILTER,
+  APP_GUARD,
+  APP_INTERCEPTOR,
+  APP_PIPE,
+} from '../constants.js';
+import { InvalidClassModuleException } from '../errors/exceptions/invalid-class-module.exception.js';
+import { InvalidModuleException } from '../errors/exceptions/invalid-module.exception.js';
+import { UndefinedModuleException } from '../errors/exceptions/undefined-module.exception.js';
+import { NestContainer } from '../injector/container.js';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import { GraphInspector } from '../inspector/graph-inspector.js';
+import { ModuleOverride } from '../interfaces/module-override.interface.js';
+import { MetadataScanner } from '../metadata-scanner.js';
+import { DependenciesScanner } from '../scanner.js';
 
 describe('DependenciesScanner', () => {
   class Guard {}

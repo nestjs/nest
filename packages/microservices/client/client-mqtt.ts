@@ -1,17 +1,21 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isObject } from '@nestjs/common/utils/shared.utils';
+import { Logger } from '@nestjs/common/services/logger.service.js';
+import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
+import { isObject } from '@nestjs/common/utils/shared.utils.js';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
-import { ECONNREFUSED, ENOTFOUND, MQTT_DEFAULT_URL } from '../constants';
-import { MqttEvents, MqttEventsMap, MqttStatus } from '../events/mqtt.events';
-import { MqttOptions, ReadPacket, WritePacket } from '../interfaces';
+import { ECONNREFUSED, ENOTFOUND, MQTT_DEFAULT_URL } from '../constants.js';
+import {
+  MqttEvents,
+  MqttEventsMap,
+  MqttStatus,
+} from '../events/mqtt.events.js';
+import { MqttOptions, ReadPacket, WritePacket } from '../interfaces/index.js';
 import {
   MqttRecord,
   MqttRecordOptions,
-} from '../record-builders/mqtt.record-builder';
-import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer';
-import { ClientProxy } from './client-proxy';
+} from '../record-builders/mqtt.record-builder.js';
+import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer.js';
+import { ClientProxy } from './client-proxy.js';
 
 let mqttPackage: any = {};
 
@@ -43,7 +47,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     super();
     this.url = this.getOptionsProp(this.options, 'url') ?? MQTT_DEFAULT_URL;
 
-    mqttPackage = loadPackage('mqtt', ClientMqtt.name, () => require('mqtt'));
+    mqttPackage = loadPackageSync('mqtt', ClientMqtt.name);
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -66,7 +70,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     this.pendingEventListeners = [];
   }
 
-  public connect(): Promise<any> {
+  public async connect(): Promise<any> {
     if (this.mqttClient) {
       return this.connectionPromise!;
     }

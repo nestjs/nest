@@ -2,8 +2,8 @@ import { INestApplication } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as request from 'supertest';
-import { RedisController } from '../src/redis/redis.controller';
+import request from 'supertest';
+import { RedisController } from '../src/redis/redis.controller.js';
 
 describe('REDIS transport', () => {
   let server;

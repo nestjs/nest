@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { MultipleProvidersModule } from '../src/multiple-providers/multiple-providers.module';
+import { MultipleProvidersModule } from '../src/multiple-providers/multiple-providers.module.js';
 
 describe('Multiple providers under the same token ("each" feature)', () => {
   describe('get()', () => {

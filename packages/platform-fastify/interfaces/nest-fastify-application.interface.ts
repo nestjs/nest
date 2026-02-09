@@ -18,8 +18,8 @@ import {
   Chain as LightMyRequestChain,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
-import { FastifyStaticOptions, FastifyViewOptions } from './external';
-import { NestFastifyBodyParserOptions } from './nest-fastify-body-parser-options.interface';
+import { FastifyStaticOptions, FastifyViewOptions } from './external/index.js';
+import { NestFastifyBodyParserOptions } from './nest-fastify-body-parser-options.interface.js';
 
 /**
  * @publicApi

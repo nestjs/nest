@@ -1,9 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import * as chai from 'chai';
-import { expect } from 'chai';
-import { AppModule } from '../src/app.module';
-import chaiAsPromised = require('chai-as-promised');
+import chai, { expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import { AppModule } from '../src/app.module.js';
 chai.use(chaiAsPromised);
 
 describe('Lazy imports', () => {

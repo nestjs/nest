@@ -2,8 +2,8 @@ import {
   DynamicModule,
   ForwardReference,
   Type,
-} from '@nestjs/common/interfaces';
-import { ModuleOpaqueKeyFactory } from './opaque-key-factory/interfaces/module-opaque-key-factory.interface';
+} from '@nestjs/common/interfaces/index.js';
+import { ModuleOpaqueKeyFactory } from './opaque-key-factory/interfaces/module-opaque-key-factory.interface.js';
 
 export interface ModuleFactory {
   type: Type<any>;

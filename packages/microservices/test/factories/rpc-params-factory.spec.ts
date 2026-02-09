@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { RpcParamtype } from '../../enums/rpc-paramtype.enum';
-import { RpcParamsFactory } from '../../factories/rpc-params-factory';
+import { RpcParamtype } from '../../enums/rpc-paramtype.enum.js';
+import { RpcParamsFactory } from '../../factories/rpc-params-factory.js';
 
 describe('RpcParamsFactory', () => {
   let factory: RpcParamsFactory;

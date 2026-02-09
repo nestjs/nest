@@ -1,6 +1,6 @@
 import * as chai from 'chai';
 import { expect } from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
+import chaiAsPromised from 'chai-as-promised';
 import { Exclude, Expose, Type } from 'class-transformer';
 import {
   IsArray,
@@ -10,10 +10,10 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { HttpStatus } from '../../enums';
-import { UnprocessableEntityException } from '../../exceptions';
-import { ArgumentMetadata } from '../../interfaces';
-import { ValidationPipe } from '../../pipes/validation.pipe';
+import { HttpStatus } from '../../enums/index.js';
+import { UnprocessableEntityException } from '../../exceptions/index.js';
+import { ArgumentMetadata } from '../../interfaces/index.js';
+import { ValidationPipe } from '../../pipes/validation.pipe.js';
 chai.use(chaiAsPromised);
 
 @Exclude()

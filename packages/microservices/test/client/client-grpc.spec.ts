@@ -2,12 +2,11 @@ import { Logger } from '@nestjs/common';
 import { expect } from 'chai';
 import { join } from 'path';
 import { Observable, Subject } from 'rxjs';
-import * as sinon from 'sinon';
-import { ClientGrpcProxy } from '../../client';
-import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
-import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception';
-import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
-import * as grpcHelpers from '../../helpers/grpc-helpers';
+import sinon from 'sinon';
+import { ClientGrpcProxy } from '../../client/index.js';
+import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
+import { InvalidGrpcServiceException } from '../../errors/invalid-grpc-service.exception.js';
+import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception.js';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -27,7 +26,7 @@ describe('ClientGrpcProxy', () => {
 
   beforeEach(() => {
     client = new ClientGrpcProxy({
-      protoPath: join(__dirname, './test.proto'),
+      protoPath: join(import.meta.dirname, './test.proto'),
       package: 'test',
     });
     untypedClient = client as any;
@@ -36,54 +35,57 @@ describe('ClientGrpcProxy', () => {
       protoPath: ['test.proto', 'test2.proto'],
       package: ['test', 'test2'],
       loader: {
-        includeDirs: [join(__dirname, '.')],
+        includeDirs: [join(import.meta.dirname, '.')],
       },
     });
   });
 
   describe('getService', () => {
     describe('when "grpcClient[name]" is nil', () => {
-      it('should throw "InvalidGrpcServiceException"', () => {
+      it('should throw "InvalidGrpcServiceException"', async () => {
         untypedClient.grpcClient = {};
-        expect(() => client.getService('test')).to.throw(
-          InvalidGrpcServiceException,
-        );
+        try {
+          await client.getService('test');
+          expect.fail('should have thrown');
+        } catch (err) {
+          expect(err).to.be.instanceOf(InvalidGrpcServiceException);
+        }
       });
 
-      it('should throw "InvalidGrpcServiceException" (multiple proto)', () => {
+      it('should throw "InvalidGrpcServiceException" (multiple proto)', async () => {
         (clientMulti as any).grpcClient = {};
 
-        expect(() => clientMulti.getService('test')).to.throw(
-          InvalidGrpcServiceException,
-        );
+        try {
+          await clientMulti.getService('test');
+          expect.fail('should have thrown');
+        } catch (err) {
+          expect(err).to.be.instanceOf(InvalidGrpcServiceException);
+        }
 
-        expect(() => clientMulti.getService('test2')).to.throw(
-          InvalidGrpcServiceException,
-        );
+        try {
+          await clientMulti.getService('test2');
+          expect.fail('should have thrown');
+        } catch (err) {
+          expect(err).to.be.instanceOf(InvalidGrpcServiceException);
+        }
       });
     });
     describe('when "grpcClient[name]" is not nil', () => {
-      it('should create grpcService', () => {
+      it('should create grpcService', async () => {
         untypedClient.grpcClients[0] = {
           test: GrpcService,
         };
-        expect(() => client.getService('test')).to.not.throw(
-          InvalidGrpcServiceException,
-        );
+        await client.getService('test'); // should not throw
       });
 
       describe('when "grpcClient[name]" is not nil (multiple proto)', () => {
-        it('should create grpcService', () => {
+        it('should create grpcService', async () => {
           (clientMulti as any).grpcClients[0] = {
             test: GrpcService,
             test2: GrpcService,
           };
-          expect(() => clientMulti.getService('test')).to.not.throw(
-            InvalidGrpcServiceException,
-          );
-          expect(() => clientMulti.getService('test2')).to.not.throw(
-            InvalidGrpcServiceException,
-          );
+          await clientMulti.getService('test'); // should not throw
+          await clientMulti.getService('test2'); // should not throw
         });
       });
     });
@@ -446,18 +448,13 @@ describe('ClientGrpcProxy', () => {
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {
-        const getPackageDefinitionStub = sinon.stub(
-          grpcHelpers,
-          'getGrpcPackageDefinition' as any,
-        );
-        getPackageDefinitionStub.callsFake(() => {
-          throw new Error();
-        });
-        untypedClient.logger = new NoopLogger();
-        expect(() => client.loadProto()).to.throws(
-          InvalidProtoDefinitionException,
-        );
-        getPackageDefinitionStub.restore();
+        expect(
+          () =>
+            new ClientGrpcProxy({
+              protoPath: '/nonexistent/invalid.proto',
+              package: 'test',
+            }),
+        ).to.throws(InvalidProtoDefinitionException);
       });
     });
   });

@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { MetadataScanner } from '../../core/metadata-scanner';
-import { WebSocketServer } from '../decorators/gateway-server.decorator';
-import { WebSocketGateway } from '../decorators/socket-gateway.decorator';
-import { SubscribeMessage } from '../decorators/subscribe-message.decorator';
-import { Ack } from '../decorators/ack.decorator';
-import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
+import { MetadataScanner } from '../../core/metadata-scanner.js';
+import { WebSocketServer } from '../decorators/gateway-server.decorator.js';
+import { WebSocketGateway } from '../decorators/socket-gateway.decorator.js';
+import { SubscribeMessage } from '../decorators/subscribe-message.decorator.js';
+import { Ack } from '../decorators/ack.decorator.js';
+import { GatewayMetadataExplorer } from '../gateway-metadata-explorer.js';
 
 describe('GatewayMetadataExplorer', () => {
   const message = 'test';

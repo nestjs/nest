@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import * as hash from 'object-hash';
+import hash from 'object-hash';
 import * as sinon from 'sinon';
-import { SocketsContainer } from '../sockets-container';
+import { SocketsContainer } from '../sockets-container.js';
 
 describe('SocketsContainer', () => {
   const port = 30;

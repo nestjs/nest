@@ -1,8 +1,8 @@
 import { CanActivate } from '@nestjs/common';
-import { ContextType, Controller } from '@nestjs/common/interfaces';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { ContextType, Controller } from '@nestjs/common/interfaces/index.js';
+import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
 import { lastValueFrom, Observable } from 'rxjs';
-import { ExecutionContextHost } from '../helpers/execution-context-host';
+import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 
 export class GuardsConsumer {
   public async tryActivate<TContext extends string = ContextType>(

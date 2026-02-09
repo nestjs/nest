@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import { KafkaContext } from '../../ctx-host';
+import { KafkaContext } from '../../ctx-host/index.js';
 import {
   Consumer,
   KafkaMessage,
   Producer,
-} from '../../external/kafka.interface';
+} from '../../external/kafka.interface.js';
 
 describe('KafkaContext', () => {
   const args = [

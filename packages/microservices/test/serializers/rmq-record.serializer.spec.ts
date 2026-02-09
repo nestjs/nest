@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { RmqRecordBuilder } from '../../record-builders';
-import { RmqRecordSerializer } from '../../serializers/rmq-record.serializer';
+import { RmqRecordBuilder } from '../../record-builders/index.js';
+import { RmqRecordSerializer } from '../../serializers/rmq-record.serializer.js';
 
 describe('RmqRecordSerializer', () => {
   const pattern = 'test';

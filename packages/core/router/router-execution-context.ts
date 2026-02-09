@@ -14,38 +14,38 @@ import {
   RENDER_METADATA,
   ROUTE_ARGS_METADATA,
   SSE_METADATA,
-} from '@nestjs/common/constants';
-import { RouteParamMetadata } from '@nestjs/common/decorators';
-import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { ContextType, Controller } from '@nestjs/common/interfaces';
-import { isEmpty, isString } from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/constants.js';
+import { RouteParamMetadata } from '@nestjs/common/decorators/index.js';
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum.js';
+import { ContextType, Controller } from '@nestjs/common/interfaces/index.js';
+import { isEmpty, isString } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage } from 'http';
 import { Observable } from 'rxjs';
 import {
   FORBIDDEN_MESSAGE,
   GuardsConsumer,
   GuardsContextCreator,
-} from '../guards';
-import { ContextUtils } from '../helpers/context-utils';
-import { ExecutionContextHost } from '../helpers/execution-context-host';
+} from '../guards/index.js';
+import { ContextUtils } from '../helpers/context-utils.js';
+import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import {
   HandleResponseFn,
   HandlerMetadata,
   HandlerMetadataStorage,
   HandlerResponseBasicFn,
-} from '../helpers/handler-metadata-storage';
-import { STATIC_CONTEXT } from '../injector/constants';
-import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../pipes/pipes-consumer';
-import { PipesContextCreator } from '../pipes/pipes-context-creator';
-import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
+} from '../helpers/handler-metadata-storage.js';
+import { STATIC_CONTEXT } from '../injector/constants.js';
+import { InterceptorsConsumer } from '../interceptors/interceptors-consumer.js';
+import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator.js';
+import { PipesConsumer } from '../pipes/pipes-consumer.js';
+import { PipesContextCreator } from '../pipes/pipes-context-creator.js';
+import { IRouteParamsFactory } from './interfaces/route-params-factory.interface.js';
 import {
   CustomHeader,
   RedirectResponse,
   RouterResponseController,
-} from './router-response-controller';
-import { HeaderStream } from './sse-stream';
+} from './router-response-controller.js';
+import { HeaderStream } from './sse-stream.js';
 
 export interface ParamProperties {
   index: number;

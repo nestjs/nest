@@ -1,4 +1,4 @@
-import { clc } from '@nestjs/common/utils/cli-colors.util';
+import { clc } from '@nestjs/common/utils/cli-colors.util.js';
 import { repl } from '@nestjs/core';
 import {
   DebugReplFn,
@@ -7,11 +7,11 @@ import {
   MethodsReplFn,
   ResolveReplFn,
   SelectReplFn,
-} from '@nestjs/core/repl/native-functions';
-import { ReplContext } from '@nestjs/core/repl/repl-context';
+} from '@nestjs/core/repl/native-functions.js';
+import { ReplContext } from '@nestjs/core/repl/repl-context.js';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { AppModule } from '../src/app.module';
+import { AppModule } from '../src/app.module.js';
 
 const PROMPT = '\u001b[1G\u001b[0J> \u001b[3G';
 

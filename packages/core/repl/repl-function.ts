@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
-import { ReplContext } from './repl-context';
-import type { ReplFnDefinition } from './repl.interfaces';
+import { clc } from '@nestjs/common/utils/cli-colors.util.js';
+import { ReplContext } from './repl-context.js';
+import type { ReplFnDefinition } from './repl.interfaces.js';
 
 export abstract class ReplFunction<
   ActionParams extends Array<unknown> = Array<unknown>,

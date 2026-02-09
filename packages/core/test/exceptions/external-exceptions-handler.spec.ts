@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { ExternalExceptionFilter } from '../../exceptions/external-exception-filter';
-import { ExternalExceptionsHandler } from '../../exceptions/external-exceptions-handler';
+import { ExternalExceptionFilter } from '../../exceptions/external-exception-filter.js';
+import { ExternalExceptionsHandler } from '../../exceptions/external-exceptions-handler.js';
 
 describe('ExternalExceptionsHandler', () => {
   let handler: ExternalExceptionsHandler;

@@ -1,9 +1,9 @@
-import { expect } from 'chai';
-import { Barrier } from '../../../core/helpers/barrier';
-import * as sinon from 'sinon';
 import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
+import { expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+import * as sinon from 'sinon';
 import { setTimeout } from 'timers/promises';
+import { Barrier } from '../../../core/helpers/barrier.js';
 chai.use(chaiAsPromised);
 
 describe('Barrier', () => {

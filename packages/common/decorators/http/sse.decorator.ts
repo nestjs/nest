@@ -1,5 +1,9 @@
-import { METHOD_METADATA, PATH_METADATA, SSE_METADATA } from '../../constants';
-import { RequestMethod } from '../../enums/request-method.enum';
+import {
+  METHOD_METADATA,
+  PATH_METADATA,
+  SSE_METADATA,
+} from '../../constants.js';
+import { RequestMethod } from '../../enums/request-method.enum.js';
 
 /**
  * Declares this route as a Server-Sent-Events endpoint

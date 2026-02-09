@@ -1,8 +1,8 @@
 import { expect } from 'chai';
-import { HttpStatus } from '../../enums';
-import { HttpException } from '../../exceptions';
-import { ArgumentMetadata } from '../../interfaces';
-import { ParseUUIDPipe } from '../../pipes/parse-uuid.pipe';
+import { HttpStatus } from '../../enums/index.js';
+import { HttpException } from '../../exceptions/index.js';
+import { ArgumentMetadata } from '../../interfaces/index.js';
+import { ParseUUIDPipe } from '../../pipes/parse-uuid.pipe.js';
 
 class TestException extends HttpException {
   constructor() {

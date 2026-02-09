@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { of, throwError } from 'rxjs';
 import * as sinon from 'sinon';
-import { RpcProxy } from '../../context/rpc-proxy';
-import { RpcException } from '../../exceptions/rpc-exception';
-import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler';
+import { RpcProxy } from '../../context/rpc-proxy.js';
+import { RpcException } from '../../exceptions/rpc-exception.js';
+import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler.js';
 
 describe('RpcProxy', () => {
   let routerProxy: RpcProxy;

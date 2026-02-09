@@ -1,6 +1,9 @@
 import { expect } from 'chai';
-import { SCOPE_OPTIONS_METADATA, INJECTABLE_WATERMARK } from '../../constants';
-import { Injectable, mixin } from '../../index';
+import {
+  SCOPE_OPTIONS_METADATA,
+  INJECTABLE_WATERMARK,
+} from '../../constants.js';
+import { Injectable, mixin } from '../../index.js';
 
 describe('@Injectable', () => {
   const options = {};

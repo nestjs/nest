@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { Socket as NetSocket } from 'net';
 import * as sinon from 'sinon';
-import { NO_MESSAGE_HANDLER } from '../../constants';
-import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
-import { TcpSocket } from '../../helpers/tcp-socket';
-import { ServerTCP } from '../../server/server-tcp';
-import { objectToMap } from './utils/object-to-map';
+import { NO_MESSAGE_HANDLER } from '../../constants.js';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
+import { TcpSocket } from '../../helpers/tcp-socket.js';
+import { ServerTCP } from '../../server/server-tcp.js';
+import { objectToMap } from './utils/object-to-map.js';
 
 describe('ServerTCP', () => {
   let server: ServerTCP;

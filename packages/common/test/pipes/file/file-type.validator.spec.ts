@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { IFile } from '../../../../common/pipes/file/interfaces';
-import { FileTypeValidator } from '../../../pipes';
+import { IFile } from '../../../../common/pipes/file/interfaces/index.js';
+import { FileTypeValidator } from '../../../pipes/index.js';
 
 const pngBuffer = Buffer.from([
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49,

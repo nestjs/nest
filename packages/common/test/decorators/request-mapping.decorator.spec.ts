@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { RequestMapping } from '../../decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../enums/request-method.enum';
+import { RequestMapping } from '../../decorators/http/request-mapping.decorator.js';
+import { RequestMethod } from '../../enums/request-method.enum.js';
 
 describe('@RequestMapping', () => {
   const requestProps = {

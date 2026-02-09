@@ -1,9 +1,9 @@
-import { clc } from '@nestjs/common/utils/cli-colors.util';
+import { clc } from '@nestjs/common/utils/cli-colors.util.js';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NestContainer } from '../../../injector/container';
-import { MethodsReplFn } from '../../../repl/native-functions';
-import { ReplContext } from '../../../repl/repl-context';
+import { NestContainer } from '../../../injector/container.js';
+import { MethodsReplFn } from '../../../repl/native-functions/index.js';
+import { ReplContext } from '../../../repl/repl-context.js';
 
 describe('MethodsReplFn', () => {
   let methodsReplFn: MethodsReplFn;

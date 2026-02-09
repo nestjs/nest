@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { IdentitySerializer } from '../../serializers/identity.serializer';
+import { IdentitySerializer } from '../../serializers/identity.serializer.js';
 
 describe('IdentitySerializer', () => {
   let instance: IdentitySerializer;

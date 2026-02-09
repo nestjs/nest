@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { MESSAGE_MAPPING_METADATA } from '../../constants';
-import { SubscribeMessage } from '../../decorators/subscribe-message.decorator';
+import { MESSAGE_MAPPING_METADATA } from '../../constants.js';
+import { SubscribeMessage } from '../../decorators/subscribe-message.decorator.js';
 
 describe('@SubscribeMessage', () => {
   class TestGateway {

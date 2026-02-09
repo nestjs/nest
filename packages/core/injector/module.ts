@@ -1,7 +1,7 @@
 import {
   EnhancerSubtype,
   ENTRY_PROVIDER_WATERMARK,
-} from '@nestjs/common/constants';
+} from '@nestjs/common/constants.js';
 import {
   ClassProvider,
   Controller,
@@ -15,8 +15,8 @@ import {
   Scope,
   Type,
   ValueProvider,
-} from '@nestjs/common/interfaces';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+} from '@nestjs/common/interfaces/index.js';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util.js';
 import {
   isFunction,
   isNil,
@@ -24,22 +24,22 @@ import {
   isString,
   isSymbol,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
-import { ApplicationConfig } from '../application-config';
+import { ApplicationConfig } from '../application-config.js';
 import {
   InvalidClassException,
   RuntimeException,
   UnknownExportException,
-} from '../errors/exceptions';
-import { createContextId } from '../helpers/context-id-factory';
-import { getClassScope } from '../helpers/get-class-scope';
-import { isDurable } from '../helpers/is-durable';
-import { UuidFactory } from '../inspector/uuid-factory';
-import { CONTROLLER_ID_KEY } from './constants';
-import { NestContainer } from './container';
-import { ContextId, InstanceWrapper } from './instance-wrapper';
-import { ModuleRef, ModuleRefGetOrResolveOpts } from './module-ref';
+} from '../errors/exceptions/index.js';
+import { createContextId } from '../helpers/context-id-factory.js';
+import { getClassScope } from '../helpers/get-class-scope.js';
+import { isDurable } from '../helpers/is-durable.js';
+import { UuidFactory } from '../inspector/uuid-factory.js';
+import { CONTROLLER_ID_KEY } from './constants.js';
+import { NestContainer } from './container.js';
+import { ContextId, InstanceWrapper } from './instance-wrapper.js';
+import { ModuleRef, ModuleRefGetOrResolveOpts } from './module-ref.js';
 
 export class Module {
   private readonly _id: string;

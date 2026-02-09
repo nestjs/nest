@@ -1,7 +1,7 @@
 import { OnApplicationShutdown, UseInterceptors } from '@nestjs/common';
 import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import * as Sinon from 'sinon';
-import { RequestInterceptor } from './request.interceptor';
+import { RequestInterceptor } from './request.interceptor.js';
 
 @WebSocketGateway()
 export class ServerGateway implements OnApplicationShutdown {

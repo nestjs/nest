@@ -1,12 +1,12 @@
 import { Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NestContainer } from '../../injector/container';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { Module } from '../../injector/module';
-import { GraphInspector } from '../../inspector/graph-inspector';
-import { EnhancerMetadataCacheEntry } from '../../inspector/interfaces/enhancer-metadata-cache-entry.interface';
-import { SerializedGraph } from '../../inspector/serialized-graph';
+import { NestContainer } from '../../injector/container.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { Module } from '../../injector/module.js';
+import { GraphInspector } from '../../inspector/graph-inspector.js';
+import { EnhancerMetadataCacheEntry } from '../../inspector/interfaces/enhancer-metadata-cache-entry.interface.js';
+import { SerializedGraph } from '../../inspector/serialized-graph.js';
 
 describe('GraphInspector', () => {
   let graphInspector: GraphInspector;

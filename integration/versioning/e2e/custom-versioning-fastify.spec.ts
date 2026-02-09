@@ -5,8 +5,8 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { FastifyRequest } from 'fastify';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 describe('Custom Versioning (fastify)', () => {
   const extractor = (request: FastifyRequest): string | string[] => {

@@ -4,8 +4,8 @@ import {
   Server,
   Socket,
 } from 'net';
-import { TcpEventsMap } from '../../events/tcp.events';
-import { JsonSocket } from '../../helpers/json-socket';
+import { TcpEventsMap } from '../../events/tcp.events.js';
+import { JsonSocket } from '../../helpers/json-socket.js';
 
 export const ip = '127.0.0.1';
 

@@ -1,10 +1,10 @@
 import { uid } from 'uid';
-import { ROUTE_ARGS_METADATA } from '../../constants';
-import { PipeTransform } from '../../index';
-import { Type } from '../../interfaces';
-import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface';
-import { assignCustomParameterMetadata } from '../../utils/assign-custom-metadata.util';
-import { isFunction, isNil } from '../../utils/shared.utils';
+import { ROUTE_ARGS_METADATA } from '../../constants.js';
+import { PipeTransform } from '../../index.js';
+import { Type } from '../../interfaces/index.js';
+import { CustomParamFactory } from '../../interfaces/features/custom-route-param-factory.interface.js';
+import { assignCustomParameterMetadata } from '../../utils/assign-custom-metadata.util.js';
+import { isFunction, isNil } from '../../utils/shared.utils.js';
 
 export type ParamDecoratorEnhancer = ParameterDecorator;
 

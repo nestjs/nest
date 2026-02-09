@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { WebSocketServer } from '../../decorators/gateway-server.decorator';
-import { GATEWAY_SERVER_METADATA } from '../../constants';
+import { WebSocketServer } from '../../decorators/gateway-server.decorator.js';
+import { GATEWAY_SERVER_METADATA } from '../../constants.js';
 
 describe('@WebSocketServer', () => {
   class TestGateway {

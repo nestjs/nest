@@ -2,17 +2,17 @@ import {
   HttpServer,
   MiddlewareConsumer,
   Type,
-} from '@nestjs/common/interfaces';
+} from '@nestjs/common/interfaces/index.js';
 import {
   MiddlewareConfigProxy,
   MiddlewareConfiguration,
   RouteInfo,
-} from '@nestjs/common/interfaces/middleware';
-import { stripEndSlash } from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/interfaces/middleware/index.js';
+import { stripEndSlash } from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
-import { RouteInfoPathExtractor } from './route-info-path-extractor';
-import { RoutesMapper } from './routes-mapper';
-import { filterMiddleware } from './utils';
+import { RouteInfoPathExtractor } from './route-info-path-extractor.js';
+import { RoutesMapper } from './routes-mapper.js';
+import { filterMiddleware } from './utils.js';
 
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();

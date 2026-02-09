@@ -1,7 +1,7 @@
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
 import { EMPTY, isObservable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler';
+import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler.js';
 
 export class WsProxy {
   public create(

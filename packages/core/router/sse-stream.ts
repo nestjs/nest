@@ -1,5 +1,5 @@
-import { MessageEvent } from '@nestjs/common/interfaces';
-import { isObject } from '@nestjs/common/utils/shared.utils';
+import { MessageEvent } from '@nestjs/common/interfaces/index.js';
+import { isObject } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage, OutgoingHttpHeaders } from 'http';
 import { Transform } from 'stream';
 

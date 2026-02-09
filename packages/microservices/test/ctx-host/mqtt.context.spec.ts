@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { MqttContext } from '../../ctx-host';
+import { MqttContext } from '../../ctx-host/index.js';
 
 describe('MqttContext', () => {
   const args = ['test', { test: true }];

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { KafkaHeaders } from '../../enums/kafka-headers.enum';
-import { KafkaParser } from '../../helpers/kafka-parser';
+import { KafkaHeaders } from '../../enums/kafka-headers.enum.js';
+import { KafkaParser } from '../../helpers/kafka-parser.js';
 
 describe('KafkaParser', () => {
   describe('parse', () => {

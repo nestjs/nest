@@ -3,15 +3,15 @@ import {
   PATTERN_EXTRAS_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
-} from '../../constants';
+} from '../../constants.js';
 import {
   GrpcMethod,
   GrpcMethodStreamingType,
   GrpcStreamCall,
   GrpcStreamMethod,
   MessagePattern,
-} from '../../decorators/message-pattern.decorator';
-import { Transport } from '../../enums/transport.enum';
+} from '../../decorators/message-pattern.decorator.js';
+import { Transport } from '../../enums/transport.enum.js';
 
 describe('@MessagePattern', () => {
   const pattern = { role: 'test' };

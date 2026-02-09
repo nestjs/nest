@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { ModulesContainer } from '../../injector/modules-container';
-import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { ModulesContainer } from '../../injector/modules-container.js';
+import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
 
 describe('DiscoverableMetaHostCollection', () => {
   beforeEach(() => {

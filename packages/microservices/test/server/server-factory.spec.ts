@@ -1,13 +1,13 @@
 import { expect } from 'chai';
-import { Transport } from '../../enums/transport.enum';
-import { ServerFactory } from '../../server/server-factory';
-import { ServerGrpc } from '../../server/server-grpc';
-import { ServerKafka } from '../../server/server-kafka';
-import { ServerMqtt } from '../../server/server-mqtt';
-import { ServerNats } from '../../server/server-nats';
-import { ServerRedis } from '../../server/server-redis';
-import { ServerRMQ } from '../../server/server-rmq';
-import { ServerTCP } from '../../server/server-tcp';
+import { Transport } from '../../enums/transport.enum.js';
+import { ServerFactory } from '../../server/server-factory.js';
+import { ServerGrpc } from '../../server/server-grpc.js';
+import { ServerKafka } from '../../server/server-kafka.js';
+import { ServerMqtt } from '../../server/server-mqtt.js';
+import { ServerNats } from '../../server/server-nats.js';
+import { ServerRedis } from '../../server/server-redis.js';
+import { ServerRMQ } from '../../server/server-rmq.js';
+import { ServerTCP } from '../../server/server-tcp.js';
 
 describe('ServerFactory', () => {
   describe('create', () => {

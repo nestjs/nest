@@ -1,23 +1,23 @@
 import { Scope } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { Injector } from '@nestjs/core/injector/injector';
-import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
+import { NestContainer } from '@nestjs/core/injector/container.js';
+import { Injector } from '@nestjs/core/injector/injector.js';
+import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { GraphInspector } from '../../core/inspector/graph-inspector';
-import { MetadataScanner } from '../../core/metadata-scanner';
-import { ClientProxyFactory } from '../client';
-import { ClientsContainer } from '../container';
-import { ExceptionFiltersContext } from '../context/exception-filters-context';
-import { RpcContextCreator } from '../context/rpc-context-creator';
-import { Transport } from '../enums/transport.enum';
+import { GraphInspector } from '../../core/inspector/graph-inspector.js';
+import { MetadataScanner } from '../../core/metadata-scanner.js';
+import { ClientProxyFactory } from '../client/index.js';
+import { ClientsContainer } from '../container.js';
+import { ExceptionFiltersContext } from '../context/exception-filters-context.js';
+import { RpcContextCreator } from '../context/rpc-context-creator.js';
+import { Transport } from '../enums/transport.enum.js';
 import {
   EventOrMessageListenerDefinition,
   ListenerMetadataExplorer,
-} from '../listener-metadata-explorer';
-import { ListenersController } from '../listeners-controller';
+} from '../listener-metadata-explorer.js';
+import { ListenersController } from '../listeners-controller.js';
 
 describe('ListenersController', () => {
   let instance: ListenersController,

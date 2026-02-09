@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Injectable } from '../../../common';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { NestContainer } from '../../injector/container';
-import { Injector } from '../../injector/injector';
-import { InstanceLoader } from '../../injector/instance-loader';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { GraphInspector } from '../../inspector/graph-inspector';
+import { Injectable } from '../../../common/index.js';
+import { Controller } from '../../../common/decorators/core/controller.decorator.js';
+import { NestContainer } from '../../injector/container.js';
+import { Injector } from '../../injector/injector.js';
+import { InstanceLoader } from '../../injector/instance-loader.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { GraphInspector } from '../../inspector/graph-inspector.js';
 
 describe('InstanceLoader', () => {
   @Controller('')

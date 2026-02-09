@@ -12,27 +12,27 @@ import {
   SelectOptions,
   ShutdownHooksOptions,
   Type,
-} from '@nestjs/common/interfaces';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/interfaces/index.js';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface.js';
+import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
-import { MESSAGES } from './constants';
-import { UnknownModuleException } from './errors/exceptions';
-import { createContextId } from './helpers/context-id-factory';
+import { MESSAGES } from './constants.js';
+import { UnknownModuleException } from './errors/exceptions/index.js';
+import { createContextId } from './helpers/context-id-factory.js';
 import {
   callAppShutdownHook,
   callBeforeAppShutdownHook,
   callModuleBootstrapHook,
   callModuleDestroyHook,
   callModuleInitHook,
-} from './hooks';
-import { AbstractInstanceResolver } from './injector/abstract-instance-resolver';
-import { ModuleCompiler } from './injector/compiler';
-import { NestContainer } from './injector/container';
-import { Injector } from './injector/injector';
-import { InstanceLinksHost } from './injector/instance-links-host';
-import { ContextId } from './injector/instance-wrapper';
-import { Module } from './injector/module';
+} from './hooks/index.js';
+import { AbstractInstanceResolver } from './injector/abstract-instance-resolver.js';
+import { ModuleCompiler } from './injector/compiler.js';
+import { NestContainer } from './injector/container.js';
+import { Injector } from './injector/injector.js';
+import { InstanceLinksHost } from './injector/instance-links-host.js';
+import { ContextId } from './injector/instance-wrapper.js';
+import { Module } from './injector/module.js';
 
 /**
  * @publicApi

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Logger } from '@nestjs/common';
-import { ExceptionsZone } from '../../../errors/exceptions-zone';
+import { ExceptionsZone } from '../../../errors/exceptions-zone.js';
 
 describe('ExceptionsZone', () => {
   const rethrow = err => {

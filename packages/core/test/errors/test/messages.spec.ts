@@ -1,12 +1,12 @@
 import { expect } from 'chai';
-import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception';
+import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception.js';
 import {
   INVALID_MODULE_MESSAGE,
   UNDEFINED_MODULE_MESSAGE,
   UNKNOWN_EXPORT_MESSAGE,
-} from '../../../errors/messages';
-import { Module } from '../../../injector/module';
-import { stringCleaner } from '../../utils/string.cleaner';
+} from '../../../errors/messages.js';
+import { Module } from '../../../injector/module.js';
+import { stringCleaner } from '../../utils/string.cleaner.js';
 
 describe('Error Messages', () => {
   const CatsModule = { name: 'CatsModule' };

@@ -7,15 +7,15 @@ import {
   Optional,
   Type,
 } from '@nestjs/common';
-import * as multer from 'multer';
+import multer from 'multer';
 import { Observable } from 'rxjs';
-import { MULTER_MODULE_OPTIONS } from '../files.constants';
-import { MulterModuleOptions } from '../interfaces';
+import { MULTER_MODULE_OPTIONS } from '../files.constants.js';
+import { MulterModuleOptions } from '../interfaces/index.js';
 import {
   MulterField,
   MulterOptions,
-} from '../interfaces/multer-options.interface';
-import { transformException } from '../multer/multer.utils';
+} from '../interfaces/multer-options.interface.js';
+import { transformException } from '../multer/multer.utils.js';
 
 type MulterInstance = any;
 

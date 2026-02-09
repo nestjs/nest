@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { GLOBAL_MODULE_METADATA } from '../../constants';
-import { Global } from '../../index';
+import { GLOBAL_MODULE_METADATA } from '../../constants.js';
+import { Global } from '../../index.js';
 
 describe('@Global', () => {
   @Global()

@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "type": "commonjs",
   "engines": {
-    "node": ">=18.8"
+    "node": ">= 20"
   },
   "scripts": {
     "build": "nest build",

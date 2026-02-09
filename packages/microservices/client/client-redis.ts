@@ -1,13 +1,13 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { REDIS_DEFAULT_HOST, REDIS_DEFAULT_PORT } from '../constants';
+import { Logger } from '@nestjs/common/services/logger.service.js';
+import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
+import { REDIS_DEFAULT_HOST, REDIS_DEFAULT_PORT } from '../constants.js';
 import {
   RedisEvents,
   RedisEventsMap,
   RedisStatus,
-} from '../events/redis.events';
-import { ReadPacket, RedisOptions, WritePacket } from '../interfaces';
-import { ClientProxy } from './client-proxy';
+} from '../events/redis.events.js';
+import { ReadPacket, RedisOptions, WritePacket } from '../interfaces/index.js';
+import { ClientProxy } from './client-proxy.js';
 
 // To enable type safety for Redis. This cant be uncommented by default
 // because it would require the user to install the ioredis package even if they dont use Redis
@@ -37,9 +37,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   constructor(protected readonly options: Required<RedisOptions>['options']) {
     super();
 
-    redisPackage = loadPackage('ioredis', ClientRedis.name, () =>
-      require('ioredis'),
-    );
+    redisPackage = loadPackageSync('ioredis', ClientRedis.name);
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -89,7 +87,8 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   }
 
   public createClient(): Redis {
-    return new redisPackage({
+    const RedisClient = redisPackage.default || redisPackage;
+    return new RedisClient({
       host: REDIS_DEFAULT_HOST,
       port: REDIS_DEFAULT_PORT,
       ...this.getClientOptions(),

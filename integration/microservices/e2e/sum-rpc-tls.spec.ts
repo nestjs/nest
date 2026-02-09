@@ -4,9 +4,9 @@ import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as request from 'supertest';
-import { AppController } from '../src/tcp-tls/app.controller';
-import { ApplicationModule } from '../src/tcp-tls/app.module';
+import request from 'supertest';
+import { AppController } from '../src/tcp-tls/app.controller.js';
+import { ApplicationModule } from '../src/tcp-tls/app.module.js';
 
 describe('RPC TLS transport', () => {
   let server;
@@ -17,10 +17,16 @@ describe('RPC TLS transport', () => {
   before(() => {
     // Generate a self-signed key pair
     key = fs
-      .readFileSync(path.join(__dirname, '../src/tcp-tls/privkey.pem'), 'utf8')
+      .readFileSync(
+        path.join(import.meta.dirname, '../src/tcp-tls/privkey.pem'),
+        'utf8',
+      )
       .toString();
     cert = fs
-      .readFileSync(path.join(__dirname, '../src/tcp-tls/ca.cert.pem'), 'utf8')
+      .readFileSync(
+        path.join(import.meta.dirname, '../src/tcp-tls/ca.cert.pem'),
+        'utf8',
+      )
       .toString();
   });
 

@@ -1,8 +1,8 @@
 import type { Type } from '@nestjs/common';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
-import { MetadataScanner } from '../../metadata-scanner';
-import { ReplFunction } from '../repl-function';
-import type { ReplFnDefinition } from '../repl.interfaces';
+import { clc } from '@nestjs/common/utils/cli-colors.util.js';
+import { MetadataScanner } from '../../metadata-scanner.js';
+import { ReplFunction } from '../repl-function.js';
+import type { ReplFnDefinition } from '../repl.interfaces.js';
 
 export class MethodsReplFn extends ReplFunction {
   public fnDefinition: ReplFnDefinition = {

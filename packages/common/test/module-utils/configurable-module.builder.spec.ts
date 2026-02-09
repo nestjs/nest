@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { Provider } from '../../interfaces';
-import { ConfigurableModuleBuilder } from '../../module-utils';
+import { Provider } from '../../interfaces/index.js';
+import { ConfigurableModuleBuilder } from '../../module-utils/index.js';
 
 describe('ConfigurableModuleBuilder', () => {
   describe('setExtras', () => {

@@ -1,8 +1,8 @@
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
-import { AppModule } from '../src/app.module';
-import { randomPort } from './utils';
+import { AppModule } from '../src/app.module.js';
+import { randomPort } from './utils.js';
 
 describe('Get URL (Fastify Application)', () => {
   let testModule: TestingModule;

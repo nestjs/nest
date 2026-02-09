@@ -2,8 +2,8 @@ import { INestApplication } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as express from 'express';
-import { AppModule } from '../src/app.module';
+import express from 'express';
+import { AppModule } from '../src/app.module.js';
 
 describe('Listen (Express Application)', () => {
   let testModule: TestingModule;

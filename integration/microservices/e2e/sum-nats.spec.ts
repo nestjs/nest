@@ -2,9 +2,9 @@ import { INestApplication } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as request from 'supertest';
-import { NatsController } from '../src/nats/nats.controller';
-import { NatsService } from '../src/nats/nats.service';
+import request from 'supertest';
+import { NatsController } from '../src/nats/nats.controller.js';
+import { NatsService } from '../src/nats/nats.service.js';
 
 describe('NATS transport', () => {
   let server;

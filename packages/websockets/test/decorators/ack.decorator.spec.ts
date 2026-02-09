@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { expect } from 'chai';
-import { PARAM_ARGS_METADATA } from '../../constants';
-import { Ack } from '../../decorators/ack.decorator';
-import { WsParamtype } from '../../enums/ws-paramtype.enum';
+import { PARAM_ARGS_METADATA } from '../../constants.js';
+import { Ack } from '../../decorators/ack.decorator.js';
+import { WsParamtype } from '../../enums/ws-paramtype.enum.js';
 
 class AckTest {
   public test(@Ack() ack: Function) {}

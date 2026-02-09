@@ -2,8 +2,8 @@ import { INestApplication, Logger } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import * as request from 'supertest';
-import { HelloModule } from '../src/inject-inquirer/hello.module';
+import request from 'supertest';
+import { HelloModule } from '../src/inject-inquirer/hello.module.js';
 
 describe('Inject Inquirer', () => {
   let logger: Record<string, any>;

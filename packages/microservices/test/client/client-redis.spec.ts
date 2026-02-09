@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ClientRedis } from '../../client/client-redis';
-import { RedisEventsMap } from '../../events/redis.events';
+import { ClientRedis } from '../../client/client-redis.js';
+import { RedisEventsMap } from '../../events/redis.events.js';
 
 describe('ClientRedis', () => {
   const test = 'test';

@@ -3,12 +3,16 @@ import * as net from 'net';
 import { EmptyError, lastValueFrom } from 'rxjs';
 import { share, tap } from 'rxjs/operators';
 import { ConnectionOptions, connect as tlsConnect, TLSSocket } from 'tls';
-import { ECONNREFUSED, TCP_DEFAULT_HOST, TCP_DEFAULT_PORT } from '../constants';
-import { TcpEvents, TcpEventsMap, TcpStatus } from '../events/tcp.events';
-import { JsonSocket, TcpSocket } from '../helpers';
-import { PacketId, ReadPacket, WritePacket } from '../interfaces';
-import { TcpClientOptions } from '../interfaces/client-metadata.interface';
-import { ClientProxy } from './client-proxy';
+import {
+  ECONNREFUSED,
+  TCP_DEFAULT_HOST,
+  TCP_DEFAULT_PORT,
+} from '../constants.js';
+import { TcpEvents, TcpEventsMap, TcpStatus } from '../events/tcp.events.js';
+import { JsonSocket, TcpSocket } from '../helpers/index.js';
+import { PacketId, ReadPacket, WritePacket } from '../interfaces/index.js';
+import { TcpClientOptions } from '../interfaces/client-metadata.interface.js';
+import { ClientProxy } from './client-proxy.js';
 
 /**
  * @publicApi

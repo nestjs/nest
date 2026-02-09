@@ -1,7 +1,7 @@
 import { Controller, Get, INestApplication, Module } from '@nestjs/common';
 import { RouterModule, Routes } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 
 describe('RouterModule', () => {
   let app: INestApplication;

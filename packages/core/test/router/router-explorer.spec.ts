@@ -1,26 +1,26 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
+import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import {
   All,
   Get,
   Post,
-} from '../../../common/decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { VersioningType } from '../../../common/enums/version-type.enum';
-import { Injector } from '../../../core/injector/injector';
-import { ApplicationConfig } from '../../application-config';
-import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception';
-import { ExecutionContextHost } from '../../helpers/execution-context-host';
-import { NestContainer } from '../../injector/container';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { GraphInspector } from '../../inspector/graph-inspector';
-import { MetadataScanner } from '../../metadata-scanner';
-import { RoutePathMetadata } from '../../router/interfaces/route-path-metadata.interface';
-import { RoutePathFactory } from '../../router/route-path-factory';
-import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { RouterExplorer } from '../../router/router-explorer';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+} from '../../../common/decorators/http/request-mapping.decorator.js';
+import { RequestMethod } from '../../../common/enums/request-method.enum.js';
+import { VersioningType } from '../../../common/enums/version-type.enum.js';
+import { Injector } from '../../../core/injector/injector.js';
+import { ApplicationConfig } from '../../application-config.js';
+import { UnknownRequestMappingException } from '../../errors/exceptions/unknown-request-mapping.exception.js';
+import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
+import { NestContainer } from '../../injector/container.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { GraphInspector } from '../../inspector/graph-inspector.js';
+import { MetadataScanner } from '../../metadata-scanner.js';
+import { RoutePathMetadata } from '../../router/interfaces/route-path-metadata.interface.js';
+import { RoutePathFactory } from '../../router/route-path-factory.js';
+import { RouterExceptionFilters } from '../../router/router-exception-filters.js';
+import { RouterExplorer } from '../../router/router-explorer.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec.js';
 
 describe('RouterExplorer', () => {
   @Controller('global')

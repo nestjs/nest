@@ -1,10 +1,14 @@
-import { CUSTOM_ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { Body, createParamDecorator, Request } from '@nestjs/common/decorators';
-import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '@nestjs/common/constants.js';
+import {
+  Body,
+  createParamDecorator,
+  Request,
+} from '@nestjs/common/decorators/index.js';
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum.js';
 import { expect } from 'chai';
-import { ROUTE_ARGS_METADATA } from '../../../common/constants';
-import { ContextUtils } from '../../helpers/context-utils';
-import { ExecutionContextHost } from '../../helpers/execution-context-host';
+import { ROUTE_ARGS_METADATA } from '../../../common/constants.js';
+import { ContextUtils } from '../../helpers/context-utils.js';
+import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
 
 describe('ContextUtils', () => {
   let contextUtils: ContextUtils;

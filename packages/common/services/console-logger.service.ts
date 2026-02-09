@@ -1,14 +1,14 @@
 import { inspect, InspectOptions } from 'util';
-import { Injectable, Optional } from '../decorators/core';
-import { clc, yellow, isColorAllowed } from '../utils/cli-colors.util';
+import { Injectable, Optional } from '../decorators/core/index.js';
+import { clc, yellow, isColorAllowed } from '../utils/cli-colors.util.js';
 import {
   isFunction,
   isPlainObject,
   isString,
   isUndefined,
-} from '../utils/shared.utils';
-import { LoggerService, LogLevel } from './logger.service';
-import { isLogLevelEnabled } from './utils/is-log-level-enabled.util';
+} from '../utils/shared.utils.js';
+import { LoggerService, LogLevel } from './logger.service.js';
+import { isLogLevelEnabled } from './utils/is-log-level-enabled.util.js';
 
 const DEFAULT_DEPTH = 5;
 

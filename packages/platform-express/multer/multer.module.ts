@@ -1,12 +1,12 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { MULTER_MODULE_OPTIONS } from './files.constants';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util.js';
+import { MULTER_MODULE_OPTIONS } from './files.constants.js';
 import {
   MulterModuleAsyncOptions,
   MulterModuleOptions,
   MulterOptionsFactory,
-} from './interfaces/files-upload-module.interface';
-import { MULTER_MODULE_ID } from './multer.constants';
+} from './interfaces/files-upload-module.interface.js';
+import { MULTER_MODULE_ID } from './multer.constants.js';
 
 /**
  * @publicApi

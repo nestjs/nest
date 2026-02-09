@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ExceptionHandler } from '../../../errors/exception-handler';
-import { RuntimeException } from '../../../errors/exceptions/runtime.exception';
+import { ExceptionHandler } from '../../../errors/exception-handler.js';
+import { RuntimeException } from '../../../errors/exceptions/runtime.exception.js';
 
 describe('ExceptionHandler', () => {
   let instance: ExceptionHandler;

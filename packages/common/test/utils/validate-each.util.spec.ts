@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { isFunction } from '../../utils/shared.utils';
+import { isFunction } from '../../utils/shared.utils.js';
 import {
   validateEach,
   InvalidDecoratorItemException,
-} from '../../utils/validate-each.util';
+} from '../../utils/validate-each.util.js';
 
 describe('validateEach', () => {
   describe('when any item will not pass predicate', () => {

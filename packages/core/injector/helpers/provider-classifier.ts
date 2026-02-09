@@ -4,7 +4,7 @@ import {
   Provider,
   ValueProvider,
 } from '@nestjs/common';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
 
 export function isClassProvider<T = any>(
   provider: Provider,

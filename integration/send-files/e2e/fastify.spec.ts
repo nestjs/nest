@@ -6,7 +6,7 @@ import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { AppModule } from '../src/app.module';
+import { AppModule } from '../src/app.module.js';
 
 const readme = readFileSync(join(process.cwd(), 'Readme.md'));
 const readmeString = readme.toString();

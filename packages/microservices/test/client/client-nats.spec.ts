@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { headers as createHeaders, JSONCodec } from 'nats';
 import * as sinon from 'sinon';
-import { ClientNats } from '../../client/client-nats';
-import { ReadPacket } from '../../interfaces';
-import { NatsRecord } from '../../record-builders';
+import { ClientNats } from '../../client/client-nats.js';
+import { ReadPacket } from '../../interfaces/index.js';
+import { NatsRecord } from '../../record-builders/index.js';
 
 describe('ClientNats', () => {
   let client: ClientNats;
@@ -23,9 +23,12 @@ describe('ClientNats', () => {
       subscription: any,
       createClient: sinon.SinonStub;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       client = new ClientNats({});
       untypedClient = client as any;
+
+      // Resolve the nats package (loaded asynchronously in constructor)
+      await client.createClient().catch(() => {});
 
       msg = { pattern, data: 'data' };
       unsubscribeSpy = sinon.spy();
@@ -49,7 +52,7 @@ describe('ClientNats', () => {
       });
       createClient = sinon
         .stub(client, 'createClient')
-        .callsFake(() => untypedClient);
+        .callsFake(async () => untypedClient);
     });
     afterEach(() => {
       connectSpy.restore();
@@ -167,7 +170,7 @@ describe('ClientNats', () => {
         callback = sinon.spy();
 
         subscription = client.createSubscriptionHandler(msg, callback);
-        subscription(undefined, natsMessage);
+        await subscription(undefined, natsMessage);
       });
       it('should call callback with expected arguments', () => {
         expect(
@@ -182,7 +185,7 @@ describe('ClientNats', () => {
       beforeEach(async () => {
         callback = sinon.spy();
         subscription = client.createSubscriptionHandler(msg, callback);
-        subscription(undefined, {
+        await subscription(undefined, {
           data: JSONCodec().encode({
             ...responseMessage,
             isDisposed: true,
@@ -336,9 +339,12 @@ describe('ClientNats', () => {
     let msg: ReadPacket;
     let subscribeStub: sinon.SinonStub, natsClient: any;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       client = new ClientNats({});
       untypedClient = client as any;
+
+      // Resolve the nats package (loaded asynchronously in constructor)
+      await client.createClient().catch(() => {});
 
       msg = { pattern: 'pattern', data: 'data' };
       subscribeStub = sinon

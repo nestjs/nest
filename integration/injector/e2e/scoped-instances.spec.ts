@@ -1,17 +1,17 @@
 import { createContextId } from '@nestjs/core';
-import { InvalidClassScopeException } from '@nestjs/core/errors/exceptions/invalid-class-scope.exception';
+import { InvalidClassScopeException } from '@nestjs/core/errors/exceptions/invalid-class-scope.exception.js';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
-import { ScopedController } from '../src/scoped/scoped.controller';
+import { ScopedController } from '../src/scoped/scoped.controller.js';
 import {
   REQUEST_SCOPED_FACTORY,
   ScopedModule,
   STATIC_FACTORY,
   TRANSIENT_SCOPED_FACTORY,
-} from '../src/scoped/scoped.module';
-import { ScopedService } from '../src/scoped/scoped.service';
-import { TransientService } from '../src/scoped/transient.service';
-import { Transient3Service } from '../src/scoped/transient3.service';
+} from '../src/scoped/scoped.module.js';
+import { ScopedService } from '../src/scoped/scoped.service.js';
+import { TransientService } from '../src/scoped/transient.service.js';
+import { Transient3Service } from '../src/scoped/transient3.service.js';
 
 describe('Scoped Instances', () => {
   let testingModule: TestingModule;

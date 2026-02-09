@@ -6,13 +6,13 @@ import {
   Provider,
   Type,
 } from '@nestjs/common';
-import { ClientProxy, ClientProxyFactory } from '../client';
+import { ClientProxy, ClientProxyFactory } from '../client/index.js';
 import {
   ClientsModuleAsyncOptions,
   ClientsModuleOptions,
   ClientsModuleOptionsFactory,
   ClientsProviderAsyncOptions,
-} from './interfaces';
+} from './interfaces/index.js';
 
 @Module({})
 export class ClientsModule {

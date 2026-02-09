@@ -1,10 +1,10 @@
-import { CUSTOM_ROUTE_ARGS_METADATA } from '../constants';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../constants.js';
 import {
   ParamData,
   RouteParamMetadata,
-} from '../decorators/http/route-params.decorator';
-import { PipeTransform, Type } from '../interfaces';
-import { CustomParamFactory } from '../interfaces/features/custom-route-param-factory.interface';
+} from '../decorators/http/route-params.decorator.js';
+import { PipeTransform, Type } from '../interfaces/index.js';
+import { CustomParamFactory } from '../interfaces/features/custom-route-param-factory.interface.js';
 
 export function assignCustomParameterMetadata(
   args: Record<number, RouteParamMetadata>,

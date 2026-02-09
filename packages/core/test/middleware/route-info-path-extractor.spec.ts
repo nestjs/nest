@@ -1,8 +1,8 @@
 import { RequestMethod, VersioningType } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core';
-import { mapToExcludeRoute } from '@nestjs/core/middleware/utils';
+import { mapToExcludeRoute } from '@nestjs/core/middleware/utils.js';
 import { expect } from 'chai';
-import { RouteInfoPathExtractor } from './../../middleware/route-info-path-extractor';
+import { RouteInfoPathExtractor } from './../../middleware/route-info-path-extractor.js';
 
 describe('RouteInfoPathExtractor', () => {
   describe('extractPathsFrom', () => {

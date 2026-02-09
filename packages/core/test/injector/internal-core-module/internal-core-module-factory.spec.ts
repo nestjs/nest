@@ -1,12 +1,12 @@
 import { ClassProvider, FactoryProvider } from '@nestjs/common';
 import { expect } from 'chai';
-import { ExternalContextCreator } from '../../../helpers/external-context-creator';
-import { HttpAdapterHost } from '../../../helpers/http-adapter-host';
-import { LazyModuleLoader, ModulesContainer } from '../../../injector';
-import { NestContainer } from '../../../injector/container';
-import { InternalCoreModule } from '../../../injector/internal-core-module/internal-core-module';
-import { InternalCoreModuleFactory } from '../../../injector/internal-core-module/internal-core-module-factory';
-import { SerializedGraph } from '../../../inspector/serialized-graph';
+import { ExternalContextCreator } from '../../../helpers/external-context-creator.js';
+import { HttpAdapterHost } from '../../../helpers/http-adapter-host.js';
+import { LazyModuleLoader, ModulesContainer } from '../../../injector/index.js';
+import { NestContainer } from '../../../injector/container.js';
+import { InternalCoreModule } from '../../../injector/internal-core-module/internal-core-module.js';
+import { InternalCoreModuleFactory } from '../../../injector/internal-core-module/internal-core-module-factory.js';
+import { SerializedGraph } from '../../../inspector/serialized-graph.js';
 
 describe('InternalCoreModuleFactory', () => {
   it('should return the internal core module definition', () => {

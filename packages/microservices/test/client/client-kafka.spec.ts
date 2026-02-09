@@ -2,15 +2,15 @@ import { expect } from 'chai';
 import { Producer } from 'kafkajs';
 import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
-import { ClientKafka } from '../../client/client-kafka';
-import { NO_MESSAGE_HANDLER } from '../../constants';
-import { KafkaHeaders } from '../../enums';
-import { InvalidKafkaClientTopicException } from '../../errors/invalid-kafka-client-topic.exception';
+import { ClientKafka } from '../../client/client-kafka.js';
+import { NO_MESSAGE_HANDLER } from '../../constants.js';
+import { KafkaHeaders } from '../../enums/index.js';
+import { InvalidKafkaClientTopicException } from '../../errors/invalid-kafka-client-topic.exception.js';
 import {
   ConsumerGroupJoinEvent,
   EachMessagePayload,
   KafkaMessage,
-} from '../../external/kafka.interface';
+} from '../../external/kafka.interface.js';
 
 describe('ClientKafka', () => {
   const topic = 'test.topic';
@@ -229,7 +229,7 @@ describe('ClientKafka', () => {
       client = new ClientKafka({});
     });
 
-    it(`should accept a custom logCreator in client options`, () => {
+    it(`should accept a custom logCreator in client options`, async () => {
       const logCreatorSpy = sinon.spy(() => 'test');
       const logCreator = () => logCreatorSpy;
 
@@ -240,7 +240,8 @@ describe('ClientKafka', () => {
         },
       });
 
-      const logger = client.createClient().logger();
+      const kafkaClient = await client.createClient();
+      const logger = kafkaClient.logger();
 
       logger.info({ namespace: '', level: 1, log: 'test' });
 

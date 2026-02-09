@@ -5,19 +5,19 @@ import {
   Post,
   VersioningType,
 } from '@nestjs/common';
-import { MODULE_PATH } from '@nestjs/common/constants';
+import { MODULE_PATH } from '@nestjs/common/constants.js';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { Get } from '../../../common/decorators/http/request-mapping.decorator';
-import { ApplicationConfig } from '../../application-config';
-import { NestContainer } from '../../injector';
-import { Injector } from '../../injector/injector';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { GraphInspector } from '../../inspector/graph-inspector';
-import { SerializedGraph } from '../../inspector/serialized-graph';
-import { RoutesResolver } from '../../router/routes-resolver';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { Controller } from '../../../common/decorators/core/controller.decorator.js';
+import { Get } from '../../../common/decorators/http/request-mapping.decorator.js';
+import { ApplicationConfig } from '../../application-config.js';
+import { NestContainer } from '../../injector/index.js';
+import { Injector } from '../../injector/injector.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { GraphInspector } from '../../inspector/graph-inspector.js';
+import { SerializedGraph } from '../../inspector/serialized-graph.js';
+import { RoutesResolver } from '../../router/routes-resolver.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec.js';
 import { createError as createFastifyError } from '@fastify/error';
 
 describe('RoutesResolver', () => {

@@ -1,11 +1,11 @@
 import {
   RESPONSE_PASSTHROUGH_METADATA,
   ROUTE_ARGS_METADATA,
-} from '../../constants';
-import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
-import { PipeTransform } from '../../index';
-import { Type } from '../../interfaces';
-import { isNil, isString } from '../../utils/shared.utils';
+} from '../../constants.js';
+import { RouteParamtypes } from '../../enums/route-paramtypes.enum.js';
+import { PipeTransform } from '../../index.js';
+import { Type } from '../../interfaces/index.js';
+import { isNil, isString } from '../../utils/shared.utils.js';
 
 /**
  * The `@Response()`/`@Res` parameter decorator options.

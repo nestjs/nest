@@ -1,9 +1,9 @@
 import {
   HttpExceptionBody,
   HttpExceptionBodyMessage,
-} from '../interfaces/http/http-exception-body.interface';
-import { isNumber, isObject, isString } from '../utils/shared.utils';
-import { IntrinsicException } from './intrinsic.exception';
+} from '../interfaces/http/http-exception-body.interface.js';
+import { isNumber, isObject, isString } from '../utils/shared.utils.js';
+import { IntrinsicException } from './intrinsic.exception.js';
 
 export interface HttpExceptionOptions {
   /** original cause of the error */

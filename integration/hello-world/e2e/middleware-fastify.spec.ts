@@ -17,8 +17,8 @@ import {
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { FastifyRequest } from 'fastify';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 describe('Middleware (FastifyAdapter)', () => {
   let app: NestFastifyApplication;

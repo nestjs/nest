@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_MESSAGE_HANDLER } from '../../constants';
-import { MqttContext } from '../../ctx-host';
-import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
-import { ServerMqtt } from '../../server/server-mqtt';
-import { objectToMap } from './utils/object-to-map';
+import { NO_MESSAGE_HANDLER } from '../../constants.js';
+import { MqttContext } from '../../ctx-host/index.js';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
+import { ServerMqtt } from '../../server/server-mqtt.js';
+import { objectToMap } from './utils/object-to-map.js';
 
 describe('ServerMqtt', () => {
   let server: ServerMqtt;

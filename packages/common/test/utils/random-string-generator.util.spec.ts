@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { randomStringGenerator } from '../../utils/random-string-generator.util';
+import { randomStringGenerator } from '../../utils/random-string-generator.util.js';
 
 describe('randomStringGenerator', () => {
   it('should generate random string', () => {

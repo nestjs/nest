@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { SELF_DECLARED_DEPS_METADATA } from '../../constants';
-import { Inject } from '../../index';
+import { SELF_DECLARED_DEPS_METADATA } from '../../constants.js';
+import { Inject } from '../../index.js';
 
 describe('@Inject', () => {
   const opaqueToken = () => ({});

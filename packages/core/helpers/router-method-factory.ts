@@ -1,5 +1,5 @@
 import { HttpServer } from '@nestjs/common';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import { RequestMethod } from '@nestjs/common/enums/request-method.enum.js';
 
 export const REQUEST_METHOD_MAP = {
   [RequestMethod.GET]: 'get',

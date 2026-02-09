@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import { JSONCodec } from 'nats';
 import * as sinon from 'sinon';
-import { NO_MESSAGE_HANDLER } from '../../constants';
-import { NatsContext } from '../../ctx-host';
-import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
-import { ServerNats } from '../../server/server-nats';
-import { objectToMap } from './utils/object-to-map';
+import { NO_MESSAGE_HANDLER } from '../../constants.js';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
+import { NatsContext } from '../../ctx-host/index.js';
+import { ServerNats } from '../../server/server-nats.js';
+import { objectToMap } from './utils/object-to-map.js';
 
 // type NatsMsg = import('nats').Msg;
 type NatsMsg = any;
@@ -14,9 +14,17 @@ describe('ServerNats', () => {
   let server: ServerNats;
   let untypedServer: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     server = new ServerNats({});
     untypedServer = server as any;
+
+    // Eagerly init serializer/deserializer (loadPackage is async in ESM)
+    if (typeof (untypedServer.serializer as any)?.init === 'function') {
+      await untypedServer.serializer.init();
+    }
+    if (typeof (untypedServer.deserializer as any)?.init === 'function') {
+      await untypedServer.deserializer.init();
+    }
   });
   describe('listen', () => {
     let client: any;

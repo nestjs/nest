@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { INTERCEPTORS_METADATA } from '../../constants';
-import { UseInterceptors } from '../../decorators/core/use-interceptors.decorator';
-import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
+import { INTERCEPTORS_METADATA } from '../../constants.js';
+import { UseInterceptors } from '../../decorators/core/use-interceptors.decorator.js';
+import { InvalidDecoratorItemException } from '../../utils/validate-each.util.js';
 
 class Interceptor {}
 

@@ -13,7 +13,7 @@ import {
   isUndefined,
   normalizePath,
   stripEndSlash,
-} from '../../utils/shared.utils';
+} from '../../utils/shared.utils.js';
 
 function Foo(a) {
   this.a = 1;

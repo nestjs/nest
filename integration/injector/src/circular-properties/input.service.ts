@@ -1,8 +1,14 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { CircularService } from './circular.service';
+
+// Lazy reference to avoid ESM circular-import TDZ issues
+// with emitDecoratorMetadata.
+let CircularServiceRef: any;
+import('./circular.service.js').then(
+  m => (CircularServiceRef = m.CircularService),
+);
 
 @Injectable()
 export class InputService {
-  @Inject(forwardRef(() => CircularService))
-  public readonly service: CircularService;
+  @Inject(forwardRef(() => CircularServiceRef))
+  public readonly service: any;
 }

@@ -2,28 +2,28 @@ import { DynamicModule, Provider } from '@nestjs/common';
 import {
   EnhancerSubtype,
   GLOBAL_MODULE_METADATA,
-} from '@nestjs/common/constants';
-import { Injectable, Type } from '@nestjs/common/interfaces';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { ApplicationConfig } from '../application-config';
-import { DiscoverableMetaHostCollection } from '../discovery/discoverable-meta-host-collection';
+} from '@nestjs/common/constants.js';
+import { Injectable, Type } from '@nestjs/common/interfaces/index.js';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface.js';
+import { ApplicationConfig } from '../application-config.js';
+import { DiscoverableMetaHostCollection } from '../discovery/discoverable-meta-host-collection.js';
 import {
   CircularDependencyException,
   UndefinedForwardRefException,
   UnknownModuleException,
-} from '../errors/exceptions';
-import { InitializeOnPreviewAllowlist } from '../inspector/initialize-on-preview.allowlist';
-import { SerializedGraph } from '../inspector/serialized-graph';
-import { REQUEST } from '../router/request/request-constants';
-import { ModuleCompiler, ModuleFactory } from './compiler';
-import { ContextId } from './instance-wrapper';
-import { InternalCoreModule } from './internal-core-module/internal-core-module';
-import { InternalProvidersStorage } from './internal-providers-storage';
-import { Module } from './module';
-import { ModulesContainer } from './modules-container';
-import { ByReferenceModuleOpaqueKeyFactory } from './opaque-key-factory/by-reference-module-opaque-key-factory';
-import { DeepHashedModuleOpaqueKeyFactory } from './opaque-key-factory/deep-hashed-module-opaque-key-factory';
-import { ModuleOpaqueKeyFactory } from './opaque-key-factory/interfaces/module-opaque-key-factory.interface';
+} from '../errors/exceptions/index.js';
+import { InitializeOnPreviewAllowlist } from '../inspector/initialize-on-preview.allowlist.js';
+import { SerializedGraph } from '../inspector/serialized-graph.js';
+import { REQUEST } from '../router/request/request-constants.js';
+import { ModuleCompiler, ModuleFactory } from './compiler.js';
+import { ContextId } from './instance-wrapper.js';
+import { InternalCoreModule } from './internal-core-module/internal-core-module.js';
+import { InternalProvidersStorage } from './internal-providers-storage.js';
+import { Module } from './module.js';
+import { ModulesContainer } from './modules-container.js';
+import { ByReferenceModuleOpaqueKeyFactory } from './opaque-key-factory/by-reference-module-opaque-key-factory.js';
+import { DeepHashedModuleOpaqueKeyFactory } from './opaque-key-factory/deep-hashed-module-opaque-key-factory.js';
+import { ModuleOpaqueKeyFactory } from './opaque-key-factory/interfaces/module-opaque-key-factory.interface.js';
 
 type ModuleMetatype = Type<any> | DynamicModule | Promise<DynamicModule>;
 type ModuleScope = Type<any>[];

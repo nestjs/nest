@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { GUARDS_METADATA } from '../../constants';
-import { UseGuards } from '../../decorators/core/use-guards.decorator';
-import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
+import { GUARDS_METADATA } from '../../constants.js';
+import { UseGuards } from '../../decorators/core/use-guards.decorator.js';
+import { InvalidDecoratorItemException } from '../../utils/validate-each.util.js';
 
 class Guard {}
 

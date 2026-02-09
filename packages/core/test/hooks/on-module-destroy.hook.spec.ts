@@ -1,9 +1,9 @@
 import { OnModuleDestroy } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { callModuleDestroyHook } from '../../hooks/on-module-destroy.hook';
-import { NestContainer } from '../../injector/container';
-import { Module } from '../../injector/module';
+import { callModuleDestroyHook } from '../../hooks/on-module-destroy.hook.js';
+import { NestContainer } from '../../injector/container.js';
+import { Module } from '../../injector/module.js';
 
 class SampleProvider implements OnModuleDestroy {
   onModuleDestroy() {}

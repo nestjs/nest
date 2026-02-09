@@ -1,5 +1,5 @@
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { isNil } from '@nestjs/common/utils/shared.utils';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util.js';
+import { isNil } from '@nestjs/common/utils/shared.utils.js';
 import {
   throwError as _throw,
   connectable,
@@ -12,8 +12,8 @@ import {
   Subject,
 } from 'rxjs';
 import { distinctUntilChanged, map, mergeMap, take } from 'rxjs/operators';
-import { IncomingResponseDeserializer } from '../deserializers/incoming-response.deserializer';
-import { InvalidMessageException } from '../errors/invalid-message.exception';
+import { IncomingResponseDeserializer } from '../deserializers/incoming-response.deserializer.js';
+import { InvalidMessageException } from '../errors/invalid-message.exception.js';
 import {
   ClientOptions,
   KafkaOptions,
@@ -26,11 +26,11 @@ import {
   RmqOptions,
   TcpClientOptions,
   WritePacket,
-} from '../interfaces';
-import { ProducerDeserializer } from '../interfaces/deserializer.interface';
-import { ProducerSerializer } from '../interfaces/serializer.interface';
-import { IdentitySerializer } from '../serializers/identity.serializer';
-import { transformPatternToRoute } from '../utils';
+} from '../interfaces/index.js';
+import { ProducerDeserializer } from '../interfaces/deserializer.interface.js';
+import { ProducerSerializer } from '../interfaces/serializer.interface.js';
+import { IdentitySerializer } from '../serializers/identity.serializer.js';
+import { transformPatternToRoute } from '../utils/index.js';
 
 /**
  * @publicApi

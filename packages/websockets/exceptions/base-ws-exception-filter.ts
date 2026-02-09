@@ -4,9 +4,9 @@ import {
   Logger,
   WsExceptionFilter,
 } from '@nestjs/common';
-import { isObject } from '@nestjs/common/utils/shared.utils';
-import { MESSAGES } from '@nestjs/core/constants';
-import { WsException } from '../errors/ws-exception';
+import { isObject } from '@nestjs/common/utils/shared.utils.js';
+import { MESSAGES } from '@nestjs/core/constants.js';
+import { WsException } from '../errors/ws-exception.js';
 
 export interface ErrorPayload<Cause = { pattern: string; data: unknown }> {
   /**

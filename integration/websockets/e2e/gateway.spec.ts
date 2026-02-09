@@ -3,10 +3,10 @@ import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { EventSource } from 'eventsource';
 import { io } from 'socket.io-client';
-import { AppController as LongConnectionController } from '../../nest-application/sse/src/app.controller';
-import { ApplicationGateway } from '../src/app.gateway';
-import { NamespaceGateway } from '../src/namespace.gateway';
-import { ServerGateway } from '../src/server.gateway';
+import { AppController as LongConnectionController } from '../../nest-application/sse/src/app.controller.js';
+import { ApplicationGateway } from '../src/app.gateway.js';
+import { NamespaceGateway } from '../src/namespace.gateway.js';
+import { ServerGateway } from '../src/server.gateway.js';
 
 async function createNestApp(...gateways): Promise<INestApplication> {
   const testingModule = await Test.createTestingModule({

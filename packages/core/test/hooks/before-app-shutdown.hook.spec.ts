@@ -1,9 +1,9 @@
 import { BeforeApplicationShutdown } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { callBeforeAppShutdownHook } from '../../hooks/before-app-shutdown.hook';
-import { NestContainer } from '../../injector/container';
-import { Module } from '../../injector/module';
+import { callBeforeAppShutdownHook } from '../../hooks/before-app-shutdown.hook.js';
+import { NestContainer } from '../../injector/container.js';
+import { Module } from '../../injector/module.js';
 
 class SampleProvider implements BeforeApplicationShutdown {
   beforeApplicationShutdown(signal?: string) {}

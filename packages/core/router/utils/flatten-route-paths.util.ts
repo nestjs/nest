@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common';
-import { isString, normalizePath } from '@nestjs/common/utils/shared.utils';
-import { Routes } from '../interfaces/routes.interface';
+import { isString, normalizePath } from '@nestjs/common/utils/shared.utils.js';
+import { Routes } from '../interfaces/routes.interface.js';
 
 export function flattenRoutePaths(routes: Routes) {
   const result: Array<{

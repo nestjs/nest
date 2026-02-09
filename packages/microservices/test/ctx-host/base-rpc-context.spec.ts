@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 
 describe('BaseRpcContext', () => {
   const args = [1, 2, 3];

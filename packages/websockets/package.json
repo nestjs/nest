@@ -4,6 +4,12 @@
   "description": "Nest - modern, fast, powerful node.js web framework (@websockets)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*": "./*"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/nestjs/nest.git",

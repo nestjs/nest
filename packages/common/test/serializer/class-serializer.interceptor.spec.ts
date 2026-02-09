@@ -1,9 +1,9 @@
 import { expect } from 'chai';
+import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { of, throwError } from 'rxjs';
-import { ClassSerializerInterceptor } from '../../serializer/class-serializer.interceptor';
-import { ExecutionContext, CallHandler } from '../../interfaces';
-import { StreamableFile } from '../../file-stream';
+import { StreamableFile } from '../../file-stream/index.js';
+import { CallHandler, ExecutionContext } from '../../interfaces/index.js';
+import { ClassSerializerInterceptor } from '../../serializer/class-serializer.interceptor.js';
 
 describe('ClassSerializerInterceptor', () => {
   let interceptor: ClassSerializerInterceptor;
@@ -74,7 +74,7 @@ describe('ClassSerializerInterceptor', () => {
       } as any;
     });
 
-    it('should transform plain object response', done => {
+    it('should transform plain object response', async () => {
       const response = { id: 1, name: 'Test' };
       const transformedResponse = { id: 1, name: 'Test' };
 
@@ -82,15 +82,19 @@ describe('ClassSerializerInterceptor', () => {
       mockTransformerPackage.classToPlain.returns(transformedResponse);
       (mockCallHandler.handle as sinon.SinonStub).returns(of(response));
 
-      interceptor
-        .intercept(mockExecutionContext, mockCallHandler)
-        .subscribe(result => {
+      const result$ = await interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
+      await new Promise<void>(resolve => {
+        result$.subscribe(result => {
           expect(result).to.equal(transformedResponse);
-          done();
+          resolve();
         });
+      });
     });
 
-    it('should transform array of objects', done => {
+    it('should transform array of objects', async () => {
       const response = [
         { id: 1, name: 'Test1' },
         { id: 2, name: 'Test2' },
@@ -107,17 +111,21 @@ describe('ClassSerializerInterceptor', () => {
         .returns(transformedItem2);
       (mockCallHandler.handle as sinon.SinonStub).returns(of(response));
 
-      interceptor
-        .intercept(mockExecutionContext, mockCallHandler)
-        .subscribe(result => {
+      const result$ = await interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
+      await new Promise<void>(resolve => {
+        result$.subscribe(result => {
           expect(result).to.be.an('array').with.lengthOf(2);
           expect(result[0]).to.equal(transformedItem1);
           expect(result[1]).to.equal(transformedItem2);
-          done();
+          resolve();
         });
+      });
     });
 
-    it('should merge context options with default options', done => {
+    it('should merge context options with default options', async () => {
       const response = { id: 1, name: 'Test' };
       const defaultOptions = { excludeExtraneousValues: true };
       const contextOptions = { groups: ['user'] };
@@ -132,17 +140,21 @@ describe('ClassSerializerInterceptor', () => {
       mockTransformerPackage.classToPlain.returns(transformedResponse);
       (mockCallHandler.handle as sinon.SinonStub).returns(of(response));
 
-      interceptor
-        .intercept(mockExecutionContext, mockCallHandler)
-        .subscribe(result => {
+      const result$ = await interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
+      await new Promise<void>(resolve => {
+        result$.subscribe(result => {
           const callArgs = mockTransformerPackage.classToPlain.getCall(0).args;
           expect(callArgs[1]).to.deep.include(defaultOptions);
           expect(callArgs[1]).to.deep.include(contextOptions);
-          done();
+          resolve();
         });
+      });
     });
 
-    it('should call reflector with handler and class', done => {
+    it('should call reflector with handler and class', async () => {
       const response = { id: 1 };
       const mockHandler = {};
       const mockClass = {};
@@ -153,14 +165,18 @@ describe('ClassSerializerInterceptor', () => {
       mockTransformerPackage.classToPlain.returns(response);
       (mockCallHandler.handle as sinon.SinonStub).returns(of(response));
 
-      interceptor
-        .intercept(mockExecutionContext, mockCallHandler)
-        .subscribe(() => {
+      const result$ = await interceptor.intercept(
+        mockExecutionContext,
+        mockCallHandler,
+      );
+      await new Promise<void>(resolve => {
+        result$.subscribe(() => {
           expect(mockReflector.getAllAndOverride.calledOnce).to.be.true;
           const args = mockReflector.getAllAndOverride.getCall(0).args;
           expect(args[1]).to.deep.equal([mockHandler, mockClass]);
-          done();
+          resolve();
         });
+      });
     });
   });
 

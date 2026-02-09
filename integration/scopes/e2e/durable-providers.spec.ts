@@ -2,9 +2,9 @@ import { INestApplication } from '@nestjs/common';
 import { ContextIdFactory } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as request from 'supertest';
-import { DurableContextIdStrategy } from '../src/durable/durable-context-id.strategy';
-import { DurableModule } from '../src/durable/durable.module';
+import request from 'supertest';
+import { DurableContextIdStrategy } from '../src/durable/durable-context-id.strategy.js';
+import { DurableModule } from '../src/durable/durable.module.js';
 
 describe('Durable providers', () => {
   let server: any;

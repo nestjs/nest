@@ -5,6 +5,6 @@
  * MIT Licensed
  */
 
-export * from './adapters';
-export * from './interfaces';
-export * from './decorators';
+export * from './adapters/index.js';
+export * from './interfaces/index.js';
+export * from './decorators/index.js';

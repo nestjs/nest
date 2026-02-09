@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Type } from '../../../common';
+import { Type } from '../../../common/index.js';
 import {
   BadGatewayException,
   BadRequestException,
@@ -23,7 +23,7 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
   UnsupportedMediaTypeException,
-} from '../../exceptions';
+} from '../../exceptions/index.js';
 
 describe('HttpException', () => {
   describe('getResponse', () => {

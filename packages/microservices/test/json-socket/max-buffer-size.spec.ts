@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { Socket } from 'net';
 import * as sinon from 'sinon';
-import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
-import { TcpEventsMap } from '../../events/tcp.events';
-import { JsonSocket } from '../../helpers/json-socket';
+import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
+import { TcpEventsMap } from '../../events/tcp.events.js';
+import { JsonSocket } from '../../helpers/json-socket.js';
 
 const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
 

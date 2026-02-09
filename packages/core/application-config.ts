@@ -6,9 +6,9 @@ import {
   VersioningOptions,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
-import { InstanceWrapper } from './injector/instance-wrapper';
-import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
+import { GlobalPrefixOptions } from '@nestjs/common/interfaces/index.js';
+import { InstanceWrapper } from './injector/instance-wrapper.js';
+import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface.js';
 
 export class ApplicationConfig {
   private globalPrefix = '';

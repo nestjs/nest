@@ -4,7 +4,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { AppModule } from '../src/app.module';
+import { AppModule } from '../src/app.module.js';
 
 describe('Body Parser (Fastify Application)', () => {
   const moduleFixture = Test.createTestingModule({

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { MqttRecordBuilder } from '../../record-builders';
-import { MqttRecordSerializer } from '../../serializers/mqtt-record.serializer';
+import { MqttRecordBuilder } from '../../record-builders/index.js';
+import { MqttRecordSerializer } from '../../serializers/mqtt-record.serializer.js';
 
 describe('MqttRecordSerializer', () => {
   let instance: MqttRecordSerializer;

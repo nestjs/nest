@@ -1,10 +1,10 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { TransientLazyModule } from '../src/transient.module';
-import { LazyController } from '../src/lazy.controller';
-import * as chai from 'chai';
+import { TransientLazyModule } from '../src/transient.module.js';
+import { LazyController } from '../src/lazy.controller.js';
+import chai from 'chai';
 import { expect } from 'chai';
-import * as request from 'supertest';
+import request from 'supertest';
 
 describe('Lazy Transient providers', () => {
   let app: INestApplication;

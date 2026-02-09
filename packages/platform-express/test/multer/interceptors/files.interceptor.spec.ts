@@ -1,9 +1,9 @@
 import { CallHandler } from '@nestjs/common';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { FilesInterceptor } from '../../../multer/interceptors/files.interceptor';
+import { FilesInterceptor } from '../../../multer/interceptors/files.interceptor.js';
 
 describe('FilesInterceptor', () => {
   it('should return metatype with expected structure', async () => {

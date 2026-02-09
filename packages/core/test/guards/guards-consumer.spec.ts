@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { of } from 'rxjs';
-import { GuardsConsumer } from '../../guards/guards-consumer';
+import { GuardsConsumer } from '../../guards/guards-consumer.js';
 import { AsyncLocalStorage } from 'async_hooks';
 
 describe('GuardsConsumer', () => {

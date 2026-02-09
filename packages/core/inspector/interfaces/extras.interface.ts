@@ -1,4 +1,4 @@
-import { EnhancerSubtype } from '@nestjs/common/constants';
+import { EnhancerSubtype } from '@nestjs/common/constants.js';
 
 /**
  * Enhancers attached through APP_PIPE, APP_GUARD, APP_INTERCEPTOR, and APP_FILTER tokens.

@@ -1,16 +1,20 @@
 import { RequestMethod } from '@nestjs/common';
-import { HttpServer, RouteInfo, Type } from '@nestjs/common/interfaces';
+import {
+  HttpServer,
+  RouteInfo,
+  Type,
+} from '@nestjs/common/interfaces/index.js';
 import {
   addLeadingSlash,
   isFunction,
   isString,
-} from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { pathToRegexp } from 'path-to-regexp';
 import { uid } from 'uid';
-import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
-import { LegacyRouteConverter } from '../router/legacy-route-converter';
-import { isRouteExcluded } from '../router/utils';
+import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
+import { LegacyRouteConverter } from '../router/legacy-route-converter.js';
+import { isRouteExcluded } from '../router/utils/index.js';
 
 export const mapToExcludeRoute = (
   routes: (string | RouteInfo)[],

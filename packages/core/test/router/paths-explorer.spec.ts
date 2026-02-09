@@ -1,13 +1,13 @@
 import { expect } from 'chai';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
+import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import {
   All,
   Get,
   Post,
-} from '../../../common/decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { MetadataScanner } from '../../metadata-scanner';
-import { PathsExplorer } from '../../router/paths-explorer';
+} from '../../../common/decorators/http/request-mapping.decorator.js';
+import { RequestMethod } from '../../../common/enums/request-method.enum.js';
+import { MetadataScanner } from '../../metadata-scanner.js';
+import { PathsExplorer } from '../../router/paths-explorer.js';
 
 describe('PathsExplorer', () => {
   @Controller('global')

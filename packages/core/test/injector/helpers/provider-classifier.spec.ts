@@ -4,7 +4,7 @@ import {
   isClassProvider,
   isFactoryProvider,
   isValueProvider,
-} from '../../../injector/helpers/provider-classifier';
+} from '../../../injector/helpers/provider-classifier.js';
 
 describe('provider classifier', () => {
   describe('isClassProvider', () => {

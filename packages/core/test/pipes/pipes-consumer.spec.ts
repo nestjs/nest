@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
-import { PipesConsumer } from '../../pipes/pipes-consumer';
+import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum.js';
+import { PipesConsumer } from '../../pipes/pipes-consumer.js';
 
 const createPipe = (transform: Function) => ({ transform });
 

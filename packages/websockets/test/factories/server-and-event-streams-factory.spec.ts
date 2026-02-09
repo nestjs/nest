@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { ReplaySubject, Subject } from 'rxjs';
-import { ServerAndEventStreamsFactory } from '../../factories/server-and-event-streams-factory';
+import { ServerAndEventStreamsFactory } from '../../factories/server-and-event-streams-factory.js';
 
 describe('ServerAndEventStreamsFactory', () => {
   describe('create', () => {

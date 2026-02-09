@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Module } from '../../decorators/modules/module.decorator';
+import { Module } from '../../decorators/modules/module.decorator.js';
 
 describe('@Module', () => {
   const moduleProps = {

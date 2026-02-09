@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getBodyParserOptions } from '../../../adapters/utils/get-body-parser-options.util';
+import { getBodyParserOptions } from '../../../adapters/utils/get-body-parser-options.util.js';
 
 describe('getBodyParserOptions', () => {
   describe('when rawBody is false', () => {

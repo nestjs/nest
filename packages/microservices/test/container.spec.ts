@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { ClientsContainer } from '../container';
+import { ClientsContainer } from '../container.js';
 
 describe('ClientsContainer', () => {
   let instance: ClientsContainer;

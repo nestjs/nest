@@ -4,10 +4,10 @@ import {
   Logger,
   RpcExceptionFilter,
 } from '@nestjs/common';
-import { isObject } from '@nestjs/common/utils/shared.utils';
-import { MESSAGES } from '@nestjs/core/constants';
+import { isObject } from '@nestjs/common/utils/shared.utils.js';
+import { MESSAGES } from '@nestjs/core/constants.js';
 import { Observable, throwError as _throw } from 'rxjs';
-import { RpcException } from './rpc-exception';
+import { RpcException } from './rpc-exception.js';
 
 /**
  * @publicApi

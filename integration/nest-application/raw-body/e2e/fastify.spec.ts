@@ -4,7 +4,7 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { FastifyModule } from '../src/fastify.module';
+import { FastifyModule } from '../src/fastify.module.js';
 
 describe('Raw body (Fastify Application)', () => {
   let app: NestFastifyApplication;

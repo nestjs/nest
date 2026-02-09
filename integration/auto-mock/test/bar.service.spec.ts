@@ -1,9 +1,9 @@
 import { Test } from '@nestjs/testing';
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import * as sinon from 'sinon';
-import { BarService } from '../src/bar.service';
-import { FooService } from '../src/foo.service';
+import { BarService } from '../src/bar.service.js';
+import { FooService } from '../src/foo.service.js';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;

@@ -1,9 +1,9 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import {
   ConsumerDeserializer,
   IncomingEvent,
   IncomingRequest,
-} from '../interfaces';
+} from '../interfaces/index.js';
 
 /**
  * @publicApi
@@ -12,7 +12,10 @@ export class IncomingRequestDeserializer implements ConsumerDeserializer {
   deserialize(
     value: any,
     options?: Record<string, any>,
-  ): IncomingRequest | IncomingEvent {
+  ):
+    | IncomingRequest
+    | IncomingEvent
+    | Promise<IncomingRequest | IncomingEvent> {
     return this.isExternal(value) ? this.mapToSchema(value, options) : value;
   }
 

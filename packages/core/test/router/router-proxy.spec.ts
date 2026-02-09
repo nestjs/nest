@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { HttpException } from '../../../common/exceptions/http.exception';
-import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
-import { ExecutionContextHost } from '../../helpers/execution-context-host';
-import { RouterProxy } from '../../router/router-proxy';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { HttpException } from '../../../common/exceptions/http.exception.js';
+import { ExceptionsHandler } from '../../exceptions/exceptions-handler.js';
+import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
+import { RouterProxy } from '../../router/router-proxy.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec.js';
 
 describe('RouterProxy', () => {
   let routerProxy: RouterProxy;

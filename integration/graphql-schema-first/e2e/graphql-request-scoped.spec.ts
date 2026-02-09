@@ -4,9 +4,9 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { join } from 'path';
-import * as request from 'supertest';
-import { CatsRequestScopedService } from '../src/cats/cats-request-scoped.service';
-import { CatsModule } from '../src/cats/cats.module';
+import request from 'supertest';
+import { CatsRequestScopedService } from '../src/cats/cats-request-scoped.service.js';
+import { CatsModule } from '../src/cats/cats.module.js';
 
 describe('GraphQL request scoped', () => {
   let app: INestApplication;
@@ -17,7 +17,9 @@ describe('GraphQL request scoped', () => {
         CatsModule.enableRequestScope(),
         GraphQLModule.forRoot({
           driver: ApolloDriver,
-          typePaths: [join(__dirname, '..', 'src', '**', '*.graphql')],
+          typePaths: [
+            join(import.meta.dirname, '..', 'src', '**', '*.graphql'),
+          ],
         }),
       ],
     }).compile();

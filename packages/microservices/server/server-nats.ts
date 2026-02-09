@@ -1,22 +1,26 @@
-import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import { EventEmitter } from 'events';
 import {
   NATS_DEFAULT_GRACE_PERIOD,
   NATS_DEFAULT_URL,
   NO_MESSAGE_HANDLER,
-} from '../constants';
-import { NatsContext } from '../ctx-host/nats.context';
-import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer';
-import { Transport } from '../enums';
-import { NatsEvents, NatsEventsMap, NatsStatus } from '../events/nats.events';
+} from '../constants.js';
+import { NatsContext } from '../ctx-host/nats.context.js';
+import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer.js';
+import { Transport } from '../enums/index.js';
+import {
+  NatsEvents,
+  NatsEventsMap,
+  NatsStatus,
+} from '../events/nats.events.js';
 import {
   NatsOptions,
   TransportId,
-} from '../interfaces/microservice-configuration.interface';
-import { IncomingRequest } from '../interfaces/packet.interface';
-import { NatsRecord } from '../record-builders';
-import { NatsRecordSerializer } from '../serializers/nats-record.serializer';
-import { Server } from './server';
+} from '../interfaces/microservice-configuration.interface.js';
+import { IncomingRequest } from '../interfaces/packet.interface.js';
+import { NatsRecord } from '../record-builders/index.js';
+import { NatsRecordSerializer } from '../serializers/nats-record.serializer.js';
+import { Server } from './server.js';
 
 let natsPackage = {} as any;
 
@@ -50,8 +54,10 @@ export class ServerNats<
   constructor(private readonly options: Required<NatsOptions>['options']) {
     super();
 
-    natsPackage = this.loadPackage('nats', ServerNats.name, () =>
-      require('nats'),
+    natsPackage = this.loadPackage(
+      'nats',
+      ServerNats.name,
+      () => import('nats'),
     );
 
     this.initializeSerializer(options);
@@ -123,7 +129,23 @@ export class ServerNats<
     this.natsClient = null;
   }
 
-  public createNatsClient(): Promise<Client> {
+  public async createNatsClient(): Promise<Client> {
+    natsPackage = await natsPackage;
+
+    // Eagerly initialize serializer/deserializer so they can be used synchronously
+    if (
+      this.serializer &&
+      typeof (this.serializer as any).init === 'function'
+    ) {
+      await (this.serializer as any).init();
+    }
+    if (
+      this.deserializer &&
+      typeof (this.deserializer as any).init === 'function'
+    ) {
+      await (this.deserializer as any).init();
+    }
+
     const options = this.options || ({} as NatsOptions);
     return natsPackage.connect({
       servers: NATS_DEFAULT_URL,

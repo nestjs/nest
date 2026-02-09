@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { Logger } from '@nestjs/common';
-import { SilentLogger } from '../../../injector/helpers/silent-logger';
+import { SilentLogger } from '../../../injector/helpers/silent-logger.js';
 
 describe('SilentLogger', () => {
   let silentLogger: SilentLogger;

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { FASTIFY_ROUTE_CONFIG_METADATA } from '../../constants';
-import { RouteConfig } from '../../decorators/route-config.decorator';
+import { FASTIFY_ROUTE_CONFIG_METADATA } from '../../constants.js';
+import { RouteConfig } from '../../decorators/route-config.decorator.js';
 
 describe('@RouteConfig', () => {
   const routeConfig = { testKey: 'testValue' };

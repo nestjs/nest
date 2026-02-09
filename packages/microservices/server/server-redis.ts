@@ -1,18 +1,22 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import {
   NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_HOST,
   REDIS_DEFAULT_PORT,
-} from '../constants';
-import { RedisContext } from '../ctx-host';
-import { Transport } from '../enums';
+} from '../constants.js';
+import { RedisContext } from '../ctx-host/index.js';
+import { Transport } from '../enums/index.js';
 import {
   RedisEvents,
   RedisEventsMap,
   RedisStatus,
-} from '../events/redis.events';
-import { IncomingRequest, RedisOptions, TransportId } from '../interfaces';
-import { Server } from './server';
+} from '../events/redis.events.js';
+import {
+  IncomingRequest,
+  RedisOptions,
+  TransportId,
+} from '../interfaces/index.js';
+import { Server } from './server.js';
 
 // To enable type safety for Redis. This cant be uncommented by default
 // because it would require the user to install the ioredis package even if they dont use Redis
@@ -41,20 +45,22 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   constructor(protected readonly options: Required<RedisOptions>['options']) {
     super();
 
-    redisPackage = this.loadPackage('ioredis', ServerRedis.name, () =>
-      require('ioredis'),
+    redisPackage = this.loadPackage(
+      'ioredis',
+      ServerRedis.name,
+      () => import('ioredis'),
     );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
   }
 
-  public listen(
+  public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
     try {
-      this.subClient = this.createRedisClient();
-      this.pubClient = this.createRedisClient();
+      this.subClient = await this.createRedisClient();
+      this.pubClient = await this.createRedisClient();
 
       [this.subClient, this.pubClient].forEach((client, index) => {
         const type = index === 0 ? 'pub' : 'sub';
@@ -111,8 +117,10 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     this.pendingEventListeners = [];
   }
 
-  public createRedisClient(): Redis {
-    return new redisPackage({
+  public async createRedisClient(): Promise<Redis> {
+    redisPackage = await redisPackage;
+    const RedisClient = redisPackage.default || redisPackage;
+    return new RedisClient({
       port: REDIS_DEFAULT_PORT,
       host: REDIS_DEFAULT_HOST,
       ...this.getClientOptions(),

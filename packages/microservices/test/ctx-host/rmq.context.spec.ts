@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { RmqContext } from '../../ctx-host';
+import { RmqContext } from '../../ctx-host/index.js';
 
 describe('RmqContext', () => {
   const args = [{ test: true }, 'test', 'pattern'];

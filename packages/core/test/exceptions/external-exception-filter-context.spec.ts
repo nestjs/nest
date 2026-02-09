@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Catch } from '../../../common/decorators/core/catch.decorator';
-import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
-import { ApplicationConfig } from '../../application-config';
-import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context';
-import { NestContainer } from '../../injector/container';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { Catch } from '../../../common/decorators/core/catch.decorator.js';
+import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator.js';
+import { ApplicationConfig } from '../../application-config.js';
+import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context.js';
+import { NestContainer } from '../../injector/container.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 
 describe('ExternalExceptionFilterContext', () => {
   let applicationConfig: ApplicationConfig;

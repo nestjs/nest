@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Module } from '../../../common/decorators/modules/module.decorator';
-import { Global } from '../../../common/index';
-import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception';
-import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
-import { NestContainer } from '../../injector/container';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { Module } from '../../../common/decorators/modules/module.decorator.js';
+import { Global } from '../../../common/index.js';
+import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception.js';
+import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception.js';
+import { NestContainer } from '../../injector/container.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec.js';
 
 describe('NestContainer', () => {
   let container: NestContainer;

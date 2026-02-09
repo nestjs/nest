@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { DefaultValuePipe } from '../../pipes/default-value.pipe';
+import { DefaultValuePipe } from '../../pipes/default-value.pipe.js';
 
 describe('DefaultValuePipe', () => {
   const defaultValue = 'default';

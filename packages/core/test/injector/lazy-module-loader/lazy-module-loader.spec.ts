@@ -5,12 +5,12 @@ import {
   ModuleRef,
   ModulesContainer,
   NestContainer,
-} from '../../../injector';
-import { Injector } from '../../../injector/injector';
-import { InstanceLoader } from '../../../injector/instance-loader';
-import { GraphInspector } from '../../../inspector/graph-inspector';
-import { MetadataScanner } from '../../../metadata-scanner';
-import { DependenciesScanner } from '../../../scanner';
+} from '../../../injector/index.js';
+import { Injector } from '../../../injector/injector.js';
+import { InstanceLoader } from '../../../injector/instance-loader.js';
+import { GraphInspector } from '../../../inspector/graph-inspector.js';
+import { MetadataScanner } from '../../../metadata-scanner.js';
+import { DependenciesScanner } from '../../../scanner.js';
 
 describe('LazyModuleLoader', () => {
   let lazyModuleLoader: LazyModuleLoader;

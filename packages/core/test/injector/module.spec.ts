@@ -1,14 +1,14 @@
 import { Controller, Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Injectable } from '../../../common';
-import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator';
-import { RuntimeException } from '../../errors/exceptions/runtime.exception';
-import { UnknownElementException } from '../../errors/exceptions/unknown-element.exception';
-import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception';
-import { NestContainer } from '../../injector/container';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { Module } from '../../injector/module';
+import { Injectable } from '../../../common/index.js';
+import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator.js';
+import { RuntimeException } from '../../errors/exceptions/runtime.exception.js';
+import { UnknownElementException } from '../../errors/exceptions/unknown-element.exception.js';
+import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception.js';
+import { NestContainer } from '../../injector/container.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { Module } from '../../injector/module.js';
 
 describe('Module', () => {
   let moduleRef: Module;

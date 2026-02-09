@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { Observable } from 'rxjs';
 import * as sinon from 'sinon';
-import { ClientProxy } from '../../client/client-proxy';
-import { ReadPacket } from '../../interfaces';
+import { ClientProxy } from '../../client/client-proxy.js';
+import { ReadPacket } from '../../interfaces/index.js';
 
 class TestClientProxy extends ClientProxy {
   protected async dispatchEvent<T = any>(

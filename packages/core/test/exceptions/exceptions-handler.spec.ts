@@ -1,13 +1,13 @@
 import { HttpException } from '@nestjs/common';
-import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
+import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { expect } from 'chai';
-import * as createHttpError from 'http-errors';
+import createHttpError from 'http-errors';
 import * as sinon from 'sinon';
-import { AbstractHttpAdapter } from '../../adapters';
-import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception';
-import { ExceptionsHandler } from '../../exceptions/exceptions-handler';
-import { ExecutionContextHost } from '../../helpers/execution-context-host';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { AbstractHttpAdapter } from '../../adapters/index.js';
+import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid-exception-filter.exception.js';
+import { ExceptionsHandler } from '../../exceptions/exceptions-handler.js';
+import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec.js';
 
 describe('ExceptionsHandler', () => {
   let adapter: AbstractHttpAdapter;

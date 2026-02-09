@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { SetMetadata } from '../../decorators/core/set-metadata.decorator';
+import { SetMetadata } from '../../decorators/core/set-metadata.decorator.js';
 
 describe('@SetMetadata', () => {
   const key = 'key',

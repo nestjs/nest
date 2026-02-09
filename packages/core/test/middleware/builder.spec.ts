@@ -11,14 +11,14 @@ import {
   RequestMethod,
   Version,
   VersioningType,
-} from '../../../common';
-import { MiddlewareConfigProxy } from '../../../common/interfaces';
-import { ApplicationConfig } from '../../application-config';
-import { NestContainer } from '../../injector/container';
-import { MiddlewareBuilder } from '../../middleware/builder';
-import { RouteInfoPathExtractor } from '../../middleware/route-info-path-extractor';
-import { RoutesMapper } from '../../middleware/routes-mapper';
-import { NoopHttpAdapter } from './../utils/noop-adapter.spec';
+} from '../../../common/index.js';
+import { MiddlewareConfigProxy } from '../../../common/interfaces/index.js';
+import { ApplicationConfig } from '../../application-config.js';
+import { NestContainer } from '../../injector/container.js';
+import { MiddlewareBuilder } from '../../middleware/builder.js';
+import { RouteInfoPathExtractor } from '../../middleware/route-info-path-extractor.js';
+import { RoutesMapper } from '../../middleware/routes-mapper.js';
+import { NoopHttpAdapter } from './../utils/noop-adapter.spec.js';
 
 describe('MiddlewareBuilder', () => {
   let builder: MiddlewareBuilder;

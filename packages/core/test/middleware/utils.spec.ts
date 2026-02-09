@@ -1,5 +1,5 @@
 import { RequestMethod } from '@nestjs/common';
-import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
+import { addLeadingSlash } from '@nestjs/common/utils/shared.utils.js';
 import { expect } from 'chai';
 import { pathToRegexp } from 'path-to-regexp';
 import * as sinon from 'sinon';
@@ -10,8 +10,8 @@ import {
   isMiddlewareRouteExcluded,
   mapToClass,
   mapToExcludeRoute,
-} from '../../middleware/utils';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+} from '../../middleware/utils.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec.js';
 
 describe('middleware utils', () => {
   const noopAdapter = new NoopHttpAdapter({});

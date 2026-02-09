@@ -1,5 +1,5 @@
 import { RequestMethod } from '@nestjs/common';
-import { VersionValue } from '@nestjs/common/interfaces';
+import { VersionValue } from '@nestjs/common/interfaces/index.js';
 
 export type HttpEntrypointMetadata = {
   path: string;

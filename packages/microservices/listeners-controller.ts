@@ -1,18 +1,18 @@
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { ContextIdFactory } from '@nestjs/core/helpers/context-id-factory';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { Injector } from '@nestjs/core/injector/injector';
+import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface.js';
+import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
+import { ContextIdFactory } from '@nestjs/core/helpers/context-id-factory.js';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants.js';
+import { NestContainer } from '@nestjs/core/injector/container.js';
+import { Injector } from '@nestjs/core/injector/injector.js';
 import {
   ContextId,
   InstanceWrapper,
-} from '@nestjs/core/injector/instance-wrapper';
-import { Module } from '@nestjs/core/injector/module';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants';
+} from '@nestjs/core/injector/instance-wrapper.js';
+import { Module } from '@nestjs/core/injector/module.js';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector.js';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner.js';
+import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants.js';
 import {
   forkJoin,
   from as fromPromise,
@@ -22,25 +22,29 @@ import {
   ObservedValueOf,
   of,
 } from 'rxjs';
-import { IClientProxyFactory } from './client/client-proxy-factory';
-import { ClientsContainer } from './container';
-import { ExceptionFiltersContext } from './context/exception-filters-context';
-import { RequestContextHost } from './context/request-context-host';
-import { RpcContextCreator } from './context/rpc-context-creator';
+import { IClientProxyFactory } from './client/client-proxy-factory.js';
+import { ClientsContainer } from './container.js';
+import { ExceptionFiltersContext } from './context/exception-filters-context.js';
+import { RequestContextHost } from './context/request-context-host.js';
+import { RpcContextCreator } from './context/rpc-context-creator.js';
 import {
   DEFAULT_CALLBACK_METADATA,
   DEFAULT_GRPC_CALLBACK_METADATA,
-} from './context/rpc-metadata-constants';
-import { BaseRpcContext } from './ctx-host/base-rpc.context';
-import { Transport } from './enums';
-import { MessageHandler, PatternMetadata, RequestContext } from './interfaces';
-import { MicroserviceEntrypointMetadata } from './interfaces/microservice-entrypoint-metadata.interface';
+} from './context/rpc-metadata-constants.js';
+import { BaseRpcContext } from './ctx-host/base-rpc.context.js';
+import { Transport } from './enums/index.js';
+import {
+  MessageHandler,
+  PatternMetadata,
+  RequestContext,
+} from './interfaces/index.js';
+import { MicroserviceEntrypointMetadata } from './interfaces/microservice-entrypoint-metadata.interface.js';
 import {
   EventOrMessageListenerDefinition,
   ListenerMetadataExplorer,
-} from './listener-metadata-explorer';
-import { ServerGrpc } from './server';
-import { Server } from './server/server';
+} from './listener-metadata-explorer.js';
+import { ServerGrpc } from './server/index.js';
+import { Server } from './server/server.js';
 
 export class ListenersController {
   private readonly metadataExplorer = new ListenerMetadataExplorer(

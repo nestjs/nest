@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { RedisContext } from '../../ctx-host';
+import { RedisContext } from '../../ctx-host/index.js';
 
 describe('RedisContext', () => {
   const args = ['test'];

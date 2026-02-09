@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { RequestContextHost } from '../../context/request-context-host';
-import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
+import { RequestContextHost } from '../../context/request-context-host.js';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 
 describe('RequestContextHost', () => {
   const data = { test: true };

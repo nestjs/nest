@@ -1,17 +1,17 @@
 import { Optional } from '@nestjs/common';
-import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
+import { PARAMTYPES_METADATA } from '@nestjs/common/constants.js';
 import * as chai from 'chai';
 import { expect } from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
+import chaiAsPromised from 'chai-as-promised';
 import * as sinon from 'sinon';
-import { Inject } from '../../../common/decorators/core/inject.decorator';
-import { Injectable } from '../../../common/decorators/core/injectable.decorator';
-import { STATIC_CONTEXT } from '../../injector/constants';
-import { NestContainer } from '../../injector/container';
-import { Injector, PropertyDependency } from '../../injector/injector';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { Module } from '../../injector/module';
-import { SettlementSignal } from '../../injector/settlement-signal';
+import { Inject } from '../../../common/decorators/core/inject.decorator.js';
+import { Injectable } from '../../../common/decorators/core/injectable.decorator.js';
+import { STATIC_CONTEXT } from '../../injector/constants.js';
+import { NestContainer } from '../../injector/container.js';
+import { Injector, PropertyDependency } from '../../injector/injector.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { Module } from '../../injector/module.js';
+import { SettlementSignal } from '../../injector/settlement-signal.js';
 
 chai.use(chaiAsPromised);
 

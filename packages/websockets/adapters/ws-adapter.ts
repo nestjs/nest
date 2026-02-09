@@ -1,9 +1,9 @@
 import { INestApplicationContext, WebSocketAdapter } from '@nestjs/common';
-import { WsMessageHandler } from '@nestjs/common/interfaces';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
+import { WsMessageHandler } from '@nestjs/common/interfaces/index.js';
+import { isFunction } from '@nestjs/common/utils/shared.utils.js';
 import { NestApplication } from '@nestjs/core';
 import { Observable } from 'rxjs';
-import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants';
+import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants.js';
 
 export interface BaseWsInstance {
   on: (event: string, callback: Function) => void;

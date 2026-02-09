@@ -5,11 +5,11 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { fail } from 'assert';
 import { expect, use } from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
+import chaiAsPromised from 'chai-as-promised';
 import { join } from 'path';
 import * as sinon from 'sinon';
-import * as request from 'supertest';
-import { GrpcController } from '../src/grpc/grpc.controller';
+import request from 'supertest';
+import { GrpcController } from '../src/grpc/grpc.controller.js';
 
 use(chaiAsPromised);
 
@@ -31,8 +31,8 @@ describe('GRPC transport', () => {
       options: {
         package: ['math', 'math2'],
         protoPath: [
-          join(__dirname, '../src/grpc/math.proto'),
-          join(__dirname, '../src/grpc/math2.proto'),
+          join(import.meta.dirname, '../src/grpc/math.proto'),
+          join(import.meta.dirname, '../src/grpc/math2.proto'),
         ],
       },
     });
@@ -42,7 +42,7 @@ describe('GRPC transport', () => {
     await app.init();
     // Load proto-buffers for test gRPC dispatch
     const proto = ProtoLoader.loadSync(
-      join(__dirname, '../src/grpc/math.proto'),
+      join(import.meta.dirname, '../src/grpc/math.proto'),
     ) as any;
     // Create Raw gRPC client object
     const protoGRPC = GRPC.loadPackageDefinition(proto) as any;

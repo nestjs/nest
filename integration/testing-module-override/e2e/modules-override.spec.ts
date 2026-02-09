@@ -9,8 +9,8 @@ import {
 import { LazyModuleLoader } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
-import { AModule, AProvider } from '../circular-dependency/a.module';
-import { BModule, BProvider } from '../circular-dependency/b.module';
+import { AModule, AProvider } from '../circular-dependency/a.module.js';
+import { BModule, BProvider } from '../circular-dependency/b.module.js';
 
 describe('Modules overriding', () => {
   describe('Top-level module', () => {

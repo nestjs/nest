@@ -1,21 +1,21 @@
 import { ForbiddenException } from '@nestjs/common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '@nestjs/common/constants.js';
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum.js';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context';
-import { GuardsConsumer } from '../../guards/guards-consumer';
-import { GuardsContextCreator } from '../../guards/guards-context-creator';
-import { ExternalContextCreator } from '../../helpers/external-context-creator';
-import { NestContainer } from '../../injector/container';
-import { Module } from '../../injector/module';
-import { ModulesContainer } from '../../injector/modules-container';
-import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../../pipes/pipes-consumer';
-import { PipesContextCreator } from '../../pipes/pipes-context-creator';
-import { RouteParamsFactory } from '../../router/route-params-factory';
+import { ExternalExceptionFilterContext } from '../../exceptions/external-exception-filter-context.js';
+import { GuardsConsumer } from '../../guards/guards-consumer.js';
+import { GuardsContextCreator } from '../../guards/guards-context-creator.js';
+import { ExternalContextCreator } from '../../helpers/external-context-creator.js';
+import { NestContainer } from '../../injector/container.js';
+import { Module } from '../../injector/module.js';
+import { ModulesContainer } from '../../injector/modules-container.js';
+import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator.js';
+import { PipesConsumer } from '../../pipes/pipes-consumer.js';
+import { PipesContextCreator } from '../../pipes/pipes-context-creator.js';
+import { RouteParamsFactory } from '../../router/route-params-factory.js';
 
 describe('ExternalContextCreator', () => {
   let contextCreator: ExternalContextCreator;

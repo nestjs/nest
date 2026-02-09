@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { CATCH_WATERMARK, FILTER_CATCH_EXCEPTIONS } from '../../constants';
-import { Catch } from '../../decorators/core/catch.decorator';
+import { CATCH_WATERMARK, FILTER_CATCH_EXCEPTIONS } from '../../constants.js';
+import { Catch } from '../../decorators/core/catch.decorator.js';
 
 describe('@Catch', () => {
   const exceptions: any = ['exception', 'exception2'];

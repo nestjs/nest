@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { expect } from 'chai';
-import { flattenRoutePaths } from '../../../router/utils';
+import { flattenRoutePaths } from '../../../router/utils/index.js';
 
 describe('flattenRoutePaths', () => {
   it('should flatten all route paths', () => {

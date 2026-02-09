@@ -1,12 +1,16 @@
 import { blue, magenta } from 'ansis';
-import * as childProcess from 'child_process';
-import { execFile as execFileCb } from 'child_process';
-import * as log from 'fancy-log';
+import log from 'fancy-log';
 import { task } from 'gulp';
-import { resolve } from 'path';
-import { promisify } from 'util';
-import { samplePath } from '../config';
-import { containsPackageJson, getDirs } from '../util/task-helpers';
+import * as childProcess from 'node:child_process';
+import { execFile as execFileCb } from 'node:child_process';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+import { samplePath } from '../config.js';
+import { containsPackageJson, getDirs } from '../util/task-helpers.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const exec = promisify(childProcess.exec);
 const execFile = promisify(execFileCb);

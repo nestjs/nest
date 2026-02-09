@@ -1,9 +1,9 @@
 import { Scope } from '@nestjs/common';
 import { expect } from 'chai';
-import { ApplicationConfig } from '../../application-config';
-import { Edge } from '../../inspector/interfaces/edge.interface';
-import { Node } from '../../inspector/interfaces/node.interface';
-import { SerializedGraph } from '../../inspector/serialized-graph';
+import { ApplicationConfig } from '../../application-config.js';
+import { Edge } from '../../inspector/interfaces/edge.interface.js';
+import { Node } from '../../inspector/interfaces/node.interface.js';
+import { SerializedGraph } from '../../inspector/serialized-graph.js';
 
 describe('SerializedGraph', () => {
   let serializedGraph: SerializedGraph;

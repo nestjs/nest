@@ -2,24 +2,24 @@ import {
   MODULE_PATH,
   PATH_METADATA,
   VERSION_METADATA,
-} from '@nestjs/common/constants';
+} from '@nestjs/common/constants.js';
 import {
   RouteInfo,
   Type,
   VERSION_NEUTRAL,
   VersionValue,
-} from '@nestjs/common/interfaces';
+} from '@nestjs/common/interfaces/index.js';
 import {
   addLeadingSlash,
   isString,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
-import { ApplicationConfig } from '../application-config';
-import { NestContainer } from '../injector/container';
-import { Module } from '../injector/module';
-import { MetadataScanner } from '../metadata-scanner';
-import { PathsExplorer, RouteDefinition } from '../router/paths-explorer';
-import { targetModulesByContainer } from '../router/router-module';
+} from '@nestjs/common/utils/shared.utils.js';
+import { ApplicationConfig } from '../application-config.js';
+import { NestContainer } from '../injector/container.js';
+import { Module } from '../injector/module.js';
+import { MetadataScanner } from '../metadata-scanner.js';
+import { PathsExplorer, RouteDefinition } from '../router/paths-explorer.js';
+import { targetModulesByContainer } from '../router/router-module.js';
 
 export class RoutesMapper {
   private readonly pathsExplorer: PathsExplorer;

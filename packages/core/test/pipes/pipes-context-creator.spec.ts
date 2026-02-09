@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ApplicationConfig } from '../../application-config';
-import { NestContainer } from '../../injector/container';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { PipesContextCreator } from '../../pipes/pipes-context-creator';
+import { ApplicationConfig } from '../../application-config.js';
+import { NestContainer } from '../../injector/container.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { PipesContextCreator } from '../../pipes/pipes-context-creator.js';
 
 class Pipe {}
 

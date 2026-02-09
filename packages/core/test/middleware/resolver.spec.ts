@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Injectable } from '../../../common';
-import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
-import { NestContainer } from '../../injector';
-import { Injector } from '../../injector/injector';
-import { MiddlewareContainer } from '../../middleware/container';
-import { MiddlewareResolver } from '../../middleware/resolver';
+import { Injectable } from '../../../common/index.js';
+import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface.js';
+import { NestContainer } from '../../injector/index.js';
+import { Injector } from '../../injector/injector.js';
+import { MiddlewareContainer } from '../../middleware/container.js';
+import { MiddlewareResolver } from '../../middleware/resolver.js';
 
 describe('MiddlewareResolver', () => {
   @Injectable()

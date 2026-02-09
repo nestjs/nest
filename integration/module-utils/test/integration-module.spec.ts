@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { IntegrationModule } from '../src/integration.module';
+import { IntegrationModule } from '../src/integration.module.js';
 
 describe('Module utils (ConfigurableModuleBuilder)', () => {
   it('should auto-generate "forRoot" method', async () => {

@@ -1,5 +1,5 @@
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { DeterministicUuidRegistry } from './deterministic-uuid-registry';
+import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util.js';
+import { DeterministicUuidRegistry } from './deterministic-uuid-registry.js';
 
 export enum UuidFactoryMode {
   Random = 'random',

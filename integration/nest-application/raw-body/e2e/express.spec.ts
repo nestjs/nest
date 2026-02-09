@@ -1,8 +1,8 @@
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as request from 'supertest';
-import { ExpressModule } from '../src/express.module';
+import request from 'supertest';
+import { ExpressModule } from '../src/express.module.js';
 
 describe('Raw body (Express Application)', () => {
   let app: NestExpressApplication;

@@ -2,15 +2,15 @@ import { ParamData } from '@nestjs/common';
 import {
   PARAMTYPES_METADATA,
   RESPONSE_PASSTHROUGH_METADATA,
-} from '@nestjs/common/constants';
+} from '@nestjs/common/constants.js';
 import {
   ContextType,
   Controller,
   PipeTransform,
   Type,
-} from '@nestjs/common/interfaces';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { ExecutionContextHost } from './execution-context-host';
+} from '@nestjs/common/interfaces/index.js';
+import { isFunction } from '@nestjs/common/utils/shared.utils.js';
+import { ExecutionContextHost } from './execution-context-host.js';
 
 export interface ParamProperties<T = any, IExtractor extends Function = any> {
   index: number;

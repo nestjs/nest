@@ -3,12 +3,12 @@ import {
   CallHandler,
   ContextType,
   Controller,
-} from '@nestjs/common/interfaces';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/interfaces/index.js';
+import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
 import { AsyncResource } from 'async_hooks';
 import { Observable, defer, from as fromPromise } from 'rxjs';
 import { mergeAll, switchMap } from 'rxjs/operators';
-import { ExecutionContextHost } from '../helpers/execution-context-host';
+import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 
 export class InterceptorsConsumer {
   public async intercept<TContext extends string = ContextType>(

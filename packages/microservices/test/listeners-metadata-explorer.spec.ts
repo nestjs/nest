@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { MetadataScanner } from '../../core/metadata-scanner';
-import { Client } from '../decorators/client.decorator';
-import { EventPattern } from '../decorators/event-pattern.decorator';
-import { MessagePattern } from '../decorators/message-pattern.decorator';
-import { Transport } from '../enums/transport.enum';
-import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
+import { MetadataScanner } from '../../core/metadata-scanner.js';
+import { Client } from '../decorators/client.decorator.js';
+import { EventPattern } from '../decorators/event-pattern.decorator.js';
+import { MessagePattern } from '../decorators/message-pattern.decorator.js';
+import { Transport } from '../enums/transport.enum.js';
+import { ListenerMetadataExplorer } from '../listener-metadata-explorer.js';
 
 describe('ListenerMetadataExplorer', () => {
   const msgPattern = { pattern: 'testMsg' };

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { MsPattern } from '../../interfaces';
-import { transformPatternToRoute } from '../../utils/transform-pattern.utils';
+import { MsPattern } from '../../interfaces/index.js';
+import { transformPatternToRoute } from '../../utils/transform-pattern.utils.js';
 
 function equalTest<R>(testPatterns: MsPattern[], expectedResults: R[]) {
   testPatterns.forEach((testPattern: MsPattern, index: number) => {

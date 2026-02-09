@@ -5,7 +5,7 @@ import {
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { EventSource } from 'eventsource';
-import { AppModule } from '../src/app.module';
+import { AppModule } from '../src/app.module.js';
 
 describe('Sse (Fastify Application)', () => {
   let app: NestFastifyApplication;

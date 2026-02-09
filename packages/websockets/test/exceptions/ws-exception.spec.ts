@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { WsException } from '../../errors/ws-exception';
+import { WsException } from '../../errors/ws-exception.js';
 
 describe('WsException', () => {
   describe('when string passed', () => {

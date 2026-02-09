@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ApplicationConfig } from '../../application-config';
-import { GuardsContextCreator } from '../../guards/guards-context-creator';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { ApplicationConfig } from '../../application-config.js';
+import { GuardsContextCreator } from '../../guards/guards-context-creator.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 
 class Guard {}
 

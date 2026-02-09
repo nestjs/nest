@@ -2,8 +2,8 @@ import { RequestMethod, VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
 import { expect } from 'chai';
 import { pathToRegexp } from 'path-to-regexp';
 import * as sinon from 'sinon';
-import { ApplicationConfig } from '../../application-config';
-import { RoutePathFactory } from '../../router/route-path-factory';
+import { ApplicationConfig } from '../../application-config.js';
+import { RoutePathFactory } from '../../router/route-path-factory.js';
 
 describe('RoutePathFactory', () => {
   let routePathFactory: RoutePathFactory;

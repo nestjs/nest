@@ -1,35 +1,35 @@
 import {
   CUSTOM_ROUTE_ARGS_METADATA,
   PARAMTYPES_METADATA,
-} from '@nestjs/common/constants';
+} from '@nestjs/common/constants.js';
 import {
   ContextType,
   Controller,
   PipeTransform,
-} from '@nestjs/common/interfaces';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
-import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards/constants';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+} from '@nestjs/common/interfaces/index.js';
+import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
+import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards/constants.js';
+import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer.js';
+import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator.js';
 import {
   ContextUtils,
   ParamProperties,
-} from '@nestjs/core/helpers/context-utils';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { HandlerMetadataStorage } from '@nestjs/core/helpers/handler-metadata-storage';
-import { ParamsMetadata } from '@nestjs/core/helpers/interfaces';
-import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
-import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+} from '@nestjs/core/helpers/context-utils.js';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
+import { HandlerMetadataStorage } from '@nestjs/core/helpers/handler-metadata-storage.js';
+import { ParamsMetadata } from '@nestjs/core/helpers/interfaces/index.js';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants.js';
+import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer.js';
+import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator.js';
+import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer.js';
+import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator.js';
 import { Observable } from 'rxjs';
-import { PARAM_ARGS_METADATA } from '../constants';
-import { RpcException } from '../exceptions';
-import { RpcParamsFactory } from '../factories/rpc-params-factory';
-import { ExceptionFiltersContext } from './exception-filters-context';
-import { DEFAULT_CALLBACK_METADATA } from './rpc-metadata-constants';
-import { RpcProxy } from './rpc-proxy';
+import { PARAM_ARGS_METADATA } from '../constants.js';
+import { RpcException } from '../exceptions/index.js';
+import { RpcParamsFactory } from '../factories/rpc-params-factory.js';
+import { ExceptionFiltersContext } from './exception-filters-context.js';
+import { DEFAULT_CALLBACK_METADATA } from './rpc-metadata-constants.js';
+import { RpcProxy } from './rpc-proxy.js';
 
 type RpcParamProperties = ParamProperties & { metatype?: any };
 export interface RpcHandlerMetadata {

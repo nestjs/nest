@@ -3,7 +3,7 @@ import {
   isNil,
   isString,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/utils/shared.utils.js';
 import {
   CONNECTION_FAILED_MESSAGE,
   DISCONNECTED_RMQ_MESSAGE,
@@ -20,19 +20,23 @@ import {
   RQM_DEFAULT_URL,
   RQM_NO_EVENT_HANDLER,
   RQM_NO_MESSAGE_HANDLER,
-} from '../constants';
-import { RmqContext } from '../ctx-host';
-import { Transport } from '../enums';
-import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events';
-import { RmqUrl } from '../external/rmq-url.interface';
-import { MessageHandler, RmqOptions, TransportId } from '../interfaces';
+} from '../constants.js';
+import { RmqContext } from '../ctx-host/index.js';
+import { Transport } from '../enums/index.js';
+import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
+import { RmqUrl } from '../external/rmq-url.interface.js';
+import {
+  MessageHandler,
+  RmqOptions,
+  TransportId,
+} from '../interfaces/index.js';
 import {
   IncomingRequest,
   OutgoingResponse,
   ReadPacket,
-} from '../interfaces/packet.interface';
-import { RmqRecordSerializer } from '../serializers/rmq-record.serializer';
-import { Server } from './server';
+} from '../interfaces/packet.interface.js';
+import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
+import { Server } from './server.js';
 
 // To enable type safety for RMQ. This cant be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
@@ -82,11 +86,11 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       this.getOptionsProp(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
 
-    this.loadPackage('amqplib', ServerRMQ.name, () => require('amqplib'));
+    this.loadPackage('amqplib', ServerRMQ.name, () => import('amqplib'));
     rmqPackage = this.loadPackage(
       'amqp-connection-manager',
       ServerRMQ.name,
-      () => require('amqp-connection-manager'),
+      () => import('amqp-connection-manager'),
     );
 
     this.initializeSerializer(options);
@@ -112,7 +116,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   public async start(
     callback?: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
-    this.server = this.createClient();
+    this.server = await this.createClient();
     this.server!.once(RmqEventsMap.CONNECT, () => {
       if (this.channel) {
         return;
@@ -162,7 +166,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     );
   }
 
-  public createClient<T = any>(): T {
+  public async createClient<T = any>(): Promise<T> {
+    rmqPackage = await rmqPackage;
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
     return rmqPackage.connect(this.urls, {
       connectionOptions: socketOptions?.connectionOptions,

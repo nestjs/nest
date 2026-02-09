@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { HttpAdapterHost } from '../../helpers/http-adapter-host';
+import { HttpAdapterHost } from '../../helpers/http-adapter-host.js';
 
 describe('HttpAdapterHost', () => {
   let applicationRefHost: HttpAdapterHost;

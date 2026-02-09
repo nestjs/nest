@@ -1,9 +1,12 @@
-import { addLeadingSlash, isString } from '@nestjs/common/utils/shared.utils';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { ServerAndEventStreamsFactory } from './factories/server-and-event-streams-factory';
-import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
-import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams-host.interface';
-import { SocketsContainer } from './sockets-container';
+import {
+  addLeadingSlash,
+  isString,
+} from '@nestjs/common/utils/shared.utils.js';
+import { ApplicationConfig } from '@nestjs/core/application-config.js';
+import { ServerAndEventStreamsFactory } from './factories/server-and-event-streams-factory.js';
+import { GatewayMetadata } from './interfaces/gateway-metadata.interface.js';
+import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams-host.interface.js';
+import { SocketsContainer } from './sockets-container.js';
 
 export class SocketServerProvider {
   constructor(

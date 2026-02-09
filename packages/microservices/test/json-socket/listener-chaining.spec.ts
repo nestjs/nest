@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { TcpEventsMap } from '../../events/tcp.events';
-import { JsonSocket } from '../../helpers/json-socket';
-import * as helpers from './helpers';
+import { TcpEventsMap } from '../../events/tcp.events.js';
+import { JsonSocket } from '../../helpers/json-socket.js';
+import * as helpers from './helpers.js';
 
 const MESSAGE_EVENT = 'message';
 

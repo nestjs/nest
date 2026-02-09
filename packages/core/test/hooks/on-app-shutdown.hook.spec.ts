@@ -1,9 +1,9 @@
 import { OnApplicationShutdown } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { callAppShutdownHook } from '../../hooks/on-app-shutdown.hook';
-import { NestContainer } from '../../injector/container';
-import { Module } from '../../injector/module';
+import { callAppShutdownHook } from '../../hooks/on-app-shutdown.hook.js';
+import { NestContainer } from '../../injector/container.js';
+import { Module } from '../../injector/module.js';
 
 class SampleProvider implements OnApplicationShutdown {
   onApplicationShutdown() {}

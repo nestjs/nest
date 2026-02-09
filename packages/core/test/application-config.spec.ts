@@ -1,8 +1,8 @@
 import { RequestMethod } from '@nestjs/common';
-import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
+import { GlobalPrefixOptions } from '@nestjs/common/interfaces/index.js';
 import { expect } from 'chai';
-import { ApplicationConfig } from '../application-config';
-import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
+import { ApplicationConfig } from '../application-config.js';
+import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
 
 describe('ApplicationConfig', () => {
   let appConfig: ApplicationConfig;

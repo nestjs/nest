@@ -1,9 +1,9 @@
-import { ModuleMetadata } from '@nestjs/common/interfaces/modules/module-metadata.interface';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
+import { ModuleMetadata } from '@nestjs/common/interfaces/modules/module-metadata.interface.js';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner.js';
 import {
   TestingModuleBuilder,
   TestingModuleOptions,
-} from './testing-module.builder';
+} from './testing-module.builder.js';
 
 export class Test {
   private static readonly metadataScanner = new MetadataScanner();

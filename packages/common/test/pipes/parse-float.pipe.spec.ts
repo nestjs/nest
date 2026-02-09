@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { HttpException } from '../../exceptions';
-import { ArgumentMetadata } from '../../interfaces';
-import { ParseFloatPipe } from '../../pipes/parse-float.pipe';
+import { HttpException } from '../../exceptions/index.js';
+import { ArgumentMetadata } from '../../interfaces/index.js';
+import { ParseFloatPipe } from '../../pipes/parse-float.pipe.js';
 
 class CustomTestError extends HttpException {
   constructor() {

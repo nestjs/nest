@@ -3,9 +3,9 @@ import {
   PATTERN_EXTRAS_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
-} from '../../constants';
-import { EventPattern } from '../../decorators/event-pattern.decorator';
-import { Transport } from '../../enums/transport.enum';
+} from '../../constants.js';
+import { EventPattern } from '../../decorators/event-pattern.decorator.js';
+import { Transport } from '../../enums/transport.enum.js';
 
 describe('@EventPattern', () => {
   const pattern = { role: 'test' };

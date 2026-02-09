@@ -2,13 +2,13 @@ import { INestApplication } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as WebSocket from 'ws';
-import { ApplicationGateway } from '../src/app.gateway';
-import { CoreGateway } from '../src/core.gateway';
-import { ExamplePathGateway } from '../src/example-path.gateway';
-import { ServerGateway } from '../src/server.gateway';
-import { WsPathGateway } from '../src/ws-path.gateway';
-import { WsPathGateway2 } from '../src/ws-path2.gateway';
+import WebSocket from 'ws';
+import { ApplicationGateway } from '../src/app.gateway.js';
+import { CoreGateway } from '../src/core.gateway.js';
+import { ExamplePathGateway } from '../src/example-path.gateway.js';
+import { ServerGateway } from '../src/server.gateway.js';
+import { WsPathGateway } from '../src/ws-path.gateway.js';
+import { WsPathGateway2 } from '../src/ws-path2.gateway.js';
 
 async function createNestApp(...gateways: any[]): Promise<INestApplication> {
   const testingModule = await Test.createTestingModule({

@@ -1,6 +1,6 @@
 import { RequestMethod } from '@nestjs/common';
-import { addLeadingSlash } from '@nestjs/common/utils/shared.utils';
-import { ExcludeRouteMetadata } from '../interfaces/exclude-route-metadata.interface';
+import { addLeadingSlash } from '@nestjs/common/utils/shared.utils.js';
+import { ExcludeRouteMetadata } from '../interfaces/exclude-route-metadata.interface.js';
 
 export const isRequestMethodAll = (method: RequestMethod) => {
   return RequestMethod.ALL === method || (method as number) === -1;

@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DiscoveryService } from '@nestjs/core';
 import { expect } from 'chai';
-import { AppModule } from '../src/app.module';
-import { WebhooksExplorer } from '../src/webhooks.explorer';
-import { NonAppliedDecorator } from '../src/decorators/non-applied.decorator';
+import { AppModule } from '../src/app.module.js';
+import { WebhooksExplorer } from '../src/webhooks.explorer.js';
+import { NonAppliedDecorator } from '../src/decorators/non-applied.decorator.js';
 
 describe('DiscoveryModule', () => {
   let moduleRef: TestingModule;

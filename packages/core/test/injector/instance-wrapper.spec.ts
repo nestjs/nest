@@ -1,9 +1,9 @@
 import { Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { createContextId } from '../../helpers';
-import { STATIC_CONTEXT } from '../../injector/constants';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { createContextId } from '../../helpers/index.js';
+import { STATIC_CONTEXT } from '../../injector/constants.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 
 class TestClass {}
 

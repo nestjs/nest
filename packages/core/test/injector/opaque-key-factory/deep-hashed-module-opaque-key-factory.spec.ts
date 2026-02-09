@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { DeepHashedModuleOpaqueKeyFactory } from '../../../injector/opaque-key-factory/deep-hashed-module-opaque-key-factory';
+import { DeepHashedModuleOpaqueKeyFactory } from '../../../injector/opaque-key-factory/deep-hashed-module-opaque-key-factory.js';
 
 describe('DeepHashedModuleOpaqueKeyFactory', () => {
   const moduleId = 'constId';

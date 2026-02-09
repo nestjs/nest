@@ -1,10 +1,10 @@
 import { Scope } from '@nestjs/common';
 import { expect } from 'chai';
-import { Injectable } from '../../../common/decorators/core/injectable.decorator';
-import { NestContainer } from '../../injector/container';
-import { Injector } from '../../injector/injector';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { Module } from '../../injector/module';
+import { Injectable } from '../../../common/decorators/core/injectable.decorator.js';
+import { NestContainer } from '../../injector/container.js';
+import { Injector } from '../../injector/injector.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { Module } from '../../injector/module.js';
 
 describe('Nested Transient Isolation', () => {
   let injector: Injector;

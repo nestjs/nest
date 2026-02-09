@@ -6,10 +6,10 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { fail } from 'assert';
 import { expect } from 'chai';
-import * as express from 'express';
+import express from 'express';
 import { join } from 'path';
-import * as request from 'supertest';
-import { AdvancedGrpcController } from '../src/grpc-advanced/advanced.grpc.controller';
+import request from 'supertest';
+import { AdvancedGrpcController } from '../src/grpc-advanced/advanced.grpc.controller.js';
 
 describe('Advanced GRPC transport', () => {
   let server;
@@ -33,7 +33,9 @@ describe('Advanced GRPC transport', () => {
         package: 'proto_example',
         protoPath: 'root.proto',
         loader: {
-          includeDirs: [join(__dirname, '../src/grpc-advanced/proto')],
+          includeDirs: [
+            join(import.meta.dirname, '../src/grpc-advanced/proto'),
+          ],
           keepCase: true,
         },
       },
@@ -43,7 +45,7 @@ describe('Advanced GRPC transport', () => {
     await app.init();
     // Load proto-buffers for test gRPC dispatch
     const proto = ProtoLoader.loadSync('root.proto', {
-      includeDirs: [join(__dirname, '../src/grpc-advanced/proto')],
+      includeDirs: [join(import.meta.dirname, '../src/grpc-advanced/proto')],
     }) as any;
     // Create Raw gRPC client object
     const protoGRPC = GRPC.loadPackageDefinition(proto) as any;

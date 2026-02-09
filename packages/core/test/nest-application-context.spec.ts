@@ -1,13 +1,12 @@
 import { Injectable, InjectionToken, Provider, Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { setTimeout } from 'timers/promises';
-import { ContextIdFactory } from '../helpers/context-id-factory';
-import { NestContainer } from '../injector/container';
-import { Injector } from '../injector/injector';
-import { InstanceLoader } from '../injector/instance-loader';
-import { GraphInspector } from '../inspector/graph-inspector';
-import { NestApplicationContext } from '../nest-application-context';
+import { ContextIdFactory } from '../helpers/context-id-factory.js';
+import { NestContainer } from '../injector/container.js';
+import { Injector } from '../injector/injector.js';
+import { InstanceLoader } from '../injector/instance-loader.js';
+import { GraphInspector } from '../inspector/graph-inspector.js';
+import { NestApplicationContext } from '../nest-application-context.js';
 
 describe('NestApplicationContext', () => {
   class A {}
@@ -112,14 +111,19 @@ describe('NestApplicationContext', () => {
       const onModuleInitStub = sinon.stub();
       const onApplicationShutdownStub = sinon.stub();
 
+      // Use global setTimeout wrapped in a Promise so sinon fake timers
+      // can intercept it (timers/promises.setTimeout is not fakeable in ESM).
+      const delay = (ms: number) =>
+        new Promise<void>(resolve => globalThis.setTimeout(resolve, ms));
+
       class B {
         async onModuleInit() {
-          await setTimeout(5000);
+          await delay(5000);
           onModuleInitStub();
         }
 
         async onApplicationShutdown() {
-          await setTimeout(1000);
+          await delay(1000);
           onApplicationShutdownStub();
         }
       }
@@ -135,7 +139,7 @@ describe('NestApplicationContext', () => {
       process.on(signal, ignoreProcessSignal);
 
       const deferredShutdown = async () => {
-        await setTimeout(1);
+        await delay(1);
         process.kill(process.pid, signal);
       };
       void Promise.all([applicationContext.init(), deferredShutdown()]);

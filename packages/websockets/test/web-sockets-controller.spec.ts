@@ -1,21 +1,21 @@
 import { NestContainer } from '@nestjs/core';
-import { ApplicationConfig } from '@nestjs/core/application-config';
+import { ApplicationConfig } from '@nestjs/core/application-config.js';
 import { expect } from 'chai';
 import { fromEvent, lastValueFrom, Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
-import { GraphInspector } from '../../core/inspector/graph-inspector';
-import { MetadataScanner } from '../../core/metadata-scanner';
-import { AbstractWsAdapter } from '../adapters/ws-adapter';
-import { PORT_METADATA } from '../constants';
-import { WsContextCreator } from '../context/ws-context-creator';
-import { WebSocketGateway } from '../decorators/socket-gateway.decorator';
-import { InvalidSocketPortException } from '../errors/invalid-socket-port.exception';
+import { GraphInspector } from '../../core/inspector/graph-inspector.js';
+import { MetadataScanner } from '../../core/metadata-scanner.js';
+import { AbstractWsAdapter } from '../adapters/ws-adapter.js';
+import { PORT_METADATA } from '../constants.js';
+import { WsContextCreator } from '../context/ws-context-creator.js';
+import { WebSocketGateway } from '../decorators/socket-gateway.decorator.js';
+import { InvalidSocketPortException } from '../errors/invalid-socket-port.exception.js';
 import {
   GatewayMetadataExplorer,
   MessageMappingProperties,
-} from '../gateway-metadata-explorer';
-import { SocketServerProvider } from '../socket-server-provider';
-import { WebSocketsController } from '../web-sockets-controller';
+} from '../gateway-metadata-explorer.js';
+import { SocketServerProvider } from '../socket-server-provider.js';
+import { WebSocketsController } from '../web-sockets-controller.js';
 
 class NoopAdapter extends AbstractWsAdapter {
   public create(port: number, options?: any) {}

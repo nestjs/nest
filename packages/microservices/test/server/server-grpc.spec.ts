@@ -3,11 +3,10 @@ import { expect } from 'chai';
 import { join } from 'path';
 import { ReplaySubject, Subject, throwError } from 'rxjs';
 import * as sinon from 'sinon';
-import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
-import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
-import * as grpcHelpers from '../../helpers/grpc-helpers';
-import { GrpcMethodStreamingType } from '../../index';
-import { ServerGrpc } from '../../server';
+import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
+import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception.js';
+import { GrpcMethodStreamingType } from '../../index.js';
+import { ServerGrpc } from '../../server/index.js';
 
 const CANCELLED_EVENT = 'cancelled';
 
@@ -24,7 +23,7 @@ describe('ServerGrpc', () => {
 
   beforeEach(() => {
     server = new ServerGrpc({
-      protoPath: join(__dirname, './test.proto'),
+      protoPath: join(import.meta.dirname, './test.proto'),
       package: 'test',
     });
     untypedServer = server as any;
@@ -33,7 +32,7 @@ describe('ServerGrpc', () => {
       protoPath: ['test.proto', 'test2.proto'],
       package: ['test', 'test2'],
       loader: {
-        includeDirs: [join(__dirname, '.')],
+        includeDirs: [join(import.meta.dirname, '.')],
       },
     });
   });
@@ -851,18 +850,14 @@ describe('ServerGrpc', () => {
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {
-        const getPackageDefinitionStub = sinon.stub(
-          grpcHelpers,
-          'getGrpcPackageDefinition' as any,
-        );
-        getPackageDefinitionStub.callsFake(() => {
-          throw new Error();
+        const invalidServer = new ServerGrpc({
+          protoPath: '/nonexistent/invalid.proto',
+          package: 'test',
         });
-        untypedServer.logger = new NoopLogger();
-        expect(() => server.loadProto()).to.throws(
+        (invalidServer as any).logger = new NoopLogger();
+        expect(() => invalidServer.loadProto()).to.throws(
           InvalidProtoDefinitionException,
         );
-        getPackageDefinitionStub.restore();
       });
     });
   });

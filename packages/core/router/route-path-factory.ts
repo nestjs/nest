@@ -5,15 +5,15 @@ import {
   VersioningType,
   flatten,
 } from '@nestjs/common';
-import { VersionValue } from '@nestjs/common/interfaces';
+import { VersionValue } from '@nestjs/common/interfaces/index.js';
 import {
   addLeadingSlash,
   isUndefined,
   stripEndSlash,
-} from '@nestjs/common/utils/shared.utils';
-import { ApplicationConfig } from '../application-config';
-import { RoutePathMetadata } from './interfaces/route-path-metadata.interface';
-import { isRouteExcluded } from './utils';
+} from '@nestjs/common/utils/shared.utils.js';
+import { ApplicationConfig } from '../application-config.js';
+import { RoutePathMetadata } from './interfaces/route-path-metadata.interface.js';
+import { isRouteExcluded } from './utils/index.js';
 
 export class RoutePathFactory {
   constructor(private readonly applicationConfig: ApplicationConfig) {}

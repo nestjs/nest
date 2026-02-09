@@ -1,12 +1,12 @@
 import { expect } from 'chai';
-import { ModulesContainer, NestContainer } from '../../injector';
-import { Module } from '../../injector/module';
-import { Routes } from '../../router/interfaces';
+import { ModulesContainer, NestContainer } from '../../injector/index.js';
+import { Module } from '../../injector/module.js';
+import { Routes } from '../../router/interfaces/index.js';
 import {
   RouterModule,
   ROUTES,
   targetModulesByContainer,
-} from '../../router/router-module';
+} from '../../router/router-module.js';
 
 class TestModuleClass {}
 

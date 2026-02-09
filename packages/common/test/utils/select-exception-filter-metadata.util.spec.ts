@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { selectExceptionFilterMetadata } from '../../utils/select-exception-filter-metadata.util';
+import { selectExceptionFilterMetadata } from '../../utils/select-exception-filter-metadata.util.js';
 
 class FirstError {}
 

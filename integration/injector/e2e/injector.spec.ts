@@ -1,23 +1,22 @@
-import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
-import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception';
-import { UnknownExportException } from '@nestjs/core/errors/exceptions/unknown-export.exception';
+import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception.js';
+import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception.js';
+import { UnknownExportException } from '@nestjs/core/errors/exceptions/unknown-export.exception.js';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
+import chai, { expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import {
   DYNAMIC_TOKEN,
   DYNAMIC_VALUE,
   NestDynamicModule,
-} from '../src/dynamic/dynamic.module';
-import { ExportsModule } from '../src/exports/exports.module';
-import { InjectModule } from '../src/inject/inject.module';
-import { InjectSameNameModule } from '../src/inject/inject-same-name.module';
+} from '../src/dynamic/dynamic.module.js';
+import { ExportsModule } from '../src/exports/exports.module.js';
+import { InjectSameNameModule } from '../src/inject/inject-same-name.module.js';
+import { InjectModule } from '../src/inject/inject.module.js';
 import {
-  SelfInjectionProviderModule,
-  SelfInjectionProviderCustomTokenModule,
   SelfInjectionForwardProviderModule,
-} from '../src/self-injection/self-injection-provider.module';
+  SelfInjectionProviderCustomTokenModule,
+  SelfInjectionProviderModule,
+} from '../src/self-injection/self-injection-provider.module.js';
 chai.use(chaiAsPromised);
 
 describe('Injector', () => {

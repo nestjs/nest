@@ -2,10 +2,10 @@ import { INestApplication, Logger } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { Admin, ITopicMetadata, Kafka } from 'kafkajs';
-import * as request from 'supertest';
+import request from 'supertest';
 import * as util from 'util';
-import { KafkaConcurrentController } from '../src/kafka-concurrent/kafka-concurrent.controller';
-import { KafkaConcurrentMessagesController } from '../src/kafka-concurrent/kafka-concurrent.messages.controller';
+import { KafkaConcurrentController } from '../src/kafka-concurrent/kafka-concurrent.controller.js';
+import { KafkaConcurrentMessagesController } from '../src/kafka-concurrent/kafka-concurrent.messages.controller.js';
 
 describe.skip('Kafka concurrent', function () {
   const numbersOfServers = 3;

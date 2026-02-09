@@ -1,1 +1,1 @@
-export * from './ws-adapter';
+export * from './ws-adapter.js';

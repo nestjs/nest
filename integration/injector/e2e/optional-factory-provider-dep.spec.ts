@@ -1,5 +1,5 @@
 import { Scope } from '@nestjs/common';
-import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception';
+import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception.js';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 

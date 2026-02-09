@@ -5,10 +5,10 @@ import {
   SetMetadata,
 } from '@nestjs/common';
 import { uid } from 'uid';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
-import { ModulesContainer } from '../injector/modules-container';
-import { DiscoverableMetaHostCollection } from './discoverable-meta-host-collection';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import { Module } from '../injector/module.js';
+import { ModulesContainer } from '../injector/modules-container.js';
+import { DiscoverableMetaHostCollection } from './discoverable-meta-host-collection.js';
 
 /**
  * @publicApi

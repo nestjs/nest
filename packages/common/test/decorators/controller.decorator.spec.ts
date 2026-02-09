@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { VERSION_METADATA, CONTROLLER_WATERMARK } from '../../constants';
-import { Controller } from '../../decorators/core/controller.decorator';
+import { VERSION_METADATA, CONTROLLER_WATERMARK } from '../../constants.js';
+import { Controller } from '../../decorators/core/controller.decorator.js';
 
 describe('@Controller', () => {
   const reflectedPath = 'test';

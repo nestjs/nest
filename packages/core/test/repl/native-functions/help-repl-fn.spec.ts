@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
-import { HelpReplFn } from '../../../repl/native-functions';
-import { ReplContext } from '../../../repl/repl-context';
-import { NestContainer } from '../../../injector/container';
+import { clc } from '@nestjs/common/utils/cli-colors.util.js';
+import { HelpReplFn } from '../../../repl/native-functions/index.js';
+import { ReplContext } from '../../../repl/repl-context.js';
+import { NestContainer } from '../../../injector/container.js';
 
 describe('HelpReplFn', () => {
   let helpReplFn: HelpReplFn;

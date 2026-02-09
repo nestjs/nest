@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { io } from 'socket.io-client';
-import { ErrorGateway } from '../src/error.gateway';
+import { ErrorGateway } from '../src/error.gateway.js';
 
 describe('ErrorGateway', () => {
   let app: INestApplication;

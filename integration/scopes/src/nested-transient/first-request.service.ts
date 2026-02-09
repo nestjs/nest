@@ -1,5 +1,5 @@
 import { Injectable, Scope } from '@nestjs/common';
-import { TransientLoggerService } from './transient-logger.service';
+import { TransientLoggerService } from './transient-logger.service.js';
 
 @Injectable({ scope: Scope.REQUEST })
 export class FirstRequestService {

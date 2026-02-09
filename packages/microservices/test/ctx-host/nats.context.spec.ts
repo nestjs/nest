@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { NatsContext } from '../../ctx-host';
+import { NatsContext } from '../../ctx-host/index.js';
 
 describe('NatsContext', () => {
   const args: [string, any] = ['test', {}];

@@ -1,22 +1,22 @@
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
-import { Injectable, UseGuards, UsePipes } from '../../../common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
-import { GuardsConsumer } from '../../../core/guards/guards-consumer';
-import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
-import { NestContainer } from '../../../core/injector/container';
-import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
-import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
-import { ExceptionFiltersContext } from '../../context/exception-filters-context';
-import { WsContextCreator } from '../../context/ws-context-creator';
-import { WsProxy } from '../../context/ws-proxy';
-import { WsParamtype } from '../../enums/ws-paramtype.enum';
-import { WsParamsFactory } from '../../factories/ws-params-factory';
-import { WsException } from '../../index';
+import { Injectable, UseGuards, UsePipes } from '../../../common/index.js';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
+import { GuardsConsumer } from '../../../core/guards/guards-consumer.js';
+import { GuardsContextCreator } from '../../../core/guards/guards-context-creator.js';
+import { NestContainer } from '../../../core/injector/container.js';
+import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer.js';
+import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator.js';
+import { PipesConsumer } from '../../../core/pipes/pipes-consumer.js';
+import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator.js';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context.js';
+import { WsContextCreator } from '../../context/ws-context-creator.js';
+import { WsProxy } from '../../context/ws-proxy.js';
+import { WsParamtype } from '../../enums/ws-paramtype.enum.js';
+import { WsParamsFactory } from '../../factories/ws-params-factory.js';
+import { WsException } from '../../index.js';
 
 @Injectable()
 class TestGuard {

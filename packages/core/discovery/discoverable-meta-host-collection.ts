@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { ModulesContainer } from '../injector/modules-container';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import { ModulesContainer } from '../injector/modules-container.js';
 
 export class DiscoverableMetaHostCollection {
   /**

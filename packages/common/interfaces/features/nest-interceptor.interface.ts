@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { ExecutionContext } from './execution-context.interface';
+import { ExecutionContext } from './execution-context.interface.js';
 
 /**
  * Interface providing access to the response stream.

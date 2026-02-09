@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { MetadataScanner } from '../metadata-scanner';
+import { MetadataScanner } from '../metadata-scanner.js';
 
 describe('MetadataScanner', () => {
   let scanner: MetadataScanner;

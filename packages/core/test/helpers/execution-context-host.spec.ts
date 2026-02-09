@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { ExecutionContextHost } from '../../helpers/execution-context-host';
+import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
 
 describe('ExecutionContextHost', () => {
   let contextHost: ExecutionContextHost;

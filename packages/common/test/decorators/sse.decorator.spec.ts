@@ -1,7 +1,11 @@
 import { expect } from 'chai';
-import { METHOD_METADATA, PATH_METADATA, SSE_METADATA } from '../../constants';
-import { Sse } from '../../decorators/http/sse.decorator';
-import { RequestMethod } from '../../enums/request-method.enum';
+import {
+  METHOD_METADATA,
+  PATH_METADATA,
+  SSE_METADATA,
+} from '../../constants.js';
+import { Sse } from '../../decorators/http/sse.decorator.js';
+import { RequestMethod } from '../../enums/request-method.enum.js';
 
 describe('@Sse', () => {
   const prefix = '/prefix';

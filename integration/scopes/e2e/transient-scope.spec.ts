@@ -1,14 +1,14 @@
 import { INestApplication, Injectable, Scope } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as request from 'supertest';
-import { NestedTransientModule } from '../src/nested-transient/nested-transient.module';
-import { Guard } from '../src/transient/guards/request-scoped.guard';
-import { HelloController } from '../src/transient/hello.controller';
-import { HelloModule } from '../src/transient/hello.module';
-import { Interceptor } from '../src/transient/interceptors/logging.interceptor';
-import { UserByIdPipe } from '../src/transient/users/user-by-id.pipe';
-import { UsersService } from '../src/transient/users/users.service';
+import request from 'supertest';
+import { NestedTransientModule } from '../src/nested-transient/nested-transient.module.js';
+import { Guard } from '../src/transient/guards/request-scoped.guard.js';
+import { HelloController } from '../src/transient/hello.controller.js';
+import { HelloModule } from '../src/transient/hello.module.js';
+import { Interceptor } from '../src/transient/interceptors/logging.interceptor.js';
+import { UserByIdPipe } from '../src/transient/users/user-by-id.pipe.js';
+import { UsersService } from '../src/transient/users/users.service.js';
 
 class Meta {
   static COUNTER = 0;

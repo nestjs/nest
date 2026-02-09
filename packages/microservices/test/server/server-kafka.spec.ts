@@ -1,15 +1,15 @@
 import { Logger } from '@nestjs/common';
 import { AssertionError, expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_MESSAGE_HANDLER } from '../../constants';
-import { KafkaContext } from '../../ctx-host';
-import { KafkaHeaders } from '../../enums';
+import { NO_MESSAGE_HANDLER } from '../../constants.js';
+import { KafkaContext } from '../../ctx-host/index.js';
+import { KafkaHeaders } from '../../enums/index.js';
 import {
   EachMessagePayload,
   KafkaMessage,
-} from '../../external/kafka.interface';
-import { ServerKafka } from '../../server';
-import { objectToMap } from './utils/object-to-map';
+} from '../../external/kafka.interface.js';
+import { ServerKafka } from '../../server/index.js';
+import { objectToMap } from './utils/object-to-map.js';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -150,7 +150,7 @@ describe('ServerKafka', () => {
       consumer: consumerStub,
       producer: producerStub,
     };
-    sinon.stub(server, 'createClient').callsFake(() => client);
+    sinon.stub(server, 'createClient').callsFake(async () => client);
 
     untypedServer = server as any;
   });
@@ -536,7 +536,7 @@ describe('ServerKafka', () => {
   });
 
   describe('createClient', () => {
-    it('should accept a custom logCreator in client options', () => {
+    it('should accept a custom logCreator in client options', async () => {
       const logCreatorSpy = sinon.spy(() => 'test');
       const logCreator = () => logCreatorSpy;
 
@@ -547,7 +547,8 @@ describe('ServerKafka', () => {
         },
       });
 
-      const logger = server.createClient().logger();
+      const kafkaClient = await server.createClient();
+      const logger = kafkaClient.logger();
 
       logger.info({ namespace: '', level: 1, log: 'test' });
 

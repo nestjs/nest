@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { ModuleCompiler } from '../../injector/compiler';
-import { ByReferenceModuleOpaqueKeyFactory } from '../../injector/opaque-key-factory/by-reference-module-opaque-key-factory';
+import { ModuleCompiler } from '../../injector/compiler.js';
+import { ByReferenceModuleOpaqueKeyFactory } from '../../injector/opaque-key-factory/by-reference-module-opaque-key-factory.js';
 
 describe('ModuleCompiler', () => {
   let compiler: ModuleCompiler;

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { Render } from '../../decorators/http/render.decorator';
-import { RENDER_METADATA } from '../../constants';
+import { Render } from '../../decorators/http/render.decorator.js';
+import { RENDER_METADATA } from '../../constants.js';
 
 describe('@Render', () => {
   const template = 'template';

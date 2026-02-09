@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { GUARDS_METADATA } from '../../constants';
-import { applyDecorators, UseGuards } from '../../decorators';
-import { CanActivate } from '../../interfaces';
+import { GUARDS_METADATA } from '../../constants.js';
+import { applyDecorators, UseGuards } from '../../decorators/index.js';
+import { CanActivate } from '../../interfaces/index.js';
 
 describe('applyDecorators', () => {
   function testDecorator1(param: number) {

@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Readable } from 'stream';
-import { StreamableFile } from '../../file-stream';
-import { HttpStatus } from '../../enums';
+import { StreamableFile } from '../../file-stream/index.js';
+import { HttpStatus } from '../../enums/index.js';
 
 describe('StreamableFile', () => {
   describe('when input is a readable stream', () => {

@@ -3,10 +3,10 @@ import {
   ExistingProvider,
   FactoryProvider,
   ValueProvider,
-} from '@nestjs/common/interfaces';
-import { requestProvider } from '../../router/request/request-providers';
-import { Reflector } from '../../services';
-import { inquirerProvider } from '../inquirer/inquirer-providers';
+} from '@nestjs/common/interfaces/index.js';
+import { requestProvider } from '../../router/request/request-providers.js';
+import { Reflector } from '../../services/index.js';
+import { inquirerProvider } from '../inquirer/inquirer-providers.js';
 
 const ReflectorAliasProvider = {
   provide: Reflector.name,

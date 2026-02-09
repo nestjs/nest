@@ -1,13 +1,13 @@
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { ClientKafka } from '../client/client-kafka';
+import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
+import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
+import { ClientKafka } from '../client/client-kafka.js';
 import {
   Cluster,
   GroupMember,
   GroupMemberAssignment,
   GroupState,
   MemberMetadata,
-} from '../external/kafka.interface';
+} from '../external/kafka.interface.js';
 
 let kafkaPackage: any = {};
 
@@ -24,8 +24,12 @@ export class KafkaReplyPartitionAssigner {
     kafkaPackage = loadPackage(
       'kafkajs',
       KafkaReplyPartitionAssigner.name,
-      () => require('kafkajs'),
+      () => import('kafkajs'),
     );
+  }
+
+  async init() {
+    kafkaPackage = await kafkaPackage;
   }
 
   /**
@@ -39,6 +43,7 @@ export class KafkaReplyPartitionAssigner {
     members: GroupMember[];
     topics: string[];
   }): Promise<GroupMemberAssignment[]> {
+    kafkaPackage = await kafkaPackage;
     const assignment = {};
     const previousAssignment = {};
 
@@ -188,6 +193,8 @@ export class KafkaReplyPartitionAssigner {
   }
 
   public decodeMember(member: GroupMember) {
+    // kafkaPackage must be resolved before calling this method
+    // (it is resolved in assign() which calls decodeMember)
     const memberMetadata = kafkaPackage.AssignerProtocol.MemberMetadata.decode(
       member.memberMetadata,
     ) as MemberMetadata;

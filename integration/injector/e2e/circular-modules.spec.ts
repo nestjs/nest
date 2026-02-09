@@ -1,9 +1,9 @@
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { CircularModule } from '../src/circular-modules/circular.module';
-import { CircularService } from '../src/circular-modules/circular.service';
-import { InputModule } from '../src/circular-modules/input.module';
-import { InputService } from '../src/circular-modules/input.service';
+import { CircularModule } from '../src/circular-modules/circular.module.js';
+import { CircularService } from '../src/circular-modules/circular.service.js';
+import { InputModule } from '../src/circular-modules/input.module.js';
+import { InputService } from '../src/circular-modules/input.service.js';
 
 describe('Circular dependency (modules)', () => {
   it('should resolve circular dependency between providers', async () => {

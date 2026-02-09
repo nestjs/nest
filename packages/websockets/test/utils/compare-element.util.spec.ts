@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { compareElementAt } from '../../utils/compare-element.util';
+import { compareElementAt } from '../../utils/compare-element.util.js';
 
 describe('compareElementAt', () => {
   it('should compare elements at the specific position in arrays', () => {

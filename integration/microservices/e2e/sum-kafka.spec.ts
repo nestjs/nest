@@ -2,12 +2,12 @@ import { INestApplication } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as request from 'supertest';
-import { BusinessDto } from '../src/kafka/dtos/business.dto';
-import { UserDto } from '../src/kafka/dtos/user.dto';
-import { UserEntity } from '../src/kafka/entities/user.entity';
-import { KafkaController } from '../src/kafka/kafka.controller';
-import { KafkaMessagesController } from '../src/kafka/kafka.messages.controller';
+import request from 'supertest';
+import { BusinessDto } from '../src/kafka/dtos/business.dto.js';
+import { UserDto } from '../src/kafka/dtos/user.dto.js';
+import { UserEntity } from '../src/kafka/entities/user.entity.js';
+import { KafkaController } from '../src/kafka/kafka.controller.js';
+import { KafkaMessagesController } from '../src/kafka/kafka.messages.controller.js';
 
 /**
  * Skip this flaky test in CI/CD pipeline as it frequently

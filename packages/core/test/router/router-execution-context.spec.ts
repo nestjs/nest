@@ -1,26 +1,30 @@
-import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
+import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception.js';
 import { expect } from 'chai';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { PassThrough } from 'stream';
-import { HttpException, HttpStatus, RouteParamMetadata } from '../../../common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
-import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
-import { AbstractHttpAdapter } from '../../adapters';
-import { ApplicationConfig } from '../../application-config';
-import { FORBIDDEN_MESSAGE } from '../../guards/constants';
-import { GuardsConsumer } from '../../guards/guards-consumer';
-import { GuardsContextCreator } from '../../guards/guards-context-creator';
-import { HandlerResponseBasicFn } from '../../helpers/handler-metadata-storage';
-import { NestContainer } from '../../injector/container';
-import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../../pipes/pipes-consumer';
-import { PipesContextCreator } from '../../pipes/pipes-context-creator';
-import { RouteParamsFactory } from '../../router/route-params-factory';
-import { RouterExecutionContext } from '../../router/router-execution-context';
-import { HeaderStream } from '../../router/sse-stream';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import {
+  HttpException,
+  HttpStatus,
+  RouteParamMetadata,
+} from '../../../common/index.js';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
+import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum.js';
+import { AbstractHttpAdapter } from '../../adapters/index.js';
+import { ApplicationConfig } from '../../application-config.js';
+import { FORBIDDEN_MESSAGE } from '../../guards/constants.js';
+import { GuardsConsumer } from '../../guards/guards-consumer.js';
+import { GuardsContextCreator } from '../../guards/guards-context-creator.js';
+import { HandlerResponseBasicFn } from '../../helpers/handler-metadata-storage.js';
+import { NestContainer } from '../../injector/container.js';
+import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator.js';
+import { PipesConsumer } from '../../pipes/pipes-consumer.js';
+import { PipesContextCreator } from '../../pipes/pipes-context-creator.js';
+import { RouteParamsFactory } from '../../router/route-params-factory.js';
+import { RouterExecutionContext } from '../../router/router-execution-context.js';
+import { HeaderStream } from '../../router/sse-stream.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec.js';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;

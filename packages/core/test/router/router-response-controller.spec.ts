@@ -1,13 +1,13 @@
-import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
+import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { expect } from 'chai';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Observable, of, Subject } from 'rxjs';
 import * as sinon from 'sinon';
 import { PassThrough, Writable } from 'stream';
-import { HttpStatus, RequestMethod } from '../../../common';
-import { RouterResponseController } from '../../router/router-response-controller';
-import { SseStream } from '../../router/sse-stream';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { HttpStatus, RequestMethod } from '../../../common/index.js';
+import { RouterResponseController } from '../../router/router-response-controller.js';
+import { SseStream } from '../../router/sse-stream.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec.js';
 
 describe('RouterResponseController', () => {
   let adapter: NoopHttpAdapter;

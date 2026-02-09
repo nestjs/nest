@@ -1,9 +1,9 @@
+import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception.js';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { DependencyService } from '../src/properties/dependency.service';
-import { PropertiesModule } from '../src/properties/properties.module';
-import { PropertiesService } from '../src/properties/properties.service';
-import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception';
+import { DependencyService } from '../src/properties/dependency.service.js';
+import { PropertiesModule } from '../src/properties/properties.module.js';
+import { PropertiesService } from '../src/properties/properties.service.js';
 
 describe('Injector', () => {
   it('should resolve property-based dependencies', async () => {

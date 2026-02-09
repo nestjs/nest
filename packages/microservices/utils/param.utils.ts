@@ -1,9 +1,9 @@
 import { PipeTransform, Type } from '@nestjs/common';
-import { assignMetadata } from '@nestjs/common/decorators/http/route-params.decorator';
-import { isNil, isString } from '@nestjs/common/utils/shared.utils';
+import { assignMetadata } from '@nestjs/common/decorators/http/route-params.decorator.js';
+import { isNil, isString } from '@nestjs/common/utils/shared.utils.js';
 import 'reflect-metadata';
-import { PARAM_ARGS_METADATA } from '../constants';
-import { RpcParamtype } from '../enums/rpc-paramtype.enum';
+import { PARAM_ARGS_METADATA } from '../constants.js';
+import { RpcParamtype } from '../enums/rpc-paramtype.enum.js';
 
 export function createRpcParamDecorator(
   paramtype: RpcParamtype,

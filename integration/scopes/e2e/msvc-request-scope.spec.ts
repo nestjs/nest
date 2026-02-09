@@ -2,12 +2,12 @@ import { INestApplication } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as request from 'supertest';
-import { Guard } from '../src/msvc/guards/request-scoped.guard';
-import { HelloController } from '../src/msvc/hello.controller';
-import { HelloModule } from '../src/msvc/hello.module';
-import { Interceptor } from '../src/msvc/interceptors/logging.interceptor';
-import { UsersService } from '../src/msvc/users/users.service';
+import request from 'supertest';
+import { Guard } from '../src/msvc/guards/request-scoped.guard.js';
+import { HelloController } from '../src/msvc/hello.controller.js';
+import { HelloModule } from '../src/msvc/hello.module.js';
+import { Interceptor } from '../src/msvc/interceptors/logging.interceptor.js';
+import { UsersService } from '../src/msvc/users/users.service.js';
 
 class Meta {
   static COUNTER = 0;

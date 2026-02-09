@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { ArgumentMetadata } from '../../interfaces';
-import { ParseBoolPipe } from '../../pipes/parse-bool.pipe';
+import { ArgumentMetadata } from '../../interfaces/index.js';
+import { ParseBoolPipe } from '../../pipes/parse-bool.pipe.js';
 
 describe('ParseBoolPipe', () => {
   let target: ParseBoolPipe;

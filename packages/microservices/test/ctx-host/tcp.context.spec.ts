@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { TcpContext } from '../../ctx-host';
+import { TcpContext } from '../../ctx-host/index.js';
 
 describe('TcpContext', () => {
   const args = [{}, 'pattern'];

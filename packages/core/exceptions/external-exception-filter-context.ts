@@ -1,15 +1,15 @@
-import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
-import { Controller } from '@nestjs/common/interfaces';
-import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants.js';
+import { Controller } from '@nestjs/common/interfaces/index.js';
+import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/index.js';
+import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
-import { ApplicationConfig } from '../application-config';
-import { STATIC_CONTEXT } from '../injector/constants';
-import { NestContainer } from '../injector/container';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { RouterProxyCallback } from '../router/router-proxy';
-import { BaseExceptionFilterContext } from './base-exception-filter-context';
-import { ExternalExceptionsHandler } from './external-exceptions-handler';
+import { ApplicationConfig } from '../application-config.js';
+import { STATIC_CONTEXT } from '../injector/constants.js';
+import { NestContainer } from '../injector/container.js';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import { RouterProxyCallback } from '../router/router-proxy.js';
+import { BaseExceptionFilterContext } from './base-exception-filter-context.js';
+import { ExternalExceptionsHandler } from './external-exceptions-handler.js';
 
 export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
   constructor(

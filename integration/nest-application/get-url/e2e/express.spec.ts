@@ -1,9 +1,9 @@
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as express from 'express';
-import { AppModule } from '../src/app.module';
-import { randomPort } from './utils';
+import express from 'express';
+import { AppModule } from '../src/app.module.js';
+import { randomPort } from './utils.js';
 
 describe('Get URL (Express Application)', () => {
   let testModule: TestingModule;

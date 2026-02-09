@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { ROUTE_ARGS_METADATA } from '../../constants';
-import { createParamDecorator } from '../../decorators/http/create-route-param-metadata.decorator';
-import { ParseIntPipe } from '../../index';
+import { ROUTE_ARGS_METADATA } from '../../constants.js';
+import { createParamDecorator } from '../../decorators/http/create-route-param-metadata.decorator.js';
+import { ParseIntPipe } from '../../index.js';
 
 describe('createParamDecorator', () => {
   let result;

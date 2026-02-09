@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { RpcException } from '../../exceptions/rpc-exception';
+import { RpcException } from '../../exceptions/rpc-exception.js';
 
 describe('RpcException', () => {
   describe('when string passed', () => {

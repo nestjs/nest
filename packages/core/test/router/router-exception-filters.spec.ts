@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { Catch } from '../../../common/decorators/core/catch.decorator';
-import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
-import { ApplicationConfig } from '../../application-config';
-import { NestContainer } from '../../injector/container';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { RouterExceptionFilters } from '../../router/router-exception-filters';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { Catch } from '../../../common/decorators/core/catch.decorator.js';
+import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator.js';
+import { ApplicationConfig } from '../../application-config.js';
+import { NestContainer } from '../../injector/container.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { RouterExceptionFilters } from '../../router/router-exception-filters.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.spec.js';
 
 describe('RouterExceptionFilters', () => {
   let applicationConfig: ApplicationConfig;

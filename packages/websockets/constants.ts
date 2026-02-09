@@ -1,4 +1,4 @@
-import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants.js';
 
 export const MESSAGE_MAPPING_METADATA = 'websockets:message_mapping';
 export const MESSAGE_METADATA = 'message';

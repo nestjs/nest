@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { assignToObject } from '../../repl/assign-to-object.util';
+import { assignToObject } from '../../repl/assign-to-object.util.js';
 
 describe('assignToObject', () => {
   it('should copy all enumerable properties and their descriptors', () => {

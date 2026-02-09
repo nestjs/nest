@@ -1,8 +1,8 @@
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { WsException } from '../../errors/ws-exception';
-import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
+import { WsException } from '../../errors/ws-exception.js';
+import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler.js';
 
 describe('WsExceptionsHandler', () => {
   let handler: WsExceptionsHandler;

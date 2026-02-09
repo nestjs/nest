@@ -10,11 +10,11 @@ import {
   VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
-import { VersionValue } from '@nestjs/common/interfaces';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
-import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter';
+import { VersionValue } from '@nestjs/common/interfaces/index.js';
+import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
+import { isString, isUndefined } from '@nestjs/common/utils/shared.utils.js';
+import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter.js';
+import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter.js';
 import {
   FastifyBaseLogger,
   FastifyBodyParser,
@@ -37,8 +37,8 @@ import {
   RouteShorthandOptions,
   fastify,
 } from 'fastify';
-import * as Reply from 'fastify/lib/reply';
-import { kRouteContext } from 'fastify/lib/symbols';
+import * as Reply from 'fastify/lib/reply.js';
+import fastifySymbols from 'fastify/lib/symbols.js';
 import * as http from 'http';
 import * as http2 from 'http2';
 import * as https from 'https';
@@ -48,20 +48,22 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { pathToRegexp } from 'path-to-regexp';
+const { kRouteContext } = fastifySymbols;
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';
-import { safeDecodeURI } from 'find-my-way/lib/url-sanitizer';
+import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
 import {
   FASTIFY_ROUTE_CONFIG_METADATA,
   FASTIFY_ROUTE_CONSTRAINTS_METADATA,
   FASTIFY_ROUTE_SCHEMA_METADATA,
-} from '../constants';
-import { NestFastifyBodyParserOptions } from '../interfaces';
+} from '../constants.js';
 import {
   FastifyStaticOptions,
   FastifyViewOptions,
-} from '../interfaces/external';
-import middie from './middie/fastify-middie';
+} from '../interfaces/external/index.js';
+import { NestFastifyBodyParserOptions } from '../interfaces/index.js';
+import middie from './middie/fastify-middie.js';
+const { safeDecodeURI } = urlSanitizer;
 
 type FastifyAdapterBaseOptions<
   Server extends RawServerBase = RawServerDefault,
@@ -141,7 +143,7 @@ export class FastifyAdapter<
     FastifyInstance<TServer, TRawRequest, TRawResponse>,
 > extends AbstractHttpAdapter<TServer, TRequest, TReply> {
   protected readonly logger = new Logger(FastifyAdapter.name);
-  protected readonly instance: TInstance;
+  declare protected readonly instance: TInstance;
   protected _pathPrefix?: string;
 
   private _isParserRegistered: boolean;
@@ -555,16 +557,18 @@ export class FastifyAdapter<
     this.httpServer = this.instance.server;
   }
 
-  public useStaticAssets(options: FastifyStaticOptions) {
+  public async useStaticAssets(options: FastifyStaticOptions) {
     return this.register(
-      loadPackage('@fastify/static', 'FastifyAdapter.useStaticAssets()', () =>
-        require('@fastify/static'),
+      await loadPackage(
+        '@fastify/static',
+        'FastifyAdapter.useStaticAssets()',
+        () => import('@fastify/static'),
       ),
       options,
     );
   }
 
-  public setViewEngine(options: FastifyViewOptions | string) {
+  public async setViewEngine(options: FastifyViewOptions | string) {
     if (isString(options)) {
       new Logger('FastifyAdapter').error(
         "setViewEngine() doesn't support a string argument.",
@@ -572,8 +576,10 @@ export class FastifyAdapter<
       process.exit(1);
     }
     return this.register(
-      loadPackage('@fastify/view', 'FastifyAdapter.setViewEngine()', () =>
-        require('@fastify/view'),
+      await loadPackage(
+        '@fastify/view',
+        'FastifyAdapter.setViewEngine()',
+        () => import('@fastify/view'),
       ),
       options,
     );

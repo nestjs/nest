@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { EXCEPTION_FILTERS_METADATA } from '../../constants';
-import { UseFilters } from '../../decorators/core/exception-filters.decorator';
-import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
+import { EXCEPTION_FILTERS_METADATA } from '../../constants.js';
+import { UseFilters } from '../../decorators/core/exception-filters.decorator.js';
+import { InvalidDecoratorItemException } from '../../utils/validate-each.util.js';
 
 class Filter {
   catch() {}

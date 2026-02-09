@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { KafkaHeaders } from '../../enums/kafka-headers.enum';
-import { KafkaRequestSerializer } from '../../serializers/kafka-request.serializer';
+import { KafkaHeaders } from '../../enums/kafka-headers.enum.js';
+import { KafkaRequestSerializer } from '../../serializers/kafka-request.serializer.js';
 
 describe('KafkaRequestSerializer', () => {
   let instance: KafkaRequestSerializer;

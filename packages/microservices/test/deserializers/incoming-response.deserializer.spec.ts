@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { IncomingResponseDeserializer } from '../../deserializers/incoming-response.deserializer';
-import { IncomingResponse } from '../../interfaces';
+import { IncomingResponseDeserializer } from '../../deserializers/incoming-response.deserializer.js';
+import { IncomingResponse } from '../../interfaces/index.js';
 
 describe('IncomingResponseDeserializer', () => {
   let instance: IncomingResponseDeserializer;

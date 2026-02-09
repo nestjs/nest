@@ -1,7 +1,7 @@
 import { dest, src, task } from 'gulp';
-import { join } from 'path';
-import { samplePath } from '../config';
-import { containsPackageJson, getDirs } from '../util/task-helpers';
+import { join } from 'node:path';
+import { samplePath } from '../config.js';
+import { containsPackageJson, getDirs } from '../util/task-helpers.js';
 
 const distFiles = src(['packages/**/*.js', 'packages/**/*.d.ts']);
 

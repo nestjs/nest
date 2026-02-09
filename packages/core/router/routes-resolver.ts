@@ -7,30 +7,30 @@ import {
   HOST_METADATA,
   MODULE_PATH,
   VERSION_METADATA,
-} from '@nestjs/common/constants';
+} from '@nestjs/common/constants.js';
 import {
   Controller,
   HttpServer,
   Type,
   VersionValue,
-} from '@nestjs/common/interfaces';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { ApplicationConfig } from '../application-config';
+} from '@nestjs/common/interfaces/index.js';
+import { Logger } from '@nestjs/common/services/logger.service.js';
+import { ApplicationConfig } from '../application-config.js';
 import {
   CONTROLLER_MAPPING_MESSAGE,
   VERSIONED_CONTROLLER_MAPPING_MESSAGE,
-} from '../helpers/messages';
-import { NestContainer } from '../injector/container';
-import { Injector } from '../injector/injector';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { GraphInspector } from '../inspector/graph-inspector';
-import { MetadataScanner } from '../metadata-scanner';
-import { Resolver } from './interfaces/resolver.interface';
-import { RoutePathMetadata } from './interfaces/route-path-metadata.interface';
-import { RoutePathFactory } from './route-path-factory';
-import { RouterExceptionFilters } from './router-exception-filters';
-import { RouterExplorer } from './router-explorer';
-import { RouterProxy } from './router-proxy';
+} from '../helpers/messages.js';
+import { NestContainer } from '../injector/container.js';
+import { Injector } from '../injector/injector.js';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import { GraphInspector } from '../inspector/graph-inspector.js';
+import { MetadataScanner } from '../metadata-scanner.js';
+import { Resolver } from './interfaces/resolver.interface.js';
+import { RoutePathMetadata } from './interfaces/route-path-metadata.interface.js';
+import { RoutePathFactory } from './route-path-factory.js';
+import { RouterExceptionFilters } from './router-exception-filters.js';
+import { RouterExplorer } from './router-explorer.js';
+import { RouterProxy } from './router-proxy.js';
 
 export class RoutesResolver implements Resolver {
   private readonly logger = new Logger(RoutesResolver.name, {

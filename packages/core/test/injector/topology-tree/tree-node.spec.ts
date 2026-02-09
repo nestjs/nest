@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { TreeNode } from '../../../injector/topology-tree/tree-node';
+import { TreeNode } from '../../../injector/topology-tree/tree-node.js';
 
 describe('TreeNode', () => {
   describe('constructor', () => {

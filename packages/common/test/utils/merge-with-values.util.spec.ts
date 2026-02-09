@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { MergeWithValues } from '../../utils/merge-with-values.util';
+import { MergeWithValues } from '../../utils/merge-with-values.util.js';
 
 describe('MergeWithValues', () => {
   let type;

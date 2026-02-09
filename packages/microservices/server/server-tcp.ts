@@ -1,5 +1,5 @@
 import { Type } from '@nestjs/common';
-import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isString, isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
 import { createServer as tlsCreateServer, TlsOptions } from 'tls';
@@ -9,23 +9,23 @@ import {
   NO_MESSAGE_HANDLER,
   TCP_DEFAULT_HOST,
   TCP_DEFAULT_PORT,
-} from '../constants';
-import { TcpContext } from '../ctx-host/tcp.context';
-import { Transport } from '../enums';
-import { TcpEvents, TcpEventsMap, TcpStatus } from '../events/tcp.events';
-import { JsonSocket, TcpSocket } from '../helpers';
-import { InvalidTcpDataReceptionException } from '../errors/invalid-tcp-data-reception.exception';
+} from '../constants.js';
+import { TcpContext } from '../ctx-host/tcp.context.js';
+import { Transport } from '../enums/index.js';
+import { TcpEvents, TcpEventsMap, TcpStatus } from '../events/tcp.events.js';
+import { JsonSocket, TcpSocket } from '../helpers/index.js';
+import { InvalidTcpDataReceptionException } from '../errors/invalid-tcp-data-reception.exception.js';
 import {
   IncomingRequest,
   PacketId,
   ReadPacket,
   WritePacket,
-} from '../interfaces';
+} from '../interfaces/index.js';
 import {
   TcpOptions,
   TransportId,
-} from '../interfaces/microservice-configuration.interface';
-import { Server } from './server';
+} from '../interfaces/microservice-configuration.interface.js';
+import { Server } from './server.js';
 
 /**
  * @publicApi

@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as request from 'supertest';
-import { LazyController } from '../src/lazy.controller';
+import request from 'supertest';
+import { LazyController } from '../src/lazy.controller.js';
 
 describe('Lazy Requested Scoped providers', () => {
   let app: INestApplication;

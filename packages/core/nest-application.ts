@@ -14,39 +14,55 @@ import {
 import {
   GlobalPrefixOptions,
   NestApplicationOptions,
-} from '@nestjs/common/interfaces';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
+} from '@nestjs/common/interfaces/index.js';
+import { Logger } from '@nestjs/common/services/logger.service.js';
+import {
+  loadPackage,
+  loadPackageCached,
+} from '@nestjs/common/utils/load-package.util.js';
 import {
   addLeadingSlash,
   isFunction,
   isObject,
   isString,
-} from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { platform } from 'os';
-import { AbstractHttpAdapter } from './adapters';
-import { ApplicationConfig } from './application-config';
-import { MESSAGES } from './constants';
-import { optionalRequire } from './helpers/optional-require';
-import { NestContainer } from './injector/container';
-import { Injector } from './injector/injector';
-import { GraphInspector } from './inspector/graph-inspector';
-import { MiddlewareContainer } from './middleware/container';
-import { MiddlewareModule } from './middleware/middleware-module';
-import { mapToExcludeRoute } from './middleware/utils';
-import { NestApplicationContext } from './nest-application-context';
-import { Resolver } from './router/interfaces/resolver.interface';
-import { RoutesResolver } from './router/routes-resolver';
+import { AbstractHttpAdapter } from './adapters/index.js';
+import { ApplicationConfig } from './application-config.js';
+import { MESSAGES } from './constants.js';
+import { optionalRequire } from './helpers/optional-require.js';
+import { NestContainer } from './injector/container.js';
+import { Injector } from './injector/injector.js';
+import { GraphInspector } from './inspector/graph-inspector.js';
+import { MiddlewareContainer } from './middleware/container.js';
+import { MiddlewareModule } from './middleware/middleware-module.js';
+import { mapToExcludeRoute } from './middleware/utils.js';
+import { NestApplicationContext } from './nest-application-context.js';
+import { Resolver } from './router/interfaces/resolver.interface.js';
+import { RoutesResolver } from './router/routes-resolver.js';
 
-const { SocketModule } = optionalRequire(
-  '@nestjs/websockets/socket-module',
-  () => require('@nestjs/websockets/socket-module'),
-);
-const { MicroservicesModule } = optionalRequire(
-  '@nestjs/microservices/microservices-module',
-  () => require('@nestjs/microservices/microservices-module'),
-);
+let _socketModule: any;
+async function getSocketModule() {
+  if (!_socketModule) {
+    _socketModule = await optionalRequire(
+      '@nestjs/websockets/socket-module',
+      () => import('@nestjs/websockets/socket-module.js'),
+    );
+  }
+  return _socketModule;
+}
+
+let _microservicesModule: any;
+async function getMicroservicesModule() {
+  if (!_microservicesModule) {
+    _microservicesModule = await optionalRequire(
+      '@nestjs/microservices/microservices-module',
+      () => import('@nestjs/microservices/microservices-module.js'),
+    );
+  }
+  return _microservicesModule;
+}
 
 /**
  * @publicApi
@@ -62,9 +78,8 @@ export class NestApplication
   private readonly middlewareContainer = new MiddlewareContainer(
     this.container,
   );
-  private readonly microservicesModule =
-    MicroservicesModule && new MicroservicesModule();
-  private readonly socketModule = SocketModule && new SocketModule();
+  private microservicesModule: any = null;
+  private socketModule: any = null;
   private readonly routesResolver: Resolver;
   private readonly microservices: any[] = [];
   private httpServer: any;
@@ -178,6 +193,22 @@ export class NestApplication
       return this;
     }
 
+    // Lazy-load optional modules (ESM-compatible)
+    const socketMod = await getSocketModule();
+    if (socketMod?.SocketModule) {
+      this.socketModule = new socketMod.SocketModule();
+    }
+    const msMod = await getMicroservicesModule();
+    if (msMod?.MicroservicesModule) {
+      this.microservicesModule = new msMod.MicroservicesModule();
+      // Pre-cache the main barrel so connectMicroservice() can stay synchronous
+      await loadPackage(
+        '@nestjs/microservices',
+        'NestFactory',
+        () => import('@nestjs/microservices'),
+      );
+    }
+
     this.applyOptions();
     await this.httpAdapter?.init?.();
 
@@ -219,11 +250,7 @@ export class NestApplication
     microserviceOptions: T,
     hybridAppOptions: NestHybridApplicationOptions = {},
   ): INestMicroservice {
-    const { NestMicroservice } = loadPackage(
-      '@nestjs/microservices',
-      'NestFactory',
-      () => require('@nestjs/microservices'),
-    );
+    const { NestMicroservice } = loadPackageCached('@nestjs/microservices');
     const { inheritAppConfig } = hybridAppOptions;
     const applicationConfig = inheritAppConfig
       ? this.config

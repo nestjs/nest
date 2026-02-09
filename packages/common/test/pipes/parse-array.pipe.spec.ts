@@ -1,6 +1,6 @@
 import * as chai from 'chai';
 import { expect } from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
+import chaiAsPromised from 'chai-as-promised';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -10,9 +10,9 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { BadRequestException } from '../../exceptions';
-import { ArgumentMetadata } from '../../interfaces/features/pipe-transform.interface';
-import { ParseArrayPipe } from '../../pipes/parse-array.pipe';
+import { BadRequestException } from '../../exceptions/index.js';
+import { ArgumentMetadata } from '../../interfaces/features/pipe-transform.interface.js';
+import { ParseArrayPipe } from '../../pipes/parse-array.pipe.js';
 chai.use(chaiAsPromised);
 
 describe('ParseArrayPipe', () => {

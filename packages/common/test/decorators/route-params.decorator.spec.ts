@@ -1,6 +1,12 @@
 import { expect } from 'chai';
-import { Body, HostParam, Param, Query, Search } from '../../decorators';
-import { RequestMethod } from '../../enums/request-method.enum';
+import {
+  Body,
+  HostParam,
+  Param,
+  Query,
+  Search,
+} from '../../decorators/index.js';
+import { RequestMethod } from '../../enums/request-method.enum.js';
 import {
   All,
   Delete,
@@ -16,9 +22,9 @@ import {
   Copy,
   Lock,
   Unlock,
-} from '../../index';
-import { ROUTE_ARGS_METADATA } from '../../constants';
-import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
+} from '../../index.js';
+import { ROUTE_ARGS_METADATA } from '../../constants.js';
+import { RouteParamtypes } from '../../enums/route-paramtypes.enum.js';
 
 describe('@Get', () => {
   const requestPath = 'test';

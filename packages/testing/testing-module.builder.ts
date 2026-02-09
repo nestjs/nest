@@ -1,27 +1,27 @@
 import { Logger, LoggerService, Module, ModuleMetadata } from '@nestjs/common';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
-import { NoopGraphInspector } from '@nestjs/core/inspector/noop-graph-inspector';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface.js';
+import { ApplicationConfig } from '@nestjs/core/application-config.js';
+import { NestContainer } from '@nestjs/core/injector/container.js';
+import { GraphInspector } from '@nestjs/core/inspector/graph-inspector.js';
+import { NoopGraphInspector } from '@nestjs/core/inspector/noop-graph-inspector.js';
 import {
   UuidFactory,
   UuidFactoryMode,
-} from '@nestjs/core/inspector/uuid-factory';
-import { ModuleDefinition } from '@nestjs/core/interfaces/module-definition.interface';
-import { ModuleOverride } from '@nestjs/core/interfaces/module-override.interface';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { DependenciesScanner } from '@nestjs/core/scanner';
+} from '@nestjs/core/inspector/uuid-factory.js';
+import { ModuleDefinition } from '@nestjs/core/interfaces/module-definition.interface.js';
+import { ModuleOverride } from '@nestjs/core/interfaces/module-override.interface.js';
+import { MetadataScanner } from '@nestjs/core/metadata-scanner.js';
+import { DependenciesScanner } from '@nestjs/core/scanner.js';
 import {
   MockFactory,
   OverrideBy,
   OverrideByFactoryOptions,
-} from './interfaces';
-import { OverrideModule } from './interfaces/override-module.interface';
-import { TestingLogger } from './services/testing-logger.service';
-import { TestingInjector } from './testing-injector';
-import { TestingInstanceLoader } from './testing-instance-loader';
-import { TestingModule } from './testing-module';
+} from './interfaces/index.js';
+import { OverrideModule } from './interfaces/override-module.interface.js';
+import { TestingLogger } from './services/testing-logger.service.js';
+import { TestingInjector } from './testing-injector.js';
+import { TestingInstanceLoader } from './testing-instance-loader.js';
+import { TestingModule } from './testing-module.js';
 
 /**
  * @publicApi
@@ -123,12 +123,14 @@ export class TestingModuleBuilder {
     scanner.applyApplicationProviders();
 
     const root = this.getRootModule();
-    return new TestingModule(
+    const testingModule = new TestingModule(
       this.container,
       graphInspector,
       root,
       this.applicationConfig,
     );
+    await testingModule.preloadLazyPackages();
+    return testingModule;
   }
 
   private override<T = any>(typeOrToken: T, isProvider: boolean): OverrideBy {

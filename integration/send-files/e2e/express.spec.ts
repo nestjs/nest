@@ -6,13 +6,13 @@ import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 import {
   getHttpBaseOptions,
   sendCanceledHttpRequest,
   sendHttpRequest,
-} from './utils';
+} from './utils.js';
 
 const readme = readFileSync(join(process.cwd(), 'Readme.md'));
 const readmeString = readme.toString();

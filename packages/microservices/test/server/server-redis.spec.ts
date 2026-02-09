@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { NO_MESSAGE_HANDLER } from '../../constants';
-import { RedisContext } from '../../ctx-host';
-import { BaseRpcContext } from '../../ctx-host/base-rpc.context';
-import { ServerRedis } from '../../server/server-redis';
-import { objectToMap } from './utils/object-to-map';
+import { NO_MESSAGE_HANDLER } from '../../constants.js';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
+import { RedisContext } from '../../ctx-host/index.js';
+import { ServerRedis } from '../../server/server-redis.js';
+import { objectToMap } from './utils/object-to-map.js';
 
 describe('ServerRedis', () => {
   let server: ServerRedis;
@@ -28,27 +28,29 @@ describe('ServerRedis', () => {
         on: onSpy,
         connect: connectSpy,
       };
-      sinon.stub(server, 'createRedisClient').callsFake(() => client);
+      sinon
+        .stub(server, 'createRedisClient')
+        .callsFake(() => Promise.resolve(client));
 
       callbackSpy = sinon.spy();
     });
-    it('should bind "error" event to handler', () => {
-      server.listen(callbackSpy);
+    it('should bind "error" event to handler', async () => {
+      await server.listen(callbackSpy);
       expect(onSpy.getCall(0).args[0]).to.be.equal('error');
     });
-    it('should call "RedisClient#connect()"', () => {
-      server.listen(callbackSpy);
+    it('should call "RedisClient#connect()"', async () => {
+      await server.listen(callbackSpy);
       expect(connectSpy.called).to.be.true;
     });
     describe('when "start" throws an exception', () => {
-      it('should call callback with a thrown error as an argument', () => {
+      it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
 
         const callbackSpy = sinon.spy();
         sinon.stub(server, 'start').callsFake(() => {
           throw error;
         });
-        server.listen(callbackSpy);
+        await server.listen(callbackSpy);
         expect(callbackSpy.calledWith(error)).to.be.true;
       });
     });

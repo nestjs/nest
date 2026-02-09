@@ -6,10 +6,13 @@ import {
 } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { ClientProxyFactory } from '../../client';
-import { Transport } from '../../enums';
-import { ClientOptions } from '../../interfaces';
-import { ClientsModule, ClientsModuleOptionsFactory } from '../../module';
+import { ClientProxyFactory } from '../../client/index.js';
+import { Transport } from '../../enums/index.js';
+import { ClientOptions } from '../../interfaces/index.js';
+import {
+  ClientsModule,
+  ClientsModuleOptionsFactory,
+} from '../../module/index.js';
 
 describe('ClientsModule', () => {
   let dynamicModule: DynamicModule;

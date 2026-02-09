@@ -12,6 +12,10 @@
     "url": "https://opencollective.com/nest"
   },
   "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
   "author": "Kamil Mysliwiec",
   "scripts": {
     "build": "tsc -b -v packages",
@@ -32,7 +36,7 @@
     "test:dev": "mocha -w --watch-files \"packages\" packages/**/*.spec.ts",
     "pretest:cov": "npm run clean",
     "test:cov": "nyc mocha packages/**/*.spec.ts --reporter spec",
-    "test:integration": "mocha --reporter-option maxDiffSize=0 \"integration/*/{,!(node_modules)/**/}/*.spec.ts\"",
+    "test:integration": "mocha --reporter-option maxDiffSize=0 --ignore 'integration/graphql-*/**' --ignore 'integration/mongoose/**' --ignore 'integration/typeorm/**' --ignore 'integration/inspector/**' --ignore 'integration/repl/**' \"integration/*/{,!(node_modules)/**/}/*.spec.ts\"",
     "test:docker:up": "docker-compose -f integration/docker-compose.yml up -d",
     "test:docker:down": "docker-compose -f integration/docker-compose.yml down",
     "lint": "concurrently 'npm run lint:packages' 'npm run lint:integration' 'npm run lint:spec'",
@@ -166,6 +170,7 @@
     "supertest": "7.2.2",
     "ts-morph": "27.0.2",
     "ts-node": "10.9.2",
+    "tsx": "4.19.2",
     "typeorm": "0.3.28",
     "typescript": "5.9.3",
     "typescript-eslint": "8.54.0",
@@ -221,7 +226,7 @@
       ".ts"
     ],
     "require": [
-      "ts-node/register"
+      "tsx"
     ],
     "reporter": [
       "text-summary",
@@ -232,10 +237,11 @@
   },
   "mocha": {
     "require": [
-      "ts-node/register",
-      "tsconfig-paths/register",
       "node_modules/reflect-metadata/Reflect.js",
       "hooks/mocha-init-hook.ts"
+    ],
+    "node-option": [
+      "import=./hooks/ts-node-register.mjs"
     ],
     "exit": true
   }

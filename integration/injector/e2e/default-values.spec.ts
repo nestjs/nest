@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { DefaultsModule } from '../src/defaults/defaults.module';
-import { DefaultsService } from '../src/defaults/defaults.service';
+import { DefaultsModule } from '../src/defaults/defaults.module.js';
+import { DefaultsService } from '../src/defaults/defaults.service.js';
 
 describe('Injector', () => {
   describe('when optional', () => {

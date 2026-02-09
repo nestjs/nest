@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { LogLevel } from '../../../services/logger.service';
-import { isLogLevelEnabled } from '../../../services/utils';
+import { LogLevel } from '../../../services/logger.service.js';
+import { isLogLevelEnabled } from '../../../services/utils/index.js';
 
 describe('isLogLevelEnabled', () => {
   const tests = [

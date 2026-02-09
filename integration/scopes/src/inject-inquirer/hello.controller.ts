@@ -1,6 +1,6 @@
 import { Controller, Get, Scope } from '@nestjs/common';
-import { HelloRequestService } from './hello-request/hello-request.service';
-import { HelloTransientService } from './hello-transient/hello-transient.service';
+import { HelloRequestService } from './hello-request/hello-request.service.js';
+import { HelloTransientService } from './hello-transient/hello-transient.service.js';
 
 @Controller({
   path: 'hello',

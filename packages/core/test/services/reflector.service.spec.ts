@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Reflector } from '../../services/reflector.service';
+import { Reflector } from '../../services/reflector.service.js';
 
 const transformDecorator = Reflector.createDecorator<string[], number>({
   transform: value => value.length,

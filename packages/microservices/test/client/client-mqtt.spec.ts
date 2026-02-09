@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import { EMPTY } from 'rxjs';
 import * as sinon from 'sinon';
-import { ClientMqtt } from '../../client/client-mqtt';
-import { MqttEventsMap } from '../../events/mqtt.events';
-import { ReadPacket } from '../../interfaces';
-import { MqttRecord } from '../../record-builders';
+import { ClientMqtt } from '../../client/client-mqtt.js';
+import { MqttEventsMap } from '../../events/mqtt.events.js';
+import { ReadPacket } from '../../interfaces/index.js';
+import { MqttRecord } from '../../record-builders/index.js';
 
 describe('ClientMqtt', () => {
   const test = 'test';

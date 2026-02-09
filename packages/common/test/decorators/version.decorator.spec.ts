@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { VERSION_METADATA } from '../../constants';
-import { Version } from '../../decorators/core/version.decorator';
+import { VERSION_METADATA } from '../../constants.js';
+import { Version } from '../../decorators/core/version.decorator.js';
 
 describe('@Version', () => {
   const version = '1';

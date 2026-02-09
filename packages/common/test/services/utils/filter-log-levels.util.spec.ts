@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { filterLogLevels } from '../../../services/utils/filter-log-levels.util';
+import { filterLogLevels } from '../../../services/utils/filter-log-levels.util.js';
 
 describe('filterLogLevels', () => {
   it('should correctly parse an exclusive range', () => {

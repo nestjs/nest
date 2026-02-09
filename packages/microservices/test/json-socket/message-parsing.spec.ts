@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import { Socket } from 'net';
 import * as sinon from 'sinon';
-import { TcpEventsMap } from '../../events/tcp.events';
-import { JsonSocket } from '../../helpers/json-socket';
+import { TcpEventsMap } from '../../events/tcp.events.js';
+import { JsonSocket } from '../../helpers/json-socket.js';
 
 const MESSAGE_EVENT = 'message';
 

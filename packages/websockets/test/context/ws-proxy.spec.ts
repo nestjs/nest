@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { throwError } from 'rxjs';
 import * as sinon from 'sinon';
-import { WsProxy } from '../../context/ws-proxy';
-import { WsException } from '../../errors/ws-exception';
-import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
+import { WsProxy } from '../../context/ws-proxy.js';
+import { WsException } from '../../errors/ws-exception.js';
+import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler.js';
 
 describe('WsProxy', () => {
   let routerProxy: WsProxy;

@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import { loggerProvider } from '../src/resolve-scoped/logger.provider';
-import { LoggerService } from '../src/resolve-scoped/logger.service';
-import { RequestLoggerService } from '../src/resolve-scoped/request-logger.service';
+import { loggerProvider } from '../src/resolve-scoped/logger.provider.js';
+import { LoggerService } from '../src/resolve-scoped/logger.service.js';
+import { RequestLoggerService } from '../src/resolve-scoped/request-logger.service.js';
 
 describe('Resolve method', () => {
   let app: INestApplication;

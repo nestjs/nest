@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { PIPES_METADATA } from '../../constants';
-import { UsePipes } from '../../decorators/core/use-pipes.decorator';
-import { InvalidDecoratorItemException } from '../../utils/validate-each.util';
+import { PIPES_METADATA } from '../../constants.js';
+import { UsePipes } from '../../decorators/core/use-pipes.decorator.js';
+import { InvalidDecoratorItemException } from '../../utils/validate-each.util.js';
 
 class Pipe {
   transform() {}

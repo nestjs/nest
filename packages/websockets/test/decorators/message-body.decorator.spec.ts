@@ -1,8 +1,8 @@
 import { ValidationPipe } from '@nestjs/common';
 import { expect } from 'chai';
-import { PARAM_ARGS_METADATA } from '../../constants';
-import { MessageBody } from '../../decorators';
-import { WsParamtype } from '../../enums/ws-paramtype.enum';
+import { PARAM_ARGS_METADATA } from '../../constants.js';
+import { MessageBody } from '../../decorators/index.js';
+import { WsParamtype } from '../../enums/ws-paramtype.enum.js';
 
 class MessagePayloadTest {
   public test(@MessageBody(ValidationPipe) payload: any) {}

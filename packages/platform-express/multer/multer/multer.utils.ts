@@ -3,7 +3,7 @@ import {
   HttpException,
   PayloadTooLargeException,
 } from '@nestjs/common';
-import { multerExceptions, busboyExceptions } from './multer.constants';
+import { multerExceptions, busboyExceptions } from './multer.constants.js';
 
 // Multer may add in a 'field' property to the error
 // https://github.com/expressjs/multer/blob/aa42bea6ac7d0cb8fcb279b15a7278cda805dc63/lib/multer-error.js#L19

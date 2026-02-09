@@ -1,22 +1,33 @@
 import { RequestMethod } from '@nestjs/common';
-import { expect } from 'chai';
-import { ApplicationConfig } from '../application-config';
-import { NestContainer } from '../injector/container';
-import { GraphInspector } from '../inspector/graph-inspector';
-import { NestApplication } from '../nest-application';
-import { mapToExcludeRoute } from './../middleware/utils';
-import { NoopHttpAdapter } from './utils/noop-adapter.spec';
+import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
 import { MicroserviceOptions } from '@nestjs/microservices';
+import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { ApplicationConfig } from '../application-config.js';
+import { NestContainer } from '../injector/container.js';
+import { GraphInspector } from '../inspector/graph-inspector.js';
+import { NestApplication } from '../nest-application.js';
+import { mapToExcludeRoute } from './../middleware/utils.js';
+import { NoopHttpAdapter } from './utils/noop-adapter.spec.js';
 
 describe('NestApplication', () => {
+  before(async () => {
+    // Pre-populate the package cache so that connectMicroservice()
+    // can synchronously retrieve @nestjs/microservices via loadPackageCached.
+    await loadPackage(
+      '@nestjs/microservices',
+      'NestApplication tests',
+      () => import('@nestjs/microservices'),
+    );
+  });
+
   describe('Hybrid Application', () => {
     class Interceptor {
       public intercept(context, next) {
         return next();
       }
     }
-    it('default should use new ApplicationConfig', () => {
+    it('default should use new ApplicationConfig', async () => {
       const applicationConfig = new ApplicationConfig();
       const container = new NestContainer(applicationConfig);
       const instance = new NestApplication(
@@ -37,7 +48,7 @@ describe('NestApplication', () => {
         (microservice as any).applicationConfig.getGlobalInterceptors().length,
       ).to.equal(0);
     });
-    it('should inherit existing ApplicationConfig', () => {
+    it('should inherit existing ApplicationConfig', async () => {
       const applicationConfig = new ApplicationConfig();
       const container = new NestContainer(applicationConfig);
       const instance = new NestApplication(
@@ -60,7 +71,7 @@ describe('NestApplication', () => {
       ).to.equal(1);
     });
 
-    it('should immediately initialize microservice by default', () => {
+    it('should immediately initialize microservice by default', async () => {
       const applicationConfig = new ApplicationConfig();
       const container = new NestContainer(applicationConfig);
       const instance = new NestApplication(
@@ -80,7 +91,7 @@ describe('NestApplication', () => {
       expect((microservice as any).wasInitHookCalled).to.be.true;
     });
 
-    it('should defer microservice initialization when deferInitialization is true', () => {
+    it('should defer microservice initialization when deferInitialization is true', async () => {
       const applicationConfig = new ApplicationConfig();
       const container = new NestContainer(applicationConfig);
       const instance = new NestApplication(

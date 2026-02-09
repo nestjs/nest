@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { KafkaResponseDeserializer } from '../../deserializers/kafka-response.deserializer';
-import { KafkaHeaders } from '../../enums/kafka-headers.enum';
+import { KafkaResponseDeserializer } from '../../deserializers/kafka-response.deserializer.js';
+import { KafkaHeaders } from '../../enums/kafka-headers.enum.js';
 
 describe('KafkaResponseDeserializer', () => {
   const id = '10';
