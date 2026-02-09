@@ -9,9 +9,11 @@ import {
 } from '@nestjs/websockets/constants';
 import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer';
 import * as http from 'http';
-import { pathToRegexp, Key } from 'path-to-regexp';
+import { pathToRegexp } from 'path-to-regexp';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
 import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
+
+type PathKey = { name: string };
 
 let wsPackage: any = {};
 
@@ -38,7 +40,7 @@ type WsAdapterOptions = {
 interface WsServerWithPath {
   path: string;
   pathRegexp?: RegExp;
-  pathKeys?: Key[];
+  pathKeys?: PathKey[];
   isStaticPath?: boolean;
   handleUpgrade: (
     request: any,
@@ -65,7 +67,7 @@ interface PathMatcher {
   dynamicPaths: Array<{
     server: WsServerWithPath;
     pathRegexp: RegExp;
-    pathKeys: Key[];
+    pathKeys: PathKey[];
   }>;
 }
 
