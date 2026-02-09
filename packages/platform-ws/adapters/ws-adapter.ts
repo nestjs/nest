@@ -19,7 +19,9 @@ import {
   ERROR_EVENT,
 } from '@nestjs/websockets/internal';
 import type { MessageMappingProperties } from '@nestjs/websockets';
-import { pathToRegexp, Key } from 'path-to-regexp';
+import { pathToRegexp } from 'path-to-regexp';
+
+type PathKey = { name: string };
 
 let wsPackage: any = {};
 
@@ -51,7 +53,7 @@ type WsAdapterOptions = {
 interface WsServerWithPath {
   path: string;
   pathRegexp?: RegExp;
-  pathKeys?: Key[];
+  pathKeys?: PathKey[];
   isStaticPath?: boolean;
   handleUpgrade: (
     request: any,
@@ -78,7 +80,7 @@ interface PathMatcher {
   dynamicPaths: Array<{
     server: WsServerWithPath;
     pathRegexp: RegExp;
-    pathKeys: Key[];
+    pathKeys: PathKey[];
   }>;
 }
 
