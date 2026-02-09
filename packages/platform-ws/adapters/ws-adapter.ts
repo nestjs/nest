@@ -12,8 +12,10 @@ import {
   ERROR_EVENT,
 } from '@nestjs/websockets/internal';
 import type { MessageMappingProperties } from '@nestjs/websockets';
-import { pathToRegexp, Key } from 'path-to-regexp';
+import { pathToRegexp } from 'path-to-regexp';
 import { mergeMapBounded } from '../utils/merge-map-bounded.util.js';
+
+type PathKey = { name: string };
 
 enum READY_STATE {
   CONNECTING_STATE = 0,
@@ -57,7 +59,7 @@ type WsAdapterOptions = {
 interface WsServerWithPath {
   path: string;
   pathRegexp?: RegExp;
-  pathKeys?: Key[];
+  pathKeys?: PathKey[];
   isStaticPath?: boolean;
   handleUpgrade: (
     request: any,
@@ -84,7 +86,7 @@ interface PathMatcher {
   dynamicPaths: Array<{
     server: WsServerWithPath;
     pathRegexp: RegExp;
-    pathKeys: Key[];
+    pathKeys: PathKey[];
   }>;
 }
 
