@@ -25,8 +25,6 @@ import { Server } from './server.js';
 // type Redis = import('ioredis').Redis;
 type Redis = any;
 
-let redisPackage = {} as any;
-
 /**
  * @publicApi
  */
@@ -44,12 +42,6 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
 
   constructor(protected readonly options: Required<RedisOptions>['options']) {
     super();
-
-    redisPackage = this.loadPackage(
-      'ioredis',
-      ServerRedis.name,
-      () => import('ioredis'),
-    );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -118,8 +110,12 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   }
 
   public async createRedisClient(): Promise<Redis> {
-    redisPackage = await redisPackage;
-    const RedisClient = redisPackage.default || redisPackage;
+    const redisPackage = await this.loadPackage(
+      'ioredis',
+      ServerRedis.name,
+      () => import('ioredis'),
+    );
+    const RedisClient: any = redisPackage.default || redisPackage;
     return new RedisClient({
       port: REDIS_DEFAULT_PORT,
       host: REDIS_DEFAULT_HOST,

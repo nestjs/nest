@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 import { Logger } from '@nestjs/common/services/logger.service.js';
 import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
+import { createRequire } from 'module';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util.js';
 import { isFunction, isString } from '@nestjs/common/utils/shared.utils.js';
 import { EventEmitter } from 'events';
@@ -87,8 +88,14 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       this.queueOptions.noAssert ??
       RQM_DEFAULT_NO_ASSERT;
 
-    loadPackageSync('amqplib', ClientRMQ.name);
-    rmqPackage = loadPackageSync('amqp-connection-manager', ClientRMQ.name);
+    loadPackageSync('amqplib', ClientRMQ.name, () =>
+      createRequire(import.meta.url)('amqplib'),
+    );
+    rmqPackage = loadPackageSync(
+      'amqp-connection-manager',
+      ClientRMQ.name,
+      () => createRequire(import.meta.url)('amqp-connection-manager'),
+    );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);

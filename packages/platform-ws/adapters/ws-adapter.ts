@@ -1,5 +1,6 @@
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
+import { createRequire } from 'module';
 import { isNil, normalizePath } from '@nestjs/common/utils/shared.utils.js';
 import { AbstractWsAdapter } from '@nestjs/websockets';
 import {
@@ -55,7 +56,9 @@ export class WsAdapter extends AbstractWsAdapter {
     options?: WsAdapterOptions,
   ) {
     super(appOrHttpServer);
-    wsPackage = loadPackageSync('ws', 'WsAdapter');
+    wsPackage = loadPackageSync('ws', 'WsAdapter', () =>
+      createRequire(import.meta.url)('ws'),
+    );
     // Normalize CJS/ESM: In CJS, require('ws') returns WebSocket with .Server.
     // We need .Server for creating WebSocketServer instances.
     if (!wsPackage.Server) {

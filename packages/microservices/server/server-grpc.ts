@@ -3,6 +3,7 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils.js';
+import { createRequire } from 'module';
 import {
   EMPTY,
   Observable,
@@ -77,6 +78,7 @@ export class ServerGrpc extends Server<never, never> {
     grpcPackage = this.loadPackageSynchronously(
       '@grpc/grpc-js',
       ServerGrpc.name,
+      () => createRequire(import.meta.url)('@grpc/grpc-js'),
     );
     grpcProtoLoaderPackage = this.loadPackageSynchronously(
       protoLoader,

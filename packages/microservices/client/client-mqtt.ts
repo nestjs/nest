@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service.js';
 import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
 import { isObject } from '@nestjs/common/utils/shared.utils.js';
+import { createRequire } from 'module';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
 import { ECONNREFUSED, ENOTFOUND, MQTT_DEFAULT_URL } from '../constants.js';
@@ -47,7 +48,9 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     super();
     this.url = this.getOptionsProp(this.options, 'url') ?? MQTT_DEFAULT_URL;
 
-    mqttPackage = loadPackageSync('mqtt', ClientMqtt.name);
+    mqttPackage = loadPackageSync('mqtt', ClientMqtt.name, () =>
+      createRequire(import.meta.url)('mqtt'),
+    );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);

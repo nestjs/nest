@@ -15,7 +15,6 @@ describe('kafka reply partition assigner', () => {
     cluster = { findTopicPartitionMetadata: topic => metadata[topic] };
     client = new ClientKafka({});
     assigner = new KafkaReplyPartitionAssigner(client, { cluster });
-    await assigner.init();
     topics = ['topic-A', 'topic-B'];
 
     getConsumerAssignments = sinon.spy(client, 'getConsumerAssignments');

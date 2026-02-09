@@ -50,8 +50,6 @@ import {
 } from '../serializers/kafka-request.serializer.js';
 import { ClientProxy } from './client-proxy.js';
 
-let kafkaPackage: any = {};
-
 /**
  * @publicApi
  */
@@ -117,13 +115,6 @@ export class ClientKafka
     this.clientId =
       (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
     this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
-
-    kafkaPackage = loadPackage(
-      'kafkajs',
-      ClientKafka.name,
-      () => import('kafkajs'),
-    );
-
     this.parser = new KafkaParser((options && options.parser) || undefined);
 
     this.initializeSerializer(options);
@@ -217,7 +208,12 @@ export class ClientKafka
   }
 
   public async createClient<T = any>(): Promise<T> {
-    kafkaPackage = await kafkaPackage;
+    const kafkaPackage = await loadPackage(
+      'kafkajs',
+      ClientKafka.name,
+      () => import('kafkajs'),
+    );
+
     const kafkaConfig: KafkaConfig = Object.assign(
       { logCreator: KafkaLogger.bind(null, this.logger) },
       this.options.client,

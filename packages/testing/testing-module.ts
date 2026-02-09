@@ -47,7 +47,7 @@ export class TestingModule extends NestApplicationContext {
    * createNestMicroservice and createHttpAdapter can stay synchronous.
    * Called from TestingModuleBuilder.compile().
    */
-  public async preloadLazyPackages(): Promise<void> {
+  private async preloadLazyPackages(): Promise<void> {
     // Best-effort: silently swallow if packages are not installed
     await loadPackage(
       '@nestjs/platform-express',

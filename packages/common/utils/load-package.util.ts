@@ -34,9 +34,14 @@ export async function loadPackage(
 }
 
 /**
- * Synchronously loads a CJS package using `createRequire` and caches it.
- * This is meant for optional dependencies that are CJS-only and must
- * be loaded in synchronous contexts (e.g. constructors).
+ * Synchronously loads a package using `createRequire` and caches it.
+ * This is meant for optional dependencies that must be loaded in
+ * synchronous contexts (e.g. constructors).
+ *
+ * @param loaderFn Optional synchronous loader (e.g.
+ *   `() => createRequire(import.meta.url)('pkg')`).
+ *   When provided, bundlers can statically analyse the string literal.
+ *   Falls back to a `createRequire` call resolved from this file.
  */
 export function loadPackageSync(
   packageName: string,

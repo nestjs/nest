@@ -295,7 +295,7 @@ export abstract class Server<
   protected loadPackage<T = any>(
     name: string,
     ctx: string,
-    loader?: Function,
+    loader?: () => T,
   ): T | Promise<T> {
     return loadPackage(name, ctx, loader);
   }

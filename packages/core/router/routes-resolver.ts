@@ -152,11 +152,9 @@ export class RoutesResolver implements Resolver {
     };
     const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);
+    const prefix = this.applicationConfig.getGlobalPrefix();
     applicationRef.setNotFoundHandler &&
-      applicationRef.setNotFoundHandler(
-        proxy,
-        this.applicationConfig.getGlobalPrefix(),
-      );
+      applicationRef.setNotFoundHandler(proxy, prefix);
   }
 
   public registerExceptionHandler() {
@@ -175,11 +173,9 @@ export class RoutesResolver implements Resolver {
     );
     const proxy = this.routerProxy.createExceptionLayerProxy(callback, handler);
     const applicationRef = this.container.getHttpAdapterRef();
+    const prefix = this.applicationConfig.getGlobalPrefix();
     applicationRef.setErrorHandler &&
-      applicationRef.setErrorHandler(
-        proxy,
-        this.applicationConfig.getGlobalPrefix(),
-      );
+      applicationRef.setErrorHandler(proxy, prefix);
   }
 
   public mapExternalException(err: any) {

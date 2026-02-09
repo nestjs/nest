@@ -1,5 +1,6 @@
-import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
+import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
 import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
+import { createRequire } from 'module';
 import { ClientKafka } from '../client/client-kafka.js';
 import {
   Cluster,
@@ -21,15 +22,11 @@ export class KafkaReplyPartitionAssigner {
       cluster: Cluster;
     },
   ) {
-    kafkaPackage = loadPackage(
+    kafkaPackage = loadPackageSync(
       'kafkajs',
       KafkaReplyPartitionAssigner.name,
-      () => import('kafkajs'),
+      () => createRequire(import.meta.url)('kafkajs'),
     );
-  }
-
-  async init() {
-    kafkaPackage = await kafkaPackage;
   }
 
   /**

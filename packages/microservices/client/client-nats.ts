@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service.js';
-import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
+import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
 import { isObject } from '@nestjs/common/utils/shared.utils.js';
+import { createRequire } from 'module';
 import { EventEmitter } from 'events';
 import { NATS_DEFAULT_URL } from '../constants.js';
 import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-json.deserializer.js';
@@ -46,7 +47,9 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
   constructor(protected readonly options: Required<NatsOptions>['options']) {
     super();
-    natsPackage = loadPackage('nats', ClientNats.name, () => import('nats'));
+    natsPackage = loadPackageSync('nats', ClientNats.name, () =>
+      createRequire(import.meta.url)('nats'),
+    );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -76,8 +79,6 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
   }
 
   public async createClient(): Promise<Client> {
-    natsPackage = await natsPackage;
-
     // Eagerly initialize serializer/deserializer so they can be used synchronously
     if (
       this.serializer &&

@@ -22,8 +22,6 @@ import { NatsRecord } from '../record-builders/index.js';
 import { NatsRecordSerializer } from '../serializers/nats-record.serializer.js';
 import { Server } from './server.js';
 
-let natsPackage = {} as any;
-
 // To enable type safety for Nats. This cant be uncommented by default
 // because it would require the user to install the nats package even if they dont use Nats
 // Otherwise, TypeScript would fail to compile the code.
@@ -53,12 +51,6 @@ export class ServerNats<
 
   constructor(private readonly options: Required<NatsOptions>['options']) {
     super();
-
-    natsPackage = this.loadPackage(
-      'nats',
-      ServerNats.name,
-      () => import('nats'),
-    );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -130,7 +122,11 @@ export class ServerNats<
   }
 
   public async createNatsClient(): Promise<Client> {
-    natsPackage = await natsPackage;
+    const natsPackage = await this.loadPackage(
+      'nats',
+      ServerNats.name,
+      () => import('nats'),
+    );
 
     // Eagerly initialize serializer/deserializer so they can be used synchronously
     if (

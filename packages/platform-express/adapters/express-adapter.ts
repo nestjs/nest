@@ -54,6 +54,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(ExpressAdapter.name);
   private readonly openConnections = new Set<Duplex>();
+  private readonly registeredPrefixes = new Set<string>();
   private onRequestHook?: (
     req: express.Request,
     res: express.Response,
@@ -166,11 +167,39 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public setErrorHandler(handler: Function, prefix?: string) {
+    if (prefix) {
+      const router = express.Router();
+      router.use(handler as any);
+      return this.use(prefix, router);
+    }
     return this.use(handler);
   }
 
   public setNotFoundHandler(handler: Function, prefix?: string) {
-    return this.use(handler);
+    if (prefix) {
+      this.registeredPrefixes.add(prefix);
+      const router = express.Router();
+      router.all('*path', handler as any);
+      return this.use(prefix, router);
+    }
+    return this.use(
+      (
+        req: express.Request,
+        res: express.Response,
+        next: express.NextFunction,
+      ) => {
+        // When multiple apps share this adapter, a non-prefixed app's 404
+        // handler may be registered before a prefixed app's routes. Skip
+        // requests whose path belongs to another app's prefix so they can
+        // reach the correct route handlers further in the stack.
+        for (const registeredPrefix of this.registeredPrefixes) {
+          if (req.originalUrl.startsWith(registeredPrefix)) {
+            return next();
+          }
+        }
+        return (handler as any)(req, res, next);
+      },
+    );
   }
 
   public isHeadersSent(response: any): boolean {

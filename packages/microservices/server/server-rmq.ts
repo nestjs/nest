@@ -4,6 +4,7 @@ import {
   isString,
   isUndefined,
 } from '@nestjs/common/utils/shared.utils.js';
+import { createRequire } from 'module';
 import {
   CONNECTION_FAILED_MESSAGE,
   DISCONNECTED_RMQ_MESSAGE,
@@ -53,8 +54,6 @@ type ChannelWrapper = any;
 type Message = any;
 type Channel = any;
 
-let rmqPackage = {} as any; // as typeof import('amqp-connection-manager');
-
 const INFINITE_CONNECTION_ATTEMPTS = -1;
 
 /**
@@ -86,11 +85,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       this.getOptionsProp(this.options, 'queueOptions') ||
       RQM_DEFAULT_QUEUE_OPTIONS;
 
-    this.loadPackage('amqplib', ServerRMQ.name, () => import('amqplib'));
-    rmqPackage = this.loadPackage(
-      'amqp-connection-manager',
-      ServerRMQ.name,
-      () => import('amqp-connection-manager'),
+    this.loadPackageSynchronously('amqplib', ServerRMQ.name, () =>
+      createRequire(import.meta.url)('amqplib'),
     );
 
     this.initializeSerializer(options);
@@ -167,13 +163,17 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   }
 
   public async createClient<T = any>(): Promise<T> {
-    rmqPackage = await rmqPackage;
+    const rmqPackage = await this.loadPackage(
+      'amqp-connection-manager',
+      ServerRMQ.name,
+      () => import('amqp-connection-manager'),
+    );
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
     return rmqPackage.connect(this.urls, {
       connectionOptions: socketOptions?.connectionOptions,
       heartbeatIntervalInSeconds: socketOptions?.heartbeatIntervalInSeconds,
       reconnectTimeInSeconds: socketOptions?.reconnectTimeInSeconds,
-    });
+    }) as T;
   }
 
   private registerConnectListener() {

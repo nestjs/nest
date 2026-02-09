@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common/services/logger.service.js';
 import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
 import { isFunction, isObject } from '@nestjs/common/utils/shared.utils.js';
+import { createRequire } from 'module';
 import { Observable, Subscription } from 'rxjs';
 import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants.js';
 import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception.js';
@@ -50,7 +51,9 @@ export class ClientGrpcProxy
     const protoLoader =
       this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
 
-    grpcPackage = loadPackageSync('@grpc/grpc-js', ClientGrpcProxy.name);
+    grpcPackage = loadPackageSync('@grpc/grpc-js', ClientGrpcProxy.name, () =>
+      createRequire(import.meta.url)('@grpc/grpc-js'),
+    );
 
     grpcProtoLoaderPackage = loadPackageSync(protoLoader, ClientGrpcProxy.name);
 

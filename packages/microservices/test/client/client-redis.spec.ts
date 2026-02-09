@@ -48,10 +48,12 @@ describe('ClientRedis', () => {
       pub = { publish: publishSpy };
       untypedClient.subClient = sub;
       untypedClient.pubClient = pub;
+      untypedClient.connectionPromise = Promise.resolve();
       connectSpy = sinon.spy(client, 'connect');
     });
     afterEach(() => {
       connectSpy.restore();
+      untypedClient.connectionPromise = null;
     });
     it('should subscribe to response pattern name', () => {
       client['publish'](msg, () => {});
@@ -249,6 +251,7 @@ describe('ClientRedis', () => {
     let registerErrorListenerSpy: sinon.SinonSpy;
 
     beforeEach(async () => {
+      untypedClient.connectionPromise = null;
       createClientSpy = sinon.stub(client, 'createClient').callsFake(
         () =>
           ({

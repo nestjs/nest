@@ -24,17 +24,6 @@ import { MicroservicesModule } from './microservices-module.js';
 import { ServerFactory } from './server/server-factory.js';
 import { Server } from './server/server.js';
 
-let _socketModule: any;
-async function getSocketModule() {
-  if (!_socketModule) {
-    _socketModule = await optionalRequire(
-      '@nestjs/websockets/socket-module',
-      () => import('@nestjs/websockets/socket-module.js'),
-    );
-  }
-  return _socketModule;
-}
-
 type CompleteMicroserviceOptions = NestMicroserviceOptions &
   (MicroserviceOptions | AsyncMicroserviceOptions);
 
@@ -264,11 +253,7 @@ export class NestMicroservice
     }
 
     // Lazy-load optional socket module (ESM-compatible)
-    const socketMod = await getSocketModule();
-    if (socketMod?.SocketModule) {
-      this.socketModule = new socketMod.SocketModule();
-    }
-
+    await this.loadSocketModule();
     await super.init();
     await this.registerModules();
     return this;
@@ -390,5 +375,17 @@ export class NestMicroservice
       );
     }
     return instances;
+  }
+
+  private async loadSocketModule() {
+    if (!this.socketModule) {
+      const socketModule = await optionalRequire(
+        '@nestjs/websockets/socket-module',
+        () => import('@nestjs/websockets/socket-module.js'),
+      );
+      if (socketModule?.SocketModule) {
+        this.socketModule = new socketModule.SocketModule();
+      }
+    }
   }
 }

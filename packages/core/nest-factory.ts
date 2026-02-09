@@ -108,6 +108,7 @@ export class NestFactoryStatic {
       graphInspector,
       appOptions,
     );
+    await instance.preloadLazyPackages();
     const target = this.createNestInstance(instance);
     return this.createAdapterProxy<T>(target, httpServer);
   }

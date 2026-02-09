@@ -7,9 +7,8 @@ const jsonCodec = nats.JSONCodec();
 
 describe('NatsRecordSerializer', () => {
   let instance: NatsRecordSerializer;
-  beforeEach(async () => {
+  beforeEach(() => {
     instance = new NatsRecordSerializer();
-    await instance.init();
   });
   describe('serialize', () => {
     it('undefined', async () => {

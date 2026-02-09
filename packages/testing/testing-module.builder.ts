@@ -129,7 +129,7 @@ export class TestingModuleBuilder {
       root,
       this.applicationConfig,
     );
-    await testingModule.preloadLazyPackages();
+    await testingModule['preloadLazyPackages']();
     return testingModule;
   }
 

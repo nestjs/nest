@@ -42,28 +42,6 @@ import { NestApplicationContext } from './nest-application-context.js';
 import { Resolver } from './router/interfaces/resolver.interface.js';
 import { RoutesResolver } from './router/routes-resolver.js';
 
-let _socketModule: any;
-async function getSocketModule() {
-  if (!_socketModule) {
-    _socketModule = await optionalRequire(
-      '@nestjs/websockets/socket-module',
-      () => import('@nestjs/websockets/socket-module.js'),
-    );
-  }
-  return _socketModule;
-}
-
-let _microservicesModule: any;
-async function getMicroservicesModule() {
-  if (!_microservicesModule) {
-    _microservicesModule = await optionalRequire(
-      '@nestjs/microservices/microservices-module',
-      () => import('@nestjs/microservices/microservices-module.js'),
-    );
-  }
-  return _microservicesModule;
-}
-
 /**
  * @publicApi
  */
@@ -194,21 +172,10 @@ export class NestApplication
     }
 
     // Lazy-load optional modules (ESM-compatible)
-    const socketMod = await getSocketModule();
-    if (socketMod?.SocketModule) {
-      this.socketModule = new socketMod.SocketModule();
-    }
-    const msMod = await getMicroservicesModule();
-    if (msMod?.MicroservicesModule) {
-      this.microservicesModule = new msMod.MicroservicesModule();
-      // Pre-cache the main barrel so connectMicroservice() can stay synchronous
-      await loadPackage(
-        '@nestjs/microservices',
-        'NestFactory',
-        () => import('@nestjs/microservices'),
-      );
-    }
-
+    await Promise.all([
+      this.loadSocketModule(),
+      this.loadMicroservicesModule(),
+    ]);
     this.applyOptions();
     await this.httpAdapter?.init?.();
 
@@ -493,6 +460,24 @@ export class NestApplication
     return this;
   }
 
+  /**
+   * Pre-load optional packages so that createNestApplication,
+   * createNestMicroservice and createHttpAdapter can stay synchronous.
+   */
+  public async preloadLazyPackages(): Promise<void> {
+    // Best-effort: silently swallow if packages are not installed
+    await loadPackage(
+      '@nestjs/platform-express',
+      'TestingModule',
+      () => import('@nestjs/platform-express'),
+    ).catch(() => {});
+    await loadPackage(
+      '@nestjs/microservices',
+      'TestingModule',
+      () => import('@nestjs/microservices'),
+    ).catch(() => {});
+  }
+
   private host(): string | undefined {
     const address = this.httpServer.address();
     if (isString(address)) {
@@ -520,5 +505,35 @@ export class NestApplication
       );
     }
     return instances;
+  }
+
+  private async loadSocketModule() {
+    if (!this.socketModule) {
+      const socketModule = await optionalRequire(
+        '@nestjs/websockets/socket-module',
+        () => import('@nestjs/websockets/socket-module.js'),
+      );
+      if (socketModule?.SocketModule) {
+        this.socketModule = new socketModule.SocketModule();
+      }
+    }
+  }
+
+  private async loadMicroservicesModule() {
+    if (!this.microservicesModule) {
+      const msModule = await optionalRequire(
+        '@nestjs/microservices/microservices-module',
+        () => import('@nestjs/microservices/microservices-module.js'),
+      );
+      if (msModule?.MicroservicesModule) {
+        this.microservicesModule = new msModule.MicroservicesModule();
+        // Pre-cache the main barrel so connectMicroservice() can stay synchronous
+        await loadPackage(
+          '@nestjs/microservices',
+          'NestFactory',
+          () => import('@nestjs/microservices'),
+        );
+      }
+    }
   }
 }
