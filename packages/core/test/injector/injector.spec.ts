@@ -11,6 +11,7 @@ import { NestContainer } from '../../injector/container';
 import { Injector, PropertyDependency } from '../../injector/injector';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { Module } from '../../injector/module';
+import { SettlementSignal } from '../../injector/settlement-signal';
 
 chai.use(chaiAsPromised);
 
@@ -544,6 +545,34 @@ describe('Injector', () => {
 
         const result = await injector.resolveComponentHost(module, wrapper);
         expect(result.instance).to.be.true;
+      });
+    });
+
+    describe('when instanceWrapper has forward ref and is in non-static context', () => {
+      it('should call settlementSignal.error when loadProvider throws', async () => {
+        const error = new Error('Test error');
+        const settlementSignal = new SettlementSignal();
+        const errorSpy = sinon.spy(settlementSignal, 'error');
+
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+        });
+        wrapper.settlementSignal = settlementSignal;
+
+        const contextId = { id: 2 };
+        const instanceHost = wrapper.getInstanceByContextId(contextId);
+        instanceHost.donePromise = Promise.resolve();
+
+        sinon
+          .stub(injector, 'loadProvider')
+          .callsFake(() => Promise.reject(error));
+
+        await injector.resolveComponentHost(module, wrapper, contextId);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(errorSpy.calledOnce).to.be.true;
+        expect(errorSpy.calledWith(error)).to.be.true;
       });
     });
   });

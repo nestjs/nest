@@ -1,4 +1,4 @@
-import { InjectionToken, Provider, Scope } from '@nestjs/common';
+import { Injectable, InjectionToken, Provider, Scope } from '@nestjs/common';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { setTimeout } from 'timers/promises';
@@ -153,6 +153,56 @@ describe('NestApplicationContext', () => {
       expect(onApplicationShutdownStub.called).to.be.true;
 
       clock.restore();
+    });
+
+    it('should use process.exit when useProcessExit option is enabled', async () => {
+      const signal = 'SIGTERM';
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      const processExitStub = sinon.stub(process, 'exit');
+      const processKillStub = sinon.stub(process, 'kill');
+
+      applicationContext.enableShutdownHooks([signal], {
+        useProcessExit: true,
+      });
+
+      const hookStub = sinon
+        .stub(applicationContext as any, 'callShutdownHook')
+        .callsFake(async () => undefined);
+
+      const shutdownCleanupRef = applicationContext['shutdownCleanupRef']!;
+      await shutdownCleanupRef(signal);
+
+      hookStub.restore();
+      processExitStub.restore();
+      processKillStub.restore();
+
+      expect(processExitStub.calledOnceWith(0)).to.be.true;
+      expect(processKillStub.called).to.be.false;
+    });
+
+    it('should use process.kill when useProcessExit option is not enabled', async () => {
+      const signal = 'SIGTERM';
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      const processExitStub = sinon.stub(process, 'exit');
+      const processKillStub = sinon.stub(process, 'kill');
+
+      applicationContext.enableShutdownHooks([signal]);
+
+      const hookStub = sinon
+        .stub(applicationContext as any, 'callShutdownHook')
+        .callsFake(async () => undefined);
+
+      const shutdownCleanupRef = applicationContext['shutdownCleanupRef']!;
+      await shutdownCleanupRef(signal);
+
+      hookStub.restore();
+      processExitStub.restore();
+      processKillStub.restore();
+
+      expect(processKillStub.calledOnceWith(process.pid, signal)).to.be.true;
+      expect(processExitStub.called).to.be.false;
     });
   });
 
@@ -373,6 +423,126 @@ describe('NestApplicationContext', () => {
         expect(a1).not.equal(a2);
         expect(a2).equal(a3);
       });
+    });
+  });
+
+  describe('implicit request scope via enhancers', () => {
+    it('get() should throw when dependency tree is not static (request-scoped enhancer attached)', async () => {
+      class Host {}
+      @Injectable({ scope: Scope.REQUEST })
+      class ReqScopedPipe {}
+
+      const nestContainer = new NestContainer();
+      const injector = new Injector();
+      const instanceLoader = new InstanceLoader(
+        nestContainer,
+        injector,
+        new GraphInspector(nestContainer),
+      );
+      const { moduleRef } = (await nestContainer.addModule(class T {}, []))!;
+
+      // Register Host as a controller (matches real-world controller case)
+      nestContainer.addController(Host, moduleRef.token);
+
+      // Register a request-scoped injectable and attach it as an enhancer to Host
+      // This simulates a method-level pipe/guard/interceptor making Host implicitly request-scoped
+      nestContainer.addInjectable(ReqScopedPipe, moduleRef.token, 'pipe', Host);
+
+      const modules = nestContainer.getModules();
+      await instanceLoader.createInstancesOfDependencies(modules);
+
+      const appCtx = new NestApplicationContext(nestContainer);
+
+      // With a non-static dependency tree, get() should refuse and instruct to use resolve()
+      expect(() => appCtx.get(Host)).to.throw();
+    });
+
+    it('resolve() should instantiate when dependency tree is not static (request-scoped enhancer attached)', async () => {
+      class Host {}
+      @Injectable({ scope: Scope.REQUEST })
+      class ReqScopedPipe {}
+
+      const nestContainer = new NestContainer();
+      const injector = new Injector();
+      const instanceLoader = new InstanceLoader(
+        nestContainer,
+        injector,
+        new GraphInspector(nestContainer),
+      );
+      const { moduleRef } = (await nestContainer.addModule(class T {}, []))!;
+
+      // Register Host as a controller
+      nestContainer.addController(Host, moduleRef.token);
+
+      nestContainer.addInjectable(ReqScopedPipe, moduleRef.token, 'pipe', Host);
+
+      const modules = nestContainer.getModules();
+      await instanceLoader.createInstancesOfDependencies(modules);
+
+      const appCtx = new NestApplicationContext(nestContainer);
+
+      const instance = await appCtx.resolve(Host);
+      expect(instance).instanceOf(Host);
+    });
+  });
+
+  describe('resolve with each: true', () => {
+    it('should resolve all default-scoped providers registered under the same token', async () => {
+      class Service1 {}
+      class Service2 {}
+      class Service3 {}
+      const TOKEN = 'MULTI_TOKEN';
+
+      const nestContainer = new NestContainer();
+      const injector = new Injector();
+      const instanceLoader = new InstanceLoader(
+        nestContainer,
+        injector,
+        new GraphInspector(nestContainer),
+      );
+
+      // Create three modules, each with a provider under the same token
+      const { moduleRef: module1 } = (await nestContainer.addModule(
+        class Module1 {},
+        [],
+      ))!;
+      const { moduleRef: module2 } = (await nestContainer.addModule(
+        class Module2 {},
+        [],
+      ))!;
+      const { moduleRef: module3 } = (await nestContainer.addModule(
+        class Module3 {},
+        [],
+      ))!;
+
+      nestContainer.addProvider(
+        { provide: TOKEN, useClass: Service1 },
+        module1.token,
+      );
+      nestContainer.addProvider(
+        { provide: TOKEN, useClass: Service2 },
+        module2.token,
+      );
+      nestContainer.addProvider(
+        { provide: TOKEN, useClass: Service3 },
+        module3.token,
+      );
+
+      const modules = nestContainer.getModules();
+      await instanceLoader.createInstancesOfDependencies(modules);
+
+      const appCtx = new NestApplicationContext(nestContainer);
+
+      const instances = await appCtx.resolve(TOKEN, undefined, {
+        strict: false,
+        each: true,
+      });
+
+      expect(instances).to.be.an('array');
+      expect(instances).to.have.length(3);
+      expect(instances[0]).to.be.instanceOf(Service1);
+      expect(instances[1]).to.be.instanceOf(Service2);
+      expect(instances[2]).to.be.instanceOf(Service3);
     });
   });
 });

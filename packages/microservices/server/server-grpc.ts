@@ -129,6 +129,34 @@ export class ServerGrpc extends Server<never, never> {
     return services;
   }
 
+  public getKeepaliveOptions() {
+    if (!isObject(this.options.keepalive)) {
+      return {};
+    }
+    const keepaliveKeys: Record<string, string> = {
+      keepaliveTimeMs: 'grpc.keepalive_time_ms',
+      keepaliveTimeoutMs: 'grpc.keepalive_timeout_ms',
+      keepalivePermitWithoutCalls: 'grpc.keepalive_permit_without_calls',
+      http2MaxPingsWithoutData: 'grpc.http2.max_pings_without_data',
+      http2MinTimeBetweenPingsMs: 'grpc.http2.min_time_between_pings_ms',
+      http2MinPingIntervalWithoutDataMs:
+        'grpc.http2.min_ping_interval_without_data_ms',
+      http2MaxPingStrikes: 'grpc.http2.max_ping_strikes',
+    };
+
+    const keepaliveOptions = {};
+    for (const [optionKey, optionValue] of Object.entries(
+      this.options.keepalive,
+    )) {
+      const key = keepaliveKeys[optionKey];
+      if (key === undefined) {
+        continue;
+      }
+      keepaliveOptions[key] = optionValue;
+    }
+    return keepaliveOptions;
+  }
+
   /**
    * Will create service mapping from gRPC generated Object to handlers
    * defined with @GrpcMethod or @GrpcStreamMethod annotations
@@ -568,7 +596,15 @@ export class ServerGrpc extends Server<never, never> {
     if (this.options && this.options.maxMetadataSize) {
       channelOptions['grpc.max_metadata_size'] = this.options.maxMetadataSize;
     }
-    const server = new grpcPackage.Server(channelOptions);
+
+    const keepaliveOptions = this.getKeepaliveOptions();
+    const options: Record<string, string | number> = {
+      ...channelOptions,
+      ...keepaliveOptions,
+    };
+
+    // Use merged options instead of just channelOptions
+    const server = new grpcPackage.Server(options);
     const credentials = this.getOptionsProp(this.options, 'credentials');
 
     await new Promise((resolve, reject) => {

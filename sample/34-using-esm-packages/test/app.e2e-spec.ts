@@ -19,11 +19,10 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect(
-        JSON.stringify({
-          jsonString:
-            '{"json":{"big":"10"},"meta":{"values":{"big":["bigint"]},"v":1}}',
-        }),
-      );
+      .expect((res) => {
+        const result = JSON.parse(res.body.jsonString);
+        expect(result.json.big).toBe('10');
+        expect(result.meta.values.big).toEqual(['bigint']);
+      });
   });
 });

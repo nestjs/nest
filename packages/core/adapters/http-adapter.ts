@@ -9,8 +9,7 @@ export abstract class AbstractHttpAdapter<
   TServer = any,
   TRequest = any,
   TResponse = any,
-> implements HttpServer<TRequest, TResponse>
-{
+> implements HttpServer<TRequest, TResponse> {
   protected httpServer: TServer;
   protected onRouteTriggered:
     | ((requestMethod: RequestMethod, path: string) => void)

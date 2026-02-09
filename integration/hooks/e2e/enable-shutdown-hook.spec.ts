@@ -51,4 +51,21 @@ describe('enableShutdownHooks', () => {
     expect(result.stdout.toString().trim()).to.be.eq('');
     done();
   }).timeout(10000);
+
+  it('should call the correct hooks with useProcessExit option', done => {
+    const result = spawnSync('ts-node', [
+      join(__dirname, '../src/enable-shutdown-hooks-main.ts'),
+      'SIGHUP',
+      'SIGHUP',
+      'graceful',
+    ]);
+    const calls = result.stdout
+      .toString()
+      .split('\n')
+      .map((call: string) => call.trim());
+    expect(calls[0]).to.equal('beforeApplicationShutdown SIGHUP');
+    expect(calls[1]).to.equal('onApplicationShutdown SIGHUP');
+    expect(result.status).to.equal(0);
+    done();
+  }).timeout(10000);
 });

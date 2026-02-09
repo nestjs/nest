@@ -10,6 +10,7 @@ import {
   DynamicModule,
   GetOrResolveOptions,
   SelectOptions,
+  ShutdownHooksOptions,
   Type,
 } from '@nestjs/common/interfaces';
 import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
@@ -37,9 +38,9 @@ import { Module } from './injector/module';
  * @publicApi
  */
 export class NestApplicationContext<
-    TOptions extends
-      NestApplicationContextOptions = NestApplicationContextOptions,
-  >
+  TOptions extends NestApplicationContextOptions =
+    NestApplicationContextOptions,
+>
   extends AbstractInstanceResolver
   implements INestApplicationContext
 {
@@ -316,10 +317,14 @@ export class NestApplicationContext<
    * process receives a shutdown signal.
    *
    * @param {ShutdownSignal[]} [signals=[]] The system signals it should listen to
+   * @param {ShutdownHooksOptions} [options={}] Options for configuring shutdown hooks behavior
    *
    * @returns {this} The Nest application context instance
    */
-  public enableShutdownHooks(signals: (ShutdownSignal | string)[] = []): this {
+  public enableShutdownHooks(
+    signals: (ShutdownSignal | string)[] = [],
+    options: ShutdownHooksOptions = {},
+  ): this {
     if (isEmpty(signals)) {
       signals = Object.keys(ShutdownSignal).map(
         (key: string) => ShutdownSignal[key],
@@ -336,7 +341,7 @@ export class NestApplicationContext<
       .filter(signal => !this.activeShutdownSignals.includes(signal))
       .toArray();
 
-    this.listenToShutdownSignals(signals);
+    this.listenToShutdownSignals(signals, options);
     return this;
   }
 
@@ -351,8 +356,12 @@ export class NestApplicationContext<
    * process events
    *
    * @param {string[]} signals The system signals it should listen to
+   * @param {ShutdownHooksOptions} options Options for configuring shutdown hooks behavior
    */
-  protected listenToShutdownSignals(signals: string[]) {
+  protected listenToShutdownSignals(
+    signals: string[],
+    options: ShutdownHooksOptions = {},
+  ) {
     let receivedSignal = false;
     const cleanup = async (signal: string) => {
       try {
@@ -368,7 +377,15 @@ export class NestApplicationContext<
         await this.dispose();
         await this.callShutdownHook(signal);
         signals.forEach(sig => process.removeListener(sig, cleanup));
-        process.kill(process.pid, signal);
+
+        if (options.useProcessExit) {
+          // Use process.exit() to ensure the 'exit' event is properly triggered.
+          // This is required for async loggers (like Pino with transports)
+          // to flush their buffers before the process terminates.
+          process.exit(0);
+        } else {
+          process.kill(process.pid, signal);
+        }
       } catch (err) {
         Logger.error(
           MESSAGES.ERROR_DURING_SHUTDOWN,

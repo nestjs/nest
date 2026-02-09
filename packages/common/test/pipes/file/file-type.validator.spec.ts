@@ -233,6 +233,32 @@ describe('FileTypeValidator', () => {
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
     });
+
+    it('should return true when no buffer is provided but fallbackToMimetype is enabled and mimetype matches', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/jpeg',
+        fallbackToMimetype: true,
+      });
+
+      const requestFile = {
+        mimetype: 'image/jpeg', // matches
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
+    });
+
+    it('should return false when no buffer is provided and fallbackToMimetype is enabled but mimetype does not match', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/jpeg',
+        fallbackToMimetype: true,
+      });
+
+      const requestFile = {
+        mimetype: 'image/png',
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
+    });
   });
 
   describe('buildErrorMessage', () => {
@@ -310,6 +336,37 @@ describe('FileTypeValidator', () => {
       } as IFile;
 
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
+    });
+
+    it('should return a static custom error message when the file type does not match', async () => {
+      const expectedFileType = 'image/png';
+      const actualFileType = 'text/csv';
+
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: expectedFileType,
+        errorMessage: 'invalid type',
+      });
+      const requestFile = { mimetype: actualFileType } as IFile;
+
+      expect(fileTypeValidator.buildErrorMessage(requestFile)).to.equal(
+        'invalid type',
+      );
+    });
+
+    it('should return a dynamic custom error message based on context when the file type does not match', async () => {
+      const expectedFileType = 'image/png';
+      const actualFileType = 'text/csv';
+
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: expectedFileType,
+        errorMessage: ctx =>
+          `Received file type '${ctx.file?.mimetype}', but expected '${ctx.config.fileType}'.`,
+      });
+      const requestFile = { mimetype: actualFileType } as IFile;
+
+      expect(fileTypeValidator.buildErrorMessage(requestFile)).to.equal(
+        `Received file type '${actualFileType}', but expected '${expectedFileType}'.`,
+      );
     });
   });
 });

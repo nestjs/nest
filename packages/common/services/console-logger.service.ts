@@ -522,10 +522,10 @@ export class ConsoleLogger implements LoggerService {
       breakLength,
     };
 
-    if (this.options.maxArrayLength) {
+    if (typeof this.options.maxArrayLength !== 'undefined') {
       inspectOptions.maxArrayLength = this.options.maxArrayLength;
     }
-    if (this.options.maxStringLength) {
+    if (typeof this.options.maxStringLength !== 'undefined') {
       inspectOptions.maxStringLength = this.options.maxStringLength;
     }
 
@@ -574,10 +574,7 @@ export class ConsoleLogger implements LoggerService {
             stack: args[1] as string,
             context: this.context,
           }
-        : {
-            messages: [args[0]],
-            context: args[1] as string,
-          };
+        : { ...this.getContextAndMessagesToPrint(args) };
     }
 
     const { messages, context } = this.getContextAndMessagesToPrint(args);

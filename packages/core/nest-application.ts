@@ -394,6 +394,9 @@ export class NestApplication
   }
 
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
+    filters = this.applyInstanceDecoratorIfRegistered<ExceptionFilter>(
+      ...filters,
+    );
     this.config.useGlobalFilters(...filters);
     filters.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -405,6 +408,9 @@ export class NestApplication
   }
 
   public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
+    pipes = this.applyInstanceDecoratorIfRegistered<PipeTransform<any>>(
+      ...pipes,
+    );
     this.config.useGlobalPipes(...pipes);
     pipes.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -416,6 +422,9 @@ export class NestApplication
   }
 
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
+    interceptors = this.applyInstanceDecoratorIfRegistered<NestInterceptor>(
+      ...interceptors,
+    );
     this.config.useGlobalInterceptors(...interceptors);
     interceptors.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -427,6 +436,7 @@ export class NestApplication
   }
 
   public useGlobalGuards(...guards: CanActivate[]): this {
+    guards = this.applyInstanceDecoratorIfRegistered<CanActivate>(...guards);
     this.config.useGlobalGuards(...guards);
     guards.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -473,5 +483,15 @@ export class NestApplication
       this.middlewareContainer,
       instance,
     );
+  }
+
+  private applyInstanceDecoratorIfRegistered<T>(...instances: T[]): T[] {
+    if (this.appOptions.instrument?.instanceDecorator) {
+      return instances.map(
+        instance =>
+          this.appOptions.instrument!.instanceDecorator(instance) as T,
+      );
+    }
+    return instances;
   }
 }
