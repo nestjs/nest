@@ -22,7 +22,7 @@ describe('AppController (e2e)', () => {
       .expect(
         JSON.stringify({
           jsonString:
-            '{"json":{"big":"10"},"meta":{"values":{"big":["bigint"]}}}',
+            '{"json":{"big":"10"},"meta":{"values":{"big":["bigint"]},"v":1}}',
         }),
       );
   });
