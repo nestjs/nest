@@ -1,8 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { DiscoveryService } from '@nestjs/core';
+import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../src/app.module.js';
-import { WebhooksExplorer } from '../src/webhooks.explorer.js';
 import { NonAppliedDecorator } from '../src/decorators/non-applied.decorator.js';
+import { WebhooksExplorer } from '../src/webhooks.explorer.js';
 
 describe('DiscoveryModule', () => {
   let moduleRef: TestingModule;
@@ -11,6 +11,10 @@ describe('DiscoveryModule', () => {
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
+  });
+
+  afterEach(async () => {
+    await moduleRef.close();
   });
 
   it('should discover all providers & handlers with corresponding annotations', async () => {

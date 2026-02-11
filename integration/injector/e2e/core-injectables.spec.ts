@@ -1,6 +1,6 @@
+import { ApplicationConfig, ModuleRef } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CoreInjectablesModule } from '../src/core-injectables/core-injectables.module.js';
-import { ApplicationConfig, ModuleRef } from '@nestjs/core';
 
 describe('Core Injectables', () => {
   let testingModule: TestingModule;
@@ -10,6 +10,10 @@ describe('Core Injectables', () => {
       imports: [CoreInjectablesModule],
     });
     testingModule = await builder.compile();
+  });
+
+  afterEach(async () => {
+    await testingModule.close();
   });
 
   it('should provide ApplicationConfig as core injectable', () => {

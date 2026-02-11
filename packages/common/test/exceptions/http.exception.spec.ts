@@ -265,5 +265,105 @@ describe('HttpException', () => {
         expect(cause).toEqual(errorCause);
       });
     });
+
+    it('should not set cause when options has no cause', () => {
+      const error = new HttpException('test', 400, {});
+      expect(error.cause).toBeUndefined();
+    });
+
+    it('should not set cause when no options provided', () => {
+      const error = new HttpException('test', 400);
+      expect(error.cause).toBeUndefined();
+    });
+  });
+
+  describe('initMessage', () => {
+    it('should use response.message when response is an object with a message string', () => {
+      const error = new HttpException({ message: 'custom message' }, 400);
+      expect(error.message).toBe('custom message');
+    });
+
+    it('should fall back to constructor name when response is an object without message', () => {
+      const error = new HttpException({ foo: 'bar' }, 400);
+      expect(error.message).toBe('Http Exception');
+    });
+  });
+
+  describe('initName', () => {
+    it('should set the name to the constructor name', () => {
+      const error = new HttpException('msg', 400);
+      expect(error.name).toBe('HttpException');
+    });
+
+    it('should set name based on subclass', () => {
+      const error = new BadRequestException('msg');
+      expect(error.name).toBe('BadRequestException');
+    });
+  });
+
+  describe('static helpers', () => {
+    describe('getDescriptionFrom', () => {
+      it('should return the string when a string is passed', () => {
+        expect(HttpException.getDescriptionFrom('desc')).toBe('desc');
+      });
+
+      it('should return the description property when an options object is passed', () => {
+        expect(
+          HttpException.getDescriptionFrom({ description: 'from-options' }),
+        ).toBe('from-options');
+      });
+
+      it('should return undefined when options has no description', () => {
+        expect(HttpException.getDescriptionFrom({})).toBeUndefined();
+      });
+    });
+
+    describe('getHttpExceptionOptionsFrom', () => {
+      it('should return empty object when a string is passed', () => {
+        expect(HttpException.getHttpExceptionOptionsFrom('desc')).toEqual({});
+      });
+
+      it('should return the options object as-is', () => {
+        const options = { cause: new Error('cause'), description: 'desc' };
+        expect(HttpException.getHttpExceptionOptionsFrom(options)).toBe(
+          options,
+        );
+      });
+    });
+
+    describe('extractDescriptionAndOptionsFrom', () => {
+      it('should extract description string and return empty options', () => {
+        const result =
+          HttpException.extractDescriptionAndOptionsFrom('my description');
+        expect(result.description).toBe('my description');
+        expect(result.httpExceptionOptions).toEqual({});
+      });
+
+      it('should extract description from options object', () => {
+        const opts = { description: 'from obj', cause: new Error() };
+        const result = HttpException.extractDescriptionAndOptionsFrom(opts);
+        expect(result.description).toBe('from obj');
+        expect(result.httpExceptionOptions).toBe(opts);
+      });
+    });
+
+    describe('createBody with number message', () => {
+      it('should handle a number as the message', () => {
+        expect(HttpException.createBody(404, 'Not Found', 404)).toEqual({
+          message: 404,
+          error: 'Not Found',
+          statusCode: 404,
+        });
+      });
+    });
+
+    describe('createBody with empty string', () => {
+      it('should treat empty string as nil', () => {
+        expect(HttpException.createBody('', 'Error', 500)).toEqual({
+          message: 'Error',
+          statusCode: 500,
+        });
+      });
+    });
   });
 });

@@ -42,7 +42,7 @@ describe('KafkaLogger', () => {
     });
 
     expect(error).toHaveBeenCalledOnce();
-    expect(error.mock.calls[0][0]).to.eq(
+    expect(error.mock.calls[0][0]).toBe(
       'label [namespace] message {"other":{"stuff":"here"}}',
     );
   });

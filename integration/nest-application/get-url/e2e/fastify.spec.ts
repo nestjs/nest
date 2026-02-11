@@ -38,12 +38,8 @@ describe('Get URL (Fastify Application)', () => {
   });
   it('should throw an error for calling getUrl before listen', async () => {
     const app = testModule.createNestApplication(new FastifyAdapter());
-    try {
-      await app.getUrl();
-    } catch (err) {
-      expect(err).toEqual(
-        'app.listen() needs to be called before calling app.getUrl()',
-      );
-    }
+    await expect(app.getUrl()).rejects.toEqual(
+      'app.listen() needs to be called before calling app.getUrl()',
+    );
   });
 });

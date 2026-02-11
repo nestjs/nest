@@ -33,7 +33,7 @@ describe('MqttRecordSerializer', () => {
         pattern: 'pattern',
         data: { random: true },
       };
-      expect(instance.serialize(packet)).to.eq(JSON.stringify(packet));
+      expect(instance.serialize(packet)).toBe(JSON.stringify(packet));
     });
   });
 });

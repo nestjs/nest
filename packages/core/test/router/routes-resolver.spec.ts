@@ -1,3 +1,4 @@
+import { createError as createFastifyError } from '@fastify/error';
 import {
   BadRequestException,
   HttpException,
@@ -16,7 +17,6 @@ import { GraphInspector } from '../../inspector/graph-inspector.js';
 import { SerializedGraph } from '../../inspector/serialized-graph.js';
 import { RoutesResolver } from '../../router/routes-resolver.js';
 import { NoopHttpAdapter } from '../utils/noop-adapter.js';
-import { createError as createFastifyError } from '@fastify/error';
 
 describe('RoutesResolver', () => {
   @Controller('global')

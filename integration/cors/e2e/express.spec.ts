@@ -141,10 +141,10 @@ describe('Express Cors', () => {
           .expect('access-control-expose-headers', 'foo,bar')
           .expect('content-length', '0');
       });
-    });
 
-    afterAll(async () => {
-      await app.close();
+      afterAll(async () => {
+        await app.close();
+      });
     });
 
     describe('Application Options', () => {

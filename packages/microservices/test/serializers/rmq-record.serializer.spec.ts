@@ -32,7 +32,7 @@ describe('RmqRecordSerializer', () => {
         pattern,
         data: { random: true },
       };
-      expect(instance.serialize(packet)).to.eq(packet);
+      expect(instance.serialize(packet)).toBe(packet);
     });
   });
 });

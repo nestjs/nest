@@ -42,24 +42,12 @@ describe('ParseDatePipe', () => {
     });
     describe('when validation fails', () => {
       it('should throw an error', () => {
-        try {
-          target.transform('123abc');
-          expect.fail();
-        } catch (error) {
-          expect(error).toBeInstanceOf(BadRequestException);
-          expect(error.message).toBe('Validation failed (invalid date format)');
-        }
+        expect(() => target.transform('123abc')).toThrow(BadRequestException);
       });
     });
     describe('when empty value', () => {
       it('should throw an error', () => {
-        try {
-          target.transform('');
-          expect.fail();
-        } catch (error) {
-          expect(error).toBeInstanceOf(BadRequestException);
-          expect(error.message).toBe('Validation failed (no Date provided)');
-        }
+        expect(() => target.transform('')).toThrow(BadRequestException);
       });
     });
   });

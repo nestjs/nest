@@ -249,11 +249,11 @@ describe('ClientTCP', () => {
     it('should upgrade to TLS', () => {
       const client = new ClientTCP({ tlsOptions: {} });
       const jsonSocket = client.createSocket();
-      expect(jsonSocket.socket).instanceOf(TLSSocket);
+      expect(jsonSocket.socket).toBeInstanceOf(TLSSocket);
     });
     it('should not upgrade to TLS, if not requested', () => {
       const jsonSocket = new ClientTCP({}).createSocket();
-      expect(jsonSocket.socket).instanceOf(NetSocket);
+      expect(jsonSocket.socket).toBeInstanceOf(NetSocket);
     });
   });
 

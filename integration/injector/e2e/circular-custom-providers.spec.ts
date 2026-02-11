@@ -28,35 +28,23 @@ export class AppModule {}
 
 describe('Circular custom providers', () => {
   it('should throw an exception (useClass + regular provider)', async () => {
-    try {
-      const builder = Test.createTestingModule({
-        imports: [AppModule],
-      });
-      await builder.compile();
-
-      expect(true).toEqual(false);
-    } catch (err) {
-      expect(err.message).toEqual(
-        'A circular dependency has been detected inside "A". Please, make sure that each side of a bidirectional relationships are decorated with "forwardRef()". Note that circular relationships between custom providers (e.g., factories) are not supported since functions cannot be called more than once.',
-      );
-    }
+    const builder = Test.createTestingModule({
+      imports: [AppModule],
+    });
+    await expect(builder.compile()).rejects.toThrow(
+      'A circular dependency has been detected inside "A". Please, make sure that each side of a bidirectional relationships are decorated with "forwardRef()". Note that circular relationships between custom providers (e.g., factories) are not supported since functions cannot be called more than once.',
+    );
   });
 
   it('should throw an exception (2 factories)', async () => {
-    try {
-      const builder = Test.createTestingModule({
-        providers: [
-          { provide: 'ABC', useFactory: () => ({}), inject: ['DEF'] },
-          { provide: 'DEF', useFactory: () => ({}), inject: ['ABC'] },
-        ],
-      });
-      await builder.compile();
-
-      expect(true).toEqual(false);
-    } catch (err) {
-      expect(err.message).toEqual(
-        'A circular dependency has been detected inside "ABC". Please, make sure that each side of a bidirectional relationships are decorated with "forwardRef()". Note that circular relationships between custom providers (e.g., factories) are not supported since functions cannot be called more than once.',
-      );
-    }
+    const builder = Test.createTestingModule({
+      providers: [
+        { provide: 'ABC', useFactory: () => ({}), inject: ['DEF'] },
+        { provide: 'DEF', useFactory: () => ({}), inject: ['ABC'] },
+      ],
+    });
+    await expect(builder.compile()).rejects.toThrow(
+      'A circular dependency has been detected inside "ABC"',
+    );
   });
 });

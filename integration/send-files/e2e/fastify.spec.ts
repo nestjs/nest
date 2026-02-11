@@ -28,7 +28,8 @@ describe('Fastify FileSend', () => {
         method: 'GET',
         url: '/file/stream',
       })
-      .then(({ payload }) => {
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).toBe(200);
         expect(payload.toString()).toBe(readmeString);
       });
   });
@@ -38,7 +39,8 @@ describe('Fastify FileSend', () => {
         method: 'GET',
         url: '/file/buffer',
       })
-      .then(({ payload }) => {
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).toBe(200);
         expect(payload.toString()).toBe(readmeString);
       });
   });
@@ -63,7 +65,8 @@ describe('Fastify FileSend', () => {
         method: 'GET',
         url: '/file/rxjs/stream',
       })
-      .then(({ payload }) => {
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).toBe(200);
         expect(payload.toString()).toBe(readmeString);
       });
   });
@@ -79,5 +82,19 @@ describe('Fastify FileSend', () => {
         expect(headers['content-length']).toBe(`${readme.byteLength}`);
         expect(payload).toBe(readmeString);
       });
+  });
+  it('should return an error if the file does not exist', async () => {
+    return app
+      .inject({
+        method: 'GET',
+        url: '/file/not/exist',
+      })
+      .then(({ statusCode }) => {
+        expect(statusCode).toBe(500);
+      });
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 });

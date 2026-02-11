@@ -40,32 +40,23 @@ describe('ClientGrpcProxy', () => {
 
   describe('getService', () => {
     describe('when "grpcClient[name]" is nil', () => {
-      it('should throw "InvalidGrpcServiceException"', async () => {
+      it('should throw "InvalidGrpcServiceException"', () => {
         untypedClient.grpcClient = {};
-        try {
-          await client.getService('test');
-          expect.fail('should have thrown');
-        } catch (err) {
-          expect(err).toBeInstanceOf(InvalidGrpcServiceException);
-        }
+        expect(() => client.getService('test')).toThrow(
+          InvalidGrpcServiceException,
+        );
       });
 
-      it('should throw "InvalidGrpcServiceException" (multiple proto)', async () => {
+      it('should throw "InvalidGrpcServiceException" (multiple proto)', () => {
         (clientMulti as any).grpcClient = {};
 
-        try {
-          await clientMulti.getService('test');
-          expect.fail('should have thrown');
-        } catch (err) {
-          expect(err).toBeInstanceOf(InvalidGrpcServiceException);
-        }
+        expect(() => clientMulti.getService('test')).toThrow(
+          InvalidGrpcServiceException,
+        );
 
-        try {
-          await clientMulti.getService('test2');
-          expect.fail('should have thrown');
-        } catch (err) {
-          expect(err).toBeInstanceOf(InvalidGrpcServiceException);
-        }
+        expect(() => clientMulti.getService('test2')).toThrow(
+          InvalidGrpcServiceException,
+        );
       });
     });
     describe('when "grpcClient[name]" is not nil', () => {

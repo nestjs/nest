@@ -52,6 +52,6 @@ describe('Auto-Mocking with token in factory', () => {
         return { foo: vi.fn() };
       }
     }).compile;
-    expect(moduleRef()).rejects.toThrow();
+    await expect(moduleRef()).rejects.toThrow();
   });
 });

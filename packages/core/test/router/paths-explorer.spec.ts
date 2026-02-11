@@ -92,7 +92,7 @@ describe('PathsExplorer', () => {
 
       expect(route.path).toEqual(['/test']);
       expect(route.requestMethod).toEqual(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTest);
+      expect(route.targetCallback).toBe(instance.getTest);
     });
 
     it('should method return expected object which represent single route with alias', () => {
@@ -107,7 +107,7 @@ describe('PathsExplorer', () => {
 
       expect(route.path).toEqual(['/test']);
       expect(route.requestMethod).toEqual(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTest);
+      expect(route.targetCallback).toBe(instance.getTest);
     });
 
     it('should method return expected object which represent multiple routes', () => {
@@ -122,7 +122,7 @@ describe('PathsExplorer', () => {
 
       expect(route.path).toEqual(['/foo', '/bar']);
       expect(route.requestMethod).toEqual(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTestUsingArray);
+      expect(route.targetCallback).toBe(instance.getTestUsingArray);
     });
 
     it('should method return expected object which represent multiple routes with alias', () => {
@@ -137,7 +137,7 @@ describe('PathsExplorer', () => {
 
       expect(route.path).toEqual(['/foo', '/bar']);
       expect(route.requestMethod).toEqual(RequestMethod.GET);
-      expect(route.targetCallback).to.eq(instance.getTestUsingArray);
+      expect(route.targetCallback).toBe(instance.getTestUsingArray);
     });
 
     describe('when new implementation is injected into router', () => {
@@ -154,7 +154,7 @@ describe('PathsExplorer', () => {
           'getTest',
         )!;
 
-        expect(route.targetCallback).to.eq(newImpl);
+        expect(route.targetCallback).toBe(newImpl);
         expect(route.path).toEqual(['/test']);
         expect(route.requestMethod).toEqual(RequestMethod.GET);
       });
@@ -172,7 +172,7 @@ describe('PathsExplorer', () => {
           'getTest',
         )!;
 
-        expect(route.targetCallback).to.eq(newImpl);
+        expect(route.targetCallback).toBe(newImpl);
         expect(route.path).toEqual(['/test']);
         expect(route.requestMethod).toEqual(RequestMethod.GET);
       });
@@ -190,7 +190,7 @@ describe('PathsExplorer', () => {
           'getTestUsingArray',
         )!;
 
-        expect(route.targetCallback).to.eq(newImpl);
+        expect(route.targetCallback).toBe(newImpl);
         expect(route.path).toEqual(['/foo', '/bar']);
         expect(route.requestMethod).toEqual(RequestMethod.GET);
       });
@@ -208,7 +208,7 @@ describe('PathsExplorer', () => {
           'getTestUsingArray',
         )!;
 
-        expect(route.targetCallback).to.eq(newImpl);
+        expect(route.targetCallback).toBe(newImpl);
         expect(route.path).toEqual(['/foo', '/bar']);
         expect(route.requestMethod).toEqual(RequestMethod.GET);
       });

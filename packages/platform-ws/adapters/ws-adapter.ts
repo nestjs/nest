@@ -1,6 +1,5 @@
 import { INestApplicationContext, Logger } from '@nestjs/common';
 import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
-import { createRequire } from 'module';
 import { isNil, normalizePath } from '@nestjs/common/utils/shared.utils.js';
 import { AbstractWsAdapter } from '@nestjs/websockets';
 import {
@@ -10,6 +9,7 @@ import {
 } from '@nestjs/websockets/constants.js';
 import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer.js';
 import * as http from 'http';
+import { createRequire } from 'module';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
 import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
 
@@ -244,7 +244,7 @@ export class WsAdapter extends AbstractWsAdapter {
           socket.destroy();
         }
       } catch (err) {
-        socket.end('HTTP/1.1 400\r\n' + err.message);
+        socket.end(`HTTP/1.1 400\r\n${err.message}`);
       }
     });
     return httpServer;

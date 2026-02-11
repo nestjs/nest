@@ -40,5 +40,38 @@ describe('ExternalErrorProxy', () => {
 
       expect(nextSpy).toHaveBeenCalledOnce();
     });
+
+    it('should return the value when callback succeeds', async () => {
+      const proxy = externalErrorProxy.createProxy(() => 'success', handler);
+      const result = await proxy();
+      expect(result).toBe('success');
+    });
+
+    it('should return value from async callback', async () => {
+      const proxy = externalErrorProxy.createProxy(
+        async () => 'async-result',
+        handler,
+      );
+      const result = await proxy();
+      expect(result).toBe('async-result');
+    });
+
+    it('should pass a type to the ExecutionContextHost on error', async () => {
+      const nextSpy = vi
+        .spyOn(handler, 'next')
+        .mockImplementation(async () => {});
+      const proxy = externalErrorProxy.createProxy(
+        () => {
+          throw new HttpException('test', 400);
+        },
+        handler,
+        'ws',
+      );
+      await proxy('arg1');
+
+      expect(nextSpy).toHaveBeenCalledOnce();
+      const contextArg = nextSpy.mock.calls[0][1];
+      expect(contextArg.getType()).toBe('ws');
+    });
   });
 });

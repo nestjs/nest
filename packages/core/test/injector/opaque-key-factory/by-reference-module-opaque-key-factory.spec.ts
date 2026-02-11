@@ -19,7 +19,7 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
         const type = Module;
         const token1 = factory.createForStatic(type);
         const token2 = factory.createForStatic(type);
-        expect(token1).to.be.deep.eq(token2);
+        expect(token1).toEqual(token2);
       });
     });
 
@@ -51,7 +51,7 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
           dynamicModule,
         );
 
-        expect(token1).to.be.deep.eq(token2);
+        expect(token1).toEqual(token2);
       });
     });
   });
@@ -73,7 +73,7 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
         const token1 = factory.createForStatic(type);
         const token2 = factory.createForStatic(type);
 
-        expect(token1).to.be.deep.eq(token2);
+        expect(token1).toEqual(token2);
       });
     });
 
@@ -106,7 +106,7 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
           dynamicModule,
         );
 
-        expect(token1).to.be.deep.eq(token2);
+        expect(token1).toEqual(token2);
       });
     });
   });

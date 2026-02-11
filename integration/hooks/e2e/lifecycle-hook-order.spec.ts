@@ -1,12 +1,12 @@
-import { Test } from '@nestjs/testing';
 import {
+  BeforeApplicationShutdown,
   Injectable,
   OnApplicationBootstrap,
   OnApplicationShutdown,
   OnModuleDestroy,
   OnModuleInit,
-  BeforeApplicationShutdown,
 } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 
 @Injectable()
 class TestInjectable

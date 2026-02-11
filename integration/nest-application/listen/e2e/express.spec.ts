@@ -29,18 +29,14 @@ describe('Listen (Express Application)', () => {
     const secondApp = testModule.createNestApplication(
       new ExpressAdapter(express()),
     );
-    try {
-      await secondApp.listen(3000);
-    } catch (error) {
-      expect(error.code).toBe('EADDRINUSE');
-    }
+    await expect(secondApp.listen(3000)).rejects.toMatchObject({
+      code: 'EADDRINUSE',
+    });
   });
 
   it('should reject if there is an invalid host', async () => {
-    try {
-      await app.listen(3000, '1');
-    } catch (error) {
-      expect(error.code).toBe('EADDRNOTAVAIL');
-    }
+    await expect(app.listen(3000, '1')).rejects.toMatchObject({
+      code: 'EADDRNOTAVAIL',
+    });
   });
 });

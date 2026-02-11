@@ -26,4 +26,8 @@ describe('Lazy Requested Scoped providers', () => {
     expect(resultTwo.text).toBe('Hi! Counter is 2');
     expect(resultTwo.statusCode).toBe(200);
   });
+
+  afterEach(async () => {
+    await app.close();
+  });
 });

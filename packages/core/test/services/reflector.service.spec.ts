@@ -196,5 +196,50 @@ describe('Reflector', () => {
       Reflect.defineMetadata(key, value2, Test2);
       expect(reflector.getAllAndOverride(key, [Test1, Test2])).toEqual(value1);
     });
+
+    it('should return undefined when no target has metadata', () => {
+      expect(reflector.getAllAndOverride(key, [Test1, Test2])).toBeUndefined();
+    });
+
+    it('should skip undefined and return the first defined value', () => {
+      Reflect.defineMetadata(key, 'second', Test2);
+      expect(reflector.getAllAndOverride(key, [Test1, Test2])).toEqual(
+        'second',
+      );
+    });
+
+    it('should work with a decorator instead of a string key', () => {
+      const decorator = Reflector.createDecorator<string>();
+      Reflect.defineMetadata(decorator.KEY, 'decorated', Test1);
+      expect(reflector.getAllAndOverride(decorator, [Test1])).toEqual(
+        'decorated',
+      );
+    });
+  });
+
+  describe('getAll (edge cases)', () => {
+    it('should return array of undefined for targets without metadata', () => {
+      expect(reflector.getAll(key, [Test1, Test2])).toEqual([
+        undefined,
+        undefined,
+      ]);
+    });
+
+    it('should handle null targets gracefully', () => {
+      expect(reflector.getAll(key, null as any)).toEqual([]);
+    });
+  });
+
+  describe('getAllAndMerge (edge cases)', () => {
+    it('should use [a, b] fallback when values are not arrays or objects', () => {
+      Reflect.defineMetadata(key, 42, Test1);
+      Reflect.defineMetadata(key, 99, Test2);
+      expect(reflector.getAllAndMerge(key, [Test1, Test2])).toEqual([42, 99]);
+    });
+
+    it('should return empty array when all metadata is undefined', () => {
+      const result = reflector.getAllAndMerge(key, [Test1, Test2]);
+      expect(result).toEqual([]);
+    });
   });
 });

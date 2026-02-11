@@ -16,6 +16,10 @@ describe('Providers introspection', () => {
     moduleRef = testingModule.get(ModuleRef);
   });
 
+  afterEach(async () => {
+    await testingModule.close();
+  });
+
   it('should properly introspect a transient provider', async () => {
     const introspectionResult = moduleRef.introspect(TransientService);
     expect(introspectionResult.scope).toBe(Scope.TRANSIENT);

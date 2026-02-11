@@ -21,6 +21,10 @@ describe('Scoped Instances', () => {
     }).compile();
   });
 
+  afterEach(async () => {
+    await testingModule.close();
+  });
+
   it('should dynamically resolve transient provider', async () => {
     const contextId = createContextId();
     const transient1 = await testingModule.resolve(TransientService, contextId);
@@ -79,18 +83,13 @@ describe('Scoped Instances', () => {
   });
 
   it('should throw an exception when "get()" method is used for scoped providers', () => {
-    try {
-      testingModule.get(ScopedController);
-    } catch (err) {
-      expect(err).toBeInstanceOf(InvalidClassScopeException);
-    }
+    expect(() => testingModule.get(ScopedController)).toThrow(
+      InvalidClassScopeException,
+    );
   });
 
-  it('should throw an exception when "resolve()" method is used for static providers', async () => {
-    try {
-      await testingModule.resolve(STATIC_FACTORY);
-    } catch (err) {
-      expect(err).toBeInstanceOf(InvalidClassScopeException);
-    }
+  it('should resolve static providers via "resolve()" method', async () => {
+    const result = await testingModule.resolve(STATIC_FACTORY);
+    expect(result).toBe(true);
   });
 });

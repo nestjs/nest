@@ -521,4 +521,104 @@ describe('WebSocketsController', () => {
       });
     });
   });
+
+  describe('connectGatewayToServer', () => {
+    it('should use port 0 when PORT_METADATA is not defined', () => {
+      const subscribeToServerEvents = vi.fn();
+      untypedInstance.subscribeToServerEvents = subscribeToServerEvents;
+
+      @WebSocketGateway()
+      class EmptyGateway {}
+      const gateway = new EmptyGateway();
+
+      instance.connectGatewayToServer(gateway, EmptyGateway, 'mod', 'wrId');
+      expect(subscribeToServerEvents).toHaveBeenCalledWith(
+        gateway,
+        {},
+        0,
+        'mod',
+        'wrId',
+      );
+    });
+  });
+
+  describe('subscribeToServerEvents', () => {
+    it('should return early when appOptions.preview is true', () => {
+      const previewConfig = new ApplicationConfig(new NoopAdapter());
+      const previewProvider = new SocketServerProvider(null!, previewConfig);
+      const contextCreator = {
+        ...Object.fromEntries(
+          Object.getOwnPropertyNames(WsContextCreator.prototype).map(m => [
+            m,
+            vi.fn(),
+          ]),
+        ),
+      } as any;
+      contextCreator.create.mockReturnValue(() => Promise.resolve());
+
+      const previewInstance = new WebSocketsController(
+        previewProvider,
+        previewConfig,
+        contextCreator as any,
+        graphInspector,
+        { preview: true },
+      );
+
+      const scanSpy = vi.spyOn(previewProvider, 'scanForSocketServer');
+      const gateway = new Test();
+
+      previewInstance.subscribeToServerEvents(
+        gateway,
+        { namespace: '/' },
+        90,
+        'moduleKey',
+        'wrapperId',
+      );
+
+      expect(scanSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('printSubscriptionLogs', () => {
+    it('should not throw when gateway has no constructor name', () => {
+      const noNameGateway = Object.create(null);
+      expect(() =>
+        untypedInstance.printSubscriptionLogs(noNameGateway, []),
+      ).not.toThrow();
+    });
+
+    it('should log each message handler', () => {
+      const logSpy = vi.spyOn(untypedInstance.logger, 'log');
+      const gateway = new Test();
+      const handlers = [
+        {
+          message: 'msg1',
+          methodName: 'a',
+          callback: vi.fn(),
+          isAckHandledManually: false,
+        },
+        {
+          message: 'msg2',
+          methodName: 'b',
+          callback: vi.fn(),
+          isAckHandledManually: false,
+        },
+      ];
+      untypedInstance.printSubscriptionLogs(gateway, handlers);
+      expect(logSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('inspectEntrypointDefinitions', () => {
+    it('should not throw with empty message handlers', () => {
+      expect(() =>
+        instance.inspectEntrypointDefinitions(
+          new Test() as any,
+          80,
+          [],
+          'wrapperId',
+        ),
+      ).not.toThrow();
+    });
+  });
 });

@@ -1,8 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { TransientLazyModule } from '../src/transient.module.js';
-import { LazyController } from '../src/lazy.controller.js';
 import request from 'supertest';
+import { LazyController } from '../src/lazy.controller.js';
 
 describe('Lazy Transient providers', () => {
   let app: INestApplication;
@@ -26,5 +25,9 @@ describe('Lazy Transient providers', () => {
 
     expect(resultTwo.text).toBe('Hi! Counter is 2');
     expect(resultTwo.statusCode).toBe(200);
+  });
+
+  afterEach(async () => {
+    await app.close();
   });
 });

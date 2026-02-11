@@ -747,7 +747,7 @@ describe('InstanceWrapper', () => {
         wrapper.setInstanceByContextId(contextId, { instance: {} });
 
         const existingContext = wrapper.getInstanceByContextId(contextId);
-        expect(existingContext.instance).to.be.not.undefined;
+        expect(existingContext.instance).toBeDefined();
         wrapper.removeInstanceByContextId(contextId);
 
         const removedContext = wrapper.getInstanceByContextId(contextId);
@@ -771,7 +771,7 @@ describe('InstanceWrapper', () => {
           STATIC_CONTEXT,
           'inquirerId',
         );
-        expect(existingContext.instance).to.be.not.undefined;
+        expect(existingContext.instance).toBeDefined();
         wrapper.removeInstanceByContextId(STATIC_CONTEXT, 'inquirerId');
 
         const removedContext = wrapper.getInstanceByContextId(
@@ -1017,6 +1017,169 @@ describe('InstanceWrapper', () => {
           expect(wrapper.inject).toEqual([]);
         });
       });
+    });
+  });
+
+  describe('id', () => {
+    it('should return a string identifier', () => {
+      const wrapper = new InstanceWrapper({ name: 'TestId' });
+      expect(typeof wrapper.id).toBe('string');
+      expect(wrapper.id.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('isFactory', () => {
+    it('should return true when inject is defined', () => {
+      const wrapper = new InstanceWrapper({
+        metatype: TestClass,
+        inject: ['dep1'],
+      });
+      expect(wrapper.isFactory).toBe(true);
+    });
+
+    it('should return false when inject is not defined', () => {
+      const wrapper = new InstanceWrapper({ metatype: TestClass });
+      expect(wrapper.isFactory).toBe(false);
+    });
+  });
+
+  describe('isTransient', () => {
+    it('should return true when scope is TRANSIENT', () => {
+      const wrapper = new InstanceWrapper({ scope: Scope.TRANSIENT });
+      expect(wrapper.isTransient).toBe(true);
+    });
+
+    it('should return false when scope is DEFAULT', () => {
+      const wrapper = new InstanceWrapper({ scope: Scope.DEFAULT });
+      expect(wrapper.isTransient).toBe(false);
+    });
+  });
+
+  describe('isNotMetatype with inject set', () => {
+    it('should return true when metatype is set but inject is also set (factory)', () => {
+      const wrapper = new InstanceWrapper({
+        metatype: (() => {}) as any,
+        inject: [],
+      });
+      expect(wrapper.isNotMetatype).toBe(true);
+    });
+  });
+
+  describe('createPrototype', () => {
+    it('should return prototype when metatype is newable and not resolved', () => {
+      const wrapper = new InstanceWrapper({ metatype: TestClass });
+      const proto = wrapper.createPrototype(STATIC_CONTEXT);
+      expect(proto).toBeDefined();
+      expect(Object.getPrototypeOf(proto)).toBe(TestClass.prototype);
+    });
+
+    it('should return undefined when instance is already resolved', () => {
+      const wrapper = new InstanceWrapper({
+        metatype: TestClass,
+        instance: new TestClass(),
+        isResolved: true,
+      });
+      const proto = wrapper.createPrototype(STATIC_CONTEXT);
+      expect(proto).toBeUndefined();
+    });
+
+    it('should return undefined when inject is set (factory provider)', () => {
+      const wrapper = new InstanceWrapper({
+        metatype: (() => {}) as any,
+        inject: [],
+      });
+      const proto = wrapper.createPrototype(STATIC_CONTEXT);
+      expect(proto).toBeUndefined();
+    });
+  });
+
+  describe('isExplicitlyRequested', () => {
+    it('should return true when inquirer is self', () => {
+      const wrapper = new InstanceWrapper({ scope: Scope.DEFAULT });
+      expect(wrapper.isExplicitlyRequested({ id: 3 }, wrapper)).toBe(true);
+    });
+
+    it('should return true when inquirer is transient', () => {
+      const wrapper = new InstanceWrapper({ scope: Scope.DEFAULT });
+      const inquirer = new InstanceWrapper({ scope: Scope.TRANSIENT });
+      expect(wrapper.isExplicitlyRequested({ id: 3 }, inquirer)).toBe(true);
+    });
+
+    it('should return false in static context', () => {
+      const wrapper = new InstanceWrapper({ scope: Scope.DEFAULT });
+      expect(wrapper.isExplicitlyRequested(STATIC_CONTEXT)).toBe(false);
+    });
+  });
+
+  describe('attachRootInquirer', () => {
+    it('should set rootInquirer for transient wrapper', () => {
+      const wrapper = new InstanceWrapper({ scope: Scope.TRANSIENT });
+      const inquirer = new InstanceWrapper({ name: 'root' });
+      wrapper.attachRootInquirer(inquirer);
+      expect(wrapper.getRootInquirer()).toBe(inquirer);
+    });
+
+    it('should not set rootInquirer for non-transient wrapper', () => {
+      const wrapper = new InstanceWrapper({ scope: Scope.DEFAULT });
+      const inquirer = new InstanceWrapper({ name: 'root' });
+      wrapper.attachRootInquirer(inquirer);
+      expect(wrapper.getRootInquirer()).toBeUndefined();
+    });
+
+    it('should use root inquirer of inquirer when available', () => {
+      const root = new InstanceWrapper({ name: 'root', scope: Scope.DEFAULT });
+      const mid = new InstanceWrapper({ name: 'mid', scope: Scope.TRANSIENT });
+      mid.attachRootInquirer(root);
+
+      const leaf = new InstanceWrapper({
+        name: 'leaf',
+        scope: Scope.TRANSIENT,
+      });
+      leaf.attachRootInquirer(mid);
+      expect(leaf.getRootInquirer()).toBe(root);
+    });
+  });
+
+  describe('removeInstanceByInquirerId', () => {
+    it('should handle missing collection gracefully', () => {
+      const wrapper = new InstanceWrapper({ scope: Scope.TRANSIENT });
+      expect(() =>
+        wrapper.removeInstanceByInquirerId(STATIC_CONTEXT, 'nonexistent'),
+      ).not.toThrow();
+    });
+  });
+
+  describe('cloneTransientInstance', () => {
+    it('should create a new instance per context for transient scope', () => {
+      const wrapper = new InstanceWrapper({
+        metatype: TestClass,
+        scope: Scope.TRANSIENT,
+        instance: new TestClass(),
+      });
+      const contextId = createContextId();
+      const clone = wrapper.cloneTransientInstance(contextId, 'inquirer');
+      expect(clone.instance).toBeDefined();
+      expect(clone.isResolved).toBe(false);
+    });
+  });
+
+  describe('mergeWith edge cases', () => {
+    it('should reset metatype and inject for value provider', () => {
+      const wrapper = new InstanceWrapper({
+        metatype: TestClass,
+        inject: ['dep'],
+      });
+      wrapper.mergeWith({ provide: 'token', useValue: 42 });
+      expect(wrapper.metatype).toBeNull();
+      expect(wrapper.inject).toBeNull();
+      expect(wrapper.scope).toBe(Scope.DEFAULT);
+    });
+
+    it('should reset inject for class provider', () => {
+      const wrapper = new InstanceWrapper({ inject: ['dep'] });
+      wrapper.mergeWith({ provide: 'token', useClass: TestClass });
+      expect(wrapper.inject).toBeNull();
+      expect(wrapper.metatype).toBe(TestClass);
     });
   });
 });

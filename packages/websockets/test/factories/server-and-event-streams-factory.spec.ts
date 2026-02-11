@@ -7,7 +7,9 @@ describe('ServerAndEventStreamsFactory', () => {
       const server = { test: 'test' };
       const result = ServerAndEventStreamsFactory.create(server);
 
-      expect(result).to.have.keys('init', 'connection', 'disconnect', 'server');
+      expect(Object.keys(result)).toEqual(
+        expect.arrayContaining(['init', 'connection', 'disconnect', 'server']),
+      );
       expect(result.init instanceof ReplaySubject).toBe(true);
       expect(result.connection instanceof Subject).toBe(true);
       expect(result.disconnect instanceof Subject).toBe(true);

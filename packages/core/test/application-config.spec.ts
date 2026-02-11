@@ -143,5 +143,57 @@ describe('ApplicationConfig', () => {
     it('should have undefined as the versioning by default', () => {
       expect(appConfig.getVersioning()).toEqual(undefined);
     });
+
+    it('should keep scalar defaultVersion unchanged', () => {
+      const options = { type: 'test', defaultVersion: '1' };
+      appConfig.enableVersioning(options as any);
+
+      expect(appConfig.getVersioning()!.defaultVersion).toEqual('1');
+    });
+  });
+
+  describe('constructor', () => {
+    it('should accept an ioAdapter argument', () => {
+      const ioAdapter = { test: true } as any;
+      const config = new ApplicationConfig(ioAdapter);
+
+      expect(config.getIoAdapter()).toBe(ioAdapter);
+    });
+
+    it('should default ioAdapter to null', () => {
+      const config = new ApplicationConfig();
+
+      expect(config.getIoAdapter()).toBeNull();
+    });
+  });
+
+  describe('accumulation', () => {
+    it('should accumulate global pipes via useGlobalPipes and addGlobalPipe', () => {
+      appConfig.useGlobalPipes('pipe1' as any, 'pipe2' as any);
+      appConfig.addGlobalPipe('pipe3' as any);
+
+      expect(appConfig.getGlobalPipes()).toEqual(['pipe1', 'pipe2', 'pipe3']);
+    });
+
+    it('should accumulate global filters via useGlobalFilters and addGlobalFilter', () => {
+      appConfig.useGlobalFilters('f1' as any);
+      appConfig.addGlobalFilter('f2' as any);
+
+      expect(appConfig.getGlobalFilters()).toEqual(['f1', 'f2']);
+    });
+
+    it('should accumulate global guards via useGlobalGuards and addGlobalGuard', () => {
+      appConfig.useGlobalGuards('g1' as any);
+      appConfig.addGlobalGuard('g2' as any);
+
+      expect(appConfig.getGlobalGuards()).toEqual(['g1', 'g2']);
+    });
+
+    it('should accumulate global interceptors via useGlobalInterceptors and addGlobalInterceptor', () => {
+      appConfig.useGlobalInterceptors('i1' as any);
+      appConfig.addGlobalInterceptor('i2' as any);
+
+      expect(appConfig.getGlobalInterceptors()).toEqual(['i1', 'i2']);
+    });
   });
 });

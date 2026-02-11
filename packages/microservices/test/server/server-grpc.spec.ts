@@ -5,6 +5,7 @@ import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.e
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception.js';
 import { GrpcMethodStreamingType } from '../../index.js';
 import { ServerGrpc } from '../../server/index.js';
+import { objectToMap } from './utils/object-to-map.js';
 
 const CANCELLED_EVENT = 'cancelled';
 
@@ -103,11 +104,9 @@ describe('ServerGrpc', () => {
       it('should throw "InvalidGrpcPackageException"', async () => {
         vi.spyOn(server, 'lookupPackage').mockImplementation(() => null);
         untypedServer.logger = new NoopLogger();
-        try {
-          await server.bindEvents();
-        } catch (err) {
-          expect(err).toBeInstanceOf(InvalidGrpcPackageException);
-        }
+        await expect(server.bindEvents()).rejects.toBeInstanceOf(
+          InvalidGrpcPackageException,
+        );
       });
     });
     describe('when package exist', () => {
@@ -145,11 +144,9 @@ describe('ServerGrpc', () => {
       it('should throw "InvalidGrpcPackageException"', async () => {
         vi.spyOn(serverMulti, 'lookupPackage').mockImplementation(() => null);
         (serverMulti as any).logger = new NoopLogger();
-        try {
-          await serverMulti.bindEvents();
-        } catch (err) {
-          expect(err).toBeInstanceOf(InvalidGrpcPackageException);
-        }
+        await expect(serverMulti.bindEvents()).rejects.toBeInstanceOf(
+          InvalidGrpcPackageException,
+        );
       });
     });
     describe('when package exist', () => {
@@ -199,9 +196,6 @@ describe('ServerGrpc', () => {
   });
 
   describe('createService', () => {
-    const objectToMap = obj =>
-      new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
-
     it('should call "createServiceMethod"', async () => {
       const handlers = objectToMap({
         test: null,
@@ -299,7 +293,6 @@ describe('ServerGrpc', () => {
         GrpcMethodStreamingType.NO_STREAMING,
       );
       const handlers = new Map([[testPattern, () => ({})]]);
-      console.log(handlers.entries());
       untypedServer.messageHandlers = handlers;
 
       expect(

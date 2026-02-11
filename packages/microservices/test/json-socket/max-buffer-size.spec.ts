@@ -87,11 +87,13 @@ describe('JsonSocket maxBufferSize', () => {
       // Total buffer size will be: header length (5) + data length (1100) = 1105
       const expectedBufferSize = packet.length;
 
+      expect(() => {
+        socket['handleData'](packet);
+      }).toThrow(MaxPacketLengthExceededException);
+
       try {
         socket['handleData'](packet);
-        expect.fail('Should have thrown MaxPacketLengthExceededException');
       } catch (err) {
-        expect(err).toBeInstanceOf(MaxPacketLengthExceededException);
         expect(err.message).toContain(String(expectedBufferSize));
       }
     });

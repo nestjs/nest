@@ -1,8 +1,8 @@
+import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
 import { DiscoveryService } from '../../discovery/discovery-service.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { Module } from '../../injector/module.js';
 import { ModulesContainer } from '../../injector/modules-container.js';
-import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
 
 describe('DiscoveryService', () => {
   let discoveryService: DiscoveryService;

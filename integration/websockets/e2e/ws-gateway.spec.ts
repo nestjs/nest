@@ -72,31 +72,28 @@ describe('WebSocketGateway (WsAdapter)', () => {
   it(`should handle message on a different path`, async () => {
     app = await createNestApp(WsPathGateway);
     await app.listen(3000);
-    try {
-      ws = new WebSocket('ws://localhost:3000/ws-path');
-      await new Promise((resolve, reject) => {
-        ws.on('open', resolve);
-        ws.on('error', reject);
-      });
 
-      ws.send(
-        JSON.stringify({
-          event: 'push',
-          data: {
-            test: 'test',
-          },
-        }),
-      );
-      await new Promise<void>(resolve =>
-        ws.on('message', data => {
-          expect(JSON.parse(data.toString()).data.test).toEqual('test');
-          ws.close();
-          resolve();
-        }),
-      );
-    } catch (err) {
-      console.log(err);
-    }
+    ws = new WebSocket('ws://localhost:3000/ws-path');
+    await new Promise((resolve, reject) => {
+      ws.on('open', resolve);
+      ws.on('error', reject);
+    });
+
+    ws.send(
+      JSON.stringify({
+        event: 'push',
+        data: {
+          test: 'test',
+        },
+      }),
+    );
+    await new Promise<void>(resolve =>
+      ws.on('message', data => {
+        expect(JSON.parse(data.toString()).data.test).toEqual('test');
+        ws.close();
+        resolve();
+      }),
+    );
   });
 
   it(`should support 2 different gateways running on different paths`, async function () {

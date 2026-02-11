@@ -354,21 +354,13 @@ describe('ServerKafka', () => {
         () => messageHandler,
       );
 
-      try {
-        await server.handleEvent(
+      await expect(
+        server.handleEvent(
           topic,
           { data: 'some data', pattern: topic },
           {} as any,
-        );
-
-        // code should not be executed
-        expect(true).toBe(false);
-      } catch (e) {
-        if ((e as any)?.message === 'expected true to be false') {
-          throw e;
-        }
-        expect(e).toBe(error);
-      }
+        ),
+      ).rejects.toBe(error);
     });
 
     it('should call "handleEvent" if correlation identifier and reply topic are present but the handler is of type eventHandler', async () => {

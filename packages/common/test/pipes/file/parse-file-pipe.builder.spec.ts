@@ -1,8 +1,8 @@
 import {
+  FileTypeValidator,
   FileValidator,
   MaxFileSizeValidator,
   ParseFilePipeBuilder,
-  FileTypeValidator,
 } from '../../../pipes/index.js';
 
 describe('ParseFilePipeBuilder', () => {

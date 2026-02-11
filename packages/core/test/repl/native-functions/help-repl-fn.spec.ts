@@ -1,7 +1,7 @@
 import { clc } from '@nestjs/common/utils/cli-colors.util.js';
+import { NestContainer } from '../../../injector/container.js';
 import { HelpReplFn } from '../../../repl/native-functions/index.js';
 import { ReplContext } from '../../../repl/repl-context.js';
-import { NestContainer } from '../../../injector/container.js';
 
 describe('HelpReplFn', () => {
   let helpReplFn: HelpReplFn;

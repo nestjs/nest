@@ -1,8 +1,8 @@
 import { MetadataScanner } from '../../core/metadata-scanner.js';
+import { Ack } from '../decorators/ack.decorator.js';
 import { WebSocketServer } from '../decorators/gateway-server.decorator.js';
 import { WebSocketGateway } from '../decorators/socket-gateway.decorator.js';
 import { SubscribeMessage } from '../decorators/subscribe-message.decorator.js';
-import { Ack } from '../decorators/ack.decorator.js';
 import { GatewayMetadataExplorer } from '../gateway-metadata-explorer.js';
 
 describe('GatewayMetadataExplorer', () => {
@@ -60,16 +60,18 @@ describe('GatewayMetadataExplorer', () => {
     });
     it(`should return null when "isMessageMapping" metadata is undefined`, () => {
       const metadata = instance.exploreMethodMetadata(test, 'noMessage');
-      expect(metadata).to.eq(null);
+      expect(metadata).toBeNull();
     });
     it(`should return message mapping properties when "isMessageMapping" metadata is not undefined`, () => {
       const metadata = instance.exploreMethodMetadata(test, 'test')!;
-      expect(metadata).to.have.keys([
-        'callback',
-        'message',
-        'methodName',
-        'isAckHandledManually',
-      ]);
+      expect(Object.keys(metadata)).toEqual(
+        expect.arrayContaining([
+          'callback',
+          'message',
+          'methodName',
+          'isAckHandledManually',
+        ]),
+      );
       expect(metadata.message).toEqual(message);
     });
     it('should set "isAckHandledManually" property to true when @Ack decorator is used', () => {

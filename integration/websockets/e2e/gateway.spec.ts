@@ -100,7 +100,6 @@ describe('WebSocketGateway', () => {
   });
 
   describe('shared server for WS and Long-Running connections', () => {
-    afterEach(() => {});
     it('should block application shutdown', () =>
       new Promise<void>(done => {
         let eventSource: EventSource;

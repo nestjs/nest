@@ -25,7 +25,10 @@ describe('Hello world (fastify adapter)', () => {
         method: 'GET',
         url: '/hello',
       })
-      .then(({ payload }) => expect(payload).toEqual('Hello world!'));
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).toBe(200);
+        expect(payload).toEqual('Hello world!');
+      });
   });
 
   it(`/GET (Promise/async)`, () => {
@@ -34,7 +37,10 @@ describe('Hello world (fastify adapter)', () => {
         method: 'GET',
         url: '/hello/async',
       })
-      .then(({ payload }) => expect(payload).toEqual('Hello world!'));
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).toBe(200);
+        expect(payload).toEqual('Hello world!');
+      });
   });
 
   it(`/GET (Observable stream)`, () => {
@@ -43,7 +49,10 @@ describe('Hello world (fastify adapter)', () => {
         method: 'GET',
         url: '/hello/stream',
       })
-      .then(({ payload }) => expect(payload).toEqual('Hello world!'));
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).toBe(200);
+        expect(payload).toEqual('Hello world!');
+      });
   });
 
   it(`/GET { host: ":tenant.example.com" } not matched`, () => {
@@ -83,7 +92,10 @@ describe('Hello world (fastify adapter)', () => {
       .inject()
       .get('/hello')
       .end()
-      .then(({ payload }) => expect(payload).toEqual('Hello world!'));
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).toBe(200);
+        expect(payload).toEqual('Hello world!');
+      });
   });
 
   it('/HEAD should respond to with a 200', () => {

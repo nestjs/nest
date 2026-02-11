@@ -15,6 +15,7 @@ describe('OnApplicationBootstrap', () => {
     await app.init();
     const instance = module.get(TestInjectable);
     expect(instance.onApplicationBootstrap).toHaveBeenCalled();
+    await app.close();
   });
 
   it('should not throw an error when onApplicationBootstrap is null', async () => {
@@ -26,6 +27,7 @@ describe('OnApplicationBootstrap', () => {
 
     const app = module.createNestApplication();
     await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should not throw an error when onApplicationBootstrap is undefined', async () => {
@@ -37,6 +39,7 @@ describe('OnApplicationBootstrap', () => {
 
     const app = module.createNestApplication();
     await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should sort modules by distance (topological sort) - DESC order', async () => {
@@ -78,5 +81,6 @@ describe('OnApplicationBootstrap', () => {
 
     const instance = module.get(AA);
     expect(instance.field).toBe('b-field_a-field');
+    await app.close();
   });
 });

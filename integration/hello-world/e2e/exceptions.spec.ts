@@ -82,13 +82,11 @@ describe('Error messages', () => {
         })
         .then(({ payload, statusCode }) => {
           expect(statusCode).toBe(HttpStatus.BAD_REQUEST);
-          expect(payload).toBe(
-            JSON.stringify({
-              statusCode: 400,
-              error: 'Bad Request',
-              message: 'Integration test',
-            }),
-          );
+          expect(JSON.parse(payload)).toEqual({
+            statusCode: 400,
+            error: 'Bad Request',
+            message: 'Integration test',
+          });
         });
     });
 
@@ -96,17 +94,15 @@ describe('Error messages', () => {
       return app
         .inject({
           method: 'GET',
-          url: '/sync',
+          url: '/async',
         })
         .then(({ payload, statusCode }) => {
           expect(statusCode).toBe(HttpStatus.BAD_REQUEST);
-          expect(payload).toBe(
-            JSON.stringify({
-              statusCode: 400,
-              error: 'Bad Request',
-              message: 'Integration test',
-            }),
-          );
+          expect(JSON.parse(payload)).toEqual({
+            statusCode: 400,
+            error: 'Bad Request',
+            message: 'Integration test',
+          });
         });
     });
 
@@ -118,12 +114,10 @@ describe('Error messages', () => {
         })
         .then(({ payload, statusCode }) => {
           expect(statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
-          expect(payload).toBe(
-            JSON.stringify({
-              statusCode: 500,
-              message: 'Internal server error',
-            }),
-          );
+          expect(JSON.parse(payload)).toEqual({
+            statusCode: 500,
+            message: 'Internal server error',
+          });
         });
     });
 

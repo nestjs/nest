@@ -44,17 +44,17 @@ describe('Durable providers', () => {
       result = await new Promise<request.Response>(resolve =>
         performHttpCall(1, resolve),
       );
-      expect(result.text).equal('Hello world! Counter: 1');
+      expect(result.text).toBe('Hello world! Counter: 1');
 
       result = await new Promise<request.Response>(resolve =>
         performHttpCall(1, resolve),
       );
-      expect(result.text).equal('Hello world! Counter: 2');
+      expect(result.text).toBe('Hello world! Counter: 2');
 
       result = await new Promise<request.Response>(resolve =>
         performHttpCall(1, resolve),
       );
-      expect(result.text).equal('Hello world! Counter: 3');
+      expect(result.text).toBe('Hello world! Counter: 3');
     });
 
     it(`should create per-tenant DI sub-tree`, async () => {
@@ -62,17 +62,17 @@ describe('Durable providers', () => {
       result = await new Promise<request.Response>(resolve =>
         performHttpCall(4, resolve),
       );
-      expect(result.text).equal('Hello world! Counter: 1');
+      expect(result.text).toBe('Hello world! Counter: 1');
 
       result = await new Promise<request.Response>(resolve =>
         performHttpCall(5, resolve),
       );
-      expect(result.text).equal('Hello world! Counter: 1');
+      expect(result.text).toBe('Hello world! Counter: 1');
 
       result = await new Promise<request.Response>(resolve =>
         performHttpCall(6, resolve),
       );
-      expect(result.text).equal('Hello world! Counter: 1');
+      expect(result.text).toBe('Hello world! Counter: 1');
     });
 
     it(`should register a custom per-tenant request payload`, async () => {
@@ -80,12 +80,12 @@ describe('Durable providers', () => {
       result = await new Promise<request.Response>(resolve =>
         performHttpCall(1, resolve, '/durable/echo'),
       );
-      expect(result.body).deep.equal({ tenantId: '1' });
+      expect(result.body).toEqual({ tenantId: '1' });
 
       result = await new Promise<request.Response>(resolve =>
         performHttpCall(3, resolve, '/durable/echo'),
       );
-      expect(result.body).deep.equal({ tenantId: '3' });
+      expect(result.body).toEqual({ tenantId: '3' });
     });
 
     it(`should return the same tenantId both from durable request scoped service and non-durable request scoped service`, async () => {
@@ -93,7 +93,7 @@ describe('Durable providers', () => {
       result = await new Promise<request.Response>(resolve =>
         performHttpCall(1, resolve, '/durable/request-context'),
       );
-      expect(result.body).deep.equal({
+      expect(result.body).toEqual({
         durableService: '1',
         nonDurableService: '1',
       });
@@ -101,7 +101,7 @@ describe('Durable providers', () => {
       result = await new Promise<request.Response>(resolve =>
         performHttpCall(2, resolve, '/durable/request-context'),
       );
-      expect(result.body).deep.equal({
+      expect(result.body).toEqual({
         durableService: '2',
         nonDurableService: '2',
       });
@@ -114,14 +114,14 @@ describe('Durable providers', () => {
         performHttpCall(10, resolve, '/durable/echo', { forceError: true }),
       );
 
-      expect(result.statusCode).equal(412);
+      expect(result.statusCode).toBe(412);
 
       // The second request should be successful
       result = await new Promise<request.Response>(resolve =>
         performHttpCall(10, resolve, '/durable/echo'),
       );
 
-      expect(result.body).deep.equal({ tenantId: '10' });
+      expect(result.body).toEqual({ tenantId: '10' });
     });
   });
 

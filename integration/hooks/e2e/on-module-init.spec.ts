@@ -15,6 +15,7 @@ describe('OnModuleInit', () => {
     await app.init();
     const instance = module.get(TestInjectable);
     expect(instance.onModuleInit).toHaveBeenCalled();
+    await app.close();
   });
 
   it('should not throw an error when onModuleInit is null', async () => {
@@ -24,6 +25,7 @@ describe('OnModuleInit', () => {
 
     const app = module.createNestApplication();
     await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should not throw an error when onModuleInit is undefined', async () => {
@@ -33,6 +35,7 @@ describe('OnModuleInit', () => {
 
     const app = module.createNestApplication();
     await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should sort modules by distance (topological sort) - DESC order', async () => {
@@ -107,5 +110,6 @@ describe('OnModuleInit', () => {
 
     const instance = module.get(AA);
     expect(instance.field).toBe('c-field_b-field_a-field');
+    await app.close();
   });
 });

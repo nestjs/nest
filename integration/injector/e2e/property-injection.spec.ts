@@ -18,26 +18,19 @@ describe('Injector', () => {
   });
 
   it('should throw UnknownDependenciesException when dependency is not met', async () => {
-    let exception;
-
-    try {
-      const builder = Test.createTestingModule({
-        providers: [
-          DependencyService,
-          PropertiesService,
-          {
-            provide: 'token',
-            useValue: true,
-          },
-          // symbol token is missing here
-        ],
-      });
-      const app = await builder.compile();
-      app.get(DependencyService);
-    } catch (e) {
-      exception = e;
-    }
-
-    expect(exception).toBeInstanceOf(UnknownDependenciesException);
+    const builder = Test.createTestingModule({
+      providers: [
+        DependencyService,
+        PropertiesService,
+        {
+          provide: 'token',
+          useValue: true,
+        },
+        // symbol token is missing here
+      ],
+    });
+    await expect(builder.compile()).rejects.toBeInstanceOf(
+      UnknownDependenciesException,
+    );
   });
 });

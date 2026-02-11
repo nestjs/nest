@@ -24,6 +24,7 @@ describe('OnModuleDestroy', () => {
 
     const app = module.createNestApplication();
     await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should not throw an error when onModuleDestroy is undefined', async () => {
@@ -35,6 +36,7 @@ describe('OnModuleDestroy', () => {
 
     const app = module.createNestApplication();
     await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should sort modules by distance (topological sort) - DESC order', async () => {

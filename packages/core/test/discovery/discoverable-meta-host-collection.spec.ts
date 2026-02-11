@@ -1,6 +1,6 @@
+import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { ModulesContainer } from '../../injector/modules-container.js';
-import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
 
 describe('DiscoverableMetaHostCollection', () => {
   beforeEach(() => {
@@ -18,7 +18,7 @@ describe('DiscoverableMetaHostCollection', () => {
         metadataKey,
       );
 
-      expect(DiscoverableMetaHostCollection.metaHostLinks.get(TestClass)).to.eq(
+      expect(DiscoverableMetaHostCollection.metaHostLinks.get(TestClass)).toBe(
         metadataKey,
       );
     });
@@ -29,7 +29,7 @@ describe('DiscoverableMetaHostCollection', () => {
       DiscoverableMetaHostCollection.addClassMetaHostLink(TestClass, 'key1');
       DiscoverableMetaHostCollection.addClassMetaHostLink(TestClass, 'key2');
 
-      expect(DiscoverableMetaHostCollection.metaHostLinks.get(TestClass)).to.eq(
+      expect(DiscoverableMetaHostCollection.metaHostLinks.get(TestClass)).toBe(
         'key2',
       );
     });
@@ -52,7 +52,7 @@ describe('DiscoverableMetaHostCollection', () => {
 
       expect(collection.has(metaKey)).toBe(true);
       expect(collection.get(metaKey)!.has(instanceWrapper)).toBe(true);
-      expect(collection.get(metaKey)!.size).to.eq(1);
+      expect(collection.get(metaKey)!.size).toBe(1);
     });
 
     it('should add to existing set when metaKey already exists', () => {
@@ -78,7 +78,7 @@ describe('DiscoverableMetaHostCollection', () => {
         collection,
       );
 
-      expect(collection.get(metaKey)!.size).to.eq(2);
+      expect(collection.get(metaKey)!.size).toBe(2);
       expect(collection.get(metaKey)!.has(instanceWrapper1)).toBe(true);
       expect(collection.get(metaKey)!.has(instanceWrapper2)).toBe(true);
     });
@@ -95,7 +95,7 @@ describe('DiscoverableMetaHostCollection', () => {
       );
 
       expect(result).toBeInstanceOf(Set);
-      expect(result.size).to.eq(0);
+      expect(result.size).toBe(0);
     });
 
     it('should return empty set when metaKey is not found', () => {
@@ -123,7 +123,7 @@ describe('DiscoverableMetaHostCollection', () => {
       );
 
       expect(result).toBeInstanceOf(Set);
-      expect(result.size).to.eq(0);
+      expect(result.size).toBe(0);
     });
 
     it('should return providers with matching metaKey', () => {
@@ -147,7 +147,7 @@ describe('DiscoverableMetaHostCollection', () => {
         metaKey,
       );
 
-      expect(result.size).to.eq(1);
+      expect(result.size).toBe(1);
       expect(result.has(instanceWrapper)).toBe(true);
     });
   });
@@ -163,7 +163,7 @@ describe('DiscoverableMetaHostCollection', () => {
       );
 
       expect(result).toBeInstanceOf(Set);
-      expect(result.size).to.eq(0);
+      expect(result.size).toBe(0);
     });
 
     it('should return controllers with matching metaKey', () => {
@@ -190,7 +190,7 @@ describe('DiscoverableMetaHostCollection', () => {
         metaKey,
       );
 
-      expect(result.size).to.eq(1);
+      expect(result.size).toBe(1);
       expect(result.has(instanceWrapper)).toBe(true);
     });
   });
@@ -215,7 +215,7 @@ describe('DiscoverableMetaHostCollection', () => {
         hostContainerRef,
         'any-key',
       );
-      expect(result.size).to.eq(0);
+      expect(result.size).toBe(0);
     });
 
     it('should add provider when metaKey is linked', () => {
@@ -239,7 +239,7 @@ describe('DiscoverableMetaHostCollection', () => {
         hostContainerRef,
         metaKey,
       );
-      expect(result.size).to.eq(1);
+      expect(result.size).toBe(1);
       expect(result.has(instanceWrapper)).toBe(true);
     });
 
@@ -268,7 +268,7 @@ describe('DiscoverableMetaHostCollection', () => {
         hostContainerRef,
         metaKey,
       );
-      expect(result.size).to.eq(0);
+      expect(result.size).toBe(0);
     });
 
     it('should use instance constructor when metatype is null but inject is provided', () => {
@@ -295,7 +295,7 @@ describe('DiscoverableMetaHostCollection', () => {
         hostContainerRef,
         metaKey,
       );
-      expect(result.size).to.eq(1);
+      expect(result.size).toBe(1);
     });
 
     it('should use instance constructor when inject is provided (useFactory)', () => {
@@ -325,7 +325,7 @@ describe('DiscoverableMetaHostCollection', () => {
         hostContainerRef,
         metaKey,
       );
-      expect(result.size).to.eq(1);
+      expect(result.size).toBe(1);
     });
   });
 
@@ -349,7 +349,7 @@ describe('DiscoverableMetaHostCollection', () => {
         hostContainerRef,
         'any-key',
       );
-      expect(result.size).to.eq(0);
+      expect(result.size).toBe(0);
     });
 
     it('should add controller when metaKey is linked', () => {
@@ -376,7 +376,7 @@ describe('DiscoverableMetaHostCollection', () => {
         hostContainerRef,
         metaKey,
       );
-      expect(result.size).to.eq(1);
+      expect(result.size).toBe(1);
       expect(result.has(instanceWrapper)).toBe(true);
     });
   });
@@ -415,7 +415,7 @@ describe('DiscoverableMetaHostCollection', () => {
         hostContainerRef,
         metaKey,
       );
-      expect(result.size).to.eq(2);
+      expect(result.size).toBe(2);
       expect(result.has(instanceWrapper1)).toBe(true);
       expect(result.has(instanceWrapper2)).toBe(true);
     });

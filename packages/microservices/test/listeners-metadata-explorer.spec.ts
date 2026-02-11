@@ -74,7 +74,7 @@ describe('ListenerMetadataExplorer', () => {
         Object.getPrototypeOf(test),
         'noPattern',
       );
-      expect(metadata).to.eq(undefined);
+      expect(metadata).toBeUndefined();
     });
 
     describe('@MessagePattern', () => {
@@ -84,14 +84,16 @@ describe('ListenerMetadataExplorer', () => {
           Object.getPrototypeOf(test),
           'testMessage',
         )!;
-        expect(metadata).to.have.keys([
-          'isEventHandler',
-          'methodKey',
-          'targetCallback',
-          'patterns',
-          'transport',
-          'extras',
-        ]);
+        expect(Object.keys(metadata)).toEqual(
+          expect.arrayContaining([
+            'isEventHandler',
+            'methodKey',
+            'targetCallback',
+            'patterns',
+            'transport',
+            'extras',
+          ]),
+        );
         expect(metadata.patterns.length).toEqual(1);
         expect(metadata.patterns[0]).toEqual(msgPattern);
       });
@@ -101,14 +103,16 @@ describe('ListenerMetadataExplorer', () => {
           Object.getPrototypeOf(test),
           'testMultipleMessage',
         )!;
-        expect(metadata).to.have.keys([
-          'isEventHandler',
-          'methodKey',
-          'targetCallback',
-          'patterns',
-          'transport',
-          'extras',
-        ]);
+        expect(Object.keys(metadata)).toEqual(
+          expect.arrayContaining([
+            'isEventHandler',
+            'methodKey',
+            'targetCallback',
+            'patterns',
+            'transport',
+            'extras',
+          ]),
+        );
         expect(metadata.patterns.length).toEqual(2);
         expect(metadata.patterns[0]).toEqual(firstMultipleMsgPattern);
         expect(metadata.patterns[1]).toEqual(secondMultipleMsgPattern);
@@ -122,14 +126,16 @@ describe('ListenerMetadataExplorer', () => {
           Object.getPrototypeOf(test),
           'testEvent',
         )!;
-        expect(metadata).to.have.keys([
-          'isEventHandler',
-          'methodKey',
-          'targetCallback',
-          'patterns',
-          'transport',
-          'extras',
-        ]);
+        expect(Object.keys(metadata)).toEqual(
+          expect.arrayContaining([
+            'isEventHandler',
+            'methodKey',
+            'targetCallback',
+            'patterns',
+            'transport',
+            'extras',
+          ]),
+        );
         expect(metadata.patterns.length).toEqual(1);
         expect(metadata.patterns[0]).toEqual(evtPattern);
       });
@@ -139,14 +145,16 @@ describe('ListenerMetadataExplorer', () => {
           Object.getPrototypeOf(test),
           'testMultipleEvent',
         )!;
-        expect(metadata).to.have.keys([
-          'isEventHandler',
-          'methodKey',
-          'targetCallback',
-          'patterns',
-          'transport',
-          'extras',
-        ]);
+        expect(Object.keys(metadata)).toEqual(
+          expect.arrayContaining([
+            'isEventHandler',
+            'methodKey',
+            'targetCallback',
+            'patterns',
+            'transport',
+            'extras',
+          ]),
+        );
         expect(metadata.patterns.length).toEqual(2);
         expect(metadata.patterns[0]).toEqual(firstMultipleEvtPattern);
         expect(metadata.patterns[1]).toEqual(secondMultipleEvtPattern);

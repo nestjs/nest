@@ -69,5 +69,41 @@ describe('ExecutionContextHost', () => {
       expect(proxy.getClient()).toBe(args[0]);
       expect(proxy.getData()).toBe(args[1]);
     });
+
+    it('should return the last arg via getPattern', () => {
+      const proxy = contextHost.switchToWs();
+      expect(proxy.getPattern()).toBe(args[args.length - 1]);
+    });
+  });
+
+  describe('getType', () => {
+    it('should return "http" by default', () => {
+      expect(contextHost.getType()).toBe('http');
+    });
+  });
+
+  describe('setType', () => {
+    it('should update the context type', () => {
+      contextHost.setType('ws');
+      expect(contextHost.getType()).toBe('ws');
+    });
+
+    it('should not update when type is falsy', () => {
+      contextHost.setType('' as any);
+      expect(contextHost.getType()).toBe('http');
+    });
+
+    it('should support custom string types', () => {
+      contextHost.setType('graphql');
+      expect(contextHost.getType()).toBe('graphql');
+    });
+  });
+
+  describe('constructor defaults', () => {
+    it('should allow null constructorRef and handler', () => {
+      const ctx = new ExecutionContextHost(['a']);
+      expect(ctx.getClass()).toBeNull();
+      expect(ctx.getHandler()).toBeNull();
+    });
   });
 });

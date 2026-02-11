@@ -31,7 +31,7 @@ describe('ClientsModule', () => {
         p => 'useValue' in p && p.provide === 'test',
       ) as ValueProvider;
       expect(provider).not.toBeUndefined();
-      expect(provider.useValue).to.be.deep.eq(
+      expect(provider.useValue).toEqual(
         ClientsModule['assignOnAppShutdownHook'](ClientProxyFactory.create({})),
       );
     });
@@ -53,13 +53,13 @@ describe('ClientsModule', () => {
     describe('when useFactory', () => {
       it('should return an expected providers array with useFactory', () => {
         dynamicModule = ClientsModule.registerAsync([registerOption]);
-        expect(dynamicModule.imports).to.be.deep.eq([]);
+        expect(dynamicModule.imports).toEqual([]);
         expect(dynamicModule.exports).toBe(dynamicModule.providers);
-        expect(dynamicModule.providers).to.be.have.length(1);
+        expect(dynamicModule.providers).toHaveLength(1);
 
         const provider = dynamicModule.providers![0] as FactoryProvider;
         expect(provider.provide).toEqual('test');
-        expect(provider.inject).to.be.deep.eq([]);
+        expect(provider.inject).toEqual([]);
         expect(provider.useFactory).toBeInstanceOf(Function);
       });
     });
@@ -80,13 +80,13 @@ describe('ClientsModule', () => {
           useClass: ClientOptionService,
         };
         dynamicModule = ClientsModule.registerAsync([useClassOption]);
-        expect(dynamicModule.imports).to.be.deep.eq([]);
-        expect(dynamicModule.providers).to.be.have.length(2);
+        expect(dynamicModule.imports).toEqual([]);
+        expect(dynamicModule.providers).toHaveLength(2);
 
         const classTestProvider = dynamicModule
           .providers![0] as FactoryProvider;
         expect(classTestProvider.provide).toEqual('classTest');
-        expect(classTestProvider.inject).to.be.deep.eq([ClientOptionService]);
+        expect(classTestProvider.inject).toEqual([ClientOptionService]);
         expect(classTestProvider.useFactory).toBeInstanceOf(Function);
       });
       it('provider should call "createClientOptions"', async () => {
@@ -115,7 +115,7 @@ describe('ClientsModule', () => {
         };
         dynamicModule = ClientsModule.registerAsync([asyncOptions as any]);
         expect(dynamicModule.providers).toHaveLength(1);
-        expect(dynamicModule.imports).to.be.deep.eq([]);
+        expect(dynamicModule.imports).toEqual([]);
         const classTestProvider = dynamicModule
           .providers![0] as FactoryProvider;
         expect(classTestProvider.useFactory).toBeInstanceOf(Function);

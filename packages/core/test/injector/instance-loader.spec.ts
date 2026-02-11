@@ -1,5 +1,5 @@
-import { Injectable } from '../../../common/index.js';
 import { Controller } from '../../../common/decorators/core/controller.decorator.js';
+import { Injectable } from '../../../common/index.js';
 import { NestContainer } from '../../injector/container.js';
 import { Injector } from '../../injector/injector.js';
 import { InstanceLoader } from '../../injector/instance-loader.js';

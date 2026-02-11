@@ -19,14 +19,12 @@ import {
 describe('Injector', () => {
   describe('when "providers" and "exports" properties are inconsistent', () => {
     it(`should fail with "UnknownExportException"`, async () => {
-      try {
-        const builder = Test.createTestingModule({
-          imports: [ExportsModule],
-        });
-        await builder.compile();
-      } catch (err) {
-        expect(err).toBeInstanceOf(UnknownExportException);
-      }
+      const builder = Test.createTestingModule({
+        imports: [ExportsModule],
+      });
+      await expect(builder.compile()).rejects.toBeInstanceOf(
+        UnknownExportException,
+      );
     });
   });
 
@@ -42,14 +40,10 @@ describe('Injector', () => {
 
   describe('when Nest cannot resolve dependencies', () => {
     it(`should fail with "RuntimeException"`, async () => {
-      try {
-        const builder = Test.createTestingModule({
-          imports: [InjectModule],
-        });
-        await builder.compile();
-      } catch (err) {
-        expect(err).toBeInstanceOf(RuntimeException);
-      }
+      const builder = Test.createTestingModule({
+        imports: [InjectModule],
+      });
+      await expect(builder.compile()).rejects.toBeInstanceOf(RuntimeException);
     });
 
     describe('due to self-injection providers', () => {

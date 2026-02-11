@@ -86,4 +86,31 @@ describe('Barrier', () => {
       expect(barrierResolveSpy).not.toHaveBeenCalled();
     });
   });
+
+  describe('edge cases', () => {
+    it('should handle over-signaling without errors', () => {
+      for (let i = 0; i < targetCount + 5; i++) {
+        expect(() => barrier.signal()).not.toThrow();
+      }
+    });
+
+    it('should resolve immediately with target count of 1', async () => {
+      const singleBarrier = new Barrier(1);
+      const promise = singleBarrier.wait();
+      singleBarrier.signal();
+      await expect(promise).resolves.toBeUndefined();
+    });
+
+    it('should resolve all waiting consumers', async () => {
+      const waitPromise1 = barrier.wait();
+      const waitPromise2 = barrier.wait();
+
+      for (let i = 0; i < targetCount; i++) {
+        barrier.signal();
+      }
+
+      await expect(waitPromise1).resolves.toBeUndefined();
+      await expect(waitPromise2).resolves.toBeUndefined();
+    });
+  });
 });

@@ -57,4 +57,51 @@ describe('MetadataScanner', () => {
       expect(methods3).toEqual(methods4);
     });
   });
+
+  describe('getAllMethodNames', () => {
+    it('should return empty array when prototype is null', () => {
+      expect(scanner.getAllMethodNames(null)).toEqual([]);
+    });
+
+    it('should exclude getters and setters', () => {
+      class WithAccessors {
+        get myProp() {
+          return 1;
+        }
+        set myProp(v) {}
+        method() {}
+      }
+      const methods = scanner.getAllMethodNames(WithAccessors.prototype);
+      expect(methods).toContain('method');
+      expect(methods).not.toContain('myProp');
+    });
+
+    it('should exclude non-function properties', () => {
+      function MyClass() {}
+      MyClass.prototype.stringProp = 'hello';
+      MyClass.prototype.realMethod = function () {};
+      const methods = scanner.getAllMethodNames(MyClass.prototype);
+      expect(methods).toContain('realMethod');
+      expect(methods).not.toContain('stringProp');
+    });
+  });
+
+  describe('scanFromPrototype', () => {
+    it('should return empty array when prototype is null', () => {
+      expect(scanner.scanFromPrototype({}, null, () => 'x')).toEqual([]);
+    });
+
+    it('should skip nil return values from callback', () => {
+      class Simple {
+        a() {}
+        b() {}
+      }
+      const result = scanner.scanFromPrototype(
+        new Simple(),
+        Simple.prototype,
+        name => (name === 'a' ? name : undefined),
+      );
+      expect(result).toEqual(['a']);
+    });
+  });
 });

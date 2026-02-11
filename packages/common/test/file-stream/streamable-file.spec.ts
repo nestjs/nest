@@ -1,6 +1,6 @@
 import { Readable } from 'stream';
-import { StreamableFile } from '../../file-stream/index.js';
 import { HttpStatus } from '../../enums/index.js';
+import { StreamableFile } from '../../file-stream/index.js';
 
 describe('StreamableFile', () => {
   describe('when input is a readable stream', () => {
@@ -197,6 +197,43 @@ describe('StreamableFile', () => {
       const result = streamableFile.setErrorLogger(customLogger);
 
       expect(result).toBe(streamableFile);
+    });
+  });
+
+  describe('auto-length from Uint8Array', () => {
+    it('should auto-populate length from Buffer when not provided', () => {
+      const buffer = Buffer.from('hello world');
+      const streamableFile = new StreamableFile(buffer);
+
+      expect(streamableFile.getHeaders().length).toBe(buffer.length);
+    });
+
+    it('should auto-populate length from Uint8Array when not provided', () => {
+      const uint8 = new Uint8Array([1, 2, 3, 4, 5]);
+      const streamableFile = new StreamableFile(uint8);
+
+      expect(streamableFile.getHeaders().length).toBe(5);
+    });
+
+    it('should not override explicitly provided length', () => {
+      const buffer = Buffer.from('hello');
+      const streamableFile = new StreamableFile(buffer, { length: 999 });
+
+      expect(streamableFile.getHeaders().length).toBe(999);
+    });
+  });
+
+  describe('getStream', () => {
+    it('should return a Readable stream from Uint8Array input', () => {
+      const streamableFile = new StreamableFile(new Uint8Array([1, 2, 3]));
+      const stream = streamableFile.getStream();
+      expect(stream).toBeInstanceOf(Readable);
+    });
+
+    it('should return the original Readable when constructed from a stream', () => {
+      const readable = new Readable({ read() {} });
+      const streamableFile = new StreamableFile(readable);
+      expect(streamableFile.getStream()).toBe(readable);
     });
   });
 });

@@ -1,6 +1,6 @@
 import { Controller, Scope } from '@nestjs/common';
-import { Injectable } from '../../../common/index.js';
 import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator.js';
+import { Injectable } from '../../../common/index.js';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception.js';
 import { UnknownElementException } from '../../errors/exceptions/unknown-element.exception.js';
 import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception.js';
