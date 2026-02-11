@@ -43,7 +43,7 @@ export class UnauthorizedException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description || 'Unauthorized',
         HttpStatus.UNAUTHORIZED,
       ),
       HttpStatus.UNAUTHORIZED,

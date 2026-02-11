@@ -43,7 +43,7 @@ export class NotFoundException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description || 'Not Found',
         HttpStatus.NOT_FOUND,
       ),
       HttpStatus.NOT_FOUND,

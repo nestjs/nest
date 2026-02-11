@@ -45,7 +45,7 @@ export class HttpVersionNotSupportedException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description || 'HTTP Version Not Supported',
         HttpStatus.HTTP_VERSION_NOT_SUPPORTED,
       ),
       HttpStatus.HTTP_VERSION_NOT_SUPPORTED,

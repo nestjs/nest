@@ -45,7 +45,7 @@ export class UnprocessableEntityException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description || 'Unprocessable Entity',
         HttpStatus.UNPROCESSABLE_ENTITY,
       ),
       HttpStatus.UNPROCESSABLE_ENTITY,

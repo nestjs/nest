@@ -43,7 +43,7 @@ export class NotImplementedException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description || 'Not Implemented',
         HttpStatus.NOT_IMPLEMENTED,
       ),
       HttpStatus.NOT_IMPLEMENTED,

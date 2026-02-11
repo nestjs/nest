@@ -43,7 +43,7 @@ export class BadGatewayException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description || 'Bad Gateway',
         HttpStatus.BAD_GATEWAY,
       ),
       HttpStatus.BAD_GATEWAY,

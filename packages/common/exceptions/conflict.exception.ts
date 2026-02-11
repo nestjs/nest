@@ -43,7 +43,7 @@ export class ConflictException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description || 'Conflict',
         HttpStatus.CONFLICT,
       ),
       HttpStatus.CONFLICT,

@@ -43,7 +43,7 @@ export class BadRequestException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description || 'Bad Request',
         HttpStatus.BAD_REQUEST,
       ),
       HttpStatus.BAD_REQUEST,

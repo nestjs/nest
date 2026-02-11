@@ -43,7 +43,7 @@ export class GatewayTimeoutException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description || 'Gateway Timeout',
         HttpStatus.GATEWAY_TIMEOUT,
       ),
       HttpStatus.GATEWAY_TIMEOUT,

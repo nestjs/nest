@@ -43,7 +43,7 @@ export class PreconditionFailedException extends HttpException {
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description || 'Precondition Failed',
         HttpStatus.PRECONDITION_FAILED,
       ),
       HttpStatus.PRECONDITION_FAILED,
