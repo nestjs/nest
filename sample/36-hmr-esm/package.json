@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "run-script-webpack-plugin": "0.2.3",
-    "webpack": "5.105.0",
+    "webpack": "5.105.1",
     "webpack-node-externals": "3.0.0",
     "@eslint/eslintrc": "3.3.3",
     "@eslint/js": "9.39.2",
