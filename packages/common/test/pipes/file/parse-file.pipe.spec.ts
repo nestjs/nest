@@ -4,7 +4,6 @@ import {
   ConflictException,
 } from '../../../exceptions/index.js';
 import { FileValidator, ParseFilePipe } from '../../../pipes/index.js';
-import { expect } from 'chai';
 
 class AlwaysValidValidator extends FileValidator {
   isValid(): boolean {
@@ -41,7 +40,7 @@ describe('ParseFilePipe', () => {
           path: 'some-path',
         };
 
-        await expect(parseFilePipe.transform(requestFile)).to.eventually.eql(
+        await expect(parseFilePipe.transform(requestFile)).resolves.toEqual(
           requestFile,
         );
       });
@@ -57,7 +56,7 @@ describe('ParseFilePipe', () => {
           path: 'some-path',
         };
 
-        await expect(parseFilePipe.transform(requestFile)).to.eventually.eql(
+        await expect(parseFilePipe.transform(requestFile)).resolves.toEqual(
           requestFile,
         );
       });
@@ -75,7 +74,7 @@ describe('ParseFilePipe', () => {
           path: 'some-path',
         };
 
-        await expect(parseFilePipe.transform(requestFile)).to.eventually.eql(
+        await expect(parseFilePipe.transform(requestFile)).resolves.toEqual(
           requestFile,
         );
       });
@@ -94,7 +93,7 @@ describe('ParseFilePipe', () => {
             path: 'some-path',
           };
 
-          await expect(parseFilePipe.transform(requestFile)).to.be.rejectedWith(
+          await expect(parseFilePipe.transform(requestFile)).rejects.toThrow(
             BadRequestException,
           );
         });
@@ -113,7 +112,7 @@ describe('ParseFilePipe', () => {
             path: 'some-path',
           };
 
-          await expect(parseFilePipe.transform(requestFile)).to.be.rejectedWith(
+          await expect(parseFilePipe.transform(requestFile)).rejects.toThrow(
             ConflictException,
           );
         });
@@ -131,7 +130,7 @@ describe('ParseFilePipe', () => {
       it('should pass validation if no file is provided', async () => {
         const requestFile = undefined;
 
-        await expect(parseFilePipe.transform(requestFile)).to.eventually.eql(
+        await expect(parseFilePipe.transform(requestFile)).resolves.toEqual(
           requestFile,
         );
       });
@@ -148,7 +147,7 @@ describe('ParseFilePipe', () => {
       it('should throw an error if no file is provided', async () => {
         const requestFile = undefined;
 
-        await expect(parseFilePipe.transform(requestFile)).to.be.rejectedWith(
+        await expect(parseFilePipe.transform(requestFile)).rejects.toThrow(
           BadRequestException,
         );
       });
@@ -158,7 +157,7 @@ describe('ParseFilePipe', () => {
           path: 'some-path',
         };
 
-        await expect(parseFilePipe.transform(requestFile)).to.eventually.eql(
+        await expect(parseFilePipe.transform(requestFile)).resolves.toEqual(
           requestFile,
         );
       });
@@ -174,7 +173,7 @@ describe('ParseFilePipe', () => {
       it('should throw an error if no file is provided', async () => {
         const requestFile = undefined;
 
-        await expect(parseFilePipe.transform(requestFile)).to.be.rejectedWith(
+        await expect(parseFilePipe.transform(requestFile)).rejects.toThrow(
           BadRequestException,
         );
       });

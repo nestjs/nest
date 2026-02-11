@@ -1,6 +1,4 @@
 import { OnModuleDestroy } from '@nestjs/common';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { callModuleDestroyHook } from '../../hooks/on-module-destroy.hook.js';
 import { NestContainer } from '../../injector/container.js';
 import { Module } from '../../injector/module.js';
@@ -38,10 +36,10 @@ describe('OnModuleDestroy', () => {
 
   describe('callModuleDestroyHook', () => {
     it('should call "onModuleDestroy" hook for the entire module', async () => {
-      const hookSpy = sinon.spy(sampleProvider, 'onModuleDestroy');
+      const hookSpy = vi.spyOn(sampleProvider, 'onModuleDestroy');
       await callModuleDestroyHook(moduleRef);
 
-      expect(hookSpy.called).to.be.true;
+      expect(hookSpy).toHaveBeenCalled();
     });
   });
 });

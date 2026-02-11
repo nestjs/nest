@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { MetadataScanner } from '../metadata-scanner.js';
 
 describe('MetadataScanner', () => {
@@ -31,13 +30,13 @@ describe('MetadataScanner', () => {
 
     it('should return only methods', () => {
       const methods = scanner.getAllMethodNames(Test.prototype);
-      expect(methods).to.eql(['test', 'test2', 'testParent', 'testParent2']);
+      expect(methods).toEqual(['test', 'test2', 'testParent', 'testParent2']);
     });
 
     it('should return the same instance for the same prototype', () => {
       const methods1 = scanner.getAllMethodNames(Test.prototype);
       const methods2 = scanner.getAllMethodNames(Test.prototype);
-      expect(methods1 === methods2).to.eql(true);
+      expect(methods1 === methods2).toEqual(true);
     });
 
     it('should keep compatibility with older methods', () => {
@@ -48,14 +47,14 @@ describe('MetadataScanner', () => {
         r => r[0],
       );
 
-      expect(methods1).to.eql(methods2);
+      expect(methods1).toEqual(methods2);
 
       const methods3 = scanner.getAllMethodNames(Test.prototype);
       const methods4 = [
         ...new Set(scanner.getAllFilteredMethodNames(Test.prototype)),
       ];
 
-      expect(methods3).to.eql(methods4);
+      expect(methods3).toEqual(methods4);
     });
   });
 });

@@ -1,6 +1,5 @@
 import { RequestMethod } from '@nestjs/common';
 import { GlobalPrefixOptions } from '@nestjs/common/interfaces/index.js';
-import { expect } from 'chai';
 import { ApplicationConfig } from '../application-config.js';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
 
@@ -15,7 +14,7 @@ describe('ApplicationConfig', () => {
       const path = 'test';
       appConfig.setGlobalPrefix(path);
 
-      expect(appConfig.getGlobalPrefix()).to.be.eql(path);
+      expect(appConfig.getGlobalPrefix()).toEqual(path);
     });
     it('should set global path options', () => {
       const options: GlobalPrefixOptions<ExcludeRouteMetadata> = {
@@ -29,13 +28,13 @@ describe('ApplicationConfig', () => {
       };
       appConfig.setGlobalPrefixOptions(options);
 
-      expect(appConfig.getGlobalPrefixOptions()).to.be.eql(options);
+      expect(appConfig.getGlobalPrefixOptions()).toEqual(options);
     });
     it('should has empty string as a global path by default', () => {
-      expect(appConfig.getGlobalPrefix()).to.be.eql('');
+      expect(appConfig.getGlobalPrefix()).toEqual('');
     });
     it('should has empty string as a global path option by default', () => {
-      expect(appConfig.getGlobalPrefixOptions()).to.be.eql({});
+      expect(appConfig.getGlobalPrefixOptions()).toEqual({});
     });
   });
   describe('IOAdapter', () => {
@@ -43,7 +42,7 @@ describe('ApplicationConfig', () => {
       const ioAdapter = { test: 0 };
       appConfig.setIoAdapter(ioAdapter as any);
 
-      expect(appConfig.getIoAdapter()).to.be.eql(ioAdapter);
+      expect(appConfig.getIoAdapter()).toEqual(ioAdapter);
     });
   });
   describe('Pipes', () => {
@@ -51,19 +50,19 @@ describe('ApplicationConfig', () => {
       const pipes = ['test', 'test2'];
       appConfig.useGlobalPipes(...(pipes as any));
 
-      expect(appConfig.getGlobalPipes()).to.be.eql(pipes);
+      expect(appConfig.getGlobalPipes()).toEqual(pipes);
     });
     it('should add pipe', () => {
       const pipe = 'testOne';
       appConfig.addGlobalPipe(pipe as any);
 
-      expect(appConfig.getGlobalPipes()).to.contain(pipe);
+      expect(appConfig.getGlobalPipes()).toContain(pipe);
     });
     it('should add global pipe', () => {
       const pipe = 'testOne';
       appConfig.addGlobalRequestPipe(pipe as any);
 
-      expect(appConfig.getGlobalRequestPipes()).to.contain(pipe);
+      expect(appConfig.getGlobalRequestPipes()).toContain(pipe);
     });
   });
   describe('Filters', () => {
@@ -71,19 +70,19 @@ describe('ApplicationConfig', () => {
       const filters = ['test', 'test2'];
       appConfig.useGlobalFilters(...(filters as any));
 
-      expect(appConfig.getGlobalFilters()).to.be.eql(filters);
+      expect(appConfig.getGlobalFilters()).toEqual(filters);
     });
     it('should add filter', () => {
       const filter = 'testOne';
       appConfig.addGlobalFilter(filter as any);
 
-      expect(appConfig.getGlobalFilters()).to.contain(filter);
+      expect(appConfig.getGlobalFilters()).toContain(filter);
     });
     it('should add request filter', () => {
       const filter = 'testOne';
       appConfig.addGlobalRequestFilter(filter as any);
 
-      expect(appConfig.getGlobalRequestFilters()).to.contain(filter);
+      expect(appConfig.getGlobalRequestFilters()).toContain(filter);
     });
   });
   describe('Guards', () => {
@@ -91,19 +90,19 @@ describe('ApplicationConfig', () => {
       const guards = ['test', 'test2'];
       appConfig.useGlobalGuards(...(guards as any));
 
-      expect(appConfig.getGlobalGuards()).to.be.eql(guards);
+      expect(appConfig.getGlobalGuards()).toEqual(guards);
     });
     it('should add guard', () => {
       const guard = 'testOne';
       appConfig.addGlobalGuard(guard as any);
 
-      expect(appConfig.getGlobalGuards()).to.contain(guard);
+      expect(appConfig.getGlobalGuards()).toContain(guard);
     });
     it('should add request guard', () => {
       const guard = 'testOne';
       appConfig.addGlobalRequestGuard(guard as any);
 
-      expect(appConfig.getGlobalRequestGuards()).to.contain(guard);
+      expect(appConfig.getGlobalRequestGuards()).toContain(guard);
     });
   });
   describe('Interceptors', () => {
@@ -111,19 +110,19 @@ describe('ApplicationConfig', () => {
       const interceptors = ['test', 'test2'];
       appConfig.useGlobalInterceptors(...(interceptors as any));
 
-      expect(appConfig.getGlobalInterceptors()).to.be.eql(interceptors);
+      expect(appConfig.getGlobalInterceptors()).toEqual(interceptors);
     });
     it('should add interceptor', () => {
       const interceptor = 'testOne';
       appConfig.addGlobalInterceptor(interceptor as any);
 
-      expect(appConfig.getGlobalInterceptors()).to.contain(interceptor);
+      expect(appConfig.getGlobalInterceptors()).toContain(interceptor);
     });
     it('should add request interceptor', () => {
       const interceptor = 'testOne';
       appConfig.addGlobalRequestInterceptor(interceptor as any);
 
-      expect(appConfig.getGlobalRequestInterceptors()).to.contain(interceptor);
+      expect(appConfig.getGlobalRequestInterceptors()).toContain(interceptor);
     });
   });
   describe('Versioning', () => {
@@ -131,18 +130,18 @@ describe('ApplicationConfig', () => {
       const options = { type: 'test' };
       appConfig.enableVersioning(options as any);
 
-      expect(appConfig.getVersioning()).to.be.eql(options);
+      expect(appConfig.getVersioning()).toEqual(options);
     });
 
     it('should ignore duplicated versions on defaultVersion array', () => {
       const options = { type: 'test', defaultVersion: ['1', '2', '2', '1'] };
       appConfig.enableVersioning(options as any);
 
-      expect(appConfig.getVersioning()!.defaultVersion).to.be.eql(['1', '2']);
+      expect(appConfig.getVersioning()!.defaultVersion).toEqual(['1', '2']);
     });
 
     it('should have undefined as the versioning by default', () => {
-      expect(appConfig.getVersioning()).to.be.eql(undefined);
+      expect(appConfig.getVersioning()).toEqual(undefined);
     });
   });
 });

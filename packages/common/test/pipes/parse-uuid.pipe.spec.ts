@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { HttpStatus } from '../../enums/index.js';
 import { HttpException } from '../../exceptions/index.js';
 import { ArgumentMetadata } from '../../interfaces/index.js';
@@ -22,24 +21,24 @@ describe('ParseUUIDPipe', () => {
     describe('when validation passes', () => {
       it('should return string if value is uuid v3, v4 or v5', async () => {
         target = new ParseUUIDPipe({ exceptionFactory });
-        expect(await target.transform(v3, {} as ArgumentMetadata)).to.equal(v3);
-        expect(await target.transform(v4, {} as ArgumentMetadata)).to.equal(v4);
-        expect(await target.transform(v5, {} as ArgumentMetadata)).to.equal(v5);
+        expect(await target.transform(v3, {} as ArgumentMetadata)).toBe(v3);
+        expect(await target.transform(v4, {} as ArgumentMetadata)).toBe(v4);
+        expect(await target.transform(v5, {} as ArgumentMetadata)).toBe(v5);
       });
 
       it('should return string if value is uuid v3', async () => {
         target = new ParseUUIDPipe({ version: '3', exceptionFactory });
-        expect(await target.transform(v3, {} as ArgumentMetadata)).to.equal(v3);
+        expect(await target.transform(v3, {} as ArgumentMetadata)).toBe(v3);
       });
 
       it('should return string if value is uuid v4', async () => {
         target = new ParseUUIDPipe({ version: '4', exceptionFactory });
-        expect(await target.transform(v4, {} as ArgumentMetadata)).to.equal(v4);
+        expect(await target.transform(v4, {} as ArgumentMetadata)).toBe(v4);
       });
 
       it('should return string if value is uuid v5', async () => {
         target = new ParseUUIDPipe({ version: '5', exceptionFactory });
-        expect(await target.transform(v5, {} as ArgumentMetadata)).to.equal(v5);
+        expect(await target.transform(v5, {} as ArgumentMetadata)).toBe(v5);
       });
       it('should not throw an error if the value is undefined/null and optional is true', async () => {
         const target = new ParseUUIDPipe({ optional: true });
@@ -47,7 +46,7 @@ describe('ParseUUIDPipe', () => {
           undefined!,
           {} as ArgumentMetadata,
         );
-        expect(value).to.equal(undefined);
+        expect(value).toBe(undefined);
       });
     });
 
@@ -56,53 +55,53 @@ describe('ParseUUIDPipe', () => {
         target = new ParseUUIDPipe({ exceptionFactory });
         await expect(
           target.transform('123a', {} as ArgumentMetadata),
-        ).to.be.rejectedWith(TestException);
+        ).rejects.toThrow(TestException);
       });
 
       it('should throw an error - not a string', async () => {
         target = new ParseUUIDPipe({ exceptionFactory });
         await expect(
           target.transform(undefined!, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(TestException);
+        ).rejects.toThrow(TestException);
       });
 
       it('should throw an error - v3', async () => {
         target = new ParseUUIDPipe({ version: '3', exceptionFactory });
         await expect(
           target.transform('123a', {} as ArgumentMetadata),
-        ).to.be.rejectedWith(TestException);
+        ).rejects.toThrow(TestException);
         await expect(
           target.transform(v4, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(TestException);
+        ).rejects.toThrow(TestException);
         await expect(
           target.transform(v5, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(TestException);
+        ).rejects.toThrow(TestException);
       });
 
       it('should throw an error - v4', async () => {
         target = new ParseUUIDPipe({ version: '4', exceptionFactory });
         await expect(
           target.transform('123a', {} as ArgumentMetadata),
-        ).to.be.rejectedWith(TestException);
+        ).rejects.toThrow(TestException);
         await expect(
           target.transform(v3, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(TestException);
+        ).rejects.toThrow(TestException);
         await expect(
           target.transform(v5, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(TestException);
+        ).rejects.toThrow(TestException);
       });
 
       it('should throw an error - v5 ', async () => {
         target = new ParseUUIDPipe({ version: '5', exceptionFactory });
         await expect(
           target.transform('123a', {} as ArgumentMetadata),
-        ).to.be.rejectedWith(TestException);
+        ).rejects.toThrow(TestException);
         await expect(
           target.transform(v3, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(TestException);
+        ).rejects.toThrow(TestException);
         await expect(
           target.transform(v4, {} as ArgumentMetadata),
-        ).to.be.rejectedWith(TestException);
+        ).rejects.toThrow(TestException);
       });
     });
   });

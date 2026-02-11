@@ -1,5 +1,4 @@
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { CircularModule } from '../src/circular-modules/circular.module.js';
 import { CircularService } from '../src/circular-modules/circular.service.js';
 import { InputModule } from '../src/circular-modules/input.module.js';
@@ -14,7 +13,7 @@ describe('Circular dependency (modules)', () => {
     const inputService = testingModule.get<InputService>(InputService);
     const circularService = testingModule.get<CircularService>(CircularService);
 
-    expect(inputService.service).to.be.eql(circularService);
-    expect(circularService.service).to.be.eql(inputService);
+    expect(inputService.service).toEqual(circularService);
+    expect(circularService.service).toEqual(inputService);
   });
 });

@@ -1,7 +1,6 @@
 import { createContextId } from '@nestjs/core';
 import { InvalidClassScopeException } from '@nestjs/core/errors/exceptions/invalid-class-scope.exception.js';
 import { Test, TestingModule } from '@nestjs/testing';
-import { expect } from 'chai';
 import { ScopedController } from '../src/scoped/scoped.controller.js';
 import {
   REQUEST_SCOPED_FACTORY,
@@ -30,10 +29,10 @@ describe('Scoped Instances', () => {
       TRANSIENT_SCOPED_FACTORY,
     );
 
-    expect(transient1).to.be.instanceOf(TransientService);
-    expect(transient2).to.be.instanceOf(TransientService);
-    expect(transient1).to.be.equal(transient2);
-    expect(transientFactory).to.be.true;
+    expect(transient1).toBeInstanceOf(TransientService);
+    expect(transient2).toBeInstanceOf(TransientService);
+    expect(transient1).toBe(transient2);
+    expect(transientFactory).toBe(true);
   });
 
   it('should dynamically resolve nested transient provider', async () => {
@@ -47,8 +46,8 @@ describe('Scoped Instances', () => {
       contextId,
     );
 
-    expect(transientTwoDepthLevel.svc.logger).to.not.be.undefined;
-    expect(transientThreeDepthLevel.svc.svc.logger).to.not.be.undefined;
+    expect(transientTwoDepthLevel.svc.logger).not.toBeUndefined();
+    expect(transientThreeDepthLevel.svc.svc.logger).not.toBeUndefined();
   });
 
   it('should dynamically resolve request-scoped provider', async () => {
@@ -62,11 +61,11 @@ describe('Scoped Instances', () => {
     const request3 = await testingModule.resolve(ScopedService, ctxId);
     const requestFactory = await testingModule.resolve(REQUEST_SCOPED_FACTORY);
 
-    expect(request1).to.be.instanceOf(ScopedService);
-    expect(request2).to.be.instanceOf(ScopedService);
-    expect(request3).to.not.be.equal(request2);
-    expect(requestFactory).to.be.true;
-    expect(request3.request).to.be.equal(requestProvider);
+    expect(request1).toBeInstanceOf(ScopedService);
+    expect(request2).toBeInstanceOf(ScopedService);
+    expect(request3).not.toBe(request2);
+    expect(requestFactory).toBe(true);
+    expect(request3.request).toBe(requestProvider);
   });
 
   it('should dynamically resolve request-scoped controller', async () => {
@@ -74,16 +73,16 @@ describe('Scoped Instances', () => {
     const request2 = await testingModule.resolve(ScopedController);
     const request3 = await testingModule.resolve(ScopedController, { id: 1 });
 
-    expect(request1).to.be.instanceOf(ScopedController);
-    expect(request2).to.be.instanceOf(ScopedController);
-    expect(request3).to.not.be.equal(request2);
+    expect(request1).toBeInstanceOf(ScopedController);
+    expect(request2).toBeInstanceOf(ScopedController);
+    expect(request3).not.toBe(request2);
   });
 
   it('should throw an exception when "get()" method is used for scoped providers', () => {
     try {
       testingModule.get(ScopedController);
     } catch (err) {
-      expect(err).to.be.instanceOf(InvalidClassScopeException);
+      expect(err).toBeInstanceOf(InvalidClassScopeException);
     }
   });
 
@@ -91,7 +90,7 @@ describe('Scoped Instances', () => {
     try {
       await testingModule.resolve(STATIC_FACTORY);
     } catch (err) {
-      expect(err).to.be.instanceOf(InvalidClassScopeException);
+      expect(err).toBeInstanceOf(InvalidClassScopeException);
     }
   });
 });

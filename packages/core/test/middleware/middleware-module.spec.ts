@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { RouteInfoPathExtractor } from '@nestjs/core/middleware/route-info-path-extractor.js';
-import * as chai from 'chai';
-import { expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
-import * as sinon from 'sinon';
 import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator.js';
 import { RequestMethod } from '../../../common/enums/request-method.enum.js';
@@ -19,9 +15,7 @@ import { MiddlewareBuilder } from '../../middleware/builder.js';
 import { MiddlewareContainer } from '../../middleware/container.js';
 import { MiddlewareModule } from '../../middleware/middleware-module.js';
 import { RouterExceptionFilters } from '../../router/router-exception-filters.js';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec.js';
-
-chai.use(chaiAsPromised);
+import { NoopHttpAdapter } from '../utils/noop-adapter.js';
 
 describe('MiddlewareModule', () => {
   let middlewareModule: MiddlewareModule;
@@ -72,7 +66,7 @@ describe('MiddlewareModule', () => {
         .getModules()
         .set('Test', new Module(class {}, stubContainer));
 
-      const configureSpy = sinon.spy();
+      const configureSpy = vi.fn();
       const mockModule = {
         instance: {
           configure: configureSpy,
@@ -86,16 +80,14 @@ describe('MiddlewareModule', () => {
         'Test',
       );
 
-      expect(configureSpy.calledOnce).to.be.true;
-      expect(
-        configureSpy.calledWith(
-          new MiddlewareBuilder(
-            (middlewareModule as any).routesMapper,
-            undefined!,
-            new RouteInfoPathExtractor(new ApplicationConfig()),
-          ),
+      expect(configureSpy).toHaveBeenCalledOnce();
+      expect(configureSpy).toHaveBeenCalledWith(
+        new MiddlewareBuilder(
+          (middlewareModule as any).routesMapper,
+          undefined!,
+          new RouteInfoPathExtractor(new ApplicationConfig()),
         ),
-      ).to.be.true;
+      );
     });
   });
 
@@ -116,7 +108,7 @@ describe('MiddlewareModule', () => {
         middleware: [TestMiddleware],
         forRoutes: [BaseController],
       };
-      const useSpy = sinon.spy();
+      const useSpy = vi.fn();
       const app = { use: useSpy };
 
       middlewareModule['container'] = nestContainer;
@@ -129,7 +121,7 @@ describe('MiddlewareModule', () => {
           'Test',
           app,
         ),
-      ).to.eventually.be.rejectedWith(RuntimeException);
+      ).rejects.toThrow(RuntimeException);
     });
 
     it('should throw "InvalidMiddlewareException" exception when middleware does not have "use" method', () => {
@@ -142,7 +134,7 @@ describe('MiddlewareModule', () => {
         forRoutes: [BaseController],
       };
 
-      const useSpy = sinon.spy();
+      const useSpy = vi.fn();
       const app = { use: useSpy };
 
       const container = new MiddlewareContainer(nestContainer);
@@ -155,6 +147,8 @@ describe('MiddlewareModule', () => {
         instance,
       } as any);
 
+      middlewareModule['container'] = nestContainer;
+
       expect(
         middlewareModule.registerRouteMiddleware(
           container,
@@ -163,7 +157,7 @@ describe('MiddlewareModule', () => {
           moduleKey,
           app,
         ),
-      ).to.be.rejectedWith(InvalidMiddlewareException);
+      ).rejects.toThrow(InvalidMiddlewareException);
     });
 
     it('should mount middleware when is stored in container', async () => {
@@ -173,9 +167,9 @@ describe('MiddlewareModule', () => {
         forRoutes: ['test', BasicController, BaseController],
       };
 
-      const createMiddlewareFactoryStub = sinon
-        .stub()
-        .callsFake(() => () => null);
+      const createMiddlewareFactoryStub = vi
+        .fn()
+        .mockImplementation(() => () => null);
       const app = {
         createMiddlewareFactory: createMiddlewareFactoryStub,
       };
@@ -197,9 +191,9 @@ describe('MiddlewareModule', () => {
           instance,
         }),
       );
-      sinon
-        .stub(stubContainer, 'getModuleByKey')
-        .callsFake(() => new Module(class {}, stubContainer));
+      vi.spyOn(stubContainer, 'getModuleByKey').mockImplementation(
+        () => new Module(class {}, stubContainer),
+      );
       middlewareModule['container'] = stubContainer;
 
       await middlewareModule.registerRouteMiddleware(
@@ -209,7 +203,7 @@ describe('MiddlewareModule', () => {
         moduleKey,
         app,
       );
-      expect(createMiddlewareFactoryStub.calledOnce).to.be.true;
+      expect(createMiddlewareFactoryStub).toHaveBeenCalledOnce();
     });
 
     it('should insert the expected middleware definition', async () => {
@@ -224,9 +218,9 @@ describe('MiddlewareModule', () => {
         instance,
         name: TestMiddleware.name,
       });
-      const createMiddlewareFactoryStub = sinon
-        .stub()
-        .callsFake(() => () => null);
+      const createMiddlewareFactoryStub = vi
+        .fn()
+        .mockImplementation(() => () => null);
       const app = {
         createMiddlewareFactory: createMiddlewareFactoryStub,
       };
@@ -241,12 +235,12 @@ describe('MiddlewareModule', () => {
       container
         .getMiddlewareCollection(moduleKey)
         .set(TestMiddleware, instanceWrapper);
-      sinon
-        .stub(stubContainer, 'getModuleByKey')
-        .callsFake(() => new Module(class {}, stubContainer));
+      vi.spyOn(stubContainer, 'getModuleByKey').mockImplementation(
+        () => new Module(class {}, stubContainer),
+      );
       middlewareModule['container'] = stubContainer;
 
-      const insertEntrypointDefinitionSpy = sinon.spy(
+      const insertEntrypointDefinitionSpy = vi.spyOn(
         graphInspector,
         'insertEntrypointDefinition',
       );
@@ -259,9 +253,9 @@ describe('MiddlewareModule', () => {
         app,
       );
 
-      expect(createMiddlewareFactoryStub.calledOnce).to.be.true;
-      expect(
-        insertEntrypointDefinitionSpy.calledWith({
+      expect(createMiddlewareFactoryStub).toHaveBeenCalledOnce();
+      expect(insertEntrypointDefinitionSpy).toHaveBeenCalledWith(
+        {
           type: 'middleware',
           methodName: 'use',
           className: instanceWrapper.name,
@@ -272,8 +266,9 @@ describe('MiddlewareModule', () => {
             requestMethod: 'ALL',
             version: undefined,
           } as any,
-        }),
-      ).to.be.true;
+        },
+        expect.any(String),
+      );
     });
   });
 });

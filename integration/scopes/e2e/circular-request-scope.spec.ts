@@ -1,6 +1,5 @@
 import { INestApplication, Scope } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import request from 'supertest';
 import { HelloController } from '../src/circular-hello/hello.controller.js';
 import { HelloModule } from '../src/circular-hello/hello.module.js';
@@ -18,7 +17,7 @@ describe('Circular request scope', () => {
   let server;
   let app: INestApplication;
 
-  before(async () => {
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       imports: [
         HelloModule.forRoot({
@@ -35,7 +34,7 @@ describe('Circular request scope', () => {
   });
 
   describe('when one service is request scoped', () => {
-    before(async () => {
+    beforeAll(async () => {
       const performHttpCall = end =>
         request(server)
           .get('/hello')
@@ -49,23 +48,23 @@ describe('Circular request scope', () => {
     });
 
     it(`should create controller for each request`, () => {
-      expect(HelloController.COUNTER).to.be.eql(3);
+      expect(HelloController.COUNTER).toEqual(3);
     });
 
     it(`should create service for each request`, () => {
-      expect(UsersService.COUNTER).to.be.eql(3);
+      expect(UsersService.COUNTER).toEqual(3);
     });
 
     it(`should create service for each request`, () => {
-      expect(HelloService.COUNTER).to.be.eql(3);
+      expect(HelloService.COUNTER).toEqual(3);
     });
 
     it(`should create provider for each inquirer`, () => {
-      expect(Meta.COUNTER).to.be.eql(3);
+      expect(Meta.COUNTER).toEqual(3);
     });
   });
 
-  after(async () => {
+  afterAll(async () => {
     await app.close();
   });
 });

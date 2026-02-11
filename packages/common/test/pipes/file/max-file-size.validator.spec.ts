@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { MaxFileSizeValidator } from '../../../pipes/index.js';
 import { IFile } from '@nestjs/common/pipes/file/interfaces/index.js';
 
@@ -15,7 +14,7 @@ describe('MaxFileSizeValidator', () => {
         size: 100,
       } as any;
 
-      expect(maxFileSizeValidator.isValid(requestFile)).to.equal(true);
+      expect(maxFileSizeValidator.isValid(requestFile)).toBe(true);
     });
 
     it('should return false when the file size is greater than the maximum size', () => {
@@ -27,7 +26,7 @@ describe('MaxFileSizeValidator', () => {
         size: oneKb + 1,
       } as any;
 
-      expect(maxFileSizeValidator.isValid(requestFile)).to.equal(false);
+      expect(maxFileSizeValidator.isValid(requestFile)).toBe(false);
     });
 
     it('should return false when the file size is equal to the maximum size', () => {
@@ -39,7 +38,7 @@ describe('MaxFileSizeValidator', () => {
         size: oneKb,
       } as any;
 
-      expect(maxFileSizeValidator.isValid(requestFile)).to.equal(false);
+      expect(maxFileSizeValidator.isValid(requestFile)).toBe(false);
     });
 
     it('should return true when no file provided', () => {
@@ -47,7 +46,7 @@ describe('MaxFileSizeValidator', () => {
         maxSize: oneKb,
       });
 
-      expect(maxFileSizeValidator.isValid()).to.equal(true);
+      expect(maxFileSizeValidator.isValid()).toBe(true);
     });
   });
 
@@ -57,7 +56,7 @@ describe('MaxFileSizeValidator', () => {
         maxSize: oneKb,
       });
 
-      expect(maxFileSizeValidator.buildErrorMessage()).to.equal(
+      expect(maxFileSizeValidator.buildErrorMessage()).toBe(
         `Validation failed (expected size is less than ${oneKb})`,
       );
     });
@@ -70,7 +69,7 @@ describe('MaxFileSizeValidator', () => {
 
       const file = { size: currentFileSize } as any;
 
-      expect(maxFileSizeValidator.buildErrorMessage(file)).to.equal(
+      expect(maxFileSizeValidator.buildErrorMessage(file)).toBe(
         `Validation failed (current file size is ${currentFileSize}, expected size is less than ${oneKb})`,
       );
     });
@@ -83,7 +82,7 @@ describe('MaxFileSizeValidator', () => {
       });
       const requestFile = { size: currentFileSize } as IFile;
 
-      expect(maxFileSizeValidator.buildErrorMessage(requestFile)).to.equal(
+      expect(maxFileSizeValidator.buildErrorMessage(requestFile)).toBe(
         'File size exceeds the limit',
       );
     });
@@ -96,7 +95,7 @@ describe('MaxFileSizeValidator', () => {
       });
       const requestFile = { size: currentFileSize } as IFile;
 
-      expect(maxFileSizeValidator.buildErrorMessage(requestFile)).to.equal(
+      expect(maxFileSizeValidator.buildErrorMessage(requestFile)).toBe(
         'File size exceeds the limit',
       );
     });
@@ -110,7 +109,7 @@ describe('MaxFileSizeValidator', () => {
       });
       const requestFile = { size: currentFileSize } as IFile;
 
-      expect(maxFileSizeValidator.buildErrorMessage(requestFile)).to.equal(
+      expect(maxFileSizeValidator.buildErrorMessage(requestFile)).toBe(
         `Received file size is ${currentFileSize}, but it must be smaller than ${oneKb}.`,
       );
     });

@@ -1,9 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import chai, { expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
 import { AppModule } from '../src/app.module.js';
-chai.use(chaiAsPromised);
 
 describe('Lazy imports', () => {
   let app: INestApplication;
@@ -17,7 +14,7 @@ describe('Lazy imports', () => {
   });
 
   it(`should allow imports of global modules`, async () => {
-    await expect(app.init()).to.eventually.be.fulfilled;
+    await expect(app.init()).resolves.toBeDefined();
   });
 
   afterEach(async () => {

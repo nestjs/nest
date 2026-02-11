@@ -2,8 +2,6 @@ import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.excepti
 import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception.js';
 import { UnknownExportException } from '@nestjs/core/errors/exceptions/unknown-export.exception.js';
 import { Test } from '@nestjs/testing';
-import chai, { expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
 import {
   DYNAMIC_TOKEN,
   DYNAMIC_VALUE,
@@ -17,7 +15,6 @@ import {
   SelfInjectionProviderCustomTokenModule,
   SelfInjectionProviderModule,
 } from '../src/self-injection/self-injection-provider.module.js';
-chai.use(chaiAsPromised);
 
 describe('Injector', () => {
   describe('when "providers" and "exports" properties are inconsistent', () => {
@@ -28,7 +25,7 @@ describe('Injector', () => {
         });
         await builder.compile();
       } catch (err) {
-        expect(err).to.be.instanceof(UnknownExportException);
+        expect(err).toBeInstanceOf(UnknownExportException);
       }
     });
   });
@@ -39,7 +36,7 @@ describe('Injector', () => {
         imports: [InjectSameNameModule],
       });
 
-      await expect(builder.compile()).to.eventually.be.fulfilled;
+      await expect(builder.compile()).resolves.toBeDefined();
     });
   });
 
@@ -51,7 +48,7 @@ describe('Injector', () => {
         });
         await builder.compile();
       } catch (err) {
-        expect(err).to.be.instanceof(RuntimeException);
+        expect(err).toBeInstanceOf(RuntimeException);
       }
     });
 
@@ -61,9 +58,7 @@ describe('Injector', () => {
           imports: [SelfInjectionProviderModule],
         });
 
-        await expect(
-          builder.compile(),
-        ).to.eventually.be.rejected.and.be.an.instanceOf(
+        await expect(builder.compile()).rejects.toBeInstanceOf(
           UnknownDependenciesException,
         );
       });
@@ -72,9 +67,7 @@ describe('Injector', () => {
           imports: [SelfInjectionForwardProviderModule],
         });
 
-        await expect(
-          builder.compile(),
-        ).to.eventually.be.rejected.and.be.an.instanceOf(
+        await expect(builder.compile()).rejects.toBeInstanceOf(
           UnknownDependenciesException,
         );
       });
@@ -83,9 +76,7 @@ describe('Injector', () => {
           imports: [SelfInjectionProviderCustomTokenModule],
         });
 
-        await expect(
-          builder.compile(),
-        ).to.eventually.be.rejected.and.be.an.instanceOf(
+        await expect(builder.compile()).rejects.toBeInstanceOf(
           UnknownDependenciesException,
         );
       });
@@ -98,7 +89,7 @@ describe('Injector', () => {
         imports: [NestDynamicModule.byObject()],
       });
       const app = await builder.compile();
-      expect(app.get(DYNAMIC_TOKEN)).to.be.eql(DYNAMIC_VALUE);
+      expect(app.get(DYNAMIC_TOKEN)).toEqual(DYNAMIC_VALUE);
     });
 
     it(`should return provider via token (exported by token)`, async () => {
@@ -106,7 +97,7 @@ describe('Injector', () => {
         imports: [NestDynamicModule.byName()],
       });
       const app = await builder.compile();
-      expect(app.get(DYNAMIC_TOKEN)).to.be.eql(DYNAMIC_VALUE);
+      expect(app.get(DYNAMIC_TOKEN)).toEqual(DYNAMIC_VALUE);
     });
   });
 });

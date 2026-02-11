@@ -12,7 +12,7 @@ describe('URI Versioning (fastify)', () => {
 
   // ======================================================================== //
   describe('without global default version', () => {
-    before(async () => {
+    beforeAll(async () => {
       const moduleRef = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
@@ -181,14 +181,14 @@ describe('URI Versioning (fastify)', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
 
   // ======================================================================== //
   describe('with the global default version: "1"', () => {
-    before(async () => {
+    beforeAll(async () => {
       const moduleRef = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
@@ -358,7 +358,7 @@ describe('URI Versioning (fastify)', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });

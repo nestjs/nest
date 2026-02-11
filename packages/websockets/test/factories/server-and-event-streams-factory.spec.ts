@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { ReplaySubject, Subject } from 'rxjs';
 import { ServerAndEventStreamsFactory } from '../../factories/server-and-event-streams-factory.js';
 
@@ -9,10 +8,10 @@ describe('ServerAndEventStreamsFactory', () => {
       const result = ServerAndEventStreamsFactory.create(server);
 
       expect(result).to.have.keys('init', 'connection', 'disconnect', 'server');
-      expect(result.init instanceof ReplaySubject).to.be.true;
-      expect(result.connection instanceof Subject).to.be.true;
-      expect(result.disconnect instanceof Subject).to.be.true;
-      expect(result.server).to.be.eql(server);
+      expect(result.init instanceof ReplaySubject).toBe(true);
+      expect(result.connection instanceof Subject).toBe(true);
+      expect(result.disconnect instanceof Subject).toBe(true);
+      expect(result.server).toEqual(server);
     });
   });
 });

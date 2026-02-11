@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { FASTIFY_ROUTE_CONSTRAINTS_METADATA } from '../../constants.js';
 import { RouteConstraints } from '../../decorators/route-constraints.decorator.js';
 
@@ -16,7 +15,7 @@ describe('@RouteConstraints', () => {
         FASTIFY_ROUTE_CONSTRAINTS_METADATA,
         TestVersionConstraints.test,
       );
-      expect(path).to.be.eql(routeConstraints);
+      expect(path).toEqual(routeConstraints);
     });
   });
 
@@ -33,7 +32,7 @@ describe('@RouteConstraints', () => {
         FASTIFY_ROUTE_CONSTRAINTS_METADATA,
         TestConstraints.test,
       );
-      expect(path).to.be.eql(customRouteConstraints);
+      expect(path).toEqual(customRouteConstraints);
     });
   });
 });

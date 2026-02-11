@@ -1,7 +1,6 @@
 import { Scope } from '@nestjs/common';
 import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception.js';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 
 describe('Optional factory provider deps', () => {
   describe('when dependency is optional', () => {
@@ -20,7 +19,7 @@ describe('Optional factory provider deps', () => {
         }).compile();
 
         const factoryProvider = moduleRef.get('FACTORY');
-        expect(factoryProvider).to.equal('OPTIONAL_DEP_VALUE');
+        expect(factoryProvider).toBe('OPTIONAL_DEP_VALUE');
       });
     });
     describe('otherwise', () => {
@@ -37,7 +36,7 @@ describe('Optional factory provider deps', () => {
         }).compile();
 
         const factoryProvider = moduleRef.get('FACTORY');
-        expect(factoryProvider).to.equal(defaultValue);
+        expect(factoryProvider).toBe(defaultValue);
       });
       it('"undefined" should be injected into the factory function (scoped provider)', async () => {
         const MY_PROVIDER = 'MY_PROVIDER';
@@ -70,7 +69,7 @@ describe('Optional factory provider deps', () => {
           ],
         }).compile();
 
-        expect(await module.resolve(MY_PROVIDER)).to.deep.equal({
+        expect(await module.resolve(MY_PROVIDER)).toEqual({
           first: undefined,
           second: 'second',
         });
@@ -92,7 +91,7 @@ describe('Optional factory provider deps', () => {
           });
           await builder.compile();
         } catch (err) {
-          expect(err).to.be.instanceOf(UnknownDependenciesException);
+          expect(err).toBeInstanceOf(UnknownDependenciesException);
         }
       });
     });
@@ -116,7 +115,7 @@ describe('Optional factory provider deps', () => {
         });
         await builder.compile();
       } catch (err) {
-        expect(err).to.be.instanceOf(UnknownDependenciesException);
+        expect(err).toBeInstanceOf(UnknownDependenciesException);
         expect(err.message).to
           .equal(`Nest can't resolve dependencies of the POSSIBLY_MISSING_DEP (?). Please make sure that the argument "MISSING_DEP" at index [0] is available in the RootTestModule context.
 

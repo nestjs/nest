@@ -1,5 +1,4 @@
 import { Test } from '@nestjs/testing';
-import * as Sinon from 'sinon';
 import {
   Injectable,
   OnApplicationBootstrap,
@@ -18,11 +17,11 @@ class TestInjectable
     OnApplicationShutdown,
     BeforeApplicationShutdown
 {
-  onApplicationBootstrap = Sinon.spy();
-  beforeApplicationShutdown = Sinon.spy();
-  onApplicationShutdown = Sinon.spy();
-  onModuleDestroy = Sinon.spy();
-  onModuleInit = Sinon.spy();
+  onApplicationBootstrap = vi.fn();
+  beforeApplicationShutdown = vi.fn();
+  onApplicationShutdown = vi.fn();
+  onModuleDestroy = vi.fn();
+  onModuleInit = vi.fn();
 }
 
 describe('Lifecycle Hook Order', () => {
@@ -36,12 +35,17 @@ describe('Lifecycle Hook Order', () => {
     await app.close();
 
     const instance = module.get(TestInjectable);
-    Sinon.assert.callOrder(
+    const order = [
       instance.onModuleInit,
       instance.onApplicationBootstrap,
       instance.onModuleDestroy,
       instance.beforeApplicationShutdown,
       instance.onApplicationShutdown,
-    );
+    ];
+    for (let i = 0; i < order.length - 1; i++) {
+      expect(order[i].mock.invocationCallOrder[0]).toBeLessThan(
+        order[i + 1].mock.invocationCallOrder[0],
+      );
+    }
   });
 });

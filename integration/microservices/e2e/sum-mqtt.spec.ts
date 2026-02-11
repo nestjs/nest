@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import request from 'supertest';
 import { MqttController } from '../src/mqtt/mqtt.controller.js';
 
@@ -47,7 +46,7 @@ describe('MQTT transport', () => {
       .post('/?command=streamSum')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
-  }).timeout(5000);
+  });
 
   it(`/POST (concurrent)`, function () {
     return request(server)
@@ -65,38 +64,40 @@ describe('MQTT transport', () => {
         Array.from({ length: 10 }, (v, k) => k + 91),
       ])
       .expect(200, 'true');
-  }).timeout(5000);
+  });
 
   it(`/POST (streaming)`, () => {
     return request(server)
       .post('/stream')
       .send([1, 2, 3, 4, 5])
       .expect(200, '15');
-  }).timeout(5000);
-
-  it(`/POST (event notification)`, done => {
-    void request(server)
-      .post('/notify')
-      .send([1, 2, 3, 4, 5])
-      .end(() => {
-        setTimeout(() => {
-          expect(MqttController.IS_NOTIFIED).to.be.true;
-          done();
-        }, 1000);
-      });
   });
 
-  it(`/POST (wildcard EVENT #)`, done => {
-    void request(server)
-      .post('/wildcard-event')
-      .send([1, 2, 3, 4, 5])
-      .end(() => {
-        setTimeout(() => {
-          expect(MqttController.IS_WILDCARD_EVENT_RECEIVED).to.be.true;
-          done();
-        }, 1000);
-      });
-  });
+  it(`/POST (event notification)`, () =>
+    new Promise<void>(done => {
+      void request(server)
+        .post('/notify')
+        .send([1, 2, 3, 4, 5])
+        .end(() => {
+          setTimeout(() => {
+            expect(MqttController.IS_NOTIFIED).toBe(true);
+            done();
+          }, 1000);
+        });
+    }));
+
+  it(`/POST (wildcard EVENT #)`, () =>
+    new Promise<void>(done => {
+      void request(server)
+        .post('/wildcard-event')
+        .send([1, 2, 3, 4, 5])
+        .end(() => {
+          setTimeout(() => {
+            expect(MqttController.IS_WILDCARD_EVENT_RECEIVED).toBe(true);
+            done();
+          }, 1000);
+        });
+    }));
 
   it(`/POST (wildcard MESSAGE #)`, () => {
     return request(server)
@@ -105,17 +106,18 @@ describe('MQTT transport', () => {
       .expect(201, '15');
   });
 
-  it(`/POST (wildcard EVENT +)`, done => {
-    void request(server)
-      .post('/wildcard-event2')
-      .send([1, 2, 3, 4, 5])
-      .end(() => {
-        setTimeout(() => {
-          expect(MqttController.IS_WILDCARD2_EVENT_RECEIVED).to.be.true;
-          done();
-        }, 1000);
-      });
-  });
+  it(`/POST (wildcard EVENT +)`, () =>
+    new Promise<void>(done => {
+      void request(server)
+        .post('/wildcard-event2')
+        .send([1, 2, 3, 4, 5])
+        .end(() => {
+          setTimeout(() => {
+            expect(MqttController.IS_WILDCARD2_EVENT_RECEIVED).toBe(true);
+            done();
+          }, 1000);
+        });
+    }));
 
   it(`/POST (wildcard MESSAGE +)`, () => {
     return request(server)
@@ -124,17 +126,18 @@ describe('MQTT transport', () => {
       .expect(201, '15');
   });
 
-  it(`/POST (shared wildcard EVENT #)`, done => {
-    void request(server)
-      .post('/shared-wildcard-event')
-      .send([1, 2, 3, 4, 5])
-      .end(() => {
-        setTimeout(() => {
-          expect(MqttController.IS_SHARED_WILDCARD_EVENT_RECEIVED).to.be.true;
-          done();
-        }, 1000);
-      });
-  });
+  it(`/POST (shared wildcard EVENT #)`, () =>
+    new Promise<void>(done => {
+      void request(server)
+        .post('/shared-wildcard-event')
+        .send([1, 2, 3, 4, 5])
+        .end(() => {
+          setTimeout(() => {
+            expect(MqttController.IS_SHARED_WILDCARD_EVENT_RECEIVED).toBe(true);
+            done();
+          }, 1000);
+        });
+    }));
 
   it(`/POST (shared wildcard MESSAGE #)`, () => {
     return request(server)
@@ -143,17 +146,20 @@ describe('MQTT transport', () => {
       .expect(201, '15');
   });
 
-  it(`/POST (shared wildcard EVENT +)`, done => {
-    void request(server)
-      .post('/shared-wildcard-event2')
-      .send([1, 2, 3, 4, 5])
-      .end(() => {
-        setTimeout(() => {
-          expect(MqttController.IS_SHARED_WILDCARD2_EVENT_RECEIVED).to.be.true;
-          done();
-        }, 1000);
-      });
-  });
+  it(`/POST (shared wildcard EVENT +)`, () =>
+    new Promise<void>(done => {
+      void request(server)
+        .post('/shared-wildcard-event2')
+        .send([1, 2, 3, 4, 5])
+        .end(() => {
+          setTimeout(() => {
+            expect(MqttController.IS_SHARED_WILDCARD2_EVENT_RECEIVED).toBe(
+              true,
+            );
+            done();
+          }, 1000);
+        });
+    }));
 
   it(`/POST (shared wildcard MESSAGE +)`, () => {
     return request(server)

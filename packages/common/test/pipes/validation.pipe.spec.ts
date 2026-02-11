@@ -1,6 +1,3 @@
-import * as chai from 'chai';
-import { expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
 import { Exclude, Expose, Type } from 'class-transformer';
 import {
   IsArray,
@@ -14,7 +11,6 @@ import { HttpStatus } from '../../enums/index.js';
 import { UnprocessableEntityException } from '../../exceptions/index.js';
 import { ArgumentMetadata } from '../../interfaces/index.js';
 import { ValidationPipe } from '../../pipes/validation.pipe.js';
-chai.use(chaiAsPromised);
 
 @Exclude()
 class TestModelInternal {
@@ -73,10 +69,10 @@ describe('ValidationPipe', () => {
       });
       it('should return the value unchanged if optional value is not defined', async () => {
         const testObj = { prop1: 'value1', prop2: 'value2' };
-        expect(await target.transform(testObj, {} as any)).to.equal(testObj);
+        expect(await target.transform(testObj, {} as any)).toBe(testObj);
         expect(
           await target.transform(testObj, metadata as any),
-        ).to.not.be.instanceOf(TestModel);
+        ).not.toBeInstanceOf(TestModel);
       });
       it('should return the value unchanged if optional value is set undefined', async () => {
         const testObj = {
@@ -84,10 +80,10 @@ describe('ValidationPipe', () => {
           prop2: 'value2',
           optionalProp: undefined,
         };
-        expect(await target.transform(testObj, {} as any)).to.equal(testObj);
+        expect(await target.transform(testObj, {} as any)).toBe(testObj);
         expect(
           await target.transform(testObj, metadata as any),
-        ).to.not.be.instanceOf(TestModel);
+        ).not.toBeInstanceOf(TestModel);
       });
       it('should return the value unchanged if optional value is null', async () => {
         const testObj = {
@@ -95,10 +91,10 @@ describe('ValidationPipe', () => {
           prop2: 'value2',
           optionalProp: null,
         };
-        expect(await target.transform(testObj, {} as any)).to.equal(testObj);
+        expect(await target.transform(testObj, {} as any)).toBe(testObj);
         expect(
           await target.transform(testObj, metadata as any),
-        ).to.not.be.instanceOf(TestModel);
+        ).not.toBeInstanceOf(TestModel);
       });
       it('should return the value unchanged if optional value is set', async () => {
         const testObj = {
@@ -106,10 +102,10 @@ describe('ValidationPipe', () => {
           prop2: 'value2',
           optionalProp: 'optional value',
         };
-        expect(await target.transform(testObj, {} as any)).to.equal(testObj);
+        expect(await target.transform(testObj, {} as any)).toBe(testObj);
         expect(
           await target.transform(testObj, metadata as any),
-        ).to.not.be.instanceOf(TestModel);
+        ).not.toBeInstanceOf(TestModel);
       });
     });
     describe('when validation fails', () => {
@@ -118,7 +114,9 @@ describe('ValidationPipe', () => {
       });
       it('should throw an error', async () => {
         const testObj = { prop1: 'value1' };
-        return expect(target.transform(testObj, metadata)).to.be.rejected;
+        return expect(
+          target.transform(testObj, metadata),
+        ).rejects.toBeDefined();
       });
 
       class TestModel2 {
@@ -150,7 +148,7 @@ describe('ValidationPipe', () => {
             metatype: TestModelWithNested,
           });
         } catch (err) {
-          expect(err.getResponse().message).to.be.eql([
+          expect(err.getResponse().message).toEqual([
             'prop must be a string',
             'test.prop1 must be a string',
             'test.prop2 must be a boolean value',
@@ -176,7 +174,7 @@ describe('ValidationPipe', () => {
             metatype: TestModelForNestedArrayValidation,
           });
         } catch (err) {
-          expect(err.getResponse().message).to.be.eql([
+          expect(err.getResponse().message).toEqual([
             'prop must be a string',
             'test.0.prop1 must be a string',
             'test.0.prop2 must be a boolean value',
@@ -188,7 +186,7 @@ describe('ValidationPipe', () => {
       it('should return a TestModel instance', async () => {
         target = new ValidationPipe({ transform: true });
         const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
-        expect(await target.transform(testObj, metadata)).to.be.instanceOf(
+        expect(await target.transform(testObj, metadata)).toBeInstanceOf(
           TestModel,
         );
       });
@@ -203,7 +201,7 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'query',
             }),
-          ).to.be.equal(+value);
+          ).toBe(+value);
         });
         it('should parse undefined to undefined', async () => {
           target = new ValidationPipe({ transform: true });
@@ -215,7 +213,7 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'query',
             }),
-          ).to.be.undefined;
+          ).toBeUndefined();
         });
       });
       describe('when input is a path parameter (number)', () => {
@@ -229,7 +227,7 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'param',
             }),
-          ).to.be.equal(+value);
+          ).toBe(+value);
         });
         it('should parse undefined to undefined', async () => {
           target = new ValidationPipe({ transform: true });
@@ -241,7 +239,7 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'param',
             }),
-          ).to.be.undefined;
+          ).toBeUndefined();
         });
       });
       describe('when input is a query parameter (boolean)', () => {
@@ -255,7 +253,7 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'query',
             }),
-          ).to.be.true;
+          ).toBe(true);
         });
         it('should parse the string "false" to the boolean false', async () => {
           target = new ValidationPipe({ transform: true });
@@ -267,7 +265,7 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'query',
             }),
-          ).to.be.false;
+          ).toBe(false);
         });
         it('should parse an empty string to false', async () => {
           target = new ValidationPipe({ transform: true });
@@ -279,7 +277,7 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'query',
             }),
-          ).to.be.false;
+          ).toBe(false);
         });
         it('should parse undefined to undefined', async () => {
           target = new ValidationPipe({ transform: true });
@@ -291,7 +289,7 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'query',
             }),
-          ).to.be.undefined;
+          ).toBeUndefined();
         });
       });
       describe('when input is a path parameter (boolean)', () => {
@@ -305,7 +303,7 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'param',
             }),
-          ).to.be.true;
+          ).toBe(true);
         });
         it('should parse the string "false" to boolean false', async () => {
           target = new ValidationPipe({ transform: true });
@@ -317,7 +315,7 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'param',
             }),
-          ).to.be.false;
+          ).toBe(false);
         });
         it('should parse an empty string to false', async () => {
           target = new ValidationPipe({ transform: true });
@@ -329,7 +327,7 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'param',
             }),
-          ).to.be.false;
+          ).toBe(false);
         });
         it('should parse undefined to undefined', async () => {
           target = new ValidationPipe({ transform: true });
@@ -341,19 +339,19 @@ describe('ValidationPipe', () => {
               data: 'test',
               type: 'param',
             }),
-          ).to.be.undefined;
+          ).toBeUndefined();
         });
       });
       describe('when validation strips', () => {
         it('should return a TestModel without extra properties', async () => {
           target = new ValidationPipe({ whitelist: true });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
-          expect(
-            await target.transform(testObj, metadata),
-          ).to.not.be.instanceOf(TestModel);
-          expect(
-            await target.transform(testObj, metadata),
-          ).to.not.have.property('prop3');
+          expect(await target.transform(testObj, metadata)).not.toBeInstanceOf(
+            TestModel,
+          );
+          expect(await target.transform(testObj, metadata)).not.toHaveProperty(
+            'prop3',
+          );
         });
       });
       describe('when validation rejects', () => {
@@ -363,7 +361,7 @@ describe('ValidationPipe', () => {
             whitelist: true,
           });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
-          expect(target.transform(testObj, metadata)).to.eventually.be.rejected;
+          expect(target.transform(testObj, metadata)).rejects.toBeDefined();
         });
       });
       describe('when transformation is internal', () => {
@@ -379,7 +377,7 @@ describe('ValidationPipe', () => {
           };
           expect(
             await target.transform(testObj, transformMetadata),
-          ).to.have.property('propInternal');
+          ).toHaveProperty('propInternal');
         });
       });
       describe('when transformation is external', () => {
@@ -395,7 +393,7 @@ describe('ValidationPipe', () => {
           };
           expect(
             await target.transform(testObj, transformMetadata),
-          ).to.not.have.property('propInternal');
+          ).not.toHaveProperty('propInternal');
         });
       });
     });
@@ -406,9 +404,9 @@ describe('ValidationPipe', () => {
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
           const result = await target.transform(testObj, metadata);
 
-          expect(result).to.not.be.instanceOf(TestModel);
-          expect(result).to.not.have.property('prop3');
-          expect(result).to.not.have.property('optionalProp');
+          expect(result).not.toBeInstanceOf(TestModel);
+          expect(result).not.toHaveProperty('prop3');
+          expect(result).not.toHaveProperty('optionalProp');
         });
         it('should return a plain object without extra properties if optional prop is defined', async () => {
           target = new ValidationPipe({ transform: false, whitelist: true });
@@ -419,9 +417,9 @@ describe('ValidationPipe', () => {
             optionalProp: 'optional value',
           };
           const result = await target.transform(testObj, metadata);
-          expect(result).to.not.be.instanceOf(TestModel);
-          expect(result).to.not.have.property('prop3');
-          expect(result).to.have.property('optionalProp');
+          expect(result).not.toBeInstanceOf(TestModel);
+          expect(result).not.toHaveProperty('prop3');
+          expect(result).toHaveProperty('optionalProp');
         });
         it('should return a plain object without extra properties if optional prop is undefined', async () => {
           target = new ValidationPipe({ transform: false, whitelist: true });
@@ -432,9 +430,9 @@ describe('ValidationPipe', () => {
             optionalProp: undefined,
           };
           const result = await target.transform(testObj, metadata);
-          expect(result).to.not.be.instanceOf(TestModel);
-          expect(result).to.not.have.property('prop3');
-          expect(result).to.have.property('optionalProp');
+          expect(result).not.toBeInstanceOf(TestModel);
+          expect(result).not.toHaveProperty('prop3');
+          expect(result).toHaveProperty('optionalProp');
         });
         it('should return a plain object without extra properties if optional prop is null', async () => {
           target = new ValidationPipe({ transform: false, whitelist: true });
@@ -446,9 +444,9 @@ describe('ValidationPipe', () => {
           };
 
           const result = await target.transform(testObj, metadata);
-          expect(result).to.not.be.instanceOf(TestModel);
-          expect(result).to.not.have.property('prop3');
-          expect(result).to.have.property('optionalProp');
+          expect(result).not.toBeInstanceOf(TestModel);
+          expect(result).not.toHaveProperty('prop3');
+          expect(result).toHaveProperty('optionalProp');
         });
       });
       describe('when validation rejects', () => {
@@ -459,7 +457,7 @@ describe('ValidationPipe', () => {
             whitelist: true,
           });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
-          expect(target.transform(testObj, metadata)).to.eventually.be.rejected;
+          expect(target.transform(testObj, metadata)).rejects.toBeDefined();
         });
       });
     });
@@ -471,11 +469,10 @@ describe('ValidationPipe', () => {
             { prop1: 'value1', prop2: 'value2', prop3: 'value3' },
           ];
 
-          expect(target.transform(testObj, metadata)).to.eventually.be.rejected;
-          expect(target.transform('string', metadata)).to.eventually.be
-            .rejected;
-          expect(target.transform(true, metadata)).to.eventually.be.rejected;
-          expect(target.transform(3, metadata)).to.eventually.be.rejected;
+          expect(target.transform(testObj, metadata)).rejects.toBeDefined();
+          expect(target.transform('string', metadata)).rejects.toBeDefined();
+          expect(target.transform(true, metadata)).rejects.toBeDefined();
+          expect(target.transform(3, metadata)).rejects.toBeDefined();
         });
       });
       describe('otherwise', () => {
@@ -488,15 +485,15 @@ describe('ValidationPipe', () => {
           const objMetadata = { ...metadata, metatype: TestModelNoValidation };
           const result = await target.transform(testObj, objMetadata);
 
-          expect(result).to.not.be.instanceOf(TestModel);
-          expect(result).to.be.eql(testObj);
+          expect(result).not.toBeInstanceOf(TestModel);
+          expect(result).toEqual(testObj);
 
           // primitives
-          expect(await target.transform('string', objMetadata)).to.be.eql(
+          expect(await target.transform('string', objMetadata)).toEqual(
             'string',
           );
-          expect(await target.transform(3, objMetadata)).to.be.eql(3);
-          expect(await target.transform(true, objMetadata)).to.be.eql(true);
+          expect(await target.transform(3, objMetadata)).toEqual(3);
+          expect(await target.transform(true, objMetadata)).toEqual(true);
         });
       });
     });
@@ -516,7 +513,7 @@ describe('ValidationPipe', () => {
         };
 
         const testObj = { prop1: 'value1', prop2: 'value2' };
-        expect(await target.transform(testObj, metadata)).to.not.be.undefined;
+        expect(await target.transform(testObj, metadata)).not.toBeUndefined();
       });
     });
     describe('when is set to `false`', () => {
@@ -547,7 +544,7 @@ describe('ValidationPipe', () => {
         };
 
         const testObj = { prop1: 'value1', prop2: 'value2' };
-        expect(await target.transform(testObj, metadata)).to.not.be.undefined;
+        expect(await target.transform(testObj, metadata)).not.toBeUndefined();
       });
     });
   });
@@ -564,7 +561,7 @@ describe('ValidationPipe', () => {
         try {
           await target.transform(testObj, metadata);
         } catch (err) {
-          expect(err).to.be.instanceOf(UnprocessableEntityException);
+          expect(err).toBeInstanceOf(UnprocessableEntityException);
         }
       });
     });
@@ -593,7 +590,7 @@ describe('ValidationPipe', () => {
       target = new ValidationPipe({ expectedType: TestModel });
       const testObj = { prop1: 'value1', prop2: 'value2' };
 
-      expect(await target.transform(testObj, m)).to.deep.equal(testObj);
+      expect(await target.transform(testObj, m)).toEqual(testObj);
     });
 
     it('should validate against the expected type if presented and metatype is primitive type', async () => {
@@ -606,7 +603,7 @@ describe('ValidationPipe', () => {
       target = new ValidationPipe({ expectedType: TestModel });
       const testObj = { prop1: 'value1', prop2: 'value2' };
 
-      expect(await target.transform(testObj, m)).to.deep.equal(testObj);
+      expect(await target.transform(testObj, m)).toEqual(testObj);
     });
   });
   describe('stripProtoKeys', () => {
@@ -617,35 +614,35 @@ describe('ValidationPipe', () => {
     describe('with built-in JavaScript primitives', () => {
       it('should not throw error when processing Date objects', () => {
         const value = { date: new Date() };
-        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+        expect(() => target['stripProtoKeys'](value)).not.toThrow();
       });
 
       it('should not throw error when processing RegExp objects', () => {
         const value = { regex: /test/i };
-        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+        expect(() => target['stripProtoKeys'](value)).not.toThrow();
       });
 
       it('should not throw error when processing Error objects', () => {
         const value = { error: new Error('test') };
-        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+        expect(() => target['stripProtoKeys'](value)).not.toThrow();
       });
 
       it('should not throw error when processing Map objects', () => {
         const value = { map: new Map() };
-        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+        expect(() => target['stripProtoKeys'](value)).not.toThrow();
       });
 
       it('should not throw error when processing Set objects', () => {
         const value = { set: new Set() };
-        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+        expect(() => target['stripProtoKeys'](value)).not.toThrow();
       });
 
       it('should preserve Date object properties', () => {
         const date = new Date();
         const value = { date };
         target['stripProtoKeys'](value);
-        expect(value.date).to.equal(date);
-        expect(value.date.constructor).to.equal(Date);
+        expect(value.date).toBe(date);
+        expect(value.date.constructor).toBe(Date);
       });
     });
 
@@ -654,19 +651,19 @@ describe('ValidationPipe', () => {
         const value = { nested: { constructor: 'malicious' } };
         target['stripProtoKeys'](value);
         // Check if 'constructor' is NOT an own property
-        expect(value.nested).to.not.have.ownProperty('constructor');
+        expect(value.nested).not.toHaveProperty('constructor');
       });
 
       it('should strip __proto__ from objects', () => {
         const value = { __proto__: { malicious: 'code' } };
         target['stripProtoKeys'](value);
-        expect(value).to.not.have.ownProperty('__proto__');
+        expect(value).not.toHaveProperty('__proto__');
       });
 
       it('should strip prototype from objects', () => {
         const value = { prototype: { malicious: 'code' } };
         target['stripProtoKeys'](value);
-        expect(value).to.not.have.ownProperty('prototype');
+        expect(value).not.toHaveProperty('prototype');
       });
 
       it('should recursively strip nested objects', () => {
@@ -679,8 +676,8 @@ describe('ValidationPipe', () => {
           },
         };
         target['stripProtoKeys'](value);
-        expect(value.level1).to.not.have.ownProperty('constructor');
-        expect(value.level1.level2).to.not.have.ownProperty('constructor');
+        expect(value.level1).not.toHaveProperty('constructor');
+        expect(value.level1.level2).not.toHaveProperty('constructor');
       });
     });
 
@@ -693,13 +690,13 @@ describe('ValidationPipe', () => {
           ],
         };
         target['stripProtoKeys'](value);
-        expect(value.items[0]).to.not.have.ownProperty('constructor');
-        expect(value.items[1]).to.not.have.ownProperty('constructor');
+        expect(value.items[0]).not.toHaveProperty('constructor');
+        expect(value.items[1]).not.toHaveProperty('constructor');
       });
 
       it('should not throw error when array contains Date objects', () => {
         const value = { dates: [new Date(), new Date()] };
-        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+        expect(() => target['stripProtoKeys'](value)).not.toThrow();
       });
     });
 
@@ -720,7 +717,7 @@ describe('ValidationPipe', () => {
         });
 
         // This should NOT throw "Cannot delete property 'constructor'"
-        expect(() => target['stripProtoKeys'](value)).to.not.throw();
+        expect(() => target['stripProtoKeys'](value)).not.toThrow();
       });
 
       it('should not attempt to delete constructor from built-in types', () => {
@@ -733,7 +730,7 @@ describe('ValidationPipe', () => {
         ];
 
         testCases.forEach(testCase => {
-          expect(() => target['stripProtoKeys'](testCase)).to.not.throw();
+          expect(() => target['stripProtoKeys'](testCase)).not.toThrow();
         });
       });
     });

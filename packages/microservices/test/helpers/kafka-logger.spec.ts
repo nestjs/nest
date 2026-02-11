@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { logLevel } from '../../external/kafka.interface.js';
 import { KafkaLogger } from '../../helpers/kafka-logger.js';
 
@@ -15,17 +13,17 @@ const entry = {
 describe('KafkaLogger', () => {
   let kafkaLogger: any;
 
-  let error: sinon.SinonSpy;
-  let warn: sinon.SinonSpy;
-  let log: sinon.SinonSpy;
-  let debug: sinon.SinonSpy;
+  let error: ReturnType<typeof vi.fn>;
+  let warn: ReturnType<typeof vi.fn>;
+  let log: ReturnType<typeof vi.fn>;
+  let debug: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     // set
-    error = sinon.spy();
-    warn = sinon.spy();
-    log = sinon.spy();
-    debug = sinon.spy();
+    error = vi.fn();
+    warn = vi.fn();
+    log = vi.fn();
+    debug = vi.fn();
 
     kafkaLogger = KafkaLogger({
       error,
@@ -43,8 +41,8 @@ describe('KafkaLogger', () => {
       log: entry,
     });
 
-    expect(error.calledOnce).to.be.true;
-    expect(error.args[0][0]).to.eq(
+    expect(error).toHaveBeenCalledOnce();
+    expect(error.mock.calls[0][0]).to.eq(
       'label [namespace] message {"other":{"stuff":"here"}}',
     );
   });
@@ -57,7 +55,7 @@ describe('KafkaLogger', () => {
       log: entry,
     });
 
-    expect(error.calledOnce).to.be.true;
+    expect(error).toHaveBeenCalledOnce();
   });
 
   it('warn', () => {
@@ -68,7 +66,7 @@ describe('KafkaLogger', () => {
       log: entry,
     });
 
-    expect(warn.calledOnce).to.be.true;
+    expect(warn).toHaveBeenCalledOnce();
   });
 
   it('info', () => {
@@ -79,7 +77,7 @@ describe('KafkaLogger', () => {
       log: entry,
     });
 
-    expect(log.calledOnce).to.be.true;
+    expect(log).toHaveBeenCalledOnce();
   });
 
   it('debug', () => {
@@ -90,6 +88,6 @@ describe('KafkaLogger', () => {
       log: entry,
     });
 
-    expect(debug.calledOnce).to.be.true;
+    expect(debug).toHaveBeenCalledOnce();
   });
 });

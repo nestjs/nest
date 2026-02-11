@@ -1,6 +1,4 @@
-import { expect } from 'chai';
 import { headers as createHeaders, JSONCodec } from 'nats';
-import * as sinon from 'sinon';
 import { ClientNats } from '../../client/client-nats.js';
 import { ReadPacket } from '../../interfaces/index.js';
 import { NatsRecord } from '../../record-builders/index.js';
@@ -14,14 +12,14 @@ describe('ClientNats', () => {
     const pattern = 'test';
     const id = 3;
 
-    let subscribeSpy: sinon.SinonSpy,
-      publishSpy: sinon.SinonSpy,
-      removeListenerSpy: sinon.SinonSpy,
-      unsubscribeSpy: sinon.SinonSpy,
-      connectSpy: sinon.SinonStub,
+    let subscribeSpy: ReturnType<typeof vi.fn>,
+      publishSpy: ReturnType<typeof vi.fn>,
+      removeListenerSpy: ReturnType<typeof vi.fn>,
+      unsubscribeSpy: ReturnType<typeof vi.fn>,
+      connectSpy: ReturnType<typeof vi.fn>,
       natsClient: any,
       subscription: any,
-      createClient: sinon.SinonStub;
+      createClient: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
       client = new ClientNats({});
@@ -31,13 +29,13 @@ describe('ClientNats', () => {
       await client.createClient().catch(() => {});
 
       msg = { pattern, data: 'data' };
-      unsubscribeSpy = sinon.spy();
+      unsubscribeSpy = vi.fn();
       subscription = {
         unsubscribe: unsubscribeSpy,
       };
-      subscribeSpy = sinon.spy(() => subscription);
-      publishSpy = sinon.spy();
-      removeListenerSpy = sinon.spy();
+      subscribeSpy = vi.fn().mockReturnValue(subscription);
+      publishSpy = vi.fn();
+      removeListenerSpy = vi.fn();
 
       natsClient = {
         subscribe: subscribeSpy,
@@ -47,68 +45,70 @@ describe('ClientNats', () => {
       };
       untypedClient.natsClient = natsClient;
 
-      connectSpy = sinon.stub(client, 'connect').callsFake(async () => {
+      connectSpy = vi.spyOn(client, 'connect').mockImplementation(async () => {
         untypedClient.natsClient = natsClient;
       });
-      createClient = sinon
-        .stub(client, 'createClient')
-        .callsFake(async () => untypedClient);
+      createClient = vi
+        .spyOn(client, 'createClient')
+        .mockImplementation(async () => untypedClient);
     });
     afterEach(() => {
-      connectSpy.restore();
-      createClient.restore();
+      connectSpy.mockRestore();
+      createClient.mockRestore();
     });
     it('should publish stringified message to pattern name', () => {
       client['publish'](msg, () => {});
-      expect(publishSpy.getCall(0).args[0]).to.be.eql(pattern);
+      expect(publishSpy.mock.calls[0][0]).toEqual(pattern);
     });
     describe('on error', () => {
-      let assignPacketIdStub: sinon.SinonStub;
+      let assignPacketIdStub: ReturnType<typeof vi.fn>;
       beforeEach(() => {
-        assignPacketIdStub = sinon
-          .stub(client, 'assignPacketId' as any)
-          .callsFake(() => {
+        assignPacketIdStub = vi
+          .spyOn(client, 'assignPacketId' as any)
+          .mockImplementation(() => {
             throw new Error();
           });
       });
       afterEach(() => {
-        assignPacketIdStub.restore();
+        assignPacketIdStub.mockRestore();
       });
 
       it('should call callback', () => {
-        const callback = sinon.spy();
+        const callback = vi.fn();
         client['publish'](msg, callback);
 
-        expect(callback.called).to.be.true;
-        expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
+        expect(callback).toHaveBeenCalled();
+        expect(callback.mock.calls[0][0].err).toBeInstanceOf(Error);
       });
     });
     describe('dispose callback', () => {
-      let assignStub: sinon.SinonStub;
-      let callback: sinon.SinonSpy, subscription;
+      let assignStub: ReturnType<typeof vi.fn>;
+      let callback: ReturnType<typeof vi.fn>, subscription;
 
       beforeEach(async () => {
-        callback = sinon.spy();
-        assignStub = sinon
-          .stub(client, 'assignPacketId' as any)
-          .callsFake(packet => Object.assign(packet as object, { id }));
+        callback = vi.fn();
+        assignStub = vi
+          .spyOn(client, 'assignPacketId' as any)
+          .mockImplementation(packet =>
+            Object.assign(packet as object, { id }),
+          );
 
         subscription = client['publish'](msg, callback);
         subscription();
       });
       afterEach(() => {
-        assignStub.restore();
+        assignStub.mockRestore();
       });
 
       it('should unsubscribe', () => {
-        expect(unsubscribeSpy.called).to.be.true;
+        expect(unsubscribeSpy).toHaveBeenCalled();
       });
     });
 
     describe('headers', () => {
       it('should not generate headers if none are configured', () => {
         client['publish'](msg, () => {});
-        expect(natsClient.publish.getCall(0).args[2].headers).to.be.undefined;
+        expect(natsClient.publish.mock.calls[0][2].headers).toBeUndefined();
       });
 
       it('should send packet headers', () => {
@@ -117,7 +117,7 @@ describe('ClientNats', () => {
         msg.data = new NatsRecord('data', requestHeaders);
 
         client['publish'](msg, () => {});
-        expect(natsClient.publish.getCall(0).args[2].headers.get('1')).to.eql(
+        expect(natsClient.publish.mock.calls[0][2].headers.get('1')).toEqual(
           '123',
         );
       });
@@ -130,10 +130,10 @@ describe('ClientNats', () => {
         msg.data = new NatsRecord('data', requestHeaders);
 
         client['publish'](msg, () => {});
-        expect(publishSpy.getCall(0).args[2].headers.get('client-id')).to.eql(
+        expect(publishSpy.mock.calls[0][2].headers.get('client-id')).toEqual(
           'some-client-id',
         );
-        expect(publishSpy.getCall(0).args[2].headers.get('1')).to.eql('123');
+        expect(publishSpy.mock.calls[0][2].headers.get('1')).toEqual('123');
       });
 
       it('should prefer packet headers over static headers', () => {
@@ -145,7 +145,7 @@ describe('ClientNats', () => {
         msg.data = new NatsRecord('data', requestHeaders);
 
         client['publish'](msg, () => {});
-        expect(publishSpy.getCall(0).args[2].headers.get('client-id')).to.eql(
+        expect(publishSpy.mock.calls[0][2].headers.get('client-id')).toEqual(
           'override-client-id',
         );
       });
@@ -163,27 +163,25 @@ describe('ClientNats', () => {
       data: JSONCodec().encode(responseMessage),
     };
 
-    let callback: sinon.SinonSpy, subscription;
+    let callback: ReturnType<typeof vi.fn>, subscription;
 
     describe('not completed', () => {
       beforeEach(async () => {
-        callback = sinon.spy();
+        callback = vi.fn();
 
         subscription = client.createSubscriptionHandler(msg, callback);
         await subscription(undefined, natsMessage);
       });
       it('should call callback with expected arguments', () => {
-        expect(
-          callback.calledWith({
-            err: undefined,
-            response: responseMessage.response,
-          }),
-        ).to.be.true;
+        expect(callback).toHaveBeenCalledWith({
+          err: undefined,
+          response: responseMessage.response,
+        });
       });
     });
     describe('disposed and "id" is correct', () => {
       beforeEach(async () => {
-        callback = sinon.spy();
+        callback = vi.fn();
         subscription = client.createSubscriptionHandler(msg, callback);
         await subscription(undefined, {
           data: JSONCodec().encode({
@@ -194,19 +192,16 @@ describe('ClientNats', () => {
       });
 
       it('should call callback with dispose param', () => {
-        expect(callback.called).to.be.true;
-        expect(
-          callback.calledWith({
-            isDisposed: true,
-            response: responseMessage.response,
-            err: undefined,
-          }),
-        ).to.be.true;
+        expect(callback).toHaveBeenCalledWith({
+          isDisposed: true,
+          response: responseMessage.response,
+          err: undefined,
+        });
       });
     });
     describe('disposed and "id" is incorrect', () => {
       beforeEach(async () => {
-        callback = sinon.spy();
+        callback = vi.fn();
         subscription = client.createSubscriptionHandler(
           {
             ...msg,
@@ -223,39 +218,39 @@ describe('ClientNats', () => {
       });
 
       it('should not call callback', () => {
-        expect(callback.called).to.be.false;
+        expect(callback).not.toHaveBeenCalled();
       });
     });
   });
   describe('close', () => {
-    let natsClose: sinon.SinonSpy;
+    let natsClose: ReturnType<typeof vi.fn>;
     let natsClient: any;
 
     beforeEach(() => {
-      natsClose = sinon.spy();
+      natsClose = vi.fn();
       natsClient = { close: natsClose };
       untypedClient.natsClient = natsClient;
     });
     it('should close "natsClient" when it is not null', async () => {
       await client.close();
-      expect(natsClose.called).to.be.true;
+      expect(natsClose).toHaveBeenCalled();
     });
   });
   describe('connect', () => {
-    let createClientSpy: sinon.SinonSpy;
-    let handleStatusUpdatesSpy: sinon.SinonSpy;
+    let createClientSpy: ReturnType<typeof vi.fn>;
+    let handleStatusUpdatesSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-      createClientSpy = sinon
-        .stub(client, 'createClient')
-        .callsFake(() => Promise.resolve({}));
-      handleStatusUpdatesSpy = sinon.spy(client, 'handleStatusUpdates');
+      createClientSpy = vi
+        .spyOn(client, 'createClient')
+        .mockImplementation(() => Promise.resolve({}));
+      handleStatusUpdatesSpy = vi.spyOn(client, 'handleStatusUpdates');
 
       await client.connect();
     });
     afterEach(() => {
-      createClientSpy.restore();
-      handleStatusUpdatesSpy.restore();
+      createClientSpy.mockRestore();
+      handleStatusUpdatesSpy.mockRestore();
     });
     describe('when is not connected', () => {
       beforeEach(async () => {
@@ -264,10 +259,10 @@ describe('ClientNats', () => {
         await client.connect();
       });
       it('should call "handleStatusUpdatesSpy" once', async () => {
-        expect(handleStatusUpdatesSpy.called).to.be.true;
+        expect(handleStatusUpdatesSpy).toHaveBeenCalled();
       });
       it('should call "createClient" once', async () => {
-        expect(createClientSpy.called).to.be.true;
+        expect(createClientSpy).toHaveBeenCalled();
       });
     });
     describe('when is connected', () => {
@@ -276,28 +271,30 @@ describe('ClientNats', () => {
         client['connection'] = Promise.resolve(true);
       });
       it('should not call "createClient"', () => {
-        expect(createClientSpy.called).to.be.false;
+        expect(createClientSpy).not.toHaveBeenCalled();
       });
       it('should not call "handleStatusUpdatesSpy"', () => {
-        expect(handleStatusUpdatesSpy.called).to.be.false;
+        expect(handleStatusUpdatesSpy).not.toHaveBeenCalled();
       });
     });
   });
   describe('handleStatusUpdates', () => {
     it('should retrieve "status()" async iterator', () => {
       const clientMock = {
-        status: sinon.stub().returns({
-          [Symbol.asyncIterator]: [],
+        status: vi.fn().mockReturnValue({
+          async *[Symbol.asyncIterator]() {
+            // empty iterator
+          },
         }),
       };
       void client.handleStatusUpdates(clientMock as any);
-      expect(clientMock.status.called).to.be.true;
+      expect(clientMock.status).toHaveBeenCalled();
     });
 
     it('should log "disconnect" and "error" statuses as "errors"', async () => {
-      const logErrorSpy = sinon.spy(untypedClient.logger, 'error');
+      const logErrorSpy = vi.spyOn(untypedClient.logger, 'error');
       const clientMock = {
-        status: sinon.stub().returns({
+        status: vi.fn().mockReturnValue({
           async *[Symbol.asyncIterator]() {
             yield { type: 'disconnect', data: 'localhost' };
             yield { type: 'error', data: {} };
@@ -305,20 +302,18 @@ describe('ClientNats', () => {
         }),
       };
       await client.handleStatusUpdates(clientMock as any);
-      expect(logErrorSpy.calledTwice).to.be.true;
-      expect(
-        logErrorSpy.calledWith(
-          `NatsError: type: "disconnect", data: "localhost".`,
-        ),
+      expect(logErrorSpy).toHaveBeenCalledTimes(2);
+      expect(logErrorSpy).toHaveBeenCalledWith(
+        'NatsError: type: "disconnect", data: "localhost".',
       );
-      expect(
-        logErrorSpy.calledWith(`NatsError: type: "disconnect", data: "{}".`),
+      expect(logErrorSpy).toHaveBeenCalledWith(
+        'NatsError: type: "error", data: "{}".',
       );
     });
     it('should log other statuses as "logs"', async () => {
-      const logSpy = sinon.spy(untypedClient.logger, 'log');
+      const logSpy = vi.spyOn(untypedClient.logger, 'log');
       const clientMock = {
-        status: sinon.stub().returns({
+        status: vi.fn().mockReturnValue({
           async *[Symbol.asyncIterator]() {
             yield { type: 'non-disconnect', data: 'localhost' };
             yield { type: 'warn', data: {} };
@@ -326,18 +321,18 @@ describe('ClientNats', () => {
         }),
       };
       await client.handleStatusUpdates(clientMock as any);
-      expect(logSpy.calledTwice).to.be.true;
-      expect(
-        logSpy.calledWith(
-          `NatsStatus: type: "non-disconnect", data: "localhost".`,
-        ),
+      expect(logSpy).toHaveBeenCalledTimes(2);
+      expect(logSpy).toHaveBeenCalledWith(
+        'NatsStatus: type: "non-disconnect", data: "localhost".',
       );
-      expect(logSpy.calledWith(`NatsStatus: type: "warn", data: "{}".`));
+      expect(logSpy).toHaveBeenCalledWith(
+        'NatsStatus: type: "warn", data: "{}".',
+      );
     });
   });
   describe('dispatchEvent', () => {
     let msg: ReadPacket;
-    let subscribeStub: sinon.SinonStub, natsClient: any;
+    let subscribeStub: ReturnType<typeof vi.fn>, natsClient: any;
 
     beforeEach(async () => {
       client = new ClientNats({});
@@ -347,11 +342,11 @@ describe('ClientNats', () => {
       await client.createClient().catch(() => {});
 
       msg = { pattern: 'pattern', data: 'data' };
-      subscribeStub = sinon
-        .stub()
-        .callsFake((channel, options) => options.callback());
+      subscribeStub = vi
+        .fn()
+        .mockImplementation((channel, options) => options.callback());
       natsClient = {
-        publish: sinon.spy(),
+        publish: vi.fn(),
         subscribe: subscribeStub,
       };
       untypedClient.natsClient = natsClient;
@@ -360,22 +355,22 @@ describe('ClientNats', () => {
     it('should publish packet', async () => {
       await client['dispatchEvent'](msg);
 
-      expect(natsClient.publish.called).to.be.true;
+      expect(natsClient.publish).toHaveBeenCalled();
     });
 
     it('should throw error', async () => {
-      subscribeStub.callsFake((channel, options) =>
+      subscribeStub.mockImplementation((channel, options) =>
         options.callback(new Error()),
       );
       await client['dispatchEvent'](msg).catch(err =>
-        expect(err).to.be.instanceOf(Error),
+        expect(err).toBeInstanceOf(Error),
       );
     });
 
     describe('headers', () => {
       it('should not generate headers if none are configured', async () => {
         await client['dispatchEvent'](msg);
-        expect(natsClient.publish.getCall(0).args[2].headers).to.be.undefined;
+        expect(natsClient.publish.mock.calls[0][2].headers).toBeUndefined();
       });
 
       it('should send packet headers', async () => {
@@ -384,7 +379,7 @@ describe('ClientNats', () => {
         msg.data = new NatsRecord('data', requestHeaders);
 
         await client['dispatchEvent'](msg);
-        expect(natsClient.publish.getCall(0).args[2].headers.get('1')).to.eql(
+        expect(natsClient.publish.mock.calls[0][2].headers.get('1')).toEqual(
           '123',
         );
       });
@@ -399,9 +394,9 @@ describe('ClientNats', () => {
 
         await client['dispatchEvent'](msg);
         expect(
-          natsClient.publish.getCall(0).args[2].headers.get('client-id'),
-        ).to.eql('some-client-id');
-        expect(natsClient.publish.getCall(0).args[2].headers.get('1')).to.eql(
+          natsClient.publish.mock.calls[0][2].headers.get('client-id'),
+        ).toEqual('some-client-id');
+        expect(natsClient.publish.mock.calls[0][2].headers.get('1')).toEqual(
           '123',
         );
       });
@@ -416,8 +411,8 @@ describe('ClientNats', () => {
 
         await client['dispatchEvent'](msg);
         expect(
-          natsClient.publish.getCall(0).args[2].headers.get('client-id'),
-        ).to.eql('override-client-id');
+          natsClient.publish.mock.calls[0][2].headers.get('client-id'),
+        ).toEqual('override-client-id');
       });
     });
   });

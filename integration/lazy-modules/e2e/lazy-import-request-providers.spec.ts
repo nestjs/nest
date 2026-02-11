@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import request from 'supertest';
 import { LazyController } from '../src/lazy.controller.js';
 
@@ -19,12 +18,12 @@ describe('Lazy Requested Scoped providers', () => {
   it('should not recreate dependencies for default scope', async () => {
     const resultOne = await request(app.getHttpServer()).get('/lazy/request');
 
-    expect(resultOne.text).to.be.equal('Hi! Counter is 1');
-    expect(resultOne.statusCode).to.be.equal(200);
+    expect(resultOne.text).toBe('Hi! Counter is 1');
+    expect(resultOne.statusCode).toBe(200);
 
     const resultTwo = await request(app.getHttpServer()).get('/lazy/request');
 
-    expect(resultTwo.text).to.be.equal('Hi! Counter is 2');
-    expect(resultTwo.statusCode).to.be.equal(200);
+    expect(resultTwo.text).toBe('Hi! Counter is 2');
+    expect(resultTwo.statusCode).toBe(200);
   });
 });

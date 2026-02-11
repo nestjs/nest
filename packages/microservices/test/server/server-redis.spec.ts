@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { RedisContext } from '../../ctx-host/index.js';
@@ -15,49 +13,49 @@ describe('ServerRedis', () => {
     untypedServer = server as any;
   });
   describe('listen', () => {
-    let onSpy: sinon.SinonSpy;
-    let connectSpy: sinon.SinonSpy;
+    let onSpy: ReturnType<typeof vi.fn>;
+    let connectSpy: ReturnType<typeof vi.fn>;
     let client: any;
-    let callbackSpy: sinon.SinonSpy;
+    let callbackSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      onSpy = sinon.spy();
-      connectSpy = sinon.spy();
+      onSpy = vi.fn();
+      connectSpy = vi.fn();
 
       client = {
         on: onSpy,
         connect: connectSpy,
       };
-      sinon
-        .stub(server, 'createRedisClient')
-        .callsFake(() => Promise.resolve(client));
+      vi.spyOn(server, 'createRedisClient').mockImplementation(() =>
+        Promise.resolve(client),
+      );
 
-      callbackSpy = sinon.spy();
+      callbackSpy = vi.fn();
     });
     it('should bind "error" event to handler', async () => {
       await server.listen(callbackSpy);
-      expect(onSpy.getCall(0).args[0]).to.be.equal('error');
+      expect(onSpy.mock.calls[0][0]).toBe('error');
     });
     it('should call "RedisClient#connect()"', async () => {
       await server.listen(callbackSpy);
-      expect(connectSpy.called).to.be.true;
+      expect(connectSpy).toHaveBeenCalled();
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
 
-        const callbackSpy = sinon.spy();
-        sinon.stub(server, 'start').callsFake(() => {
+        const callbackSpy = vi.fn();
+        vi.spyOn(server, 'start').mockImplementation(() => {
           throw error;
         });
         await server.listen(callbackSpy);
-        expect(callbackSpy.calledWith(error)).to.be.true;
+        expect(callbackSpy).toHaveBeenCalledWith(error);
       });
     });
   });
   describe('close', () => {
-    const pub = { quit: sinon.spy() };
-    const sub = { quit: sinon.spy() };
+    const pub = { quit: vi.fn() };
+    const sub = { quit: vi.fn() };
     beforeEach(() => {
       untypedServer.pubClient = pub;
       untypedServer.subClient = sub;
@@ -65,16 +63,19 @@ describe('ServerRedis', () => {
     it('should close pub & sub server', async () => {
       await server.close();
 
-      expect(pub.quit.calledOnce).to.be.true;
-      expect(sub.quit.calledOnce).to.be.true;
+      expect(pub.quit).toHaveBeenCalledOnce();
+      expect(sub.quit).toHaveBeenCalledOnce();
     });
   });
   describe('handleConnection', () => {
-    let onSpy: sinon.SinonSpy, subscribeSpy: sinon.SinonSpy, sub, psub;
+    let onSpy: ReturnType<typeof vi.fn>,
+      subscribeSpy: ReturnType<typeof vi.fn>,
+      sub,
+      psub;
 
     beforeEach(() => {
-      onSpy = sinon.spy();
-      subscribeSpy = sinon.spy();
+      onSpy = vi.fn();
+      subscribeSpy = vi.fn();
       sub = {
         on: onSpy,
         subscribe: subscribeSpy,
@@ -86,24 +87,24 @@ describe('ServerRedis', () => {
     });
     it('should bind "message" event to handler if wildcards are disabled', () => {
       server.bindEvents(sub, null);
-      expect(onSpy.getCall(0).args[0]).to.be.equal('message');
+      expect(onSpy.mock.calls[0][0]).toBe('message');
     });
     it('should bind "pmessage" event to handler if wildcards are enabled', () => {
       untypedServer.options = {};
       untypedServer.options.wildcards = true;
 
       server.bindEvents(psub, null);
-      expect(onSpy.getCall(0).args[0]).to.be.equal('pmessage');
+      expect(onSpy.mock.calls[0][0]).toBe('pmessage');
     });
 
     it('should "subscribe" to each pattern if wildcards are disabled', () => {
       const pattern = 'test';
-      const handler = sinon.spy();
+      const handler = vi.fn();
       untypedServer.messageHandlers = objectToMap({
         [pattern]: handler,
       });
       server.bindEvents(sub, null);
-      expect(subscribeSpy.calledWith(pattern)).to.be.true;
+      expect(subscribeSpy).toHaveBeenCalledWith(pattern);
     });
 
     it('should "psubscribe" to each pattern if wildcards are enabled', () => {
@@ -111,66 +112,72 @@ describe('ServerRedis', () => {
       untypedServer.options.wildcards = true;
 
       const pattern = 'test';
-      const handler = sinon.spy();
+      const handler = vi.fn();
       untypedServer.messageHandlers = objectToMap({
         [pattern]: handler,
       });
       server.bindEvents(psub, null);
-      expect(subscribeSpy.calledWith(pattern)).to.be.true;
+      expect(subscribeSpy).toHaveBeenCalledWith(pattern);
     });
   });
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
-      expect(typeof server.getMessageHandler(null)).to.be.eql('function');
+      expect(typeof server.getMessageHandler(null)).toEqual('function');
     });
   });
   describe('handleMessage', () => {
-    let getPublisherSpy: sinon.SinonSpy;
+    let getPublisherSpy: ReturnType<typeof vi.fn>;
 
     const channel = 'test';
     const data = 'test';
     const id = '3';
 
     beforeEach(() => {
-      getPublisherSpy = sinon.spy();
-      sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
+      getPublisherSpy = vi.fn();
+      vi.spyOn(server, 'getPublisher').mockImplementation(
+        () => getPublisherSpy,
+      );
     });
     it('should call "handleEvent" if identifier is not present', async () => {
-      const handleEventSpy = sinon.spy(server, 'handleEvent');
-      sinon.stub(server, 'parseMessage').callsFake(() => ({ data }) as any);
+      const handleEventSpy = vi.spyOn(server, 'handleEvent');
+      vi.spyOn(server, 'parseMessage').mockImplementation(
+        () => ({ data }) as any,
+      );
 
       await server.handleMessage(channel, JSON.stringify({}), null, channel);
-      expect(handleEventSpy.called).to.be.true;
+      expect(handleEventSpy).toHaveBeenCalled();
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
-      sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data }) as any);
+      vi.spyOn(server, 'parseMessage').mockImplementation(
+        () => ({ id, data }) as any,
+      );
       await server.handleMessage(
         channel,
         JSON.stringify({ id }),
         null,
         channel,
       );
-      expect(
-        getPublisherSpy.calledWith({
-          id,
-          status: 'error',
-          err: NO_MESSAGE_HANDLER,
-        }),
-      ).to.be.true;
+      expect(getPublisherSpy).toHaveBeenCalledWith({
+        id,
+        status: 'error',
+        err: NO_MESSAGE_HANDLER,
+      });
     });
     it(`should call handler with expected arguments`, async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
-      sinon.stub(server, 'parseMessage').callsFake(() => ({ id, data }) as any);
+      vi.spyOn(server, 'parseMessage').mockImplementation(
+        () => ({ id, data }) as any,
+      );
 
       await server.handleMessage(channel, '', null, channel);
-      expect(handler.calledWith(data)).to.be.true;
+      expect(handler).toHaveBeenCalledWith(data, expect.any(RedisContext));
     });
   });
   describe('getPublisher', () => {
-    let publisherSpy: sinon.SinonSpy;
+    let publisherSpy: ReturnType<typeof vi.fn>;
     let pub, publisher;
 
     const id = '1';
@@ -178,64 +185,60 @@ describe('ServerRedis', () => {
     const context = new RedisContext([] as any);
 
     beforeEach(() => {
-      publisherSpy = sinon.spy();
+      publisherSpy = vi.fn();
       pub = {
         publish: publisherSpy,
       };
       publisher = server.getPublisher(pub, pattern, id, context);
     });
     it(`should return function`, () => {
-      expect(typeof server.getPublisher(null, null, id, context)).to.be.eql(
+      expect(typeof server.getPublisher(null, null, id, context)).toEqual(
         'function',
       );
     });
     it(`should call "publish" with expected arguments`, () => {
       const respond = 'test';
       publisher({ respond, id });
-      expect(
-        publisherSpy.calledWith(
-          `${pattern}.reply`,
-          JSON.stringify({ respond, id }),
-        ),
-      ).to.be.true;
+      expect(publisherSpy).toHaveBeenCalledWith(
+        `${pattern}.reply`,
+        JSON.stringify({ respond, id }),
+      );
     });
   });
   describe('parseMessage', () => {
     it(`should return parsed json`, () => {
       const obj = { test: 'test' };
-      expect(server.parseMessage(obj)).to.deep.equal(
-        JSON.parse(JSON.stringify(obj)),
-      );
+      expect(server.parseMessage(obj)).toEqual(JSON.parse(JSON.stringify(obj)));
     });
     it(`should not parse argument if it is not an object`, () => {
       const content = 'test';
-      expect(server.parseMessage(content)).to.equal(content);
+      expect(server.parseMessage(content)).toBe(content);
     });
   });
   describe('getRequestPattern', () => {
     const test = 'test';
     it(`should leave pattern as it is`, () => {
       const expectedResult = test;
-      expect(server.getRequestPattern(test)).to.equal(expectedResult);
+      expect(server.getRequestPattern(test)).toBe(expectedResult);
     });
   });
   describe('getReplyPattern', () => {
     const test = 'test';
     it(`should append ".reply" to string`, () => {
       const expectedResult = test + '.reply';
-      expect(server.getReplyPattern(test)).to.equal(expectedResult);
+      expect(server.getReplyPattern(test)).toBe(expectedResult);
     });
   });
   describe('getClientOptions', () => {
     it('should return options object with "retryStrategy" and call "createRetryStrategy"', () => {
-      const createSpy = sinon.spy(server, 'createRetryStrategy');
+      const createSpy = vi.spyOn(server, 'createRetryStrategy');
       const { retryStrategy } = server.getClientOptions()!;
       try {
         retryStrategy!(0);
       } catch {
         // Ignore
       }
-      expect(createSpy.called).to.be.true;
+      expect(createSpy).toHaveBeenCalled();
     });
   });
   describe('createRetryStrategy', () => {
@@ -243,7 +246,7 @@ describe('ServerRedis', () => {
       it('should return undefined', () => {
         untypedServer.isManuallyClosed = true;
         const result = server.createRetryStrategy(0);
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('when "retryAttempts" does not exist', () => {
@@ -251,7 +254,7 @@ describe('ServerRedis', () => {
         untypedServer.options.options = {};
         untypedServer.options.options.retryAttempts = undefined;
 
-        expect(server.createRetryStrategy(4)).to.be.undefined;
+        expect(server.createRetryStrategy(4)).toBeUndefined();
       });
     });
     describe('when "attempts" count is max', () => {
@@ -259,7 +262,7 @@ describe('ServerRedis', () => {
         untypedServer.options.options = {};
         untypedServer.options.options.retryAttempts = 3;
 
-        expect(server.createRetryStrategy(4)).to.be.undefined;
+        expect(server.createRetryStrategy(4)).toBeUndefined();
       });
     });
     describe('otherwise', () => {
@@ -269,7 +272,7 @@ describe('ServerRedis', () => {
         untypedServer.options.retryAttempts = 3;
         untypedServer.options.retryDelay = 3;
         const result = server.createRetryStrategy(2);
-        expect(result).to.be.eql(untypedServer.options.retryDelay);
+        expect(result).toEqual(untypedServer.options.retryDelay);
       });
     });
   });
@@ -278,7 +281,7 @@ describe('ServerRedis', () => {
     const data = 'test';
 
     it('should call handler with expected arguments', async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
@@ -288,7 +291,7 @@ describe('ServerRedis', () => {
         { pattern: '', data },
         new BaseRpcContext([]),
       );
-      expect(handler.calledWith(data)).to.be.true;
+      expect(handler).toHaveBeenCalledWith(data, expect.any(BaseRpcContext));
     });
   });
 });

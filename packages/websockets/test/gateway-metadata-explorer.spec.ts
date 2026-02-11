@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner.js';
 import { WebSocketServer } from '../decorators/gateway-server.decorator.js';
 import { WebSocketGateway } from '../decorators/socket-gateway.decorator.js';
@@ -43,16 +41,16 @@ describe('GatewayMetadataExplorer', () => {
     instance = new GatewayMetadataExplorer(scanner);
   });
   describe('explore', () => {
-    let getAllMethodNames: sinon.SinonSpy;
+    let getAllMethodNames: ReturnType<typeof vi.fn>;
     beforeEach(() => {
-      getAllMethodNames = sinon.spy(scanner, 'getAllMethodNames');
+      getAllMethodNames = vi.spyOn(scanner, 'getAllMethodNames');
     });
     it(`should call "scanFromPrototype" with expected arguments`, () => {
       const obj = new Test();
       instance.explore(obj as any);
 
-      const [argProto] = getAllMethodNames.getCall(0).args;
-      expect(argProto).to.be.eql(Object.getPrototypeOf(obj));
+      const [argProto] = getAllMethodNames.mock.calls[0];
+      expect(argProto).toEqual(Object.getPrototypeOf(obj));
     });
   });
   describe('exploreMethodMetadata', () => {
@@ -72,15 +70,15 @@ describe('GatewayMetadataExplorer', () => {
         'methodName',
         'isAckHandledManually',
       ]);
-      expect(metadata.message).to.eql(message);
+      expect(metadata.message).toEqual(message);
     });
     it('should set "isAckHandledManually" property to true when @Ack decorator is used', () => {
       const metadata = instance.exploreMethodMetadata(test, 'testWithAck')!;
-      expect(metadata.isAckHandledManually).to.be.true;
+      expect(metadata.isAckHandledManually).toBe(true);
     });
     it('should set "isAckHandledManually" property to false when @Ack decorator is not used', () => {
       const metadata = instance.exploreMethodMetadata(test, 'test')!;
-      expect(metadata.isAckHandledManually).to.be.false;
+      expect(metadata.isAckHandledManually).toBe(false);
     });
   });
   describe('scanForServerHooks', () => {
@@ -88,8 +86,8 @@ describe('GatewayMetadataExplorer', () => {
       const obj = new Test();
       const servers = [...instance.scanForServerHooks(obj as any)];
 
-      expect(servers).to.have.length(2);
-      expect(servers).to.deep.eq(['server', 'anotherServer']);
+      expect(servers).toHaveLength(2);
+      expect(servers).toEqual(['server', 'anotherServer']);
     });
   });
 });

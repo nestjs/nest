@@ -2596,68 +2596,6 @@
     }
   },
   "entrypoints": {
-    "1131051184": [
-      {
-        "type": "websocket",
-        "methodName": "create",
-        "className": "ChatGateway",
-        "classNodeId": "1131051184",
-        "metadata": {
-          "port": 0,
-          "key": "createChat",
-          "message": "createChat"
-        },
-        "id": "1131051184_create"
-      },
-      {
-        "type": "websocket",
-        "methodName": "findAll",
-        "className": "ChatGateway",
-        "classNodeId": "1131051184",
-        "metadata": {
-          "port": 0,
-          "key": "findAllChat",
-          "message": "findAllChat"
-        },
-        "id": "1131051184_findAll"
-      },
-      {
-        "type": "websocket",
-        "methodName": "findOne",
-        "className": "ChatGateway",
-        "classNodeId": "1131051184",
-        "metadata": {
-          "port": 0,
-          "key": "findOneChat",
-          "message": "findOneChat"
-        },
-        "id": "1131051184_findOne"
-      },
-      {
-        "type": "websocket",
-        "methodName": "update",
-        "className": "ChatGateway",
-        "classNodeId": "1131051184",
-        "metadata": {
-          "port": 0,
-          "key": "updateChat",
-          "message": "updateChat"
-        },
-        "id": "1131051184_update"
-      },
-      {
-        "type": "websocket",
-        "methodName": "remove",
-        "className": "ChatGateway",
-        "classNodeId": "1131051184",
-        "metadata": {
-          "port": 0,
-          "key": "removeChat",
-          "message": "removeChat"
-        },
-        "id": "1131051184_remove"
-      }
-    ],
     "1472486160": [
       {
         "type": "http-endpoint",

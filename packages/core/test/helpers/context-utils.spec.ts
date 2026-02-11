@@ -5,7 +5,6 @@ import {
   Request,
 } from '@nestjs/common/decorators/index.js';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum.js';
-import { expect } from 'chai';
 import { ROUTE_ARGS_METADATA } from '../../../common/constants.js';
 import { ContextUtils } from '../../helpers/context-utils.js';
 import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
@@ -50,10 +49,10 @@ describe('ContextUtils', () => {
           data: undefined,
         },
       };
-      expect(metadata[`${RouteParamtypes.REQUEST}:0`]).to.deep.equal(
+      expect(metadata[`${RouteParamtypes.REQUEST}:0`]).toEqual(
         expectedMetadata[`${RouteParamtypes.REQUEST}:0`],
       );
-      expect(metadata[`${RouteParamtypes.REQUEST}:1`]).to.deep.equal(
+      expect(metadata[`${RouteParamtypes.REQUEST}:1`]).toEqual(
         expectedMetadata[`${RouteParamtypes.REQUEST}:1`],
       );
 
@@ -62,10 +61,10 @@ describe('ContextUtils', () => {
         key.includes(CUSTOM_ROUTE_ARGS_METADATA),
       )!;
 
-      expect(metadata[custom]).to.be.an('object');
-      expect(metadata[custom].index).to.be.eq(2);
-      expect(metadata[custom].data).to.be.eq(undefined);
-      expect(metadata[custom].factory).to.be.a('function');
+      expect(metadata[custom]).toBeTypeOf('object');
+      expect(metadata[custom].index).toBe(2);
+      expect(metadata[custom].data).toBe(undefined);
+      expect(metadata[custom].factory).toBeTypeOf('function');
     });
   });
   describe('getArgumentsLength', () => {
@@ -79,7 +78,7 @@ describe('ContextUtils', () => {
       };
       expect(
         contextUtils.getArgumentsLength(Object.keys(metadata), metadata),
-      ).to.be.eq(max + 1);
+      ).toBe(max + 1);
     });
   });
   describe('createNullArray', () => {
@@ -97,7 +96,7 @@ describe('ContextUtils', () => {
       const paramsProperties = ['1'];
       expect(
         contextUtils.mergeParamsMetatypes(paramsProperties as any, null!),
-      ).to.be.eql(paramsProperties);
+      ).toEqual(paramsProperties);
     });
   });
   describe('getCustomFactory', () => {
@@ -111,7 +110,7 @@ describe('ContextUtils', () => {
 
         expect(
           contextUtils.getCustomFactory(customFactory, data, contextFactory)(),
-        ).to.be.eql(result);
+        ).toEqual(result);
       });
     });
     describe('when factory is undefined / is not a function', () => {
@@ -123,7 +122,7 @@ describe('ContextUtils', () => {
             undefined,
             contextFactory,
           )(),
-        ).to.be.eql(null);
+        ).toEqual(null);
       });
     });
   });

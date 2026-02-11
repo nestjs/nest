@@ -5,7 +5,6 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import { fail } from 'assert';
-import { expect } from 'chai';
 import express from 'express';
 import { join } from 'path';
 import request from 'supertest';
@@ -16,7 +15,7 @@ describe('Advanced GRPC transport', () => {
   let app: INestApplication;
   let client: any;
 
-  before(async () => {
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [AdvancedGrpcController],
     }).compile();
@@ -95,8 +94,8 @@ describe('Advanced GRPC transport', () => {
         },
         (err, result) => {
           // Compare results
-          expect(err).to.be.null;
-          expect(result).to.eql({
+          expect(err).toBeNull();
+          expect(result).toEqual({
             id: 1,
             itemTypes: [1],
             shipmentType: {
@@ -117,12 +116,12 @@ describe('Advanced GRPC transport', () => {
 
     // Get Set-Cookie from Metadata
     callHandler.on('metadata', (metadata: GRPC.Metadata) => {
-      expect(metadata.get('Set-Cookie')[0]).to.eq('test_cookie=abcd');
+      expect(metadata.get('Set-Cookie')[0]).toBe('test_cookie=abcd');
     });
 
     callHandler.on('data', (msg: number) => {
       // Do deep comparison (to.eql)
-      expect(msg).to.eql({
+      expect(msg).toEqual({
         id: 1,
         itemTypes: [1],
         shipmentType: {
@@ -154,7 +153,7 @@ describe('Advanced GRPC transport', () => {
 
     callHandler.on('data', (msg: number) => {
       // Do deep comparison (to.eql)
-      expect(msg).to.eql({
+      expect(msg).toEqual({
         id: 1,
         itemTypes: [1],
         shipmentType: {
@@ -186,7 +185,7 @@ describe('Advanced GRPC transport', () => {
       if (err) {
         throw err;
       }
-      expect(res).to.eql({
+      expect(res).toEqual({
         id: 1,
         itemTypes: [1],
         shipmentType: {
@@ -210,7 +209,7 @@ describe('Advanced GRPC transport', () => {
       if (err) {
         throw err;
       }
-      expect(res).to.eql({
+      expect(res).toEqual({
         id: 1,
         itemTypes: [1],
         shipmentType: {

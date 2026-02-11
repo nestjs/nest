@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { DeepHashedModuleOpaqueKeyFactory } from '../../../injector/opaque-key-factory/deep-hashed-module-opaque-key-factory.js';
 
 describe('DeepHashedModuleOpaqueKeyFactory', () => {
@@ -8,7 +6,7 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
 
   beforeEach(() => {
     factory = new DeepHashedModuleOpaqueKeyFactory();
-    sinon.stub(factory, 'getModuleId').returns(moduleId);
+    vi.spyOn(factory, 'getModuleId').mockReturnValue(moduleId);
   });
   describe('createForStatic', () => {
     class Module {}
@@ -39,7 +37,7 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
   describe('getModuleName', () => {
     it('should map module metatype to name', () => {
       const metatype = () => {};
-      expect(factory.getModuleName(metatype as any)).to.be.eql(metatype.name);
+      expect(factory.getModuleName(metatype as any)).toEqual(metatype.name);
     });
   });
 
@@ -47,14 +45,14 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
     describe('when metadata exists', () => {
       it('should return hash', () => {
         const metadata = { providers: ['', {}] };
-        expect(factory.getStringifiedOpaqueToken(metadata as any)).to.be.eql(
+        expect(factory.getStringifiedOpaqueToken(metadata as any)).toEqual(
           JSON.stringify(metadata),
         );
       });
       it('should return hash with class', () => {
         class Provider {}
         const metadata = { providers: [Provider], exports: [Provider] };
-        expect(factory.getStringifiedOpaqueToken(metadata)).to.be.eql(
+        expect(factory.getStringifiedOpaqueToken(metadata)).toEqual(
           '{"providers":["Provider"],"exports":["Provider"]}',
         );
       });
@@ -64,7 +62,7 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
           useValue: function Provider() {},
         };
         const metadata = { providers: [provider] };
-        expect(factory.getStringifiedOpaqueToken(metadata)).to.be.eql(
+        expect(factory.getStringifiedOpaqueToken(metadata)).toEqual(
           `{"providers":[{"provide":"ProvideValue","useValue":"${provider.useValue.toString()}"}]}`,
         );
       });
@@ -82,7 +80,7 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
           ],
         };
 
-        expect(factory.getStringifiedOpaqueToken(metadata)).to.be.eql(
+        expect(factory.getStringifiedOpaqueToken(metadata)).toEqual(
           '{"providers":[{"provide":"Symbol(a)","useValue":"a"},{"provide":"Symbol(b)","useValue":"b"}]}',
         );
       });
@@ -90,7 +88,7 @@ describe('DeepHashedModuleOpaqueKeyFactory', () => {
 
     describe('when metadata does not exist', () => {
       it('should return empty string', () => {
-        expect(factory.getStringifiedOpaqueToken(undefined)).to.be.eql('');
+        expect(factory.getStringifiedOpaqueToken(undefined)).toEqual('');
       });
     });
   });

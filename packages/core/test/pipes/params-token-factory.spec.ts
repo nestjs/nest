@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum.js';
 import { ParamsTokenFactory } from '../../pipes/params-token-factory.js';
 
@@ -11,28 +10,28 @@ describe('ParamsTokenFactory', () => {
     describe('when key is', () => {
       describe(`RouteParamtypes.BODY`, () => {
         it('should return body object', () => {
-          expect(factory.exchangeEnumForString(RouteParamtypes.BODY)).to.be.eql(
+          expect(factory.exchangeEnumForString(RouteParamtypes.BODY)).toEqual(
             'body',
           );
         });
       });
       describe(`RouteParamtypes.QUERY`, () => {
         it('should return query object', () => {
-          expect(
-            factory.exchangeEnumForString(RouteParamtypes.QUERY),
-          ).to.be.eql('query');
+          expect(factory.exchangeEnumForString(RouteParamtypes.QUERY)).toEqual(
+            'query',
+          );
         });
       });
       describe(`RouteParamtypes.PARAM`, () => {
         it('should return params object', () => {
-          expect(
-            factory.exchangeEnumForString(RouteParamtypes.PARAM),
-          ).to.be.eql('param');
+          expect(factory.exchangeEnumForString(RouteParamtypes.PARAM)).toEqual(
+            'param',
+          );
         });
       });
       describe('not available', () => {
         it('should return "custom"', () => {
-          expect(factory.exchangeEnumForString(-1 as any)).to.be.eql('custom');
+          expect(factory.exchangeEnumForString(-1 as any)).toEqual('custom');
         });
       });
     });

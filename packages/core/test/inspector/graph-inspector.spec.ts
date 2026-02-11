@@ -1,6 +1,4 @@
 import { Scope } from '@nestjs/common';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { NestContainer } from '../../injector/container.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { Module } from '../../injector/module.js';
@@ -70,7 +68,7 @@ describe('GraphInspector', () => {
       graphInspector.inspectInstanceWrapper(instanceWrapper, moduleRef);
 
       const edgesArr = [...graph['edges'].values()];
-      expect(edgesArr).to.deep.equal([
+      expect(edgesArr).toEqual([
         {
           id: edgesArr[0].id,
           metadata: {
@@ -164,11 +162,13 @@ describe('GraphInspector', () => {
       );
 
       const serializedNode = { metadata: {} };
-      sinon.stub(graph, 'getNodeById').callsFake(() => serializedNode as any);
+      vi.spyOn(graph, 'getNodeById').mockImplementation(
+        () => serializedNode as any,
+      );
 
       graphInspector.inspectModules();
 
-      expect(serializedNode).to.deep.equal({
+      expect(serializedNode).toEqual({
         metadata: {
           enhancers: [
             { methodKey, name: RandomPipe.name, subtype },
@@ -207,11 +207,11 @@ describe('GraphInspector', () => {
 
       graphInspector.insertAttachedEnhancer(instanceWrapper);
 
-      expect(insertedNode.metadata).to.deep.equal({
+      expect(insertedNode.metadata).toEqual({
         ...nodeDefinition.metadata,
         global: true,
       });
-      expect(graph['extras'].attachedEnhancers).to.deep.contain({
+      expect(graph['extras'].attachedEnhancers).toContainEqual({
         nodeId: insertedNode.id,
       });
     });

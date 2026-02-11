@@ -1,5 +1,4 @@
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 
 import { Controller, Injectable, Module } from '@nestjs/common';
 
@@ -35,9 +34,9 @@ describe('Circular custom providers', () => {
       });
       await builder.compile();
 
-      expect(true).to.be.eql(false);
+      expect(true).toEqual(false);
     } catch (err) {
-      expect(err.message).to.be.eql(
+      expect(err.message).toEqual(
         'A circular dependency has been detected inside "A". Please, make sure that each side of a bidirectional relationships are decorated with "forwardRef()". Note that circular relationships between custom providers (e.g., factories) are not supported since functions cannot be called more than once.',
       );
     }
@@ -53,9 +52,9 @@ describe('Circular custom providers', () => {
       });
       await builder.compile();
 
-      expect(true).to.be.eql(false);
+      expect(true).toEqual(false);
     } catch (err) {
-      expect(err.message).to.be.eql(
+      expect(err.message).toEqual(
         'A circular dependency has been detected inside "ABC". Please, make sure that each side of a bidirectional relationships are decorated with "forwardRef()". Note that circular relationships between custom providers (e.g., factories) are not supported since functions cannot be called more than once.',
       );
     }

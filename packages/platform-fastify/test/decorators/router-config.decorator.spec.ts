@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { FASTIFY_ROUTE_CONFIG_METADATA } from '../../constants.js';
 import { RouteConfig } from '../../decorators/route-config.decorator.js';
 
@@ -12,6 +11,6 @@ describe('@RouteConfig', () => {
 
   it('should enhance method with expected fastify route config', () => {
     const path = Reflect.getMetadata(FASTIFY_ROUTE_CONFIG_METADATA, Test.test);
-    expect(path).to.be.eql(routeConfig);
+    expect(path).toEqual(routeConfig);
   });
 });

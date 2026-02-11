@@ -1,5 +1,4 @@
 import { Scope } from '@nestjs/common';
-import { expect } from 'chai';
 import { ApplicationConfig } from '../../application-config.js';
 import { Edge } from '../../inspector/interfaces/edge.interface.js';
 import { Node } from '../../inspector/interfaces/node.interface.js';
@@ -37,7 +36,7 @@ describe('SerializedGraph', () => {
         };
         serializedGraph.insertNode(nodeDefinition);
 
-        expect(nodesCollection.get(nodeDefinition.id)).to.deep.equal({
+        expect(nodesCollection.get(nodeDefinition.id)).toEqual({
           ...nodeDefinition,
           metadata: {
             ...nodeDefinition.metadata,
@@ -68,7 +67,7 @@ describe('SerializedGraph', () => {
         };
         serializedGraph.insertNode(nodeDefinition);
 
-        expect(nodesCollection.get(nodeDefinition.id)).to.equal(nodeDefinition);
+        expect(nodesCollection.get(nodeDefinition.id)).toBe(nodeDefinition);
       });
     });
   });
@@ -94,7 +93,7 @@ describe('SerializedGraph', () => {
         };
         const edge = serializedGraph.insertEdge(edgeDefinition);
 
-        expect(edgesCollection.get(edge.id)).to.deep.equal({
+        expect(edgesCollection.get(edge.id)).toEqual({
           ...edgeDefinition,
           metadata: {
             ...edgeDefinition.metadata,
@@ -124,7 +123,7 @@ describe('SerializedGraph', () => {
         };
         const edge = serializedGraph.insertEdge(edgeDefinition);
 
-        expect(edgesCollection.get(edge.id)).to.deep.equal({
+        expect(edgesCollection.get(edge.id)).toEqual({
           ...edgeDefinition,
           id: edge.id,
         });

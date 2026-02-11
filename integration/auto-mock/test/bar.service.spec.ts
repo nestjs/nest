@@ -1,17 +1,11 @@
 import { Test } from '@nestjs/testing';
-import chai from 'chai';
-import chaiAsPromised from 'chai-as-promised';
-import * as sinon from 'sinon';
 import { BarService } from '../src/bar.service.js';
 import { FooService } from '../src/foo.service.js';
-
-chai.use(chaiAsPromised);
-const { expect } = chai;
 
 describe('Auto-Mocking Bar Deps', () => {
   let service: BarService;
   let fooService: FooService;
-  const stub = sinon.stub();
+  const stub = vi.fn();
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
       providers: [BarService],
@@ -23,12 +17,12 @@ describe('Auto-Mocking Bar Deps', () => {
   });
 
   it('should be defined', () => {
-    expect(service).not.to.be.undefined;
-    expect(fooService).not.to.be.undefined;
+    expect(service).not.toBeUndefined();
+    expect(fooService).not.toBeUndefined();
   });
   it('should call bar.bar', () => {
     service.bar();
-    expect(stub.called);
+    expect(stub).toHaveBeenCalled();
   });
 });
 
@@ -39,23 +33,25 @@ describe('Auto-Mocking with token in factory', () => {
     })
       .useMocker(token => {
         if (token === FooService) {
-          return { foo: sinon.stub };
+          return { foo: vi.fn() };
         }
       })
       .compile();
     const service = moduleRef.get(BarService);
-    const fooServ = moduleRef.get<{ foo: sinon.SinonStub }>(FooService as any);
+    const fooServ = moduleRef.get<{ foo: ReturnType<typeof vi.fn> }>(
+      FooService as any,
+    );
     service.bar();
-    expect(fooServ.foo.called);
+    expect(fooServ.foo).toHaveBeenCalled();
   });
   it('cannot mock the dependencies', async () => {
     const moduleRef = Test.createTestingModule({
       providers: [BarService],
     }).useMocker(token => {
       if (token === FooService.name + 'something that fails the token') {
-        return { foo: sinon.stub };
+        return { foo: vi.fn() };
       }
     }).compile;
-    expect(moduleRef()).to.eventually.throw();
+    expect(moduleRef()).rejects.toThrow();
   });
 });

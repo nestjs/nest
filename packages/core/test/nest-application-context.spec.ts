@@ -1,6 +1,4 @@
 import { Injectable, InjectionToken, Provider, Scope } from '@nestjs/common';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { ContextIdFactory } from '../helpers/context-id-factory.js';
 import { NestContainer } from '../injector/container.js';
 import { Injector } from '../injector/injector.js';
@@ -86,9 +84,9 @@ describe('NestApplicationContext', () => {
         process.kill(process.pid, signal);
       });
 
-      const hookStub = sinon
-        .stub(applicationContext as any, 'callShutdownHook')
-        .callsFake(async () => {
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => {
           // run some async code
           await new Promise(resolve => setImmediate(() => resolve(undefined)));
           if (processUp) {
@@ -97,19 +95,19 @@ describe('NestApplicationContext', () => {
         });
       process.kill(process.pid, signal);
       await waitProcessDown;
-      hookStub.restore();
-      expect(processUp).to.be.false;
-      expect(promisesResolved).to.be.true;
+      hookStub.mockRestore();
+      expect(processUp).toBe(false);
+      expect(promisesResolved).toBe(true);
     });
 
     it('should defer shutdown until all init hooks are resolved', async () => {
-      const clock = sinon.useFakeTimers({
+      const clock = vi.useFakeTimers({
         toFake: ['setTimeout'],
       });
       const signal = 'SIGTERM';
 
-      const onModuleInitStub = sinon.stub();
-      const onApplicationShutdownStub = sinon.stub();
+      const onModuleInitStub = vi.fn();
+      const onApplicationShutdownStub = vi.fn();
 
       // Use global setTimeout wrapped in a Promise so sinon fake timers
       // can intercept it (timers/promises.setTimeout is not fakeable in ESM).
@@ -144,69 +142,77 @@ describe('NestApplicationContext', () => {
       };
       void Promise.all([applicationContext.init(), deferredShutdown()]);
 
-      await clock.nextAsync();
-      expect(onModuleInitStub.called).to.be.false;
-      expect(onApplicationShutdownStub.called).to.be.false;
+      await vi.advanceTimersByTimeAsync(1);
+      expect(onModuleInitStub).not.toHaveBeenCalled();
+      expect(onApplicationShutdownStub).not.toHaveBeenCalled();
 
-      await clock.nextAsync();
-      expect(onModuleInitStub.called).to.be.true;
-      expect(onApplicationShutdownStub.called).to.be.false;
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(onModuleInitStub).toHaveBeenCalled();
+      expect(onApplicationShutdownStub).not.toHaveBeenCalled();
 
-      await clock.nextAsync();
-      expect(onModuleInitStub.called).to.be.true;
-      expect(onApplicationShutdownStub.called).to.be.true;
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(onModuleInitStub).toHaveBeenCalled();
+      expect(onApplicationShutdownStub).toHaveBeenCalled();
 
-      clock.restore();
+      vi.useRealTimers();
     });
 
     it('should use process.exit when useProcessExit option is enabled', async () => {
       const signal = 'SIGTERM';
       const applicationContext = await testHelper(A, Scope.DEFAULT);
 
-      const processExitStub = sinon.stub(process, 'exit');
-      const processKillStub = sinon.stub(process, 'kill');
+      const processExitStub = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => ({}) as any);
+      const processKillStub = vi
+        .spyOn(process, 'kill')
+        .mockImplementation(() => ({}) as any);
 
       applicationContext.enableShutdownHooks([signal], {
         useProcessExit: true,
       });
 
-      const hookStub = sinon
-        .stub(applicationContext as any, 'callShutdownHook')
-        .callsFake(async () => undefined);
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => undefined);
 
       const shutdownCleanupRef = applicationContext['shutdownCleanupRef']!;
       await shutdownCleanupRef(signal);
 
-      hookStub.restore();
-      processExitStub.restore();
-      processKillStub.restore();
+      expect(processExitStub).toHaveBeenCalledWith(0);
+      expect(processKillStub).not.toHaveBeenCalled();
 
-      expect(processExitStub.calledOnceWith(0)).to.be.true;
-      expect(processKillStub.called).to.be.false;
+      hookStub.mockRestore();
+      processExitStub.mockRestore();
+      processKillStub.mockRestore();
     });
 
     it('should use process.kill when useProcessExit option is not enabled', async () => {
       const signal = 'SIGTERM';
       const applicationContext = await testHelper(A, Scope.DEFAULT);
 
-      const processExitStub = sinon.stub(process, 'exit');
-      const processKillStub = sinon.stub(process, 'kill');
+      const processExitStub = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => ({}) as any);
+      const processKillStub = vi
+        .spyOn(process, 'kill')
+        .mockImplementation(() => ({}) as any);
 
       applicationContext.enableShutdownHooks([signal]);
 
-      const hookStub = sinon
-        .stub(applicationContext as any, 'callShutdownHook')
-        .callsFake(async () => undefined);
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => undefined);
 
       const shutdownCleanupRef = applicationContext['shutdownCleanupRef']!;
       await shutdownCleanupRef(signal);
 
-      hookStub.restore();
-      processExitStub.restore();
-      processKillStub.restore();
+      expect(processKillStub).toHaveBeenCalledWith(process.pid, signal);
+      expect(processExitStub).not.toHaveBeenCalled();
 
-      expect(processKillStub.calledOnceWith(process.pid, signal)).to.be.true;
-      expect(processExitStub.called).to.be.false;
+      hookStub.mockRestore();
+      processExitStub.mockRestore();
+      processKillStub.mockRestore();
     });
   });
 
@@ -458,7 +464,7 @@ describe('NestApplicationContext', () => {
       const appCtx = new NestApplicationContext(nestContainer);
 
       // With a non-static dependency tree, get() should refuse and instruct to use resolve()
-      expect(() => appCtx.get(Host)).to.throw();
+      expect(() => appCtx.get(Host)).toThrow();
     });
 
     it('resolve() should instantiate when dependency tree is not static (request-scoped enhancer attached)', async () => {
@@ -542,11 +548,11 @@ describe('NestApplicationContext', () => {
         each: true,
       });
 
-      expect(instances).to.be.an('array');
-      expect(instances).to.have.length(3);
-      expect(instances[0]).to.be.instanceOf(Service1);
-      expect(instances[1]).to.be.instanceOf(Service2);
-      expect(instances[2]).to.be.instanceOf(Service3);
+      expect(instances).toEqual(expect.any(Array));
+      expect(instances).toHaveLength(3);
+      expect(instances[0]).toBeInstanceOf(Service1);
+      expect(instances[1]).toBeInstanceOf(Service2);
+      expect(instances[2]).toBeInstanceOf(Service3);
     });
   });
 });

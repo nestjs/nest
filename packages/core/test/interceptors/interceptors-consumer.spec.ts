@@ -1,8 +1,6 @@
 import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
-import { expect } from 'chai';
 import { Observable, defer, lastValueFrom, merge, of, retry } from 'rxjs';
-import * as sinon from 'sinon';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
 
 describe('InterceptorsConsumer', () => {
@@ -12,30 +10,32 @@ describe('InterceptorsConsumer', () => {
     consumer = new InterceptorsConsumer();
     interceptors = [
       {
-        intercept: sinon.stub().callsFake((ctx, handler) => handler.handle()),
+        intercept: vi
+          .fn()
+          .mockImplementation((ctx, handler) => handler.handle()),
       },
       {
-        intercept: sinon
-          .stub()
-          .callsFake(async (ctx, handler) => handler.handle()),
+        intercept: vi
+          .fn()
+          .mockImplementation(async (ctx, handler) => handler.handle()),
       },
     ];
   });
   describe('intercept', () => {
     describe('when interceptors array is empty', () => {
-      let next: sinon.SinonSpy;
+      let next: ReturnType<typeof vi.fn>;
       beforeEach(() => {
-        next = sinon.spy();
+        next = vi.fn();
       });
       it('should call next()', async () => {
         await consumer.intercept([], null!, { constructor: null }, null!, next);
-        expect(next.calledOnce).to.be.true;
+        expect(next).toHaveBeenCalledOnce();
       });
     });
     describe('when interceptors array is not empty', () => {
-      let next: sinon.SinonSpy;
+      let next: ReturnType<typeof vi.fn>;
       beforeEach(() => {
-        next = sinon.stub().returns(Promise.resolve(''));
+        next = vi.fn().mockReturnValue(Promise.resolve(''));
       });
       it('does not call `intercept` (lazy evaluation)', async () => {
         await consumer.intercept(
@@ -46,8 +46,8 @@ describe('InterceptorsConsumer', () => {
           next,
         );
 
-        expect(interceptors[0].intercept.called).to.be.false;
-        expect(interceptors[1].intercept.called).to.be.false;
+        expect(interceptors[0].intercept).not.toHaveBeenCalled();
+        expect(interceptors[1].intercept).not.toHaveBeenCalled();
       });
       it('should call every `intercept` method when subscribe', async () => {
         const intercepted = await consumer.intercept(
@@ -59,8 +59,8 @@ describe('InterceptorsConsumer', () => {
         );
         await transformToResult(intercepted);
 
-        expect(interceptors[0].intercept.calledOnce).to.be.true;
-        expect(interceptors[1].intercept.calledOnce).to.be.true;
+        expect(interceptors[0].intercept).toHaveBeenCalledOnce();
+        expect(interceptors[1].intercept).toHaveBeenCalledOnce();
       });
       it('should not call `next` (lazy evaluation)', async () => {
         await consumer.intercept(
@@ -70,7 +70,7 @@ describe('InterceptorsConsumer', () => {
           null!,
           next,
         );
-        expect(next.called).to.be.false;
+        expect(next).not.toHaveBeenCalled();
       });
       it('should call `next` when subscribe', async () => {
         const intercepted = await consumer.intercept(
@@ -81,7 +81,7 @@ describe('InterceptorsConsumer', () => {
           next,
         );
         await transformToResult(intercepted);
-        expect(next.called).to.be.true;
+        expect(next).toHaveBeenCalled();
       });
     });
 
@@ -107,7 +107,7 @@ describe('InterceptorsConsumer', () => {
           next,
         );
         const result = await transformToResult(intercepted);
-        expect(result).to.equal('hello');
+        expect(result).toBe('hello');
       });
     });
 
@@ -136,7 +136,7 @@ describe('InterceptorsConsumer', () => {
           null!,
           next,
         );
-        expect(await transformToResult(intercepted)).to.equal(3);
+        expect(await transformToResult(intercepted)).toBe(3);
       });
     });
   });
@@ -146,8 +146,8 @@ describe('InterceptorsConsumer', () => {
       const callback = () => null;
       const context = consumer.createContext([], instance, callback);
 
-      expect(context.getClass()).to.be.eql(instance.constructor);
-      expect(context.getHandler()).to.be.eql(callback);
+      expect(context.getClass()).toEqual(instance.constructor);
+      expect(context.getHandler()).toEqual(callback);
     });
   });
   describe('transformDeferred', () => {
@@ -155,7 +155,7 @@ describe('InterceptorsConsumer', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = async () => val;
-        expect(await lastValueFrom(consumer.transformDeferred(next))).to.be.eql(
+        expect(await lastValueFrom(consumer.transformDeferred(next))).toEqual(
           val,
         );
       });
@@ -164,7 +164,7 @@ describe('InterceptorsConsumer', () => {
       it('should return Observable', async () => {
         const val = 3;
         const next = async () => val;
-        expect(await lastValueFrom(consumer.transformDeferred(next))).to.be.eql(
+        expect(await lastValueFrom(consumer.transformDeferred(next))).toEqual(
           val,
         );
       });
@@ -175,7 +175,7 @@ describe('InterceptorsConsumer', () => {
         const next = async () => of(val);
         expect(
           await lastValueFrom(consumer.transformDeferred(next) as any),
-        ).to.be.eql(val);
+        ).toEqual(val);
       });
     });
   });
@@ -184,7 +184,7 @@ describe('InterceptorsConsumer', () => {
       class TestError extends Error {}
       const testInterceptors = [
         {
-          intercept: sinon.stub().callsFake(async (ctx, handler) => {
+          intercept: vi.fn().mockImplementation(async (ctx, handler) => {
             return merge(
               handler.handle(),
               defer(() => {
@@ -194,14 +194,14 @@ describe('InterceptorsConsumer', () => {
           }),
         },
         {
-          intercept: sinon
-            .stub()
-            .callsFake(async (ctx, handler) => handler.handle()),
+          intercept: vi
+            .fn()
+            .mockImplementation(async (ctx, handler) => handler.handle()),
         },
         {
-          intercept: sinon
-            .stub()
-            .callsFake(async (ctx, handler) => handler.handle()),
+          intercept: vi
+            .fn()
+            .mockImplementation(async (ctx, handler) => handler.handle()),
         },
       ];
 
@@ -220,7 +220,7 @@ describe('InterceptorsConsumer', () => {
           throw error;
         }
       }
-      expect(testInterceptors[2].intercept.called).to.be.false;
+      expect(testInterceptors[2].intercept).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,6 +1,4 @@
 import { BeforeApplicationShutdown } from '@nestjs/common';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { callBeforeAppShutdownHook } from '../../hooks/before-app-shutdown.hook.js';
 import { NestContainer } from '../../injector/container.js';
 import { Module } from '../../injector/module.js';
@@ -40,10 +38,10 @@ describe('BeforeAppShutdown', () => {
     it('should call "beforeApplicationShutdown" hook for the entire module', async () => {
       const signal = 'SIGTERM';
 
-      const hookSpy = sinon.spy(sampleProvider, 'beforeApplicationShutdown');
+      const hookSpy = vi.spyOn(sampleProvider, 'beforeApplicationShutdown');
       await callBeforeAppShutdownHook(moduleRef, signal);
 
-      expect(hookSpy.calledWith(signal)).to.be.true;
+      expect(hookSpy).toHaveBeenCalledWith(signal);
     });
   });
 });

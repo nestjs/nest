@@ -1,5 +1,4 @@
 import { ClassProvider, FactoryProvider, ValueProvider } from '@nestjs/common';
-import { expect } from 'chai';
 import {
   isClassProvider,
   isFactoryProvider,
@@ -14,7 +13,7 @@ describe('provider classifier', () => {
         provide: 'token',
       };
 
-      expect(isClassProvider(classProvider)).to.be.true;
+      expect(isClassProvider(classProvider)).toBe(true);
     });
 
     it('should return false if useClass is undefined', () => {
@@ -23,7 +22,7 @@ describe('provider classifier', () => {
         provide: 'token',
       };
 
-      expect(isClassProvider(classProvider)).to.be.false;
+      expect(isClassProvider(classProvider)).toBe(false);
     });
 
     it('should return false if useClass is not present', () => {
@@ -31,13 +30,13 @@ describe('provider classifier', () => {
         provide: 'token',
       };
 
-      expect(isClassProvider(classProvider as ClassProvider)).to.be.false;
+      expect(isClassProvider(classProvider as ClassProvider)).toBe(false);
     });
 
     it('should return false if provider is undefined', () => {
       const classProvider = undefined!;
 
-      expect(isClassProvider(classProvider)).to.be.false;
+      expect(isClassProvider(classProvider)).toBe(false);
     });
   });
 
@@ -48,7 +47,7 @@ describe('provider classifier', () => {
         provide: 'token',
       };
 
-      expect(isValueProvider(valueProvider)).to.be.true;
+      expect(isValueProvider(valueProvider)).toBe(true);
     });
 
     it('should return true if useValue is "false"', () => {
@@ -57,7 +56,7 @@ describe('provider classifier', () => {
         provide: 'token',
       };
 
-      expect(isValueProvider(valueProvider)).to.be.true;
+      expect(isValueProvider(valueProvider)).toBe(true);
     });
 
     it('should return true if useValue is "null"', () => {
@@ -66,7 +65,7 @@ describe('provider classifier', () => {
         provide: 'token',
       };
 
-      expect(isValueProvider(valueProvider)).to.be.true;
+      expect(isValueProvider(valueProvider)).toBe(true);
     });
 
     it('should return true if useValue is an empty string', () => {
@@ -75,7 +74,7 @@ describe('provider classifier', () => {
         provide: '',
       };
 
-      expect(isValueProvider(valueProvider)).to.be.true;
+      expect(isValueProvider(valueProvider)).toBe(true);
     });
 
     it('should return false if useValue is undefined', () => {
@@ -84,7 +83,7 @@ describe('provider classifier', () => {
         provide: 'token',
       };
 
-      expect(isValueProvider(valueProvider)).to.be.false;
+      expect(isValueProvider(valueProvider)).toBe(false);
     });
 
     it('should return false if useValue is not present', () => {
@@ -92,13 +91,13 @@ describe('provider classifier', () => {
         provide: 'token',
       };
 
-      expect(isValueProvider(valueProvider as ValueProvider)).to.be.false;
+      expect(isValueProvider(valueProvider as ValueProvider)).toBe(false);
     });
 
     it('should return false if provider is undefined', () => {
       const valueProvider = undefined!;
 
-      expect(isValueProvider(valueProvider as ValueProvider)).to.be.false;
+      expect(isValueProvider(valueProvider as ValueProvider)).toBe(false);
     });
   });
 
@@ -109,7 +108,7 @@ describe('provider classifier', () => {
         useFactory: () => {},
       };
 
-      expect(isFactoryProvider(factoryProvider)).to.be.true;
+      expect(isFactoryProvider(factoryProvider)).toBe(true);
     });
 
     it('should return false if useFactory is not present', () => {
@@ -117,7 +116,7 @@ describe('provider classifier', () => {
         provide: 'token',
       };
 
-      expect(isFactoryProvider(factoryProvider as FactoryProvider)).to.be.false;
+      expect(isFactoryProvider(factoryProvider as FactoryProvider)).toBe(false);
     });
 
     it('should return false if useFactory is undefined', () => {
@@ -126,7 +125,7 @@ describe('provider classifier', () => {
         useFactory: undefined!,
       };
 
-      expect(isFactoryProvider(factoryProvider)).to.be.false;
+      expect(isFactoryProvider(factoryProvider)).toBe(false);
     });
   });
 });

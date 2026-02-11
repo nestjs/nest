@@ -1,11 +1,8 @@
 import { Injectable, Module, OnApplicationBootstrap } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as Sinon from 'sinon';
-
 @Injectable()
 class TestInjectable implements OnApplicationBootstrap {
-  onApplicationBootstrap = Sinon.spy();
+  onApplicationBootstrap = vi.fn();
 }
 
 describe('OnApplicationBootstrap', () => {
@@ -17,7 +14,7 @@ describe('OnApplicationBootstrap', () => {
     const app = module.createNestApplication();
     await app.init();
     const instance = module.get(TestInjectable);
-    expect(instance.onApplicationBootstrap.called).to.be.true;
+    expect(instance.onApplicationBootstrap).toHaveBeenCalled();
   });
 
   it('should not throw an error when onApplicationBootstrap is null', async () => {
@@ -28,7 +25,7 @@ describe('OnApplicationBootstrap', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then(obj => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).not.toBeUndefined());
   });
 
   it('should not throw an error when onApplicationBootstrap is undefined', async () => {
@@ -39,7 +36,7 @@ describe('OnApplicationBootstrap', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then(obj => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).not.toBeUndefined());
   });
 
   it('should sort modules by distance (topological sort) - DESC order', async () => {
@@ -80,6 +77,6 @@ describe('OnApplicationBootstrap', () => {
     await app.init();
 
     const instance = module.get(AA);
-    expect(instance.field).to.equal('b-field_a-field');
+    expect(instance.field).toBe('b-field_a-field');
   });
 });

@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { EventSource } from 'eventsource';
 import { io } from 'socket.io-client';
 import { AppController as LongConnectionController } from '../../nest-application/sse/src/app.controller.js';
@@ -29,7 +28,7 @@ describe('WebSocketGateway', () => {
     });
     await new Promise<void>(resolve =>
       ws.on('pop', data => {
-        expect(data.test).to.be.eql('test');
+        expect(data.test).toEqual('test');
         resolve();
       }),
     );
@@ -45,7 +44,7 @@ describe('WebSocketGateway', () => {
     });
     await new Promise<void>(resolve =>
       ws.on('pop', data => {
-        expect(data.test).to.be.eql('test');
+        expect(data.test).toEqual('test');
         resolve();
       }),
     );
@@ -62,7 +61,7 @@ describe('WebSocketGateway', () => {
     });
     await new Promise<void>(resolve =>
       ws.on('pop', data => {
-        expect(data.test).to.be.eql('test');
+        expect(data.test).toEqual('test');
         resolve();
       }),
     );
@@ -78,7 +77,7 @@ describe('WebSocketGateway', () => {
     });
     await new Promise<void>(resolve =>
       ws.on('popClient', data => {
-        expect(data.path).to.be.eql('getClient');
+        expect(data.path).toEqual('getClient');
         resolve();
       }),
     );
@@ -94,7 +93,7 @@ describe('WebSocketGateway', () => {
     });
     await new Promise<void>(resolve =>
       ws.on('exception', data => {
-        expect(data.pattern).to.be.eql('getClientWithError');
+        expect(data.pattern).toEqual('getClientWithError');
         resolve();
       }),
     );
@@ -102,43 +101,42 @@ describe('WebSocketGateway', () => {
 
   describe('shared server for WS and Long-Running connections', () => {
     afterEach(() => {});
-    it('should block application shutdown', function (done) {
-      let eventSource: EventSource;
+    it('should block application shutdown', () =>
+      new Promise<void>(done => {
+        let eventSource: EventSource;
 
-      void (async () => {
-        this.timeout(30000);
+        void (async () => {
+          setTimeout(() => {
+            const instance = testingModule.get(ServerGateway);
+            expect(instance.onApplicationShutdown).not.toHaveBeenCalled();
+            eventSource.close();
+            done();
+          }, 25000);
 
-        setTimeout(() => {
-          const instance = testingModule.get(ServerGateway);
-          expect(instance.onApplicationShutdown.called).to.be.false;
-          eventSource.close();
-          done();
-        }, 25000);
+          const testingModule = await Test.createTestingModule({
+            providers: [ServerGateway],
+            controllers: [LongConnectionController],
+          }).compile();
+          app = testingModule.createNestApplication();
 
-        const testingModule = await Test.createTestingModule({
-          providers: [ServerGateway],
-          controllers: [LongConnectionController],
-        }).compile();
-        app = testingModule.createNestApplication();
+          await app.listen(3000);
 
-        await app.listen(3000);
+          ws = io(`http://localhost:3000`);
+          eventSource = new EventSource(`http://localhost:3000/sse`);
 
-        ws = io(`http://localhost:3000`);
-        eventSource = new EventSource(`http://localhost:3000/sse`);
+          await new Promise<void>((resolve, reject) => {
+            ws.on('connect', resolve);
+            ws.on('error', reject);
+          });
 
-        await new Promise<void>((resolve, reject) => {
-          ws.on('connect', resolve);
-          ws.on('error', reject);
-        });
+          await new Promise((resolve, reject) => {
+            eventSource.onmessage = resolve;
+            eventSource.onerror = reject;
+          });
 
-        await new Promise((resolve, reject) => {
-          eventSource.onmessage = resolve;
-          eventSource.onerror = reject;
-        });
-
-        await app.close();
-      })();
-    });
+          await app.close();
+        })();
+      }));
 
     it('should shutdown application immediately when forceCloseConnections is true', async () => {
       const testingModule = await Test.createTestingModule({
@@ -168,7 +166,7 @@ describe('WebSocketGateway', () => {
       await app.close();
 
       const instance = testingModule.get(ServerGateway);
-      expect(instance.onApplicationShutdown.called).to.be.true;
+      expect(instance.onApplicationShutdown).toHaveBeenCalled();
       eventSource.close();
     });
   });

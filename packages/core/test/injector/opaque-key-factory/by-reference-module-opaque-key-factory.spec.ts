@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { ByReferenceModuleOpaqueKeyFactory } from '../../../injector/opaque-key-factory/by-reference-module-opaque-key-factory.js';
 
 describe('ByReferenceModuleOpaqueKeyFactory', () => {
@@ -9,7 +7,9 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
   describe('when generating algorithm is random', () => {
     beforeEach(() => {
       factory = new ByReferenceModuleOpaqueKeyFactory();
-      sinon.stub(factory as any, 'generateRandomString').returns(moduleId);
+      vi.spyOn(factory as any, 'generateRandomString').mockReturnValue(
+        moduleId,
+      );
     });
 
     describe('createForStatic', () => {
@@ -60,7 +60,9 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
       factory = new ByReferenceModuleOpaqueKeyFactory({
         keyGenerationStrategy: 'shallow',
       });
-      sinon.stub(factory as any, 'generateRandomString').returns(moduleId);
+      vi.spyOn(factory as any, 'generateRandomString').mockReturnValue(
+        moduleId,
+      );
     });
 
     describe('createForStatic', () => {

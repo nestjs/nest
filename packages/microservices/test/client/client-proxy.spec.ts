@@ -1,6 +1,4 @@
-import { expect } from 'chai';
 import { Observable } from 'rxjs';
-import * as sinon from 'sinon';
 import { ClientProxy } from '../../client/client-proxy.js';
 import { ReadPacket } from '../../interfaces/index.js';
 
@@ -22,8 +20,6 @@ class TestClientProxy extends ClientProxy {
 }
 
 describe('ClientProxy', function () {
-  this.retries(10);
-
   let client: TestClientProxy;
   beforeEach(() => {
     client = new TestClientProxy();
@@ -34,9 +30,9 @@ describe('ClientProxy', function () {
       it(`"error" when first parameter is not null or undefined`, () => {
         const testClient = new TestClientProxy();
         const err = 'test';
-        const error = sinon.spy();
-        const next = sinon.spy();
-        const complete = sinon.spy();
+        const error = vi.fn();
+        const next = vi.fn();
+        const complete = vi.fn();
         const observer = {
           error,
           next,
@@ -45,15 +41,15 @@ describe('ClientProxy', function () {
         const fn = testClient['createObserver'](observer);
 
         fn({ err });
-        expect(error.calledWith(err)).to.be.true;
+        expect(error).toHaveBeenCalledWith(err);
       });
 
       it(`"next" when first parameter is null or undefined`, () => {
         const testClient = new TestClientProxy();
         const data = 'test';
-        const error = sinon.spy();
-        const next = sinon.spy();
-        const complete = sinon.spy();
+        const error = vi.fn();
+        const next = vi.fn();
+        const complete = vi.fn();
         const observer = {
           error,
           next,
@@ -62,15 +58,15 @@ describe('ClientProxy', function () {
         const fn = testClient['createObserver'](observer);
 
         fn({ response: data });
-        expect(next.calledWith(data)).to.be.true;
+        expect(next).toHaveBeenCalledWith(data);
       });
 
       it(`"complete" when third parameter is true`, () => {
         const testClient = new TestClientProxy();
         const data = 'test';
-        const error = sinon.spy();
-        const next = sinon.spy();
-        const complete = sinon.spy();
+        const error = vi.fn();
+        const next = vi.fn();
+        const complete = vi.fn();
         const observer = {
           error,
           next,
@@ -79,7 +75,7 @@ describe('ClientProxy', function () {
         const fn = testClient['createObserver'](observer);
 
         fn({ data, isDisposed: true } as any);
-        expect(complete.called).to.be.true;
+        expect(complete).toHaveBeenCalled();
       });
     });
   });
@@ -87,96 +83,96 @@ describe('ClientProxy', function () {
   describe('send', () => {
     it(`should return an observable stream`, () => {
       const stream$ = client.send({}, '');
-      expect(stream$ instanceof Observable).to.be.true;
+      expect(stream$ instanceof Observable).toBe(true);
     });
     it('should call "connect" on subscribe', () => {
-      const connectSpy = sinon.spy(client, 'connect');
+      const connectSpy = vi.spyOn(client, 'connect');
       const stream$ = client.send({ test: 3 }, 'test');
 
       stream$.subscribe();
-      expect(connectSpy.calledOnce).to.be.true;
+      expect(connectSpy).toHaveBeenCalledOnce();
     });
     describe('when "connect" throws', () => {
       it('should return Observable with error', () => {
-        sinon.stub(client, 'connect').callsFake(() => {
+        vi.spyOn(client, 'connect').mockImplementation(() => {
           throw new Error();
         });
         const stream$ = client.send({ test: 3 }, 'test');
         stream$.subscribe({
           next: () => {},
           error: err => {
-            expect(err).to.be.instanceof(Error);
+            expect(err).toBeInstanceOf(Error);
           },
         });
       });
     });
     describe('when is connected', () => {
       beforeEach(() => {
-        sinon.stub(client, 'connect').callsFake(() => Promise.resolve());
+        vi.spyOn(client, 'connect').mockImplementation(() => Promise.resolve());
       });
       it(`should call "publish"`, () => {
         const pattern = { test: 3 };
         const data = 'test';
-        const publishSpy = sinon.spy();
+        const publishSpy = vi.fn();
         const stream$ = client.send(pattern, data);
         client.publish = publishSpy;
 
         stream$.subscribe(() => {
-          expect(publishSpy.calledOnce).to.be.true;
+          expect(publishSpy).toHaveBeenCalledOnce();
         });
       });
     });
     it('should return Observable with error', () => {
       const err$ = client.send(null, null);
-      expect(err$).to.be.instanceOf(Observable);
+      expect(err$).toBeInstanceOf(Observable);
     });
   });
 
   describe('emit', () => {
     it(`should return an observable stream`, () => {
       const stream$ = client.emit({}, '');
-      expect(stream$ instanceof Observable).to.be.true;
+      expect(stream$ instanceof Observable).toBe(true);
     });
     it('should call "connect" immediately', () => {
-      const connectSpy = sinon.spy(client, 'connect');
+      const connectSpy = vi.spyOn(client, 'connect');
       client.emit({ test: 3 }, 'test');
-      expect(connectSpy.calledOnce).to.be.true;
+      expect(connectSpy).toHaveBeenCalledOnce();
     });
     describe('when "connect" throws', () => {
       it('should return Observable with error', () => {
-        sinon.stub(client, 'connect').callsFake(() => {
+        vi.spyOn(client, 'connect').mockImplementation(() => {
           throw new Error();
         });
         const stream$ = client.emit({ test: 3 }, 'test');
         stream$.subscribe({
           next: () => {},
           error: err => {
-            expect(err).to.be.instanceof(Error);
+            expect(err).toBeInstanceOf(Error);
           },
         });
       });
     });
     describe('when is connected', () => {
       beforeEach(() => {
-        sinon.stub(client, 'connect').callsFake(() => Promise.resolve());
+        vi.spyOn(client, 'connect').mockImplementation(() => Promise.resolve());
       });
       it(`should call "dispatchEvent"`, () => {
         const pattern = { test: 3 };
         const data = 'test';
-        const dispatchEventSpy = sinon
-          .stub()
-          .callsFake(() => Promise.resolve(true));
+        const dispatchEventSpy = vi
+          .fn()
+          .mockImplementation(() => Promise.resolve(true));
         const stream$ = client.emit(pattern, data);
         client['dispatchEvent'] = dispatchEventSpy;
 
         stream$.subscribe(() => {
-          expect(dispatchEventSpy.calledOnce).to.be.true;
+          expect(dispatchEventSpy).toHaveBeenCalledOnce();
         });
       });
     });
     it('should return Observable with error', () => {
       const err$ = client.emit(null, null);
-      expect(err$).to.be.instanceOf(Observable);
+      expect(err$).toBeInstanceOf(Observable);
     });
   });
 });

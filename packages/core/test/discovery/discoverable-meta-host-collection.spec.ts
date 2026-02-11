@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { ModulesContainer } from '../../injector/modules-container.js';
 import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
@@ -51,8 +50,8 @@ describe('DiscoverableMetaHostCollection', () => {
         collection,
       );
 
-      expect(collection.has(metaKey)).to.be.true;
-      expect(collection.get(metaKey)!.has(instanceWrapper)).to.be.true;
+      expect(collection.has(metaKey)).toBe(true);
+      expect(collection.get(metaKey)!.has(instanceWrapper)).toBe(true);
       expect(collection.get(metaKey)!.size).to.eq(1);
     });
 
@@ -80,8 +79,8 @@ describe('DiscoverableMetaHostCollection', () => {
       );
 
       expect(collection.get(metaKey)!.size).to.eq(2);
-      expect(collection.get(metaKey)!.has(instanceWrapper1)).to.be.true;
-      expect(collection.get(metaKey)!.has(instanceWrapper2)).to.be.true;
+      expect(collection.get(metaKey)!.has(instanceWrapper1)).toBe(true);
+      expect(collection.get(metaKey)!.has(instanceWrapper2)).toBe(true);
     });
   });
 
@@ -95,7 +94,7 @@ describe('DiscoverableMetaHostCollection', () => {
         metaKey,
       );
 
-      expect(result).to.be.instanceOf(Set);
+      expect(result).toBeInstanceOf(Set);
       expect(result.size).to.eq(0);
     });
 
@@ -123,7 +122,7 @@ describe('DiscoverableMetaHostCollection', () => {
         'non-existent-key',
       );
 
-      expect(result).to.be.instanceOf(Set);
+      expect(result).toBeInstanceOf(Set);
       expect(result.size).to.eq(0);
     });
 
@@ -149,7 +148,7 @@ describe('DiscoverableMetaHostCollection', () => {
       );
 
       expect(result.size).to.eq(1);
-      expect(result.has(instanceWrapper)).to.be.true;
+      expect(result.has(instanceWrapper)).toBe(true);
     });
   });
 
@@ -163,7 +162,7 @@ describe('DiscoverableMetaHostCollection', () => {
         metaKey,
       );
 
-      expect(result).to.be.instanceOf(Set);
+      expect(result).toBeInstanceOf(Set);
       expect(result.size).to.eq(0);
     });
 
@@ -192,7 +191,7 @@ describe('DiscoverableMetaHostCollection', () => {
       );
 
       expect(result.size).to.eq(1);
-      expect(result.has(instanceWrapper)).to.be.true;
+      expect(result.has(instanceWrapper)).toBe(true);
     });
   });
 
@@ -241,7 +240,7 @@ describe('DiscoverableMetaHostCollection', () => {
         metaKey,
       );
       expect(result.size).to.eq(1);
-      expect(result.has(instanceWrapper)).to.be.true;
+      expect(result.has(instanceWrapper)).toBe(true);
     });
 
     it('should not add provider when metatype is null and inject is not provided (useValue without inject)', () => {
@@ -378,7 +377,7 @@ describe('DiscoverableMetaHostCollection', () => {
         metaKey,
       );
       expect(result.size).to.eq(1);
-      expect(result.has(instanceWrapper)).to.be.true;
+      expect(result.has(instanceWrapper)).toBe(true);
     });
   });
 
@@ -417,8 +416,8 @@ describe('DiscoverableMetaHostCollection', () => {
         metaKey,
       );
       expect(result.size).to.eq(2);
-      expect(result.has(instanceWrapper1)).to.be.true;
-      expect(result.has(instanceWrapper2)).to.be.true;
+      expect(result.has(instanceWrapper1)).toBe(true);
+      expect(result.has(instanceWrapper2)).toBe(true);
     });
   });
 });

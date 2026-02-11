@@ -7,10 +7,8 @@ import {
   MethodsReplFn,
   ResolveReplFn,
   SelectReplFn,
-} from '@nestjs/core/repl/native-functions.js';
+} from '@nestjs/core/repl/native-functions';
 import { ReplContext } from '@nestjs/core/repl/repl-context.js';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { AppModule } from '../src/app.module.js';
 
 const PROMPT = '\u001b[1G\u001b[0J> \u001b[3G';
@@ -18,28 +16,28 @@ const PROMPT = '\u001b[1G\u001b[0J> \u001b[3G';
 describe('REPL', () => {
   beforeEach(() => {
     // To avoid coloring the output:
-    sinon.stub(clc, 'bold').callsFake(text => text);
-    sinon.stub(clc, 'green').callsFake(text => text);
-    sinon.stub(clc, 'yellow').callsFake(text => text);
-    sinon.stub(clc, 'red').callsFake(text => text);
-    sinon.stub(clc, 'magentaBright').callsFake(text => text);
-    sinon.stub(clc, 'cyanBright').callsFake(text => text);
+    vi.spyOn(clc, 'bold').mockImplementation(text => text);
+    vi.spyOn(clc, 'green').mockImplementation(text => text);
+    vi.spyOn(clc, 'yellow').mockImplementation(text => text);
+    vi.spyOn(clc, 'red').mockImplementation(text => text);
+    vi.spyOn(clc, 'magentaBright').mockImplementation(text => text);
+    vi.spyOn(clc, 'cyanBright').mockImplementation(text => text);
   });
   afterEach(() => {
-    sinon.restore();
+    vi.restoreAllMocks();
   });
 
   it('get()', async () => {
     const server = await repl(AppModule);
     server.context;
     let outputText = '';
-    sinon.stub(process.stdout, 'write').callsFake(text => {
+    vi.spyOn(process.stdout, 'write').mockImplementation(text => {
       outputText += text as string;
       return true;
     });
     server.emit('line', 'get(UsersService)');
 
-    expect(outputText).to.equal(
+    expect(outputText).toBe(
       `UsersService { usersRepository: UsersRepository {} }
 ${PROMPT}`,
     );
@@ -47,14 +45,13 @@ ${PROMPT}`,
     outputText = '';
     server.emit('line', 'get(UsersService).findAll()');
 
-    expect(outputText).to
-      .equal(`\u001b[32m'This action returns all users'\u001b[39m
+    expect(outputText).toBe(`\u001b[32m'This action returns all users'\u001b[39m
 ${PROMPT}`);
 
     outputText = '';
     server.emit('line', 'get("UsersRepository")');
 
-    expect(outputText).to.equal(`UsersRepository {}
+    expect(outputText).toBe(`UsersRepository {}
 ${PROMPT}`);
   });
 
@@ -62,13 +59,13 @@ ${PROMPT}`);
     const server = await repl(AppModule);
     server.context;
     let outputText = '';
-    sinon.stub(process.stdout, 'write').callsFake(text => {
+    vi.spyOn(process.stdout, 'write').mockImplementation(text => {
       outputText += text as string;
       return true;
     });
     server.emit('line', '$(UsersService)');
 
-    expect(outputText).to.equal(
+    expect(outputText).toBe(
       `UsersService { usersRepository: UsersRepository {} }
 ${PROMPT}`,
     );
@@ -76,14 +73,13 @@ ${PROMPT}`,
     outputText = '';
     server.emit('line', '$(UsersService).findAll()');
 
-    expect(outputText).to
-      .equal(`\u001b[32m'This action returns all users'\u001b[39m
+    expect(outputText).toBe(`\u001b[32m'This action returns all users'\u001b[39m
 ${PROMPT}`);
 
     outputText = '';
     server.emit('line', '$("UsersRepository")');
 
-    expect(outputText).to.equal(`UsersRepository {}
+    expect(outputText).toBe(`UsersRepository {}
 ${PROMPT}`);
   });
 
@@ -91,13 +87,13 @@ ${PROMPT}`);
     const server = await repl(AppModule);
 
     let outputText = '';
-    sinon.stub(process.stdout, 'write').callsFake(text => {
+    vi.spyOn(process.stdout, 'write').mockImplementation(text => {
       outputText += text as string;
       return true;
     });
     server.emit('line', 'debug(UsersModule)');
 
-    expect(outputText).to.equal(
+    expect(outputText).toBe(
       `
 UsersModule:
  - controllers:
@@ -114,13 +110,13 @@ ${PROMPT}`,
     const server = await repl(AppModule);
 
     let outputText = '';
-    sinon.stub(process.stdout, 'write').callsFake(text => {
+    vi.spyOn(process.stdout, 'write').mockImplementation(text => {
       outputText += text as string;
       return true;
     });
     server.emit('line', 'methods("UsersRepository")');
 
-    expect(outputText).to.equal(
+    expect(outputText).toBe(
       `
 Methods:
  ◻ find
@@ -131,7 +127,7 @@ ${PROMPT}`,
     outputText = '';
     server.emit('line', 'methods(UsersService)');
 
-    expect(outputText).to.equal(
+    expect(outputText).toBe(
       `
 Methods:
  ◻ create
@@ -149,17 +145,17 @@ ${PROMPT}`,
       const replServer = await repl(AppModule);
 
       const { description, signature } = new HelpReplFn(
-        sinon.stub() as unknown as ReplContext,
+        vi.fn() as unknown as ReplContext,
       ).fnDefinition;
       let outputText = '';
-      sinon.stub(process.stdout, 'write').callsFake(text => {
+      vi.spyOn(process.stdout, 'write').mockImplementation(text => {
         outputText += text as string;
         return true;
       });
 
       replServer.emit('line', 'help.help');
 
-      expect(outputText).to.equal(`${description}
+      expect(outputText).toBe(`${description}
 Interface: help${signature}
 ${PROMPT}`);
     });
@@ -168,17 +164,17 @@ ${PROMPT}`);
       const replServer = await repl(AppModule);
 
       const { description, signature } = new GetReplFn(
-        sinon.stub() as unknown as ReplContext,
+        vi.fn() as unknown as ReplContext,
       ).fnDefinition;
       let outputText = '';
-      sinon.stub(process.stdout, 'write').callsFake(text => {
+      vi.spyOn(process.stdout, 'write').mockImplementation(text => {
         outputText += text as string;
         return true;
       });
 
       replServer.emit('line', 'get.help');
 
-      expect(outputText).to.equal(`${description}
+      expect(outputText).toBe(`${description}
 Interface: get${signature}
 ${PROMPT}`);
     });
@@ -187,17 +183,17 @@ ${PROMPT}`);
       const replServer = await repl(AppModule);
 
       const { description, signature } = new ResolveReplFn(
-        sinon.stub() as unknown as ReplContext,
+        vi.fn() as unknown as ReplContext,
       ).fnDefinition;
       let outputText = '';
-      sinon.stub(process.stdout, 'write').callsFake(text => {
+      vi.spyOn(process.stdout, 'write').mockImplementation(text => {
         outputText += text as string;
         return true;
       });
 
       replServer.emit('line', 'resolve.help');
 
-      expect(outputText).to.equal(`${description}
+      expect(outputText).toBe(`${description}
 Interface: resolve${signature}
 ${PROMPT}`);
     });
@@ -206,17 +202,17 @@ ${PROMPT}`);
       const replServer = await repl(AppModule);
 
       const { description, signature } = new SelectReplFn(
-        sinon.stub() as unknown as ReplContext,
+        vi.fn() as unknown as ReplContext,
       ).fnDefinition;
       let outputText = '';
-      sinon.stub(process.stdout, 'write').callsFake(text => {
+      vi.spyOn(process.stdout, 'write').mockImplementation(text => {
         outputText += text as string;
         return true;
       });
 
       replServer.emit('line', 'select.help');
 
-      expect(outputText).to.equal(`${description}
+      expect(outputText).toBe(`${description}
 Interface: select${signature}
 ${PROMPT}`);
     });
@@ -225,17 +221,17 @@ ${PROMPT}`);
       const replServer = await repl(AppModule);
 
       const { description, signature } = new DebugReplFn(
-        sinon.stub() as unknown as ReplContext,
+        vi.fn() as unknown as ReplContext,
       ).fnDefinition;
       let outputText = '';
-      sinon.stub(process.stdout, 'write').callsFake(text => {
+      vi.spyOn(process.stdout, 'write').mockImplementation(text => {
         outputText += text as string;
         return true;
       });
 
       replServer.emit('line', 'debug.help');
 
-      expect(outputText).to.equal(`${description}
+      expect(outputText).toBe(`${description}
 Interface: debug${signature}
 ${PROMPT}`);
     });
@@ -244,17 +240,17 @@ ${PROMPT}`);
       const replServer = await repl(AppModule);
 
       const { description, signature } = new MethodsReplFn(
-        sinon.stub() as unknown as ReplContext,
+        vi.fn() as unknown as ReplContext,
       ).fnDefinition;
       let outputText = '';
-      sinon.stub(process.stdout, 'write').callsFake(text => {
+      vi.spyOn(process.stdout, 'write').mockImplementation(text => {
         outputText += text as string;
         return true;
       });
 
       replServer.emit('line', 'methods.help');
 
-      expect(outputText).to.equal(`${description}
+      expect(outputText).toBe(`${description}
 Interface: methods${signature}
 ${PROMPT}`);
     });

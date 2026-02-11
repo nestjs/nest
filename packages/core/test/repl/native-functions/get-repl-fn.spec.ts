@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { GetReplFn } from '../../../repl/native-functions/index.js';
 import { ReplContext } from '../../../repl/repl-context.js';
 import { NestContainer } from '../../../injector/container.js';
@@ -10,19 +8,19 @@ describe('GetReplFn', () => {
   let replContext: ReplContext;
   let mockApp: {
     container: NestContainer;
-    get: sinon.SinonStub;
-    resolve: sinon.SinonSpy;
-    select: sinon.SinonSpy;
+    get: ReturnType<typeof vi.fn>;
+    resolve: ReturnType<typeof vi.fn>;
+    select: ReturnType<typeof vi.fn>;
   };
 
-  before(async () => {
+  beforeAll(async () => {
     const container = new NestContainer();
 
     mockApp = {
       container,
-      get: sinon.stub(),
-      resolve: sinon.spy(),
-      select: sinon.spy(),
+      get: vi.fn(),
+      resolve: vi.fn(),
+      select: vi.fn(),
     };
     replContext = new ReplContext(mockApp as any);
   });
@@ -30,18 +28,18 @@ describe('GetReplFn', () => {
   beforeEach(() => {
     getReplFn = replContext.nativeFunctions.get('get') as GetReplFn;
   });
-  afterEach(() => sinon.restore());
+  afterEach(() => vi.restoreAllMocks());
 
   it('the function name should be "get"', () => {
-    expect(getReplFn).to.not.be.undefined;
-    expect(getReplFn.fnDefinition.name).to.eql('get');
+    expect(getReplFn).not.toBeUndefined();
+    expect(getReplFn.fnDefinition.name).toEqual('get');
   });
 
   describe('action', () => {
     it('should pass arguments down to the application context', () => {
       const token = 'test';
       getReplFn.action(token);
-      expect(mockApp.get.calledWith(token)).to.be.true;
+      expect(mockApp.get).toHaveBeenCalledWith(token);
     });
   });
 });

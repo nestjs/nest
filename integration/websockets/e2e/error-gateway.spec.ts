@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { io } from 'socket.io-client';
 import { ErrorGateway } from '../src/error.gateway.js';
 
@@ -25,7 +24,7 @@ describe('ErrorGateway', () => {
 
     await new Promise<void>(resolve =>
       ws.on('exception', error => {
-        expect(error).to.be.eql({
+        expect(error).toEqual({
           status: 'error',
           message: 'test',
           cause: {

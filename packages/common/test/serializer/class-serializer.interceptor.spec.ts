@@ -1,6 +1,4 @@
-import { expect } from 'chai';
 import { of } from 'rxjs';
-import * as sinon from 'sinon';
 import { StreamableFile } from '../../file-stream/index.js';
 import { CallHandler, ExecutionContext } from '../../interfaces/index.js';
 import { ClassSerializerInterceptor } from '../../serializer/class-serializer.interceptor.js';
@@ -9,21 +7,21 @@ describe('ClassSerializerInterceptor', () => {
   let interceptor: ClassSerializerInterceptor;
   let mockReflector: any;
   let mockTransformerPackage: any;
-  let sandbox: sinon.SinonSandbox;
+  let sandbox: any;
 
   beforeEach(() => {
-    sandbox = sinon.createSandbox();
+    sandbox = /* sandbox not needed with vitest */ { stub: vi.fn };
     mockReflector = {
-      getAllAndOverride: sandbox.stub(),
+      getAllAndOverride: vi.fn(),
     };
     mockTransformerPackage = {
-      classToPlain: sandbox.stub(),
-      plainToInstance: sandbox.stub(),
+      classToPlain: vi.fn(),
+      plainToInstance: vi.fn(),
     };
   });
 
   afterEach(() => {
-    sandbox.restore();
+    vi.restoreAllMocks();
   });
 
   describe('constructor', () => {
@@ -36,13 +34,13 @@ describe('ClassSerializerInterceptor', () => {
 
       interceptor = new ClassSerializerInterceptor(mockReflector, options);
 
-      expect(interceptor).to.be.instanceOf(ClassSerializerInterceptor);
+      expect(interceptor).toBeInstanceOf(ClassSerializerInterceptor);
     });
 
     it('should use provided transformer package from options', () => {
       const customTransformer = {
-        classToPlain: sandbox.stub(),
-        plainToInstance: sandbox.stub(),
+        classToPlain: vi.fn(),
+        plainToInstance: vi.fn(),
       };
 
       const options = {
@@ -51,7 +49,7 @@ describe('ClassSerializerInterceptor', () => {
 
       interceptor = new ClassSerializerInterceptor(mockReflector, options);
 
-      expect(interceptor).to.be.instanceOf(ClassSerializerInterceptor);
+      expect(interceptor).toBeInstanceOf(ClassSerializerInterceptor);
     });
   });
 
@@ -65,12 +63,12 @@ describe('ClassSerializerInterceptor', () => {
       });
 
       mockExecutionContext = {
-        getHandler: sandbox.stub(),
-        getClass: sandbox.stub(),
+        getHandler: vi.fn(),
+        getClass: vi.fn(),
       } as any;
 
       mockCallHandler = {
-        handle: sandbox.stub(),
+        handle: vi.fn(),
       } as any;
     });
 
@@ -78,9 +76,11 @@ describe('ClassSerializerInterceptor', () => {
       const response = { id: 1, name: 'Test' };
       const transformedResponse = { id: 1, name: 'Test' };
 
-      mockReflector.getAllAndOverride.returns(undefined);
-      mockTransformerPackage.classToPlain.returns(transformedResponse);
-      (mockCallHandler.handle as sinon.SinonStub).returns(of(response));
+      mockReflector.getAllAndOverride.mockReturnValue(undefined);
+      mockTransformerPackage.classToPlain.mockReturnValue(transformedResponse);
+      (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
+        of(response),
+      );
 
       const result$ = await interceptor.intercept(
         mockExecutionContext,
@@ -88,7 +88,7 @@ describe('ClassSerializerInterceptor', () => {
       );
       await new Promise<void>(resolve => {
         result$.subscribe(result => {
-          expect(result).to.equal(transformedResponse);
+          expect(result).toBe(transformedResponse);
           resolve();
         });
       });
@@ -102,14 +102,13 @@ describe('ClassSerializerInterceptor', () => {
       const transformedItem1 = { id: 1, name: 'Test1' };
       const transformedItem2 = { id: 2, name: 'Test2' };
 
-      mockReflector.getAllAndOverride.returns(undefined);
+      mockReflector.getAllAndOverride.mockReturnValue(undefined);
       mockTransformerPackage.classToPlain
-        .onFirstCall()
-        .returns(transformedItem1);
-      mockTransformerPackage.classToPlain
-        .onSecondCall()
-        .returns(transformedItem2);
-      (mockCallHandler.handle as sinon.SinonStub).returns(of(response));
+        .mockReturnValueOnce(transformedItem1)
+        .mockReturnValueOnce(transformedItem2);
+      (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
+        of(response),
+      );
 
       const result$ = await interceptor.intercept(
         mockExecutionContext,
@@ -117,9 +116,9 @@ describe('ClassSerializerInterceptor', () => {
       );
       await new Promise<void>(resolve => {
         result$.subscribe(result => {
-          expect(result).to.be.an('array').with.lengthOf(2);
-          expect(result[0]).to.equal(transformedItem1);
-          expect(result[1]).to.equal(transformedItem2);
+          expect(result).toHaveLength(2);
+          expect(result[0]).toBe(transformedItem1);
+          expect(result[1]).toBe(transformedItem2);
           resolve();
         });
       });
@@ -136,9 +135,11 @@ describe('ClassSerializerInterceptor', () => {
         ...defaultOptions,
       });
 
-      mockReflector.getAllAndOverride.returns(contextOptions);
-      mockTransformerPackage.classToPlain.returns(transformedResponse);
-      (mockCallHandler.handle as sinon.SinonStub).returns(of(response));
+      mockReflector.getAllAndOverride.mockReturnValue(contextOptions);
+      mockTransformerPackage.classToPlain.mockReturnValue(transformedResponse);
+      (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
+        of(response),
+      );
 
       const result$ = await interceptor.intercept(
         mockExecutionContext,
@@ -146,9 +147,9 @@ describe('ClassSerializerInterceptor', () => {
       );
       await new Promise<void>(resolve => {
         result$.subscribe(result => {
-          const callArgs = mockTransformerPackage.classToPlain.getCall(0).args;
-          expect(callArgs[1]).to.deep.include(defaultOptions);
-          expect(callArgs[1]).to.deep.include(contextOptions);
+          const callArgs = mockTransformerPackage.classToPlain.mock.calls[0];
+          expect(callArgs[1]).toMatchObject(defaultOptions);
+          expect(callArgs[1]).toMatchObject(contextOptions);
           resolve();
         });
       });
@@ -159,11 +160,17 @@ describe('ClassSerializerInterceptor', () => {
       const mockHandler = {};
       const mockClass = {};
 
-      (mockExecutionContext.getHandler as sinon.SinonStub).returns(mockHandler);
-      (mockExecutionContext.getClass as sinon.SinonStub).returns(mockClass);
-      mockReflector.getAllAndOverride.returns(undefined);
-      mockTransformerPackage.classToPlain.returns(response);
-      (mockCallHandler.handle as sinon.SinonStub).returns(of(response));
+      (
+        mockExecutionContext.getHandler as ReturnType<typeof vi.fn>
+      ).mockReturnValue(mockHandler);
+      (
+        mockExecutionContext.getClass as ReturnType<typeof vi.fn>
+      ).mockReturnValue(mockClass);
+      mockReflector.getAllAndOverride.mockReturnValue(undefined);
+      mockTransformerPackage.classToPlain.mockReturnValue(response);
+      (mockCallHandler.handle as ReturnType<typeof vi.fn>).mockReturnValue(
+        of(response),
+      );
 
       const result$ = await interceptor.intercept(
         mockExecutionContext,
@@ -171,9 +178,9 @@ describe('ClassSerializerInterceptor', () => {
       );
       await new Promise<void>(resolve => {
         result$.subscribe(() => {
-          expect(mockReflector.getAllAndOverride.calledOnce).to.be.true;
-          const args = mockReflector.getAllAndOverride.getCall(0).args;
-          expect(args[1]).to.deep.equal([mockHandler, mockClass]);
+          expect(mockReflector.getAllAndOverride).toHaveBeenCalledOnce();
+          const args = mockReflector.getAllAndOverride.mock.calls[0];
+          expect(args[1]).toEqual([mockHandler, mockClass]);
           resolve();
         });
       });
@@ -188,37 +195,37 @@ describe('ClassSerializerInterceptor', () => {
     });
 
     it('should return primitive values unchanged', () => {
-      expect(interceptor.serialize('string' as any, {})).to.equal('string');
-      expect(interceptor.serialize(123 as any, {})).to.equal(123);
-      expect(interceptor.serialize(true as any, {})).to.equal(true);
+      expect(interceptor.serialize('string' as any, {})).toBe('string');
+      expect(interceptor.serialize(123 as any, {})).toBe(123);
+      expect(interceptor.serialize(true as any, {})).toBe(true);
     });
 
     it('should return null unchanged', () => {
-      expect(interceptor.serialize(null as any, {})).to.be.null;
+      expect(interceptor.serialize(null as any, {})).toBeNull();
     });
 
     it('should return undefined unchanged', () => {
-      expect(interceptor.serialize(undefined as any, {})).to.be.undefined;
+      expect(interceptor.serialize(undefined as any, {})).toBeUndefined();
     });
 
     it('should return StreamableFile unchanged', () => {
       const streamableFile = new StreamableFile(Buffer.from('test'));
       const result = interceptor.serialize(streamableFile as any, {});
 
-      expect(result).to.equal(streamableFile);
-      expect(mockTransformerPackage.classToPlain.called).to.be.false;
+      expect(result).toBe(streamableFile);
+      expect(mockTransformerPackage.classToPlain).not.toHaveBeenCalled();
     });
 
     it('should transform plain object', () => {
       const input = { id: 1, name: 'Test' };
       const output = { id: 1 };
 
-      mockTransformerPackage.classToPlain.returns(output);
+      mockTransformerPackage.classToPlain.mockReturnValue(output);
 
       const result = interceptor.serialize(input, {});
 
-      expect(result).to.equal(output);
-      expect(mockTransformerPackage.classToPlain.calledOnce).to.be.true;
+      expect(result).toBe(output);
+      expect(mockTransformerPackage.classToPlain).toHaveBeenCalledOnce();
     });
 
     it('should transform array of objects', () => {
@@ -226,15 +233,16 @@ describe('ClassSerializerInterceptor', () => {
       const output1 = { id: 1 };
       const output2 = { id: 2 };
 
-      mockTransformerPackage.classToPlain.onFirstCall().returns(output1);
-      mockTransformerPackage.classToPlain.onSecondCall().returns(output2);
+      mockTransformerPackage.classToPlain
+        .mockReturnValueOnce(output1)
+        .mockReturnValueOnce(output2);
 
       const result = interceptor.serialize(input, {});
 
-      expect(result).to.be.an('array').with.lengthOf(2);
-      expect(result[0]).to.equal(output1);
-      expect(result[1]).to.equal(output2);
-      expect(mockTransformerPackage.classToPlain.calledTwice).to.be.true;
+      expect(result).toHaveLength(2);
+      expect(result[0]).toBe(output1);
+      expect(result[1]).toBe(output2);
+      expect(mockTransformerPackage.classToPlain).toHaveBeenCalledTimes(2);
     });
 
     it('should handle empty array', () => {
@@ -242,8 +250,8 @@ describe('ClassSerializerInterceptor', () => {
 
       const result = interceptor.serialize(input, {});
 
-      expect(result).to.be.an('array').that.is.empty;
-      expect(mockTransformerPackage.classToPlain.called).to.be.false;
+      expect(result).toHaveLength(0);
+      expect(mockTransformerPackage.classToPlain).not.toHaveBeenCalled();
     });
   });
 
@@ -255,25 +263,27 @@ describe('ClassSerializerInterceptor', () => {
     });
 
     it('should return falsy values unchanged', () => {
-      expect(interceptor.transformToPlain(null, {})).to.be.null;
-      expect(interceptor.transformToPlain(undefined, {})).to.be.undefined;
-      expect(interceptor.transformToPlain(0 as any, {})).to.equal(0);
-      expect(interceptor.transformToPlain(false as any, {})).to.be.false;
-      expect(interceptor.transformToPlain('' as any, {})).to.equal('');
+      expect(interceptor.transformToPlain(null, {})).toBeNull();
+      expect(interceptor.transformToPlain(undefined, {})).toBeUndefined();
+      expect(interceptor.transformToPlain(0 as any, {})).toBe(0);
+      expect(interceptor.transformToPlain(false as any, {})).toBe(false);
+      expect(interceptor.transformToPlain('' as any, {})).toBe('');
     });
 
     it('should use classToPlain when no type option provided', () => {
       const input = { id: 1, name: 'Test' };
       const output = { id: 1 };
 
-      mockTransformerPackage.classToPlain.returns(output);
+      mockTransformerPackage.classToPlain.mockReturnValue(output);
 
       const result = interceptor.transformToPlain(input, {});
 
-      expect(result).to.equal(output);
-      expect(mockTransformerPackage.classToPlain.calledOnceWith(input, {})).to
-        .be.true;
-      expect(mockTransformerPackage.plainToInstance.called).to.be.false;
+      expect(result).toBe(output);
+      expect(mockTransformerPackage.classToPlain).toHaveBeenCalledWith(
+        input,
+        {},
+      );
+      expect(mockTransformerPackage.plainToInstance).not.toHaveBeenCalled();
     });
 
     it('should use classToPlain when input is instance of options.type', () => {
@@ -289,13 +299,13 @@ describe('ClassSerializerInterceptor', () => {
       const output = { id: 1 };
       const options = { type: UserDto };
 
-      mockTransformerPackage.classToPlain.returns(output);
+      mockTransformerPackage.classToPlain.mockReturnValue(output);
 
       const result = interceptor.transformToPlain(input, options);
 
-      expect(result).to.equal(output);
-      expect(mockTransformerPackage.classToPlain.calledOnce).to.be.true;
-      expect(mockTransformerPackage.plainToInstance.called).to.be.false;
+      expect(result).toBe(output);
+      expect(mockTransformerPackage.classToPlain).toHaveBeenCalledOnce();
+      expect(mockTransformerPackage.plainToInstance).not.toHaveBeenCalled();
     });
 
     it('should convert plain to instance then to plain when type provided but not matching', () => {
@@ -310,25 +320,21 @@ describe('ClassSerializerInterceptor', () => {
       const finalOutput = { id: 1 };
       const options = { type: UserDto };
 
-      mockTransformerPackage.plainToInstance.returns(instanceOutput);
-      mockTransformerPackage.classToPlain.returns(finalOutput);
+      mockTransformerPackage.plainToInstance.mockReturnValue(instanceOutput);
+      mockTransformerPackage.classToPlain.mockReturnValue(finalOutput);
 
       const result = interceptor.transformToPlain(plainInput, options);
 
-      expect(result).to.equal(finalOutput);
-      expect(
-        mockTransformerPackage.plainToInstance.calledOnceWith(
-          UserDto,
-          plainInput,
-          options,
-        ),
-      ).to.be.true;
-      expect(
-        mockTransformerPackage.classToPlain.calledOnceWith(
-          instanceOutput,
-          options,
-        ),
-      ).to.be.true;
+      expect(result).toBe(finalOutput);
+      expect(mockTransformerPackage.plainToInstance).toHaveBeenCalledWith(
+        UserDto,
+        plainInput,
+        options,
+      );
+      expect(mockTransformerPackage.classToPlain).toHaveBeenCalledWith(
+        instanceOutput,
+        options,
+      );
     });
 
     it('should handle complex nested objects', () => {
@@ -341,11 +347,11 @@ describe('ClassSerializerInterceptor', () => {
         posts: [{ id: 1 }],
       };
 
-      mockTransformerPackage.classToPlain.returns(output);
+      mockTransformerPackage.classToPlain.mockReturnValue(output);
 
       const result = interceptor.transformToPlain(input, {});
 
-      expect(result).to.equal(output);
+      expect(result).toBe(output);
     });
   });
 
@@ -360,40 +366,40 @@ describe('ClassSerializerInterceptor', () => {
       const mockHandler = {};
       const mockClass = {};
       const mockContext = {
-        getHandler: sandbox.stub().returns(mockHandler),
-        getClass: sandbox.stub().returns(mockClass),
+        getHandler: vi.fn().mockReturnValue(mockHandler),
+        getClass: vi.fn().mockReturnValue(mockClass),
       } as any;
 
       const expectedOptions = { groups: ['admin'] };
-      mockReflector.getAllAndOverride.returns(expectedOptions);
+      mockReflector.getAllAndOverride.mockReturnValue(expectedOptions);
 
       const result = (interceptor as any).getContextOptions(mockContext);
 
-      expect(mockReflector.getAllAndOverride.calledOnce).to.be.true;
-      const callArgs = mockReflector.getAllAndOverride.getCall(0).args;
-      expect(callArgs[1]).to.deep.equal([mockHandler, mockClass]);
-      expect(result).to.equal(expectedOptions);
+      expect(mockReflector.getAllAndOverride).toHaveBeenCalledOnce();
+      const callArgs = mockReflector.getAllAndOverride.mock.calls[0];
+      expect(callArgs[1]).toEqual([mockHandler, mockClass]);
+      expect(result).toBe(expectedOptions);
     });
 
     it('should return undefined when no metadata exists', () => {
       const mockContext = {
-        getHandler: sandbox.stub().returns({}),
-        getClass: sandbox.stub().returns({}),
+        getHandler: vi.fn().mockReturnValue({}),
+        getClass: vi.fn().mockReturnValue({}),
       } as any;
 
-      mockReflector.getAllAndOverride.returns(undefined);
+      mockReflector.getAllAndOverride.mockReturnValue(undefined);
 
       const result = (interceptor as any).getContextOptions(mockContext);
 
-      expect(result).to.be.undefined;
+      expect(result).toBeUndefined();
     });
 
     it('should respect handler metadata over class metadata', () => {
       const mockHandler = {};
       const mockClass = {};
       const mockContext = {
-        getHandler: sandbox.stub().returns(mockHandler),
-        getClass: sandbox.stub().returns(mockClass),
+        getHandler: vi.fn().mockReturnValue(mockHandler),
+        getClass: vi.fn().mockReturnValue(mockClass),
       } as any;
 
       // getAllAndOverride should merge with handler taking precedence
@@ -401,15 +407,15 @@ describe('ClassSerializerInterceptor', () => {
         groups: ['user'],
         excludeExtraneousValues: true,
       };
-      mockReflector.getAllAndOverride.returns(handlerOptions);
+      mockReflector.getAllAndOverride.mockReturnValue(handlerOptions);
 
       const result = (interceptor as any).getContextOptions(mockContext);
 
-      expect(result).to.deep.equal(handlerOptions);
+      expect(result).toEqual(handlerOptions);
       // Verify it's checking handler first, then class
-      const callArgs = mockReflector.getAllAndOverride.getCall(0).args;
-      expect(callArgs[1][0]).to.equal(mockHandler);
-      expect(callArgs[1][1]).to.equal(mockClass);
+      const callArgs = mockReflector.getAllAndOverride.mock.calls[0];
+      expect(callArgs[1][0]).toBe(mockHandler);
+      expect(callArgs[1][1]).toBe(mockClass);
     });
   });
 
@@ -429,19 +435,16 @@ describe('ClassSerializerInterceptor', () => {
       ];
 
       mockTransformerPackage.classToPlain
-        .onCall(0)
-        .returns({ id: 1, name: 'Test' });
-      mockTransformerPackage.classToPlain.onCall(1).returns(null);
-      mockTransformerPackage.classToPlain.onCall(2).returns(undefined);
-      mockTransformerPackage.classToPlain
-        .onCall(3)
-        .returns({ id: 2, name: 'Test2' });
+        .mockReturnValueOnce({ id: 1, name: 'Test' })
+        .mockReturnValueOnce(null)
+        .mockReturnValueOnce(undefined)
+        .mockReturnValueOnce({ id: 2, name: 'Test2' });
 
       const result = interceptor.serialize(input, {});
 
-      expect(result).to.be.an('array').with.lengthOf(4);
-      expect(result[1]).to.be.null;
-      expect(result[2]).to.be.undefined;
+      expect(result).toHaveLength(4);
+      expect(result[1]).toBeNull();
+      expect(result[2]).toBeUndefined();
     });
 
     it('should not transform when response is not an object', () => {
@@ -449,19 +452,19 @@ describe('ClassSerializerInterceptor', () => {
 
       const result = interceptor.serialize(input as any, {});
 
-      expect(result).to.equal(input);
-      expect(mockTransformerPackage.classToPlain.called).to.be.false;
+      expect(result).toBe(input);
+      expect(mockTransformerPackage.classToPlain).not.toHaveBeenCalled();
     });
 
     it('should handle Date objects', () => {
       const date = new Date();
       const output = { date: date.toISOString() };
 
-      mockTransformerPackage.classToPlain.returns(output);
+      mockTransformerPackage.classToPlain.mockReturnValue(output);
 
       const result = interceptor.serialize({ date } as any, {});
 
-      expect(mockTransformerPackage.classToPlain.calledOnce).to.be.true;
+      expect(mockTransformerPackage.classToPlain).toHaveBeenCalledOnce();
     });
 
     it('should pass through options to transformer', () => {
@@ -472,13 +475,16 @@ describe('ClassSerializerInterceptor', () => {
         strategy: 'excludeAll',
       };
 
-      mockTransformerPackage.classToPlain.returns({ id: 1, name: 'Test' });
+      mockTransformerPackage.classToPlain.mockReturnValue({
+        id: 1,
+        name: 'Test',
+      });
 
       interceptor.transformToPlain(input, options as any);
 
-      expect(mockTransformerPackage.classToPlain.calledOnce).to.be.true;
-      const callArgs = mockTransformerPackage.classToPlain.getCall(0).args;
-      expect(callArgs[1]).to.deep.include(options);
+      expect(mockTransformerPackage.classToPlain).toHaveBeenCalledOnce();
+      const callArgs = mockTransformerPackage.classToPlain.mock.calls[0];
+      expect(callArgs[1]).toMatchObject(options);
     });
   });
 });

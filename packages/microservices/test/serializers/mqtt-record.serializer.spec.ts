@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { MqttRecordBuilder } from '../../record-builders/index.js';
 import { MqttRecordSerializer } from '../../serializers/mqtt-record.serializer.js';
 
@@ -22,7 +21,7 @@ describe('MqttRecordSerializer', () => {
           pattern: 'pattern',
           data: mqttMessage,
         }),
-      ).to.deep.eq(
+      ).toEqual(
         JSON.stringify({
           pattern: 'pattern',
           data: { value: 'string' },

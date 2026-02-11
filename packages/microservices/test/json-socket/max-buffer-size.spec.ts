@@ -1,8 +1,5 @@
-import { expect } from 'chai';
 import { Socket } from 'net';
-import * as sinon from 'sinon';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
-import { TcpEventsMap } from '../../events/tcp.events.js';
 import { JsonSocket } from '../../helpers/json-socket.js';
 
 const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
@@ -11,7 +8,7 @@ describe('JsonSocket maxBufferSize', () => {
   describe('default maxBufferSize', () => {
     it('should use default maxBufferSize when not provided', () => {
       const socket = new JsonSocket(new Socket());
-      expect(socket['maxBufferSize']).to.equal(DEFAULT_MAX_BUFFER_SIZE);
+      expect(socket['maxBufferSize']).toBe(DEFAULT_MAX_BUFFER_SIZE);
     });
 
     it('should accept data up to default maxBufferSize', () => {
@@ -26,7 +23,7 @@ describe('JsonSocket maxBufferSize', () => {
 
       expect(() => {
         socket['handleData'](packet);
-      }).to.not.throw();
+      }).not.toThrow();
     });
 
     it('should throw MaxPacketLengthExceededException when exceeding default maxBufferSize', () => {
@@ -36,7 +33,7 @@ describe('JsonSocket maxBufferSize', () => {
 
       expect(() => {
         socket['handleData'](packet);
-      }).to.throw(MaxPacketLengthExceededException);
+      }).toThrow(MaxPacketLengthExceededException);
     });
   });
 
@@ -46,7 +43,7 @@ describe('JsonSocket maxBufferSize', () => {
       const socket = new JsonSocket(new Socket(), {
         maxBufferSize: customSize,
       });
-      expect(socket['maxBufferSize']).to.equal(customSize);
+      expect(socket['maxBufferSize']).toBe(customSize);
     });
 
     it('should accept data up to custom maxBufferSize', () => {
@@ -64,7 +61,7 @@ describe('JsonSocket maxBufferSize', () => {
 
       expect(() => {
         socket['handleData'](packet);
-      }).to.not.throw();
+      }).not.toThrow();
     });
 
     it('should throw MaxPacketLengthExceededException when exceeding custom maxBufferSize', () => {
@@ -77,7 +74,7 @@ describe('JsonSocket maxBufferSize', () => {
 
       expect(() => {
         socket['handleData'](packet);
-      }).to.throw(MaxPacketLengthExceededException);
+      }).toThrow(MaxPacketLengthExceededException);
     });
 
     it('should throw MaxPacketLengthExceededException with correct buffer length', () => {
@@ -94,8 +91,8 @@ describe('JsonSocket maxBufferSize', () => {
         socket['handleData'](packet);
         expect.fail('Should have thrown MaxPacketLengthExceededException');
       } catch (err) {
-        expect(err).to.be.instanceof(MaxPacketLengthExceededException);
-        expect(err.message).to.include(String(expectedBufferSize));
+        expect(err).toBeInstanceOf(MaxPacketLengthExceededException);
+        expect(err.message).toContain(String(expectedBufferSize));
       }
     });
   });
@@ -117,7 +114,7 @@ describe('JsonSocket maxBufferSize', () => {
       const exceedingData = 'x'.repeat(customSize);
       expect(() => {
         socket['handleData'](exceedingData);
-      }).to.throw(MaxPacketLengthExceededException);
+      }).toThrow(MaxPacketLengthExceededException);
     });
 
     it('should clear buffer after throwing MaxPacketLengthExceededException', () => {
@@ -134,17 +131,17 @@ describe('JsonSocket maxBufferSize', () => {
         // Expected
       }
 
-      expect(socket['buffer']).to.equal('');
+      expect(socket['buffer']).toBe('');
     });
   });
 
   describe('error handling when maxBufferSize exceeded', () => {
-    it(`should emit ${TcpEventsMap.ERROR} event when maxBufferSize is exceeded`, () => {
+    it('should emit error event when maxBufferSize is exceeded', () => {
       const customSize = 100;
       const socket = new JsonSocket(new Socket(), {
         maxBufferSize: customSize,
       });
-      const socketEmitSpy: sinon.SinonSpy<any, any> = sinon.spy(
+      const socketEmitSpy: ReturnType<typeof vi.fn> = vi.spyOn(
         socket['socket'],
         'emit',
       );
@@ -154,37 +151,37 @@ describe('JsonSocket maxBufferSize', () => {
 
       socket['onData'](packet);
 
-      expect(socketEmitSpy.called).to.be.true;
-      expect(socketEmitSpy.calledWith(TcpEventsMap.ERROR)).to.be.true;
-      socketEmitSpy.restore();
+      expect(socketEmitSpy).toHaveBeenCalled();
+      expect(socketEmitSpy).toHaveBeenCalledWith('error', expect.any(String));
+      socketEmitSpy.mockRestore();
     });
 
-    it(`should send a FIN packet when maxBufferSize is exceeded`, () => {
+    it('should send a FIN packet when maxBufferSize is exceeded', () => {
       const customSize = 100;
       const socket = new JsonSocket(new Socket(), {
         maxBufferSize: customSize,
       });
-      const socketEndSpy = sinon.spy(socket['socket'], 'end');
+      const socketEndSpy = vi.spyOn(socket['socket'], 'end');
 
       const largeData = 'x'.repeat(customSize + 1);
       const packet = Buffer.from(`${largeData.length}#${largeData}`);
 
       socket['onData'](packet);
 
-      expect(socketEndSpy.calledOnce).to.be.true;
-      socketEndSpy.restore();
+      expect(socketEndSpy).toHaveBeenCalledOnce();
+      socketEndSpy.mockRestore();
     });
   });
 
   describe('edge cases', () => {
     it('should handle maxBufferSize of 0', () => {
       const socket = new JsonSocket(new Socket(), { maxBufferSize: 0 });
-      expect(socket['maxBufferSize']).to.equal(0);
+      expect(socket['maxBufferSize']).toBe(0);
 
       const packet = '5#"test"';
       expect(() => {
         socket['handleData'](packet);
-      }).to.throw(MaxPacketLengthExceededException);
+      }).toThrow(MaxPacketLengthExceededException);
     });
 
     it('should handle very large custom maxBufferSize', () => {
@@ -192,7 +189,7 @@ describe('JsonSocket maxBufferSize', () => {
       const socket = new JsonSocket(new Socket(), {
         maxBufferSize: veryLargeSize,
       });
-      expect(socket['maxBufferSize']).to.equal(veryLargeSize);
+      expect(socket['maxBufferSize']).toBe(veryLargeSize);
 
       // Account for header length (number + '#')
       // For 10MB, header is approximately "10485760#" = 10 characters
@@ -204,7 +201,7 @@ describe('JsonSocket maxBufferSize', () => {
 
       expect(() => {
         socket['handleData'](packet);
-      }).to.not.throw();
+      }).not.toThrow();
     });
 
     it('should handle maxBufferSize exactly at the limit', () => {
@@ -223,7 +220,7 @@ describe('JsonSocket maxBufferSize', () => {
       // Should not throw when exactly at limit
       expect(() => {
         socket['handleData'](packet);
-      }).to.not.throw();
+      }).not.toThrow();
     });
   });
 });

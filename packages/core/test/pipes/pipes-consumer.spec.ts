@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum.js';
 import { PipesConsumer } from '../../pipes/pipes-consumer.js';
 
@@ -18,33 +16,35 @@ describe('PipesConsumer', () => {
       ((metatype = {}), (type = RouteParamtypes.QUERY));
       stringifiedType = 'query';
       transforms = [
-        createPipe(sinon.stub().callsFake(val => val + 1)),
-        createPipe(sinon.stub().callsFake(val => Promise.resolve(val + 1))),
-        createPipe(sinon.stub().callsFake(val => val + 1)),
+        createPipe(vi.fn().mockImplementation(val => val + 1)),
+        createPipe(vi.fn().mockImplementation(val => Promise.resolve(val + 1))),
+        createPipe(vi.fn().mockImplementation(val => val + 1)),
       ];
     });
-    it('should call all transform functions', done => {
-      /* eslint-disable-next-line @typescript-eslint/no-floating-promises */
-      consumer.apply(value, { metatype, type, data }, transforms).then(() => {
-        expect(
-          transforms.reduce(
-            (prev, next) => prev && next.transform.called,
-            true,
-          ),
-        ).to.be.true;
+    it('should call all transform functions', () =>
+      new Promise<void>(done => {
+        /* eslint-disable-next-line @typescript-eslint/no-floating-promises */
+        consumer.apply(value, { metatype, type, data }, transforms).then(() => {
+          expect(
+            transforms.reduce(
+              (prev, next) => prev && next.transform.mock.calls.length > 0,
+              true,
+            ),
+          ).toBe(true);
 
-        done();
-      });
-    });
-    it('should return expected result', done => {
-      const expectedResult = 3;
-      /* eslint-disable-next-line @typescript-eslint/no-floating-promises */
-      consumer
-        .apply(value, { metatype, type, data }, transforms)
-        .then(result => {
-          expect(result).to.be.eql(expectedResult);
           done();
         });
-    });
+      }));
+    it('should return expected result', () =>
+      new Promise<void>(done => {
+        const expectedResult = 3;
+        /* eslint-disable-next-line @typescript-eslint/no-floating-promises */
+        consumer
+          .apply(value, { metatype, type, data }, transforms)
+          .then(result => {
+            expect(result).toEqual(expectedResult);
+            done();
+          });
+      }));
   });
 });

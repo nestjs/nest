@@ -1,16 +1,13 @@
-import { expect } from 'chai';
 import { Socket as NetSocket } from 'net';
-import * as sinon from 'sinon';
 import { TLSSocket } from 'tls';
 import { ClientTCP } from '../../client/client-tcp.js';
-import { TcpEventsMap } from '../../events/tcp.events.js';
 import { TcpSocket } from '../../helpers/tcp-socket.js';
 
 describe('ClientTCP', () => {
   let client: ClientTCP;
   let untypedClient: any;
   let socket: any;
-  let createSocketStub: sinon.SinonStub;
+  let createSocketStub: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     client = new ClientTCP({});
@@ -20,22 +17,22 @@ describe('ClientTCP', () => {
       event !== 'error' && event !== 'close' && callback({});
 
     socket = {
-      connect: sinon.stub(),
-      on: sinon.stub().callsFake(onFakeCallback),
+      connect: vi.fn(),
+      on: vi.fn().mockImplementation(onFakeCallback),
       netSocket: {
-        addListener: sinon.stub().callsFake(onFakeCallback),
-        removeListener: sinon.spy(),
-        once: sinon.stub().callsFake(onFakeCallback),
+        addListener: vi.fn().mockImplementation(onFakeCallback),
+        removeListener: vi.fn(),
+        once: vi.fn().mockImplementation(onFakeCallback),
       },
-      sendMessage: sinon.spy(),
-      end: sinon.spy(),
+      sendMessage: vi.fn(),
+      end: vi.fn(),
     };
-    createSocketStub = sinon
-      .stub(client, 'createSocket')
-      .callsFake(() => socket);
+    createSocketStub = vi
+      .spyOn(client, 'createSocket')
+      .mockImplementation(() => socket);
   });
   afterEach(() => {
-    createSocketStub.restore();
+    createSocketStub.mockRestore();
   });
   describe('publish', () => {
     let msg;
@@ -51,79 +48,73 @@ describe('ClientTCP', () => {
       it('should remove listener from routing map', () => {
         client['publish'](msg, () => ({}))();
 
-        expect(client['routingMap'].size).to.be.eq(0);
+        expect(client['routingMap'].size).toBe(0);
       });
     });
     describe('on error', () => {
       it('should call callback', () => {
-        const callback = sinon.spy();
-        sinon.stub(client, 'assignPacketId' as any).callsFake(() => {
+        const callback = vi.fn();
+        vi.spyOn(client, 'assignPacketId' as any).mockImplementation(() => {
           throw new Error();
         });
         client['publish'](msg, callback);
-        expect(callback.called).to.be.true;
-        expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
+        expect(callback).toHaveBeenCalled();
+        expect(callback.mock.calls[0][0].err).toBeInstanceOf(Error);
       });
     });
   });
   describe('handleResponse', () => {
-    let callback: sinon.SinonSpy;
+    let callback: ReturnType<typeof vi.fn>;
     const id = '1';
 
     describe('when disposed', () => {
       beforeEach(async () => {
-        callback = sinon.spy();
+        callback = vi.fn();
         client['routingMap'].set(id, callback);
         await client.handleResponse({ id, isDisposed: true });
       });
       it('should emit disposed callback', () => {
-        expect(callback.called).to.be.true;
-        expect(
-          callback.calledWith({
-            err: undefined,
-            response: undefined,
-            isDisposed: true,
-          }),
-        ).to.be.true;
+        expect(callback).toHaveBeenCalledWith({
+          err: undefined,
+          response: undefined,
+          isDisposed: true,
+        });
       });
     });
     describe('when not disposed', () => {
       let buffer;
       beforeEach(async () => {
         buffer = { id, err: undefined, response: 'res' };
-        callback = sinon.spy();
+        callback = vi.fn();
         client['routingMap'].set(id, callback);
         await client.handleResponse(buffer);
       });
       it('should not end server', () => {
-        expect(socket.end.called).to.be.false;
+        expect(socket.end).not.toHaveBeenCalled();
       });
       it('should call callback with error and response data', () => {
-        expect(callback.called).to.be.true;
-        expect(
-          callback.calledWith({
-            err: buffer.err,
-            response: buffer.response,
-          }),
-        ).to.be.true;
+        expect(callback).toHaveBeenCalledWith({
+          err: buffer.err,
+          response: buffer.response,
+        });
       });
     });
   });
   describe('connect', () => {
-    let registerConnectListenerSpy: sinon.SinonSpy;
-    let registerErrorListenerSpy: sinon.SinonSpy;
-    let registerCloseListenerSpy: sinon.SinonSpy;
-    let connect$Stub: sinon.SinonStub;
+    let registerConnectListenerSpy: ReturnType<typeof vi.fn>;
+    let registerErrorListenerSpy: ReturnType<typeof vi.fn>;
+    let registerCloseListenerSpy: ReturnType<typeof vi.fn>;
+    let connect$Stub: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-      registerConnectListenerSpy = sinon.spy(client, 'registerConnectListener');
-      registerErrorListenerSpy = sinon.spy(client, 'registerErrorListener');
-      registerCloseListenerSpy = sinon.spy(client, 'registerCloseListener');
+      registerConnectListenerSpy = vi.spyOn(client, 'registerConnectListener');
+      registerErrorListenerSpy = vi.spyOn(client, 'registerErrorListener');
+      registerCloseListenerSpy = vi.spyOn(client, 'registerCloseListener');
     });
     afterEach(() => {
-      registerConnectListenerSpy.restore();
-      registerErrorListenerSpy.restore();
-      registerCloseListenerSpy.restore;
+      registerConnectListenerSpy.mockRestore();
+      registerErrorListenerSpy.mockRestore();
+      registerCloseListenerSpy.mockRestore();
     });
     describe('when is not connected', () => {
       beforeEach(async () => {
@@ -132,31 +123,31 @@ describe('ClientTCP', () => {
           subscribe: ({ complete }) => complete(),
           pipe: () => source,
         };
-        connect$Stub = sinon
-          .stub(client, 'connect$' as any)
-          .callsFake(() => source);
+        connect$Stub = vi
+          .spyOn(client, 'connect$' as any)
+          .mockImplementation(() => source);
         await client.connect();
       });
       afterEach(() => {
-        connect$Stub.restore();
+        connect$Stub.mockRestore();
       });
       it('should call "registerConnectListener" once', async () => {
-        expect(registerConnectListenerSpy.called).to.be.true;
+        expect(registerConnectListenerSpy).toHaveBeenCalled();
       });
       it('should call "registerErrorListener" once', async () => {
-        expect(registerErrorListenerSpy.called).to.be.true;
+        expect(registerErrorListenerSpy).toHaveBeenCalled();
       });
       it('should call "registerCloseListener" once', async () => {
-        expect(registerCloseListenerSpy.called).to.be.true;
+        expect(registerCloseListenerSpy).toHaveBeenCalled();
       });
       it('should call "createSocket" once', async () => {
-        expect(createSocketStub.called).to.be.true;
+        expect(createSocketStub).toHaveBeenCalled();
       });
       it('should call "connect$" once', async () => {
-        expect(connect$Stub.called).to.be.true;
+        expect(connect$Stub).toHaveBeenCalled();
       });
       it('should listen on messages', () => {
-        expect(socket.on.called).to.be.true;
+        expect(socket.on).toHaveBeenCalled();
       });
     });
     describe('when is connected', () => {
@@ -164,20 +155,20 @@ describe('ClientTCP', () => {
         client['isConnected'] = true;
       });
       it('should not call "createSocket"', () => {
-        expect(createSocketStub.called).to.be.false;
+        expect(createSocketStub).not.toHaveBeenCalled();
       });
       it('should not call "bindEvents"', () => {
-        expect(registerConnectListenerSpy.called).to.be.false;
+        expect(registerConnectListenerSpy).not.toHaveBeenCalled();
       });
     });
   });
   describe('close', () => {
     let routingMap: Map<string, Function>;
-    let callback: sinon.SinonSpy;
+    let callback: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
       routingMap = new Map<string, Function>();
-      callback = sinon.spy();
+      callback = vi.fn();
       routingMap.set('some id', callback);
 
       untypedClient.socket = socket;
@@ -185,58 +176,62 @@ describe('ClientTCP', () => {
       client.close();
     });
     it('should end() socket', () => {
-      expect(socket.end.called).to.be.true;
+      expect(socket.end).toHaveBeenCalled();
     });
     it('should set "socket" to null', () => {
-      expect(untypedClient.socket).to.be.null;
+      expect(untypedClient.socket).toBeNull();
     });
     it('should clear out the routing map', () => {
-      expect(untypedClient.routingMap.size).to.be.eq(0);
+      expect(untypedClient.routingMap.size).toBe(0);
     });
     it('should call callbacks', () => {
-      expect(
-        callback.calledWith({
-          err: sinon.match({ message: 'Connection closed' }),
-        }),
-      ).to.be.true;
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
     });
   });
   describe('registerErrorListener', () => {
     it('should bind error event handler', () => {
-      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const callback = vi
+        .fn()
+        .mockImplementation((_, fn) => fn({ code: 'test' }));
       const emitter = {
         on: callback,
       };
       client.registerErrorListener(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(TcpEventsMap.ERROR);
+      expect(callback.mock.calls[0][0]).toEqual('error');
     });
   });
   describe('registerCloseListener', () => {
     it('should bind close event handler', () => {
-      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const callback = vi
+        .fn()
+        .mockImplementation((_, fn) => fn({ code: 'test' }));
       const emitter = {
         on: callback,
       };
       client.registerCloseListener(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(TcpEventsMap.CLOSE);
+      expect(callback.mock.calls[0][0]).toEqual('close');
     });
   });
   describe('registerConnectListener', () => {
     it('should bind connect event handler', () => {
-      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const callback = vi
+        .fn()
+        .mockImplementation((_, fn) => fn({ code: 'test' }));
       const emitter = {
         on: callback,
       };
       client.registerConnectListener(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(TcpEventsMap.CONNECT);
+      expect(callback.mock.calls[0][0]).toEqual('connect');
     });
   });
   describe('dispatchEvent', () => {
     const msg = { pattern: 'pattern', data: 'data' };
-    let sendMessageStub: sinon.SinonStub, internalSocket;
+    let sendMessageStub: ReturnType<typeof vi.fn>, internalSocket;
 
     beforeEach(() => {
-      sendMessageStub = sinon.stub();
+      sendMessageStub = vi.fn();
       internalSocket = {
         sendMessage: sendMessageStub,
       };
@@ -246,7 +241,7 @@ describe('ClientTCP', () => {
     it('should publish packet', async () => {
       await client['dispatchEvent'](msg);
 
-      expect(sendMessageStub.called).to.be.true;
+      expect(sendMessageStub).toHaveBeenCalled();
     });
   });
 
@@ -269,7 +264,7 @@ describe('ClientTCP', () => {
       it('should use default maxBufferSize', () => {
         const client = new ClientTCP({});
         const socket = client.createSocket();
-        expect(socket['maxBufferSize']).to.equal(DEFAULT_MAX_BUFFER_SIZE);
+        expect(socket['maxBufferSize']).toBe(DEFAULT_MAX_BUFFER_SIZE);
       });
     });
 
@@ -278,14 +273,14 @@ describe('ClientTCP', () => {
         const customSize = 5000;
         const client = new ClientTCP({ maxBufferSize: customSize });
         const socket = client.createSocket();
-        expect(socket['maxBufferSize']).to.equal(customSize);
+        expect(socket['maxBufferSize']).toBe(customSize);
       });
 
       it('should pass maxBufferSize to JsonSocket', () => {
         const customSize = 10000;
         const client = new ClientTCP({ maxBufferSize: customSize });
         const socket = client.createSocket();
-        expect(socket['maxBufferSize']).to.equal(customSize);
+        expect(socket['maxBufferSize']).toBe(customSize);
       });
     });
 
@@ -304,9 +299,9 @@ describe('ClientTCP', () => {
           maxBufferSize: 5000,
         });
         const socket = client.createSocket();
-        expect(socket).to.be.instanceOf(CustomSocket);
+        expect(socket).toBeInstanceOf(CustomSocket);
         // Custom socket should not have maxBufferSize property
-        expect(socket['maxBufferSize']).to.be.undefined;
+        expect(socket['maxBufferSize']).toBeUndefined();
       });
     });
   });

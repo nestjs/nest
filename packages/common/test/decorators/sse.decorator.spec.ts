@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import {
   METHOD_METADATA,
   PATH_METADATA,
@@ -19,22 +18,22 @@ describe('@Sse', () => {
 
   it('should enhance method with expected http status code', () => {
     const path = Reflect.getMetadata(PATH_METADATA, Test.test);
-    expect(path).to.be.eql('/prefix');
+    expect(path).toEqual('/prefix');
 
     const method = Reflect.getMetadata(METHOD_METADATA, Test.test);
-    expect(method).to.be.eql(RequestMethod.GET);
+    expect(method).toEqual(RequestMethod.GET);
 
     const metadata = Reflect.getMetadata(SSE_METADATA, Test.test);
-    expect(metadata).to.be.eql(true);
+    expect(metadata).toEqual(true);
   });
   it('should enhance method with expected http status code and method from options', () => {
     const path = Reflect.getMetadata(PATH_METADATA, Test.testUsingOptions);
-    expect(path).to.be.eql('/prefix');
+    expect(path).toEqual('/prefix');
 
     const method = Reflect.getMetadata(METHOD_METADATA, Test.testUsingOptions);
-    expect(method).to.be.eql(RequestMethod.POST);
+    expect(method).toEqual(RequestMethod.POST);
 
     const metadata = Reflect.getMetadata(SSE_METADATA, Test.testUsingOptions);
-    expect(metadata).to.be.eql(true);
+    expect(metadata).toEqual(true);
   });
 });

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { KafkaHeaders } from '../../enums/kafka-headers.enum.js';
 import { KafkaRequestSerializer } from '../../serializers/kafka-request.serializer.js';
 
@@ -9,42 +8,42 @@ describe('KafkaRequestSerializer', () => {
   });
   describe('serialize', () => {
     it('undefined', async () => {
-      expect(await instance.serialize(undefined)).to.deep.eq({
+      expect(await instance.serialize(undefined)).toEqual({
         headers: {},
         value: null,
       });
     });
 
     it('null', async () => {
-      expect(await instance.serialize(null)).to.deep.eq({
+      expect(await instance.serialize(null)).toEqual({
         headers: {},
         value: null,
       });
     });
 
     it('string', async () => {
-      expect(await instance.serialize('string')).to.deep.eq({
+      expect(await instance.serialize('string')).toEqual({
         headers: {},
         value: 'string',
       });
     });
 
     it('number', async () => {
-      expect(await instance.serialize(12345)).to.deep.eq({
+      expect(await instance.serialize(12345)).toEqual({
         headers: {},
         value: '12345',
       });
     });
 
     it('buffer', async () => {
-      expect(await instance.serialize(Buffer.from('buffer'))).to.deep.eq({
+      expect(await instance.serialize(Buffer.from('buffer'))).toEqual({
         headers: {},
         value: Buffer.from('buffer'),
       });
     });
 
     it('array', async () => {
-      expect(await instance.serialize([1, 2, 3, 4, 5])).to.deep.eq({
+      expect(await instance.serialize([1, 2, 3, 4, 5])).toEqual({
         headers: {},
         value: '[1,2,3,4,5]',
       });
@@ -55,7 +54,7 @@ describe('KafkaRequestSerializer', () => {
         await instance.serialize({
           prop: 'value',
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {},
         value: '{"prop":"value"}',
       });
@@ -69,7 +68,7 @@ describe('KafkaRequestSerializer', () => {
         }
       }
 
-      expect(await instance.serialize(new Complex())).to.deep.eq({
+      expect(await instance.serialize(new Complex())).toEqual({
         headers: {},
         value: 'complex',
       });
@@ -85,7 +84,7 @@ describe('KafkaRequestSerializer', () => {
 
       class ComplexChild extends ComplexParent {}
 
-      expect(await instance.serialize(new ComplexChild())).to.deep.eq({
+      expect(await instance.serialize(new ComplexChild())).toEqual({
         headers: {},
         value: 'complexParent',
       });
@@ -96,12 +95,10 @@ describe('KafkaRequestSerializer', () => {
         private readonly name = 'complex';
       }
 
-      expect(await instance.serialize(new ComplexWithOutToString())).to.deep.eq(
-        {
-          headers: {},
-          value: '{"name":"complex"}',
-        },
-      );
+      expect(await instance.serialize(new ComplexWithOutToString())).toEqual({
+        headers: {},
+        value: '{"name":"complex"}',
+      });
     });
   });
 
@@ -111,7 +108,7 @@ describe('KafkaRequestSerializer', () => {
         await instance.serialize({
           value: 'string',
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {},
         value: 'string',
       });
@@ -123,7 +120,7 @@ describe('KafkaRequestSerializer', () => {
           key: '1',
           value: 'string',
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {},
         key: '1',
         value: 'string',
@@ -139,7 +136,7 @@ describe('KafkaRequestSerializer', () => {
             [KafkaHeaders.CORRELATION_ID]: '1234',
           },
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: {
           [KafkaHeaders.CORRELATION_ID]: '1234',
         },

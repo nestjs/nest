@@ -1,5 +1,4 @@
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { IntegrationModule } from '../src/integration.module.js';
 
 describe('Module utils (ConfigurableModuleBuilder)', () => {
@@ -16,7 +15,7 @@ describe('Module utils (ConfigurableModuleBuilder)', () => {
 
     const integrationModule = moduleRef.get(IntegrationModule);
 
-    expect(integrationModule.options).to.deep.equal({
+    expect(integrationModule.options).toEqual({
       url: 'test_url',
       secure: false,
     });
@@ -39,7 +38,7 @@ describe('Module utils (ConfigurableModuleBuilder)', () => {
 
     const integrationModule = moduleRef.get(IntegrationModule);
 
-    expect(integrationModule.options).to.deep.equal({
+    expect(integrationModule.options).toEqual({
       url: 'test_url',
       secure: false,
     });

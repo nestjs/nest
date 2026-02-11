@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { ArgumentMetadata } from '../../interfaces/index.js';
 import { ParseBoolPipe } from '../../pipes/parse-bool.pipe.js';
 
@@ -10,13 +9,16 @@ describe('ParseBoolPipe', () => {
   describe('transform', () => {
     describe('when validation passes', () => {
       it('should return boolean', async () => {
-        expect(await target.transform('true', {} as ArgumentMetadata)).to.be
-          .true;
-        expect(await target.transform(true, {} as ArgumentMetadata)).to.be.true;
-        expect(await target.transform('false', {} as ArgumentMetadata)).to.be
-          .false;
-        expect(await target.transform(false, {} as ArgumentMetadata)).to.be
-          .false;
+        expect(await target.transform('true', {} as ArgumentMetadata)).toBe(
+          true,
+        );
+        expect(await target.transform(true, {} as ArgumentMetadata)).toBe(true);
+        expect(await target.transform('false', {} as ArgumentMetadata)).toBe(
+          false,
+        );
+        expect(await target.transform(false, {} as ArgumentMetadata)).toBe(
+          false,
+        );
       });
 
       it('should not throw an error if the value is undefined/null and optional is true', async () => {
@@ -25,13 +27,14 @@ describe('ParseBoolPipe', () => {
           undefined!,
           {} as ArgumentMetadata,
         );
-        expect(value).to.equal(undefined);
+        expect(value).toBe(undefined);
       });
     });
     describe('when validation fails', () => {
       it('should throw an error', async () => {
-        return expect(target.transform('123abc', {} as ArgumentMetadata)).to.be
-          .rejected;
+        return expect(
+          target.transform('123abc', {} as ArgumentMetadata),
+        ).rejects.toBeDefined();
       });
     });
   });

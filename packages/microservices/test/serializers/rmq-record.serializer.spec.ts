@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { RmqRecordBuilder } from '../../record-builders/index.js';
 import { RmqRecordSerializer } from '../../serializers/rmq-record.serializer.js';
 
@@ -21,7 +20,7 @@ describe('RmqRecordSerializer', () => {
           pattern,
           data: rmqMessage,
         }),
-      ).to.deep.eq({
+      ).toEqual({
         pattern,
         options: { appId: 'app', persistent: true },
         data: { value: 'string' },

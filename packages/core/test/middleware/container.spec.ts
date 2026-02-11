@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Injectable } from '../../../common/index.js';
 import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator.js';
@@ -47,9 +46,7 @@ describe('MiddlewareContainer', () => {
       },
     ];
     container.insertConfig(config, 'Module');
-    expect([...container.getConfigurations().get('Module')!]).to.deep.equal(
-      config,
-    );
+    expect([...container.getConfigurations().get('Module')!]).toEqual(config);
   });
 
   it('should store expected middleware for given module', () => {
@@ -66,9 +63,9 @@ describe('MiddlewareContainer', () => {
     const collection = container.getMiddlewareCollection(key);
     const insertedMiddleware = collection.get(TestMiddleware);
 
-    expect(collection.size).to.eql(config.length);
-    expect(insertedMiddleware).to.be.instanceOf(InstanceWrapper);
-    expect(insertedMiddleware!.scope).to.be.undefined;
-    expect(insertedMiddleware!.metatype).to.be.eql(TestMiddleware);
+    expect(collection.size).toEqual(config.length);
+    expect(insertedMiddleware).toBeInstanceOf(InstanceWrapper);
+    expect(insertedMiddleware!.scope).toBeUndefined();
+    expect(insertedMiddleware!.metatype).toEqual(TestMiddleware);
   });
 });

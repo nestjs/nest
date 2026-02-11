@@ -28,7 +28,7 @@ describe.skip('Fastify Cors', () => {
   ];
   describe('Dynamic config', () => {
     describe('enableCors', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -73,13 +73,13 @@ describe.skip('Fastify Cors', () => {
           .expect('content-length', '0');
       });
 
-      after(async () => {
+      afterAll(async () => {
         await app.close();
       });
     });
 
     describe('Application Options', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -124,7 +124,7 @@ describe.skip('Fastify Cors', () => {
           .expect('content-length', '0');
       });
 
-      after(async () => {
+      afterAll(async () => {
         await app.close();
       });
     });
@@ -132,7 +132,7 @@ describe.skip('Fastify Cors', () => {
 
   describe('Static config', () => {
     describe('enableCors', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -156,12 +156,12 @@ describe.skip('Fastify Cors', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
 
     describe('Application Options', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -186,7 +186,7 @@ describe.skip('Fastify Cors', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });

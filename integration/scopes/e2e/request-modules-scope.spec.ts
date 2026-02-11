@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import request from 'supertest';
 import { RequestChainModule } from '../src/request-chain/request-chain.module.js';
 import { RequestChainService } from '../src/request-chain/request-chain.service.js';
@@ -9,7 +8,7 @@ describe('Request scope (modules propagation)', () => {
   let server;
   let app: INestApplication;
 
-  before(async () => {
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       imports: [RequestChainModule],
     }).compile();
@@ -20,7 +19,7 @@ describe('Request scope (modules propagation)', () => {
   });
 
   describe('when service from parent module is request scoped', () => {
-    before(async () => {
+    beforeAll(async () => {
       const performHttpCall = end =>
         request(server)
           .get('/hello')
@@ -34,11 +33,11 @@ describe('Request scope (modules propagation)', () => {
     });
 
     it(`should not fail`, () => {
-      expect(RequestChainService.COUNTER).to.be.eql(3);
+      expect(RequestChainService.COUNTER).toEqual(3);
     });
   });
 
-  after(async () => {
+  afterAll(async () => {
     await app.close();
   });
 });

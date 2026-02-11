@@ -1,9 +1,5 @@
 import { Optional } from '@nestjs/common';
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants.js';
-import * as chai from 'chai';
-import { expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
-import * as sinon from 'sinon';
 import { Inject } from '../../../common/decorators/core/inject.decorator.js';
 import { Injectable } from '../../../common/decorators/core/injectable.decorator.js';
 import { STATIC_CONTEXT } from '../../injector/constants.js';
@@ -12,8 +8,6 @@ import { Injector, PropertyDependency } from '../../injector/injector.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { Module } from '../../injector/module.js';
 import { SettlementSignal } from '../../injector/settlement-signal.js';
-
-chai.use(chaiAsPromised);
 
 describe('Injector', () => {
   let injector: Injector;
@@ -31,11 +25,11 @@ describe('Injector', () => {
 
     @Injectable()
     class MainTest {
-      @Inject() property: DependencyOne;
+      @Inject(DependencyOne) property: DependencyOne;
 
       constructor(
         public one: DependencyOne,
-        @Inject() public two: DependencyTwo,
+        @Inject(DependencyTwo) public two: DependencyTwo,
       ) {}
     }
 
@@ -80,9 +74,9 @@ describe('Injector', () => {
         'MainTest',
       ) as InstanceWrapper<MainTest>;
 
-      expect(instance.one).instanceof(DependencyOne);
-      expect(instance.two).instanceof(DependencyTwo);
-      expect(instance).instanceof(MainTest);
+      expect(instance.one).toBeInstanceOf(DependencyOne);
+      expect(instance.two).toBeInstanceOf(DependencyTwo);
+      expect(instance).toBeInstanceOf(MainTest);
     });
 
     it('should set "isResolved" property to true after instance initialization', async () => {
@@ -90,16 +84,16 @@ describe('Injector', () => {
       const { isResolved } = (
         moduleDeps.providers.get('MainTest') as InstanceWrapper<MainTest>
       ).getInstanceByContextId(STATIC_CONTEXT);
-      expect(isResolved).to.be.true;
+      expect(isResolved).toBe(true);
     });
 
-    it('should throw RuntimeException when type is not stored in collection', () => {
-      return expect(
+    it('should throw RuntimeException when type is not stored in collection', async () => {
+      await expect(
         injector.loadInstance({} as any, moduleDeps.providers, moduleDeps),
-      ).to.eventually.be.rejected;
+      ).rejects.toBeDefined();
     });
 
-    it('should await done$ when "isPending"', () => {
+    it('should await done$ when "isPending"', async () => {
       const wrapper = new InstanceWrapper({
         name: 'MainTest',
         metatype: MainTest,
@@ -110,12 +104,12 @@ describe('Injector', () => {
       host.donePromise = Promise.resolve();
       host.isPending = true;
 
-      expect(
+      await expect(
         injector.loadInstance(wrapper, moduleDeps.providers, moduleDeps),
-      ).to.eventually.not.throw();
+      ).resolves.not.toThrow();
     });
 
-    it('should await done$ when "isPending" and rethrow an exception (if thrown)', () => {
+    it('should await done$ when "isPending" and rethrow an exception (if thrown)', async () => {
       const error = new Error('Test error');
       const wrapper = new InstanceWrapper({
         name: 'MainTest',
@@ -127,9 +121,9 @@ describe('Injector', () => {
       host.donePromise = Promise.resolve(error);
       host.isPending = true;
 
-      expect(
+      await expect(
         injector.loadInstance(wrapper, moduleDeps.providers, moduleDeps),
-      ).to.eventually.throw(error);
+      ).rejects.toThrow(error);
     });
 
     it('should return undefined when metatype is resolved', async () => {
@@ -143,7 +137,7 @@ describe('Injector', () => {
         moduleDeps.providers,
         moduleDeps,
       );
-      expect(result).to.be.undefined;
+      expect(result).toBeUndefined();
     });
   });
 
@@ -168,14 +162,14 @@ describe('Injector', () => {
 
     it('should create prototype of instance', () => {
       injector.loadPrototype(test, moduleDeps.providers);
-      expect(moduleDeps.providers.get('Test')!.instance).to.deep.equal(
+      expect(moduleDeps.providers.get('Test')!.instance).toEqual(
         Object.create(Test.prototype),
       );
     });
 
     it('should return undefined when collection is nil', () => {
       const result = injector.loadPrototype(test, null!);
-      expect(result).to.be.undefined;
+      expect(result).toBeUndefined();
     });
 
     it('should return undefined when target isResolved', () => {
@@ -186,7 +180,7 @@ describe('Injector', () => {
         }),
       };
       const result = injector.loadPrototype(test, collection as any);
-      expect(result).to.be.undefined;
+      expect(result).toBeUndefined();
     });
 
     it('should return undefined when "inject" is not nil', () => {
@@ -194,28 +188,28 @@ describe('Injector', () => {
         get: () => new InstanceWrapper({ inject: [] }),
       };
       const result = injector.loadPrototype(test, collection as any);
-      expect(result).to.be.undefined;
+      expect(result).toBeUndefined();
     });
   });
 
   describe('resolveSingleParam', () => {
     it('should throw "RuntimeException" when param is undefined', async () => {
-      return expect(
+      await expect(
         injector.resolveSingleParam(
           null!,
           undefined!,
           { index: 0, dependencies: [] },
           null!,
         ),
-      ).to.eventually.be.rejected;
+      ).rejects.toBeDefined();
     });
   });
 
   describe('loadMiddleware', () => {
-    let loadInstanceSpy: sinon.SinonSpy;
+    let loadInstanceSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      loadInstanceSpy = sinon.spy();
+      loadInstanceSpy = vi.fn();
       injector.loadInstance = loadInstanceSpy;
     });
 
@@ -230,7 +224,7 @@ describe('Injector', () => {
         collection as any,
         null!,
       );
-      expect(loadInstanceSpy.called).to.be.true;
+      expect(loadInstanceSpy).toHaveBeenCalled();
     });
 
     it('should not call "loadInstanceSpy" when instance is not resolved', async () => {
@@ -246,15 +240,15 @@ describe('Injector', () => {
         collection as any,
         null!,
       );
-      expect(loadInstanceSpy.called).to.be.false;
+      expect(loadInstanceSpy).not.toHaveBeenCalled();
     });
   });
 
   describe('loadController', () => {
-    let loadInstance: sinon.SinonSpy;
+    let loadInstance: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      loadInstance = sinon.spy();
+      loadInstance = vi.fn();
       injector.loadInstance = loadInstance;
     });
 
@@ -263,16 +257,21 @@ describe('Injector', () => {
       const wrapper = { test: 'test', getEnhancersMetadata: () => [] };
 
       await injector.loadController(wrapper as any, module as any);
-      expect(loadInstance.calledWith(wrapper, module.controllers, module)).to.be
-        .true;
+      expect(loadInstance).toHaveBeenCalledWith(
+        wrapper,
+        module.controllers,
+        module,
+        expect.anything(),
+        wrapper,
+      );
     });
   });
 
   describe('loadInjectable', () => {
-    let loadInstance: sinon.SinonSpy;
+    let loadInstance: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      loadInstance = sinon.spy();
+      loadInstance = vi.fn();
       injector.loadInstance = loadInstance;
     });
 
@@ -281,13 +280,18 @@ describe('Injector', () => {
       const wrapper = { test: 'test' };
 
       await injector.loadInjectable(wrapper as any, module as any);
-      expect(loadInstance.calledWith(wrapper, module.injectables, module)).to.be
-        .true;
+      expect(loadInstance).toHaveBeenCalledWith(
+        wrapper,
+        module.injectables,
+        module,
+        expect.anything(),
+        undefined,
+      );
     });
   });
 
   describe('lookupComponent', () => {
-    let lookupComponentInImports: sinon.SinonStub;
+    let lookupComponentInImports: ReturnType<typeof vi.fn>;
     const metatype = { name: 'test', metatype: { name: 'test' } };
     const wrapper = new InstanceWrapper({
       name: 'Test',
@@ -296,7 +300,7 @@ describe('Injector', () => {
       isResolved: false,
     });
     beforeEach(() => {
-      lookupComponentInImports = sinon.stub();
+      lookupComponentInImports = vi.fn();
       (injector as any).lookupComponentInImports = lookupComponentInImports;
     });
 
@@ -312,10 +316,10 @@ describe('Injector', () => {
         { name: metatype.name, index: 0, dependencies: [] },
         wrapper,
       );
-      expect(result).to.be.equal(instance);
+      expect(result).toBe(instance);
     });
 
-    it('should throw an exception if recursion happens', () => {
+    it('should throw an exception if recursion happens', async () => {
       const name = 'RecursionService';
       const instance = { test: 3 };
       const collection = {
@@ -330,11 +334,11 @@ describe('Injector', () => {
           name,
         }),
       );
-      expect(result).to.eventually.be.rejected;
+      await expect(result).rejects.toBeDefined();
     });
 
     it('should call "lookupComponentInImports" when object is not in collection', async () => {
-      lookupComponentInImports.returns({});
+      lookupComponentInImports.mockReturnValue({});
       const collection = {
         has: () => false,
       };
@@ -344,51 +348,51 @@ describe('Injector', () => {
         { name: metatype.name, index: 0, dependencies: [] },
         wrapper,
       );
-      expect(lookupComponentInImports.called).to.be.true;
+      expect(lookupComponentInImports).toHaveBeenCalled();
     });
 
-    it('should throw "UnknownDependenciesException" when instanceWrapper is null and "exports" collection does not contain token', () => {
-      lookupComponentInImports.returns(null);
+    it('should throw "UnknownDependenciesException" when instanceWrapper is null and "exports" collection does not contain token', async () => {
+      lookupComponentInImports.mockReturnValue(null);
       const collection = {
         has: () => false,
       };
       const module = { exports: collection };
-      expect(
+      await expect(
         injector.lookupComponent(
           collection as any,
           module as any,
           { name: metatype.name, index: 0, dependencies: [] },
           wrapper,
         ),
-      ).to.eventually.be.rejected;
+      ).rejects.toBeDefined();
     });
 
-    it('should not throw "UnknownDependenciesException" instanceWrapper is not null', () => {
-      lookupComponentInImports.returns({});
+    it('should not throw "UnknownDependenciesException" instanceWrapper is not null', async () => {
+      lookupComponentInImports.mockReturnValue({});
       const collection = {
         has: () => false,
       };
       const module = { exports: collection };
-      expect(
+      await expect(
         injector.lookupComponent(
           collection as any,
           module as any,
           { name: metatype.name, index: 0, dependencies: [] },
           wrapper,
         ),
-      ).to.eventually.be.not.rejected;
+      ).resolves.not.toThrow();
     });
   });
 
   describe('lookupComponentInImports', () => {
-    let loadProvider: sinon.SinonSpy;
+    let loadProvider: ReturnType<typeof vi.fn>;
     const metatype = { name: 'test' };
     const module = {
       relatedModules: new Map(),
     };
 
     beforeEach(() => {
-      loadProvider = sinon.spy();
+      loadProvider = vi.fn();
       (injector as any).loadProvider = loadProvider;
     });
 
@@ -398,10 +402,10 @@ describe('Injector', () => {
         'testToken',
         new InstanceWrapper(),
       );
-      expect(result).to.be.eq(null);
+      expect(result).toBe(null);
     });
 
-    it('should return null when related modules do not have appropriate component', () => {
+    it('should return null when related modules do not have appropriate component', async () => {
       let moduleFixture = {
         relatedModules: new Map([
           [
@@ -417,13 +421,13 @@ describe('Injector', () => {
           ],
         ] as any),
       };
-      expect(
+      await expect(
         injector.lookupComponentInImports(
           moduleFixture as any,
           metatype as any,
           null!,
         ),
-      ).to.be.eventually.eq(null);
+      ).resolves.toBe(null);
 
       moduleFixture = {
         relatedModules: new Map([
@@ -440,13 +444,13 @@ describe('Injector', () => {
           ],
         ] as any),
       };
-      expect(
+      await expect(
         injector.lookupComponentInImports(
           moduleFixture as any,
           metatype as any,
           null!,
         ),
-      ).to.eventually.be.eq(null);
+      ).resolves.toBe(null);
     });
   });
 
@@ -464,13 +468,11 @@ describe('Injector', () => {
         };
       });
       it('return forwardRef() result', () => {
-        expect(injector.resolveParamToken(wrapper, param)).to.be.eql(
-          forwardRef,
-        );
+        expect(injector.resolveParamToken(wrapper, param)).toEqual(forwardRef);
       });
       it('set wrapper "forwardRef" property to true', () => {
         injector.resolveParamToken(wrapper, param);
-        expect(wrapper.forwardRef).to.be.true;
+        expect(wrapper.forwardRef).toBe(true);
       });
     });
     describe('when "forwardRef" property is nil', () => {
@@ -481,10 +483,10 @@ describe('Injector', () => {
       });
       it('set wrapper "forwardRef" property to false', () => {
         injector.resolveParamToken(wrapper, param);
-        expect(wrapper.forwardRef).to.be.undefined;
+        expect(wrapper.forwardRef).toBeUndefined();
       });
       it('return param', () => {
-        expect(injector.resolveParamToken(wrapper, param)).to.be.eql(param);
+        expect(injector.resolveParamToken(wrapper, param)).toEqual(param);
       });
     });
   });
@@ -501,39 +503,39 @@ describe('Injector', () => {
       it('should call loadProvider', async () => {
         const wrapper = new InstanceWrapper({ isResolved: false });
 
-        const loadStub = sinon
-          .stub(injector, 'loadProvider')
-          .callsFake(() => null!);
+        const loadStub = vi
+          .spyOn(injector, 'loadProvider')
+          .mockImplementation(() => null!);
 
         await injector.resolveComponentHost(module, wrapper);
-        expect(loadStub.called).to.be.true;
+        expect(loadStub).toHaveBeenCalled();
       });
       it('should not call loadProvider (isResolved)', async () => {
         const wrapper = new InstanceWrapper({ isResolved: true });
-        const loadStub = sinon
-          .stub(injector, 'loadProvider')
-          .callsFake(() => null!);
+        const loadStub = vi
+          .spyOn(injector, 'loadProvider')
+          .mockImplementation(() => null!);
 
         await injector.resolveComponentHost(module, wrapper);
-        expect(loadStub.called).to.be.false;
+        expect(loadStub).not.toHaveBeenCalled();
       });
       it('should not call loadProvider (forwardRef)', async () => {
         const wrapper = new InstanceWrapper({
           isResolved: false,
           forwardRef: true,
         });
-        const loadStub = sinon
-          .stub(injector, 'loadProvider')
-          .callsFake(() => null!);
+        const loadStub = vi
+          .spyOn(injector, 'loadProvider')
+          .mockImplementation(() => null!);
 
         await injector.resolveComponentHost(module, wrapper);
-        expect(loadStub.called).to.be.false;
+        expect(loadStub).not.toHaveBeenCalled();
       });
     });
 
     describe('when instanceWrapper has async property', () => {
       it('should await instance', async () => {
-        sinon.stub(injector, 'loadProvider').callsFake(() => null!);
+        vi.spyOn(injector, 'loadProvider').mockImplementation(() => null!);
 
         const instance = Promise.resolve(true);
         const wrapper = new InstanceWrapper({
@@ -544,7 +546,7 @@ describe('Injector', () => {
         });
 
         const result = await injector.resolveComponentHost(module, wrapper);
-        expect(result.instance).to.be.true;
+        expect(result.instance).toBe(true);
       });
     });
 
@@ -552,7 +554,7 @@ describe('Injector', () => {
       it('should call settlementSignal.error when loadProvider throws', async () => {
         const error = new Error('Test error');
         const settlementSignal = new SettlementSignal();
-        const errorSpy = sinon.spy(settlementSignal, 'error');
+        const errorSpy = vi.spyOn(settlementSignal, 'error');
 
         const wrapper = new InstanceWrapper({
           isResolved: false,
@@ -564,15 +566,15 @@ describe('Injector', () => {
         const instanceHost = wrapper.getInstanceByContextId(contextId);
         instanceHost.donePromise = Promise.resolve();
 
-        sinon
-          .stub(injector, 'loadProvider')
-          .callsFake(() => Promise.reject(error));
+        vi.spyOn(injector, 'loadProvider').mockImplementation(() =>
+          Promise.reject(error),
+        );
 
         await injector.resolveComponentHost(module, wrapper, contextId);
         await new Promise(resolve => setImmediate(resolve));
 
-        expect(errorSpy.calledOnce).to.be.true;
-        expect(errorSpy.calledWith(error)).to.be.true;
+        expect(errorSpy).toHaveBeenCalledOnce();
+        expect(errorSpy).toHaveBeenCalledWith(error);
       });
     });
   });
@@ -580,7 +582,7 @@ describe('Injector', () => {
   describe('applyProperties', () => {
     describe('when instance is not an object', () => {
       it('should return undefined', () => {
-        expect(injector.applyProperties('test', [])).to.be.undefined;
+        expect(injector.applyProperties('test', [])).toBeUndefined();
       });
     });
 
@@ -594,9 +596,9 @@ describe('Injector', () => {
         const obj: Record<any, any> = {};
         injector.applyProperties(obj, properties as PropertyDependency[]);
 
-        expect(obj.one).to.be.eql(properties[0].instance);
-        expect(obj.two).to.be.undefined;
-        expect(obj.three).to.be.eql(properties[2].instance);
+        expect(obj.one).toEqual(properties[0].instance);
+        expect(obj.two).toBeUndefined();
+        expect(obj.three).toEqual(properties[2].instance);
       });
     });
   });
@@ -609,8 +611,8 @@ describe('Injector', () => {
         const wrapper = new InstanceWrapper({ metatype: TestClass });
         await injector.instantiateClass([], wrapper, wrapper, STATIC_CONTEXT);
 
-        expect(wrapper.instance).to.not.be.undefined;
-        expect(wrapper.instance).to.be.instanceOf(TestClass);
+        expect(wrapper.instance).not.toBeUndefined();
+        expect(wrapper.instance).toBeInstanceOf(TestClass);
       });
       it('should call factory', async () => {
         const wrapper = new InstanceWrapper({
@@ -619,7 +621,7 @@ describe('Injector', () => {
         });
         await injector.instantiateClass([], wrapper, wrapper, STATIC_CONTEXT);
 
-        expect(wrapper.instance).to.not.be.undefined;
+        expect(wrapper.instance).not.toBeUndefined();
       });
     });
     describe('when context is not static', () => {
@@ -628,18 +630,18 @@ describe('Injector', () => {
         const wrapper = new InstanceWrapper({ metatype: TestClass });
         await injector.instantiateClass([], wrapper, wrapper, ctx);
 
-        expect(wrapper.instance).to.be.undefined;
-        expect(wrapper.getInstanceByContextId(ctx).isResolved).to.be.true;
+        expect(wrapper.instance).toBeUndefined();
+        expect(wrapper.getInstanceByContextId(ctx).isResolved).toBe(true);
       });
 
       it('should not call factory', async () => {
         const wrapper = new InstanceWrapper({
           inject: [],
-          metatype: sinon.spy() as any,
+          metatype: vi.fn() as any,
         });
         await injector.instantiateClass([], wrapper, wrapper, { id: 2 });
-        expect(wrapper.instance).to.be.undefined;
-        expect((wrapper.metatype as any).called).to.be.false;
+        expect(wrapper.instance).toBeUndefined();
+        expect(wrapper.metatype as any).not.toHaveBeenCalled();
       });
     });
   });
@@ -664,7 +666,7 @@ describe('Injector', () => {
         moduleRef.providers,
         ctx,
       );
-      expect(instance).to.be.instanceOf(TestClass);
+      expect(instance).toBeInstanceOf(TestClass);
     });
   });
 
@@ -682,12 +684,12 @@ describe('Injector', () => {
         }),
       );
 
-      const loadInstanceStub = sinon
-        .stub(injector, 'loadInstance')
-        .callsFake(async () => ({}) as any);
+      const loadInstanceStub = vi
+        .spyOn(injector, 'loadInstance')
+        .mockImplementation(async () => ({}) as any);
 
       await injector.loadEnhancersPerContext(wrapper, STATIC_CONTEXT);
-      expect(loadInstanceStub.calledTwice).to.be.true;
+      expect(loadInstanceStub).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -697,15 +699,15 @@ describe('Injector', () => {
       wrapper.addCtorMetadata(0, new InstanceWrapper());
       wrapper.addCtorMetadata(1, new InstanceWrapper());
 
-      const resolveComponentHostStub = sinon
-        .stub(injector, 'resolveComponentHost')
-        .callsFake(async () => new InstanceWrapper());
+      const resolveComponentHostStub = vi
+        .spyOn(injector, 'resolveComponentHost')
+        .mockImplementation(async () => new InstanceWrapper());
 
       await injector.loadCtorMetadata(
         wrapper.getCtorMetadata(),
         STATIC_CONTEXT,
       );
-      expect(resolveComponentHostStub.calledTwice).to.be.true;
+      expect(resolveComponentHostStub).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -715,15 +717,15 @@ describe('Injector', () => {
       wrapper.addPropertiesMetadata('key1', new InstanceWrapper());
       wrapper.addPropertiesMetadata('key2', new InstanceWrapper());
 
-      const resolveComponentHostStub = sinon
-        .stub(injector, 'resolveComponentHost')
-        .callsFake(async () => new InstanceWrapper());
+      const resolveComponentHostStub = vi
+        .spyOn(injector, 'resolveComponentHost')
+        .mockImplementation(async () => new InstanceWrapper());
 
       await injector.loadPropertiesMetadata(
         wrapper.getPropertiesMetadata(),
         STATIC_CONTEXT,
       );
-      expect(resolveComponentHostStub.calledTwice).to.be.true;
+      expect(resolveComponentHostStub).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -731,15 +733,15 @@ describe('Injector', () => {
     it('should call "loadCtorMetadata" if metadata is not undefined', async () => {
       const wrapper = new InstanceWrapper();
       const metadata = [];
-      sinon.stub(wrapper, 'getCtorMetadata').callsFake(() => metadata);
+      vi.spyOn(wrapper, 'getCtorMetadata').mockImplementation(() => metadata);
 
-      const loadCtorMetadataSpy = sinon.spy(injector, 'loadCtorMetadata');
+      const loadCtorMetadataSpy = vi.spyOn(injector, 'loadCtorMetadata');
       await injector.resolveConstructorParams(
         wrapper,
         null!,
         [],
         () => {
-          expect(loadCtorMetadataSpy.called).to.be.true;
+          expect(loadCtorMetadataSpy).toHaveBeenCalled();
         },
         { id: 2 },
       );
@@ -750,14 +752,16 @@ describe('Injector', () => {
     it('should call "loadPropertiesMetadata" if metadata is not undefined', async () => {
       const wrapper = new InstanceWrapper();
       const metadata = [];
-      sinon.stub(wrapper, 'getPropertiesMetadata').callsFake(() => metadata);
+      vi.spyOn(wrapper, 'getPropertiesMetadata').mockImplementation(
+        () => metadata,
+      );
 
-      const loadPropertiesMetadataSpy = sinon.spy(
+      const loadPropertiesMetadataSpy = vi.spyOn(
         injector,
         'loadPropertiesMetadata',
       );
       await injector.resolveProperties(wrapper, null!, null!, { id: 2 });
-      expect(loadPropertiesMetadataSpy.called).to.be.true;
+      expect(loadPropertiesMetadataSpy).toHaveBeenCalled();
     });
   });
 
@@ -778,8 +782,8 @@ describe('Injector', () => {
       const [dependencies, optionalDependenciesIds] =
         injector.getClassDependencies(wrapper);
 
-      expect(dependencies).to.deep.eq([FixtureDep1, FixtureDep2]);
-      expect(optionalDependenciesIds).to.deep.eq([1]);
+      expect(dependencies).toEqual([FixtureDep1, FixtureDep2]);
+      expect(optionalDependenciesIds).toEqual([1]);
     });
 
     it('should not mutate the constructor metadata', async () => {
@@ -794,10 +798,10 @@ describe('Injector', () => {
 
       const wrapper = new InstanceWrapper({ metatype: FixtureClass });
       const [dependencies] = injector.getClassDependencies(wrapper);
-      expect(dependencies).to.deep.eq([injectionToken]);
+      expect(dependencies).toEqual([injectionToken]);
 
       const paramtypes = Reflect.getMetadata(PARAMTYPES_METADATA, FixtureClass);
-      expect(paramtypes).to.deep.eq([FixtureDep1]);
+      expect(paramtypes).toEqual([FixtureDep1]);
     });
   });
 
@@ -817,13 +821,8 @@ describe('Injector', () => {
       const [dependencies, optionalDependenciesIds] =
         injector.getFactoryProviderDependencies(wrapper);
 
-      expect(dependencies).to.deep.eq([
-        FixtureDep1,
-        FixtureDep2,
-        FixtureDep2,
-        {},
-      ]);
-      expect(optionalDependenciesIds).to.deep.eq([1]);
+      expect(dependencies).toEqual([FixtureDep1, FixtureDep2, FixtureDep2, {}]);
+      expect(optionalDependenciesIds).toEqual([1]);
     });
   });
 
@@ -847,7 +846,7 @@ describe('Injector', () => {
     });
 
     it('should add dependency metadata to PropertiesMetadata when key is symbol', async () => {
-      const addPropertiesMetadataSpy = sinon.spy(
+      const addPropertiesMetadataSpy = vi.spyOn(
         hostWrapper,
         'addPropertiesMetadata',
       );
@@ -855,11 +854,11 @@ describe('Injector', () => {
       const key = Symbol.for('symbol');
       exposedInjector.addDependencyMetadata(key, hostWrapper, instanceWrapper);
 
-      expect(addPropertiesMetadataSpy.called).to.be.true;
+      expect(addPropertiesMetadataSpy).toHaveBeenCalled();
     });
 
     it('should add dependency metadata to PropertiesMetadata when key is string', async () => {
-      const addPropertiesMetadataSpy = sinon.spy(
+      const addPropertiesMetadataSpy = vi.spyOn(
         hostWrapper,
         'addPropertiesMetadata',
       );
@@ -867,16 +866,16 @@ describe('Injector', () => {
       const key = 'string';
       exposedInjector.addDependencyMetadata(key, hostWrapper, instanceWrapper);
 
-      expect(addPropertiesMetadataSpy.called).to.be.true;
+      expect(addPropertiesMetadataSpy).toHaveBeenCalled();
     });
 
     it('should add dependency metadata to CtorMetadata when key is number', async () => {
-      const addCtorMetadataSpy = sinon.spy(hostWrapper, 'addCtorMetadata');
+      const addCtorMetadataSpy = vi.spyOn(hostWrapper, 'addCtorMetadata');
 
       const key = 0;
       exposedInjector.addDependencyMetadata(key, hostWrapper, instanceWrapper);
 
-      expect(addCtorMetadataSpy.called).to.be.true;
+      expect(addCtorMetadataSpy).toHaveBeenCalled();
     });
   });
 });

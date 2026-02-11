@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Logger } from '@nestjs/common';
 import { SilentLogger } from '../../../injector/helpers/silent-logger.js';
 
@@ -10,43 +9,43 @@ describe('SilentLogger', () => {
   });
 
   it('should be an instance of Logger', () => {
-    expect(silentLogger).to.be.instanceOf(Logger);
+    expect(silentLogger).toBeInstanceOf(Logger);
   });
 
   describe('logging methods', () => {
     it('should have log method that does nothing', () => {
-      expect(() => silentLogger.log()).to.not.throw();
-      expect(silentLogger.log()).to.be.undefined;
+      expect(() => silentLogger.log()).not.toThrow();
+      expect(silentLogger.log()).toBeUndefined();
     });
 
     it('should have error method that does nothing', () => {
-      expect(() => silentLogger.error()).to.not.throw();
-      expect(silentLogger.error()).to.be.undefined;
+      expect(() => silentLogger.error()).not.toThrow();
+      expect(silentLogger.error()).toBeUndefined();
     });
 
     it('should have warn method that does nothing', () => {
-      expect(() => silentLogger.warn()).to.not.throw();
-      expect(silentLogger.warn()).to.be.undefined;
+      expect(() => silentLogger.warn()).not.toThrow();
+      expect(silentLogger.warn()).toBeUndefined();
     });
 
     it('should have debug method that does nothing', () => {
-      expect(() => silentLogger.debug()).to.not.throw();
-      expect(silentLogger.debug()).to.be.undefined;
+      expect(() => silentLogger.debug()).not.toThrow();
+      expect(silentLogger.debug()).toBeUndefined();
     });
 
     it('should have verbose method that does nothing', () => {
-      expect(() => silentLogger.verbose()).to.not.throw();
-      expect(silentLogger.verbose()).to.be.undefined;
+      expect(() => silentLogger.verbose()).not.toThrow();
+      expect(silentLogger.verbose()).toBeUndefined();
     });
 
     it('should have fatal method that does nothing', () => {
-      expect(() => silentLogger.fatal()).to.not.throw();
-      expect(silentLogger.fatal()).to.be.undefined;
+      expect(() => silentLogger.fatal()).not.toThrow();
+      expect(silentLogger.fatal()).toBeUndefined();
     });
 
     it('should have setLogLevels method that does nothing', () => {
-      expect(() => silentLogger.setLogLevels()).to.not.throw();
-      expect(silentLogger.setLogLevels()).to.be.undefined;
+      expect(() => silentLogger.setLogLevels()).not.toThrow();
+      expect(silentLogger.setLogLevels()).toBeUndefined();
     });
   });
 });

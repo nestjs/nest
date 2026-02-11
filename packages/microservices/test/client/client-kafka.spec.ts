@@ -1,7 +1,5 @@
-import { expect } from 'chai';
 import { Producer } from 'kafkajs';
 import { Observable } from 'rxjs';
-import * as sinon from 'sinon';
 import { ClientKafka } from '../../client/client-kafka.js';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaHeaders } from '../../enums/index.js';
@@ -152,29 +150,29 @@ describe('ClientKafka', () => {
 
   let client: ClientKafka;
   let untypedClient: any;
-  let callback: sinon.SinonSpy;
-  let connect: sinon.SinonSpy;
-  let subscribe: sinon.SinonSpy;
-  let run: sinon.SinonSpy;
-  let send: sinon.SinonSpy;
-  let on: sinon.SinonSpy;
-  let consumerStub: sinon.SinonStub;
-  let producerStub: sinon.SinonStub;
-  let createClientStub: sinon.SinonStub;
+  let callback: ReturnType<typeof vi.fn>;
+  let connect: ReturnType<typeof vi.fn>;
+  let subscribe: ReturnType<typeof vi.fn>;
+  let run: ReturnType<typeof vi.fn>;
+  let send: ReturnType<typeof vi.fn>;
+  let on: ReturnType<typeof vi.fn>;
+  let consumerStub: ReturnType<typeof vi.fn>;
+  let producerStub: ReturnType<typeof vi.fn>;
+  let createClientStub: ReturnType<typeof vi.fn>;
   let kafkaClient: any;
 
   beforeEach(() => {
     client = new ClientKafka({});
     untypedClient = client as any;
 
-    callback = sinon.spy();
-    connect = sinon.spy();
-    subscribe = sinon.spy();
-    run = sinon.spy();
-    send = sinon.spy();
-    on = sinon.spy();
+    callback = vi.fn();
+    connect = vi.fn();
+    subscribe = vi.fn();
+    run = vi.fn();
+    send = vi.fn();
+    on = vi.fn();
 
-    consumerStub = sinon.stub(client as any, 'consumer').callsFake(() => {
+    consumerStub = vi.fn().mockImplementation(() => {
       return {
         connect,
         subscribe,
@@ -200,7 +198,7 @@ describe('ClientKafka', () => {
         on,
       };
     });
-    producerStub = sinon.stub(client as any, 'producer').callsFake(() => {
+    producerStub = vi.fn().mockImplementation(() => {
       return {
         connect,
         send,
@@ -219,9 +217,9 @@ describe('ClientKafka', () => {
       producer: producerStub,
     };
 
-    createClientStub = sinon
-      .stub(client, 'createClient')
-      .callsFake(() => kafkaClient);
+    createClientStub = vi
+      .spyOn(client, 'createClient')
+      .mockImplementation(() => kafkaClient);
   });
 
   describe('createClient', () => {
@@ -230,7 +228,7 @@ describe('ClientKafka', () => {
     });
 
     it(`should accept a custom logCreator in client options`, async () => {
-      const logCreatorSpy = sinon.spy(() => 'test');
+      const logCreatorSpy = vi.fn().mockReturnValue('test');
       const logCreator = () => logCreatorSpy;
 
       client = new ClientKafka({
@@ -245,17 +243,17 @@ describe('ClientKafka', () => {
 
       logger.info({ namespace: '', level: 1, log: 'test' });
 
-      expect(logCreatorSpy.called).to.be.true;
+      expect(logCreatorSpy).toHaveBeenCalled();
     });
   });
 
   describe('subscribeToResponseOf', () => {
-    let normalizePatternSpy: sinon.SinonSpy;
-    let getResponsePatternNameSpy: sinon.SinonSpy;
+    let normalizePatternSpy: ReturnType<typeof vi.spyOn>;
+    let getResponsePatternNameSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-      normalizePatternSpy = sinon.spy(client as any, 'normalizePattern');
-      getResponsePatternNameSpy = sinon.spy(
+      normalizePatternSpy = vi.spyOn(client as any, 'normalizePattern');
+      getResponsePatternNameSpy = vi.spyOn(
         client as any,
         'getResponsePatternName',
       );
@@ -264,20 +262,20 @@ describe('ClientKafka', () => {
     it(`should create an array of response patterns`, () => {
       client.subscribeToResponseOf(topic);
 
-      expect(normalizePatternSpy.calledWith(topic)).to.be.true;
-      expect(getResponsePatternNameSpy.calledWith(topic)).to.be.true;
-      expect(client['responsePatterns']).to.not.be.empty;
-      expect(client['responsePatterns'][0]).to.eq(replyTopic);
+      expect(normalizePatternSpy).toHaveBeenCalledWith(topic);
+      expect(getResponsePatternNameSpy).toHaveBeenCalledWith(topic);
+      expect(client['responsePatterns']).not.toHaveLength(0);
+      expect(client['responsePatterns'][0]).toEqual(replyTopic);
     });
 
     afterEach(() => {
-      normalizePatternSpy.restore();
+      normalizePatternSpy.mockRestore();
     });
   });
 
   describe('close', () => {
-    const consumer = { disconnect: sinon.stub().resolves() };
-    const producer = { disconnect: sinon.stub().resolves() };
+    const consumer = { disconnect: vi.fn().mockResolvedValue(undefined) };
+    const producer = { disconnect: vi.fn().mockResolvedValue(undefined) };
     beforeEach(() => {
       untypedClient._consumer = consumer;
       untypedClient._producer = producer;
@@ -285,40 +283,37 @@ describe('ClientKafka', () => {
     it('should close server', async () => {
       await client.close();
 
-      expect(consumer.disconnect.calledOnce).to.be.true;
-      expect(producer.disconnect.calledOnce).to.be.true;
-      expect(untypedClient._consumer).to.be.null;
-      expect(untypedClient._producer).to.be.null;
-      expect(untypedClient.client).to.be.null;
+      expect(consumer.disconnect).toHaveBeenCalledOnce();
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+      expect(untypedClient._consumer).toBeNull();
+      expect(untypedClient._producer).toBeNull();
+      expect(untypedClient.client).toBeNull();
     });
   });
 
   describe('connect', () => {
-    let consumerAssignmentsStub: sinon.SinonStub;
-    let bindTopicsStub: sinon.SinonStub;
+    let consumerAssignmentsStub: any;
+    let bindTopicsStub: ReturnType<typeof vi.fn>;
 
     describe('consumer and producer', () => {
       beforeEach(() => {
-        consumerAssignmentsStub = sinon.stub(
-          client as any,
-          'consumerAssignments',
-        );
-        bindTopicsStub = sinon
-          .stub(client, 'bindTopics')
-          .callsFake(async () => {});
+        consumerAssignmentsStub = (client as any).consumerAssignments;
+        bindTopicsStub = vi
+          .spyOn(client, 'bindTopics')
+          .mockImplementation(async () => {});
       });
 
       it('should expect the connection to be created', async () => {
         const connection = await client.connect();
 
-        expect(createClientStub.calledOnce).to.be.true;
-        expect(producerStub.calledOnce).to.be.true;
-        expect(consumerStub.calledOnce).to.be.true;
-        expect(on.called).to.be.true;
-        expect(client['consumerAssignments']).to.be.empty;
-        expect(connect.calledTwice).to.be.true;
-        expect(bindTopicsStub.calledOnce).to.be.true;
-        expect(connection).to.deep.equal(producerStub());
+        expect(createClientStub).toHaveBeenCalledOnce();
+        expect(producerStub).toHaveBeenCalledOnce();
+        expect(consumerStub).toHaveBeenCalledOnce();
+        expect(on).toHaveBeenCalled();
+        expect(client['consumerAssignments']).toEqual({});
+        expect(connect).toHaveBeenCalledTimes(2);
+        expect(bindTopicsStub).toHaveBeenCalledOnce();
+        expect(connection).toEqual(producerStub());
       });
 
       it('should expect the connection to be reused', async () => {
@@ -326,46 +321,42 @@ describe('ClientKafka', () => {
 
         await client.connect();
 
-        expect(createClientStub.calledOnce).to.be.false;
-        expect(producerStub.calledOnce).to.be.false;
-        expect(consumerStub.calledOnce).to.be.false;
+        expect(createClientStub).not.toHaveBeenCalled();
+        expect(producerStub).not.toHaveBeenCalled();
+        expect(consumerStub).not.toHaveBeenCalled();
 
-        expect(on.calledOnce).to.be.false;
-        expect(client['consumerAssignments']).to.be.empty;
+        expect(on).not.toHaveBeenCalled();
+        expect(client['consumerAssignments']).toEqual({});
 
-        expect(connect.calledTwice).to.be.false;
+        expect(connect).not.toHaveBeenCalledTimes(2);
 
-        expect(bindTopicsStub.calledOnce).to.be.false;
+        expect(bindTopicsStub).not.toHaveBeenCalled();
       });
     });
 
     describe('producer only mode', () => {
       beforeEach(() => {
-        consumerAssignmentsStub = sinon.stub(
-          client as any,
-          'consumerAssignments',
-        );
-        bindTopicsStub = sinon
-          .stub(client, 'bindTopics')
-          .callsFake(async () => {});
+        consumerAssignmentsStub = (client as any).consumerAssignments;
+        bindTopicsStub = vi
+          .spyOn(client, 'bindTopics')
+          .mockImplementation(async () => {});
         client['producerOnlyMode'] = true;
       });
 
       it('should expect the connection to be created', async () => {
         const connection = await client.connect();
 
-        expect(createClientStub.calledOnce).to.be.true;
-        expect(producerStub.calledOnce).to.be.true;
+        expect(createClientStub).toHaveBeenCalledOnce();
+        expect(producerStub).toHaveBeenCalledOnce();
 
-        expect(consumerStub.calledOnce).to.be.false;
+        expect(consumerStub).not.toHaveBeenCalled();
 
-        expect(on.calledOnce).to.be.false;
-        expect(client['consumerAssignments']).to.be.empty;
+        expect(client['consumerAssignments']).toEqual({});
 
-        expect(connect.calledOnce).to.be.true;
+        expect(connect).toHaveBeenCalledOnce();
 
-        expect(bindTopicsStub.calledOnce).to.be.false;
-        expect(connection).to.deep.equal(producerStub());
+        expect(bindTopicsStub).not.toHaveBeenCalled();
+        expect(connection).toEqual(producerStub());
       });
 
       it('should expect the connection to be reused', async () => {
@@ -373,16 +364,16 @@ describe('ClientKafka', () => {
 
         await client.connect();
 
-        expect(createClientStub.calledOnce).to.be.false;
-        expect(producerStub.calledOnce).to.be.false;
-        expect(consumerStub.calledOnce).to.be.false;
+        expect(createClientStub).not.toHaveBeenCalled();
+        expect(producerStub).not.toHaveBeenCalled();
+        expect(consumerStub).not.toHaveBeenCalled();
 
-        expect(on.calledOnce).to.be.false;
-        expect(client['consumerAssignments']).to.be.empty;
+        expect(on).not.toHaveBeenCalled();
+        expect(client['consumerAssignments']).toEqual({});
 
-        expect(connect.calledTwice).to.be.false;
+        expect(connect).not.toHaveBeenCalledTimes(2);
 
-        expect(bindTopicsStub.calledOnce).to.be.false;
+        expect(bindTopicsStub).not.toHaveBeenCalled();
       });
     });
   });
@@ -411,7 +402,7 @@ describe('ClientKafka', () => {
 
       client['setConsumerAssignments'](consumerAssignments);
 
-      expect(client['consumerAssignments']).to.deep.eq(
+      expect(client['consumerAssignments']).toEqual(
         // consumerAssignments.payload.memberAssignment,
         {
           'topic-a': 0,
@@ -443,7 +434,7 @@ describe('ClientKafka', () => {
 
       client['setConsumerAssignments'](consumerAssignments);
 
-      expect(client['consumerAssignments']).to.deep.eq({
+      expect(client['consumerAssignments']).toEqual({
         'topic-b': 3,
       });
     });
@@ -456,13 +447,11 @@ describe('ClientKafka', () => {
 
       await client.bindTopics();
 
-      expect(subscribe.calledOnce).to.be.true;
-      expect(
-        subscribe.calledWith({
-          topics: [replyTopic],
-        }),
-      ).to.be.true;
-      expect(run.calledOnce).to.be.true;
+      expect(subscribe).toHaveBeenCalledOnce();
+      expect(subscribe).toHaveBeenCalledWith({
+        topics: [replyTopic],
+      });
+      expect(run).toHaveBeenCalledOnce();
     });
 
     it('should bind topics from response patterns with options', async () => {
@@ -473,14 +462,12 @@ describe('ClientKafka', () => {
 
       await client.bindTopics();
 
-      expect(subscribe.calledOnce).to.be.true;
-      expect(
-        subscribe.calledWith({
-          topics: [replyTopic],
-          fromBeginning: true,
-        }),
-      ).to.be.true;
-      expect(run.calledOnce).to.be.true;
+      expect(subscribe).toHaveBeenCalledOnce();
+      expect(subscribe).toHaveBeenCalledWith({
+        topics: [replyTopic],
+        fromBeginning: true,
+      });
+      expect(run).toHaveBeenCalledOnce();
     });
   });
 
@@ -495,13 +482,11 @@ describe('ClientKafka', () => {
         subscription(payload);
       });
       it('should call callback with expected arguments', () => {
-        expect(callback.called).to.be.true;
-        expect(
-          callback.calledWith({
-            err: undefined,
-            response: messageValue,
-          }),
-        ).to.be.true;
+        expect(callback).toHaveBeenCalled();
+        expect(callback).toHaveBeenCalledWith({
+          err: undefined,
+          response: messageValue,
+        });
       });
     });
 
@@ -514,14 +499,12 @@ describe('ClientKafka', () => {
       });
 
       it('should call callback with dispose param', () => {
-        expect(callback.called).to.be.true;
-        expect(
-          callback.calledWith({
-            isDisposed: true,
-            response: deserializedPayloadDisposed.message.value,
-            err: undefined,
-          }),
-        ).to.be.true;
+        expect(callback).toHaveBeenCalled();
+        expect(callback).toHaveBeenCalledWith({
+          isDisposed: true,
+          response: deserializedPayloadDisposed.message.value,
+          err: undefined,
+        });
       });
     });
 
@@ -534,14 +517,12 @@ describe('ClientKafka', () => {
       });
 
       it('should call callback with error param', () => {
-        expect(callback.called).to.be.true;
-        expect(
-          callback.calledWith({
-            isDisposed: true,
-            response: undefined,
-            err: NO_MESSAGE_HANDLER,
-          }),
-        ).to.be.true;
+        expect(callback).toHaveBeenCalled();
+        expect(callback).toHaveBeenCalledWith({
+          isDisposed: true,
+          response: undefined,
+          err: NO_MESSAGE_HANDLER,
+        });
       });
     });
 
@@ -554,13 +535,13 @@ describe('ClientKafka', () => {
       });
 
       it('should not call callback', () => {
-        expect(callback.called).to.be.false;
+        expect(callback).not.toHaveBeenCalled();
       });
     });
 
     describe('disposed and "id" is incorrect', () => {
       beforeEach(async () => {
-        callback = sinon.spy();
+        callback = vi.fn();
         subscription = client.createResponseCallback();
 
         client['routingMap'].set('incorrect-correlation-id', callback);
@@ -568,7 +549,7 @@ describe('ClientKafka', () => {
       });
 
       it('should not call callback', () => {
-        expect(callback.called).to.be.false;
+        expect(callback).not.toHaveBeenCalled();
       });
     });
   });
@@ -581,23 +562,23 @@ describe('ClientKafka', () => {
           messages: [],
         },
       );
-      expect(stream$ instanceof Observable).to.be.true;
+      expect(stream$ instanceof Observable).toBe(true);
     });
 
     it(`should call "connect" immediately`, () => {
-      const connectSpy = sinon.spy(client, 'connect');
+      const connectSpy = vi.spyOn(client, 'connect');
       client.emitBatch(
         {},
         {
           messages: [],
         },
       );
-      expect(connectSpy.calledOnce).to.be.true;
+      expect(connectSpy).toHaveBeenCalledOnce();
     });
 
     describe('when "connect" throws', () => {
       it('should return Observable with error', () => {
-        sinon.stub(client, 'connect').callsFake(() => {
+        vi.spyOn(client, 'connect').mockImplementation(() => {
           throw new Error();
         });
 
@@ -611,7 +592,7 @@ describe('ClientKafka', () => {
         stream$.subscribe({
           next: () => {},
           error: err => {
-            expect(err).to.be.instanceof(Error);
+            expect(err).toBeInstanceOf(Error);
           },
         });
       });
@@ -619,28 +600,28 @@ describe('ClientKafka', () => {
 
     describe('when is connected', () => {
       beforeEach(() => {
-        sinon
-          .stub(client, 'connect')
-          .callsFake(() => Promise.resolve({} as Producer));
+        vi.spyOn(client, 'connect').mockImplementation(() =>
+          Promise.resolve({} as Producer),
+        );
       });
 
       it(`should call dispatchBatchEvent`, () => {
         const pattern = { test: 3 };
         const data = { messages: [] };
-        const dispatchBatchEventSpy = sinon
-          .stub()
-          .callsFake(() => Promise.resolve(true));
+        const dispatchBatchEventSpy = vi
+          .fn()
+          .mockImplementation(() => Promise.resolve(true));
         const stream$ = client.emitBatch(pattern, data);
         client['dispatchBatchEvent'] = dispatchBatchEventSpy;
         stream$.subscribe(() => {
-          expect(dispatchBatchEventSpy.calledOnce).to.be.true;
+          expect(dispatchBatchEventSpy).toHaveBeenCalledOnce();
         });
       });
     });
 
     it('should return Observable with error', () => {
       const err$ = client.emitBatch(null, null!);
-      expect(err$).to.be.instanceOf(Observable);
+      expect(err$).toBeInstanceOf(Observable);
     });
   });
 
@@ -651,39 +632,39 @@ describe('ClientKafka', () => {
       data: messageValue,
     };
 
-    let sendStub: sinon.SinonStub;
-    let sendSpy: sinon.SinonSpy;
+    let sendStub: ReturnType<typeof vi.fn>;
+    let sendSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      sendStub = sinon.stub().callsFake(async a => {
+      sendStub = vi.fn().mockImplementation(async a => {
         throw new Error('ERROR!');
       });
-      sendSpy = sinon.spy();
+      sendSpy = vi.fn();
     });
 
     it('should publish packet', async () => {
-      sinon.stub(client as any, '_producer').value({
+      vi.spyOn(client as any, '_producer', 'get').mockReturnValue({
         send: sendSpy,
       });
 
       await client['dispatchEvent'](eventMessage);
 
-      expect(sendSpy.calledOnce).to.be.true;
-      expect(sendSpy.args[0][0].topic).to.eq(topic);
-      expect(sendSpy.args[0][0].messages).to.not.be.empty;
+      expect(sendSpy).toHaveBeenCalledOnce();
+      expect(sendSpy.mock.calls[0][0].topic).toEqual(topic);
+      expect(sendSpy.mock.calls[0][0].messages).not.toHaveLength(0);
 
-      const sentMessage = sendSpy.args[0][0].messages[0];
+      const sentMessage = sendSpy.mock.calls[0][0].messages[0];
 
-      expect(sentMessage.value).to.eq(messageValue);
+      expect(sentMessage.value).toEqual(messageValue);
     });
 
     it('should throw error', async () => {
-      sinon.stub(client as any, 'producer').value({
+      vi.spyOn(client as any, 'producer', 'get').mockReturnValue({
         send: sendStub,
       });
 
       client['dispatchEvent'](eventMessage).catch(err =>
-        expect(err).to.be.instanceOf(Error),
+        expect(err).toBeInstanceOf(Error),
       );
     });
   });
@@ -696,7 +677,7 @@ describe('ClientKafka', () => {
 
       const result = client.getConsumerAssignments();
 
-      expect(result).to.deep.eq(client['consumerAssignments']);
+      expect(result).toEqual(client['consumerAssignments']);
     });
   });
 
@@ -708,13 +689,13 @@ describe('ClientKafka', () => {
 
       const result = client['getReplyTopicPartition'](replyTopic);
 
-      expect(result).to.eq('0');
+      expect(result).toEqual('0');
     });
 
     it('should throw error when the topic is not being consumed', () => {
       client['consumerAssignments'] = {};
 
-      expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
+      expect(() => client['getReplyTopicPartition'](replyTopic)).toThrow(
         InvalidKafkaClientTopicException,
       );
     });
@@ -724,7 +705,7 @@ describe('ClientKafka', () => {
         [topic]: undefined!,
       };
 
-      expect(() => client['getReplyTopicPartition'](replyTopic)).to.throw(
+      expect(() => client['getReplyTopicPartition'](replyTopic)).toThrow(
         InvalidKafkaClientTopicException,
       );
     });
@@ -738,35 +719,35 @@ describe('ClientKafka', () => {
       data: messageValue,
     };
 
-    let assignPacketIdStub: sinon.SinonStub;
-    let normalizePatternSpy: sinon.SinonSpy;
-    let getResponsePatternNameSpy: sinon.SinonSpy;
-    let getReplyTopicPartitionSpy: sinon.SinonSpy;
-    let routingMapSetSpy: sinon.SinonSpy;
-    let sendSpy: sinon.SinonSpy;
+    let assignPacketIdStub: any;
+    let normalizePatternSpy: any;
+    let getResponsePatternNameSpy: any;
+    let getReplyTopicPartitionSpy: any;
+    let routingMapSetSpy: any;
+    let sendSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      normalizePatternSpy = sinon.spy(client as any, 'normalizePattern');
-      getResponsePatternNameSpy = sinon.spy(
+      normalizePatternSpy = vi.spyOn(client as any, 'normalizePattern');
+      getResponsePatternNameSpy = vi.spyOn(
         client as any,
         'getResponsePatternName',
       );
-      getReplyTopicPartitionSpy = sinon.spy(
+      getReplyTopicPartitionSpy = vi.spyOn(
         client as any,
         'getReplyTopicPartition',
       );
-      routingMapSetSpy = sinon.spy(untypedClient.routingMap, 'set');
-      sendSpy = sinon.spy(() => Promise.resolve());
+      routingMapSetSpy = vi.spyOn(untypedClient.routingMap, 'set');
+      sendSpy = vi.fn().mockResolvedValue(undefined);
 
-      assignPacketIdStub = sinon
-        .stub(client as any, 'assignPacketId')
-        .callsFake(packet =>
+      assignPacketIdStub = vi
+        .spyOn(client as any, 'assignPacketId')
+        .mockImplementation(packet =>
           Object.assign(packet as object, {
             id: correlationId,
           }),
         );
 
-      sinon.stub(client as any, '_producer').value({
+      vi.spyOn(client as any, '_producer', 'get').mockReturnValue({
         send: sendSpy,
       });
 
@@ -780,7 +761,7 @@ describe('ClientKafka', () => {
 
       await waitForNextTick();
 
-      expect(assignPacketIdStub.calledWith(readPacket)).to.be.true;
+      expect(assignPacketIdStub).toHaveBeenCalledWith(readPacket);
     });
 
     it('should normalize the pattern', async () => {
@@ -788,7 +769,7 @@ describe('ClientKafka', () => {
 
       await waitForNextTick();
 
-      expect(normalizePatternSpy.calledWith(topic)).to.be.true;
+      expect(normalizePatternSpy).toHaveBeenCalledWith(topic);
     });
 
     it('should get the reply pattern', async () => {
@@ -796,7 +777,7 @@ describe('ClientKafka', () => {
 
       await waitForNextTick();
 
-      expect(getResponsePatternNameSpy.calledWith(topic)).to.be.true;
+      expect(getResponsePatternNameSpy).toHaveBeenCalledWith(topic);
     });
 
     it('should get the reply partition', async () => {
@@ -804,7 +785,7 @@ describe('ClientKafka', () => {
 
       await waitForNextTick();
 
-      expect(getReplyTopicPartitionSpy.calledWith(replyTopic)).to.be.true;
+      expect(getReplyTopicPartitionSpy).toHaveBeenCalledWith(replyTopic);
     });
 
     it('should add the callback to the routing map', async () => {
@@ -812,9 +793,9 @@ describe('ClientKafka', () => {
 
       await waitForNextTick();
 
-      expect(routingMapSetSpy.calledOnce).to.be.true;
-      expect(routingMapSetSpy.args[0][0]).to.eq(correlationId);
-      expect(routingMapSetSpy.args[0][1]).to.eq(callback);
+      expect(routingMapSetSpy).toHaveBeenCalledOnce();
+      expect(routingMapSetSpy.mock.calls[0][0]).toEqual(correlationId);
+      expect(routingMapSetSpy.mock.calls[0][1]).toEqual(callback);
     });
 
     it('should send the message with headers', async () => {
@@ -822,19 +803,19 @@ describe('ClientKafka', () => {
 
       await waitForNextTick();
 
-      expect(sendSpy.calledOnce).to.be.true;
-      expect(sendSpy.args[0][0].topic).to.eq(topic);
-      expect(sendSpy.args[0][0].messages).to.not.be.empty;
+      expect(sendSpy).toHaveBeenCalledOnce();
+      expect(sendSpy.mock.calls[0][0].topic).toEqual(topic);
+      expect(sendSpy.mock.calls[0][0].messages).not.toHaveLength(0);
 
-      const sentMessage = sendSpy.args[0][0].messages[0];
+      const sentMessage = sendSpy.mock.calls[0][0].messages[0];
 
-      expect(sentMessage.value).to.eq(messageValue);
-      expect(sentMessage.headers).to.not.be.empty;
-      expect(sentMessage.headers[KafkaHeaders.CORRELATION_ID]).to.eq(
+      expect(sentMessage.value).toEqual(messageValue);
+      expect(sentMessage.headers).toBeDefined();
+      expect(sentMessage.headers[KafkaHeaders.CORRELATION_ID]).toEqual(
         correlationId,
       );
-      expect(sentMessage.headers[KafkaHeaders.REPLY_TOPIC]).to.eq(replyTopic);
-      expect(sentMessage.headers[KafkaHeaders.REPLY_PARTITION]).to.eq(
+      expect(sentMessage.headers[KafkaHeaders.REPLY_TOPIC]).toEqual(replyTopic);
+      expect(sentMessage.headers[KafkaHeaders.REPLY_PARTITION]).toEqual(
         replyPartition,
       );
     });
@@ -844,26 +825,28 @@ describe('ClientKafka', () => {
 
       await waitForNextTick();
 
-      expect(client['routingMap'].has(correlationId)).to.be.false;
-      expect(client['routingMap'].size).to.eq(0);
+      expect(client['routingMap'].has(correlationId)).toBe(false);
+      expect(client['routingMap'].size).toEqual(0);
     });
 
     describe('on error', () => {
-      let clientProducerStub: sinon.SinonStub;
-      let sendStub: sinon.SinonStub;
+      let clientProducerStub: any;
+      let sendStub: ReturnType<typeof vi.fn>;
 
       beforeEach(() => {
-        sendStub = sinon.stub().callsFake(() => {
+        sendStub = vi.fn().mockImplementation(() => {
           throw new Error();
         });
 
-        clientProducerStub = sinon.stub(client as any, '_producer').value({
-          send: sendStub,
-        });
+        clientProducerStub = vi
+          .spyOn(client as any, '_producer', 'get')
+          .mockReturnValue({
+            send: sendStub,
+          });
       });
 
       afterEach(() => {
-        clientProducerStub.restore();
+        clientProducerStub.mockRestore();
       });
 
       it('should call callback', async () => {
@@ -871,41 +854,41 @@ describe('ClientKafka', () => {
         return new Promise(async resolve => {
           return client['publish'](readPacket, ({ err }) => resolve(err));
         }).then(err => {
-          expect(err).to.be.instanceof(Error);
+          expect(err).toBeInstanceOf(Error);
         });
       });
     });
 
     describe('dispose callback', () => {
       let subscription;
-      let getResponsePatternNameStub: sinon.SinonStub;
-      let getReplyTopicPartitionStub: sinon.SinonStub;
+      let getResponsePatternNameStub: any;
+      let getReplyTopicPartitionStub: any;
 
       beforeEach(async () => {
         // restore
-        getResponsePatternNameSpy.restore();
-        getReplyTopicPartitionSpy.restore();
+        getResponsePatternNameSpy.mockRestore();
+        getReplyTopicPartitionSpy.mockRestore();
 
         // return the topic instead of the reply topic
-        getResponsePatternNameStub = sinon
-          .stub(client as any, 'getResponsePatternName')
-          .callsFake(() => topic);
-        getReplyTopicPartitionStub = sinon
-          .stub(client as any, 'getReplyTopicPartition')
-          .callsFake(() => '0');
+        getResponsePatternNameStub = vi
+          .spyOn(client as any, 'getResponsePatternName')
+          .mockImplementation(() => topic);
+        getReplyTopicPartitionStub = vi
+          .spyOn(client as any, 'getReplyTopicPartition')
+          .mockImplementation(() => '0');
 
         subscription = client['publish'](readPacket, callback);
         subscription(payloadDisposed);
       });
 
       afterEach(() => {
-        getResponsePatternNameStub.restore();
-        getReplyTopicPartitionStub.restore();
+        getResponsePatternNameStub.mockRestore();
+        getReplyTopicPartitionStub.mockRestore();
       });
 
       it('should remove callback from routing map', async () => {
-        expect(client['routingMap'].has(correlationId)).to.be.false;
-        expect(client['routingMap'].size).to.eq(0);
+        expect(client['routingMap'].has(correlationId)).toBe(false);
+        expect(client['routingMap'].size).toEqual(0);
       });
     });
   });

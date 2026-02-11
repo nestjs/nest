@@ -1,6 +1,4 @@
-import { expect } from 'chai';
 import { Socket as NetSocket } from 'net';
-import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { TcpSocket } from '../../helpers/tcp-socket.js';
@@ -17,41 +15,41 @@ describe('ServerTCP', () => {
   });
 
   describe('bindHandler', () => {
-    const socket = { on: sinon.spy() };
+    const socket = { on: vi.fn() };
 
     beforeEach(() => {
-      sinon.stub(server, 'getSocketInstance' as any).callsFake(() => socket);
+      vi.spyOn(server, 'getSocketInstance' as any).mockImplementation(
+        () => socket,
+      );
     });
     it('should bind message and error events to handler', () => {
       server.bindHandler(null!);
-      expect(socket.on.calledTwice).to.be.true;
+      expect(socket.on).toHaveBeenCalledTimes(2);
     });
   });
   describe('close', () => {
-    const tcpServer = { close: sinon.spy() };
+    const tcpServer = { close: vi.fn() };
     beforeEach(() => {
       untypedServer.server = tcpServer;
     });
     it('should close server', () => {
       server.close();
-      expect(tcpServer.close.called).to.be.true;
+      expect(tcpServer.close).toHaveBeenCalled();
     });
   });
   describe('listen', () => {
-    const serverMock = { listen: sinon.spy(), once: sinon.spy() };
+    const serverMock = { listen: vi.fn(), once: vi.fn() };
     beforeEach(() => {
       untypedServer.server = serverMock;
     });
     it('should call native listen method with expected arguments', () => {
       const callback = () => {};
       server.listen(callback);
-      expect(
-        serverMock.listen.calledWith(
-          untypedServer.port,
-          untypedServer.host,
-          callback,
-        ),
-      ).to.be.true;
+      expect(serverMock.listen).toHaveBeenCalledWith(
+        untypedServer.port,
+        untypedServer.host,
+        callback,
+      );
     });
   });
   describe('handleMessage', () => {
@@ -63,26 +61,24 @@ describe('ServerTCP', () => {
     };
     beforeEach(() => {
       socket = {
-        sendMessage: sinon.spy(),
+        sendMessage: vi.fn(),
       };
     });
     it('should send NO_MESSAGE_HANDLER error if key does not exists in handlers object', async () => {
       await server.handleMessage(socket, msg);
-      expect(
-        socket.sendMessage.calledWith({
-          id: msg.id,
-          status: 'error',
-          err: NO_MESSAGE_HANDLER,
-        }),
-      ).to.be.true;
+      expect(socket.sendMessage).toHaveBeenCalledWith({
+        id: msg.id,
+        status: 'error',
+        err: NO_MESSAGE_HANDLER,
+      });
     });
     it('should call handler if exists in handlers object', async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       untypedServer.messageHandlers = objectToMap({
         [msg.pattern]: handler as any,
       });
       await server.handleMessage(socket, msg);
-      expect(handler.calledOnce).to.be.true;
+      expect(handler).toHaveBeenCalledOnce();
     });
   });
   describe('handleClose', () => {
@@ -90,14 +86,14 @@ describe('ServerTCP', () => {
       it('should return undefined', () => {
         untypedServer.isExplicitlyTerminated = true;
         const result = server.handleClose();
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('when "retryAttempts" does not exist', () => {
       it('should return undefined', () => {
         untypedServer.options.retryAttempts = undefined;
         const result = server.handleClose();
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('when "retryAttemptsCount" count is max', () => {
@@ -105,7 +101,7 @@ describe('ServerTCP', () => {
         untypedServer.options.retryAttempts = 3;
         untypedServer.retryAttemptsCount = 3;
         const result = server.handleClose();
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('otherwise', () => {
@@ -116,7 +112,7 @@ describe('ServerTCP', () => {
         untypedServer.retryAttemptsCount = 2;
         untypedServer.options.retryDelay = 3;
         const result = server.handleClose();
-        expect(result).to.be.not.undefined;
+        expect(result).toBeDefined();
       });
     });
   });
@@ -126,7 +122,7 @@ describe('ServerTCP', () => {
     const data = 'test';
 
     it('should call handler with expected arguments', async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
@@ -136,7 +132,7 @@ describe('ServerTCP', () => {
         { pattern: '', data },
         new BaseRpcContext([]),
       );
-      expect(handler.calledWith(data)).to.be.true;
+      expect(handler).toHaveBeenCalledWith(data, expect.any(BaseRpcContext));
     });
   });
 
@@ -148,7 +144,7 @@ describe('ServerTCP', () => {
         const server = new ServerTCP({});
         const socket = new NetSocket();
         const jsonSocket = server['getSocketInstance'](socket);
-        expect(jsonSocket['maxBufferSize']).to.equal(DEFAULT_MAX_BUFFER_SIZE);
+        expect(jsonSocket['maxBufferSize']).toBe(DEFAULT_MAX_BUFFER_SIZE);
       });
     });
 
@@ -158,7 +154,7 @@ describe('ServerTCP', () => {
         const server = new ServerTCP({ maxBufferSize: customSize });
         const socket = new NetSocket();
         const jsonSocket = server['getSocketInstance'](socket);
-        expect(jsonSocket['maxBufferSize']).to.equal(customSize);
+        expect(jsonSocket['maxBufferSize']).toBe(customSize);
       });
 
       it('should pass maxBufferSize to JsonSocket', () => {
@@ -166,7 +162,7 @@ describe('ServerTCP', () => {
         const server = new ServerTCP({ maxBufferSize: customSize });
         const socket = new NetSocket();
         const jsonSocket = server['getSocketInstance'](socket);
-        expect(jsonSocket['maxBufferSize']).to.equal(customSize);
+        expect(jsonSocket['maxBufferSize']).toBe(customSize);
       });
     });
 
@@ -186,9 +182,9 @@ describe('ServerTCP', () => {
         });
         const socket = new NetSocket();
         const customSocket = server['getSocketInstance'](socket);
-        expect(customSocket).to.be.instanceOf(CustomSocket);
+        expect(customSocket).toBeInstanceOf(CustomSocket);
         // Custom socket should not have maxBufferSize property
-        expect(customSocket['maxBufferSize']).to.be.undefined;
+        expect(customSocket['maxBufferSize']).toBeUndefined();
       });
     });
   });

@@ -3,7 +3,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { AppModule } from '../src/app.module.js';
@@ -30,7 +29,7 @@ describe('Fastify FileSend', () => {
         url: '/file/stream',
       })
       .then(({ payload }) => {
-        expect(payload.toString()).to.be.eq(readmeString);
+        expect(payload.toString()).toBe(readmeString);
       });
   });
   it('should return a file from a buffer', async () => {
@@ -40,7 +39,7 @@ describe('Fastify FileSend', () => {
         url: '/file/buffer',
       })
       .then(({ payload }) => {
-        expect(payload.toString()).to.be.eq(readmeString);
+        expect(payload.toString()).toBe(readmeString);
       });
   });
   /**
@@ -55,7 +54,7 @@ describe('Fastify FileSend', () => {
         method: 'get',
       })
       .then(({ payload }) => {
-        expect(payload).to.be.eq({ value: 'Hello world' });
+        expect(payload).toBe({ value: 'Hello world' });
       });
   });
   it('should return a file from an RxJS stream', async () => {
@@ -65,20 +64,20 @@ describe('Fastify FileSend', () => {
         url: '/file/rxjs/stream',
       })
       .then(({ payload }) => {
-        expect(payload.toString()).to.be.eq(readmeString);
+        expect(payload.toString()).toBe(readmeString);
       });
   });
   it('should return a file with correct headers', async () => {
     return app
       .inject({ url: '/file/with/headers', method: 'get' })
       .then(({ statusCode, headers, payload }) => {
-        expect(statusCode).to.equal(200);
-        expect(headers['content-type']).to.equal('text/markdown');
-        expect(headers['content-disposition']).to.equal(
+        expect(statusCode).toBe(200);
+        expect(headers['content-type']).toBe('text/markdown');
+        expect(headers['content-disposition']).toBe(
           'attachment; filename="Readme.md"',
         );
-        expect(headers['content-length']).to.equal(`${readme.byteLength}`);
-        expect(payload).to.equal(readmeString);
+        expect(headers['content-length']).toBe(`${readme.byteLength}`);
+        expect(payload).toBe(readmeString);
       });
   });
 });
