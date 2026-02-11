@@ -21,9 +21,7 @@ describe('AudioController (e2e)', () => {
 
   describe('/audio/transcode (POST)', () => {
     it('should queue a transcoding job and return success', () => {
-      return request(app.getHttpServer())
-        .post('/audio/transcode')
-        .expect(201);
+      return request(app.getHttpServer()).post('/audio/transcode').expect(201);
     });
 
     it('should handle multiple concurrent requests', async () => {
@@ -35,9 +33,7 @@ describe('AudioController (e2e)', () => {
     });
 
     it('should reject GET requests', () => {
-      return request(app.getHttpServer())
-        .get('/audio/transcode')
-        .expect(404);
+      return request(app.getHttpServer()).get('/audio/transcode').expect(404);
     });
   });
 });

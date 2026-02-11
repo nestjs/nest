@@ -3,3 +3,4 @@ export * from './http-redirect-response.interface';
 export * from './http-server.interface';
 export * from './message-event.interface';
 export * from './raw-body-request.interface';
+export * from './sse-options.interface';
