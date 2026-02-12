@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule, dynamicModule } from './app.module';
-import { AppService } from './app.service';
+import { AppModule, dynamicModule } from './app.module.js';
+import { AppService } from './app.service.js';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);

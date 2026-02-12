@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { Cat } from '../graphql.schema';
-import { CatsResolver } from './cats.resolver';
-import { CatsService } from './cats.service';
+import { Cat } from '../graphql.schema.js';
+import { CatsResolver } from './cats.resolver.js';
+import { CatsService } from './cats.service.js';
 
-import { MINIMUM_AGE, MINIMUM_AGE_ERROR } from './dto/create-cat.dto';
+import { MINIMUM_AGE, MINIMUM_AGE_ERROR } from './dto/create-cat.dto.js';
 
 describe('CatsResolver', () => {
   let resolver: CatsResolver;
@@ -17,11 +17,11 @@ describe('CatsResolver', () => {
         {
           provide: CatsService,
           useValue: {
-            create: jest
+            create: vi
               .fn()
               .mockImplementation((cat: Cat) => ({ id: 1, ...cat })),
-            findAll: jest.fn().mockReturnValue([cat]),
-            findOneById: jest
+            findAll: vi.fn().mockReturnValue([cat]),
+            findOneById: vi
               .fn()
               .mockImplementation((id: number) => ({ ...cat, id })),
           },

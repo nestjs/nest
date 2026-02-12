@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Express } from 'express';
-import { AppService } from './app.service';
-import { SampleDto } from './sample.dto';
+import { AppService } from './app.service.js';
+import { SampleDto } from './sample.dto.js';
 
 @Controller()
 export class AppController {

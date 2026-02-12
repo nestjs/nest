@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
-import { AudioController } from './audio/audio.controller';
-import { AudioProcessor } from './audio/audio.processor';
+import { AudioController } from './audio/audio.controller.js';
+import { AudioProcessor } from './audio/audio.processor.js';
 
 @Module({
   imports: [
