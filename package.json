@@ -142,7 +142,7 @@
     "gulp-watch": "5.0.1",
     "http-errors": "2.0.1",
     "husky": "9.1.7",
-    "ioredis": "5.9.2",
+    "ioredis": "5.9.3",
     "kafkajs": "2.2.4",
     "lerna": "9.0.4",
     "lerna-changelog": "2.2.0",
