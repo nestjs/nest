@@ -16,4 +16,4 @@ async function bootstrap() {
 
   return app.close();
 }
-bootstrap();
+await bootstrap();
