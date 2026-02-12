@@ -24,7 +24,7 @@
     "@nestjs/core": "11.1.13",
     "@nestjs/platform-express": "11.1.13",
     "bull": "4.16.5",
-    "dotenv": "17.2.3",
+    "dotenv": "17.2.4",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.2",
     "rxjs": "7.8.2"
@@ -38,7 +38,7 @@
     "@types/bull": "4.10.4",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
-    "@types/node": "24.10.10",
+    "@types/node": "24.10.13",
     "@types/supertest": "6.0.3",
     "jest": "30.2.0",
     "prettier": "3.8.1",
@@ -51,7 +51,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-import": "2.32.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.54.0"
+    "typescript-eslint": "8.55.0"
   },
   "jest": {
     "moduleFileExtensions": [
