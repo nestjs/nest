@@ -1,6 +1,7 @@
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
+import { BaseWsExceptionFilter } from '../../exceptions/base-ws-exception-filter';
 import { WsException } from '../../errors/ws-exception';
 import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler';
 
@@ -168,6 +169,119 @@ describe('WsExceptionsHandler', () => {
             .false;
         });
       });
+    });
+  });
+
+  describe('when client is a native WebSocket (ws library)', () => {
+    let sendStub: sinon.SinonStub;
+    let wsClient: {
+      send: sinon.SinonStub;
+      readyState: number;
+    };
+    let wsExecutionContextHost: ExecutionContextHost;
+
+    beforeEach(() => {
+      sendStub = sinon.stub();
+      wsClient = {
+        send: sendStub,
+        readyState: 1,
+      };
+      wsExecutionContextHost = new ExecutionContextHost([
+        wsClient,
+        data,
+        pattern,
+      ]);
+    });
+
+    it('should send JSON error via client.send when exception is unknown', () => {
+      handler.handle(new Error(), wsExecutionContextHost);
+      expect(sendStub.calledOnce).to.be.true;
+      const sent = JSON.parse(sendStub.firstCall.args[0]);
+      expect(sent).to.deep.equal({
+        event: 'exception',
+        data: {
+          status: 'error',
+          message: 'Internal server error',
+          cause: {
+            pattern,
+            data,
+          },
+        },
+      });
+    });
+
+    it('should send JSON error via client.send when WsException has string message', () => {
+      const message = 'Unauthorized';
+      handler.handle(new WsException(message), wsExecutionContextHost);
+      expect(sendStub.calledOnce).to.be.true;
+      const sent = JSON.parse(sendStub.firstCall.args[0]);
+      expect(sent).to.deep.equal({
+        event: 'exception',
+        data: {
+          message,
+          status: 'error',
+          cause: {
+            pattern,
+            data,
+          },
+        },
+      });
+    });
+
+    it('should send JSON error via client.send when WsException has object message', () => {
+      const message = { custom: 'Unauthorized' };
+      handler.handle(new WsException(message), wsExecutionContextHost);
+      expect(sendStub.calledOnce).to.be.true;
+      const sent = JSON.parse(sendStub.firstCall.args[0]);
+      expect(sent).to.deep.equal({
+        event: 'exception',
+        data: message,
+      });
+    });
+
+    it('should not send when readyState is not OPEN', () => {
+      wsClient.readyState = 3;
+      handler.handle(new WsException('test'), wsExecutionContextHost);
+      expect(sendStub.notCalled).to.be.true;
+    });
+  });
+
+  describe('when client has neither emit nor send', () => {
+    it('should bail out without throwing', () => {
+      const bareClient = {};
+      const bareCtx = new ExecutionContextHost([bareClient, data, pattern]);
+      expect(() => handler.handle(new WsException('test'), bareCtx)).to.not
+        .throw;
+    });
+  });
+});
+
+describe('BaseWsExceptionFilter', () => {
+  describe('isNativeWebSocket', () => {
+    let filter: BaseWsExceptionFilter;
+
+    beforeEach(() => {
+      filter = new BaseWsExceptionFilter();
+    });
+
+    it('should return true for a raw ws client', () => {
+      const wsClient = { send: () => {}, readyState: 1 };
+      expect((filter as any).isNativeWebSocket(wsClient)).to.be.true;
+    });
+
+    it('should return false for a socket.io client (has nsp)', () => {
+      const ioClient = {
+        send: () => {},
+        readyState: 1,
+        emit: () => {},
+        nsp: {},
+      };
+      expect((filter as any).isNativeWebSocket(ioClient)).to.be.false;
+    });
+
+    it('should return false for a client without send', () => {
+      const client = { emit: () => {} };
+      expect((filter as any).isNativeWebSocket(client)).to.be.false;
     });
   });
 });
