@@ -39,13 +39,13 @@ export class HttpVersionNotSupportedException extends HttpException {
       | string
       | HttpExceptionOptions = 'HTTP Version Not Supported',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'HTTP Version Not Supported', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.HTTP_VERSION_NOT_SUPPORTED,
       ),
       HttpStatus.HTTP_VERSION_NOT_SUPPORTED,

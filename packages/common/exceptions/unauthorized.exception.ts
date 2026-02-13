@@ -37,13 +37,13 @@ export class UnauthorizedException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Unauthorized',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Unauthorized', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.UNAUTHORIZED,
       ),
       HttpStatus.UNAUTHORIZED,
