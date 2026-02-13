@@ -7,6 +7,9 @@
   "imports": {
     "#root/*": "./src/*"
   },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "prepare": "husky || true",
     "format": "oxfmt",
