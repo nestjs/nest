@@ -1,0 +1,39 @@
+{
+  "name": "nest-rolldown-starter",
+  "version": "1.0.0",
+  "description": "Nest Rolldown starter repository",
+  "license": "MIT",
+  "type": "module",
+  "imports": {
+    "#root/*": "./src/*"
+  },
+  "scripts": {
+    "prepare": "husky || true",
+    "format": "oxfmt",
+    "lint": "oxlint --type-aware",
+    "build": "rolldown --config rolldown.config.ts",
+    "dev": "rolldown --config rolldown.config.ts --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@nestjs/common": "11.1.13",
+    "@nestjs/core": "11.1.13",
+    "@nestjs/platform-express": "11.1.13",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.14.3",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "11.1.13",
+    "@rollup/plugin-run": "3.1.0",
+    "husky": "9.1.7",
+    "oxfmt": "0.32.0",
+    "oxlint": "1.47.0",
+    "oxlint-tsgolint": "0.12.1",
+    "rolldown": "^1.0.0-rc.4",
+    "typescript": "5.9.3",
+    "unplugin-swc": "1.5.9",
+    "vitest": "4.0.18"
+  }
+}
