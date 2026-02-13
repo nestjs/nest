@@ -77,9 +77,7 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
   }
 
   protected isEnum(value: T): boolean {
-    const enumValues = Object.keys(this.enumType as object).map(
-      item => this.enumType[item],
-    );
+    const enumValues = Object.values(this.enumType as object);
     return enumValues.includes(value);
   }
 }

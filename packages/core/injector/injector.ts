@@ -809,7 +809,7 @@ export class Injector {
     properties: PropertyDependency[],
   ): void {
     if (!isObject(instance)) {
-      return undefined;
+      return;
     }
     iterate(properties)
       .filter(item => !isNil(item.instance))

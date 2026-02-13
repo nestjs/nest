@@ -12,7 +12,7 @@ export class GuardsConsumer {
     callback: (...args: unknown[]) => unknown,
     type?: TContext,
   ): Promise<boolean> {
-    if (!guards || isEmpty(guards)) {
+    if (isEmpty(guards)) {
       return true;
     }
     const context = this.createContext(args, instance, callback);

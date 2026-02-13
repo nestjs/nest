@@ -319,9 +319,7 @@ export class NestApplicationContext<
     options: ShutdownHooksOptions = {},
   ): this {
     if (isEmpty(signals)) {
-      signals = Object.keys(ShutdownSignal).map(
-        (key: string) => ShutdownSignal[key],
-      );
+      signals = Object.values(ShutdownSignal);
     } else {
       // given signals array should be unique because
       // process shouldn't listen to the same signal more than once.

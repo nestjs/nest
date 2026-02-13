@@ -63,18 +63,14 @@ export class KafkaReplyPartitionAssigner {
     });
 
     // build a collection of topics and partitions
-    const topicsPartitions = group.topics
-      .map(topic => {
-        const partitionMetadata =
-          this.config.cluster.findTopicPartitionMetadata(topic);
-        return partitionMetadata.map(m => {
-          return {
-            topic,
-            partitionId: m.partitionId,
-          };
-        });
-      })
-      .reduce((acc, val) => acc.concat(val), []);
+    const topicsPartitions = group.topics.flatMap(topic => {
+      const partitionMetadata =
+        this.config.cluster.findTopicPartitionMetadata(topic);
+      return partitionMetadata.map(m => ({
+        topic,
+        partitionId: m.partitionId,
+      }));
+    });
 
     // create the new assignment by populating the members with the first partition of the topics
     sortedMemberIds.forEach(assignee => {

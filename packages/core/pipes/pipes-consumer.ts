@@ -24,10 +24,10 @@ export class PipesConsumer {
     { metatype, type, data }: { metatype: any; type?: any; data?: any },
     transforms: PipeTransform[],
   ) {
-    return transforms.reduce(async (deferredValue, pipe) => {
-      const val = await deferredValue;
-      const result = pipe.transform(val, { metatype, type, data });
-      return result;
-    }, Promise.resolve(value));
+    let result: unknown = value;
+    for (const pipe of transforms) {
+      result = await pipe.transform(result, { metatype, type, data });
+    }
+    return result;
   }
 }

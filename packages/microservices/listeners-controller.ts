@@ -84,12 +84,12 @@ export class ListenersController {
           isUndefined(serverInstance.transportId) ||
           transport === serverInstance.transportId,
       )
-      .reduce((acc, handler) => {
-        handler.patterns.forEach(pattern =>
-          acc.push({ ...handler, patterns: [pattern] }),
-        );
-        return acc;
-      }, [] as EventOrMessageListenerDefinition[])
+      .flatMap(handler =>
+        handler.patterns.map(pattern => ({
+          ...handler,
+          patterns: [pattern],
+        })),
+      )
       .forEach((definition: EventOrMessageListenerDefinition) => {
         const {
           patterns: [pattern],

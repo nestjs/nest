@@ -34,13 +34,10 @@ export class ClientsModule {
 
   static registerAsync(options: ClientsModuleAsyncOptions): DynamicModule {
     const clientsOptions = !Array.isArray(options) ? options.clients : options;
-    const providers: Provider[] = clientsOptions.reduce(
-      (accProviders: Provider[], item) =>
-        accProviders
-          .concat(this.createAsyncProviders(item))
-          .concat(item.extraProviders || []),
-      [],
-    );
+    const providers: Provider[] = clientsOptions.flatMap(item => [
+      ...this.createAsyncProviders(item),
+      ...(item.extraProviders || []),
+    ]);
     const imports = clientsOptions.reduce(
       (accImports, option) => {
         if (!option.imports) {

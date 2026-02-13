@@ -233,9 +233,8 @@ export class RouterExecutionContext {
     );
 
     const httpCode = this.reflectHttpStatusCode(callback);
-    const httpStatusCode = httpCode
-      ? httpCode
-      : this.responseController.getStatusByMethod(requestMethod);
+    const httpStatusCode =
+      httpCode ?? this.responseController.getStatusByMethod(requestMethod);
 
     const responseHeaders = this.reflectResponseHeaders(callback);
     const hasCustomHeaders = !isEmpty(responseHeaders);

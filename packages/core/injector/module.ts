@@ -564,33 +564,37 @@ export class Module {
   }
 
   public getProviderById<T = any>(id: string): InstanceWrapper<T> | undefined {
-    return Array.from(this._providers.values()).find(
-      item => item.id === id,
-    ) as InstanceWrapper<T>;
+    for (const item of this._providers.values()) {
+      if (item.id === id) return item as InstanceWrapper<T>;
+    }
+    return undefined;
   }
 
   public getControllerById<T = any>(
     id: string,
   ): InstanceWrapper<T> | undefined {
-    return Array.from(this._controllers.values()).find(
-      item => item.id === id,
-    ) as InstanceWrapper<T>;
+    for (const item of this._controllers.values()) {
+      if (item.id === id) return item as InstanceWrapper<T>;
+    }
+    return undefined;
   }
 
   public getInjectableById<T = any>(
     id: string,
   ): InstanceWrapper<T> | undefined {
-    return Array.from(this._injectables.values()).find(
-      item => item.id === id,
-    ) as InstanceWrapper<T>;
+    for (const item of this._injectables.values()) {
+      if (item.id === id) return item as InstanceWrapper<T>;
+    }
+    return undefined;
   }
 
   public getMiddlewareById<T = any>(
     id: string,
   ): InstanceWrapper<T> | undefined {
-    return Array.from(this._middlewares.values()).find(
-      item => item.id === id,
-    ) as InstanceWrapper<T>;
+    for (const item of this._middlewares.values()) {
+      if (item.id === id) return item as InstanceWrapper<T>;
+    }
+    return undefined;
   }
 
   public getNonAliasProviders(): Array<

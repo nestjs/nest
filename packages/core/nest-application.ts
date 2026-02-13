@@ -88,9 +88,9 @@ export class NestApplication
   }
 
   protected async dispose(): Promise<void> {
-    this.socketModule && (await this.socketModule.close());
-    this.microservicesModule && (await this.microservicesModule.close());
-    this.httpAdapter && (await this.httpAdapter.close());
+    await this.socketModule?.close();
+    await this.microservicesModule?.close();
+    await this.httpAdapter?.close();
 
     await Promise.all(
       iterate(this.microservices).map(async microservice => {
@@ -444,19 +444,17 @@ export class NestApplication
   public useStaticAssets(options: any): this;
   public useStaticAssets(path: string, options?: any): this;
   public useStaticAssets(pathOrOptions: any, options?: any): this {
-    this.httpAdapter.useStaticAssets &&
-      this.httpAdapter.useStaticAssets(pathOrOptions, options);
+    this.httpAdapter.useStaticAssets?.(pathOrOptions, options);
     return this;
   }
 
   public setBaseViewsDir(path: string | string[]): this {
-    this.httpAdapter.setBaseViewsDir && this.httpAdapter.setBaseViewsDir(path);
+    this.httpAdapter.setBaseViewsDir?.(path);
     return this;
   }
 
   public setViewEngine(engineOrOptions: any): this {
-    this.httpAdapter.setViewEngine &&
-      this.httpAdapter.setViewEngine(engineOrOptions);
+    this.httpAdapter.setViewEngine?.(engineOrOptions);
     return this;
   }
 
