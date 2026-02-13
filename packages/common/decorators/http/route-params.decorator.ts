@@ -1,3 +1,4 @@
+import { StandardSchemaV1 } from '@standard-schema/spec';
 import {
   RESPONSE_PASSTHROUGH_METADATA,
   ROUTE_ARGS_METADATA,
@@ -6,6 +7,22 @@ import { RouteParamtypes } from '../../enums/route-paramtypes.enum.js';
 import { PipeTransform } from '../../index.js';
 import { Type } from '../../interfaces/index.js';
 import { isNil, isString } from '../../utils/shared.utils.js';
+
+/**
+ * The options that can be passed to a handler's parameter decorator, such as `@Query()`, `@Body()`, and others.
+ * These options allow you to specify a schema for validation and transformation, as well as any pipes to apply to the parameter.
+ */
+export interface ParameterDecoratorOptions {
+  /**
+   * The schema to use to retrieve within the pipes,
+   * to, for example, validate the parameter against the schema or to apply transformations based on the schema.
+   */
+  schema?: StandardSchemaV1;
+  /**
+   * The list of pipes to apply to the parameter.
+   */
+  pipes?: (Type<PipeTransform> | PipeTransform)[];
+}
 
 /**
  * The `@Response()`/`@Res` parameter decorator options.
@@ -31,15 +48,17 @@ export function assignMetadata<TParamtype = any, TArgs = any>(
   args: TArgs,
   paramtype: TParamtype,
   index: number,
-  data?: ParamData,
-  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+  options: {
+    data?: ParamData;
+  } & ParameterDecoratorOptions,
 ) {
   return {
     ...args,
     [`${paramtype as string}:${index}`]: {
       index,
-      data,
-      pipes,
+      data: options.data,
+      pipes: options.pipes,
+      schema: options.schema,
     },
   };
 }
@@ -56,7 +75,9 @@ function createRouteParamDecorator(paramtype: RouteParamtypes) {
           args,
           paramtype,
           index,
-          data,
+          {
+            data,
+          },
         ),
         target.constructor,
         key!,
@@ -66,10 +87,11 @@ function createRouteParamDecorator(paramtype: RouteParamtypes) {
 
 const createPipesRouteParamDecorator =
   (paramtype: RouteParamtypes) =>
-  (
-    data?: any,
-    ...pipes: (Type<PipeTransform> | PipeTransform)[]
-  ): ParameterDecorator =>
+  ({
+    data,
+    pipes,
+    schema,
+  }: ParameterDecoratorOptions & { data?: unknown }): ParameterDecorator =>
   (target, key, index) => {
     const args =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key!) || {};
@@ -79,7 +101,11 @@ const createPipesRouteParamDecorator =
 
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
-      assignMetadata(args, paramtype, index, paramData!, ...paramPipes),
+      assignMetadata(args, paramtype, index, {
+        data: paramData!,
+        pipes: paramPipes,
+        schema,
+      }),
       target.constructor,
       key!,
     );
@@ -242,10 +268,10 @@ export function UploadedFile(
   fileKey?: string | (Type<PipeTransform> | PipeTransform),
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
-  return createPipesRouteParamDecorator(RouteParamtypes.FILE)(
-    fileKey,
-    ...pipes,
-  );
+  return createPipesRouteParamDecorator(RouteParamtypes.FILE)({
+    data: fileKey,
+    pipes,
+  });
 }
 
 /**
@@ -303,10 +329,9 @@ export function UploadedFiles(
 export function UploadedFiles(
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
-  return createPipesRouteParamDecorator(RouteParamtypes.FILES)(
-    undefined,
-    ...pipes,
-  );
+  return createPipesRouteParamDecorator(RouteParamtypes.FILES)({
+    pipes,
+  });
 }
 
 /**
@@ -399,6 +424,29 @@ export function Query(
  * ```
  *
  * @param property name of single property to extract from the `query` object
+ * @param options options object containing additional configuration for the decorator, such as pipes and schema
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ *
+ * @publicApi
+ */
+export function Query(
+  property: string,
+  options: ParameterDecoratorOptions,
+): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `query`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `query`. May also apply pipes to the bound
+ * query parameter.
+ *
+ * For example:
+ * ```typescript
+ * async find(@Query('user') user: string)
+ * ```
+ *
+ * @param property name of single property to extract from the `query` object
+ * @param optionsOrPipe one or more pipes to apply to the bound query parameter or options object
  * @param pipes one or more pipes to apply to the bound query parameter
  *
  * @see [Request object](https://docs.nestjs.com/controllers#request-object)
@@ -407,12 +455,21 @@ export function Query(
  */
 export function Query(
   property?: string | (Type<PipeTransform> | PipeTransform),
+  optionsOrPipe?:
+    | ParameterDecoratorOptions
+    | Type<PipeTransform>
+    | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
-  return createPipesRouteParamDecorator(RouteParamtypes.QUERY)(
-    property,
-    ...pipes,
-  );
+  const actualPipes =
+    optionsOrPipe && ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe)
+      ? optionsOrPipe.pipes
+      : [optionsOrPipe].concat(pipes);
+  return createPipesRouteParamDecorator(RouteParamtypes.QUERY)({
+    data: property,
+    pipes: actualPipes,
+    schema: optionsOrPipe?.schema,
+  });
 }
 
 /**
@@ -478,7 +535,6 @@ export function Body(
   property: string,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator;
-
 /**
  * Route handler parameter decorator. Extracts the entire `body` object
  * property, or optionally a named property of the `body` object, from
@@ -491,6 +547,30 @@ export function Body(
  * ```
  *
  * @param property name of single property to extract from the `body` object
+ * @param options options to apply to the bound body parameter.
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ * @see [Working with pipes](https://docs.nestjs.com/custom-decorators#working-with-pipes)
+ *
+ * @publicApi
+ */
+export function Body(
+  property: string,
+  options: ParameterDecoratorOptions,
+): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the entire `body` object
+ * property, or optionally a named property of the `body` object, from
+ * the `req` object and populates the decorated parameter with that value.
+ * Also applies pipes to the bound body parameter.
+ *
+ * For example:
+ * ```typescript
+ * async create(@Body('role', new ValidationPipe()) role: string)
+ * ```
+ *
+ * @param property name of single property to extract from the `body` object
+ * @param optionsOrPipe options to apply to the bound body parameter.
  * @param pipes one or more pipes - either instances or classes - to apply to
  * the bound body parameter.
  *
@@ -501,12 +581,21 @@ export function Body(
  */
 export function Body(
   property?: string | (Type<PipeTransform> | PipeTransform),
+  optionsOrPipe?:
+    | ParameterDecoratorOptions
+    | Type<PipeTransform>
+    | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
-  return createPipesRouteParamDecorator(RouteParamtypes.BODY)(
-    property,
-    ...pipes,
-  );
+  const actualPipes =
+    optionsOrPipe && ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe)
+      ? optionsOrPipe.pipes
+      : [optionsOrPipe].concat(pipes);
+  return createPipesRouteParamDecorator(RouteParamtypes.BODY)({
+    data: property,
+    pipes: actualPipes,
+    schema: optionsOrPipe?.schema,
+  });
 }
 
 /**
