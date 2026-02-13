@@ -1,11 +1,4 @@
 import { ForbiddenException, ParamData } from '@nestjs/common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '@nestjs/common/constants.js';
-import {
-  ContextType,
-  Controller,
-  PipeTransform,
-} from '@nestjs/common/interfaces/index.js';
-import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
 import { isObservable, lastValueFrom } from 'rxjs';
 import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context.js';
 import { GuardsConsumer, GuardsContextCreator } from '../guards/index.js';
@@ -24,6 +17,12 @@ import { ExternalErrorProxy } from './external-proxy.js';
 import { HandlerMetadataStorage } from './handler-metadata-storage.js';
 import { ExternalHandlerMetadata } from './interfaces/external-handler-metadata.interface.js';
 import { ParamsMetadata } from './interfaces/params-metadata.interface.js';
+import {
+  CUSTOM_ROUTE_ARGS_METADATA,
+  Controller,
+  isEmpty,
+} from '@nestjs/common/internal';
+import { ContextType, PipeTransform } from '@nestjs/common';
 
 export interface ParamsFactory {
   exchangeKeyForValue(type: number, data: ParamData, args: any): any;

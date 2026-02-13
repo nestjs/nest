@@ -6,19 +6,6 @@ import {
   PipeTransform,
   RequestMethod,
 } from '@nestjs/common';
-import {
-  CUSTOM_ROUTE_ARGS_METADATA,
-  HEADERS_METADATA,
-  HTTP_CODE_METADATA,
-  REDIRECT_METADATA,
-  RENDER_METADATA,
-  ROUTE_ARGS_METADATA,
-  SSE_METADATA,
-} from '@nestjs/common/constants.js';
-import { RouteParamMetadata } from '@nestjs/common/decorators/index.js';
-import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum.js';
-import { ContextType, Controller } from '@nestjs/common/interfaces/index.js';
-import { isEmpty, isString } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage } from 'http';
 import { Observable } from 'rxjs';
 import {
@@ -46,6 +33,20 @@ import {
   RouterResponseController,
 } from './router-response-controller.js';
 import { HeaderStream } from './sse-stream.js';
+import {
+  CUSTOM_ROUTE_ARGS_METADATA,
+  HEADERS_METADATA,
+  HTTP_CODE_METADATA,
+  REDIRECT_METADATA,
+  RENDER_METADATA,
+  ROUTE_ARGS_METADATA,
+  SSE_METADATA,
+  RouteParamtypes,
+  Controller,
+  isEmpty,
+  isString,
+} from '@nestjs/common/internal';
+import { RouteParamMetadata, ContextType } from '@nestjs/common';
 
 export interface ParamProperties {
   index: number;

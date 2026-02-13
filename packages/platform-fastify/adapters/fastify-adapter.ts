@@ -10,11 +10,6 @@ import {
   VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
-import { VersionValue } from '@nestjs/common/interfaces/index.js';
-import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
-import { isString, isUndefined } from '@nestjs/common/utils/shared.utils.js';
-import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter.js';
-import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter.js';
 import {
   FastifyBaseLogger,
   FastifyBodyParser,
@@ -48,6 +43,14 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { pathToRegexp } from 'path-to-regexp';
+import {
+  VersionValue,
+  loadPackage,
+  isString,
+  isUndefined,
+} from '@nestjs/common/internal';
+import { AbstractHttpAdapter } from '@nestjs/core';
+import { LegacyRouteConverter } from '@nestjs/core/internal';
 const { kRouteContext } = fastifySymbols;
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';

@@ -1,14 +1,11 @@
 import { HttpServer, INestApplication } from '@nestjs/common';
-import type {
-  CorsOptions,
-  CorsOptionsDelegate,
-} from '@nestjs/common/interfaces/external/cors-options.interface.js';
 import type { Express } from 'express';
 import type { Server as CoreHttpServer } from 'http';
 import type { Server as CoreHttpsServer } from 'https';
 import { NestExpressBodyParserOptions } from './nest-express-body-parser-options.interface.js';
 import { NestExpressBodyParserType } from './nest-express-body-parser.interface.js';
 import { ServeStaticOptions } from './serve-static-options.interface.js';
+import type { CorsOptions, CorsOptionsDelegate } from '@nestjs/common/internal';
 
 /**
  * Interface describing methods on NestExpressApplication.

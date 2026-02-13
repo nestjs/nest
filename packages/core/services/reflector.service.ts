@@ -1,6 +1,6 @@
 import { CustomDecorator, SetMetadata, Type } from '@nestjs/common';
-import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { uid } from 'uid';
+import { isEmpty, isObject } from '@nestjs/common/internal';
 
 /**
  * @publicApi

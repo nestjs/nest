@@ -7,13 +7,6 @@ import {
   INestMicroservice,
   Type,
 } from '@nestjs/common';
-import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface.js';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface.js';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface.js';
-import { ConsoleLogger } from '@nestjs/common/services/console-logger.service.js';
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
-import { isFunction, isNil } from '@nestjs/common/utils/shared.utils.js';
 import { AbstractHttpAdapter } from './adapters/http-adapter.js';
 import { ApplicationConfig } from './application-config.js';
 import { MESSAGES } from './constants.js';
@@ -30,6 +23,14 @@ import { MetadataScanner } from './metadata-scanner.js';
 import { NestApplicationContext } from './nest-application-context.js';
 import { NestApplication } from './nest-application.js';
 import { DependenciesScanner } from './scanner.js';
+import {
+  NestMicroserviceOptions,
+  NestApplicationContextOptions,
+  loadPackage,
+  isFunction,
+  isNil,
+} from '@nestjs/common/internal';
+import { NestApplicationOptions, ConsoleLogger, Logger } from '@nestjs/common';
 
 type IEntryNestModule =
   | Type<any>

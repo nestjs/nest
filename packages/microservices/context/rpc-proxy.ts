@@ -1,7 +1,7 @@
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
 import { isObservable, Observable } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler.js';
+import { ExecutionContextHost } from '@nestjs/core/internal';
 
 export class RpcProxy {
   public create(

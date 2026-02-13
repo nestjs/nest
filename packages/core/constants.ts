@@ -1,4 +1,4 @@
-import { EnhancerSubtype } from '@nestjs/common/constants.js';
+import { EnhancerSubtype } from '@nestjs/common/internal';
 
 export const MESSAGES = {
   APPLICATION_START: `Starting Nest application...`,

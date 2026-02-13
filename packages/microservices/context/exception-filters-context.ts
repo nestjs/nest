@@ -1,14 +1,17 @@
-import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants.js';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface.js';
-import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
-import { ApplicationConfig } from '@nestjs/core/application-config.js';
-import { BaseExceptionFilterContext } from '@nestjs/core/exceptions/base-exception-filter-context.js';
-import { STATIC_CONTEXT } from '@nestjs/core/injector/constants.js';
-import { NestContainer } from '@nestjs/core/injector/container.js';
-import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
 import { iterate } from 'iterare';
 import { Observable } from 'rxjs';
 import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler.js';
+import {
+  EXCEPTION_FILTERS_METADATA,
+  Controller,
+  isEmpty,
+} from '@nestjs/common/internal';
+import { ApplicationConfig, NestContainer } from '@nestjs/core';
+import {
+  BaseExceptionFilterContext,
+  STATIC_CONTEXT,
+  InstanceWrapper,
+} from '@nestjs/core/internal';
 
 /**
  * @publicApi

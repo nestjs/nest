@@ -1,5 +1,4 @@
 import { OnModuleInit } from '@nestjs/common';
-import { isFunction, isNil } from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,
@@ -7,6 +6,7 @@ import {
 } from '../injector/helpers/transient-instances.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import { Module } from '../injector/module.js';
+import { isFunction, isNil } from '@nestjs/common/internal';
 
 /**
  * Returns true or false if the given instance has a `onModuleInit` function

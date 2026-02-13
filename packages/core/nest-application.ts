@@ -11,21 +11,6 @@ import {
   VersioningType,
   WebSocketAdapter,
 } from '@nestjs/common';
-import {
-  GlobalPrefixOptions,
-  NestApplicationOptions,
-} from '@nestjs/common/interfaces/index.js';
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import {
-  loadPackage,
-  loadPackageCached,
-} from '@nestjs/common/utils/load-package.util.js';
-import {
-  addLeadingSlash,
-  isFunction,
-  isObject,
-  isString,
-} from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { platform } from 'os';
 import { AbstractHttpAdapter } from './adapters/index.js';
@@ -41,6 +26,16 @@ import { mapToExcludeRoute } from './middleware/utils.js';
 import { NestApplicationContext } from './nest-application-context.js';
 import { Resolver } from './router/interfaces/resolver.interface.js';
 import { RoutesResolver } from './router/routes-resolver.js';
+import { NestApplicationOptions, Logger } from '@nestjs/common';
+import {
+  GlobalPrefixOptions,
+  loadPackage,
+  loadPackageCached,
+  addLeadingSlash,
+  isFunction,
+  isObject,
+  isString,
+} from '@nestjs/common/internal';
 
 /**
  * @publicApi

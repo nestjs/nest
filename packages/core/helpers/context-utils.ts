@@ -1,16 +1,12 @@
 import { ParamData } from '@nestjs/common';
+import { ExecutionContextHost } from './execution-context-host.js';
 import {
   PARAMTYPES_METADATA,
   RESPONSE_PASSTHROUGH_METADATA,
-} from '@nestjs/common/constants.js';
-import {
-  ContextType,
   Controller,
-  PipeTransform,
-  Type,
-} from '@nestjs/common/interfaces/index.js';
-import { isFunction } from '@nestjs/common/utils/shared.utils.js';
-import { ExecutionContextHost } from './execution-context-host.js';
+  isFunction,
+} from '@nestjs/common/internal';
+import { ContextType, PipeTransform, Type } from '@nestjs/common';
 
 export interface ParamProperties<T = any, IExtractor extends Function = any> {
   index: number;

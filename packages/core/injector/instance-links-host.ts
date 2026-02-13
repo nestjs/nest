@@ -1,9 +1,9 @@
 import { InjectionToken } from '@nestjs/common';
-import { isFunction } from '@nestjs/common/utils/shared.utils.js';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception.js';
 import { NestContainer } from './container.js';
 import { InstanceWrapper } from './instance-wrapper.js';
 import { Module } from './module.js';
+import { isFunction } from '@nestjs/common/internal';
 
 type HostCollection = 'providers' | 'controllers' | 'injectables';
 

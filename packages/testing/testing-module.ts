@@ -6,22 +6,20 @@ import {
   NestApplicationOptions,
   Type,
 } from '@nestjs/common';
-import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface.js';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface.js';
-import {
-  loadPackage,
-  loadPackageCached,
-} from '@nestjs/common/utils/load-package.util.js';
-import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import {
   AbstractHttpAdapter,
   NestApplication,
   NestApplicationContext,
 } from '@nestjs/core';
-import { ApplicationConfig } from '@nestjs/core/application-config.js';
-import { NestContainer } from '@nestjs/core/injector/container.js';
-import { Module } from '@nestjs/core/injector/module.js';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector.js';
+import {
+  NestMicroserviceOptions,
+  NestApplicationContextOptions,
+  loadPackage,
+  loadPackageCached,
+  isUndefined,
+} from '@nestjs/common/internal';
+import { ApplicationConfig, NestContainer, GraphInspector } from '@nestjs/core';
+import { Module } from '@nestjs/core/internal';
 
 /**
  * @publicApi

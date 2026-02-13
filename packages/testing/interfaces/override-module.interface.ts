@@ -1,5 +1,5 @@
-import { ModuleDefinition } from '@nestjs/core/interfaces/module-definition.interface.js';
 import { TestingModuleBuilder } from '../testing-module.builder.js';
+import { ModuleDefinition } from '@nestjs/core/internal';
 
 /**
  * @publicApi

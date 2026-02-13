@@ -1,11 +1,12 @@
-import { DynamicModule } from '@nestjs/common/interfaces/modules/dynamic-module.interface.js';
-import { Type } from '@nestjs/common/interfaces/type.interface.js';
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util.js';
-import { isFunction, isSymbol } from '@nestjs/common/utils/shared.utils.js';
 import { createHash } from 'crypto';
 import _stringify from 'fast-safe-stringify';
 import { ModuleOpaqueKeyFactory } from './interfaces/module-opaque-key-factory.interface.js';
+import { DynamicModule, Type, Logger } from '@nestjs/common';
+import {
+  randomStringGenerator,
+  isFunction,
+  isSymbol,
+} from '@nestjs/common/internal';
 // CJS interop: fast-safe-stringify sets module.exports.default = module.exports
 const stringify = ((_stringify as any).default ?? _stringify) as unknown as (
   value: any,

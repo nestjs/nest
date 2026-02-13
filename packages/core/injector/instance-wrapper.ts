@@ -1,16 +1,4 @@
 import { Logger, LoggerService, Provider, Scope, Type } from '@nestjs/common';
-import { EnhancerSubtype } from '@nestjs/common/constants.js';
-import {
-  FactoryProvider,
-  InjectionToken,
-} from '@nestjs/common/interfaces/index.js';
-import { clc } from '@nestjs/common/utils/cli-colors.util.js';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util.js';
-import {
-  isNil,
-  isString,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { UuidFactory } from '../inspector/uuid-factory.js';
 import { STATIC_CONTEXT } from './constants.js';
@@ -21,6 +9,15 @@ import {
 } from './helpers/provider-classifier.js';
 import { Module } from './module.js';
 import { SettlementSignal } from './settlement-signal.js';
+import {
+  EnhancerSubtype,
+  clc,
+  randomStringGenerator,
+  isNil,
+  isString,
+  isUndefined,
+} from '@nestjs/common/internal';
+import { FactoryProvider, InjectionToken } from '@nestjs/common';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');

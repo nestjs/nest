@@ -1,5 +1,4 @@
 import { Type } from '@nestjs/common';
-import { isString, isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
 import { createServer as tlsCreateServer, TlsOptions } from 'tls';
@@ -26,6 +25,7 @@ import {
   TransportId,
 } from '../interfaces/microservice-configuration.interface.js';
 import { Server } from './server.js';
+import { isString, isUndefined } from '@nestjs/common/internal';
 
 /**
  * @publicApi

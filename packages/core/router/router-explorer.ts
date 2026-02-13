@@ -1,15 +1,4 @@
 import { HttpServer } from '@nestjs/common';
-import { PATH_METADATA } from '@nestjs/common/constants.js';
-import { RequestMethod, VersioningType } from '@nestjs/common/enums/index.js';
-import { InternalServerErrorException } from '@nestjs/common/exceptions/index.js';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface.js';
-import { Type } from '@nestjs/common/interfaces/type.interface.js';
-import { VersionValue } from '@nestjs/common/interfaces/version-options.interface.js';
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import {
-  addLeadingSlash,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils.js';
 import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config.js';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception.js';
@@ -45,6 +34,20 @@ import { RouteParamsFactory } from './route-params-factory.js';
 import { RoutePathFactory } from './route-path-factory.js';
 import { RouterExecutionContext } from './router-execution-context.js';
 import { RouterProxy, RouterProxyCallback } from './router-proxy.js';
+import {
+  PATH_METADATA,
+  Controller,
+  VersionValue,
+  addLeadingSlash,
+  isUndefined,
+} from '@nestjs/common/internal';
+import {
+  RequestMethod,
+  VersioningType,
+  InternalServerErrorException,
+  Type,
+  Logger,
+} from '@nestjs/common';
 
 export interface RouteDefinition {
   path: string[];

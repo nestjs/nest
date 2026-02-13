@@ -1,9 +1,11 @@
-import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/index.js';
-import { ArgumentsHost } from '@nestjs/common/interfaces/features/arguments-host.interface.js';
-import { selectExceptionFilterMetadata } from '@nestjs/common/utils/select-exception-filter-metadata.util.js';
-import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
 import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception.js';
 import { ExternalExceptionFilter } from './external-exception-filter.js';
+import {
+  ExceptionFilterMetadata,
+  selectExceptionFilterMetadata,
+  isEmpty,
+} from '@nestjs/common/internal';
+import { ArgumentsHost } from '@nestjs/common';
 
 export class ExternalExceptionsHandler extends ExternalExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];

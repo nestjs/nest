@@ -1,5 +1,3 @@
-import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
-import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import { createRequire } from 'module';
 import { ClientKafka } from '../client/client-kafka.js';
 import {
@@ -9,6 +7,7 @@ import {
   GroupState,
   MemberMetadata,
 } from '../external/kafka.interface.js';
+import { loadPackageSync, isUndefined } from '@nestjs/common/internal';
 
 let kafkaPackage: any = {};
 

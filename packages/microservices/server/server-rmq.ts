@@ -1,9 +1,4 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
-import {
-  isNil,
-  isString,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils.js';
 import { createRequire } from 'module';
 import {
   CONNECTION_FAILED_MESSAGE,
@@ -38,6 +33,7 @@ import {
 } from '../interfaces/packet.interface.js';
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
 import { Server } from './server.js';
+import { isNil, isString, isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for RMQ. This cant be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ

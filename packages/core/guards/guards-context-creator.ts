@@ -1,13 +1,17 @@
 import { CanActivate } from '@nestjs/common';
-import { GUARDS_METADATA } from '@nestjs/common/constants.js';
-import { Controller, Type } from '@nestjs/common/interfaces/index.js';
-import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
 import { ContextCreator } from '../helpers/context-creator.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import {
+  GUARDS_METADATA,
+  Controller,
+  isEmpty,
+  isFunction,
+} from '@nestjs/common/internal';
+import { Type } from '@nestjs/common';
 
 export class GuardsContextCreator extends ContextCreator {
   private moduleContext: string;

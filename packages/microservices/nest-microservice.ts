@@ -6,15 +6,6 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface.js';
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import { ApplicationConfig } from '@nestjs/core/application-config.js';
-import { MESSAGES } from '@nestjs/core/constants.js';
-import { optionalRequire } from '@nestjs/core/helpers/optional-require.js';
-import { NestContainer } from '@nestjs/core/injector/container.js';
-import { Injector } from '@nestjs/core/injector/injector.js';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector.js';
-import { NestApplicationContext } from '@nestjs/core/nest-application-context.js';
 import { Transport } from './enums/transport.enum.js';
 import {
   AsyncMicroserviceOptions,
@@ -23,6 +14,15 @@ import {
 import { MicroservicesModule } from './microservices-module.js';
 import { ServerFactory } from './server/server-factory.js';
 import { Server } from './server/server.js';
+import { NestMicroserviceOptions } from '@nestjs/common/internal';
+import { Logger } from '@nestjs/common';
+import {
+  ApplicationConfig,
+  NestContainer,
+  GraphInspector,
+  NestApplicationContext,
+} from '@nestjs/core';
+import { MESSAGES, optionalRequire, Injector } from '@nestjs/core/internal';
 
 type CompleteMicroserviceOptions = NestMicroserviceOptions &
   (MicroserviceOptions | AsyncMicroserviceOptions);

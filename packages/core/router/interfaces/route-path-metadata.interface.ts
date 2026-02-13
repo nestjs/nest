@@ -1,5 +1,5 @@
 import { VersioningOptions } from '@nestjs/common';
-import { VersionValue } from '@nestjs/common/interfaces/index.js';
+import { VersionValue } from '@nestjs/common/internal';
 
 export interface RoutePathMetadata {
   /**

@@ -1,12 +1,12 @@
-import { isFunction, isNil } from '@nestjs/common/utils/shared.utils.js';
 import {
   AbstractWsAdapter,
   MessageMappingProperties,
 } from '@nestjs/websockets';
-import { DISCONNECT_EVENT } from '@nestjs/websockets/constants.js';
 import { fromEvent, Observable } from 'rxjs';
 import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
 import { Server, ServerOptions, Socket } from 'socket.io';
+import { isFunction, isNil } from '@nestjs/common/internal';
+import { DISCONNECT_EVENT } from '@nestjs/websockets/internal';
 
 /**
  * @publicApi

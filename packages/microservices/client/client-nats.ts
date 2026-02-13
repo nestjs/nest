@@ -1,6 +1,3 @@
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
-import { isObject } from '@nestjs/common/utils/shared.utils.js';
 import { createRequire } from 'module';
 import { EventEmitter } from 'events';
 import { NATS_DEFAULT_URL } from '../constants.js';
@@ -20,6 +17,8 @@ import {
 import { NatsRecord } from '../record-builders/index.js';
 import { NatsRecordSerializer } from '../serializers/nats-record.serializer.js';
 import { ClientProxy } from './client-proxy.js';
+import { Logger } from '@nestjs/common';
+import { loadPackageSync, isObject } from '@nestjs/common/internal';
 
 let natsPackage = {} as any;
 

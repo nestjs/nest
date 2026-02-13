@@ -1,9 +1,10 @@
 import { PipeTransform, Type } from '@nestjs/common';
-import { assignMetadata } from '@nestjs/common/decorators/http/route-params.decorator.js';
-import { isNil, isString } from '@nestjs/common/utils/shared.utils.js';
+import type { ParameterDecoratorOptions } from '@nestjs/common';
 import 'reflect-metadata';
 import { PARAM_ARGS_METADATA } from '../constants.js';
 import { RpcParamtype } from '../enums/rpc-paramtype.enum.js';
+import { assignMetadata } from '@nestjs/common';
+import { isNil, isString } from '@nestjs/common/internal';
 
 export function createRpcParamDecorator(
   paramtype: RpcParamtype,
@@ -15,7 +16,7 @@ export function createRpcParamDecorator(
         {};
       Reflect.defineMetadata(
         PARAM_ARGS_METADATA,
-        assignMetadata(args, paramtype, index, undefined, ...pipes),
+        assignMetadata(args, paramtype, index, { pipes }),
         target.constructor,
         key!,
       );
@@ -26,6 +27,10 @@ export const createPipesRpcParamDecorator =
   (paramtype: RpcParamtype) =>
   (
     data?: any,
+    optionsOrPipe?:
+      | ParameterDecoratorOptions
+      | Type<PipeTransform>
+      | PipeTransform,
     ...pipes: (Type<PipeTransform> | PipeTransform)[]
   ): ParameterDecorator =>
   (target, key, index) => {
@@ -34,11 +39,36 @@ export const createPipesRpcParamDecorator =
 
     const hasParamData = isNil(data) || isString(data);
     const paramData = hasParamData ? data : undefined;
-    const paramPipes = hasParamData ? pipes : [data, ...pipes];
+
+    const isOptions =
+      optionsOrPipe &&
+      typeof optionsOrPipe === 'object' &&
+      ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
+
+    let paramPipes: (Type<PipeTransform> | PipeTransform)[];
+    if (isOptions) {
+      paramPipes = (optionsOrPipe as ParameterDecoratorOptions).pipes ?? [];
+    } else if (hasParamData) {
+      paramPipes = [optionsOrPipe, ...pipes].filter(Boolean) as (
+        | Type<PipeTransform>
+        | PipeTransform
+      )[];
+    } else {
+      paramPipes = [data, optionsOrPipe, ...pipes].filter(Boolean) as (
+        | Type<PipeTransform>
+        | PipeTransform
+      )[];
+    }
 
     Reflect.defineMetadata(
       PARAM_ARGS_METADATA,
-      assignMetadata(args, paramtype, index, paramData!, ...paramPipes),
+      assignMetadata(args, paramtype, index, {
+        data: paramData!,
+        pipes: paramPipes,
+        schema: isOptions
+          ? (optionsOrPipe as ParameterDecoratorOptions).schema
+          : undefined,
+      }),
       target.constructor,
       key!,
     );

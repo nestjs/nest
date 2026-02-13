@@ -1,13 +1,12 @@
 import { DynamicModule, Logger, Type } from '@nestjs/common';
-import { clc } from '@nestjs/common/utils/cli-colors.util.js';
 import { NestFactory } from '../nest-factory.js';
 import { assignToObject } from './assign-to-object.util.js';
 import { REPL_INITIALIZED_MESSAGE } from './constants.js';
 import { ReplContext } from './repl-context.js';
 import { ReplLogger } from './repl-logger.js';
 import { defineDefaultCommandsOnRepl } from './repl-native-commands.js';
-
 import type { ReplOptions } from 'repl';
+import { clc } from '@nestjs/common/internal';
 
 export async function repl(
   module: Type | DynamicModule,

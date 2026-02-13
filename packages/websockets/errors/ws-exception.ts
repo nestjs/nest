@@ -1,4 +1,4 @@
-import { isObject, isString } from '@nestjs/common/utils/shared.utils.js';
+import { isObject, isString } from '@nestjs/common/internal';
 
 export class WsException extends Error {
   constructor(private readonly error: string | object) {

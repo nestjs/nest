@@ -1,37 +1,4 @@
 import { DynamicModule, ForwardReference, Provider } from '@nestjs/common';
-import {
-  CATCH_WATERMARK,
-  CONTROLLER_WATERMARK,
-  ENHANCER_KEY_TO_SUBTYPE_MAP,
-  EXCEPTION_FILTERS_METADATA,
-  EnhancerSubtype,
-  GUARDS_METADATA,
-  INJECTABLE_WATERMARK,
-  INTERCEPTORS_METADATA,
-  MODULE_METADATA,
-  PIPES_METADATA,
-  ROUTE_ARGS_METADATA,
-} from '@nestjs/common/constants.js';
-import {
-  CanActivate,
-  ClassProvider,
-  Controller,
-  ExceptionFilter,
-  ExistingProvider,
-  FactoryProvider,
-  Injectable,
-  InjectionToken,
-  NestInterceptor,
-  PipeTransform,
-  Scope,
-  Type,
-  ValueProvider,
-} from '@nestjs/common/interfaces/index.js';
-import {
-  isFunction,
-  isNil,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from './application-config.js';
 import {
@@ -56,6 +23,37 @@ import { UuidFactory } from './inspector/uuid-factory.js';
 import { ModuleDefinition } from './interfaces/module-definition.interface.js';
 import { ModuleOverride } from './interfaces/module-override.interface.js';
 import { MetadataScanner } from './metadata-scanner.js';
+import {
+  CATCH_WATERMARK,
+  CONTROLLER_WATERMARK,
+  ENHANCER_KEY_TO_SUBTYPE_MAP,
+  EXCEPTION_FILTERS_METADATA,
+  EnhancerSubtype,
+  GUARDS_METADATA,
+  INJECTABLE_WATERMARK,
+  INTERCEPTORS_METADATA,
+  MODULE_METADATA,
+  PIPES_METADATA,
+  ROUTE_ARGS_METADATA,
+  Controller,
+  Injectable,
+  isFunction,
+  isNil,
+  isUndefined,
+} from '@nestjs/common/internal';
+import {
+  CanActivate,
+  ClassProvider,
+  ExceptionFilter,
+  ExistingProvider,
+  FactoryProvider,
+  InjectionToken,
+  NestInterceptor,
+  PipeTransform,
+  Scope,
+  Type,
+  ValueProvider,
+} from '@nestjs/common';
 
 interface ApplicationProviderWrapper {
   moduleKey: string;

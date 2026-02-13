@@ -1,6 +1,4 @@
-import { DynamicModule } from '@nestjs/common/interfaces/modules/dynamic-module.interface.js';
-import { ForwardReference } from '@nestjs/common/interfaces/modules/forward-reference.interface.js';
-import { Type } from '@nestjs/common/interfaces/type.interface.js';
+import { DynamicModule, ForwardReference, Type } from '@nestjs/common';
 
 export interface ModuleOpaqueKeyFactory {
   /**

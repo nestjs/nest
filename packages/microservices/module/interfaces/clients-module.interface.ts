@@ -1,9 +1,5 @@
 import { ClientOptions, CustomClientOptions } from '../../interfaces/index.js';
-import {
-  Type,
-  Provider,
-  ModuleMetadata,
-} from '@nestjs/common/interfaces/index.js';
+import { Type, Provider, ModuleMetadata } from '@nestjs/common';
 
 export type ClientProvider = ClientOptions | CustomClientOptions;
 

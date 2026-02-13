@@ -1,23 +1,3 @@
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface.js';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface.js';
-import { ApplicationConfig } from '@nestjs/core/application-config.js';
-import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception.js';
-import {
-  GuardsConsumer,
-  GuardsContextCreator,
-} from '@nestjs/core/guards/index.js';
-import { NestContainer } from '@nestjs/core/injector/container.js';
-import { Injector } from '@nestjs/core/injector/injector.js';
-import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector.js';
-import {
-  InterceptorsConsumer,
-  InterceptorsContextCreator,
-} from '@nestjs/core/interceptors/index.js';
-import {
-  PipesConsumer,
-  PipesContextCreator,
-} from '@nestjs/core/pipes/index.js';
 import { ClientProxyFactory } from './client/index.js';
 import { ClientsContainer } from './container.js';
 import { ExceptionFiltersContext } from './context/exception-filters-context.js';
@@ -25,6 +5,22 @@ import { RpcContextCreator } from './context/rpc-context-creator.js';
 import { RpcProxy } from './context/rpc-proxy.js';
 import { ListenersController } from './listeners-controller.js';
 import { Server } from './server/server.js';
+import {
+  Controller,
+  NestApplicationContextOptions,
+} from '@nestjs/common/internal';
+import { ApplicationConfig, NestContainer, GraphInspector } from '@nestjs/core';
+import {
+  RuntimeException,
+  GuardsConsumer,
+  GuardsContextCreator,
+  Injector,
+  InstanceWrapper,
+  InterceptorsConsumer,
+  InterceptorsContextCreator,
+  PipesConsumer,
+  PipesContextCreator,
+} from '@nestjs/core/internal';
 
 export class MicroservicesModule<
   TAppOptions extends NestApplicationContextOptions =

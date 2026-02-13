@@ -1,6 +1,6 @@
 import { Type } from '@nestjs/common';
-import { EnhancerSubtype } from '@nestjs/common/constants.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { EnhancerSubtype } from '@nestjs/common/internal';
 
 export interface EnhancerMetadataCacheEntry {
   targetNodeId?: string;

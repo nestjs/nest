@@ -1,5 +1,5 @@
-import { isNil } from '@nestjs/common/utils/shared.utils.js';
 import { KafkaParserConfig } from '../interfaces/index.js';
+import { isNil } from '@nestjs/common/internal';
 
 export class KafkaParser {
   protected readonly keepBinary: boolean;

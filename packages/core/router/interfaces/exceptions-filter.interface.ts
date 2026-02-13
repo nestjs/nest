@@ -1,6 +1,6 @@
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface.js';
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler.js';
 import { ContextId } from '../../injector/instance-wrapper.js';
+import { Controller } from '@nestjs/common/internal';
 
 export interface ExceptionsFilter {
   create(

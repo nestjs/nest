@@ -1,8 +1,3 @@
-import {
-  isObject,
-  isString,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils.js';
 import { createRequire } from 'module';
 import {
   EMPTY,
@@ -28,6 +23,7 @@ import {
   TransportId,
 } from '../interfaces/microservice-configuration.interface.js';
 import { Server } from './server.js';
+import { isObject, isString, isUndefined } from '@nestjs/common/internal';
 
 const CANCELLED_EVENT = 'cancelled';
 

@@ -1,37 +1,30 @@
-import {
-  CUSTOM_ROUTE_ARGS_METADATA,
-  PARAMTYPES_METADATA,
-} from '@nestjs/common/constants.js';
-import {
-  ContextType,
-  Controller,
-  PipeTransform,
-} from '@nestjs/common/interfaces/index.js';
-import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
-import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards/constants.js';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer.js';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator.js';
-import {
-  ContextUtils,
-  ParamProperties,
-} from '@nestjs/core/helpers/context-utils.js';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
-import { HandlerMetadataStorage } from '@nestjs/core/helpers/handler-metadata-storage.js';
-import { ParamsMetadata } from '@nestjs/core/helpers/interfaces/index.js';
-import {
-  InterceptorsConsumer,
-  InterceptorsContextCreator,
-} from '@nestjs/core/interceptors/index.js';
-import {
-  PipesConsumer,
-  PipesContextCreator,
-} from '@nestjs/core/pipes/index.js';
 import { MESSAGE_METADATA, PARAM_ARGS_METADATA } from '../constants.js';
 import { WsException } from '../errors/ws-exception.js';
 import { WsParamsFactory } from '../factories/ws-params-factory.js';
 import { ExceptionFiltersContext } from './exception-filters-context.js';
 import { DEFAULT_CALLBACK_METADATA } from './ws-metadata-constants.js';
 import { WsProxy } from './ws-proxy.js';
+import {
+  CUSTOM_ROUTE_ARGS_METADATA,
+  PARAMTYPES_METADATA,
+  Controller,
+  isEmpty,
+} from '@nestjs/common/internal';
+import { ContextType, PipeTransform } from '@nestjs/common';
+import {
+  FORBIDDEN_MESSAGE,
+  GuardsConsumer,
+  GuardsContextCreator,
+  ContextUtils,
+  ParamProperties,
+  ExecutionContextHost,
+  HandlerMetadataStorage,
+  ParamsMetadata,
+  InterceptorsConsumer,
+  InterceptorsContextCreator,
+  PipesConsumer,
+  PipesContextCreator,
+} from '@nestjs/core/internal';
 
 type WsParamProperties = ParamProperties & { metatype?: any };
 export interface WsHandlerMetadata {

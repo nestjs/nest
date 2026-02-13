@@ -57,8 +57,8 @@ export function assignMetadata<TParamtype = any, TArgs = any>(
     [`${paramtype as string}:${index}`]: {
       index,
       data: options.data,
-      pipes: options.pipes,
-      schema: options.schema,
+      pipes: options.pipes ?? [],
+      ...(options.schema !== undefined && { schema: options.schema }),
     },
   };
 }
@@ -97,7 +97,9 @@ const createPipesRouteParamDecorator =
       Reflect.getMetadata(ROUTE_ARGS_METADATA, target.constructor, key!) || {};
     const hasParamData = isNil(data) || isString(data);
     const paramData = hasParamData ? data : undefined;
-    const paramPipes = hasParamData ? pipes : [data, ...pipes];
+    const paramPipes = hasParamData
+      ? (pipes ?? [])
+      : [data as Type<PipeTransform> | PipeTransform, ...(pipes ?? [])];
 
     Reflect.defineMetadata(
       ROUTE_ARGS_METADATA,
@@ -461,14 +463,22 @@ export function Query(
     | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
-  const actualPipes =
-    optionsOrPipe && ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe)
-      ? optionsOrPipe.pipes
-      : [optionsOrPipe].concat(pipes);
+  const isOptions =
+    optionsOrPipe &&
+    typeof optionsOrPipe === 'object' &&
+    ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
+  const actualPipes = isOptions
+    ? (optionsOrPipe as ParameterDecoratorOptions).pipes
+    : ([optionsOrPipe, ...pipes].filter(Boolean) as (
+        | Type<PipeTransform>
+        | PipeTransform
+      )[]);
   return createPipesRouteParamDecorator(RouteParamtypes.QUERY)({
     data: property,
     pipes: actualPipes,
-    schema: optionsOrPipe?.schema,
+    schema: isOptions
+      ? (optionsOrPipe as ParameterDecoratorOptions).schema
+      : undefined,
   });
 }
 
@@ -587,14 +597,22 @@ export function Body(
     | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
-  const actualPipes =
-    optionsOrPipe && ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe)
-      ? optionsOrPipe.pipes
-      : [optionsOrPipe].concat(pipes);
+  const isOptions =
+    optionsOrPipe &&
+    typeof optionsOrPipe === 'object' &&
+    ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
+  const actualPipes = isOptions
+    ? (optionsOrPipe as ParameterDecoratorOptions).pipes
+    : ([optionsOrPipe, ...pipes].filter(Boolean) as (
+        | Type<PipeTransform>
+        | PipeTransform
+      )[]);
   return createPipesRouteParamDecorator(RouteParamtypes.BODY)({
     data: property,
     pipes: actualPipes,
-    schema: optionsOrPipe?.schema,
+    schema: isOptions
+      ? (optionsOrPipe as ParameterDecoratorOptions).schema
+      : undefined,
   });
 }
 
@@ -647,9 +665,30 @@ export function RawBody(
  *
  * For example:
  * ```typescript
+ * async create(@RawBody({ schema: z.instanceof(Buffer) }) rawBody: Buffer)
+ * ```
+ *
+ * @param options options object containing additional configuration for the decorator, such as pipes and schema
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ * @see [Raw body](https://docs.nestjs.com/faq/raw-body)
+ * @see [Working with pipes](https://docs.nestjs.com/custom-decorators#working-with-pipes)
+ *
+ * @publicApi
+ */
+export function RawBody(options: ParameterDecoratorOptions): ParameterDecorator;
+
+/**
+ * Route handler parameter decorator. Extracts the `rawBody` Buffer
+ * property from the `req` object and populates the decorated parameter with that value.
+ * Also applies pipes to the bound rawBody parameter.
+ *
+ * For example:
+ * ```typescript
  * async create(@RawBody(new ValidationPipe()) rawBody: Buffer)
  * ```
  *
+ * @param optionsOrPipe one or more pipes to apply or options object
  * @param pipes one or more pipes - either instances or classes - to apply to
  * the bound body parameter.
  *
@@ -660,15 +699,31 @@ export function RawBody(
  * @publicApi
  */
 export function RawBody(
+  optionsOrPipe?:
+    | ParameterDecoratorOptions
+    | Type<PipeTransform<Buffer | undefined>>
+    | PipeTransform<Buffer | undefined>,
   ...pipes: (
     | Type<PipeTransform<Buffer | undefined>>
     | PipeTransform<Buffer | undefined>
   )[]
 ): ParameterDecorator {
-  return createPipesRouteParamDecorator(RouteParamtypes.RAW_BODY)(
-    undefined,
-    ...pipes,
-  );
+  const isOptions =
+    optionsOrPipe &&
+    typeof optionsOrPipe === 'object' &&
+    ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
+  const actualPipes = isOptions
+    ? (optionsOrPipe as ParameterDecoratorOptions).pipes
+    : ([optionsOrPipe, ...pipes].filter(Boolean) as (
+        | Type<PipeTransform>
+        | PipeTransform
+      )[]);
+  return createPipesRouteParamDecorator(RouteParamtypes.RAW_BODY)({
+    pipes: actualPipes,
+    schema: isOptions
+      ? (optionsOrPipe as ParameterDecoratorOptions).schema
+      : undefined,
+  });
 }
 
 /**
@@ -757,6 +812,28 @@ export function Param(
  * parameter with the value of `params`. May also apply pipes to the bound
  * parameter.
  *
+ * For example, extracting a single param:
+ * ```typescript
+ * findOne(@Param('id', { schema: z.string().uuid() }) id: string)
+ * ```
+ * @param property name of single property to extract from the `req` object
+ * @param options options object containing additional configuration for the decorator, such as pipes and schema
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ * @see [Working with pipes](https://docs.nestjs.com/custom-decorators#working-with-pipes)
+ *
+ * @publicApi
+ */
+export function Param(
+  property: string,
+  options: ParameterDecoratorOptions,
+): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `params`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `params`. May also apply pipes to the bound
+ * parameter.
+ *
  * For example, extracting all params:
  * ```typescript
  * findOne(@Param() params: string[])
@@ -767,6 +844,7 @@ export function Param(
  * findOne(@Param('id') id: string)
  * ```
  * @param property name of single property to extract from the `req` object
+ * @param optionsOrPipe one or more pipes to apply to the bound parameter or options object
  * @param pipes one or more pipes - either instances or classes - to apply to
  * the bound parameter.
  *
@@ -777,12 +855,29 @@ export function Param(
  */
 export function Param(
   property?: string | (Type<PipeTransform> | PipeTransform),
+  optionsOrPipe?:
+    | ParameterDecoratorOptions
+    | Type<PipeTransform>
+    | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
-  return createPipesRouteParamDecorator(RouteParamtypes.PARAM)(
-    property,
-    ...pipes,
-  );
+  const isOptions =
+    optionsOrPipe &&
+    typeof optionsOrPipe === 'object' &&
+    ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
+  const actualPipes = isOptions
+    ? (optionsOrPipe as ParameterDecoratorOptions).pipes
+    : ([optionsOrPipe, ...pipes].filter(Boolean) as (
+        | Type<PipeTransform>
+        | PipeTransform
+      )[]);
+  return createPipesRouteParamDecorator(RouteParamtypes.PARAM)({
+    data: property,
+    pipes: actualPipes,
+    schema: isOptions
+      ? (optionsOrPipe as ParameterDecoratorOptions).schema
+      : undefined,
+  });
 }
 
 /**
