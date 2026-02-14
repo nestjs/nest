@@ -186,6 +186,81 @@ describe('Transient scope', () => {
     });
   });
 
+  describe('when multiple DEFAULT parents inject the same TRANSIENT -> TRANSIENT chain', () => {
+    let app: INestApplication;
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class IsolatedNestedTransient {
+      public static instanceCount = 0;
+      public readonly instanceId: number;
+
+      constructor() {
+        IsolatedNestedTransient.instanceCount++;
+        this.instanceId = IsolatedNestedTransient.instanceCount;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class IsolatedTransientLogger {
+      public static instanceCount = 0;
+      public readonly instanceId: number;
+
+      constructor(public readonly nested: IsolatedNestedTransient) {
+        IsolatedTransientLogger.instanceCount++;
+        this.instanceId = IsolatedTransientLogger.instanceCount;
+      }
+    }
+
+    @Injectable()
+    class ServiceA {
+      constructor(public readonly logger: IsolatedTransientLogger) {}
+    }
+
+    @Injectable()
+    class ServiceB {
+      constructor(public readonly logger: IsolatedTransientLogger) {}
+    }
+
+    before(async () => {
+      IsolatedNestedTransient.instanceCount = 0;
+      IsolatedTransientLogger.instanceCount = 0;
+
+      const module = await Test.createTestingModule({
+        providers: [
+          ServiceA,
+          ServiceB,
+          IsolatedTransientLogger,
+          IsolatedNestedTransient,
+        ],
+      }).compile();
+
+      app = module.createNestApplication();
+      await app.init();
+    });
+
+    it('should create separate TransientLogger instances for each DEFAULT parent', () => {
+      const serviceA = app.get(ServiceA);
+      const serviceB = app.get(ServiceB);
+
+      expect(serviceA.logger.instanceId).to.not.equal(
+        serviceB.logger.instanceId,
+      );
+    });
+
+    it('should create separate nested TRANSIENT instances for each DEFAULT parent', () => {
+      const serviceA = app.get(ServiceA);
+      const serviceB = app.get(ServiceB);
+
+      expect(serviceA.logger.nested.instanceId).to.not.equal(
+        serviceB.logger.nested.instanceId,
+      );
+    });
+
+    after(async () => {
+      await app.close();
+    });
+  });
+
   describe('when nested transient providers are used in request scope', () => {
     let server: any;
     let app: INestApplication;

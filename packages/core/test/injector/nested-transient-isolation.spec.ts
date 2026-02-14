@@ -269,4 +269,109 @@ describe('Nested Transient Isolation', () => {
       );
     });
   });
+
+  describe('when multiple DEFAULT scoped providers inject the same TRANSIENT -> TRANSIENT chain', () => {
+    @Injectable({ scope: Scope.TRANSIENT })
+    class NestedTransientService {
+      public static instanceCount = 0;
+      public readonly instanceId: number;
+
+      constructor() {
+        NestedTransientService.instanceCount++;
+        this.instanceId = NestedTransientService.instanceCount;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class TransientService {
+      public static instanceCount = 0;
+      public readonly instanceId: number;
+
+      constructor(public readonly nested: NestedTransientService) {
+        TransientService.instanceCount++;
+        this.instanceId = TransientService.instanceCount;
+      }
+    }
+
+    @Injectable()
+    class DefaultParent1 {
+      constructor(public readonly transient: TransientService) {}
+    }
+
+    @Injectable()
+    class DefaultParent2 {
+      constructor(public readonly transient: TransientService) {}
+    }
+
+    let nestedTransientWrapper: InstanceWrapper;
+    let transientWrapper: InstanceWrapper;
+    let parent1Wrapper: InstanceWrapper;
+    let parent2Wrapper: InstanceWrapper;
+
+    beforeEach(() => {
+      NestedTransientService.instanceCount = 0;
+      TransientService.instanceCount = 0;
+
+      nestedTransientWrapper = new InstanceWrapper({
+        name: NestedTransientService.name,
+        token: NestedTransientService,
+        metatype: NestedTransientService,
+        scope: Scope.TRANSIENT,
+        host: module,
+      });
+
+      transientWrapper = new InstanceWrapper({
+        name: TransientService.name,
+        token: TransientService,
+        metatype: TransientService,
+        scope: Scope.TRANSIENT,
+        host: module,
+      });
+
+      parent1Wrapper = new InstanceWrapper({
+        name: DefaultParent1.name,
+        token: DefaultParent1,
+        metatype: DefaultParent1,
+        scope: Scope.DEFAULT,
+        host: module,
+      });
+
+      parent2Wrapper = new InstanceWrapper({
+        name: DefaultParent2.name,
+        token: DefaultParent2,
+        metatype: DefaultParent2,
+        scope: Scope.DEFAULT,
+        host: module,
+      });
+
+      module.providers.set(NestedTransientService, nestedTransientWrapper);
+      module.providers.set(TransientService, transientWrapper);
+      module.providers.set(DefaultParent1, parent1Wrapper);
+      module.providers.set(DefaultParent2, parent2Wrapper);
+    });
+
+    it('should create separate TransientService instances for each DEFAULT parent', async () => {
+      await injector.loadInstance(parent1Wrapper, module.providers, module);
+      await injector.loadInstance(parent2Wrapper, module.providers, module);
+
+      const parent1Instance = parent1Wrapper.instance;
+      const parent2Instance = parent2Wrapper.instance;
+
+      expect(parent1Instance.transient.instanceId).to.not.equal(
+        parent2Instance.transient.instanceId,
+      );
+    });
+
+    it('should create separate nested TRANSIENT instances for each DEFAULT parent', async () => {
+      await injector.loadInstance(parent1Wrapper, module.providers, module);
+      await injector.loadInstance(parent2Wrapper, module.providers, module);
+
+      const parent1Instance = parent1Wrapper.instance;
+      const parent2Instance = parent2Wrapper.instance;
+
+      expect(parent1Instance.transient.nested.instanceId).to.not.equal(
+        parent2Instance.transient.nested.instanceId,
+      );
+    });
+  });
 });
