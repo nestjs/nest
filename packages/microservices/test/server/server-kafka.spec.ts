@@ -250,6 +250,39 @@ describe('ServerKafka', () => {
       expect(run).toHaveBeenCalled();
       expect(connect).toHaveBeenCalled();
     });
+    it('should pass run options with partitionsConsumedConcurrently to consumer.run()', async () => {
+      untypedServer.logger = new NoopLogger();
+      untypedServer.options.run = {
+        partitionsConsumedConcurrently: 5,
+      };
+      await server.listen(callback);
+      await server.bindEvents(untypedServer.consumer);
+
+      expect(run.called).to.be.true;
+      expect(run.firstCall.args[0]).to.include({
+        partitionsConsumedConcurrently: 5,
+      });
+      expect(run.firstCall.args[0]).to.have.property('eachMessage');
+    });
+    it('should pass multiple run options to consumer.run()', async () => {
+      untypedServer.logger = new NoopLogger();
+      untypedServer.options.run = {
+        partitionsConsumedConcurrently: 3,
+        autoCommit: false,
+        autoCommitInterval: 5000,
+      };
+      await server.listen(callback);
+      await server.bindEvents(untypedServer.consumer);
+
+      expect(run.called).to.be.true;
+      const callArg = run.firstCall.args[0];
+      expect(callArg).to.include({
+        partitionsConsumedConcurrently: 3,
+        autoCommit: false,
+        autoCommitInterval: 5000,
+      });
+      expect(callArg).to.have.property('eachMessage');
+    });
   });
 
   describe('getMessageHandler', () => {

@@ -36,7 +36,7 @@
     "@nestjs/testing": "11.1.13",
     "@types/express": "5.0.6",
     "@types/multer": "2.0.0",
-    "@types/node": "24.10.11",
+    "@types/node": "24.10.13",
     "@types/supertest": "6.0.3",
     "prettier": "3.8.1",
     "supertest": "7.2.2",
