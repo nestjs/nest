@@ -1,4 +1,4 @@
-import { Serializer } from '../interfaces/serializer.interface';
+import { Serializer } from '../interfaces/serializer.interface.js';
 
 export class IdentitySerializer implements Serializer {
   serialize(value: any) {

@@ -1,7 +1,6 @@
-import { expect } from 'chai';
-import { REDIRECT_METADATA } from '../../constants';
-import { Redirect } from '../../decorators/http/redirect.decorator';
-import { HttpStatus } from '../../index';
+import { REDIRECT_METADATA } from '../../constants.js';
+import { Redirect } from '../../decorators/http/redirect.decorator.js';
+import { HttpStatus } from '../../index.js';
 
 describe('@Redirect', () => {
   const url = 'http://test.com';
@@ -14,11 +13,11 @@ describe('@Redirect', () => {
 
   it('should enhance method with expected redirect url string', () => {
     const metadata = Reflect.getMetadata(REDIRECT_METADATA, Test.test);
-    expect(metadata.url).to.be.eql(url);
+    expect(metadata.url).toEqual(url);
   });
 
   it('should enhance method with expected response code', () => {
     const metadata = Reflect.getMetadata(REDIRECT_METADATA, Test.test);
-    expect(metadata.statusCode).to.be.eql(statusCode);
+    expect(metadata.statusCode).toEqual(statusCode);
   });
 });

@@ -1,11 +1,11 @@
-import { Injectable } from '../decorators/core/injectable.decorator';
-import { HttpStatus } from '../enums/http-status.enum';
-import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import { Injectable } from '../decorators/core/injectable.decorator.js';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { PipeTransform } from '../interfaces/features/pipe-transform.interface.js';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
-} from '../utils/http-error-by-code.util';
-import { isNil } from '../utils/shared.utils';
+} from '../utils/http-error-by-code.util.js';
+import { isNil } from '../utils/shared.utils.js';
 
 export interface ParseDatePipeOptions {
   /**
@@ -31,9 +31,9 @@ export interface ParseDatePipeOptions {
 }
 
 @Injectable()
-export class ParseDatePipe
-  implements PipeTransform<string | number | undefined | null>
-{
+export class ParseDatePipe implements PipeTransform<
+  string | number | undefined | null
+> {
   protected exceptionFactory: (error: string) => any;
 
   constructor(private readonly options: ParseDatePipeOptions = {}) {

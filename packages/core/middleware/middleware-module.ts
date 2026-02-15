@@ -1,40 +1,39 @@
-import { HttpServer, InjectionToken, Logger } from '@nestjs/common';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
-import {
-  MiddlewareConfiguration,
-  NestMiddleware,
-  RouteInfo,
-} from '@nestjs/common/interfaces/middleware';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { ApplicationConfig } from '../application-config';
-import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { ContextIdFactory } from '../helpers/context-id-factory';
-import { ExecutionContextHost } from '../helpers/execution-context-host';
-import { STATIC_CONTEXT } from '../injector/constants';
-import { NestContainer } from '../injector/container';
-import { Injector } from '../injector/injector';
-import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
-import { GraphInspector } from '../inspector/graph-inspector';
+import { type HttpServer, type InjectionToken, Logger } from '@nestjs/common';
+import { ApplicationConfig } from '../application-config.js';
+import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception.js';
+import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
+import { ContextIdFactory } from '../helpers/context-id-factory.js';
+import { ExecutionContextHost } from '../helpers/execution-context-host.js';
+import { STATIC_CONTEXT } from '../injector/constants.js';
+import { NestContainer } from '../injector/container.js';
+import { Injector } from '../injector/injector.js';
+import { ContextId, InstanceWrapper } from '../injector/instance-wrapper.js';
+import { Module } from '../injector/module.js';
+import { GraphInspector } from '../inspector/graph-inspector.js';
 import {
   Entrypoint,
   MiddlewareEntrypointMetadata,
-} from '../inspector/interfaces/entrypoint.interface';
-import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
-import { RouterExceptionFilters } from '../router/router-exception-filters';
-import { RouterProxy } from '../router/router-proxy';
-import { isRequestMethodAll } from '../router/utils';
-import { MiddlewareBuilder } from './builder';
-import { MiddlewareContainer } from './container';
-import { MiddlewareResolver } from './resolver';
-import { RouteInfoPathExtractor } from './route-info-path-extractor';
-import { RoutesMapper } from './routes-mapper';
+} from '../inspector/interfaces/entrypoint.interface.js';
+import { REQUEST_CONTEXT_ID } from '../router/request/request-constants.js';
+import { RouterExceptionFilters } from '../router/router-exception-filters.js';
+import { RouterProxy } from '../router/router-proxy.js';
+import { isRequestMethodAll } from '../router/utils/index.js';
+import { MiddlewareBuilder } from './builder.js';
+import { MiddlewareContainer } from './container.js';
+import { MiddlewareResolver } from './resolver.js';
+import { RouteInfoPathExtractor } from './route-info-path-extractor.js';
+import { RoutesMapper } from './routes-mapper.js';
+import { RequestMethod, type NestMiddleware } from '@nestjs/common';
+import {
+  type MiddlewareConfiguration,
+  type RouteInfo,
+  type NestApplicationContextOptions,
+  isUndefined,
+} from '@nestjs/common/internal';
 
 export class MiddlewareModule<
-  TAppOptions extends
-    NestApplicationContextOptions = NestApplicationContextOptions,
+  TAppOptions extends NestApplicationContextOptions =
+    NestApplicationContextOptions,
 > {
   private readonly routerProxy = new RouterProxy();
   private readonly exceptionFiltersCache = new WeakMap();

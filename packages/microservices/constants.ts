@@ -1,4 +1,4 @@
-import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { ROUTE_ARGS_METADATA } from '@nestjs/common/internal';
 
 export const TCP_DEFAULT_PORT = 3000;
 export const TCP_DEFAULT_HOST = 'localhost';
@@ -14,13 +14,16 @@ export const KAFKA_DEFAULT_GROUP = 'nestjs-group';
 export const MQTT_SEPARATOR = '/';
 export const MQTT_WILDCARD_SINGLE = '+';
 export const MQTT_WILDCARD_ALL = '#';
-export const RQM_DEFAULT_QUEUE = 'default';
+export const RQM_DEFAULT_QUEUE = '';
 export const RQM_DEFAULT_PREFETCH_COUNT = 0;
 export const RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT = false;
 export const RQM_DEFAULT_QUEUE_OPTIONS = {};
 export const RQM_DEFAULT_NOACK = true;
 export const RQM_DEFAULT_PERSISTENT = false;
 export const RQM_DEFAULT_NO_ASSERT = false;
+export const RMQ_SEPARATOR = '.';
+export const RMQ_WILDCARD_SINGLE = '*';
+export const RMQ_WILDCARD_ALL = '#';
 
 export const ECONNREFUSED = 'ECONNREFUSED';
 export const CONN_ERR = 'CONN_ERR';

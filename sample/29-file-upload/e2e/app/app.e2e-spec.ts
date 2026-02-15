@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { readFileSync } from 'fs';
-import * as request from 'supertest';
-import { AppModule } from '../../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../../src/app.module.js';
 
 describe('E2E FileTest', () => {
   let app: INestApplication;
@@ -32,14 +32,14 @@ describe('E2E FileTest', () => {
   it('should allow for file uploads that pass validation', async () => {
     return request(app.getHttpServer())
       .post('/file/pass-validation')
-      .attach('file', './package.json')
+      .attach('file', './resources/nestjs.jpg')
       .field('name', 'test')
       .expect(201)
       .expect({
         body: {
           name: 'test',
         },
-        file: readFileSync('./package.json').toString(),
+        file: readFileSync('./resources/nestjs.jpg').toString(),
       });
   });
 

@@ -1,15 +1,15 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isFunction, isObject } from '@nestjs/common/utils/shared.utils';
+import { createRequire } from 'module';
 import { Observable, Subscription } from 'rxjs';
-import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants';
-import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception';
-import { InvalidGrpcServiceException } from '../errors/invalid-grpc-service.exception';
-import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception';
-import { ChannelOptions } from '../external/grpc-options.interface';
-import { getGrpcPackageDefinition } from '../helpers';
-import { ClientGrpc, GrpcOptions } from '../interfaces';
-import { ClientProxy } from './client-proxy';
+import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants.js';
+import { InvalidGrpcPackageException } from '../errors/invalid-grpc-package.exception.js';
+import { InvalidGrpcServiceException } from '../errors/invalid-grpc-service.exception.js';
+import { InvalidProtoDefinitionException } from '../errors/invalid-proto-definition.exception.js';
+import { ChannelOptions } from '../external/grpc-options.interface.js';
+import { getGrpcPackageDefinition } from '../helpers/index.js';
+import { ClientGrpc, GrpcOptions } from '../interfaces/index.js';
+import { ClientProxy } from './client-proxy.js';
+import { Logger } from '@nestjs/common';
+import { loadPackageSync, isFunction, isObject } from '@nestjs/common/internal';
 
 const GRPC_CANCELLED = 'Cancelled';
 
@@ -50,23 +50,17 @@ export class ClientGrpcProxy
     const protoLoader =
       this.getOptionsProp(options, 'protoLoader') || GRPC_DEFAULT_PROTO_LOADER;
 
-    grpcPackage = loadPackage('@grpc/grpc-js', ClientGrpcProxy.name, () =>
-      require('@grpc/grpc-js'),
+    grpcPackage = loadPackageSync('@grpc/grpc-js', ClientGrpcProxy.name, () =>
+      createRequire(import.meta.url)('@grpc/grpc-js'),
     );
 
-    grpcProtoLoaderPackage = loadPackage(
-      protoLoader,
-      ClientGrpcProxy.name,
-      () =>
-        protoLoader === GRPC_DEFAULT_PROTO_LOADER
-          ? require('@grpc/proto-loader')
-          : require(protoLoader),
-    );
+    grpcProtoLoaderPackage = loadPackageSync(protoLoader, ClientGrpcProxy.name);
+
     this.grpcClients = this.createClients();
   }
 
   public getService<T extends object>(name: string): T {
-    const grpcClient = this.createClientByServiceName(name);
+    const grpcClient = this.getClientByServiceName(name);
     const clientRef = this.getClient(name);
     if (!clientRef) {
       throw new InvalidGrpcServiceException(name);
@@ -126,7 +120,7 @@ export class ClientGrpcProxy
       return {};
     }
     const keepaliveKeys: Record<
-      keyof GrpcOptions['options']['keepalive'],
+      keyof NonNullable<GrpcOptions['options']['keepalive']>,
       string
     > = {
       keepaliveTimeMs: 'grpc.keepalive_time_ms',

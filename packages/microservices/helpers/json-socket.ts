@@ -1,10 +1,14 @@
 import { Buffer } from 'buffer';
 import { StringDecoder } from 'string_decoder';
-import { CorruptedPacketLengthException } from '../errors/corrupted-packet-length.exception';
-import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception';
-import { TcpSocket } from './tcp-socket';
+import { CorruptedPacketLengthException } from '../errors/corrupted-packet-length.exception.js';
+import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception.js';
+import { TcpSocket } from './tcp-socket.js';
 
-const MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
+const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
+
+export interface JsonSocketOptions {
+  maxBufferSize?: number;
+}
 
 export class JsonSocket extends TcpSocket {
   private contentLength: number | null = null;
@@ -12,6 +16,12 @@ export class JsonSocket extends TcpSocket {
 
   private readonly stringDecoder = new StringDecoder();
   private readonly delimiter = '#';
+  private readonly maxBufferSize: number;
+
+  constructor(socket: any, options?: JsonSocketOptions) {
+    super(socket);
+    this.maxBufferSize = options?.maxBufferSize ?? DEFAULT_MAX_BUFFER_SIZE;
+  }
 
   protected handleSend(message: any, callback?: (err?: any) => void) {
     this.socket.write(this.formatMessageData(message), 'utf-8', callback);
@@ -23,9 +33,10 @@ export class JsonSocket extends TcpSocket {
       : dataRaw;
     this.buffer += data;
 
-    if (this.buffer.length > MAX_BUFFER_SIZE) {
+    if (this.buffer.length > this.maxBufferSize) {
+      const bufferLength = this.buffer.length;
       this.buffer = '';
-      throw new MaxPacketLengthExceededException(this.buffer.length);
+      throw new MaxPacketLengthExceededException(bufferLength);
     }
 
     if (this.contentLength === null) {

@@ -3,8 +3,8 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 describe.skip('Fastify Cors', () => {
   let app: NestFastifyApplication;
@@ -28,7 +28,7 @@ describe.skip('Fastify Cors', () => {
   ];
   describe('Dynamic config', () => {
     describe('enableCors', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -73,13 +73,13 @@ describe.skip('Fastify Cors', () => {
           .expect('content-length', '0');
       });
 
-      after(async () => {
+      afterAll(async () => {
         await app.close();
       });
     });
 
     describe('Application Options', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -124,7 +124,7 @@ describe.skip('Fastify Cors', () => {
           .expect('content-length', '0');
       });
 
-      after(async () => {
+      afterAll(async () => {
         await app.close();
       });
     });
@@ -132,7 +132,7 @@ describe.skip('Fastify Cors', () => {
 
   describe('Static config', () => {
     describe('enableCors', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -154,14 +154,14 @@ describe.skip('Fastify Cors', () => {
           .expect('access-control-expose-headers', 'foo,bar')
           .expect('content-length', '0');
       });
-    });
 
-    after(async () => {
-      await app.close();
+      afterAll(async () => {
+        await app.close();
+      });
     });
 
     describe('Application Options', () => {
-      before(async () => {
+      beforeAll(async () => {
         const module = await Test.createTestingModule({
           imports: [AppModule],
         }).compile();
@@ -184,10 +184,10 @@ describe.skip('Fastify Cors', () => {
           .expect('access-control-expose-headers', 'foo,bar')
           .expect('content-length', '0');
       });
-    });
 
-    after(async () => {
-      await app.close();
+      afterAll(async () => {
+        await app.close();
+      });
     });
   });
 });

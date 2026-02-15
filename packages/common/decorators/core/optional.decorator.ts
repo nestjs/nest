@@ -1,8 +1,8 @@
 import {
   OPTIONAL_DEPS_METADATA,
   OPTIONAL_PROPERTY_DEPS_METADATA,
-} from '../../constants';
-import { isUndefined } from '../../utils/shared.utils';
+} from '../../constants.js';
+import { isUndefined } from '../../utils/shared.utils.js';
 
 /**
  * Parameter decorator for an injected dependency marking the

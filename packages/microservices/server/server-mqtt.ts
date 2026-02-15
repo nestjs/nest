@@ -1,26 +1,31 @@
-import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
 import {
   MQTT_DEFAULT_URL,
   MQTT_SEPARATOR,
   MQTT_WILDCARD_ALL,
   MQTT_WILDCARD_SINGLE,
   NO_MESSAGE_HANDLER,
-} from '../constants';
-import { MqttContext } from '../ctx-host/mqtt.context';
-import { Transport } from '../enums';
-import { MqttEvents, MqttEventsMap, MqttStatus } from '../events/mqtt.events';
+} from '../constants.js';
+import { MqttContext } from '../ctx-host/mqtt.context.js';
+import { Transport } from '../enums/index.js';
+import {
+  MqttEvents,
+  MqttEventsMap,
+  MqttStatus,
+} from '../events/mqtt.events.js';
 import {
   IncomingRequest,
   MessageHandler,
   PacketId,
   ReadPacket,
-} from '../interfaces';
-import { MqttOptions } from '../interfaces/microservice-configuration.interface';
-import { MqttRecord } from '../record-builders/mqtt.record-builder';
-import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer';
-import { Server } from './server';
-
-let mqttPackage: any = {};
+} from '../interfaces/index.js';
+import {
+  MqttOptions,
+  TransportId,
+} from '../interfaces/microservice-configuration.interface.js';
+import { MqttRecord } from '../record-builders/mqtt.record-builder.js';
+import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer.js';
+import { Server } from './server.js';
+import { isObject, isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for MQTT. This cant be uncommented by default
 // because it would require the user to install the mqtt package even if they dont use MQTT
@@ -33,7 +38,7 @@ type MqttClient = any;
  * @publicApi
  */
 export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
-  public readonly transportId = Transport.MQTT;
+  public transportId: TransportId = Transport.MQTT;
   protected readonly url: string;
   protected mqttClient: MqttClient;
   protected pendingEventListeners: Array<{
@@ -45,10 +50,6 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     super();
     this.url = this.getOptionsProp(options, 'url', MQTT_DEFAULT_URL);
 
-    mqttPackage = this.loadPackage('mqtt', ServerMqtt.name, () =>
-      require('mqtt'),
-    );
-
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
   }
@@ -57,7 +58,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
     try {
-      this.mqttClient = this.createMqttClient();
+      this.mqttClient = await this.createMqttClient();
       this.start(callback);
     } catch (err) {
       callback(err);
@@ -87,10 +88,21 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
 
     const registeredPatterns = [...this.messageHandlers.keys()];
     registeredPatterns.forEach(pattern => {
-      const { isEventHandler } = this.messageHandlers.get(pattern)!;
+      const handler = this.messageHandlers.get(pattern)!;
+      const { isEventHandler, extras } = handler;
+
+      const globalSubscribeOptions = this.getOptionsProp(
+        this.options,
+        'subscribeOptions',
+      );
+      const subscribeOptions =
+        extras?.qos !== undefined
+          ? { ...globalSubscribeOptions, qos: extras.qos }
+          : globalSubscribeOptions;
+
       mqttClient.subscribe(
         isEventHandler ? pattern : this.getRequestPattern(pattern),
-        this.getOptionsProp(this.options, 'subscribeOptions'),
+        subscribeOptions,
       );
     });
   }
@@ -100,8 +112,13 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     this.pendingEventListeners = [];
   }
 
-  public createMqttClient(): MqttClient {
-    return mqttPackage.connect(this.url, this.options as MqttOptions);
+  public async createMqttClient(): Promise<MqttClient> {
+    const mqttPackage = await this.loadPackage(
+      'mqtt',
+      ServerMqtt.name,
+      () => import('mqtt'),
+    );
+    return mqttPackage.connect(this.url, this.options as any);
   }
 
   public getMessageHandler(pub: MqttClient) {
@@ -126,7 +143,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     }
     const publish = this.getPublisher(
       pub,
-      channel,
+      mqttContext,
       (packet as IncomingRequest).id,
     );
     const handler = this.getHandlerByPattern(channel);
@@ -140,13 +157,23 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       };
       return publish(noHandlerPacket);
     }
-    const response$ = this.transformToObservable(
-      await handler(packet.data, mqttContext),
+    return this.onProcessingStartHook(
+      this.transportId,
+      mqttContext,
+      async () => {
+        const response$ = this.transformToObservable(
+          await handler(packet.data, mqttContext),
+        );
+        response$ && this.send(response$, publish);
+      },
     );
-    response$ && this.send(response$, publish);
   }
 
-  public getPublisher(client: MqttClient, pattern: any, id: string): any {
+  public getPublisher(
+    client: MqttClient,
+    context: MqttContext,
+    id: string,
+  ): any {
     return (response: any) => {
       Object.assign(response, { id });
 
@@ -158,8 +185,10 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
 
       const outgoingResponse: string | Buffer =
         this.serializer.serialize(response);
+
+      this.onProcessingEndHook?.(this.transportId, context);
       return client.publish(
-        this.getReplyPattern(pattern),
+        this.getReplyPattern(context.getTopic()),
         outgoingResponse,
         options,
       );

@@ -1,6 +1,10 @@
-import { PipeTransform, Type } from '@nestjs/common';
-import { WsParamtype } from '../enums/ws-paramtype.enum';
-import { createPipesWsParamDecorator } from '../utils/param.utils';
+import type {
+  ParameterDecoratorOptions,
+  PipeTransform,
+  Type,
+} from '@nestjs/common';
+import { WsParamtype } from '../enums/ws-paramtype.enum.js';
+import { createPipesWsParamDecorator } from '../utils/param.utils.js';
 
 /**
  * WebSockets message body parameter decorator.
@@ -51,12 +55,51 @@ export function MessageBody(
   propertyKey: string,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator;
+/**
+ * WebSockets message body parameter decorator. Extracts a property from the
+ * message payload object with additional options.
+ *
+ * For example, extracting a single param with schema:
+ * ```typescript
+ * create(@MessageBody('data', { schema: z.string() }) data: string)
+ * ```
+ * @param propertyKey name of single property to extract from the message payload
+ * @param options options object containing additional configuration for the decorator, such as pipes and schema
+ *
+ * @publicApi
+ */
 export function MessageBody(
-  propertyOrPipe?: string | (Type<PipeTransform> | PipeTransform),
+  propertyKey: string,
+  options: ParameterDecoratorOptions,
+): ParameterDecorator;
+/**
+ * WebSockets message body parameter decorator.
+ *
+ * For example, passing schema as options:
+ * ```typescript
+ * create(@MessageBody({ schema: z.object({ data: z.string() }) }) body)
+ * ```
+ * @param options options object containing additional configuration for the decorator, such as pipes and schema
+ *
+ * @publicApi
+ */
+export function MessageBody(
+  options: ParameterDecoratorOptions,
+): ParameterDecorator;
+export function MessageBody(
+  propertyOrPipe?:
+    | string
+    | (Type<PipeTransform> | PipeTransform)
+    | ParameterDecoratorOptions,
+  optionsOrPipe?:
+    | ParameterDecoratorOptions
+    | Type<PipeTransform>
+    | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
   return createPipesWsParamDecorator(WsParamtype.PAYLOAD)(
     propertyOrPipe,
+    optionsOrPipe,
     ...pipes,
   );
 }

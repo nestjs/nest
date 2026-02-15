@@ -1,8 +1,9 @@
-import { ShutdownSignal } from '../enums/shutdown-signal.enum';
-import { LoggerService, LogLevel } from '../services/logger.service';
-import { DynamicModule } from './modules';
-import { NestApplicationContextOptions } from './nest-application-context-options.interface';
-import { Type } from './type.interface';
+import { ShutdownSignal } from '../enums/shutdown-signal.enum.js';
+import { LoggerService, LogLevel } from '../services/logger.service.js';
+import { DynamicModule } from './modules/index.js';
+import { NestApplicationContextOptions } from './nest-application-context-options.interface.js';
+import { ShutdownHooksOptions } from './shutdown-hooks-options.interface.js';
+import { Type } from './type.interface.js';
 
 export type SelectOptions = Pick<NestApplicationContextOptions, 'abortOnError'>;
 
@@ -143,9 +144,15 @@ export interface INestApplicationContext {
    * `onApplicationShutdown` function of a provider if the
    * process receives a shutdown signal.
    *
+   * @param {ShutdownSignal[] | string[]} [signals] The system signals to listen to
+   * @param {ShutdownHooksOptions} [options] Options for configuring shutdown hooks behavior
+   *
    * @returns {this} The Nest application context instance
    */
-  enableShutdownHooks(signals?: ShutdownSignal[] | string[]): this;
+  enableShutdownHooks(
+    signals?: ShutdownSignal[] | string[],
+    options?: ShutdownHooksOptions,
+  ): this;
 
   /**
    * Initializes the Nest application.

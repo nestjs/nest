@@ -1,4 +1,4 @@
-import { ClientProxy } from './client/client-proxy';
+import { ClientProxy } from './client/client-proxy.js';
 
 export class ClientsContainer {
   private clients: ClientProxy[] = [];

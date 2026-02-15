@@ -1,23 +1,17 @@
 import {
-  isNil,
-  isNumber,
-  isObject,
-  isSymbol,
-} from '@nestjs/common/utils/shared.utils';
-
-import {
   PATTERN_EXTRAS_METADATA,
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
-} from '../constants';
-import { Transport } from '../enums';
-import { PatternHandler } from '../enums/pattern-handler.enum';
+} from '../constants.js';
+import { Transport } from '../enums/index.js';
+import { PatternHandler } from '../enums/pattern-handler.enum.js';
 import {
   InvalidGrpcDecoratorException,
   RpcDecoratorMetadata,
-} from '../errors/invalid-grpc-message-decorator.exception';
-import { PatternMetadata } from '../interfaces/pattern-metadata.interface';
+} from '../errors/invalid-grpc-message-decorator.exception.js';
+import { PatternMetadata } from '../interfaces/pattern-metadata.interface.js';
+import { isNil, isNumber, isObject, isSymbol } from '@nestjs/common/internal';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',
@@ -152,16 +146,18 @@ export function GrpcStreamMethod(
 
     // Override original method to call the "drainBuffer" method on the first parameter
     // This is required to avoid premature message emission
-    descriptor.value = async function (
-      this: any,
-      observable: any,
-      ...args: any[]
-    ) {
-      const result = await Promise.resolve(
-        originalMethod.apply(this, [observable, ...args]),
-      );
+    descriptor.value = function (this: any, observable: any, ...args: any[]) {
+      const result = originalMethod.apply(this, [observable, ...args]);
+      const isPromise = result && typeof result.then === 'function';
+      if (isPromise) {
+        return result.then((data: any) => {
+          if (observable && observable.drainBuffer) {
+            observable.drainBuffer();
+          }
+          return data;
+        });
+      }
 
-      // Drain buffer if "drainBuffer" method is available
       if (observable && observable.drainBuffer) {
         observable.drainBuffer();
       }

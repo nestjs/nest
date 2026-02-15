@@ -1,6 +1,6 @@
 {
   "name": "@nestjs/common",
-  "version": "11.0.12",
+  "version": "11.1.13",
   "description": "Nest - modern, fast, powerful node.js web framework (@common)",
   "author": "Kamil Mysliwiec",
   "homepage": "https://nestjs.com",
@@ -17,14 +17,49 @@
     "access": "public"
   },
   "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*.js": "./*.js",
+    "./*": "./*.js",
+    "./decorators": "./decorators/index.js",
+    "./decorators/core": "./decorators/core/index.js",
+    "./decorators/http": "./decorators/http/index.js",
+    "./decorators/modules": "./decorators/modules/index.js",
+    "./enums": "./enums/index.js",
+    "./exceptions": "./exceptions/index.js",
+    "./file-stream": "./file-stream/index.js",
+    "./file-stream/interfaces": "./file-stream/interfaces/index.js",
+    "./interfaces": "./interfaces/index.js",
+    "./interfaces/controllers": "./interfaces/controllers/index.js",
+    "./interfaces/exceptions": "./interfaces/exceptions/index.js",
+    "./interfaces/hooks": "./interfaces/hooks/index.js",
+    "./interfaces/http": "./interfaces/http/index.js",
+    "./interfaces/middleware": "./interfaces/middleware/index.js",
+    "./interfaces/modules": "./interfaces/modules/index.js",
+    "./module-utils": "./module-utils/index.js",
+    "./module-utils/interfaces": "./module-utils/interfaces/index.js",
+    "./module-utils/utils": "./module-utils/utils/index.js",
+    "./pipes": "./pipes/index.js",
+    "./pipes/file": "./pipes/file/index.js",
+    "./pipes/file/interfaces": "./pipes/file/interfaces/index.js",
+    "./serializer": "./serializer/index.js",
+    "./serializer/decorators": "./serializer/decorators/index.js",
+    "./services": "./services/index.js",
+    "./services/utils": "./services/utils/index.js",
+    "./utils": "./utils/index.js"
+  },
   "dependencies": {
+    "file-type": "21.3.0",
     "iterare": "1.2.1",
+    "load-esm": "1.0.3",
     "tslib": "2.8.1",
     "uid": "2.0.2"
   },
   "peerDependencies": {
-    "class-transformer": "*",
-    "class-validator": "*",
+    "class-transformer": ">=0.4.1",
+    "class-validator": ">=0.13.2",
     "reflect-metadata": "^0.1.12 || ^0.2.0",
     "rxjs": "^7.1.0"
   },
@@ -35,5 +70,6 @@
     "class-transformer": {
       "optional": true
     }
-  }
+  },
+  "gitHead": "bcb4747f7598a9d2655c8184a6d729ebefa07fbd"
 }

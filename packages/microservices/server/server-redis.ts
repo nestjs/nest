@@ -1,18 +1,22 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import {
   NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_HOST,
   REDIS_DEFAULT_PORT,
-} from '../constants';
-import { RedisContext } from '../ctx-host';
-import { Transport } from '../enums';
+} from '../constants.js';
+import { RedisContext } from '../ctx-host/index.js';
+import { Transport } from '../enums/index.js';
 import {
   RedisEvents,
   RedisEventsMap,
   RedisStatus,
-} from '../events/redis.events';
-import { IncomingRequest, RedisOptions } from '../interfaces';
-import { Server } from './server';
+} from '../events/redis.events.js';
+import {
+  IncomingRequest,
+  RedisOptions,
+  TransportId,
+} from '../interfaces/index.js';
+import { Server } from './server.js';
+import { isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for Redis. This cant be uncommented by default
 // because it would require the user to install the ioredis package even if they dont use Redis
@@ -21,13 +25,11 @@ import { Server } from './server';
 // type Redis = import('ioredis').Redis;
 type Redis = any;
 
-let redisPackage = {} as any;
-
 /**
  * @publicApi
  */
 export class ServerRedis extends Server<RedisEvents, RedisStatus> {
-  public readonly transportId = Transport.REDIS;
+  public transportId: TransportId = Transport.REDIS;
 
   protected subClient: Redis;
   protected pubClient: Redis;
@@ -41,20 +43,16 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   constructor(protected readonly options: Required<RedisOptions>['options']) {
     super();
 
-    redisPackage = this.loadPackage('ioredis', ServerRedis.name, () =>
-      require('ioredis'),
-    );
-
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
   }
 
-  public listen(
+  public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
     try {
-      this.subClient = this.createRedisClient();
-      this.pubClient = this.createRedisClient();
+      this.subClient = await this.createRedisClient();
+      this.pubClient = await this.createRedisClient();
 
       [this.subClient, this.pubClient].forEach((client, index) => {
         const type = index === 0 ? 'pub' : 'sub';
@@ -104,15 +102,21 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     });
   }
 
-  public close() {
+  public async close() {
     this.isManuallyClosed = true;
-    this.pubClient && this.pubClient.quit();
-    this.subClient && this.subClient.quit();
+    this.pubClient && (await this.pubClient.quit());
+    this.subClient && (await this.subClient.quit());
     this.pendingEventListeners = [];
   }
 
-  public createRedisClient(): Redis {
-    return new redisPackage({
+  public async createRedisClient(): Promise<Redis> {
+    const redisPackage = await this.loadPackage(
+      'ioredis',
+      ServerRedis.name,
+      () => import('ioredis'),
+    );
+    const RedisClient: any = redisPackage.default || redisPackage;
+    return new RedisClient({
       port: REDIS_DEFAULT_PORT,
       host: REDIS_DEFAULT_HOST,
       ...this.getClientOptions(),
@@ -145,6 +149,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       pub,
       channel,
       (packet as IncomingRequest).id,
+      redisCtx,
     );
     const handler = this.getHandlerByPattern(channel);
 
@@ -157,17 +162,24 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       };
       return publish(noHandlerPacket);
     }
-    const response$ = this.transformToObservable(
-      await handler(packet.data, redisCtx),
+    return this.onProcessingStartHook?.(
+      this.transportId,
+      redisCtx,
+      async () => {
+        const response$ = this.transformToObservable(
+          await handler(packet.data, redisCtx),
+        );
+        response$ && this.send(response$, publish);
+      },
     );
-    response$ && this.send(response$, publish);
   }
 
-  public getPublisher(pub: Redis, pattern: any, id: string) {
+  public getPublisher(pub: Redis, pattern: any, id: string, ctx: RedisContext) {
     return (response: any) => {
       Object.assign(response, { id });
       const outgoingResponse = this.serializer.serialize(response);
 
+      this.onProcessingEndHook?.(this.transportId, ctx);
       return pub.publish(
         this.getReplyPattern(pattern),
         JSON.stringify(outgoingResponse),

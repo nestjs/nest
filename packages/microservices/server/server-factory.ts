@@ -1,7 +1,6 @@
-import { Transport } from '../enums/transport.enum';
+import { Transport } from '../enums/transport.enum.js';
 import {
   CustomStrategy,
-  GrpcOptions,
   KafkaOptions,
   MicroserviceOptions,
   MqttOptions,
@@ -9,14 +8,14 @@ import {
   RedisOptions,
   RmqOptions,
   TcpOptions,
-} from '../interfaces';
-import { ServerGrpc } from './server-grpc';
-import { ServerKafka } from './server-kafka';
-import { ServerMqtt } from './server-mqtt';
-import { ServerNats } from './server-nats';
-import { ServerRedis } from './server-redis';
-import { ServerRMQ } from './server-rmq';
-import { ServerTCP } from './server-tcp';
+} from '../interfaces/index.js';
+import { ServerGrpc } from './server-grpc.js';
+import { ServerKafka } from './server-kafka.js';
+import { ServerMqtt } from './server-mqtt.js';
+import { ServerNats } from './server-nats.js';
+import { ServerRedis } from './server-redis.js';
+import { ServerRMQ } from './server-rmq.js';
+import { ServerTCP } from './server-tcp.js';
 
 export class ServerFactory {
   public static create(microserviceOptions: MicroserviceOptions) {

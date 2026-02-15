@@ -1,4 +1,4 @@
-import { RENDER_METADATA } from '../../constants';
+import { RENDER_METADATA } from '../../constants.js';
 
 /**
  * Route handler method Decorator.  Defines a template to be rendered by the controller.

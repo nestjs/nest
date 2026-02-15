@@ -1,9 +1,17 @@
 {
   "name": "@nestjs/testing",
-  "version": "11.0.12",
+  "version": "11.1.13",
   "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*.js": "./*.js",
+    "./*": "./*.js",
+    "./interfaces": "./interfaces/index.js"
+  },
   "homepage": "https://nestjs.com",
   "funding": {
     "type": "opencollective",
@@ -33,5 +41,6 @@
     "@nestjs/platform-express": {
       "optional": true
     }
-  }
+  },
+  "gitHead": "bcb4747f7598a9d2655c8184a6d729ebefa07fbd"
 }

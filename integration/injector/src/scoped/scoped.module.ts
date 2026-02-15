@@ -1,9 +1,9 @@
 import { Module, Scope } from '@nestjs/common';
-import { ScopedController } from './scoped.controller';
-import { ScopedService } from './scoped.service';
-import { TransientService } from './transient.service';
-import { Transient2Service } from './transient2.service';
-import { Transient3Service } from './transient3.service';
+import { ScopedController } from './scoped.controller.js';
+import { ScopedService } from './scoped.service.js';
+import { TransientService } from './transient.service.js';
+import { Transient2Service } from './transient2.service.js';
+import { Transient3Service } from './transient3.service.js';
 
 export const STATIC_FACTORY = 'STATIC_FACTORY';
 export const REQUEST_SCOPED_FACTORY = 'REQUEST_SCOPED_FACTORY';

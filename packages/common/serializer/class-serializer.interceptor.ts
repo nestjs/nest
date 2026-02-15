@@ -1,16 +1,20 @@
-import { ClassSerializerContextOptions } from './class-serializer.interfaces';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Inject, Injectable, Optional } from '../decorators/core';
-import { StreamableFile } from '../file-stream';
-import { CallHandler, ExecutionContext, NestInterceptor } from '../interfaces';
-import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
-import { TransformerPackage } from '../interfaces/external/transformer-package.interface';
-import { loadPackage } from '../utils/load-package.util';
-import { isObject } from '../utils/shared.utils';
-import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants';
+import { Inject, Injectable, Optional } from '../decorators/core/index.js';
+import { StreamableFile } from '../file-stream/index.js';
+import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface.js';
+import { TransformerPackage } from '../interfaces/external/transformer-package.interface.js';
+import {
+  CallHandler,
+  ExecutionContext,
+  NestInterceptor,
+} from '../interfaces/index.js';
+import { loadPackage } from '../utils/load-package.util.js';
+import { isObject } from '../utils/shared.utils.js';
+import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants.js';
+import { ClassSerializerContextOptions } from './class-serializer.interfaces.js';
 
-let classTransformer: TransformerPackage = {} as any;
+let classTransformer: any = {} as any;
 
 export interface PlainLiteralObject {
   [key: string]: any;
@@ -24,8 +28,7 @@ const REFLECTOR = 'Reflector';
 /**
  * @publicApi
  */
-export interface ClassSerializerInterceptorOptions
-  extends ClassTransformOptions {
+export interface ClassSerializerInterceptorOptions extends ClassTransformOptions {
   transformerPackage?: TransformerPackage;
 }
 
@@ -41,16 +44,19 @@ export class ClassSerializerInterceptor implements NestInterceptor {
   ) {
     classTransformer =
       defaultOptions?.transformerPackage ??
-      loadPackage('class-transformer', 'ClassSerializerInterceptor', () =>
-        require('class-transformer'),
+      loadPackage(
+        'class-transformer',
+        'ClassSerializerInterceptor',
+        () => import('class-transformer'),
       );
-
-    if (!defaultOptions?.transformerPackage) {
-      require('class-transformer');
-    }
   }
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  async intercept(
+    context: ExecutionContext,
+    next: CallHandler,
+  ): Promise<Observable<any>> {
+    classTransformer = (await classTransformer) as TransformerPackage;
+
     const contextOptions = this.getContextOptions(context);
     const options = {
       ...this.defaultOptions,

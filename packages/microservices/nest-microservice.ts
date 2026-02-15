@@ -1,4 +1,4 @@
-import {
+import type {
   CanActivate,
   ExceptionFilter,
   INestMicroservice,
@@ -6,28 +6,23 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { MESSAGES } from '@nestjs/core/constants';
-import { optionalRequire } from '@nestjs/core/helpers/optional-require';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { Injector } from '@nestjs/core/injector/injector';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
-import { NestApplicationContext } from '@nestjs/core/nest-application-context';
-import { Transport } from './enums/transport.enum';
+import { Transport } from './enums/transport.enum.js';
 import {
   AsyncMicroserviceOptions,
   MicroserviceOptions,
-} from './interfaces/microservice-configuration.interface';
-import { MicroservicesModule } from './microservices-module';
-import { Server } from './server/server';
-import { ServerFactory } from './server/server-factory';
-
-const { SocketModule } = optionalRequire(
-  '@nestjs/websockets/socket-module',
-  () => require('@nestjs/websockets/socket-module'),
-);
+} from './interfaces/microservice-configuration.interface.js';
+import { MicroservicesModule } from './microservices-module.js';
+import { ServerFactory } from './server/server-factory.js';
+import { Server } from './server/server.js';
+import type { NestMicroserviceOptions } from '@nestjs/common/internal';
+import { Logger } from '@nestjs/common';
+import {
+  type ApplicationConfig,
+  type NestContainer,
+  type GraphInspector,
+  NestApplicationContext,
+} from '@nestjs/core';
+import { MESSAGES, optionalRequire, Injector } from '@nestjs/core/internal';
 
 type CompleteMicroserviceOptions = NestMicroserviceOptions &
   (MicroserviceOptions | AsyncMicroserviceOptions);
@@ -40,7 +35,7 @@ export class NestMicroservice
     timestamp: true,
   });
   private readonly microservicesModule = new MicroservicesModule();
-  private readonly socketModule = SocketModule ? new SocketModule() : null;
+  private socketModule: any = null;
   private microserviceConfig: Exclude<
     CompleteMicroserviceOptions,
     AsyncMicroserviceOptions
@@ -64,7 +59,10 @@ export class NestMicroservice
   ) {
     super(container, config);
 
-    this.injector = new Injector({ preview: config.preview! });
+    this.injector = new Injector({
+      preview: config.preview!,
+      instanceDecorator: config.instrument?.instanceDecorator,
+    });
     this.microservicesModule.register(
       container,
       this.graphInspector,
@@ -73,27 +71,37 @@ export class NestMicroservice
     );
     this.createServer(config);
     this.selectContextModule();
+
+    const modulesContainer = this.container.getModules();
+    modulesContainer.addRpcTarget(this.serverInstance);
   }
 
   public createServer(config: CompleteMicroserviceOptions) {
     try {
       if ('useFactory' in config) {
-        this.microserviceConfig = this.resolveAsyncOptions(config);
+        const resolvedConfig = this.resolveAsyncOptions(config);
+        this.microserviceConfig = resolvedConfig;
+
+        // Inject custom strategy
+        if ('strategy' in resolvedConfig) {
+          this.serverInstance = resolvedConfig.strategy as Server;
+          return;
+        }
       } else {
         this.microserviceConfig = {
           transport: Transport.TCP,
           ...config,
         } as MicroserviceOptions;
+
+        if ('strategy' in config) {
+          this.serverInstance = config.strategy as Server;
+          return;
+        }
       }
 
-      if ('strategy' in config) {
-        this.serverInstance = config.strategy as Server;
-        return;
-      } else {
-        this.serverInstance = ServerFactory.create(
-          this.microserviceConfig,
-        ) as Server;
-      }
+      this.serverInstance = ServerFactory.create(
+        this.microserviceConfig,
+      ) as Server;
     } catch (e) {
       this.logger.error(e);
       throw e;
@@ -137,6 +145,11 @@ export class NestMicroservice
    * @returns {this}
    */
   public useWebSocketAdapter(adapter: WebSocketAdapter): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Cannot apply WebSocket adapter: registration must occur before initialization.',
+      );
+    }
     this.applicationConfig.setIoAdapter(adapter);
     return this;
   }
@@ -147,6 +160,15 @@ export class NestMicroservice
    * @param {...ExceptionFilter} filters
    */
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Cannot apply global exception filters: registration must occur before initialization.',
+      );
+    }
+
+    filters = this.applyInstanceDecoratorIfRegistered<ExceptionFilter>(
+      ...filters,
+    );
     this.applicationConfig.useGlobalFilters(...filters);
     filters.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -163,6 +185,15 @@ export class NestMicroservice
    * @param {...PipeTransform} pipes
    */
   public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Global pipes registered after initialization will not be applied.',
+      );
+    }
+
+    pipes = this.applyInstanceDecoratorIfRegistered<PipeTransform<any>>(
+      ...pipes,
+    );
     this.applicationConfig.useGlobalPipes(...pipes);
     pipes.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -179,6 +210,15 @@ export class NestMicroservice
    * @param {...NestInterceptor} interceptors
    */
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Cannot apply global interceptors: registration must occur before initialization.',
+      );
+    }
+
+    interceptors = this.applyInstanceDecoratorIfRegistered<NestInterceptor>(
+      ...interceptors,
+    );
     this.applicationConfig.useGlobalInterceptors(...interceptors);
     interceptors.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -190,6 +230,13 @@ export class NestMicroservice
   }
 
   public useGlobalGuards(...guards: CanActivate[]): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Cannot apply global guards: registration must occur before initialization.',
+      );
+    }
+
+    guards = this.applyInstanceDecoratorIfRegistered<CanActivate>(...guards);
     this.applicationConfig.useGlobalGuards(...guards);
     guards.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -204,6 +251,9 @@ export class NestMicroservice
     if (this.isInitialized) {
       return this;
     }
+
+    // Lazy-load optional socket module (ESM-compatible)
+    await this.loadSocketModule();
     await super.init();
     await this.registerModules();
     return this;
@@ -315,5 +365,27 @@ export class NestMicroservice
       this.get(token, { strict: false }),
     );
     return config.useFactory(...args);
+  }
+
+  private applyInstanceDecoratorIfRegistered<T>(...instances: T[]): T[] {
+    if (this.appOptions.instrument?.instanceDecorator) {
+      return instances.map(
+        instance =>
+          this.appOptions.instrument!.instanceDecorator(instance) as T,
+      );
+    }
+    return instances;
+  }
+
+  private async loadSocketModule() {
+    if (!this.socketModule) {
+      const socketModule = await optionalRequire(
+        '@nestjs/websockets/socket-module',
+        () => import('@nestjs/websockets/socket-module.js'),
+      );
+      if (socketModule?.SocketModule) {
+        this.socketModule = new socketModule.SocketModule();
+      }
+    }
   }
 }

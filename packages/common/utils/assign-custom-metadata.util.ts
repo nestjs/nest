@@ -1,10 +1,11 @@
-import { CUSTOM_ROUTE_ARGS_METADATA } from '../constants';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../constants.js';
 import {
   ParamData,
   RouteParamMetadata,
-} from '../decorators/http/route-params.decorator';
-import { PipeTransform, Type } from '../interfaces';
-import { CustomParamFactory } from '../interfaces/features/custom-route-param-factory.interface';
+} from '../decorators/http/route-params.decorator.js';
+import { CustomParamFactory } from '../interfaces/features/custom-route-param-factory.interface.js';
+import { PipeTransform, Type } from '../interfaces/index.js';
 
 export function assignCustomParameterMetadata(
   args: Record<number, RouteParamMetadata>,
@@ -12,6 +13,7 @@ export function assignCustomParameterMetadata(
   index: number,
   factory: CustomParamFactory,
   data?: ParamData,
+  schema?: StandardSchemaV1,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ) {
   return {
@@ -21,6 +23,7 @@ export function assignCustomParameterMetadata(
       factory,
       data,
       pipes,
+      ...(schema !== undefined && { schema }),
     },
   };
 }

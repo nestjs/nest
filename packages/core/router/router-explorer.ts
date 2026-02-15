@@ -1,50 +1,53 @@
-import { HttpServer } from '@nestjs/common';
-import { PATH_METADATA } from '@nestjs/common/constants';
-import { RequestMethod, VersioningType } from '@nestjs/common/enums';
-import { InternalServerErrorException } from '@nestjs/common/exceptions';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Type } from '@nestjs/common/interfaces/type.interface';
-import { VersionValue } from '@nestjs/common/interfaces/version-options.interface';
-import { Logger } from '@nestjs/common/services/logger.service';
-import {
-  addLeadingSlash,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+import type { HttpServer } from '@nestjs/common';
 import { pathToRegexp } from 'path-to-regexp';
-import { ApplicationConfig } from '../application-config';
-import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
-import { GuardsConsumer, GuardsContextCreator } from '../guards';
-import { ContextIdFactory } from '../helpers/context-id-factory';
-import { ExecutionContextHost } from '../helpers/execution-context-host';
+import { ApplicationConfig } from '../application-config.js';
+import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception.js';
+import { GuardsConsumer, GuardsContextCreator } from '../guards/index.js';
+import { ContextIdFactory } from '../helpers/context-id-factory.js';
+import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import {
   ROUTE_MAPPED_MESSAGE,
   VERSIONED_ROUTE_MAPPED_MESSAGE,
-} from '../helpers/messages';
-import { RouterMethodFactory } from '../helpers/router-method-factory';
-import { STATIC_CONTEXT } from '../injector/constants';
-import { NestContainer } from '../injector/container';
-import { Injector } from '../injector/injector';
-import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
-import { GraphInspector } from '../inspector/graph-inspector';
+} from '../helpers/messages.js';
+import { RouterMethodFactory } from '../helpers/router-method-factory.js';
+import { STATIC_CONTEXT } from '../injector/constants.js';
+import { NestContainer } from '../injector/container.js';
+import { Injector } from '../injector/injector.js';
+import { ContextId, InstanceWrapper } from '../injector/instance-wrapper.js';
+import { Module } from '../injector/module.js';
+import { GraphInspector } from '../inspector/graph-inspector.js';
 import {
   Entrypoint,
   HttpEntrypointMetadata,
-} from '../inspector/interfaces/entrypoint.interface';
+} from '../inspector/interfaces/entrypoint.interface.js';
 import {
   InterceptorsConsumer,
   InterceptorsContextCreator,
-} from '../interceptors';
-import { MetadataScanner } from '../metadata-scanner';
-import { PipesConsumer, PipesContextCreator } from '../pipes';
-import { ExceptionsFilter } from './interfaces/exceptions-filter.interface';
-import { RoutePathMetadata } from './interfaces/route-path-metadata.interface';
-import { PathsExplorer } from './paths-explorer';
-import { REQUEST_CONTEXT_ID } from './request/request-constants';
-import { RouteParamsFactory } from './route-params-factory';
-import { RoutePathFactory } from './route-path-factory';
-import { RouterExecutionContext } from './router-execution-context';
-import { RouterProxy, RouterProxyCallback } from './router-proxy';
+} from '../interceptors/index.js';
+import { MetadataScanner } from '../metadata-scanner.js';
+import { PipesConsumer, PipesContextCreator } from '../pipes/index.js';
+import { ExceptionsFilter } from './interfaces/exceptions-filter.interface.js';
+import { RoutePathMetadata } from './interfaces/route-path-metadata.interface.js';
+import { PathsExplorer } from './paths-explorer.js';
+import { REQUEST_CONTEXT_ID } from './request/request-constants.js';
+import { RouteParamsFactory } from './route-params-factory.js';
+import { RoutePathFactory } from './route-path-factory.js';
+import { RouterExecutionContext } from './router-execution-context.js';
+import { RouterProxy, RouterProxyCallback } from './router-proxy.js';
+import {
+  PATH_METADATA,
+  type Controller,
+  type VersionValue,
+  addLeadingSlash,
+  isUndefined,
+} from '@nestjs/common/internal';
+import {
+  RequestMethod,
+  VersioningType,
+  InternalServerErrorException,
+  type Type,
+  Logger,
+} from '@nestjs/common';
 
 export interface RouteDefinition {
   path: string[];
@@ -101,14 +104,14 @@ export class RouterExplorer {
   public explore<T extends HttpServer = any>(
     instanceWrapper: InstanceWrapper,
     moduleKey: string,
-    applicationRef: T,
+    httpAdapterRef: T,
     host: string | RegExp | Array<string | RegExp>,
     routePathMetadata: RoutePathMetadata,
   ) {
     const { instance } = instanceWrapper;
     const routerPaths = this.pathsExplorer.scanForPaths(instance);
     this.applyPathsToRouterProxy(
-      applicationRef,
+      httpAdapterRef,
       routerPaths,
       instanceWrapper,
       moduleKey,
@@ -234,7 +237,17 @@ export class RouterExplorer {
         const normalizedPath = router.normalizePath
           ? router.normalizePath(path)
           : path;
-        routerMethodRef(normalizedPath, routeHandler);
+
+        const httpAdapter = this.container.getHttpAdapterRef();
+        const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
+        if (onRouteTriggered) {
+          routerMethodRef(normalizedPath, (...args: unknown[]) => {
+            onRouteTriggered(requestMethod, path);
+            return routeHandler(...args);
+          });
+        } else {
+          routerMethodRef(normalizedPath, routeHandler);
+        }
 
         this.graphInspector.insertEntrypointDefinition<HttpEntrypointMetadata>(
           entrypointDefinition,

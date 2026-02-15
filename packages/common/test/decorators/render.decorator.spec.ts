@@ -1,6 +1,5 @@
-import { expect } from 'chai';
-import { Render } from '../../decorators/http/render.decorator';
-import { RENDER_METADATA } from '../../constants';
+import { Render } from '../../decorators/http/render.decorator.js';
+import { RENDER_METADATA } from '../../constants.js';
 
 describe('@Render', () => {
   const template = 'template';
@@ -12,6 +11,6 @@ describe('@Render', () => {
 
   it('should enhance method with expected template string', () => {
     const metadata = Reflect.getMetadata(RENDER_METADATA, Test.test);
-    expect(metadata).to.be.eql(template);
+    expect(metadata).toEqual(template);
   });
 });

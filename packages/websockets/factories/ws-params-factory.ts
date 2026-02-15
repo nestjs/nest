@@ -1,4 +1,5 @@
-import { WsParamtype } from '../enums/ws-paramtype.enum';
+import { WsParamtype } from '../enums/ws-paramtype.enum.js';
+import { isFunction } from '@nestjs/common/internal';
 
 export class WsParamsFactory {
   public exchangeKeyForValue(
@@ -14,6 +15,9 @@ export class WsParamsFactory {
         return args[0];
       case WsParamtype.PAYLOAD:
         return data ? args[1]?.[data] : args[1];
+      case WsParamtype.ACK: {
+        return args.find(arg => isFunction(arg));
+      }
       default:
         return null;
     }

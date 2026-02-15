@@ -1,9 +1,9 @@
-import { Injectable } from '../decorators/core/injectable.decorator';
+import { Injectable } from '../decorators/core/injectable.decorator.js';
 import {
   ArgumentMetadata,
   PipeTransform,
-} from '../interfaces/features/pipe-transform.interface';
-import { isNil, isNumber } from '../utils/shared.utils';
+} from '../interfaces/features/pipe-transform.interface.js';
+import { isNil, isNumber } from '../utils/shared.utils.js';
 
 /**
  * Defines the built-in DefaultValue Pipe
@@ -13,9 +13,10 @@ import { isNil, isNumber } from '../utils/shared.utils';
  * @publicApi
  */
 @Injectable()
-export class DefaultValuePipe<T = any, R = any>
-  implements PipeTransform<T, T | R>
-{
+export class DefaultValuePipe<T = any, R = any> implements PipeTransform<
+  T,
+  T | R
+> {
   constructor(protected readonly defaultValue: R) {}
 
   transform(value?: T, _metadata?: ArgumentMetadata): T | R {

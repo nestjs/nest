@@ -1,4 +1,4 @@
-import { HttpStatus } from '../enums';
+import { HttpStatus } from '../enums/index.js';
 import {
   BadGatewayException,
   BadRequestException,
@@ -19,8 +19,8 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
   UnsupportedMediaTypeException,
-} from '../exceptions';
-import { Type } from '../interfaces';
+} from '../exceptions/index.js';
+import { Type } from '../interfaces/index.js';
 
 export type ErrorHttpStatusCode =
   | HttpStatus.BAD_GATEWAY

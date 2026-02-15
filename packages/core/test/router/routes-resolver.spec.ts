@@ -1,22 +1,22 @@
+import { createError as createFastifyError } from '@fastify/error';
 import {
   BadRequestException,
+  HttpException,
   Module,
   Post,
   VersioningType,
 } from '@nestjs/common';
-import { MODULE_PATH } from '@nestjs/common/constants';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { Get } from '../../../common/decorators/http/request-mapping.decorator';
-import { ApplicationConfig } from '../../application-config';
-import { NestContainer } from '../../injector';
-import { Injector } from '../../injector/injector';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { GraphInspector } from '../../inspector/graph-inspector';
-import { SerializedGraph } from '../../inspector/serialized-graph';
-import { RoutesResolver } from '../../router/routes-resolver';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { MODULE_PATH } from '@nestjs/common/constants.js';
+import { Controller } from '../../../common/decorators/core/controller.decorator.js';
+import { Get } from '../../../common/decorators/http/request-mapping.decorator.js';
+import { ApplicationConfig } from '../../application-config.js';
+import { NestContainer } from '../../injector/index.js';
+import { Injector } from '../../injector/injector.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { GraphInspector } from '../../inspector/graph-inspector.js';
+import { SerializedGraph } from '../../inspector/serialized-graph.js';
+import { RoutesResolver } from '../../router/routes-resolver.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.js';
 
 describe('RoutesResolver', () => {
   @Controller('global')
@@ -61,8 +61,8 @@ describe('RoutesResolver', () => {
     modules = new Map();
     applicationRef = {
       use: () => ({}),
-      setNotFoundHandler: sinon.spy(),
-      setErrorHandler: sinon.spy(),
+      setNotFoundHandler: vi.fn(),
+      setErrorHandler: vi.fn(),
     } as any;
     container = {
       getModules: () => modules,
@@ -96,16 +96,17 @@ describe('RoutesResolver', () => {
       routes.set('TestRoute', routeWrapper);
 
       const appInstance = new NoopHttpAdapter(router);
-      const exploreSpy = sinon.spy(
+      const exploreSpy = vi.spyOn(
         untypedRoutesResolver.routerExplorer,
         'explore',
       );
       const moduleName = '';
       modules.set(moduleName, {});
 
-      sinon
-        .stub(untypedRoutesResolver.routerExplorer, 'extractRouterPath')
-        .callsFake(() => ['']);
+      vi.spyOn(
+        untypedRoutesResolver.routerExplorer,
+        'extractRouterPath',
+      ).mockImplementation(() => ['']);
       routesResolver.registerRouters(routes, moduleName, '', '', appInstance);
 
       const routePathMetadata = {
@@ -117,16 +118,14 @@ describe('RoutesResolver', () => {
         methodVersion: undefined,
         methodPath: '/another-test',
       };
-      expect(exploreSpy.called).to.be.true;
-      expect(
-        exploreSpy.calledWith(
-          routeWrapper,
-          moduleName,
-          appInstance,
-          undefined,
-          routePathMetadata,
-        ),
-      ).to.be.true;
+      expect(exploreSpy).toHaveBeenCalled();
+      expect(exploreSpy).toHaveBeenCalledWith(
+        routeWrapper,
+        moduleName,
+        appInstance,
+        undefined,
+        routePathMetadata,
+      );
     });
 
     it('should register with host when specified', () => {
@@ -138,16 +137,17 @@ describe('RoutesResolver', () => {
       routes.set('TestHostRoute', routeWrapper);
 
       const appInstance = new NoopHttpAdapter(router);
-      const exploreSpy = sinon.spy(
+      const exploreSpy = vi.spyOn(
         untypedRoutesResolver.routerExplorer,
         'explore',
       );
       const moduleName = '';
       modules.set(moduleName, {});
 
-      sinon
-        .stub(untypedRoutesResolver.routerExplorer, 'extractRouterPath')
-        .callsFake(() => ['']);
+      vi.spyOn(
+        untypedRoutesResolver.routerExplorer,
+        'extractRouterPath',
+      ).mockImplementation(() => ['']);
       routesResolver.registerRouters(routes, moduleName, '', '', appInstance);
 
       const routePathMetadata = {
@@ -160,16 +160,14 @@ describe('RoutesResolver', () => {
         methodPath: '/',
       };
 
-      expect(exploreSpy.called).to.be.true;
-      expect(
-        exploreSpy.calledWith(
-          routeWrapper,
-          moduleName,
-          appInstance,
-          'api.example.com',
-          routePathMetadata,
-        ),
-      ).to.be.true;
+      expect(exploreSpy).toHaveBeenCalled();
+      expect(exploreSpy).toHaveBeenCalledWith(
+        routeWrapper,
+        moduleName,
+        appInstance,
+        'api.example.com',
+        routePathMetadata,
+      );
     });
 
     it('should register with version when specified', () => {
@@ -193,16 +191,17 @@ describe('RoutesResolver', () => {
       routes.set('TestVersionRoute', routeWrapper);
 
       const appInstance = new NoopHttpAdapter(router);
-      const exploreSpy = sinon.spy(
+      const exploreSpy = vi.spyOn(
         untypedRoutesResolver.routerExplorer,
         'explore',
       );
       const moduleName = '';
       modules.set(moduleName, {});
 
-      sinon
-        .stub(untypedRoutesResolver.routerExplorer, 'extractRouterPath')
-        .callsFake(() => ['']);
+      vi.spyOn(
+        untypedRoutesResolver.routerExplorer,
+        'extractRouterPath',
+      ).mockImplementation(() => ['']);
       routesResolver.registerRouters(routes, moduleName, '', '', appInstance);
 
       const routePathMetadata = {
@@ -217,16 +216,14 @@ describe('RoutesResolver', () => {
         methodPath: '/',
       };
 
-      expect(exploreSpy.called).to.be.true;
-      expect(
-        exploreSpy.calledWith(
-          routeWrapper,
-          moduleName,
-          appInstance,
-          undefined,
-          routePathMetadata,
-        ),
-      ).to.be.true;
+      expect(exploreSpy).toHaveBeenCalled();
+      expect(exploreSpy).toHaveBeenCalledWith(
+        routeWrapper,
+        moduleName,
+        appInstance,
+        undefined,
+        routePathMetadata,
+      );
     });
   });
 
@@ -243,12 +240,12 @@ describe('RoutesResolver', () => {
       modules.set('TestModule', { routes, metatype: class {} });
       modules.set('TestModule2', { routes, metatype: class {} });
 
-      const registerRoutersStub = sinon
-        .stub(routesResolver, 'registerRouters')
-        .callsFake(() => undefined);
+      const registerRoutersStub = vi
+        .spyOn(routesResolver, 'registerRouters')
+        .mockImplementation(() => undefined);
 
-      routesResolver.resolve({ use: sinon.spy() } as any, 'basePath');
-      expect(registerRoutersStub.calledTwice).to.be.true;
+      routesResolver.resolve({ use: vi.fn() } as any, 'basePath');
+      expect(registerRoutersStub).toHaveBeenCalledTimes(2);
     });
 
     describe('registerRouters', () => {
@@ -263,27 +260,15 @@ describe('RoutesResolver', () => {
         modules.set('TestModule', { routes, metatype: TestModule });
         modules.set('TestModule2', { routes, metatype: TestModule2 });
 
-        const spy = sinon
-          .stub(routesResolver, 'registerRouters')
-          .callsFake(() => undefined);
+        const spy = vi
+          .spyOn(routesResolver, 'registerRouters')
+          .mockImplementation(() => undefined);
 
         routesResolver.resolve(applicationRef, 'api/v1');
 
-        expect(
-          spy
-            .getCall(0)
-            .calledWith(sinon.match.any, sinon.match.any, 'api/v1', '/test'),
-        ).to.be.true;
-        expect(
-          spy
-            .getCall(1)
-            .calledWith(
-              sinon.match.any,
-              sinon.match.any,
-              'api/v1',
-              sinon.match.any,
-            ),
-        ).to.be.true;
+        expect(spy.mock.calls[0][2]).toBe('api/v1');
+        expect(spy.mock.calls[0][3]).toBe('/test');
+        expect(spy.mock.calls[1][2]).toBe('api/v1');
       });
 
       it('should register each module with the module path if present', () => {
@@ -297,23 +282,17 @@ describe('RoutesResolver', () => {
         modules.set('TestModule', { routes, metatype: TestModule });
         modules.set('TestModule2', { routes, metatype: TestModule2 });
 
-        const spy = sinon
-          .stub(routesResolver, 'registerRouters')
-          .callsFake(() => undefined);
+        const spy = vi
+          .spyOn(routesResolver, 'registerRouters')
+          .mockImplementation(() => undefined);
 
         routesResolver.resolve(applicationRef, '');
 
-        expect(
-          spy
-            .getCall(0)
-            .calledWith(sinon.match.any, sinon.match.any, '', '/test'),
-        ).to.be.true;
+        expect(spy.mock.calls[0][2]).toBe('');
+        expect(spy.mock.calls[0][3]).toBe('/test');
         // without module path
-        expect(
-          spy
-            .getCall(1)
-            .calledWith(sinon.match.any, sinon.match.any, '', undefined),
-        ).to.be.true;
+        expect(spy.mock.calls[1][2]).toBe('');
+        expect(spy.mock.calls[1][3]).toBeUndefined();
       });
     });
   });
@@ -324,21 +303,50 @@ describe('RoutesResolver', () => {
         it('should map to BadRequestException', () => {
           const err = new SyntaxError();
           const outputErr = routesResolver.mapExternalException(err);
-          expect(outputErr).to.be.instanceof(BadRequestException);
+          expect(outputErr).toBeInstanceOf(BadRequestException);
         });
       });
       describe('URIError', () => {
         it('should map to BadRequestException', () => {
           const err = new URIError();
           const outputErr = routesResolver.mapExternalException(err);
-          expect(outputErr).to.be.instanceof(BadRequestException);
+          expect(outputErr).toBeInstanceOf(BadRequestException);
+        });
+      });
+      describe('FastifyError', () => {
+        it('should map FastifyError with status code to HttpException', () => {
+          const FastifyErrorCls = createFastifyError(
+            'FST_ERR_CTP_INVALID_MEDIA_TYPE',
+            'Unsupported Media Type: %s',
+            415,
+          );
+          const error = new FastifyErrorCls();
+
+          const result = routesResolver.mapExternalException(error);
+
+          expect(result).toBeInstanceOf(HttpException);
+          expect(result.message).toBe(error.message);
+          expect(result.getStatus()).toBe(415);
+        });
+
+        it('should return FastifyError without user status code to Internal Server Error HttpException', () => {
+          const FastifyErrorCls = createFastifyError(
+            'FST_WITHOUT_STATUS_CODE',
+            'Error without status code',
+          );
+          const error = new FastifyErrorCls();
+
+          const result = routesResolver.mapExternalException(error);
+          expect(result).toBeInstanceOf(HttpException);
+          expect(result.message).toBe(error.message);
+          expect(result.getStatus()).toBe(500);
         });
       });
       describe('other', () => {
         it('should behave as an identity', () => {
           const err = new Error();
           const outputErr = routesResolver.mapExternalException(err);
-          expect(outputErr).to.be.eql(err);
+          expect(outputErr).toEqual(err);
         });
       });
     });
@@ -348,7 +356,7 @@ describe('RoutesResolver', () => {
     it('should register not found handler', () => {
       routesResolver.registerNotFoundHandler();
 
-      expect(applicationRef.setNotFoundHandler.called).to.be.true;
+      expect(applicationRef.setNotFoundHandler).toHaveBeenCalled();
     });
   });
 
@@ -356,7 +364,7 @@ describe('RoutesResolver', () => {
     it('should register exception handler', () => {
       routesResolver.registerExceptionHandler();
 
-      expect(applicationRef.setErrorHandler.called).to.be.true;
+      expect(applicationRef.setErrorHandler).toHaveBeenCalled();
     });
   });
 });

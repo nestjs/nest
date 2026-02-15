@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { HelperModule } from './helper/helper.module';
-import { RequestChainController } from './request-chain.controller';
-import { RequestChainService } from './request-chain.service';
+import { HelperModule } from './helper/helper.module.js';
+import { RequestChainController } from './request-chain.controller.js';
+import { RequestChainService } from './request-chain.service.js';
 
 @Module({
   imports: [HelperModule],

@@ -1,6 +1,5 @@
-import { expect } from 'chai';
-import { Provider } from '../../../interfaces';
-import { getInjectionProviders } from '../../../module-utils/utils/get-injection-providers.util';
+import { Provider } from '../../../interfaces/index.js';
+import { getInjectionProviders } from '../../../module-utils/utils/get-injection-providers.util.js';
 
 describe('getInjectionProviders', () => {
   it('should take only required providers', () => {
@@ -68,6 +67,6 @@ describe('getInjectionProviders', () => {
 
     const result = getInjectionProviders(providers, ['e']);
 
-    expect(result).to.have.members(expected);
+    expect(result).toEqual(expect.arrayContaining(expected));
   });
 });

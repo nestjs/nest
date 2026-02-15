@@ -1,7 +1,6 @@
-import { expect } from 'chai';
 import * as nats from 'nats';
-import { NatsRecordBuilder } from '../../record-builders';
-import { NatsRecordSerializer } from '../../serializers/nats-record.serializer';
+import { NatsRecordBuilder } from '../../record-builders/index.js';
+import { NatsRecordSerializer } from '../../serializers/nats-record.serializer.js';
 
 const jsonCodec = nats.JSONCodec();
 
@@ -12,42 +11,42 @@ describe('NatsRecordSerializer', () => {
   });
   describe('serialize', () => {
     it('undefined', () => {
-      expect(instance.serialize({ data: undefined })).to.deep.eq({
+      expect(instance.serialize({ data: undefined })).toEqual({
         headers: undefined,
         data: jsonCodec.encode({ data: undefined }),
       });
     });
 
     it('null', () => {
-      expect(instance.serialize({ data: null })).to.deep.eq({
+      expect(instance.serialize({ data: null })).toEqual({
         headers: undefined,
         data: jsonCodec.encode({ data: null }),
       });
     });
 
     it('string', () => {
-      expect(instance.serialize({ data: 'string' })).to.deep.eq({
+      expect(instance.serialize({ data: 'string' })).toEqual({
         headers: undefined,
         data: jsonCodec.encode({ data: 'string' }),
       });
     });
 
     it('number', () => {
-      expect(instance.serialize({ data: 12345 })).to.deep.eq({
+      expect(instance.serialize({ data: 12345 })).toEqual({
         headers: undefined,
         data: jsonCodec.encode({ data: 12345 }),
       });
     });
 
     it('buffer', () => {
-      expect(instance.serialize({ data: Buffer.from('buffer') })).to.deep.eq({
+      expect(instance.serialize({ data: Buffer.from('buffer') })).toEqual({
         headers: undefined,
         data: jsonCodec.encode({ data: Buffer.from('buffer') }),
       });
     });
 
     it('array', () => {
-      expect(instance.serialize({ data: [1, 2, 3, 4, 5] })).to.deep.eq({
+      expect(instance.serialize({ data: [1, 2, 3, 4, 5] })).toEqual({
         headers: undefined,
         data: jsonCodec.encode({ data: [1, 2, 3, 4, 5] }),
       });
@@ -55,7 +54,7 @@ describe('NatsRecordSerializer', () => {
 
     it('object', () => {
       const serObject = { prop: 'value' };
-      expect(instance.serialize({ data: serObject })).to.deep.eq({
+      expect(instance.serialize({ data: serObject })).toEqual({
         headers: undefined,
         data: jsonCodec.encode({ data: serObject }),
       });
@@ -72,7 +71,7 @@ describe('NatsRecordSerializer', () => {
         instance.serialize({
           data: natsMessage,
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: natsHeaders,
         data: jsonCodec.encode({
           data: {

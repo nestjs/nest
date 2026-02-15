@@ -1,31 +1,33 @@
-import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
-import { expect } from 'chai';
+import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception.js';
 import { of } from 'rxjs';
-import * as sinon from 'sinon';
 import { PassThrough } from 'stream';
-import { HttpException, HttpStatus, RouteParamMetadata } from '../../../common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
-import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum';
-import { AbstractHttpAdapter } from '../../adapters';
-import { ApplicationConfig } from '../../application-config';
-import { FORBIDDEN_MESSAGE } from '../../guards/constants';
-import { GuardsConsumer } from '../../guards/guards-consumer';
-import { GuardsContextCreator } from '../../guards/guards-context-creator';
-import { HandlerResponseBasicFn } from '../../helpers/handler-metadata-storage';
-import { NestContainer } from '../../injector/container';
-import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../../pipes/pipes-consumer';
-import { PipesContextCreator } from '../../pipes/pipes-context-creator';
-import { RouteParamsFactory } from '../../router/route-params-factory';
-import { RouterExecutionContext } from '../../router/router-execution-context';
-import { HeaderStream } from '../../router/sse-stream';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
+import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum.js';
+import {
+  HttpException,
+  HttpStatus,
+  RouteParamMetadata,
+} from '../../../common/index.js';
+import { AbstractHttpAdapter } from '../../adapters/index.js';
+import { ApplicationConfig } from '../../application-config.js';
+import { FORBIDDEN_MESSAGE } from '../../guards/constants.js';
+import { GuardsConsumer } from '../../guards/guards-consumer.js';
+import { GuardsContextCreator } from '../../guards/guards-context-creator.js';
+import { HandlerResponseBasicFn } from '../../helpers/handler-metadata-storage.js';
+import { NestContainer } from '../../injector/container.js';
+import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
+import { InterceptorsContextCreator } from '../../interceptors/interceptors-context-creator.js';
+import { PipesConsumer } from '../../pipes/pipes-consumer.js';
+import { PipesContextCreator } from '../../pipes/pipes-context-creator.js';
+import { RouteParamsFactory } from '../../router/route-params-factory.js';
+import { RouterExecutionContext } from '../../router/router-execution-context.js';
+import { HeaderStream } from '../../router/sse-stream.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.js';
 
 describe('RouterExecutionContext', () => {
   let contextCreator: RouterExecutionContext;
   let callback: any;
-  let applySpy: sinon.SinonSpy;
+  let applySpy: ReturnType<typeof vi.fn>;
   let factory: RouteParamsFactory;
   let consumer: PipesConsumer;
   let guardsConsumer: GuardsConsumer;
@@ -37,7 +39,7 @@ describe('RouterExecutionContext', () => {
       bind: () => ({}),
       apply: () => ({}),
     };
-    applySpy = sinon.spy(callback, 'apply');
+    applySpy = vi.spyOn(callback, 'apply');
 
     factory = new RouteParamsFactory();
     consumer = new PipesConsumer();
@@ -58,7 +60,7 @@ describe('RouterExecutionContext', () => {
   describe('create', () => {
     describe('when callback metadata is not undefined', () => {
       let metadata: Record<number, RouteParamMetadata>;
-      let exchangeKeysForValuesSpy: sinon.SinonSpy;
+      let exchangeKeysForValuesSpy: ReturnType<typeof vi.fn>;
       beforeEach(() => {
         metadata = {
           [RouteParamtypes.NEXT]: { index: 0 },
@@ -67,28 +69,35 @@ describe('RouterExecutionContext', () => {
             data: 'test',
           },
         };
-        sinon
-          .stub((contextCreator as any).contextUtils, 'reflectCallbackMetadata')
-          .returns(metadata);
-        sinon
-          .stub(
-            (contextCreator as any).contextUtils,
-            'reflectCallbackParamtypes',
-          )
-          .returns([]);
-        exchangeKeysForValuesSpy = sinon.spy(
+        vi.spyOn(
+          (contextCreator as any).contextUtils,
+          'reflectCallbackMetadata',
+        ).mockReturnValue(metadata);
+        vi.spyOn(
+          (contextCreator as any).contextUtils,
+          'reflectCallbackParamtypes',
+        ).mockReturnValue([]);
+        exchangeKeysForValuesSpy = vi.spyOn(
           contextCreator,
           'exchangeKeysForValues',
         );
       });
-      it('should call "exchangeKeysForValues" with expected arguments', done => {
-        const keys = Object.keys(metadata);
+      it('should call "exchangeKeysForValues" with expected arguments', () =>
+        new Promise<void>(done => {
+          const keys = Object.keys(metadata);
 
-        contextCreator.create({ foo: 'bar' }, callback, '', '', 0);
-        expect(exchangeKeysForValuesSpy.called).to.be.true;
-        expect(exchangeKeysForValuesSpy.calledWith(keys, metadata)).to.be.true;
-        done();
-      });
+          contextCreator.create({ foo: 'bar' }, callback, '', '', 0);
+          expect(exchangeKeysForValuesSpy).toHaveBeenCalled();
+          expect(exchangeKeysForValuesSpy).toHaveBeenCalledWith(
+            keys,
+            metadata,
+            '',
+            expect.anything(),
+            undefined,
+            expect.any(Function),
+          );
+          done();
+        }));
       describe('returns proxy function', () => {
         let proxyContext;
         let instance;
@@ -101,14 +110,16 @@ describe('RouterExecutionContext', () => {
             null!,
             null!,
           );
-          sinon.stub(contextCreator, 'createGuardsFn').returns(canActivateFn);
-          tryActivateStub = sinon
-            .stub(guardsConsumer, 'tryActivate')
-            .callsFake(async () => true);
+          vi.spyOn(contextCreator, 'createGuardsFn').mockReturnValue(
+            canActivateFn,
+          );
+          tryActivateStub = vi
+            .spyOn(guardsConsumer, 'tryActivate')
+            .mockImplementation(async () => true);
           proxyContext = contextCreator.create(instance, callback, '', '', 0);
         });
         it('should be a function', () => {
-          expect(proxyContext).to.be.a('function');
+          expect(proxyContext).toBeTypeOf('function');
         });
         describe('when proxy function called', () => {
           let request;
@@ -126,17 +137,18 @@ describe('RouterExecutionContext', () => {
               },
             };
           });
-          it('should apply expected context and arguments to callback', done => {
-            tryActivateStub.callsFake(async () => true);
-            proxyContext(request, response, next).then(() => {
-              const args = [next, undefined, request.body.test];
-              expect(applySpy.called).to.be.true;
-              expect(applySpy.calledWith(instance, args)).to.be.true;
-              done();
-            });
-          });
+          it('should apply expected context and arguments to callback', () =>
+            new Promise<void>(done => {
+              tryActivateStub.mockImplementation(async () => true);
+              proxyContext(request, response, next).then(() => {
+                const args = [next, undefined, request.body.test];
+                expect(applySpy).toHaveBeenCalled();
+                expect(applySpy).toHaveBeenCalledWith(instance, args);
+                done();
+              });
+            }));
           it('should throw exception when "tryActivate" returns false', async () => {
-            tryActivateStub.callsFake(async () => false);
+            tryActivateStub.mockImplementation(async () => false);
 
             let error: HttpException;
             try {
@@ -144,9 +156,9 @@ describe('RouterExecutionContext', () => {
             } catch (e) {
               error = e;
             }
-            expect(error!).to.be.instanceOf(ForbiddenException);
-            expect(error!.message).to.be.eql('Forbidden resource');
-            expect(error!.getResponse()).to.be.eql({
+            expect(error!).toBeInstanceOf(ForbiddenException);
+            expect(error!.message).toEqual('Forbidden resource');
+            expect(error!.getResponse()).toEqual({
               statusCode: HttpStatus.FORBIDDEN,
               error: 'Forbidden',
               message: FORBIDDEN_MESSAGE,
@@ -154,17 +166,19 @@ describe('RouterExecutionContext', () => {
           });
           it('should apply expected context when "canActivateFn" apply', () => {
             proxyContext(request, response, next).then(() => {
-              expect(tryActivateStub.args[0][1][0]).to.equals(request);
-              expect(tryActivateStub.args[0][1][1]).to.equals(response);
-              expect(tryActivateStub.args[0][1][2]).to.equals(next);
+              expect(tryActivateStub.mock.calls[0][1][0]).toBe(request);
+              expect(tryActivateStub.mock.calls[0][1][1]).toBe(response);
+              expect(tryActivateStub.mock.calls[0][1][2]).toBe(next);
             });
           });
           it('should apply expected context when "intercept" apply', () => {
-            const interceptStub = sinon.stub(interceptorsConsumer, 'intercept');
+            const interceptStub = vi
+              .spyOn(interceptorsConsumer, 'intercept')
+              .mockImplementation(() => ({}) as any);
             proxyContext(request, response, next).then(() => {
-              expect(interceptStub.args[0][1][0]).to.equals(request);
-              expect(interceptStub.args[0][1][1]).to.equals(response);
-              expect(interceptStub.args[0][1][2]).to.equals(next);
+              expect(interceptStub.mock.calls[0][1][0]).toBe(request);
+              expect(interceptStub.mock.calls[0][1][1]).toBe(response);
+              expect(interceptStub.mock.calls[0][1][2]).toBe(next);
             });
           });
         });
@@ -190,19 +204,19 @@ describe('RouterExecutionContext', () => {
         { index: 2, type: RouteParamtypes.BODY, data: 'test' },
         { index: 3, type: `key${CUSTOM_ROUTE_ARGS_METADATA}`, data: 'custom' },
       ];
-      expect(values[0]).to.deep.include(expectedValues[0]);
-      expect(values[1]).to.deep.include(expectedValues[1]);
+      expect(values[0]).toMatchObject(expectedValues[0]);
+      expect(values[1]).toMatchObject(expectedValues[1]);
     });
   });
 
   describe('getParamValue', () => {
-    let consumerApplySpy: sinon.SinonSpy;
+    let consumerApplySpy: ReturnType<typeof vi.fn>;
     const value = 3,
       metatype = null,
-      transforms = [{ transform: sinon.spy() }];
+      transforms = [{ transform: vi.fn() }];
 
     beforeEach(() => {
-      consumerApplySpy = sinon.spy(consumer, 'apply');
+      consumerApplySpy = vi.spyOn(consumer, 'apply');
     });
     describe('when paramtype is query, body, rawBody or param', () => {
       it('should call "consumer.apply" with expected arguments', async () => {
@@ -211,52 +225,44 @@ describe('RouterExecutionContext', () => {
           { metatype, type: RouteParamtypes.QUERY, data: null },
           transforms,
         );
-        expect(
-          consumerApplySpy.calledWith(
-            value,
-            { metatype, type: RouteParamtypes.QUERY, data: null },
-            transforms,
-          ),
-        ).to.be.true;
+        expect(consumerApplySpy).toHaveBeenCalledWith(
+          value,
+          { metatype, type: RouteParamtypes.QUERY, data: null },
+          transforms,
+        );
 
         await contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.BODY, data: null },
           transforms,
         );
-        expect(
-          consumerApplySpy.calledWith(
-            value,
-            { metatype, type: RouteParamtypes.BODY, data: null },
-            transforms,
-          ),
-        ).to.be.true;
+        expect(consumerApplySpy).toHaveBeenCalledWith(
+          value,
+          { metatype, type: RouteParamtypes.BODY, data: null },
+          transforms,
+        );
 
         await contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.RAW_BODY, data: null },
           transforms,
         );
-        expect(
-          consumerApplySpy.calledWith(
-            value,
-            { metatype, type: RouteParamtypes.RAW_BODY, data: null },
-            transforms,
-          ),
-        ).to.be.true;
+        expect(consumerApplySpy).toHaveBeenCalledWith(
+          value,
+          { metatype, type: RouteParamtypes.RAW_BODY, data: null },
+          transforms,
+        );
 
         await contextCreator.getParamValue(
           value,
           { metatype, type: RouteParamtypes.PARAM, data: null },
           transforms,
         );
-        expect(
-          consumerApplySpy.calledWith(
-            value,
-            { metatype, type: RouteParamtypes.PARAM, data: null },
-            transforms,
-          ),
-        ).to.be.true;
+        expect(consumerApplySpy).toHaveBeenCalledWith(
+          value,
+          { metatype, type: RouteParamtypes.PARAM, data: null },
+          transforms,
+        );
       });
     });
   });
@@ -264,16 +270,16 @@ describe('RouterExecutionContext', () => {
     describe('when paramtype is not query, body, param and custom', () => {
       it('should return false', () => {
         const result = contextCreator.isPipeable(RouteParamtypes.NEXT);
-        expect(result).to.be.false;
+        expect(result).toBe(false);
       });
       it('otherwise', () => {
-        expect(contextCreator.isPipeable(RouteParamtypes.BODY)).to.be.true;
-        expect(contextCreator.isPipeable(RouteParamtypes.RAW_BODY)).to.be.true;
-        expect(contextCreator.isPipeable(RouteParamtypes.QUERY)).to.be.true;
-        expect(contextCreator.isPipeable(RouteParamtypes.PARAM)).to.be.true;
-        expect(contextCreator.isPipeable(RouteParamtypes.FILE)).to.be.true;
-        expect(contextCreator.isPipeable(RouteParamtypes.FILES)).to.be.true;
-        expect(contextCreator.isPipeable('custom')).to.be.true;
+        expect(contextCreator.isPipeable(RouteParamtypes.BODY)).toBe(true);
+        expect(contextCreator.isPipeable(RouteParamtypes.RAW_BODY)).toBe(true);
+        expect(contextCreator.isPipeable(RouteParamtypes.QUERY)).toBe(true);
+        expect(contextCreator.isPipeable(RouteParamtypes.PARAM)).toBe(true);
+        expect(contextCreator.isPipeable(RouteParamtypes.FILE)).toBe(true);
+        expect(contextCreator.isPipeable(RouteParamtypes.FILES)).toBe(true);
+        expect(contextCreator.isPipeable('custom')).toBe(true);
       });
     });
   });
@@ -281,14 +287,16 @@ describe('RouterExecutionContext', () => {
     describe('when "paramsOptions" is empty', () => {
       it('returns null', async () => {
         const pipesFn = contextCreator.createPipesFn([], []);
-        expect(pipesFn).to.be.null;
+        expect(pipesFn).toBeNull();
       });
     });
   });
   describe('createGuardsFn', () => {
     it('should throw ForbiddenException when "tryActivate" returns false', async () => {
       const guardsFn = contextCreator.createGuardsFn([null!], null!, null!)!;
-      sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
+      vi.spyOn(guardsConsumer, 'tryActivate').mockImplementation(
+        async () => false,
+      );
 
       let error: ForbiddenException;
       try {
@@ -297,9 +305,9 @@ describe('RouterExecutionContext', () => {
         error = e;
       }
 
-      expect(error!).to.be.instanceOf(ForbiddenException);
-      expect(error!.message).to.be.eql('Forbidden resource');
-      expect(error!.getResponse()).to.be.eql({
+      expect(error!).toBeInstanceOf(ForbiddenException);
+      expect(error!.message).toEqual('Forbidden resource');
+      expect(error!.getResponse()).toEqual({
         statusCode: HttpStatus.FORBIDDEN,
         message: FORBIDDEN_MESSAGE,
         error: 'Forbidden',
@@ -309,18 +317,20 @@ describe('RouterExecutionContext', () => {
   describe('createHandleResponseFn', () => {
     describe('when "renderTemplate" is defined', () => {
       beforeEach(() => {
-        sinon
-          .stub(adapter, 'render')
-          .callsFake((response, view: string, options: any) => {
+        vi.spyOn(adapter, 'render').mockImplementation(
+          (response, view: string, options: any) => {
             return response.render(view, options);
-          });
+          },
+        );
       });
       it('should call "res.render()" with expected args', async () => {
         const template = 'template';
         const value = 'test';
-        const response = { render: sinon.spy() };
+        const response = { render: vi.fn() };
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(template);
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          template,
+        );
 
         const handler = contextCreator.createHandleResponseFn(
           null!,
@@ -330,17 +340,19 @@ describe('RouterExecutionContext', () => {
         ) as HandlerResponseBasicFn;
         await handler(value, response);
 
-        expect(response.render.calledWith(template, value)).to.be.true;
+        expect(response.render).toHaveBeenCalledWith(template, value);
       });
     });
     describe('when "renderTemplate" is undefined', () => {
       it('should not call "res.render()"', async () => {
         const result = Promise.resolve('test');
-        const response = { render: sinon.spy() };
+        const response = { render: vi.fn() };
 
-        sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
-        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
+        vi.spyOn(contextCreator, 'reflectResponseHeaders').mockReturnValue([]);
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue(undefined!);
 
         const handler = contextCreator.createHandleResponseFn(
           null!,
@@ -350,23 +362,23 @@ describe('RouterExecutionContext', () => {
         ) as HandlerResponseBasicFn;
         await handler(result, response);
 
-        expect(response.render.called).to.be.false;
+        expect(response.render).not.toHaveBeenCalled();
       });
     });
     describe('when "redirectResponse" is present', () => {
       beforeEach(() => {
-        sinon
-          .stub(adapter, 'redirect')
-          .callsFake((response, statusCode: number, url: string) => {
+        vi.spyOn(adapter, 'redirect').mockImplementation(
+          (response, statusCode: number, url: string) => {
             return response.redirect(statusCode, url);
-          });
+          },
+        );
       });
       it('should call "res.redirect()" with expected args', async () => {
         const redirectResponse = {
           url: 'http://test.com',
           statusCode: 302,
         };
-        const response = { redirect: sinon.spy() };
+        const response = { redirect: vi.fn() };
 
         const handler = contextCreator.createHandleResponseFn(
           () => {},
@@ -376,23 +388,23 @@ describe('RouterExecutionContext', () => {
         ) as HandlerResponseBasicFn;
         await handler(redirectResponse, response);
 
-        expect(
-          response.redirect.calledWith(
-            redirectResponse.statusCode,
-            redirectResponse.url,
-          ),
-        ).to.be.true;
+        expect(response.redirect).toHaveBeenCalledWith(
+          redirectResponse.statusCode,
+          redirectResponse.url,
+        );
       });
     });
 
     describe('when "redirectResponse" is undefined', () => {
       it('should not call "res.redirect()"', async () => {
         const result = Promise.resolve('test');
-        const response = { redirect: sinon.spy() };
+        const response = { redirect: vi.fn() };
 
-        sinon.stub(contextCreator, 'reflectResponseHeaders').returns([]);
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
-        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
+        vi.spyOn(contextCreator, 'reflectResponseHeaders').mockReturnValue([]);
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue(undefined!);
 
         const handler = contextCreator.createHandleResponseFn(
           null!,
@@ -402,7 +414,7 @@ describe('RouterExecutionContext', () => {
         ) as HandlerResponseBasicFn;
         await handler(result, response);
 
-        expect(response.redirect.called).to.be.false;
+        expect(response.redirect).not.toHaveBeenCalled();
       });
     });
 
@@ -411,8 +423,10 @@ describe('RouterExecutionContext', () => {
         const result = Promise.resolve('test');
         const response = {};
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
-        sinon.stub(contextCreator, 'reflectSse').returns(undefined!);
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue(undefined!);
 
         const handler = contextCreator.createHandleResponseFn(
           null!,
@@ -420,15 +434,9 @@ describe('RouterExecutionContext', () => {
           undefined,
           1234,
         ) as HandlerResponseBasicFn;
-        const adapterReplySpy = sinon.spy(adapter, 'reply');
+        const adapterReplySpy = vi.spyOn(adapter, 'reply');
         await handler(result, response);
-        expect(
-          adapterReplySpy.calledOnceWithExactly(
-            sinon.match.same(response),
-            'test',
-            1234,
-          ),
-        ).to.be.true;
+        expect(adapterReplySpy).toHaveBeenCalledWith(response, 'test', 1234);
       });
     });
 
@@ -436,13 +444,15 @@ describe('RouterExecutionContext', () => {
       it('should delegate result to SseStream', async () => {
         const result = of('test');
         const response = new PassThrough();
-        response.write = sinon.spy();
+        response.write = vi.fn();
 
         const request = new PassThrough();
-        request.on = sinon.spy();
+        request.on = vi.fn();
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
-        sinon.stub(contextCreator, 'reflectSse').returns('/');
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
 
         const handler = contextCreator.createHandleResponseFn(
           null!,
@@ -452,8 +462,8 @@ describe('RouterExecutionContext', () => {
         ) as HandlerResponseBasicFn;
         await handler(result, response, request);
 
-        expect((response.write as any).called).to.be.true;
-        expect((request.on as any).called).to.be.true;
+        expect(response.write).toHaveBeenCalled();
+        expect(request.on).toHaveBeenCalled();
       });
 
       it('should not allow a non-observable result', async () => {
@@ -461,8 +471,10 @@ describe('RouterExecutionContext', () => {
         const response = new PassThrough();
         const request = new PassThrough();
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
-        sinon.stub(contextCreator, 'reflectSse').returns('/');
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
 
         const handler = contextCreator.createHandleResponseFn(
           null!,
@@ -474,7 +486,7 @@ describe('RouterExecutionContext', () => {
         try {
           await handler(result, response, request);
         } catch (e) {
-          expect(e.message).to.equal(
+          expect(e.message).toBe(
             'You must return an Observable stream to use Server-Sent Events (SSE).',
           );
         }
@@ -483,18 +495,20 @@ describe('RouterExecutionContext', () => {
       it('should apply any headers that exists on the response', async () => {
         const result = of('test');
         const response = new PassThrough() as HeaderStream;
-        response.write = sinon.spy();
-        response.writeHead = sinon.spy();
-        response.flushHeaders = sinon.spy();
-        response.getHeaders = sinon
-          .stub()
-          .returns({ 'access-control-headers': 'some-cors-value' });
+        response.write = vi.fn();
+        response.writeHead = vi.fn();
+        response.flushHeaders = vi.fn();
+        response.getHeaders = vi
+          .fn()
+          .mockReturnValue({ 'access-control-headers': 'some-cors-value' });
 
         const request = new PassThrough();
-        request.on = sinon.spy();
+        request.on = vi.fn();
 
-        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
-        sinon.stub(contextCreator, 'reflectSse').returns('/');
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
 
         const handler = contextCreator.createHandleResponseFn(
           null!,
@@ -504,12 +518,12 @@ describe('RouterExecutionContext', () => {
         ) as HandlerResponseBasicFn;
         await handler(result, response, request);
 
-        expect(
-          (response.writeHead as sinon.SinonSpy).calledWith(
-            200,
-            sinon.match.hasNested('access-control-headers', 'some-cors-value'),
-          ),
-        ).to.be.true;
+        expect(response.writeHead).toHaveBeenCalledWith(
+          200,
+          expect.objectContaining({
+            'access-control-headers': 'some-cors-value',
+          }),
+        );
       });
     });
   });

@@ -5,11 +5,11 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { Guard } from './guards/request-scoped.guard';
-import { HelloService } from './hello.service';
-import { Interceptor } from './interceptors/logging.interceptor';
-import { UserByIdPipe } from './users/user-by-id.pipe';
-import { UsersService } from './users/users.service';
+import { Guard } from './guards/request-scoped.guard.js';
+import { HelloService } from './hello.service.js';
+import { Interceptor } from './interceptors/logging.interceptor.js';
+import { UserByIdPipe } from './users/user-by-id.pipe.js';
+import { UsersService } from './users/users.service.js';
 
 @Controller('hello')
 export class HelloController {

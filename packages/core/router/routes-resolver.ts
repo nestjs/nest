@@ -1,32 +1,32 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  NotFoundException,
+} from '@nestjs/common';
+import { ApplicationConfig } from '../application-config.js';
+import {
+  CONTROLLER_MAPPING_MESSAGE,
+  VERSIONED_CONTROLLER_MAPPING_MESSAGE,
+} from '../helpers/messages.js';
+import { NestContainer } from '../injector/container.js';
+import { Injector } from '../injector/injector.js';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import { GraphInspector } from '../inspector/graph-inspector.js';
+import { MetadataScanner } from '../metadata-scanner.js';
+import { Resolver } from './interfaces/resolver.interface.js';
+import { RoutePathMetadata } from './interfaces/route-path-metadata.interface.js';
+import { RoutePathFactory } from './route-path-factory.js';
+import { RouterExceptionFilters } from './router-exception-filters.js';
+import { RouterExplorer } from './router-explorer.js';
+import { RouterProxy } from './router-proxy.js';
 import {
   HOST_METADATA,
   MODULE_PATH,
   VERSION_METADATA,
-} from '@nestjs/common/constants';
-import {
-  Controller,
-  HttpServer,
-  Type,
-  VersionValue,
-} from '@nestjs/common/interfaces';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { ApplicationConfig } from '../application-config';
-import {
-  CONTROLLER_MAPPING_MESSAGE,
-  VERSIONED_CONTROLLER_MAPPING_MESSAGE,
-} from '../helpers/messages';
-import { NestContainer } from '../injector/container';
-import { Injector } from '../injector/injector';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { GraphInspector } from '../inspector/graph-inspector';
-import { MetadataScanner } from '../metadata-scanner';
-import { Resolver } from './interfaces/resolver.interface';
-import { RoutePathMetadata } from './interfaces/route-path-metadata.interface';
-import { RoutePathFactory } from './route-path-factory';
-import { RouterExceptionFilters } from './router-exception-filters';
-import { RouterExplorer } from './router-explorer';
-import { RouterProxy } from './router-proxy';
+  type Controller,
+  type VersionValue,
+} from '@nestjs/common/internal';
+import { type HttpServer, type Type, Logger } from '@nestjs/common';
 
 export class RoutesResolver implements Resolver {
   private readonly logger = new Logger(RoutesResolver.name, {
@@ -148,11 +148,9 @@ export class RoutesResolver implements Resolver {
     };
     const handler = this.routerExceptionsFilter.create({}, callback, undefined);
     const proxy = this.routerProxy.createProxy(callback, handler);
+    const prefix = this.applicationConfig.getGlobalPrefix();
     applicationRef.setNotFoundHandler &&
-      applicationRef.setNotFoundHandler(
-        proxy,
-        this.applicationConfig.getGlobalPrefix(),
-      );
+      applicationRef.setNotFoundHandler(proxy, prefix);
   }
 
   public registerExceptionHandler() {
@@ -171,11 +169,9 @@ export class RoutesResolver implements Resolver {
     );
     const proxy = this.routerProxy.createExceptionLayerProxy(callback, handler);
     const applicationRef = this.container.getHttpAdapterRef();
+    const prefix = this.applicationConfig.getGlobalPrefix();
     applicationRef.setErrorHandler &&
-      applicationRef.setErrorHandler(
-        proxy,
-        this.applicationConfig.getGlobalPrefix(),
-      );
+      applicationRef.setErrorHandler(proxy, prefix);
   }
 
   public mapExternalException(err: any) {
@@ -185,9 +181,22 @@ export class RoutesResolver implements Resolver {
       // encoding, e.g. '%FF' (#8915)
       case err instanceof SyntaxError || err instanceof URIError:
         return new BadRequestException(err.message);
+      case this.isHttpFastifyError(err):
+        return new HttpException(err.message, err.statusCode);
       default:
         return err;
     }
+  }
+
+  private isHttpFastifyError(
+    error: any,
+  ): error is Error & { statusCode: number } {
+    // condition based on this code - https://github.com/fastify/fastify-error/blob/d669b150a82968322f9f7be992b2f6b463272de3/index.js#L22
+    return (
+      error.statusCode !== undefined &&
+      error instanceof Error &&
+      error.name === 'FastifyError'
+    );
   }
 
   private getModulePathMetadata(metatype: Type<unknown>): string | undefined {

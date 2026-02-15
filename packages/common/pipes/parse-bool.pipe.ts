@@ -1,15 +1,15 @@
-import { Injectable } from '../decorators/core/injectable.decorator';
-import { Optional } from '../decorators/core/optional.decorator';
-import { HttpStatus } from '../enums/http-status.enum';
+import { Injectable } from '../decorators/core/injectable.decorator.js';
+import { Optional } from '../decorators/core/optional.decorator.js';
+import { HttpStatus } from '../enums/http-status.enum.js';
 import {
   ArgumentMetadata,
   PipeTransform,
-} from '../interfaces/features/pipe-transform.interface';
+} from '../interfaces/features/pipe-transform.interface.js';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
-} from '../utils/http-error-by-code.util';
-import { isNil } from '../utils/shared.utils';
+} from '../utils/http-error-by-code.util.js';
+import { isNil } from '../utils/shared.utils.js';
 
 /**
  * @publicApi
@@ -41,9 +41,10 @@ export interface ParseBoolPipeOptions {
  * @publicApi
  */
 @Injectable()
-export class ParseBoolPipe
-  implements PipeTransform<string | boolean, Promise<boolean>>
-{
+export class ParseBoolPipe implements PipeTransform<
+  string | boolean,
+  Promise<boolean>
+> {
   protected exceptionFactory: (error: string) => any;
 
   constructor(@Optional() protected readonly options?: ParseBoolPipeOptions) {

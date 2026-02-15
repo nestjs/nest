@@ -1,11 +1,8 @@
 import { Injectable, Module, OnApplicationShutdown } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as Sinon from 'sinon';
-
 @Injectable()
 class TestInjectable implements OnApplicationShutdown {
-  onApplicationShutdown = Sinon.spy();
+  onApplicationShutdown = vi.fn();
 }
 
 describe('OnApplicationShutdown', () => {
@@ -17,13 +14,13 @@ describe('OnApplicationShutdown', () => {
     const app = module.createNestApplication();
     await app.close();
     const instance = module.get(TestInjectable);
-    expect(instance.onApplicationShutdown.called).to.be.true;
+    expect(instance.onApplicationShutdown).toHaveBeenCalled();
   });
 
   it('should sort modules by distance (topological sort) - DESC order', async () => {
     @Injectable()
     class BB implements OnApplicationShutdown {
-      onApplicationShutdown = Sinon.spy();
+      onApplicationShutdown = vi.fn();
     }
 
     @Module({
@@ -35,7 +32,7 @@ describe('OnApplicationShutdown', () => {
     @Injectable()
     class AA implements OnApplicationShutdown {
       constructor(private bb: BB) {}
-      onApplicationShutdown = Sinon.spy();
+      onApplicationShutdown = vi.fn();
     }
     @Module({
       imports: [B],
@@ -53,7 +50,9 @@ describe('OnApplicationShutdown', () => {
 
     const aa = module.get(AA);
     const bb = module.get(BB);
-    Sinon.assert.callOrder(aa.onApplicationShutdown, bb.onApplicationShutdown);
+    expect(aa.onApplicationShutdown.mock.invocationCallOrder[0]).toBeLessThan(
+      bb.onApplicationShutdown.mock.invocationCallOrder[0],
+    );
   });
 
   it('should sort components within a single module by injection hierarchy - ASC order', async () => {

@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Internal Server Error* type errors.

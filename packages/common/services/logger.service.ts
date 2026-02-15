@@ -1,12 +1,21 @@
-import { Injectable, Optional } from '../decorators/core';
-import { isObject } from '../utils/shared.utils';
-import { ConsoleLogger } from './console-logger.service';
-import { isLogLevelEnabled } from './utils';
+import { Injectable, Optional } from '../decorators/core/index.js';
+import { isObject } from '../utils/shared.utils.js';
+import { ConsoleLogger } from './console-logger.service.js';
+import { isLogLevelEnabled } from './utils/index.js';
+
+export const LOG_LEVELS = [
+  'verbose',
+  'debug',
+  'log',
+  'warn',
+  'error',
+  'fatal',
+] as const satisfies string[];
 
 /**
  * @publicApi
  */
-export type LogLevel = 'log' | 'error' | 'warn' | 'debug' | 'verbose' | 'fatal';
+export type LogLevel = (typeof LOG_LEVELS)[number];
 
 /**
  * @publicApi

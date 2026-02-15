@@ -1,5 +1,5 @@
-import { ModuleMetadata, Type } from '@nestjs/common/interfaces';
-import { MulterOptions } from './multer-options.interface';
+import { MulterOptions } from './multer-options.interface.js';
+import type { ModuleMetadata, Type } from '@nestjs/common';
 
 export type MulterModuleOptions = MulterOptions;
 
@@ -13,8 +13,10 @@ export interface MulterOptionsFactory {
 /**
  * @publicApi
  */
-export interface MulterModuleAsyncOptions
-  extends Pick<ModuleMetadata, 'imports'> {
+export interface MulterModuleAsyncOptions extends Pick<
+  ModuleMetadata,
+  'imports'
+> {
   useExisting?: Type<MulterOptionsFactory>;
   useClass?: Type<MulterOptionsFactory>;
   useFactory?: (

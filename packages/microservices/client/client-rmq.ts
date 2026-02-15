@@ -1,7 +1,5 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
+import { createRequire } from 'module';
 import { EventEmitter } from 'events';
 import {
   EmptyError,
@@ -22,12 +20,19 @@ import {
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
-} from '../constants';
-import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events';
-import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
-import { RmqRecord } from '../record-builders';
-import { RmqRecordSerializer } from '../serializers/rmq-record.serializer';
-import { ClientProxy } from './client-proxy';
+} from '../constants.js';
+import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
+import { ReadPacket, RmqOptions, WritePacket } from '../interfaces/index.js';
+import { RmqRecord } from '../record-builders/index.js';
+import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
+import { ClientProxy } from './client-proxy.js';
+import { Logger } from '@nestjs/common';
+import {
+  loadPackageSync,
+  randomStringGenerator,
+  isFunction,
+  isString,
+} from '@nestjs/common/internal';
 
 // To enable type safety for RMQ. This cant be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
@@ -55,8 +60,8 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   protected readonly logger = new Logger(ClientProxy.name);
   protected connection$: ReplaySubject<any>;
   protected connectionPromise: Promise<void>;
-  protected client: AmqpConnectionManager = null;
-  protected channel: ChannelWrapper = null;
+  protected client: AmqpConnectionManager | null = null;
+  protected channel: ChannelWrapper | null = null;
   protected pendingEventListeners: Array<{
     event: keyof RmqEvents;
     callback: RmqEvents[keyof RmqEvents];
@@ -86,24 +91,28 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       this.queueOptions.noAssert ??
       RQM_DEFAULT_NO_ASSERT;
 
-    loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
-    rmqPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
-      require('amqp-connection-manager'),
+    loadPackageSync('amqplib', ClientRMQ.name, () =>
+      createRequire(import.meta.url)('amqplib'),
+    );
+    rmqPackage = loadPackageSync(
+      'amqp-connection-manager',
+      ClientRMQ.name,
+      () => createRequire(import.meta.url)('amqp-connection-manager'),
     );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
   }
 
-  public close(): void {
-    this.channel && this.channel.close();
-    this.client && this.client.close();
+  public async close(): Promise<void> {
+    this.channel && (await this.channel.close());
+    this.client && (await this.client.close());
     this.channel = null;
     this.client = null;
     this.pendingEventListeners = [];
   }
 
-  public connect(): Promise<any> {
+  public async connect(): Promise<any> {
     if (this.client) {
       return this.connectionPromise;
     }
@@ -113,7 +122,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     this.registerDisconnectListener(this.client);
     this.registerConnectListener(this.client);
     this.pendingEventListeners.forEach(({ event, callback }) =>
-      this.client.on(event, callback),
+      this.client!.on(event, callback),
     );
     this.pendingEventListeners = [];
 
@@ -140,7 +149,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
   public createChannel(): Promise<void> {
     return new Promise(resolve => {
-      this.channel = this.client.createChannel({
+      this.channel = this.client!.createChannel({
         json: false,
         setup: (channel: Channel) => this.setupChannel(channel, resolve),
       });
@@ -203,16 +212,33 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       this.getOptionsProp(this.options, 'isGlobalPrefetchCount') ||
       RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
 
-    if (!this.noAssert) {
-      await channel.assertQueue(this.queue, this.queueOptions);
-    }
+    if (!this.options.wildcards && this.options.exchangeType !== 'fanout') {
+      if (!this.noAssert) {
+        await channel.assertQueue(this.queue, this.queueOptions);
+      }
 
-    if (this.options.exchange && this.options.routingKey) {
-      await channel.bindQueue(
-        this.queue,
-        this.options.exchange,
-        this.options.routingKey,
+      if (this.options.exchange && this.options.routingKey) {
+        await channel.bindQueue(
+          this.queue,
+          this.options.exchange,
+          this.options.exchangeType === 'fanout' ? '' : this.options.routingKey,
+        );
+      }
+    } else {
+      const exchange = this.getOptionsProp(
+        this.options,
+        'exchange',
+        this.options.queue,
       );
+      const exchangeType = this.getOptionsProp(
+        this.options,
+        'exchangeType',
+        'topic',
+      );
+      await channel.assertExchange(exchange, exchangeType, {
+        durable: true,
+        arguments: this.getOptionsProp(this.options, 'exchangeArguments', {}),
+      });
     }
 
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
@@ -224,8 +250,8 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
     await channel.consume(
       this.replyQueue,
-      (msg: ConsumeMessage) =>
-        this.responseEmitter.emit(msg.properties.correlationId, msg),
+      (msg: ConsumeMessage | null) =>
+        this.responseEmitter.emit(msg!.properties.correlationId, msg),
       {
         noAck,
       },
@@ -359,23 +385,44 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       delete serializedPacket.options;
 
       this.responseEmitter.on(correlationId, listener);
-      this.channel
-        .sendToQueue(
+
+      const content = Buffer.from(JSON.stringify(serializedPacket));
+      const sendOptions = {
+        replyTo: this.replyQueue,
+        persistent: this.getOptionsProp(
+          this.options,
+          'persistent',
+          RQM_DEFAULT_PERSISTENT,
+        ),
+        ...options,
+        headers: this.mergeHeaders(options?.headers),
+        correlationId,
+      };
+
+      if (this.options.wildcards || this.options.exchangeType === 'fanout') {
+        const stringifiedPattern = isString(message.pattern)
+          ? message.pattern
+          : JSON.stringify(message.pattern);
+
+        // The exchange is the same as the queue when wildcards are enabled
+        // and the exchange is not explicitly set
+        const exchange = this.getOptionsProp(
+          this.options,
+          'exchange',
           this.queue,
-          Buffer.from(JSON.stringify(serializedPacket)),
-          {
-            replyTo: this.replyQueue,
-            persistent: this.getOptionsProp(
-              this.options,
-              'persistent',
-              RQM_DEFAULT_PERSISTENT,
-            ),
-            ...options,
-            headers: this.mergeHeaders(options?.headers),
-            correlationId,
-          },
-        )
-        .catch(err => callback({ err }));
+        );
+
+        this.channel!.publish(
+          exchange,
+          stringifiedPattern,
+          content,
+          sendOptions,
+        ).catch(err => callback({ err }));
+      } else {
+        this.channel!.sendToQueue(this.queue, content, sendOptions).catch(err =>
+          callback({ err }),
+        );
+      }
       return () => this.responseEmitter.removeListener(correlationId, listener);
     } catch (err) {
       callback({ err });
@@ -390,22 +437,39 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     const options = serializedPacket.options;
     delete serializedPacket.options;
 
-    return new Promise<void>((resolve, reject) =>
-      this.channel.sendToQueue(
-        this.queue,
-        Buffer.from(JSON.stringify(serializedPacket)),
-        {
-          persistent: this.getOptionsProp(
-            this.options,
-            'persistent',
-            RQM_DEFAULT_PERSISTENT,
-          ),
-          ...options,
-          headers: this.mergeHeaders(options?.headers),
-        },
-        (err: unknown) => (err ? reject(err as Error) : resolve()),
-      ),
-    );
+    return new Promise<void>((resolve, reject) => {
+      const content = Buffer.from(JSON.stringify(serializedPacket));
+      const sendOptions = {
+        persistent: this.getOptionsProp(
+          this.options,
+          'persistent',
+          RQM_DEFAULT_PERSISTENT,
+        ),
+        ...options,
+        headers: this.mergeHeaders(options?.headers),
+      };
+      const errorCallback = (err: unknown) =>
+        err ? reject(err as Error) : resolve();
+
+      return this.options.wildcards || this.options.exchangeType === 'fanout'
+        ? this.channel!.publish(
+            // The exchange is the same as the queue when wildcards are enabled
+            // and the exchange is not explicitly set
+            this.getOptionsProp(this.options, 'exchange', this.queue),
+            isString(packet.pattern)
+              ? packet.pattern
+              : JSON.stringify(packet.pattern),
+            content,
+            sendOptions,
+            errorCallback,
+          )
+        : this.channel!.sendToQueue(
+            this.queue,
+            content,
+            sendOptions,
+            errorCallback,
+          );
+    });
   }
 
   protected initializeSerializer(options: RmqOptions['options']) {

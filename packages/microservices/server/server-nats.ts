@@ -1,21 +1,26 @@
-import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
 import { EventEmitter } from 'events';
 import {
   NATS_DEFAULT_GRACE_PERIOD,
   NATS_DEFAULT_URL,
   NO_MESSAGE_HANDLER,
-} from '../constants';
-import { NatsContext } from '../ctx-host/nats.context';
-import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer';
-import { Transport } from '../enums';
-import { NatsEvents, NatsEventsMap, NatsStatus } from '../events/nats.events';
-import { NatsOptions } from '../interfaces/microservice-configuration.interface';
-import { IncomingRequest } from '../interfaces/packet.interface';
-import { NatsRecord } from '../record-builders';
-import { NatsRecordSerializer } from '../serializers/nats-record.serializer';
-import { Server } from './server';
-
-let natsPackage = {} as any;
+} from '../constants.js';
+import { NatsContext } from '../ctx-host/nats.context.js';
+import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer.js';
+import { Transport } from '../enums/index.js';
+import {
+  NatsEvents,
+  NatsEventsMap,
+  NatsStatus,
+} from '../events/nats.events.js';
+import {
+  NatsOptions,
+  TransportId,
+} from '../interfaces/microservice-configuration.interface.js';
+import { IncomingRequest } from '../interfaces/packet.interface.js';
+import { NatsRecord } from '../record-builders/index.js';
+import { NatsRecordSerializer } from '../serializers/nats-record.serializer.js';
+import { Server } from './server.js';
+import { isObject, isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for Nats. This cant be uncommented by default
 // because it would require the user to install the nats package even if they dont use Nats
@@ -36,7 +41,7 @@ export class ServerNats<
   E extends NatsEvents = NatsEvents,
   S extends NatsStatus = NatsStatus,
 > extends Server<E, S> {
-  public readonly transportId = Transport.NATS;
+  public transportId: TransportId = Transport.NATS;
 
   private natsClient: Client;
   protected statusEventEmitter = new EventEmitter<{
@@ -46,10 +51,6 @@ export class ServerNats<
 
   constructor(private readonly options: Required<NatsOptions>['options']) {
     super();
-
-    natsPackage = this.loadPackage('nats', ServerNats.name, () =>
-      require('nats'),
-    );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -120,7 +121,27 @@ export class ServerNats<
     this.natsClient = null;
   }
 
-  public createNatsClient(): Promise<Client> {
+  public async createNatsClient(): Promise<Client> {
+    const natsPackage = await this.loadPackage(
+      'nats',
+      ServerNats.name,
+      () => import('nats'),
+    );
+
+    // Eagerly initialize serializer/deserializer so they can be used synchronously
+    if (
+      this.serializer &&
+      typeof (this.serializer as any).init === 'function'
+    ) {
+      await (this.serializer as any).init();
+    }
+    if (
+      this.deserializer &&
+      typeof (this.deserializer as any).init === 'function'
+    ) {
+      await (this.deserializer as any).init();
+    }
+
     const options = this.options || ({} as NatsOptions);
     return natsPackage.connect({
       servers: NATS_DEFAULT_URL,
@@ -150,7 +171,11 @@ export class ServerNats<
     if (isUndefined((message as IncomingRequest).id)) {
       return this.handleEvent(channel, message, natsCtx);
     }
-    const publish = this.getPublisher(natsMsg, (message as IncomingRequest).id);
+    const publish = this.getPublisher(
+      natsMsg,
+      (message as IncomingRequest).id,
+      natsCtx,
+    );
     const handler = this.getHandlerByPattern(channel);
     if (!handler) {
       const status = 'error';
@@ -161,18 +186,22 @@ export class ServerNats<
       };
       return publish(noHandlerPacket);
     }
-    const response$ = this.transformToObservable(
-      await handler(message.data, natsCtx),
-    );
-    response$ && this.send(response$, publish);
+    return this.onProcessingStartHook(this.transportId, natsCtx, async () => {
+      const response$ = this.transformToObservable(
+        await handler(message.data, natsCtx),
+      );
+      response$ && this.send(response$, publish);
+    });
   }
 
-  public getPublisher(natsMsg: NatsMsg, id: string) {
+  public getPublisher(natsMsg: NatsMsg, id: string, ctx: NatsContext) {
     if (natsMsg.reply) {
       return (response: any) => {
         Object.assign(response, { id });
         const outgoingResponse: NatsRecord =
           this.serializer.serialize(response);
+
+        this.onProcessingEndHook?.(this.transportId, ctx);
         return natsMsg.respond(outgoingResponse.data, {
           headers: outgoingResponse.headers,
         });
@@ -264,7 +293,7 @@ export class ServerNats<
     EventKey extends keyof E = keyof E,
     EventCallback extends E[EventKey] = E[EventKey],
   >(event: EventKey, callback: EventCallback) {
-    this.statusEventEmitter.on(event, callback as any);
+    this.statusEventEmitter.on(event as string | symbol, callback as any);
   }
 
   protected initializeSerializer(options: NatsOptions['options']) {

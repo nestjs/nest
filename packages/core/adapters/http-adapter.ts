@@ -1,6 +1,10 @@
-import { HttpServer, RequestMethod, VersioningOptions } from '@nestjs/common';
-import { RequestHandler, VersionValue } from '@nestjs/common/interfaces';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+import type {
+  HttpServer,
+  RequestMethod,
+  VersioningOptions,
+} from '@nestjs/common';
+import type { RequestHandler, VersionValue } from '@nestjs/common/internal';
+import type { NestApplicationOptions } from '@nestjs/common';
 
 /**
  * @publicApi
@@ -9,9 +13,11 @@ export abstract class AbstractHttpAdapter<
   TServer = any,
   TRequest = any,
   TResponse = any,
-> implements HttpServer<TRequest, TResponse>
-{
+> implements HttpServer<TRequest, TResponse> {
   protected httpServer: TServer;
+  protected onRouteTriggered:
+    | ((requestMethod: RequestMethod, path: string) => void)
+    | undefined;
 
   constructor(protected instance?: any) {}
 
@@ -143,6 +149,22 @@ export abstract class AbstractHttpAdapter<
     return path;
   }
 
+  public setOnRouteTriggered(
+    onRouteTriggered: (requestMethod: RequestMethod, path: string) => void,
+  ) {
+    this.onRouteTriggered = onRouteTriggered;
+  }
+
+  public getOnRouteTriggered() {
+    return this.onRouteTriggered;
+  }
+
+  public setOnRequestHook(onRequestHook: Function): void {}
+
+  public setOnResponseHook(onResponseHook: Function): void {}
+
+  public beforeClose(): void {}
+
   abstract close();
   abstract initHttpServer(options: NestApplicationOptions);
   abstract useStaticAssets(...args: any[]);
@@ -158,7 +180,9 @@ export abstract class AbstractHttpAdapter<
   abstract setErrorHandler(handler: Function, prefix?: string);
   abstract setNotFoundHandler(handler: Function, prefix?: string);
   abstract isHeadersSent(response: any);
+  abstract getHeader(response: any, name: string);
   abstract setHeader(response: any, name: string, value: string);
+  abstract appendHeader(response: any, name: string, value: string);
   abstract registerParserMiddleware(prefix?: string, rawBody?: boolean);
   abstract enableCors(options?: any, prefix?: string);
   abstract createMiddlewareFactory(

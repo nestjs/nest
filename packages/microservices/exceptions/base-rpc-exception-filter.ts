@@ -1,20 +1,21 @@
 import {
-  ArgumentsHost,
+  type ArgumentsHost,
   IntrinsicException,
   Logger,
-  RpcExceptionFilter,
+  type RpcExceptionFilter,
 } from '@nestjs/common';
-import { isObject } from '@nestjs/common/utils/shared.utils';
-import { MESSAGES } from '@nestjs/core/constants';
 import { Observable, throwError as _throw } from 'rxjs';
-import { RpcException } from './rpc-exception';
+import { RpcException } from './rpc-exception.js';
+import { isObject } from '@nestjs/common/internal';
+import { MESSAGES } from '@nestjs/core/internal';
 
 /**
  * @publicApi
  */
-export class BaseRpcExceptionFilter<T = any, R = any>
-  implements RpcExceptionFilter<T>
-{
+export class BaseRpcExceptionFilter<
+  T = any,
+  R = any,
+> implements RpcExceptionFilter<T> {
   private static readonly logger = new Logger('RpcExceptionsHandler');
 
   public catch(exception: T, host: ArgumentsHost): Observable<R> {

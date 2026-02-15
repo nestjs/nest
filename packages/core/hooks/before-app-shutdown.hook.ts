@@ -1,9 +1,9 @@
-import { BeforeApplicationShutdown } from '@nestjs/common';
-import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
+import type { BeforeApplicationShutdown } from '@nestjs/common';
+import { isFunction, isNil } from '@nestjs/common/internal';
 import { iterate } from 'iterare';
-import { Module } from '../injector/module';
-import { getInstancesGroupedByHierarchyLevel } from './utils/get-instances-grouped-by-hierarchy-level';
-import { getSortedHierarchyLevels } from './utils/get-sorted-hierarchy-levels';
+import { Module } from '../injector/module.js';
+import { getInstancesGroupedByHierarchyLevel } from './utils/get-instances-grouped-by-hierarchy-level.js';
+import { getSortedHierarchyLevels } from './utils/get-sorted-hierarchy-levels.js';
 
 /**
  * Checks if the given instance has the `beforeApplicationShutdown` function
