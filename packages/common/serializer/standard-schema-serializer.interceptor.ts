@@ -12,7 +12,7 @@ import { isObject } from '../utils/shared.utils.js';
 import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants.js';
 import { StandardSchemaSerializerContextOptions } from './standard-schema-serializer.interfaces.js';
 
-export interface PlainLiteralObject {
+interface PlainLiteralObject {
   [key: string]: any;
 }
 
