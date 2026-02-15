@@ -1,4 +1,4 @@
-import {
+import type {
   CanActivate,
   ExceptionFilter,
   INestMicroservice,
@@ -6,28 +6,23 @@ import {
   PipeTransform,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { MESSAGES } from '@nestjs/core/constants';
-import { optionalRequire } from '@nestjs/core/helpers/optional-require';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { Injector } from '@nestjs/core/injector/injector';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
-import { NestApplicationContext } from '@nestjs/core/nest-application-context';
-import { Transport } from './enums/transport.enum';
+import { Transport } from './enums/transport.enum.js';
 import {
   AsyncMicroserviceOptions,
   MicroserviceOptions,
-} from './interfaces/microservice-configuration.interface';
-import { MicroservicesModule } from './microservices-module';
-import { Server } from './server/server';
-import { ServerFactory } from './server/server-factory';
-
-const { SocketModule } = optionalRequire(
-  '@nestjs/websockets/socket-module',
-  () => require('@nestjs/websockets/socket-module'),
-);
+} from './interfaces/microservice-configuration.interface.js';
+import { MicroservicesModule } from './microservices-module.js';
+import { ServerFactory } from './server/server-factory.js';
+import { Server } from './server/server.js';
+import type { NestMicroserviceOptions } from '@nestjs/common/internal';
+import { Logger } from '@nestjs/common';
+import {
+  type ApplicationConfig,
+  type NestContainer,
+  type GraphInspector,
+  NestApplicationContext,
+} from '@nestjs/core';
+import { MESSAGES, optionalRequire, Injector } from '@nestjs/core/internal';
 
 type CompleteMicroserviceOptions = NestMicroserviceOptions &
   (MicroserviceOptions | AsyncMicroserviceOptions);
@@ -40,7 +35,7 @@ export class NestMicroservice
     timestamp: true,
   });
   private readonly microservicesModule = new MicroservicesModule();
-  private readonly socketModule = SocketModule ? new SocketModule() : null;
+  private socketModule: any = null;
   private microserviceConfig: Exclude<
     CompleteMicroserviceOptions,
     AsyncMicroserviceOptions
@@ -256,6 +251,9 @@ export class NestMicroservice
     if (this.isInitialized) {
       return this;
     }
+
+    // Lazy-load optional socket module (ESM-compatible)
+    await this.loadSocketModule();
     await super.init();
     await this.registerModules();
     return this;
@@ -377,5 +375,17 @@ export class NestMicroservice
       );
     }
     return instances;
+  }
+
+  private async loadSocketModule() {
+    if (!this.socketModule) {
+      const socketModule = await optionalRequire(
+        '@nestjs/websockets/socket-module',
+        () => import('@nestjs/websockets/socket-module.js'),
+      );
+      if (socketModule?.SocketModule) {
+        this.socketModule = new socketModule.SocketModule();
+      }
+    }
   }
 }

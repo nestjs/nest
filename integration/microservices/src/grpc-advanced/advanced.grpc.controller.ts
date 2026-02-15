@@ -23,7 +23,7 @@ export class AdvancedGrpcController {
       package: 'proto_example.orders',
       protoPath: 'root.proto',
       loader: {
-        includeDirs: [join(__dirname, './proto')],
+        includeDirs: [join(import.meta.dirname, './proto')],
         keepCase: true,
       },
     },

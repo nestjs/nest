@@ -1,9 +1,7 @@
-import { pathToFileURL } from 'url';
-import { Logger } from '../../services/logger.service';
-import { FileValidatorContext } from './file-validator-context.interface';
-import { FileValidator } from './file-validator.interface';
-import { IFile } from './interfaces';
-import { loadEsm } from 'load-esm';
+import { Logger } from '../../services/logger.service.js';
+import { FileValidatorContext } from './file-validator-context.interface.js';
+import { FileValidator } from './file-validator.interface.js';
+import { IFile } from './interfaces/index.js';
 
 const logger = new Logger('FileTypeValidator');
 type FileTypeValidatorContext = FileValidatorContext<
@@ -124,15 +122,7 @@ export class FileTypeValidator extends FileValidator<
     }
 
     try {
-      let fileTypeModule: string;
-      try {
-        const resolvedPath = require.resolve('file-type');
-        fileTypeModule = pathToFileURL(resolvedPath).href;
-      } catch {
-        fileTypeModule = 'file-type';
-      }
-      const { fileTypeFromBuffer } =
-        await loadEsm<typeof import('file-type')>(fileTypeModule);
+      const { fileTypeFromBuffer } = await import('file-type');
       const fileType = await fileTypeFromBuffer(file.buffer);
 
       if (fileType) {

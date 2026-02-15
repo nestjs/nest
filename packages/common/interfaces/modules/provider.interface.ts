@@ -1,7 +1,7 @@
-import { Scope } from '../scope-options.interface';
-import { Type } from '../type.interface';
-import { InjectionToken } from './injection-token.interface';
-import { OptionalFactoryDependency } from './optional-factory-dependency.interface';
+import { Scope } from '../scope-options.interface.js';
+import { Type } from '../type.interface.js';
+import { InjectionToken } from './injection-token.interface.js';
+import { OptionalFactoryDependency } from './optional-factory-dependency.interface.js';
 
 /**
  *

@@ -1,6 +1,6 @@
 import { Controller, Get, Scope } from '@nestjs/common';
-import { FirstRequestService } from './first-request.service';
-import { SecondRequestService } from './second-request.service';
+import { FirstRequestService } from './first-request.service.js';
+import { SecondRequestService } from './second-request.service.js';
 
 @Controller({ path: 'nested-transient', scope: Scope.REQUEST })
 export class NestedTransientController {

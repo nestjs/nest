@@ -1,4 +1,4 @@
-import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { ROUTE_ARGS_METADATA } from '@nestjs/common/internal';
 
 export const TCP_DEFAULT_PORT = 3000;
 export const TCP_DEFAULT_HOST = 'localhost';

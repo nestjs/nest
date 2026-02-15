@@ -1,10 +1,9 @@
-import { DynamicModule, Inject, Module, Type } from '@nestjs/common';
-import { MODULE_PATH } from '@nestjs/common/constants';
-import { normalizePath } from '@nestjs/common/utils/shared.utils';
-import { Module as ModuleClass } from '../injector/module';
-import { ModulesContainer } from '../injector/modules-container';
-import { Routes, RouteTree } from './interfaces';
-import { flattenRoutePaths } from './utils';
+import { type DynamicModule, Inject, Module, type Type } from '@nestjs/common';
+import { Module as ModuleClass } from '../injector/module.js';
+import { ModulesContainer } from '../injector/modules-container.js';
+import { Routes, RouteTree } from './interfaces/index.js';
+import { flattenRoutePaths } from './utils/index.js';
+import { MODULE_PATH, normalizePath } from '@nestjs/common/internal';
 
 export const ROUTES = Symbol('ROUTES');
 

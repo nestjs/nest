@@ -4,6 +4,17 @@
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-fastify)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*.js": "./*.js",
+    "./*": "./*.js",
+    "./adapters": "./adapters/index.js",
+    "./decorators": "./decorators/index.js",
+    "./interfaces": "./interfaces/index.js",
+    "./interfaces/external": "./interfaces/external/index.js"
+  },
   "homepage": "https://nestjs.com",
   "funding": {
     "type": "opencollective",

@@ -4,6 +4,18 @@
   "description": "Nest - modern, fast, powerful node.js web framework (@platform-express)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*.js": "./*.js",
+    "./*": "./*.js",
+    "./adapters": "./adapters/index.js",
+    "./interfaces": "./interfaces/index.js",
+    "./multer": "./multer/index.js",
+    "./multer/interceptors": "./multer/interceptors/index.js",
+    "./multer/interfaces": "./multer/interfaces/index.js"
+  },
   "homepage": "https://nestjs.com",
   "funding": {
     "type": "opencollective",

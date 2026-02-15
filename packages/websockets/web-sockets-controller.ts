@@ -1,9 +1,3 @@
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { Type } from '@nestjs/common/interfaces/type.interface';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
 import {
   from as fromPromise,
   isObservable,
@@ -12,19 +6,26 @@ import {
   Subject,
 } from 'rxjs';
 import { distinctUntilChanged, mergeAll } from 'rxjs/operators';
-import { GATEWAY_OPTIONS, PORT_METADATA } from './constants';
-import { WsContextCreator } from './context/ws-context-creator';
-import { InvalidSocketPortException } from './errors/invalid-socket-port.exception';
+import { GATEWAY_OPTIONS, PORT_METADATA } from './constants.js';
+import { WsContextCreator } from './context/ws-context-creator.js';
+import { InvalidSocketPortException } from './errors/invalid-socket-port.exception.js';
 import {
   GatewayMetadataExplorer,
   MessageMappingProperties,
-} from './gateway-metadata-explorer';
-import { GatewayMetadata } from './interfaces/gateway-metadata.interface';
-import { NestGateway } from './interfaces/nest-gateway.interface';
-import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams-host.interface';
-import { WebsocketEntrypointMetadata } from './interfaces/websockets-entrypoint-metadata.interface';
-import { SocketServerProvider } from './socket-server-provider';
-import { compareElementAt } from './utils/compare-element.util';
+} from './gateway-metadata-explorer.js';
+import { GatewayMetadata } from './interfaces/gateway-metadata.interface.js';
+import { NestGateway } from './interfaces/nest-gateway.interface.js';
+import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams-host.interface.js';
+import { WebsocketEntrypointMetadata } from './interfaces/websockets-entrypoint-metadata.interface.js';
+import { SocketServerProvider } from './socket-server-provider.js';
+import { compareElementAt } from './utils/compare-element.util.js';
+import type { NestApplicationContextOptions } from '@nestjs/common/internal';
+import { type Type, Logger } from '@nestjs/common';
+import {
+  type ApplicationConfig,
+  type GraphInspector,
+  MetadataScanner,
+} from '@nestjs/core';
 
 export class WebSocketsController {
   private readonly logger = new Logger(WebSocketsController.name, {

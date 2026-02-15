@@ -1,9 +1,7 @@
-import { DynamicModule } from '@nestjs/common/interfaces/modules/dynamic-module.interface';
-import { ForwardReference } from '@nestjs/common/interfaces/modules/forward-reference.interface';
-import { Type } from '@nestjs/common/interfaces/type.interface';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { createHash } from 'crypto';
-import { ModuleOpaqueKeyFactory } from './interfaces/module-opaque-key-factory.interface';
+import { ModuleOpaqueKeyFactory } from './interfaces/module-opaque-key-factory.interface.js';
+import type { DynamicModule, ForwardReference, Type } from '@nestjs/common';
+import { randomStringGenerator } from '@nestjs/common/internal';
 
 const K_MODULE_ID = Symbol('K_MODULE_ID');
 

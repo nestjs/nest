@@ -1,5 +1,5 @@
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
-import { AppController } from './app.controller';
+import { AppController } from './app.controller.js';
 
 export const MIDDLEWARE_VALUE = 'middleware';
 export const MIDDLEWARE_PARAM_VALUE = 'middleware_param';

@@ -4,9 +4,9 @@ import {
   PATH_METADATA,
   SCOPE_OPTIONS_METADATA,
   VERSION_METADATA,
-} from '../../constants';
-import { ScopeOptions, VersionOptions } from '../../interfaces';
-import { isString, isUndefined } from '../../utils/shared.utils';
+} from '../../constants.js';
+import { ScopeOptions, VersionOptions } from '../../interfaces/index.js';
+import { isString, isUndefined } from '../../utils/shared.utils.js';
 
 /**
  * Interface defining options that can be passed to `@Controller()` decorator

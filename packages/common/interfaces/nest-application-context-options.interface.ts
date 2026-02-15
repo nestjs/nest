@@ -1,4 +1,4 @@
-import { LoggerService, LogLevel } from '../services/logger.service';
+import { LoggerService, LogLevel } from '../services/logger.service.js';
 
 /**
  * @publicApi

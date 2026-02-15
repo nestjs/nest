@@ -1,8 +1,5 @@
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
-import {
-  VersionValue,
-  VERSION_NEUTRAL,
-} from '@nestjs/common/interfaces/version-options.interface';
+import { RequestMethod, VERSION_NEUTRAL } from '@nestjs/common';
+import type { VersionValue } from '@nestjs/common/internal';
 
 export const MODULE_INIT_MESSAGE = (
   text: TemplateStringsArray,

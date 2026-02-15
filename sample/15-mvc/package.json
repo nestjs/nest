@@ -12,11 +12,11 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint '{src,apps,libs,test}/**/*.ts' --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "echo 'No e2e tests implemented yet.'"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage",
+    "test:debug": "vitest --inspect-brk --no-file-parallelism",
+    "test:e2e": "vitest run --config ./vitest.config.e2e.mts"
   },
   "dependencies": {
     "@nestjs/common": "11.1.13",
@@ -36,10 +36,8 @@
     "@types/express": "5.0.6",
     "@types/node": "24.10.13",
     "@types/supertest": "6.0.3",
-    "jest": "30.2.0",
     "prettier": "3.8.1",
     "supertest": "7.2.2",
-    "ts-jest": "29.4.6",
     "ts-loader": "9.5.4",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
@@ -47,6 +45,10 @@
     "eslint-plugin-prettier": "5.5.5",
     "globals": "17.3.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.55.0"
-  }
+    "typescript-eslint": "8.54.0",
+    "vitest": "3.2.4",
+    "unplugin-swc": "1.5.5",
+    "@swc/core": "1.13.1"
+  },
+  "type": "module"
 }

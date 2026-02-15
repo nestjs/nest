@@ -2,39 +2,39 @@ import {
   HttpStatus,
   InternalServerErrorException,
   Logger,
-  RequestMethod,
+  type RequestMethod,
   StreamableFile,
   VERSION_NEUTRAL,
-  VersioningOptions,
+  type VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
-import { VersionValue } from '@nestjs/common/interfaces';
-import {
-  CorsOptions,
-  CorsOptionsDelegate,
-} from '@nestjs/common/interfaces/external/cors-options.interface';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import {
-  isFunction,
-  isNil,
-  isObject,
-  isString,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils';
-import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
-import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
-import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter';
-import * as cors from 'cors';
-import * as express from 'express';
+import cors from 'cors';
+import express from 'express';
 import type { Server } from 'http';
 import * as http from 'http';
 import * as https from 'https';
 import { pathToRegexp } from 'path-to-regexp';
 import { Duplex, Writable } from 'stream';
-import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface';
-import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface';
-import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
-import { getBodyParserOptions } from './utils/get-body-parser-options.util';
+import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface.js';
+import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface.js';
+import { ServeStaticOptions } from '../interfaces/serve-static-options.interface.js';
+import { getBodyParserOptions } from './utils/get-body-parser-options.util.js';
+import {
+  type CorsOptions,
+  type CorsOptionsDelegate,
+  type VersionValue,
+  isFunction,
+  isNil,
+  isObject,
+  isString,
+  isUndefined,
+} from '@nestjs/common/internal';
+import type { NestApplicationOptions } from '@nestjs/common';
+import { AbstractHttpAdapter } from '@nestjs/core';
+import {
+  RouterMethodFactory,
+  LegacyRouteConverter,
+} from '@nestjs/core/internal';
 
 type VersionedRoute = <
   TRequest extends Record<string, any> = any,
@@ -54,6 +54,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   private readonly routerMethodFactory = new RouterMethodFactory();
   private readonly logger = new Logger(ExpressAdapter.name);
   private readonly openConnections = new Set<Duplex>();
+  private readonly registeredPrefixes = new Set<string>();
   private onRequestHook?: (
     req: express.Request,
     res: express.Response,
@@ -166,11 +167,39 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public setErrorHandler(handler: Function, prefix?: string) {
+    if (prefix) {
+      const router = express.Router();
+      router.use(handler as any);
+      return this.use(prefix, router);
+    }
     return this.use(handler);
   }
 
   public setNotFoundHandler(handler: Function, prefix?: string) {
-    return this.use(handler);
+    if (prefix) {
+      this.registeredPrefixes.add(prefix);
+      const router = express.Router();
+      router.all('*path', handler as any);
+      return this.use(prefix, router);
+    }
+    return this.use(
+      (
+        req: express.Request,
+        res: express.Response,
+        next: express.NextFunction,
+      ) => {
+        // When multiple apps share this adapter, a non-prefixed app's 404
+        // handler may be registered before a prefixed app's routes. Skip
+        // requests whose path belongs to another app's prefix so they can
+        // reach the correct route handlers further in the stack.
+        for (const registeredPrefix of this.registeredPrefixes) {
+          if (req.originalUrl.startsWith(registeredPrefix)) {
+            return next();
+          }
+        }
+        return (handler as any)(req, res, next);
+      },
+    );
   }
 
   public isHeadersSent(response: any): boolean {

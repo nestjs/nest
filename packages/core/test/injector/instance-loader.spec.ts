@@ -1,12 +1,10 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { Injectable } from '../../../common';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { NestContainer } from '../../injector/container';
-import { Injector } from '../../injector/injector';
-import { InstanceLoader } from '../../injector/instance-loader';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { GraphInspector } from '../../inspector/graph-inspector';
+import { Controller } from '../../../common/decorators/core/controller.decorator.js';
+import { Injectable } from '../../../common/index.js';
+import { NestContainer } from '../../injector/container.js';
+import { Injector } from '../../injector/injector.js';
+import { InstanceLoader } from '../../injector/instance-loader.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { GraphInspector } from '../../inspector/graph-inspector.js';
 
 describe('InstanceLoader', () => {
   @Controller('')
@@ -19,22 +17,20 @@ describe('InstanceLoader', () => {
   let injector: Injector;
   let container: NestContainer;
   let graphInspector: GraphInspector;
-  let inspectInstanceWrapperStub: sinon.SinonStub;
-  let mockContainer: sinon.SinonMock;
+  let inspectInstanceWrapperStub: ReturnType<typeof vi.fn>;
   let moduleMock: Record<string, any>;
 
   beforeEach(() => {
     container = new NestContainer();
     graphInspector = new GraphInspector(container);
 
-    inspectInstanceWrapperStub = sinon.stub(
+    inspectInstanceWrapperStub = vi.spyOn(
       graphInspector,
       'inspectInstanceWrapper',
     );
 
     injector = new Injector();
     loader = new InstanceLoader(container, injector, graphInspector);
-    mockContainer = sinon.mock(container);
 
     moduleMock = {
       imports: new Set(),
@@ -47,7 +43,7 @@ describe('InstanceLoader', () => {
 
     const modules = new Map();
     modules.set('Test', moduleMock);
-    mockContainer.expects('getModules').returns(modules);
+    vi.spyOn(container, 'getModules').mockReturnValue(modules);
   });
 
   it('should call "loadPrototype" for every provider and controller in every module', async () => {
@@ -65,28 +61,29 @@ describe('InstanceLoader', () => {
     moduleMock.providers.set('TestProvider', providerWrapper);
     moduleMock.controllers.set('TestRoute', ctrlWrapper);
 
-    const loadProviderPrototypeStub = sinon.stub(injector, 'loadPrototype');
+    const loadProviderPrototypeStub = vi
+      .spyOn(injector, 'loadPrototype')
+      .mockImplementation(() => ({}) as any);
 
-    sinon.stub(injector, 'loadController');
-    sinon.stub(injector, 'loadProvider');
+    vi.spyOn(injector, 'loadController').mockImplementation(() => ({}) as any);
+    vi.spyOn(injector, 'loadProvider').mockImplementation(() => ({}) as any);
 
     await loader.createInstancesOfDependencies();
 
-    expect(
-      loadProviderPrototypeStub.calledWith(
-        providerWrapper,
-        moduleMock.providers,
-      ),
-    ).to.be.true;
-    expect(
-      loadProviderPrototypeStub.calledWith(ctrlWrapper, moduleMock.controllers),
-    ).to.be.true;
+    expect(loadProviderPrototypeStub).toHaveBeenCalledWith(
+      providerWrapper,
+      moduleMock.providers,
+    );
+    expect(loadProviderPrototypeStub).toHaveBeenCalledWith(
+      ctrlWrapper,
+      moduleMock.controllers,
+    );
   });
 
   describe('for every provider in every module', () => {
     const testProviderToken = 'TestProvider';
 
-    let loadProviderStub: sinon.SinonStub;
+    let loadProviderStub: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
       const testProviderWrapper = new InstanceWrapper({
@@ -97,33 +94,33 @@ describe('InstanceLoader', () => {
       });
       moduleMock.providers.set(testProviderToken, testProviderWrapper);
 
-      loadProviderStub = sinon.stub(injector, 'loadProvider');
-      sinon.stub(injector, 'loadController');
+      loadProviderStub = vi
+        .spyOn(injector, 'loadProvider')
+        .mockImplementation(() => ({}) as any);
+      vi.spyOn(injector, 'loadController').mockImplementation(
+        () => ({}) as any,
+      );
 
       await loader.createInstancesOfDependencies();
     });
 
     it('should call "loadProvider"', async () => {
-      expect(
-        loadProviderStub.calledWith(
-          moduleMock.providers.get(testProviderToken),
-          moduleMock as any,
-        ),
-      ).to.be.true;
+      expect(loadProviderStub).toHaveBeenCalledWith(
+        moduleMock.providers.get(testProviderToken),
+        moduleMock as any,
+      );
     });
 
     it('should call "inspectInstanceWrapper"', async () => {
-      expect(
-        inspectInstanceWrapperStub.calledWith(
-          moduleMock.providers.get(testProviderToken),
-          moduleMock as any,
-        ),
-      ).to.be.true;
+      expect(inspectInstanceWrapperStub).toHaveBeenCalledWith(
+        moduleMock.providers.get(testProviderToken),
+        moduleMock as any,
+      );
     });
   });
 
   describe('for every controller in every module', () => {
-    let loadControllerStub: sinon.SinonStub;
+    let loadControllerStub: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
       const wrapper = new InstanceWrapper({
@@ -134,31 +131,29 @@ describe('InstanceLoader', () => {
       });
       moduleMock.controllers.set('TestRoute', wrapper);
 
-      sinon.stub(injector, 'loadProvider');
-      loadControllerStub = sinon.stub(injector, 'loadController');
+      vi.spyOn(injector, 'loadProvider').mockImplementation(() => ({}) as any);
+      loadControllerStub = vi
+        .spyOn(injector, 'loadController')
+        .mockImplementation(() => ({}) as any);
 
       await loader.createInstancesOfDependencies();
     });
     it('should call "loadController"', async () => {
-      expect(
-        loadControllerStub.calledWith(
-          moduleMock.controllers.get('TestRoute'),
-          moduleMock as any,
-        ),
-      ).to.be.true;
+      expect(loadControllerStub).toHaveBeenCalledWith(
+        moduleMock.controllers.get('TestRoute'),
+        moduleMock as any,
+      );
     });
     it('should call "inspectInstanceWrapper"', async () => {
-      expect(
-        inspectInstanceWrapperStub.calledWith(
-          moduleMock.controllers.get('TestRoute'),
-          moduleMock as any,
-        ),
-      ).to.be.true;
+      expect(inspectInstanceWrapperStub).toHaveBeenCalledWith(
+        moduleMock.controllers.get('TestRoute'),
+        moduleMock as any,
+      );
     });
   });
 
   describe('for every injectable in every module', () => {
-    let loadInjectableStub: sinon.SinonStub;
+    let loadInjectableStub: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
       const testInjectable = new InstanceWrapper({
@@ -169,27 +164,27 @@ describe('InstanceLoader', () => {
       });
       moduleMock.injectables.set('TestProvider', testInjectable);
 
-      loadInjectableStub = sinon.stub(injector, 'loadInjectable');
-      sinon.stub(injector, 'loadController');
+      loadInjectableStub = vi
+        .spyOn(injector, 'loadInjectable')
+        .mockImplementation(() => ({}) as any);
+      vi.spyOn(injector, 'loadController').mockImplementation(
+        () => ({}) as any,
+      );
 
       await loader.createInstancesOfDependencies();
     });
 
     it('should call "loadInjectable"', async () => {
-      expect(
-        loadInjectableStub.calledWith(
-          moduleMock.injectables.get('TestProvider'),
-          moduleMock as any,
-        ),
-      ).to.be.true;
+      expect(loadInjectableStub).toHaveBeenCalledWith(
+        moduleMock.injectables.get('TestProvider'),
+        moduleMock as any,
+      );
     });
     it('should call "inspectInstanceWrapper"', async () => {
-      expect(
-        inspectInstanceWrapperStub.calledWith(
-          moduleMock.injectables.get('TestProvider'),
-          moduleMock as any,
-        ),
-      ).to.be.true;
+      expect(inspectInstanceWrapperStub).toHaveBeenCalledWith(
+        moduleMock.injectables.get('TestProvider'),
+        moduleMock as any,
+      );
     });
   });
 });

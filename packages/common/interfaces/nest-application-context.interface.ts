@@ -1,9 +1,9 @@
-import { ShutdownSignal } from '../enums/shutdown-signal.enum';
-import { LoggerService, LogLevel } from '../services/logger.service';
-import { DynamicModule } from './modules';
-import { NestApplicationContextOptions } from './nest-application-context-options.interface';
-import { ShutdownHooksOptions } from './shutdown-hooks-options.interface';
-import { Type } from './type.interface';
+import { ShutdownSignal } from '../enums/shutdown-signal.enum.js';
+import { LoggerService, LogLevel } from '../services/logger.service.js';
+import { DynamicModule } from './modules/index.js';
+import { NestApplicationContextOptions } from './nest-application-context-options.interface.js';
+import { ShutdownHooksOptions } from './shutdown-hooks-options.interface.js';
+import { Type } from './type.interface.js';
 
 export type SelectOptions = Pick<NestApplicationContextOptions, 'abortOnError'>;
 

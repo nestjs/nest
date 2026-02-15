@@ -9,8 +9,8 @@ import {
 } from '@nestjs/common';
 import { Client, ClientKafka, Transport } from '@nestjs/microservices';
 import { lastValueFrom, Observable } from 'rxjs';
-import { BusinessDto } from './dtos/business.dto';
-import { UserDto } from './dtos/user.dto';
+import { BusinessDto } from './dtos/business.dto.js';
+import { UserDto } from './dtos/user.dto.js';
 
 @Controller()
 export class KafkaController implements OnModuleInit, OnModuleDestroy {

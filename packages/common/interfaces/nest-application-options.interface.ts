@@ -1,9 +1,9 @@
 import {
   CorsOptions,
   CorsOptionsDelegate,
-} from './external/cors-options.interface';
-import { HttpsOptions } from './external/https-options.interface';
-import { NestApplicationContextOptions } from './nest-application-context-options.interface';
+} from './external/cors-options.interface.js';
+import { HttpsOptions } from './external/https-options.interface.js';
+import { NestApplicationContextOptions } from './nest-application-context-options.interface.js';
 
 /**
  * @publicApi

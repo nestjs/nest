@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
-import { MqttBroadcastController } from '../src/mqtt/mqtt-broadcast.controller';
+import request from 'supertest';
+import { MqttBroadcastController } from '../src/mqtt/mqtt-broadcast.controller.js';
 
 describe('MQTT transport', () => {
   let server;

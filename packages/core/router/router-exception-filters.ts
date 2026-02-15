@@ -1,15 +1,17 @@
-import { HttpServer } from '@nestjs/common';
-import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import type { HttpServer } from '@nestjs/common';
 import { iterate } from 'iterare';
-import { ApplicationConfig } from '../application-config';
-import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context';
-import { ExceptionsHandler } from '../exceptions/exceptions-handler';
-import { STATIC_CONTEXT } from '../injector/constants';
-import { NestContainer } from '../injector/container';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { RouterProxyCallback } from './router-proxy';
+import { ApplicationConfig } from '../application-config.js';
+import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context.js';
+import { ExceptionsHandler } from '../exceptions/exceptions-handler.js';
+import { STATIC_CONTEXT } from '../injector/constants.js';
+import { NestContainer } from '../injector/container.js';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import { RouterProxyCallback } from './router-proxy.js';
+import {
+  EXCEPTION_FILTERS_METADATA,
+  type Controller,
+  isEmpty,
+} from '@nestjs/common/internal';
 
 export class RouterExceptionFilters extends BaseExceptionFilterContext {
   constructor(

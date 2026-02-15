@@ -1,2 +1,2 @@
-export * from './streamable-options.interface';
-export * from './streamable-handler-response.interface';
+export * from './streamable-options.interface.js';
+export * from './streamable-handler-response.interface.js';

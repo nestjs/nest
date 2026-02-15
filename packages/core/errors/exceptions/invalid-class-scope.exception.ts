@@ -1,7 +1,7 @@
-import { Abstract, Type } from '@nestjs/common/interfaces';
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { INVALID_CLASS_SCOPE_MESSAGE } from '../messages';
-import { RuntimeException } from './runtime.exception';
+import { INVALID_CLASS_SCOPE_MESSAGE } from '../messages.js';
+import { RuntimeException } from './runtime.exception.js';
+import type { Abstract, Type } from '@nestjs/common';
+import { isFunction } from '@nestjs/common/internal';
 
 export class InvalidClassScopeException extends RuntimeException {
   constructor(metatypeOrToken: Type<any> | Abstract<any> | string | symbol) {

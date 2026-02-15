@@ -1,4 +1,4 @@
-import {
+import type {
   DynamicModule,
   ForwardReference,
   HttpServer,
@@ -7,29 +7,34 @@ import {
   INestMicroservice,
   Type,
 } from '@nestjs/common';
-import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
-import { ConsoleLogger } from '@nestjs/common/services/console-logger.service';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
-import { AbstractHttpAdapter } from './adapters/http-adapter';
-import { ApplicationConfig } from './application-config';
-import { MESSAGES } from './constants';
-import { ExceptionsZone } from './errors/exceptions-zone';
-import { loadAdapter } from './helpers/load-adapter';
-import { rethrow } from './helpers/rethrow';
-import { NestContainer } from './injector/container';
-import { Injector } from './injector/injector';
-import { InstanceLoader } from './injector/instance-loader';
-import { GraphInspector } from './inspector/graph-inspector';
-import { NoopGraphInspector } from './inspector/noop-graph-inspector';
-import { UuidFactory, UuidFactoryMode } from './inspector/uuid-factory';
-import { MetadataScanner } from './metadata-scanner';
-import { NestApplication } from './nest-application';
-import { NestApplicationContext } from './nest-application-context';
-import { DependenciesScanner } from './scanner';
+import { AbstractHttpAdapter } from './adapters/http-adapter.js';
+import { ApplicationConfig } from './application-config.js';
+import { MESSAGES } from './constants.js';
+import { ExceptionsZone } from './errors/exceptions-zone.js';
+import { loadAdapter } from './helpers/load-adapter.js';
+import { rethrow } from './helpers/rethrow.js';
+import { NestContainer } from './injector/container.js';
+import { Injector } from './injector/injector.js';
+import { InstanceLoader } from './injector/instance-loader.js';
+import { GraphInspector } from './inspector/graph-inspector.js';
+import { NoopGraphInspector } from './inspector/noop-graph-inspector.js';
+import { UuidFactory, UuidFactoryMode } from './inspector/uuid-factory.js';
+import { MetadataScanner } from './metadata-scanner.js';
+import { NestApplicationContext } from './nest-application-context.js';
+import { NestApplication } from './nest-application.js';
+import { DependenciesScanner } from './scanner.js';
+import {
+  type NestMicroserviceOptions,
+  type NestApplicationContextOptions,
+  loadPackage,
+  isFunction,
+  isNil,
+} from '@nestjs/common/internal';
+import {
+  type NestApplicationOptions,
+  ConsoleLogger,
+  Logger,
+} from '@nestjs/common';
 
 type IEntryNestModule =
   | Type<any>
@@ -83,7 +88,7 @@ export class NestFactoryStatic {
   ): Promise<T> {
     const [httpServer, appOptions] = this.isHttpServer(serverOrOptions!)
       ? [serverOrOptions, options]
-      : [this.createHttpAdapter(), serverOrOptions];
+      : [await this.createHttpAdapter(), serverOrOptions];
 
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig, appOptions);
@@ -108,6 +113,7 @@ export class NestFactoryStatic {
       graphInspector,
       appOptions,
     );
+    await instance.preloadLazyPackages();
     const target = this.createNestInstance(instance);
     return this.createAdapterProxy<T>(target, httpServer);
   }
@@ -125,10 +131,10 @@ export class NestFactoryStatic {
     moduleCls: IEntryNestModule,
     options?: NestMicroserviceOptions & T,
   ): Promise<INestMicroservice> {
-    const { NestMicroservice } = loadPackage(
+    const { NestMicroservice } = await loadPackage(
       '@nestjs/microservices',
       'NestFactory',
-      () => require('@nestjs/microservices'),
+      () => import('@nestjs/microservices'),
     );
     const applicationConfig = new ApplicationConfig();
     const container = new NestContainer(applicationConfig, options);
@@ -315,11 +321,13 @@ export class NestFactoryStatic {
     this.autoFlushLogs = autoFlushLogs ?? true;
   }
 
-  private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
-    const { ExpressAdapter } = loadAdapter(
+  private async createHttpAdapter<T = any>(
+    httpServer?: T,
+  ): Promise<AbstractHttpAdapter> {
+    const { ExpressAdapter } = await loadAdapter(
       '@nestjs/platform-express',
       'HTTP',
-      () => require('@nestjs/platform-express'),
+      () => import('@nestjs/platform-express'),
     );
     return new ExpressAdapter(httpServer);
   }

@@ -1,15 +1,13 @@
 import { Logger } from '@nestjs/common';
-import { AssertionError, expect } from 'chai';
-import * as sinon from 'sinon';
-import { NO_MESSAGE_HANDLER } from '../../constants';
-import { KafkaContext } from '../../ctx-host';
-import { KafkaHeaders } from '../../enums';
+import { NO_MESSAGE_HANDLER } from '../../constants.js';
+import { KafkaContext } from '../../ctx-host/index.js';
+import { KafkaHeaders } from '../../enums/index.js';
 import {
   EachMessagePayload,
   KafkaMessage,
-} from '../../external/kafka.interface';
-import { ServerKafka } from '../../server';
-import { objectToMap } from './utils/object-to-map';
+} from '../../external/kafka.interface.js';
+import { ServerKafka } from '../../server/index.js';
+import { objectToMap } from './utils/object-to-map.js';
 
 class NoopLogger extends Logger {
   log(message: any, context?: string): void {}
@@ -84,29 +82,29 @@ describe('ServerKafka', () => {
 
   let server: ServerKafka;
   let untypedServer: any;
-  let callback: sinon.SinonSpy;
-  let bindEventsStub: sinon.SinonStub;
-  let connect: sinon.SinonSpy;
-  let subscribe: sinon.SinonSpy;
-  let run: sinon.SinonSpy;
-  let send: sinon.SinonSpy;
-  let on: sinon.SinonSpy;
-  let consumerStub: sinon.SinonStub;
-  let producerStub: sinon.SinonStub;
+  let callback: ReturnType<typeof vi.fn>;
+  let bindEventsStub: ReturnType<typeof vi.fn>;
+  let connect: ReturnType<typeof vi.fn>;
+  let subscribe: ReturnType<typeof vi.fn>;
+  let run: ReturnType<typeof vi.fn>;
+  let send: ReturnType<typeof vi.fn>;
+  let on: ReturnType<typeof vi.fn>;
+  let consumerStub: ReturnType<typeof vi.fn>;
+  let producerStub: ReturnType<typeof vi.fn>;
   let client: any;
 
   beforeEach(() => {
     server = new ServerKafka({});
     untypedServer = server as any;
 
-    callback = sinon.spy();
-    connect = sinon.spy();
-    subscribe = sinon.spy();
-    run = sinon.spy();
-    send = sinon.spy();
-    on = sinon.spy();
+    callback = vi.fn();
+    connect = vi.fn();
+    subscribe = vi.fn();
+    run = vi.fn();
+    send = vi.fn();
+    on = vi.fn();
 
-    consumerStub = sinon.stub(server as any, 'consumer').callsFake(() => {
+    consumerStub = vi.fn(() => {
       return {
         connect,
         subscribe,
@@ -132,7 +130,7 @@ describe('ServerKafka', () => {
         },
       };
     });
-    producerStub = sinon.stub(server as any, 'producer').callsFake(() => {
+    producerStub = vi.fn(() => {
       return {
         connect,
         send,
@@ -150,41 +148,41 @@ describe('ServerKafka', () => {
       consumer: consumerStub,
       producer: producerStub,
     };
-    sinon.stub(server, 'createClient').callsFake(() => client);
+    vi.spyOn(server, 'createClient').mockImplementation(async () => client);
 
     untypedServer = server as any;
   });
 
   describe('listen', () => {
     it('should call "bindEvents"', async () => {
-      bindEventsStub = sinon
-        .stub(server, 'bindEvents')
-        .callsFake(() => ({}) as any);
+      bindEventsStub = vi
+        .spyOn(server, 'bindEvents')
+        .mockImplementation(() => ({}) as any);
 
       await server.listen(err => console.log(err));
-      expect(bindEventsStub.called).to.be.true;
+      expect(bindEventsStub).toHaveBeenCalled();
     });
     it('should call callback', async () => {
       await server.listen(callback);
-      expect(callback.called).to.be.true;
+      expect(callback).toHaveBeenCalled();
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
 
-        const callbackSpy = sinon.spy();
-        sinon.stub(server, 'start').callsFake(() => {
+        const callbackSpy = vi.fn();
+        vi.spyOn(server, 'start').mockImplementation(() => {
           throw error;
         });
         await server.listen(callbackSpy);
-        expect(callbackSpy.calledWith(error)).to.be.true;
+        expect(callbackSpy).toHaveBeenCalledWith(error);
       });
     });
   });
 
   describe('close', () => {
-    const consumer = { disconnect: sinon.spy() };
-    const producer = { disconnect: sinon.spy() };
+    const consumer = { disconnect: vi.fn() };
+    const producer = { disconnect: vi.fn() };
     beforeEach(() => {
       untypedServer.consumer = consumer;
       untypedServer.producer = producer;
@@ -192,11 +190,11 @@ describe('ServerKafka', () => {
     it('should close server', async () => {
       await server.close();
 
-      expect(consumer.disconnect.calledOnce).to.be.true;
-      expect(producer.disconnect.calledOnce).to.be.true;
-      expect(untypedServer.consumer).to.be.null;
-      expect(untypedServer.producer).to.be.null;
-      expect(untypedServer.client).to.be.null;
+      expect(consumer.disconnect).toHaveBeenCalledOnce();
+      expect(producer.disconnect).toHaveBeenCalledOnce();
+      expect(untypedServer.consumer).toBeNull();
+      expect(untypedServer.producer).toBeNull();
+      expect(untypedServer.client).toBeNull();
     });
   });
 
@@ -205,31 +203,29 @@ describe('ServerKafka', () => {
       untypedServer.logger = new NoopLogger();
       await server.listen(callback);
       await server.bindEvents(untypedServer.consumer);
-      expect(subscribe.called).to.be.false;
-      expect(run.called).to.be.true;
-      expect(connect.called).to.be.true;
+      expect(subscribe).not.toHaveBeenCalled();
+      expect(run).toHaveBeenCalled();
+      expect(connect).toHaveBeenCalled();
     });
     it('should call subscribe and run on consumer when there are messageHandlers', async () => {
       untypedServer.logger = new NoopLogger();
       await server.listen(callback);
 
       const pattern = 'test';
-      const handler = sinon.spy();
+      const handler = vi.fn();
       untypedServer.messageHandlers = objectToMap({
         [pattern]: handler,
       });
 
       await server.bindEvents(untypedServer.consumer);
 
-      expect(subscribe.called).to.be.true;
-      expect(
-        subscribe.calledWith({
-          topics: [pattern],
-        }),
-      ).to.be.true;
+      expect(subscribe).toHaveBeenCalled();
+      expect(subscribe).toHaveBeenCalledWith({
+        topics: [pattern],
+      });
 
-      expect(run.called).to.be.true;
-      expect(connect.called).to.be.true;
+      expect(run).toHaveBeenCalled();
+      expect(connect).toHaveBeenCalled();
     });
     it('should call subscribe with options and run on consumer when there are messageHandlers', async () => {
       untypedServer.logger = new NoopLogger();
@@ -238,23 +234,21 @@ describe('ServerKafka', () => {
       await server.listen(callback);
 
       const pattern = 'test';
-      const handler = sinon.spy();
+      const handler = vi.fn();
       untypedServer.messageHandlers = objectToMap({
         [pattern]: handler,
       });
 
       await server.bindEvents(untypedServer.consumer);
 
-      expect(subscribe.called).to.be.true;
-      expect(
-        subscribe.calledWith({
-          topics: [pattern],
-          fromBeginning: true,
-        }),
-      ).to.be.true;
+      expect(subscribe).toHaveBeenCalled();
+      expect(subscribe).toHaveBeenCalledWith({
+        topics: [pattern],
+        fromBeginning: true,
+      });
 
-      expect(run.called).to.be.true;
-      expect(connect.called).to.be.true;
+      expect(run).toHaveBeenCalled();
+      expect(connect).toHaveBeenCalled();
     });
     it('should pass run options with partitionsConsumedConcurrently to consumer.run()', async () => {
       untypedServer.logger = new NoopLogger();
@@ -264,11 +258,13 @@ describe('ServerKafka', () => {
       await server.listen(callback);
       await server.bindEvents(untypedServer.consumer);
 
-      expect(run.called).to.be.true;
-      expect(run.firstCall.args[0]).to.include({
-        partitionsConsumedConcurrently: 5,
-      });
-      expect(run.firstCall.args[0]).to.have.property('eachMessage');
+      expect(run).toHaveBeenCalled();
+      expect(run.mock.calls[0][0]).toEqual(
+        expect.objectContaining({
+          partitionsConsumedConcurrently: 5,
+        }),
+      );
+      expect(run.mock.calls[0][0]).toHaveProperty('eachMessage');
     });
     it('should pass multiple run options to consumer.run()', async () => {
       untypedServer.logger = new NoopLogger();
@@ -280,35 +276,37 @@ describe('ServerKafka', () => {
       await server.listen(callback);
       await server.bindEvents(untypedServer.consumer);
 
-      expect(run.called).to.be.true;
-      const callArg = run.firstCall.args[0];
-      expect(callArg).to.include({
-        partitionsConsumedConcurrently: 3,
-        autoCommit: false,
-        autoCommitInterval: 5000,
-      });
-      expect(callArg).to.have.property('eachMessage');
+      expect(run).toHaveBeenCalled();
+      const callArg = run.mock.calls[0][0];
+      expect(callArg).toEqual(
+        expect.objectContaining({
+          partitionsConsumedConcurrently: 3,
+          autoCommit: false,
+          autoCommitInterval: 5000,
+        }),
+      );
+      expect(callArg).toHaveProperty('eachMessage');
     });
   });
 
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
-      expect(typeof server.getMessageHandler()).to.be.eql('function');
+      expect(typeof server.getMessageHandler()).toEqual('function');
     });
     describe('handler', () => {
       it('should call "handleMessage"', async () => {
-        const handleMessageStub = sinon
-          .stub(server, 'handleMessage')
-          .callsFake(() => null!);
+        const handleMessageStub = vi
+          .spyOn(server, 'handleMessage')
+          .mockImplementation(() => null!);
         await server.getMessageHandler()(null!);
-        expect(handleMessageStub.called).to.be.true;
+        expect(handleMessageStub).toHaveBeenCalled();
       });
     });
   });
 
   describe('getPublisher', () => {
     const context = new KafkaContext([] as any);
-    let sendMessageStub: sinon.SinonStub;
+    let sendMessageStub: ReturnType<typeof vi.fn>;
     let publisher;
 
     beforeEach(() => {
@@ -318,14 +316,14 @@ describe('ServerKafka', () => {
         correlationId,
         context,
       );
-      sendMessageStub = sinon
-        .stub(server, 'sendMessage')
-        .callsFake(async () => []);
+      sendMessageStub = vi
+        .spyOn(server, 'sendMessage')
+        .mockImplementation(async () => []);
     });
     it(`should return function`, () => {
       expect(
         typeof server.getPublisher(null!, null!, correlationId, context),
-      ).to.be.eql('function');
+      ).toEqual('function');
     });
     it(`should call "publish" with expected arguments`, () => {
       const data = {
@@ -334,125 +332,122 @@ describe('ServerKafka', () => {
       };
       publisher(data);
 
-      expect(
-        sendMessageStub.calledWith(
-          data,
-          replyTopic,
-          replyPartition,
-          correlationId,
-        ),
-      ).to.be.true;
+      expect(sendMessageStub).toHaveBeenCalledWith(
+        data,
+        replyTopic,
+        replyPartition,
+        correlationId,
+        context,
+      );
     });
   });
 
   describe('handleMessage', () => {
-    let getPublisherSpy: sinon.SinonSpy;
+    let getPublisherSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      sinon.stub(server, 'sendMessage').callsFake(async () => []);
-      getPublisherSpy = sinon.spy();
+      vi.spyOn(server, 'sendMessage').mockImplementation(async () => []);
+      getPublisherSpy = vi.fn();
 
-      sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
+      vi.spyOn(server, 'getPublisher').mockImplementation(
+        () => getPublisherSpy,
+      );
     });
 
     it('should call "handleEvent" if correlation identifier is not present', async () => {
-      const handleEventSpy = sinon.spy(server, 'handleEvent');
+      const handleEventSpy = vi.spyOn(server, 'handleEvent');
       await server.handleMessage(eventPayload);
-      expect(handleEventSpy.called).to.be.true;
+      expect(handleEventSpy).toHaveBeenCalled();
     });
 
     it('should call "handleEvent" if correlation identifier is present but the reply topic is not present', async () => {
-      const handleEventSpy = sinon.spy(server, 'handleEvent');
+      const handleEventSpy = vi.spyOn(server, 'handleEvent');
       await server.handleMessage(eventWithCorrelationIdPayload);
-      expect(handleEventSpy.called).to.be.true;
+      expect(handleEventSpy).toHaveBeenCalled();
     });
 
     it('should call event handler when "handleEvent" is called', async () => {
-      const messageHandler = sinon.mock();
+      const messageHandler = vi.fn();
       const context = { test: true } as any;
       const messageData = 'some data';
-      sinon.stub(server, 'getHandlerByPattern').callsFake(() => messageHandler);
+      vi.spyOn(server, 'getHandlerByPattern').mockImplementation(
+        () => messageHandler,
+      );
 
       await server.handleEvent(
         topic,
         { data: messageData, pattern: topic },
         context,
       );
-      expect(messageHandler.calledWith(messageData, context)).to.be.true;
+      expect(messageHandler).toHaveBeenCalledWith(messageData, context);
     });
 
     it('should not catch error thrown by event handler as part of "handleEvent"', async () => {
       const error = new Error('handler error');
-      const messageHandler = sinon.mock().throwsException(error);
-      sinon.stub(server, 'getHandlerByPattern').callsFake(() => messageHandler);
+      const messageHandler = vi.fn().mockImplementation(() => {
+        throw error;
+      });
+      vi.spyOn(server, 'getHandlerByPattern').mockImplementation(
+        () => messageHandler,
+      );
 
-      try {
-        await server.handleEvent(
+      await expect(
+        server.handleEvent(
           topic,
           { data: 'some data', pattern: topic },
           {} as any,
-        );
-
-        // code should not be executed
-        expect(true).to.be.false;
-      } catch (e) {
-        if (e instanceof AssertionError) {
-          throw e;
-        }
-        expect(e).to.be.eq(error);
-      }
+        ),
+      ).rejects.toBe(error);
     });
 
     it('should call "handleEvent" if correlation identifier and reply topic are present but the handler is of type eventHandler', async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       (handler as any).isEventHandler = true;
       untypedServer.messageHandlers = objectToMap({
         [topic]: handler,
       });
-      const handleEventSpy = sinon.spy(server, 'handleEvent');
+      const handleEventSpy = vi.spyOn(server, 'handleEvent');
       await server.handleMessage(payload);
-      expect(handleEventSpy.called).to.be.true;
+      expect(handleEventSpy).toHaveBeenCalled();
     });
 
     it('should NOT call "handleEvent" if correlation identifier and reply topic are present but the handler is not of type eventHandler', async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       (handler as any).isEventHandler = false;
       untypedServer.messageHandlers = objectToMap({
         [topic]: handler,
       });
-      const handleEventSpy = sinon.spy(server, 'handleEvent');
+      const handleEventSpy = vi.spyOn(server, 'handleEvent');
       await server.handleMessage(payload);
-      expect(handleEventSpy.called).to.be.false;
+      expect(handleEventSpy).not.toHaveBeenCalled();
     });
 
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
       await server.handleMessage(payload);
-      expect(
-        getPublisherSpy.calledWith({
-          id: payload.message.headers![KafkaHeaders.CORRELATION_ID]!.toString(),
-          err: NO_MESSAGE_HANDLER,
-        }),
-      ).to.be.true;
+      expect(getPublisherSpy).toHaveBeenCalledWith({
+        id: payload.message.headers![KafkaHeaders.CORRELATION_ID]!.toString(),
+        err: NO_MESSAGE_HANDLER,
+      });
     });
 
     it(`should call handler with expected arguments`, async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       untypedServer.messageHandlers = objectToMap({
         [topic]: handler,
       });
 
       await server.handleMessage(payload);
-      expect(handler.called).to.be.true;
+      expect(handler).toHaveBeenCalled();
     });
   });
 
   describe('sendMessage', () => {
     const context = new KafkaContext([] as any);
-    let sendSpy: sinon.SinonSpy;
+    let sendSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      sendSpy = sinon.stub().callsFake(() => Promise.resolve());
-      sinon.stub(server as any, 'producer').value({
+      sendSpy = vi.fn().mockImplementation(() => Promise.resolve());
+      vi.spyOn(server as any, 'producer', 'get').mockReturnValue({
         send: sendSpy,
       });
     });
@@ -469,20 +464,18 @@ describe('ServerKafka', () => {
         context,
       );
 
-      expect(
-        sendSpy.calledWith({
-          topic: replyTopic,
-          messages: [
-            {
-              partition: parseFloat(replyPartition),
-              value: messageValue,
-              headers: {
-                [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
-              },
+      expect(sendSpy).toHaveBeenCalledWith({
+        topic: replyTopic,
+        messages: [
+          {
+            partition: parseFloat(replyPartition),
+            value: messageValue,
+            headers: {
+              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
             },
-          ],
-        }),
-      ).to.be.true;
+          },
+        ],
+      });
     });
     it('should send message without reply partition', async () => {
       await server.sendMessage(
@@ -496,19 +489,17 @@ describe('ServerKafka', () => {
         context,
       );
 
-      expect(
-        sendSpy.calledWith({
-          topic: replyTopic,
-          messages: [
-            {
-              value: messageValue,
-              headers: {
-                [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
-              },
+      expect(sendSpy).toHaveBeenCalledWith({
+        topic: replyTopic,
+        messages: [
+          {
+            value: messageValue,
+            headers: {
+              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
             },
-          ],
-        }),
-      ).to.be.true;
+          },
+        ],
+      });
     });
     it('should send error message', async () => {
       await server.sendMessage(
@@ -522,21 +513,19 @@ describe('ServerKafka', () => {
         context,
       );
 
-      expect(
-        sendSpy.calledWith({
-          topic: replyTopic,
-          messages: [
-            {
-              value: null,
-              partition: parseFloat(replyPartition),
-              headers: {
-                [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
-                [KafkaHeaders.NEST_ERR]: Buffer.from(NO_MESSAGE_HANDLER),
-              },
+      expect(sendSpy).toHaveBeenCalledWith({
+        topic: replyTopic,
+        messages: [
+          {
+            value: null,
+            partition: parseFloat(replyPartition),
+            headers: {
+              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+              [KafkaHeaders.NEST_ERR]: Buffer.from(NO_MESSAGE_HANDLER),
             },
-          ],
-        }),
-      ).to.be.true;
+          },
+        ],
+      });
     });
     it('should send `isDisposed` message', async () => {
       await server.sendMessage(
@@ -550,27 +539,25 @@ describe('ServerKafka', () => {
         context,
       );
 
-      expect(
-        sendSpy.calledWith({
-          topic: replyTopic,
-          messages: [
-            {
-              value: null,
-              partition: parseFloat(replyPartition),
-              headers: {
-                [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
-                [KafkaHeaders.NEST_IS_DISPOSED]: Buffer.alloc(1),
-              },
+      expect(sendSpy).toHaveBeenCalledWith({
+        topic: replyTopic,
+        messages: [
+          {
+            value: null,
+            partition: parseFloat(replyPartition),
+            headers: {
+              [KafkaHeaders.CORRELATION_ID]: Buffer.from(correlationId),
+              [KafkaHeaders.NEST_IS_DISPOSED]: Buffer.alloc(1),
             },
-          ],
-        }),
-      ).to.be.true;
+          },
+        ],
+      });
     });
   });
 
   describe('createClient', () => {
-    it('should accept a custom logCreator in client options', () => {
-      const logCreatorSpy = sinon.spy(() => 'test');
+    it('should accept a custom logCreator in client options', async () => {
+      const logCreatorSpy = vi.fn(() => 'test');
       const logCreator = () => logCreatorSpy;
 
       server = new ServerKafka({
@@ -580,11 +567,12 @@ describe('ServerKafka', () => {
         },
       });
 
-      const logger = server.createClient().logger();
+      const kafkaClient = await server.createClient();
+      const logger = kafkaClient.logger();
 
       logger.info({ namespace: '', level: 1, log: 'test' });
 
-      expect(logCreatorSpy.called).to.be.true;
+      expect(logCreatorSpy).toHaveBeenCalled();
     });
   });
 });

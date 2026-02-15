@@ -1,10 +1,9 @@
 import { Scope } from '@nestjs/common';
-import { expect } from 'chai';
-import { Injectable } from '../../../common/decorators/core/injectable.decorator';
-import { NestContainer } from '../../injector/container';
-import { Injector } from '../../injector/injector';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { Module } from '../../injector/module';
+import { Injectable } from '../../../common/decorators/core/injectable.decorator.js';
+import { NestContainer } from '../../injector/container.js';
+import { Injector } from '../../injector/injector.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { Module } from '../../injector/module.js';
 
 describe('Nested Transient Isolation', () => {
   let injector: Injector;
@@ -117,7 +116,7 @@ describe('Nested Transient Isolation', () => {
         parent2Wrapper.getInstanceByContextId(contextId).instance;
 
       // 각 parent는 서로 다른 TransientService instance를 가져야 함
-      expect(parent1Instance.transient.instanceId).to.not.equal(
+      expect(parent1Instance.transient.instanceId).not.toBe(
         parent2Instance.transient.instanceId,
       );
     });
@@ -144,7 +143,7 @@ describe('Nested Transient Isolation', () => {
         parent2Wrapper.getInstanceByContextId(contextId).instance;
 
       // 각 TransientService는 서로 다른 NestedTransientService instance를 가져야 함
-      expect(parent1Instance.transient.nested.instanceId).to.not.equal(
+      expect(parent1Instance.transient.nested.instanceId).not.toBe(
         parent2Instance.transient.nested.instanceId,
       );
     });
@@ -180,12 +179,12 @@ describe('Nested Transient Isolation', () => {
         parent1Wrapper.getInstanceByContextId(contextId2).instance;
 
       // 같은 context 내에서 다른 parent
-      expect(ctx1Parent1.transient.nested.instanceId).to.not.equal(
+      expect(ctx1Parent1.transient.nested.instanceId).not.toBe(
         ctx1Parent2.transient.nested.instanceId,
       );
 
       // 다른 context의 같은 parent
-      expect(ctx1Parent1.transient.nested.instanceId).to.not.equal(
+      expect(ctx1Parent1.transient.nested.instanceId).not.toBe(
         ctx2Parent1.transient.nested.instanceId,
       );
     });
@@ -258,15 +257,13 @@ describe('Nested Transient Isolation', () => {
 
       const parentInstance = parentWrapper.instance;
 
-      expect(TransientService.constructorCalled).to.be.true;
-      expect(NestedTransientService.constructorCalled).to.be.true;
-      expect(parentInstance.transient).to.be.instanceOf(TransientService);
-      expect(parentInstance.transient.nested).to.be.instanceOf(
+      expect(TransientService.constructorCalled).toBe(true);
+      expect(NestedTransientService.constructorCalled).toBe(true);
+      expect(parentInstance.transient).toBeInstanceOf(TransientService);
+      expect(parentInstance.transient.nested).toBeInstanceOf(
         NestedTransientService,
       );
-      expect(parentInstance.transient.nested.value).to.equal(
-        'nested-initialized',
-      );
+      expect(parentInstance.transient.nested.value).toBe('nested-initialized');
     });
   });
 });

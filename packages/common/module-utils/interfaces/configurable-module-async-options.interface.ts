@@ -3,8 +3,8 @@ import {
   ModuleMetadata,
   Provider,
   Type,
-} from '../../interfaces';
-import { DEFAULT_FACTORY_CLASS_METHOD_KEY } from '../constants';
+} from '../../interfaces/index.js';
+import { DEFAULT_FACTORY_CLASS_METHOD_KEY } from '../constants.js';
 
 /**
  * Interface that must be implemented by the module options factory class.

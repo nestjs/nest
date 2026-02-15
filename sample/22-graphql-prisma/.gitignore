@@ -20,6 +20,9 @@ npm-debug.log
 # dist
 /dist
 
+# generated prisma client
+/src/generated
+
 # database
 prisma/dev.db
 

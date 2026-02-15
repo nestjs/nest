@@ -7,9 +7,9 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
-import { DatabaseService } from './database.service';
-import { CreateDatabaseDto } from './dto/create-database.dto';
-import { UpdateDatabaseDto } from './dto/update-database.dto';
+import { DatabaseService } from './database.service.js';
+import { CreateDatabaseDto } from './dto/create-database.dto.js';
+import { UpdateDatabaseDto } from './dto/update-database.dto.js';
 
 @Controller('database')
 export class DatabaseController {

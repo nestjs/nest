@@ -2,9 +2,9 @@ import {
   PARAMTYPES_METADATA,
   PROPERTY_DEPS_METADATA,
   SELF_DECLARED_DEPS_METADATA,
-} from '../../constants';
-import { ForwardReference, InjectionToken } from '../../interfaces';
-import { isUndefined } from '../../utils/shared.utils';
+} from '../../constants.js';
+import { ForwardReference, InjectionToken } from '../../interfaces/index.js';
+import { isUndefined } from '../../utils/shared.utils.js';
 
 /**
  * Decorator that marks a constructor parameter as a target for

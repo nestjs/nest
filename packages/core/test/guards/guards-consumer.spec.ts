@@ -1,6 +1,5 @@
-import { expect } from 'chai';
 import { of } from 'rxjs';
-import { GuardsConsumer } from '../../guards/guards-consumer';
+import { GuardsConsumer } from '../../guards/guards-consumer.js';
 import { AsyncLocalStorage } from 'async_hooks';
 
 describe('GuardsConsumer', () => {
@@ -19,7 +18,7 @@ describe('GuardsConsumer', () => {
           { constructor: null },
           null!,
         );
-        expect(canActivate).to.be.true;
+        expect(canActivate).toBe(true);
       });
     });
     describe('when guards array is not empty', () => {
@@ -31,7 +30,7 @@ describe('GuardsConsumer', () => {
             { constructor: null },
             null!,
           );
-          expect(canActivate).to.be.false;
+          expect(canActivate).toBe(false);
         });
       });
       describe('when each guard returns true', () => {
@@ -42,7 +41,7 @@ describe('GuardsConsumer', () => {
             { constructor: null },
             null!,
           );
-          expect(canActivate).to.be.true;
+          expect(canActivate).toBe(true);
         });
       });
       describe('when sync guards initialize AsyncLocalStorages', () => {
@@ -68,9 +67,9 @@ describe('GuardsConsumer', () => {
             { constructor: null },
             null!,
           );
-          expect(canActivate).to.be.true;
-          expect(storage1.getStore()).to.equal(1);
-          expect(storage2.getStore()).to.equal(2);
+          expect(canActivate).toBe(true);
+          expect(storage1.getStore()).toBe(1);
+          expect(storage2.getStore()).toBe(2);
         });
       });
     });
@@ -78,12 +77,12 @@ describe('GuardsConsumer', () => {
   describe('pickResult', () => {
     describe('when result is Observable', () => {
       it('should return result', async () => {
-        expect(await consumer.pickResult(of(true))).to.be.true;
+        expect(await consumer.pickResult(of(true))).toBe(true);
       });
     });
     describe('when result is Promise', () => {
       it('should await promise', async () => {
-        expect(await consumer.pickResult(Promise.resolve(true))).to.be.true;
+        expect(await consumer.pickResult(Promise.resolve(true))).toBe(true);
       });
     });
   });

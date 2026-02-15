@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PhotoService } from './photo.service';
-import { PhotoController } from './photo.controller';
-import { Photo } from './photo.entity';
+import { PhotoService } from './photo.service.js';
+import { PhotoController } from './photo.controller.js';
+import { Photo } from './photo.entity.js';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Photo])],

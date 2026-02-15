@@ -2,8 +2,8 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { DirectiveLocation, GraphQLDirective } from 'graphql';
-import { upperDirectiveTransformer } from './common/directives/upper-case.directive';
-import { RecipesModule } from './recipes/recipes.module';
+import { upperDirectiveTransformer } from './common/directives/upper-case.directive.js';
+import { RecipesModule } from './recipes/recipes.module.js';
 
 @Module({
   imports: [

@@ -1,23 +1,21 @@
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { expect } from 'chai';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
 import { of } from 'rxjs';
-import * as sinon from 'sinon';
-import { Injectable, UseGuards, UsePipes } from '../../../common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
-import { ApplicationConfig } from '../../../core/application-config';
-import { GuardsConsumer } from '../../../core/guards/guards-consumer';
-import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
-import { NestContainer } from '../../../core/injector/container';
-import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
-import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
-import { ExceptionFiltersContext } from '../../context/exception-filters-context';
-import { RpcContextCreator } from '../../context/rpc-context-creator';
-import { RpcProxy } from '../../context/rpc-proxy';
-import { RpcParamtype } from '../../enums/rpc-paramtype.enum';
-import { RpcParamsFactory } from '../../factories/rpc-params-factory';
-import { RpcException } from '../../index';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
+import { Injectable, UseGuards, UsePipes } from '../../../common/index.js';
+import { ApplicationConfig } from '../../../core/application-config.js';
+import { GuardsConsumer } from '../../../core/guards/guards-consumer.js';
+import { GuardsContextCreator } from '../../../core/guards/guards-context-creator.js';
+import { NestContainer } from '../../../core/injector/container.js';
+import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer.js';
+import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator.js';
+import { PipesConsumer } from '../../../core/pipes/pipes-consumer.js';
+import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator.js';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context.js';
+import { RpcContextCreator } from '../../context/rpc-context-creator.js';
+import { RpcProxy } from '../../context/rpc-proxy.js';
+import { RpcParamtype } from '../../enums/rpc-paramtype.enum.js';
+import { RpcParamsFactory } from '../../factories/rpc-params-factory.js';
+import { RpcException } from '../../index.js';
 
 @Injectable()
 class TestGuard {
@@ -58,7 +56,7 @@ describe('RpcContextCreator', () => {
       container,
       new ApplicationConfig() as any,
     );
-    sinon.stub(rpcProxy, 'create').callsFake(a => a);
+    vi.spyOn(rpcProxy, 'create').mockImplementation(a => a);
 
     pipesCreator = new PipesContextCreator(container);
     pipesConsumer = new PipesConsumer();
@@ -80,30 +78,44 @@ describe('RpcContextCreator', () => {
   });
   describe('create', () => {
     it('should create exception handler', () => {
-      const handlerCreateSpy = sinon.spy(exceptionFiltersContext, 'create');
+      const handlerCreateSpy = vi.spyOn(exceptionFiltersContext, 'create');
       contextCreator.create(instance, instance.test, module, 'test');
-      expect(
-        handlerCreateSpy.calledWith(instance, instance.test as any, module),
-      ).to.be.true;
+      expect(handlerCreateSpy).toHaveBeenCalledWith(
+        instance,
+        instance.test as any,
+        module,
+        expect.anything(),
+        undefined,
+      );
     });
     it('should create pipes context', () => {
-      const pipesCreateSpy = sinon.spy(pipesCreator, 'create');
+      const pipesCreateSpy = vi.spyOn(pipesCreator, 'create');
       contextCreator.create(instance, instance.test, module, 'test');
-      expect(pipesCreateSpy.calledWith(instance, instance.test as any, module))
-        .to.be.true;
+      expect(pipesCreateSpy).toHaveBeenCalledWith(
+        instance,
+        instance.test as any,
+        module,
+        expect.anything(),
+        undefined,
+      );
     });
     it('should create guards context', () => {
-      const guardsCreateSpy = sinon.spy(guardsContextCreator, 'create');
+      const guardsCreateSpy = vi.spyOn(guardsContextCreator, 'create');
       contextCreator.create(instance, instance.test, module, 'test');
-      expect(guardsCreateSpy.calledWith(instance, instance.test, module)).to.be
-        .true;
+      expect(guardsCreateSpy).toHaveBeenCalledWith(
+        instance,
+        instance.test,
+        module,
+        expect.anything(),
+        undefined,
+      );
     });
     describe('when proxy called', () => {
       it('should call guards consumer `tryActivate`', async () => {
-        const tryActivateSpy = sinon.spy(guardsConsumer, 'tryActivate');
-        sinon
-          .stub(guardsContextCreator, 'create')
-          .callsFake(() => [{ canActivate: () => true }]);
+        const tryActivateSpy = vi.spyOn(guardsConsumer, 'tryActivate');
+        vi.spyOn(guardsContextCreator, 'create').mockImplementation(
+          () => [{ canActivate: () => true }] as any,
+        );
         const proxy = contextCreator.create(
           instance,
           instance.test,
@@ -113,13 +125,13 @@ describe('RpcContextCreator', () => {
         const data = 'test';
         await proxy(data);
 
-        expect(tryActivateSpy.called).to.be.true;
+        expect(tryActivateSpy).toHaveBeenCalled();
       });
       describe('when can not activate', () => {
         it('should throw forbidden exception', async () => {
-          sinon
-            .stub(guardsConsumer, 'tryActivate')
-            .callsFake(async () => false);
+          vi.spyOn(guardsConsumer, 'tryActivate').mockImplementation(
+            async () => false,
+          );
 
           const proxy = contextCreator.create(
             instance,
@@ -130,7 +142,7 @@ describe('RpcContextCreator', () => {
           const data = 'test';
 
           proxy(null, data).catch(err =>
-            expect(err).to.be.instanceOf(RpcException),
+            expect(err).toBeInstanceOf(RpcException),
           );
         });
       });
@@ -143,15 +155,17 @@ describe('RpcContextCreator', () => {
         instance,
         instance.test,
       );
-      expect(paramtypes).to.be.eql([String]);
+      expect(paramtypes).toEqual([String]);
     });
   });
 
   describe('createGuardsFn', () => {
     it('should throw exception when "tryActivate" returns false', () => {
       const guardsFn = contextCreator.createGuardsFn([null], null!, null!)!;
-      sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
-      guardsFn([]).catch(err => expect(err).to.not.be.undefined);
+      vi.spyOn(guardsConsumer, 'tryActivate').mockImplementation(
+        async () => false,
+      );
+      guardsFn([]).catch(err => expect(err).not.toBeUndefined());
     });
   });
 
@@ -179,19 +193,19 @@ describe('RpcContextCreator', () => {
         { index: 2, type: RpcParamtype.CONTEXT, data: 'test' },
         { index: 3, type: `key${CUSTOM_ROUTE_ARGS_METADATA}`, data: 'custom' },
       ];
-      expect(values[0]).to.deep.include(expectedValues[0]);
-      expect(values[1]).to.deep.include(expectedValues[1]);
-      expect(values[2]).to.deep.include(expectedValues[2]);
+      expect(values[0]).toMatchObject(expectedValues[0]);
+      expect(values[1]).toMatchObject(expectedValues[1]);
+      expect(values[2]).toMatchObject(expectedValues[2]);
     });
   });
   describe('getParamValue', () => {
-    let consumerApplySpy: sinon.SinonSpy;
+    let consumerApplySpy: ReturnType<typeof vi.fn>;
     const value = 3,
       metatype = null,
-      transforms = [{ transform: sinon.spy() }];
+      transforms = [{ transform: vi.fn() }];
 
     beforeEach(() => {
-      consumerApplySpy = sinon.spy(pipesConsumer, 'apply');
+      consumerApplySpy = vi.spyOn(pipesConsumer, 'apply');
     });
     it('should call "consumer.apply"', async () => {
       await contextCreator.getParamValue(
@@ -199,14 +213,14 @@ describe('RpcContextCreator', () => {
         { metatype, type: RpcParamtype.PAYLOAD, data: null },
         transforms,
       );
-      expect(consumerApplySpy.called).to.be.true;
+      expect(consumerApplySpy).toHaveBeenCalled();
     });
   });
   describe('createPipesFn', () => {
     describe('when "paramsOptions" is empty', () => {
       it('returns null', async () => {
         const pipesFn = contextCreator.createPipesFn([], []);
-        expect(pipesFn).to.be.null;
+        expect(pipesFn).toBeNull();
       });
     });
     describe('when "paramsOptions" is not empty', () => {
@@ -224,7 +238,7 @@ describe('RpcContextCreator', () => {
           ],
         )!;
         await pipesFn([]);
-        expect(pipesFn).to.be.a('function');
+        expect(pipesFn).toBeTypeOf('function');
       });
     });
   });

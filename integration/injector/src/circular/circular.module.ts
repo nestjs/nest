@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { CircularService } from './circular.service';
-import { InputService } from './input.service';
+import { CircularService } from './circular.service.js';
+import { InputService } from './input.service.js';
 
 @Module({
   providers: [CircularService, InputService],

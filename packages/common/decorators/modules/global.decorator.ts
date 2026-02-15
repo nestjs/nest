@@ -1,4 +1,4 @@
-import { GLOBAL_MODULE_METADATA } from '../../constants';
+import { GLOBAL_MODULE_METADATA } from '../../constants.js';
 
 /**
  * Decorator that makes a module global-scoped.

@@ -1,8 +1,5 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import { isFunction, isString } from '@nestjs/common/utils/shared.utils';
+import { createRequire } from 'module';
 import { EventEmitter } from 'events';
 import {
   EmptyError,
@@ -23,12 +20,19 @@ import {
   RQM_DEFAULT_QUEUE,
   RQM_DEFAULT_QUEUE_OPTIONS,
   RQM_DEFAULT_URL,
-} from '../constants';
-import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events';
-import { ReadPacket, RmqOptions, WritePacket } from '../interfaces';
-import { RmqRecord } from '../record-builders';
-import { RmqRecordSerializer } from '../serializers/rmq-record.serializer';
-import { ClientProxy } from './client-proxy';
+} from '../constants.js';
+import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
+import { ReadPacket, RmqOptions, WritePacket } from '../interfaces/index.js';
+import { RmqRecord } from '../record-builders/index.js';
+import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
+import { ClientProxy } from './client-proxy.js';
+import { Logger } from '@nestjs/common';
+import {
+  loadPackageSync,
+  randomStringGenerator,
+  isFunction,
+  isString,
+} from '@nestjs/common/internal';
 
 // To enable type safety for RMQ. This cant be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
@@ -87,9 +91,13 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       this.queueOptions.noAssert ??
       RQM_DEFAULT_NO_ASSERT;
 
-    loadPackage('amqplib', ClientRMQ.name, () => require('amqplib'));
-    rmqPackage = loadPackage('amqp-connection-manager', ClientRMQ.name, () =>
-      require('amqp-connection-manager'),
+    loadPackageSync('amqplib', ClientRMQ.name, () =>
+      createRequire(import.meta.url)('amqplib'),
+    );
+    rmqPackage = loadPackageSync(
+      'amqp-connection-manager',
+      ClientRMQ.name,
+      () => createRequire(import.meta.url)('amqp-connection-manager'),
     );
 
     this.initializeSerializer(options);
@@ -104,7 +112,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     this.pendingEventListeners = [];
   }
 
-  public connect(): Promise<any> {
+  public async connect(): Promise<any> {
     if (this.client) {
       return this.connectionPromise;
     }

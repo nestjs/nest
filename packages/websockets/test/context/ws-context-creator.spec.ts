@@ -1,22 +1,20 @@
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { expect } from 'chai';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
 import { of } from 'rxjs';
-import * as sinon from 'sinon';
-import { Injectable, UseGuards, UsePipes } from '../../../common';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
-import { GuardsConsumer } from '../../../core/guards/guards-consumer';
-import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
-import { NestContainer } from '../../../core/injector/container';
-import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
-import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
-import { ExceptionFiltersContext } from '../../context/exception-filters-context';
-import { WsContextCreator } from '../../context/ws-context-creator';
-import { WsProxy } from '../../context/ws-proxy';
-import { WsParamtype } from '../../enums/ws-paramtype.enum';
-import { WsParamsFactory } from '../../factories/ws-params-factory';
-import { WsException } from '../../index';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
+import { Injectable, UseGuards, UsePipes } from '../../../common/index.js';
+import { GuardsConsumer } from '../../../core/guards/guards-consumer.js';
+import { GuardsContextCreator } from '../../../core/guards/guards-context-creator.js';
+import { NestContainer } from '../../../core/injector/container.js';
+import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer.js';
+import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator.js';
+import { PipesConsumer } from '../../../core/pipes/pipes-consumer.js';
+import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator.js';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context.js';
+import { WsContextCreator } from '../../context/ws-context-creator.js';
+import { WsProxy } from '../../context/ws-proxy.js';
+import { WsParamtype } from '../../enums/ws-paramtype.enum.js';
+import { WsParamsFactory } from '../../factories/ws-params-factory.js';
+import { WsException } from '../../index.js';
 
 @Injectable()
 class TestGuard {
@@ -52,7 +50,7 @@ describe('WsContextCreator', () => {
 
   beforeEach(() => {
     wsProxy = new WsProxy();
-    sinon.stub(wsProxy, 'create').callsFake(a => a);
+    vi.spyOn(wsProxy, 'create').mockImplementation(a => a);
 
     exceptionFiltersContext = new ExceptionFiltersContext(
       new NestContainer() as any,
@@ -77,30 +75,38 @@ describe('WsContextCreator', () => {
   });
   describe('create', () => {
     it('should create exception handler', () => {
-      const handlerCreateSpy = sinon.spy(exceptionFiltersContext, 'create');
+      const handlerCreateSpy = vi.spyOn(exceptionFiltersContext, 'create');
       contextCreator.create(instance, instance.test, module, 'create');
-      expect(
-        handlerCreateSpy.calledWith(instance, instance.test as any, module),
-      ).to.be.true;
+      expect(handlerCreateSpy).toHaveBeenCalledWith(
+        instance,
+        instance.test as any,
+        module,
+      );
     });
     it('should create pipes context', () => {
-      const pipesCreateSpy = sinon.spy(pipesCreator, 'create');
+      const pipesCreateSpy = vi.spyOn(pipesCreator, 'create');
       contextCreator.create(instance, instance.test, module, 'create');
-      expect(pipesCreateSpy.calledWith(instance, instance.test, module)).to.be
-        .true;
+      expect(pipesCreateSpy).toHaveBeenCalledWith(
+        instance,
+        instance.test,
+        module,
+      );
     });
     it('should create guards context', () => {
-      const guardsCreateSpy = sinon.spy(guardsContextCreator, 'create');
+      const guardsCreateSpy = vi.spyOn(guardsContextCreator, 'create');
       contextCreator.create(instance, instance.test, module, 'create');
-      expect(guardsCreateSpy.calledWith(instance, instance.test, module)).to.be
-        .true;
+      expect(guardsCreateSpy).toHaveBeenCalledWith(
+        instance,
+        instance.test,
+        module,
+      );
     });
     describe('when proxy called', () => {
       it('should call guards consumer `tryActivate`', async () => {
-        const tryActivateSpy = sinon.spy(guardsConsumer, 'tryActivate');
-        sinon
-          .stub(guardsContextCreator, 'create')
-          .callsFake(() => [{ canActivate: () => true }]);
+        const tryActivateSpy = vi.spyOn(guardsConsumer, 'tryActivate');
+        vi.spyOn(guardsContextCreator, 'create').mockImplementation(
+          () => [{ canActivate: () => true }] as any,
+        );
         const proxy = contextCreator.create(
           instance,
           instance.test,
@@ -110,13 +116,13 @@ describe('WsContextCreator', () => {
         const data = 'test';
         await proxy(null, data);
 
-        expect(tryActivateSpy.called).to.be.true;
+        expect(tryActivateSpy).toHaveBeenCalled();
       });
       describe('when can not activate', () => {
         it('should throw forbidden exception', () => {
-          sinon
-            .stub(guardsConsumer, 'tryActivate')
-            .callsFake(async () => false);
+          vi.spyOn(guardsConsumer, 'tryActivate').mockImplementation(
+            async () => false,
+          );
           const proxy = contextCreator.create(
             instance,
             instance.test,
@@ -125,7 +131,7 @@ describe('WsContextCreator', () => {
           );
           const data = 'test';
           proxy(null, data).catch(err =>
-            expect(err).to.be.instanceOf(WsException),
+            expect(err).toBeInstanceOf(WsException),
           );
         });
       });
@@ -138,15 +144,17 @@ describe('WsContextCreator', () => {
         instance,
         instance.test,
       );
-      expect(paramtypes).to.be.eql([String, Number]);
+      expect(paramtypes).toEqual([String, Number]);
     });
   });
 
   describe('createGuardsFn', () => {
     it('should throw exception when "tryActivate" returns false', () => {
       const guardsFn = contextCreator.createGuardsFn([null], null!, null!)!;
-      sinon.stub(guardsConsumer, 'tryActivate').callsFake(async () => false);
-      guardsFn([]).catch(err => expect(err).to.not.be.undefined);
+      vi.spyOn(guardsConsumer, 'tryActivate').mockImplementation(
+        async () => false,
+      );
+      guardsFn([]).catch(err => expect(err).not.toBeUndefined());
     });
   });
 
@@ -174,18 +182,18 @@ describe('WsContextCreator', () => {
         { index: 2, type: WsParamtype.PAYLOAD, data: 'test' },
         { index: 3, type: `key${CUSTOM_ROUTE_ARGS_METADATA}`, data: 'custom' },
       ];
-      expect(values[0]).to.deep.include(expectedValues[0]);
-      expect(values[1]).to.deep.include(expectedValues[1]);
+      expect(values[0]).toMatchObject(expectedValues[0]);
+      expect(values[1]).toMatchObject(expectedValues[1]);
     });
   });
   describe('getParamValue', () => {
-    let consumerApplySpy: sinon.SinonSpy;
+    let consumerApplySpy: ReturnType<typeof vi.fn>;
     const value = 3,
       metatype = null,
-      transforms = [{ transform: sinon.spy() }];
+      transforms = [{ transform: vi.fn() }];
 
     beforeEach(() => {
-      consumerApplySpy = sinon.spy(pipesConsumer, 'apply');
+      consumerApplySpy = vi.spyOn(pipesConsumer, 'apply');
     });
     it('should call "consumer.apply"', async () => {
       await contextCreator.getParamValue(
@@ -193,14 +201,14 @@ describe('WsContextCreator', () => {
         { metatype, type: WsParamtype.PAYLOAD, data: null },
         transforms,
       );
-      expect(consumerApplySpy.called).to.be.true;
+      expect(consumerApplySpy).toHaveBeenCalled();
     });
   });
   describe('createPipesFn', () => {
     describe('when "paramsOptions" is empty', () => {
       it('returns null', async () => {
         const pipesFn = contextCreator.createPipesFn([], []);
-        expect(pipesFn).to.be.null;
+        expect(pipesFn).toBeNull();
       });
     });
     describe('when "paramsOptions" is not empty', () => {
@@ -218,7 +226,7 @@ describe('WsContextCreator', () => {
           ],
         )!;
         await pipesFn([]);
-        expect(pipesFn).to.be.a('function');
+        expect(pipesFn).toBeTypeOf('function');
       });
     });
   });

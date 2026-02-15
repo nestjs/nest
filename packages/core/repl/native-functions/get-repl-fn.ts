@@ -1,6 +1,6 @@
 import type { Type } from '@nestjs/common';
-import { ReplFunction } from '../repl-function';
-import type { ReplFnDefinition } from '../repl.interfaces';
+import { ReplFunction } from '../repl-function.js';
+import type { ReplFnDefinition } from '../repl.interfaces.js';
 
 export class GetReplFn extends ReplFunction {
   public fnDefinition: ReplFnDefinition = {

@@ -4,6 +4,14 @@
   "description": "Nest - modern, fast, powerful node.js web framework (@testing)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*.js": "./*.js",
+    "./*": "./*.js",
+    "./interfaces": "./interfaces/index.js"
+  },
   "homepage": "https://nestjs.com",
   "funding": {
     "type": "opencollective",
