@@ -1,5 +1,5 @@
 import { InjectionToken } from '@nestjs/common';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 
 export function getInstancesGroupedByHierarchyLevel(
   ...collections: Array<

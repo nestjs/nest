@@ -1,18 +1,9 @@
 import type { OnApplicationShutdown } from '@nestjs/common';
-import { iterate } from 'iterare';
-<<<<<<< HEAD
-import { Module } from '../injector/module';
-import { getInstancesGroupedByHierarchyLevel } from './utils/get-instances-grouped-by-hierarchy-level';
-import { getSortedHierarchyLevels } from './utils/get-sorted-hierarchy-levels';
-=======
-import {
-  getNonTransientInstances,
-  getTransientInstances,
-} from '../injector/helpers/transient-instances.js';
-import { InstanceWrapper } from '../injector/instance-wrapper.js';
-import { Module } from '../injector/module.js';
 import { isFunction, isNil } from '@nestjs/common/internal';
->>>>>>> v12.0.0
+import { iterate } from 'iterare';
+import { Module } from '../injector/module.js';
+import { getInstancesGroupedByHierarchyLevel } from './utils/get-instances-grouped-by-hierarchy-level.js';
+import { getSortedHierarchyLevels } from './utils/get-sorted-hierarchy-levels.js';
 
 /**
  * Checks if the given instance has the `onApplicationShutdown` function
