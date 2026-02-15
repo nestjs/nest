@@ -1,4 +1,4 @@
-import { DynamicModule, Type } from '@nestjs/common';
+import type { DynamicModule, Type } from '@nestjs/common';
 import { ModuleOverride } from '../../interfaces/module-override.interface.js';
 import { DependenciesScanner } from '../../scanner.js';
 import { ModuleCompiler } from '../compiler.js';

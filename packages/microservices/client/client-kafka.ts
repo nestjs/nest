@@ -1,6 +1,3 @@
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
-import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import {
   throwError as _throw,
   connectable,
@@ -49,6 +46,8 @@ import {
   KafkaRequestSerializer,
 } from '../serializers/kafka-request.serializer.js';
 import { ClientProxy } from './client-proxy.js';
+import { Logger } from '@nestjs/common';
+import { loadPackage, isNil, isUndefined } from '@nestjs/common/internal';
 
 /**
  * @publicApi

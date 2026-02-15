@@ -189,28 +189,38 @@ describe('JsonSocket connection', () => {
         server.once('connection', socket => {
           const serverSocket = new JsonSocket(socket);
 
-          serverSocket.once('end', () => {
-            setTimeout(() => {
-              expect(serverSocket['isClosed']).toBe(true);
-              expect(clientSocket['isClosed']).toBe(true);
+          let serverClosed = false;
+          let clientClosed = false;
 
-              clientSocket.on('connect', () => {
-                setTimeout(() => {
-                  expect(clientSocket['isClosed']).toBe(false);
+          const onBothClosed = () => {
+            if (!serverClosed || !clientClosed) return;
 
-                  clientSocket.end();
-                  server.close(done);
-                }, 10);
-              });
+            expect(serverSocket['isClosed']).toBe(true);
+            expect(clientSocket['isClosed']).toBe(true);
 
-              const address2 = server.address();
-              if (!address2) {
-                throw new Error('server.address() returned null');
-              }
-              const port2 = (address2 as AddressInfo).port;
+            clientSocket.on('connect', () => {
+              expect(clientSocket['isClosed']).toBe(false);
 
-              clientSocket.connect(port2, ip);
-            }, 10);
+              clientSocket.end();
+              server.close(done);
+            });
+
+            const address2 = server.address();
+            if (!address2) {
+              throw new Error('server.address() returned null');
+            }
+            const port2 = (address2 as AddressInfo).port;
+
+            clientSocket.connect(port2, ip);
+          };
+
+          serverSocket.once('close', () => {
+            serverClosed = true;
+            onBothClosed();
+          });
+          clientSocket.once('close', () => {
+            clientClosed = true;
+            onBothClosed();
           });
 
           clientSocket.end();

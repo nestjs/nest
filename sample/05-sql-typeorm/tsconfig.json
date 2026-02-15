@@ -11,7 +11,8 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "moduleResolution": "nodenext"
+    "moduleResolution": "nodenext",
+    "types": ["vitest/globals"]
   },
   "include": [
     "src/**/*",

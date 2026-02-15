@@ -2,28 +2,12 @@ import {
   HttpStatus,
   InternalServerErrorException,
   Logger,
-  RequestMethod,
+  type RequestMethod,
   StreamableFile,
   VERSION_NEUTRAL,
-  VersioningOptions,
+  type VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
-import {
-  CorsOptions,
-  CorsOptionsDelegate,
-} from '@nestjs/common/interfaces/external/cors-options.interface.js';
-import { VersionValue } from '@nestjs/common/interfaces/index.js';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface.js';
-import {
-  isFunction,
-  isNil,
-  isObject,
-  isString,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils.js';
-import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter.js';
-import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory.js';
-import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter.js';
 import cors from 'cors';
 import express from 'express';
 import type { Server } from 'http';
@@ -35,6 +19,22 @@ import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-pa
 import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface.js';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface.js';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util.js';
+import {
+  type CorsOptions,
+  type CorsOptionsDelegate,
+  type VersionValue,
+  isFunction,
+  isNil,
+  isObject,
+  isString,
+  isUndefined,
+} from '@nestjs/common/internal';
+import type { NestApplicationOptions } from '@nestjs/common';
+import { AbstractHttpAdapter } from '@nestjs/core';
+import {
+  RouterMethodFactory,
+  LegacyRouteConverter,
+} from '@nestjs/core/internal';
 
 type VersionedRoute = <
   TRequest extends Record<string, any> = any,

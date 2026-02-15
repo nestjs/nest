@@ -1,28 +1,25 @@
+import type { ContextType, PipeTransform } from '@nestjs/common';
 import {
+  type Controller,
   CUSTOM_ROUTE_ARGS_METADATA,
+  isEmpty,
   PARAMTYPES_METADATA,
-} from '@nestjs/common/constants.js';
-import {
-  ContextType,
-  Controller,
-  PipeTransform,
-} from '@nestjs/common/interfaces/index.js';
-import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
-import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards/constants.js';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer.js';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator.js';
+} from '@nestjs/common/internal';
 import {
   ContextUtils,
-  ParamProperties,
-} from '@nestjs/core/helpers/context-utils.js';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
-import { HandlerMetadataStorage } from '@nestjs/core/helpers/handler-metadata-storage.js';
-import { ParamsMetadata } from '@nestjs/core/helpers/interfaces/index.js';
-import { STATIC_CONTEXT } from '@nestjs/core/injector/constants.js';
-import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer.js';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator.js';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer.js';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator.js';
+  type ExecutionContextHost,
+  FORBIDDEN_MESSAGE,
+  type GuardsConsumer,
+  type GuardsContextCreator,
+  HandlerMetadataStorage,
+  type InterceptorsConsumer,
+  type InterceptorsContextCreator,
+  type ParamProperties,
+  type ParamsMetadata,
+  type PipesConsumer,
+  type PipesContextCreator,
+  STATIC_CONTEXT,
+} from '@nestjs/core/internal';
 import { Observable } from 'rxjs';
 import { PARAM_ARGS_METADATA } from '../constants.js';
 import { RpcException } from '../exceptions/index.js';
@@ -220,7 +217,7 @@ export class RpcContextCreator {
     this.pipesContextCreator.setModuleContext(moduleContext);
 
     return keys.map(key => {
-      const { index, data, pipes: pipesCollection } = metadata[key];
+      const { index, data, pipes: pipesCollection, schema } = metadata[key];
       const pipes =
         this.pipesContextCreator.createConcreteContext(pipesCollection);
       const type = this.contextUtils.mapParamType(key);
@@ -232,13 +229,20 @@ export class RpcContextCreator {
           data,
           contextFactory,
         );
-        return { index, extractValue: customExtractValue, type, data, pipes };
+        return {
+          index,
+          extractValue: customExtractValue,
+          type,
+          data,
+          pipes,
+          schema,
+        };
       }
       const numericType = Number(type);
       const extractValue = (...args: unknown[]) =>
         paramsFactory.exchangeKeyForValue(numericType, data, args);
 
-      return { index, extractValue, type: numericType, data, pipes };
+      return { index, extractValue, type: numericType, data, pipes, schema };
     });
   }
 

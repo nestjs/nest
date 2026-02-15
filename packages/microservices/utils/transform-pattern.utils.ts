@@ -1,9 +1,5 @@
-import {
-  isObject,
-  isString,
-  isNumber,
-} from '@nestjs/common/utils/shared.utils.js';
 import { MsPattern } from '../interfaces/index.js';
+import { isObject, isString, isNumber } from '@nestjs/common/internal';
 
 /**
  * Transforms the Pattern to Route.

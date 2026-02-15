@@ -1,11 +1,10 @@
 import {
-  HttpServer,
+  type HttpServer,
   HttpStatus,
   Logger,
   RequestMethod,
-  MessageEvent,
+  type MessageEvent,
 } from '@nestjs/common';
-import { isObject } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage } from 'http';
 import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
 import { catchError, concatMap, map } from 'rxjs/operators';
@@ -14,6 +13,7 @@ import {
   WritableHeaderStream,
   SseStream,
 } from './sse-stream.js';
+import { isObject } from '@nestjs/common/internal';
 
 export interface CustomHeader {
   name: string;

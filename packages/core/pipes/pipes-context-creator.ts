@@ -1,16 +1,16 @@
-import { PIPES_METADATA } from '@nestjs/common/constants.js';
-import {
-  Controller,
-  PipeTransform,
-  Type,
-} from '@nestjs/common/interfaces/index.js';
-import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
 import { ContextCreator } from '../helpers/context-creator.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import {
+  PIPES_METADATA,
+  type Controller,
+  isEmpty,
+  isFunction,
+} from '@nestjs/common/internal';
+import type { PipeTransform, Type } from '@nestjs/common';
 
 export class PipesContextCreator extends ContextCreator {
   private moduleContext: string;

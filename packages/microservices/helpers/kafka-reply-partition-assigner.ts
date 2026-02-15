@@ -1,5 +1,3 @@
-import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
-import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import { createRequire } from 'module';
 import { ClientKafka } from '../client/client-kafka.js';
 import {
@@ -9,6 +7,7 @@ import {
   GroupState,
   MemberMetadata,
 } from '../external/kafka.interface.js';
+import { loadPackageSync, isUndefined } from '@nestjs/common/internal';
 
 let kafkaPackage: any = {};
 
@@ -63,18 +62,14 @@ export class KafkaReplyPartitionAssigner {
     });
 
     // build a collection of topics and partitions
-    const topicsPartitions = group.topics
-      .map(topic => {
-        const partitionMetadata =
-          this.config.cluster.findTopicPartitionMetadata(topic);
-        return partitionMetadata.map(m => {
-          return {
-            topic,
-            partitionId: m.partitionId,
-          };
-        });
-      })
-      .reduce((acc, val) => acc.concat(val), []);
+    const topicsPartitions = group.topics.flatMap(topic => {
+      const partitionMetadata =
+        this.config.cluster.findTopicPartitionMetadata(topic);
+      return partitionMetadata.map(m => ({
+        topic,
+        partitionId: m.partitionId,
+      }));
+    });
 
     // create the new assignment by populating the members with the first partition of the topics
     sortedMemberIds.forEach(assignee => {

@@ -1,5 +1,3 @@
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util.js';
-import { isNil } from '@nestjs/common/utils/shared.utils.js';
 import {
   throwError as _throw,
   connectable,
@@ -31,6 +29,7 @@ import { ProducerDeserializer } from '../interfaces/deserializer.interface.js';
 import { ProducerSerializer } from '../interfaces/serializer.interface.js';
 import { IdentitySerializer } from '../serializers/identity.serializer.js';
 import { transformPatternToRoute } from '../utils/index.js';
+import { randomStringGenerator, isNil } from '@nestjs/common/internal';
 
 /**
  * @publicApi

@@ -54,7 +54,7 @@ describe('ListenersController', () => {
           vi.fn(),
         ]),
       ),
-    } as any as any;
+    } as any;
     proxySpy = vi.fn();
     (rpcContextCreator as any).create.mockImplementation(() => proxySpy);
 

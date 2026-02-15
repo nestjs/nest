@@ -1,11 +1,11 @@
+import { Serializer } from '../interfaces/serializer.interface.js';
 import {
   isNil,
   isObject,
   isPlainObject,
   isString,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils.js';
-import { Serializer } from '../interfaces/serializer.interface.js';
+} from '@nestjs/common/internal';
 
 export interface KafkaRequest<T = any> {
   key: Buffer | string | null;

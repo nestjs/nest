@@ -17,10 +17,10 @@ describe('ServerNats', () => {
     untypedServer = server as any;
 
     // Eagerly init serializer/deserializer (loadPackage is async in ESM)
-    if (typeof (untypedServer.serializer as any)?.init === 'function') {
+    if (typeof untypedServer.serializer?.init === 'function') {
       await untypedServer.serializer.init();
     }
-    if (typeof (untypedServer.deserializer as any)?.init === 'function') {
+    if (typeof untypedServer.deserializer?.init === 'function') {
       await untypedServer.deserializer.init();
     }
   });

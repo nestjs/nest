@@ -1,8 +1,8 @@
 import type { InjectionToken, Type } from '@nestjs/common';
-import { clc } from '@nestjs/common/utils/cli-colors.util.js';
 import type { ModuleDebugEntry } from '../repl-context.js';
 import { ReplFunction } from '../repl-function.js';
 import type { ReplFnDefinition } from '../repl.interfaces.js';
+import { clc } from '@nestjs/common/internal';
 
 export class DebugReplFn extends ReplFunction {
   public fnDefinition: ReplFnDefinition = {

@@ -1,17 +1,16 @@
-import { INestApplicationContext, Logger } from '@nestjs/common';
-import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
-import { isNil, normalizePath } from '@nestjs/common/utils/shared.utils.js';
+import { type INestApplicationContext, Logger } from '@nestjs/common';
 import { AbstractWsAdapter } from '@nestjs/websockets';
-import {
-  CLOSE_EVENT,
-  CONNECTION_EVENT,
-  ERROR_EVENT,
-} from '@nestjs/websockets/constants.js';
-import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer.js';
 import * as http from 'http';
 import { createRequire } from 'module';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
 import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
+import { loadPackageSync, isNil, normalizePath } from '@nestjs/common/internal';
+import {
+  CLOSE_EVENT,
+  CONNECTION_EVENT,
+  ERROR_EVENT,
+} from '@nestjs/websockets/internal';
+import type { MessageMappingProperties } from '@nestjs/websockets';
 
 let wsPackage: any = {};
 

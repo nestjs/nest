@@ -1,10 +1,9 @@
-import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
-import { isObject } from '@nestjs/common/utils/shared.utils.js';
 import { createRequire } from 'module';
 import { NatsCodec } from '../external/nats-codec.interface.js';
 import { ReadPacket } from '../interfaces/index.js';
 import { Serializer } from '../interfaces/serializer.interface.js';
 import { NatsRecord, NatsRecordBuilder } from '../record-builders/index.js';
+import { loadPackageSync, isObject } from '@nestjs/common/internal';
 
 let natsPackage = {} as any;
 
