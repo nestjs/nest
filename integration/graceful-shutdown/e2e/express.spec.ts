@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { INestApplication } from '@nestjs/common';
-import { expect } from 'chai';
 import * as http from 'http';
 import { AppModule } from '../src/app.module';
 
@@ -46,10 +45,10 @@ describe('Graceful Shutdown (Express)', () => {
 
     // The in-flight request should finish successfully
     const response = await requestPromise;
-    expect(response).to.equal('ok');
+    expect(response).toBe('ok');
 
     await closePromise;
-  }).timeout(10000);
+  }, 10000);
 
   it('should return 503 for NEW queued requests on existing connections during shutdown', async () => {
     app = await NestFactory.create(AppModule, new ExpressAdapter() as any, {
@@ -86,9 +85,9 @@ describe('Graceful Shutdown (Express)', () => {
     req1.on('error', () => {});
 
     const status = await statusPromise;
-    expect(status).to.equal(503);
+    expect(status).toBe(503);
 
     await closePromise;
     agent.destroy();
-  }).timeout(10000);
+  }, 10000);
 });

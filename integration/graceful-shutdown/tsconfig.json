@@ -1,16 +1,28 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "types": ["vitest/globals"],
     "module": "commonjs",
-    "target": "es2020",
-    "strict": true,
+    "declaration": false,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "noLib": false,
     "esModuleInterop": true,
-    "baseUrl": ".",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "allowJs": true,
+    "strictNullChecks": true,
+    "outDir": "./dist",
     "paths": {
-      "@nestjs/common": ["../../packages/common/index.ts"],
-      "@nestjs/core": ["../../packages/core/index.ts"],
-      "@nestjs/platform-express": ["../../packages/platform-express/index.ts"],
-      "@nestjs/testing": ["../../packages/testing/index.ts"]
+      "@nestjs/common": ["../../packages/common"],
+      "@nestjs/common/*": ["../../packages/common/*"],
+      "@nestjs/core": ["../../packages/core"],
+      "@nestjs/core/*": ["../../packages/core/*"],
+      "@nestjs/platform-express": ["../../packages/platform-express"],
+      "@nestjs/platform-express/*": ["../../packages/platform-express/*"],
+      "@nestjs/testing": ["../../packages/testing"],
+      "@nestjs/testing/*": ["../../packages/testing/*"]
     }
   },
   "include": ["src/**/*", "e2e/**/*"],
