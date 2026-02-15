@@ -801,6 +801,73 @@ describe('Injector', () => {
     });
   });
 
+  describe('getClassDependencies - inheritance', () => {
+    it('should not inherit optional metadata from parent when child defines own constructor', async () => {
+      class FixtureDep1 {}
+      class FixtureDep2 {}
+
+      @Injectable()
+      class ParentClass {
+        constructor(@Optional() private dep1: FixtureDep1) {}
+      }
+
+      @Injectable()
+      class ChildClass extends ParentClass {
+        constructor(private dep2: FixtureDep2) {
+          super(undefined as any);
+        }
+      }
+
+      const wrapper = new InstanceWrapper({ metatype: ChildClass });
+      const [dependencies, optionalDependenciesIds] =
+        injector.getClassDependencies(wrapper);
+
+      expect(dependencies).to.deep.eq([FixtureDep2]);
+      expect(optionalDependenciesIds).to.deep.eq([]);
+    });
+
+    it('should inherit optional metadata from parent when child does not define own constructor', async () => {
+      class FixtureDep1 {}
+
+      @Injectable()
+      class ParentClass {
+        constructor(@Optional() private dep1: FixtureDep1) {}
+      }
+
+      // Child without own constructor inherits parent's
+      @Injectable()
+      class ChildClass extends ParentClass {}
+
+      const wrapper = new InstanceWrapper({ metatype: ChildClass });
+      const [, optionalDependenciesIds] =
+        injector.getClassDependencies(wrapper);
+
+      expect(optionalDependenciesIds).to.deep.eq([0]);
+    });
+
+    it('should not inherit @Inject metadata from parent when child defines own constructor', async () => {
+      class FixtureDep1 {}
+      class FixtureDep2 {}
+
+      @Injectable()
+      class ParentClass {
+        constructor(@Inject('PARENT_TOKEN') private dep1: FixtureDep1) {}
+      }
+
+      @Injectable()
+      class ChildClass extends ParentClass {
+        constructor(private dep2: FixtureDep2) {
+          super(undefined as any);
+        }
+      }
+
+      const wrapper = new InstanceWrapper({ metatype: ChildClass });
+      const [dependencies] = injector.getClassDependencies(wrapper);
+
+      expect(dependencies).to.deep.eq([FixtureDep2]);
+    });
+  });
+
   describe('getFactoryProviderDependencies', () => {
     it('should return an array that consists of deps and optional dep ids', async () => {
       class FixtureDep1 {}

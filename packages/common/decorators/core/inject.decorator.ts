@@ -49,7 +49,7 @@ export function Inject(
 
     if (!isUndefined(index)) {
       let dependencies =
-        Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, target) || [];
+        Reflect.getOwnMetadata(SELF_DECLARED_DEPS_METADATA, target) || [];
 
       dependencies = [...dependencies, { index, param: type }];
       Reflect.defineMetadata(SELF_DECLARED_DEPS_METADATA, dependencies, target);

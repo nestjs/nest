@@ -448,10 +448,18 @@ export class Injector {
   }
 
   public reflectOptionalParams<T>(type: Type<T>): any[] {
+    const hasOwnConstructor = Reflect.getOwnMetadata(PARAMTYPES_METADATA, type);
+    if (hasOwnConstructor) {
+      return Reflect.getOwnMetadata(OPTIONAL_DEPS_METADATA, type) || [];
+    }
     return Reflect.getMetadata(OPTIONAL_DEPS_METADATA, type) || [];
   }
 
   public reflectSelfParams<T>(type: Type<T>): any[] {
+    const hasOwnConstructor = Reflect.getOwnMetadata(PARAMTYPES_METADATA, type);
+    if (hasOwnConstructor) {
+      return Reflect.getOwnMetadata(SELF_DECLARED_DEPS_METADATA, type) || [];
+    }
     return Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, type) || [];
   }
 
