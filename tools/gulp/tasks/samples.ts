@@ -137,6 +137,10 @@ task('install:samples', async () =>
   ),
 );
 task('build:samples', async () => executeNpmScriptInSamples('npm run build'));
+// TODO: re-enable test:samples and test:e2e:samples once third-party @nestjs/*
+// packages (e.g. @nestjs/typeorm, @nestjs/swagger) ship ESM builds. Currently,
+// move:samples overwrites published CJS builds with local ESM, breaking CJS
+// require() chains in these packages.
 task('test:samples', async () =>
   executeNpmScriptInSamples('npm run test', '--passWithNoTests'),
 );
