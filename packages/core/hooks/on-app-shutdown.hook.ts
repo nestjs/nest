@@ -1,4 +1,4 @@
-import { OnApplicationShutdown } from '@nestjs/common';
+import type { OnApplicationShutdown } from '@nestjs/common';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,

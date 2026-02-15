@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import { ModuleOpaqueKeyFactory } from './interfaces/module-opaque-key-factory.interface.js';
-import { DynamicModule, ForwardReference, Type } from '@nestjs/common';
+import type { DynamicModule, ForwardReference, Type } from '@nestjs/common';
 import { randomStringGenerator } from '@nestjs/common/internal';
 
 const K_MODULE_ID = Symbol('K_MODULE_ID');

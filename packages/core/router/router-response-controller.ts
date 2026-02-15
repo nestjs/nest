@@ -1,9 +1,9 @@
 import {
-  HttpServer,
+  type HttpServer,
   HttpStatus,
   Logger,
   RequestMethod,
-  MessageEvent,
+  type MessageEvent,
 } from '@nestjs/common';
 import { IncomingMessage } from 'http';
 import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';

@@ -1,4 +1,4 @@
-import { Type } from '@nestjs/common';
+import type { Type } from '@nestjs/common';
 import { Routes } from '../interfaces/routes.interface.js';
 import { isString, normalizePath } from '@nestjs/common/internal';
 

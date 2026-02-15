@@ -1,7 +1,7 @@
 import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler.js';
 import { EXCEPTION_FILTERS_METADATA, isEmpty } from '@nestjs/common/internal';
 import { BaseExceptionFilterContext } from '@nestjs/core/internal';
-import { NestContainer } from '@nestjs/core';
+import type { NestContainer } from '@nestjs/core';
 
 /**
  * @publicApi

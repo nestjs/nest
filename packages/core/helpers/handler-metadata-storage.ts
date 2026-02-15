@@ -4,8 +4,8 @@ import { CONTROLLER_ID_KEY } from '../injector/constants.js';
 import { ContextId } from '../injector/instance-wrapper.js';
 import { HeaderStream } from '../router/sse-stream.js';
 import { ParamProperties } from './context-utils.js';
-import { Type } from '@nestjs/common';
-import { Controller } from '@nestjs/common/internal';
+import type { Type } from '@nestjs/common';
+import type { Controller } from '@nestjs/common/internal';
 
 export const HANDLER_METADATA_SYMBOL = Symbol.for('handler_metadata:cache');
 

@@ -1,4 +1,4 @@
-import {
+import type {
   CanActivate,
   ExceptionFilter,
   INestMicroservice,
@@ -14,12 +14,12 @@ import {
 import { MicroservicesModule } from './microservices-module.js';
 import { ServerFactory } from './server/server-factory.js';
 import { Server } from './server/server.js';
-import { NestMicroserviceOptions } from '@nestjs/common/internal';
+import type { NestMicroserviceOptions } from '@nestjs/common/internal';
 import { Logger } from '@nestjs/common';
 import {
-  ApplicationConfig,
-  NestContainer,
-  GraphInspector,
+  type ApplicationConfig,
+  type NestContainer,
+  type GraphInspector,
   NestApplicationContext,
 } from '@nestjs/core';
 import { MESSAGES, optionalRequire, Injector } from '@nestjs/core/internal';

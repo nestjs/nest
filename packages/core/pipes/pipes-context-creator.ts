@@ -6,11 +6,11 @@ import { NestContainer } from '../injector/container.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import {
   PIPES_METADATA,
-  Controller,
+  type Controller,
   isEmpty,
   isFunction,
 } from '@nestjs/common/internal';
-import { PipeTransform, Type } from '@nestjs/common';
+import type { PipeTransform, Type } from '@nestjs/common';
 
 export class PipesContextCreator extends ContextCreator {
   private moduleContext: string;

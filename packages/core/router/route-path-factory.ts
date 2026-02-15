@@ -1,7 +1,7 @@
 import {
-  RequestMethod,
+  type RequestMethod,
   VERSION_NEUTRAL,
-  VersioningOptions,
+  type VersioningOptions,
   VersioningType,
   flatten,
 } from '@nestjs/common';
@@ -9,7 +9,7 @@ import { ApplicationConfig } from '../application-config.js';
 import { RoutePathMetadata } from './interfaces/route-path-metadata.interface.js';
 import { isRouteExcluded } from './utils/index.js';
 import {
-  VersionValue,
+  type VersionValue,
   addLeadingSlash,
   isUndefined,
   stripEndSlash,

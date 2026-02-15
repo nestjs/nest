@@ -2,7 +2,7 @@ import {
   TestingModuleBuilder,
   TestingModuleOptions,
 } from './testing-module.builder.js';
-import { ModuleMetadata } from '@nestjs/common';
+import type { ModuleMetadata } from '@nestjs/common';
 import { MetadataScanner } from '@nestjs/core';
 
 export class Test {

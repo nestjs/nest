@@ -1,4 +1,4 @@
-import { EnhancerSubtype } from '@nestjs/common/internal';
+import type { EnhancerSubtype } from '@nestjs/common/internal';
 
 /**
  * Enhancers attached through APP_PIPE, APP_GUARD, APP_INTERCEPTOR, and APP_FILTER tokens.

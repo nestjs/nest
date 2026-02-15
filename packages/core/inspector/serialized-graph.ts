@@ -1,4 +1,4 @@
-import { InjectionToken } from '@nestjs/common';
+import type { InjectionToken } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config.js';
 import { ExternalContextCreator } from '../helpers/external-context-creator.js';
 import { HttpAdapterHost } from '../helpers/http-adapter-host.js';

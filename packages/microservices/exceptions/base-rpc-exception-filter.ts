@@ -1,8 +1,8 @@
 import {
-  ArgumentsHost,
+  type ArgumentsHost,
   IntrinsicException,
   Logger,
-  RpcExceptionFilter,
+  type RpcExceptionFilter,
 } from '@nestjs/common';
 import { Observable, throwError as _throw } from 'rxjs';
 import { RpcException } from './rpc-exception.js';

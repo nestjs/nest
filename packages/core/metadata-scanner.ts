@@ -1,5 +1,5 @@
 import {
-  Injectable,
+  type Injectable,
   isConstructor,
   isFunction,
   isNil,

@@ -8,7 +8,7 @@ import {
   isEmpty,
   isFunction,
 } from '@nestjs/common/internal';
-import { Type, ExceptionFilter } from '@nestjs/common';
+import type { Type, ExceptionFilter } from '@nestjs/common';
 
 export class BaseExceptionFilterContext extends ContextCreator {
   protected moduleContext: string;

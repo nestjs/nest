@@ -1,8 +1,8 @@
-import { INestApplicationContext, WebSocketAdapter } from '@nestjs/common';
+import type { INestApplicationContext, WebSocketAdapter } from '@nestjs/common';
 import { NestApplication } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { CONNECTION_EVENT, DISCONNECT_EVENT } from '../constants.js';
-import { WsMessageHandler } from '@nestjs/common';
+import type { WsMessageHandler } from '@nestjs/common';
 import { isFunction } from '@nestjs/common/internal';
 
 export interface BaseWsInstance {

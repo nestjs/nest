@@ -1,4 +1,4 @@
-import { CorsOptions } from '@nestjs/common/internal';
+import type { CorsOptions } from '@nestjs/common/internal';
 
 /**
  * External interface

@@ -7,4 +7,5 @@ export * from './parse-enum.pipe.js';
 export * from './parse-float.pipe.js';
 export * from './parse-int.pipe.js';
 export * from './parse-uuid.pipe.js';
+export * from './standard-schema-validation.pipe.js';
 export * from './validation.pipe.js';

@@ -1,4 +1,4 @@
-import { HttpServer, INestApplication } from '@nestjs/common';
+import type { HttpServer, INestApplication } from '@nestjs/common';
 import type { Express } from 'express';
 import type { Server as CoreHttpServer } from 'http';
 import type { Server as CoreHttpsServer } from 'https';

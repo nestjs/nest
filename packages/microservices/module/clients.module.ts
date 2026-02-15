@@ -1,10 +1,10 @@
 import {
-  DynamicModule,
-  ForwardReference,
+  type DynamicModule,
+  type ForwardReference,
   Module,
-  OnApplicationShutdown,
-  Provider,
-  Type,
+  type OnApplicationShutdown,
+  type Provider,
+  type Type,
 } from '@nestjs/common';
 import { ClientProxy, ClientProxyFactory } from '../client/index.js';
 import {

@@ -1,5 +1,5 @@
 import { RequestMethod, VERSION_NEUTRAL } from '@nestjs/common';
-import { VersionValue } from '@nestjs/common/internal';
+import type { VersionValue } from '@nestjs/common/internal';
 
 export const MODULE_INIT_MESSAGE = (
   text: TemplateStringsArray,

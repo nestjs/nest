@@ -1,4 +1,4 @@
-import { InjectionToken } from '@nestjs/common';
+import type { InjectionToken } from '@nestjs/common';
 import { UnknownElementException } from '../errors/exceptions/unknown-element.exception.js';
 import { NestContainer } from './container.js';
 import { InstanceWrapper } from './instance-wrapper.js';

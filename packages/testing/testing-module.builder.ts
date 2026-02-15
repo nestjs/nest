@@ -1,4 +1,9 @@
-import { Logger, LoggerService, Module, ModuleMetadata } from '@nestjs/common';
+import {
+  Logger,
+  type LoggerService,
+  Module,
+  type ModuleMetadata,
+} from '@nestjs/common';
 import {
   MockFactory,
   OverrideBy,
@@ -9,19 +14,19 @@ import { TestingLogger } from './services/testing-logger.service.js';
 import { TestingInjector } from './testing-injector.js';
 import { TestingInstanceLoader } from './testing-instance-loader.js';
 import { TestingModule } from './testing-module.js';
-import { NestApplicationContextOptions } from '@nestjs/common/internal';
+import type { NestApplicationContextOptions } from '@nestjs/common/internal';
 import {
   ApplicationConfig,
   NestContainer,
   GraphInspector,
-  MetadataScanner,
+  type MetadataScanner,
 } from '@nestjs/core';
 import {
   NoopGraphInspector,
   UuidFactory,
   UuidFactoryMode,
-  ModuleDefinition,
-  ModuleOverride,
+  type ModuleDefinition,
+  type ModuleOverride,
   DependenciesScanner,
 } from '@nestjs/core/internal';
 

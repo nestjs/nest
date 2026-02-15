@@ -6,11 +6,11 @@ import { NestContainer } from '../injector/container.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import {
   INTERCEPTORS_METADATA,
-  Controller,
+  type Controller,
   isEmpty,
   isFunction,
 } from '@nestjs/common/internal';
-import { NestInterceptor, Type } from '@nestjs/common';
+import type { NestInterceptor, Type } from '@nestjs/common';
 
 export class InterceptorsContextCreator extends ContextCreator {
   private moduleContext: string;

@@ -8,8 +8,8 @@ import {
 import { NestGateway } from './interfaces/nest-gateway.interface.js';
 import { WsParamtype } from './enums/ws-paramtype.enum.js';
 import { isFunction, isUndefined } from '@nestjs/common/internal';
-import { MetadataScanner } from '@nestjs/core';
-import { ParamsMetadata, ContextUtils } from '@nestjs/core/internal';
+import type { MetadataScanner } from '@nestjs/core';
+import { type ParamsMetadata, ContextUtils } from '@nestjs/core/internal';
 
 export interface MessageMappingProperties {
   message: any;

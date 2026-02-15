@@ -1,4 +1,4 @@
-import { CanActivate } from '@nestjs/common';
+import type { CanActivate } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
 import { ContextCreator } from '../helpers/context-creator.js';
@@ -7,11 +7,11 @@ import { NestContainer } from '../injector/container.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import {
   GUARDS_METADATA,
-  Controller,
+  type Controller,
   isEmpty,
   isFunction,
 } from '@nestjs/common/internal';
-import { Type } from '@nestjs/common';
+import type { Type } from '@nestjs/common';
 
 export class GuardsContextCreator extends ContextCreator {
   private moduleContext: string;

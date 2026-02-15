@@ -1,8 +1,8 @@
 import {
-  ArgumentsHost,
-  ExceptionFilter,
+  type ArgumentsHost,
+  type ExceptionFilter,
   HttpException,
-  HttpServer,
+  type HttpServer,
   HttpStatus,
   Inject,
   IntrinsicException,

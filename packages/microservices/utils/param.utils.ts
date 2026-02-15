@@ -1,10 +1,13 @@
-import { PipeTransform, Type } from '@nestjs/common';
-import type { ParameterDecoratorOptions } from '@nestjs/common';
+import type {
+  ParameterDecoratorOptions,
+  PipeTransform,
+  Type,
+} from '@nestjs/common';
+import { assignMetadata } from '@nestjs/common';
+import { isNil, isString } from '@nestjs/common/internal';
 import 'reflect-metadata';
 import { PARAM_ARGS_METADATA } from '../constants.js';
 import { RpcParamtype } from '../enums/rpc-paramtype.enum.js';
-import { assignMetadata } from '@nestjs/common';
-import { isNil, isString } from '@nestjs/common/internal';
 
 export function createRpcParamDecorator(
   paramtype: RpcParamtype,
@@ -36,6 +39,26 @@ export const createPipesRpcParamDecorator =
   (target, key, index) => {
     const args =
       Reflect.getMetadata(PARAM_ARGS_METADATA, target.constructor, key!) || {};
+
+    const isDataOptions =
+      data &&
+      typeof data === 'object' &&
+      !('transform' in data) &&
+      ('schema' in data || 'pipes' in data);
+
+    if (isDataOptions) {
+      const opts = data as ParameterDecoratorOptions;
+      Reflect.defineMetadata(
+        PARAM_ARGS_METADATA,
+        assignMetadata(args, paramtype, index, {
+          pipes: opts.pipes ?? [],
+          schema: opts.schema,
+        }),
+        target.constructor,
+        key!,
+      );
+      return;
+    }
 
     const hasParamData = isNil(data) || isString(data);
     const paramData = hasParamData ? data : undefined;

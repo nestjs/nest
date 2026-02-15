@@ -1,4 +1,4 @@
-import { DynamicModule, Inject, Module, Type } from '@nestjs/common';
+import { type DynamicModule, Inject, Module, type Type } from '@nestjs/common';
 import { Module as ModuleClass } from '../injector/module.js';
 import { ModulesContainer } from '../injector/modules-container.js';
 import { Routes, RouteTree } from './interfaces/index.js';

@@ -1,4 +1,4 @@
-import { HttpServer } from '@nestjs/common';
+import type { HttpServer } from '@nestjs/common';
 import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config.js';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception.js';
@@ -36,8 +36,8 @@ import { RouterExecutionContext } from './router-execution-context.js';
 import { RouterProxy, RouterProxyCallback } from './router-proxy.js';
 import {
   PATH_METADATA,
-  Controller,
-  VersionValue,
+  type Controller,
+  type VersionValue,
   addLeadingSlash,
   isUndefined,
 } from '@nestjs/common/internal';
@@ -45,7 +45,7 @@ import {
   RequestMethod,
   VersioningType,
   InternalServerErrorException,
-  Type,
+  type Type,
   Logger,
 } from '@nestjs/common';
 

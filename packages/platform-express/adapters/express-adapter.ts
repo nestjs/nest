@@ -2,10 +2,10 @@ import {
   HttpStatus,
   InternalServerErrorException,
   Logger,
-  RequestMethod,
+  type RequestMethod,
   StreamableFile,
   VERSION_NEUTRAL,
-  VersioningOptions,
+  type VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
 import cors from 'cors';
@@ -20,16 +20,16 @@ import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parse
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface.js';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util.js';
 import {
-  CorsOptions,
-  CorsOptionsDelegate,
-  VersionValue,
+  type CorsOptions,
+  type CorsOptionsDelegate,
+  type VersionValue,
   isFunction,
   isNil,
   isObject,
   isString,
   isUndefined,
 } from '@nestjs/common/internal';
-import { NestApplicationOptions } from '@nestjs/common';
+import type { NestApplicationOptions } from '@nestjs/common';
 import { AbstractHttpAdapter } from '@nestjs/core';
 import {
   RouterMethodFactory,

@@ -1,4 +1,4 @@
-import { DynamicModule, ForwardReference, Type } from '@nestjs/common';
+import type { DynamicModule, ForwardReference, Type } from '@nestjs/common';
 
 export interface ModuleOpaqueKeyFactory {
   /**

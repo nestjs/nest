@@ -3,7 +3,7 @@ import { GatewayMetadata } from './interfaces/gateway-metadata.interface.js';
 import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams-host.interface.js';
 import { SocketsContainer } from './sockets-container.js';
 import { addLeadingSlash, isString } from '@nestjs/common/internal';
-import { ApplicationConfig } from '@nestjs/core';
+import type { ApplicationConfig } from '@nestjs/core';
 
 export class SocketServerProvider {
   constructor(

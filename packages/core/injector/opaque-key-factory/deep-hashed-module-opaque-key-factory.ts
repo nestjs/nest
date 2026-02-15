@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import _stringify from 'fast-safe-stringify';
 import { ModuleOpaqueKeyFactory } from './interfaces/module-opaque-key-factory.interface.js';
-import { DynamicModule, Type, Logger } from '@nestjs/common';
+import { type DynamicModule, type Type, Logger } from '@nestjs/common';
 import {
   randomStringGenerator,
   isFunction,

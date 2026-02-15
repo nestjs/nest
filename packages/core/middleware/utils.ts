@@ -5,9 +5,9 @@ import { uid } from 'uid';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
 import { LegacyRouteConverter } from '../router/legacy-route-converter.js';
 import { isRouteExcluded } from '../router/utils/index.js';
-import { HttpServer, Type } from '@nestjs/common';
+import type { HttpServer, Type } from '@nestjs/common';
 import {
-  RouteInfo,
+  type RouteInfo,
   addLeadingSlash,
   isFunction,
   isString,

@@ -1,8 +1,8 @@
-import { DynamicModule, Global, Module } from '@nestjs/common';
+import { type DynamicModule, Global, Module } from '@nestjs/common';
 import { requestProvider } from '../../router/request/request-providers.js';
 import { Reflector } from '../../services/index.js';
 import { inquirerProvider } from '../inquirer/inquirer-providers.js';
-import {
+import type {
   ExistingProvider,
   FactoryProvider,
   ValueProvider,

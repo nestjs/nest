@@ -1,4 +1,4 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
+import { type DynamicModule, Module, type Provider } from '@nestjs/common';
 import { MULTER_MODULE_OPTIONS } from './files.constants.js';
 import {
   MulterModuleAsyncOptions,

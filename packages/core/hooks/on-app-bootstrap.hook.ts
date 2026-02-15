@@ -1,4 +1,4 @@
-import { OnApplicationBootstrap } from '@nestjs/common';
+import type { OnApplicationBootstrap } from '@nestjs/common';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,

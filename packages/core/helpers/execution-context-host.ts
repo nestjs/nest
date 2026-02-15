@@ -1,6 +1,6 @@
-import { ExecutionContext } from '@nestjs/common';
-import { Type, ContextType } from '@nestjs/common';
-import {
+import type { ExecutionContext } from '@nestjs/common';
+import type { Type, ContextType } from '@nestjs/common';
+import type {
   HttpArgumentsHost,
   RpcArgumentsHost,
   WsArgumentsHost,

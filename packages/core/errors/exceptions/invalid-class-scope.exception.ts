@@ -1,6 +1,6 @@
 import { INVALID_CLASS_SCOPE_MESSAGE } from '../messages.js';
 import { RuntimeException } from './runtime.exception.js';
-import { Abstract, Type } from '@nestjs/common';
+import type { Abstract, Type } from '@nestjs/common';
 import { isFunction } from '@nestjs/common/internal';
 
 export class InvalidClassScopeException extends RuntimeException {

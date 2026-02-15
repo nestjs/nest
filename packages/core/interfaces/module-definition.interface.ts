@@ -1,5 +1,5 @@
-import { DynamicModule, ForwardReference } from '@nestjs/common';
-import { Type } from '@nestjs/common';
+import type { DynamicModule, ForwardReference } from '@nestjs/common';
+import type { Type } from '@nestjs/common';
 
 export type ModuleDefinition =
   | ForwardReference

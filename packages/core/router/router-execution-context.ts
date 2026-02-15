@@ -1,11 +1,30 @@
-import {
-  CanActivate,
-  ForbiddenException,
-  HttpServer,
-  ParamData,
-  PipeTransform,
-  RequestMethod,
+import type {
+  ArgumentMetadata,
+  ContextType,
+  RouteParamMetadata,
 } from '@nestjs/common';
+import {
+  type CanActivate,
+  ForbiddenException,
+  type HttpServer,
+  type ParamData,
+  type PipeTransform,
+  type RequestMethod,
+} from '@nestjs/common';
+import {
+  type Controller,
+  CUSTOM_ROUTE_ARGS_METADATA,
+  HEADERS_METADATA,
+  HTTP_CODE_METADATA,
+  isEmpty,
+  isString,
+  REDIRECT_METADATA,
+  RENDER_METADATA,
+  ROUTE_ARGS_METADATA,
+  RouteParamtypes,
+  SSE_METADATA,
+} from '@nestjs/common/internal';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { IncomingMessage } from 'http';
 import { Observable } from 'rxjs';
 import {
@@ -33,20 +52,6 @@ import {
   RouterResponseController,
 } from './router-response-controller.js';
 import { HeaderStream } from './sse-stream.js';
-import {
-  CUSTOM_ROUTE_ARGS_METADATA,
-  HEADERS_METADATA,
-  HTTP_CODE_METADATA,
-  REDIRECT_METADATA,
-  RENDER_METADATA,
-  ROUTE_ARGS_METADATA,
-  SSE_METADATA,
-  RouteParamtypes,
-  Controller,
-  isEmpty,
-  isString,
-} from '@nestjs/common/internal';
-import { RouteParamMetadata, ContextType } from '@nestjs/common';
 
 export interface ParamProperties {
   index: number;
@@ -58,6 +63,7 @@ export interface ParamProperties {
     res: TResponse,
     next: Function,
   ) => any;
+  schema?: StandardSchemaV1;
 }
 
 export class RouterExecutionContext {
@@ -291,7 +297,7 @@ export class RouterExecutionContext {
     this.pipesContextCreator.setModuleContext(moduleContext);
 
     return keys.map(key => {
-      const { index, data, pipes: pipesCollection } = metadata[key];
+      const { index, data, pipes: pipesCollection, schema } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
         pipesCollection,
         contextId,
@@ -306,7 +312,14 @@ export class RouterExecutionContext {
           data,
           contextFactory!,
         );
-        return { index, extractValue: customExtractValue, type, data, pipes };
+        return {
+          index,
+          extractValue: customExtractValue,
+          type,
+          data,
+          pipes,
+          schema,
+        };
       }
       const numericType = Number(type);
       const extractValue = <TRequest, TResponse>(
@@ -319,25 +332,17 @@ export class RouterExecutionContext {
           res,
           next,
         });
-      return { index, extractValue, type: numericType, data, pipes };
+      return { index, extractValue, type: numericType, data, pipes, schema };
     });
   }
 
   public async getParamValue<T>(
     value: T,
-    {
-      metatype,
-      type,
-      data,
-    }: { metatype: unknown; type: RouteParamtypes; data: unknown },
+    metadata: ArgumentMetadata,
     pipes: PipeTransform[],
   ): Promise<unknown> {
     if (!isEmpty(pipes)) {
-      return this.pipesConsumer.apply(
-        value,
-        { metatype, type, data } as any,
-        pipes,
-      );
+      return this.pipesConsumer.apply(value, metadata, pipes);
     }
     return value;
   }
@@ -395,13 +400,14 @@ export class RouterExecutionContext {
           data,
           metatype,
           pipes: paramPipes,
+          schema,
         } = param;
         const value = extractValue(req, res, next);
 
         args[index] = this.isPipeable(type)
           ? await this.getParamValue(
               value,
-              { metatype, type, data } as any,
+              { metatype, type, data, schema } as ArgumentMetadata,
               pipes.concat(paramPipes),
             )
           : value;

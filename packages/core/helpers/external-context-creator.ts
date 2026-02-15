@@ -1,8 +1,18 @@
-import { ForbiddenException, ParamData } from '@nestjs/common';
+import type { ContextType, PipeTransform } from '@nestjs/common';
+import {
+  ArgumentMetadata,
+  ForbiddenException,
+  type ParamData,
+} from '@nestjs/common';
+import {
+  CUSTOM_ROUTE_ARGS_METADATA,
+  type Controller,
+  isEmpty,
+} from '@nestjs/common/internal';
 import { isObservable, lastValueFrom } from 'rxjs';
 import { ExternalExceptionFilterContext } from '../exceptions/external-exception-filter-context.js';
-import { GuardsConsumer, GuardsContextCreator } from '../guards/index.js';
 import { FORBIDDEN_MESSAGE } from '../guards/constants.js';
+import { GuardsConsumer, GuardsContextCreator } from '../guards/index.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
 import { ContextId } from '../injector/instance-wrapper.js';
@@ -17,12 +27,6 @@ import { ExternalErrorProxy } from './external-proxy.js';
 import { HandlerMetadataStorage } from './handler-metadata-storage.js';
 import { ExternalHandlerMetadata } from './interfaces/external-handler-metadata.interface.js';
 import { ParamsMetadata } from './interfaces/params-metadata.interface.js';
-import {
-  CUSTOM_ROUTE_ARGS_METADATA,
-  Controller,
-  isEmpty,
-} from '@nestjs/common/internal';
-import { ContextType, PipeTransform } from '@nestjs/common';
 
 export interface ParamsFactory {
   exchangeKeyForValue(type: number, data: ParamData, args: any): any;
@@ -263,7 +267,7 @@ export class ExternalContextCreator {
     this.pipesContextCreator.setModuleContext(moduleContext);
 
     return keys.map(key => {
-      const { index, data, pipes: pipesCollection } = metadata[key];
+      const { index, data, pipes: pipesCollection, schema } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
         pipesCollection,
         contextId,
@@ -278,13 +282,20 @@ export class ExternalContextCreator {
           data,
           contextFactory,
         );
-        return { index, extractValue: customExtractValue, type, data, pipes };
+        return {
+          index,
+          extractValue: customExtractValue,
+          type,
+          data,
+          pipes,
+          schema,
+        };
       }
       const numericType = Number(type);
       const extractValue = (...args: unknown[]) =>
         paramsFactory.exchangeKeyForValue(numericType, data, args);
 
-      return { index, extractValue, type: numericType, data, pipes };
+      return { index, extractValue, type: numericType, data, pipes, schema };
     });
   }
 
@@ -303,12 +314,13 @@ export class ExternalContextCreator {
           data,
           metatype,
           pipes: paramPipes,
+          schema,
         } = param;
         const value = extractValue(...params);
 
         args[index] = await this.getParamValue(
           value,
-          { metatype, type, data },
+          { metatype, type, data, schema } as ArgumentMetadata,
           pipes.concat(paramPipes),
         );
       };
@@ -319,12 +331,12 @@ export class ExternalContextCreator {
 
   public async getParamValue<T>(
     value: T,
-    { metatype, type, data }: { metatype: any; type: any; data: any },
+    metadata: ArgumentMetadata,
     pipes: PipeTransform[],
   ): Promise<any> {
     return isEmpty(pipes)
       ? value
-      : this.pipesConsumer.apply(value, { metatype, type, data }, pipes);
+      : this.pipesConsumer.apply(value, metadata, pipes);
   }
 
   public async transformToResult(resultOrDeferred: any) {

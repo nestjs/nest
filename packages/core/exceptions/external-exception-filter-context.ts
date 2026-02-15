@@ -8,8 +8,8 @@ import { BaseExceptionFilterContext } from './base-exception-filter-context.js';
 import { ExternalExceptionsHandler } from './external-exceptions-handler.js';
 import {
   EXCEPTION_FILTERS_METADATA,
-  Controller,
-  ExceptionFilterMetadata,
+  type Controller,
+  type ExceptionFilterMetadata,
   isEmpty,
 } from '@nestjs/common/internal';
 

@@ -1,5 +1,8 @@
-import { PipeTransform, Type } from '@nestjs/common';
-import type { ParameterDecoratorOptions } from '@nestjs/common';
+import type {
+  ParameterDecoratorOptions,
+  PipeTransform,
+  Type,
+} from '@nestjs/common';
 import { WsParamtype } from '../enums/ws-paramtype.enum.js';
 import { createPipesWsParamDecorator } from '../utils/param.utils.js';
 
@@ -69,8 +72,25 @@ export function MessageBody(
   propertyKey: string,
   options: ParameterDecoratorOptions,
 ): ParameterDecorator;
+/**
+ * WebSockets message body parameter decorator.
+ *
+ * For example, passing schema as options:
+ * ```typescript
+ * create(@MessageBody({ schema: z.object({ data: z.string() }) }) body)
+ * ```
+ * @param options options object containing additional configuration for the decorator, such as pipes and schema
+ *
+ * @publicApi
+ */
 export function MessageBody(
-  propertyOrPipe?: string | (Type<PipeTransform> | PipeTransform),
+  options: ParameterDecoratorOptions,
+): ParameterDecorator;
+export function MessageBody(
+  propertyOrPipe?:
+    | string
+    | (Type<PipeTransform> | PipeTransform)
+    | ParameterDecoratorOptions,
   optionsOrPipe?:
     | ParameterDecoratorOptions
     | Type<PipeTransform>

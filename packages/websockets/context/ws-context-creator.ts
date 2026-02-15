@@ -1,30 +1,34 @@
+import type {
+  ArgumentMetadata,
+  ContextType,
+  PipeTransform,
+} from '@nestjs/common';
+import {
+  type Controller,
+  CUSTOM_ROUTE_ARGS_METADATA,
+  isEmpty,
+  PARAMTYPES_METADATA,
+} from '@nestjs/common/internal';
+import {
+  ContextUtils,
+  type ExecutionContextHost,
+  FORBIDDEN_MESSAGE,
+  type GuardsConsumer,
+  type GuardsContextCreator,
+  HandlerMetadataStorage,
+  type InterceptorsConsumer,
+  type InterceptorsContextCreator,
+  type ParamProperties,
+  type ParamsMetadata,
+  type PipesConsumer,
+  type PipesContextCreator,
+} from '@nestjs/core/internal';
 import { MESSAGE_METADATA, PARAM_ARGS_METADATA } from '../constants.js';
 import { WsException } from '../errors/ws-exception.js';
 import { WsParamsFactory } from '../factories/ws-params-factory.js';
 import { ExceptionFiltersContext } from './exception-filters-context.js';
 import { DEFAULT_CALLBACK_METADATA } from './ws-metadata-constants.js';
 import { WsProxy } from './ws-proxy.js';
-import {
-  CUSTOM_ROUTE_ARGS_METADATA,
-  PARAMTYPES_METADATA,
-  Controller,
-  isEmpty,
-} from '@nestjs/common/internal';
-import { ContextType, PipeTransform } from '@nestjs/common';
-import {
-  FORBIDDEN_MESSAGE,
-  GuardsConsumer,
-  GuardsContextCreator,
-  ContextUtils,
-  ParamProperties,
-  ExecutionContextHost,
-  HandlerMetadataStorage,
-  ParamsMetadata,
-  InterceptorsConsumer,
-  InterceptorsContextCreator,
-  PipesConsumer,
-  PipesContextCreator,
-} from '@nestjs/core/internal';
 
 type WsParamProperties = ParamProperties & { metatype?: any };
 export interface WsHandlerMetadata {
@@ -211,7 +215,7 @@ export class WsContextCreator {
     this.pipesContextCreator.setModuleContext(moduleContext);
 
     return keys.map(key => {
-      const { index, data, pipes: pipesCollection } = metadata[key];
+      const { index, data, pipes: pipesCollection, schema } = metadata[key];
       const pipes =
         this.pipesContextCreator.createConcreteContext(pipesCollection);
       const type = this.contextUtils.mapParamType(key);
@@ -223,13 +227,20 @@ export class WsContextCreator {
           data,
           contextFactory,
         );
-        return { index, extractValue: customExtractValue, type, data, pipes };
+        return {
+          index,
+          extractValue: customExtractValue,
+          type,
+          data,
+          pipes,
+          schema,
+        };
       }
       const numericType = Number(type);
       const extractValue = (...args: any[]) =>
         paramsFactory.exchangeKeyForValue(numericType, data, args);
 
-      return { index, extractValue, type: numericType, data, pipes };
+      return { index, extractValue, type: numericType, data, pipes, schema };
     });
   }
 
@@ -248,12 +259,13 @@ export class WsContextCreator {
           data,
           metatype,
           pipes: paramPipes,
+          schema,
         } = param;
         const value = extractValue(...params);
 
         args[index] = await this.getParamValue(
           value,
-          { metatype, type, data },
+          { metatype, type, data, schema } as ArgumentMetadata,
           pipes.concat(paramPipes),
         );
       };
@@ -264,11 +276,11 @@ export class WsContextCreator {
 
   public async getParamValue<T>(
     value: T,
-    { metatype, type, data }: { metatype: any; type: any; data: any },
+    metadata: ArgumentMetadata,
     pipes: PipeTransform[],
   ): Promise<any> {
     return isEmpty(pipes)
       ? value
-      : this.pipesConsumer.apply(value, { metatype, type, data }, pipes);
+      : this.pipesConsumer.apply(value, metadata, pipes);
   }
 }

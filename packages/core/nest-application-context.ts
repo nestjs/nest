@@ -1,8 +1,8 @@
 import {
-  INestApplicationContext,
+  type INestApplicationContext,
   Logger,
-  LoggerService,
-  LogLevel,
+  type LoggerService,
+  type LogLevel,
   ShutdownSignal,
 } from '@nestjs/common';
 import { iterate } from 'iterare';
@@ -23,12 +23,12 @@ import { Injector } from './injector/injector.js';
 import { InstanceLinksHost } from './injector/instance-links-host.js';
 import { ContextId } from './injector/instance-wrapper.js';
 import { Module } from './injector/module.js';
-import { Abstract, DynamicModule, Type } from '@nestjs/common';
+import type { Abstract, DynamicModule, Type } from '@nestjs/common';
 import {
-  GetOrResolveOptions,
-  SelectOptions,
-  ShutdownHooksOptions,
-  NestApplicationContextOptions,
+  type GetOrResolveOptions,
+  type SelectOptions,
+  type ShutdownHooksOptions,
+  type NestApplicationContextOptions,
   isEmpty,
 } from '@nestjs/common/internal';
 

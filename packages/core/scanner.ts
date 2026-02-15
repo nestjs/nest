@@ -1,4 +1,4 @@
-import { DynamicModule, ForwardReference, Provider } from '@nestjs/common';
+import type { DynamicModule, ForwardReference, Provider } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from './application-config.js';
 import {
@@ -28,31 +28,31 @@ import {
   CONTROLLER_WATERMARK,
   ENHANCER_KEY_TO_SUBTYPE_MAP,
   EXCEPTION_FILTERS_METADATA,
-  EnhancerSubtype,
+  type EnhancerSubtype,
   GUARDS_METADATA,
   INJECTABLE_WATERMARK,
   INTERCEPTORS_METADATA,
   MODULE_METADATA,
   PIPES_METADATA,
   ROUTE_ARGS_METADATA,
-  Controller,
-  Injectable,
+  type Controller,
+  type Injectable,
   isFunction,
   isNil,
   isUndefined,
 } from '@nestjs/common/internal';
 import {
-  CanActivate,
-  ClassProvider,
-  ExceptionFilter,
-  ExistingProvider,
-  FactoryProvider,
-  InjectionToken,
-  NestInterceptor,
-  PipeTransform,
+  type CanActivate,
+  type ClassProvider,
+  type ExceptionFilter,
+  type ExistingProvider,
+  type FactoryProvider,
+  type InjectionToken,
+  type NestInterceptor,
+  type PipeTransform,
   Scope,
-  Type,
-  ValueProvider,
+  type Type,
+  type ValueProvider,
 } from '@nestjs/common';
 
 interface ApplicationProviderWrapper {

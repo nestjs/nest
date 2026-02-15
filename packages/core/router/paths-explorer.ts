@@ -4,13 +4,13 @@ import {
   METHOD_METADATA,
   PATH_METADATA,
   VERSION_METADATA,
-  Controller,
-  VersionValue,
+  type Controller,
+  type VersionValue,
   addLeadingSlash,
   isString,
   isUndefined,
 } from '@nestjs/common/internal';
-import { RequestMethod } from '@nestjs/common';
+import type { RequestMethod } from '@nestjs/common';
 
 export interface RouteDefinition {
   path: string[];

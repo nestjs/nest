@@ -1,8 +1,8 @@
 import {
-  InjectionToken,
+  type InjectionToken,
   Logger,
-  LoggerService,
-  OptionalFactoryDependency,
+  type LoggerService,
+  type OptionalFactoryDependency,
 } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { performance } from 'perf_hooks';
@@ -27,8 +27,8 @@ import {
   PARAMTYPES_METADATA,
   PROPERTY_DEPS_METADATA,
   SELF_DECLARED_DEPS_METADATA,
-  Controller,
-  Injectable,
+  type Controller,
+  type Injectable,
   clc,
   isFunction,
   isNil,
@@ -37,7 +37,7 @@ import {
   isSymbol,
   isUndefined,
 } from '@nestjs/common/internal';
-import { ForwardReference, Type } from '@nestjs/common';
+import type { ForwardReference, Type } from '@nestjs/common';
 
 /**
  * The type of an injectable dependency

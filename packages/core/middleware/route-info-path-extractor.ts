@@ -3,10 +3,10 @@ import { ApplicationConfig } from '../application-config.js';
 import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
 import { isRouteExcluded } from '../router/utils/index.js';
 import { RoutePathFactory } from './../router/route-path-factory.js';
-import { VersioningOptions } from '@nestjs/common';
+import type { VersioningOptions } from '@nestjs/common';
 import {
-  RouteInfo,
-  VersionValue,
+  type RouteInfo,
+  type VersionValue,
   addLeadingSlash,
   stripEndSlash,
 } from '@nestjs/common/internal';

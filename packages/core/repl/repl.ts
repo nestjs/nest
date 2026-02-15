@@ -1,4 +1,4 @@
-import { DynamicModule, Logger, Type } from '@nestjs/common';
+import { type DynamicModule, Logger, type Type } from '@nestjs/common';
 import { NestFactory } from '../nest-factory.js';
 import { assignToObject } from './assign-to-object.util.js';
 import { REPL_INITIALIZED_MESSAGE } from './constants.js';

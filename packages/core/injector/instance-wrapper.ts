@@ -1,4 +1,10 @@
-import { Logger, LoggerService, Provider, Scope, Type } from '@nestjs/common';
+import {
+  Logger,
+  type LoggerService,
+  type Provider,
+  Scope,
+  type Type,
+} from '@nestjs/common';
 import { iterate } from 'iterare';
 import { UuidFactory } from '../inspector/uuid-factory.js';
 import { STATIC_CONTEXT } from './constants.js';
@@ -10,14 +16,14 @@ import {
 import { Module } from './module.js';
 import { SettlementSignal } from './settlement-signal.js';
 import {
-  EnhancerSubtype,
+  type EnhancerSubtype,
   clc,
   randomStringGenerator,
   isNil,
   isString,
   isUndefined,
 } from '@nestjs/common/internal';
-import { FactoryProvider, InjectionToken } from '@nestjs/common';
+import type { FactoryProvider, InjectionToken } from '@nestjs/common';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');

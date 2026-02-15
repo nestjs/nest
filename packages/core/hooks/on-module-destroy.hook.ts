@@ -1,4 +1,4 @@
-import { OnModuleDestroy } from '@nestjs/common';
+import type { OnModuleDestroy } from '@nestjs/common';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,

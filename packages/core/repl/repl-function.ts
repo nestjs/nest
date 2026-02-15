@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import type { Logger } from '@nestjs/common';
 import { ReplContext } from './repl-context.js';
 import type { ReplFnDefinition } from './repl.interfaces.js';
 import { clc } from '@nestjs/common/internal';

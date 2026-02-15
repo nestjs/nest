@@ -38,7 +38,7 @@ import {
 import { ConsumerSerializer } from '../interfaces/serializer.interface.js';
 import { IdentitySerializer } from '../serializers/identity.serializer.js';
 import { transformPatternToRoute } from '../utils/index.js';
-import { Logger, LoggerService } from '@nestjs/common';
+import { Logger, type LoggerService } from '@nestjs/common';
 import { loadPackage, loadPackageSync } from '@nestjs/common/internal';
 
 /**

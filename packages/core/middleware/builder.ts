@@ -2,11 +2,11 @@ import { iterate } from 'iterare';
 import { RouteInfoPathExtractor } from './route-info-path-extractor.js';
 import { RoutesMapper } from './routes-mapper.js';
 import { filterMiddleware } from './utils.js';
-import { HttpServer, MiddlewareConsumer, Type } from '@nestjs/common';
+import type { HttpServer, MiddlewareConsumer, Type } from '@nestjs/common';
 import {
-  MiddlewareConfigProxy,
-  MiddlewareConfiguration,
-  RouteInfo,
+  type MiddlewareConfigProxy,
+  type MiddlewareConfiguration,
+  type RouteInfo,
   stripEndSlash,
 } from '@nestjs/common/internal';
 

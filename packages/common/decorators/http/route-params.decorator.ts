@@ -1,4 +1,4 @@
-import { StandardSchemaV1 } from '@standard-schema/spec';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 import {
   RESPONSE_PASSTHROUGH_METADATA,
   ROUTE_ARGS_METADATA,
@@ -444,6 +444,24 @@ export function Query(
  *
  * For example:
  * ```typescript
+ * async find(@Query({ schema: z.object({ user: z.string() }) }) query)
+ * ```
+ *
+ * @param options options object containing additional configuration for the decorator, such as pipes and schema
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ *
+ * @publicApi
+ */
+export function Query(options: ParameterDecoratorOptions): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `query`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `query`. May also apply pipes to the bound
+ * query parameter.
+ *
+ * For example:
+ * ```typescript
  * async find(@Query('user') user: string)
  * ```
  *
@@ -456,13 +474,30 @@ export function Query(
  * @publicApi
  */
 export function Query(
-  property?: string | (Type<PipeTransform> | PipeTransform),
+  property?:
+    | string
+    | (Type<PipeTransform> | PipeTransform)
+    | ParameterDecoratorOptions,
   optionsOrPipe?:
     | ParameterDecoratorOptions
     | Type<PipeTransform>
     | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
+  const isPropertyOptions =
+    property &&
+    typeof property === 'object' &&
+    !('transform' in property) &&
+    ('schema' in property || 'pipes' in property);
+
+  if (isPropertyOptions) {
+    const opts = property as ParameterDecoratorOptions;
+    return createPipesRouteParamDecorator(RouteParamtypes.QUERY)({
+      pipes: opts.pipes,
+      schema: opts.schema,
+    });
+  }
+
   const isOptions =
     optionsOrPipe &&
     typeof optionsOrPipe === 'object' &&
@@ -497,7 +532,6 @@ export function Query(
  * @publicApi
  */
 export function Body(): ParameterDecorator;
-
 /**
  * Route handler parameter decorator. Extracts the entire `body`
  * object from the `req` object and populates the decorated
@@ -520,7 +554,23 @@ export function Body(): ParameterDecorator;
 export function Body(
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator;
-
+/**
+ * Route handler parameter decorator. Extracts the entire `body` object
+ * property, or optionally a named property of the `body` object, from
+ * the `req` object and populates the decorated parameter with that value.
+ *
+ * For example:
+ * ```typescript
+ * async create(@Body('role') role: string)
+ * ```
+ *
+ * @param options options to apply to the bound body parameter.
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ *
+ * @publicApi
+ */
+export function Body(options: ParameterDecoratorOptions): ParameterDecorator;
 /**
  * Route handler parameter decorator. Extracts a single property from
  * the `body` object property of the `req` object and populates the decorated
@@ -590,13 +640,30 @@ export function Body(
  * @publicApi
  */
 export function Body(
-  property?: string | (Type<PipeTransform> | PipeTransform),
+  property?:
+    | string
+    | (Type<PipeTransform> | PipeTransform)
+    | ParameterDecoratorOptions,
   optionsOrPipe?:
     | ParameterDecoratorOptions
     | Type<PipeTransform>
     | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
+  const isPropertyOptions =
+    property &&
+    typeof property === 'object' &&
+    !('transform' in property) &&
+    ('schema' in property || 'pipes' in property);
+
+  if (isPropertyOptions) {
+    const opts = property as ParameterDecoratorOptions;
+    return createPipesRouteParamDecorator(RouteParamtypes.BODY)({
+      pipes: opts.pipes,
+      schema: opts.schema,
+    });
+  }
+
   const isOptions =
     optionsOrPipe &&
     typeof optionsOrPipe === 'object' &&
@@ -834,6 +901,25 @@ export function Param(
  * parameter with the value of `params`. May also apply pipes to the bound
  * parameter.
  *
+ * For example:
+ * ```typescript
+ * findOne(@Param({ schema: z.object({ id: z.string().uuid() }) }) params)
+ * ```
+ *
+ * @param options options object containing additional configuration for the decorator, such as pipes and schema
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ * @see [Working with pipes](https://docs.nestjs.com/custom-decorators#working-with-pipes)
+ *
+ * @publicApi
+ */
+export function Param(options: ParameterDecoratorOptions): ParameterDecorator;
+/**
+ * Route handler parameter decorator. Extracts the `params`
+ * property from the `req` object and populates the decorated
+ * parameter with the value of `params`. May also apply pipes to the bound
+ * parameter.
+ *
  * For example, extracting all params:
  * ```typescript
  * findOne(@Param() params: string[])
@@ -854,13 +940,30 @@ export function Param(
  * @publicApi
  */
 export function Param(
-  property?: string | (Type<PipeTransform> | PipeTransform),
+  property?:
+    | string
+    | (Type<PipeTransform> | PipeTransform)
+    | ParameterDecoratorOptions,
   optionsOrPipe?:
     | ParameterDecoratorOptions
     | Type<PipeTransform>
     | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
+  const isPropertyOptions =
+    property &&
+    typeof property === 'object' &&
+    !('transform' in property) &&
+    ('schema' in property || 'pipes' in property);
+
+  if (isPropertyOptions) {
+    const opts = property as ParameterDecoratorOptions;
+    return createPipesRouteParamDecorator(RouteParamtypes.PARAM)({
+      pipes: opts.pipes,
+      schema: opts.schema,
+    });
+  }
+
   const isOptions =
     optionsOrPipe &&
     typeof optionsOrPipe === 'object' &&

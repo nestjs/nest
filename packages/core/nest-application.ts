@@ -1,15 +1,15 @@
 import {
-  CanActivate,
-  ExceptionFilter,
-  HttpServer,
-  INestApplication,
-  INestMicroservice,
-  NestHybridApplicationOptions,
-  NestInterceptor,
-  PipeTransform,
-  VersioningOptions,
+  type CanActivate,
+  type ExceptionFilter,
+  type HttpServer,
+  type INestApplication,
+  type INestMicroservice,
+  type NestHybridApplicationOptions,
+  type NestInterceptor,
+  type PipeTransform,
+  type VersioningOptions,
   VersioningType,
-  WebSocketAdapter,
+  type WebSocketAdapter,
 } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { platform } from 'os';
@@ -26,9 +26,9 @@ import { mapToExcludeRoute } from './middleware/utils.js';
 import { NestApplicationContext } from './nest-application-context.js';
 import { Resolver } from './router/interfaces/resolver.interface.js';
 import { RoutesResolver } from './router/routes-resolver.js';
-import { NestApplicationOptions, Logger } from '@nestjs/common';
+import { type NestApplicationOptions, Logger } from '@nestjs/common';
 import {
-  GlobalPrefixOptions,
+  type GlobalPrefixOptions,
   loadPackage,
   loadPackageCached,
   addLeadingSlash,

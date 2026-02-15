@@ -1,4 +1,4 @@
-import { Type } from '@nestjs/common';
+import type { Type } from '@nestjs/common';
 import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
 import { createServer as tlsCreateServer, TlsOptions } from 'tls';

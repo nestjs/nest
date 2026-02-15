@@ -1,12 +1,12 @@
-import { HttpException } from '@nestjs/common';
+import type { HttpException } from '@nestjs/common';
 import { InvalidExceptionFilterException } from '../errors/exceptions/invalid-exception-filter.exception.js';
 import { BaseExceptionFilter } from './base-exception-filter.js';
 import {
-  ExceptionFilterMetadata,
+  type ExceptionFilterMetadata,
   selectExceptionFilterMetadata,
   isEmpty,
 } from '@nestjs/common/internal';
-import { ArgumentsHost } from '@nestjs/common';
+import type { ArgumentsHost } from '@nestjs/common';
 
 export class ExceptionsHandler extends BaseExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];

@@ -1,6 +1,6 @@
 import {
   AbstractWsAdapter,
-  MessageMappingProperties,
+  type MessageMappingProperties,
 } from '@nestjs/websockets';
 import { fromEvent, Observable } from 'rxjs';
 import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';

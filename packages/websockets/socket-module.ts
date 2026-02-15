@@ -1,4 +1,4 @@
-import { NestApplicationOptions } from '@nestjs/common';
+import type { NestApplicationOptions } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { AbstractWsAdapter } from './adapters/index.js';
 import { GATEWAY_METADATA } from './constants.js';
@@ -9,17 +9,21 @@ import { NestGateway } from './interfaces/nest-gateway.interface.js';
 import { SocketServerProvider } from './socket-server-provider.js';
 import { SocketsContainer } from './sockets-container.js';
 import { WebSocketsController } from './web-sockets-controller.js';
-import { InjectionToken } from '@nestjs/common';
-import {
+import type { InjectionToken } from '@nestjs/common';
+import type {
   Injectable,
   NestApplicationContextOptions,
 } from '@nestjs/common/internal';
-import { ApplicationConfig, NestContainer, GraphInspector } from '@nestjs/core';
+import type {
+  ApplicationConfig,
+  NestContainer,
+  GraphInspector,
+} from '@nestjs/core';
 import {
   GuardsConsumer,
   GuardsContextCreator,
   loadAdapter,
-  InstanceWrapper,
+  type InstanceWrapper,
   InterceptorsConsumer,
   InterceptorsContextCreator,
   PipesConsumer,

@@ -3,11 +3,11 @@ import { FastifyCorsOptions } from '@fastify/cors';
 import {
   HttpStatus,
   Logger,
-  RawBodyRequest,
-  RequestMethod,
+  type RawBodyRequest,
+  type RequestMethod,
   StreamableFile,
   VERSION_NEUTRAL,
-  VersioningOptions,
+  type VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
 import {
@@ -44,7 +44,7 @@ import {
 } from 'light-my-request';
 import { pathToRegexp } from 'path-to-regexp';
 import {
-  VersionValue,
+  type VersionValue,
   loadPackage,
   isString,
   isUndefined,

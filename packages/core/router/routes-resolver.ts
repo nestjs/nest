@@ -23,10 +23,10 @@ import {
   HOST_METADATA,
   MODULE_PATH,
   VERSION_METADATA,
-  Controller,
-  VersionValue,
+  type Controller,
+  type VersionValue,
 } from '@nestjs/common/internal';
-import { HttpServer, Type, Logger } from '@nestjs/common';
+import { type HttpServer, type Type, Logger } from '@nestjs/common';
 
 export class RoutesResolver implements Resolver {
   private readonly logger = new Logger(RoutesResolver.name, {

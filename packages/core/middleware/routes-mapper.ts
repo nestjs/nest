@@ -8,13 +8,13 @@ import {
   MODULE_PATH,
   PATH_METADATA,
   VERSION_METADATA,
-  RouteInfo,
-  VersionValue,
+  type RouteInfo,
+  type VersionValue,
   addLeadingSlash,
   isString,
   isUndefined,
 } from '@nestjs/common/internal';
-import { Type, VERSION_NEUTRAL } from '@nestjs/common';
+import { type Type, VERSION_NEUTRAL } from '@nestjs/common';
 
 export class RoutesMapper {
   private readonly pathsExplorer: PathsExplorer;

@@ -14,10 +14,10 @@ import { NestContainer } from './container.js';
 import { ContextId, InstanceWrapper } from './instance-wrapper.js';
 import { ModuleRef, ModuleRefGetOrResolveOpts } from './module-ref.js';
 import {
-  EnhancerSubtype,
+  type EnhancerSubtype,
   ENTRY_PROVIDER_WATERMARK,
-  Controller,
-  Injectable,
+  type Controller,
+  type Injectable,
   randomStringGenerator,
   isFunction,
   isNil,
@@ -27,16 +27,16 @@ import {
   isUndefined,
 } from '@nestjs/common/internal';
 import {
-  ClassProvider,
-  DynamicModule,
-  ExistingProvider,
-  FactoryProvider,
-  InjectionToken,
-  NestModule,
-  Provider,
+  type ClassProvider,
+  type DynamicModule,
+  type ExistingProvider,
+  type FactoryProvider,
+  type InjectionToken,
+  type NestModule,
+  type Provider,
   Scope,
-  Type,
-  ValueProvider,
+  type Type,
+  type ValueProvider,
 } from '@nestjs/common';
 
 export class Module {

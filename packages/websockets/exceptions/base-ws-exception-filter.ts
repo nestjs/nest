@@ -1,8 +1,8 @@
 import {
-  ArgumentsHost,
+  type ArgumentsHost,
   IntrinsicException,
   Logger,
-  WsExceptionFilter,
+  type WsExceptionFilter,
 } from '@nestjs/common';
 import { WsException } from '../errors/ws-exception.js';
 import { isObject } from '@nestjs/common/internal';

@@ -1,4 +1,4 @@
-import {
+import type {
   CanActivate,
   ExceptionFilter,
   NestInterceptor,
@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { InstanceWrapper } from './injector/instance-wrapper.js';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface.js';
-import { GlobalPrefixOptions } from '@nestjs/common/internal';
+import type { GlobalPrefixOptions } from '@nestjs/common/internal';
 
 export class ApplicationConfig {
   private globalPrefix = '';

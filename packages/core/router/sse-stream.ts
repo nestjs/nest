@@ -1,6 +1,6 @@
 import { IncomingMessage, OutgoingHttpHeaders } from 'http';
 import { Transform } from 'stream';
-import { MessageEvent } from '@nestjs/common';
+import type { MessageEvent } from '@nestjs/common';
 import { isObject } from '@nestjs/common/internal';
 
 function toDataString(data: string | object): string {

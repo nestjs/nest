@@ -1,4 +1,4 @@
-import { CustomDecorator, SetMetadata, Type } from '@nestjs/common';
+import { type CustomDecorator, SetMetadata, type Type } from '@nestjs/common';
 import { uid } from 'uid';
 import { isEmpty, isObject } from '@nestjs/common/internal';
 

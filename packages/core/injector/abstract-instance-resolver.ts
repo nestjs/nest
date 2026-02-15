@@ -1,4 +1,4 @@
-import { Abstract, Scope, Type } from '@nestjs/common';
+import { type Abstract, Scope, type Type } from '@nestjs/common';
 import {
   InvalidClassScopeException,
   UnknownElementException,
@@ -7,7 +7,7 @@ import { Injector } from './injector.js';
 import { InstanceLink, InstanceLinksHost } from './instance-links-host.js';
 import { ContextId } from './instance-wrapper.js';
 import { Module } from './module.js';
-import { GetOrResolveOptions } from '@nestjs/common/internal';
+import type { GetOrResolveOptions } from '@nestjs/common/internal';
 
 export abstract class AbstractInstanceResolver {
   protected abstract instanceLinksHost: InstanceLinksHost;

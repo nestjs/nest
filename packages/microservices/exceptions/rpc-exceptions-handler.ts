@@ -2,11 +2,11 @@ import { Observable } from 'rxjs';
 import { BaseRpcExceptionFilter } from './base-rpc-exception-filter.js';
 import { RpcException } from './rpc-exception.js';
 import {
-  RpcExceptionFilterMetadata,
+  type RpcExceptionFilterMetadata,
   selectExceptionFilterMetadata,
   isEmpty,
 } from '@nestjs/common/internal';
-import { ArgumentsHost } from '@nestjs/common';
+import type { ArgumentsHost } from '@nestjs/common';
 import { InvalidExceptionFilterException } from '@nestjs/core/internal';
 
 /**

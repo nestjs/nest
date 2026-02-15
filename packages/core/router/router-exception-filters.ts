@@ -1,4 +1,4 @@
-import { HttpServer } from '@nestjs/common';
+import type { HttpServer } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
 import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context.js';
@@ -9,7 +9,7 @@ import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import { RouterProxyCallback } from './router-proxy.js';
 import {
   EXCEPTION_FILTERS_METADATA,
-  Controller,
+  type Controller,
   isEmpty,
 } from '@nestjs/common/internal';
 

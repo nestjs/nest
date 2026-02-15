@@ -19,11 +19,11 @@ import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams
 import { WebsocketEntrypointMetadata } from './interfaces/websockets-entrypoint-metadata.interface.js';
 import { SocketServerProvider } from './socket-server-provider.js';
 import { compareElementAt } from './utils/compare-element.util.js';
-import { NestApplicationContextOptions } from '@nestjs/common/internal';
-import { Type, Logger } from '@nestjs/common';
+import type { NestApplicationContextOptions } from '@nestjs/common/internal';
+import { type Type, Logger } from '@nestjs/common';
 import {
-  ApplicationConfig,
-  GraphInspector,
+  type ApplicationConfig,
+  type GraphInspector,
   MetadataScanner,
 } from '@nestjs/core';
 

@@ -1,5 +1,8 @@
-import { PipeTransform, Type } from '@nestjs/common';
-import type { ParameterDecoratorOptions } from '@nestjs/common';
+import type {
+  ParameterDecoratorOptions,
+  PipeTransform,
+  Type,
+} from '@nestjs/common';
 import { RpcParamtype } from '../enums/rpc-paramtype.enum.js';
 import { createPipesRpcParamDecorator } from '../utils/param.utils.js';
 
@@ -69,8 +72,23 @@ export function Payload(
   propertyKey: string,
   options: ParameterDecoratorOptions,
 ): ParameterDecorator;
+/**
+ * Microservice message pattern payload parameter decorator.
+ *
+ * For example, passing schema as options:
+ * ```typescript
+ * create(@Payload({ schema: z.object({ data: z.string() }) }) payload)
+ * ```
+ * @param options options object containing additional configuration for the decorator, such as pipes and schema
+ *
+ * @publicApi
+ */
+export function Payload(options: ParameterDecoratorOptions): ParameterDecorator;
 export function Payload(
-  propertyOrPipe?: string | (Type<PipeTransform> | PipeTransform),
+  propertyOrPipe?:
+    | string
+    | (Type<PipeTransform> | PipeTransform)
+    | ParameterDecoratorOptions,
   optionsOrPipe?:
     | ParameterDecoratorOptions
     | Type<PipeTransform>

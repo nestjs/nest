@@ -1,25 +1,29 @@
 import {
-  HttpServer,
-  INestApplication,
-  INestMicroservice,
+  type HttpServer,
+  type INestApplication,
+  type INestMicroservice,
   Logger,
-  NestApplicationOptions,
-  Type,
+  type NestApplicationOptions,
+  type Type,
 } from '@nestjs/common';
 import {
-  AbstractHttpAdapter,
+  type AbstractHttpAdapter,
   NestApplication,
   NestApplicationContext,
 } from '@nestjs/core';
 import {
-  NestMicroserviceOptions,
-  NestApplicationContextOptions,
+  type NestMicroserviceOptions,
+  type NestApplicationContextOptions,
   loadPackage,
   loadPackageCached,
   isUndefined,
 } from '@nestjs/common/internal';
-import { ApplicationConfig, NestContainer, GraphInspector } from '@nestjs/core';
-import { Module } from '@nestjs/core/internal';
+import type {
+  ApplicationConfig,
+  NestContainer,
+  GraphInspector,
+} from '@nestjs/core';
+import type { Module } from '@nestjs/core/internal';
 
 /**
  * @publicApi

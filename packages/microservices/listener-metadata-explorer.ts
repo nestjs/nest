@@ -9,8 +9,12 @@ import {
 import { Transport } from './enums/index.js';
 import { PatternHandler } from './enums/pattern-handler.enum.js';
 import { ClientOptions, PatternMetadata } from './interfaces/index.js';
-import { Controller, isFunction, isUndefined } from '@nestjs/common/internal';
-import { MetadataScanner } from '@nestjs/core';
+import {
+  type Controller,
+  isFunction,
+  isUndefined,
+} from '@nestjs/common/internal';
+import type { MetadataScanner } from '@nestjs/core';
 
 export interface ClientProperties {
   property: string;

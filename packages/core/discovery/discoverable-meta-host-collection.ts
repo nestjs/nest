@@ -1,4 +1,4 @@
-import { Type } from '@nestjs/common';
+import type { Type } from '@nestjs/common';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import { ModulesContainer } from '../injector/modules-container.js';
 

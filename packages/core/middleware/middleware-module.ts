@@ -1,4 +1,4 @@
-import { HttpServer, InjectionToken, Logger } from '@nestjs/common';
+import { type HttpServer, type InjectionToken, Logger } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config.js';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception.js';
 import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
@@ -23,11 +23,11 @@ import { MiddlewareContainer } from './container.js';
 import { MiddlewareResolver } from './resolver.js';
 import { RouteInfoPathExtractor } from './route-info-path-extractor.js';
 import { RoutesMapper } from './routes-mapper.js';
-import { RequestMethod, NestMiddleware } from '@nestjs/common';
+import { RequestMethod, type NestMiddleware } from '@nestjs/common';
 import {
-  MiddlewareConfiguration,
-  RouteInfo,
-  NestApplicationContextOptions,
+  type MiddlewareConfiguration,
+  type RouteInfo,
+  type NestApplicationContextOptions,
   isUndefined,
 } from '@nestjs/common/internal';
 

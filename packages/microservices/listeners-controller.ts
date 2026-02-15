@@ -30,20 +30,20 @@ import {
 } from './listener-metadata-explorer.js';
 import { ServerGrpc } from './server/index.js';
 import { Server } from './server/server.js';
-import { Controller, isUndefined } from '@nestjs/common/internal';
+import { type Controller, isUndefined } from '@nestjs/common/internal';
 import {
   ContextIdFactory,
-  NestContainer,
-  ContextId,
-  GraphInspector,
+  type NestContainer,
+  type ContextId,
+  type GraphInspector,
   MetadataScanner,
 } from '@nestjs/core';
 import {
   ExecutionContextHost,
   STATIC_CONTEXT,
-  Injector,
-  InstanceWrapper,
-  Module,
+  type Injector,
+  type InstanceWrapper,
+  type Module,
   REQUEST_CONTEXT_ID,
 } from '@nestjs/core/internal';
 

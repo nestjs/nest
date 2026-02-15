@@ -1,4 +1,4 @@
-import { HttpServer } from '@nestjs/common';
+import type { HttpServer } from '@nestjs/common';
 import { RequestMethod } from '@nestjs/common';
 
 export const REQUEST_METHOD_MAP = {

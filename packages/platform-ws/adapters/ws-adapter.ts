@@ -1,4 +1,4 @@
-import { INestApplicationContext, Logger } from '@nestjs/common';
+import { type INestApplicationContext, Logger } from '@nestjs/common';
 import { AbstractWsAdapter } from '@nestjs/websockets';
 import * as http from 'http';
 import { createRequire } from 'module';
@@ -10,7 +10,7 @@ import {
   CONNECTION_EVENT,
   ERROR_EVENT,
 } from '@nestjs/websockets/internal';
-import { MessageMappingProperties } from '@nestjs/websockets';
+import type { MessageMappingProperties } from '@nestjs/websockets';
 
 let wsPackage: any = {};
 

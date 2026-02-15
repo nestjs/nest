@@ -1,4 +1,4 @@
-import {
+import type {
   DynamicModule,
   ForwardReference,
   HttpServer,
@@ -24,13 +24,17 @@ import { NestApplicationContext } from './nest-application-context.js';
 import { NestApplication } from './nest-application.js';
 import { DependenciesScanner } from './scanner.js';
 import {
-  NestMicroserviceOptions,
-  NestApplicationContextOptions,
+  type NestMicroserviceOptions,
+  type NestApplicationContextOptions,
   loadPackage,
   isFunction,
   isNil,
 } from '@nestjs/common/internal';
-import { NestApplicationOptions, ConsoleLogger, Logger } from '@nestjs/common';
+import {
+  type NestApplicationOptions,
+  ConsoleLogger,
+  Logger,
+} from '@nestjs/common';
 
 type IEntryNestModule =
   | Type<any>

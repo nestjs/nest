@@ -1,10 +1,10 @@
-import { NestInterceptor, Type } from '@nestjs/common';
+import type { NestInterceptor, Type } from '@nestjs/common';
 import { AsyncResource } from 'async_hooks';
 import { Observable, defer, from as fromPromise } from 'rxjs';
 import { mergeAll, switchMap } from 'rxjs/operators';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
-import { CallHandler, ContextType } from '@nestjs/common';
-import { Controller, isEmpty } from '@nestjs/common/internal';
+import type { CallHandler, ContextType } from '@nestjs/common';
+import { type Controller, isEmpty } from '@nestjs/common/internal';
 
 export class InterceptorsConsumer {
   public async intercept<TContext extends string = ContextType>(

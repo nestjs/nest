@@ -5,17 +5,21 @@ import { RpcContextCreator } from './context/rpc-context-creator.js';
 import { RpcProxy } from './context/rpc-proxy.js';
 import { ListenersController } from './listeners-controller.js';
 import { Server } from './server/server.js';
-import {
+import type {
   Controller,
   NestApplicationContextOptions,
 } from '@nestjs/common/internal';
-import { ApplicationConfig, NestContainer, GraphInspector } from '@nestjs/core';
+import type {
+  ApplicationConfig,
+  NestContainer,
+  GraphInspector,
+} from '@nestjs/core';
 import {
   RuntimeException,
   GuardsConsumer,
   GuardsContextCreator,
   Injector,
-  InstanceWrapper,
+  type InstanceWrapper,
   InterceptorsConsumer,
   InterceptorsContextCreator,
   PipesConsumer,

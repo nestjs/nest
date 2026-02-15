@@ -1,8 +1,8 @@
-import { ArgumentsHost } from '@nestjs/common';
+import type { ArgumentsHost } from '@nestjs/common';
 import { WsException } from '../errors/ws-exception.js';
 import { BaseWsExceptionFilter } from './base-ws-exception-filter.js';
 import {
-  ExceptionFilterMetadata,
+  type ExceptionFilterMetadata,
   selectExceptionFilterMetadata,
   isEmpty,
 } from '@nestjs/common/internal';

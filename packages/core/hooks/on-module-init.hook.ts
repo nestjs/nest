@@ -1,4 +1,4 @@
-import { OnModuleInit } from '@nestjs/common';
+import type { OnModuleInit } from '@nestjs/common';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,
