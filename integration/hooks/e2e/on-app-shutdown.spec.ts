@@ -54,4 +54,50 @@ describe('OnApplicationShutdown', () => {
       bb.onApplicationShutdown.mock.invocationCallOrder[0],
     );
   });
+
+  it('should sort components within a single module by injection hierarchy - ASC order', async () => {
+    @Injectable()
+    class A implements OnApplicationShutdown {
+      onApplicationShutdown = vi.fn();
+    }
+
+    @Injectable()
+    class AHost implements OnApplicationShutdown {
+      constructor(private a: A) {}
+      onApplicationShutdown = vi.fn();
+    }
+
+    @Injectable()
+    class Composition implements OnApplicationShutdown {
+      constructor(
+        private a: A,
+        private host: AHost,
+      ) {}
+      onApplicationShutdown = vi.fn();
+    }
+
+    @Module({
+      providers: [AHost, A, Composition],
+    })
+    class AModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [AModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    const child = module.get(A);
+    const parent = module.get(AHost);
+    const composition = module.get(Composition);
+
+    expect(composition.onApplicationShutdown).toHaveBeenCalledBefore(
+      parent.onApplicationShutdown,
+    );
+    expect(parent.onApplicationShutdown).toHaveBeenCalledBefore(
+      child.onApplicationShutdown,
+    );
+  });
 });

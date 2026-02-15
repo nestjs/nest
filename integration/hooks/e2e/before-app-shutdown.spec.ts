@@ -54,4 +54,50 @@ describe('BeforeApplicationShutdown', () => {
       aa.beforeApplicationShutdown.mock.invocationCallOrder[0],
     ).toBeLessThan(bb.beforeApplicationShutdown.mock.invocationCallOrder[0]);
   });
+
+  it('should sort components within a single module by injection hierarchy - ASC order', async () => {
+    @Injectable()
+    class A implements BeforeApplicationShutdown {
+      beforeApplicationShutdown = vi.fn();
+    }
+
+    @Injectable()
+    class AHost implements BeforeApplicationShutdown {
+      constructor(private a: A) {}
+      beforeApplicationShutdown = vi.fn();
+    }
+
+    @Injectable()
+    class Composition implements BeforeApplicationShutdown {
+      constructor(
+        private a: A,
+        private host: AHost,
+      ) {}
+      beforeApplicationShutdown = vi.fn();
+    }
+
+    @Module({
+      providers: [AHost, A, Composition],
+    })
+    class AModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [AModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    const child = module.get(A);
+    const parent = module.get(AHost);
+    const composition = module.get(Composition);
+
+    expect(composition.beforeApplicationShutdown).toHaveBeenCalledBefore(
+      parent.beforeApplicationShutdown,
+    );
+    expect(parent.beforeApplicationShutdown).toHaveBeenCalledBefore(
+      child.beforeApplicationShutdown,
+    );
+  });
 });

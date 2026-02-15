@@ -1,3 +1,4 @@
+import type { FactoryProvider, InjectionToken } from '@nestjs/common';
 import {
   Logger,
   type LoggerService,
@@ -5,6 +6,14 @@ import {
   Scope,
   type Type,
 } from '@nestjs/common';
+import {
+  type EnhancerSubtype,
+  clc,
+  isNil,
+  isString,
+  isUndefined,
+  randomStringGenerator,
+} from '@nestjs/common/internal';
 import { iterate } from 'iterare';
 import { UuidFactory } from '../inspector/uuid-factory.js';
 import { STATIC_CONTEXT } from './constants.js';
@@ -15,15 +24,6 @@ import {
 } from './helpers/provider-classifier.js';
 import { Module } from './module.js';
 import { SettlementSignal } from './settlement-signal.js';
-import {
-  type EnhancerSubtype,
-  clc,
-  randomStringGenerator,
-  isNil,
-  isString,
-  isUndefined,
-} from '@nestjs/common/internal';
-import type { FactoryProvider, InjectionToken } from '@nestjs/common';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
@@ -89,6 +89,16 @@ export class InstanceWrapper<T = any> {
     | undefined;
   private isTreeStatic: boolean | undefined;
   private isTreeDurable: boolean | undefined;
+  private _hierarchyLevel = 0;
+
+  get hierarchyLevel(): number {
+    return this._hierarchyLevel;
+  }
+
+  set hierarchyLevel(level: number) {
+    this._hierarchyLevel = level;
+  }
+
   /**
    * The root inquirer reference. Present only if child instance wrapper
    * is transient and has a parent inquirer.
