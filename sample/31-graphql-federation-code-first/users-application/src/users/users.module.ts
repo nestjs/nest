@@ -5,8 +5,8 @@ import {
 } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
-import { UsersResolver } from './users.resolver';
-import { UsersService } from './users.service';
+import { UsersResolver } from './users.resolver.js';
+import { UsersService } from './users.service.js';
 
 @Module({
   providers: [UsersResolver, UsersService],
@@ -16,7 +16,7 @@ import { UsersService } from './users.service';
       autoSchemaFile: {
         federation: 2,
       },
-      plugins: [ApolloServerPluginInlineTrace()],
+      plugins: [ApolloServerPluginInlineTrace() as any],
     }),
   ],
 })

@@ -1,9 +1,9 @@
-import { Type } from '@nestjs/common';
+import type { Type } from '@nestjs/common';
 import { ConnectionOptions } from 'tls';
-import { ClientProxy } from '../client';
-import { Transport } from '../enums/transport.enum';
-import { TcpSocket } from '../helpers';
-import { Deserializer } from './deserializer.interface';
+import { ClientProxy } from '../client/index.js';
+import { Transport } from '../enums/transport.enum.js';
+import { TcpSocket } from '../helpers/index.js';
+import { Deserializer } from './deserializer.interface.js';
 import {
   GrpcOptions,
   KafkaOptions,
@@ -11,8 +11,8 @@ import {
   NatsOptions,
   RedisOptions,
   RmqOptions,
-} from './microservice-configuration.interface';
-import { Serializer } from './serializer.interface';
+} from './microservice-configuration.interface.js';
+import { Serializer } from './serializer.interface.js';
 
 export type ClientOptions =
   | RedisOptions
@@ -43,5 +43,10 @@ export interface TcpClientOptions {
     deserializer?: Deserializer;
     tlsOptions?: ConnectionOptions;
     socketClass?: Type<TcpSocket>;
+    /**
+     * Maximum buffer size in characters (default: 128MB in characters, i.e., (512 * 1024 * 1024) / 4).
+     * This limit prevents memory exhaustion when receiving large TCP messages.
+     */
+    maxBufferSize?: number;
   };
 }

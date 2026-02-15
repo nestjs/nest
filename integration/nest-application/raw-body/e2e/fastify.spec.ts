@@ -3,8 +3,7 @@ import {
   FastifyAdapter,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import { FastifyModule } from '../src/fastify.module';
+import { FastifyModule } from '../src/fastify.module.js';
 
 describe('Raw body (Fastify Application)', () => {
   let app: NestFastifyApplication;
@@ -39,7 +38,7 @@ describe('Raw body (Fastify Application)', () => {
         payload: body,
       });
 
-      expect(JSON.parse(response.body)).to.eql({
+      expect(JSON.parse(response.body)).toEqual({
         parsed: {
           amount: 0,
         },
@@ -60,7 +59,7 @@ describe('Raw body (Fastify Application)', () => {
       // Unlike Express, when you send a POST request without a body
       // with Fastify, Fastify will throw an error because it isn't valid
       // JSON. See fastify/fastify#297.
-      expect(response.statusCode).to.equal(400);
+      expect(response.statusCode).toBe(400);
     });
   });
 
@@ -75,7 +74,7 @@ describe('Raw body (Fastify Application)', () => {
         payload: body,
       });
 
-      expect(JSON.parse(response.body)).to.eql({
+      expect(JSON.parse(response.body)).toEqual({
         parsed: {
           content: 'this is a post\'s content by "Nest"',
         },
@@ -92,7 +91,7 @@ describe('Raw body (Fastify Application)', () => {
         },
       });
 
-      expect(response.statusCode).to.equal(201);
+      expect(response.statusCode).toBe(201);
     });
   });
 });

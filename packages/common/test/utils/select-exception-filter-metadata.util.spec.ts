@@ -1,5 +1,4 @@
-import { expect } from 'chai';
-import { selectExceptionFilterMetadata } from '../../utils/select-exception-filter-metadata.util';
+import { selectExceptionFilterMetadata } from '../../utils/select-exception-filter-metadata.util.js';
 
 class FirstError {}
 
@@ -22,9 +21,9 @@ describe('selectExceptionFilterMetadata', () => {
       },
     ];
 
-    expect(
-      selectExceptionFilterMetadata(metadataList, new FourthError()),
-    ).to.be.equal(metadataList[1]);
+    expect(selectExceptionFilterMetadata(metadataList, new FourthError())).toBe(
+      metadataList[1],
+    );
   });
 
   describe('when multiple exception handlers are accepting error handling', () => {
@@ -42,7 +41,7 @@ describe('selectExceptionFilterMetadata', () => {
 
       expect(
         selectExceptionFilterMetadata(metadataList, new FirstError()),
-      ).to.be.equal(metadataList[0]);
+      ).toBe(metadataList[0]);
     });
   });
 
@@ -79,7 +78,7 @@ describe('selectExceptionFilterMetadata', () => {
 
       expect(
         selectExceptionFilterMetadata(metadataList, new ThirdError()),
-      ).to.be.equal(metadataList[1]);
+      ).toBe(metadataList[1]);
     });
   });
 });

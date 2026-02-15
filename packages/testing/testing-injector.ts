@@ -1,12 +1,12 @@
-import { NestContainer } from '@nestjs/core';
-import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
+import type { NestContainer } from '@nestjs/core';
+import { MockFactory } from './interfaces/index.js';
 import {
+  STATIC_CONTEXT,
   Injector,
-  InjectorDependencyContext,
-} from '@nestjs/core/injector/injector';
-import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { Module } from '@nestjs/core/injector/module';
-import { MockFactory } from './interfaces';
+  type InjectorDependencyContext,
+  InstanceWrapper,
+  type Module,
+} from '@nestjs/core/internal';
 
 /**
  * @publicApi

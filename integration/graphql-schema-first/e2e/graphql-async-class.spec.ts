@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import * as request from 'supertest';
-import { AsyncClassApplicationModule } from '../src/async-options-class.module';
+import request from 'supertest';
+import { AsyncClassApplicationModule } from '../src/async-options-class.module.js';
 
 describe('GraphQL (async class)', () => {
   let app: INestApplication;

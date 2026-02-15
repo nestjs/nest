@@ -1,5 +1,5 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { DatabaseConnection } from './database.connection';
+import { DatabaseConnection } from './database.connection.js';
 
 @Module({})
 export class DatabaseModule {

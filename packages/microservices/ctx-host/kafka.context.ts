@@ -1,5 +1,9 @@
-import { Consumer, KafkaMessage, Producer } from '../external/kafka.interface';
-import { BaseRpcContext } from './base-rpc.context';
+import {
+  Consumer,
+  KafkaMessage,
+  Producer,
+} from '../external/kafka.interface.js';
+import { BaseRpcContext } from './base-rpc.context.js';
 
 type KafkaContextArgs = [
   message: KafkaMessage,

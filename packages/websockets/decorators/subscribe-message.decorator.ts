@@ -1,4 +1,4 @@
-import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA } from '../constants';
+import { MESSAGE_MAPPING_METADATA, MESSAGE_METADATA } from '../constants.js';
 
 /**
  * Subscribes to messages that fulfils chosen pattern.

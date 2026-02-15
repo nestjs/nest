@@ -1,5 +1,5 @@
-import { LOG_LEVELS, LogLevel } from '../logger.service';
-import { isLogLevel } from './is-log-level.util';
+import { LOG_LEVELS, LogLevel } from '../logger.service.js';
+import { isLogLevel } from './is-log-level.util.js';
 
 /**
  * @publicApi

@@ -1,11 +1,12 @@
-import { isObject } from '@nestjs/common/utils/shared.utils';
-import { ReadPacket } from '../interfaces';
-import { Serializer } from '../interfaces/serializer.interface';
-import { RmqRecord } from '../record-builders';
+import { ReadPacket } from '../interfaces/index.js';
+import { Serializer } from '../interfaces/serializer.interface.js';
+import { RmqRecord } from '../record-builders/index.js';
+import { isObject } from '@nestjs/common/internal';
 
-export class RmqRecordSerializer
-  implements Serializer<ReadPacket, ReadPacket & Partial<RmqRecord>>
-{
+export class RmqRecordSerializer implements Serializer<
+  ReadPacket,
+  ReadPacket & Partial<RmqRecord>
+> {
   serialize(packet: ReadPacket): ReadPacket & Partial<RmqRecord> {
     if (
       packet?.data &&

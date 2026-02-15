@@ -1,48 +1,43 @@
 import {
-  InjectionToken,
+  type InjectionToken,
   Logger,
-  LoggerService,
-  OptionalFactoryDependency,
+  type LoggerService,
+  type OptionalFactoryDependency,
 } from '@nestjs/common';
+import { iterate } from 'iterare';
+import { performance } from 'perf_hooks';
+import { CircularDependencyException } from '../errors/exceptions/index.js';
+import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
+import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception.js';
+import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception.js';
+import { Barrier } from '../helpers/barrier.js';
+import { STATIC_CONTEXT } from './constants.js';
+import { INQUIRER } from './inquirer/index.js';
+import {
+  ContextId,
+  InstancePerContext,
+  InstanceWrapper,
+  PropertyMetadata,
+} from './instance-wrapper.js';
+import { Module } from './module.js';
+import { SettlementSignal } from './settlement-signal.js';
 import {
   OPTIONAL_DEPS_METADATA,
   OPTIONAL_PROPERTY_DEPS_METADATA,
   PARAMTYPES_METADATA,
   PROPERTY_DEPS_METADATA,
   SELF_DECLARED_DEPS_METADATA,
-} from '@nestjs/common/constants';
-import {
-  Controller,
-  ForwardReference,
-  Injectable,
-  Type,
-} from '@nestjs/common/interfaces';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
-import {
+  type Controller,
+  type Injectable,
+  clc,
   isFunction,
   isNil,
   isObject,
   isString,
   isSymbol,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
-import { iterate } from 'iterare';
-import { performance } from 'perf_hooks';
-import { CircularDependencyException } from '../errors/exceptions';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
-import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
-import { Barrier } from '../helpers/barrier';
-import { STATIC_CONTEXT } from './constants';
-import { INQUIRER } from './inquirer';
-import {
-  ContextId,
-  InstancePerContext,
-  InstanceWrapper,
-  PropertyMetadata,
-} from './instance-wrapper';
-import { Module } from './module';
-import { SettlementSignal } from './settlement-signal';
+} from '@nestjs/common/internal';
+import type { ForwardReference, Type } from '@nestjs/common';
 
 /**
  * The type of an injectable dependency
@@ -296,7 +291,6 @@ export class Injector {
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
   ) {
-    const inquirerId = this.getInquirerId(inquirer);
     const metadata = wrapper.getCtorMetadata();
 
     if (metadata && contextId !== STATIC_CONTEXT) {
@@ -349,15 +343,21 @@ export class Injector {
          */
         await paramBarrier.signalAndWait();
 
+        const effectiveInquirer = this.getEffectiveInquirer(
+          paramWrapper,
+          inquirer,
+          parentInquirer,
+          contextId,
+        );
         const paramWrapperWithInstance = await this.resolveComponentHost(
           moduleRef,
           paramWrapper,
           contextId,
-          inquirer,
+          effectiveInquirer,
         );
         const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
           this.getContextId(contextId, paramWrapperWithInstance),
-          inquirerId,
+          this.getInquirerId(effectiveInquirer),
         );
         if (!instanceHost.isResolved && !paramWrapperWithInstance.forwardRef) {
           isResolved = false;
@@ -548,9 +548,13 @@ export class Injector {
        * instantiated beforehand.
        */
       instanceHost.donePromise &&
-        void instanceHost.donePromise.then(() =>
-          this.loadProvider(instanceWrapper, moduleRef, contextId, inquirer),
-        );
+        void instanceHost.donePromise
+          .then(() =>
+            this.loadProvider(instanceWrapper, moduleRef, contextId, inquirer),
+          )
+          .catch(err => {
+            instanceWrapper.settlementSignal?.error(err);
+          });
     }
     if (instanceWrapper.async) {
       const host = instanceWrapper.getInstanceByContextId(
@@ -610,7 +614,7 @@ export class Injector {
       moduleRef,
       dependencyContext.name!,
       wrapper,
-      [],
+      new Set<string>(),
       contextId,
       inquirer,
       keyOrIndex,
@@ -630,7 +634,7 @@ export class Injector {
     moduleRef: Module,
     name: InjectionToken,
     wrapper: InstanceWrapper,
-    moduleRegistry: any[] = [],
+    moduleRegistry: Set<string> = new Set<string>(),
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
     keyOrIndex?: symbol | string | number,
@@ -648,11 +652,11 @@ export class Injector {
       );
     }
     for (const relatedModule of children) {
-      if (moduleRegistry.includes(relatedModule.id)) {
+      if (moduleRegistry.has(relatedModule.id)) {
         continue;
       }
       this.printLookingForProviderLog(name, relatedModule);
-      moduleRegistry.push(relatedModule.id);
+      moduleRegistry.add(relatedModule.id);
 
       const { providers, exports } = relatedModule;
       if (!exports.has(name) || !providers.has(name)) {
@@ -742,19 +746,24 @@ export class Injector {
            */
           await propertyBarrier.signalAndWait();
 
+          const effectivePropertyInquirer = this.getEffectiveInquirer(
+            paramWrapper,
+            inquirer,
+            parentInquirer,
+            contextId,
+          );
           const paramWrapperWithInstance = await this.resolveComponentHost(
             moduleRef,
             paramWrapper,
             contextId,
-            inquirer,
+            effectivePropertyInquirer,
           );
           if (!paramWrapperWithInstance) {
             return undefined;
           }
-          const inquirerId = this.getInquirerId(inquirer);
           const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
             this.getContextId(contextId, paramWrapperWithInstance),
-            inquirerId,
+            this.getInquirerId(effectivePropertyInquirer),
           );
           return instanceHost.instance;
         } catch (err) {
@@ -795,7 +804,7 @@ export class Injector {
     properties: PropertyDependency[],
   ): void {
     if (!isObject(instance)) {
-      return undefined;
+      return;
     }
     iterate(properties)
       .filter(item => !isNil(item.instance))
@@ -835,12 +844,14 @@ export class Injector {
         : new (metatype as Type<any>)(...instances);
 
       instanceHost.instance = this.instanceDecorator(instanceHost.instance);
+      instanceHost.isConstructorCalled = true;
     } else if (isInContext) {
       const factoryReturnValue = (targetMetatype.metatype as any as Function)(
         ...instances,
       );
       instanceHost.instance = await factoryReturnValue;
       instanceHost.instance = this.instanceDecorator(instanceHost.instance);
+      instanceHost.isConstructorCalled = true;
     }
     instanceHost.isResolved = true;
     return instanceHost.instance;
@@ -902,14 +913,20 @@ export class Injector {
         ),
       ),
     );
-    const inquirerId = this.getInquirerId(inquirer);
-    return hosts.map(
-      item =>
-        item?.getInstanceByContextId(
-          this.getContextId(contextId, item),
-          inquirerId,
-        ).instance,
-    );
+    return hosts.map((item, index) => {
+      const dependency = metadata[index];
+      const effectiveInquirer = this.getEffectiveInquirer(
+        dependency,
+        inquirer,
+        parentInquirer,
+        contextId,
+      );
+
+      return item?.getInstanceByContextId(
+        this.getContextId(contextId, item),
+        this.getInquirerId(effectiveInquirer),
+      ).instance;
+    });
   }
 
   public async loadPropertiesMetadata(
@@ -945,6 +962,27 @@ export class Injector {
     return inquirer ? inquirer.id : undefined;
   }
 
+  /**
+   * For nested TRANSIENT dependencies (TRANSIENT -> TRANSIENT) in non-static contexts,
+   * returns parentInquirer to ensure each parent TRANSIENT gets its own instance.
+   * This is necessary because in REQUEST/DURABLE scopes, the same TRANSIENT wrapper
+   * can be used by multiple parents, causing nested TRANSIENTs to be shared incorrectly.
+   * For non-TRANSIENT -> TRANSIENT, returns inquirer (current wrapper being created).
+   */
+  private getEffectiveInquirer(
+    dependency: InstanceWrapper | undefined,
+    inquirer: InstanceWrapper | undefined,
+    parentInquirer: InstanceWrapper | undefined,
+    contextId: ContextId,
+  ): InstanceWrapper | undefined {
+    return dependency?.isTransient &&
+      inquirer?.isTransient &&
+      parentInquirer &&
+      contextId !== STATIC_CONTEXT
+      ? parentInquirer
+      : inquirer;
+  }
+
   private resolveScopedComponentHost(
     item: InstanceWrapper,
     contextId: ContextId,
@@ -953,7 +991,12 @@ export class Injector {
   ) {
     return this.isInquirerRequest(item, parentInquirer)
       ? parentInquirer
-      : this.resolveComponentHost(item.host!, item, contextId, inquirer);
+      : this.resolveComponentHost(
+          item.host!,
+          item,
+          contextId,
+          this.getEffectiveInquirer(item, inquirer, parentInquirer, contextId),
+        );
   }
 
   private isInquirerRequest(

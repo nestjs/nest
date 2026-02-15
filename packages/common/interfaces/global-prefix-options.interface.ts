@@ -1,4 +1,4 @@
-import { RouteInfo } from './middleware';
+import { RouteInfo } from './middleware/index.js';
 
 /**
  * @publicApi

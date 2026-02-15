@@ -1,9 +1,31 @@
 {
   "name": "@nestjs/microservices",
-  "version": "11.1.6",
+  "version": "11.1.13",
   "description": "Nest - modern, fast, powerful node.js web framework (@microservices)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*.js": "./*.js",
+    "./*": "./*.js",
+    "./client": "./client/index.js",
+    "./ctx-host": "./ctx-host/index.js",
+    "./decorators": "./decorators/index.js",
+    "./deserializers": "./deserializers/index.js",
+    "./enums": "./enums/index.js",
+    "./events": "./events/index.js",
+    "./exceptions": "./exceptions/index.js",
+    "./helpers": "./helpers/index.js",
+    "./interfaces": "./interfaces/index.js",
+    "./module": "./module/index.js",
+    "./module/interfaces": "./module/interfaces/index.js",
+    "./record-builders": "./record-builders/index.js",
+    "./serializers": "./serializers/index.js",
+    "./server": "./server/index.js",
+    "./utils": "./utils/index.js"
+  },
   "homepage": "https://nestjs.com",
   "funding": {
     "type": "opencollective",
@@ -22,8 +44,8 @@
     "tslib": "2.8.1"
   },
   "devDependencies": {
-    "@nestjs/common": "11.1.6",
-    "@nestjs/core": "11.1.6"
+    "@nestjs/common": "11.1.13",
+    "@nestjs/core": "11.1.13"
   },
   "peerDependencies": {
     "@grpc/grpc-js": "*",
@@ -68,5 +90,6 @@
     "amqp-connection-manager": {
       "optional": true
     }
-  }
+  },
+  "gitHead": "bcb4747f7598a9d2655c8184a6d729ebefa07fbd"
 }

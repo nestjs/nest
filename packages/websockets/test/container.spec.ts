@@ -1,17 +1,15 @@
-import { expect } from 'chai';
-import * as hash from 'object-hash';
-import * as sinon from 'sinon';
-import { SocketsContainer } from '../sockets-container';
+import hash from 'object-hash';
+import { SocketsContainer } from '../sockets-container.js';
 
 describe('SocketsContainer', () => {
   const port = 30;
 
   let instance: SocketsContainer;
-  let getSpy: sinon.SinonSpy, setSpy: sinon.SinonSpy;
+  let getSpy: ReturnType<typeof vi.fn>, setSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    setSpy = sinon.spy();
-    getSpy = sinon.spy();
+    setSpy = vi.fn();
+    getSpy = vi.fn();
     instance = new SocketsContainer();
     (instance as any).serverAndEventStreamsHosts = {
       get: getSpy,
@@ -24,7 +22,7 @@ describe('SocketsContainer', () => {
       instance.getOneByConfig(config);
 
       const token = hash(config);
-      expect(getSpy.calledWith(token)).to.be.true;
+      expect(getSpy).toHaveBeenCalledWith(token);
     });
   });
   describe('addOne', () => {
@@ -35,22 +33,22 @@ describe('SocketsContainer', () => {
       instance.addOne(config, server as any);
 
       const token = hash(config);
-      expect(setSpy.calledWith(token, server)).to.be.true;
+      expect(setSpy).toHaveBeenCalledWith(token, server);
     });
   });
   describe('getAll', () => {
     it('should return "serverAndEventStreamsHosts"', () => {
       const collection = ['test'];
       (instance as any).serverAndEventStreamsHosts = collection;
-      expect(instance.getAll()).to.be.eq(collection);
+      expect(instance.getAll()).toBe(collection);
     });
   });
   describe('clear', () => {
     it('should clear hosts collection', () => {
-      const collection = { clear: sinon.spy() };
+      const collection = { clear: vi.fn() };
       (instance as any).serverAndEventStreamsHosts = collection;
       instance.clear();
-      expect(collection.clear.called).to.be.true;
+      expect(collection.clear).toHaveBeenCalled();
     });
   });
 });

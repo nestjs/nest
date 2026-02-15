@@ -1,5 +1,5 @@
 import { Injectable, Scope } from '@nestjs/common';
-import { Transient2Service } from './transient2.service';
+import { Transient2Service } from './transient2.service.js';
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class TransientService {

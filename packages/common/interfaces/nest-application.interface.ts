@@ -1,24 +1,25 @@
-import { CanActivate } from './features/can-activate.interface';
-import { NestInterceptor } from './features/nest-interceptor.interface';
-import { GlobalPrefixOptions } from './global-prefix-options.interface';
-import { HttpServer } from './http/http-server.interface';
+import { CanActivate } from './features/can-activate.interface.js';
+import { NestInterceptor } from './features/nest-interceptor.interface.js';
+import { GlobalPrefixOptions } from './global-prefix-options.interface.js';
+import { HttpServer } from './http/http-server.interface.js';
 import {
   ExceptionFilter,
   INestMicroservice,
   NestHybridApplicationOptions,
   PipeTransform,
-} from './index';
-import { INestApplicationContext } from './nest-application-context.interface';
-import { VersioningOptions } from './version-options.interface';
-import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
+} from './index.js';
+import { INestApplicationContext } from './nest-application-context.interface.js';
+import { VersioningOptions } from './version-options.interface.js';
+import { WebSocketAdapter } from './websockets/web-socket-adapter.interface.js';
 
 /**
  * Interface defining the core NestApplication object.
  *
  * @publicApi
  */
-export interface INestApplication<TServer = any>
-  extends INestApplicationContext {
+export interface INestApplication<
+  TServer = any,
+> extends INestApplicationContext {
   /**
    * A wrapper function around HTTP adapter method: `adapter.use()`.
    * Example `app.use(cors())`

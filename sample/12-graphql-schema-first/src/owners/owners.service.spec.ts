@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Owner } from '../graphql.schema';
-import { OwnersService } from './owners.service';
+import { Owner } from '../graphql.schema.js';
+import { OwnersService } from './owners.service.js';
 
 describe('OwnersService', () => {
   let service: OwnersService;

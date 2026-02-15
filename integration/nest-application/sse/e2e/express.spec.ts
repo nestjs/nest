@@ -1,8 +1,7 @@
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { EventSource } from 'eventsource';
-import { AppModule } from '../src/app.module';
+import { AppModule } from '../src/app.module.js';
 
 describe('Sse (Express Application)', () => {
   let app: NestExpressApplication;
@@ -40,14 +39,15 @@ describe('Sse (Express Application)', () => {
       await app.close();
     });
 
-    it('receives events from server', done => {
-      eventSource.addEventListener('message', event => {
-        expect(JSON.parse(event.data)).to.eql({
-          hello: 'world',
+    it('receives events from server', () =>
+      new Promise<void>(done => {
+        eventSource.addEventListener('message', event => {
+          expect(JSON.parse(event.data)).toEqual({
+            hello: 'world',
+          });
+          done();
         });
-        done();
-      });
-    });
+      }));
   });
 
   describe('with forceCloseConnections', () => {
@@ -81,13 +81,14 @@ describe('Sse (Express Application)', () => {
       eventSource.close();
     });
 
-    it('receives events from server', done => {
-      eventSource.addEventListener('message', event => {
-        expect(JSON.parse(event.data)).to.eql({
-          hello: 'world',
+    it('receives events from server', () =>
+      new Promise<void>(done => {
+        eventSource.addEventListener('message', event => {
+          expect(JSON.parse(event.data)).toEqual({
+            hello: 'world',
+          });
+          done();
         });
-        done();
-      });
-    });
+      }));
   });
 });

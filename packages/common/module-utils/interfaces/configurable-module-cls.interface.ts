@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import { DynamicModule } from '../../interfaces';
+import { DynamicModule } from '../../interfaces/index.js';
 import {
   DEFAULT_FACTORY_CLASS_METHOD_KEY,
   DEFAULT_METHOD_KEY,
-} from '../constants';
-import { ConfigurableModuleAsyncOptions } from './configurable-module-async-options.interface';
+} from '../constants.js';
+import { ConfigurableModuleAsyncOptions } from './configurable-module-async-options.interface.js';
 
 /**
  * Class that represents a blueprint/prototype for a configurable Nest module.
@@ -16,8 +16,8 @@ import { ConfigurableModuleAsyncOptions } from './configurable-module-async-opti
 export type ConfigurableModuleCls<
   ModuleOptions,
   MethodKey extends string = typeof DEFAULT_METHOD_KEY,
-  FactoryClassMethodKey extends
-    string = typeof DEFAULT_FACTORY_CLASS_METHOD_KEY,
+  FactoryClassMethodKey extends string =
+    typeof DEFAULT_FACTORY_CLASS_METHOD_KEY,
   ExtraModuleDefinitionOptions = {},
 > = {
   new (): any;

@@ -1,6 +1,10 @@
-import { HttpServer, RequestMethod, VersioningOptions } from '@nestjs/common';
-import { RequestHandler, VersionValue } from '@nestjs/common/interfaces';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+import type {
+  HttpServer,
+  RequestMethod,
+  VersioningOptions,
+} from '@nestjs/common';
+import type { RequestHandler, VersionValue } from '@nestjs/common/internal';
+import type { NestApplicationOptions } from '@nestjs/common';
 
 /**
  * @publicApi
@@ -9,8 +13,7 @@ export abstract class AbstractHttpAdapter<
   TServer = any,
   TRequest = any,
   TResponse = any,
-> implements HttpServer<TRequest, TResponse>
-{
+> implements HttpServer<TRequest, TResponse> {
   protected httpServer: TServer;
   protected onRouteTriggered:
     | ((requestMethod: RequestMethod, path: string) => void)

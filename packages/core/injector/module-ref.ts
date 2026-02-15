@@ -1,12 +1,12 @@
-import { IntrospectionResult, Scope, Type } from '@nestjs/common';
-import { getClassScope } from '../helpers/get-class-scope';
-import { isDurable } from '../helpers/is-durable';
-import { AbstractInstanceResolver } from './abstract-instance-resolver';
-import { NestContainer } from './container';
-import { Injector } from './injector';
-import { InstanceLinksHost } from './instance-links-host';
-import { ContextId, InstanceWrapper } from './instance-wrapper';
-import { Module } from './module';
+import { type IntrospectionResult, Scope, type Type } from '@nestjs/common';
+import { getClassScope } from '../helpers/get-class-scope.js';
+import { isDurable } from '../helpers/is-durable.js';
+import { AbstractInstanceResolver } from './abstract-instance-resolver.js';
+import { NestContainer } from './container.js';
+import { Injector } from './injector.js';
+import { InstanceLinksHost } from './instance-links-host.js';
+import { ContextId, InstanceWrapper } from './instance-wrapper.js';
+import { Module } from './module.js';
 
 export interface ModuleRefGetOrResolveOpts {
   /**

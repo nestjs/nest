@@ -3,18 +3,13 @@ import { FastifyCorsOptions } from '@fastify/cors';
 import {
   HttpStatus,
   Logger,
-  RawBodyRequest,
-  RequestMethod,
+  type RawBodyRequest,
+  type RequestMethod,
   StreamableFile,
   VERSION_NEUTRAL,
-  VersioningOptions,
+  type VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
-import { VersionValue } from '@nestjs/common/interfaces';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
-import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
-import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter';
 import {
   FastifyBaseLogger,
   FastifyBodyParser,
@@ -37,8 +32,8 @@ import {
   RouteShorthandOptions,
   fastify,
 } from 'fastify';
-import * as Reply from 'fastify/lib/reply';
-import { kRouteContext } from 'fastify/lib/symbols';
+import * as Reply from 'fastify/lib/reply.js';
+import fastifySymbols from 'fastify/lib/symbols.js';
 import * as http from 'http';
 import * as http2 from 'http2';
 import * as https from 'https';
@@ -48,18 +43,30 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { pathToRegexp } from 'path-to-regexp';
+import {
+  type VersionValue,
+  loadPackage,
+  isString,
+  isUndefined,
+} from '@nestjs/common/internal';
+import { AbstractHttpAdapter } from '@nestjs/core';
+import { LegacyRouteConverter } from '@nestjs/core/internal';
+const { kRouteContext } = fastifySymbols;
 // Fastify uses `fast-querystring` internally to quickly parse URL query strings.
 import { parse as querystringParse } from 'fast-querystring';
+import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
 import {
   FASTIFY_ROUTE_CONFIG_METADATA,
   FASTIFY_ROUTE_CONSTRAINTS_METADATA,
   FASTIFY_ROUTE_SCHEMA_METADATA,
-} from '../constants';
-import { NestFastifyBodyParserOptions } from '../interfaces';
+} from '../constants.js';
 import {
   FastifyStaticOptions,
   FastifyViewOptions,
-} from '../interfaces/external';
+} from '../interfaces/external/index.js';
+import { NestFastifyBodyParserOptions } from '../interfaces/index.js';
+import middie from './middie/fastify-middie.js';
+const { safeDecodeURI } = urlSanitizer;
 
 type FastifyAdapterBaseOptions<
   Server extends RawServerBase = RawServerDefault,
@@ -122,8 +129,8 @@ type FastifyRawRequest<TServer extends RawServerBase> =
 export class FastifyAdapter<
   TServer extends RawServerBase = RawServerDefault,
   TRawRequest extends FastifyRawRequest<TServer> = FastifyRawRequest<TServer>,
-  TRawResponse extends
-    RawReplyDefaultExpression<TServer> = RawReplyDefaultExpression<TServer>,
+  TRawResponse extends RawReplyDefaultExpression<TServer> =
+    RawReplyDefaultExpression<TServer>,
   TRequest extends FastifyRequest<
     RequestGenericInterface,
     TServer,
@@ -135,14 +142,11 @@ export class FastifyAdapter<
     TRawRequest,
     TRawResponse
   > = FastifyReply<RouteGenericInterface, TServer, TRawRequest, TRawResponse>,
-  TInstance extends FastifyInstance<
-    TServer,
-    TRawRequest,
-    TRawResponse
-  > = FastifyInstance<TServer, TRawRequest, TRawResponse>,
+  TInstance extends FastifyInstance<TServer, TRawRequest, TRawResponse> =
+    FastifyInstance<TServer, TRawRequest, TRawResponse>,
 > extends AbstractHttpAdapter<TServer, TRequest, TReply> {
   protected readonly logger = new Logger(FastifyAdapter.name);
-  protected readonly instance: TInstance;
+  declare protected readonly instance: TInstance;
   protected _pathPrefix?: string;
 
   private _isParserRegistered: boolean;
@@ -250,10 +254,13 @@ export class FastifyAdapter<
       instanceOrOptions && (instanceOrOptions as TInstance).server
         ? instanceOrOptions
         : fastify({
-            constraints: {
-              version: this.versionConstraint as any,
-            },
             ...(instanceOrOptions as FastifyServerOptions),
+            routerOptions: {
+              ...(instanceOrOptions as FastifyServerOptions)?.routerOptions,
+              constraints: {
+                version: this.versionConstraint as any,
+              },
+            },
           });
 
     this.setInstance(instance);
@@ -553,16 +560,18 @@ export class FastifyAdapter<
     this.httpServer = this.instance.server;
   }
 
-  public useStaticAssets(options: FastifyStaticOptions) {
+  public async useStaticAssets(options: FastifyStaticOptions) {
     return this.register(
-      loadPackage('@fastify/static', 'FastifyAdapter.useStaticAssets()', () =>
-        require('@fastify/static'),
+      await loadPackage(
+        '@fastify/static',
+        'FastifyAdapter.useStaticAssets()',
+        () => import('@fastify/static'),
       ),
       options,
     );
   }
 
-  public setViewEngine(options: FastifyViewOptions | string) {
+  public async setViewEngine(options: FastifyViewOptions | string) {
     if (isString(options)) {
       new Logger('FastifyAdapter').error(
         "setViewEngine() doesn't support a string argument.",
@@ -570,8 +579,10 @@ export class FastifyAdapter<
       process.exit(1);
     }
     return this.register(
-      loadPackage('@fastify/view', 'FastifyAdapter.setViewEngine()', () =>
-        require('@fastify/view'),
+      await loadPackage(
+        '@fastify/view',
+        'FastifyAdapter.setViewEngine()',
+        () => import('@fastify/view'),
       ),
       options,
     );
@@ -702,10 +713,11 @@ export class FastifyAdapter<
           normalizedPath,
           (req: any, res: any, next: Function) => {
             const queryParamsIndex = req.originalUrl.indexOf('?');
-            const pathname =
+            let pathname =
               queryParamsIndex >= 0
                 ? req.originalUrl.slice(0, queryParamsIndex)
                 : req.originalUrl;
+            pathname = safeDecodeURI(pathname).path;
 
             if (!re.exec(pathname + '/') && normalizedPath) {
               return next();
@@ -791,9 +803,7 @@ export class FastifyAdapter<
 
   private async registerMiddie() {
     this.isMiddieRegistered = true;
-    await this.register(
-      import('@fastify/middie') as Parameters<TInstance['register']>[0],
-    );
+    await this.register(middie as Parameters<TInstance['register']>[0]);
   }
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {
@@ -833,7 +843,7 @@ export class FastifyAdapter<
       handler: handlerRef,
     };
 
-    if (this.instance.supportedMethods.indexOf(routerMethodKey) === -1) {
+    if (!this.instance.supportedMethods.includes(routerMethodKey)) {
       this.instance.addHttpMethod(routerMethodKey, { hasBody: true });
     }
 

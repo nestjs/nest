@@ -6,19 +6,24 @@
  */
 import 'reflect-metadata';
 
-export * from './adapters';
-export * from './application-config';
-export { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from './constants';
-export * from './discovery';
-export * from './exceptions';
-export * from './helpers';
-export * from './injector';
-export * from './inspector';
-export * from './metadata-scanner';
-export * from './middleware';
-export * from './nest-application';
-export * from './nest-application-context';
-export { NestFactory } from './nest-factory';
-export * from './repl';
-export * from './router';
-export * from './services';
+export * from './adapters/index.js';
+export * from './application-config.js';
+export {
+  APP_FILTER,
+  APP_GUARD,
+  APP_INTERCEPTOR,
+  APP_PIPE,
+} from './constants.js';
+export * from './discovery/index.js';
+export * from './exceptions/index.js';
+export * from './helpers/index.js';
+export * from './injector/index.js';
+export * from './inspector/index.js';
+export * from './metadata-scanner.js';
+export * from './middleware/index.js';
+export * from './nest-application.js';
+export * from './nest-application-context.js';
+export { NestFactory } from './nest-factory.js';
+export * from './repl/index.js';
+export * from './router/index.js';
+export * from './services/index.js';

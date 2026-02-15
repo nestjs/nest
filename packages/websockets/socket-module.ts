@@ -1,33 +1,39 @@
-import { NestApplicationOptions } from '@nestjs/common';
-import { InjectionToken } from '@nestjs/common/interfaces';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
-import { loadAdapter } from '@nestjs/core/helpers/load-adapter';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
-import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import type { NestApplicationOptions } from '@nestjs/common';
 import { iterate } from 'iterare';
-import { AbstractWsAdapter } from './adapters';
-import { GATEWAY_METADATA } from './constants';
-import { ExceptionFiltersContext } from './context/exception-filters-context';
-import { WsContextCreator } from './context/ws-context-creator';
-import { WsProxy } from './context/ws-proxy';
-import { NestGateway } from './interfaces/nest-gateway.interface';
-import { SocketServerProvider } from './socket-server-provider';
-import { SocketsContainer } from './sockets-container';
-import { WebSocketsController } from './web-sockets-controller';
+import { AbstractWsAdapter } from './adapters/index.js';
+import { GATEWAY_METADATA } from './constants.js';
+import { ExceptionFiltersContext } from './context/exception-filters-context.js';
+import { WsContextCreator } from './context/ws-context-creator.js';
+import { WsProxy } from './context/ws-proxy.js';
+import { NestGateway } from './interfaces/nest-gateway.interface.js';
+import { SocketServerProvider } from './socket-server-provider.js';
+import { SocketsContainer } from './sockets-container.js';
+import { WebSocketsController } from './web-sockets-controller.js';
+import type { InjectionToken } from '@nestjs/common';
+import type {
+  Injectable,
+  NestApplicationContextOptions,
+} from '@nestjs/common/internal';
+import type {
+  ApplicationConfig,
+  NestContainer,
+  GraphInspector,
+} from '@nestjs/core';
+import {
+  GuardsConsumer,
+  GuardsContextCreator,
+  loadAdapter,
+  type InstanceWrapper,
+  InterceptorsConsumer,
+  InterceptorsContextCreator,
+  PipesConsumer,
+  PipesContextCreator,
+} from '@nestjs/core/internal';
 
 export class SocketModule<
   THttpServer = any,
-  TAppOptions extends
-    NestApplicationContextOptions = NestApplicationContextOptions,
+  TAppOptions extends NestApplicationContextOptions =
+    NestApplicationContextOptions,
 > {
   private readonly socketsContainer = new SocketsContainer();
   private applicationConfig: ApplicationConfig;
@@ -74,7 +80,7 @@ export class SocketModule<
       .forEach(wrapper => this.connectGatewayToServer(wrapper, moduleName));
   }
 
-  public connectGatewayToServer(
+  public async connectGatewayToServer(
     wrapper: InstanceWrapper<Injectable>,
     moduleName: string,
   ) {
@@ -84,7 +90,7 @@ export class SocketModule<
       return;
     }
     if (!this.isAdapterInitialized) {
-      this.initializeAdapter();
+      await this.initializeAdapter();
     }
     this.webSocketsController.connectGatewayToServer(
       instance as NestGateway,
@@ -113,7 +119,7 @@ export class SocketModule<
     this.socketsContainer.clear();
   }
 
-  private initializeAdapter() {
+  private async initializeAdapter() {
     const forceCloseConnections = (this.appOptions as NestApplicationOptions)
       .forceCloseConnections;
     const adapter = this.applicationConfig.getIoAdapter();
@@ -123,10 +129,10 @@ export class SocketModule<
       this.isAdapterInitialized = true;
       return;
     }
-    const { IoAdapter } = loadAdapter(
+    const { IoAdapter } = await loadAdapter(
       '@nestjs/platform-socket.io',
       'WebSockets',
-      () => require('@nestjs/platform-socket.io'),
+      () => import('@nestjs/platform-socket.io'),
     );
     const ioAdapter = new IoAdapter(this.httpServer);
     ioAdapter.forceCloseConnections = forceCloseConnections;

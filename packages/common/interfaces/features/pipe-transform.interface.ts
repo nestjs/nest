@@ -1,5 +1,6 @@
-import { Type } from '../type.interface';
-import { Paramtype } from './paramtype.interface';
+import { Type } from '../type.interface.js';
+import { Paramtype } from './paramtype.interface.js';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 export type Transform<T = any> = (value: T, metadata: ArgumentMetadata) => any;
 
@@ -25,6 +26,11 @@ export interface ArgumentMetadata {
    * Example: `@Body('userId')` would yield `userId`
    */
   readonly data?: string | undefined;
+  /**
+   * A standard schema object.
+   * Can be used to validate the parameter's value against the schema, or to generate API.
+   */
+  readonly schema?: StandardSchemaV1;
 }
 
 /**

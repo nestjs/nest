@@ -1,9 +1,38 @@
 {
   "name": "@nestjs/core",
-  "version": "11.1.6",
+  "version": "11.1.13",
   "description": "Nest - modern, fast, powerful node.js web framework (@core)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*.js": "./*.js",
+    "./*": "./*.js",
+    "./adapters": "./adapters/index.js",
+    "./discovery": "./discovery/index.js",
+    "./errors/exceptions": "./errors/exceptions/index.js",
+    "./exceptions": "./exceptions/index.js",
+    "./guards": "./guards/index.js",
+    "./helpers": "./helpers/index.js",
+    "./helpers/interfaces": "./helpers/interfaces/index.js",
+    "./hooks": "./hooks/index.js",
+    "./injector": "./injector/index.js",
+    "./injector/inquirer": "./injector/inquirer/index.js",
+    "./injector/internal-core-module": "./injector/internal-core-module/index.js",
+    "./inspector": "./inspector/index.js",
+    "./interceptors": "./interceptors/index.js",
+    "./middleware": "./middleware/index.js",
+    "./pipes": "./pipes/index.js",
+    "./repl": "./repl/index.js",
+    "./repl/native-functions": "./repl/native-functions/index.js",
+    "./router": "./router/index.js",
+    "./router/interfaces": "./router/interfaces/index.js",
+    "./router/request": "./router/request/index.js",
+    "./router/utils": "./router/utils/index.js",
+    "./services": "./services/index.js"
+  },
   "homepage": "https://nestjs.com",
   "funding": {
     "type": "opencollective",
@@ -34,12 +63,12 @@
     "@nuxt/opencollective": "0.4.1",
     "fast-safe-stringify": "2.1.1",
     "iterare": "1.2.1",
-    "path-to-regexp": "8.2.0",
+    "path-to-regexp": "8.3.0",
     "tslib": "2.8.1",
     "uid": "2.0.2"
   },
   "devDependencies": {
-    "@nestjs/common": "11.1.6"
+    "@nestjs/common": "11.1.13"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.0.0",
@@ -59,5 +88,6 @@
     "@nestjs/platform-express": {
       "optional": true
     }
-  }
+  },
+  "gitHead": "bcb4747f7598a9d2655c8184a6d729ebefa07fbd"
 }

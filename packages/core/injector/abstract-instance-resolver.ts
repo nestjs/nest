@@ -1,13 +1,13 @@
-import { Abstract, Scope, Type } from '@nestjs/common';
-import { GetOrResolveOptions } from '@nestjs/common/interfaces';
+import { type Abstract, Scope, type Type } from '@nestjs/common';
 import {
   InvalidClassScopeException,
   UnknownElementException,
-} from '../errors/exceptions';
-import { Injector } from './injector';
-import { InstanceLink, InstanceLinksHost } from './instance-links-host';
-import { ContextId } from './instance-wrapper';
-import { Module } from './module';
+} from '../errors/exceptions/index.js';
+import { Injector } from './injector.js';
+import { InstanceLink, InstanceLinksHost } from './instance-links-host.js';
+import { ContextId } from './instance-wrapper.js';
+import { Module } from './module.js';
+import type { GetOrResolveOptions } from '@nestjs/common/internal';
 
 export abstract class AbstractInstanceResolver {
   protected abstract instanceLinksHost: InstanceLinksHost;
@@ -29,7 +29,8 @@ export abstract class AbstractInstanceResolver {
     const pluckInstance = ({ wrapperRef }: InstanceLink) => {
       if (
         wrapperRef.scope === Scope.REQUEST ||
-        wrapperRef.scope === Scope.TRANSIENT
+        wrapperRef.scope === Scope.TRANSIENT ||
+        !wrapperRef.isDependencyTreeStatic()
       ) {
         throw new InvalidClassScopeException(typeOrToken);
       }
@@ -59,7 +60,7 @@ export abstract class AbstractInstanceResolver {
     const pluckInstance = async (instanceLink: InstanceLink) => {
       const { wrapperRef, collection } = instanceLink;
       if (wrapperRef.isDependencyTreeStatic() && !wrapperRef.isTransient) {
-        return this.get(typeOrToken, { strict: options?.strict });
+        return wrapperRef.instance;
       }
 
       const ctorHost = wrapperRef.instance || { constructor: typeOrToken };

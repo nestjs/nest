@@ -1,5 +1,5 @@
 import { Directive, Field, ID, ObjectType } from '@nestjs/graphql';
-import { Post } from './post.model';
+import { Post } from './post.model.js';
 
 @ObjectType()
 @Directive('@extends')

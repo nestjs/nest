@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { DefaultsService } from './defaults.service';
+import { DefaultsService } from './defaults.service.js';
 
 @Module({
   providers: [DefaultsService],

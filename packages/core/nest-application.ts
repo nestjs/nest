@@ -1,52 +1,41 @@
 import {
-  CanActivate,
-  ExceptionFilter,
-  HttpServer,
-  INestApplication,
-  INestMicroservice,
-  NestHybridApplicationOptions,
-  NestInterceptor,
-  PipeTransform,
-  VersioningOptions,
+  type CanActivate,
+  type ExceptionFilter,
+  type HttpServer,
+  type INestApplication,
+  type INestMicroservice,
+  type NestHybridApplicationOptions,
+  type NestInterceptor,
+  type PipeTransform,
+  type VersioningOptions,
   VersioningType,
-  WebSocketAdapter,
+  type WebSocketAdapter,
 } from '@nestjs/common';
+import { iterate } from 'iterare';
+import { platform } from 'os';
+import { AbstractHttpAdapter } from './adapters/index.js';
+import { ApplicationConfig } from './application-config.js';
+import { MESSAGES } from './constants.js';
+import { optionalRequire } from './helpers/optional-require.js';
+import { NestContainer } from './injector/container.js';
+import { Injector } from './injector/injector.js';
+import { GraphInspector } from './inspector/graph-inspector.js';
+import { MiddlewareContainer } from './middleware/container.js';
+import { MiddlewareModule } from './middleware/middleware-module.js';
+import { mapToExcludeRoute } from './middleware/utils.js';
+import { NestApplicationContext } from './nest-application-context.js';
+import { Resolver } from './router/interfaces/resolver.interface.js';
+import { RoutesResolver } from './router/routes-resolver.js';
+import { type NestApplicationOptions, Logger } from '@nestjs/common';
 import {
-  GlobalPrefixOptions,
-  NestApplicationOptions,
-} from '@nestjs/common/interfaces';
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import {
+  type GlobalPrefixOptions,
+  loadPackage,
+  loadPackageCached,
   addLeadingSlash,
   isFunction,
   isObject,
   isString,
-} from '@nestjs/common/utils/shared.utils';
-import { iterate } from 'iterare';
-import { platform } from 'os';
-import { AbstractHttpAdapter } from './adapters';
-import { ApplicationConfig } from './application-config';
-import { MESSAGES } from './constants';
-import { optionalRequire } from './helpers/optional-require';
-import { NestContainer } from './injector/container';
-import { Injector } from './injector/injector';
-import { GraphInspector } from './inspector/graph-inspector';
-import { MiddlewareContainer } from './middleware/container';
-import { MiddlewareModule } from './middleware/middleware-module';
-import { mapToExcludeRoute } from './middleware/utils';
-import { NestApplicationContext } from './nest-application-context';
-import { Resolver } from './router/interfaces/resolver.interface';
-import { RoutesResolver } from './router/routes-resolver';
-
-const { SocketModule } = optionalRequire(
-  '@nestjs/websockets/socket-module',
-  () => require('@nestjs/websockets/socket-module'),
-);
-const { MicroservicesModule } = optionalRequire(
-  '@nestjs/microservices/microservices-module',
-  () => require('@nestjs/microservices/microservices-module'),
-);
+} from '@nestjs/common/internal';
 
 /**
  * @publicApi
@@ -62,9 +51,8 @@ export class NestApplication
   private readonly middlewareContainer = new MiddlewareContainer(
     this.container,
   );
-  private readonly microservicesModule =
-    MicroservicesModule && new MicroservicesModule();
-  private readonly socketModule = SocketModule && new SocketModule();
+  private microservicesModule: any = null;
+  private socketModule: any = null;
   private readonly routesResolver: Resolver;
   private readonly microservices: any[] = [];
   private httpServer: any;
@@ -95,9 +83,9 @@ export class NestApplication
   }
 
   protected async dispose(): Promise<void> {
-    this.socketModule && (await this.socketModule.close());
-    this.microservicesModule && (await this.microservicesModule.close());
-    this.httpAdapter && (await this.httpAdapter.close());
+    await this.socketModule?.close();
+    await this.microservicesModule?.close();
+    await this.httpAdapter?.close();
 
     await Promise.all(
       iterate(this.microservices).map(async microservice => {
@@ -178,6 +166,11 @@ export class NestApplication
       return this;
     }
 
+    // Lazy-load optional modules (ESM-compatible)
+    await Promise.all([
+      this.loadSocketModule(),
+      this.loadMicroservicesModule(),
+    ]);
     this.applyOptions();
     await this.httpAdapter?.init?.();
 
@@ -219,11 +212,7 @@ export class NestApplication
     microserviceOptions: T,
     hybridAppOptions: NestHybridApplicationOptions = {},
   ): INestMicroservice {
-    const { NestMicroservice } = loadPackage(
-      '@nestjs/microservices',
-      'NestFactory',
-      () => require('@nestjs/microservices'),
-    );
+    const { NestMicroservice } = loadPackageCached('@nestjs/microservices');
     const { inheritAppConfig } = hybridAppOptions;
     const applicationConfig = inheritAppConfig
       ? this.config
@@ -394,6 +383,9 @@ export class NestApplication
   }
 
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
+    filters = this.applyInstanceDecoratorIfRegistered<ExceptionFilter>(
+      ...filters,
+    );
     this.config.useGlobalFilters(...filters);
     filters.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -405,6 +397,9 @@ export class NestApplication
   }
 
   public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
+    pipes = this.applyInstanceDecoratorIfRegistered<PipeTransform<any>>(
+      ...pipes,
+    );
     this.config.useGlobalPipes(...pipes);
     pipes.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -416,6 +411,9 @@ export class NestApplication
   }
 
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
+    interceptors = this.applyInstanceDecoratorIfRegistered<NestInterceptor>(
+      ...interceptors,
+    );
     this.config.useGlobalInterceptors(...interceptors);
     interceptors.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -427,6 +425,7 @@ export class NestApplication
   }
 
   public useGlobalGuards(...guards: CanActivate[]): this {
+    guards = this.applyInstanceDecoratorIfRegistered<CanActivate>(...guards);
     this.config.useGlobalGuards(...guards);
     guards.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -440,20 +439,36 @@ export class NestApplication
   public useStaticAssets(options: any): this;
   public useStaticAssets(path: string, options?: any): this;
   public useStaticAssets(pathOrOptions: any, options?: any): this {
-    this.httpAdapter.useStaticAssets &&
-      this.httpAdapter.useStaticAssets(pathOrOptions, options);
+    this.httpAdapter.useStaticAssets?.(pathOrOptions, options);
     return this;
   }
 
   public setBaseViewsDir(path: string | string[]): this {
-    this.httpAdapter.setBaseViewsDir && this.httpAdapter.setBaseViewsDir(path);
+    this.httpAdapter.setBaseViewsDir?.(path);
     return this;
   }
 
   public setViewEngine(engineOrOptions: any): this {
-    this.httpAdapter.setViewEngine &&
-      this.httpAdapter.setViewEngine(engineOrOptions);
+    this.httpAdapter.setViewEngine?.(engineOrOptions);
     return this;
+  }
+
+  /**
+   * Pre-load optional packages so that createNestApplication,
+   * createNestMicroservice and createHttpAdapter can stay synchronous.
+   */
+  public async preloadLazyPackages(): Promise<void> {
+    // Best-effort: silently swallow if packages are not installed
+    await loadPackage(
+      '@nestjs/platform-express',
+      'TestingModule',
+      () => import('@nestjs/platform-express'),
+    ).catch(() => {});
+    await loadPackage(
+      '@nestjs/microservices',
+      'TestingModule',
+      () => import('@nestjs/microservices'),
+    ).catch(() => {});
   }
 
   private host(): string | undefined {
@@ -473,5 +488,45 @@ export class NestApplication
       this.middlewareContainer,
       instance,
     );
+  }
+
+  private applyInstanceDecoratorIfRegistered<T>(...instances: T[]): T[] {
+    if (this.appOptions.instrument?.instanceDecorator) {
+      return instances.map(
+        instance =>
+          this.appOptions.instrument!.instanceDecorator(instance) as T,
+      );
+    }
+    return instances;
+  }
+
+  private async loadSocketModule() {
+    if (!this.socketModule) {
+      const socketModule = await optionalRequire(
+        '@nestjs/websockets/socket-module',
+        () => import('@nestjs/websockets/socket-module.js'),
+      );
+      if (socketModule?.SocketModule) {
+        this.socketModule = new socketModule.SocketModule();
+      }
+    }
+  }
+
+  private async loadMicroservicesModule() {
+    if (!this.microservicesModule) {
+      const msModule = await optionalRequire(
+        '@nestjs/microservices/microservices-module',
+        () => import('@nestjs/microservices/microservices-module.js'),
+      );
+      if (msModule?.MicroservicesModule) {
+        this.microservicesModule = new msModule.MicroservicesModule();
+        // Pre-cache the main barrel so connectMicroservice() can stay synchronous
+        await loadPackage(
+          '@nestjs/microservices',
+          'NestFactory',
+          () => import('@nestjs/microservices'),
+        );
+      }
+    }
   }
 }

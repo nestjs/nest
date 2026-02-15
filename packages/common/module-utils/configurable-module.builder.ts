@@ -1,20 +1,24 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import { DynamicModule, Provider } from '../interfaces';
-import { Logger } from '../services/logger.service';
-import { randomStringGenerator } from '../utils/random-string-generator.util';
+import { DynamicModule, Provider } from '../interfaces/index.js';
+import { Logger } from '../services/logger.service.js';
+import { randomStringGenerator } from '../utils/random-string-generator.util.js';
 import {
   ASYNC_METHOD_SUFFIX,
+  ASYNC_OPTIONS_METADATA_KEYS,
   CONFIGURABLE_MODULE_ID,
   DEFAULT_FACTORY_CLASS_METHOD_KEY,
   DEFAULT_METHOD_KEY,
-} from './constants';
+} from './constants.js';
 import {
   ConfigurableModuleAsyncOptions,
   ConfigurableModuleCls,
   ConfigurableModuleHost,
   ConfigurableModuleOptionsFactory,
-} from './interfaces';
-import { generateOptionsInjectionToken, getInjectionProviders } from './utils';
+} from './interfaces/index.js';
+import {
+  generateOptionsInjectionToken,
+  getInjectionProviders,
+} from './utils/index.js';
 
 /**
  * @publicApi
@@ -52,8 +56,8 @@ export interface ConfigurableModuleBuilderOptions {
 export class ConfigurableModuleBuilder<
   ModuleOptions,
   StaticMethodKey extends string = typeof DEFAULT_METHOD_KEY,
-  FactoryClassMethodKey extends
-    string = typeof DEFAULT_FACTORY_CLASS_METHOD_KEY,
+  FactoryClassMethodKey extends string =
+    typeof DEFAULT_FACTORY_CLASS_METHOD_KEY,
   ExtraModuleDefinitionOptions = {},
 > {
   protected staticMethodKey: StaticMethodKey;
@@ -254,7 +258,7 @@ export class ConfigurableModuleBuilder<
           },
           {
             ...self.extras,
-            ...options,
+            ...this.extractExtrasFromAsyncOptions(options, self.extras),
           },
         );
       }
@@ -277,8 +281,28 @@ export class ConfigurableModuleBuilder<
         return moduleOptions as ModuleOptions;
       }
 
+      private static extractExtrasFromAsyncOptions(
+        input: ConfigurableModuleAsyncOptions<ModuleOptions> &
+          ExtraModuleDefinitionOptions,
+        extras: ExtraModuleDefinitionOptions | undefined,
+      ): Partial<ExtraModuleDefinitionOptions> {
+        if (!extras) {
+          return {};
+        }
+        const extrasOptions = {};
+
+        Object.keys(input as object)
+          .filter(key => !ASYNC_OPTIONS_METADATA_KEYS.includes(key as any))
+          .forEach(key => {
+            extrasOptions[key] = input[key];
+          });
+
+        return extrasOptions;
+      }
+
       private static createAsyncProviders(
-        options: ConfigurableModuleAsyncOptions<ModuleOptions>,
+        options: ConfigurableModuleAsyncOptions<ModuleOptions> &
+          ExtraModuleDefinitionOptions,
       ): Provider[] {
         if (options.useExisting || options.useFactory) {
           if (options.inject && options.provideInjectionTokensFrom) {

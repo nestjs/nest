@@ -1,10 +1,10 @@
 import type { DynamicModule, ForwardReference, Type } from '@nestjs/common';
-import { isNil, isSymbol } from '@nestjs/common/utils/shared.utils';
 import {
   InjectorDependency,
   InjectorDependencyContext,
-} from '../injector/injector';
-import { Module } from '../injector/module';
+} from '../injector/injector.js';
+import { Module } from '../injector/module.js';
+import { isNil, isSymbol } from '@nestjs/common/internal';
 
 /**
  * Returns the name of an instance or `undefined`
@@ -69,10 +69,33 @@ export const UNKNOWN_DEPENDENCIES_MESSAGE = (
   const moduleName = getModuleName(moduleRef);
   const dependencyName = getDependencyName(name, 'dependency');
 
-  const potentialSolutions =
-    // If module's name is well defined
-    moduleName !== 'current'
-      ? `\n
+  const isImportTypeIssue =
+    !isNil(index) &&
+    dependencies &&
+    (dependencies[index] === undefined ||
+      dependencies[index] === Object ||
+      (typeof dependencies[index] === 'function' &&
+        (dependencies[index] as any).name === 'Object'));
+
+  let potentialSolutions: string;
+
+  if (isImportTypeIssue) {
+    potentialSolutions = `\n
+Potential solutions:
+- The dependency at index [${index}] appears to be undefined at runtime
+- This commonly occurs when using 'import type' instead of 'import' for injectable classes
+- Check your imports and change:
+  ❌ import type { SomeService } from './some.service';
+  ✅ import { SomeService } from './some.service';
+- Ensure the imported class is decorated with @Injectable() or is a valid provider
+- If using dynamic imports, ensure the class is available at runtime, not just for type checking
+
+For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors`;
+  } else {
+    potentialSolutions =
+      // If module's name is well defined
+      moduleName !== 'current'
+        ? `\n
 Potential solutions:
 - Is ${moduleName} a valid NestJS module?
 - If ${dependencyName} is a provider, is it part of the current ${moduleName}?
@@ -80,15 +103,18 @@ Potential solutions:
   @Module({
     imports: [ /* the Module containing ${dependencyName} */ ]
   })
-`
-      : `\n
+
+For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors`
+        : `\n
 Potential solutions:
 - If ${dependencyName} is a provider, is it part of the current Module?
 - If ${dependencyName} is exported from a separate @Module, is that module imported within Module?
   @Module({
     imports: [ /* the Module containing ${dependencyName} */ ]
   })
-`;
+
+For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors`;
+  }
 
   let message = `Nest can't resolve dependencies of the ${type.toString()}`;
 
@@ -103,7 +129,7 @@ Potential solutions:
 
   message += ` (`;
   message += dependenciesName.join(', ');
-  message += `). Please make sure that the argument ${dependencyName} at index [${index}] is available in the ${moduleName} context.`;
+  message += `). Please make sure that the argument ${isImportTypeIssue ? 'dependency' : dependencyName} at index [${index}] is available in the ${isImportTypeIssue ? 'current' : moduleName} context.`;
   message += potentialSolutions;
 
   return message;
@@ -175,6 +201,8 @@ export const UNKNOWN_EXPORT_MESSAGE = (
 
 Possible Solutions:
 - Is ${token} part of the relevant providers/imports within ${module}?
+
+For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
 `;
 };
 

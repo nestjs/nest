@@ -12,60 +12,44 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint '{src,apps,libs,test}/**/*.ts' --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "echo 'No e2e tests implemented yet.'"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage",
+    "test:debug": "vitest --inspect-brk --no-file-parallelism",
+    "test:e2e": "vitest run --config ./vitest.config.e2e.mts"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.6",
-    "@nestjs/core": "11.1.6",
-    "@nestjs/mongoose": "11.0.3",
-    "@nestjs/platform-express": "11.1.6",
-    "mongoose": "8.17.1",
+    "@nestjs/common": "11.1.13",
+    "@nestjs/core": "11.1.13",
+    "@nestjs/mongoose": "11.0.4",
+    "@nestjs/platform-express": "11.1.13",
+    "mongoose": "9.2.1",
     "reflect-metadata": "0.2.2",
-    "rimraf": "6.0.1",
+    "rimraf": "6.1.2",
     "rxjs": "7.8.2"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.3.1",
-    "@eslint/js": "9.31.0",
-    "@nestjs/cli": "11.0.10",
-    "@nestjs/schematics": "11.0.7",
-    "@nestjs/testing": "11.1.6",
-    "@types/express": "5.0.3",
-    "@types/jest": "29.5.14",
-    "@types/node": "22.17.1",
+    "@eslint/eslintrc": "3.3.3",
+    "@eslint/js": "9.39.2",
+    "@nestjs/cli": "11.0.16",
+    "@nestjs/schematics": "11.0.9",
+    "@nestjs/testing": "11.1.13",
+    "@types/express": "5.0.6",
+    "@types/node": "24.10.11",
     "@types/supertest": "6.0.3",
-    "eslint": "9.31.0",
-    "eslint-plugin-prettier": "5.5.4",
-    "globals": "16.3.0",
-    "jest": "29.7.0",
-    "prettier": "3.6.2",
-    "supertest": "7.1.4",
-    "ts-jest": "29.4.1",
-    "ts-loader": "9.5.2",
+    "eslint": "9.39.2",
+    "eslint-plugin-prettier": "5.5.5",
+    "globals": "17.3.0",
+    "prettier": "3.8.1",
+    "supertest": "7.2.2",
+    "ts-loader": "9.5.4",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
-    "typescript": "5.7.3",
-    "typescript-eslint": "8.39.0"
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.54.0",
+    "vitest": "3.2.4",
+    "unplugin-swc": "1.5.5",
+    "@swc/core": "1.13.1"
   },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".spec.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
-  }
+  "type": "module"
 }

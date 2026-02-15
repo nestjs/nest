@@ -1,12 +1,12 @@
-import { OnApplicationShutdown } from '@nestjs/common';
-import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
+import type { OnApplicationShutdown } from '@nestjs/common';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,
   getTransientInstances,
-} from '../injector/helpers/transient-instances';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
+} from '../injector/helpers/transient-instances.js';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import { Module } from '../injector/module.js';
+import { isFunction, isNil } from '@nestjs/common/internal';
 
 /**
  * Checks if the given instance has the `onApplicationShutdown` function

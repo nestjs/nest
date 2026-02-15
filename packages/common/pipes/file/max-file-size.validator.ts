@@ -1,9 +1,40 @@
-import { FileValidator } from './file-validator.interface';
-import { IFile } from './interfaces';
+import { FileValidatorContext } from './file-validator-context.interface.js';
+import { FileValidator } from './file-validator.interface.js';
+import { IFile } from './interfaces/index.js';
+
+type MaxFileSizeValidatorContext = FileValidatorContext<
+  Omit<MaxFileSizeValidatorOptions, 'errorMessage' | 'message'>
+>;
 
 export type MaxFileSizeValidatorOptions = {
+  /**
+   * Maximum allowed file size in bytes.
+   */
   maxSize: number;
+
+  /**
+   * @deprecated Use `errorMessage` instead.
+   */
   message?: string | ((maxSize: number) => string);
+
+  /**
+   * Custom error message returned when file size validation fails.
+   * Can be provided as a static string, or as a factory function
+   * that receives the validation context (file and validator configuration)
+   * and returns a dynamic error message.
+   *
+   * @example
+   * // Static message
+   * new MaxFileSizeValidator({ maxSize: 1000, errorMessage: 'File size exceeds the limit' })
+   *
+   * @example
+   * // Dynamic message based on file object and validator configuration
+   * new MaxFileSizeValidator({
+   *   maxSize: 1000,
+   *   errorMessage: ctx => `Received file size is ${ctx.file?.size}, but it must be smaller than ${ctx.config.maxSize}.`
+   * })
+   */
+  errorMessage?: string | ((ctx: MaxFileSizeValidatorContext) => string);
 };
 
 /**
@@ -18,12 +49,18 @@ export class MaxFileSizeValidator extends FileValidator<
   IFile
 > {
   buildErrorMessage(file?: IFile): string {
-    if ('message' in this.validationOptions) {
-      if (typeof this.validationOptions.message === 'function') {
-        return this.validationOptions.message(this.validationOptions.maxSize);
-      }
+    const { errorMessage, message, ...config } = this.validationOptions;
 
-      return this.validationOptions.message!;
+    if (errorMessage) {
+      return typeof errorMessage === 'function'
+        ? errorMessage({ file, config })
+        : errorMessage;
+    }
+
+    if (message) {
+      return typeof message === 'function'
+        ? message(this.validationOptions.maxSize)
+        : message;
     }
 
     if (file?.size) {

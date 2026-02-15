@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
-import { AsyncOptionsClassModule } from '../src/async-class-options.module';
+import request from 'supertest';
+import { AsyncOptionsClassModule } from '../src/async-class-options.module.js';
 
 describe('TypeOrm (async configuration)', () => {
   let server;
