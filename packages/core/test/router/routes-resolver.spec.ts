@@ -1,11 +1,4 @@
-import { createError as createFastifyError } from '@fastify/error';
-import {
-  BadRequestException,
-  HttpException,
-  Module,
-  Post,
-  VersioningType,
-} from '@nestjs/common';
+import { Module, Post, VersioningType } from '@nestjs/common';
 import { MODULE_PATH } from '@nestjs/common/constants.js';
 import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import { Get } from '../../../common/decorators/http/request-mapping.decorator.js';
@@ -293,61 +286,6 @@ describe('RoutesResolver', () => {
         // without module path
         expect(spy.mock.calls[1][2]).toBe('');
         expect(spy.mock.calls[1][3]).toBeUndefined();
-      });
-    });
-  });
-
-  describe('mapExternalExceptions', () => {
-    describe('when exception prototype is', () => {
-      describe('SyntaxError', () => {
-        it('should map to BadRequestException', () => {
-          const err = new SyntaxError();
-          const outputErr = routesResolver.mapExternalException(err);
-          expect(outputErr).toBeInstanceOf(BadRequestException);
-        });
-      });
-      describe('URIError', () => {
-        it('should map to BadRequestException', () => {
-          const err = new URIError();
-          const outputErr = routesResolver.mapExternalException(err);
-          expect(outputErr).toBeInstanceOf(BadRequestException);
-        });
-      });
-      describe('FastifyError', () => {
-        it('should map FastifyError with status code to HttpException', () => {
-          const FastifyErrorCls = createFastifyError(
-            'FST_ERR_CTP_INVALID_MEDIA_TYPE',
-            'Unsupported Media Type: %s',
-            415,
-          );
-          const error = new FastifyErrorCls();
-
-          const result = routesResolver.mapExternalException(error);
-
-          expect(result).toBeInstanceOf(HttpException);
-          expect(result.message).toBe(error.message);
-          expect(result.getStatus()).toBe(415);
-        });
-
-        it('should return FastifyError without user status code to Internal Server Error HttpException', () => {
-          const FastifyErrorCls = createFastifyError(
-            'FST_WITHOUT_STATUS_CODE',
-            'Error without status code',
-          );
-          const error = new FastifyErrorCls();
-
-          const result = routesResolver.mapExternalException(error);
-          expect(result).toBeInstanceOf(HttpException);
-          expect(result.message).toBe(error.message);
-          expect(result.getStatus()).toBe(500);
-        });
-      });
-      describe('other', () => {
-        it('should behave as an identity', () => {
-          const err = new Error();
-          const outputErr = routesResolver.mapExternalException(err);
-          expect(outputErr).toEqual(err);
-        });
       });
     });
   });

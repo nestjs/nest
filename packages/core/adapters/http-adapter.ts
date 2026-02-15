@@ -165,6 +165,10 @@ export abstract class AbstractHttpAdapter<
 
   public beforeClose(): void {}
 
+  public mapException(error: unknown): unknown {
+    return error;
+  }
+
   abstract close();
   abstract initHttpServer(options: NestApplicationOptions);
   abstract useStaticAssets(...args: any[]);

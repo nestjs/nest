@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   HttpStatus,
   InternalServerErrorException,
   Logger,
@@ -533,6 +534,18 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     }
 
     throw new Error('Unsupported versioning options');
+  }
+
+  public mapException(error: unknown): unknown {
+    switch (true) {
+      // SyntaxError is thrown by Express body-parser when given invalid JSON (#422, #430)
+      // URIError is thrown by Express when given a path parameter with an invalid percentage
+      // encoding, e.g. '%FF' (#8915)
+      case error instanceof SyntaxError || error instanceof URIError:
+        return new BadRequestException(error.message);
+      default:
+        return error;
+    }
   }
 
   private trackOpenConnections() {
