@@ -1,6 +1,3 @@
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
-import { isFunction, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { createRequire } from 'module';
 import { Observable, Subscription } from 'rxjs';
 import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants.js';
@@ -11,6 +8,8 @@ import { ChannelOptions } from '../external/grpc-options.interface.js';
 import { getGrpcPackageDefinition } from '../helpers/index.js';
 import { ClientGrpc, GrpcOptions } from '../interfaces/index.js';
 import { ClientProxy } from './client-proxy.js';
+import { Logger } from '@nestjs/common';
+import { loadPackageSync, isFunction, isObject } from '@nestjs/common/internal';
 
 const GRPC_CANCELLED = 'Cancelled';
 

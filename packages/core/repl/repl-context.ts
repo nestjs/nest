@@ -1,6 +1,6 @@
 import {
-  INestApplicationContext,
-  InjectionToken,
+  type INestApplicationContext,
+  type InjectionToken,
   Logger,
 } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config.js';

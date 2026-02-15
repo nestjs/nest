@@ -1,4 +1,4 @@
-import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception.js';
+import { RuntimeException } from '@nestjs/core/internal';
 
 /**
  * @publicApi

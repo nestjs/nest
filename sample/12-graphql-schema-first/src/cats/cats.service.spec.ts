@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CatsService } from './cats.service';
-import { Cat } from 'src/graphql.schema';
+import { CatsService } from './cats.service.js';
+import { Cat } from '../graphql.schema.js';
 
 describe('CatsService', () => {
   let service: CatsService;

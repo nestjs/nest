@@ -1,9 +1,9 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import {
   ConsumerDeserializer,
   IncomingEvent,
   IncomingRequest,
 } from '../interfaces/index.js';
+import { isUndefined } from '@nestjs/common/internal';
 
 /**
  * @publicApi

@@ -1,20 +1,10 @@
 import {
-  INestApplicationContext,
+  type INestApplicationContext,
   Logger,
-  LoggerService,
-  LogLevel,
+  type LoggerService,
+  type LogLevel,
   ShutdownSignal,
 } from '@nestjs/common';
-import {
-  Abstract,
-  DynamicModule,
-  GetOrResolveOptions,
-  SelectOptions,
-  ShutdownHooksOptions,
-  Type,
-} from '@nestjs/common/interfaces/index.js';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface.js';
-import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { MESSAGES } from './constants.js';
 import { UnknownModuleException } from './errors/exceptions/index.js';
@@ -33,6 +23,14 @@ import { Injector } from './injector/injector.js';
 import { InstanceLinksHost } from './injector/instance-links-host.js';
 import { ContextId } from './injector/instance-wrapper.js';
 import { Module } from './injector/module.js';
+import type { Abstract, DynamicModule, Type } from '@nestjs/common';
+import {
+  type GetOrResolveOptions,
+  type SelectOptions,
+  type ShutdownHooksOptions,
+  type NestApplicationContextOptions,
+  isEmpty,
+} from '@nestjs/common/internal';
 
 /**
  * @publicApi
@@ -319,9 +317,7 @@ export class NestApplicationContext<
     options: ShutdownHooksOptions = {},
   ): this {
     if (isEmpty(signals)) {
-      signals = Object.keys(ShutdownSignal).map(
-        (key: string) => ShutdownSignal[key],
-      );
+      signals = Object.values(ShutdownSignal);
     } else {
       // given signals array should be unique because
       // process shouldn't listen to the same signal more than once.

@@ -1,5 +1,4 @@
-import { OnApplicationBootstrap } from '@nestjs/common';
-import { isFunction, isNil } from '@nestjs/common/utils/shared.utils.js';
+import type { OnApplicationBootstrap } from '@nestjs/common';
 import { iterate } from 'iterare';
 import {
   getNonTransientInstances,
@@ -7,6 +6,7 @@ import {
 } from '../injector/helpers/transient-instances.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import { Module } from '../injector/module.js';
+import { isFunction, isNil } from '@nestjs/common/internal';
 
 /**
  * Checks if the given instance has the `onApplicationBootstrap` function

@@ -1,7 +1,7 @@
-import { MessageEvent } from '@nestjs/common/interfaces/index.js';
-import { isObject } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage, OutgoingHttpHeaders } from 'http';
 import { Transform } from 'stream';
+import type { MessageEvent } from '@nestjs/common';
+import { isObject } from '@nestjs/common/internal';
 
 function toDataString(data: string | object): string {
   if (isObject(data)) {

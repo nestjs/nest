@@ -1,4 +1,3 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import {
   NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_HOST,
@@ -17,6 +16,7 @@ import {
   TransportId,
 } from '../interfaces/index.js';
 import { Server } from './server.js';
+import { isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for Redis. This cant be uncommented by default
 // because it would require the user to install the ioredis package even if they dont use Redis

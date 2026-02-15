@@ -1,10 +1,4 @@
-import { DynamicModule, Provider } from '@nestjs/common';
-import {
-  EnhancerSubtype,
-  GLOBAL_MODULE_METADATA,
-} from '@nestjs/common/constants.js';
-import { Injectable, Type } from '@nestjs/common/interfaces/index.js';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface.js';
+import type { DynamicModule, Provider } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config.js';
 import { DiscoverableMetaHostCollection } from '../discovery/discoverable-meta-host-collection.js';
 import {
@@ -24,6 +18,13 @@ import { ModulesContainer } from './modules-container.js';
 import { ByReferenceModuleOpaqueKeyFactory } from './opaque-key-factory/by-reference-module-opaque-key-factory.js';
 import { DeepHashedModuleOpaqueKeyFactory } from './opaque-key-factory/deep-hashed-module-opaque-key-factory.js';
 import { ModuleOpaqueKeyFactory } from './opaque-key-factory/interfaces/module-opaque-key-factory.interface.js';
+import {
+  type EnhancerSubtype,
+  GLOBAL_MODULE_METADATA,
+  type Injectable,
+  type NestApplicationContextOptions,
+} from '@nestjs/common/internal';
+import type { Type } from '@nestjs/common';
 
 type ModuleMetatype = Type<any> | DynamicModule | Promise<DynamicModule>;
 type ModuleScope = Type<any>[];

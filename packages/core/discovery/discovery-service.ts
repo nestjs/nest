@@ -1,5 +1,5 @@
 import {
-  CustomDecorator,
+  type CustomDecorator,
   flatten,
   Injectable,
   SetMetadata,

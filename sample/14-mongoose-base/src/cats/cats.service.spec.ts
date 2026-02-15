@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from 'mongoose';
-import { CatsService } from './cats.service';
-import { Cat } from './interfaces/cat.interface';
+import { CatsService } from './cats.service.js';
+import { Cat } from './interfaces/cat.interface.js';
 
 const mockCat = {
   name: 'Cat #1',
@@ -33,12 +33,12 @@ describe('CatService', () => {
         {
           provide: 'CAT_MODEL',
           useValue: {
-            new: jest.fn().mockResolvedValue(mockCat),
-            constructor: jest.fn().mockResolvedValue(mockCat),
-            find: jest.fn(),
-            create: jest.fn(),
-            save: jest.fn(),
-            exec: jest.fn(),
+            new: vi.fn().mockResolvedValue(mockCat),
+            constructor: vi.fn().mockResolvedValue(mockCat),
+            find: vi.fn(),
+            create: vi.fn(),
+            save: vi.fn(),
+            exec: vi.fn(),
           },
         },
       ],
@@ -53,15 +53,15 @@ describe('CatService', () => {
   });
 
   it('should return all cats', async () => {
-    jest.spyOn(model, 'find').mockReturnValue({
-      exec: jest.fn().mockResolvedValueOnce(catsArray),
+    vi.spyOn(model, 'find').mockReturnValue({
+      exec: vi.fn().mockResolvedValueOnce(catsArray),
     } as any);
     const cats = await service.findAll();
     expect(cats).toEqual(catsArray);
   });
 
   it('should insert a new cat', async () => {
-    jest.spyOn(model, 'create').mockImplementationOnce(() =>
+    vi.spyOn(model, 'create').mockImplementationOnce(() =>
       Promise.resolve({
         name: 'Cat #1',
         breed: 'Breed #1',

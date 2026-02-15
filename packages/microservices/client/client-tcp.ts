@@ -1,4 +1,4 @@
-import { Logger, Type } from '@nestjs/common';
+import { Logger, type Type } from '@nestjs/common';
 import * as net from 'net';
 import { EmptyError, lastValueFrom } from 'rxjs';
 import { share, tap } from 'rxjs/operators';

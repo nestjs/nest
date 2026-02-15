@@ -1,12 +1,4 @@
 import {
-  Logger,
-  LoggerService,
-} from '@nestjs/common/services/logger.service.js';
-import {
-  loadPackage,
-  loadPackageSync,
-} from '@nestjs/common/utils/load-package.util.js';
-import {
   connectable,
   EMPTY,
   from as fromPromise,
@@ -46,6 +38,8 @@ import {
 import { ConsumerSerializer } from '../interfaces/serializer.interface.js';
 import { IdentitySerializer } from '../serializers/identity.serializer.js';
 import { transformPatternToRoute } from '../utils/index.js';
+import { Logger, type LoggerService } from '@nestjs/common';
+import { loadPackage, loadPackageSync } from '@nestjs/common/internal';
 
 /**
  * @publicApi

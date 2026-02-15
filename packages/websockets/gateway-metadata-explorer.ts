@@ -1,5 +1,3 @@
-import { isFunction, isUndefined } from '@nestjs/common/utils/shared.utils.js';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner.js';
 import { Observable } from 'rxjs';
 import {
   GATEWAY_SERVER_METADATA,
@@ -8,9 +6,10 @@ import {
   PARAM_ARGS_METADATA,
 } from './constants.js';
 import { NestGateway } from './interfaces/nest-gateway.interface.js';
-import { ParamsMetadata } from '@nestjs/core/helpers/interfaces/index.js';
 import { WsParamtype } from './enums/ws-paramtype.enum.js';
-import { ContextUtils } from '@nestjs/core/helpers/context-utils.js';
+import { isFunction, isUndefined } from '@nestjs/common/internal';
+import type { MetadataScanner } from '@nestjs/core';
+import { type ParamsMetadata, ContextUtils } from '@nestjs/core/internal';
 
 export interface MessageMappingProperties {
   message: any;

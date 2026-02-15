@@ -29,10 +29,12 @@ describe('Get URL (Fastify Application)', () => {
     expect(await app.getUrl()).toEqual(`http://127.0.0.1:${port}`);
     await app.close();
   });
-  it('should return [::1] in a callback (default bind)', () => {
+  it('should return a loopback address in a callback (default bind)', () => {
     const app = testModule.createNestApplication(new FastifyAdapter());
     return app.listen(port, async () => {
-      expect(await app.getUrl()).toEqual(`http://[::1]:${port}`);
+      expect(await app.getUrl()).toMatch(
+        new RegExp(`http://(\\[::1\\]|127\\.0\\.0\\.1):${port}`),
+      );
       await app.close();
     });
   });

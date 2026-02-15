@@ -59,7 +59,7 @@ describe('WebSocketsController', () => {
     instance = new WebSocketsController(
       provider,
       config,
-      contextCreator as any,
+      contextCreator,
       graphInspector,
     );
     untypedInstance = instance as any;
@@ -146,7 +146,7 @@ describe('WebSocketsController', () => {
       server = { server: 'test' };
 
       vi.spyOn(explorer, 'explore').mockReturnValue(handlers);
-      vi.spyOn(provider, 'scanForSocketServer').mockReturnValue(server as any);
+      vi.spyOn(provider, 'scanForSocketServer').mockReturnValue(server);
 
       assignServerToProperties = vi.fn();
       subscribeEvents = vi.fn();
@@ -559,7 +559,7 @@ describe('WebSocketsController', () => {
       const previewInstance = new WebSocketsController(
         previewProvider,
         previewConfig,
-        contextCreator as any,
+        contextCreator,
         graphInspector,
         { preview: true },
       );

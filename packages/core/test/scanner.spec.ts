@@ -389,24 +389,24 @@ describe('DependenciesScanner', () => {
 
       expect(module.forwardRef).toHaveBeenCalled();
     });
-    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with `@Injectable()` decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with `@Injectable()` decorator', async () => {
       vi.spyOn(container, 'addModule').mockReturnValue({} as any);
 
-      expect(scanner.insertModule(TestComponent, [])).rejects.toThrow(
+      await expect(scanner.insertModule(TestComponent, [])).rejects.toThrow(
         InvalidClassModuleException,
       );
     });
-    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with `@Controller()` decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with `@Controller()` decorator', async () => {
       vi.spyOn(container, 'addModule').mockReturnValue({} as any);
 
-      expect(scanner.insertModule(TestController, [])).rejects.toThrow(
+      await expect(scanner.insertModule(TestController, [])).rejects.toThrow(
         InvalidClassModuleException,
       );
     });
-    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with (only) `@Catch()` decorator', () => {
+    it('should throw "InvalidClassModuleException" exception when supplying a class annotated with (only) `@Catch()` decorator', async () => {
       vi.spyOn(container, 'addModule').mockReturnValue({} as any);
 
-      expect(
+      await expect(
         scanner.insertModule(TestExceptionFilterWithoutInjectable, []),
       ).rejects.toThrow(InvalidClassModuleException);
     });

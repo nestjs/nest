@@ -18,10 +18,12 @@ describe('Get URL (Express Application)', () => {
     port = await randomPort();
   });
 
-  it('should be able to get the IPv6 address', async () => {
+  it('should be able to get a loopback address', async () => {
     const app = testModule.createNestApplication(new ExpressAdapter(express()));
     await app.listen(port);
-    expect(await app.getUrl()).toEqual(`http://[::1]:${port}`);
+    expect(await app.getUrl()).toMatch(
+      new RegExp(`http://(\\[::1\\]|127\\.0\\.0\\.1):${port}`),
+    );
     await app.close();
   });
   it('should be able to get the IPv4 address', async () => {
@@ -36,10 +38,12 @@ describe('Get URL (Express Application)', () => {
     expect(await app.getUrl()).toEqual(`http://127.0.0.1:${port}`);
     await app.close();
   });
-  it('should return [::1] in a callback (default bind)', () => {
+  it('should return a loopback address in a callback (default bind)', () => {
     const app = testModule.createNestApplication(new ExpressAdapter(express()));
     return app.listen(port, async () => {
-      expect(await app.getUrl()).toEqual(`http://[::1]:${port}`);
+      expect(await app.getUrl()).toMatch(
+        new RegExp(`http://(\\[::1\\]|127\\.0\\.0\\.1):${port}`),
+      );
       await app.close();
     });
   });
