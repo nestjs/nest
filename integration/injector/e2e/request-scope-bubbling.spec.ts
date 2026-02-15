@@ -1,7 +1,6 @@
 import { Injectable, Scope, Module } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ContextIdFactory, REQUEST } from '@nestjs/core';
-import { expect } from 'chai';
 
 describe('Request Scope Bubbling', () => {
   // 1. Define the "Poison" (Request Scoped Service)
@@ -39,10 +38,10 @@ describe('Request Scope Bubbling', () => {
     // 6. Assertions (The "Moment of Truth")
 
     // The Child IDs should be different (Proof of Request Scope)
-    expect(parent1.child.id).to.not.equal(parent2.child.id);
+    expect(parent1.child.id).not.toBe(parent2.child.id);
 
     // The Parent instances should ALSO be different (Proof of Bubbling)
     // If Parent was a true Singleton, these would be equal.
-    expect(parent1).to.not.equal(parent2);
+    expect(parent1).not.toBe(parent2);
   });
 });

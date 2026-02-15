@@ -1,6 +1,4 @@
 import { ApplicationConfig } from '@nestjs/core/application-config.js';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { AbstractWsAdapter } from '../adapters/ws-adapter.js';
 import { SocketServerProvider } from '../socket-server-provider.js';
 import { SocketsContainer } from '../sockets-container.js';
@@ -12,68 +10,68 @@ class NoopAdapter extends AbstractWsAdapter {
 
 describe('SocketServerProvider', () => {
   let instance: SocketServerProvider;
-  let socketsContainer: SocketsContainer, mockContainer: sinon.SinonMock;
+  let socketsContainer: SocketsContainer;
 
   beforeEach(() => {
     socketsContainer = new SocketsContainer();
-    mockContainer = sinon.mock(socketsContainer);
     instance = new SocketServerProvider(
       socketsContainer,
       new ApplicationConfig(new NoopAdapter()),
     );
   });
   describe('scanForSocketServer', () => {
-    let createSocketServerSpy: sinon.SinonSpy;
+    let createSocketServerSpy: ReturnType<typeof vi.fn>;
     const path = 'localhost:3030';
     const port = 30;
 
     beforeEach(() => {
-      createSocketServerSpy = sinon.spy(instance, 'createSocketServer' as any);
+      createSocketServerSpy = vi.spyOn(instance, 'createSocketServer' as any);
     });
 
-    afterEach(() => {
-      mockContainer.restore();
-    });
     it(`should return stored server`, () => {
       const server = { test: 'test' };
-      mockContainer.expects('getOneByConfig').returns(server);
+      vi.spyOn(socketsContainer, 'getOneByConfig').mockReturnValue(
+        server as any,
+      );
 
       const result = instance.scanForSocketServer({ namespace: null! }, port);
 
-      expect(createSocketServerSpy.called).to.be.false;
-      expect(result).to.eq(server);
+      expect(createSocketServerSpy).not.toHaveBeenCalled();
+      expect(result).toBe(server);
     });
 
     it(`should call "createSocketServer" when server is not stored already`, () => {
-      mockContainer.expects('getOneByConfig').returns(null);
+      vi.spyOn(socketsContainer, 'getOneByConfig').mockReturnValue(null as any);
 
       instance.scanForSocketServer({ path }, port);
-      expect(createSocketServerSpy.called).to.be.true;
+      expect(createSocketServerSpy).toHaveBeenCalled();
     });
 
     it(`should call "decorateWithNamespace" when namespace is specified`, () => {
-      const decorateWithNamespaceSpy = sinon.spy(
+      const decorateWithNamespaceSpy = vi.spyOn(
         instance,
         'decorateWithNamespace' as any,
       );
 
       instance.scanForSocketServer({ path, namespace: 'random' }, port);
-      expect(decorateWithNamespaceSpy.called).to.be.true;
+      expect(decorateWithNamespaceSpy).toHaveBeenCalled();
     });
 
     describe('when namespace is specified and server does exist already', () => {
       it(`should call "decorateWithNamespace" and not call "createSocketServer"`, () => {
         const server = { test: 'test' };
-        mockContainer.expects('getOneByConfig').returns(server);
+        vi.spyOn(socketsContainer, 'getOneByConfig').mockReturnValue(
+          server as any,
+        );
 
-        const decorateWithNamespaceSpy = sinon.spy(
+        const decorateWithNamespaceSpy = vi.spyOn(
           instance,
           'decorateWithNamespace' as any,
         );
 
         instance.scanForSocketServer({ path, namespace: 'random' }, port);
-        expect(decorateWithNamespaceSpy.called).to.be.true;
-        expect(createSocketServerSpy.called).to.be.false;
+        expect(decorateWithNamespaceSpy).toHaveBeenCalled();
+        expect(createSocketServerSpy).not.toHaveBeenCalled();
       });
     });
   });

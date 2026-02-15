@@ -3,10 +3,8 @@ import { Injector } from '@nestjs/core/injector/injector.js';
 import { SerializedGraph } from '@nestjs/core/inspector/serialized-graph.js';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test, TestingModule } from '@nestjs/testing';
-import { expect } from 'chai';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import * as sinon from 'sinon';
 import { AppModule } from '../src/app.module.js';
 import { HttpExceptionFilter } from '../src/common/filters/http-exception.filter.js';
 import { TimeoutInterceptor } from '../src/common/interceptors/timeout.interceptor.js';
@@ -14,8 +12,10 @@ import { TimeoutInterceptor } from '../src/common/interceptors/timeout.intercept
 describe('Graph inspector', () => {
   let testingModule: TestingModule;
 
-  before(async () => {
-    sinon.stub(Injector.prototype as any, 'getNowTimestamp').callsFake(() => 0);
+  beforeAll(async () => {
+    vi.spyOn(Injector.prototype as any, 'getNowTimestamp').mockImplementation(
+      () => 0,
+    );
 
     testingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -36,7 +36,7 @@ describe('Graph inspector', () => {
       'utf-8',
     );
 
-    expect(JSON.parse(graph.toString())).to.deep.equal(JSON.parse(snapshot));
+    expect(JSON.parse(graph.toString())).toEqual(JSON.parse(snapshot));
   });
 
   it('should generate a post-initialization graph and match snapshot', async () => {
@@ -64,6 +64,6 @@ describe('Graph inspector', () => {
       'utf-8',
     );
 
-    expect(graph.toString()).to.equal(snapshot);
+    expect(graph.toString()).toBe(snapshot);
   });
 });

@@ -1,11 +1,4 @@
 import {
-  isNil,
-  isNumber,
-  isObject,
-  isSymbol,
-} from '@nestjs/common/utils/shared.utils.js';
-
-import {
   PATTERN_EXTRAS_METADATA,
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
@@ -18,6 +11,7 @@ import {
   RpcDecoratorMetadata,
 } from '../errors/invalid-grpc-message-decorator.exception.js';
 import { PatternMetadata } from '../interfaces/pattern-metadata.interface.js';
+import { isNil, isNumber, isObject, isSymbol } from '@nestjs/common/internal';
 
 export enum GrpcMethodStreamingType {
   NO_STREAMING = 'no_stream',

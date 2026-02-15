@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { MESSAGE_MAPPING_METADATA } from '../../constants.js';
 import { SubscribeMessage } from '../../decorators/subscribe-message.decorator.js';
 
@@ -15,7 +14,7 @@ describe('@SubscribeMessage', () => {
     );
     const message = Reflect.getMetadata('message', TestGateway.fn);
 
-    expect(isMessageMapping).to.be.true;
-    expect(message).to.be.eql('filter');
+    expect(isMessageMapping).toBe(true);
+    expect(message).toEqual('filter');
   });
 });

@@ -1,5 +1,5 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingResponse, ProducerDeserializer } from '../interfaces/index.js';
+import { isUndefined } from '@nestjs/common/internal';
 
 /**
  * @publicApi

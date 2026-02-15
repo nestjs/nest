@@ -1,10 +1,10 @@
 import type { DynamicModule, ForwardReference, Type } from '@nestjs/common';
-import { isNil, isSymbol } from '@nestjs/common/utils/shared.utils.js';
 import {
   InjectorDependency,
   InjectorDependencyContext,
 } from '../injector/injector.js';
 import { Module } from '../injector/module.js';
+import { isNil, isSymbol } from '@nestjs/common/internal';
 
 /**
  * Returns the name of an instance or `undefined`

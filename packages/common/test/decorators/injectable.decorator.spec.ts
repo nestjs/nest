@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import {
   SCOPE_OPTIONS_METADATA,
   INJECTABLE_WATERMARK,
@@ -19,7 +18,7 @@ describe('@Injectable', () => {
       TestMiddleware,
     );
 
-    expect(injectableWatermark).to.be.eql(true);
+    expect(injectableWatermark).toEqual(true);
   });
 
   it('should enhance component with "design:paramtypes" metadata', () => {
@@ -28,8 +27,8 @@ describe('@Injectable', () => {
       TestMiddleware,
     );
 
-    expect(constructorParams[0]).to.be.eql(Number);
-    expect(constructorParams[1]).to.be.eql(String);
+    expect(constructorParams[0]).toEqual(Number);
+    expect(constructorParams[1]).toEqual(String);
   });
 
   it(`should enhance component with "${SCOPE_OPTIONS_METADATA}" metadata`, () => {
@@ -38,7 +37,7 @@ describe('@Injectable', () => {
       TestMiddleware,
     );
 
-    expect(constructorParams).to.be.eql(options);
+    expect(constructorParams).toEqual(options);
   });
 });
 
@@ -51,14 +50,14 @@ describe('mixin', () => {
   it('should set name of metatype', () => {
     const type = mixin(Test);
 
-    expect(type.name).to.not.eql('Test');
+    expect(type.name).not.toEqual('Test');
   });
 
   it('should not lost the design:paramtypes metadata', () => {
     const type = mixin(Test);
     const constructorParams = Reflect.getMetadata('design:paramtypes', type);
 
-    expect(constructorParams[0]).to.be.eql(Number);
-    expect(constructorParams[1]).to.be.eql(String);
+    expect(constructorParams[0]).toEqual(Number);
+    expect(constructorParams[1]).toEqual(String);
   });
 });

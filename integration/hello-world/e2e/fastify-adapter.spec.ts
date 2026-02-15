@@ -3,7 +3,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { AppModule } from '../src/app.module.js';
 
 describe('Hello world (fastify adapter)', () => {
@@ -26,7 +25,10 @@ describe('Hello world (fastify adapter)', () => {
         method: 'GET',
         url: '/hello',
       })
-      .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).toBe(200);
+        expect(payload).toEqual('Hello world!');
+      });
   });
 
   it(`/GET (Promise/async)`, () => {
@@ -35,7 +37,10 @@ describe('Hello world (fastify adapter)', () => {
         method: 'GET',
         url: '/hello/async',
       })
-      .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).toBe(200);
+        expect(payload).toEqual('Hello world!');
+      });
   });
 
   it(`/GET (Observable stream)`, () => {
@@ -44,7 +49,10 @@ describe('Hello world (fastify adapter)', () => {
         method: 'GET',
         url: '/hello/stream',
       })
-      .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).toBe(200);
+        expect(payload).toEqual('Hello world!');
+      });
   });
 
   it(`/GET { host: ":tenant.example.com" } not matched`, () => {
@@ -54,7 +62,7 @@ describe('Hello world (fastify adapter)', () => {
         url: '/host',
       })
       .then(({ payload }) => {
-        expect(JSON.parse(payload)).to.be.eql({
+        expect(JSON.parse(payload)).toEqual({
           error: 'Internal Server Error',
           message:
             'HTTP adapter does not support filtering on host: ":tenant.example.com"',
@@ -70,7 +78,7 @@ describe('Hello world (fastify adapter)', () => {
         url: '/host-array',
       })
       .then(({ payload }) => {
-        expect(JSON.parse(payload)).to.be.eql({
+        expect(JSON.parse(payload)).toEqual({
           error: 'Internal Server Error',
           message:
             'HTTP adapter does not support filtering on hosts: [":tenant.example1.com", ":tenant.example2.com"]',
@@ -84,7 +92,10 @@ describe('Hello world (fastify adapter)', () => {
       .inject()
       .get('/hello')
       .end()
-      .then(({ payload }) => expect(payload).to.be.eql('Hello world!'));
+      .then(({ payload, statusCode }) => {
+        expect(statusCode).toBe(200);
+        expect(payload).toEqual('Hello world!');
+      });
   });
 
   it('/HEAD should respond to with a 200', () => {
@@ -93,7 +104,7 @@ describe('Hello world (fastify adapter)', () => {
         method: 'HEAD',
         url: '/hello',
       })
-      .then(({ statusCode }) => expect(statusCode).to.be.eq(200));
+      .then(({ statusCode }) => expect(statusCode).toBe(200));
   });
 
   afterEach(async () => {

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { expect } from 'chai';
 import {
   LazyModuleLoader,
   ModuleRef,
@@ -60,8 +59,8 @@ describe('LazyModuleLoader', () => {
     describe('when module was not loaded yet', () => {
       it('should load it and return a module reference', async () => {
         const moduleRef = await lazyModuleLoader.load(() => ModuleA);
-        expect(moduleRef).to.be.instanceOf(ModuleRef);
-        expect(moduleRef.get(bProvider.provide, { strict: false })).to.equal(
+        expect(moduleRef).toBeInstanceOf(ModuleRef);
+        expect(moduleRef.get(bProvider.provide, { strict: false })).toBe(
           bProvider.useValue,
         );
       });
@@ -73,7 +72,7 @@ describe('LazyModuleLoader', () => {
       it('should return an existing module reference', async () => {
         const moduleRef = await lazyModuleLoader.load(() => ModuleC);
         const moduleRef2 = await lazyModuleLoader.load(() => ModuleC);
-        expect(moduleRef).to.equal(moduleRef2);
+        expect(moduleRef).toBe(moduleRef2);
       });
     });
   });

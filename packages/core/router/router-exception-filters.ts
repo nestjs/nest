@@ -1,7 +1,4 @@
-import { HttpServer } from '@nestjs/common';
-import { EXCEPTION_FILTERS_METADATA } from '@nestjs/common/constants.js';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface.js';
-import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
+import type { HttpServer } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
 import { BaseExceptionFilterContext } from '../exceptions/base-exception-filter-context.js';
@@ -10,6 +7,11 @@ import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import { RouterProxyCallback } from './router-proxy.js';
+import {
+  EXCEPTION_FILTERS_METADATA,
+  type Controller,
+  isEmpty,
+} from '@nestjs/common/internal';
 
 export class RouterExceptionFilters extends BaseExceptionFilterContext {
   constructor(

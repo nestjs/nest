@@ -1,5 +1,3 @@
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
 import { REDIS_DEFAULT_HOST, REDIS_DEFAULT_PORT } from '../constants.js';
 import {
   RedisEvents,
@@ -8,6 +6,8 @@ import {
 } from '../events/redis.events.js';
 import { ReadPacket, RedisOptions, WritePacket } from '../interfaces/index.js';
 import { ClientProxy } from './client-proxy.js';
+import { Logger } from '@nestjs/common';
+import { loadPackage } from '@nestjs/common/internal';
 
 // To enable type safety for Redis. This cant be uncommented by default
 // because it would require the user to install the ioredis package even if they dont use Redis

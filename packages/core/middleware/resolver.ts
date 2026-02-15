@@ -1,4 +1,4 @@
-import { InjectionToken } from '@nestjs/common';
+import type { InjectionToken } from '@nestjs/common';
 import { Injector } from '../injector/injector.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import { Module } from '../injector/module.js';

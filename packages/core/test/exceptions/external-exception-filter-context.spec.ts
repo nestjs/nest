@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { Catch } from '../../../common/decorators/core/catch.decorator.js';
 import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator.js';
 import { ApplicationConfig } from '../../application-config.js';
@@ -31,7 +29,7 @@ describe('ExternalExceptionFilterContext', () => {
     describe('when filters metadata is empty', () => {
       class EmptyMetadata {}
       beforeEach(() => {
-        sinon.stub(exceptionFilter, 'createContext').returns([]);
+        vi.spyOn(exceptionFilter, 'createContext').mockReturnValue([]);
       });
       it('should return plain ExceptionHandler object', () => {
         const filter = exceptionFilter.create(
@@ -39,7 +37,7 @@ describe('ExternalExceptionFilterContext', () => {
           () => ({}) as any,
           undefined!,
         );
-        expect((filter as any).filters).to.be.empty;
+        expect((filter as any).filters).toHaveLength(0);
       });
     });
     describe('when filters metadata is not empty', () => {
@@ -52,7 +50,7 @@ describe('ExternalExceptionFilterContext', () => {
           () => ({}) as any,
           undefined!,
         );
-        expect((filter as any).filters).to.not.be.empty;
+        expect((filter as any).filters).not.toHaveLength(0);
       });
     });
   });
@@ -60,12 +58,12 @@ describe('ExternalExceptionFilterContext', () => {
     it('should return FILTER_CATCH_EXCEPTIONS metadata', () => {
       expect(
         exceptionFilter.reflectCatchExceptions(new ExceptionFilter()),
-      ).to.be.eql([CustomException]);
+      ).toEqual([CustomException]);
     });
     it('should return an empty array when metadata was found', () => {
       expect(
         exceptionFilter.reflectCatchExceptions(new ClassWithNoMetadata()),
-      ).to.be.eql([]);
+      ).toEqual([]);
     });
   });
   describe('createConcreteContext', () => {
@@ -74,11 +72,9 @@ describe('ExternalExceptionFilterContext', () => {
 
     it('should return expected exception filters metadata', () => {
       const resolved = exceptionFilter.createConcreteContext(filters as any);
-      expect(resolved).to.have.length(1);
-      expect(resolved[0].exceptionMetatypes).to.be.deep.equal([
-        CustomException,
-      ]);
-      expect(resolved[0].func).to.be.a('function');
+      expect(resolved).toHaveLength(1);
+      expect(resolved[0].exceptionMetatypes).toEqual([CustomException]);
+      expect(resolved[0].func).toBeTypeOf('function');
     });
   });
 
@@ -86,7 +82,7 @@ describe('ExternalExceptionFilterContext', () => {
     describe('when contextId is static and inquirerId is nil', () => {
       it('should return global filters', () => {
         const expectedResult = applicationConfig.getGlobalFilters();
-        expect(exceptionFilter.getGlobalMetadata()).to.be.equal(expectedResult);
+        expect(exceptionFilter.getGlobalMetadata()).toBe(expectedResult);
       });
     });
     describe('otherwise', () => {
@@ -96,20 +92,20 @@ describe('ExternalExceptionFilterContext', () => {
         const instance = 'request-scoped';
         const scopedFilterWrappers = [instanceWrapper];
 
-        sinon
-          .stub(applicationConfig, 'getGlobalFilters')
-          .callsFake(() => globalFilters);
-        sinon
-          .stub(applicationConfig, 'getGlobalRequestFilters')
-          .callsFake(() => scopedFilterWrappers);
-        sinon
-          .stub(instanceWrapper, 'getInstanceByContextId')
-          .callsFake(() => ({ instance }) as any);
-
-        expect(exceptionFilter.getGlobalMetadata({ id: 3 })).to.contains(
-          instance,
-          ...globalFilters,
+        vi.spyOn(applicationConfig, 'getGlobalFilters').mockImplementation(
+          () => globalFilters,
         );
+        vi.spyOn(
+          applicationConfig,
+          'getGlobalRequestFilters',
+        ).mockImplementation(() => scopedFilterWrappers);
+        vi.spyOn(instanceWrapper, 'getInstanceByContextId').mockImplementation(
+          () => ({ instance }) as any,
+        );
+
+        const result = exceptionFilter.getGlobalMetadata({ id: 3 });
+        expect(result).toContain(instance);
+        globalFilters.forEach(f => expect(result).toContain(f));
       });
     });
   });

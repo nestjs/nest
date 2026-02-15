@@ -4,8 +4,6 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-hos
 import { NestContainer } from '@nestjs/core/injector/container.js';
 import { Injector } from '@nestjs/core/injector/injector.js';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { GraphInspector } from '../../core/inspector/graph-inspector.js';
 import { MetadataScanner } from '../../core/metadata-scanner.js';
 import { ClientProxyFactory } from '../client/index.js';
@@ -21,25 +19,25 @@ import { ListenersController } from '../listeners-controller.js';
 
 describe('ListenersController', () => {
   let instance: ListenersController,
-    explorer: sinon.SinonMock,
+    explorer: any,
     metadataExplorer: ListenerMetadataExplorer,
     server: any,
     serverTCP: any,
     serverCustom: any,
     customTransport: symbol,
-    addSpy: sinon.SinonSpy,
-    addSpyTCP: sinon.SinonSpy,
-    addSpyCustom: sinon.SinonSpy,
-    proxySpy: sinon.SinonSpy,
+    addSpy: ReturnType<typeof vi.fn>,
+    addSpyTCP: ReturnType<typeof vi.fn>,
+    addSpyCustom: ReturnType<typeof vi.fn>,
+    proxySpy: ReturnType<typeof vi.fn>,
     container: NestContainer,
     graphInspector: GraphInspector,
     injector: Injector,
     rpcContextCreator: RpcContextCreator,
     exceptionFiltersContext: ExceptionFiltersContext;
 
-  before(() => {
+  beforeAll(() => {
     metadataExplorer = new ListenerMetadataExplorer(new MetadataScanner());
-    explorer = sinon.mock(metadataExplorer);
+    explorer = metadataExplorer;
   });
   beforeEach(() => {
     container = new NestContainer();
@@ -49,9 +47,16 @@ describe('ListenersController', () => {
       container,
       new ApplicationConfig(),
     );
-    rpcContextCreator = sinon.createStubInstance(RpcContextCreator) as any;
-    proxySpy = sinon.spy();
-    (rpcContextCreator as any).create.callsFake(() => proxySpy);
+    rpcContextCreator = {
+      ...Object.fromEntries(
+        Object.getOwnPropertyNames(RpcContextCreator.prototype).map(m => [
+          m,
+          vi.fn(),
+        ]),
+      ),
+    } as any;
+    proxySpy = vi.fn();
+    (rpcContextCreator as any).create.mockImplementation(() => proxySpy);
 
     instance = new ListenersController(
       new ClientsContainer(),
@@ -63,16 +68,16 @@ describe('ListenersController', () => {
       graphInspector,
     );
     (instance as any).metadataExplorer = metadataExplorer;
-    addSpy = sinon.spy();
+    addSpy = vi.fn();
     server = {
       addHandler: addSpy,
     };
-    addSpyTCP = sinon.spy();
+    addSpyTCP = vi.fn();
     serverTCP = {
       addHandler: addSpyTCP,
       transportId: Transport.TCP,
     };
-    addSpyCustom = sinon.spy();
+    addSpyCustom = vi.fn();
     customTransport = Symbol();
     serverCustom = {
       addHandler: addSpyCustom,
@@ -87,12 +92,14 @@ describe('ListenersController', () => {
     ];
 
     beforeEach(() => {
-      sinon.stub(container, 'getModuleByKey').callsFake(() => ({}) as any);
+      vi.spyOn(container, 'getModuleByKey').mockImplementation(
+        () => ({}) as any,
+      );
     });
     it(`should call "addHandler" method of server for each pattern handler`, () => {
-      explorer.expects('explore').returns(handlers);
+      vi.spyOn(metadataExplorer, 'explore').mockReturnValue(handlers as any);
       instance.registerPatternHandlers(new InstanceWrapper(), server, '');
-      expect(addSpy.calledTwice).to.be.true;
+      expect(addSpy).toHaveBeenCalledTimes(2);
     });
     it(`should call "addHandler" method of server for each pattern handler with same transport`, () => {
       const serverHandlers = [
@@ -103,9 +110,11 @@ describe('ListenersController', () => {
         },
         { pattern: 'test2', targetCallback: '2', transport: Transport.KAFKA },
       ];
-      explorer.expects('explore').returns(serverHandlers);
+      vi.spyOn(metadataExplorer, 'explore').mockReturnValue(
+        serverHandlers as any,
+      );
       instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
-      expect(addSpyTCP.calledOnce).to.be.true;
+      expect(addSpyTCP).toHaveBeenCalledOnce();
     });
     it(`should call "addHandler" method of server without transportID for each pattern handler with any transport value`, () => {
       const serverHandlers = [
@@ -116,9 +125,11 @@ describe('ListenersController', () => {
           transport: Transport.KAFKA,
         },
       ];
-      explorer.expects('explore').returns(serverHandlers);
+      vi.spyOn(metadataExplorer, 'explore').mockReturnValue(
+        serverHandlers as any,
+      );
       instance.registerPatternHandlers(new InstanceWrapper(), server, '');
-      expect(addSpy.calledTwice).to.be.true;
+      expect(addSpy).toHaveBeenCalledTimes(2);
     });
     it(`should call "addHandler" method of server with transportID for each pattern handler with self transport and without transport`, () => {
       const serverHandlers = [
@@ -134,14 +145,16 @@ describe('ListenersController', () => {
           transport: Transport.TCP,
         },
       ];
-      explorer.expects('explore').returns(serverHandlers);
+      vi.spyOn(metadataExplorer, 'explore').mockReturnValue(
+        serverHandlers as any,
+      );
       instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
-      expect(addSpyTCP.calledTwice).to.be.true;
+      expect(addSpyTCP).toHaveBeenCalledTimes(2);
     });
     it(`should call "addHandler" method of server with transportID for each pattern handler without transport`, () => {
-      explorer.expects('explore').returns(handlers);
+      vi.spyOn(metadataExplorer, 'explore').mockReturnValue(handlers as any);
       instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
-      expect(addSpyTCP.calledTwice).to.be.true;
+      expect(addSpyTCP).toHaveBeenCalledTimes(2);
     });
     it(`should call "addHandler" method of server with custom transportID for pattern handler with the same custom token`, () => {
       const serverHandlers = [
@@ -157,9 +170,11 @@ describe('ListenersController', () => {
         },
       ];
 
-      explorer.expects('explore').returns(serverHandlers);
+      vi.spyOn(metadataExplorer, 'explore').mockReturnValue(
+        serverHandlers as any,
+      );
       instance.registerPatternHandlers(new InstanceWrapper(), serverCustom, '');
-      expect(addSpyCustom.calledOnce).to.be.true;
+      expect(addSpyCustom).toHaveBeenCalledOnce();
     });
     it(`should call "addHandler" method of server with extras data`, () => {
       const serverHandlers = [
@@ -169,46 +184,44 @@ describe('ListenersController', () => {
           extras: { param: 'value' },
         },
       ];
-      explorer.expects('explore').returns(serverHandlers);
+      vi.spyOn(metadataExplorer, 'explore').mockReturnValue(
+        serverHandlers as any,
+      );
       instance.registerPatternHandlers(new InstanceWrapper(), serverTCP, '');
-      expect(addSpyTCP.calledOnce).to.be.true;
-      expect(
-        addSpyTCP.calledWith(
-          sinon.match.any,
-          sinon.match.any,
-          sinon.match.any,
-          sinon.match({ param: 'value' }),
-        ),
-      ).to.be.true;
+      expect(addSpyTCP).toHaveBeenCalledOnce();
+      expect(addSpyTCP.mock.calls[0][3]).toEqual(
+        expect.objectContaining({ param: 'value' }),
+      );
     });
     describe('when request scoped', () => {
       it(`should call "addHandler" with deferred proxy`, () => {
-        explorer.expects('explore').returns(handlers);
+        vi.spyOn(metadataExplorer, 'explore').mockReturnValue(handlers as any);
         instance.registerPatternHandlers(
           new InstanceWrapper({ scope: Scope.REQUEST }),
           server,
           '',
         );
-        expect(addSpy.calledTwice).to.be.true;
+        expect(addSpy).toHaveBeenCalledTimes(2);
       });
     });
   });
 
   describe('createRequestScopedHandler', () => {
-    let handleSpy: sinon.SinonSpy;
+    let handleSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      handleSpy = sinon.spy();
-      sinon.stub(exceptionFiltersContext, 'create').callsFake(
+      handleSpy = vi.fn();
+      vi.spyOn(exceptionFiltersContext, 'create').mockImplementation(
         () =>
           ({
             handle: handleSpy,
           }) as any,
       );
 
-      sinon
-        .stub((instance as any).container, 'registerRequestProvider')
-        .callsFake(() => ({}) as any);
+      vi.spyOn(
+        (instance as any).container,
+        'registerRequestProvider',
+      ).mockImplementation(() => ({}) as any);
     });
 
     describe('when "loadPerContext" resolves', () => {
@@ -221,9 +234,9 @@ describe('ListenersController', () => {
       const wrapper = new InstanceWrapper({ instance: { [methodKey]: {} } });
 
       it('should pass all arguments to the proxy chain', async () => {
-        sinon
-          .stub(injector, 'loadPerContext')
-          .callsFake(() => Promise.resolve({}));
+        vi.spyOn(injector, 'loadPerContext').mockImplementation(() =>
+          Promise.resolve({}),
+        );
         const handler = instance.createRequestScopedHandler(
           wrapper,
           patterns,
@@ -233,9 +246,9 @@ describe('ListenersController', () => {
         );
         await handler('data', 'metadata');
 
-        expect(proxySpy.called).to.be.true;
-        expect(proxySpy.getCall(0).args[0]).to.be.eql('data');
-        expect(proxySpy.getCall(0).args[1]).to.be.eql('metadata');
+        expect(proxySpy).toHaveBeenCalled();
+        expect(proxySpy.mock.calls[0][0]).toEqual('data');
+        expect(proxySpy.mock.calls[0][1]).toEqual('metadata');
       });
     });
 
@@ -249,7 +262,7 @@ describe('ListenersController', () => {
       const wrapper = new InstanceWrapper({ instance: { [methodKey]: {} } });
 
       it('should delegate error to exception filters', async () => {
-        sinon.stub(injector, 'loadPerContext').callsFake(() => {
+        vi.spyOn(injector, 'loadPerContext').mockImplementation(() => {
           throw new Error();
         });
         const handler = instance.createRequestScopedHandler(
@@ -261,11 +274,9 @@ describe('ListenersController', () => {
         );
         await handler([]);
 
-        expect(handleSpy.called).to.be.true;
-        expect(handleSpy.getCall(0).args[0]).to.be.instanceOf(Error);
-        expect(handleSpy.getCall(0).args[1]).to.be.instanceOf(
-          ExecutionContextHost,
-        );
+        expect(handleSpy).toHaveBeenCalled();
+        expect(handleSpy.mock.calls[0][0]).toBeInstanceOf(Error);
+        expect(handleSpy.mock.calls[0][1]).toBeInstanceOf(ExecutionContextHost);
       });
     });
   });
@@ -286,7 +297,7 @@ describe('ListenersController', () => {
       };
       const transportId = Transport.MQTT;
 
-      const insertEntrypointDefinitionSpy = sinon.spy(
+      const insertEntrypointDefinitionSpy = vi.spyOn(
         graphInspector,
         'insertEntrypointDefinition',
       );
@@ -295,8 +306,8 @@ describe('ListenersController', () => {
         definition,
         transportId,
       );
-      expect(
-        insertEntrypointDefinitionSpy.calledWith({
+      expect(insertEntrypointDefinitionSpy).toHaveBeenCalledWith(
+        {
           type: 'microservice',
           methodName: definition.methodKey,
           className: 'TestCtrl',
@@ -308,8 +319,9 @@ describe('ListenersController', () => {
             isEventHandler: definition.isEventHandler,
             extras: definition.extras,
           } as any,
-        }),
-      ).to.be.true;
+        },
+        expect.any(String),
+      );
     });
   });
 
@@ -320,7 +332,7 @@ describe('ListenersController', () => {
       const client = { test: true };
       instance.assignClientToInstance(object, propertyKey, client);
 
-      expect(object[propertyKey]).to.be.eql(client);
+      expect(object[propertyKey]).toEqual(client);
     });
   });
 
@@ -335,17 +347,18 @@ describe('ListenersController', () => {
           metadata: {},
         },
       ];
-      sinon
-        .stub((instance as any).metadataExplorer, 'scanForClientHooks')
-        .callsFake(() => metadata);
+      vi.spyOn(
+        (instance as any).metadataExplorer,
+        'scanForClientHooks',
+      ).mockImplementation(() => metadata);
 
-      const assignClientToInstanceSpy = sinon.spy(
+      const assignClientToInstanceSpy = vi.spyOn(
         instance,
         'assignClientToInstance',
       );
       instance.assignClientsToProperties(controller);
 
-      expect(assignClientToInstanceSpy.calledOnce).to.be.true;
+      expect(assignClientToInstanceSpy).toHaveBeenCalledOnce();
     });
   });
 });

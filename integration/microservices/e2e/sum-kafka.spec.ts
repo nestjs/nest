@@ -1,7 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import request from 'supertest';
 import { BusinessDto } from '../src/kafka/dtos/business.dto.js';
 import { UserDto } from '../src/kafka/dtos/user.dto.js';
@@ -18,10 +17,7 @@ describe.skip('Kafka transport', function () {
   let app: INestApplication;
 
   // set timeout to be longer (especially for the after hook)
-  this.timeout(50000);
-  this.retries(10);
-
-  before(`Start Kafka app`, async function () {
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [KafkaController, KafkaMessagesController],
     }).compile();
@@ -90,17 +86,18 @@ describe.skip('Kafka transport', function () {
       .expect(200, '15');
   });
 
-  it(`/POST (async event notification)`, done => {
-    void request(server)
-      .post('/notify')
-      .send()
-      .end(() => {
-        setTimeout(() => {
-          expect(KafkaController.IS_NOTIFIED).to.be.true;
-          done();
-        }, 1000);
-      });
-  });
+  it(`/POST (async event notification)`, () =>
+    new Promise<void>(done => {
+      void request(server)
+        .post('/notify')
+        .send()
+        .end(() => {
+          setTimeout(() => {
+            expect(KafkaController.IS_NOTIFIED).toBe(true);
+            done();
+          }, 1000);
+        });
+    }));
 
   const userDto: UserDto = {
     email: 'enriquebenavidesm@gmail.com',
@@ -132,7 +129,7 @@ describe.skip('Kafka transport', function () {
     await Promise.all(promises);
   });
 
-  after(`Stopping Kafka app`, async () => {
+  afterAll(async () => {
     await app.close();
   });
 });

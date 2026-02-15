@@ -1,7 +1,5 @@
 import { RequestMethod, VERSION_NEUTRAL, VersioningType } from '@nestjs/common';
-import { expect } from 'chai';
 import { pathToRegexp } from 'path-to-regexp';
-import * as sinon from 'sinon';
 import { ApplicationConfig } from '../../application-config.js';
 import { RoutePathFactory } from '../../router/route-path-factory.js';
 
@@ -21,28 +19,28 @@ describe('RoutePathFactory', () => {
           ctrlPath: 'ctrlPath/',
           methodPath: '',
         }),
-      ).to.deep.equal(['/ctrlPath']);
+      ).toEqual(['/ctrlPath']);
 
       expect(
         routePathFactory.create({
           ctrlPath: '/ctrlPath',
           methodPath: '',
         }),
-      ).to.deep.equal(['/ctrlPath']);
+      ).toEqual(['/ctrlPath']);
 
       expect(
         routePathFactory.create({
           ctrlPath: '/ctrlPath/',
           methodPath: '/methodPath',
         }),
-      ).to.deep.equal(['/ctrlPath/methodPath']);
+      ).toEqual(['/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
           ctrlPath: 'ctrlPath/',
           methodPath: 'methodPath/',
         }),
-      ).to.deep.equal(['/ctrlPath/methodPath']);
+      ).toEqual(['/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
@@ -50,7 +48,7 @@ describe('RoutePathFactory', () => {
           methodPath: 'methodPath',
           modulePath: 'modulePath',
         }),
-      ).to.deep.equal(['/modulePath/ctrlPath/methodPath']);
+      ).toEqual(['/modulePath/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
@@ -58,7 +56,7 @@ describe('RoutePathFactory', () => {
           methodPath: 'methodPath',
           modulePath: '/modulePath',
         }),
-      ).to.deep.equal(['/modulePath/ctrlPath/methodPath']);
+      ).toEqual(['/modulePath/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
@@ -66,7 +64,7 @@ describe('RoutePathFactory', () => {
           methodPath: '/methodPath/',
           modulePath: '/modulePath/',
         }),
-      ).to.deep.equal(['/modulePath/ctrlPath/methodPath']);
+      ).toEqual(['/modulePath/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
@@ -75,7 +73,7 @@ describe('RoutePathFactory', () => {
           modulePath: '/modulePath/',
           globalPrefix: 'api',
         }),
-      ).to.deep.equal(['/api/modulePath/ctrlPath/methodPath']);
+      ).toEqual(['/api/modulePath/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
@@ -84,7 +82,7 @@ describe('RoutePathFactory', () => {
           modulePath: '/modulePath/',
           globalPrefix: '/api',
         }),
-      ).to.deep.equal(['/api/modulePath/ctrlPath/methodPath']);
+      ).toEqual(['/api/modulePath/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
@@ -99,7 +97,7 @@ describe('RoutePathFactory', () => {
           methodVersion: '1.0.0',
           controllerVersion: '1.1.1',
         }),
-      ).to.deep.equal(['/api/modulePath/ctrlPath/methodPath']);
+      ).toEqual(['/api/modulePath/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
@@ -113,7 +111,7 @@ describe('RoutePathFactory', () => {
           methodVersion: '1.0.0',
           controllerVersion: '1.1.1',
         }),
-      ).to.deep.equal(['/api/v1.0.0/modulePath/ctrlPath/methodPath']);
+      ).toEqual(['/api/v1.0.0/modulePath/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
@@ -126,7 +124,7 @@ describe('RoutePathFactory', () => {
           methodVersion: '1.0.0',
           controllerVersion: '1.1.1',
         }),
-      ).to.deep.equal(['/v1.0.0/modulePath/ctrlPath/methodPath']);
+      ).toEqual(['/v1.0.0/modulePath/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
@@ -139,7 +137,7 @@ describe('RoutePathFactory', () => {
           methodVersion: '1.0.0',
           controllerVersion: '1.1.1',
         }),
-      ).to.deep.equal(['/api/v1.0.0/ctrlPath/methodPath']);
+      ).toEqual(['/api/v1.0.0/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
@@ -151,7 +149,7 @@ describe('RoutePathFactory', () => {
           },
           controllerVersion: '1.1.1',
         }),
-      ).to.deep.equal(['/api/v1.1.1/ctrlPath/methodPath']);
+      ).toEqual(['/api/v1.1.1/ctrlPath/methodPath']);
 
       expect(
         routePathFactory.create({
@@ -163,7 +161,7 @@ describe('RoutePathFactory', () => {
           },
           controllerVersion: ['1.1.1', '1.2.3'],
         }),
-      ).to.deep.equal([
+      ).toEqual([
         '/api/v1.1.1/ctrlPath/methodPath',
         '/api/v1.2.3/ctrlPath/methodPath',
       ]);
@@ -178,7 +176,7 @@ describe('RoutePathFactory', () => {
           },
           controllerVersion: ['1.1.1', '1.2.3'],
         }),
-      ).to.deep.equal(['/api/v1.1.1', '/api/v1.2.3']);
+      ).toEqual(['/api/v1.1.1', '/api/v1.2.3']);
 
       expect(
         routePathFactory.create({
@@ -191,7 +189,7 @@ describe('RoutePathFactory', () => {
             defaultVersion: VERSION_NEUTRAL,
           },
         }),
-      ).to.deep.equal(['/']);
+      ).toEqual(['/']);
 
       expect(
         routePathFactory.create({
@@ -204,7 +202,7 @@ describe('RoutePathFactory', () => {
             defaultVersion: ['1', VERSION_NEUTRAL],
           },
         }),
-      ).to.deep.equal(['/v1', '/']);
+      ).toEqual(['/v1', '/']);
 
       expect(
         routePathFactory.create({
@@ -212,9 +210,11 @@ describe('RoutePathFactory', () => {
           methodPath: '',
           globalPrefix: '',
         }),
-      ).to.deep.equal(['/']);
+      ).toEqual(['/']);
 
-      sinon.stub(routePathFactory, 'isExcludedFromGlobalPrefix').returns(true);
+      vi.spyOn(routePathFactory, 'isExcludedFromGlobalPrefix').mockReturnValue(
+        true,
+      );
       expect(
         routePathFactory.create({
           ctrlPath: '/ctrlPath/',
@@ -222,15 +222,15 @@ describe('RoutePathFactory', () => {
           modulePath: '/',
           globalPrefix: '/api',
         }),
-      ).to.deep.equal(['/ctrlPath']);
-      sinon.restore();
+      ).toEqual(['/ctrlPath']);
+      vi.restoreAllMocks();
     });
   });
 
   describe('isExcludedFromGlobalPrefix', () => {
     describe('when there is no exclude configuration', () => {
       it('should return false', () => {
-        sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
+        vi.spyOn(applicationConfig, 'getGlobalPrefixOptions').mockReturnValue({
           exclude: undefined,
         });
         expect(
@@ -238,51 +238,58 @@ describe('RoutePathFactory', () => {
             '/cats',
             RequestMethod.GET,
           ),
-        ).to.be.false;
+        ).toBe(false);
       });
     });
     describe('otherwise', () => {
       describe('when route is not excluded', () => {
         it('should return false', () => {
-          sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
-            exclude: [
-              {
-                path: '/random',
-                pathRegex: pathToRegexp('/random').regexp,
-                requestMethod: RequestMethod.ALL,
-              },
-            ],
-          });
+          vi.spyOn(applicationConfig, 'getGlobalPrefixOptions').mockReturnValue(
+            {
+              exclude: [
+                {
+                  path: '/random',
+                  pathRegex: pathToRegexp('/random').regexp,
+                  requestMethod: RequestMethod.ALL,
+                },
+              ],
+            },
+          );
           expect(
             routePathFactory.isExcludedFromGlobalPrefix(
               '/cats',
               RequestMethod.GET,
             ),
-          ).to.be.false;
+          ).toBe(false);
         });
       });
       describe('when route is excluded (by path)', () => {
         it('should return true', () => {
-          sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
-            exclude: [
-              {
-                path: '/cats',
-                pathRegex: pathToRegexp('/cats').regexp,
-                requestMethod: RequestMethod.ALL,
-              },
-            ],
-          });
+          vi.spyOn(applicationConfig, 'getGlobalPrefixOptions').mockReturnValue(
+            {
+              exclude: [
+                {
+                  path: '/cats',
+                  pathRegex: pathToRegexp('/cats').regexp,
+                  requestMethod: RequestMethod.ALL,
+                },
+              ],
+            },
+          );
           expect(
             routePathFactory.isExcludedFromGlobalPrefix(
               '/cats',
               RequestMethod.GET,
             ),
-          ).to.be.true;
+          ).toBe(true);
         });
 
         describe('when route is excluded (by method and path)', () => {
           it('should return true', () => {
-            sinon.stub(applicationConfig, 'getGlobalPrefixOptions').returns({
+            vi.spyOn(
+              applicationConfig,
+              'getGlobalPrefixOptions',
+            ).mockReturnValue({
               exclude: [
                 {
                   path: '/cats',
@@ -296,13 +303,13 @@ describe('RoutePathFactory', () => {
                 '/cats',
                 RequestMethod.GET,
               ),
-            ).to.be.true;
+            ).toBe(true);
             expect(
               routePathFactory.isExcludedFromGlobalPrefix(
                 '/cats',
                 RequestMethod.POST,
               ),
-            ).to.be.false;
+            ).toBe(false);
           });
         });
       });
@@ -318,7 +325,7 @@ describe('RoutePathFactory', () => {
               type: VersioningType.URI,
               prefix: false,
             }),
-          ).to.equal('');
+          ).toBe('');
         });
       });
       describe('and prefix is undefined', () => {
@@ -327,7 +334,7 @@ describe('RoutePathFactory', () => {
             routePathFactory.getVersionPrefix({
               type: VersioningType.URI,
             }),
-          ).to.equal('v');
+          ).toBe('v');
         });
       });
       describe('and prefix is specified', () => {
@@ -337,7 +344,7 @@ describe('RoutePathFactory', () => {
               type: VersioningType.URI,
               prefix: 'test',
             }),
-          ).to.equal('test');
+          ).toBe('test');
         });
       });
     });
@@ -348,7 +355,7 @@ describe('RoutePathFactory', () => {
             type: VersioningType.HEADER,
             header: 'X',
           }),
-        ).to.equal('v');
+        ).toBe('v');
       });
     });
   });

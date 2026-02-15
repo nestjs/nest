@@ -1,6 +1,4 @@
-import { expect } from 'chai';
 import { JSONCodec } from 'nats';
-import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { NatsContext } from '../../ctx-host/index.js';
@@ -19,48 +17,53 @@ describe('ServerNats', () => {
     untypedServer = server as any;
 
     // Eagerly init serializer/deserializer (loadPackage is async in ESM)
-    if (typeof (untypedServer.serializer as any)?.init === 'function') {
+    if (typeof untypedServer.serializer?.init === 'function') {
       await untypedServer.serializer.init();
     }
-    if (typeof (untypedServer.deserializer as any)?.init === 'function') {
+    if (typeof untypedServer.deserializer?.init === 'function') {
       await untypedServer.deserializer.init();
     }
   });
   describe('listen', () => {
     let client: any;
-    let callbackSpy: sinon.SinonSpy;
+    let callbackSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      sinon.stub(server, 'createNatsClient').callsFake(() => client);
-      callbackSpy = sinon.spy();
+      client = {
+        status: vi.fn().mockReturnValue({
+          async *[Symbol.asyncIterator]() {},
+        }),
+      };
+      vi.spyOn(server, 'createNatsClient').mockResolvedValue(client);
+      callbackSpy = vi.fn();
     });
-    describe('when "start" throws an exception', async () => {
+    describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
 
-        sinon.stub(server, 'start').callsFake(() => {
+        vi.spyOn(server, 'start').mockImplementation(() => {
           throw error;
         });
         await server.listen(callbackSpy);
-        expect(callbackSpy.calledWith(error)).to.be.true;
+        expect(callbackSpy).toHaveBeenCalledWith(error);
       });
     });
   });
   describe('close', () => {
-    const natsClient = { close: sinon.spy() };
+    const natsClient = { close: vi.fn() };
     beforeEach(() => {
       untypedServer.natsClient = natsClient;
     });
     it('should close natsClient', async () => {
       await server.close();
-      expect(natsClient.close.called).to.be.true;
+      expect(natsClient.close).toHaveBeenCalled();
     });
 
     describe('when "gracefulShutdown" is true', () => {
-      const waitForGracePeriod = sinon.spy();
+      const waitForGracePeriod = vi.fn();
       const subscriptions = [
-        { unsubscribe: sinon.spy() },
-        { unsubscribe: sinon.spy() },
+        { unsubscribe: vi.fn() },
+        { unsubscribe: vi.fn() },
       ];
       beforeEach(() => {
         (server as any).subscriptions = subscriptions;
@@ -71,21 +74,21 @@ describe('ServerNats', () => {
       it('should unsubscribe all subscriptions', async () => {
         await server.close();
         for (const subscription of subscriptions) {
-          expect(subscription.unsubscribe.calledOnce).to.be.true;
+          expect(subscription.unsubscribe).toHaveBeenCalledOnce();
         }
       });
 
       it('should call "waitForGracePeriod"', async () => {
         await server.close();
-        expect(waitForGracePeriod.called).to.be.true;
+        expect(waitForGracePeriod).toHaveBeenCalled();
       });
     });
 
     describe('when "gracefulShutdown" is false', () => {
-      const waitForGracePeriod = sinon.spy();
+      const waitForGracePeriod = vi.fn();
       const subscriptions = [
-        { unsubscribe: sinon.spy() },
-        { unsubscribe: sinon.spy() },
+        { unsubscribe: vi.fn() },
+        { unsubscribe: vi.fn() },
       ];
       beforeEach(() => {
         (server as any).subscriptions = subscriptions;
@@ -95,24 +98,26 @@ describe('ServerNats', () => {
       it('should not unsubscribe all subscriptions', async () => {
         await server.close();
         for (const subscription of subscriptions) {
-          expect(subscription.unsubscribe.called).to.be.false;
+          expect(subscription.unsubscribe).not.toHaveBeenCalled();
         }
       });
 
       it('should not call "waitForGracePeriod"', async () => {
         await server.close();
-        expect(waitForGracePeriod.called).to.be.false;
+        expect(waitForGracePeriod).not.toHaveBeenCalled();
       });
     });
   });
   describe('bindEvents', () => {
-    let onSpy: sinon.SinonSpy, subscribeSpy: sinon.SinonSpy, natsClient;
+    let onSpy: ReturnType<typeof vi.fn>,
+      subscribeSpy: ReturnType<typeof vi.fn>,
+      natsClient;
     const pattern = 'test';
-    const messageHandler = sinon.spy();
+    const messageHandler = vi.fn();
 
     beforeEach(() => {
-      onSpy = sinon.spy();
-      subscribeSpy = sinon.spy();
+      onSpy = vi.fn();
+      subscribeSpy = vi.fn();
       natsClient = {
         on: onSpy,
         subscribe: subscribeSpy,
@@ -124,7 +129,10 @@ describe('ServerNats', () => {
 
     it('should subscribe to every pattern', () => {
       server.bindEvents(natsClient);
-      expect(subscribeSpy.calledWith(pattern)).to.be.true;
+      expect(subscribeSpy).toHaveBeenCalledWith(
+        pattern,
+        expect.objectContaining({}),
+      );
     });
 
     it('should use a per pattern queue if provided', () => {
@@ -137,50 +145,53 @@ describe('ServerNats', () => {
         }),
       });
       server.bindEvents(natsClient);
-      const lastCall = subscribeSpy.lastCall;
-      expect(lastCall.args[1].queue).to.be.eql(queue);
+      const lastCallArgs =
+        subscribeSpy.mock.calls[subscribeSpy.mock.calls.length - 1];
+      expect(lastCallArgs[1].queue).toEqual(queue);
     });
 
     it('should fill the subscriptions array properly', () => {
       server.bindEvents(natsClient);
-      expect(server['subscriptions'].length).to.be.equals(1);
+      expect(server['subscriptions'].length).toBe(1);
     });
   });
   describe('getMessageHandler', () => {
     it(`should return function`, () => {
-      expect(typeof server.getMessageHandler(null!)).to.be.eql('function');
+      expect(typeof server.getMessageHandler(null!)).toEqual('function');
     });
     describe('handler', () => {
       it('should call "handleMessage"', async () => {
-        const handleMessageStub = sinon
-          .stub(server, 'handleMessage')
-          .callsFake(() => null!);
+        const handleMessageStub = vi
+          .spyOn(server, 'handleMessage')
+          .mockImplementation(() => null!);
         await server.getMessageHandler('')('' as any, '');
-        expect(handleMessageStub.called).to.be.true;
+        expect(handleMessageStub).toHaveBeenCalled();
       });
     });
   });
   describe('handleMessage', () => {
-    let getPublisherSpy: sinon.SinonSpy;
+    let getPublisherSpy: ReturnType<typeof vi.fn>;
 
     const channel = 'test';
     const id = '3';
 
     beforeEach(() => {
-      getPublisherSpy = sinon.spy();
-      sinon.stub(server, 'getPublisher').callsFake(() => getPublisherSpy);
+      getPublisherSpy = vi.fn();
+      vi.spyOn(server, 'getPublisher').mockImplementation(
+        () => getPublisherSpy,
+      );
     });
     it('should call "handleEvent" if identifier is not present', async () => {
-      const handleEventSpy = sinon.spy(server, 'handleEvent');
+      const handleEventSpy = vi.spyOn(server, 'handleEvent');
       const data = JSONCodec().encode({ id: 10 });
       const natsMsg: NatsMsg = {
         data,
         subject: channel,
         sid: +id,
-        respond: sinon.spy(),
+        respond: vi.fn(),
       };
       await server.handleMessage(channel, natsMsg);
-      expect(handleEventSpy.called).to.be.true;
+      expect(handleEventSpy).toHaveBeenCalled();
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern does not exist in messageHandlers object`, async () => {
       const data = JSONCodec().encode({
@@ -192,20 +203,18 @@ describe('ServerNats', () => {
         data,
         subject: channel,
         sid: +id,
-        respond: sinon.spy(),
+        respond: vi.fn(),
       };
 
       await server.handleMessage(channel, natsMsg);
-      expect(
-        getPublisherSpy.calledWith({
-          id,
-          status: 'error',
-          err: NO_MESSAGE_HANDLER,
-        }),
-      ).to.be.true;
+      expect(getPublisherSpy).toHaveBeenCalledWith({
+        id,
+        status: 'error',
+        err: NO_MESSAGE_HANDLER,
+      });
     });
     it(`should call handler with expected arguments`, async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
@@ -222,11 +231,11 @@ describe('ServerNats', () => {
         data,
         subject: channel,
         sid: +id,
-        respond: sinon.spy(),
+        respond: vi.fn(),
         headers,
       };
       await server.handleMessage(channel, natsMsg);
-      expect(handler.calledWith('test', natsContext)).to.be.true;
+      expect(handler).toHaveBeenCalledWith('test', natsContext);
     });
   });
   describe('getPublisher', () => {
@@ -238,9 +247,9 @@ describe('ServerNats', () => {
         data: new Uint8Array(),
         subject: '',
         sid: +id,
-        respond: sinon.spy(),
+        respond: vi.fn(),
       };
-      expect(typeof server.getPublisher(natsMsg, id, context)).to.be.eql(
+      expect(typeof server.getPublisher(natsMsg, id, context)).toEqual(
         'function',
       );
     });
@@ -250,15 +259,17 @@ describe('ServerNats', () => {
         data: new Uint8Array(),
         subject: '',
         sid: +id,
-        respond: sinon.spy(),
+        respond: vi.fn(),
         reply: replyTo,
       };
       const publisher = server.getPublisher(natsMsg, id, context);
 
       const respond = 'test';
       publisher({ respond, id });
-      expect(natsMsg.respond.calledWith(JSONCodec().encode({ respond, id }))).to
-        .be.true;
+      expect(natsMsg.respond).toHaveBeenCalledWith(
+        JSONCodec().encode({ respond, id }),
+        expect.objectContaining({}),
+      );
     });
     it(`should not call "publish" when replyTo NOT provided`, () => {
       const replyTo = undefined;
@@ -267,13 +278,13 @@ describe('ServerNats', () => {
         subject: '',
         reply: replyTo,
         sid: +id,
-        respond: sinon.spy(),
+        respond: vi.fn(),
       };
       const publisher = server.getPublisher(natsMsg, id, context);
 
       const respond = 'test';
       publisher({ respond, id });
-      expect(natsMsg.respond.notCalled);
+      expect(natsMsg.respond).not.toHaveBeenCalled();
     });
   });
   describe('handleEvent', () => {
@@ -281,7 +292,7 @@ describe('ServerNats', () => {
     const data = 'test';
 
     it('should call handler with expected arguments', async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       untypedServer.messageHandlers = objectToMap({
         [channel]: handler,
       });
@@ -291,24 +302,24 @@ describe('ServerNats', () => {
         { pattern: '', data },
         new BaseRpcContext([]),
       );
-      expect(handler.calledWith(data)).to.be.true;
+      expect(handler).toHaveBeenCalledWith(data, expect.any(BaseRpcContext));
     });
   });
   describe('handleStatusUpdates', () => {
-    it('should retrieve "status()" async iterator', () => {
+    it('should retrieve "status()" async iterator', async () => {
       const serverMock = {
-        status: sinon.stub().returns({
-          [Symbol.asyncIterator]: [],
+        status: vi.fn().mockReturnValue({
+          async *[Symbol.asyncIterator]() {},
         }),
       };
-      void server.handleStatusUpdates(serverMock as any);
-      expect(serverMock.status.called).to.be.true;
+      await server.handleStatusUpdates(serverMock as any);
+      expect(serverMock.status).toHaveBeenCalled();
     });
 
     it('should log "disconnect" and "error" statuses as "errors"', async () => {
-      const logErrorSpy = sinon.spy(untypedServer.logger, 'error');
+      const logErrorSpy = vi.spyOn(untypedServer.logger, 'error');
       const serverMock = {
-        status: sinon.stub().returns({
+        status: vi.fn().mockReturnValue({
           async *[Symbol.asyncIterator]() {
             yield { type: 'disconnect', data: 'localhost' };
             yield { type: 'error', data: {} };
@@ -316,20 +327,18 @@ describe('ServerNats', () => {
         }),
       };
       await server.handleStatusUpdates(serverMock as any);
-      expect(logErrorSpy.calledTwice).to.be.true;
-      expect(
-        logErrorSpy.calledWith(
-          `NatsError: type: "disconnect", data: "localhost".`,
-        ),
+      expect(logErrorSpy).toHaveBeenCalledTimes(2);
+      expect(logErrorSpy).toHaveBeenCalledWith(
+        `NatsError: type: "disconnect", data: "localhost".`,
       );
-      expect(
-        logErrorSpy.calledWith(`NatsError: type: "disconnect", data: "{}".`),
+      expect(logErrorSpy).toHaveBeenCalledWith(
+        `NatsError: type: "error", data: "{}".`,
       );
     });
     it('should log other statuses as "logs"', async () => {
-      const logSpy = sinon.spy(untypedServer.logger, 'log');
+      const logSpy = vi.spyOn(untypedServer.logger, 'log');
       const serverMock = {
-        status: sinon.stub().returns({
+        status: vi.fn().mockReturnValue({
           async *[Symbol.asyncIterator]() {
             yield { type: 'non-disconnect', data: 'localhost' };
             yield { type: 'warn', data: {} };
@@ -337,13 +346,13 @@ describe('ServerNats', () => {
         }),
       };
       await server.handleStatusUpdates(serverMock as any);
-      expect(logSpy.calledTwice).to.be.true;
-      expect(
-        logSpy.calledWith(
-          `NatsStatus: type: "non-disconnect", data: "localhost".`,
-        ),
+      expect(logSpy).toHaveBeenCalledTimes(2);
+      expect(logSpy).toHaveBeenCalledWith(
+        `NatsStatus: type: "non-disconnect", data: "localhost".`,
       );
-      expect(logSpy.calledWith(`NatsStatus: type: "warn", data: "{}".`));
+      expect(logSpy).toHaveBeenCalledWith(
+        `NatsStatus: type: "warn", data: "{}".`,
+      );
     });
   });
 });

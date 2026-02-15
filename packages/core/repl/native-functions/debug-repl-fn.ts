@@ -1,8 +1,8 @@
-import type { Type, InjectionToken } from '@nestjs/common';
-import { clc } from '@nestjs/common/utils/cli-colors.util.js';
-import { ReplFunction } from '../repl-function.js';
+import type { InjectionToken, Type } from '@nestjs/common';
 import type { ModuleDebugEntry } from '../repl-context.js';
+import { ReplFunction } from '../repl-function.js';
 import type { ReplFnDefinition } from '../repl.interfaces.js';
+import { clc } from '@nestjs/common/internal';
 
 export class DebugReplFn extends ReplFunction {
   public fnDefinition: ReplFnDefinition = {
@@ -26,12 +26,9 @@ export class DebugReplFn extends ReplFunction {
       }
       this.printCtrlsAndProviders(token, moduleEntry);
     } else {
-      Object.keys(this.ctx.debugRegistry).forEach(moduleKey => {
-        this.printCtrlsAndProviders(
-          moduleKey,
-          this.ctx.debugRegistry[moduleKey],
-        );
-      });
+      for (const [moduleKey, entry] of Object.entries(this.ctx.debugRegistry)) {
+        this.printCtrlsAndProviders(moduleKey, entry);
+      }
     }
     this.ctx.writeToStdout('\n');
   }

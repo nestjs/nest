@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { HttpException } from '../../exceptions/index.js';
 import { ArgumentMetadata } from '../../interfaces/index.js';
 import { ParseFloatPipe } from '../../pipes/parse-float.pipe.js';
@@ -20,7 +19,7 @@ describe('ParseFloatPipe', () => {
     describe('when validation passes', () => {
       it('should return number', async () => {
         const num = '3.33';
-        expect(await target.transform(num, {} as ArgumentMetadata)).to.equal(
+        expect(await target.transform(num, {} as ArgumentMetadata)).toBe(
           parseFloat(num),
         );
       });
@@ -30,14 +29,14 @@ describe('ParseFloatPipe', () => {
           undefined!,
           {} as ArgumentMetadata,
         );
-        expect(value).to.equal(undefined);
+        expect(value).toBe(undefined);
       });
     });
     describe('when validation fails', () => {
       it('should throw an error', async () => {
         return expect(
           target.transform('123.123abc', {} as ArgumentMetadata),
-        ).to.be.rejectedWith(CustomTestError);
+        ).rejects.toThrow(CustomTestError);
       });
     });
   });

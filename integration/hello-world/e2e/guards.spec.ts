@@ -33,10 +33,31 @@ function createTestModule(guard) {
 describe('Guards', () => {
   let app: INestApplication;
 
+  afterEach(async () => {
+    await app.close();
+  });
+
   it(`should prevent access (unauthorized)`, async () => {
     app = (await createTestModule(new AuthGuard())).createNestApplication();
 
     await app.init();
-    return request(app.getHttpServer()).get('/hello').expect(401);
+    return request(app.getHttpServer())
+      .get('/hello')
+      .expect(401)
+      .expect(({ body }) => {
+        expect(body.message).toBe('Unauthorized');
+        expect(body.statusCode).toBe(401);
+      });
+  });
+
+  it(`should allow access when guard returns true`, async () => {
+    const allowGuard = { canActivate: () => true };
+    app = (await createTestModule(allowGuard)).createNestApplication();
+
+    await app.init();
+    return request(app.getHttpServer())
+      .get('/hello')
+      .expect(200)
+      .expect('Hello world!');
   });
 });

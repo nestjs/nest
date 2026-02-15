@@ -1,24 +1,20 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
+import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
 import { DiscoveryService } from '../../discovery/discovery-service.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
 import { Module } from '../../injector/module.js';
 import { ModulesContainer } from '../../injector/modules-container.js';
-import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
 
 describe('DiscoveryService', () => {
   let discoveryService: DiscoveryService;
   let modulesContainer: ModulesContainer;
-  let sandbox: sinon.SinonSandbox;
 
   beforeEach(() => {
     modulesContainer = new ModulesContainer();
     discoveryService = new DiscoveryService(modulesContainer);
-    sandbox = sinon.createSandbox();
   });
 
   afterEach(() => {
-    sandbox.restore();
+    vi.restoreAllMocks();
   });
 
   describe('createDecorator', () => {
@@ -26,9 +22,9 @@ describe('DiscoveryService', () => {
       const decorator1 = DiscoveryService.createDecorator();
       const decorator2 = DiscoveryService.createDecorator();
 
-      expect(decorator1.KEY).to.be.a('string');
-      expect(decorator2.KEY).to.be.a('string');
-      expect(decorator1.KEY).to.not.equal(decorator2.KEY);
+      expect(decorator1.KEY).toBeTypeOf('string');
+      expect(decorator2.KEY).toBeTypeOf('string');
+      expect(decorator1.KEY).not.toBe(decorator2.KEY);
     });
 
     it('should create a decorator that can decorate classes', () => {
@@ -40,7 +36,7 @@ describe('DiscoveryService', () => {
       class TestClass {}
 
       const metadata = Reflect.getMetadata(TestDecorator.KEY, TestClass);
-      expect(metadata).to.deep.equal({ value: 'test' });
+      expect(metadata).toEqual({ value: 'test' });
     });
 
     it('should create a decorator that can decorate methods', () => {
@@ -57,7 +53,7 @@ describe('DiscoveryService', () => {
         TestDecorator.KEY,
         new TestClass().handleClick,
       );
-      expect(metadata).to.deep.equal({ event: 'click' });
+      expect(metadata).toEqual({ event: 'click' });
     });
 
     it('should use empty object as default metadata when no options provided', () => {
@@ -67,11 +63,11 @@ describe('DiscoveryService', () => {
       class TestClass {}
 
       const metadata = Reflect.getMetadata(TestDecorator.KEY, TestClass);
-      expect(metadata).to.deep.equal({});
+      expect(metadata).toEqual({});
     });
 
     it('should add class to DiscoverableMetaHostCollection when decorating a class', () => {
-      const addClassMetaHostLinkSpy = sandbox.spy(
+      const addClassMetaHostLinkSpy = vi.spyOn(
         DiscoverableMetaHostCollection,
         'addClassMetaHostLink',
       );
@@ -80,13 +76,15 @@ describe('DiscoveryService', () => {
       @TestDecorator()
       class TestClass {}
 
-      expect(addClassMetaHostLinkSpy.calledOnce).to.be.true;
-      expect(addClassMetaHostLinkSpy.calledWith(TestClass, TestDecorator.KEY))
-        .to.be.true;
+      expect(addClassMetaHostLinkSpy).toHaveBeenCalledOnce();
+      expect(addClassMetaHostLinkSpy).toHaveBeenCalledWith(
+        TestClass,
+        TestDecorator.KEY,
+      );
     });
 
     it('should not add to DiscoverableMetaHostCollection when decorating a method', () => {
-      const addClassMetaHostLinkSpy = sandbox.spy(
+      const addClassMetaHostLinkSpy = vi.spyOn(
         DiscoverableMetaHostCollection,
         'addClassMetaHostLink',
       );
@@ -97,7 +95,7 @@ describe('DiscoveryService', () => {
         testMethod() {}
       }
 
-      expect(addClassMetaHostLinkSpy.called).to.be.false;
+      expect(addClassMetaHostLinkSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -132,15 +130,15 @@ describe('DiscoveryService', () => {
 
       const providers = discoveryService.getProviders();
 
-      expect(providers).to.have.lengthOf(3);
-      expect(providers).to.include(provider1);
-      expect(providers).to.include(provider2);
-      expect(providers).to.include(provider3);
+      expect(providers).toHaveLength(3);
+      expect(providers).toContain(provider1);
+      expect(providers).toContain(provider2);
+      expect(providers).toContain(provider3);
     });
 
     it('should return empty array when no modules exist', () => {
       const providers = discoveryService.getProviders();
-      expect(providers).to.be.an('array').that.is.empty;
+      expect(providers).toHaveLength(0);
     });
 
     it('should return empty array when modules have no providers', () => {
@@ -149,7 +147,7 @@ describe('DiscoveryService', () => {
       modulesContainer.set('Module1', module1);
 
       const providers = discoveryService.getProviders();
-      expect(providers).to.be.an('array').that.is.empty;
+      expect(providers).toHaveLength(0);
     });
 
     it('should filter providers by metadataKey when provided', () => {
@@ -164,31 +162,33 @@ describe('DiscoveryService', () => {
       });
 
       const providerSet = new Set([provider1, provider2]);
-      const getProvidersByMetaKeyStub = sandbox
-        .stub(DiscoverableMetaHostCollection, 'getProvidersByMetaKey')
-        .returns(providerSet);
+      const getProvidersByMetaKeyStub = vi
+        .spyOn(DiscoverableMetaHostCollection, 'getProvidersByMetaKey')
+        .mockReturnValue(providerSet);
 
       const providers = discoveryService.getProviders({ metadataKey });
 
-      expect(getProvidersByMetaKeyStub.calledOnce).to.be.true;
-      expect(
-        getProvidersByMetaKeyStub.calledWith(modulesContainer, metadataKey),
-      ).to.be.true;
-      expect(providers).to.have.lengthOf(2);
-      expect(providers).to.include(provider1);
-      expect(providers).to.include(provider2);
+      expect(getProvidersByMetaKeyStub).toHaveBeenCalledOnce();
+      expect(getProvidersByMetaKeyStub).toHaveBeenCalledWith(
+        modulesContainer,
+        metadataKey,
+      );
+      expect(providers).toHaveLength(2);
+      expect(providers).toContain(provider1);
+      expect(providers).toContain(provider2);
     });
 
     it('should return empty array when no providers match the metadataKey', () => {
       const metadataKey = 'non-existent-key';
       const emptySet = new Set<InstanceWrapper>();
 
-      sandbox
-        .stub(DiscoverableMetaHostCollection, 'getProvidersByMetaKey')
-        .returns(emptySet);
+      vi.spyOn(
+        DiscoverableMetaHostCollection,
+        'getProvidersByMetaKey',
+      ).mockReturnValue(emptySet);
 
       const providers = discoveryService.getProviders({ metadataKey });
-      expect(providers).to.be.an('array').that.is.empty;
+      expect(providers).toHaveLength(0);
     });
 
     it('should filter providers by included modules', () => {
@@ -230,10 +230,10 @@ describe('DiscoveryService', () => {
         include: [Module1, Module2],
       });
 
-      expect(providers).to.have.lengthOf(2);
-      expect(providers).to.include(provider1);
-      expect(providers).to.include(provider2);
-      expect(providers).to.not.include(provider3);
+      expect(providers).toHaveLength(2);
+      expect(providers).toContain(provider1);
+      expect(providers).toContain(provider2);
+      expect(providers).not.toContain(provider3);
     });
 
     it('should return empty array when include option is empty array', () => {
@@ -246,7 +246,7 @@ describe('DiscoveryService', () => {
       modulesContainer.set('Module1', module1);
 
       const providers = discoveryService.getProviders({ include: [] });
-      expect(providers).to.be.an('array').that.is.empty;
+      expect(providers).toHaveLength(0);
     });
   });
 
@@ -272,9 +272,9 @@ describe('DiscoveryService', () => {
 
       const controllers = discoveryService.getControllers();
 
-      expect(controllers).to.have.lengthOf(2);
-      expect(controllers).to.include(controller1);
-      expect(controllers).to.include(controller2);
+      expect(controllers).toHaveLength(2);
+      expect(controllers).toContain(controller1);
+      expect(controllers).toContain(controller2);
     });
 
     it('should return empty array when no controllers exist', () => {
@@ -282,7 +282,7 @@ describe('DiscoveryService', () => {
       modulesContainer.set('Module1', module1);
 
       const controllers = discoveryService.getControllers();
-      expect(controllers).to.be.an('array').that.is.empty;
+      expect(controllers).toHaveLength(0);
     });
 
     it('should filter controllers by metadataKey when provided', () => {
@@ -293,18 +293,19 @@ describe('DiscoveryService', () => {
       });
 
       const controllerSet = new Set([controller1]);
-      const getControllersByMetaKeyStub = sandbox
-        .stub(DiscoverableMetaHostCollection, 'getControllersByMetaKey')
-        .returns(controllerSet);
+      const getControllersByMetaKeyStub = vi
+        .spyOn(DiscoverableMetaHostCollection, 'getControllersByMetaKey')
+        .mockReturnValue(controllerSet);
 
       const controllers = discoveryService.getControllers({ metadataKey });
 
-      expect(getControllersByMetaKeyStub.calledOnce).to.be.true;
-      expect(
-        getControllersByMetaKeyStub.calledWith(modulesContainer, metadataKey),
-      ).to.be.true;
-      expect(controllers).to.have.lengthOf(1);
-      expect(controllers).to.include(controller1);
+      expect(getControllersByMetaKeyStub).toHaveBeenCalledOnce();
+      expect(getControllersByMetaKeyStub).toHaveBeenCalledWith(
+        modulesContainer,
+        metadataKey,
+      );
+      expect(controllers).toHaveLength(1);
+      expect(controllers).toContain(controller1);
     });
 
     it('should filter controllers by included modules', () => {
@@ -333,9 +334,9 @@ describe('DiscoveryService', () => {
         include: [Module1],
       });
 
-      expect(controllers).to.have.lengthOf(1);
-      expect(controllers).to.include(controller1);
-      expect(controllers).to.not.include(controller2);
+      expect(controllers).toHaveLength(1);
+      expect(controllers).toContain(controller1);
+      expect(controllers).not.toContain(controller2);
     });
   });
 
@@ -361,7 +362,7 @@ describe('DiscoveryService', () => {
         wrapper,
       );
 
-      expect(metadata).to.deep.equal({ role: 'admin' });
+      expect(metadata).toEqual({ role: 'admin' });
     });
 
     it('should retrieve metadata from method using decorator and methodKey', () => {
@@ -388,7 +389,7 @@ describe('DiscoveryService', () => {
         'onCreate',
       );
 
-      expect(metadata).to.deep.equal({ event: 'created' });
+      expect(metadata).toEqual({ event: 'created' });
     });
 
     it('should return undefined when metadata does not exist', () => {
@@ -409,7 +410,7 @@ describe('DiscoveryService', () => {
         wrapper,
       );
 
-      expect(metadata).to.be.undefined;
+      expect(metadata).toBeUndefined();
     });
 
     it('should return undefined when methodKey does not exist on instance', () => {
@@ -433,7 +434,7 @@ describe('DiscoveryService', () => {
         'existingMethod', // Use existing method to avoid undefined reference error
       );
 
-      expect(metadata).to.be.undefined;
+      expect(metadata).toBeUndefined();
     });
 
     it('should use metatype when instance.constructor is undefined', () => {
@@ -458,7 +459,7 @@ describe('DiscoveryService', () => {
         wrapper,
       );
 
-      expect(metadata).to.deep.equal({ value: 42 });
+      expect(metadata).toEqual({ value: 42 });
     });
 
     it('should handle undefined instance gracefully', () => {
@@ -481,7 +482,7 @@ describe('DiscoveryService', () => {
         wrapper,
       );
 
-      expect(metadata).to.deep.equal({ test: 'value' });
+      expect(metadata).toEqual({ test: 'value' });
     });
   });
 
@@ -495,14 +496,14 @@ describe('DiscoveryService', () => {
 
       const modules = (discoveryService as any).getModules();
 
-      expect(modules).to.have.lengthOf(2);
-      expect(modules).to.include(module1);
-      expect(modules).to.include(module2);
+      expect(modules).toHaveLength(2);
+      expect(modules).toContain(module1);
+      expect(modules).toContain(module2);
     });
 
     it('should return empty array when no modules exist', () => {
       const modules = (discoveryService as any).getModules();
-      expect(modules).to.be.an('array').that.is.empty;
+      expect(modules).toHaveLength(0);
     });
 
     it('should filter modules by include option', () => {
@@ -522,10 +523,10 @@ describe('DiscoveryService', () => {
         include: [Module1, Module3],
       });
 
-      expect(modules).to.have.lengthOf(2);
-      expect(modules).to.include(module1);
-      expect(modules).to.include(module3);
-      expect(modules).to.not.include(module2);
+      expect(modules).toHaveLength(2);
+      expect(modules).toContain(module1);
+      expect(modules).toContain(module3);
+      expect(modules).not.toContain(module2);
     });
 
     it('should return empty array when include option is empty', () => {
@@ -533,7 +534,7 @@ describe('DiscoveryService', () => {
       modulesContainer.set('Module1', module1);
 
       const modules = (discoveryService as any).getModules({ include: [] });
-      expect(modules).to.be.an('array').that.is.empty;
+      expect(modules).toHaveLength(0);
     });
   });
 });

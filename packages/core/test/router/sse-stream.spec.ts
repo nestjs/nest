@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { EventSource } from 'eventsource';
 import { createServer, OutgoingHttpHeaders } from 'http';
 import { AddressInfo } from 'net';
@@ -59,7 +58,7 @@ describe('SseStream', () => {
     sse.end();
     await written(sink);
 
-    expect(sink.content).to.equal(
+    expect(sink.content).toBe(
       `
 id: 1
 data: hello
@@ -87,7 +86,7 @@ data: monde
     sse.end();
     await written(sink);
 
-    expect(sink.content).to.equal(
+    expect(sink.content).toBe(
       `
 id: 1
 data: {"hello":"world"}
@@ -113,7 +112,7 @@ data: {"hello":"world"}
     sse.end();
     await written(sink);
 
-    expect(sink.content).to.equal(
+    expect(sink.content).toBe(
       `
 event: tea-time
 id: the-id
@@ -124,89 +123,94 @@ data: hello
     );
   });
 
-  it('sets headers on destination when it looks like a HTTP Response', callback => {
-    const sse = new SseStream();
-    const sink = new Sink(
-      (status: number, headers: string | OutgoingHttpHeaders) => {
-        expect(headers).to.deep.equal({
-          'Content-Type': 'text/event-stream',
-          Connection: 'keep-alive',
-          'Cache-Control':
-            'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
-          Pragma: 'no-cache',
-          Expire: '0',
-          'X-Accel-Buffering': 'no',
-        });
-        callback();
-        return sink;
-      },
-    );
-    sse.pipe(sink);
-  });
-
-  it('sets additional headers when provided', callback => {
-    const sse = new SseStream();
-    const sink = new Sink(
-      (status: number, headers: string | OutgoingHttpHeaders) => {
-        expect(headers).to.contain.keys('access-control-headers');
-        expect(headers['access-control-headers']).to.equal('some-cors-value');
-        callback();
-        return sink;
-      },
-    );
-
-    sse.pipe(sink, {
-      additionalHeaders: { 'access-control-headers': 'some-cors-value' },
-    });
-  });
-
-  it('sets custom status code when provided', callback => {
-    const sse = new SseStream();
-    const sink = new Sink(
-      (status: number, headers: string | OutgoingHttpHeaders) => {
-        expect(status).to.equal(404);
-        callback();
-        return sink;
-      },
-    );
-
-    sse.pipe(sink, {
-      statusCode: 404,
-    });
-  });
-
-  it('defaults to 200 status code when not provided', callback => {
-    const sse = new SseStream();
-    const sink = new Sink(
-      (status: number, headers: string | OutgoingHttpHeaders) => {
-        expect(status).to.equal(200);
-        callback();
-        return sink;
-      },
-    );
-
-    sse.pipe(sink);
-  });
-
-  it('allows an eventsource to connect', callback => {
-    let sse: SseStream;
-    const server = createServer((req, res) => {
-      sse = new SseStream(req);
-      sse.pipe(res);
-    });
-
-    server.listen(() => {
-      const es = new EventSource(
-        `http://localhost:${(server.address() as AddressInfo).port}`,
+  it('sets headers on destination when it looks like a HTTP Response', () =>
+    new Promise<void>(callback => {
+      const sse = new SseStream();
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          expect(headers).toEqual({
+            'Content-Type': 'text/event-stream',
+            Connection: 'keep-alive',
+            'Cache-Control':
+              'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
+            Pragma: 'no-cache',
+            Expire: '0',
+            'X-Accel-Buffering': 'no',
+          });
+          callback();
+          return sink;
+        },
       );
-      es.onmessage = e => {
-        expect(e.data).to.equal('hello');
-        es.close();
-        server.close(callback);
-      };
-      es.onopen = () => sse.writeMessage({ data: 'hello' }, noop);
-      es.onerror = e =>
-        callback(new Error(`Error from EventSource: ${JSON.stringify(e)}`));
-    });
-  });
+      sse.pipe(sink);
+    }));
+
+  it('sets additional headers when provided', () =>
+    new Promise<void>(callback => {
+      const sse = new SseStream();
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          expect(headers).toHaveProperty('access-control-headers');
+          expect(headers['access-control-headers']).toBe('some-cors-value');
+          callback();
+          return sink;
+        },
+      );
+
+      sse.pipe(sink, {
+        additionalHeaders: { 'access-control-headers': 'some-cors-value' },
+      });
+    }));
+
+  it('sets custom status code when provided', () =>
+    new Promise<void>(callback => {
+      const sse = new SseStream();
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          expect(status).toBe(404);
+          callback();
+          return sink;
+        },
+      );
+
+      sse.pipe(sink, {
+        statusCode: 404,
+      });
+    }));
+
+  it('defaults to 200 status code when not provided', () =>
+    new Promise<void>(callback => {
+      const sse = new SseStream();
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          expect(status).toBe(200);
+          callback();
+          return sink;
+        },
+      );
+
+      sse.pipe(sink);
+    }));
+
+  it('allows an eventsource to connect', () =>
+    new Promise<void>((resolve, reject) => {
+      let sse: SseStream;
+      const server = createServer((req, res) => {
+        sse = new SseStream(req);
+        sse.pipe(res);
+      });
+
+      server.listen(() => {
+        const es = new EventSource(
+          `http://localhost:${(server.address() as AddressInfo).port}`,
+        );
+        es.onmessage = e => {
+          expect(e.data).toBe('hello');
+          es.close();
+          server.close(() => resolve());
+        };
+        es.onopen = () => sse.writeMessage({ data: 'hello' }, noop);
+        es.onerror = e =>
+          reject(new Error(`Error from EventSource: ${JSON.stringify(e)}`));
+      });
+    }));
 });

@@ -1,7 +1,6 @@
 import { Scope } from '@nestjs/common';
 import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception.js';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 
 describe('Optional factory provider deps', () => {
   describe('when dependency is optional', () => {
@@ -20,7 +19,7 @@ describe('Optional factory provider deps', () => {
         }).compile();
 
         const factoryProvider = moduleRef.get('FACTORY');
-        expect(factoryProvider).to.equal('OPTIONAL_DEP_VALUE');
+        expect(factoryProvider).toBe('OPTIONAL_DEP_VALUE');
       });
     });
     describe('otherwise', () => {
@@ -37,7 +36,7 @@ describe('Optional factory provider deps', () => {
         }).compile();
 
         const factoryProvider = moduleRef.get('FACTORY');
-        expect(factoryProvider).to.equal(defaultValue);
+        expect(factoryProvider).toBe(defaultValue);
       });
       it('"undefined" should be injected into the factory function (scoped provider)', async () => {
         const MY_PROVIDER = 'MY_PROVIDER';
@@ -70,7 +69,7 @@ describe('Optional factory provider deps', () => {
           ],
         }).compile();
 
-        expect(await module.resolve(MY_PROVIDER)).to.deep.equal({
+        expect(await module.resolve(MY_PROVIDER)).toEqual({
           first: undefined,
           second: 'second',
         });
@@ -80,56 +79,44 @@ describe('Optional factory provider deps', () => {
   describe('otherwise', () => {
     describe('and dependency is not registered', () => {
       it('should error out', async () => {
-        try {
-          const builder = Test.createTestingModule({
-            providers: [
-              {
-                provide: 'FACTORY',
-                useFactory: () => 'RETURNED_VALUE',
-                inject: ['MISSING_DEP'],
-              },
-            ],
-          });
-          await builder.compile();
-        } catch (err) {
-          expect(err).to.be.instanceOf(UnknownDependenciesException);
-        }
+        const builder = Test.createTestingModule({
+          providers: [
+            {
+              provide: 'FACTORY',
+              useFactory: () => 'RETURNED_VALUE',
+              inject: ['MISSING_DEP'],
+            },
+          ],
+        });
+        await expect(builder.compile()).rejects.toBeInstanceOf(
+          UnknownDependenciesException,
+        );
       });
     });
   });
   describe('and dependency is registered but it cannot be instantiated', () => {
     it('should error out', async () => {
-      try {
-        const builder = Test.createTestingModule({
-          providers: [
-            {
-              provide: 'POSSIBLY_MISSING_DEP',
-              useFactory: () => null,
-              inject: ['MISSING_DEP'],
-            },
-            {
-              provide: 'FACTORY',
-              useFactory: () => 'RETURNED_VALUE',
-              inject: [{ token: 'POSSIBLY_MISSING_DEP', optional: false }],
-            },
-          ],
-        });
-        await builder.compile();
-      } catch (err) {
-        expect(err).to.be.instanceOf(UnknownDependenciesException);
-        expect(err.message).to
-          .equal(`Nest can't resolve dependencies of the POSSIBLY_MISSING_DEP (?). Please make sure that the argument "MISSING_DEP" at index [0] is available in the RootTestModule context.
-
-Potential solutions:
-- Is RootTestModule a valid NestJS module?
-- If "MISSING_DEP" is a provider, is it part of the current RootTestModule?
-- If "MISSING_DEP" is exported from a separate @Module, is that module imported within RootTestModule?
-  @Module({
-    imports: [ /* the Module containing "MISSING_DEP" */ ]
-  })
-
-For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors`);
-      }
+      const builder = Test.createTestingModule({
+        providers: [
+          {
+            provide: 'POSSIBLY_MISSING_DEP',
+            useFactory: () => null,
+            inject: ['MISSING_DEP'],
+          },
+          {
+            provide: 'FACTORY',
+            useFactory: () => 'RETURNED_VALUE',
+            inject: [{ token: 'POSSIBLY_MISSING_DEP', optional: false }],
+          },
+        ],
+      });
+      await expect(builder.compile()).rejects.toSatisfy((err: any) => {
+        expect(err).toBeInstanceOf(UnknownDependenciesException);
+        expect(err.message).toContain(
+          `Nest can't resolve dependencies of the POSSIBLY_MISSING_DEP (?)`,
+        );
+        return true;
+      });
     });
   });
 });

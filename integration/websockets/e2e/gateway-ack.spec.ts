@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { io } from 'socket.io-client';
 import { AckGateway } from '../src/ack.gateway.js';
 
@@ -22,7 +21,7 @@ describe('WebSocketGateway (ack)', () => {
     ws = io('http://localhost:8080');
     await new Promise<void>(resolve =>
       ws.emit('push', { test: 'test' }, data => {
-        expect(data).to.be.eql('pong');
+        expect(data).toEqual('pong');
         resolve();
       }),
     );
@@ -35,7 +34,7 @@ describe('WebSocketGateway (ack)', () => {
     ws = io('http://localhost:8080');
     await new Promise<void>(resolve =>
       ws.emit('push', data => {
-        expect(data).to.be.eql('pong');
+        expect(data).toEqual('pong');
         resolve();
       }),
     );
@@ -50,7 +49,7 @@ describe('WebSocketGateway (ack)', () => {
 
     await new Promise<void>(resolve =>
       ws.emit('manual-ack', payload, response => {
-        expect(response).to.eql({ status: 'success', data: payload });
+        expect(response).toEqual({ status: 'success', data: payload });
         resolve();
       }),
     );
@@ -65,7 +64,7 @@ describe('WebSocketGateway (ack)', () => {
 
     await new Promise<void>(resolve =>
       ws.emit('manual-ack', payload, response => {
-        expect(response).to.eql({
+        expect(response).toEqual({
           status: 'error',
           message: 'Operation failed',
         });

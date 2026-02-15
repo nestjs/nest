@@ -9,8 +9,6 @@ import {
 } from '@nestjs/common';
 import { Test } from '../../../packages/testing.js';
 import request from 'supertest';
-import { expect } from 'chai';
-
 /**
  * Number of times that the middleware was executed.
  */

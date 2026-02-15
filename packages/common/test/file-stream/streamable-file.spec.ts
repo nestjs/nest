@@ -1,36 +1,34 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { Readable } from 'stream';
-import { StreamableFile } from '../../file-stream/index.js';
 import { HttpStatus } from '../../enums/index.js';
+import { StreamableFile } from '../../file-stream/index.js';
 
 describe('StreamableFile', () => {
   describe('when input is a readable stream', () => {
     it('should assign it to a stream class property', () => {
       const stream = new Readable();
       const streamableFile = new StreamableFile(stream);
-      expect(streamableFile.getStream()).to.equal(stream);
+      expect(streamableFile.getStream()).toBe(stream);
     });
   });
   describe('when input is an object with "pipe" method', () => {
     it('should assign it to a stream class property', () => {
       const stream = { pipe: () => {} };
       const streamableFile = new StreamableFile(stream as any);
-      expect(streamableFile.getStream()).to.equal(stream);
+      expect(streamableFile.getStream()).toBe(stream);
     });
   });
   describe('when input is neither Uint8Array nor has pipe method', () => {
     it('should not set stream property', () => {
       const invalidInput = { notPipe: true };
       const streamableFile = new StreamableFile(invalidInput as any);
-      expect(streamableFile.getStream()).to.be.undefined;
+      expect(streamableFile.getStream()).toBeUndefined();
     });
   });
   describe('when options is empty', () => {
     it('should return application/octet-stream for type and undefined for others', () => {
       const stream = new Readable();
       const streamableFile = new StreamableFile(stream);
-      expect(streamableFile.getHeaders()).to.deep.equal({
+      expect(streamableFile.getHeaders()).toEqual({
         type: 'application/octet-stream',
         disposition: undefined,
         length: undefined,
@@ -45,7 +43,7 @@ describe('StreamableFile', () => {
         disposition: 'inline',
         length: 100,
       });
-      expect(streamableFile.getHeaders()).to.deep.equal({
+      expect(streamableFile.getHeaders()).toEqual({
         type: 'application/pdf',
         disposition: 'inline',
         length: 100,
@@ -58,7 +56,7 @@ describe('StreamableFile', () => {
         const buffer = Buffer.from('test');
         const streamableFile = new StreamableFile(buffer);
         const stream = streamableFile.getStream();
-        expect(stream.read()).to.equal(buffer);
+        expect(stream.read()).toBe(buffer);
       });
     });
     describe('when input is a Uint8Array', () => {
@@ -66,7 +64,7 @@ describe('StreamableFile', () => {
         const buffer = Uint8Array.from([0xab, 0xcd, 0xef, 0x00]);
         const streamableFile = new StreamableFile(buffer);
         const stream = streamableFile.getStream();
-        expect(stream.read()).to.deep.equal(Buffer.from(buffer));
+        expect(stream.read()).toEqual(Buffer.from(buffer));
       });
     });
   });
@@ -75,7 +73,7 @@ describe('StreamableFile', () => {
     it('should return the default error handler', () => {
       const stream = new Readable();
       const streamableFile = new StreamableFile(stream);
-      expect(streamableFile.errorHandler).to.be.a('function');
+      expect(streamableFile.errorHandler).toBeTypeOf('function');
     });
 
     describe('default error handler behavior', () => {
@@ -86,14 +84,14 @@ describe('StreamableFile', () => {
           destroyed: true,
           headersSent: false,
           statusCode: 200,
-          end: sinon.spy(),
-          send: sinon.spy(),
+          end: vi.fn(),
+          send: vi.fn(),
         };
 
         streamableFile.errorHandler(new Error('test error'), res as any);
 
-        expect(res.end.called).to.be.false;
-        expect(res.send.called).to.be.false;
+        expect(res.end).not.toHaveBeenCalled();
+        expect(res.send).not.toHaveBeenCalled();
       });
 
       it('should call res.end() when headers are already sent', () => {
@@ -103,14 +101,14 @@ describe('StreamableFile', () => {
           destroyed: false,
           headersSent: true,
           statusCode: 200,
-          end: sinon.spy(),
-          send: sinon.spy(),
+          end: vi.fn(),
+          send: vi.fn(),
         };
 
         streamableFile.errorHandler(new Error('test error'), res as any);
 
-        expect(res.end.calledOnce).to.be.true;
-        expect(res.send.called).to.be.false;
+        expect(res.end).toHaveBeenCalledOnce();
+        expect(res.send).not.toHaveBeenCalled();
       });
 
       it('should set status code to BAD_REQUEST and send error message', () => {
@@ -120,15 +118,15 @@ describe('StreamableFile', () => {
           destroyed: false,
           headersSent: false,
           statusCode: 200,
-          end: sinon.spy(),
-          send: sinon.spy(),
+          end: vi.fn(),
+          send: vi.fn(),
         };
         const error = new Error('test error message');
 
         streamableFile.errorHandler(error, res as any);
 
-        expect(res.statusCode).to.equal(HttpStatus.BAD_REQUEST);
-        expect(res.send.calledOnceWith('test error message')).to.be.true;
+        expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST);
+        expect(res.send).toHaveBeenCalledWith('test error message');
       });
     });
   });
@@ -137,21 +135,21 @@ describe('StreamableFile', () => {
     it('should set a custom error handler', () => {
       const stream = new Readable();
       const streamableFile = new StreamableFile(stream);
-      const customHandler = sinon.spy();
+      const customHandler = vi.fn();
 
       streamableFile.setErrorHandler(customHandler);
 
-      expect(streamableFile.errorHandler).to.equal(customHandler);
+      expect(streamableFile.errorHandler).toBe(customHandler);
     });
 
     it('should return the instance for chaining', () => {
       const stream = new Readable();
       const streamableFile = new StreamableFile(stream);
-      const customHandler = sinon.spy();
+      const customHandler = vi.fn();
 
       const result = streamableFile.setErrorHandler(customHandler);
 
-      expect(result).to.equal(streamableFile);
+      expect(result).toBe(streamableFile);
     });
   });
 
@@ -159,14 +157,14 @@ describe('StreamableFile', () => {
     it('should return the default error logger', () => {
       const stream = new Readable();
       const streamableFile = new StreamableFile(stream);
-      expect(streamableFile.errorLogger).to.be.a('function');
+      expect(streamableFile.errorLogger).toBeTypeOf('function');
     });
 
     describe('default error logger behavior', () => {
       it('should call logger.error with the error', () => {
         const stream = new Readable();
         const streamableFile = new StreamableFile(stream);
-        const loggerErrorStub = sinon.stub(
+        const loggerErrorStub = vi.spyOn(
           (streamableFile as any).logger,
           'error',
         );
@@ -174,8 +172,8 @@ describe('StreamableFile', () => {
 
         streamableFile.errorLogger(error);
 
-        expect(loggerErrorStub.calledOnceWith(error)).to.be.true;
-        loggerErrorStub.restore();
+        expect(loggerErrorStub).toHaveBeenCalledWith(error);
+        loggerErrorStub.mockRestore();
       });
     });
   });
@@ -184,21 +182,58 @@ describe('StreamableFile', () => {
     it('should set a custom error logger', () => {
       const stream = new Readable();
       const streamableFile = new StreamableFile(stream);
-      const customLogger = sinon.spy();
+      const customLogger = vi.fn();
 
       streamableFile.setErrorLogger(customLogger);
 
-      expect(streamableFile.errorLogger).to.equal(customLogger);
+      expect(streamableFile.errorLogger).toBe(customLogger);
     });
 
     it('should return the instance for chaining', () => {
       const stream = new Readable();
       const streamableFile = new StreamableFile(stream);
-      const customLogger = sinon.spy();
+      const customLogger = vi.fn();
 
       const result = streamableFile.setErrorLogger(customLogger);
 
-      expect(result).to.equal(streamableFile);
+      expect(result).toBe(streamableFile);
+    });
+  });
+
+  describe('auto-length from Uint8Array', () => {
+    it('should auto-populate length from Buffer when not provided', () => {
+      const buffer = Buffer.from('hello world');
+      const streamableFile = new StreamableFile(buffer);
+
+      expect(streamableFile.getHeaders().length).toBe(buffer.length);
+    });
+
+    it('should auto-populate length from Uint8Array when not provided', () => {
+      const uint8 = new Uint8Array([1, 2, 3, 4, 5]);
+      const streamableFile = new StreamableFile(uint8);
+
+      expect(streamableFile.getHeaders().length).toBe(5);
+    });
+
+    it('should not override explicitly provided length', () => {
+      const buffer = Buffer.from('hello');
+      const streamableFile = new StreamableFile(buffer, { length: 999 });
+
+      expect(streamableFile.getHeaders().length).toBe(999);
+    });
+  });
+
+  describe('getStream', () => {
+    it('should return a Readable stream from Uint8Array input', () => {
+      const streamableFile = new StreamableFile(new Uint8Array([1, 2, 3]));
+      const stream = streamableFile.getStream();
+      expect(stream).toBeInstanceOf(Readable);
+    });
+
+    it('should return the original Readable when constructed from a stream', () => {
+      const readable = new Readable({ read() {} });
+      const streamableFile = new StreamableFile(readable);
+      expect(streamableFile.getStream()).toBe(readable);
     });
   });
 });

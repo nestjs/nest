@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import {
   Controller,
   Delete,
@@ -18,7 +17,7 @@ import { NestContainer } from '../../injector/container.js';
 import { MiddlewareBuilder } from '../../middleware/builder.js';
 import { RouteInfoPathExtractor } from '../../middleware/route-info-path-extractor.js';
 import { RoutesMapper } from '../../middleware/routes-mapper.js';
-import { NoopHttpAdapter } from './../utils/noop-adapter.spec.js';
+import { NoopHttpAdapter } from './../utils/noop-adapter.js';
 
 describe('MiddlewareBuilder', () => {
   let builder: MiddlewareBuilder;
@@ -37,7 +36,7 @@ describe('MiddlewareBuilder', () => {
     it('should return configuration proxy', () => {
       const configProxy = builder.apply([]);
       const metatype = (MiddlewareBuilder as any).ConfigProxy;
-      expect(configProxy instanceof metatype).to.be.true;
+      expect(configProxy instanceof metatype).toBe(true);
     });
 
     describe('configuration proxy', () => {
@@ -60,7 +59,7 @@ describe('MiddlewareBuilder', () => {
         it('should store configuration passed as argument', () => {
           configProxy.forRoutes(route, Test);
 
-          expect(builder.build()).to.deep.equal([
+          expect(builder.build()).toEqual([
             {
               middleware: [],
               forRoutes: [
@@ -124,7 +123,7 @@ describe('MiddlewareBuilder', () => {
         it('should remove overlapping routes', () => {
           configProxy.forRoutes(UsersController);
 
-          expect(builder.build()).to.deep.equal([
+          expect(builder.build()).toEqual([
             {
               middleware: [],
               forRoutes: [
@@ -190,7 +189,7 @@ describe('MiddlewareBuilder', () => {
       const path = '/test';
       const proxy: any = builder.apply().exclude(path);
 
-      expect(proxy.getExcludedRoutes()).to.be.eql([
+      expect(proxy.getExcludedRoutes()).toEqual([
         {
           path,
           method: -1,

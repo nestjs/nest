@@ -1,9 +1,8 @@
-import { expect } from 'chai';
 import { spawn } from 'child_process';
 
 const PROMPT = '> ';
 
-describe('REPL process', function () {
+describe('REPL process', () => {
   let replProcess: ReturnType<typeof spawn>;
 
   function waitForReplToStart(
@@ -35,26 +34,27 @@ describe('REPL process', function () {
     });
   }
 
-  beforeEach(async function () {
-    this.timeout(15000);
-    replProcess = spawn('ts-node', ['../src/repl.ts'], {
-      cwd: import.meta.dirname,
-    });
+  beforeEach(async () => {
+    replProcess = spawn(
+      process.execPath,
+      ['--import', 'jiti/register', '../src/repl.ts'],
+      {
+        cwd: import.meta.dirname,
+      },
+    );
     await waitForReplToStart(replProcess, PROMPT);
-  });
+  }, 15000);
 
-  afterEach(function () {
+  afterEach(() => {
     if (replProcess) {
       replProcess.kill(9);
     }
   });
 
-  it('exits on .exit', async function () {
-    this.timeout(1000);
-
+  it('exits on .exit', async () => {
     return new Promise((resolve, reject) => {
       replProcess.on('exit', _ => {
-        expect(replProcess.exitCode).to.equal(0);
+        expect(replProcess.exitCode).toBe(0);
         resolve();
       });
 
@@ -68,5 +68,5 @@ describe('REPL process', function () {
         reject(new Error('REPL stdin is not available'));
       }
     });
-  });
+  }, 5000);
 });

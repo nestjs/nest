@@ -1,9 +1,9 @@
-import { InjectionToken, Type } from '@nestjs/common';
-import { MiddlewareConfiguration } from '@nestjs/common/interfaces/middleware/middleware-configuration.interface.js';
+import type { InjectionToken, Type } from '@nestjs/common';
 import { getClassScope } from '../helpers/get-class-scope.js';
 import { isDurable } from '../helpers/is-durable.js';
 import { NestContainer } from '../injector/container.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import type { MiddlewareConfiguration } from '@nestjs/common/internal';
 
 export class MiddlewareContainer {
   private readonly middleware = new Map<

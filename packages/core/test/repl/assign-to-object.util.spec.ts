@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { assignToObject } from '../../repl/assign-to-object.util.js';
 
 describe('assignToObject', () => {
@@ -20,13 +19,13 @@ describe('assignToObject', () => {
 
     assignToObject(targetObj, sourceObj);
 
-    expect(Object.getOwnPropertyDescriptor(targetObj, 'foo')).to.be.eql({
+    expect(Object.getOwnPropertyDescriptor(targetObj, 'foo')).toEqual({
       value: 123,
       configurable: true,
       enumerable: true,
       writable: true,
     });
-    expect(Object.getOwnPropertyDescriptor(targetObj, 'bar')).to.be.eql({
+    expect(Object.getOwnPropertyDescriptor(targetObj, 'bar')).toEqual({
       value: 456,
       configurable: true,
       enumerable: true,

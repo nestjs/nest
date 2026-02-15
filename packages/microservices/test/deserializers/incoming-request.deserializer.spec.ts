@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { IncomingRequestDeserializer } from '../../deserializers/incoming-request.deserializer.js';
 import { IncomingRequest } from '../../interfaces/index.js';
 
@@ -15,9 +14,7 @@ describe('IncomingRequestDeserializer', () => {
           pattern: 'pattern',
           data: [],
         };
-        expect(instance.deserialize(incomingRequest)).to.be.equal(
-          incomingRequest,
-        );
+        expect(instance.deserialize(incomingRequest)).toBe(incomingRequest);
       });
     });
     describe('otherwise', () => {
@@ -29,9 +26,7 @@ describe('IncomingRequestDeserializer', () => {
           const options = {
             channel: 'test',
           };
-          expect(
-            instance.deserialize(externalRequest, options),
-          ).to.be.deep.equal({
+          expect(instance.deserialize(externalRequest, options)).toEqual({
             pattern: options.channel,
             data: externalRequest,
           });
@@ -39,7 +34,7 @@ describe('IncomingRequestDeserializer', () => {
       });
       describe('when options are undefined', () => {
         it('should map to proper schema with undefined values', () => {
-          expect(instance.deserialize({})).to.be.deep.equal({
+          expect(instance.deserialize({})).toEqual({
             pattern: undefined,
             data: undefined,
           });

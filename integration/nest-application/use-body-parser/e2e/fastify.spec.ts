@@ -3,7 +3,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { AppModule } from '../src/app.module.js';
 
 describe('Body Parser (Fastify Application)', () => {
@@ -43,7 +42,7 @@ describe('Body Parser (Fastify Application)', () => {
         payload: stringLimit,
       });
 
-      expect(JSON.parse(response.body)).to.eql({
+      expect(JSON.parse(response.body)).toEqual({
         raw: stringLimit,
       });
     });
@@ -56,7 +55,7 @@ describe('Body Parser (Fastify Application)', () => {
         payload: stringOverLimit,
       });
 
-      expect(response.statusCode).to.equal(413);
+      expect(response.statusCode).toBe(413);
     });
   });
 
@@ -87,7 +86,7 @@ describe('Body Parser (Fastify Application)', () => {
         payload: stringLimit,
       });
 
-      expect(JSON.parse(response.body)).to.eql({
+      expect(JSON.parse(response.body)).toEqual({
         raw: stringLimit,
       });
     });
@@ -100,7 +99,7 @@ describe('Body Parser (Fastify Application)', () => {
         payload: stringOverLimit,
       });
 
-      expect(response.statusCode).to.equal(413);
+      expect(response.statusCode).toBe(413);
     });
   });
 });

@@ -1,11 +1,9 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { Module } from '../../../common/decorators/modules/module.decorator.js';
 import { Global } from '../../../common/index.js';
 import { CircularDependencyException } from '../../errors/exceptions/circular-dependency.exception.js';
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception.js';
 import { NestContainer } from '../../injector/container.js';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.js';
 
 describe('NestContainer', () => {
   let container: NestContainer;
@@ -24,19 +22,19 @@ describe('NestContainer', () => {
   });
 
   it('should "addProvider" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addProvider({} as any, 'TestModule')).throw(
+    expect(() => container.addProvider({} as any, 'TestModule')).toThrow(
       UnknownModuleException,
     );
   });
 
   it('should "addProvider" throw "CircularDependencyException" when provider is nil', () => {
-    expect(() => container.addProvider(null!, 'TestModule')).throw(
+    expect(() => container.addProvider(null!, 'TestModule')).toThrow(
       CircularDependencyException,
     );
   });
 
   it('should "addController" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addController(null!, 'TestModule')).throw(
+    expect(() => container.addController(null!, 'TestModule')).toThrow(
       UnknownModuleException,
     );
   });
@@ -44,43 +42,43 @@ describe('NestContainer', () => {
   it('should "addExportedProviderOrModule" throw "UnknownModuleException" when module is not stored in collection', () => {
     expect(() =>
       container.addExportedProviderOrModule(null!, 'TestModule'),
-    ).throw(UnknownModuleException);
+    ).toThrow(UnknownModuleException);
   });
 
   it('should "addInjectable" throw "UnknownModuleException" when module is not stored in collection', () => {
-    expect(() => container.addInjectable(null!, 'TestModule', null!)).throw(
+    expect(() => container.addInjectable(null!, 'TestModule', null!)).toThrow(
       UnknownModuleException,
     );
   });
 
   describe('clear', () => {
     it('should call `clear` on modules collection', () => {
-      const clearSpy = sinon.spy(untypedContainer.modules, 'clear');
+      const clearSpy = vi.spyOn(untypedContainer.modules, 'clear');
       container.clear();
-      expect(clearSpy.called).to.be.true;
+      expect(clearSpy).toHaveBeenCalled();
     });
   });
 
   describe('addModule', () => {
     it('should not add module if already exists in collection', async () => {
       const modules = new Map();
-      const setSpy = sinon.spy(modules, 'set');
+      const setSpy = vi.spyOn(modules, 'set');
       untypedContainer.modules = modules;
 
       await container.addModule(TestModule as any, []);
       await container.addModule(TestModule as any, []);
 
-      expect(setSpy.calledOnce).to.be.true;
+      expect(setSpy).toHaveBeenCalledOnce();
     });
 
-    it('should throw an exception when metatype is not defined', () => {
-      expect(container.addModule(undefined!, [])).to.eventually.throws();
+    it('should throw an exception when metatype is not defined', async () => {
+      await expect(container.addModule(undefined!, [])).rejects.toThrow();
     });
 
     it('should add global module when module is global', async () => {
-      const addGlobalModuleSpy = sinon.spy(container, 'addGlobalModule');
+      const addGlobalModuleSpy = vi.spyOn(container, 'addGlobalModule');
       await container.addModule(GlobalTestModule as any, []);
-      expect(addGlobalModuleSpy.calledOnce).to.be.true;
+      expect(addGlobalModuleSpy).toHaveBeenCalledOnce();
     });
   });
 
@@ -90,7 +88,7 @@ describe('NestContainer', () => {
       class ReplaceTestModule {}
 
       const modules = new Map();
-      const setSpy = sinon.spy(modules, 'set');
+      const setSpy = vi.spyOn(modules, 'set');
       untypedContainer.modules = modules;
 
       await container.addModule(TestModule as any, []);
@@ -100,35 +98,36 @@ describe('NestContainer', () => {
         [],
       );
 
-      expect(setSpy.calledTwice).to.be.true;
+      expect(setSpy).toHaveBeenCalledTimes(2);
     });
 
-    it('should throw an exception when metatype is not defined', () => {
-      expect(container.addModule(undefined!, [])).to.eventually.throws();
+    it('should throw an exception when metatype is not defined', async () => {
+      await expect(container.addModule(undefined!, [])).rejects.toThrow();
     });
 
     it('should add global module when module is global', async () => {
-      const addGlobalModuleSpy = sinon.spy(container, 'addGlobalModule');
+      const addGlobalModuleSpy = vi.spyOn(container, 'addGlobalModule');
       await container.addModule(GlobalTestModule as any, []);
-      expect(addGlobalModuleSpy.calledOnce).to.be.true;
+      expect(addGlobalModuleSpy).toHaveBeenCalledOnce();
     });
   });
 
   describe('isGlobalModule', () => {
     describe('when module is not globally scoped', () => {
       it('should return false', () => {
-        expect(container.isGlobalModule(TestModule)).to.be.false;
+        expect(container.isGlobalModule(TestModule)).toBe(false);
       });
     });
     describe('when module is globally scoped', () => {
       it('should return true', () => {
-        expect(container.isGlobalModule(GlobalTestModule)).to.be.true;
+        expect(container.isGlobalModule(GlobalTestModule)).toBe(true);
       });
     });
     describe('when dynamic module is globally scoped', () => {
       it('should return true', () => {
-        expect(container.isGlobalModule(TestModule, { global: true })).to.be
-          .true;
+        expect(container.isGlobalModule(TestModule, { global: true })).toBe(
+          true,
+        );
       });
     });
   });
@@ -141,30 +140,30 @@ describe('NestContainer', () => {
       container.addGlobalModule(global1 as any);
       container.addGlobalModule(global2 as any);
 
-      const bindGlobalModuleToModuleSpy = sinon.spy(
+      const bindGlobalModuleToModuleSpy = vi.spyOn(
         container,
         'bindGlobalModuleToModule',
       );
       container.bindGlobalsToImports({
-        addImport: sinon.spy(),
+        addImport: vi.fn(),
       } as any);
-      expect(bindGlobalModuleToModuleSpy.calledTwice).to.be.true;
+      expect(bindGlobalModuleToModuleSpy).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('bindGlobalModuleToModule', () => {
     describe('when "module" is not "globalModule"', () => {
       it('should call "addImport"', () => {
-        const module = { addImport: sinon.spy() };
+        const module = { addImport: vi.fn() };
         container.bindGlobalModuleToModule(module as any, null!);
-        expect(module.addImport.calledOnce).to.be.true;
+        expect(module.addImport).toHaveBeenCalledOnce();
       });
     });
     describe('when "module" is "globalModule"', () => {
       it('should not call "addImport"', () => {
-        const module = { addImport: sinon.spy() };
+        const module = { addImport: vi.fn() };
         container.bindGlobalModuleToModule(module as any, module as any);
-        expect(module.addImport.calledOnce).to.be.false;
+        expect(module.addImport).not.toHaveBeenCalled();
       });
     });
   });
@@ -180,18 +179,18 @@ describe('NestContainer', () => {
     });
     describe('when dynamic metadata exists', () => {
       it('should add to the dynamic metadata collection', async () => {
-        const addSpy = sinon.spy(collection, 'set');
+        const addSpy = vi.spyOn(collection, 'set');
         const dynamicMetadata = { module: null! };
 
         await container.addDynamicMetadata(token, dynamicMetadata, []);
-        expect(addSpy.calledWith(token, dynamicMetadata)).to.be.true;
+        expect(addSpy).toHaveBeenCalledWith(token, dynamicMetadata);
       });
     });
     describe('when dynamic metadata does not exists', () => {
       it('should not add to the dynamic metadata collection', async () => {
-        const addSpy = sinon.spy(collection, 'set');
+        const addSpy = vi.spyOn(collection, 'set');
         await container.addDynamicMetadata(token, null!, []);
-        expect(addSpy.called).to.be.false;
+        expect(addSpy).not.toHaveBeenCalled();
       });
     });
   });
@@ -200,23 +199,23 @@ describe('NestContainer', () => {
   describe('addDynamicModules', () => {
     describe('when array is empty/undefined', () => {
       it('should not call "addModule"', async () => {
-        const addModuleSpy = sinon.spy(container, 'addModule');
+        const addModuleSpy = vi.spyOn(container, 'addModule');
         await container.addDynamicModules(undefined!, []);
-        expect(addModuleSpy.called).to.be.false;
+        expect(addModuleSpy).not.toHaveBeenCalled();
       });
     });
     describe('when array is not empty/undefined', () => {
       it('should call "addModule"', async () => {
-        const addModuleSpy = sinon.spy(container, 'addModule');
+        const addModuleSpy = vi.spyOn(container, 'addModule');
         await container.addDynamicModules([Test] as any, []);
-        expect(addModuleSpy.called).to.be.true;
+        expect(addModuleSpy).toHaveBeenCalled();
       });
     });
   });
 
   describe('get applicationConfig', () => {
     it('should return ApplicationConfig instance', () => {
-      expect(container.applicationConfig).to.be.eql(
+      expect(container.applicationConfig).toEqual(
         untypedContainer._applicationConfig,
       );
     });
@@ -228,7 +227,7 @@ describe('NestContainer', () => {
       container.setHttpAdapter(httpAdapter);
 
       const internalStorage = untypedContainer.internalProvidersStorage;
-      expect(internalStorage.httpAdapter).to.be.eql(httpAdapter);
+      expect(internalStorage.httpAdapter).toEqual(httpAdapter);
     });
   });
 
@@ -238,7 +237,7 @@ describe('NestContainer', () => {
       const value = {};
       container.getModules().set(key, value as any);
 
-      expect(container.getModuleByKey(key)).to.be.eql(value);
+      expect(container.getModuleByKey(key)).toEqual(value);
     });
   });
 
@@ -246,7 +245,7 @@ describe('NestContainer', () => {
     it('should register core module ref', () => {
       const ref = {} as any;
       container.registerCoreModuleRef(ref);
-      expect(untypedContainer.internalCoreModule).to.be.eql(ref);
+      expect(untypedContainer.internalCoreModule).toEqual(ref);
     });
   });
 });

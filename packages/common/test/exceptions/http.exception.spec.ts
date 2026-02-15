@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { Type } from '../../../common/index.js';
 import {
   BadGatewayException,
@@ -29,7 +28,7 @@ describe('HttpException', () => {
   describe('getResponse', () => {
     it('should return a response as a string when input is a string', () => {
       const message = 'My error message';
-      expect(new HttpException(message, 404).getResponse()).to.be.eql(
+      expect(new HttpException(message, 404).getResponse()).toEqual(
         'My error message',
       );
     });
@@ -40,12 +39,12 @@ describe('HttpException', () => {
         reason: 'this can be a human readable reason',
         anything: 'else',
       };
-      expect(new HttpException(message, 404).getResponse()).to.be.eql(message);
+      expect(new HttpException(message, 404).getResponse()).toEqual(message);
     });
 
     it('should return a message from a built-in exception as an object', () => {
       const message = 'My error message';
-      expect(new BadRequestException(message).getResponse()).to.be.eql({
+      expect(new BadRequestException(message).getResponse()).toEqual({
         statusCode: 400,
         error: 'Bad Request',
         message: 'My error message',
@@ -53,7 +52,7 @@ describe('HttpException', () => {
     });
 
     it('should return an object even when the message is undefined', () => {
-      expect(new BadRequestException().getResponse()).to.be.eql({
+      expect(new BadRequestException().getResponse()).toEqual({
         statusCode: 400,
         message: 'Bad Request',
       });
@@ -88,7 +87,7 @@ describe('HttpException', () => {
         ];
 
         testCases.forEach(([ExceptionClass, expectedStatus]) => {
-          expect(new ExceptionClass().getStatus()).to.be.eql(expectedStatus);
+          expect(new ExceptionClass().getStatus()).toEqual(expectedStatus);
         });
       });
     });
@@ -121,7 +120,7 @@ describe('HttpException', () => {
 
         testCases.forEach(
           ([ExceptionClass, expectedStatus, expectedMessage]) => {
-            expect(new ExceptionClass().getResponse()).to.be.eql({
+            expect(new ExceptionClass().getResponse()).toEqual({
               message: expectedMessage,
               statusCode: expectedStatus,
             });
@@ -134,7 +133,7 @@ describe('HttpException', () => {
           description: 'Some error description',
         });
 
-        expect(badRequestError.getResponse()).to.be.eql({
+        expect(badRequestError.getResponse()).toEqual({
           message: 'ErrorMessage',
           error: 'Some error description',
           statusCode: 400,
@@ -145,7 +144,7 @@ describe('HttpException', () => {
 
   it('should inherit from error', () => {
     const error = new HttpException('', 400);
-    expect(error instanceof Error).to.be.true;
+    expect(error instanceof Error).toBe(true);
   });
 
   describe('when serializing', () => {
@@ -153,8 +152,8 @@ describe('HttpException', () => {
       it('should concatenate HttpException with the given message', () => {
         const responseAsString = 'Some Error';
         const error = new HttpException(responseAsString, 400);
-        expect(`${error}`).to.be.eql(`HttpException: ${responseAsString}`);
-        expect(`${error}`.includes('[object Object]')).to.not.be.true;
+        expect(`${error}`).toEqual(`HttpException: ${responseAsString}`);
+        expect(`${error}`.includes('[object Object]')).not.toBe(true);
       });
     });
 
@@ -164,12 +163,12 @@ describe('HttpException', () => {
         const error = new HttpException(responseAsObject, 400);
         const badRequestError = new BadRequestException(responseAsObject);
 
-        expect(`${error}`).to.be.eql(`HttpException: Http Exception`);
-        expect(`${badRequestError}`).to.be.eql(
+        expect(`${error}`).toEqual(`HttpException: Http Exception`);
+        expect(`${badRequestError}`).toEqual(
           `BadRequestException: Bad Request Exception`,
         );
-        expect(`${error}`.includes('[object Object]')).to.not.be.true;
-        expect(`${badRequestError}`.includes('[object Object]')).to.not.be.true;
+        expect(`${error}`.includes('[object Object]')).not.toBe(true);
+        expect(`${badRequestError}`.includes('[object Object]')).not.toBe(true);
       });
     });
   });
@@ -180,7 +179,7 @@ describe('HttpException', () => {
         const object = {
           message: 'test',
         };
-        expect(HttpException.createBody(object)).to.be.eql(object);
+        expect(HttpException.createBody(object)).toEqual(object);
       });
     });
     describe('when string has been passed', () => {
@@ -188,7 +187,7 @@ describe('HttpException', () => {
         const error = 'test';
         const status = 500;
         const message = 'error';
-        expect(HttpException.createBody(message, error, status)).to.be.eql({
+        expect(HttpException.createBody(message, error, status)).toEqual({
           error,
           message,
           statusCode: status,
@@ -199,7 +198,7 @@ describe('HttpException', () => {
       it('should return expected object', () => {
         const status = 500;
         const error = 'error';
-        expect(HttpException.createBody(null, error, status)).to.be.eql({
+        expect(HttpException.createBody(null, error, status)).toEqual({
           message: error,
           statusCode: status,
         });
@@ -208,7 +207,7 @@ describe('HttpException', () => {
     it('should not override pre-defined body if message is array', () => {
       expect(
         HttpException.createBody(['a', 'random', 'array'], 'error', 200),
-      ).to.eql({
+      ).toEqual({
         message: ['a', 'random', 'array'],
         error: 'error',
         statusCode: 200,
@@ -225,10 +224,10 @@ describe('HttpException', () => {
         cause: errorCause,
       });
 
-      expect(`${error}`).to.be.eql(`HttpException: ${customDescription}`);
+      expect(`${error}`).toEqual(`HttpException: ${customDescription}`);
       const { cause } = error;
 
-      expect(cause).to.be.eql(errorCause);
+      expect(cause).toEqual(errorCause);
     });
 
     it('configures a cause when using a built-in exception with options', () => {
@@ -263,7 +262,107 @@ describe('HttpException', () => {
 
         const { cause } = error;
 
-        expect(cause).to.be.eql(errorCause);
+        expect(cause).toEqual(errorCause);
+      });
+    });
+
+    it('should not set cause when options has no cause', () => {
+      const error = new HttpException('test', 400, {});
+      expect(error.cause).toBeUndefined();
+    });
+
+    it('should not set cause when no options provided', () => {
+      const error = new HttpException('test', 400);
+      expect(error.cause).toBeUndefined();
+    });
+  });
+
+  describe('initMessage', () => {
+    it('should use response.message when response is an object with a message string', () => {
+      const error = new HttpException({ message: 'custom message' }, 400);
+      expect(error.message).toBe('custom message');
+    });
+
+    it('should fall back to constructor name when response is an object without message', () => {
+      const error = new HttpException({ foo: 'bar' }, 400);
+      expect(error.message).toBe('Http Exception');
+    });
+  });
+
+  describe('initName', () => {
+    it('should set the name to the constructor name', () => {
+      const error = new HttpException('msg', 400);
+      expect(error.name).toBe('HttpException');
+    });
+
+    it('should set name based on subclass', () => {
+      const error = new BadRequestException('msg');
+      expect(error.name).toBe('BadRequestException');
+    });
+  });
+
+  describe('static helpers', () => {
+    describe('getDescriptionFrom', () => {
+      it('should return the string when a string is passed', () => {
+        expect(HttpException.getDescriptionFrom('desc')).toBe('desc');
+      });
+
+      it('should return the description property when an options object is passed', () => {
+        expect(
+          HttpException.getDescriptionFrom({ description: 'from-options' }),
+        ).toBe('from-options');
+      });
+
+      it('should return undefined when options has no description', () => {
+        expect(HttpException.getDescriptionFrom({})).toBeUndefined();
+      });
+    });
+
+    describe('getHttpExceptionOptionsFrom', () => {
+      it('should return empty object when a string is passed', () => {
+        expect(HttpException.getHttpExceptionOptionsFrom('desc')).toEqual({});
+      });
+
+      it('should return the options object as-is', () => {
+        const options = { cause: new Error('cause'), description: 'desc' };
+        expect(HttpException.getHttpExceptionOptionsFrom(options)).toBe(
+          options,
+        );
+      });
+    });
+
+    describe('extractDescriptionAndOptionsFrom', () => {
+      it('should extract description string and return empty options', () => {
+        const result =
+          HttpException.extractDescriptionAndOptionsFrom('my description');
+        expect(result.description).toBe('my description');
+        expect(result.httpExceptionOptions).toEqual({});
+      });
+
+      it('should extract description from options object', () => {
+        const opts = { description: 'from obj', cause: new Error() };
+        const result = HttpException.extractDescriptionAndOptionsFrom(opts);
+        expect(result.description).toBe('from obj');
+        expect(result.httpExceptionOptions).toBe(opts);
+      });
+    });
+
+    describe('createBody with number message', () => {
+      it('should handle a number as the message', () => {
+        expect(HttpException.createBody(404, 'Not Found', 404)).toEqual({
+          message: 404,
+          error: 'Not Found',
+          statusCode: 404,
+        });
+      });
+    });
+
+    describe('createBody with empty string', () => {
+      it('should treat empty string as nil', () => {
+        expect(HttpException.createBody('', 'Error', 500)).toEqual({
+          message: 'Error',
+          statusCode: 500,
+        });
       });
     });
   });

@@ -1,6 +1,5 @@
 import { INestApplication, Injectable, Scope } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import request from 'supertest';
 import { NestedTransientModule } from '../src/nested-transient/nested-transient.module.js';
 import { Guard } from '../src/transient/guards/request-scoped.guard.js';
@@ -22,7 +21,7 @@ describe('Transient scope', () => {
     let server: any;
     let app: INestApplication;
 
-    before(async () => {
+    beforeAll(async () => {
       const module = await Test.createTestingModule({
         imports: [
           HelloModule.forRoot({
@@ -39,7 +38,7 @@ describe('Transient scope', () => {
     });
 
     describe('and when one service is request scoped', () => {
-      before(async () => {
+      beforeAll(async () => {
         const performHttpCall = end =>
           request(server)
             .get('/hello')
@@ -53,31 +52,31 @@ describe('Transient scope', () => {
       });
 
       it(`should create controller for each request`, () => {
-        expect(HelloController.COUNTER).to.be.eql(3);
+        expect(HelloController.COUNTER).toEqual(3);
       });
 
       it(`should create service for each request`, () => {
-        expect(UsersService.COUNTER).to.be.eql(3);
+        expect(UsersService.COUNTER).toEqual(3);
       });
 
       it(`should create provider for each inquirer`, () => {
-        expect(Meta.COUNTER).to.be.eql(7);
+        expect(Meta.COUNTER).toEqual(7);
       });
 
       it(`should create transient pipe for each controller (3 requests, 1 static)`, () => {
-        expect(UserByIdPipe.COUNTER).to.be.eql(4);
+        expect(UserByIdPipe.COUNTER).toEqual(4);
       });
 
       it(`should create transient interceptor for each controller (3 requests, 1 static)`, () => {
-        expect(Interceptor.COUNTER).to.be.eql(4);
+        expect(Interceptor.COUNTER).toEqual(4);
       });
 
       it(`should create transient guard for each controller (3 requests, 1 static)`, () => {
-        expect(Guard.COUNTER).to.be.eql(4);
+        expect(Guard.COUNTER).toEqual(4);
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
@@ -117,7 +116,7 @@ describe('Transient scope', () => {
       }
     }
 
-    before(async () => {
+    beforeAll(async () => {
       const module = await Test.createTestingModule({
         providers: [FirstService, SecondService, LoggerService, DeepTransient],
       }).compile();
@@ -129,14 +128,14 @@ describe('Transient scope', () => {
     it('should create a new instance of the transient provider for each provider', async () => {
       const firstService1 = app.get(FirstService);
 
-      expect(firstService1.secondService.loggerService.context).to.equal(
+      expect(firstService1.secondService.loggerService.context).toBe(
         'SecondService',
       );
-      expect(firstService1.loggerService.context).to.equal('FirstService');
-      expect(firstService1.deepTransient.initialized).to.be.true;
+      expect(firstService1.loggerService.context).toBe('FirstService');
+      expect(firstService1.deepTransient.initialized).toBe(true);
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
@@ -163,7 +162,7 @@ describe('Transient scope', () => {
       constructor(public readonly middle: MiddleTransient) {}
     }
 
-    before(async () => {
+    beforeAll(async () => {
       DeepNestedTransient.constructorCalled = false;
 
       const module = await Test.createTestingModule({
@@ -177,11 +176,11 @@ describe('Transient scope', () => {
     it('should call constructor of deeply nested TRANSIENT provider', () => {
       const rootService = app.get(RootService);
 
-      expect(DeepNestedTransient.constructorCalled).to.be.true;
-      expect(rootService.middle.nested).to.be.instanceOf(DeepNestedTransient);
+      expect(DeepNestedTransient.constructorCalled).toBe(true);
+      expect(rootService.middle.nested).toBeInstanceOf(DeepNestedTransient);
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
@@ -190,7 +189,7 @@ describe('Transient scope', () => {
     let server: any;
     let app: INestApplication;
 
-    before(async () => {
+    beforeAll(async () => {
       const module = await Test.createTestingModule({
         imports: [NestedTransientModule],
       }).compile();
@@ -203,7 +202,7 @@ describe('Transient scope', () => {
     describe('when handling HTTP requests', () => {
       let response: any;
 
-      before(async () => {
+      beforeAll(async () => {
         const performHttpCall = () =>
           new Promise<any>((resolve, reject) => {
             request(server)
@@ -218,19 +217,15 @@ describe('Transient scope', () => {
       });
 
       it('should isolate nested transient instances for each parent service', () => {
-        expect(response.body.firstServiceContext).to.equal(
-          'NESTED-FirstService',
-        );
-        expect(response.body.secondServiceContext).to.equal(
-          'NESTED-SecondService',
-        );
-        expect(response.body.firstServiceNestedId).to.not.equal(
+        expect(response.body.firstServiceContext).toBe('NESTED-FirstService');
+        expect(response.body.secondServiceContext).toBe('NESTED-SecondService');
+        expect(response.body.firstServiceNestedId).not.toBe(
           response.body.secondServiceNestedId,
         );
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });

@@ -1,6 +1,4 @@
 import { OnApplicationBootstrap } from '@nestjs/common';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { callModuleBootstrapHook } from '../../hooks/on-app-bootstrap.hook.js';
 import { NestContainer } from '../../injector/container.js';
 import { Module } from '../../injector/module.js';
@@ -38,10 +36,10 @@ describe('OnApplicationBootstrap', () => {
 
   describe('callModuleBootstrapHook', () => {
     it('should call "onApplicationBootstrap" hook for the entire module', async () => {
-      const hookSpy = sinon.spy(sampleProvider, 'onApplicationBootstrap');
+      const hookSpy = vi.spyOn(sampleProvider, 'onApplicationBootstrap');
       await callModuleBootstrapHook(moduleRef);
 
-      expect(hookSpy.called).to.be.true;
+      expect(hookSpy).toHaveBeenCalled();
     });
   });
 });

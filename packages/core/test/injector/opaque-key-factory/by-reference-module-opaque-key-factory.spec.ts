@@ -1,5 +1,3 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { ByReferenceModuleOpaqueKeyFactory } from '../../../injector/opaque-key-factory/by-reference-module-opaque-key-factory.js';
 
 describe('ByReferenceModuleOpaqueKeyFactory', () => {
@@ -9,7 +7,9 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
   describe('when generating algorithm is random', () => {
     beforeEach(() => {
       factory = new ByReferenceModuleOpaqueKeyFactory();
-      sinon.stub(factory as any, 'generateRandomString').returns(moduleId);
+      vi.spyOn(factory as any, 'generateRandomString').mockReturnValue(
+        moduleId,
+      );
     });
 
     describe('createForStatic', () => {
@@ -19,7 +19,7 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
         const type = Module;
         const token1 = factory.createForStatic(type);
         const token2 = factory.createForStatic(type);
-        expect(token1).to.be.deep.eq(token2);
+        expect(token1).toEqual(token2);
       });
     });
 
@@ -51,7 +51,7 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
           dynamicModule,
         );
 
-        expect(token1).to.be.deep.eq(token2);
+        expect(token1).toEqual(token2);
       });
     });
   });
@@ -60,7 +60,9 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
       factory = new ByReferenceModuleOpaqueKeyFactory({
         keyGenerationStrategy: 'shallow',
       });
-      sinon.stub(factory as any, 'generateRandomString').returns(moduleId);
+      vi.spyOn(factory as any, 'generateRandomString').mockReturnValue(
+        moduleId,
+      );
     });
 
     describe('createForStatic', () => {
@@ -71,7 +73,7 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
         const token1 = factory.createForStatic(type);
         const token2 = factory.createForStatic(type);
 
-        expect(token1).to.be.deep.eq(token2);
+        expect(token1).toEqual(token2);
       });
     });
 
@@ -104,7 +106,7 @@ describe('ByReferenceModuleOpaqueKeyFactory', () => {
           dynamicModule,
         );
 
-        expect(token1).to.be.deep.eq(token2);
+        expect(token1).toEqual(token2);
       });
     });
   });

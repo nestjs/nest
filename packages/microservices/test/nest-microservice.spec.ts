@@ -4,28 +4,26 @@ import { Transport } from '@nestjs/microservices/enums/index.js';
 import { AsyncMicroserviceOptions } from '@nestjs/microservices/interfaces/index.js';
 import { NestMicroservice } from '@nestjs/microservices/nest-microservice.js';
 import { Server, ServerTCP } from '@nestjs/microservices/server/index.js';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 
 const createMockGraphInspector = (): GraphInspector =>
   ({
-    insertOrphanedEnhancer: sinon.stub(),
+    insertOrphanedEnhancer: vi.fn(),
   }) as unknown as GraphInspector;
 
 const createMockAppConfig = (): ApplicationConfig =>
   ({
-    useGlobalFilters: sinon.stub(),
-    useGlobalPipes: sinon.stub(),
-    useGlobalGuards: sinon.stub(),
-    useGlobalInterceptors: sinon.stub(),
-    setIoAdapter: sinon.stub(),
+    useGlobalFilters: vi.fn(),
+    useGlobalPipes: vi.fn(),
+    useGlobalGuards: vi.fn(),
+    useGlobalInterceptors: vi.fn(),
+    setIoAdapter: vi.fn(),
   }) as unknown as ApplicationConfig;
 
 const mockContainer = {
-  getModuleCompiler: sinon.stub(),
+  getModuleCompiler: vi.fn(),
   getModules: () =>
     Object.assign(new Map(), {
-      addRpcTarget: sinon.spy(),
+      addRpcTarget: vi.fn(),
     }),
   get: () => null,
   getHttpAdapterHost: () => undefined,
@@ -41,7 +39,7 @@ describe('NestMicroservice', () => {
   });
 
   afterEach(() => {
-    sinon.restore();
+    vi.restoreAllMocks();
   });
 
   it('should use ServerFactory if no strategy is provided', () => {
@@ -52,15 +50,15 @@ describe('NestMicroservice', () => {
       mockAppConfig,
     );
 
-    expect((instance as any).serverInstance).to.be.instanceOf(ServerTCP);
+    expect((instance as any).serverInstance).toBeInstanceOf(ServerTCP);
   });
 
   it('should use provided strategy if present in config', () => {
     const strategy = new (class extends Server {
-      listen = sinon.spy();
-      close = sinon.spy();
-      on = sinon.stub();
-      unwrap = sinon.stub();
+      listen = vi.fn();
+      close = vi.fn();
+      on = vi.fn();
+      unwrap = vi.fn();
     })();
 
     const instance = new NestMicroservice(
@@ -70,15 +68,15 @@ describe('NestMicroservice', () => {
       mockAppConfig,
     );
 
-    expect((instance as any).serverInstance).to.equal(strategy);
+    expect((instance as any).serverInstance).toBe(strategy);
   });
 
   it('should use strategy resolved from useFactory config', () => {
     const strategy = new (class extends Server {
-      listen = sinon.spy();
-      close = sinon.spy();
-      on = sinon.stub();
-      unwrap = sinon.stub();
+      listen = vi.fn();
+      close = vi.fn();
+      on = vi.fn();
+      unwrap = vi.fn();
     })();
     const asyncConfig: AsyncMicroserviceOptions = {
       useFactory: () => ({ strategy }),
@@ -92,16 +90,16 @@ describe('NestMicroservice', () => {
       mockAppConfig,
     );
 
-    expect((instance as any).serverInstance).to.equal(strategy);
+    expect((instance as any).serverInstance).toBe(strategy);
   });
 
   it('should call listen() on server when listen() is called', async () => {
-    const listenSpy = sinon.spy((cb: () => void) => cb());
+    const listenSpy = vi.fn((cb: () => void) => cb());
     const strategy = new (class extends Server {
       listen = listenSpy;
-      close = sinon.spy();
-      on = sinon.stub();
-      unwrap = sinon.stub();
+      close = vi.fn();
+      on = vi.fn();
+      unwrap = vi.fn();
     })();
 
     const instance = new NestMicroservice(
@@ -112,15 +110,15 @@ describe('NestMicroservice', () => {
     );
 
     await instance.listen();
-    expect(listenSpy.calledOnce).to.be.true;
+    expect(listenSpy).toHaveBeenCalledOnce();
   });
 
   it('should delegate unwrap() to server', () => {
-    const unwrapStub = sinon.stub().returns('core');
+    const unwrapStub = vi.fn().mockReturnValue('core');
     const strategy = new (class extends Server {
-      listen = sinon.spy();
-      close = sinon.spy();
-      on = sinon.stub();
+      listen = vi.fn();
+      close = vi.fn();
+      on = vi.fn();
       unwrap = unwrapStub;
     })();
 
@@ -131,16 +129,16 @@ describe('NestMicroservice', () => {
       mockAppConfig,
     );
 
-    expect(instance.unwrap()).to.equal('core');
+    expect(instance.unwrap()).toBe('core');
   });
 
   it('should delegate on() to server', () => {
-    const onStub = sinon.stub();
+    const onStub = vi.fn();
     const strategy = new (class extends Server {
-      listen = sinon.spy();
-      close = sinon.spy();
+      listen = vi.fn();
+      close = vi.fn();
       on = onStub;
-      unwrap = sinon.stub();
+      unwrap = vi.fn();
     })();
 
     const instance = new NestMicroservice(
@@ -152,6 +150,6 @@ describe('NestMicroservice', () => {
 
     const cb = () => {};
     instance.on('test:event', cb);
-    expect(onStub.calledWith('test:event', cb)).to.be.true;
+    expect(onStub).toHaveBeenCalledWith('test:event', cb);
   });
 });

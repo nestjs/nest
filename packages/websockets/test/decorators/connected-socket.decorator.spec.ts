@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { PARAM_ARGS_METADATA } from '../../constants.js';
 import { ConnectedSocket } from '../../decorators/index.js';
 import { WsParamtype } from '../../enums/ws-paramtype.enum.js';
@@ -21,6 +20,6 @@ describe('@ConnectedSocket', () => {
         pipes: [],
       },
     };
-    expect(argsMetadata).to.be.eql(expectedMetadata);
+    expect(argsMetadata).toEqual(expectedMetadata);
   });
 });

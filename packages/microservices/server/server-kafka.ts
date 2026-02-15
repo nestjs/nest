@@ -1,5 +1,3 @@
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import { isNil } from '@nestjs/common/utils/shared.utils.js';
 import { isObservable, lastValueFrom, Observable, ReplaySubject } from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
@@ -34,6 +32,8 @@ import {
 } from '../interfaces/index.js';
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
 import { Server } from './server.js';
+import { Logger } from '@nestjs/common';
+import { isNil } from '@nestjs/common/internal';
 
 /**
  * @publicApi
@@ -99,9 +99,10 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async start(callback: () => void): Promise<void> {
-    const consumerOptions = Object.assign(this.options.consumer || {}, {
+    const consumerOptions = {
+      ...(this.options.consumer || {}),
       groupId: this.groupId,
-    });
+    };
     this.consumer = this.client!.consumer(consumerOptions);
     this.producer = this.client!.producer(this.options.producer);
     this.registerConsumerEventListeners();
@@ -152,13 +153,12 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       ServerKafka.name,
       () => import('kafkajs'),
     );
-    return new kafkaPackage.Kafka(
-      Object.assign(
-        { logCreator: KafkaLogger.bind(null, this.logger) },
-        this.options.client,
-        { clientId: this.clientId, brokers: this.brokers },
-      ) as KafkaConfig,
-    ) as T;
+    return new kafkaPackage.Kafka({
+      logCreator: KafkaLogger.bind(null, this.logger),
+      ...this.options.client,
+      clientId: this.clientId,
+      brokers: this.brokers,
+    } as KafkaConfig) as T;
   }
 
   public async bindEvents(consumer: Consumer) {
@@ -172,9 +172,10 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       });
     }
 
-    const consumerRunOptions = Object.assign(this.options.run || {}, {
+    const consumerRunOptions = {
+      ...(this.options.run || {}),
       eachMessage: this.getMessageHandler(),
-    });
+    };
     await consumer.run(consumerRunOptions);
   }
 
@@ -313,13 +314,11 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     this.assignErrorHeader(message, outgoingMessage);
     this.assignIsDisposedHeader(message, outgoingMessage);
 
-    const replyMessage = Object.assign(
-      {
-        topic: replyTopic,
-        messages: [outgoingMessage],
-      },
-      this.options.send || {},
-    );
+    const replyMessage = {
+      topic: replyTopic,
+      messages: [outgoingMessage],
+      ...(this.options.send || {}),
+    };
     return this.producer!.send(replyMessage).finally(() => {
       this.onProcessingEndHook?.(this.transportId, context);
     });

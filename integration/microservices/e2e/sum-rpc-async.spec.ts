@@ -15,7 +15,6 @@ import {
   TcpOptions,
   Transport,
 } from '@nestjs/microservices';
-import { expect } from 'chai';
 
 let port: number;
 
@@ -80,17 +79,18 @@ describe('RPC Async transport', () => {
     client = app.get('RPC_CLIENT', { strict: false });
   });
 
-  it(`/POST`, done => {
-    let retData = 0;
-    client.send({ cmd: 'sum' }, [1, 2, 3, 4, 5]).subscribe({
-      next: val => (retData += val),
-      error: done,
-      complete: () => {
-        expect(retData).to.eq(15);
-        done();
-      },
-    });
-  });
+  it(`/POST`, () =>
+    new Promise<void>(done => {
+      let retData = 0;
+      client.send({ cmd: 'sum' }, [1, 2, 3, 4, 5]).subscribe({
+        next: val => (retData += val),
+        error: done,
+        complete: () => {
+          expect(retData).toBe(15);
+          done();
+        },
+      });
+    }));
 
   afterEach(async () => {
     await app.close();

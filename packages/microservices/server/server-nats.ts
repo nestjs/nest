@@ -1,4 +1,3 @@
-import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import { EventEmitter } from 'events';
 import {
   NATS_DEFAULT_GRACE_PERIOD,
@@ -21,6 +20,7 @@ import { IncomingRequest } from '../interfaces/packet.interface.js';
 import { NatsRecord } from '../record-builders/index.js';
 import { NatsRecordSerializer } from '../serializers/nats-record.serializer.js';
 import { Server } from './server.js';
+import { isObject, isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for Nats. This cant be uncommented by default
 // because it would require the user to install the nats package even if they dont use Nats

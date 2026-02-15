@@ -4,7 +4,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { RawServerDefault } from 'fastify';
 import request from 'supertest';
 import { ErrorsController } from '../src/errors/errors.controller.js';
@@ -82,14 +81,12 @@ describe('Error messages', () => {
           url: '/sync',
         })
         .then(({ payload, statusCode }) => {
-          expect(statusCode).to.equal(HttpStatus.BAD_REQUEST);
-          expect(payload).to.equal(
-            JSON.stringify({
-              statusCode: 400,
-              error: 'Bad Request',
-              message: 'Integration test',
-            }),
-          );
+          expect(statusCode).toBe(HttpStatus.BAD_REQUEST);
+          expect(JSON.parse(payload)).toEqual({
+            statusCode: 400,
+            error: 'Bad Request',
+            message: 'Integration test',
+          });
         });
     });
 
@@ -97,17 +94,15 @@ describe('Error messages', () => {
       return app
         .inject({
           method: 'GET',
-          url: '/sync',
+          url: '/async',
         })
         .then(({ payload, statusCode }) => {
-          expect(statusCode).to.equal(HttpStatus.BAD_REQUEST);
-          expect(payload).to.equal(
-            JSON.stringify({
-              statusCode: 400,
-              error: 'Bad Request',
-              message: 'Integration test',
-            }),
-          );
+          expect(statusCode).toBe(HttpStatus.BAD_REQUEST);
+          expect(JSON.parse(payload)).toEqual({
+            statusCode: 400,
+            error: 'Bad Request',
+            message: 'Integration test',
+          });
         });
     });
 
@@ -118,13 +113,11 @@ describe('Error messages', () => {
           url: '/unexpected-error',
         })
         .then(({ payload, statusCode }) => {
-          expect(statusCode).to.equal(HttpStatus.INTERNAL_SERVER_ERROR);
-          expect(payload).to.equal(
-            JSON.stringify({
-              statusCode: 500,
-              message: 'Internal server error',
-            }),
-          );
+          expect(statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+          expect(JSON.parse(payload)).toEqual({
+            statusCode: 500,
+            message: 'Internal server error',
+          });
         });
     });
 

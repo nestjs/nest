@@ -1,14 +1,12 @@
 import { CallHandler } from '@nestjs/common';
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
-import { expect } from 'chai';
 import { of } from 'rxjs';
-import * as sinon from 'sinon';
 import { FilesInterceptor } from '../../../multer/interceptors/files.interceptor.js';
 
 describe('FilesInterceptor', () => {
   it('should return metatype with expected structure', async () => {
     const targetClass = FilesInterceptor('file');
-    expect(targetClass.prototype.intercept).to.not.be.undefined;
+    expect(targetClass.prototype.intercept).not.toBeUndefined();
   });
   describe('intercept', () => {
     let handler: CallHandler;
@@ -23,14 +21,14 @@ describe('FilesInterceptor', () => {
       const target = new (FilesInterceptor(fieldName, maxCount))();
 
       const callback = (req, res, next) => next();
-      const arraySpy = sinon
-        .stub((target as any).multer, 'array')
-        .returns(callback);
+      const arraySpy = vi
+        .spyOn((target as any).multer, 'array')
+        .mockReturnValue(callback);
 
       await target.intercept(new ExecutionContextHost([]), handler);
 
-      expect(arraySpy.called).to.be.true;
-      expect(arraySpy.calledWith(fieldName, maxCount)).to.be.true;
+      expect(arraySpy).toHaveBeenCalled();
+      expect(arraySpy).toHaveBeenCalledWith(fieldName, maxCount);
     });
     it('should transform exception', async () => {
       const fieldName = 'file';
@@ -41,7 +39,7 @@ describe('FilesInterceptor', () => {
         array: () => callback,
       };
       (target.intercept(new ExecutionContextHost([]), handler) as any).catch(
-        error => expect(error).to.not.be.undefined,
+        error => expect(error).not.toBeUndefined(),
       );
     });
   });

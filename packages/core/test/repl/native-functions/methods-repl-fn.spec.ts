@@ -1,6 +1,4 @@
 import { clc } from '@nestjs/common/utils/cli-colors.util.js';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { NestContainer } from '../../../injector/container.js';
 import { MethodsReplFn } from '../../../repl/native-functions/index.js';
 import { ReplContext } from '../../../repl/repl-context.js';
@@ -11,12 +9,12 @@ describe('MethodsReplFn', () => {
   let replContext: ReplContext;
   let mockApp: {
     container: NestContainer;
-    get: sinon.SinonStub;
-    resolve: sinon.SinonSpy;
-    select: sinon.SinonSpy;
+    get: ReturnType<typeof vi.fn>;
+    resolve: ReturnType<typeof vi.fn>;
+    select: ReturnType<typeof vi.fn>;
   };
 
-  before(async () => {
+  beforeAll(async () => {
     const container = new NestContainer();
     const { moduleRef: aModuleRef } = (await container.addModule(
       class ModuleA {},
@@ -36,9 +34,9 @@ describe('MethodsReplFn', () => {
 
     mockApp = {
       container,
-      get: sinon.stub(),
-      resolve: sinon.spy(),
-      select: sinon.spy(),
+      get: vi.fn(),
+      resolve: vi.fn(),
+      select: vi.fn(),
     };
     replContext = new ReplContext(mockApp as any);
   });
@@ -47,14 +45,14 @@ describe('MethodsReplFn', () => {
     methodsReplFn = replContext.nativeFunctions.get('methods') as MethodsReplFn;
 
     // To avoid coloring the output:
-    sinon.stub(clc, 'yellow').callsFake(text => text);
-    sinon.stub(clc, 'green').callsFake(text => text);
+    vi.spyOn(clc, 'yellow').mockImplementation(text => text);
+    vi.spyOn(clc, 'green').mockImplementation(text => text);
   });
-  afterEach(() => sinon.restore());
+  afterEach(() => vi.restoreAllMocks());
 
   it('the function name should be "methods"', () => {
-    expect(methodsReplFn).to.not.be.undefined;
-    expect(methodsReplFn.fnDefinition.name).to.eql('methods');
+    expect(methodsReplFn).not.toBeUndefined();
+    expect(methodsReplFn.fnDefinition.name).toEqual('methods');
   });
 
   describe('action', () => {
@@ -70,13 +68,13 @@ describe('MethodsReplFn', () => {
 
         let outputText = '';
 
-        sinon
-          .stub(replContext, 'writeToStdout')
-          .callsFake(text => (outputText += text));
+        vi.spyOn(replContext, 'writeToStdout').mockImplementation(
+          text => (outputText += text),
+        );
 
         methodsReplFn.action(TestService);
 
-        expect(outputText).to.equal(`
+        expect(outputText).toBe(`
 Methods:
  ◻ findAll
  ◻ findOne
@@ -94,15 +92,15 @@ Methods:
         }
         let outputText = '';
 
-        sinon
-          .stub(replContext, 'writeToStdout')
-          .callsFake(text => (outputText += text));
+        vi.spyOn(replContext, 'writeToStdout').mockImplementation(
+          text => (outputText += text),
+        );
 
-        mockApp.get.callsFake(() => new ProviderA1());
+        mockApp.get.mockImplementation(() => new ProviderA1());
 
         methodsReplFn.action('ProviderA1');
 
-        expect(outputText).to.equal(`
+        expect(outputText).toBe(`
 Methods:
  ◻ findAll
  ◻ findOne

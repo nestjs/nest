@@ -20,8 +20,6 @@ describe.skip('Kafka concurrent', function () {
   const logger = new Logger('concurrent-kafka.spec.ts');
 
   // set timeout to be longer (especially for the after hook)
-  this.timeout(30000);
-
   const startServer = async () => {
     const module = await Test.createTestingModule({
       controllers: [
@@ -162,7 +160,7 @@ describe.skip('Kafka concurrent', function () {
           });
         }),
     );
-  }).timeout(30000);
+  });
 
   it(`Concurrent messages without forcing a rebalance.`, async () => {
     // wait a second before notifying the servers to respond
@@ -280,7 +278,7 @@ describe.skip('Kafka concurrent', function () {
     );
   });
 
-  after(`Stopping Kafka app`, async () => {
+  afterAll(async () => {
     // close all concurrently
     return Promise.all(
       apps.map(async app => {

@@ -3,7 +3,6 @@ import {
   HttpException,
   PayloadTooLargeException,
 } from '@nestjs/common';
-import { expect } from 'chai';
 import {
   busboyExceptions,
   multerExceptions,
@@ -14,20 +13,20 @@ describe('transformException', () => {
   describe('if error does not exist', () => {
     it('should behave as identity', () => {
       const err = undefined;
-      expect(transformException(err)).to.be.eq(err);
+      expect(transformException(err)).toBe(err);
     });
   });
   describe('if error is instance of HttpException', () => {
     it('should behave as identity', () => {
       const err = new HttpException('response', 500);
-      expect(transformException(err)).to.be.eq(err);
+      expect(transformException(err)).toBe(err);
     });
   });
   describe('if error exists and is not instance of HttpException', () => {
     describe('and is LIMIT_FILE_SIZE exception', () => {
       it('should return "PayloadTooLargeException"', () => {
         const err = { message: multerExceptions.LIMIT_FILE_SIZE };
-        expect(transformException(err as any)).to.be.instanceof(
+        expect(transformException(err as any)).toBeInstanceOf(
           PayloadTooLargeException,
         );
       });
@@ -35,7 +34,7 @@ describe('transformException', () => {
     describe('and is multer exception but not a LIMIT_FILE_SIZE', () => {
       it('should return "BadRequestException"', () => {
         const err = { message: multerExceptions.LIMIT_FIELD_KEY };
-        expect(transformException(err as any)).to.be.instanceof(
+        expect(transformException(err as any)).toBeInstanceOf(
           BadRequestException,
         );
       });
@@ -43,7 +42,7 @@ describe('transformException', () => {
     describe('and is busboy/multipart exception', () => {
       it('should return "BadRequestException"', () => {
         const err = { message: busboyExceptions.MULTIPART_BOUNDARY_NOT_FOUND };
-        expect(transformException(err as any)).to.be.instanceof(
+        expect(transformException(err as any)).toBeInstanceOf(
           BadRequestException,
         );
       });
@@ -52,7 +51,7 @@ describe('transformException', () => {
         const err = {
           message: busboyExceptions.MULTIPART_UNEXPECTED_END_OF_FORM,
         };
-        expect(transformException(err as any)).to.be.instanceof(
+        expect(transformException(err as any)).toBeInstanceOf(
           BadRequestException,
         );
       });
@@ -63,7 +62,7 @@ describe('transformException', () => {
           message: multerExceptions.LIMIT_UNEXPECTED_FILE,
           field: 'foo',
         };
-        expect(transformException(err as any)!.message).to.equal(
+        expect(transformException(err as any)!.message).toBe(
           `${multerExceptions.LIMIT_UNEXPECTED_FILE} - foo`,
         );
       });

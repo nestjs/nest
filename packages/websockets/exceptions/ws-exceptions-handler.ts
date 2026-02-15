@@ -1,10 +1,12 @@
-import { ArgumentsHost } from '@nestjs/common';
-import { ExceptionFilterMetadata } from '@nestjs/common/interfaces/exceptions/exception-filter-metadata.interface.js';
-import { selectExceptionFilterMetadata } from '@nestjs/common/utils/select-exception-filter-metadata.util.js';
-import { isEmpty } from '@nestjs/common/utils/shared.utils.js';
-import { InvalidExceptionFilterException } from '@nestjs/core/errors/exceptions/invalid-exception-filter.exception.js';
+import type { ArgumentsHost } from '@nestjs/common';
 import { WsException } from '../errors/ws-exception.js';
 import { BaseWsExceptionFilter } from './base-ws-exception-filter.js';
+import {
+  type ExceptionFilterMetadata,
+  selectExceptionFilterMetadata,
+  isEmpty,
+} from '@nestjs/common/internal';
+import { InvalidExceptionFilterException } from '@nestjs/core/internal';
 
 /**
  * @publicApi

@@ -1,4 +1,4 @@
-import { Type } from '@nestjs/common';
+import type { Type } from '@nestjs/common';
 import { ConnectionOptions } from 'tls';
 import { ClientProxy } from '../client/index.js';
 import { Transport } from '../enums/transport.enum.js';

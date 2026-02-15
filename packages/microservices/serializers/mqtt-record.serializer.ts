@@ -1,6 +1,6 @@
-import { isObject } from '@nestjs/common/utils/shared.utils.js';
 import { ReadPacket, Serializer } from '../interfaces/index.js';
 import { MqttRecord } from '../record-builders/index.js';
+import { isObject } from '@nestjs/common/internal';
 
 export class MqttRecordSerializer implements Serializer<ReadPacket, string> {
   serialize(packet: ReadPacket): string {

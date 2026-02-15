@@ -1,18 +1,4 @@
-import { NestApplicationOptions } from '@nestjs/common';
-import { InjectionToken } from '@nestjs/common/interfaces/index.js';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface.js';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface.js';
-import { ApplicationConfig } from '@nestjs/core/application-config.js';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer.js';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator.js';
-import { loadAdapter } from '@nestjs/core/helpers/load-adapter.js';
-import { NestContainer } from '@nestjs/core/injector/container.js';
-import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper.js';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector.js';
-import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer.js';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator.js';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer.js';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator.js';
+import type { NestApplicationOptions } from '@nestjs/common';
 import { iterate } from 'iterare';
 import { AbstractWsAdapter } from './adapters/index.js';
 import { GATEWAY_METADATA } from './constants.js';
@@ -23,6 +9,26 @@ import { NestGateway } from './interfaces/nest-gateway.interface.js';
 import { SocketServerProvider } from './socket-server-provider.js';
 import { SocketsContainer } from './sockets-container.js';
 import { WebSocketsController } from './web-sockets-controller.js';
+import type { InjectionToken } from '@nestjs/common';
+import type {
+  Injectable,
+  NestApplicationContextOptions,
+} from '@nestjs/common/internal';
+import type {
+  ApplicationConfig,
+  NestContainer,
+  GraphInspector,
+} from '@nestjs/core';
+import {
+  GuardsConsumer,
+  GuardsContextCreator,
+  loadAdapter,
+  type InstanceWrapper,
+  InterceptorsConsumer,
+  InterceptorsContextCreator,
+  PipesConsumer,
+  PipesContextCreator,
+} from '@nestjs/core/internal';
 
 export class SocketModule<
   THttpServer = any,

@@ -1,5 +1,5 @@
-import { isNil } from '@nestjs/common/utils/shared.utils.js';
 import { KafkaParserConfig } from '../interfaces/index.js';
+import { isNil } from '@nestjs/common/internal';
 
 export class KafkaParser {
   protected readonly keepBinary: boolean;
@@ -23,10 +23,9 @@ export class KafkaParser {
       result.key = this.decode(data.key);
     }
     if (!isNil(data.headers)) {
-      const decodeHeaderByKey = (key: string) => {
+      for (const key of Object.keys(data.headers)) {
         result.headers[key] = this.decode(data.headers[key]);
-      };
-      Object.keys(data.headers).forEach(decodeHeaderByKey);
+      }
     } else {
       result.headers = {};
     }

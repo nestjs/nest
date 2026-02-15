@@ -1,17 +1,15 @@
 import { RequestMethod } from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
 import { MicroserviceOptions } from '@nestjs/microservices';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { ApplicationConfig } from '../application-config.js';
 import { NestContainer } from '../injector/container.js';
 import { GraphInspector } from '../inspector/graph-inspector.js';
 import { NestApplication } from '../nest-application.js';
 import { mapToExcludeRoute } from './../middleware/utils.js';
-import { NoopHttpAdapter } from './utils/noop-adapter.spec.js';
+import { NoopHttpAdapter } from './utils/noop-adapter.js';
 
 describe('NestApplication', () => {
-  before(async () => {
+  beforeAll(async () => {
     // Pre-populate the package cache so that connectMicroservice()
     // can synchronously retrieve @nestjs/microservices via loadPackageCached.
     await loadPackage(
@@ -19,7 +17,7 @@ describe('NestApplication', () => {
       'NestApplication tests',
       () => import('@nestjs/microservices'),
     );
-  });
+  }, 30_000);
 
   describe('Hybrid Application', () => {
     class Interceptor {
@@ -41,12 +39,10 @@ describe('NestApplication', () => {
       const microservice = instance.connectMicroservice<MicroserviceOptions>(
         {},
       );
-      expect((instance as any).config.getGlobalInterceptors().length).to.equal(
-        1,
-      );
+      expect((instance as any).config.getGlobalInterceptors().length).toBe(1);
       expect(
         (microservice as any).applicationConfig.getGlobalInterceptors().length,
-      ).to.equal(0);
+      ).toBe(0);
     });
     it('should inherit existing ApplicationConfig', async () => {
       const applicationConfig = new ApplicationConfig();
@@ -63,12 +59,10 @@ describe('NestApplication', () => {
         {},
         { inheritAppConfig: true },
       );
-      expect((instance as any).config.getGlobalInterceptors().length).to.equal(
-        1,
-      );
+      expect((instance as any).config.getGlobalInterceptors().length).toBe(1);
       expect(
         (microservice as any).applicationConfig.getGlobalInterceptors().length,
-      ).to.equal(1);
+      ).toBe(1);
     });
 
     it('should immediately initialize microservice by default', async () => {
@@ -87,8 +81,8 @@ describe('NestApplication', () => {
         {},
       );
 
-      expect((microservice as any).isInitialized).to.be.true;
-      expect((microservice as any).wasInitHookCalled).to.be.true;
+      expect((microservice as any).isInitialized).toBe(true);
+      expect((microservice as any).wasInitHookCalled).toBe(true);
     });
 
     it('should defer microservice initialization when deferInitialization is true', async () => {
@@ -107,8 +101,8 @@ describe('NestApplication', () => {
         { deferInitialization: true },
       );
 
-      expect((microservice as any).isInitialized).to.be.false;
-      expect((microservice as any).wasInitHookCalled).to.be.false;
+      expect((microservice as any).isInitialized).toBe(false);
+      expect((microservice as any).wasInitHookCalled).toBe(false);
     });
   });
   describe('Global Prefix', () => {
@@ -126,7 +120,7 @@ describe('NestApplication', () => {
       instance.setGlobalPrefix('api', {
         exclude: excludeRoute,
       });
-      expect(applicationConfig.getGlobalPrefixOptions()).to.eql({
+      expect(applicationConfig.getGlobalPrefixOptions()).toEqual({
         exclude: mapToExcludeRoute(excludeRoute),
       });
     });
@@ -134,7 +128,7 @@ describe('NestApplication', () => {
   describe('Double initialization', () => {
     it('should initialize application only once', async () => {
       const noopHttpAdapter = new NoopHttpAdapter({});
-      const httpAdapterSpy = sinon.spy(noopHttpAdapter);
+      (noopHttpAdapter as any).init = vi.fn();
 
       const applicationConfig = new ApplicationConfig();
 
@@ -152,7 +146,7 @@ describe('NestApplication', () => {
       await instance.init();
       await instance.init();
 
-      expect(httpAdapterSpy.init.calledOnce).to.be.true;
+      expect((noopHttpAdapter as any).init).toHaveBeenCalledOnce();
     });
   });
 });
