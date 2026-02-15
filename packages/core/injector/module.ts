@@ -1,30 +1,3 @@
-import {
-  EnhancerSubtype,
-  ENTRY_PROVIDER_WATERMARK,
-} from '@nestjs/common/constants.js';
-import {
-  ClassProvider,
-  Controller,
-  DynamicModule,
-  ExistingProvider,
-  FactoryProvider,
-  Injectable,
-  InjectionToken,
-  NestModule,
-  Provider,
-  Scope,
-  Type,
-  ValueProvider,
-} from '@nestjs/common/interfaces/index.js';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util.js';
-import {
-  isFunction,
-  isNil,
-  isObject,
-  isString,
-  isSymbol,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { ApplicationConfig } from '../application-config.js';
 import {
@@ -40,6 +13,31 @@ import { CONTROLLER_ID_KEY } from './constants.js';
 import { NestContainer } from './container.js';
 import { ContextId, InstanceWrapper } from './instance-wrapper.js';
 import { ModuleRef, ModuleRefGetOrResolveOpts } from './module-ref.js';
+import {
+  type EnhancerSubtype,
+  ENTRY_PROVIDER_WATERMARK,
+  type Controller,
+  type Injectable,
+  randomStringGenerator,
+  isFunction,
+  isNil,
+  isObject,
+  isString,
+  isSymbol,
+  isUndefined,
+} from '@nestjs/common/internal';
+import {
+  type ClassProvider,
+  type DynamicModule,
+  type ExistingProvider,
+  type FactoryProvider,
+  type InjectionToken,
+  type NestModule,
+  type Provider,
+  Scope,
+  type Type,
+  type ValueProvider,
+} from '@nestjs/common';
 
 export class Module {
   private readonly _id: string;

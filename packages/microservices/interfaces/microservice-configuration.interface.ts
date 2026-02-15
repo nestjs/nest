@@ -1,4 +1,4 @@
-import { InjectionToken, Type } from '@nestjs/common';
+import type { InjectionToken, Type } from '@nestjs/common';
 import { TlsOptions } from 'tls';
 import { Transport } from '../enums/transport.enum.js';
 import { ChannelOptions } from '../external/grpc-options.interface.js';

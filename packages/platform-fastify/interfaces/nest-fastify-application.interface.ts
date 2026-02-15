@@ -1,5 +1,5 @@
 import { FastifyCorsOptions } from '@fastify/cors';
-import { HttpServer, INestApplication } from '@nestjs/common';
+import type { HttpServer, INestApplication } from '@nestjs/common';
 import {
   FastifyBodyParser,
   FastifyInstance,

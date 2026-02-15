@@ -1,31 +1,16 @@
 import {
-  CanActivate,
-  ExceptionFilter,
-  HttpServer,
-  INestApplication,
-  INestMicroservice,
-  NestHybridApplicationOptions,
-  NestInterceptor,
-  PipeTransform,
-  VersioningOptions,
+  type CanActivate,
+  type ExceptionFilter,
+  type HttpServer,
+  type INestApplication,
+  type INestMicroservice,
+  type NestHybridApplicationOptions,
+  type NestInterceptor,
+  type PipeTransform,
+  type VersioningOptions,
   VersioningType,
-  WebSocketAdapter,
+  type WebSocketAdapter,
 } from '@nestjs/common';
-import {
-  GlobalPrefixOptions,
-  NestApplicationOptions,
-} from '@nestjs/common/interfaces/index.js';
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import {
-  loadPackage,
-  loadPackageCached,
-} from '@nestjs/common/utils/load-package.util.js';
-import {
-  addLeadingSlash,
-  isFunction,
-  isObject,
-  isString,
-} from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { platform } from 'os';
 import { AbstractHttpAdapter } from './adapters/index.js';
@@ -41,6 +26,16 @@ import { mapToExcludeRoute } from './middleware/utils.js';
 import { NestApplicationContext } from './nest-application-context.js';
 import { Resolver } from './router/interfaces/resolver.interface.js';
 import { RoutesResolver } from './router/routes-resolver.js';
+import { type NestApplicationOptions, Logger } from '@nestjs/common';
+import {
+  type GlobalPrefixOptions,
+  loadPackage,
+  loadPackageCached,
+  addLeadingSlash,
+  isFunction,
+  isObject,
+  isString,
+} from '@nestjs/common/internal';
 
 /**
  * @publicApi

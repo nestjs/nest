@@ -355,13 +355,15 @@ describe('ValidationPipe', () => {
         });
       });
       describe('when validation rejects', () => {
-        it('should throw an error', () => {
+        it('should throw an error', async () => {
           target = new ValidationPipe({
             forbidNonWhitelisted: true,
             whitelist: true,
           });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
-          expect(target.transform(testObj, metadata)).rejects.toBeDefined();
+          await expect(
+            target.transform(testObj, metadata),
+          ).rejects.toBeDefined();
         });
       });
       describe('when transformation is internal', () => {
@@ -450,14 +452,16 @@ describe('ValidationPipe', () => {
         });
       });
       describe('when validation rejects', () => {
-        it('should throw an error', () => {
+        it('should throw an error', async () => {
           target = new ValidationPipe({
             transform: false,
             forbidNonWhitelisted: true,
             whitelist: true,
           });
           const testObj = { prop1: 'value1', prop2: 'value2', prop3: 'value3' };
-          expect(target.transform(testObj, metadata)).rejects.toBeDefined();
+          await expect(
+            target.transform(testObj, metadata),
+          ).rejects.toBeDefined();
         });
       });
     });
@@ -469,10 +473,14 @@ describe('ValidationPipe', () => {
             { prop1: 'value1', prop2: 'value2', prop3: 'value3' },
           ];
 
-          expect(target.transform(testObj, metadata)).rejects.toBeDefined();
-          expect(target.transform('string', metadata)).rejects.toBeDefined();
-          expect(target.transform(true, metadata)).rejects.toBeDefined();
-          expect(target.transform(3, metadata)).rejects.toBeDefined();
+          await expect(
+            target.transform(testObj, metadata),
+          ).rejects.toBeDefined();
+          await expect(
+            target.transform('string', metadata),
+          ).rejects.toBeDefined();
+          await expect(target.transform(true, metadata)).rejects.toBeDefined();
+          await expect(target.transform(3, metadata)).rejects.toBeDefined();
         });
       });
       describe('otherwise', () => {

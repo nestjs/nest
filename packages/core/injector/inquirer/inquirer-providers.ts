@@ -1,4 +1,4 @@
-import { Provider, Scope } from '@nestjs/common';
+import { type Provider, Scope } from '@nestjs/common';
 import { INQUIRER } from './inquirer-constants.js';
 
 const noop = () => {};

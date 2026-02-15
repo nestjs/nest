@@ -1,9 +1,3 @@
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface.js';
-import { Type } from '@nestjs/common/interfaces/type.interface.js';
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import { ApplicationConfig } from '@nestjs/core/application-config.js';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector.js';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner.js';
 import {
   from as fromPromise,
   isObservable,
@@ -25,6 +19,13 @@ import { ServerAndEventStreamsHost } from './interfaces/server-and-event-streams
 import { WebsocketEntrypointMetadata } from './interfaces/websockets-entrypoint-metadata.interface.js';
 import { SocketServerProvider } from './socket-server-provider.js';
 import { compareElementAt } from './utils/compare-element.util.js';
+import type { NestApplicationContextOptions } from '@nestjs/common/internal';
+import { type Type, Logger } from '@nestjs/common';
+import {
+  type ApplicationConfig,
+  type GraphInspector,
+  MetadataScanner,
+} from '@nestjs/core';
 
 export class WebSocketsController {
   private readonly logger = new Logger(WebSocketsController.name, {

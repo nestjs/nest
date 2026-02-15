@@ -1,31 +1,9 @@
 import {
-  InjectionToken,
+  type InjectionToken,
   Logger,
-  LoggerService,
-  OptionalFactoryDependency,
+  type LoggerService,
+  type OptionalFactoryDependency,
 } from '@nestjs/common';
-import {
-  OPTIONAL_DEPS_METADATA,
-  OPTIONAL_PROPERTY_DEPS_METADATA,
-  PARAMTYPES_METADATA,
-  PROPERTY_DEPS_METADATA,
-  SELF_DECLARED_DEPS_METADATA,
-} from '@nestjs/common/constants.js';
-import {
-  Controller,
-  ForwardReference,
-  Injectable,
-  Type,
-} from '@nestjs/common/interfaces/index.js';
-import { clc } from '@nestjs/common/utils/cli-colors.util.js';
-import {
-  isFunction,
-  isNil,
-  isObject,
-  isString,
-  isSymbol,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { performance } from 'perf_hooks';
 import { CircularDependencyException } from '../errors/exceptions/index.js';
@@ -43,6 +21,23 @@ import {
 } from './instance-wrapper.js';
 import { Module } from './module.js';
 import { SettlementSignal } from './settlement-signal.js';
+import {
+  OPTIONAL_DEPS_METADATA,
+  OPTIONAL_PROPERTY_DEPS_METADATA,
+  PARAMTYPES_METADATA,
+  PROPERTY_DEPS_METADATA,
+  SELF_DECLARED_DEPS_METADATA,
+  type Controller,
+  type Injectable,
+  clc,
+  isFunction,
+  isNil,
+  isObject,
+  isString,
+  isSymbol,
+  isUndefined,
+} from '@nestjs/common/internal';
+import type { ForwardReference, Type } from '@nestjs/common';
 
 /**
  * The type of an injectable dependency

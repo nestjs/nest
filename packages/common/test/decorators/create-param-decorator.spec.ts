@@ -100,6 +100,142 @@ describe('createParamDecorator', () => {
         expect(metadata[key].data).toBe(Data);
       });
     });
+
+    describe('when options object with schema is passed', () => {
+      const mockSchema = {
+        '~standard': {
+          version: 1,
+          vendor: 'test',
+          validate: (v: unknown) => ({ value: v }),
+        },
+      };
+
+      describe('with data and schema option', () => {
+        const data = 'testData';
+        class Test {
+          public test(
+            @Decorator(data, { schema: mockSchema })
+            param,
+          ) {}
+        }
+        it('should enhance param with "data" and "schema"', () => {
+          const metadata = Reflect.getMetadata(
+            ROUTE_ARGS_METADATA,
+            Test,
+            'test',
+          );
+          const key = Object.keys(metadata)[0];
+          expect(metadata[key]).toEqual({
+            data: 'testData',
+            factory: factoryFn,
+            index: 0,
+            pipes: [],
+            schema: mockSchema,
+          });
+        });
+      });
+
+      describe('with schema option only (no data)', () => {
+        class Test {
+          public test(
+            @Decorator({ schema: mockSchema })
+            param,
+          ) {}
+        }
+        it('should enhance param with schema and no data', () => {
+          const metadata = Reflect.getMetadata(
+            ROUTE_ARGS_METADATA,
+            Test,
+            'test',
+          );
+          const key = Object.keys(metadata)[0];
+          expect(metadata[key]).toEqual({
+            data: undefined,
+            factory: factoryFn,
+            index: 0,
+            pipes: [],
+            schema: mockSchema,
+          });
+        });
+      });
+
+      describe('with data, pipes, and schema option', () => {
+        const data = 'testData';
+        const pipe = new ParseIntPipe();
+        class Test {
+          public test(
+            @Decorator(data, pipe, { schema: mockSchema })
+            param,
+          ) {}
+        }
+        it('should enhance param with "data", pipes, and schema', () => {
+          const metadata = Reflect.getMetadata(
+            ROUTE_ARGS_METADATA,
+            Test,
+            'test',
+          );
+          const key = Object.keys(metadata)[0];
+          expect(metadata[key]).toEqual({
+            data: 'testData',
+            factory: factoryFn,
+            index: 0,
+            pipes: [pipe],
+            schema: mockSchema,
+          });
+        });
+      });
+
+      describe('with pipes in options object', () => {
+        const data = 'testData';
+        const pipe = new ParseIntPipe();
+        class Test {
+          public test(
+            @Decorator(data, { schema: mockSchema, pipes: [pipe] })
+            param,
+          ) {}
+        }
+        it('should enhance param with "data", pipes from options, and schema', () => {
+          const metadata = Reflect.getMetadata(
+            ROUTE_ARGS_METADATA,
+            Test,
+            'test',
+          );
+          const key = Object.keys(metadata)[0];
+          expect(metadata[key]).toEqual({
+            data: 'testData',
+            factory: factoryFn,
+            index: 0,
+            pipes: [pipe],
+            schema: mockSchema,
+          });
+        });
+      });
+
+      describe('with options containing only pipes (no schema)', () => {
+        const data = 'testData';
+        const pipe = new ParseIntPipe();
+        class Test {
+          public test(
+            @Decorator(data, { pipes: [pipe] })
+            param,
+          ) {}
+        }
+        it('should enhance param with "data" and pipes from options', () => {
+          const metadata = Reflect.getMetadata(
+            ROUTE_ARGS_METADATA,
+            Test,
+            'test',
+          );
+          const key = Object.keys(metadata)[0];
+          expect(metadata[key]).toEqual({
+            data: 'testData',
+            factory: factoryFn,
+            index: 0,
+            pipes: [pipe],
+          });
+        });
+      });
+    });
   });
 
   describe('returned generic typed decorator', () => {

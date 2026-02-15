@@ -1,4 +1,3 @@
-import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils.js';
 import {
   MQTT_DEFAULT_URL,
   MQTT_SEPARATOR,
@@ -26,6 +25,7 @@ import {
 import { MqttRecord } from '../record-builders/mqtt.record-builder.js';
 import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer.js';
 import { Server } from './server.js';
+import { isObject, isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for MQTT. This cant be uncommented by default
 // because it would require the user to install the mqtt package even if they dont use MQTT

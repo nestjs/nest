@@ -1,6 +1,6 @@
-import { ContextType } from '@nestjs/common/interfaces/index.js';
 import { ExternalExceptionsHandler } from '../exceptions/external-exceptions-handler.js';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
+import type { ContextType } from '@nestjs/common';
 
 export class ExternalErrorProxy {
   public createProxy<TContext extends string = ContextType>(

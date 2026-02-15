@@ -1,18 +1,3 @@
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface.js';
-import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
-import { ContextIdFactory } from '@nestjs/core/helpers/context-id-factory.js';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
-import { STATIC_CONTEXT } from '@nestjs/core/injector/constants.js';
-import { NestContainer } from '@nestjs/core/injector/container.js';
-import { Injector } from '@nestjs/core/injector/injector.js';
-import {
-  ContextId,
-  InstanceWrapper,
-} from '@nestjs/core/injector/instance-wrapper.js';
-import { Module } from '@nestjs/core/injector/module.js';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector.js';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner.js';
-import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants.js';
 import {
   forkJoin,
   from as fromPromise,
@@ -45,6 +30,22 @@ import {
 } from './listener-metadata-explorer.js';
 import { ServerGrpc } from './server/index.js';
 import { Server } from './server/server.js';
+import { type Controller, isUndefined } from '@nestjs/common/internal';
+import {
+  ContextIdFactory,
+  type NestContainer,
+  type ContextId,
+  type GraphInspector,
+  MetadataScanner,
+} from '@nestjs/core';
+import {
+  ExecutionContextHost,
+  STATIC_CONTEXT,
+  type Injector,
+  type InstanceWrapper,
+  type Module,
+  REQUEST_CONTEXT_ID,
+} from '@nestjs/core/internal';
 
 export class ListenersController {
   private readonly metadataExplorer = new ListenerMetadataExplorer(

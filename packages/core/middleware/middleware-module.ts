@@ -1,12 +1,4 @@
-import { HttpServer, InjectionToken, Logger } from '@nestjs/common';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum.js';
-import {
-  MiddlewareConfiguration,
-  NestMiddleware,
-  RouteInfo,
-} from '@nestjs/common/interfaces/middleware/index.js';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface.js';
-import { isUndefined } from '@nestjs/common/utils/shared.utils.js';
+import { type HttpServer, type InjectionToken, Logger } from '@nestjs/common';
 import { ApplicationConfig } from '../application-config.js';
 import { InvalidMiddlewareException } from '../errors/exceptions/invalid-middleware.exception.js';
 import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
@@ -31,6 +23,13 @@ import { MiddlewareContainer } from './container.js';
 import { MiddlewareResolver } from './resolver.js';
 import { RouteInfoPathExtractor } from './route-info-path-extractor.js';
 import { RoutesMapper } from './routes-mapper.js';
+import { RequestMethod, type NestMiddleware } from '@nestjs/common';
+import {
+  type MiddlewareConfiguration,
+  type RouteInfo,
+  type NestApplicationContextOptions,
+  isUndefined,
+} from '@nestjs/common/internal';
 
 export class MiddlewareModule<
   TAppOptions extends NestApplicationContextOptions =

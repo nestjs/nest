@@ -1,8 +1,8 @@
-import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
 import { createRequire } from 'module';
 import { NatsCodec } from '../external/nats-codec.interface.js';
 import { IncomingEvent, IncomingRequest } from '../interfaces/index.js';
 import { IncomingRequestDeserializer } from './incoming-request.deserializer.js';
+import { loadPackageSync } from '@nestjs/common/internal';
 
 let natsPackage = {} as any;
 

@@ -1,6 +1,3 @@
-import { Logger } from '@nestjs/common/services/logger.service.js';
-import { loadPackageSync } from '@nestjs/common/utils/load-package.util.js';
-import { isObject } from '@nestjs/common/utils/shared.utils.js';
 import { createRequire } from 'module';
 import { EmptyError, fromEvent, lastValueFrom, merge, Observable } from 'rxjs';
 import { first, map, share, tap } from 'rxjs/operators';
@@ -17,6 +14,8 @@ import {
 } from '../record-builders/mqtt.record-builder.js';
 import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer.js';
 import { ClientProxy } from './client-proxy.js';
+import { Logger } from '@nestjs/common';
+import { loadPackageSync, isObject } from '@nestjs/common/internal';
 
 let mqttPackage: any = {};
 

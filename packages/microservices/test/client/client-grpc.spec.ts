@@ -64,7 +64,7 @@ describe('ClientGrpcProxy', () => {
         untypedClient.grpcClients[0] = {
           test: GrpcService,
         };
-        await client.getService('test'); // should not throw
+        client.getService('test'); // should not throw
       });
 
       describe('when "grpcClient[name]" is not nil (multiple proto)', () => {
@@ -73,8 +73,8 @@ describe('ClientGrpcProxy', () => {
             test: GrpcService,
             test2: GrpcService,
           };
-          await clientMulti.getService('test'); // should not throw
-          await clientMulti.getService('test2'); // should not throw
+          clientMulti.getService('test'); // should not throw
+          clientMulti.getService('test2'); // should not throw
         });
       });
     });

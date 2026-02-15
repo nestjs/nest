@@ -1,9 +1,10 @@
-import { HttpServer, RequestMethod, VersioningOptions } from '@nestjs/common';
-import {
-  RequestHandler,
-  VersionValue,
-} from '@nestjs/common/interfaces/index.js';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface.js';
+import type {
+  HttpServer,
+  RequestMethod,
+  VersioningOptions,
+} from '@nestjs/common';
+import type { RequestHandler, VersionValue } from '@nestjs/common/internal';
+import type { NestApplicationOptions } from '@nestjs/common';
 
 /**
  * @publicApi

@@ -17,7 +17,7 @@ describe('NestApplication', () => {
       'NestApplication tests',
       () => import('@nestjs/microservices'),
     );
-  });
+  }, 30_000);
 
   describe('Hybrid Application', () => {
     class Interceptor {

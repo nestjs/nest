@@ -1,12 +1,14 @@
-import { FILTER_CATCH_EXCEPTIONS } from '@nestjs/common/constants.js';
-import { Type } from '@nestjs/common/interfaces/index.js';
-import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface.js';
-import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils.js';
 import { iterate } from 'iterare';
 import { ContextCreator } from '../helpers/context-creator.js';
 import { STATIC_CONTEXT } from '../injector/constants.js';
 import { NestContainer } from '../injector/container.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import {
+  FILTER_CATCH_EXCEPTIONS,
+  isEmpty,
+  isFunction,
+} from '@nestjs/common/internal';
+import type { Type, ExceptionFilter } from '@nestjs/common';
 
 export class BaseExceptionFilterContext extends ContextCreator {
   protected moduleContext: string;

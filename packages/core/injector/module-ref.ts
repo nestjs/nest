@@ -1,4 +1,4 @@
-import { IntrospectionResult, Scope, Type } from '@nestjs/common';
+import { type IntrospectionResult, Scope, type Type } from '@nestjs/common';
 import { getClassScope } from '../helpers/get-class-scope.js';
 import { isDurable } from '../helpers/is-durable.js';
 import { AbstractInstanceResolver } from './abstract-instance-resolver.js';
