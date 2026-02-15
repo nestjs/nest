@@ -1,4 +1,4 @@
-import { VersioningType } from '../enums/version-type.enum';
+import { VersioningType } from '../enums/version-type.enum.js';
 
 /**
  * Indicates that this will work for any version passed in the request, or no version.

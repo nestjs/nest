@@ -1,3 +1,3 @@
-export * from './console-logger.service';
-export * from './logger.service';
-export * from './utils/filter-log-levels.util';
+export * from './console-logger.service.js';
+export * from './logger.service.js';
+export * from './utils/filter-log-levels.util.js';

@@ -1,11 +1,8 @@
 import { Injectable, Module, OnModuleDestroy } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as Sinon from 'sinon';
-
 @Injectable()
 class TestInjectable implements OnModuleDestroy {
-  onModuleDestroy = Sinon.spy();
+  onModuleDestroy = vi.fn();
 }
 
 describe('OnModuleDestroy', () => {
@@ -17,7 +14,7 @@ describe('OnModuleDestroy', () => {
     const app = module.createNestApplication();
     await app.close();
     const instance = module.get(TestInjectable);
-    expect(instance.onModuleDestroy.called).to.be.true;
+    expect(instance.onModuleDestroy).toHaveBeenCalled();
   });
 
   it('should not throw an error when onModuleDestroy is null', async () => {
@@ -26,7 +23,8 @@ describe('OnModuleDestroy', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then(obj => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should not throw an error when onModuleDestroy is undefined', async () => {
@@ -37,13 +35,14 @@ describe('OnModuleDestroy', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then(obj => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should sort modules by distance (topological sort) - DESC order', async () => {
     @Injectable()
     class BB implements OnModuleDestroy {
-      onModuleDestroy = Sinon.spy();
+      onModuleDestroy = vi.fn();
     }
 
     @Module({
@@ -55,7 +54,7 @@ describe('OnModuleDestroy', () => {
     @Injectable()
     class AA implements OnModuleDestroy {
       constructor(private bb: BB) {}
-      onModuleDestroy = Sinon.spy();
+      onModuleDestroy = vi.fn();
     }
 
     @Module({
@@ -74,6 +73,8 @@ describe('OnModuleDestroy', () => {
 
     const aa = module.get(AA);
     const bb = module.get(BB);
-    Sinon.assert.callOrder(aa.onModuleDestroy, bb.onModuleDestroy);
+    expect(aa.onModuleDestroy.mock.invocationCallOrder[0]).toBeLessThan(
+      bb.onModuleDestroy.mock.invocationCallOrder[0],
+    );
   });
 });

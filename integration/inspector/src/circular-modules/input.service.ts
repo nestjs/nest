@@ -1,5 +1,5 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
-import { CircularService } from './circular.service';
+import { CircularService } from './circular.service.js';
 
 @Injectable()
 export class InputService {

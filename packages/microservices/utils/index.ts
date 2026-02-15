@@ -1,1 +1,1 @@
-export * from './transform-pattern.utils';
+export * from './transform-pattern.utils.js';

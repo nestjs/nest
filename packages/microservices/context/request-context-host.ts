@@ -1,5 +1,5 @@
-import { BaseRpcContext } from '../ctx-host/base-rpc.context';
-import { RequestContext } from '../interfaces';
+import { BaseRpcContext } from '../ctx-host/base-rpc.context.js';
+import { RequestContext } from '../interfaces/index.js';
 
 /**
  * @publicApi

@@ -1,5 +1,5 @@
 import { Exclude, Expose, Transform } from 'class-transformer';
-import { RoleEntity } from './role.entity';
+import { RoleEntity } from './role.entity.js';
 
 export class UserEntity {
   id: number;

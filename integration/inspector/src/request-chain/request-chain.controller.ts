@@ -1,6 +1,6 @@
 import { Controller, Get, UseInterceptors } from '@nestjs/common';
-import { LoggingInterceptor } from './interceptors/logging.interceptor';
-import { RequestChainService } from './request-chain.service';
+import { LoggingInterceptor } from './interceptors/logging.interceptor.js';
+import { RequestChainService } from './request-chain.service.js';
 
 @Controller('hello')
 export class RequestChainController {

@@ -1,1 +1,1 @@
-export * from './forward-ref.util';
+export * from './forward-ref.util.js';

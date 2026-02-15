@@ -1,5 +1,5 @@
-import { VERSION_METADATA } from '../../constants';
-import { VersionValue } from '../../interfaces/version-options.interface';
+import { VERSION_METADATA } from '../../constants.js';
+import { VersionValue } from '../../interfaces/version-options.interface.js';
 
 /**
  * Sets the version of the endpoint to the passed version

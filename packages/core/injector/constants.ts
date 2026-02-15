@@ -1,4 +1,4 @@
-import { ContextId } from './instance-wrapper';
+import { ContextId } from './instance-wrapper.js';
 
 export const CONTROLLER_ID_KEY = 'CONTROLLER_ID';
 

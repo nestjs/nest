@@ -1,7 +1,7 @@
 import { Controller, Get, StreamableFile } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { AppService } from './app.service';
-import { NonFile } from './non-file';
+import { AppService } from './app.service.js';
+import { NonFile } from './non-file.js';
 
 @Controller()
 export class AppController {

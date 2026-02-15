@@ -1,10 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as request from 'supertest';
-import { NatsController } from '../src/nats/nats.controller';
-import { NatsService } from '../src/nats/nats.service';
+import request from 'supertest';
+import { NatsController } from '../src/nats/nats.controller.js';
+import { NatsService } from '../src/nats/nats.service.js';
 
 describe('NATS transport', () => {
   let server;
@@ -83,18 +82,19 @@ describe('NATS transport', () => {
     });
   });
 
-  it(`/POST (event notification)`, done => {
-    void request(server)
-      .post('/notify')
-      .send([1, 2, 3, 4, 5])
-      .end(() => {
-        setTimeout(() => {
-          expect(NatsController.IS_NOTIFIED).to.be.true;
-          expect(NatsController.IS_NOTIFIED2).to.be.true;
-          done();
-        }, 1000);
-      });
-  });
+  it(`/POST (event notification)`, () =>
+    new Promise<void>(done => {
+      void request(server)
+        .post('/notify')
+        .send([1, 2, 3, 4, 5])
+        .end(() => {
+          setTimeout(() => {
+            expect(NatsController.IS_NOTIFIED).toBe(true);
+            expect(NatsController.IS_NOTIFIED2).toBe(true);
+            done();
+          }, 1000);
+        });
+    }));
 
   it(`/POST (sending headers with "RecordBuilder")`, () => {
     const payload = { items: [1, 2, 3] };

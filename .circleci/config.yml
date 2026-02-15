@@ -1,12 +1,6 @@
 version: 2.1
 
 parameters:
-  check-legacy-node-version:
-    type: boolean
-    default: false
-  legacy-node-version:
-    type: string
-    default: '18.20'
   maintenance-node-version:
     type: string
     default: '20.18'
@@ -15,7 +9,7 @@ parameters:
     default: '22.11'
   current-node-version:
     type: string
-    default: '23.3'
+    default: '24.1'
 
 aliases:
   - &restore-cache
@@ -62,61 +56,36 @@ jobs:
     docker:
       - image: cimg/node:<< parameters.node-version >>
     steps:
+      - checkout
+      - *restore-cache
+      - *install-deps
+      - *build-packages
       - when:
           condition:
-            and:
-              - equal:
-                  [
-                    '<< parameters.node-version >>',
-                    '<< pipeline.parameters.legacy-node-version >>',
-                  ]
-              - not: << pipeline.parameters.check-legacy-node-version >>
+            equal:
+              [
+                '<< parameters.node-version >>',
+                '<< pipeline.parameters.maintenance-node-version >>',
+              ]
           steps:
             - run:
-                name: Skip
-                command: |
-                  echo Skipping
+                name: Test (coverage)
+                command: npm run test:cov
+            - run:
+                name: Collect coverage
+                command: npm run coverage
+            - store_artifacts:
+                path: coverage
       - when:
           condition:
-            or:
-              - not:
-                  equal:
-                    [
-                      '<< parameters.node-version >>',
-                      '<< pipeline.parameters.legacy-node-version >>',
-                    ]
-              - << pipeline.parameters.check-legacy-node-version >>
+            not:
+              equal:
+                [
+                  '<< parameters.node-version >>',
+                  '<< pipeline.parameters.maintenance-node-version >>',
+                ]
           steps:
-            - checkout
-            - *restore-cache
-            - *install-deps
-            - *build-packages
-            - when:
-                condition:
-                  equal:
-                    [
-                      '<< parameters.node-version >>',
-                      '<< pipeline.parameters.maintenance-node-version >>',
-                    ]
-                steps:
-                  - run:
-                      name: Test (coverage)
-                      command: npm run test:cov
-                  - run:
-                      name: Collect coverage
-                      command: npm run coverage
-                  - store_artifacts:
-                      path: coverage
-            - when:
-                condition:
-                  not:
-                    equal:
-                      [
-                        '<< parameters.node-version >>',
-                        '<< pipeline.parameters.maintenance-node-version >>',
-                      ]
-                steps:
-                  - *run-unit-tests
+            - *run-unit-tests
 
   lint:
     working_directory: ~/nest
@@ -183,7 +152,6 @@ jobs:
           name: Build all samples
           command: npm run build:samples
 
-
 workflows:
   build-and-test:
     jobs:
@@ -195,7 +163,6 @@ workflows:
             parameters:
               node-version:
                 [
-                  '<< pipeline.parameters.legacy-node-version >>',
                   '<< pipeline.parameters.maintenance-node-version >>',
                   '<< pipeline.parameters.active-node-version >>',
                   '<< pipeline.parameters.current-node-version >>',
@@ -209,4 +176,3 @@ workflows:
       - samples:
           requires:
             - build
-

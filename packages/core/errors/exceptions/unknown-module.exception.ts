@@ -1,4 +1,4 @@
-import { RuntimeException } from './runtime.exception';
+import { RuntimeException } from './runtime.exception.js';
 
 export class UnknownModuleException extends RuntimeException {
   constructor(moduleName?: string) {

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import { UsersController } from './users.controller.js';
+import { UsersService } from './users.service.js';
 
 const createUserDto: CreateUserDto = {
   firstName: 'firstName #1',
@@ -20,12 +20,12 @@ describe('UsersController', () => {
         {
           provide: UsersService,
           useValue: {
-            create: jest
+            create: vi
               .fn()
               .mockImplementation((user: CreateUserDto) =>
                 Promise.resolve({ id: '1', ...user }),
               ),
-            findAll: jest.fn().mockResolvedValue([
+            findAll: vi.fn().mockResolvedValue([
               {
                 firstName: 'firstName #1',
                 lastName: 'lastName #1',
@@ -35,14 +35,14 @@ describe('UsersController', () => {
                 lastName: 'lastName #2',
               },
             ]),
-            findOne: jest.fn().mockImplementation((id: string) =>
+            findOne: vi.fn().mockImplementation((id: string) =>
               Promise.resolve({
                 firstName: 'firstName #1',
                 lastName: 'lastName #1',
                 id,
               }),
             ),
-            remove: jest.fn(),
+            remove: vi.fn(),
           },
         },
       ],

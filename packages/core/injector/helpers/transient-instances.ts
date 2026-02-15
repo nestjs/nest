@@ -1,6 +1,6 @@
-import { InjectionToken } from '@nestjs/common';
+import type { InjectionToken } from '@nestjs/common';
 import { iterate } from 'iterare';
-import { InstanceWrapper } from '../instance-wrapper';
+import { InstanceWrapper } from '../instance-wrapper.js';
 
 /**
  * Returns the instances which are transient

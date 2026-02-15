@@ -1,9 +1,9 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { CatsController } from '../cats/cats.controller';
-import { LoggerMiddleware } from '../common/middleware/logger.middleware';
-import { LoggingInterceptor } from './interceptors/logging.interceptor';
-import { TransformInterceptor } from './interceptors/transform.interceptor';
+import { CatsController } from '../cats/cats.controller.js';
+import { LoggerMiddleware } from '../common/middleware/logger.middleware.js';
+import { LoggingInterceptor } from './interceptors/logging.interceptor.js';
+import { TransformInterceptor } from './interceptors/transform.interceptor.js';
 
 @Module({
   providers: [

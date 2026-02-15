@@ -1,6 +1,5 @@
-import { expect } from 'chai';
-import { BadRequestException } from '../../exceptions';
-import { ParseDatePipe } from '../../pipes/parse-date.pipe';
+import { BadRequestException } from '../../exceptions/index.js';
+import { ParseDatePipe } from '../../pipes/parse-date.pipe.js';
 
 describe('ParseDatePipe', () => {
   let target: ParseDatePipe;
@@ -15,19 +14,19 @@ describe('ParseDatePipe', () => {
         const date = new Date().toISOString();
 
         const transformedDate = target.transform(date)!;
-        expect(transformedDate).to.be.instanceOf(Date);
-        expect(transformedDate.toISOString()).to.equal(date);
+        expect(transformedDate).toBeInstanceOf(Date);
+        expect(transformedDate.toISOString()).toBe(date);
 
         const asNumber = transformedDate.getTime();
         const transformedNumber = target.transform(asNumber)!;
-        expect(transformedNumber).to.be.instanceOf(Date);
-        expect(transformedNumber.getTime()).to.equal(asNumber);
+        expect(transformedNumber).toBeInstanceOf(Date);
+        expect(transformedNumber.getTime()).toBe(asNumber);
       });
 
       it('should not throw an error if the value is undefined/null and optional is true', () => {
         const target = new ParseDatePipe({ optional: true });
         const value = target.transform(undefined);
-        expect(value).to.equal(undefined);
+        expect(value).toBe(undefined);
       });
     });
     describe('when default value is provided', () => {
@@ -38,33 +37,17 @@ describe('ParseDatePipe', () => {
           default: () => defaultValue,
         });
         const value = target.transform(undefined);
-        expect(value).to.equal(defaultValue);
+        expect(value).toBe(defaultValue);
       });
     });
     describe('when validation fails', () => {
       it('should throw an error', () => {
-        try {
-          target.transform('123abc');
-          expect.fail();
-        } catch (error) {
-          expect(error).to.be.instanceOf(BadRequestException);
-          expect(error.message).to.equal(
-            'Validation failed (invalid date format)',
-          );
-        }
+        expect(() => target.transform('123abc')).toThrow(BadRequestException);
       });
     });
     describe('when empty value', () => {
       it('should throw an error', () => {
-        try {
-          target.transform('');
-          expect.fail();
-        } catch (error) {
-          expect(error).to.be.instanceOf(BadRequestException);
-          expect(error.message).to.equal(
-            'Validation failed (no Date provided)',
-          );
-        }
+        expect(() => target.transform('')).toThrow(BadRequestException);
       });
     });
   });

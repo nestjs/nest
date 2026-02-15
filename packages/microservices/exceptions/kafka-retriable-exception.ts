@@ -1,4 +1,4 @@
-import { RpcException } from './rpc-exception';
+import { RpcException } from './rpc-exception.js';
 
 /**
  * Exception that instructs Kafka driver to instead of introspecting

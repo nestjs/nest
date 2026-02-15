@@ -1,11 +1,9 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { MetadataScanner } from '../../core/metadata-scanner';
-import { WebSocketServer } from '../decorators/gateway-server.decorator';
-import { WebSocketGateway } from '../decorators/socket-gateway.decorator';
-import { SubscribeMessage } from '../decorators/subscribe-message.decorator';
-import { Ack } from '../decorators/ack.decorator';
-import { GatewayMetadataExplorer } from '../gateway-metadata-explorer';
+import { MetadataScanner } from '../../core/metadata-scanner.js';
+import { Ack } from '../decorators/ack.decorator.js';
+import { WebSocketServer } from '../decorators/gateway-server.decorator.js';
+import { WebSocketGateway } from '../decorators/socket-gateway.decorator.js';
+import { SubscribeMessage } from '../decorators/subscribe-message.decorator.js';
+import { GatewayMetadataExplorer } from '../gateway-metadata-explorer.js';
 
 describe('GatewayMetadataExplorer', () => {
   const message = 'test';
@@ -43,16 +41,16 @@ describe('GatewayMetadataExplorer', () => {
     instance = new GatewayMetadataExplorer(scanner);
   });
   describe('explore', () => {
-    let getAllMethodNames: sinon.SinonSpy;
+    let getAllMethodNames: ReturnType<typeof vi.fn>;
     beforeEach(() => {
-      getAllMethodNames = sinon.spy(scanner, 'getAllMethodNames');
+      getAllMethodNames = vi.spyOn(scanner, 'getAllMethodNames');
     });
     it(`should call "scanFromPrototype" with expected arguments`, () => {
       const obj = new Test();
       instance.explore(obj as any);
 
-      const [argProto] = getAllMethodNames.getCall(0).args;
-      expect(argProto).to.be.eql(Object.getPrototypeOf(obj));
+      const [argProto] = getAllMethodNames.mock.calls[0];
+      expect(argProto).toEqual(Object.getPrototypeOf(obj));
     });
   });
   describe('exploreMethodMetadata', () => {
@@ -62,25 +60,27 @@ describe('GatewayMetadataExplorer', () => {
     });
     it(`should return null when "isMessageMapping" metadata is undefined`, () => {
       const metadata = instance.exploreMethodMetadata(test, 'noMessage');
-      expect(metadata).to.eq(null);
+      expect(metadata).toBeNull();
     });
     it(`should return message mapping properties when "isMessageMapping" metadata is not undefined`, () => {
       const metadata = instance.exploreMethodMetadata(test, 'test')!;
-      expect(metadata).to.have.keys([
-        'callback',
-        'message',
-        'methodName',
-        'isAckHandledManually',
-      ]);
-      expect(metadata.message).to.eql(message);
+      expect(Object.keys(metadata)).toEqual(
+        expect.arrayContaining([
+          'callback',
+          'message',
+          'methodName',
+          'isAckHandledManually',
+        ]),
+      );
+      expect(metadata.message).toEqual(message);
     });
     it('should set "isAckHandledManually" property to true when @Ack decorator is used', () => {
       const metadata = instance.exploreMethodMetadata(test, 'testWithAck')!;
-      expect(metadata.isAckHandledManually).to.be.true;
+      expect(metadata.isAckHandledManually).toBe(true);
     });
     it('should set "isAckHandledManually" property to false when @Ack decorator is not used', () => {
       const metadata = instance.exploreMethodMetadata(test, 'test')!;
-      expect(metadata.isAckHandledManually).to.be.false;
+      expect(metadata.isAckHandledManually).toBe(false);
     });
   });
   describe('scanForServerHooks', () => {
@@ -88,8 +88,8 @@ describe('GatewayMetadataExplorer', () => {
       const obj = new Test();
       const servers = [...instance.scanForServerHooks(obj as any)];
 
-      expect(servers).to.have.length(2);
-      expect(servers).to.deep.eq(['server', 'anotherServer']);
+      expect(servers).toHaveLength(2);
+      expect(servers).toEqual(['server', 'anotherServer']);
     });
   });
 });

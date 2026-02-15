@@ -1,8 +1,8 @@
-import { Abstract } from '../abstract.interface';
-import { Type } from '../type.interface';
-import { DynamicModule } from './dynamic-module.interface';
-import { ForwardReference } from './forward-reference.interface';
-import { Provider } from './provider.interface';
+import { Abstract } from '../abstract.interface.js';
+import { Type } from '../type.interface.js';
+import { DynamicModule } from './dynamic-module.interface.js';
+import { ForwardReference } from './forward-reference.interface.js';
+import { Provider } from './provider.interface.js';
 
 /**
  * Interface defining the property object that describes the module.

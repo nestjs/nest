@@ -1,13 +1,15 @@
 {
   "compilerOptions": {
+    "types": ["vitest/globals"],
     "module": "commonjs",
     "declaration": false,
     "noImplicitAny": false,
     "removeComments": true,
     "noLib": false,
+    "esModuleInterop": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "target": "ES2021",
+    "target": "ES2023",
     "sourceMap": true,
     "allowJs": true,
     "strictNullChecks": true,

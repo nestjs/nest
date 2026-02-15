@@ -1,1 +1,1 @@
-export * from './internal-core-module';
+export * from './internal-core-module.js';

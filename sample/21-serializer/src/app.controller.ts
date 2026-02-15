@@ -4,8 +4,8 @@ import {
   Get,
   UseInterceptors,
 } from '@nestjs/common';
-import { RoleEntity } from './entities/role.entity';
-import { UserEntity } from './entities/user.entity';
+import { RoleEntity } from './entities/role.entity.js';
+import { UserEntity } from './entities/user.entity.js';
 
 @Controller()
 @UseInterceptors(ClassSerializerInterceptor)

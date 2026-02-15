@@ -1,5 +1,5 @@
-import { RuntimeException } from './runtime.exception';
-import { INVALID_EXCEPTION_FILTER } from '../messages';
+import { RuntimeException } from './runtime.exception.js';
+import { INVALID_EXCEPTION_FILTER } from '../messages.js';
 
 export class InvalidExceptionFilterException extends RuntimeException {
   constructor() {

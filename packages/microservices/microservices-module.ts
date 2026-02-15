@@ -1,24 +1,30 @@
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
-import { GuardsConsumer, GuardsContextCreator } from '@nestjs/core/guards';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { Injector } from '@nestjs/core/injector/injector';
-import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
+import { ClientProxyFactory } from './client/index.js';
+import { ClientsContainer } from './container.js';
+import { ExceptionFiltersContext } from './context/exception-filters-context.js';
+import { RpcContextCreator } from './context/rpc-context-creator.js';
+import { RpcProxy } from './context/rpc-proxy.js';
+import { ListenersController } from './listeners-controller.js';
+import { Server } from './server/server.js';
+import type {
+  Controller,
+  NestApplicationContextOptions,
+} from '@nestjs/common/internal';
+import type {
+  ApplicationConfig,
+  NestContainer,
+  GraphInspector,
+} from '@nestjs/core';
 import {
+  RuntimeException,
+  GuardsConsumer,
+  GuardsContextCreator,
+  Injector,
+  type InstanceWrapper,
   InterceptorsConsumer,
   InterceptorsContextCreator,
-} from '@nestjs/core/interceptors';
-import { PipesConsumer, PipesContextCreator } from '@nestjs/core/pipes';
-import { ClientProxyFactory } from './client';
-import { ClientsContainer } from './container';
-import { ExceptionFiltersContext } from './context/exception-filters-context';
-import { RpcContextCreator } from './context/rpc-context-creator';
-import { RpcProxy } from './context/rpc-proxy';
-import { ListenersController } from './listeners-controller';
-import { Server } from './server/server';
+  PipesConsumer,
+  PipesContextCreator,
+} from '@nestjs/core/internal';
 
 export class MicroservicesModule<
   TAppOptions extends NestApplicationContextOptions =

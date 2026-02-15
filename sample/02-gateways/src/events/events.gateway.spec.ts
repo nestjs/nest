@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { reduce } from 'rxjs/operators';
-import { EventsGateway } from './events.gateway';
+import { EventsGateway } from './events.gateway.js';
 
 describe('EventsGateway', () => {
   let gateway: EventsGateway;
@@ -18,17 +18,19 @@ describe('EventsGateway', () => {
   });
 
   describe('findAll', () => {
-    it('should return 3 numbers', done => {
-      gateway
-        .findAll({})
-        .pipe(reduce((acc, item) => [...acc, item], []))
-        .subscribe(results => {
-          expect(results.length).toBe(3);
-          results.forEach((result, index) =>
-            expect(result.data).toBe(index + 1),
-          );
-          done();
-        });
+    it('should return 3 numbers', () => {
+      return new Promise<void>(resolve => {
+        gateway
+          .findAll({})
+          .pipe(reduce((acc, item) => [...acc, item], []))
+          .subscribe(results => {
+            expect(results.length).toBe(3);
+            results.forEach((result, index) =>
+              expect(result.data).toBe(index + 1),
+            );
+            resolve();
+          });
+      });
     });
   });
 

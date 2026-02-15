@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "esModuleInterop": true,
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "removeComments": true,
@@ -10,8 +12,9 @@
     "noLib": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "useUnknownInCatchVariables": false,
-    "target": "ES2021",
+    "target": "ES2023",
     "sourceMap": true,
     "allowJs": false,
     "outDir": "dist",
@@ -34,7 +37,7 @@
       "@nestjs/platform-fastify": ["./packages/platform-fastify"],
       "@nestjs/platform-fastify/*": ["./packages/platform-fastify/*"],
       "@nestjs/platform-socket.io": ["./packages/platform-socket.io"],
-      "@nestjs/platform-socket.io/*": ["./packages/platform-socket.io/*"],
+      "@nestjs/platform-socket.io/*": ["./packages/platform-socket.io/*"]
     }
   },
   "include": ["packages/**/*", "integration/**/*"],

@@ -7,10 +7,8 @@ import {
   NestMiddleware,
   Module,
 } from '@nestjs/common';
-import { Test } from '../../../packages/testing';
-import * as request from 'supertest';
-import { expect } from 'chai';
-
+import { Test } from '../../../packages/testing.js';
+import request from 'supertest';
 /**
  * Number of times that the middleware was executed.
  */

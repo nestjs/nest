@@ -1,8 +1,8 @@
 import { Buffer } from 'buffer';
 import { Socket } from 'net';
-import { InvalidJSONFormatException } from '../errors/invalid-json-format.exception';
-import { NetSocketClosedException } from '../errors/net-socket-closed.exception';
-import { TcpEventsMap } from '../events/tcp.events';
+import { InvalidJSONFormatException } from '../errors/invalid-json-format.exception.js';
+import { NetSocketClosedException } from '../errors/net-socket-closed.exception.js';
+import { TcpEventsMap } from '../events/tcp.events.js';
 
 export abstract class TcpSocket {
   private isClosed = false;

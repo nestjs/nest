@@ -1,27 +1,34 @@
-import { Logger, LoggerService, Module, ModuleMetadata } from '@nestjs/common';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
-import { NoopGraphInspector } from '@nestjs/core/inspector/noop-graph-inspector';
 import {
-  UuidFactory,
-  UuidFactoryMode,
-} from '@nestjs/core/inspector/uuid-factory';
-import { ModuleDefinition } from '@nestjs/core/interfaces/module-definition.interface';
-import { ModuleOverride } from '@nestjs/core/interfaces/module-override.interface';
-import { MetadataScanner } from '@nestjs/core/metadata-scanner';
-import { DependenciesScanner } from '@nestjs/core/scanner';
+  Logger,
+  type LoggerService,
+  Module,
+  type ModuleMetadata,
+} from '@nestjs/common';
 import {
   MockFactory,
   OverrideBy,
   OverrideByFactoryOptions,
-} from './interfaces';
-import { OverrideModule } from './interfaces/override-module.interface';
-import { TestingLogger } from './services/testing-logger.service';
-import { TestingInjector } from './testing-injector';
-import { TestingInstanceLoader } from './testing-instance-loader';
-import { TestingModule } from './testing-module';
+} from './interfaces/index.js';
+import { OverrideModule } from './interfaces/override-module.interface.js';
+import { TestingLogger } from './services/testing-logger.service.js';
+import { TestingInjector } from './testing-injector.js';
+import { TestingInstanceLoader } from './testing-instance-loader.js';
+import { TestingModule } from './testing-module.js';
+import type { NestApplicationContextOptions } from '@nestjs/common/internal';
+import {
+  ApplicationConfig,
+  NestContainer,
+  GraphInspector,
+  type MetadataScanner,
+} from '@nestjs/core';
+import {
+  NoopGraphInspector,
+  UuidFactory,
+  UuidFactoryMode,
+  type ModuleDefinition,
+  type ModuleOverride,
+  DependenciesScanner,
+} from '@nestjs/core/internal';
 
 /**
  * @publicApi
@@ -123,12 +130,14 @@ export class TestingModuleBuilder {
     scanner.applyApplicationProviders();
 
     const root = this.getRootModule();
-    return new TestingModule(
+    const testingModule = new TestingModule(
       this.container,
       graphInspector,
       root,
       this.applicationConfig,
     );
+    await testingModule['preloadLazyPackages']();
+    return testingModule;
   }
 
   private override<T = any>(typeOrToken: T, isProvider: boolean): OverrideBy {

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import { ConfigurableModuleAsyncOptions } from './configurable-module-async-options.interface';
-import { ConfigurableModuleCls } from './configurable-module-cls.interface';
+import { ConfigurableModuleAsyncOptions } from './configurable-module-async-options.interface.js';
+import { ConfigurableModuleCls } from './configurable-module-cls.interface.js';
 
 /**
  * Configurable module host. See properties for more details

@@ -1,13 +1,13 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { REDIS_DEFAULT_HOST, REDIS_DEFAULT_PORT } from '../constants';
+import { REDIS_DEFAULT_HOST, REDIS_DEFAULT_PORT } from '../constants.js';
 import {
   RedisEvents,
   RedisEventsMap,
   RedisStatus,
-} from '../events/redis.events';
-import { ReadPacket, RedisOptions, WritePacket } from '../interfaces';
-import { ClientProxy } from './client-proxy';
+} from '../events/redis.events.js';
+import { ReadPacket, RedisOptions, WritePacket } from '../interfaces/index.js';
+import { ClientProxy } from './client-proxy.js';
+import { Logger } from '@nestjs/common';
+import { loadPackage } from '@nestjs/common/internal';
 
 // To enable type safety for Redis. This cant be uncommented by default
 // because it would require the user to install the ioredis package even if they dont use Redis
@@ -15,8 +15,6 @@ import { ClientProxy } from './client-proxy';
 //
 // type Redis = import('ioredis').Redis;
 type Redis = any;
-
-let redisPackage = {} as any;
 
 /**
  * @publicApi
@@ -26,7 +24,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   protected readonly subscriptionsCount = new Map<string, number>();
   protected pubClient: Redis;
   protected subClient: Redis;
-  protected connectionPromise: Promise<any>;
+  protected connectionPromise: Promise<any> | null = null;
   protected isManuallyClosed = false;
   protected wasInitialConnectionSuccessful = false;
   protected pendingEventListeners: Array<{
@@ -36,10 +34,6 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
   constructor(protected readonly options: Required<RedisOptions>['options']) {
     super();
-
-    redisPackage = loadPackage('ioredis', ClientRedis.name, () =>
-      require('ioredis'),
-    );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -58,15 +52,21 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     this.pubClient && (await this.pubClient.quit());
     this.subClient && (await this.subClient.quit());
     this.pubClient = this.subClient = null;
+    this.connectionPromise = null;
     this.pendingEventListeners = [];
   }
 
-  public async connect(): Promise<any> {
-    if (this.pubClient && this.subClient) {
+  public connect(): Promise<any> {
+    if (this.connectionPromise) {
       return this.connectionPromise;
     }
-    this.pubClient = this.createClient();
-    this.subClient = this.createClient();
+    this.connectionPromise = this.handleConnection();
+    return this.connectionPromise;
+  }
+
+  private async handleConnection(): Promise<any> {
+    this.pubClient = await this.createClient();
+    this.subClient = await this.createClient();
 
     [this.pubClient, this.subClient].forEach((client, index) => {
       const type = index === 0 ? 'pub' : 'sub';
@@ -80,16 +80,17 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     });
     this.pendingEventListeners = [];
 
-    this.connectionPromise = Promise.all([
-      this.subClient.connect(),
-      this.pubClient.connect(),
-    ]);
-    await this.connectionPromise;
-    return this.connectionPromise;
+    await Promise.all([this.subClient.connect(), this.pubClient.connect()]);
   }
 
-  public createClient(): Redis {
-    return new redisPackage({
+  public async createClient(): Promise<Redis> {
+    const redisPackage = await loadPackage(
+      'ioredis',
+      ClientRedis.name,
+      () => import('ioredis'),
+    );
+    const RedisClient = redisPackage.default || redisPackage;
+    return new RedisClient({
       host: REDIS_DEFAULT_HOST,
       port: REDIS_DEFAULT_PORT,
       ...this.getClientOptions(),

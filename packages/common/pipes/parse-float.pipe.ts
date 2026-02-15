@@ -1,11 +1,11 @@
-import { Injectable, Optional } from '../decorators/core';
-import { ArgumentMetadata, HttpStatus } from '../index';
-import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import { Injectable, Optional } from '../decorators/core/index.js';
+import { ArgumentMetadata, HttpStatus } from '../index.js';
+import { PipeTransform } from '../interfaces/features/pipe-transform.interface.js';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
-} from '../utils/http-error-by-code.util';
-import { isNil } from '../utils/shared.utils';
+} from '../utils/http-error-by-code.util.js';
+import { isNil } from '../utils/shared.utils.js';
 
 /**
  * @publicApi

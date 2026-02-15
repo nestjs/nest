@@ -1,10 +1,10 @@
 import { Observable } from 'rxjs';
-import { ExceptionFilter } from './exceptions/exception-filter.interface';
-import { CanActivate } from './features/can-activate.interface';
-import { NestInterceptor } from './features/nest-interceptor.interface';
-import { PipeTransform } from './features/pipe-transform.interface';
-import { INestApplicationContext } from './nest-application-context.interface';
-import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
+import { ExceptionFilter } from './exceptions/exception-filter.interface.js';
+import { CanActivate } from './features/can-activate.interface.js';
+import { NestInterceptor } from './features/nest-interceptor.interface.js';
+import { PipeTransform } from './features/pipe-transform.interface.js';
+import { INestApplicationContext } from './nest-application-context.interface.js';
+import { WebSocketAdapter } from './websockets/web-socket-adapter.interface.js';
 
 /**
  * Interface describing Microservice Context.

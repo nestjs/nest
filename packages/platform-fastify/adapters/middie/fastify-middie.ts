@@ -8,10 +8,11 @@ import {
   HookHandlerDoneFunction,
 } from 'fastify';
 import fp from 'fastify-plugin';
-import { safeDecodeURI } from 'find-my-way/lib/url-sanitizer';
+import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
 import * as http from 'node:http';
 import { Path, pathToRegexp } from 'path-to-regexp';
-import reusify = require('reusify');
+import reusify from 'reusify';
+const { safeDecodeURI } = urlSanitizer;
 
 export type MiddlewareFn<
   Req extends { url: string; originalUrl?: string },

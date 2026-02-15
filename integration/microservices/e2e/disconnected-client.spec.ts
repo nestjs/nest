@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import { App } from 'supertest/types';
-import { DisconnectedClientController } from '../src/disconnected.controller';
+import { DisconnectedClientController } from '../src/disconnected.controller.js';
 
 describe('Disconnected client', () => {
   let server: App;

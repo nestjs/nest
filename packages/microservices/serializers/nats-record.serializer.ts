@@ -1,9 +1,9 @@
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isObject } from '@nestjs/common/utils/shared.utils';
-import { NatsCodec } from '../external/nats-codec.interface';
-import { ReadPacket } from '../interfaces';
-import { Serializer } from '../interfaces/serializer.interface';
-import { NatsRecord, NatsRecordBuilder } from '../record-builders';
+import { createRequire } from 'module';
+import { NatsCodec } from '../external/nats-codec.interface.js';
+import { ReadPacket } from '../interfaces/index.js';
+import { Serializer } from '../interfaces/serializer.interface.js';
+import { NatsRecord, NatsRecordBuilder } from '../record-builders/index.js';
+import { loadPackageSync, isObject } from '@nestjs/common/internal';
 
 let natsPackage = {} as any;
 
@@ -14,8 +14,8 @@ export class NatsRecordSerializer implements Serializer<
   private readonly jsonCodec: NatsCodec<unknown>;
 
   constructor() {
-    natsPackage = loadPackage('nats', NatsRecordSerializer.name, () =>
-      require('nats'),
+    natsPackage = loadPackageSync('nats', NatsRecordSerializer.name, () =>
+      createRequire(import.meta.url)('nats'),
     );
     this.jsonCodec = natsPackage.JSONCodec();
   }

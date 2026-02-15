@@ -5,9 +5,9 @@ import {
   WebSocketGateway,
   WsException,
 } from '@nestjs/websockets';
-import { RequestInterceptor } from './request.interceptor';
+import { RequestInterceptor } from './request.interceptor.js';
 import { throwError } from 'rxjs';
-import { RequestFilter } from './request.filter';
+import { RequestFilter } from './request.filter.js';
 
 @WebSocketGateway(8080)
 export class ApplicationGateway {

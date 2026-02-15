@@ -1,9 +1,7 @@
 import { OnModuleInit } from '@nestjs/common';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { callModuleInitHook } from '../../hooks/on-module-init.hook';
-import { NestContainer } from '../../injector/container';
-import { Module } from '../../injector/module';
+import { callModuleInitHook } from '../../hooks/on-module-init.hook.js';
+import { NestContainer } from '../../injector/container.js';
+import { Module } from '../../injector/module.js';
 
 class SampleProvider implements OnModuleInit {
   onModuleInit() {}
@@ -38,10 +36,10 @@ describe('OnModuleInit', () => {
 
   describe('callModuleInitHook', () => {
     it('should call "onModuleInit" hook for the entire module', async () => {
-      const hookSpy = sinon.spy(sampleProvider, 'onModuleInit');
+      const hookSpy = vi.spyOn(sampleProvider, 'onModuleInit');
       await callModuleInitHook(moduleRef);
 
-      expect(hookSpy.called).to.be.true;
+      expect(hookSpy).toHaveBeenCalled();
     });
   });
 });

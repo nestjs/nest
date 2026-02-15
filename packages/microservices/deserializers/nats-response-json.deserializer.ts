@@ -1,8 +1,8 @@
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { NatsCodec } from '../external/nats-codec.interface';
-import { IncomingResponse } from '../interfaces';
-import { IncomingResponseDeserializer } from './incoming-response.deserializer';
-import { NatsRequestJSONDeserializer } from './nats-request-json.deserializer';
+import { createRequire } from 'module';
+import { NatsCodec } from '../external/nats-codec.interface.js';
+import { IncomingResponse } from '../interfaces/index.js';
+import { IncomingResponseDeserializer } from './incoming-response.deserializer.js';
+import { loadPackageSync } from '@nestjs/common/internal';
 
 let natsPackage = {} as any;
 
@@ -15,8 +15,10 @@ export class NatsResponseJSONDeserializer extends IncomingResponseDeserializer {
   constructor() {
     super();
 
-    natsPackage = loadPackage('nats', NatsRequestJSONDeserializer.name, () =>
-      require('nats'),
+    natsPackage = loadPackageSync(
+      'nats',
+      NatsResponseJSONDeserializer.name,
+      () => createRequire(import.meta.url)('nats'),
     );
     this.jsonCodec = natsPackage.JSONCodec();
   }
@@ -24,7 +26,7 @@ export class NatsResponseJSONDeserializer extends IncomingResponseDeserializer {
   deserialize(
     value: Uint8Array,
     options?: Record<string, any>,
-  ): IncomingResponse {
+  ): IncomingResponse | Promise<IncomingResponse> {
     const decodedRequest = this.jsonCodec.decode(value);
     return super.deserialize(decodedRequest, options);
   }

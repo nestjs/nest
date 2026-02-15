@@ -1,11 +1,11 @@
-import { Injectable, Optional } from '../decorators/core';
-import { ArgumentMetadata, HttpStatus } from '../index';
-import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import { Injectable, Optional } from '../decorators/core/index.js';
+import { ArgumentMetadata, HttpStatus } from '../index.js';
+import { PipeTransform } from '../interfaces/features/pipe-transform.interface.js';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
-} from '../utils/http-error-by-code.util';
-import { isNil } from '../utils/shared.utils';
+} from '../utils/http-error-by-code.util.js';
+import { isNil } from '../utils/shared.utils.js';
 
 /**
  * @publicApi
@@ -77,9 +77,7 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
   }
 
   protected isEnum(value: T): boolean {
-    const enumValues = Object.keys(this.enumType as object).map(
-      item => this.enumType[item],
-    );
+    const enumValues = Object.values(this.enumType as object);
     return enumValues.includes(value);
   }
 }

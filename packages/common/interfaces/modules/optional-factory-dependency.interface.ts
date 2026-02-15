@@ -1,4 +1,4 @@
-import { InjectionToken } from './injection-token.interface';
+import { InjectionToken } from './injection-token.interface.js';
 
 /**
  * @publicApi

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Order } from '../orders/entities/order.entity';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { OrderCreatedEvent } from './events/order-created.event';
+import { Order } from '../orders/entities/order.entity.js';
+import { CreateOrderDto } from './dto/create-order.dto.js';
+import { OrderCreatedEvent } from './events/order-created.event.js';
 
 @Injectable()
 export class OrdersService {

@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
-import { RMQTopicExchangeController } from '../src/rmq/topic-exchange-rmq.controller';
+import request from 'supertest';
+import { RMQTopicExchangeController } from '../src/rmq/topic-exchange-rmq.controller.js';
 
 describe('RabbitMQ transport (Topic Exchange - wildcards)', () => {
   let server: any;

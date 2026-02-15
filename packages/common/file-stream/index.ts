@@ -1,1 +1,1 @@
-export * from './streamable-file';
+export * from './streamable-file.js';

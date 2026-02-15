@@ -1,5 +1,5 @@
 import { Mongoose } from 'mongoose';
-import { CatSchema } from './schemas/cat.schema';
+import { CatSchema } from './schemas/cat.schema.js';
 
 export const catsProviders = [
   {

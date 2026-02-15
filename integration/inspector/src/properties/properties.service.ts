@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { DependencyService } from './dependency.service';
+import { DependencyService } from './dependency.service.js';
 
 export const SYMBOL_TOKEN = Symbol('token');
 

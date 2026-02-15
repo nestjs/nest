@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { HelperService } from './helper/helper.service';
+import { HelperService } from './helper/helper.service.js';
 
 @Injectable()
 export class RequestChainService {

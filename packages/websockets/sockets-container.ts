@@ -1,5 +1,8 @@
-import * as hash from 'object-hash';
-import { GatewayMetadata, ServerAndEventStreamsHost } from './interfaces';
+import hash from 'object-hash';
+import {
+  GatewayMetadata,
+  ServerAndEventStreamsHost,
+} from './interfaces/index.js';
 
 export class SocketsContainer {
   private readonly serverAndEventStreamsHosts = new Map<

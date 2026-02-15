@@ -3,22 +3,18 @@
     "experimentalDecorators": true,
     "noUnusedParameters": false,
     "noUnusedLocals": false,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "moduleResolution": "Node16",
     "outDir": "../../dist/tools/gulp",
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "noImplicitThis": true,
     "noEmitOnError": true,
     "noImplicitAny": false,
-    "target": "ES2021",
-    "types": [
-      "node"
-    ],
+    "target": "ES2023",
+    "types": ["node"],
     "typeRoots": ["./typings", "../../node_modules/@types/"],
-    "baseUrl": ".",
+    "baseUrl": "."
   },
-  "files": [
-    "gulpfile.ts"
-  ]
+  "files": ["gulpfile.ts"]
 }

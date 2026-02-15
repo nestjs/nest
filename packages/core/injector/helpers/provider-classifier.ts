@@ -1,10 +1,10 @@
-import {
+import type {
   ClassProvider,
   FactoryProvider,
   Provider,
   ValueProvider,
 } from '@nestjs/common';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isUndefined } from '@nestjs/common/internal';
 
 export function isClassProvider<T = any>(
   provider: Provider,

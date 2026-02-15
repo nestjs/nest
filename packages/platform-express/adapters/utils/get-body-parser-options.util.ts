@@ -1,6 +1,6 @@
 import type { RawBodyRequest } from '@nestjs/common';
 import type { IncomingMessage, ServerResponse } from 'http';
-import type { NestExpressBodyParserOptions } from '../../interfaces';
+import type { NestExpressBodyParserOptions } from '../../interfaces/index.js';
 
 const rawBodyParser = (
   req: RawBodyRequest<IncomingMessage>,

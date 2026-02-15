@@ -1,5 +1,5 @@
-import { task, src, dest } from 'gulp';
-import { packagePaths } from '../config';
+import { dest, src, task } from 'gulp';
+import { packagePaths } from '../config.js';
 
 /**
  * Copies assets like Readme.md or LICENSE from the project base path

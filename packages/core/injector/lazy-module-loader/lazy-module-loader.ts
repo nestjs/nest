@@ -1,13 +1,13 @@
-import { DynamicModule, Type } from '@nestjs/common';
-import { ModuleOverride } from '../../interfaces/module-override.interface';
-import { DependenciesScanner } from '../../scanner';
-import { ModuleCompiler } from '../compiler';
-import { SilentLogger } from '../helpers/silent-logger';
-import { InstanceLoader } from '../instance-loader';
-import { Module } from '../module';
-import { ModuleRef } from '../module-ref';
-import { ModulesContainer } from '../modules-container';
-import { LazyModuleLoaderLoadOptions } from './lazy-module-loader-options.interface';
+import type { DynamicModule, Type } from '@nestjs/common';
+import { ModuleOverride } from '../../interfaces/module-override.interface.js';
+import { DependenciesScanner } from '../../scanner.js';
+import { ModuleCompiler } from '../compiler.js';
+import { SilentLogger } from '../helpers/silent-logger.js';
+import { InstanceLoader } from '../instance-loader.js';
+import { Module } from '../module.js';
+import { ModuleRef } from '../module-ref.js';
+import { ModulesContainer } from '../modules-container.js';
+import { LazyModuleLoaderLoadOptions } from './lazy-module-loader-options.interface.js';
 
 export class LazyModuleLoader {
   constructor(

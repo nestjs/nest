@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Post } from './models/post.model';
-import { PostsService } from './posts.service';
-import { UsersResolver } from './users.resolver';
+import { Post } from './models/post.model.js';
+import { PostsService } from './posts.service.js';
+import { UsersResolver } from './users.resolver.js';
 
 const postsServiceMock = {
-  findOneByAuthorId: jest.fn((authorId: number): Post[] => {
+  findOneByAuthorId: vi.fn((authorId: number): Post[] => {
     return [{ authorId, id: 1, title: 'Post Mock' }];
   }),
 };

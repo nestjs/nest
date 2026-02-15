@@ -1,7 +1,7 @@
-import { task, src, series } from 'gulp';
-import { source } from '../config';
-import * as clean from 'gulp-clean';
-import * as deleteEmpty from 'delete-empty';
+import deleteEmpty from 'delete-empty';
+import { series, src, task } from 'gulp';
+import clean from 'gulp-clean';
+import { source } from '../config.js';
 
 /**
  * Cleans the build output assets from the packages folders

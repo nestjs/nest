@@ -5,10 +5,10 @@ import {
 } from '@nestjs/apollo';
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
-import { User } from './models/user.model';
-import { PostsResolver } from './posts.resolver';
-import { PostsService } from './posts.service';
-import { UsersResolver } from './users.resolver';
+import { User } from './models/user.model.js';
+import { PostsResolver } from './posts.resolver.js';
+import { PostsService } from './posts.service.js';
+import { UsersResolver } from './users.resolver.js';
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import { UsersResolver } from './users.resolver';
       autoSchemaFile: {
         federation: 2,
       },
-      plugins: [ApolloServerPluginInlineTrace()],
+      plugins: [ApolloServerPluginInlineTrace() as any],
       buildSchemaOptions: {
         orphanedTypes: [User],
       },

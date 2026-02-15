@@ -1,6 +1,6 @@
-import { IncomingEvent, IncomingRequest } from '../interfaces';
-import { KafkaRequest } from '../serializers/kafka-request.serializer';
-import { IncomingRequestDeserializer } from './incoming-request.deserializer';
+import { IncomingEvent, IncomingRequest } from '../interfaces/index.js';
+import { KafkaRequest } from '../serializers/kafka-request.serializer.js';
+import { IncomingRequestDeserializer } from './incoming-request.deserializer.js';
 
 /**
  * @publicApi

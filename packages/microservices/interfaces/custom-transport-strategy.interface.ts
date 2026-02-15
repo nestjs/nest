@@ -1,4 +1,4 @@
-import { TransportId } from './microservice-configuration.interface';
+import { TransportId } from './microservice-configuration.interface.js';
 
 /**
  * @publicApi

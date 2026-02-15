@@ -1,1 +1,1 @@
-export * from './base-exception-filter';
+export * from './base-exception-filter.js';

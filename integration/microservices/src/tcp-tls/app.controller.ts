@@ -34,7 +34,10 @@ export class AppController {
       tlsOptions: {
         ca: [
           fs
-            .readFileSync(path.join(__dirname, 'ca.cert.pem'), 'utf-8')
+            .readFileSync(
+              path.join(import.meta.dirname, 'ca.cert.pem'),
+              'utf-8',
+            )
             .toString(),
         ],
       },

@@ -1,4 +1,4 @@
-import { REDIRECT_METADATA } from '../../constants';
+import { REDIRECT_METADATA } from '../../constants.js';
 
 /**
  * Redirects request to the specified URL.

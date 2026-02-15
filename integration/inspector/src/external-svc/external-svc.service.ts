@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateExternalSvcDto } from './dto/create-external-svc.dto';
-import { UpdateExternalSvcDto } from './dto/update-external-svc.dto';
+import { CreateExternalSvcDto } from './dto/create-external-svc.dto.js';
+import { UpdateExternalSvcDto } from './dto/update-external-svc.dto.js';
 
 @Injectable()
 export class ExternalSvcService {

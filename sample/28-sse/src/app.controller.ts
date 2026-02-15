@@ -1,9 +1,12 @@
 import { Controller, Get, MessageEvent, Res, Sse } from '@nestjs/common';
 import { Response } from 'express';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { interval, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 @Controller()
 export class AppController {

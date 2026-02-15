@@ -1,4 +1,4 @@
-import { SerializedGraph } from './serialized-graph';
+import { SerializedGraph } from './serialized-graph.js';
 
 export class PartialGraphHost {
   private static partialGraph: SerializedGraph;

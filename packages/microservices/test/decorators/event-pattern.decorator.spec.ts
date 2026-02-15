@@ -1,11 +1,10 @@
-import { expect } from 'chai';
 import {
   PATTERN_EXTRAS_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
-} from '../../constants';
-import { EventPattern } from '../../decorators/event-pattern.decorator';
-import { Transport } from '../../enums/transport.enum';
+} from '../../constants.js';
+import { EventPattern } from '../../decorators/event-pattern.decorator.js';
+import { Transport } from '../../enums/transport.enum.js';
 
 describe('@EventPattern', () => {
   const pattern = { role: 'test' };
@@ -25,32 +24,32 @@ describe('@EventPattern', () => {
   }
   it(`should enhance method with ${PATTERN_METADATA} metadata`, () => {
     const metadata = Reflect.getMetadata(PATTERN_METADATA, TestComponent.test);
-    expect(metadata.length).to.equal(1);
-    expect(metadata[0]).to.be.eql(pattern);
+    expect(metadata.length).toBe(1);
+    expect(metadata[0]).toEqual(pattern);
   });
   it(`should enhance method with ${PATTERN_EXTRAS_METADATA} metadata`, () => {
     const metadata = Reflect.getMetadata(
       PATTERN_EXTRAS_METADATA,
       TestComponent.test,
     );
-    expect(metadata).to.be.deep.equal(extras);
+    expect(metadata).toEqual(extras);
   });
   it(`should enhance method with last ${PATTERN_METADATA} metadata`, () => {
     const metadata = Reflect.getMetadata(
       PATTERN_METADATA,
       TestComponent.testOnlyThird,
     );
-    expect(metadata.length).to.equal(1);
-    expect(metadata[0]).to.be.eql(patternSecond);
+    expect(metadata.length).toBe(1);
+    expect(metadata[0]).toEqual(patternSecond);
   });
   it(`should enhance method with both ${PATTERN_METADATA} metadata`, () => {
     const metadata = Reflect.getMetadata(
       PATTERN_METADATA,
       TestComponent.testBoth,
     );
-    expect(metadata.length).to.equal(2);
-    expect(metadata[0]).to.be.eql(patternSecond);
-    expect(metadata[1]).to.be.eql(patternThird);
+    expect(metadata.length).toBe(2);
+    expect(metadata[0]).toEqual(patternSecond);
+    expect(metadata[1]).toEqual(patternThird);
   });
 
   describe('decorator overloads', () => {
@@ -98,9 +97,9 @@ describe('@EventPattern', () => {
         PATTERN_EXTRAS_METADATA,
         TestComponent1.test,
       );
-      expect(metadataArg).to.be.eql(pattern);
-      expect(transportArg).to.be.undefined;
-      expect(extrasArg).to.be.eql({});
+      expect(metadataArg).toEqual(pattern);
+      expect(transportArg).toBeUndefined();
+      expect(extrasArg).toEqual({});
     });
 
     it(`should enhance method with ${PATTERN_METADATA}, ${TRANSPORT_METADATA} metadata`, () => {
@@ -116,9 +115,9 @@ describe('@EventPattern', () => {
         PATTERN_EXTRAS_METADATA,
         TestComponent2.test,
       );
-      expect(metadataArg).to.be.eql(pattern);
-      expect(transportArg).to.be.eql(Transport.TCP);
-      expect(extrasArg).to.be.eql({});
+      expect(metadataArg).toEqual(pattern);
+      expect(transportArg).toEqual(Transport.TCP);
+      expect(extrasArg).toEqual({});
     });
 
     it(`should enhance method with ${PATTERN_METADATA}, ${PATTERN_EXTRAS_METADATA} metadata`, () => {
@@ -134,9 +133,9 @@ describe('@EventPattern', () => {
         PATTERN_EXTRAS_METADATA,
         TestComponent3.test,
       );
-      expect(metadataArg).to.be.eql(pattern);
-      expect(transportArg).to.be.undefined;
-      expect(extrasArg).to.be.eql(extras);
+      expect(metadataArg).toEqual(pattern);
+      expect(transportArg).toBeUndefined();
+      expect(extrasArg).toEqual(extras);
     });
 
     it(`should enhance method with ${PATTERN_METADATA}, ${TRANSPORT_METADATA} and \
@@ -153,9 +152,9 @@ ${PATTERN_EXTRAS_METADATA} metadata`, () => {
         PATTERN_EXTRAS_METADATA,
         TestComponent4.test,
       );
-      expect(metadataArg).to.be.eql(pattern);
-      expect(transportArg).to.be.eql(Transport.TCP);
-      expect(extrasArg).to.be.eql(extras);
+      expect(metadataArg).toEqual(pattern);
+      expect(transportArg).toEqual(Transport.TCP);
+      expect(extrasArg).toEqual(extras);
     });
 
     it(`should merge with existing ${PATTERN_EXTRAS_METADATA} metadata`, () => {
@@ -171,9 +170,9 @@ ${PATTERN_EXTRAS_METADATA} metadata`, () => {
         PATTERN_EXTRAS_METADATA,
         TestComponent5.test,
       );
-      expect(metadataArg).to.be.eql(pattern);
-      expect(transportArg).to.be.eql(Transport.TCP);
-      expect(extrasArg).to.be.eql({
+      expect(metadataArg).toEqual(pattern);
+      expect(transportArg).toEqual(Transport.TCP);
+      expect(extrasArg).toEqual({
         ...additionalExtras,
         ...extras,
       });

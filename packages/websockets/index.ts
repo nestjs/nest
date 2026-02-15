@@ -6,9 +6,9 @@
  */
 import 'reflect-metadata';
 
-export * from './adapters';
-export * from './decorators';
-export * from './errors';
-export * from './exceptions';
-export { MessageMappingProperties } from './gateway-metadata-explorer';
-export * from './interfaces';
+export * from './adapters/index.js';
+export * from './decorators/index.js';
+export * from './errors/index.js';
+export * from './exceptions/index.js';
+export { MessageMappingProperties } from './gateway-metadata-explorer.js';
+export * from './interfaces/index.js';

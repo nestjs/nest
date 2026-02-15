@@ -1,5 +1,5 @@
-import { ErrorHttpStatusCode } from '../../utils/http-error-by-code.util';
-import { FileValidator } from './file-validator.interface';
+import { ErrorHttpStatusCode } from '../../utils/http-error-by-code.util.js';
+import { FileValidator } from './file-validator.interface.js';
 
 /**
  * @publicApi

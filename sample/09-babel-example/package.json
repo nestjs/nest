@@ -8,9 +8,9 @@
     "build": "babel src -d dist",
     "start": "babel-node index.js",
     "start:dev": "nodemon",
-    "test": "jest",
-    "test:cov": "jest --coverage",
-    "test:e2e": "echo 'No e2e tests implemented yet.'"
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage",
+    "test:e2e": "vitest run --config ./vitest.config.e2e.mts"
   },
   "dependencies": {
     "@nestjs/common": "11.1.13",
@@ -31,18 +31,10 @@
     "@babel/register": "7.28.6",
     "@babel/runtime": "7.28.6",
     "@nestjs/testing": "11.1.13",
-    "jest": "30.2.0",
     "nodemon": "3.1.11",
     "prettier": "3.8.1",
-    "supertest": "7.2.2"
+    "supertest": "7.2.2",
+    "vitest": "3.2.4"
   },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.js$",
-    "coverageDirectory": "../coverage"
-  }
+  "type": "module"
 }

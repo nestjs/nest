@@ -1,11 +1,9 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { Injectable } from '../../../common';
-import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
-import { NestContainer } from '../../injector';
-import { Injector } from '../../injector/injector';
-import { MiddlewareContainer } from '../../middleware/container';
-import { MiddlewareResolver } from '../../middleware/resolver';
+import { Injectable } from '../../../common/index.js';
+import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface.js';
+import { NestContainer } from '../../injector/index.js';
+import { Injector } from '../../injector/injector.js';
+import { MiddlewareContainer } from '../../middleware/container.js';
+import { MiddlewareResolver } from '../../middleware/resolver.js';
 
 describe('MiddlewareResolver', () => {
   @Injectable()
@@ -15,17 +13,17 @@ describe('MiddlewareResolver', () => {
 
   let resolver: MiddlewareResolver;
   let container: MiddlewareContainer;
-  let mockContainer: sinon.SinonMock;
 
   beforeEach(() => {
     const injector = new Injector();
     container = new MiddlewareContainer(new NestContainer());
     resolver = new MiddlewareResolver(container, injector);
-    mockContainer = sinon.mock(container);
   });
 
   it('should resolve middleware instances from container', async () => {
-    const loadMiddleware = sinon.stub(resolver['injector'], 'loadMiddleware');
+    const loadMiddleware = vi
+      .spyOn(resolver['injector'], 'loadMiddleware')
+      .mockImplementation(() => ({}) as any);
     const middleware = new Map();
     const wrapper = {
       instance: { metatype: {} },
@@ -34,13 +32,16 @@ describe('MiddlewareResolver', () => {
     middleware.set('TestMiddleware', wrapper);
 
     const module = { metatype: { name: '' } } as any;
-    mockContainer.expects('getMiddlewareCollection').returns(middleware);
+    vi.spyOn(container, 'getMiddlewareCollection').mockReturnValue(middleware);
     await resolver.resolveInstances(module, null!);
 
-    expect(loadMiddleware.callCount).to.be.equal(middleware.size);
-    expect(loadMiddleware.calledWith(wrapper as any, middleware, module)).to.be
-      .true;
+    expect(loadMiddleware.mock.calls.length).toBe(middleware.size);
+    expect(loadMiddleware).toHaveBeenCalledWith(
+      wrapper as any,
+      middleware,
+      module,
+    );
 
-    loadMiddleware.restore();
+    loadMiddleware.mockRestore?.();
   });
 });

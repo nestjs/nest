@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { HelperService } from './helper.service';
+import { HelperService } from './helper.service.js';
 
 @Module({
   providers: [HelperService],

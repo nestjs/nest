@@ -1,10 +1,10 @@
 import { Controller, Logger } from '@nestjs/common';
 import { EventPattern, MessagePattern } from '@nestjs/microservices';
-import { BusinessDto } from './dtos/business.dto';
-import { UserDto } from './dtos/user.dto';
-import { BusinessEntity } from './entities/business.entity';
-import { UserEntity } from './entities/user.entity';
-import { KafkaController } from './kafka.controller';
+import { BusinessDto } from './dtos/business.dto.js';
+import { UserDto } from './dtos/user.dto.js';
+import { BusinessEntity } from './entities/business.entity.js';
+import { UserEntity } from './entities/user.entity.js';
+import { KafkaController } from './kafka.controller.js';
 
 @Controller()
 export class KafkaMessagesController {

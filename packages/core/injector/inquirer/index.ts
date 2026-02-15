@@ -1,1 +1,1 @@
-export * from './inquirer-constants';
+export * from './inquirer-constants.js';

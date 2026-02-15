@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Photo } from './photo.entity';
-import { PhotoService } from './photo.service';
+import { Photo } from './photo.entity.js';
+import { PhotoService } from './photo.service.js';
 
 describe('CatService', () => {
   let service: PhotoService;
@@ -30,7 +30,7 @@ describe('CatService', () => {
         {
           provide: getRepositoryToken(Photo),
           useValue: {
-            find: jest.fn().mockResolvedValue(photosArray),
+            find: vi.fn().mockResolvedValue(photosArray),
           },
         },
       ],

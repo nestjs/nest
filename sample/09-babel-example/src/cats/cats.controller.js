@@ -7,7 +7,7 @@ import {
   Dependencies,
   Param,
 } from '@nestjs/common';
-import { CatsService } from './cats.service';
+import { CatsService } from './cats.service.js';
 
 @Controller('cats')
 @Dependencies(CatsService)

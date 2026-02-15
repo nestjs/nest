@@ -1,8 +1,6 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { ResolveReplFn } from '../../../repl/native-functions';
-import { ReplContext } from '../../../repl/repl-context';
-import { NestContainer } from '../../../injector/container';
+import { ResolveReplFn } from '../../../repl/native-functions/index.js';
+import { ReplContext } from '../../../repl/repl-context.js';
+import { NestContainer } from '../../../injector/container.js';
 
 describe('ResolveReplFn', () => {
   let resolveReplFn: ResolveReplFn;
@@ -10,19 +8,19 @@ describe('ResolveReplFn', () => {
   let replContext: ReplContext;
   let mockApp: {
     container: NestContainer;
-    get: sinon.SinonStub;
-    resolve: sinon.SinonSpy;
-    select: sinon.SinonSpy;
+    get: ReturnType<typeof vi.fn>;
+    resolve: ReturnType<typeof vi.fn>;
+    select: ReturnType<typeof vi.fn>;
   };
 
-  before(async () => {
+  beforeAll(async () => {
     const container = new NestContainer();
 
     mockApp = {
       container,
-      get: sinon.stub(),
-      resolve: sinon.spy(),
-      select: sinon.spy(),
+      get: vi.fn(),
+      resolve: vi.fn(),
+      select: vi.fn(),
     };
     replContext = new ReplContext(mockApp as any);
   });
@@ -30,11 +28,11 @@ describe('ResolveReplFn', () => {
   beforeEach(() => {
     resolveReplFn = replContext.nativeFunctions.get('resolve') as ResolveReplFn;
   });
-  afterEach(() => sinon.restore());
+  afterEach(() => vi.restoreAllMocks());
 
   it('the function name should be "resolve"', () => {
-    expect(resolveReplFn).to.not.be.undefined;
-    expect(resolveReplFn.fnDefinition.name).to.eql('resolve');
+    expect(resolveReplFn).not.toBeUndefined();
+    expect(resolveReplFn.fnDefinition.name).toEqual('resolve');
   });
 
   describe('action', () => {
@@ -43,7 +41,7 @@ describe('ResolveReplFn', () => {
       const contextId = {};
 
       await resolveReplFn.action(token, contextId);
-      expect(mockApp.resolve.calledWith(token, contextId)).to.be.true;
+      expect(mockApp.resolve).toHaveBeenCalledWith(token, contextId);
     });
   });
 });

@@ -1,12 +1,16 @@
 import { blue, magenta } from 'ansis';
-import * as childProcess from 'child_process';
-import { execFile as execFileCb } from 'child_process';
-import * as log from 'fancy-log';
+import log from 'fancy-log';
 import { task } from 'gulp';
-import { resolve } from 'path';
-import { promisify } from 'util';
-import { samplePath } from '../config';
-import { containsPackageJson, getDirs } from '../util/task-helpers';
+import * as childProcess from 'node:child_process';
+import { execFile as execFileCb } from 'node:child_process';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+import { samplePath } from '../config.js';
+import { containsPackageJson, getDirs } from '../util/task-helpers.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const exec = promisify(childProcess.exec);
 const execFile = promisify(execFileCb);
@@ -26,6 +30,21 @@ async function executeNpmScriptInSamples(
   );
   if (prismaSampleIndex !== -1) {
     directories.splice(prismaSampleIndex, 1);
+  }
+
+  // TODO: samples that use third-party compiler plugins (e.g. @nestjs/swagger,
+  // @nestjs/graphql) are excluded because move:samples copies local ESM builds
+  // into node_modules, but these CJS plugins load framework packages via require().
+  const samplesWithCompilerPlugins = [
+    '11-swagger',
+    '23-graphql-code-first',
+    '33-graphql-mercurius',
+  ];
+  for (const sample of samplesWithCompilerPlugins) {
+    const idx = directories.indexOf(`${samplePath}/${sample}`);
+    if (idx !== -1) {
+      directories.splice(idx, 1);
+    }
   }
 
   // A dictionary that maps the sample number to the minimum Node.js version
@@ -118,6 +137,10 @@ task('install:samples', async () =>
   ),
 );
 task('build:samples', async () => executeNpmScriptInSamples('npm run build'));
+// TODO: re-enable test:samples and test:e2e:samples once third-party @nestjs/*
+// packages (e.g. @nestjs/typeorm, @nestjs/swagger) ship ESM builds. Currently,
+// move:samples overwrites published CJS builds with local ESM, breaking CJS
+// require() chains in these packages.
 task('test:samples', async () =>
   executeNpmScriptInSamples('npm run test', '--passWithNoTests'),
 );

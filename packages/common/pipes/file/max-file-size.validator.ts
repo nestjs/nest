@@ -1,6 +1,6 @@
-import { FileValidatorContext } from './file-validator-context.interface';
-import { FileValidator } from './file-validator.interface';
-import { IFile } from './interfaces';
+import { FileValidatorContext } from './file-validator-context.interface.js';
+import { FileValidator } from './file-validator.interface.js';
+import { IFile } from './interfaces/index.js';
 
 type MaxFileSizeValidatorContext = FileValidatorContext<
   Omit<MaxFileSizeValidatorOptions, 'errorMessage' | 'message'>

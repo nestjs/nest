@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
 
 const appServiceMock = {
-  getHello: jest.fn().mockImplementation(() => 'Hello World!'),
+  getHello: vi.fn().mockImplementation(() => 'Hello World!'),
 };
 
 describe('AppController', () => {

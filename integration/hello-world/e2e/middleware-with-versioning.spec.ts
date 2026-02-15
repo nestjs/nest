@@ -6,14 +6,14 @@ import {
   Module,
   RequestMethod,
   Version,
+  VERSION_NEUTRAL,
   VersioningOptions,
   VersioningType,
-  VERSION_NEUTRAL,
 } from '@nestjs/common';
-import { CustomVersioningOptions } from '@nestjs/common/interfaces';
+import { CustomVersioningOptions } from '@nestjs/common/interfaces/index.js';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 const RETURN_VALUE = 'test';
 const VERSIONED_VALUE = 'test_versioned';

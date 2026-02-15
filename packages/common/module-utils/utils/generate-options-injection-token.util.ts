@@ -1,4 +1,4 @@
-import { randomStringGenerator } from '../../utils/random-string-generator.util';
+import { randomStringGenerator } from '../../utils/random-string-generator.util.js';
 
 export function generateOptionsInjectionToken() {
   const hash = randomStringGenerator();

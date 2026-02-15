@@ -1,21 +1,24 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import { DynamicModule, Provider } from '../interfaces';
-import { Logger } from '../services/logger.service';
-import { randomStringGenerator } from '../utils/random-string-generator.util';
+import { DynamicModule, Provider } from '../interfaces/index.js';
+import { Logger } from '../services/logger.service.js';
+import { randomStringGenerator } from '../utils/random-string-generator.util.js';
 import {
   ASYNC_METHOD_SUFFIX,
   ASYNC_OPTIONS_METADATA_KEYS,
   CONFIGURABLE_MODULE_ID,
   DEFAULT_FACTORY_CLASS_METHOD_KEY,
   DEFAULT_METHOD_KEY,
-} from './constants';
+} from './constants.js';
 import {
   ConfigurableModuleAsyncOptions,
   ConfigurableModuleCls,
   ConfigurableModuleHost,
   ConfigurableModuleOptionsFactory,
-} from './interfaces';
-import { generateOptionsInjectionToken, getInjectionProviders } from './utils';
+} from './interfaces/index.js';
+import {
+  generateOptionsInjectionToken,
+  getInjectionProviders,
+} from './utils/index.js';
 
 /**
  * @publicApi

@@ -1,2 +1,2 @@
-export * from './interceptors-consumer';
-export * from './interceptors-context-creator';
+export * from './interceptors-consumer.js';
+export * from './interceptors-context-creator.js';

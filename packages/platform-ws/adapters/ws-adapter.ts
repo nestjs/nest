@@ -1,16 +1,16 @@
-import { INestApplicationContext, Logger } from '@nestjs/common';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isNil, normalizePath } from '@nestjs/common/utils/shared.utils';
+import { type INestApplicationContext, Logger } from '@nestjs/common';
 import { AbstractWsAdapter } from '@nestjs/websockets';
+import * as http from 'http';
+import { createRequire } from 'module';
+import { EMPTY, fromEvent, Observable } from 'rxjs';
+import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
+import { loadPackageSync, isNil, normalizePath } from '@nestjs/common/internal';
 import {
   CLOSE_EVENT,
   CONNECTION_EVENT,
   ERROR_EVENT,
-} from '@nestjs/websockets/constants';
-import { MessageMappingProperties } from '@nestjs/websockets/gateway-metadata-explorer';
-import * as http from 'http';
-import { EMPTY, fromEvent, Observable } from 'rxjs';
-import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
+} from '@nestjs/websockets/internal';
+import type { MessageMappingProperties } from '@nestjs/websockets';
 
 let wsPackage: any = {};
 
@@ -55,7 +55,14 @@ export class WsAdapter extends AbstractWsAdapter {
     options?: WsAdapterOptions,
   ) {
     super(appOrHttpServer);
-    wsPackage = loadPackage('ws', 'WsAdapter', () => require('ws'));
+    wsPackage = loadPackageSync('ws', 'WsAdapter', () =>
+      createRequire(import.meta.url)('ws'),
+    );
+    // Normalize CJS/ESM: In CJS, require('ws') returns WebSocket with .Server.
+    // We need .Server for creating WebSocketServer instances.
+    if (!wsPackage.Server) {
+      wsPackage = { ...wsPackage, Server: wsPackage.WebSocketServer };
+    }
 
     if (options?.messageParser) {
       this.messageParser = options.messageParser;
@@ -185,8 +192,10 @@ export class WsAdapter extends AbstractWsAdapter {
     const closeEventSignal = new Promise((resolve, reject) =>
       server.close((err: Error) => (err ? reject(err) : resolve(undefined))),
     );
-    for (const ws of server.clients) {
-      ws.terminate();
+    if (server.clients) {
+      for (const ws of server.clients) {
+        ws.terminate();
+      }
     }
     await closeEventSignal;
   }
@@ -234,7 +243,7 @@ export class WsAdapter extends AbstractWsAdapter {
           socket.destroy();
         }
       } catch (err) {
-        socket.end('HTTP/1.1 400\r\n' + err.message);
+        socket.end(`HTTP/1.1 400\r\n${err.message}`);
       }
     });
     return httpServer;

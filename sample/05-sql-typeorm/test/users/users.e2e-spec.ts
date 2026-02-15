@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import * as request from 'supertest';
-import { CreateUserDto } from '../../src/users/dto/create-user.dto';
-import { UsersModule } from '../../src/users/users.module';
+import request from 'supertest';
+import { CreateUserDto } from '../../src/users/dto/create-user.dto.js';
+import { UsersModule } from '../../src/users/users.module.js';
 
 describe('Users - /users (e2e)', () => {
   const users = {

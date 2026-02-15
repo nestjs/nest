@@ -1,13 +1,10 @@
 import { Injectable, InjectionToken, Provider, Scope } from '@nestjs/common';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { setTimeout } from 'timers/promises';
-import { ContextIdFactory } from '../helpers/context-id-factory';
-import { NestContainer } from '../injector/container';
-import { Injector } from '../injector/injector';
-import { InstanceLoader } from '../injector/instance-loader';
-import { GraphInspector } from '../inspector/graph-inspector';
-import { NestApplicationContext } from '../nest-application-context';
+import { ContextIdFactory } from '../helpers/context-id-factory.js';
+import { NestContainer } from '../injector/container.js';
+import { Injector } from '../injector/injector.js';
+import { InstanceLoader } from '../injector/instance-loader.js';
+import { GraphInspector } from '../inspector/graph-inspector.js';
+import { NestApplicationContext } from '../nest-application-context.js';
 
 describe('NestApplicationContext', () => {
   class A {}
@@ -87,9 +84,9 @@ describe('NestApplicationContext', () => {
         process.kill(process.pid, signal);
       });
 
-      const hookStub = sinon
-        .stub(applicationContext as any, 'callShutdownHook')
-        .callsFake(async () => {
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => {
           // run some async code
           await new Promise(resolve => setImmediate(() => resolve(undefined)));
           if (processUp) {
@@ -98,28 +95,33 @@ describe('NestApplicationContext', () => {
         });
       process.kill(process.pid, signal);
       await waitProcessDown;
-      hookStub.restore();
-      expect(processUp).to.be.false;
-      expect(promisesResolved).to.be.true;
+      hookStub.mockRestore();
+      expect(processUp).toBe(false);
+      expect(promisesResolved).toBe(true);
     });
 
     it('should defer shutdown until all init hooks are resolved', async () => {
-      const clock = sinon.useFakeTimers({
+      const clock = vi.useFakeTimers({
         toFake: ['setTimeout'],
       });
       const signal = 'SIGTERM';
 
-      const onModuleInitStub = sinon.stub();
-      const onApplicationShutdownStub = sinon.stub();
+      const onModuleInitStub = vi.fn();
+      const onApplicationShutdownStub = vi.fn();
+
+      // Use global setTimeout wrapped in a Promise so sinon fake timers
+      // can intercept it (timers/promises.setTimeout is not fakeable in ESM).
+      const delay = (ms: number) =>
+        new Promise<void>(resolve => globalThis.setTimeout(resolve, ms));
 
       class B {
         async onModuleInit() {
-          await setTimeout(5000);
+          await delay(5000);
           onModuleInitStub();
         }
 
         async onApplicationShutdown() {
-          await setTimeout(1000);
+          await delay(1000);
           onApplicationShutdownStub();
         }
       }
@@ -135,74 +137,82 @@ describe('NestApplicationContext', () => {
       process.on(signal, ignoreProcessSignal);
 
       const deferredShutdown = async () => {
-        await setTimeout(1);
+        await delay(1);
         process.kill(process.pid, signal);
       };
       void Promise.all([applicationContext.init(), deferredShutdown()]);
 
-      await clock.nextAsync();
-      expect(onModuleInitStub.called).to.be.false;
-      expect(onApplicationShutdownStub.called).to.be.false;
+      await vi.advanceTimersByTimeAsync(1);
+      expect(onModuleInitStub).not.toHaveBeenCalled();
+      expect(onApplicationShutdownStub).not.toHaveBeenCalled();
 
-      await clock.nextAsync();
-      expect(onModuleInitStub.called).to.be.true;
-      expect(onApplicationShutdownStub.called).to.be.false;
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(onModuleInitStub).toHaveBeenCalled();
+      expect(onApplicationShutdownStub).not.toHaveBeenCalled();
 
-      await clock.nextAsync();
-      expect(onModuleInitStub.called).to.be.true;
-      expect(onApplicationShutdownStub.called).to.be.true;
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(onModuleInitStub).toHaveBeenCalled();
+      expect(onApplicationShutdownStub).toHaveBeenCalled();
 
-      clock.restore();
+      vi.useRealTimers();
     });
 
     it('should use process.exit when useProcessExit option is enabled', async () => {
       const signal = 'SIGTERM';
       const applicationContext = await testHelper(A, Scope.DEFAULT);
 
-      const processExitStub = sinon.stub(process, 'exit');
-      const processKillStub = sinon.stub(process, 'kill');
+      const processExitStub = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => ({}) as any);
+      const processKillStub = vi
+        .spyOn(process, 'kill')
+        .mockImplementation(() => ({}) as any);
 
       applicationContext.enableShutdownHooks([signal], {
         useProcessExit: true,
       });
 
-      const hookStub = sinon
-        .stub(applicationContext as any, 'callShutdownHook')
-        .callsFake(async () => undefined);
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => undefined);
 
       const shutdownCleanupRef = applicationContext['shutdownCleanupRef']!;
       await shutdownCleanupRef(signal);
 
-      hookStub.restore();
-      processExitStub.restore();
-      processKillStub.restore();
+      expect(processExitStub).toHaveBeenCalledWith(0);
+      expect(processKillStub).not.toHaveBeenCalled();
 
-      expect(processExitStub.calledOnceWith(0)).to.be.true;
-      expect(processKillStub.called).to.be.false;
+      hookStub.mockRestore();
+      processExitStub.mockRestore();
+      processKillStub.mockRestore();
     });
 
     it('should use process.kill when useProcessExit option is not enabled', async () => {
       const signal = 'SIGTERM';
       const applicationContext = await testHelper(A, Scope.DEFAULT);
 
-      const processExitStub = sinon.stub(process, 'exit');
-      const processKillStub = sinon.stub(process, 'kill');
+      const processExitStub = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => ({}) as any);
+      const processKillStub = vi
+        .spyOn(process, 'kill')
+        .mockImplementation(() => ({}) as any);
 
       applicationContext.enableShutdownHooks([signal]);
 
-      const hookStub = sinon
-        .stub(applicationContext as any, 'callShutdownHook')
-        .callsFake(async () => undefined);
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => undefined);
 
       const shutdownCleanupRef = applicationContext['shutdownCleanupRef']!;
       await shutdownCleanupRef(signal);
 
-      hookStub.restore();
-      processExitStub.restore();
-      processKillStub.restore();
+      expect(processKillStub).toHaveBeenCalledWith(process.pid, signal);
+      expect(processExitStub).not.toHaveBeenCalled();
 
-      expect(processKillStub.calledOnceWith(process.pid, signal)).to.be.true;
-      expect(processExitStub.called).to.be.false;
+      hookStub.mockRestore();
+      processExitStub.mockRestore();
+      processKillStub.mockRestore();
     });
   });
 
@@ -215,9 +225,9 @@ describe('NestApplicationContext', () => {
         const a1: A = await applicationContext.get(key);
         const a2: A = await applicationContext.get(key);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).equal(a2);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).toBe(a2);
       });
 
       it('should get value with string injection key', async () => {
@@ -227,9 +237,9 @@ describe('NestApplicationContext', () => {
         const a1: A = await applicationContext.get(key);
         const a2: A = await applicationContext.get(key);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).equal(a2);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).toBe(a2);
       });
 
       it('should get value with symbol injection key', async () => {
@@ -239,9 +249,9 @@ describe('NestApplicationContext', () => {
         const a1: A = await applicationContext.get(key);
         const a2: A = await applicationContext.get(key);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).equal(a2);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).toBe(a2);
       });
     });
 
@@ -250,21 +260,21 @@ describe('NestApplicationContext', () => {
         const key = A;
         const applicationContext = await testHelper(key, Scope.REQUEST);
 
-        expect(() => applicationContext.get(key)).to.be.throw;
+        expect(() => applicationContext.get(key)).toThrow();
       });
 
       it('should throw error when use string injection key', async () => {
         const key = 'KEY_A';
         const applicationContext = await testHelper(key, Scope.REQUEST);
 
-        expect(() => applicationContext.get(key)).to.be.throw;
+        expect(() => applicationContext.get(key)).toThrow();
       });
 
       it('should throw error when use symbol injection key', async () => {
         const key = Symbol('KEY_A');
         const applicationContext = await testHelper(key, Scope.REQUEST);
 
-        expect(() => applicationContext.get(key)).to.be.throw;
+        expect(() => applicationContext.get(key)).toThrow();
       });
     });
 
@@ -273,21 +283,21 @@ describe('NestApplicationContext', () => {
         const key = A;
         const applicationContext = await testHelper(key, Scope.TRANSIENT);
 
-        expect(() => applicationContext.get(key)).to.be.throw;
+        expect(() => applicationContext.get(key)).toThrow();
       });
 
       it('should throw error when use string injection key', async () => {
         const key = 'KEY_A';
         const applicationContext = await testHelper(key, Scope.TRANSIENT);
 
-        expect(() => applicationContext.get(key)).to.be.throw;
+        expect(() => applicationContext.get(key)).toThrow();
       });
 
       it('should throw error when use symbol injection key', async () => {
         const key = Symbol('KEY_A');
         const applicationContext = await testHelper(key, Scope.TRANSIENT);
 
-        expect(() => applicationContext.get(key)).to.be.throw;
+        expect(() => applicationContext.get(key)).toThrow();
       });
     });
   });
@@ -301,9 +311,9 @@ describe('NestApplicationContext', () => {
         const a1: A = await applicationContext.resolve(key);
         const a2: A = await applicationContext.resolve(key);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).equal(a2);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).toBe(a2);
       });
 
       it('should resolve value with string injection key', async () => {
@@ -313,9 +323,9 @@ describe('NestApplicationContext', () => {
         const a1: A = await applicationContext.resolve(key);
         const a2: A = await applicationContext.resolve(key);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).equal(a2);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).toBe(a2);
       });
 
       it('should resolve value with symbol injection key', async () => {
@@ -325,9 +335,9 @@ describe('NestApplicationContext', () => {
         const a1: A = await applicationContext.resolve(key);
         const a2: A = await applicationContext.resolve(key);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).equal(a2);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).toBe(a2);
       });
     });
 
@@ -341,10 +351,10 @@ describe('NestApplicationContext', () => {
         const a2: A = await applicationContext.resolve(key, contextId);
         const a3: A = await applicationContext.resolve(key, contextId);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).not.equal(a2);
-        expect(a2).equal(a3);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).not.toBe(a2);
+        expect(a2).toBe(a3);
       });
 
       it('should resolve value with string injection key', async () => {
@@ -356,10 +366,10 @@ describe('NestApplicationContext', () => {
         const a2: A = await applicationContext.resolve(key, contextId);
         const a3: A = await applicationContext.resolve(key, contextId);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).not.equal(a2);
-        expect(a2).equal(a3);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).not.toBe(a2);
+        expect(a2).toBe(a3);
       });
 
       it('should resolve value with symbol injection key', async () => {
@@ -371,10 +381,10 @@ describe('NestApplicationContext', () => {
         const a2: A = await applicationContext.resolve(key, contextId);
         const a3: A = await applicationContext.resolve(key, contextId);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).not.equal(a2);
-        expect(a2).equal(a3);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).not.toBe(a2);
+        expect(a2).toBe(a3);
       });
     });
 
@@ -388,10 +398,10 @@ describe('NestApplicationContext', () => {
         const a2: A = await applicationContext.resolve(key, contextId);
         const a3: A = await applicationContext.resolve(key, contextId);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).not.equal(a2);
-        expect(a2).equal(a3);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).not.toBe(a2);
+        expect(a2).toBe(a3);
       });
 
       it('should resolve value with string injection key', async () => {
@@ -403,10 +413,10 @@ describe('NestApplicationContext', () => {
         const a2: A = await applicationContext.resolve(key, contextId);
         const a3: A = await applicationContext.resolve(key, contextId);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).not.equal(a2);
-        expect(a2).equal(a3);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).not.toBe(a2);
+        expect(a2).toBe(a3);
       });
 
       it('should resolve value with symbol injection key', async () => {
@@ -418,10 +428,10 @@ describe('NestApplicationContext', () => {
         const a2: A = await applicationContext.resolve(key, contextId);
         const a3: A = await applicationContext.resolve(key, contextId);
 
-        expect(a1).instanceOf(A);
-        expect(a2).instanceOf(A);
-        expect(a1).not.equal(a2);
-        expect(a2).equal(a3);
+        expect(a1).toBeInstanceOf(A);
+        expect(a2).toBeInstanceOf(A);
+        expect(a1).not.toBe(a2);
+        expect(a2).toBe(a3);
       });
     });
   });
@@ -454,7 +464,7 @@ describe('NestApplicationContext', () => {
       const appCtx = new NestApplicationContext(nestContainer);
 
       // With a non-static dependency tree, get() should refuse and instruct to use resolve()
-      expect(() => appCtx.get(Host)).to.throw();
+      expect(() => appCtx.get(Host)).toThrow();
     });
 
     it('resolve() should instantiate when dependency tree is not static (request-scoped enhancer attached)', async () => {
@@ -482,7 +492,7 @@ describe('NestApplicationContext', () => {
       const appCtx = new NestApplicationContext(nestContainer);
 
       const instance = await appCtx.resolve(Host);
-      expect(instance).instanceOf(Host);
+      expect(instance).toBeInstanceOf(Host);
     });
   });
 
@@ -538,11 +548,11 @@ describe('NestApplicationContext', () => {
         each: true,
       });
 
-      expect(instances).to.be.an('array');
-      expect(instances).to.have.length(3);
-      expect(instances[0]).to.be.instanceOf(Service1);
-      expect(instances[1]).to.be.instanceOf(Service2);
-      expect(instances[2]).to.be.instanceOf(Service3);
+      expect(instances).toEqual(expect.any(Array));
+      expect(instances).toHaveLength(3);
+      expect(instances[0]).toBeInstanceOf(Service1);
+      expect(instances[1]).toBeInstanceOf(Service2);
+      expect(instances[2]).toBeInstanceOf(Service3);
     });
   });
 });

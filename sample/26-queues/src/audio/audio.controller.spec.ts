@@ -1,14 +1,14 @@
 import { getQueueToken } from '@nestjs/bull';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Queue } from 'bull';
-import { AudioController } from './audio.controller';
+import { AudioController } from './audio.controller.js';
 
 describe('AudioController', () => {
   let audioController: AudioController;
   let audioQueue: Queue;
 
   const mockQueue = {
-    add: jest.fn(),
+    add: vi.fn(),
   };
 
   beforeEach(async () => {
@@ -27,7 +27,7 @@ describe('AudioController', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('transcode', () => {

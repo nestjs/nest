@@ -1,10 +1,10 @@
-import { Transport } from '../enums/transport.enum';
-import { ClientKafkaProxy } from '../interfaces';
+import { Transport } from '../enums/transport.enum.js';
+import { ClientKafkaProxy } from '../interfaces/index.js';
 import {
   ClientOptions,
   CustomClientOptions,
   TcpClientOptions,
-} from '../interfaces/client-metadata.interface';
+} from '../interfaces/client-metadata.interface.js';
 import {
   GrpcOptions,
   KafkaOptions,
@@ -12,15 +12,15 @@ import {
   NatsOptions,
   RedisOptions,
   RmqOptions,
-} from '../interfaces/microservice-configuration.interface';
-import { ClientGrpcProxy } from './client-grpc';
-import { ClientKafka } from './client-kafka';
-import { ClientMqtt } from './client-mqtt';
-import { ClientNats } from './client-nats';
-import { ClientProxy } from './client-proxy';
-import { ClientRedis } from './client-redis';
-import { ClientRMQ } from './client-rmq';
-import { ClientTCP } from './client-tcp';
+} from '../interfaces/microservice-configuration.interface.js';
+import { ClientGrpcProxy } from './client-grpc.js';
+import { ClientKafka } from './client-kafka.js';
+import { ClientMqtt } from './client-mqtt.js';
+import { ClientNats } from './client-nats.js';
+import { ClientProxy } from './client-proxy.js';
+import { ClientRedis } from './client-redis.js';
+import { ClientRMQ } from './client-rmq.js';
+import { ClientTCP } from './client-tcp.js';
 
 export interface IClientProxyFactory {
   create(clientOptions: ClientOptions): ClientProxy;

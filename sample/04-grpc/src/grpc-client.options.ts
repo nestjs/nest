@@ -1,6 +1,9 @@
 import { ReflectionService } from '@grpc/reflection';
 import { GrpcOptions, Transport } from '@nestjs/microservices';
-import { join } from 'path';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export const grpcClientOptions: GrpcOptions = {
   transport: Transport.GRPC,

@@ -1,12 +1,14 @@
-import { FILTER_CATCH_EXCEPTIONS } from '@nestjs/common/constants';
-import { Type } from '@nestjs/common/interfaces';
-import { ExceptionFilter } from '@nestjs/common/interfaces/exceptions/exception-filter.interface';
-import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
+import type { ExceptionFilter, Type } from '@nestjs/common';
+import {
+  FILTER_CATCH_EXCEPTIONS,
+  isEmptyArray,
+  isFunction,
+} from '@nestjs/common/internal';
 import { iterate } from 'iterare';
-import { ContextCreator } from '../helpers/context-creator';
-import { STATIC_CONTEXT } from '../injector/constants';
-import { NestContainer } from '../injector/container';
-import { InstanceWrapper } from '../injector/instance-wrapper';
+import { ContextCreator } from '../helpers/context-creator.js';
+import { STATIC_CONTEXT } from '../injector/constants.js';
+import { NestContainer } from '../injector/container.js';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
 
 export class BaseExceptionFilterContext extends ContextCreator {
   protected moduleContext: string;
@@ -20,7 +22,7 @@ export class BaseExceptionFilterContext extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): R {
-    if (isEmpty(metadata)) {
+    if (isEmptyArray(metadata)) {
       return [] as any[] as R;
     }
     return iterate(metadata)

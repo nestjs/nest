@@ -1,24 +1,24 @@
 import { iterate } from 'iterare';
 import { types } from 'util';
-import { Optional } from '../decorators';
-import { Injectable } from '../decorators/core';
-import { HttpStatus } from '../enums/http-status.enum';
-import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
-import { TransformerPackage } from '../interfaces/external/transformer-package.interface';
-import { ValidationError } from '../interfaces/external/validation-error.interface';
-import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
-import { ValidatorPackage } from '../interfaces/external/validator-package.interface';
+import { Injectable } from '../decorators/core/index.js';
+import { Optional } from '../decorators/index.js';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface.js';
+import { TransformerPackage } from '../interfaces/external/transformer-package.interface.js';
+import { ValidationError } from '../interfaces/external/validation-error.interface.js';
+import { ValidatorOptions } from '../interfaces/external/validator-options.interface.js';
+import { ValidatorPackage } from '../interfaces/external/validator-package.interface.js';
 import {
   ArgumentMetadata,
   PipeTransform,
-} from '../interfaces/features/pipe-transform.interface';
-import { Type } from '../interfaces/type.interface';
+} from '../interfaces/features/pipe-transform.interface.js';
+import { Type } from '../interfaces/type.interface.js';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
-} from '../utils/http-error-by-code.util';
-import { loadPackage } from '../utils/load-package.util';
-import { isNil, isUndefined } from '../utils/shared.utils';
+} from '../utils/http-error-by-code.util.js';
+import { loadPackage } from '../utils/load-package.util.js';
+import { isNil, isUndefined } from '../utils/shared.utils.js';
 
 /**
  * @publicApi
@@ -35,8 +35,8 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   transformerPackage?: TransformerPackage;
 }
 
-let classValidator: ValidatorPackage = {} as any;
-let classTransformer: TransformerPackage = {} as any;
+let classValidator: any = {} as any;
+let classTransformer: any = {} as any;
 
 /**
  * Built-in JavaScript types that should be excluded from prototype stripping
@@ -90,22 +90,26 @@ export class ValidationPipe implements PipeTransform<any> {
 
   protected loadValidator(
     validatorPackage?: ValidatorPackage,
-  ): ValidatorPackage {
+  ): ValidatorPackage | Promise<ValidatorPackage> {
     return (
       validatorPackage ??
-      loadPackage('class-validator', 'ValidationPipe', () =>
-        require('class-validator'),
+      loadPackage(
+        'class-validator',
+        'ValidationPipe',
+        () => import('class-validator'),
       )
     );
   }
 
   protected loadTransformer(
     transformerPackage?: TransformerPackage,
-  ): TransformerPackage {
+  ): TransformerPackage | Promise<TransformerPackage> {
     return (
       transformerPackage ??
-      loadPackage('class-transformer', 'ValidationPipe', () =>
-        require('class-transformer'),
+      loadPackage(
+        'class-transformer',
+        'ValidationPipe',
+        () => import('class-transformer'),
       )
     );
   }
@@ -121,6 +125,10 @@ export class ValidationPipe implements PipeTransform<any> {
         ? this.transformPrimitive(value, metadata)
         : value;
     }
+
+    classValidator = (await classValidator) as ValidatorPackage;
+    classTransformer = (await classTransformer) as TransformerPackage;
+
     const originalValue = value;
     value = this.toEmptyIfNil(value, metatype);
 

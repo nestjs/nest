@@ -1,18 +1,18 @@
 import {
-  ArgumentsHost,
-  ExceptionFilter,
+  type ArgumentsHost,
+  type ExceptionFilter,
   HttpException,
-  HttpServer,
+  type HttpServer,
   HttpStatus,
   Inject,
   IntrinsicException,
   Logger,
   Optional,
 } from '@nestjs/common';
-import { isObject } from '@nestjs/common/utils/shared.utils';
-import { AbstractHttpAdapter } from '../adapters';
-import { MESSAGES } from '../constants';
-import { HttpAdapterHost } from '../helpers/http-adapter-host';
+import { AbstractHttpAdapter } from '../adapters/index.js';
+import { MESSAGES } from '../constants.js';
+import { HttpAdapterHost } from '../helpers/http-adapter-host.js';
+import { isObject } from '@nestjs/common/internal';
 
 export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
   private static readonly logger = new Logger('ExceptionsHandler');

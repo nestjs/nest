@@ -1,5 +1,5 @@
-import { isFunction } from '@nestjs/common/utils/shared.utils';
-import { WsParamtype } from '../enums/ws-paramtype.enum';
+import { WsParamtype } from '../enums/ws-paramtype.enum.js';
+import { isFunction } from '@nestjs/common/internal';
 
 export class WsParamsFactory {
   public exchangeKeyForValue(

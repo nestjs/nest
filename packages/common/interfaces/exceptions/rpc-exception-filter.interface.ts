@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { ArgumentsHost } from '../features/arguments-host.interface';
+import { ArgumentsHost } from '../features/arguments-host.interface.js';
 
 /**
  * Interface describing implementation of an RPC exception filter.

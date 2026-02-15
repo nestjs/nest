@@ -1,48 +1,43 @@
 import {
-  InjectionToken,
+  type InjectionToken,
   Logger,
-  LoggerService,
-  OptionalFactoryDependency,
+  type LoggerService,
+  type OptionalFactoryDependency,
 } from '@nestjs/common';
+import { iterate } from 'iterare';
+import { performance } from 'perf_hooks';
+import { CircularDependencyException } from '../errors/exceptions/index.js';
+import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
+import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception.js';
+import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception.js';
+import { Barrier } from '../helpers/barrier.js';
+import { STATIC_CONTEXT } from './constants.js';
+import { INQUIRER } from './inquirer/index.js';
+import {
+  ContextId,
+  InstancePerContext,
+  InstanceWrapper,
+  PropertyMetadata,
+} from './instance-wrapper.js';
+import { Module } from './module.js';
+import { SettlementSignal } from './settlement-signal.js';
 import {
   OPTIONAL_DEPS_METADATA,
   OPTIONAL_PROPERTY_DEPS_METADATA,
   PARAMTYPES_METADATA,
   PROPERTY_DEPS_METADATA,
   SELF_DECLARED_DEPS_METADATA,
-} from '@nestjs/common/constants';
-import {
-  Controller,
-  ForwardReference,
-  Injectable,
-  Type,
-} from '@nestjs/common/interfaces';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
-import {
+  type Controller,
+  type Injectable,
+  clc,
   isFunction,
   isNil,
   isObject,
   isString,
   isSymbol,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
-import { iterate } from 'iterare';
-import { performance } from 'perf_hooks';
-import { CircularDependencyException } from '../errors/exceptions';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
-import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
-import { Barrier } from '../helpers/barrier';
-import { STATIC_CONTEXT } from './constants';
-import { INQUIRER } from './inquirer';
-import {
-  ContextId,
-  InstancePerContext,
-  InstanceWrapper,
-  PropertyMetadata,
-} from './instance-wrapper';
-import { Module } from './module';
-import { SettlementSignal } from './settlement-signal';
+} from '@nestjs/common/internal';
+import type { ForwardReference, Type } from '@nestjs/common';
 
 /**
  * The type of an injectable dependency
@@ -809,7 +804,7 @@ export class Injector {
     properties: PropertyDependency[],
   ): void {
     if (!isObject(instance)) {
-      return undefined;
+      return;
     }
     iterate(properties)
       .filter(item => !isNil(item.instance))

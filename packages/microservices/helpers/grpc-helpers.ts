@@ -1,6 +1,6 @@
-import { InvalidGrpcPackageDefinitionMissingPackageDefinitionException } from '../errors/invalid-grpc-package-definition-missing-package-definition.exception';
-import { InvalidGrpcPackageDefinitionMutexException } from '../errors/invalid-grpc-package-definition-mutex.exception';
-import { GrpcOptions } from '../interfaces';
+import { InvalidGrpcPackageDefinitionMissingPackageDefinitionException } from '../errors/invalid-grpc-package-definition-missing-package-definition.exception.js';
+import { InvalidGrpcPackageDefinitionMutexException } from '../errors/invalid-grpc-package-definition-mutex.exception.js';
+import { GrpcOptions } from '../interfaces/index.js';
 
 export function getGrpcPackageDefinition(
   options: GrpcOptions['options'],

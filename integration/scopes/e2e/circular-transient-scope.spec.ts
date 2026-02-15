@@ -1,11 +1,10 @@
 import { INestApplication, Scope } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as request from 'supertest';
-import { HelloController } from '../src/circular-transient/hello.controller';
-import { HelloModule } from '../src/circular-transient/hello.module';
-import { HelloService } from '../src/circular-transient/hello.service';
-import { UsersService } from '../src/circular-transient/users/users.service';
+import request from 'supertest';
+import { HelloController } from '../src/circular-transient/hello.controller.js';
+import { HelloModule } from '../src/circular-transient/hello.module.js';
+import { HelloService } from '../src/circular-transient/hello.service.js';
+import { UsersService } from '../src/circular-transient/users/users.service.js';
 
 class Meta {
   static COUNTER = 0;
@@ -18,7 +17,7 @@ describe('Circular transient scope', () => {
   let server;
   let app: INestApplication;
 
-  before(async () => {
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       imports: [
         HelloModule.forRoot({
@@ -35,7 +34,7 @@ describe('Circular transient scope', () => {
   });
 
   describe('when one service is request scoped', () => {
-    before(async () => {
+    beforeAll(async () => {
       const performHttpCall = end =>
         request(server)
           .get('/hello')
@@ -49,23 +48,23 @@ describe('Circular transient scope', () => {
     });
 
     it(`should create controller for each request`, async () => {
-      expect(HelloController.COUNTER).to.be.eql(3);
+      expect(HelloController.COUNTER).toEqual(3);
     });
 
     it(`should create service for each request`, async () => {
-      expect(UsersService.COUNTER).to.be.eql(3);
+      expect(UsersService.COUNTER).toEqual(3);
     });
 
     it(`should create service for each request`, async () => {
-      expect(HelloService.COUNTER).to.be.eql(3);
+      expect(HelloService.COUNTER).toEqual(3);
     });
 
     it(`should create provider for each inquirer`, async () => {
-      expect(Meta.COUNTER).to.be.eql(7);
+      expect(Meta.COUNTER).toEqual(7);
     });
   });
 
-  after(async () => {
+  afterAll(async () => {
     await app.close();
   });
 });

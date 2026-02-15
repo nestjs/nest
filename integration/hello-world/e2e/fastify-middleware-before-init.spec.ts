@@ -11,7 +11,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 
 describe('Middleware before init (FastifyAdapter)', () => {
   let app: NestFastifyApplication;
@@ -81,11 +80,11 @@ describe('Middleware before init (FastifyAdapter)', () => {
           url: '/test',
         })
         .then(({ statusCode, payload, headers }) => {
-          expect(statusCode).to.equal(200);
-          expect(JSON.parse(payload)).to.deep.equal({ data: 'test_data' });
+          expect(statusCode).toBe(200);
+          expect(JSON.parse(payload)).toEqual({ data: 'test_data' });
           // Verify both module-level and global middleware were applied
-          expect(headers['x-middleware']).to.equal('applied');
-          expect(headers['x-global-middleware']).to.equal('applied');
+          expect(headers['x-middleware']).toBe('applied');
+          expect(headers['x-global-middleware']).toBe('applied');
         });
     });
 
@@ -123,8 +122,8 @@ describe('Middleware before init (FastifyAdapter)', () => {
           url: '/test',
         })
         .then(({ statusCode, payload }) => {
-          expect(statusCode).to.equal(200);
-          expect(JSON.parse(payload)).to.deep.equal({ data: 'test_data' });
+          expect(statusCode).toBe(200);
+          expect(JSON.parse(payload)).toEqual({ data: 'test_data' });
         });
     });
 

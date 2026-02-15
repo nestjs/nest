@@ -1,2 +1,2 @@
-export * from './fastify-static-options.interface';
-export * from './fastify-view-options.interface';
+export * from './fastify-static-options.interface.js';
+export * from './fastify-view-options.interface.js';

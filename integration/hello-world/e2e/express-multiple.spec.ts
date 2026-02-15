@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
-import * as express from 'express';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import express from 'express';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 describe('Hello world (express instance with multiple applications)', () => {
   let server;

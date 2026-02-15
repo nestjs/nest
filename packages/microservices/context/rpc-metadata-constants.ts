@@ -1,4 +1,4 @@
-import { RpcParamtype } from '../enums/rpc-paramtype.enum';
+import { RpcParamtype } from '../enums/rpc-paramtype.enum.js';
 
 export const DEFAULT_CALLBACK_METADATA = {
   [`${RpcParamtype.PAYLOAD}:0`]: { index: 0, data: undefined, pipes: [] },

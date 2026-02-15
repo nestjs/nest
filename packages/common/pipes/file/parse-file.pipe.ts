@@ -1,10 +1,14 @@
-import { Injectable, Optional } from '../../decorators/core';
-import { HttpStatus } from '../../enums';
-import { PipeTransform } from '../../interfaces/features/pipe-transform.interface';
-import { HttpErrorByCode } from '../../utils/http-error-by-code.util';
-import { isEmpty, isObject, isUndefined } from '../../utils/shared.utils';
-import { FileValidator } from './file-validator.interface';
-import { ParseFileOptions } from './parse-file-options.interface';
+import { Injectable, Optional } from '../../decorators/core/index.js';
+import { HttpStatus } from '../../enums/index.js';
+import { PipeTransform } from '../../interfaces/features/pipe-transform.interface.js';
+import { HttpErrorByCode } from '../../utils/http-error-by-code.util.js';
+import {
+  isEmptyArray,
+  isObject,
+  isUndefined,
+} from '../../utils/shared.utils.js';
+import { FileValidator } from './file-validator.interface.js';
+import { ParseFileOptions } from './parse-file-options.interface.js';
 
 /**
  * Defines the built-in ParseFile Pipe. This pipe can be used to validate incoming files
@@ -60,9 +64,8 @@ export class ParseFilePipe implements PipeTransform<any> {
   }
 
   private thereAreNoFilesIn(value: any): boolean {
-    const isEmptyArray = Array.isArray(value) && isEmpty(value);
-    const isEmptyObject = isObject(value) && isEmpty(Object.keys(value));
-    return isUndefined(value) || isEmptyArray || isEmptyObject;
+    const isEmptyObject = isObject(value) && isEmptyArray(Object.keys(value));
+    return isUndefined(value) || isEmptyArray(value) || isEmptyObject;
   }
 
   protected async validate(file: any): Promise<any> {

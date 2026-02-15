@@ -1,9 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 
-import { Cat } from '../../src/graphql.schema';
-import { AppModule } from '../../src/app.module';
+import { Cat } from '../../src/graphql.schema.js';
+import { AppModule } from '../../src/app.module.js';
 
 describe('Cats Resolver (e2e)', () => {
   let app: INestApplication;

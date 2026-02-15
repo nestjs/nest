@@ -1,9 +1,7 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { Catch } from '../../../common/decorators/core/catch.decorator';
-import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator';
-import { NestContainer } from '../../../core/injector/container';
-import { ExceptionFiltersContext } from '../../context/exception-filters-context';
+import { Catch } from '../../../common/decorators/core/catch.decorator.js';
+import { UseFilters } from '../../../common/decorators/core/exception-filters.decorator.js';
+import { NestContainer } from '../../../core/injector/container.js';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context.js';
 
 describe('ExceptionFiltersContext', () => {
   let exceptionFilter: ExceptionFiltersContext;
@@ -21,7 +19,7 @@ describe('ExceptionFiltersContext', () => {
     describe('when filters metadata is empty', () => {
       class EmptyMetadata {}
       beforeEach(() => {
-        sinon.stub(exceptionFilter, 'createContext').returns([]);
+        vi.spyOn(exceptionFilter, 'createContext').mockReturnValue([]);
       });
       it('should return plain ExceptionHandler object', () => {
         const filter = exceptionFilter.create(
@@ -29,7 +27,7 @@ describe('ExceptionFiltersContext', () => {
           () => ({}) as any,
           '',
         );
-        expect((filter as any).filters).to.be.empty;
+        expect((filter as any).filters).toHaveLength(0);
       });
     });
     describe('when filters metadata is not empty', () => {
@@ -42,7 +40,7 @@ describe('ExceptionFiltersContext', () => {
           () => ({}) as any,
           '',
         );
-        expect((filter as any).filters).to.not.be.empty;
+        expect((filter as any).filters).not.toHaveLength(0);
       });
     });
   });

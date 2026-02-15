@@ -1,4 +1,4 @@
-import { logLevel } from '../external/kafka.interface';
+import { logLevel } from '../external/kafka.interface.js';
 
 export const KafkaLogger =
   (logger: any) =>

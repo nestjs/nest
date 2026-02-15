@@ -1,8 +1,8 @@
 import { Buffer } from 'buffer';
 import { StringDecoder } from 'string_decoder';
-import { CorruptedPacketLengthException } from '../errors/corrupted-packet-length.exception';
-import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception';
-import { TcpSocket } from './tcp-socket';
+import { CorruptedPacketLengthException } from '../errors/corrupted-packet-length.exception.js';
+import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception.js';
+import { TcpSocket } from './tcp-socket.js';
 
 const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
 

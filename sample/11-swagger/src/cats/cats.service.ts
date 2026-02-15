@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateCatDto } from './dto/create-cat.dto';
-import { Cat } from './entities/cat.entity';
+import { CreateCatDto } from './dto/create-cat.dto.js';
+import { Cat } from './entities/cat.entity.js';
 
 @Injectable()
 export class CatsService {

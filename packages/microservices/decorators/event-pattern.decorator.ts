@@ -1,17 +1,12 @@
 import {
-  isNil,
-  isNumber,
-  isObject,
-  isSymbol,
-} from '@nestjs/common/utils/shared.utils';
-import {
   PATTERN_EXTRAS_METADATA,
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
-} from '../constants';
-import { Transport } from '../enums';
-import { PatternHandler } from '../enums/pattern-handler.enum';
+} from '../constants.js';
+import { Transport } from '../enums/index.js';
+import { PatternHandler } from '../enums/pattern-handler.enum.js';
+import { isNil, isNumber, isObject, isSymbol } from '@nestjs/common/internal';
 
 /**
  * Subscribes to incoming events which fulfils chosen pattern.

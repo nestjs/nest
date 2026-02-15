@@ -1,13 +1,11 @@
 import { Logger } from '@nestjs/common';
-import { expect } from 'chai';
 import { join } from 'path';
 import { ReplaySubject, Subject, throwError } from 'rxjs';
-import * as sinon from 'sinon';
-import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception';
-import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception';
-import * as grpcHelpers from '../../helpers/grpc-helpers';
-import { GrpcMethodStreamingType } from '../../index';
-import { ServerGrpc } from '../../server';
+import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
+import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception.js';
+import { GrpcMethodStreamingType } from '../../index.js';
+import { ServerGrpc } from '../../server/index.js';
+import { objectToMap } from './utils/object-to-map.js';
 
 const CANCELLED_EVENT = 'cancelled';
 
@@ -24,7 +22,7 @@ describe('ServerGrpc', () => {
 
   beforeEach(() => {
     server = new ServerGrpc({
-      protoPath: join(__dirname, './test.proto'),
+      protoPath: join(import.meta.dirname, './test.proto'),
       package: 'test',
     });
     untypedServer = server as any;
@@ -33,84 +31,82 @@ describe('ServerGrpc', () => {
       protoPath: ['test.proto', 'test2.proto'],
       package: ['test', 'test2'],
       loader: {
-        includeDirs: [join(__dirname, '.')],
+        includeDirs: [join(import.meta.dirname, '.')],
       },
     });
   });
 
   describe('listen', () => {
-    let callback: sinon.SinonSpy;
-    let bindEventsStub: sinon.SinonStub;
+    let callback: ReturnType<typeof vi.fn>;
+    let bindEventsStub: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      callback = sinon.spy();
-      bindEventsStub = sinon
-        .stub(server, 'bindEvents')
-        .callsFake(() => ({}) as any);
+      callback = vi.fn();
+      bindEventsStub = vi
+        .spyOn(server, 'bindEvents')
+        .mockImplementation(() => ({}) as any);
     });
 
     it('should call "bindEvents"', async () => {
       await server.listen(callback);
       await server.close();
-      expect(bindEventsStub.called).to.be.true;
+      expect(bindEventsStub).toHaveBeenCalled();
     });
     it('should call callback', async () => {
       await server.listen(callback);
       await server.close();
-      expect(callback.called).to.be.true;
+      expect(callback).toHaveBeenCalled();
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
 
-        const callbackSpy = sinon.spy();
-        sinon.stub(server, 'createClient').callsFake(async () => null);
+        const callbackSpy = vi.fn();
+        vi.spyOn(server, 'createClient').mockImplementation(async () => null);
 
-        sinon.stub(server, 'start').callsFake(() => {
+        vi.spyOn(server, 'start').mockImplementation(() => {
           throw error;
         });
         await server.listen(callbackSpy);
-        expect(callbackSpy.calledWith(error)).to.be.true;
+        expect(callbackSpy).toHaveBeenCalledWith(error);
       });
     });
   });
 
   describe('listen (multiple proto)', () => {
-    let callback: sinon.SinonSpy;
-    let bindEventsStub: sinon.SinonStub;
+    let callback: ReturnType<typeof vi.fn>;
+    let bindEventsStub: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      callback = sinon.spy();
-      bindEventsStub = sinon
-        .stub(serverMulti, 'bindEvents')
-        .callsFake(() => ({}) as any);
+      callback = vi.fn();
+      bindEventsStub = vi
+        .spyOn(serverMulti, 'bindEvents')
+        .mockImplementation(() => ({}) as any);
     });
 
     it('should call "bindEvents"', async () => {
       await serverMulti.listen(callback);
       await serverMulti.close();
-      expect(bindEventsStub.called).to.be.true;
+      expect(bindEventsStub).toHaveBeenCalled();
     });
     it('should call callback', async () => {
       await serverMulti.listen(callback);
       await serverMulti.close();
-      expect(callback.called).to.be.true;
+      expect(callback).toHaveBeenCalled();
     });
   });
 
   describe('bindEvents', () => {
     beforeEach(() => {
-      sinon.stub(server, 'loadProto').callsFake(() => ({}));
+      vi.spyOn(server, 'loadProto').mockImplementation(() => ({}));
     });
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', async () => {
-        sinon.stub(server, 'lookupPackage').callsFake(() => null);
+        vi.spyOn(server, 'lookupPackage').mockImplementation(() => null);
         untypedServer.logger = new NoopLogger();
-        try {
-          await server.bindEvents();
-        } catch (err) {
-          expect(err).to.be.instanceOf(InvalidGrpcPackageException);
-        }
+        await expect(server.bindEvents()).rejects.toBeInstanceOf(
+          InvalidGrpcPackageException,
+        );
       });
     });
     describe('when package exist', () => {
@@ -125,32 +121,32 @@ describe('ServerGrpc', () => {
             service: true,
           },
         ];
-        sinon.stub(server, 'lookupPackage').callsFake(() => ({
+        vi.spyOn(server, 'lookupPackage').mockImplementation(() => ({
           test: { service: true },
           test2: { service: true },
         }));
-        sinon.stub(server, 'getServiceNames').callsFake(() => serviceNames);
-        untypedServer.grpcClient = { addService: sinon.spy() };
+        vi.spyOn(server, 'getServiceNames').mockImplementation(
+          () => serviceNames,
+        );
+        untypedServer.grpcClient = { addService: vi.fn() };
 
         await server.bindEvents();
-        expect(untypedServer.grpcClient.addService.calledTwice).to.be.true;
+        expect(untypedServer.grpcClient.addService).toHaveBeenCalledTimes(2);
       });
     });
   });
 
   describe('bindEvents (multiple proto)', () => {
     beforeEach(() => {
-      sinon.stub(serverMulti, 'loadProto').callsFake(() => ({}));
+      vi.spyOn(serverMulti, 'loadProto').mockImplementation(() => ({}));
     });
     describe('when package does not exist', () => {
       it('should throw "InvalidGrpcPackageException"', async () => {
-        sinon.stub(serverMulti, 'lookupPackage').callsFake(() => null);
+        vi.spyOn(serverMulti, 'lookupPackage').mockImplementation(() => null);
         (serverMulti as any).logger = new NoopLogger();
-        try {
-          await serverMulti.bindEvents();
-        } catch (err) {
-          expect(err).to.be.instanceOf(InvalidGrpcPackageException);
-        }
+        await expect(serverMulti.bindEvents()).rejects.toBeInstanceOf(
+          InvalidGrpcPackageException,
+        );
       });
     });
     describe('when package exist', () => {
@@ -161,18 +157,19 @@ describe('ServerGrpc', () => {
             service: true,
           },
         ];
-        sinon.stub(serverMulti, 'lookupPackage').callsFake(() => ({
+        vi.spyOn(serverMulti, 'lookupPackage').mockImplementation(() => ({
           test: { service: true },
         }));
-        sinon
-          .stub(serverMulti, 'getServiceNames')
-          .callsFake(() => serviceNames);
+        vi.spyOn(serverMulti, 'getServiceNames').mockImplementation(
+          () => serviceNames,
+        );
 
-        (serverMulti as any).grpcClient = { addService: sinon.spy() };
+        (serverMulti as any).grpcClient = { addService: vi.fn() };
 
         await serverMulti.bindEvents();
-        expect((serverMulti as any).grpcClient.addService.calledTwice).to.be
-          .true;
+        expect(
+          (serverMulti as any).grpcClient.addService,
+        ).toHaveBeenCalledTimes(2);
       });
     });
   });
@@ -194,29 +191,23 @@ describe('ServerGrpc', () => {
           service: { service: true },
         },
       ];
-      expect(server.getServiceNames(obj)).to.be.eql(expected);
+      expect(server.getServiceNames(obj)).toEqual(expected);
     });
   });
 
   describe('createService', () => {
-    const objectToMap = obj =>
-      new Map(Object.keys(obj).map(key => [key, obj[key]]) as any);
-
     it('should call "createServiceMethod"', async () => {
       const handlers = objectToMap({
         test: null,
         test2: () => ({}),
       });
-      sinon
-        .stub(server, 'createPattern')
-        .onFirstCall()
-        .returns('test')
-        .onSecondCall()
-        .returns('test2');
+      vi.spyOn(server, 'createPattern')
+        .mockReturnValueOnce('test')
+        .mockReturnValueOnce('test2');
 
-      const spy = sinon
-        .stub(server, 'createServiceMethod')
-        .callsFake(() => ({}) as any);
+      const spy = vi
+        .spyOn(server, 'createServiceMethod')
+        .mockImplementation(() => ({}) as any);
       untypedServer.messageHandlers = handlers;
       await server.createService(
         {
@@ -224,7 +215,7 @@ describe('ServerGrpc', () => {
         },
         'name',
       );
-      expect(spy.calledOnce).to.be.true;
+      expect(spy).toHaveBeenCalledOnce();
     });
     describe('when RX streaming', () => {
       it('should call "createPattern" with proper arguments', async () => {
@@ -233,12 +224,13 @@ describe('ServerGrpc', () => {
             requestStream: true,
           },
         });
-        const createPatternStub = sinon
-          .stub(server, 'createPattern')
-          .onFirstCall()
-          .returns('test2');
+        const createPatternStub = vi
+          .spyOn(server, 'createPattern')
+          .mockReturnValueOnce('test2');
 
-        sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
+        vi.spyOn(server, 'createServiceMethod').mockImplementation(
+          () => ({}) as any,
+        );
         untypedServer.messageHandlers = handlers;
         await server.createService(
           {
@@ -250,13 +242,11 @@ describe('ServerGrpc', () => {
           },
           'name',
         );
-        expect(
-          createPatternStub.calledWith(
-            'name',
-            'test2',
-            GrpcMethodStreamingType.RX_STREAMING,
-          ),
-        ).to.be.true;
+        expect(createPatternStub).toHaveBeenCalledWith(
+          'name',
+          'test2',
+          GrpcMethodStreamingType.RX_STREAMING,
+        );
       });
     });
     describe('when pass through streaming', () => {
@@ -266,16 +256,15 @@ describe('ServerGrpc', () => {
             requestStream: true,
           },
         });
-        const createPatternStub = sinon
-          .stub(server, 'createPattern')
-          .onFirstCall()
-          .returns('_invalid')
-          .onSecondCall()
-          .returns('_invalid')
-          .onThirdCall()
-          .returns('test2');
+        const createPatternStub = vi
+          .spyOn(server, 'createPattern')
+          .mockReturnValueOnce('_invalid')
+          .mockReturnValueOnce('_invalid')
+          .mockReturnValueOnce('test2');
 
-        sinon.stub(server, 'createServiceMethod').callsFake(() => ({}) as any);
+        vi.spyOn(server, 'createServiceMethod').mockImplementation(
+          () => ({}) as any,
+        );
         untypedServer.messageHandlers = handlers;
         await server.createService(
           {
@@ -287,13 +276,11 @@ describe('ServerGrpc', () => {
           },
           'name',
         );
-        expect(
-          createPatternStub.calledWith(
-            'name',
-            'test2',
-            GrpcMethodStreamingType.PT_STREAMING,
-          ),
-        ).to.be.true;
+        expect(createPatternStub).toHaveBeenCalledWith(
+          'name',
+          'test2',
+          GrpcMethodStreamingType.PT_STREAMING,
+        );
       });
     });
   });
@@ -306,7 +293,6 @@ describe('ServerGrpc', () => {
         GrpcMethodStreamingType.NO_STREAMING,
       );
       const handlers = new Map([[testPattern, () => ({})]]);
-      console.log(handlers.entries());
       untypedServer.messageHandlers = handlers;
 
       expect(
@@ -316,7 +302,7 @@ describe('ServerGrpc', () => {
           GrpcMethodStreamingType.NO_STREAMING,
           {},
         ),
-      ).not.to.be.undefined;
+      ).not.toBeUndefined();
     });
     it('should return handler when package name specified with service name', () => {
       const testPattern = server.createPattern(
@@ -336,7 +322,7 @@ describe('ServerGrpc', () => {
             path: '/package.example.test/TestMethod',
           },
         ),
-      ).not.to.be.undefined;
+      ).not.toBeUndefined();
     });
 
     it('should return undefined when method name is unknown', () => {
@@ -357,7 +343,7 @@ describe('ServerGrpc', () => {
             path: '/package.example.test/TestMethod',
           },
         ),
-      ).to.be.undefined;
+      ).toBeUndefined();
     });
   });
 
@@ -371,7 +357,7 @@ describe('ServerGrpc', () => {
           method,
           GrpcMethodStreamingType.NO_STREAMING,
         ),
-      ).to.be.eql(
+      ).toEqual(
         JSON.stringify({
           service,
           rpc: method,
@@ -384,55 +370,55 @@ describe('ServerGrpc', () => {
   describe('createServiceMethod', () => {
     describe('when method is a response stream', () => {
       it('should call "createStreamServiceMethod"', () => {
-        const cln = sinon.spy();
-        const spy = sinon.spy(server, 'createStreamServiceMethod');
+        const cln = vi.fn();
+        const spy = vi.spyOn(server, 'createStreamServiceMethod');
         server.createServiceMethod(
           cln,
           { responseStream: true } as any,
           GrpcMethodStreamingType.NO_STREAMING,
         );
 
-        expect(spy.called).to.be.true;
+        expect(spy).toHaveBeenCalled();
       });
     });
     describe('when method is not a response stream', () => {
       it('should call "createUnaryServiceMethod"', () => {
-        const cln = sinon.spy();
-        const spy = sinon.spy(server, 'createUnaryServiceMethod');
+        const cln = vi.fn();
+        const spy = vi.spyOn(server, 'createUnaryServiceMethod');
         server.createServiceMethod(
           cln,
           { responseStream: false } as any,
           GrpcMethodStreamingType.NO_STREAMING,
         );
 
-        expect(spy.called).to.be.true;
+        expect(spy).toHaveBeenCalled();
       });
     });
     describe('when request is a stream', () => {
       describe('when stream type is RX_STREAMING', () => {
         it('should call "createRequestStreamMethod"', () => {
-          const cln = sinon.spy();
-          const spy = sinon.spy(server, 'createRequestStreamMethod');
+          const cln = vi.fn();
+          const spy = vi.spyOn(server, 'createRequestStreamMethod');
           server.createServiceMethod(
             cln,
             { requestStream: true } as any,
             GrpcMethodStreamingType.RX_STREAMING,
           );
 
-          expect(spy.called).to.be.true;
+          expect(spy).toHaveBeenCalled();
         });
       });
       describe('when stream type is PT_STREAMING', () => {
         it('should call "createStreamCallMethod"', () => {
-          const cln = sinon.spy();
-          const spy = sinon.spy(server, 'createStreamCallMethod');
+          const cln = vi.fn();
+          const spy = vi.spyOn(server, 'createStreamCallMethod');
           server.createServiceMethod(
             cln,
             { requestStream: true } as any,
             GrpcMethodStreamingType.PT_STREAMING,
           );
 
-          expect(spy.called).to.be.true;
+          expect(spy).toHaveBeenCalled();
         });
       });
     });
@@ -440,45 +426,48 @@ describe('ServerGrpc', () => {
 
   describe('createStreamServiceMethod', () => {
     it('should return function', () => {
-      const fn = server.createStreamServiceMethod(sinon.spy());
-      expect(fn).to.be.a('function');
+      const fn = server.createStreamServiceMethod(vi.fn());
+      expect(fn).toBeTypeOf('function');
     });
 
     describe('on call', () => {
       it('should call native method', async () => {
         const call = {
-          write: sinon.spy(() => true),
-          end: sinon.spy(),
-          on: sinon.spy(),
-          off: sinon.spy(),
+          write: vi.fn(() => true),
+          end: vi.fn(),
+          on: vi.fn(),
+          off: vi.fn(),
         };
-        const callback = sinon.spy();
-        const native = sinon.spy();
+        const callback = vi.fn();
+        const native = vi.fn();
 
         await server.createStreamServiceMethod(native)(call, callback);
-        expect(native.called).to.be.true;
-        expect(call.on.calledWith('cancelled')).to.be.true;
-        expect(call.off.calledWith('cancelled')).to.be.true;
+        expect(native).toHaveBeenCalled();
+        expect(call.on).toHaveBeenCalledWith('cancelled', expect.any(Function));
+        expect(call.off).toHaveBeenCalledWith(
+          'cancelled',
+          expect.any(Function),
+        );
       });
 
       it('should handle error thrown in handler', async () => {
         const call = {
-          write: sinon.spy(() => true),
-          end: sinon.spy(),
-          on: sinon.spy(),
-          off: sinon.spy(),
-          emit: sinon.spy(),
+          write: vi.fn(() => true),
+          end: vi.fn(),
+          on: vi.fn(),
+          off: vi.fn(),
+          emit: vi.fn(),
         };
 
-        const callback = sinon.spy();
+        const callback = vi.fn();
         const error = new Error('handler threw');
-        const native = sinon.spy(() => throwError(() => error));
+        const native = vi.fn(() => throwError(() => error));
 
         // implicit assertion that this will never throw when call.emit emits an error event
         await server.createStreamServiceMethod(native)(call, callback);
-        expect(native.called).to.be.true;
-        expect(call.emit.calledWith('error', error)).to.be.ok;
-        expect(call.end.called).to.be.true;
+        expect(native).toHaveBeenCalled();
+        expect(call.emit).toHaveBeenCalledWith('error', error);
+        expect(call.end).toHaveBeenCalled();
       });
 
       it(`should close the result observable when receiving an 'cancelled' event from the client`, async () => {
@@ -487,43 +476,46 @@ describe('ServerGrpc', () => {
 
         const written: any[] = [];
         const call = {
-          write: sinon.spy((value: any) => {
+          write: vi.fn((value: any) => {
             written.push(value);
             return true;
           }),
-          end: sinon.spy(() => written.push('end')),
-          on: sinon.spy((name, cb) => {
+          end: vi.fn(() => written.push('end')),
+          on: vi.fn((name, cb) => {
             et.addEventListener(name, cb);
           }),
-          off: sinon.spy((name, cb) => {
+          off: vi.fn((name, cb) => {
             et.removeEventListener(name, cb);
           }),
         };
 
         const result$ = new Subject<number>();
         const resolvedObservable = Promise.resolve(result$);
-        const callback = sinon.spy();
-        const native = sinon.stub().returns(resolvedObservable);
+        const callback = vi.fn();
+        const native = vi.fn().mockReturnValue(resolvedObservable);
 
         const result = server.createStreamServiceMethod(native)(call, callback);
 
         await resolvedObservable;
 
         result$.next(1);
-        expect(written).to.deep.equal([1]);
+        expect(written).toEqual([1]);
         result$.next(2);
-        expect(written).to.deep.equal([1, 2]);
+        expect(written).toEqual([1, 2]);
         result$.next(3);
-        expect(written).to.deep.equal([1, 2, 3]);
+        expect(written).toEqual([1, 2, 3]);
         cancel();
         result$.next(4);
-        expect(written).to.deep.equal([1, 2, 3, 'end']);
+        expect(written).toEqual([1, 2, 3, 'end']);
 
-        expect(call.end.called).to.be.true;
-        expect(call.on.calledWith('cancelled')).to.be.true;
-        expect(call.on.calledWith('drain')).to.be.true;
-        expect(call.off.calledWith('cancelled')).to.be.true;
-        expect(call.off.calledWith('drain')).to.be.true;
+        expect(call.end).toHaveBeenCalled();
+        expect(call.on).toHaveBeenCalledWith('cancelled', expect.any(Function));
+        expect(call.on).toHaveBeenCalledWith('drain', expect.any(Function));
+        expect(call.off).toHaveBeenCalledWith(
+          'cancelled',
+          expect.any(Function),
+        );
+        expect(call.off).toHaveBeenCalledWith('drain', expect.any(Function));
 
         await result;
       });
@@ -532,76 +524,70 @@ describe('ServerGrpc', () => {
 
   describe('createUnaryServiceMethod', () => {
     it('should return observable', () => {
-      const fn = server.createUnaryServiceMethod(sinon.spy());
-      expect(fn).to.be.a('function');
+      const fn = server.createUnaryServiceMethod(vi.fn());
+      expect(fn).toBeTypeOf('function');
     });
     describe('on call', () => {
       it('should call native & callback methods', async () => {
-        const call = { write: sinon.spy(), end: sinon.spy() };
-        const callback = sinon.spy();
-        const native = sinon.spy();
+        const call = { write: vi.fn(), end: vi.fn() };
+        const callback = vi.fn();
+        const native = vi.fn();
 
         await server.createUnaryServiceMethod(native)(call, callback);
-        expect(native.called).to.be.true;
-        expect(callback.called).to.be.true;
+        expect(native).toHaveBeenCalled();
+        expect(callback).toHaveBeenCalled();
       });
 
       it('should await when a promise is return by the native', async () => {
-        const call = { write: sinon.spy(), end: sinon.spy() };
-        const callback = sinon.spy();
+        const call = { write: vi.fn(), end: vi.fn() };
+        const callback = vi.fn();
 
-        const original = { native: Function };
-        const mock = sinon.mock(original);
+        const native = vi.fn().mockReturnValue(
+          (() => {
+            const sub = new ReplaySubject<any>(1);
+            sub.next(new Promise(resolve => resolve({ foo: 'bar' })));
+            return sub.asObservable();
+          })(),
+        );
 
-        mock
-          .expects('native')
-          .once()
-          .returns(
-            (() => {
-              const sub = new ReplaySubject<any>(1);
-              sub.next(new Promise(resolve => resolve({ foo: 'bar' })));
-              return sub.asObservable();
-            })(),
-          );
-
-        await server.createUnaryServiceMethod(original.native)(call, callback);
-        mock.verify();
-        expect(callback.calledWith(null, { foo: 'bar' })).to.be.true;
+        await server.createUnaryServiceMethod(native)(call, callback);
+        expect(native).toHaveBeenCalledOnce();
+        expect(callback).toHaveBeenCalledWith(null, { foo: 'bar' });
       });
     });
   });
 
   describe('createRequestStreamMethod', () => {
     it('should wrap call into Subject', async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       const fn = server.createRequestStreamMethod(handler, false);
       const call = {
         on: (event, callback) => callback(),
-        off: sinon.spy(),
-        end: sinon.spy(),
-        write: sinon.spy(),
+        off: vi.fn(),
+        end: vi.fn(),
+        write: vi.fn(),
       };
-      await fn(call as any, sinon.spy());
+      await fn(call as any, vi.fn());
 
-      expect(handler.called).to.be.true;
+      expect(handler).toHaveBeenCalled();
     });
 
     it('should wrap call into Subject with metadata', async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       const fn = server.createRequestStreamMethod(handler, false);
       const call = {
         on: (event, callback) => callback(),
-        off: sinon.spy(),
-        end: sinon.spy(),
-        write: sinon.spy(),
+        off: vi.fn(),
+        end: vi.fn(),
+        write: vi.fn(),
         metadata: {
           test: '123',
         },
       };
-      await fn(call as any, sinon.spy());
+      await fn(call as any, vi.fn());
 
-      expect(handler.called).to.be.true;
-      expect(handler.args[0][1]).to.eq(call.metadata);
+      expect(handler).toHaveBeenCalled();
+      expect(handler.mock.calls[0][1]).toBe(call.metadata);
     });
 
     describe('when response is not a stream', () => {
@@ -614,15 +600,15 @@ describe('ServerGrpc', () => {
               callback();
             }
           },
-          off: sinon.spy(),
-          end: sinon.spy(),
-          write: sinon.spy(() => false),
+          off: vi.fn(),
+          end: vi.fn(),
+          write: vi.fn(() => false),
         };
 
-        const responseCallback = sinon.spy();
+        const responseCallback = vi.fn();
         await fn(call as any, responseCallback);
 
-        expect(responseCallback.called).to.be.true;
+        expect(responseCallback).toHaveBeenCalled();
       });
 
       it('should handle error thrown in handler', async () => {
@@ -635,16 +621,16 @@ describe('ServerGrpc', () => {
               callback();
             }
           },
-          off: sinon.spy(),
-          end: sinon.spy(),
-          write: sinon.spy(),
+          off: vi.fn(),
+          end: vi.fn(),
+          write: vi.fn(),
         };
 
-        const responseCallback = sinon.spy();
+        const responseCallback = vi.fn();
         await fn(call as any, responseCallback);
 
-        expect(responseCallback.calledOnce).to.be.true;
-        expect(responseCallback.firstCall.args).to.eql([error, null]);
+        expect(responseCallback).toHaveBeenCalledOnce();
+        expect(responseCallback.mock.calls[0]).toEqual([error, null]);
       });
 
       describe('when response is a stream', () => {
@@ -671,7 +657,7 @@ describe('ServerGrpc', () => {
           };
 
           const call = {
-            write: sinon.spy(value => {
+            write: vi.fn(value => {
               // Simulating a writable stream becoming overwhelmed.
               if (writeCounter++ < highwaterMark) {
                 // We can write this value to the stream.
@@ -680,13 +666,13 @@ describe('ServerGrpc', () => {
               // But as soon as we pass the highwater mark, we can't write anymore.
               return writeCounter < highwaterMark;
             }),
-            end: sinon.spy(() => {
+            end: vi.fn(() => {
               written.push('end');
             }),
-            emit: sinon.spy(),
-            request: sinon.spy(),
-            metadata: sinon.spy(),
-            sendMetadata: sinon.spy(),
+            emit: vi.fn(),
+            request: vi.fn(),
+            metadata: vi.fn(),
+            sendMetadata: vi.fn(),
             on: (name, cb) => {
               emitter.addEventListener(name, cb);
             },
@@ -699,7 +685,7 @@ describe('ServerGrpc', () => {
             },
           };
 
-          const callback = sinon.spy();
+          const callback = vi.fn();
 
           const subject = new Subject<string>();
           const handlerResult = Promise.resolve(subject);
@@ -726,15 +712,15 @@ describe('ServerGrpc', () => {
                 callback();
               }
             },
-            off: sinon.spy(),
-            end: sinon.spy(),
-            write: sinon.spy(() => true),
+            off: vi.fn(),
+            end: vi.fn(),
+            write: vi.fn(() => true),
           };
 
           await fn(call as any, null!);
 
-          expect(call.write.called).to.be.true;
-          expect(call.end.called).to.be.true;
+          expect(call.write).toHaveBeenCalled();
+          expect(call.end).toHaveBeenCalled();
         });
 
         it('should drain all values emitted from the observable while waiting for the drain event from the call', async () => {
@@ -742,20 +728,20 @@ describe('ServerGrpc', () => {
 
           subject.next('a');
           subject.next('b');
-          expect(written).to.deep.equal(['a', 'b']);
+          expect(written).toEqual(['a', 'b']);
           subject.next('c'); // can't be written yet.
-          expect(written).to.deep.equal(['a', 'b']);
+          expect(written).toEqual(['a', 'b']);
           call.fire.drain();
           subject.next('d');
-          expect(written).to.deep.equal(['a', 'b', 'c', 'd']);
+          expect(written).toEqual(['a', 'b', 'c', 'd']);
           subject.next('e'); // can't be written yet.
-          expect(written).to.deep.equal(['a', 'b', 'c', 'd']);
+          expect(written).toEqual(['a', 'b', 'c', 'd']);
           call.fire.drain();
-          expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e']);
+          expect(written).toEqual(['a', 'b', 'c', 'd', 'e']);
           subject.next('f');
-          expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e', 'f']);
+          expect(written).toEqual(['a', 'b', 'c', 'd', 'e', 'f']);
           subject.complete();
-          expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e', 'f', 'end']);
+          expect(written).toEqual(['a', 'b', 'c', 'd', 'e', 'f', 'end']);
 
           return result;
         });
@@ -771,13 +757,13 @@ describe('ServerGrpc', () => {
             subject.next('c');
             subject.next('d');
             subject.next('e');
-            expect(written).to.deep.equal(['a', 'b']);
+            expect(written).toEqual(['a', 'b']);
             call.fire.drain();
-            expect(written).to.deep.equal(['a', 'b', 'c', 'd']);
+            expect(written).toEqual(['a', 'b', 'c', 'd']);
             call.fire.drain();
-            expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e']);
+            expect(written).toEqual(['a', 'b', 'c', 'd', 'e']);
             subject.complete();
-            expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e', 'end']);
+            expect(written).toEqual(['a', 'b', 'c', 'd', 'e', 'end']);
 
             return result;
           },
@@ -792,11 +778,11 @@ describe('ServerGrpc', () => {
           subject.next('d');
           subject.next('e');
           subject.complete();
-          expect(written).to.deep.equal(['a', 'b']);
+          expect(written).toEqual(['a', 'b']);
           call.fire.drain();
-          expect(written).to.deep.equal(['a', 'b', 'c', 'd']);
+          expect(written).toEqual(['a', 'b', 'c', 'd']);
           call.fire.drain();
-          expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e', 'end']);
+          expect(written).toEqual(['a', 'b', 'c', 'd', 'e', 'end']);
 
           return result;
         });
@@ -804,10 +790,10 @@ describe('ServerGrpc', () => {
         it('should end the subscription to the source if the call is cancelled', async () => {
           const { call, subject, result } = await createCall();
 
-          expect(subject.observed).to.be.true;
+          expect(subject.observed).toBe(true);
           call.fire.cancel();
-          expect(subject.observed).to.be.false;
-          expect(call.end.called).to.be.true;
+          expect(subject.observed).toBe(false);
+          expect(call.end).toHaveBeenCalled();
 
           return result;
         });
@@ -821,16 +807,16 @@ describe('ServerGrpc', () => {
           subject.next('d');
           subject.next('e');
           subject.error(error);
-          expect(written).to.deep.equal(['a', 'b']);
+          expect(written).toEqual(['a', 'b']);
           call.fire.drain();
-          expect(written).to.deep.equal(['a', 'b', 'c', 'd']);
+          expect(written).toEqual(['a', 'b', 'c', 'd']);
           call.fire.drain();
-          expect(written).to.deep.equal(['a', 'b', 'c', 'd', 'e', 'end']);
+          expect(written).toEqual(['a', 'b', 'c', 'd', 'e', 'end']);
 
           try {
             await result;
           } catch (err) {
-            expect(err).to.equal(error);
+            expect(err).toBe(error);
           }
         });
       });
@@ -839,30 +825,26 @@ describe('ServerGrpc', () => {
 
   describe('createStreamCallMethod', () => {
     it('should pass through to "methodHandler"', async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       const fn = server.createStreamCallMethod(handler, false);
       const args = [1, 2, 3];
-      await fn(args as any, sinon.spy());
+      await fn(args as any, vi.fn());
 
-      expect(handler.calledWith(args)).to.be.true;
+      expect(handler).toHaveBeenCalledWith(args, expect.any(Function));
     });
   });
 
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {
-        const getPackageDefinitionStub = sinon.stub(
-          grpcHelpers,
-          'getGrpcPackageDefinition' as any,
-        );
-        getPackageDefinitionStub.callsFake(() => {
-          throw new Error();
+        const invalidServer = new ServerGrpc({
+          protoPath: '/nonexistent/invalid.proto',
+          package: 'test',
         });
-        untypedServer.logger = new NoopLogger();
-        expect(() => server.loadProto()).to.throws(
+        (invalidServer as any).logger = new NoopLogger();
+        expect(() => invalidServer.loadProto()).toThrow(
           InvalidProtoDefinitionException,
         );
-        getPackageDefinitionStub.restore();
       });
     });
   });
@@ -870,50 +852,48 @@ describe('ServerGrpc', () => {
   describe('close', () => {
     it('should call "forceShutdown" by default', async () => {
       const grpcClient = {
-        forceShutdown: sinon.spy(),
-        tryShutdown: sinon.stub().yields(),
+        forceShutdown: vi.fn(),
+        tryShutdown: vi.fn(cb => cb()),
       };
       untypedServer.grpcClient = grpcClient;
       await server.close();
-      expect(grpcClient.forceShutdown.called).to.be.true;
-      expect(grpcClient.tryShutdown.called).to.be.false;
+      expect(grpcClient.forceShutdown).toHaveBeenCalled();
+      expect(grpcClient.tryShutdown).not.toHaveBeenCalled();
     });
 
     it('should call "forceShutdown" when "gracefulShutdown" is false', async () => {
       const grpcClient = {
-        forceShutdown: sinon.spy(),
-        tryShutdown: sinon.stub().yields(),
+        forceShutdown: vi.fn(),
+        tryShutdown: vi.fn(cb => cb()),
       };
       untypedServer.grpcClient = grpcClient;
       untypedServer.options.gracefulShutdown = false;
       await server.close();
-      expect(grpcClient.forceShutdown.called).to.be.true;
-      expect(grpcClient.tryShutdown.called).to.be.false;
+      expect(grpcClient.forceShutdown).toHaveBeenCalled();
+      expect(grpcClient.tryShutdown).not.toHaveBeenCalled();
     });
 
     it('should call "tryShutdown" when "gracefulShutdown" is true', async () => {
       const grpcClient = {
-        forceShutdown: sinon.spy(),
-        tryShutdown: sinon.stub().yields(),
+        forceShutdown: vi.fn(),
+        tryShutdown: vi.fn(cb => cb()),
       };
       untypedServer.grpcClient = grpcClient;
       untypedServer.options.gracefulShutdown = true;
       await server.close();
-      expect(grpcClient.forceShutdown.called).to.be.false;
-      expect(grpcClient.tryShutdown.called).to.be.true;
+      expect(grpcClient.forceShutdown).not.toHaveBeenCalled();
+      expect(grpcClient.tryShutdown).toHaveBeenCalled();
     });
   });
 
   describe('deserialize', () => {
     it(`should return parsed json`, () => {
       const obj = { test: 'test' };
-      expect(server.deserialize(obj)).to.deep.equal(
-        JSON.parse(JSON.stringify(obj)),
-      );
+      expect(server.deserialize(obj)).toEqual(JSON.parse(JSON.stringify(obj)));
     });
     it(`should not parse argument if it is not an object`, () => {
       const content = 'test';
-      expect(server.deserialize(content)).to.equal(content);
+      expect(server.deserialize(content)).toBe(content);
     });
   });
 
@@ -938,12 +918,9 @@ describe('ServerGrpc', () => {
         },
       };
       const svcs = server.getServiceNames(grpcPkg);
-      expect(svcs.length).to.be.equal(
-        2,
-        'Amount of services collected from namespace should be equal 2',
-      );
-      expect(svcs[0].name).to.be.equal('A.C.E');
-      expect(svcs[1].name).to.be.equal('B.D');
+      expect(svcs.length).toBe(2);
+      expect(svcs[0].name).toBe('A.C.E');
+      expect(svcs[1].name).toBe('B.D');
     });
     it('should parse single level proto package tree"', () => {
       const grpcPkg = {
@@ -959,12 +936,9 @@ describe('ServerGrpc', () => {
         },
       };
       const services = server.getServiceNames(grpcPkg);
-      expect(services.length).to.be.equal(
-        2,
-        'Amount of services collected from namespace should be equal 2',
-      );
-      expect(services[0].name).to.be.equal('A');
-      expect(services[1].name).to.be.equal('B');
+      expect(services.length).toBe(2);
+      expect(services[0].name).toBe('A');
+      expect(services[1].name).toBe('B');
     });
   });
 
@@ -973,16 +947,18 @@ describe('ServerGrpc', () => {
       pattern = { test: 'test pattern' };
 
     it(`should add handler`, () => {
-      sinon.stub(server as any, 'messageHandlers').value({ set() {} });
+      vi.spyOn(server as any, 'messageHandlers', 'get').mockReturnValue({
+        set() {},
+      });
 
-      const messageHandlersSetSpy = sinon.spy(
+      const messageHandlersSetSpy = vi.spyOn(
         untypedServer.messageHandlers,
         'set',
       );
       server.addHandler(pattern, callback as any);
 
-      expect(messageHandlersSetSpy.called).to.be.true;
-      expect(messageHandlersSetSpy.getCall(0).args[0]).to.be.equal(
+      expect(messageHandlersSetSpy).toHaveBeenCalled();
+      expect(messageHandlersSetSpy.mock.calls[0][0]).toBe(
         JSON.stringify(pattern),
       );
     });

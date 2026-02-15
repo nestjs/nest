@@ -1,5 +1,5 @@
-import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
-import { Type } from '../interfaces';
+import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface.js';
+import { Type } from '../interfaces/index.js';
 
 /**
  * @publicApi

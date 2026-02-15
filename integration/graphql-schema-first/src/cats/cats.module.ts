@@ -1,7 +1,7 @@
 import { DynamicModule, Module, Scope } from '@nestjs/common';
-import { CatsRequestScopedService } from './cats-request-scoped.service';
-import { CatsResolvers } from './cats.resolvers';
-import { CatsService } from './cats.service';
+import { CatsRequestScopedService } from './cats-request-scoped.service.js';
+import { CatsResolvers } from './cats.resolvers.js';
+import { CatsService } from './cats.service.js';
 
 @Module({
   providers: [CatsService, CatsResolvers],

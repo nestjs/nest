@@ -1,9 +1,12 @@
 import { Readable } from 'stream';
 import { types } from 'util';
-import { HttpStatus } from '../enums';
-import { Logger } from '../services';
-import { isFunction } from '../utils/shared.utils';
-import { StreamableFileOptions, StreamableHandlerResponse } from './interfaces';
+import { HttpStatus } from '../enums/index.js';
+import { Logger } from '../services/index.js';
+import { isFunction } from '../utils/shared.utils.js';
+import {
+  StreamableFileOptions,
+  StreamableHandlerResponse,
+} from './interfaces/index.js';
 
 /**
  * @see [Streaming files](https://docs.nestjs.com/techniques/streaming-files)
