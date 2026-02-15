@@ -116,13 +116,13 @@ describe('OnModuleInit', () => {
   it('should sort components within a single module by injection hierarchy - DESC order', async () => {
     @Injectable()
     class A implements OnModuleInit {
-      onModuleInit = Sinon.spy();
+      onModuleInit = vi.fn();
     }
 
     @Injectable()
     class AHost implements OnModuleInit {
       constructor(private a: A) {}
-      onModuleInit = Sinon.spy();
+      onModuleInit = vi.fn();
     }
 
     @Injectable()
@@ -131,7 +131,7 @@ describe('OnModuleInit', () => {
         private a: A,
         private host: AHost,
       ) {}
-      onModuleInit = Sinon.spy();
+      onModuleInit = vi.fn();
     }
 
     @Module({
@@ -150,10 +150,9 @@ describe('OnModuleInit', () => {
     const child = module.get(A);
     const parent = module.get(AHost);
     const composition = module.get(Composition);
-    Sinon.assert.callOrder(
-      child.onModuleInit,
+    expect(composition.onModuleInit).toHaveBeenCalledBefore(
       parent.onModuleInit,
-      composition.onModuleInit,
     );
+    expect(parent.onModuleInit).toHaveBeenCalledBefore(child.onModuleInit);
   });
 });

@@ -58,13 +58,13 @@ describe('BeforeApplicationShutdown', () => {
   it('should sort components within a single module by injection hierarchy - ASC order', async () => {
     @Injectable()
     class A implements BeforeApplicationShutdown {
-      beforeApplicationShutdown = Sinon.spy();
+      beforeApplicationShutdown = vi.fn();
     }
 
     @Injectable()
     class AHost implements BeforeApplicationShutdown {
       constructor(private a: A) {}
-      beforeApplicationShutdown = Sinon.spy();
+      beforeApplicationShutdown = vi.fn();
     }
 
     @Injectable()
@@ -73,7 +73,7 @@ describe('BeforeApplicationShutdown', () => {
         private a: A,
         private host: AHost,
       ) {}
-      beforeApplicationShutdown = Sinon.spy();
+      beforeApplicationShutdown = vi.fn();
     }
 
     @Module({
@@ -92,9 +92,11 @@ describe('BeforeApplicationShutdown', () => {
     const child = module.get(A);
     const parent = module.get(AHost);
     const composition = module.get(Composition);
-    Sinon.assert.callOrder(
-      composition.beforeApplicationShutdown,
+
+    expect(composition.beforeApplicationShutdown).toHaveBeenCalledBefore(
       parent.beforeApplicationShutdown,
+    );
+    expect(parent.beforeApplicationShutdown).toHaveBeenCalledBefore(
       child.beforeApplicationShutdown,
     );
   });
