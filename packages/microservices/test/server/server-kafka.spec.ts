@@ -258,11 +258,13 @@ describe('ServerKafka', () => {
       await server.listen(callback);
       await server.bindEvents(untypedServer.consumer);
 
-      expect(run.called).to.be.true;
-      expect(run.firstCall.args[0]).to.include({
-        partitionsConsumedConcurrently: 5,
-      });
-      expect(run.firstCall.args[0]).to.have.property('eachMessage');
+      expect(run).toHaveBeenCalled();
+      expect(run.mock.calls[0][0]).toEqual(
+        expect.objectContaining({
+          partitionsConsumedConcurrently: 5,
+        }),
+      );
+      expect(run.mock.calls[0][0]).toHaveProperty('eachMessage');
     });
     it('should pass multiple run options to consumer.run()', async () => {
       untypedServer.logger = new NoopLogger();
@@ -274,14 +276,16 @@ describe('ServerKafka', () => {
       await server.listen(callback);
       await server.bindEvents(untypedServer.consumer);
 
-      expect(run.called).to.be.true;
-      const callArg = run.firstCall.args[0];
-      expect(callArg).to.include({
-        partitionsConsumedConcurrently: 3,
-        autoCommit: false,
-        autoCommitInterval: 5000,
-      });
-      expect(callArg).to.have.property('eachMessage');
+      expect(run).toHaveBeenCalled();
+      const callArg = run.mock.calls[0][0];
+      expect(callArg).toEqual(
+        expect.objectContaining({
+          partitionsConsumedConcurrently: 3,
+          autoCommit: false,
+          autoCommitInterval: 5000,
+        }),
+      );
+      expect(callArg).toHaveProperty('eachMessage');
     });
   });
 
