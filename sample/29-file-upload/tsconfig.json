@@ -12,7 +12,7 @@
     "incremental": true,
     "skipLibCheck": true,
     "moduleResolution": "nodenext",
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals", "multer"]
   },
   "include": [
     "src/**/*"
