@@ -491,10 +491,9 @@ export function Query(
     ('schema' in property || 'pipes' in property);
 
   if (isPropertyOptions) {
-    const opts = property as ParameterDecoratorOptions;
     return createPipesRouteParamDecorator(RouteParamtypes.QUERY)({
-      pipes: opts.pipes,
-      schema: opts.schema,
+      pipes: property.pipes,
+      schema: property.schema,
     });
   }
 
@@ -503,7 +502,7 @@ export function Query(
     typeof optionsOrPipe === 'object' &&
     ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
   const actualPipes = isOptions
-    ? (optionsOrPipe as ParameterDecoratorOptions).pipes
+    ? optionsOrPipe.pipes
     : ([optionsOrPipe, ...pipes].filter(Boolean) as (
         | Type<PipeTransform>
         | PipeTransform
@@ -511,9 +510,7 @@ export function Query(
   return createPipesRouteParamDecorator(RouteParamtypes.QUERY)({
     data: property,
     pipes: actualPipes,
-    schema: isOptions
-      ? (optionsOrPipe as ParameterDecoratorOptions).schema
-      : undefined,
+    schema: isOptions ? optionsOrPipe.schema : undefined,
   });
 }
 
@@ -657,10 +654,9 @@ export function Body(
     ('schema' in property || 'pipes' in property);
 
   if (isPropertyOptions) {
-    const opts = property as ParameterDecoratorOptions;
     return createPipesRouteParamDecorator(RouteParamtypes.BODY)({
-      pipes: opts.pipes,
-      schema: opts.schema,
+      pipes: property.pipes,
+      schema: property.schema,
     });
   }
 
@@ -669,7 +665,7 @@ export function Body(
     typeof optionsOrPipe === 'object' &&
     ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
   const actualPipes = isOptions
-    ? (optionsOrPipe as ParameterDecoratorOptions).pipes
+    ? optionsOrPipe.pipes
     : ([optionsOrPipe, ...pipes].filter(Boolean) as (
         | Type<PipeTransform>
         | PipeTransform
@@ -677,9 +673,7 @@ export function Body(
   return createPipesRouteParamDecorator(RouteParamtypes.BODY)({
     data: property,
     pipes: actualPipes,
-    schema: isOptions
-      ? (optionsOrPipe as ParameterDecoratorOptions).schema
-      : undefined,
+    schema: isOptions ? optionsOrPipe.schema : undefined,
   });
 }
 
@@ -780,16 +774,14 @@ export function RawBody(
     typeof optionsOrPipe === 'object' &&
     ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
   const actualPipes = isOptions
-    ? (optionsOrPipe as ParameterDecoratorOptions).pipes
+    ? optionsOrPipe.pipes
     : ([optionsOrPipe, ...pipes].filter(Boolean) as (
         | Type<PipeTransform>
         | PipeTransform
       )[]);
   return createPipesRouteParamDecorator(RouteParamtypes.RAW_BODY)({
     pipes: actualPipes,
-    schema: isOptions
-      ? (optionsOrPipe as ParameterDecoratorOptions).schema
-      : undefined,
+    schema: isOptions ? optionsOrPipe.schema : undefined,
   });
 }
 
@@ -957,10 +949,9 @@ export function Param(
     ('schema' in property || 'pipes' in property);
 
   if (isPropertyOptions) {
-    const opts = property as ParameterDecoratorOptions;
     return createPipesRouteParamDecorator(RouteParamtypes.PARAM)({
-      pipes: opts.pipes,
-      schema: opts.schema,
+      pipes: property.pipes,
+      schema: property.schema,
     });
   }
 
@@ -969,7 +960,7 @@ export function Param(
     typeof optionsOrPipe === 'object' &&
     ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
   const actualPipes = isOptions
-    ? (optionsOrPipe as ParameterDecoratorOptions).pipes
+    ? optionsOrPipe.pipes
     : ([optionsOrPipe, ...pipes].filter(Boolean) as (
         | Type<PipeTransform>
         | PipeTransform
@@ -977,9 +968,7 @@ export function Param(
   return createPipesRouteParamDecorator(RouteParamtypes.PARAM)({
     data: property,
     pipes: actualPipes,
-    schema: isOptions
-      ? (optionsOrPipe as ParameterDecoratorOptions).schema
-      : undefined,
+    schema: isOptions ? optionsOrPipe.schema : undefined,
   });
 }
 

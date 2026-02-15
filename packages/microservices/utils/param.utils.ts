@@ -70,7 +70,7 @@ export const createPipesRpcParamDecorator =
 
     let paramPipes: (Type<PipeTransform> | PipeTransform)[];
     if (isOptions) {
-      paramPipes = (optionsOrPipe as ParameterDecoratorOptions).pipes ?? [];
+      paramPipes = optionsOrPipe.pipes ?? [];
     } else if (hasParamData) {
       paramPipes = [optionsOrPipe, ...pipes].filter(Boolean) as (
         | Type<PipeTransform>
@@ -88,9 +88,7 @@ export const createPipesRpcParamDecorator =
       assignMetadata(args, paramtype, index, {
         data: paramData!,
         pipes: paramPipes,
-        schema: isOptions
-          ? (optionsOrPipe as ParameterDecoratorOptions).schema
-          : undefined,
+        schema: isOptions ? optionsOrPipe.schema : undefined,
       }),
       target.constructor,
       key!,
