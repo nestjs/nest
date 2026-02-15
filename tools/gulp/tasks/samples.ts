@@ -32,6 +32,21 @@ async function executeNpmScriptInSamples(
     directories.splice(prismaSampleIndex, 1);
   }
 
+  // TODO: samples that use third-party compiler plugins (e.g. @nestjs/swagger,
+  // @nestjs/graphql) are excluded because move:samples copies local ESM builds
+  // into node_modules, but these CJS plugins load framework packages via require().
+  const samplesWithCompilerPlugins = [
+    '11-swagger',
+    '23-graphql-code-first',
+    '33-graphql-mercurius',
+  ];
+  for (const sample of samplesWithCompilerPlugins) {
+    const idx = directories.indexOf(`${samplePath}/${sample}`);
+    if (idx !== -1) {
+      directories.splice(idx, 1);
+    }
+  }
+
   // A dictionary that maps the sample number to the minimum Node.js version
   // required to execute any scripts.
   const minNodejsVersionBySampleNumber = {
