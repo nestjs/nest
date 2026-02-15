@@ -426,6 +426,72 @@ describe('WebSocketsController', () => {
       instance.subscribeDisconnectEvent(gateway, event);
       expect(subscribe).toHaveBeenCalled();
     });
+
+    describe('when handling disconnect events', () => {
+      let handleDisconnectSpy: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        handleDisconnectSpy = vi.fn();
+        (gateway as any).handleDisconnect = handleDisconnectSpy;
+      });
+
+      it('should call handleDisconnect with client and reason when data contains both', () => {
+        const mockClient = { id: 'test-client' };
+        const mockReason = 'client namespace disconnect';
+        const disconnectData = { client: mockClient, reason: mockReason };
+
+        let subscriptionCallback: Function | undefined;
+        event.subscribe = (callback: Function) => {
+          subscriptionCallback = callback;
+        };
+
+        instance.subscribeDisconnectEvent(gateway, event);
+
+        if (subscriptionCallback) {
+          subscriptionCallback(disconnectData);
+        }
+
+        expect(handleDisconnectSpy).toHaveBeenCalledOnce();
+        expect(handleDisconnectSpy).toHaveBeenCalledWith(
+          mockClient,
+          mockReason,
+        );
+      });
+
+      it('should call handleDisconnect with only client for backward compatibility', () => {
+        const mockClient = { id: 'test-client' };
+
+        let subscriptionCallback: Function | undefined;
+        event.subscribe = (callback: Function) => {
+          subscriptionCallback = callback;
+        };
+
+        instance.subscribeDisconnectEvent(gateway, event);
+
+        if (subscriptionCallback) {
+          subscriptionCallback(mockClient);
+        }
+
+        expect(handleDisconnectSpy).toHaveBeenCalledOnce();
+        expect(handleDisconnectSpy).toHaveBeenCalledWith(mockClient);
+      });
+
+      it('should handle null/undefined data gracefully', () => {
+        let subscriptionCallback: Function | undefined;
+        event.subscribe = (callback: Function) => {
+          subscriptionCallback = callback;
+        };
+
+        instance.subscribeDisconnectEvent(gateway, event);
+
+        if (subscriptionCallback) {
+          subscriptionCallback(null);
+        }
+
+        expect(handleDisconnectSpy).toHaveBeenCalledOnce();
+        expect(handleDisconnectSpy).toHaveBeenCalledWith(null);
+      });
+    });
   });
   describe('subscribeMessages', () => {
     const gateway = new Test();
