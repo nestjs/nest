@@ -10,7 +10,7 @@ export type Transform<T = any> = (value: T, metadata: ArgumentMetadata) => any;
  *
  * @publicApi
  */
-export interface ArgumentMetadata<MetaType = any> {
+export interface ArgumentMetadata<Metatype = any> {
   /**
    * Indicates whether argument is a body, query, param, or custom parameter
    */
