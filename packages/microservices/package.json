@@ -49,6 +49,7 @@
   },
   "peerDependencies": {
     "@grpc/grpc-js": "*",
+    "@nats-io/transport-node": "*",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
     "@nestjs/websockets": "^11.0.0",
@@ -58,12 +59,14 @@
     "ioredis": "*",
     "kafkajs": "*",
     "mqtt": "*",
-    "nats": "*",
     "reflect-metadata": "^0.1.12 || ^0.2.0",
     "rxjs": "^7.1.0"
   },
   "peerDependenciesMeta": {
     "@grpc/grpc-js": {
+      "optional": true
+    },
+    "@nats-io/transport-node": {
       "optional": true
     },
     "@nestjs/websockets": {
@@ -76,9 +79,6 @@
       "optional": true
     },
     "mqtt": {
-      "optional": true
-    },
-    "nats": {
       "optional": true
     },
     "ioredis": {
