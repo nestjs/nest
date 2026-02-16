@@ -112,4 +112,47 @@ describe('OnModuleInit', () => {
     expect(instance.field).toBe('c-field_b-field_a-field');
     await app.close();
   });
+
+  it('should sort components within a single module by injection hierarchy - DESC order', async () => {
+    @Injectable()
+    class A implements OnModuleInit {
+      onModuleInit = vi.fn();
+    }
+
+    @Injectable()
+    class AHost implements OnModuleInit {
+      constructor(private a: A) {}
+      onModuleInit = vi.fn();
+    }
+
+    @Injectable()
+    class Composition implements OnModuleInit {
+      constructor(
+        private a: A,
+        private host: AHost,
+      ) {}
+      onModuleInit = vi.fn();
+    }
+
+    @Module({
+      providers: [AHost, A, Composition],
+    })
+    class AModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [AModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    const child = module.get(A);
+    const parent = module.get(AHost);
+    const composition = module.get(Composition);
+    expect(child.onModuleInit).toHaveBeenCalledBefore(parent.onModuleInit);
+    expect(parent.onModuleInit).toHaveBeenCalledBefore(
+      composition.onModuleInit,
+    );
+  });
 });

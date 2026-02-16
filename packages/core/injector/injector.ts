@@ -1,9 +1,26 @@
+import type { ForwardReference, Type } from '@nestjs/common';
 import {
   type InjectionToken,
   Logger,
   type LoggerService,
   type OptionalFactoryDependency,
 } from '@nestjs/common';
+import {
+  type Controller,
+  type Injectable,
+  OPTIONAL_DEPS_METADATA,
+  OPTIONAL_PROPERTY_DEPS_METADATA,
+  PARAMTYPES_METADATA,
+  PROPERTY_DEPS_METADATA,
+  SELF_DECLARED_DEPS_METADATA,
+  clc,
+  isFunction,
+  isNil,
+  isObject,
+  isString,
+  isSymbol,
+  isUndefined,
+} from '@nestjs/common/internal';
 import { iterate } from 'iterare';
 import { performance } from 'perf_hooks';
 import { CircularDependencyException } from '../errors/exceptions/index.js';
@@ -21,23 +38,6 @@ import {
 } from './instance-wrapper.js';
 import { Module } from './module.js';
 import { SettlementSignal } from './settlement-signal.js';
-import {
-  OPTIONAL_DEPS_METADATA,
-  OPTIONAL_PROPERTY_DEPS_METADATA,
-  PARAMTYPES_METADATA,
-  PROPERTY_DEPS_METADATA,
-  SELF_DECLARED_DEPS_METADATA,
-  type Controller,
-  type Injectable,
-  clc,
-  isFunction,
-  isNil,
-  isObject,
-  isString,
-  isSymbol,
-  isUndefined,
-} from '@nestjs/common/internal';
-import type { ForwardReference, Type } from '@nestjs/common';
 
 /**
  * The type of an injectable dependency
@@ -159,7 +159,7 @@ export class Injector {
     }
     try {
       const t0 = this.getNowTimestamp();
-      const callback = async (instances: unknown[]) => {
+      const callback = async (instances: unknown[], depth = 0) => {
         const properties = await this.resolveProperties(
           wrapper,
           moduleRef,
@@ -176,6 +176,8 @@ export class Injector {
           inquirer,
         );
         this.applyProperties(instance, properties);
+
+        wrapper.hierarchyLevel = depth + 1;
         wrapper.initTime = this.getNowTimestamp() - t0;
         settlementSignal.complete();
       };
@@ -286,7 +288,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     moduleRef: Module,
     inject: InjectorDependency[] | undefined,
-    callback: (args: unknown[]) => void | Promise<void>,
+    callback: (args: unknown[], depth?: number) => void | Promise<void>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
@@ -310,6 +312,7 @@ export class Injector {
 
     const paramBarrier = new Barrier(dependencies.length);
     let isResolved = true;
+    let depth = 0;
     const resolveParam = async (param: unknown, index: number) => {
       try {
         if (this.isInquirer(param, parentInquirer)) {
@@ -355,6 +358,11 @@ export class Injector {
           contextId,
           effectiveInquirer,
         );
+
+        if (paramWrapperWithInstance.hierarchyLevel > depth) {
+          depth = paramWrapperWithInstance.hierarchyLevel;
+        }
+
         const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
           this.getContextId(contextId, paramWrapperWithInstance),
           this.getInquirerId(effectiveInquirer),
@@ -379,7 +387,7 @@ export class Injector {
       }
     };
     const instances = await Promise.all(dependencies.map(resolveParam));
-    isResolved && (await callback(instances));
+    isResolved && (await callback(instances, depth));
   }
 
   public getClassDependencies<T>(

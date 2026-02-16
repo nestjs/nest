@@ -77,4 +77,49 @@ describe('OnModuleDestroy', () => {
       bb.onModuleDestroy.mock.invocationCallOrder[0],
     );
   });
+
+  it('should sort components within a single module by injection hierarchy - ASC order', async () => {
+    @Injectable()
+    class A implements OnModuleDestroy {
+      onModuleDestroy = vi.fn();
+    }
+
+    @Injectable()
+    class AHost implements OnModuleDestroy {
+      constructor(private a: A) {}
+      onModuleDestroy = vi.fn();
+    }
+
+    @Injectable()
+    class Composition implements OnModuleDestroy {
+      constructor(
+        private a: A,
+        private host: AHost,
+      ) {}
+      onModuleDestroy = vi.fn();
+    }
+
+    @Module({
+      providers: [AHost, A, Composition],
+    })
+    class AModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [AModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    const child = module.get(A);
+    const parent = module.get(AHost);
+    const composition = module.get(Composition);
+    expect(composition.onModuleDestroy).toHaveBeenCalledBefore(
+      parent.onModuleDestroy,
+    );
+    expect(parent.onModuleDestroy).toHaveBeenCalledBefore(
+      child.onModuleDestroy,
+    );
+  });
 });
