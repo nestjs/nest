@@ -123,24 +123,10 @@ export class ServerNats<
 
   public async createNatsClient(): Promise<Client> {
     const natsPackage = await this.loadPackage(
-      'nats',
+      '@nats-io/transport-node',
       ServerNats.name,
-      () => import('nats'),
+      () => import('@nats-io/transport-node'),
     );
-
-    // Eagerly initialize serializer/deserializer so they can be used synchronously
-    if (
-      this.serializer &&
-      typeof (this.serializer as any).init === 'function'
-    ) {
-      await (this.serializer as any).init();
-    }
-    if (
-      this.deserializer &&
-      typeof (this.deserializer as any).init === 'function'
-    ) {
-      await (this.deserializer as any).init();
-    }
 
     const options = this.options || ({} as NatsOptions);
     return natsPackage.connect({

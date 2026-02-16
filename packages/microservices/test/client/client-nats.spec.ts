@@ -1,4 +1,4 @@
-import { headers as createHeaders } from 'nats';
+import { headers as createHeaders } from '@nats-io/transport-node';
 import { ClientNats } from '../../client/client-nats.js';
 import { ReadPacket, WritePacket } from '../../interfaces/index.js';
 import { NatsRecord } from '../../record-builders/index.js';
