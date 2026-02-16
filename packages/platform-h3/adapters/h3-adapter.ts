@@ -1,11 +1,20 @@
 import {
+  InternalServerErrorException,
   Logger,
   NestApplicationOptions,
   RequestMethod,
   StreamableFile,
+  VERSION_NEUTRAL,
   VersioningOptions,
+  VersioningType,
 } from '@nestjs/common';
-import { isNil, isObject, isString } from '@nestjs/common/utils/shared.utils';
+import { VersionValue } from '@nestjs/common/interfaces';
+import {
+  isNil,
+  isObject,
+  isString,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   H3,
@@ -26,6 +35,15 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { pathToRegexp } from 'path-to-regexp';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
+
+type VersionedRoute = <
+  TRequest extends Record<string, any> = any,
+  TResponse = any,
+>(
+  req: TRequest,
+  res: TResponse,
+  next: () => void,
+) => any;
 
 export class H3Adapter extends AbstractHttpAdapter<
   http.Server | https.Server,
@@ -698,26 +716,159 @@ export class H3Adapter extends AbstractHttpAdapter<
   }
 
   /**
-   * Version filtering is part of the AbstractHttpAdapter interface contract.
-   * Version filtering is not yet implemented in H3Adapter.
-   * TODO: Implement version filtering similar to Express adapter.
+   * Applies version filtering to a route handler.
+   * Supports URI, Header, Media Type, and Custom versioning strategies.
+   *
+   * @param handler - The route handler function
+   * @param version - The version(s) this handler supports
+   * @param versioningOptions - The versioning configuration options
+   * @returns A wrapped handler that filters by version
    */
   public applyVersionFilter(
     handler: Function,
-    _version: any,
-    _versioningOptions: VersioningOptions,
-  ): <TRequest = any, TResponse = any>(
-    req: TRequest,
-    res: TResponse,
-    next: () => void,
-  ) => any {
-    return <TRequest = any, TResponse = any>(
-      req: TRequest,
-      res: TResponse,
-      next: () => void,
-    ) => {
-      return handler(req, res, next);
+    version: VersionValue,
+    versioningOptions: VersioningOptions,
+  ): VersionedRoute {
+    const callNextHandler: VersionedRoute = (req, res, next) => {
+      if (!next) {
+        throw new InternalServerErrorException(
+          'HTTP adapter does not support filtering on version',
+        );
+      }
+      return next();
     };
+
+    // VERSION_NEUTRAL or URI versioning pass through directly
+    // URI Versioning is done via the path, so the filter continues forward
+    if (
+      version === VERSION_NEUTRAL ||
+      versioningOptions.type === VersioningType.URI
+    ) {
+      const handlerForNoVersioning: VersionedRoute = (req, res, next) =>
+        handler(req, res, next);
+      return handlerForNoVersioning;
+    }
+
+    // Custom Extractor Versioning Handler
+    if (versioningOptions.type === VersioningType.CUSTOM) {
+      const handlerForCustomVersioning: VersionedRoute = (req, res, next) => {
+        const extractedVersion = versioningOptions.extractor(req);
+
+        if (Array.isArray(version)) {
+          if (
+            Array.isArray(extractedVersion) &&
+            version.filter(v => extractedVersion.includes(v as string)).length
+          ) {
+            return handler(req, res, next);
+          }
+
+          if (
+            isString(extractedVersion) &&
+            version.includes(extractedVersion)
+          ) {
+            return handler(req, res, next);
+          }
+        } else if (isString(version)) {
+          // Known limitation: if there are multiple versions supported across separate
+          // handlers/controllers, we can't select the highest matching handler.
+          // Since this code is evaluated per-handler, we can't see if the highest
+          // specified version exists in a different handler.
+          if (
+            Array.isArray(extractedVersion) &&
+            extractedVersion.includes(version)
+          ) {
+            return handler(req, res, next);
+          }
+
+          if (isString(extractedVersion) && version === extractedVersion) {
+            return handler(req, res, next);
+          }
+        }
+
+        return callNextHandler(req, res, next);
+      };
+
+      return handlerForCustomVersioning;
+    }
+
+    // Media Type (Accept Header) Versioning Handler
+    if (versioningOptions.type === VersioningType.MEDIA_TYPE) {
+      const handlerForMediaTypeVersioning: VersionedRoute = (
+        req,
+        res,
+        next,
+      ) => {
+        const MEDIA_TYPE_HEADER = 'Accept';
+        const acceptHeaderValue: string | undefined =
+          req.headers?.[MEDIA_TYPE_HEADER] ||
+          req.headers?.[MEDIA_TYPE_HEADER.toLowerCase()];
+
+        const acceptHeaderVersionParameter = acceptHeaderValue
+          ? acceptHeaderValue.split(';')[1]
+          : undefined;
+
+        // No version was supplied
+        if (isUndefined(acceptHeaderVersionParameter)) {
+          if (Array.isArray(version)) {
+            if (version.includes(VERSION_NEUTRAL)) {
+              return handler(req, res, next);
+            }
+          }
+        } else {
+          const headerVersion = acceptHeaderVersionParameter.split(
+            versioningOptions.key,
+          )[1];
+
+          if (Array.isArray(version)) {
+            if (version.includes(headerVersion)) {
+              return handler(req, res, next);
+            }
+          } else if (isString(version)) {
+            if (version === headerVersion) {
+              return handler(req, res, next);
+            }
+          }
+        }
+
+        return callNextHandler(req, res, next);
+      };
+
+      return handlerForMediaTypeVersioning;
+    }
+
+    // Header Versioning Handler
+    if (versioningOptions.type === VersioningType.HEADER) {
+      const handlerForHeaderVersioning: VersionedRoute = (req, res, next) => {
+        const customHeaderVersionParameter: string | undefined =
+          req.headers?.[versioningOptions.header] ||
+          req.headers?.[versioningOptions.header.toLowerCase()];
+
+        // No version was supplied
+        if (isUndefined(customHeaderVersionParameter)) {
+          if (Array.isArray(version)) {
+            if (version.includes(VERSION_NEUTRAL)) {
+              return handler(req, res, next);
+            }
+          }
+        } else {
+          if (Array.isArray(version)) {
+            if (version.includes(customHeaderVersionParameter)) {
+              return handler(req, res, next);
+            }
+          } else if (isString(version)) {
+            if (version === customHeaderVersionParameter) {
+              return handler(req, res, next);
+            }
+          }
+        }
+
+        return callNextHandler(req, res, next);
+      };
+
+      return handlerForHeaderVersioning;
+    }
+
+    throw new Error('Unsupported versioning options');
   }
 
   private wrapHandler(handler: Function) {
