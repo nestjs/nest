@@ -65,10 +65,10 @@ export const isEmpty = (value: unknown): boolean => {
 };
 
 export const isEmptyArray = (array: unknown): boolean => {
-  if (isNil(array)) {
-    return true;
+  if (!Array.isArray(array)) {
+    return false;
   }
-  return Array.isArray(array) && array.length === 0;
+  return array.length === 0;
 };
 
 export const isSymbol = (val: unknown): val is symbol =>
