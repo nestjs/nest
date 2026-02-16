@@ -1,5 +1,6 @@
 import {
   Logger,
+  NestApplicationOptions,
   RequestMethod,
   StreamableFile,
   VersioningOptions,
@@ -11,9 +12,11 @@ import {
   eventHandler,
   fromNodeHandler,
   getQuery,
+  getRouterParams,
   H3Event,
   readBody,
   handleCors,
+  type CorsOptions,
 } from 'h3';
 import { toNodeHandler } from 'h3/node';
 import * as http from 'http';
@@ -22,8 +25,8 @@ import { pathToRegexp } from 'path-to-regexp';
 
 export class H3Adapter extends AbstractHttpAdapter<
   http.Server | https.Server,
-  H3Event,
-  H3Event
+  http.IncomingMessage,
+  http.ServerResponse
 > {
   protected readonly instance: H3;
   private readonly logger = new Logger(H3Adapter.name);
@@ -32,11 +35,16 @@ export class H3Adapter extends AbstractHttpAdapter<
     super(instance || new H3());
   }
 
-  public reply(response: H3Event, body: any, statusCode?: number) {
-    if (!response.runtime?.node?.res) {
+  public reply(
+    response: http.ServerResponse | H3Event,
+    body: any,
+    statusCode?: number,
+  ) {
+    // response should be Node.js res object now
+    const res = response as http.ServerResponse;
+    if (!res || typeof res.end !== 'function') {
       return;
     }
-    const res = response.runtime.node.res;
     if (statusCode) {
       res.statusCode = statusCode;
     }
@@ -61,9 +69,9 @@ export class H3Adapter extends AbstractHttpAdapter<
         res.setHeader('Content-Length', String(streamHeaders.length));
       }
       const stream = body.getStream();
-      (res as any).send = (chunk: any) => res.end(chunk);
+      const mockRes = { send: (chunk: any) => res.end(chunk) } as any;
       stream.once('error', err => {
-        body.errorHandler(err, res as any);
+        body.errorHandler(err, mockRes);
       });
       return stream
         .pipe(res)
@@ -74,7 +82,17 @@ export class H3Adapter extends AbstractHttpAdapter<
       return res.end();
     }
     if (isObject(body) && !Buffer.isBuffer(body) && !isString(body)) {
-      if (!res.getHeader('Content-Type')) {
+      const responseContentType = res.getHeader('Content-Type');
+      if (
+        typeof responseContentType === 'string' &&
+        !responseContentType.startsWith('application/json') &&
+        (body as any)?.statusCode >= 400
+      ) {
+        this.logger.warn(
+          "Content-Type doesn't match Reply body, you might need a custom ExceptionFilter for non-JSON responses",
+        );
+        res.setHeader('Content-Type', 'application/json');
+      } else if (!responseContentType) {
         res.setHeader('Content-Type', 'application/json');
       }
       return res.end(JSON.stringify(body));
@@ -82,86 +100,146 @@ export class H3Adapter extends AbstractHttpAdapter<
     return res.end(body);
   }
 
-  public status(response: H3Event, statusCode: number) {
-    if (response.runtime?.node?.res) {
-      response.runtime.node.res.statusCode = statusCode;
+  public status(response: http.ServerResponse | H3Event, statusCode: number) {
+    // Handle both H3Event and Node.js response
+    const res =
+      (response as H3Event).runtime?.node?.res ||
+      (response as http.ServerResponse);
+    if (res && typeof res.statusCode !== 'undefined') {
+      res.statusCode = statusCode;
     }
     return response;
   }
 
-  public end(response: H3Event, message?: string) {
-    if (response.runtime?.node?.res) {
+  public end(response: http.ServerResponse | H3Event, message?: string) {
+    // Handle both H3Event and Node.js response
+    const res =
+      (response as H3Event).runtime?.node?.res ||
+      (response as http.ServerResponse);
+    if (res && typeof res.end === 'function') {
       if (message) {
-        return response.runtime.node.res.end(message);
+        return res.end(message);
       }
-      return response.runtime.node.res.end();
+      return res.end();
     }
   }
 
-  public render(response: H3Event, view: string, options: any) {
+  /**
+   * Render method is part of the AbstractHttpAdapter interface contract.
+   * Template rendering is not yet supported in H3Adapter.
+   */
+  public render(
+    response: http.ServerResponse | H3Event,
+    _view: string,
+    _options: any,
+  ) {
     this.logger.warn('render() is not supported in H3Adapter yet.');
-    if (response.runtime?.node?.res) {
-      return response.runtime.node.res.end('Render not supported');
+    // Handle both H3Event and Node.js response
+    const res =
+      (response as H3Event).runtime?.node?.res ||
+      (response as http.ServerResponse);
+    if (res && typeof res.end === 'function') {
+      return res.end('Render not supported');
     }
   }
 
-  public redirect(response: H3Event, statusCode: number, url: string) {
-    if (response.runtime?.node?.res) {
-      response.runtime.node.res.statusCode = statusCode;
-      response.runtime.node.res.setHeader('Location', url);
-      response.runtime.node.res.end();
+  public redirect(
+    response: http.ServerResponse | H3Event,
+    statusCode: number,
+    url: string,
+  ) {
+    // Handle both H3Event and Node.js response
+    const res =
+      (response as H3Event).runtime?.node?.res ||
+      (response as http.ServerResponse);
+    if (res) {
+      res.statusCode = statusCode;
+      res.setHeader('Location', url);
+      res.end();
     }
   }
 
-  public setErrorHandler(handler: Function, prefix?: string) {
+  /**
+   * The prefix parameter is part of the AbstractHttpAdapter interface contract.
+   * It represents the global prefix but is not used in H3's error handler implementation.
+   */
+  public setErrorHandler(handler: Function, _prefix?: string) {
     this.instance.config.onError = (error, event) => {
       return handler(
         error,
         event.runtime?.node?.req,
         event.runtime?.node?.res,
-        err => {
-          // Next callback
+        (_err: any) => {
+          // Next callback - error parameter required by signature but not used
         },
       );
     };
     return this;
   }
 
-  public setNotFoundHandler(handler: Function, prefix?: string) {
-    this.instance.use(
-      eventHandler(async event => {
-        return handler(event.runtime?.node?.req, event.runtime?.node?.res);
-      }),
-    );
+  /**
+   * The prefix parameter is part of the AbstractHttpAdapter interface contract.
+   * It represents the global prefix but is not used in H3's not-found handler implementation.
+   */
+  public setNotFoundHandler(handler: Function, _prefix?: string) {
+    // Not found handler should be registered as a catch-all route, not middleware
+    // This ensures it only runs when no other routes match
+    this.instance.all('/**', async event => {
+      return handler(event.runtime?.node?.req, event.runtime?.node?.res);
+    });
     return this;
   }
 
-  public isHeadersSent(response: H3Event): boolean {
-    return response.runtime?.node?.res?.headersSent ?? false;
+  public isHeadersSent(response: http.ServerResponse | H3Event): boolean {
+    // Handle both H3Event and Node.js response
+    const res =
+      (response as H3Event).runtime?.node?.res ||
+      (response as http.ServerResponse);
+    return res?.headersSent ?? false;
   }
 
-  public getHeader(response: H3Event, name: string) {
-    return response.runtime?.node?.res?.getHeader(name);
+  public getHeader(response: http.ServerResponse | H3Event, name: string) {
+    // Handle both H3Event and Node.js response
+    const res =
+      (response as H3Event).runtime?.node?.res ||
+      (response as http.ServerResponse);
+    return res?.getHeader?.(name);
   }
 
-  public setHeader(response: H3Event, name: string, value: string) {
-    if (response.runtime?.node?.res) {
-      response.runtime.node.res.setHeader(name, value);
+  public setHeader(
+    response: http.ServerResponse | H3Event,
+    name: string,
+    value: string,
+  ) {
+    // Handle both H3Event and Node.js response
+    const res =
+      (response as H3Event).runtime?.node?.res ||
+      (response as http.ServerResponse);
+    if (res && typeof res.setHeader === 'function') {
+      res.setHeader(name, value);
     }
   }
 
-  public appendHeader(response: H3Event, name: string, value: string) {
-    if (!response.runtime?.node?.res) {
+  public appendHeader(
+    response: http.ServerResponse | H3Event,
+    name: string,
+    value: string,
+  ) {
+    // Handle both H3Event and Node.js response
+    const res =
+      (response as H3Event).runtime?.node?.res ||
+      (response as http.ServerResponse);
+    if (!res || typeof res.setHeader !== 'function') {
       return;
     }
-    const prev = response.runtime.node.res.getHeader(name);
+    const prev = res.getHeader(name);
     if (!prev) {
-      response.runtime.node.res.setHeader(name, value);
+      res.setHeader(name, value);
     } else {
       const newValue = Array.isArray(prev)
         ? [...prev, value]
         : [String(prev), value];
-      response.runtime.node.res.setHeader(name, newValue);
+      res.setHeader(name, newValue);
     }
   }
 
@@ -210,52 +288,76 @@ export class H3Adapter extends AbstractHttpAdapter<
     return this;
   }
 
-  public getRequestHostname(request: H3Event): string {
-    return (request.runtime?.node?.req?.headers['host'] as string) || '';
+  public getRequestHostname(request: http.IncomingMessage | H3Event): string {
+    // Handle both H3Event and Node.js request
+    if ('runtime' in request) {
+      return request.runtime?.node?.req?.headers?.host || '';
+    }
+    return request.headers?.host || '';
   }
 
-  public getRequestMethod(request: H3Event): string {
-    return request.runtime?.node?.req?.method || 'GET';
+  public getRequestMethod(request: http.IncomingMessage | H3Event): string {
+    // Handle both H3Event and Node.js request
+    if ('runtime' in request) {
+      return request.runtime?.node?.req?.method || 'GET';
+    }
+    return request.method || 'GET';
   }
 
-  public getRequestUrl(request: H3Event): string {
-    return request.runtime?.node?.req?.url || '';
+  public getRequestUrl(request: http.IncomingMessage | H3Event): string {
+    // Handle both H3Event and Node.js request
+    if ('runtime' in request) {
+      return request.runtime?.node?.req?.url || '';
+    }
+    return request.url || '';
   }
 
-  public enableCors(options: any) {
-    this.instance.use(
-      eventHandler(async event => {
-        if (handleCors(event, options)) {
-          return;
-        }
-      }),
-    );
-  }
+  public enableCors(options?: CorsOptions) {
+    // Use plain middleware function - don't wrap in eventHandler()
+    this.instance.use(event => {
+      // Configure preflight status code if not set
+      const corsOptions = {
+        ...options,
+        preflight: {
+          statusCode: 204,
+          ...options?.preflight,
+        },
+      };
 
-  public createMiddlewareFactory(
-    requestMethod: RequestMethod,
-  ): (path: string, callback: Function) => any {
-    return (path: string, callback: Function) => {
-      let normalizedPath = path;
-      if (path.endsWith('/')) {
-        normalizedPath = path.slice(0, -1);
+      // handleCors returns true/response if it handled the request (preflight)
+      const corsResult = handleCors(event, corsOptions);
+
+      if (corsResult) {
+        return corsResult;
       }
 
+      // Return undefined to continue to route handler
+    });
+  }
+
+  /**
+   * The requestMethod parameter is part of the AbstractHttpAdapter interface contract.
+   * H3 middleware uses instance.use() which doesn't filter by HTTP method (similar to Fastify).
+   */
+  public createMiddlewareFactory(
+    _requestMethod: RequestMethod,
+  ): (path: string, callback: Function) => any {
+    return (path: string, callback: Function) => {
+      const normalizedPath = path.endsWith('/') ? path.slice(0, -1) : path;
       const { regexp } = pathToRegexp(normalizedPath);
 
-      const handler = eventHandler(async event => {
+      // Use plain middleware function - don't wrap in eventHandler()
+      this.instance.use(async event => {
         const currentPath = (event.runtime?.node?.req?.url || '').split('?')[0];
         if (regexp.exec(currentPath)) {
-          const nodeHandler = fromNodeHandler(callback as any);
-          return nodeHandler(event);
+          await fromNodeHandler(callback as any)(event);
         }
+        // Return undefined to continue to route handler
       });
-
-      this.instance.use(handler);
     };
   }
 
-  public initHttpServer(options: any) {
+  public initHttpServer(options: NestApplicationOptions) {
     const requestListener = toNodeHandler(this.instance);
     if (options && options.httpsOptions) {
       this.httpServer = https.createServer(
@@ -267,86 +369,166 @@ export class H3Adapter extends AbstractHttpAdapter<
     }
   }
 
-  public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
-    const parser = eventHandler(async event => {
+  /**
+   * Parameters are part of the AbstractHttpAdapter interface contract.
+   * The prefix parameter could be used to conditionally apply parsing based on path prefix.
+   * The rawBody parameter could be used to configure raw body parsing.
+   * Currently, H3 adapter applies body parsing globally for POST, PUT, and PATCH requests.
+   */
+  public registerParserMiddleware(_prefix?: string, _rawBody?: boolean) {
+    // Use plain middleware function - don't wrap in eventHandler()
+    // Middleware must return undefined to allow route handlers to execute
+    this.instance.use(async event => {
       const method = event.runtime?.node?.req?.method || 'GET';
       if (['POST', 'PUT', 'PATCH'].includes(method)) {
         const body = await readBody(event);
         (event as any).body = body;
       }
+      // Return undefined to continue to next handler/route
     });
-    this.instance.use(parser);
   }
 
   public getType(): string {
     return 'h3';
   }
 
-  public get(...args: any[]) {
+  public get(handler: Function): void;
+  public get(path: string, handler: Function): void;
+  public get(...args: [Function] | [string, Function]) {
     const path = args.length > 1 ? args[0] : '/';
-    const handler = args.length > 1 ? args[1] : args[0];
-    this.instance.get(path, this.wrapHandler(handler));
+    const handler =
+      args.length > 1 ? (args[1] as Function) : (args[0] as Function);
+    this.instance.on('GET', path as string, this.wrapHandler(handler));
   }
 
-  public post(...args: any[]) {
+  public post(handler: Function): void;
+  public post(path: string, handler: Function): void;
+  public post(...args: [Function] | [string, Function]) {
     const path = args.length > 1 ? args[0] : '/';
-    const handler = args.length > 1 ? args[1] : args[0];
-    this.instance.post(path, this.wrapHandler(handler));
+    const handler =
+      args.length > 1 ? (args[1] as Function) : (args[0] as Function);
+    this.instance.on('POST', path as string, this.wrapHandler(handler));
   }
 
-  public put(...args: any[]) {
+  public put(handler: Function): void;
+  public put(path: string, handler: Function): void;
+  public put(...args: [Function] | [string, Function]) {
     const path = args.length > 1 ? args[0] : '/';
-    const handler = args.length > 1 ? args[1] : args[0];
-    this.instance.put(path, this.wrapHandler(handler));
+    const handler =
+      args.length > 1 ? (args[1] as Function) : (args[0] as Function);
+    this.instance.on('PUT', path as string, this.wrapHandler(handler));
   }
 
-  public delete(...args: any[]) {
+  public delete(handler: Function): void;
+  public delete(path: string, handler: Function): void;
+  public delete(...args: [Function] | [string, Function]) {
     const path = args.length > 1 ? args[0] : '/';
-    const handler = args.length > 1 ? args[1] : args[0];
-    this.instance.delete(path, this.wrapHandler(handler));
+    const handler =
+      args.length > 1 ? (args[1] as Function) : (args[0] as Function);
+    this.instance.on('DELETE', path as string, this.wrapHandler(handler));
   }
 
-  public patch(...args: any[]) {
+  public patch(handler: Function): void;
+  public patch(path: string, handler: Function): void;
+  public patch(...args: [Function] | [string, Function]) {
     const path = args.length > 1 ? args[0] : '/';
-    const handler = args.length > 1 ? args[1] : args[0];
-    this.instance.patch(path, this.wrapHandler(handler));
+    const handler =
+      args.length > 1 ? (args[1] as Function) : (args[0] as Function);
+    this.instance.on('PATCH', path as string, this.wrapHandler(handler));
   }
 
-  public options(...args: any[]) {
+  public options(handler: Function): void;
+  public options(path: string, handler: Function): void;
+  public options(...args: [Function] | [string, Function]) {
     const path = args.length > 1 ? args[0] : '/';
-    const handler = args.length > 1 ? args[1] : args[0];
-    this.instance.options(path, this.wrapHandler(handler));
+    const handler =
+      args.length > 1 ? (args[1] as Function) : (args[0] as Function);
+    this.instance.on('OPTIONS', path as string, this.wrapHandler(handler));
   }
 
-  public head(...args: any[]) {
+  public head(handler: Function): void;
+  public head(path: string, handler: Function): void;
+  public head(...args: [Function] | [string, Function]) {
     const path = args.length > 1 ? args[0] : '/';
-    const handler = args.length > 1 ? args[1] : args[0];
-    (this.instance as any).use(path, this.wrapHandler(handler), {
-      method: 'HEAD',
-    });
+    const handler =
+      args.length > 1 ? (args[1] as Function) : (args[0] as Function);
+    this.instance.on('HEAD', path as string, this.wrapHandler(handler));
   }
 
+  /**
+   * Version filtering is part of the AbstractHttpAdapter interface contract.
+   * Version filtering is not yet implemented in H3Adapter.
+   * TODO: Implement version filtering similar to Express adapter.
+   */
   public applyVersionFilter(
     handler: Function,
-    version: any,
-    versioningOptions: VersioningOptions,
-  ) {
-    return (req: any, res: any, next: () => void) => {
+    _version: any,
+    _versioningOptions: VersioningOptions,
+  ): <TRequest = any, TResponse = any>(
+    req: TRequest,
+    res: TResponse,
+    next: () => void,
+  ) => any {
+    return <TRequest = any, TResponse = any>(
+      req: TRequest,
+      res: TResponse,
+      next: () => void,
+    ) => {
       return handler(req, res, next);
     };
   }
 
-  private wrapHandler(handler: any) {
+  private wrapHandler(handler: Function) {
     return eventHandler(async event => {
-      (event as any).query = getQuery(event);
-      (event as any).params = event.context.params;
+      const req = event.runtime?.node?.req;
+      const res = event.runtime?.node?.res;
 
-      await new Promise<void>((resolve, reject) => {
-        const next = () => {
+      if (!req || !res) {
+        throw new Error('Node.js runtime not available');
+      }
+
+      // Copy H3 response headers to Node.js response (e.g., CORS headers set by middleware)
+      for (const [key, value] of event.res.headers.entries()) {
+        if (!res.getHeader(key)) {
+          res.setHeader(key, value);
+        }
+      }
+
+      // Add H3-specific properties to req
+      (req as any).query = getQuery(event);
+      (req as any).params = getRouterParams(event) || {};
+      (req as any).body = (event as any).body;
+      (req as any).h3Event = event;
+
+      // Create a promise that resolves when the response is sent
+      return new Promise<void>((resolve, reject) => {
+        // Intercept res.end to know when the response is complete
+        const originalEnd = res.end.bind(res);
+        (res as any).end = function (...args: any[]) {
+          originalEnd(...args);
           resolve();
         };
+
         // NestJS handler expects (req, res, next)
-        handler(event, event, next);
+        const next = (err?: any) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        };
+
+        try {
+          const result = handler(req, res, next);
+          // Handle async handlers
+          if (result && typeof result.then === 'function') {
+            result.catch((err: any) => {
+              reject(err);
+            });
+          }
+        } catch (err) {
+          reject(err);
+        }
       });
     });
   }
