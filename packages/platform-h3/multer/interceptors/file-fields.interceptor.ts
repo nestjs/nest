@@ -15,16 +15,17 @@ import {
   H3MulterOptions,
 } from '../interfaces/multer-options.interface';
 import {
-  parseMultipartFormData,
+  parseMultipartFormDataWithFields,
   groupFilesByFields,
 } from '../multer/multipart.utils';
 
 /**
  * Interceptor for handling file uploads from multiple fields on the H3 platform.
  * Uses H3's native multipart form data parsing.
+ * Also captures form fields and attaches them to the request.
  *
  * @param uploadFields Array of field configurations specifying field names and max counts
- * @param localOptions Optional configuration options
+ * @param localOptions Optional configuration options (storage, limits, fileFilter)
  *
  * @publicApi
  */
@@ -59,13 +60,19 @@ export function FileFieldsInterceptor(
       };
 
       // Parse multipart form data using H3's native approach
-      const files = await parseMultipartFormData(h3Event, mergedOptions);
+      const { files, fields } = await parseMultipartFormDataWithFields(
+        h3Event,
+        mergedOptions,
+      );
 
       // Group files by field names according to the uploadFields configuration
       const groupedFiles = groupFilesByFields(files, uploadFields);
 
       // Set files object on request (matching multer behavior for .fields())
       request.files = groupedFiles;
+
+      // Also attach form fields to request
+      request.formFields = fields;
 
       return next.handle();
     }

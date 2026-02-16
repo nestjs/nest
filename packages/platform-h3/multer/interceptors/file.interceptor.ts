@@ -12,16 +12,17 @@ import { MULTER_MODULE_OPTIONS } from '../files.constants';
 import { H3MulterModuleOptions } from '../interfaces';
 import { H3MulterOptions } from '../interfaces/multer-options.interface';
 import {
-  parseMultipartFormData,
+  parseMultipartFormDataWithFields,
   filterFilesByFieldName,
 } from '../multer/multipart.utils';
 
 /**
  * Interceptor for handling single file uploads on the H3 platform.
  * Uses H3's native multipart form data parsing.
+ * Also captures form fields and attaches them to the request.
  *
  * @param fieldName The name of the field containing the file
- * @param localOptions Optional configuration options
+ * @param localOptions Optional configuration options (storage, limits, fileFilter)
  *
  * @publicApi
  */
@@ -56,13 +57,19 @@ export function FileInterceptor(
       };
 
       // Parse multipart form data using H3's native approach
-      const files = await parseMultipartFormData(h3Event, mergedOptions);
+      const { files, fields } = await parseMultipartFormDataWithFields(
+        h3Event,
+        mergedOptions,
+      );
 
       // Filter to get only the file from the specified field
       const fieldFiles = filterFilesByFieldName(files, fieldName);
 
       // Set single file on request (matching multer behavior)
       request.file = fieldFiles.length > 0 ? fieldFiles[0] : undefined;
+
+      // Also attach form fields to request
+      request.formFields = fields;
 
       return next.handle();
     }

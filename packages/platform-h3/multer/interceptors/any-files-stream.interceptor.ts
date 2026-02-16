@@ -11,26 +11,32 @@ import { Observable } from 'rxjs';
 import { MULTER_MODULE_OPTIONS } from '../files.constants';
 import { H3MulterModuleOptions } from '../interfaces';
 import { H3MulterOptions } from '../interfaces/multer-options.interface';
-import {
-  parseMultipartFormDataWithFields,
-  filterFilesByFieldName,
-} from '../multer/multipart.utils';
+import { parseMultipartWithBusboy } from '../multer/stream.utils';
 
 /**
- * Interceptor for handling multiple file uploads on the H3 platform
- * from a single field.
- * Uses H3's native multipart form data parsing.
- * Also captures form fields and attaches them to the request.
+ * Stream-based interceptor for handling file uploads from any fields on the H3 platform.
+ * Accepts files from any field without filtering by field name.
+ * Uses @fastify/busboy for efficient stream processing.
+ * Supports storage backends (disk/memory) and form field extraction.
  *
- * @param fieldName The name of the field containing the files
- * @param maxCount Maximum number of files to accept (optional)
  * @param localOptions Optional configuration options (storage, limits, fileFilter)
+ *
+ * @example
+ * ```typescript
+ * import { diskStorage } from '@nestjs/platform-h3';
+ *
+ * @Post('upload')
+ * @UseInterceptors(AnyFilesStreamInterceptor({
+ *   storage: diskStorage({ destination: './uploads' })
+ * }))
+ * uploadFiles(@UploadedFiles() files: H3UploadedFile[]) {
+ *   // files[].path contains the paths on disk
+ * }
+ * ```
  *
  * @publicApi
  */
-export function FilesInterceptor(
-  fieldName: string,
-  maxCount?: number,
+export function AnyFilesStreamInterceptor(
   localOptions?: H3MulterOptions,
 ): Type<NestInterceptor> {
   class MixinInterceptor implements NestInterceptor {
@@ -59,30 +65,14 @@ export function FilesInterceptor(
         ...localOptions,
       };
 
-      // Apply maxCount to the files limit if specified
-      if (maxCount !== undefined) {
-        mergedOptions.limits = {
-          ...mergedOptions.limits,
-          files: maxCount,
-        };
-      }
-
-      // Parse multipart form data using H3's native approach
-      const { files, fields } = await parseMultipartFormDataWithFields(
+      // Parse multipart form data using busboy for stream processing
+      const { files, fields } = await parseMultipartWithBusboy(
         h3Event,
         mergedOptions,
       );
 
-      // Filter to get only files from the specified field
-      const fieldFiles = filterFilesByFieldName(files, fieldName);
-
-      // Enforce maxCount if specified (in case there are multiple fields)
-      if (maxCount !== undefined && fieldFiles.length > maxCount) {
-        // Truncate to maxCount
-        request.files = fieldFiles.slice(0, maxCount);
-      } else {
-        request.files = fieldFiles;
-      }
+      // Set all files on request (matching multer behavior for .any())
+      request.files = files;
 
       // Also attach form fields to request
       request.formFields = fields;

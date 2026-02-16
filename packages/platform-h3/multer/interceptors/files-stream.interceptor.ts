@@ -12,23 +12,36 @@ import { MULTER_MODULE_OPTIONS } from '../files.constants';
 import { H3MulterModuleOptions } from '../interfaces';
 import { H3MulterOptions } from '../interfaces/multer-options.interface';
 import {
-  parseMultipartFormDataWithFields,
-  filterFilesByFieldName,
-} from '../multer/multipart.utils';
+  parseMultipartWithBusboy,
+  filterFilesByFieldNameStream,
+} from '../multer/stream.utils';
 
 /**
- * Interceptor for handling multiple file uploads on the H3 platform
+ * Stream-based interceptor for handling multiple file uploads on the H3 platform
  * from a single field.
- * Uses H3's native multipart form data parsing.
- * Also captures form fields and attaches them to the request.
+ * Uses @fastify/busboy for efficient stream processing.
+ * Supports storage backends (disk/memory) and form field extraction.
  *
  * @param fieldName The name of the field containing the files
  * @param maxCount Maximum number of files to accept (optional)
  * @param localOptions Optional configuration options (storage, limits, fileFilter)
  *
+ * @example
+ * ```typescript
+ * import { diskStorage } from '@nestjs/platform-h3';
+ *
+ * @Post('upload')
+ * @UseInterceptors(FilesStreamInterceptor('files', 5, {
+ *   storage: diskStorage({ destination: './uploads' })
+ * }))
+ * uploadFiles(@UploadedFiles() files: H3UploadedFile[]) {
+ *   // files[].path contains the paths on disk
+ * }
+ * ```
+ *
  * @publicApi
  */
-export function FilesInterceptor(
+export function FilesStreamInterceptor(
   fieldName: string,
   maxCount?: number,
   localOptions?: H3MulterOptions,
@@ -67,14 +80,14 @@ export function FilesInterceptor(
         };
       }
 
-      // Parse multipart form data using H3's native approach
-      const { files, fields } = await parseMultipartFormDataWithFields(
+      // Parse multipart form data using busboy for stream processing
+      const { files, fields } = await parseMultipartWithBusboy(
         h3Event,
         mergedOptions,
       );
 
       // Filter to get only files from the specified field
-      const fieldFiles = filterFilesByFieldName(files, fieldName);
+      const fieldFiles = filterFilesByFieldNameStream(files, fieldName);
 
       // Enforce maxCount if specified (in case there are multiple fields)
       if (maxCount !== undefined && fieldFiles.length > maxCount) {

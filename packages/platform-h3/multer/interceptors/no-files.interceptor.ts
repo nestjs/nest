@@ -11,12 +11,13 @@ import { Observable } from 'rxjs';
 import { MULTER_MODULE_OPTIONS } from '../files.constants';
 import { H3MulterModuleOptions } from '../interfaces';
 import { H3MulterOptions } from '../interfaces/multer-options.interface';
-import { parseMultipartFormData } from '../multer/multipart.utils';
+import { parseMultipartFormDataWithFields } from '../multer/multipart.utils';
 
 /**
  * Interceptor for parsing multipart form data without accepting any files
  * on the H3 platform. Useful when you only want to parse text fields.
  * Uses H3's native multipart form data parsing.
+ * Extracts form fields and attaches them to the request.
  *
  * @param localOptions Optional configuration options
  *
@@ -58,7 +59,14 @@ export function NoFilesInterceptor(
       };
 
       // Parse multipart form data - will throw if files are present
-      await parseMultipartFormData(h3Event, mergedOptions);
+      // Form fields are extracted and attached to request
+      const { fields } = await parseMultipartFormDataWithFields(
+        h3Event,
+        mergedOptions,
+      );
+
+      // Attach form fields to request
+      request.formFields = fields;
 
       return next.handle();
     }

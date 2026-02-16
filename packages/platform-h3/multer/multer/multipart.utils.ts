@@ -3,8 +3,12 @@ import {
   H3UploadedFile,
   H3MulterOptions,
   H3MulterField,
+  H3FormField,
+  H3MultipartParseResult,
 } from '../interfaces/multer-options.interface';
 import { transformException, h3MultipartExceptions } from './multer.utils';
+import { StorageEngine } from '../storage/storage.interface';
+import { DiskStorage } from '../storage/disk.storage';
 
 /**
  * Checks if the request has multipart/form-data content type.
@@ -19,6 +23,8 @@ export function isMultipartRequest(event: H3Event): boolean {
 
 /**
  * Parses multipart form data from an H3 event and extracts files.
+ * This is the legacy function that only returns files.
+ * Use parseMultipartFormDataWithFields for both files and fields.
  *
  * @param event The H3 event containing the request
  * @param options Optional configuration for file upload limits and filtering
@@ -28,13 +34,37 @@ export async function parseMultipartFormData(
   event: H3Event,
   options?: H3MulterOptions,
 ): Promise<H3UploadedFile[]> {
+  const result = await parseMultipartFormDataWithFields(event, options);
+  return result.files;
+}
+
+/**
+ * Parses multipart form data from an H3 event and extracts both files and form fields.
+ *
+ * @param event The H3 event containing the request
+ * @param options Optional configuration for file upload limits, storage, and filtering
+ * @returns Promise resolving to files and fields
+ *
+ * @publicApi
+ */
+export async function parseMultipartFormDataWithFields(
+  event: H3Event,
+  options?: H3MulterOptions,
+): Promise<H3MultipartParseResult> {
   const files: H3UploadedFile[] = [];
+  const fields: H3FormField[] = [];
   const limits = options?.limits || {};
+
+  // Determine storage engine
+  let storage: StorageEngine | undefined = options?.storage;
+  if (!storage && options?.dest) {
+    storage = new DiskStorage({ destination: options.dest });
+  }
 
   // Check if this is a multipart request
   if (!isMultipartRequest(event)) {
-    // Not a multipart request, return empty array
-    return files;
+    // Not a multipart request, return empty result
+    return { files, fields };
   }
 
   try {
@@ -114,6 +144,23 @@ export async function parseMultipartFormData(
           }
         }
 
+        // Apply storage engine if provided
+        if (storage) {
+          await new Promise<void>((resolve, reject) => {
+            storage._handleFile(event.req, file, (error, info) => {
+              if (error) {
+                reject(error);
+              } else if (info) {
+                // Merge storage info into file
+                Object.assign(file, info);
+                resolve();
+              } else {
+                resolve();
+              }
+            });
+          });
+        }
+
         files.push(file);
       } else {
         // It's a field value (string)
@@ -136,10 +183,16 @@ export async function parseMultipartFormData(
           error.field = fieldName;
           throw transformException(error);
         }
+
+        // Store the field value
+        fields.push({
+          fieldname: fieldName,
+          value: value,
+        });
       }
     }
 
-    return files;
+    return { files, fields };
   } catch (error) {
     if (error instanceof Error) {
       throw transformException(error);
@@ -188,6 +241,46 @@ export function groupFilesByFields(
     }
 
     result[field.name] = fieldFiles;
+  }
+
+  return result;
+}
+
+/**
+ * Filters form fields by a specific field name.
+ *
+ * @param fields Array of form fields
+ * @param fieldName The field name to filter by
+ * @returns Fields matching the field name
+ */
+export function filterFormFieldsByName(
+  fields: H3FormField[],
+  fieldName: string,
+): H3FormField[] {
+  return fields.filter(field => field.fieldname === fieldName);
+}
+
+/**
+ * Converts an array of form fields to a key-value object.
+ * If multiple fields have the same name, they are collected into an array.
+ *
+ * @param fields Array of form fields
+ * @returns Object with field names as keys and values (string or string[])
+ */
+export function fieldsToObject(
+  fields: H3FormField[],
+): Record<string, string | string[]> {
+  const result: Record<string, string | string[]> = {};
+
+  for (const field of fields) {
+    const existing = result[field.fieldname];
+    if (existing === undefined) {
+      result[field.fieldname] = field.value;
+    } else if (Array.isArray(existing)) {
+      existing.push(field.value);
+    } else {
+      result[field.fieldname] = [existing, field.value];
+    }
   }
 
   return result;
