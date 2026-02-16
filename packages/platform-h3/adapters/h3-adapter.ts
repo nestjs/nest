@@ -18,15 +18,14 @@ import {
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import {
   H3,
-  eventHandler,
   fromNodeHandler,
   getQuery,
-  getRouterParams,
   H3Event,
   readBody,
   handleCors,
   serveStatic,
   type CorsOptions,
+  type H3Config,
 } from 'h3';
 import { toNodeHandler } from 'h3/node';
 import * as http from 'http';
@@ -36,6 +35,12 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { pathToRegexp } from 'path-to-regexp';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
+
+/**
+ * Symbol used by H3 to indicate the response has been handled.
+ * When returned from a middleware, H3 will not attempt to send a response.
+ */
+const kHandled = Symbol.for('h3.handled');
 
 /**
  * HTTP/2 options for the H3 adapter.
@@ -121,8 +126,19 @@ export class H3Adapter extends AbstractHttpAdapter<
   ) => Promise<void> | void;
   private onResponseHook?: (req: any, res: any) => Promise<void> | void;
 
-  constructor(instance?: H3) {
-    super(instance || new H3());
+  constructor(instanceOrOptions?: H3 | H3Config) {
+    super();
+
+    const instance =
+      instanceOrOptions && (instanceOrOptions as H3).config
+        ? instanceOrOptions
+        : new H3(instanceOrOptions as H3Config);
+
+    this.setInstance(instance);
+  }
+
+  public getInstance<T = H3>(): T {
+    return this.instance as T;
   }
 
   /**
@@ -1205,8 +1221,9 @@ export class H3Adapter extends AbstractHttpAdapter<
         return undefined;
       }
 
-      // If handled, we've already sent the response
-      return;
+      // If handled, return kHandled to tell H3 the response was already sent
+      // This prevents H3 from trying to send a response on top of what we already sent
+      return kHandled;
     };
   }
 }
