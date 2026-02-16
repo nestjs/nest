@@ -2,8 +2,18 @@ import { HttpServer, INestApplication } from '@nestjs/common';
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { H3, H3Event } from 'h3';
 import * as http from 'http';
+import * as http2 from 'http2';
 import * as https from 'https';
 import { ServeStaticOptions } from './serve-static-options.interface';
+
+/**
+ * HTTP/2 compatible server type for H3.
+ */
+type H3Server =
+  | http.Server
+  | https.Server
+  | http2.Http2Server
+  | http2.Http2SecureServer;
 
 /**
  * Interface describing methods on NestH3Application.
@@ -13,7 +23,7 @@ import { ServeStaticOptions } from './serve-static-options.interface';
  * @publicApi
  */
 export interface NestH3Application<
-  TServer extends http.Server | https.Server = http.Server,
+  TServer extends H3Server = http.Server,
 > extends INestApplication<TServer> {
   /**
    * Returns the underlying HTTP adapter bounded to the H3 app.
@@ -147,8 +157,8 @@ export interface NestH3Application<
    */
   setOnRequestHook(
     onRequestHook: (
-      req: http.IncomingMessage,
-      res: http.ServerResponse,
+      req: http.IncomingMessage | http2.Http2ServerRequest,
+      res: http.ServerResponse | http2.Http2ServerResponse,
       done: () => void,
     ) => Promise<void> | void,
   ): void;
@@ -166,8 +176,21 @@ export interface NestH3Application<
    */
   setOnResponseHook(
     onResponseHook: (
-      req: http.IncomingMessage,
-      res: http.ServerResponse,
+      req: http.IncomingMessage | http2.Http2ServerRequest,
+      res: http.ServerResponse | http2.Http2ServerResponse,
     ) => Promise<void> | void,
   ): void;
+
+  /**
+   * Returns whether the server is running in HTTP/2 mode.
+   *
+   * @example
+   * const adapter = app.getHttpAdapter() as H3Adapter;
+   * if (adapter.isHttp2Enabled()) {
+   *   console.log('Running with HTTP/2');
+   * }
+   *
+   * @returns {boolean} True if HTTP/2 is enabled
+   */
+  isHttp2Enabled(): boolean;
 }

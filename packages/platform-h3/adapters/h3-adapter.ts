@@ -30,11 +30,63 @@ import {
 } from 'h3';
 import { toNodeHandler } from 'h3/node';
 import * as http from 'http';
+import * as http2 from 'http2';
 import * as https from 'https';
 import * as path from 'path';
 import * as fs from 'fs';
 import { pathToRegexp } from 'path-to-regexp';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
+
+/**
+ * HTTP/2 options for the H3 adapter.
+ *
+ * @publicApi
+ */
+export interface H3Http2Options {
+  /**
+   * Enable HTTP/2 support.
+   */
+  http2: true;
+  /**
+   * TLS/SSL options for secure HTTP/2 connections (h2).
+   * Required for HTTP/2 in browsers.
+   */
+  http2Options?: http2.SecureServerOptions;
+  /**
+   * Allow HTTP/1 connections as a fallback via ALPN negotiation.
+   * Defaults to true.
+   */
+  allowHTTP1?: boolean;
+}
+
+/**
+ * HTTP/2 cleartext options (h2c) - HTTP/2 without TLS.
+ * Note: Browsers do not support h2c, only server-to-server communication.
+ *
+ * @publicApi
+ */
+export interface H3Http2CleartextOptions {
+  /**
+   * Enable HTTP/2 cleartext support (h2c).
+   */
+  http2: true;
+  /**
+   * HTTP/2 server options (without TLS).
+   */
+  http2Options?: http2.ServerOptions;
+}
+
+/**
+ * Extended application options for H3 with HTTP/2 support.
+ *
+ * @publicApi
+ */
+export interface H3ApplicationOptions extends NestApplicationOptions {
+  /**
+   * HTTP/2 configuration options.
+   */
+  http2Options?: H3Http2Options | H3Http2CleartextOptions;
+}
 
 type VersionedRoute = <
   TRequest extends Record<string, any> = any,
@@ -45,13 +97,23 @@ type VersionedRoute = <
   next: () => void,
 ) => any;
 
+/**
+ * HTTP/2 compatible server type
+ */
+type H3Server =
+  | http.Server
+  | https.Server
+  | http2.Http2Server
+  | http2.Http2SecureServer;
+
 export class H3Adapter extends AbstractHttpAdapter<
-  http.Server | https.Server,
-  http.IncomingMessage,
-  http.ServerResponse
+  H3Server,
+  http.IncomingMessage | http2.Http2ServerRequest,
+  http.ServerResponse | http2.Http2ServerResponse
 > {
   protected readonly instance: H3;
   private readonly logger = new Logger(H3Adapter.name);
+  private isHttp2 = false;
   private onRequestHook?: (
     req: any,
     res: any,
@@ -609,16 +671,87 @@ export class H3Adapter extends AbstractHttpAdapter<
     };
   }
 
-  public initHttpServer(options: NestApplicationOptions) {
+  /**
+   * Initialize the HTTP server with support for HTTP/1.1, HTTPS, and HTTP/2.
+   *
+   * HTTP/2 can be enabled by passing `http2Options` in the application options:
+   *
+   * @example
+   * ```typescript
+   * // HTTP/2 with TLS (h2)
+   * const app = await NestFactory.create(AppModule, new H3Adapter(), {
+   *   httpsOptions: { key, cert },
+   *   http2Options: { http2: true, allowHTTP1: true }
+   * });
+   *
+   * // HTTP/2 cleartext (h2c) - for server-to-server only
+   * const app = await NestFactory.create(AppModule, new H3Adapter(), {
+   *   http2Options: { http2: true }
+   * });
+   * ```
+   *
+   * @param options - Application options including HTTP/2 configuration
+   */
+  public initHttpServer(
+    options: NestApplicationOptions & {
+      http2Options?: H3Http2Options | H3Http2CleartextOptions;
+    },
+  ) {
     const requestListener = toNodeHandler(this.instance);
-    if (options && options.httpsOptions) {
+
+    // Check for HTTP/2 options
+    if (options?.http2Options?.http2) {
+      this.isHttp2 = true;
+
+      // HTTP/2 with TLS (h2) - required for browser support
+      if (options.httpsOptions) {
+        const secureOptions: http2.SecureServerOptions = {
+          ...options.httpsOptions,
+          ...options.http2Options.http2Options,
+          allowHTTP1:
+            (options.http2Options as H3Http2Options).allowHTTP1 ?? true,
+        };
+
+        this.httpServer = http2.createSecureServer(
+          secureOptions,
+          requestListener as any,
+        );
+
+        this.logger.log('HTTP/2 secure server (h2) initialized');
+      } else {
+        // HTTP/2 cleartext (h2c) - only for server-to-server communication
+        const h2cOptions: http2.ServerOptions = {
+          ...options.http2Options.http2Options,
+        };
+
+        this.httpServer = http2.createServer(
+          h2cOptions,
+          requestListener as any,
+        );
+
+        this.logger.warn(
+          'HTTP/2 cleartext server (h2c) initialized. Note: Browsers do not support h2c.',
+        );
+      }
+    } else if (options?.httpsOptions) {
+      // HTTPS (HTTP/1.1 over TLS)
       this.httpServer = https.createServer(
         options.httpsOptions,
         requestListener,
       );
     } else {
+      // HTTP/1.1
       this.httpServer = http.createServer(requestListener);
     }
+  }
+
+  /**
+   * Returns whether the server is running in HTTP/2 mode.
+   *
+   * @returns {boolean} True if HTTP/2 is enabled
+   */
+  public isHttp2Enabled(): boolean {
+    return this.isHttp2;
   }
 
   /**
