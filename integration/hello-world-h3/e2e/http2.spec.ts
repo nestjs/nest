@@ -142,7 +142,7 @@ describe('HTTP/2 Support (H3 adapter)', () => {
         });
 
         req.on('data', chunk => {
-          data += chunk;
+          data += chunk.toString();
         });
 
         req.on('end', () => {
@@ -242,7 +242,7 @@ describe('HTTP/2 Support (H3 adapter)', () => {
         });
 
         req.on('data', chunk => {
-          data += chunk;
+          data += chunk.toString();
         });
 
         req.on('end', () => {
