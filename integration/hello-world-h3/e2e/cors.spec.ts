@@ -112,7 +112,7 @@ describe('CORS (H3 adapter)', () => {
       app.enableCors({
         origin: '*',
         methods: ['GET', 'POST', 'PUT'],
-        allowHeaders: ['Content-Type', 'Authorization'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
       });
       await app.init();
     });
@@ -196,7 +196,7 @@ describe('CORS (H3 adapter)', () => {
       app = module.createNestApplication<NestH3Application>(new H3Adapter());
       app.enableCors({
         origin: '*',
-        maxAge: '3600',
+        maxAge: 3600,
       });
       await app.init();
     });
@@ -224,7 +224,7 @@ describe('CORS (H3 adapter)', () => {
       app = module.createNestApplication<NestH3Application>(new H3Adapter());
       app.enableCors({
         origin: '*',
-        exposeHeaders: ['X-Custom-Header', 'X-Request-Id'],
+        exposedHeaders: ['X-Custom-Header', 'X-Request-Id'],
       });
       await app.init();
     });
