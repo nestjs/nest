@@ -148,4 +148,101 @@ describe('CORS (H3 adapter)', () => {
         });
     });
   });
+
+  describe('with origin function callback', () => {
+    beforeEach(async () => {
+      const module = await Test.createTestingModule({
+        controllers: [TestController],
+      }).compile();
+
+      app = module.createNestApplication<NestH3Application>(new H3Adapter());
+      app.enableCors({
+        origin: (origin: string) => {
+          // Allow only specific origins dynamically
+          const allowedOrigins = ['https://allowed.com', 'https://trusted.com'];
+          return allowedOrigins.includes(origin) ? origin : false;
+        },
+      });
+      await app.init();
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should allow origin from callback returning allowed origin', () => {
+      return request(app.getHttpServer())
+        .get('/test')
+        .set('Origin', 'https://allowed.com')
+        .expect(200)
+        .expect('Access-Control-Allow-Origin', 'https://allowed.com');
+    });
+
+    it('should allow another origin from callback', () => {
+      return request(app.getHttpServer())
+        .get('/test')
+        .set('Origin', 'https://trusted.com')
+        .expect(200)
+        .expect('Access-Control-Allow-Origin', 'https://trusted.com');
+    });
+  });
+
+  describe('with maxAge option', () => {
+    beforeEach(async () => {
+      const module = await Test.createTestingModule({
+        controllers: [TestController],
+      }).compile();
+
+      app = module.createNestApplication<NestH3Application>(new H3Adapter());
+      app.enableCors({
+        origin: '*',
+        maxAge: '3600',
+      });
+      await app.init();
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should include max-age in preflight response', () => {
+      return request(app.getHttpServer())
+        .options('/test')
+        .set('Origin', 'http://example.com')
+        .set('Access-Control-Request-Method', 'GET')
+        .expect(204)
+        .expect('Access-Control-Max-Age', '3600');
+    });
+  });
+
+  describe('with exposed headers', () => {
+    beforeEach(async () => {
+      const module = await Test.createTestingModule({
+        controllers: [TestController],
+      }).compile();
+
+      app = module.createNestApplication<NestH3Application>(new H3Adapter());
+      app.enableCors({
+        origin: '*',
+        exposeHeaders: ['X-Custom-Header', 'X-Request-Id'],
+      });
+      await app.init();
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should include exposed headers in response', () => {
+      return request(app.getHttpServer())
+        .get('/test')
+        .set('Origin', 'http://example.com')
+        .expect(200)
+        .expect(res => {
+          const exposedHeaders = res.headers['access-control-expose-headers'];
+          expect(exposedHeaders).to.include('X-Custom-Header');
+          expect(exposedHeaders).to.include('X-Request-Id');
+        });
+    });
+  });
 });

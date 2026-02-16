@@ -1,11 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Head,
   Header,
   HttpCode,
-  Next,
+  Options,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -96,5 +99,31 @@ export class HelloController {
   @Get('local-pipe/:id')
   localPipe(@Param('id', UserByIdPipe) user: any): any {
     return user;
+  }
+
+  @Delete('resource/:id')
+  deleteResource(@Param('id') id: string): { deleted: string } {
+    return { deleted: id };
+  }
+
+  @Patch('resource/:id')
+  patchResource(
+    @Param('id') id: string,
+    @Body() body: Partial<CreateUserDto>,
+  ): { id: string; patched: Partial<CreateUserDto> } {
+    return { id, patched: body };
+  }
+
+  @Head('resource')
+  headResource(): void {
+    // HEAD requests should return no body, just headers
+    return;
+  }
+
+  @Options('resource')
+  optionsResource(): { methods: string[] } {
+    return {
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
+    };
   }
 }
