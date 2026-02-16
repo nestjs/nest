@@ -7,7 +7,7 @@ import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import {
   PIPES_METADATA,
   type Controller,
-  isEmptyArray,
+  isEmpty,
   isFunction,
 } from '@nestjs/common/internal';
 import type { PipeTransform, Type } from '@nestjs/common';
@@ -44,7 +44,7 @@ export class PipesContextCreator extends ContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
   ): R {
-    if (isEmptyArray(metadata)) {
+    if (isEmpty(metadata)) {
       return [] as any[] as R;
     }
     return iterate(metadata)
