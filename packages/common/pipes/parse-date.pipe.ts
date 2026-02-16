@@ -5,7 +5,7 @@ import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util.js';
-import { isNil } from '../utils/shared.utils.js';
+import { isNil, isNumber, isString } from '../utils/shared.utils.js';
 
 export interface ParseDatePipeOptions {
   /**
@@ -31,9 +31,7 @@ export interface ParseDatePipeOptions {
 }
 
 @Injectable()
-export class ParseDatePipe implements PipeTransform<
-  string | number | undefined | null
-> {
+export class ParseDatePipe implements PipeTransform {
   protected exceptionFactory: (error: string) => any;
 
   constructor(private readonly options: ParseDatePipeOptions = {}) {
@@ -52,9 +50,7 @@ export class ParseDatePipe implements PipeTransform<
    * @param value currently processed route argument
    * @param metadata contains metadata about the currently processed route argument
    */
-  transform(
-    value: string | number | undefined | null,
-  ): Date | null | undefined {
+  transform(value: unknown): Date | null | undefined {
     if (this.options.optional && isNil(value)) {
       return this.options.default ? this.options.default() : value;
     }
@@ -63,7 +59,10 @@ export class ParseDatePipe implements PipeTransform<
       throw this.exceptionFactory('Validation failed (no Date provided)');
     }
 
-    const transformedValue = new Date(value);
+    const transformedValue =
+      isString(value) || isNumber(value) || value instanceof Date
+        ? new Date(value)
+        : new Date(NaN);
 
     if (isNaN(transformedValue.getTime())) {
       throw this.exceptionFactory('Validation failed (invalid date format)');

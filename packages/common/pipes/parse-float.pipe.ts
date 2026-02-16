@@ -37,7 +37,7 @@ export interface ParseFloatPipeOptions {
  * @publicApi
  */
 @Injectable()
-export class ParseFloatPipe implements PipeTransform<string> {
+export class ParseFloatPipe implements PipeTransform {
   protected exceptionFactory: (error: string) => any;
 
   constructor(@Optional() protected readonly options?: ParseFloatPipeOptions) {
@@ -57,7 +57,10 @@ export class ParseFloatPipe implements PipeTransform<string> {
    * @param value currently processed route argument
    * @param metadata contains metadata about the currently processed route argument
    */
-  async transform(value: string, metadata: ArgumentMetadata): Promise<number> {
+  async transform(
+    value: unknown,
+    metadata: ArgumentMetadata,
+  ): Promise<number | undefined | null> {
     if (isNil(value) && this.options?.optional) {
       return value;
     }
@@ -66,17 +69,17 @@ export class ParseFloatPipe implements PipeTransform<string> {
         'Validation failed (numeric string is expected)',
       );
     }
-    return parseFloat(value);
+    return parseFloat(String(value));
   }
 
   /**
    * @param value currently processed route argument
    * @returns `true` if `value` is a valid float number
    */
-  protected isNumeric(value: string): boolean {
+  protected isNumeric(value: unknown): boolean {
     return (
       ['string', 'number'].includes(typeof value) &&
-      !isNaN(parseFloat(value)) &&
+      !isNaN(parseFloat(String(value))) &&
       isFinite(value as any)
     );
   }
