@@ -41,10 +41,7 @@ export interface ParseBoolPipeOptions {
  * @publicApi
  */
 @Injectable()
-export class ParseBoolPipe implements PipeTransform<
-  string | boolean,
-  Promise<boolean>
-> {
+export class ParseBoolPipe implements PipeTransform {
   protected exceptionFactory: (error: string) => any;
 
   constructor(@Optional() protected readonly options?: ParseBoolPipeOptions) {
@@ -64,9 +61,9 @@ export class ParseBoolPipe implements PipeTransform<
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(
-    value: string | boolean,
+    value: unknown,
     metadata: ArgumentMetadata,
-  ): Promise<boolean> {
+  ): Promise<boolean | undefined | null> {
     if (isNil(value) && this.options?.optional) {
       return value;
     }
@@ -86,7 +83,7 @@ export class ParseBoolPipe implements PipeTransform<
    * @returns `true` if `value` is said 'true', ie., if it is equal to the boolean
    * `true` or the string `"true"`
    */
-  protected isTrue(value: string | boolean): boolean {
+  protected isTrue(value: unknown): boolean {
     return value === true || value === 'true';
   }
 
@@ -95,7 +92,7 @@ export class ParseBoolPipe implements PipeTransform<
    * @returns `true` if `value` is said 'false', ie., if it is equal to the boolean
    * `false` or the string `"false"`
    */
-  protected isFalse(value: string | boolean): boolean {
+  protected isFalse(value: unknown): boolean {
     return value === false || value === 'false';
   }
 }

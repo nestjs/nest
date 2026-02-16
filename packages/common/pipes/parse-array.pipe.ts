@@ -76,7 +76,7 @@ export class ParseArrayPipe implements PipeTransform {
    * @param value currently processed route argument
    * @param metadata contains metadata about the currently processed route argument
    */
-  async transform(value: any, metadata: ArgumentMetadata): Promise<any> {
+  async transform(value: unknown, metadata: ArgumentMetadata): Promise<any> {
     if (!value && !this.options.optional) {
       throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
     } else if (isNil(value) && this.options.optional) {
@@ -147,7 +147,9 @@ export class ParseArrayPipe implements PipeTransform {
         }
         return targetArray;
       } else {
-        value = await Promise.all(value.map(toClassInstance));
+        value = await Promise.all(
+          (value as Array<unknown>).map(toClassInstance),
+        );
       }
     }
     return value;
