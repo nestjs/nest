@@ -122,11 +122,11 @@ describe('OnApplicationBootstrap', () => {
     const parent = module.get(AHost);
     const composition = module.get(Composition);
 
-    expect(composition.onApplicationBootstrap).toHaveBeenCalledBefore(
+    expect(child.onApplicationBootstrap).toHaveBeenCalledBefore(
       parent.onApplicationBootstrap,
     );
     expect(parent.onApplicationBootstrap).toHaveBeenCalledBefore(
-      child.onApplicationBootstrap,
+      composition.onApplicationBootstrap,
     );
   });
 });

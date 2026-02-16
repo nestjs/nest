@@ -339,10 +339,6 @@ export class Injector {
           index,
         );
 
-        if (paramWrapper.hierarchyLevel > depth) {
-          depth = paramWrapper.hierarchyLevel;
-        }
-
         /*
          * Ensure that all instance wrappers are resolved at this point before we continue.
          * Otherwise the staticity of `wrapper`'s dependency tree may be evaluated incorrectly
@@ -362,6 +358,11 @@ export class Injector {
           contextId,
           effectiveInquirer,
         );
+
+        if (paramWrapperWithInstance.hierarchyLevel > depth) {
+          depth = paramWrapperWithInstance.hierarchyLevel;
+        }
+
         const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
           this.getContextId(contextId, paramWrapperWithInstance),
           this.getInquirerId(effectiveInquirer),

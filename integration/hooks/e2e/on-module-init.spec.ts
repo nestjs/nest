@@ -150,9 +150,9 @@ describe('OnModuleInit', () => {
     const child = module.get(A);
     const parent = module.get(AHost);
     const composition = module.get(Composition);
-    expect(composition.onModuleInit).toHaveBeenCalledBefore(
-      parent.onModuleInit,
+    expect(child.onModuleInit).toHaveBeenCalledBefore(parent.onModuleInit);
+    expect(parent.onModuleInit).toHaveBeenCalledBefore(
+      composition.onModuleInit,
     );
-    expect(parent.onModuleInit).toHaveBeenCalledBefore(child.onModuleInit);
   });
 });
