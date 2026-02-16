@@ -12,14 +12,14 @@ import {
 import { first, map, retryWhen, scan, skip, switchMap } from 'rxjs/operators';
 import {
   DISCONNECTED_RMQ_MESSAGE,
-  RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
-  RQM_DEFAULT_NO_ASSERT,
-  RQM_DEFAULT_NOACK,
-  RQM_DEFAULT_PERSISTENT,
-  RQM_DEFAULT_PREFETCH_COUNT,
-  RQM_DEFAULT_QUEUE,
-  RQM_DEFAULT_QUEUE_OPTIONS,
-  RQM_DEFAULT_URL,
+  RMQ_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
+  RMQ_DEFAULT_NO_ASSERT,
+  RMQ_DEFAULT_NOACK,
+  RMQ_DEFAULT_PERSISTENT,
+  RMQ_DEFAULT_PREFETCH_COUNT,
+  RMQ_DEFAULT_QUEUE,
+  RMQ_DEFAULT_QUEUE_OPTIONS,
+  RMQ_DEFAULT_URL,
 } from '../constants.js';
 import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
 import { ReadPacket, RmqOptions, WritePacket } from '../interfaces/index.js';
@@ -75,11 +75,11 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
   constructor(protected readonly options: Required<RmqOptions>['options']) {
     super();
-    this.queue = this.getOptionsProp(this.options, 'queue', RQM_DEFAULT_QUEUE);
+    this.queue = this.getOptionsProp(this.options, 'queue', RMQ_DEFAULT_QUEUE);
     this.queueOptions = this.getOptionsProp(
       this.options,
       'queueOptions',
-      RQM_DEFAULT_QUEUE_OPTIONS,
+      RMQ_DEFAULT_QUEUE_OPTIONS,
     );
     this.replyQueue = this.getOptionsProp(
       this.options,
@@ -89,7 +89,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     this.noAssert =
       this.getOptionsProp(this.options, 'noAssert') ??
       this.queueOptions.noAssert ??
-      RQM_DEFAULT_NO_ASSERT;
+      RMQ_DEFAULT_NO_ASSERT;
 
     loadPackageSync('amqplib', ClientRMQ.name, () =>
       createRequire(import.meta.url)('amqplib'),
@@ -158,7 +158,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
   public createClient(): AmqpConnectionManager {
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
-    const urls = this.getOptionsProp(this.options, 'urls') || [RQM_DEFAULT_URL];
+    const urls = this.getOptionsProp(this.options, 'urls') || [RMQ_DEFAULT_URL];
     return rmqPackage.connect(urls, socketOptions);
   }
 
@@ -207,10 +207,10 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   public async setupChannel(channel: Channel, resolve: Function) {
     const prefetchCount =
       this.getOptionsProp(this.options, 'prefetchCount') ||
-      RQM_DEFAULT_PREFETCH_COUNT;
+      RMQ_DEFAULT_PREFETCH_COUNT;
     const isGlobalPrefetchCount =
       this.getOptionsProp(this.options, 'isGlobalPrefetchCount') ||
-      RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
+      RMQ_DEFAULT_IS_GLOBAL_PREFETCH_COUNT;
 
     if (!this.options.wildcards && this.options.exchangeType !== 'fanout') {
       if (!this.noAssert) {
@@ -247,7 +247,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   }
 
   public async consumeChannel(channel: Channel) {
-    const noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
+    const noAck = this.getOptionsProp(this.options, 'noAck', RMQ_DEFAULT_NOACK);
     await channel.consume(
       this.replyQueue,
       (msg: ConsumeMessage | null) =>
@@ -392,7 +392,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
         persistent: this.getOptionsProp(
           this.options,
           'persistent',
-          RQM_DEFAULT_PERSISTENT,
+          RMQ_DEFAULT_PERSISTENT,
         ),
         ...options,
         headers: this.mergeHeaders(options?.headers),
@@ -443,7 +443,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
         persistent: this.getOptionsProp(
           this.options,
           'persistent',
-          RQM_DEFAULT_PERSISTENT,
+          RMQ_DEFAULT_PERSISTENT,
         ),
         ...options,
         headers: this.mergeHeaders(options?.headers),
