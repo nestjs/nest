@@ -2,6 +2,7 @@ import {
   InternalServerErrorException,
   Logger,
   NestApplicationOptions,
+  NotFoundException,
   RequestMethod,
   StreamableFile,
   VERSION_NEUTRAL,
@@ -20,6 +21,7 @@ import {
   H3,
   fromNodeHandler,
   getQuery,
+  getRouterParams,
   H3Event,
   readBody,
   handleCors,
@@ -111,6 +113,13 @@ type H3Server =
   | http2.Http2Server
   | http2.Http2SecureServer;
 
+/**
+ * Internal handler metadata for route chaining.
+ */
+interface HandlerInfo {
+  handler: Function;
+}
+
 export class H3Adapter extends AbstractHttpAdapter<
   H3Server,
   http.IncomingMessage | http2.Http2ServerRequest,
@@ -125,6 +134,16 @@ export class H3Adapter extends AbstractHttpAdapter<
     done: () => void,
   ) => Promise<void> | void;
   private onResponseHook?: (req: any, res: any) => Promise<void> | void;
+  /**
+   * Route registry mapping 'METHOD:path' to array of handlers.
+   * Enables multiple versioned handlers for the same path.
+   */
+  private readonly routeMap = new Map<string, HandlerInfo[]>();
+  /**
+   * Tracks which method:path combinations have been registered with H3.
+   * Prevents duplicate route registrations.
+   */
+  private readonly registeredPaths = new Set<string>();
 
   constructor(instanceOrOptions?: H3 | H3Config) {
     super();
@@ -895,63 +914,232 @@ export class H3Adapter extends AbstractHttpAdapter<
   }
 
   /**
-   * Registers a route handler using middleware-style registration.
-   * This enables version filtering to work by allowing handlers to skip
-   * to the next middleware when the version doesn't match.
+   * Registers a route handler using H3's native routing with handler chaining.
+   * Uses H3's radix tree router for fast O(1) path matching.
+   *
+   * Implementation notes:
+   * - Uses H3's native routing (instance.on()) for optimal performance
+   * - Maintains route map to support multiple versioned handlers per path
+   * - On first registration: creates chain handler and registers with H3
+   * - On subsequent registrations: adds to route map, existing chain handler finds it
+   * - Lazy lookup pattern: chain handler queries route map at request time
+   * - Supports version filtering via next() callback mechanism
    *
    * @param method - HTTP method (GET, POST, etc.)
    * @param routePath - The route path pattern
-   * @param handler - The route handler function
+   * @param handler - The route handler (possibly wrapped with version filter)
    */
   private registerRoute(method: string, routePath: string, handler: Function) {
-    // Normalize path for matching
-    const normalizedPath = routePath.endsWith('/')
-      ? routePath.slice(0, -1)
-      : routePath;
+    // Normalize path - remove trailing slash except for root
+    const normalizedPath =
+      routePath.endsWith('/') && routePath !== '/'
+        ? routePath.slice(0, -1)
+        : routePath || '/';
 
-    // Build path regex for matching, handling route parameters
-    const { regexp, keys } = pathToRegexp(normalizedPath || '/');
+    const upperMethod = method.toUpperCase();
+    const routeKey = `${upperMethod}:${normalizedPath}`;
 
-    // Use middleware-style registration to enable handler chaining
-    // This allows versioned handlers to skip to the next handler when version doesn't match
-    this.instance.use(async event => {
-      // Check HTTP method
-      const reqMethod = event.req.method?.toUpperCase();
-      if (reqMethod !== method && !(method === 'GET' && reqMethod === 'HEAD')) {
-        return; // Continue to next middleware
+    // Add handler to route map
+    if (!this.routeMap.has(routeKey)) {
+      this.routeMap.set(routeKey, []);
+    }
+    this.routeMap.get(routeKey)!.push({ handler });
+
+    // Register with H3 only once per method:path combination
+    if (!this.registeredPaths.has(routeKey)) {
+      this.registeredPaths.add(routeKey);
+
+      // Create chain handler that performs lazy lookup from route map
+      // H3 expects lowercase HTTP methods
+      const lowerMethod = method.toLowerCase() as
+        | 'get'
+        | 'post'
+        | 'put'
+        | 'delete'
+        | 'patch'
+        | 'head'
+        | 'options';
+      this.instance.on(lowerMethod, normalizedPath, async event => {
+        // Lazy lookup: get current handlers from map at request time
+        // This allows handlers registered after this point to be found
+        const handlers = this.routeMap.get(routeKey);
+        if (!handlers || handlers.length === 0) {
+          return; // No handlers, continue to next route/404
+        }
+
+        // Extract params using H3's native router (already parsed)
+        const params = getRouterParams(event, { decode: true });
+
+        // Chain through handlers (supports versioning via next() callback)
+        for (const handlerInfo of handlers) {
+          const result = await this.executeHandler(
+            handlerInfo.handler,
+            event,
+            params,
+          );
+
+          // Handler completed successfully - stop chain
+          if (result === kHandled) {
+            return kHandled;
+          }
+
+          // Handler called next() or returned undefined - try next handler
+          // (version didn't match, or handler passed through)
+        }
+
+        // No handler matched (all called next()) - throw 404
+        // This happens when versioned routes exist but no version matched
+        const req = event.runtime?.node?.req;
+        const res = event.runtime?.node?.res;
+        throw new NotFoundException(
+          `Cannot ${req?.method} ${event.url.pathname}`,
+        );
+      });
+    }
+  }
+
+  /**
+   * Executes a NestJS handler within an H3 event context.
+   * Used by native routing chain handler to invoke individual route handlers.
+   *
+   * @param handler - The NestJS route handler (possibly version-wrapped)
+   * @param event - The H3 event
+   * @param params - Route parameters (extracted by H3's router)
+   * @returns Promise that resolves to kHandled (if handled) or undefined (if next() called)
+   */
+  private executeHandler(
+    handler: Function,
+    event: H3Event,
+    params: Record<string, string>,
+  ): Promise<typeof kHandled | undefined> {
+    const req = event.runtime?.node?.req;
+    const res = event.runtime?.node?.res;
+
+    if (!req || !res) {
+      throw new Error('Node.js runtime not available');
+    }
+
+    // Copy H3 response headers to Node.js response (e.g., CORS headers set by middleware)
+    // This is important because middleware may set headers on event.res
+    const h3Headers = event.res.headers;
+    for (const [key, value] of h3Headers.entries()) {
+      if (!res.getHeader(key)) {
+        res.setHeader(key, value);
       }
+    }
 
-      // Check path match
-      const urlPath =
-        (
-          event.url.pathname + event.url.search ||
-          event.runtime?.node?.req?.url ||
-          ''
-        ).split('?')[0] || '/';
-      const normalizedUrlPath = urlPath.endsWith('/')
-        ? urlPath.slice(0, -1) || '/'
-        : urlPath;
+    // Add NestJS-expected properties to req (direct assignment for speed)
+    (req as any).query = getQuery(event);
+    (req as any).params = params;
+    (req as any).body = (event as any).body;
+    (req as any).h3Event = event;
 
-      const match = regexp.exec(normalizedUrlPath);
-      if (!match) {
-        return; // Continue to next middleware
-      }
+    // Register response hook if set
+    if (this.onResponseHook) {
+      res.once('finish', () => {
+        void this.onResponseHook?.apply(this, [req, res]);
+      });
+    }
 
-      // Extract route parameters from the match
-      const params: Record<string, string> = {};
-      keys.forEach((key, index) => {
-        if (match[index + 1] !== undefined) {
-          params[key.name] = match[index + 1];
+    // Handle onRequest hook if set
+    if (this.onRequestHook) {
+      return new Promise<typeof kHandled | undefined>((resolve, reject) => {
+        let invoked = false;
+        const invokeOnce = () => {
+          if (invoked) return;
+          invoked = true;
+          this.invokeHandler(handler, req, res).then(resolve).catch(reject);
+        };
+
+        try {
+          const hookResult = this.onRequestHook?.apply(this, [
+            req,
+            res,
+            invokeOnce,
+          ]);
+          if (hookResult && typeof hookResult.then === 'function') {
+            hookResult.then(() => invokeOnce()).catch(reject);
+          }
+        } catch (err) {
+          reject(err);
         }
       });
+    }
 
-      // Store params on the event for later retrieval
-      (
-        event as unknown as { matchedParams: Record<string, string> }
-      ).matchedParams = params;
+    // Fast path: no hooks, just invoke handler
+    return this.invokeHandler(handler, req, res);
+  }
 
-      // Call the wrapped handler
-      return this.wrapMiddlewareHandler(handler, params)(event);
+  /**
+   * Invokes the actual NestJS handler and manages response lifecycle.
+   * Optimized to avoid unnecessary listener registration.
+   *
+   * Response handling:
+   * - For async handlers (return promise): resolve when promise completes, no res listener needed
+   * - For sync handlers: wait for res 'finish' event to know when response is sent
+   * - next() callback allows versioned handlers to skip to next handler if version doesn't match
+   * - Returns kHandled to signal H3 that response is handled, or undefined to continue middleware chain
+   *
+   * @param handler - The NestJS route handler function
+   * @param req - Node.js request (HTTP/1 or HTTP/2)
+   * @param res - Node.js response (HTTP/1 or HTTP/2)
+   * @returns Promise resolving to kHandled or undefined
+   */
+  private invokeHandler(
+    handler: Function,
+    req: http.IncomingMessage | http2.Http2ServerRequest,
+    res: http.ServerResponse | http2.Http2ServerResponse,
+  ): Promise<typeof kHandled | undefined> {
+    return new Promise<typeof kHandled | undefined>((resolve, reject) => {
+      let resolved = false;
+
+      // next() callback for version filtering
+      const next = (err?: Error) => {
+        if (resolved) return;
+        resolved = true;
+        if (err) {
+          reject(err);
+        } else {
+          resolve(undefined); // Continue to next handler (version didn't match)
+        }
+      };
+
+      try {
+        const result = handler(req, res, next);
+
+        // If handler returns a promise, handle errors
+        if (result && typeof result.then === 'function') {
+          result
+            .then(() => {
+              // Handler completed, mark as handled
+              if (!resolved) {
+                resolved = true;
+                resolve(kHandled);
+              }
+            })
+            .catch((err: Error) => {
+              if (!resolved) {
+                resolved = true;
+                reject(err);
+              }
+            });
+        } else {
+          // Synchronous handler - wait for response finish
+          if (!resolved) {
+            res.once('finish', () => {
+              if (!resolved) {
+                resolved = true;
+                resolve(kHandled);
+              }
+            });
+          }
+        }
+      } catch (err) {
+        if (!resolved) {
+          resolved = true;
+          reject(err as Error);
+        }
+      }
     });
   }
 
@@ -1109,121 +1297,5 @@ export class H3Adapter extends AbstractHttpAdapter<
     }
 
     throw new Error('Unsupported versioning options');
-  }
-
-  /**
-   * Wraps a NestJS handler for use as H3 middleware.
-   * Returns undefined when next() is called without error (e.g., version doesn't match),
-   * allowing H3 to continue to the next middleware.
-   *
-   * @param handler - The NestJS route handler function
-   * @param params - Route parameters extracted from the path
-   * @returns An H3 middleware handler
-   */
-  private wrapMiddlewareHandler(
-    handler: Function,
-    params: Record<string, string>,
-  ) {
-    return async (event: H3Event) => {
-      const req = event.runtime?.node?.req;
-      const res = event.runtime?.node?.res;
-
-      if (!req || !res) {
-        throw new Error('Node.js runtime not available');
-      }
-
-      // Copy H3 response headers to Node.js response (e.g., CORS headers set by middleware)
-      for (const [key, value] of event.res.headers.entries()) {
-        if (!res.getHeader(key)) {
-          res.setHeader(key, value);
-        }
-      }
-
-      // Add H3-specific properties to req
-      const reqWithProps = req as http.IncomingMessage & {
-        query?: Record<string, unknown>;
-        params?: Record<string, string>;
-        body?: unknown;
-        h3Event?: H3Event;
-      };
-      reqWithProps.query = getQuery(event);
-      reqWithProps.params = params;
-      reqWithProps.body = (event as unknown as { body?: unknown }).body;
-      reqWithProps.h3Event = event;
-
-      // Track whether the handler actually processed the request
-      let responseEnded = false;
-
-      // Register onResponse hook if set
-      if (this.onResponseHook) {
-        res.on('finish', () => {
-          void this.onResponseHook?.apply(this, [req, res]);
-        });
-      }
-
-      // Call onRequest hook if set
-      if (this.onRequestHook) {
-        await new Promise<void>((resolve, reject) => {
-          try {
-            const result = this.onRequestHook?.apply(this, [req, res, resolve]);
-            if (result && typeof result.then === 'function') {
-              result.then(resolve).catch(reject);
-            }
-          } catch (err) {
-            reject(err);
-          }
-        });
-      }
-
-      // Create a promise that resolves when the response is sent or next() is called
-      const result = await new Promise<'handled' | 'skipped'>(
-        (resolve, reject) => {
-          // Intercept res.end to know when the response is complete
-          const originalEnd = res.end.bind(res);
-          // Use type assertion to handle complex overloaded signatures
-          (res as any).end = function (...args: unknown[]) {
-            responseEnded = true;
-
-            return (originalEnd as any)(...args);
-          };
-          res.on('finish', () => {
-            if (!responseEnded) return;
-            resolve('handled');
-          });
-
-          // NestJS handler expects (req, res, next)
-          // When next() is called without error, it means version doesn't match
-          const next = (err?: Error) => {
-            if (err) {
-              reject(err);
-            } else if (!responseEnded) {
-              // next() was called without error - skip to next middleware
-              resolve('skipped');
-            }
-          };
-
-          try {
-            const handlerResult = handler(req, res, next);
-            // Handle async handlers
-            if (handlerResult && typeof handlerResult.then === 'function') {
-              handlerResult.catch((err: Error) => {
-                reject(err);
-              });
-            }
-          } catch (err) {
-            reject(err);
-          }
-        },
-      );
-
-      // If skipped (version didn't match), return undefined to continue to next middleware
-      if (result === 'skipped') {
-        return undefined;
-      }
-
-      // If handled, return kHandled to tell H3 the response was already sent
-      // This prevents H3 from trying to send a response on top of what we already sent
-      return kHandled;
-    };
   }
 }
