@@ -4,18 +4,23 @@
 
   "compilerOptions": {
     "lib": ["es2023"],
-    "module": "node16",
+    "module": "nodenext",
     "target": "es2022",
 
-    "strict": true,
+    "strict": false,
+    "noImplicitAny": false,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
-    "moduleResolution": "node16",
+    "moduleResolution": "nodenext",
 
     "outDir": "dist",
 
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "rootDir": "./src"
   },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "../../packages"]
 }

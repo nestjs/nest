@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 
-import { AppModule } from './nest/app.module';
+import { AppModule } from './nest/app.module.js';
 
 NestFactory.create(AppModule, new FastifyAdapter(), {
   logger: false,

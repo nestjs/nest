@@ -3,16 +3,20 @@
   "version": "1.0.0",
   "description": "Nest - modern, fast, powerful node.js web framework (@benchmarks)",
   "license": "ISC",
+  "type": "module",
   "scripts": {
+    "prebenchmarks": "cd ../.. && npm run build",
     "benchmarks": "tsc && node dist/main.js"
   },
   "dependencies": {
-    "@nestjs/common": "^11.1.12",
-    "@nestjs/core": "^11.1.12",
-    "@nestjs/platform-express": "^11.1.12",
-    "@nestjs/platform-fastify": "^11.1.13",
+    "@nestjs/common": "file:../../node_modules/@nestjs/common",
+    "@nestjs/core": "file:../../node_modules/@nestjs/core",
+    "@nestjs/platform-express": "file:../../node_modules/@nestjs/platform-express",
+    "@nestjs/platform-fastify": "file:../../node_modules/@nestjs/platform-fastify",
+    "@nestjs/platform-h3": "file:../../node_modules/@nestjs/platform-h3",
     "express": "^5.2.1",
     "fastify": "^5.7.4",
+    "h3": "^2.0.1-rc.14",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },

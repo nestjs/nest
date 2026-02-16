@@ -1,8 +1,18 @@
 import { fork, ChildProcess } from 'node:child_process';
-import { join } from 'node:path';
-import { run } from './autocannon/run';
+import { dirname, join } from 'node:path';
+import { run } from './autocannon/run.js';
+import { fileURLToPath } from 'node:url';
 
-type Framework = 'express' | 'fastify' | 'nest-express' | 'nest-fastify';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+type Framework =
+  | 'express'
+  | 'fastify'
+  | 'h3'
+  | 'nest-express'
+  | 'nest-fastify'
+  | 'nest-h3';
 
 type Args = {
   connections: number;
@@ -85,7 +95,7 @@ function printHelpAndExit(code: number): never {
   // Notes: The benchmark spawns the framework server as a child process and
   // runs autocannon against it.
   //
-  // eslint-disable-next-line no-console
+
   console.log(
     `
 Usage:
@@ -113,7 +123,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function waitForServer(url: string, timeoutMs = 5_000): Promise<void> {
+async function waitForServer(url: string, timeoutMs = 10_000): Promise<void> {
   const start = Date.now();
   // Use global fetch if available (Node 18+). If not, just wait a bit.
   const hasFetch = typeof (globalThis as any).fetch === 'function';
@@ -137,24 +147,46 @@ async function waitForServer(url: string, timeoutMs = 5_000): Promise<void> {
   throw new Error(`Server did not become ready in ${timeoutMs}ms: ${url}`);
 }
 
-function killChild(child: ChildProcess): void {
-  if (!child || child.killed) return;
+function killChild(child: ChildProcess): Promise<void> {
+  return new Promise(resolve => {
+    if (!child || child.killed) {
+      resolve();
+      return;
+    }
 
-  // Try graceful termination first.
-  try {
-    child.kill('SIGTERM');
-  } catch {
-    // ignore
-  }
+    let resolved = false;
+    const done = () => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(forceKillTimer);
+      clearTimeout(safetyTimer);
+      resolve();
+    };
 
-  // Force kill if still alive shortly after.
-  setTimeout(() => {
+    // Resolve once the process actually exits.
+    child.on('exit', done);
+
+    // Try graceful termination first.
     try {
-      if (!child.killed) child.kill('SIGKILL');
+      child.kill('SIGTERM');
     } catch {
       // ignore
     }
-  }, 1_000).unref?.();
+
+    // Force kill if still alive after 2s.
+    const forceKillTimer = setTimeout(() => {
+      try {
+        if (!child.killed) child.kill('SIGKILL');
+      } catch {
+        // ignore
+      }
+    }, 2_000);
+    forceKillTimer.unref?.();
+
+    // Safety net: don't hang forever if 'exit' never fires.
+    const safetyTimer = setTimeout(done, 5_000);
+    safetyTimer.unref?.();
+  });
 }
 
 function toNumber(value: unknown, fallback = 0): number {
@@ -207,11 +239,9 @@ function printComparison(
   nestName: string,
   nest: BenchmarkSummary | undefined,
 ): void {
-  // eslint-disable-next-line no-console
   console.log(`\n--- Comparison: ${baseName} <-> ${nestName} ---`);
 
   if (!base || !nest) {
-    // eslint-disable-next-line no-console
     console.log(
       `Missing results: ${baseName}=${base ? 'ok' : 'missing'} ${nestName}=${nest ? 'ok' : 'missing'}`,
     );
@@ -226,19 +256,18 @@ function printComparison(
     base.throughputBytesPerSecAvg,
   );
 
-  // eslint-disable-next-line no-console
   console.log(
     `Requests/sec avg: ${fmtNum(base.requestsPerSecAvg)} -> ${fmtNum(nest.requestsPerSecAvg)} (${fmtPct(rpsPct)})`,
   );
-  // eslint-disable-next-line no-console
+
   console.log(
     `Latency avg (ms): ${fmtNum(base.latencyAvgMs)} -> ${fmtNum(nest.latencyAvgMs)} (${fmtPct(latAvgPct)})`,
   );
-  // eslint-disable-next-line no-console
+
   console.log(
     `Latency p99 (ms): ${fmtNum(base.latencyP99Ms)} -> ${fmtNum(nest.latencyP99Ms)} (${fmtPct(latP99Pct)})`,
   );
-  // eslint-disable-next-line no-console
+
   console.log(
     `Throughput avg:  ${fmtBytesPerSec(base.throughputBytesPerSecAvg)} -> ${fmtBytesPerSec(nest.throughputBytesPerSecAvg)} (${fmtPct(thrPct)})`,
   );
@@ -249,7 +278,12 @@ async function runOne(
   args: Args,
 ): Promise<BenchmarkSummary> {
   const child = fork(frameworkEntry(framework), {
-    stdio: 'ignore',
+    stdio: ['ignore', 'ignore', 'pipe', 'ipc'],
+  });
+
+  // Surface child process errors (e.g. EADDRINUSE) so they aren't swallowed.
+  child.stderr?.on('data', (chunk: Buffer) => {
+    process.stderr.write(`[${framework}] ${chunk}`);
   });
 
   const url = `http://localhost:${args.port}${args.path.startsWith('/') ? args.path : `/${args.path}`}`;
@@ -257,16 +291,14 @@ async function runOne(
   try {
     await waitForServer(url);
 
-    // eslint-disable-next-line no-console
     console.log(`\n=== ${framework.toUpperCase()} ===`);
-    // eslint-disable-next-line no-console
+
     console.log(`Target: ${url}`);
-    // eslint-disable-next-line no-console
+
     console.log(
       `connections=${args.connections} duration=${args.duration} pipelining=${args.pipelining}`,
     );
 
-    // eslint-disable-next-line no-console
     console.log(`Warmup: ${framework.toUpperCase()}`);
     await run({
       url,
@@ -275,7 +307,7 @@ async function runOne(
       pipelining: args.pipelining,
       verbose: args.verbose,
     });
-    // eslint-disable-next-line no-console
+
     console.log(`Warmup ended: ${framework.toUpperCase()}`);
 
     const result = (await run({
@@ -289,18 +321,20 @@ async function runOne(
     const summary = summarizeResult(result);
 
     // Keep output readable and stable across autocannon versions.
-    // eslint-disable-next-line no-console
+
     console.log(`Requests/sec: ${summary.requestsPerSecAvg}`);
-    // eslint-disable-next-line no-console
+
     console.log(
       `Latency (ms): avg=${summary.latencyAvgMs} p99=${summary.latencyP99Ms}`,
     );
-    // eslint-disable-next-line no-console
+
     console.log(`Throughput (B/s): avg=${summary.throughputBytesPerSecAvg}`);
 
     return summary;
   } finally {
-    killChild(child);
+    await killChild(child);
+    // Give the OS time to release the port.
+    await sleep(500);
   }
 }
 
@@ -312,6 +346,8 @@ async function main(): Promise<void> {
     'nest-express',
     'fastify',
     'nest-fastify',
+    'h3',
+    'nest-h3',
   ];
 
   const results: Partial<Record<Framework, BenchmarkSummary>> = {};
@@ -336,10 +372,10 @@ async function main(): Promise<void> {
     'NEST-FASTIFY',
     results['nest-fastify'],
   );
+  printComparison('H3', results['h3'], 'NEST-H3', results['nest-h3']);
 }
 
 main().catch(err => {
-  // eslint-disable-next-line no-console
   console.error(err);
   process.exit(1);
 });

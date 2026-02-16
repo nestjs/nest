@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import express from 'express';
+import { H3Adapter } from '@nestjs/platform-h3';
 
 import { AppModule } from './nest/app.module.js';
 
-NestFactory.create(AppModule, new ExpressAdapter(express()), {
+const adapter = new H3Adapter();
+
+NestFactory.create(AppModule, adapter, {
   logger: false,
   bodyParser: false,
 })
