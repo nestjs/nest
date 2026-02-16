@@ -31,7 +31,7 @@
     "graphql": "16.10.0",
     "graphql-subscriptions": "3.0.0",
     "reflect-metadata": "0.2.2",
-    "rimraf": "6.1.2",
+    "rimraf": "6.1.3",
     "rxjs": "7.8.2"
   },
   "devDependencies": {
