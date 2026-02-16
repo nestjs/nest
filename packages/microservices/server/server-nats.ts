@@ -43,7 +43,7 @@ export class ServerNats<
 > extends Server<E, S> {
   public transportId: TransportId = Transport.NATS;
 
-  private natsClient: Client | null;
+  private natsClient: Client;
   protected statusEventEmitter = new EventEmitter<{
     [key in keyof NatsEvents]: Parameters<NatsEvents[key]>;
   }>();
@@ -73,7 +73,7 @@ export class ServerNats<
   public start(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
-    this.bindEvents(this.natsClient!);
+    this.bindEvents(this.natsClient);
     callback();
   }
 
@@ -242,7 +242,7 @@ export class ServerNats<
           this.statusEventEmitter.emit(NatsEventsMap.UPDATE, undefined);
           break;
 
-        default:
+        default: {
           const data =
             'data' in status && isObject(status.data)
               ? JSON.stringify(status.data)
@@ -253,6 +253,7 @@ export class ServerNats<
             `NatsStatus: type: "${status.type}", data: "${data}".`,
           );
           break;
+        }
       }
     }
   }

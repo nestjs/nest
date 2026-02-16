@@ -143,7 +143,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
         case 'ping':
           if (this.options.debug) {
-            this.logger.debug!(
+            this.logger.debug(
               `NatsStatus: type: "${status.type}", pending pings: "${status.pendingPings}".`,
             );
           }
@@ -156,7 +156,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
           this.statusEventEmitter.emit(NatsEventsMap.UPDATE, undefined);
           break;
 
-        default:
+        default: {
           const data =
             'data' in status && isObject(status.data)
               ? JSON.stringify(status.data)
@@ -167,6 +167,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
             `NatsStatus: type: "${status.type}", data: "${data}".`,
           );
           break;
+        }
       }
     }
   }
