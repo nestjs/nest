@@ -24,6 +24,34 @@ describe('ConfigurableModuleBuilder', () => {
         global: true,
       });
     });
+
+    it('should preserve extras in registerAsync transformation', () => {
+      let capturedExtras: any;
+
+      const { ConfigurableModuleClass } = new ConfigurableModuleBuilder()
+        .setExtras(
+          { folder: 'default' },
+          (definition, extras: { folder: string }) => {
+            capturedExtras = extras;
+            return {
+              ...definition,
+              customProperty: `folder: ${extras.folder}`,
+            };
+          },
+        )
+        .build();
+
+      const asyncResult = ConfigurableModuleClass.registerAsync({
+        useFactory: () => ({}),
+        folder: 'forRootAsync',
+      });
+
+      expect(capturedExtras).to.deep.equal({ folder: 'forRootAsync' });
+      expect(asyncResult).to.have.property(
+        'customProperty',
+        'folder: forRootAsync',
+      );
+    });
   });
   describe('setClassMethodName', () => {
     it('should set static class method name and return typed builder', () => {

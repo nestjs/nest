@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import 'reflect-metadata';
 import * as sinon from 'sinon';
 import { ConsoleLogger, Logger, LoggerService, LogLevel } from '../../services';
 
@@ -475,6 +474,85 @@ describe('Logger', () => {
         expect(processStdoutWriteSpy.secondCall.firstArg).to.include(Test.name);
       });
     });
+
+    describe('forceConsole option', () => {
+      let consoleLogSpy: sinon.SinonSpy;
+      let consoleErrorSpy: sinon.SinonSpy;
+      let processStdoutWriteStub: sinon.SinonStub;
+      let processStderrWriteStub: sinon.SinonStub;
+
+      beforeEach(() => {
+        // Stub process.stdout.write to prevent actual output and track calls
+        processStdoutWriteStub = sinon.stub(process.stdout, 'write');
+        processStderrWriteStub = sinon.stub(process.stderr, 'write');
+        consoleLogSpy = sinon.spy(console, 'log');
+        consoleErrorSpy = sinon.spy(console, 'error');
+      });
+
+      afterEach(() => {
+        processStdoutWriteStub.restore();
+        processStderrWriteStub.restore();
+        consoleLogSpy.restore();
+        consoleErrorSpy.restore();
+      });
+
+      it('should use console.log instead of process.stdout.write when forceConsole is true', () => {
+        const logger = new ConsoleLogger({ forceConsole: true });
+        const message = 'test message';
+
+        logger.log(message);
+
+        // When forceConsole is true, console.log should be called
+        expect(consoleLogSpy.called).to.be.true;
+        expect(consoleLogSpy.firstCall.firstArg).to.include(message);
+      });
+
+      it('should use console.error instead of process.stderr.write when forceConsole is true', () => {
+        const logger = new ConsoleLogger({ forceConsole: true });
+        const message = 'error message';
+
+        logger.error(message);
+
+        expect(consoleErrorSpy.called).to.be.true;
+        expect(consoleErrorSpy.firstCall.firstArg).to.include(message);
+      });
+
+      it('should use console.error for stack traces when forceConsole is true', () => {
+        const logger = new ConsoleLogger({ forceConsole: true });
+        const message = 'error with stack';
+        const stack = 'Error: test\n    at <anonymous>:1:1';
+
+        logger.error(message, stack);
+
+        expect(consoleErrorSpy.calledTwice).to.be.true;
+        expect(consoleErrorSpy.firstCall.firstArg).to.include(message);
+        expect(consoleErrorSpy.secondCall.firstArg).to.equal(stack);
+      });
+
+      it('should use process.stdout.write when forceConsole is false', () => {
+        const logger = new ConsoleLogger({ forceConsole: false });
+        const message = 'test message';
+
+        logger.log(message);
+
+        expect(processStdoutWriteStub.called).to.be.true;
+        expect(processStdoutWriteStub.firstCall.firstArg).to.include(message);
+        expect(consoleLogSpy.called).to.be.false;
+      });
+
+      it('should work with JSON mode and forceConsole', () => {
+        const logger = new ConsoleLogger({ json: true, forceConsole: true });
+        const message = 'json message';
+
+        logger.log(message);
+
+        expect(consoleLogSpy.called).to.be.true;
+
+        const output = consoleLogSpy.firstCall.firstArg;
+        const json = JSON.parse(output);
+        expect(json.message).to.equal(message);
+      });
+    });
   });
 
   describe('[instance methods]', () => {
@@ -817,6 +895,36 @@ describe('Logger', () => {
     });
     afterEach(() => {
       processStdoutWriteSpy.restore();
+    });
+
+    it('should respect maxStringLength when set to 0', () => {
+      const consoleLogger = new ConsoleLogger({
+        colors: false,
+        compact: false,
+        maxStringLength: 0,
+      });
+
+      consoleLogger.log({ name: 'abcdef' });
+
+      expect(processStdoutWriteSpy.calledOnce).to.be.true;
+      expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        "''... 6 more characters",
+      );
+    });
+
+    it('should respect maxArrayLength when set to 0', () => {
+      const consoleLogger = new ConsoleLogger({
+        colors: false,
+        compact: false,
+        maxArrayLength: 0,
+      });
+
+      consoleLogger.log({ items: ['a', 'b', 'c'] });
+
+      expect(processStdoutWriteSpy.calledOnce).to.be.true;
+      expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        '... 3 more items',
+      );
     });
 
     it('should support custom formatter', () => {

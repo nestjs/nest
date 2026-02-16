@@ -11,6 +11,7 @@ import { NestContainer } from '../../injector/container';
 import { Injector, PropertyDependency } from '../../injector/injector';
 import { InstanceWrapper } from '../../injector/instance-wrapper';
 import { Module } from '../../injector/module';
+import { SettlementSignal } from '../../injector/settlement-signal';
 
 chai.use(chaiAsPromised);
 
@@ -447,63 +448,6 @@ describe('Injector', () => {
         ),
       ).to.eventually.be.eq(null);
     });
-
-    it('should call "loadProvider" when component is not resolved', async () => {
-      const moduleFixture = {
-        imports: new Map([
-          [
-            'key',
-            {
-              providers: {
-                has: () => true,
-                get: () =>
-                  new InstanceWrapper({
-                    isResolved: false,
-                  }),
-              },
-              exports: {
-                has: () => true,
-              },
-              imports: new Map(),
-            },
-          ],
-        ] as any),
-      };
-      await injector.lookupComponentInImports(
-        moduleFixture as any,
-        metatype as any,
-        new InstanceWrapper(),
-      );
-      expect(loadProvider.called).to.be.true;
-    });
-
-    it('should not call "loadProvider" when component is resolved', async () => {
-      const moduleFixture = {
-        relatedModules: new Map([
-          [
-            'key',
-            {
-              providers: {
-                has: () => true,
-                get: () => ({
-                  isResolved: true,
-                }),
-              },
-              exports: {
-                has: () => true,
-              },
-              relatedModules: new Map(),
-            },
-          ],
-        ] as any),
-      };
-      await injector.lookupComponentInImports(
-        moduleFixture as any,
-        metatype as any,
-        null!,
-      );
-      expect(loadProvider.called).to.be.false;
-    });
   });
 
   describe('resolveParamToken', () => {
@@ -545,7 +489,7 @@ describe('Injector', () => {
     });
   });
 
-  describe('resolveComponentInstance', () => {
+  describe('resolveComponentHost', () => {
     let module: any;
     beforeEach(() => {
       module = {
@@ -560,16 +504,8 @@ describe('Injector', () => {
         const loadStub = sinon
           .stub(injector, 'loadProvider')
           .callsFake(() => null!);
-        sinon
-          .stub(injector, 'lookupComponent')
-          .returns(Promise.resolve(wrapper));
 
-        await injector.resolveComponentInstance(
-          module,
-          '',
-          { index: 0, dependencies: [] },
-          wrapper,
-        );
+        await injector.resolveComponentHost(module, wrapper);
         expect(loadStub.called).to.be.true;
       });
       it('should not call loadProvider (isResolved)', async () => {
@@ -578,16 +514,7 @@ describe('Injector', () => {
           .stub(injector, 'loadProvider')
           .callsFake(() => null!);
 
-        sinon
-          .stub(injector, 'lookupComponent')
-          .returns(Promise.resolve(wrapper));
-
-        await injector.resolveComponentInstance(
-          module,
-          '',
-          { index: 0, dependencies: [] },
-          wrapper,
-        );
+        await injector.resolveComponentHost(module, wrapper);
         expect(loadStub.called).to.be.false;
       });
       it('should not call loadProvider (forwardRef)', async () => {
@@ -599,16 +526,7 @@ describe('Injector', () => {
           .stub(injector, 'loadProvider')
           .callsFake(() => null!);
 
-        sinon
-          .stub(injector, 'lookupComponent')
-          .returns(Promise.resolve(wrapper));
-
-        await injector.resolveComponentInstance(
-          module,
-          '',
-          { index: 0, dependencies: [] },
-          wrapper,
-        );
+        await injector.resolveComponentHost(module, wrapper);
         expect(loadStub.called).to.be.false;
       });
     });
@@ -624,17 +542,37 @@ describe('Injector', () => {
           async: true,
           instance,
         });
-        sinon
-          .stub(injector, 'lookupComponent')
-          .returns(Promise.resolve(wrapper));
 
-        const result = await injector.resolveComponentInstance(
-          module,
-          '',
-          { index: 0, dependencies: [] },
-          wrapper,
-        );
+        const result = await injector.resolveComponentHost(module, wrapper);
         expect(result.instance).to.be.true;
+      });
+    });
+
+    describe('when instanceWrapper has forward ref and is in non-static context', () => {
+      it('should call settlementSignal.error when loadProvider throws', async () => {
+        const error = new Error('Test error');
+        const settlementSignal = new SettlementSignal();
+        const errorSpy = sinon.spy(settlementSignal, 'error');
+
+        const wrapper = new InstanceWrapper({
+          isResolved: false,
+          forwardRef: true,
+        });
+        wrapper.settlementSignal = settlementSignal;
+
+        const contextId = { id: 2 };
+        const instanceHost = wrapper.getInstanceByContextId(contextId);
+        instanceHost.donePromise = Promise.resolve();
+
+        sinon
+          .stub(injector, 'loadProvider')
+          .callsFake(() => Promise.reject(error));
+
+        await injector.resolveComponentHost(module, wrapper, contextId);
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(errorSpy.calledOnce).to.be.true;
+        expect(errorSpy.calledWith(error)).to.be.true;
       });
     });
   });

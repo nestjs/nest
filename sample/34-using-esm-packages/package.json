@@ -27,7 +27,7 @@
     "@nestjs/common": "11.x",
     "@nestjs/core": "11.x",
     "@nestjs/platform-express": "11.x",
-    "delay": "6.x",
+    "delay": "7.x",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.x",
     "superjson": "2.x"
@@ -37,15 +37,15 @@
     "@nestjs/schematics": "11.x",
     "@nestjs/testing": "11.x",
     "@types/express": "5.x",
-    "@types/jest": "29.x",
-    "@types/node": "22.x",
+    "@types/jest": "30.x",
+    "@types/node": "24.x",
     "@types/supertest": "6.x",
     "@typescript-eslint/eslint-plugin": "8.x",
     "@typescript-eslint/parser": "8.x",
     "eslint": "9.x",
     "eslint-config-prettier": "10.x",
     "eslint-plugin-prettier": "5.x",
-    "jest": "29.7.0",
+    "jest": "30.2.0",
     "prettier": "3.x",
     "source-map-support": "0.5.21",
     "supertest": "7.x",
@@ -53,7 +53,7 @@
     "ts-loader": "9.x",
     "ts-node": "10.x",
     "tsconfig-paths": "4.x",
-    "typescript": "5.7.x"
+    "typescript": "5.9.x"
   },
   "jest": {
     "moduleFileExtensions": [

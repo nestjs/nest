@@ -1,6 +1,6 @@
 type ColorTextFn = (text: string) => string;
 
-const isColorAllowed = () => !process.env.NO_COLOR;
+export const isColorAllowed = () => !process.env.NO_COLOR;
 const colorIfAllowed = (colorFn: ColorTextFn) => (text: string) =>
   isColorAllowed() ? colorFn(text) : text;
 

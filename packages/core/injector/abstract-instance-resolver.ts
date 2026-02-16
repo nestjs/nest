@@ -29,7 +29,8 @@ export abstract class AbstractInstanceResolver {
     const pluckInstance = ({ wrapperRef }: InstanceLink) => {
       if (
         wrapperRef.scope === Scope.REQUEST ||
-        wrapperRef.scope === Scope.TRANSIENT
+        wrapperRef.scope === Scope.TRANSIENT ||
+        !wrapperRef.isDependencyTreeStatic()
       ) {
         throw new InvalidClassScopeException(typeOrToken);
       }
@@ -59,7 +60,7 @@ export abstract class AbstractInstanceResolver {
     const pluckInstance = async (instanceLink: InstanceLink) => {
       const { wrapperRef, collection } = instanceLink;
       if (wrapperRef.isDependencyTreeStatic() && !wrapperRef.isTransient) {
-        return this.get(typeOrToken, { strict: options?.strict });
+        return wrapperRef.instance;
       }
 
       const ctorHost = wrapperRef.instance || { constructor: typeOrToken };

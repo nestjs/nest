@@ -32,6 +32,7 @@ import { CircularDependencyException } from '../errors/exceptions';
 import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
+import { Barrier } from '../helpers/barrier';
 import { STATIC_CONTEXT } from './constants';
 import { INQUIRER } from './inquirer';
 import {
@@ -295,7 +296,6 @@ export class Injector {
     inquirer?: InstanceWrapper,
     parentInquirer?: InstanceWrapper,
   ) {
-    let inquirerId = this.getInquirerId(inquirer);
     const metadata = wrapper.getCtorMetadata();
 
     if (metadata && contextId !== STATIC_CONTEXT) {
@@ -313,15 +313,23 @@ export class Injector {
       ? this.getFactoryProviderDependencies(wrapper)
       : this.getClassDependencies(wrapper);
 
+    const paramBarrier = new Barrier(dependencies.length);
     let isResolved = true;
     const resolveParam = async (param: unknown, index: number) => {
       try {
         if (this.isInquirer(param, parentInquirer)) {
+          /*
+           * Signal the barrier to make sure other dependencies do not get stuck waiting forever.
+           */
+          paramBarrier.signal();
+
           return parentInquirer && parentInquirer.instance;
         }
         if (inquirer?.isTransient && parentInquirer) {
-          inquirer = parentInquirer;
-          inquirerId = this.getInquirerId(parentInquirer);
+          // When `inquirer` is transient too, inherit the parent inquirer
+          // This is required to ensure that transient providers are only resolved
+          // when requested
+          inquirer.attachRootInquirer(parentInquirer);
         }
         const paramWrapper = await this.resolveSingleParam<T>(
           wrapper,
@@ -332,15 +340,42 @@ export class Injector {
           inquirer,
           index,
         );
-        const instanceHost = paramWrapper.getInstanceByContextId(
-          this.getContextId(contextId, paramWrapper),
-          inquirerId,
+
+        /*
+         * Ensure that all instance wrappers are resolved at this point before we continue.
+         * Otherwise the staticity of `wrapper`'s dependency tree may be evaluated incorrectly
+         * and result in undefined / null injection.
+         */
+        await paramBarrier.signalAndWait();
+
+        const effectiveInquirer = this.getEffectiveInquirer(
+          paramWrapper,
+          inquirer,
+          parentInquirer,
+          contextId,
         );
-        if (!instanceHost.isResolved && !paramWrapper.forwardRef) {
+        const paramWrapperWithInstance = await this.resolveComponentHost(
+          moduleRef,
+          paramWrapper,
+          contextId,
+          effectiveInquirer,
+        );
+        const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
+          this.getContextId(contextId, paramWrapperWithInstance),
+          this.getInquirerId(effectiveInquirer),
+        );
+        if (!instanceHost.isResolved && !paramWrapperWithInstance.forwardRef) {
           isResolved = false;
         }
         return instanceHost?.instance;
       } catch (err) {
+        /*
+         * Signal the barrier to make sure other dependencies do not get stuck waiting forever. We
+         * do not care if this occurs after `Barrier.signalAndWait()` is called in the `try` block
+         * because the barrier will always have been resolved by then.
+         */
+        paramBarrier.signal();
+
         const isOptional = optionalDependenciesIds.includes(index);
         if (!isOptional) {
           throw err;
@@ -440,7 +475,7 @@ export class Injector {
       );
     }
     const token = this.resolveParamToken(wrapper, param);
-    return this.resolveComponentInstance<T>(
+    return this.resolveComponentWrapper(
       moduleRef,
       token,
       dependencyContext,
@@ -462,7 +497,7 @@ export class Injector {
     return param;
   }
 
-  public async resolveComponentInstance<T>(
+  public async resolveComponentWrapper<T>(
     moduleRef: Module,
     token: InjectionToken,
     dependencyContext: InjectorDependencyContext,
@@ -474,7 +509,7 @@ export class Injector {
     this.printResolvingDependenciesLog(token, inquirer);
     this.printLookingForProviderLog(token, moduleRef);
     const providers = moduleRef.providers;
-    const instanceWrapper = await this.lookupComponent(
+    return this.lookupComponent(
       providers,
       moduleRef,
       { ...dependencyContext, name: token },
@@ -482,13 +517,6 @@ export class Injector {
       contextId,
       inquirer,
       keyOrIndex,
-    );
-
-    return this.resolveComponentHost(
-      moduleRef,
-      instanceWrapper,
-      contextId,
-      inquirer,
     );
   }
 
@@ -525,9 +553,13 @@ export class Injector {
        * instantiated beforehand.
        */
       instanceHost.donePromise &&
-        void instanceHost.donePromise.then(() =>
-          this.loadProvider(instanceWrapper, moduleRef, contextId, inquirer),
-        );
+        void instanceHost.donePromise
+          .then(() =>
+            this.loadProvider(instanceWrapper, moduleRef, contextId, inquirer),
+          )
+          .catch(err => {
+            instanceWrapper.settlementSignal?.error(err);
+          });
     }
     if (instanceWrapper.async) {
       const host = instanceWrapper.getInstanceByContextId(
@@ -587,7 +619,7 @@ export class Injector {
       moduleRef,
       dependencyContext.name!,
       wrapper,
-      [],
+      new Set<string>(),
       contextId,
       inquirer,
       keyOrIndex,
@@ -607,7 +639,7 @@ export class Injector {
     moduleRef: Module,
     name: InjectionToken,
     wrapper: InstanceWrapper,
-    moduleRegistry: any[] = [],
+    moduleRegistry: Set<string> = new Set<string>(),
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
     keyOrIndex?: symbol | string | number,
@@ -625,11 +657,11 @@ export class Injector {
       );
     }
     for (const relatedModule of children) {
-      if (moduleRegistry.includes(relatedModule.id)) {
+      if (moduleRegistry.has(relatedModule.id)) {
         continue;
       }
       this.printLookingForProviderLog(name, relatedModule);
-      moduleRegistry.push(relatedModule.id);
+      moduleRegistry.add(relatedModule.id);
 
       const { providers, exports } = relatedModule;
       if (!exports.has(name) || !providers.has(name)) {
@@ -659,14 +691,11 @@ export class Injector {
         inquirerId,
       );
       if (!instanceHost.isResolved && !instanceWrapperRef.forwardRef) {
-        wrapper.settlementSignal?.insertRef(instanceWrapperRef.id);
-
-        await this.loadProvider(
-          instanceWrapperRef,
-          relatedModule,
-          contextId,
-          wrapper,
-        );
+        /*
+         * Provider will be loaded shortly in resolveComponentHost() once we pass the current
+         * Barrier. We cannot load it here because doing so could incorrectly evaluate the
+         * staticity of the dependency tree and lead to undefined / null injection.
+         */
         break;
       }
     }
@@ -689,6 +718,7 @@ export class Injector {
       return this.loadPropertiesMetadata(metadata, contextId, inquirer);
     }
     const properties = this.reflectProperties(wrapper.metatype as Type<any>);
+    const propertyBarrier = new Barrier(properties.length);
     const instances = await Promise.all(
       properties.map(async (item: PropertyDependency) => {
         try {
@@ -697,6 +727,11 @@ export class Injector {
             name: item.name as Function | string | symbol,
           };
           if (this.isInquirer(item.name, parentInquirer)) {
+            /*
+             * Signal the barrier to make sure other dependencies do not get stuck waiting forever.
+             */
+            propertyBarrier.signal();
+
             return parentInquirer && parentInquirer.instance;
           }
           const paramWrapper = await this.resolveSingleParam<T>(
@@ -708,16 +743,42 @@ export class Injector {
             inquirer,
             item.key,
           );
-          if (!paramWrapper) {
+
+          /*
+           * Ensure that all instance wrappers are resolved at this point before we continue.
+           * Otherwise the staticity of `wrapper`'s dependency tree may be evaluated incorrectly
+           * and result in undefined / null injection.
+           */
+          await propertyBarrier.signalAndWait();
+
+          const effectivePropertyInquirer = this.getEffectiveInquirer(
+            paramWrapper,
+            inquirer,
+            parentInquirer,
+            contextId,
+          );
+          const paramWrapperWithInstance = await this.resolveComponentHost(
+            moduleRef,
+            paramWrapper,
+            contextId,
+            effectivePropertyInquirer,
+          );
+          if (!paramWrapperWithInstance) {
             return undefined;
           }
-          const inquirerId = this.getInquirerId(inquirer);
-          const instanceHost = paramWrapper.getInstanceByContextId(
-            this.getContextId(contextId, paramWrapper),
-            inquirerId,
+          const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
+            this.getContextId(contextId, paramWrapperWithInstance),
+            this.getInquirerId(effectivePropertyInquirer),
           );
           return instanceHost.instance;
         } catch (err) {
+          /*
+           * Signal the barrier to make sure other dependencies do not get stuck waiting forever. We
+           * do not care if this occurs after `Barrier.signalAndWait()` is called in the `try` block
+           * because the barrier will always have been resolved by then.
+           */
+          propertyBarrier.signal();
+
           if (!item.isOptional) {
             throw err;
           }
@@ -788,12 +849,14 @@ export class Injector {
         : new (metatype as Type<any>)(...instances);
 
       instanceHost.instance = this.instanceDecorator(instanceHost.instance);
+      instanceHost.isConstructorCalled = true;
     } else if (isInContext) {
       const factoryReturnValue = (targetMetatype.metatype as any as Function)(
         ...instances,
       );
       instanceHost.instance = await factoryReturnValue;
       instanceHost.instance = this.instanceDecorator(instanceHost.instance);
+      instanceHost.isConstructorCalled = true;
     }
     instanceHost.isResolved = true;
     return instanceHost.instance;
@@ -855,14 +918,20 @@ export class Injector {
         ),
       ),
     );
-    const inquirerId = this.getInquirerId(inquirer);
-    return hosts.map(
-      item =>
-        item?.getInstanceByContextId(
-          this.getContextId(contextId, item),
-          inquirerId,
-        ).instance,
-    );
+    return hosts.map((item, index) => {
+      const dependency = metadata[index];
+      const effectiveInquirer = this.getEffectiveInquirer(
+        dependency,
+        inquirer,
+        parentInquirer,
+        contextId,
+      );
+
+      return item?.getInstanceByContextId(
+        this.getContextId(contextId, item),
+        this.getInquirerId(effectiveInquirer),
+      ).instance;
+    });
   }
 
   public async loadPropertiesMetadata(
@@ -898,6 +967,27 @@ export class Injector {
     return inquirer ? inquirer.id : undefined;
   }
 
+  /**
+   * For nested TRANSIENT dependencies (TRANSIENT -> TRANSIENT) in non-static contexts,
+   * returns parentInquirer to ensure each parent TRANSIENT gets its own instance.
+   * This is necessary because in REQUEST/DURABLE scopes, the same TRANSIENT wrapper
+   * can be used by multiple parents, causing nested TRANSIENTs to be shared incorrectly.
+   * For non-TRANSIENT -> TRANSIENT, returns inquirer (current wrapper being created).
+   */
+  private getEffectiveInquirer(
+    dependency: InstanceWrapper | undefined,
+    inquirer: InstanceWrapper | undefined,
+    parentInquirer: InstanceWrapper | undefined,
+    contextId: ContextId,
+  ): InstanceWrapper | undefined {
+    return dependency?.isTransient &&
+      inquirer?.isTransient &&
+      parentInquirer &&
+      contextId !== STATIC_CONTEXT
+      ? parentInquirer
+      : inquirer;
+  }
+
   private resolveScopedComponentHost(
     item: InstanceWrapper,
     contextId: ContextId,
@@ -906,7 +996,12 @@ export class Injector {
   ) {
     return this.isInquirerRequest(item, parentInquirer)
       ? parentInquirer
-      : this.resolveComponentHost(item.host!, item, contextId, inquirer);
+      : this.resolveComponentHost(
+          item.host!,
+          item,
+          contextId,
+          this.getEffectiveInquirer(item, inquirer, parentInquirer, contextId),
+        );
   }
 
   private isInquirerRequest(

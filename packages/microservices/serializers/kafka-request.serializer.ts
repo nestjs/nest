@@ -16,9 +16,10 @@ export interface KafkaRequest<T = any> {
 /**
  * @publicApi
  */
-export class KafkaRequestSerializer
-  implements Serializer<any, KafkaRequest | Promise<KafkaRequest>>
-{
+export class KafkaRequestSerializer implements Serializer<
+  any,
+  KafkaRequest | Promise<KafkaRequest>
+> {
   serialize(value: any) {
     const isNotKafkaMessage =
       isNil(value) ||
@@ -43,7 +44,9 @@ export class KafkaRequestSerializer
       !isNil(value) && !isString(value) && !Buffer.isBuffer(value);
 
     if (isObjectOrArray) {
-      return isPlainObject(value) || Array.isArray(value)
+      return isPlainObject(value) ||
+        Array.isArray(value) ||
+        value.toString == Object.prototype.toString // Prevent default [object Object] behavior
         ? JSON.stringify(value)
         : value.toString();
     } else if (isUndefined(value)) {

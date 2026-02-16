@@ -12,4 +12,5 @@ export enum RouteParamtypes {
   HOST = 10,
   IP = 11,
   RAW_BODY = 12,
+  ACK = 13,
 }

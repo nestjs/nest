@@ -169,8 +169,12 @@ jobs:
     working_directory: ~/nest
     docker:
       - image: cimg/node:<< pipeline.parameters.maintenance-node-version >>
+      - image: redis:8-alpine
+        name: redis
     environment:
       DISABLE_OPENCOLLECTIVE: 'true'
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     steps:
       - checkout
       - *restore-cache
@@ -178,6 +182,7 @@ jobs:
       - run:
           name: Build all samples
           command: npm run build:samples
+
 
 workflows:
   build-and-test:
@@ -204,3 +209,4 @@ workflows:
       - samples:
           requires:
             - build
+

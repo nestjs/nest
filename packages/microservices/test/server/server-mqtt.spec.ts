@@ -93,6 +93,98 @@ describe('ServerMqtt', () => {
       server.bindEvents(mqttClient);
       expect(subscribeSpy.calledWith(pattern)).to.be.true;
     });
+
+    describe('per-handler QoS via extras.qos', () => {
+      it('should use extras.qos=2 when handler specifies qos 2', () => {
+        const pattern = 'alerts/critical';
+        const handler = Object.assign(sinon.spy(), { extras: { qos: 2 } });
+        untypedServer.messageHandlers = objectToMap({
+          [pattern]: handler,
+        });
+        server.bindEvents(mqttClient);
+        expect(subscribeSpy.calledOnce).to.be.true;
+        expect(subscribeSpy.firstCall.args[0]).to.equal(pattern);
+        expect(subscribeSpy.firstCall.args[1]).to.deep.equal({ qos: 2 });
+      });
+
+      it('should use extras.qos=0 when handler specifies qos 0', () => {
+        const pattern = 'telemetry/data';
+        const handler = Object.assign(sinon.spy(), { extras: { qos: 0 } });
+        untypedServer.messageHandlers = objectToMap({
+          [pattern]: handler,
+        });
+        server.bindEvents(mqttClient);
+        expect(subscribeSpy.calledOnce).to.be.true;
+        expect(subscribeSpy.firstCall.args[0]).to.equal(pattern);
+        expect(subscribeSpy.firstCall.args[1]).to.deep.equal({ qos: 0 });
+      });
+
+      it('should use global subscribeOptions when extras.qos is undefined', () => {
+        const globalQos = 1;
+        const serverWithOptions = new ServerMqtt({
+          subscribeOptions: { qos: globalQos },
+        });
+        const untypedServerWithOptions = serverWithOptions as any;
+        const pattern = 'events/general';
+        const handler = Object.assign(sinon.spy(), { extras: {} });
+        untypedServerWithOptions.messageHandlers = objectToMap({
+          [pattern]: handler,
+        });
+        serverWithOptions.bindEvents(mqttClient);
+        expect(subscribeSpy.calledOnce).to.be.true;
+        expect(subscribeSpy.firstCall.args[0]).to.equal(pattern);
+        expect(subscribeSpy.firstCall.args[1]).to.deep.equal({
+          qos: globalQos,
+        });
+      });
+
+      it('should override only qos while preserving other global subscribeOptions', () => {
+        const serverWithOptions = new ServerMqtt({
+          subscribeOptions: { qos: 1, nl: true, rap: false },
+        });
+        const untypedServerWithOptions = serverWithOptions as any;
+        const pattern = 'commands/run';
+        const handler = Object.assign(sinon.spy(), { extras: { qos: 2 } });
+        untypedServerWithOptions.messageHandlers = objectToMap({
+          [pattern]: handler,
+        });
+        serverWithOptions.bindEvents(mqttClient);
+        expect(subscribeSpy.calledOnce).to.be.true;
+        expect(subscribeSpy.firstCall.args[1]).to.deep.equal({
+          qos: 2,
+          nl: true,
+          rap: false,
+        });
+      });
+
+      it('should apply different qos per handler when multiple handlers exist', () => {
+        const serverWithOptions = new ServerMqtt({
+          subscribeOptions: { qos: 1 },
+        });
+        const untypedServerWithOptions = serverWithOptions as any;
+
+        const handler0 = Object.assign(sinon.spy(), { extras: { qos: 0 } });
+        const handler1 = Object.assign(sinon.spy(), { extras: {} });
+        const handler2 = Object.assign(sinon.spy(), { extras: { qos: 2 } });
+
+        untypedServerWithOptions.messageHandlers = objectToMap({
+          'telemetry/+': handler0,
+          'events/#': handler1,
+          'alerts/critical': handler2,
+        });
+
+        serverWithOptions.bindEvents(mqttClient);
+
+        expect(subscribeSpy.callCount).to.equal(3);
+
+        const calls = subscribeSpy.getCalls();
+        const callMap = new Map(calls.map(c => [c.args[0], c.args[1]]));
+
+        expect(callMap.get('telemetry/+')).to.deep.equal({ qos: 0 });
+        expect(callMap.get('events/#')).to.deep.equal({ qos: 1 });
+        expect(callMap.get('alerts/critical')).to.deep.equal({ qos: 2 });
+      });
+    });
   });
   describe('getMessageHandler', () => {
     it(`should return function`, () => {

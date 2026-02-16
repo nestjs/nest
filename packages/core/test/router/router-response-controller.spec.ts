@@ -263,7 +263,7 @@ describe('RouterResponseController', () => {
     it('should accept only observables', async () => {
       const result = Promise.resolve('test');
       try {
-        routerResponseController.sse(
+        await routerResponseController.sse(
           result as unknown as any,
           {} as unknown as ServerResponse,
           {} as unknown as IncomingMessage,
@@ -273,6 +273,76 @@ describe('RouterResponseController', () => {
           'You must return an Observable stream to use Server-Sent Events (SSE).',
         );
       }
+    });
+
+    it('should accept Promise<Observable>', async () => {
+      class Sink extends Writable {
+        private readonly chunks: string[] = [];
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          this.chunks.push(chunk);
+          callback();
+        }
+
+        get content() {
+          return this.chunks.join('');
+        }
+      }
+
+      const written = (stream: Writable) =>
+        new Promise((resolve, reject) =>
+          stream.on('error', reject).on('finish', resolve),
+        );
+
+      const result = Promise.resolve(of('test'));
+      const response = new Sink();
+      const request = new PassThrough();
+      await routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+      request.destroy();
+      await written(response);
+      expect(response.content).to.eql(
+        `
+id: 1
+data: test
+
+`,
+      );
+    });
+
+    it('should use custom status code from response', async () => {
+      class SinkWithStatusCode extends Writable {
+        statusCode = 404;
+        writeHead = sinon.spy();
+        flushHeaders = sinon.spy();
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          callback();
+        }
+      }
+
+      const result = of('test');
+      const response = new SinkWithStatusCode();
+      const request = new PassThrough();
+      await routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      expect(response.writeHead.firstCall.args[0]).to.equal(404);
+      request.destroy();
     });
 
     it('should write string', async () => {
@@ -301,7 +371,7 @@ describe('RouterResponseController', () => {
       const result = of('test');
       const response = new Sink();
       const request = new PassThrough();
-      routerResponseController.sse(
+      void routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
@@ -326,7 +396,7 @@ data: test
       const request = new Writable();
       request._write = () => {};
 
-      routerResponseController.sse(
+      void routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
@@ -343,7 +413,7 @@ data: test
       const request = new Writable();
       request._write = () => {};
 
-      routerResponseController.sse(
+      void routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
@@ -360,7 +430,7 @@ data: test
       request._write = () => {};
 
       try {
-        routerResponseController.sse(
+        void routerResponseController.sse(
           result as unknown as Observable<string>,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
@@ -423,7 +493,7 @@ data: test
         const request = new Writable();
         request._write = () => {};
 
-        routerResponseController.sse(
+        void routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
@@ -450,7 +520,7 @@ data: test
         const request = new Writable();
         request._write = () => {};
 
-        routerResponseController.sse(
+        void routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
@@ -485,7 +555,7 @@ data: test
         const result = new Subject();
         const response = new Sink();
         const request = new PassThrough();
-        routerResponseController.sse(
+        void routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,

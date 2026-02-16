@@ -12,28 +12,28 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.3",
-    "@nestjs/core": "11.1.3",
-    "@nestjs/platform-express": "11.1.3",
+    "@nestjs/common": "11.1.13",
+    "@nestjs/core": "11.1.13",
+    "@nestjs/platform-express": "11.1.13",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
-    "typescript": "5.7.3"
+    "typescript": "5.9.3"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "3.3.1",
-    "@eslint/js": "9.31.0",
-    "@nestjs/cli": "11.0.7",
-    "@nestjs/schematics": "11.0.5",
-    "@types/node": "22.16.3",
-    "eslint": "9.31.0",
-    "eslint-plugin-prettier": "5.5.1",
-    "globals": "16.3.0",
+    "@eslint/eslintrc": "3.3.3",
+    "@eslint/js": "9.39.2",
+    "@nestjs/cli": "11.0.16",
+    "@nestjs/schematics": "11.0.9",
+    "@types/node": "24.10.13",
+    "eslint": "9.39.2",
+    "eslint-plugin-prettier": "5.5.5",
+    "globals": "17.3.0",
     "start-server-webpack-plugin": "2.2.5",
-    "ts-loader": "9.5.2",
+    "ts-loader": "9.5.4",
     "ts-node": "10.9.2",
-    "webpack": "5.100.1",
+    "webpack": "5.105.2",
     "webpack-cli": "6.0.1",
     "webpack-node-externals": "3.0.0",
-    "typescript-eslint": "8.37.0"
+    "typescript-eslint": "8.55.0"
   }
 }

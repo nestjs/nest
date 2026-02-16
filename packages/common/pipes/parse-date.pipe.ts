@@ -31,9 +31,9 @@ export interface ParseDatePipeOptions {
 }
 
 @Injectable()
-export class ParseDatePipe
-  implements PipeTransform<string | number | undefined | null>
-{
+export class ParseDatePipe implements PipeTransform<
+  string | number | undefined | null
+> {
   protected exceptionFactory: (error: string) => any;
 
   constructor(private readonly options: ParseDatePipeOptions = {}) {
