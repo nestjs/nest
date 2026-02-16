@@ -1,4 +1,4 @@
-import { NO_MESSAGE_HANDLER, RQM_DEFAULT_QUEUE } from '../../constants.js';
+import { NO_MESSAGE_HANDLER, RMQ_DEFAULT_QUEUE } from '../../constants.js';
 import { RmqContext } from '../../ctx-host/index.js';
 import { ServerRMQ } from '../../server/server-rmq.js';
 import { objectToMap } from './utils/object-to-map.js';
@@ -222,11 +222,11 @@ describe('ServerRMQ', () => {
       expect(channel.assertQueue).toHaveBeenCalledWith(queue, queueOptions);
     });
     it('should call "assertQueue" with queue and queue options when queue is default queue', async () => {
-      server['queue' as any] = RQM_DEFAULT_QUEUE;
+      server['queue' as any] = RMQ_DEFAULT_QUEUE;
 
       await server.setupChannel(channel, () => null);
       expect(channel.assertQueue).toHaveBeenCalledWith(
-        RQM_DEFAULT_QUEUE,
+        RMQ_DEFAULT_QUEUE,
         queueOptions,
       );
     });
@@ -242,7 +242,7 @@ describe('ServerRMQ', () => {
     it('should call "bindQueue" with exchangeType is fanout', async () => {
       const namedQueue = 'exclusive-queue-name';
       channel.assertQueue = vi.fn(() => ({ queue: namedQueue }));
-      server['queue' as any] = RQM_DEFAULT_QUEUE;
+      server['queue' as any] = RMQ_DEFAULT_QUEUE;
       server['options' as any] = {
         ...(server as any)['options'],
         exchangeType: 'fanout',
