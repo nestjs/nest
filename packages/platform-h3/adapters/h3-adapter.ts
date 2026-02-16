@@ -374,6 +374,7 @@ export class H3Adapter extends AbstractHttpAdapter<
    * The prefix parameter could be used to conditionally apply parsing based on path prefix.
    * The rawBody parameter could be used to configure raw body parsing.
    * Currently, H3 adapter applies body parsing globally for POST, PUT, and PATCH requests.
+   * Multipart form data is skipped to allow interceptors to handle file uploads.
    */
   public registerParserMiddleware(_prefix?: string, _rawBody?: boolean) {
     // Use plain middleware function - don't wrap in eventHandler()
@@ -381,6 +382,13 @@ export class H3Adapter extends AbstractHttpAdapter<
     this.instance.use(async event => {
       const method = event.runtime?.node?.req?.method || 'GET';
       if (['POST', 'PUT', 'PATCH'].includes(method)) {
+        // Get content type and check if it's multipart - skip body parsing for multipart
+        const contentType =
+          event.runtime?.node?.req?.headers?.['content-type'] || '';
+        if (contentType.includes('multipart/form-data')) {
+          // Skip body parsing for multipart - let interceptors handle it
+          return;
+        }
         const body = await readBody(event);
         (event as any).body = body;
       }
