@@ -23,6 +23,11 @@ import { isNil, isUndefined } from '../utils/shared.utils.js';
 /**
  * @publicApi
  */
+export type ValidationErrorFormat = 'list' | 'grouped';
+
+/**
+ * @publicApi
+ */
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
   disableErrorMessages?: boolean;
@@ -33,6 +38,18 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   expectedType?: Type<any>;
   validatorPackage?: ValidatorPackage;
   transformerPackage?: TransformerPackage;
+  /**
+   * Specifies the format of validation error messages.
+   * - 'list': Returns an array of error message strings (default). The response message is `string[]`.
+   * - 'grouped': Returns an object with property paths as keys and arrays of unmodified error messages as values.
+   *   The response message is `Record<string, string[]>`. Custom messages defined in validation decorators
+   *   (e.g., `@IsNotEmpty({ message: 'Name is required' })`) are preserved without parent path prefixes.
+   *
+   * @remarks
+   * When using 'grouped', the `message` property in the error response changes from `string[]` to `Record<string, string[]>`.
+   * If you have exception filters or interceptors that assume `message` is always an array, they will need to be updated.
+   */
+  errorFormat?: ValidationErrorFormat;
 }
 
 let classValidator: any = {} as any;
@@ -59,6 +76,7 @@ export class ValidationPipe implements PipeTransform {
   protected expectedType: Type<any> | undefined;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
+  protected errorFormat: ValidationErrorFormat;
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
@@ -69,6 +87,7 @@ export class ValidationPipe implements PipeTransform {
       expectedType,
       transformOptions,
       validateCustomDecorators,
+      errorFormat,
       ...validatorOptions
     } = options;
 
@@ -81,6 +100,7 @@ export class ValidationPipe implements PipeTransform {
     this.validateCustomDecorators = validateCustomDecorators || false;
     this.errorHttpStatusCode = errorHttpStatusCode || HttpStatus.BAD_REQUEST;
     this.expectedType = expectedType;
+    this.errorFormat = errorFormat || 'list';
     this.exceptionFactory =
       options.exceptionFactory || this.createExceptionFactory();
 
@@ -190,6 +210,12 @@ export class ValidationPipe implements PipeTransform {
     return (validationErrors: ValidationError[] = []) => {
       if (this.isDetailedOutputDisabled) {
         return new HttpErrorByCode[this.errorHttpStatusCode]();
+      }
+      if (this.errorFormat === 'grouped') {
+        const errors = this.groupValidationErrors(validationErrors);
+        return new HttpErrorByCode[this.errorHttpStatusCode]({
+          message: errors,
+        });
       }
       const errors = this.flattenValidationErrors(validationErrors);
       return new HttpErrorByCode[this.errorHttpStatusCode](errors);
@@ -316,6 +342,25 @@ export class ValidationPipe implements PipeTransform {
       .map(item => Object.values(item.constraints!))
       .flatten()
       .toArray();
+  }
+
+  protected groupValidationErrors(
+    validationErrors: ValidationError[],
+    parentPath?: string,
+  ): Record<string, string[]> {
+    const result: Record<string, string[]> = {};
+    for (const error of validationErrors) {
+      const path = parentPath
+        ? `${parentPath}.${error.property}`
+        : error.property;
+      if (error.constraints) {
+        result[path] = Object.values(error.constraints);
+      }
+      if (error.children && error.children.length) {
+        Object.assign(result, this.groupValidationErrors(error.children, path));
+      }
+    }
+    return result;
   }
 
   protected mapChildrenToValidationErrors(
