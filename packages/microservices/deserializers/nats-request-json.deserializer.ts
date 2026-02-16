@@ -1,5 +1,5 @@
-import { IncomingEvent, IncomingRequest } from '../interfaces';
-import { IncomingRequestDeserializer } from './incoming-request.deserializer';
+import { IncomingEvent, IncomingRequest } from '../interfaces/index.js';
+import { IncomingRequestDeserializer } from './incoming-request.deserializer.js';
 
 // To enable type safety for Nats. This cant be uncommented by default
 // because it would require the user to install the nats package even if they dont use Nats
@@ -16,7 +16,11 @@ export class NatsRequestJSONDeserializer extends IncomingRequestDeserializer {
   deserialize(
     value: NatsMsg,
     options?: Record<string, any>,
-  ): IncomingRequest | IncomingEvent {
+  ):
+    | IncomingRequest
+    | IncomingEvent
+    | Promise<IncomingRequest>
+    | Promise<IncomingEvent> {
     const decodedRequest = value.json();
     return super.deserialize(decodedRequest, options);
   }

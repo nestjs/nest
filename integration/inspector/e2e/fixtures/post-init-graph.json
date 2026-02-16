@@ -2197,22 +2197,6 @@
       },
       "id": "1976848738"
     },
-    "-2105726668": {
-      "source": "-1803759743",
-      "target": "1010833816",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "PropertiesModule",
-        "sourceClassName": "PropertiesService",
-        "targetClassName": "token",
-        "sourceClassToken": "PropertiesService",
-        "targetClassToken": "token",
-        "targetModuleName": "PropertiesModule",
-        "keyOrIndex": "token",
-        "injectionType": "property"
-      },
-      "id": "-2105726668"
-    },
     "-21463590": {
       "source": "-1378706112",
       "target": "1004276345",
@@ -2228,6 +2212,22 @@
         "injectionType": "constructor"
       },
       "id": "-21463590"
+    },
+    "-2105726668": {
+      "source": "-1803759743",
+      "target": "1010833816",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "PropertiesModule",
+        "sourceClassName": "PropertiesService",
+        "targetClassName": "token",
+        "sourceClassToken": "PropertiesService",
+        "targetClassToken": "token",
+        "targetModuleName": "PropertiesModule",
+        "keyOrIndex": "token",
+        "injectionType": "property"
+      },
+      "id": "-2105726668"
     },
     "-1657371464": {
       "source": "-1673986099",
@@ -2263,6 +2263,22 @@
       },
       "id": "-1303681274"
     },
+    "-831049991": {
+      "source": "594986539",
+      "target": "-1721730431",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "InputModule",
+        "sourceClassName": "InputService",
+        "targetClassName": "CircularService",
+        "sourceClassToken": "InputService",
+        "targetClassToken": "CircularService",
+        "targetModuleName": "CircularModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "-831049991"
+    },
     "-886102564": {
       "source": "208171089",
       "target": "671882984",
@@ -2279,6 +2295,22 @@
         "internal": true
       },
       "id": "-886102564"
+    },
+    "-2146943494": {
+      "source": "-234035039",
+      "target": "928565345",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "RequestChainModule",
+        "sourceClassName": "RequestChainService",
+        "targetClassName": "HelperService",
+        "sourceClassToken": "RequestChainService",
+        "targetClassToken": "HelperService",
+        "targetModuleName": "HelperModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "-2146943494"
     },
     "-2003045613": {
       "source": "-377928898",
@@ -2311,38 +2343,6 @@
         "injectionType": "constructor"
       },
       "id": "-881420795"
-    },
-    "-831049991": {
-      "source": "594986539",
-      "target": "-1721730431",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "InputModule",
-        "sourceClassName": "InputService",
-        "targetClassName": "CircularService",
-        "sourceClassToken": "InputService",
-        "targetClassToken": "CircularService",
-        "targetModuleName": "CircularModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "-831049991"
-    },
-    "-2146943494": {
-      "source": "-234035039",
-      "target": "928565345",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "RequestChainModule",
-        "sourceClassName": "RequestChainService",
-        "targetClassName": "HelperService",
-        "sourceClassToken": "RequestChainService",
-        "targetClassToken": "HelperService",
-        "targetModuleName": "HelperModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "-2146943494"
     },
     "-1816180282": {
       "source": "-848516688",
@@ -2596,68 +2596,6 @@
     }
   },
   "entrypoints": {
-    "1131051184": [
-      {
-        "type": "websocket",
-        "methodName": "create",
-        "className": "ChatGateway",
-        "classNodeId": "1131051184",
-        "metadata": {
-          "port": 0,
-          "key": "createChat",
-          "message": "createChat"
-        },
-        "id": "1131051184_create"
-      },
-      {
-        "type": "websocket",
-        "methodName": "findAll",
-        "className": "ChatGateway",
-        "classNodeId": "1131051184",
-        "metadata": {
-          "port": 0,
-          "key": "findAllChat",
-          "message": "findAllChat"
-        },
-        "id": "1131051184_findAll"
-      },
-      {
-        "type": "websocket",
-        "methodName": "findOne",
-        "className": "ChatGateway",
-        "classNodeId": "1131051184",
-        "metadata": {
-          "port": 0,
-          "key": "findOneChat",
-          "message": "findOneChat"
-        },
-        "id": "1131051184_findOne"
-      },
-      {
-        "type": "websocket",
-        "methodName": "update",
-        "className": "ChatGateway",
-        "classNodeId": "1131051184",
-        "metadata": {
-          "port": 0,
-          "key": "updateChat",
-          "message": "updateChat"
-        },
-        "id": "1131051184_update"
-      },
-      {
-        "type": "websocket",
-        "methodName": "remove",
-        "className": "ChatGateway",
-        "classNodeId": "1131051184",
-        "metadata": {
-          "port": 0,
-          "key": "removeChat",
-          "message": "removeChat"
-        },
-        "id": "1131051184_remove"
-      }
-    ],
     "1472486160": [
       {
         "type": "http-endpoint",

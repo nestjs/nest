@@ -1,6 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import { MultipleProvidersModule } from '../src/multiple-providers/multiple-providers.module';
+import { MultipleProvidersModule } from '../src/multiple-providers/multiple-providers.module.js';
 
 describe('Multiple providers under the same token ("each" feature)', () => {
   describe('get()', () => {
@@ -20,11 +19,11 @@ describe('Multiple providers under the same token ("each" feature)', () => {
       // @ts-expect-error: make sure "multiProviderInstances" is string[] not string
       multiProviderInstances.charAt;
 
-      expect(multiProviderInstances).to.be.eql(['A', 'B', 'C']);
+      expect(multiProviderInstances).toEqual(['A', 'B', 'C']);
     });
   });
   describe('resolve()', () => {
-    it('should return an array of providers', async () => {
+    it('should return an array of request-scoped providers', async () => {
       const builder = Test.createTestingModule({
         imports: [MultipleProvidersModule],
       });
@@ -41,7 +40,27 @@ describe('Multiple providers under the same token ("each" feature)', () => {
       // @ts-expect-error: make sure "multiProviderInstances" is string[] not string
       multiProviderInstances.charAt;
 
-      expect(multiProviderInstances).to.be.eql(['A', 'B', 'C']);
+      expect(multiProviderInstances).toEqual(['A', 'B', 'C']);
+    });
+
+    it('should return an array of default-scoped providers', async () => {
+      const builder = Test.createTestingModule({
+        imports: [MultipleProvidersModule],
+      });
+      const testingModule = await builder.compile();
+
+      const multiProviderInstances = await testingModule.resolve<string>(
+        'MULTI_PROVIDER',
+        undefined,
+        {
+          each: true,
+        },
+      );
+
+      // @ts-expect-error: make sure "multiProviderInstances" is string[] not string
+      multiProviderInstances.charAt;
+
+      expect(multiProviderInstances).toEqual(['A', 'B', 'C']);
     });
   });
 });

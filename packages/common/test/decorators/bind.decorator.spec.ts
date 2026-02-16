@@ -1,7 +1,6 @@
-import { expect } from 'chai';
-import { ROUTE_ARGS_METADATA } from '../../constants';
-import { Bind } from '../../decorators/core/bind.decorator';
-import { Req } from '../../decorators/http/route-params.decorator';
+import { ROUTE_ARGS_METADATA } from '../../constants.js';
+import { Bind } from '../../decorators/core/bind.decorator.js';
+import { Req } from '../../decorators/http/route-params.decorator.js';
 
 describe('@Bind', () => {
   class TestWithMethod {
@@ -16,7 +15,7 @@ describe('@Bind', () => {
       'test',
     );
 
-    expect(metadata).to.be.deep.equal({
+    expect(metadata).toEqual({
       '0:0': {
         data: undefined,
         index: 0,

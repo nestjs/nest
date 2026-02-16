@@ -1,8 +1,8 @@
 import { INestApplication, VersioningType } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { Request } from 'express';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 describe('Custom Versioning', () => {
   const extractor = (request: Request): string | string[] => {
@@ -21,7 +21,7 @@ describe('Custom Versioning', () => {
 
   // ======================================================================== //
   describe('without global default version', () => {
-    before(async () => {
+    beforeAll(async () => {
       const moduleRef = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
@@ -380,14 +380,14 @@ describe('Custom Versioning', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
 
   // ======================================================================== //
   describe('with the global default version: "1"', () => {
-    before(async () => {
+    beforeAll(async () => {
       const moduleRef = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
@@ -705,7 +705,7 @@ describe('Custom Versioning', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });

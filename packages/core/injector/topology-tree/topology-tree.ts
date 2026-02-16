@@ -1,5 +1,5 @@
-import { Module } from '../module';
-import { TreeNode } from './tree-node';
+import { Module } from '../module.js';
+import { TreeNode } from './tree-node.js';
 
 export class TopologyTree {
   private root: TreeNode<Module>;

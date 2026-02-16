@@ -1,23 +1,29 @@
-import { Logger, LoggerService, Provider, Scope, Type } from '@nestjs/common';
-import { EnhancerSubtype } from '@nestjs/common/constants';
-import { FactoryProvider, InjectionToken } from '@nestjs/common/interfaces';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import type { FactoryProvider, InjectionToken } from '@nestjs/common';
 import {
+  Logger,
+  type LoggerService,
+  type Provider,
+  Scope,
+  type Type,
+} from '@nestjs/common';
+import {
+  type EnhancerSubtype,
+  clc,
   isNil,
   isString,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+  randomStringGenerator,
+} from '@nestjs/common/internal';
 import { iterate } from 'iterare';
-import { UuidFactory } from '../inspector/uuid-factory';
-import { STATIC_CONTEXT } from './constants';
+import { UuidFactory } from '../inspector/uuid-factory.js';
+import { STATIC_CONTEXT } from './constants.js';
 import {
   isClassProvider,
   isFactoryProvider,
   isValueProvider,
-} from './helpers/provider-classifier';
-import { Module } from './module';
-import { SettlementSignal } from './settlement-signal';
+} from './helpers/provider-classifier.js';
+import { Module } from './module.js';
+import { SettlementSignal } from './settlement-signal.js';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
@@ -44,6 +50,7 @@ export interface InstancePerContext<T> {
   isResolved?: boolean;
   isPending?: boolean;
   donePromise?: Promise<unknown>;
+  isConstructorCalled?: boolean;
 }
 
 export interface PropertyMetadata {
@@ -82,6 +89,21 @@ export class InstanceWrapper<T = any> {
     | undefined;
   private isTreeStatic: boolean | undefined;
   private isTreeDurable: boolean | undefined;
+  private _hierarchyLevel = 0;
+
+  get hierarchyLevel(): number {
+    return this._hierarchyLevel;
+  }
+
+  set hierarchyLevel(level: number) {
+    this._hierarchyLevel = level;
+  }
+
+  /**
+   * The root inquirer reference. Present only if child instance wrapper
+   * is transient and has a parent inquirer.
+   */
+  private rootInquirer: InstanceWrapper | undefined;
 
   constructor(
     metadata: Partial<InstanceWrapper<T>> & Partial<InstancePerContext<T>> = {},
@@ -402,16 +424,48 @@ export class InstanceWrapper<T = any> {
     contextId: ContextId,
     inquirer: InstanceWrapper | undefined,
   ): boolean {
+    if (!this.isDependencyTreeStatic() || contextId !== STATIC_CONTEXT) {
+      return false;
+    }
+
+    // Non-transient provider in static context
+    if (!this.isTransient) {
+      return true;
+    }
+
     const isInquirerRequestScoped =
       inquirer && !inquirer.isDependencyTreeStatic();
     const isStaticTransient = this.isTransient && !isInquirerRequestScoped;
+    const rootInquirer = inquirer?.getRootInquirer();
 
-    return (
-      this.isDependencyTreeStatic() &&
-      contextId === STATIC_CONTEXT &&
-      (!this.isTransient ||
-        (isStaticTransient && !!inquirer && !inquirer.isTransient))
-    );
+    // Transient provider inquired by non-transient (e.g., DEFAULT -> TRANSIENT)
+    if (isStaticTransient && inquirer && !inquirer.isTransient) {
+      return true;
+    }
+
+    // Nested transient with non-transient root (e.g., DEFAULT -> TRANSIENT -> TRANSIENT)
+    if (isStaticTransient && rootInquirer && !rootInquirer.isTransient) {
+      return true;
+    }
+
+    // Nested transient during initial instantiation (rootInquirer not yet set)
+    if (isStaticTransient && inquirer?.isTransient && !rootInquirer) {
+      return true;
+    }
+
+    return false;
+  }
+
+  public attachRootInquirer(inquirer: InstanceWrapper) {
+    if (!this.isTransient) {
+      // Only attach root inquirer if the instance wrapper is transient
+      return;
+    }
+    this.rootInquirer = inquirer.getRootInquirer() ?? inquirer;
+  }
+
+  getRootInquirer(): InstanceWrapper | undefined {
+    return this.rootInquirer;
   }
 
   public getStaticTransientInstances() {
@@ -421,7 +475,11 @@ export class InstanceWrapper<T = any> {
     const instances = [...this.transientMap.values()];
     return iterate(instances)
       .map(item => item.get(STATIC_CONTEXT))
-      .filter(item => !!item)
+      .filter(item => {
+        // Only return items where constructor has been actually called
+        // This prevents calling lifecycle hooks on non-instantiated transient services
+        return !!(item && item.isConstructorCalled);
+      })
       .toArray();
   }
 

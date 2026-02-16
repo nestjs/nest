@@ -1,4 +1,4 @@
-import { LoggerService, LogLevel } from '../services/logger.service';
+import { LoggerService, LogLevel } from '../services/logger.service.js';
 
 /**
  * @publicApi
@@ -53,4 +53,25 @@ export class NestApplicationContextOptions {
    * @default 'reference'
    */
   moduleIdGeneratorAlgorithm?: 'deep-hash' | 'reference';
+
+  /**
+   * Instrument the application context.
+   * This option allows you to add custom instrumentation to the application context.
+   */
+  instrument?: {
+    /**
+     * Function that decorates each instance created by the application context.
+     * This function can be used to add custom properties or methods to the instance.
+     * @param instance The instance to decorate.
+     * @returns The decorated instance.
+     */
+    instanceDecorator: (instance: unknown) => unknown;
+  };
+
+  /**
+   * If enabled, will force the use of console.log/console.error instead of process.stdout/stderr.write
+   * in the default ConsoleLogger. This is useful for test environments like Jest that can buffer console calls.
+   * @default false
+   */
+  forceConsole?: boolean;
 }

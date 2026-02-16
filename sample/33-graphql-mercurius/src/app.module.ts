@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { MercuriusDriver, MercuriusDriverConfig } from '@nestjs/mercurius';
-import { RecipesModule } from './recipes/recipes.module';
+import { RecipesModule } from './recipes/recipes.module.js';
 
 @Module({
   imports: [

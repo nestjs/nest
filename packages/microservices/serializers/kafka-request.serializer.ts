@@ -1,11 +1,11 @@
+import { Serializer } from '../interfaces/serializer.interface.js';
 import {
   isNil,
   isObject,
   isPlainObject,
   isString,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
-import { Serializer } from '../interfaces/serializer.interface';
+} from '@nestjs/common/internal';
 
 export interface KafkaRequest<T = any> {
   key: Buffer | string | null;
@@ -16,9 +16,10 @@ export interface KafkaRequest<T = any> {
 /**
  * @publicApi
  */
-export class KafkaRequestSerializer
-  implements Serializer<any, KafkaRequest | Promise<KafkaRequest>>
-{
+export class KafkaRequestSerializer implements Serializer<
+  any,
+  KafkaRequest | Promise<KafkaRequest>
+> {
   serialize(value: any) {
     const isNotKafkaMessage =
       isNil(value) ||
@@ -43,7 +44,9 @@ export class KafkaRequestSerializer
       !isNil(value) && !isString(value) && !Buffer.isBuffer(value);
 
     if (isObjectOrArray) {
-      return isPlainObject(value) || Array.isArray(value)
+      return isPlainObject(value) ||
+        Array.isArray(value) ||
+        value.toString == Object.prototype.toString // Prevent default [object Object] behavior
         ? JSON.stringify(value)
         : value.toString();
     } else if (isUndefined(value)) {

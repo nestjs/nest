@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { MATH_SERVICE } from './math.constants';
-import { MathController } from './math.controller';
+import { MATH_SERVICE } from './math.constants.js';
+import { MathController } from './math.controller.js';
 
 @Module({
   imports: [

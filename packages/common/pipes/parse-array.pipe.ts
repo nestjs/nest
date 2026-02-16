@@ -1,14 +1,14 @@
-import { Injectable } from '../decorators/core/injectable.decorator';
-import { Optional } from '../decorators/core/optional.decorator';
-import { HttpStatus } from '../enums/http-status.enum';
-import { Type } from '../interfaces';
+import { Injectable } from '../decorators/core/injectable.decorator.js';
+import { Optional } from '../decorators/core/optional.decorator.js';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { Type } from '../interfaces/index.js';
 import {
   ArgumentMetadata,
   PipeTransform,
-} from '../interfaces/features/pipe-transform.interface';
-import { HttpErrorByCode } from '../utils/http-error-by-code.util';
-import { isNil, isString, isUndefined } from '../utils/shared.utils';
-import { ValidationPipe, ValidationPipeOptions } from './validation.pipe';
+} from '../interfaces/features/pipe-transform.interface.js';
+import { HttpErrorByCode } from '../utils/http-error-by-code.util.js';
+import { isNil, isString, isUndefined } from '../utils/shared.utils.js';
+import { ValidationPipe, ValidationPipeOptions } from './validation.pipe.js';
 
 const VALIDATION_ERROR_MESSAGE = 'Validation failed (parsable array expected)';
 const DEFAULT_ARRAY_SEPARATOR = ',';
@@ -16,11 +16,10 @@ const DEFAULT_ARRAY_SEPARATOR = ',';
 /**
  * @publicApi
  */
-export interface ParseArrayOptions
-  extends Omit<
-    ValidationPipeOptions,
-    'transform' | 'validateCustomDecorators' | 'exceptionFactory'
-  > {
+export interface ParseArrayOptions extends Omit<
+  ValidationPipeOptions,
+  'transform' | 'validateCustomDecorators' | 'exceptionFactory'
+> {
   /**
    * Type for items to be converted into
    */
@@ -77,7 +76,7 @@ export class ParseArrayPipe implements PipeTransform {
    * @param value currently processed route argument
    * @param metadata contains metadata about the currently processed route argument
    */
-  async transform(value: any, metadata: ArgumentMetadata): Promise<any> {
+  async transform(value: unknown, metadata: ArgumentMetadata): Promise<any> {
     if (!value && !this.options.optional) {
       throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
     } else if (isNil(value) && this.options.optional) {
@@ -148,7 +147,9 @@ export class ParseArrayPipe implements PipeTransform {
         }
         return targetArray;
       } else {
-        value = await Promise.all(value.map(toClassInstance));
+        value = await Promise.all(
+          (value as Array<unknown>).map(toClassInstance),
+        );
       }
     }
     return value;

@@ -1,11 +1,8 @@
 import { Injectable, Module, OnModuleInit } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as Sinon from 'sinon';
-
 @Injectable()
 class TestInjectable implements OnModuleInit {
-  onModuleInit = Sinon.spy();
+  onModuleInit = vi.fn();
 }
 
 describe('OnModuleInit', () => {
@@ -17,7 +14,8 @@ describe('OnModuleInit', () => {
     const app = module.createNestApplication();
     await app.init();
     const instance = module.get(TestInjectable);
-    expect(instance.onModuleInit.called).to.be.true;
+    expect(instance.onModuleInit).toHaveBeenCalled();
+    await app.close();
   });
 
   it('should not throw an error when onModuleInit is null', async () => {
@@ -26,7 +24,8 @@ describe('OnModuleInit', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then(obj => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should not throw an error when onModuleInit is undefined', async () => {
@@ -35,7 +34,8 @@ describe('OnModuleInit', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then(obj => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should sort modules by distance (topological sort) - DESC order', async () => {
@@ -109,6 +109,50 @@ describe('OnModuleInit', () => {
     await app.init();
 
     const instance = module.get(AA);
-    expect(instance.field).to.equal('c-field_b-field_a-field');
+    expect(instance.field).toBe('c-field_b-field_a-field');
+    await app.close();
+  });
+
+  it('should sort components within a single module by injection hierarchy - DESC order', async () => {
+    @Injectable()
+    class A implements OnModuleInit {
+      onModuleInit = vi.fn();
+    }
+
+    @Injectable()
+    class AHost implements OnModuleInit {
+      constructor(private a: A) {}
+      onModuleInit = vi.fn();
+    }
+
+    @Injectable()
+    class Composition implements OnModuleInit {
+      constructor(
+        private a: A,
+        private host: AHost,
+      ) {}
+      onModuleInit = vi.fn();
+    }
+
+    @Module({
+      providers: [AHost, A, Composition],
+    })
+    class AModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [AModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    const child = module.get(A);
+    const parent = module.get(AHost);
+    const composition = module.get(Composition);
+    expect(child.onModuleInit).toHaveBeenCalledBefore(parent.onModuleInit);
+    expect(parent.onModuleInit).toHaveBeenCalledBefore(
+      composition.onModuleInit,
+    );
   });
 });

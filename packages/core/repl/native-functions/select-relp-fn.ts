@@ -3,8 +3,8 @@ import type {
   INestApplicationContext,
   Type,
 } from '@nestjs/common';
-import { ReplFunction } from '../repl-function';
-import type { ReplFnDefinition } from '../repl.interfaces';
+import { ReplFunction } from '../repl-function.js';
+import type { ReplFnDefinition } from '../repl.interfaces.js';
 
 export class SelectReplFn extends ReplFunction {
   public fnDefinition: ReplFnDefinition = {

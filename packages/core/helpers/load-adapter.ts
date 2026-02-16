@@ -8,13 +8,13 @@ const MISSING_REQUIRED_DEPENDENCY = (
 
 const logger = new Logger('PackageLoader');
 
-export function loadAdapter(
+export async function loadAdapter(
   defaultPlatform: string,
   transport: string,
   loaderFn?: Function,
 ) {
   try {
-    return loaderFn ? loaderFn() : require(defaultPlatform);
+    return loaderFn ? await loaderFn() : await import(defaultPlatform);
   } catch (e) {
     logger.error(MISSING_REQUIRED_DEPENDENCY(defaultPlatform, transport));
     process.exit(1);

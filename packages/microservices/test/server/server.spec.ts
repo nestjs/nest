@@ -1,7 +1,5 @@
-import { expect } from 'chai';
 import { throwError as _throw, lastValueFrom, Observable, of } from 'rxjs';
-import * as sinon from 'sinon';
-import { Server } from '../../server/server';
+import { Server } from '../../server/server.js';
 
 class TestServer extends Server {
   public on<
@@ -18,36 +16,33 @@ class TestServer extends Server {
 describe('Server', () => {
   const server = new TestServer();
   const untypedServer = server as any;
-  const sandbox = sinon.createSandbox();
   const callback = () => {},
     pattern = { test: 'test pattern' };
 
   afterEach(() => {
-    sandbox.restore();
+    vi.restoreAllMocks();
   });
 
   describe('addHandler', () => {
     it(`should add handler`, () => {
       const handlerRoute = 'hello';
-      sandbox
-        .stub(server as any, 'messageHandlers')
-        .value({ set() {}, has() {} });
+      untypedServer.messageHandlers = new Map();
 
-      const messageHandlersSetSpy = sinon.spy(
+      const messageHandlersSetSpy = vi.spyOn(
         untypedServer.messageHandlers,
         'set',
       );
-      const normalizePatternStub = sinon
-        .stub(server as any, 'normalizePattern')
-        .returns(handlerRoute);
+      const normalizePatternStub = vi
+        .spyOn(server as any, 'normalizePattern')
+        .mockReturnValue(handlerRoute);
 
       server.addHandler(pattern, callback as any);
 
-      expect(messageHandlersSetSpy.called).to.be.true;
-      expect(messageHandlersSetSpy.args[0][0]).to.be.equal(handlerRoute);
-      expect(messageHandlersSetSpy.args[0][1]).to.be.equal(callback);
+      expect(messageHandlersSetSpy).toHaveBeenCalled();
+      expect(messageHandlersSetSpy.mock.calls[0][0]).toBe(handlerRoute);
+      expect(messageHandlersSetSpy.mock.calls[0][1]).toBe(callback);
 
-      normalizePatternStub.restore();
+      normalizePatternStub.mockRestore();
     });
     describe('when handler is an event handler', () => {
       describe('and there are other handlers registered for the pattern already', () => {
@@ -60,28 +55,30 @@ describe('Server', () => {
           untypedServer['messageHandlers'] = new Map([
             [handlerRoute, headHandler],
           ]);
-          const normalizePatternStub = sinon
-            .stub(server as any, 'normalizePattern')
-            .returns(handlerRoute);
+          const normalizePatternStub = vi
+            .spyOn(server as any, 'normalizePattern')
+            .mockReturnValue(handlerRoute);
 
           server.addHandler(pattern, callback as any, true);
 
-          expect(nextHandler.next).to.equal(callback);
-          normalizePatternStub.restore();
+          expect(nextHandler.next).toBe(callback);
+          normalizePatternStub.mockRestore();
         });
       });
     });
   });
 
   describe('getRouteFromPattern', () => {
-    let normalizePatternStub: sinon.SinonStub;
+    let normalizePatternStub: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      normalizePatternStub = sinon.stub(server as any, 'normalizePattern');
+      normalizePatternStub = vi
+        .spyOn(server as any, 'normalizePattern')
+        .mockImplementation(() => ({}) as any);
     });
 
     afterEach(() => {
-      normalizePatternStub.restore();
+      normalizePatternStub.mockRestore();
     });
 
     describe(`when gets 'string' pattern`, () => {
@@ -90,7 +87,7 @@ describe('Server', () => {
         const transformedServerPattern = inputServerPattern;
         untypedServer.getRouteFromPattern(inputServerPattern);
 
-        expect(normalizePatternStub.args[0][0]).to.be.equal(
+        expect(normalizePatternStub.mock.calls[0][0]).toBe(
           transformedServerPattern,
         );
       });
@@ -105,7 +102,7 @@ describe('Server', () => {
         };
         untypedServer.getRouteFromPattern(inputServerPattern);
 
-        expect(normalizePatternStub.args[0][0]).to.be.deep.equal(
+        expect(normalizePatternStub.mock.calls[0][0]).toEqual(
           transformedServerPattern,
         );
       });
@@ -114,26 +111,23 @@ describe('Server', () => {
 
   describe('send', () => {
     let stream$: Observable<string>;
-    let sendSpy: sinon.SinonSpy;
+    let sendSpy: ReturnType<typeof vi.fn>;
     beforeEach(() => {
       stream$ = of('test');
     });
     describe('when stream', () => {
       beforeEach(() => {
-        sendSpy = sinon.spy();
+        sendSpy = vi.fn();
       });
       describe('throws exception', () => {
         beforeEach(() => {
           server.send(_throw(() => 'test') as any, sendSpy);
         });
-        it('should send error and complete', () => {
-          process.nextTick(() => {
-            expect(
-              sendSpy.calledWith({
-                err: 'test',
-                isDisposed: true,
-              }),
-            ).to.be.true;
+        it('should send error and complete', async () => {
+          await new Promise<void>(resolve => process.nextTick(resolve));
+          expect(sendSpy).toHaveBeenCalledWith({
+            err: 'test',
+            isDisposed: true,
           });
         });
       });
@@ -141,14 +135,11 @@ describe('Server', () => {
         beforeEach(() => {
           server.send(stream$, sendSpy);
         });
-        it('should send response and "complete" event', () => {
-          process.nextTick(() => {
-            expect(
-              sendSpy.calledWith({
-                response: 'test',
-                isDisposed: true,
-              }),
-            ).to.be.true;
+        it('should send response and "complete" event', async () => {
+          await new Promise<void>(resolve => process.nextTick(resolve));
+          expect(sendSpy).toHaveBeenCalledWith({
+            response: 'test',
+            isDisposed: true,
           });
         });
       });
@@ -163,7 +154,7 @@ describe('Server', () => {
             await lastValueFrom(
               server.transformToObservable(Promise.resolve(value)),
             ),
-          ).to.be.eq(100);
+          ).toBe(100);
         });
       });
       describe('is Observable', () => {
@@ -171,23 +162,23 @@ describe('Server', () => {
           const value = 100;
           expect(
             await lastValueFrom(server.transformToObservable(of(value))),
-          ).to.be.eq(100);
+          ).toBe(100);
         });
       });
       describe('is any number', () => {
         it('should return Observable that emits the supplied number', async () => {
           const value = 100;
-          expect(
-            await lastValueFrom(server.transformToObservable(value)),
-          ).to.be.eq(100);
+          expect(await lastValueFrom(server.transformToObservable(value))).toBe(
+            100,
+          );
         });
       });
       describe('is an array', () => {
         it('should return Observable that emits the supplied array', async () => {
           const value = [1, 2, 3];
-          expect(
-            await lastValueFrom(server.transformToObservable(value)),
-          ).to.be.eq(value);
+          expect(await lastValueFrom(server.transformToObservable(value))).toBe(
+            value,
+          );
         });
       });
     });
@@ -196,55 +187,62 @@ describe('Server', () => {
   describe('getHandlers', () => {
     it('should return registered handlers', () => {
       const messageHandlers = [() => null, () => true];
-      sandbox.stub(server as any, 'messageHandlers').value(messageHandlers);
-      expect(server.getHandlers()).to.equal(messageHandlers);
+      const original = untypedServer.messageHandlers;
+      untypedServer.messageHandlers = messageHandlers;
+      expect(server.getHandlers()).toBe(messageHandlers);
+      untypedServer.messageHandlers = original;
     });
   });
 
   describe('getHandlerByPattern', () => {
-    let messageHandlersGetSpy: sinon.SinonStub;
-    let messageHandlersHasSpy: sinon.SinonStub;
+    let messageHandlersGetSpy: ReturnType<typeof vi.spyOn>;
+    let messageHandlersHasSpy: ReturnType<typeof vi.spyOn>;
+    let originalMessageHandlers: any;
     const handlerRoute = 'hello';
 
     beforeEach(() => {
-      sandbox
-        .stub(server as any, 'messageHandlers')
-        .value({ get() {}, has() {} });
-      messageHandlersGetSpy = sinon
-        .stub(untypedServer.messageHandlers, 'get')
-        .returns(callback);
-      messageHandlersHasSpy = sinon.stub(untypedServer.messageHandlers, 'has');
+      originalMessageHandlers = untypedServer.messageHandlers;
+      untypedServer.messageHandlers = new Map();
+      messageHandlersGetSpy = vi
+        .spyOn(untypedServer.messageHandlers, 'get')
+        .mockReturnValue(callback);
+      messageHandlersHasSpy = vi
+        .spyOn(untypedServer.messageHandlers, 'has')
+        .mockReturnValue(false);
 
-      sandbox.stub(server as any, 'getRouteFromPattern').returns(handlerRoute);
+      vi.spyOn(server as any, 'getRouteFromPattern').mockReturnValue(
+        handlerRoute,
+      );
     });
 
     afterEach(() => {
-      messageHandlersGetSpy.restore();
-      messageHandlersHasSpy.restore();
+      messageHandlersGetSpy.mockRestore();
+      messageHandlersHasSpy.mockRestore();
+      untypedServer.messageHandlers = originalMessageHandlers;
     });
 
     describe('when handler exists', () => {
       it('should return expected handler', () => {
-        messageHandlersHasSpy.returns(true);
+        messageHandlersHasSpy.mockReturnValue(true);
 
         const value = server.getHandlerByPattern(handlerRoute);
 
-        expect(messageHandlersHasSpy.args[0][0]).to.be.equal(handlerRoute);
-        expect(messageHandlersGetSpy.called).to.be.true;
-        expect(messageHandlersGetSpy.args[0][0]).to.be.equal(handlerRoute);
-        expect(value).to.be.equal(callback);
+        expect(messageHandlersHasSpy.mock.calls[0][0]).toBe(handlerRoute);
+        expect(messageHandlersGetSpy).toHaveBeenCalled();
+        expect(messageHandlersGetSpy.mock.calls[0][0]).toBe(handlerRoute);
+        expect(value).toBe(callback);
       });
     });
 
     describe('when handler does not exists', () => {
       it('should return null', () => {
-        messageHandlersHasSpy.returns(false);
+        messageHandlersHasSpy.mockReturnValue(false);
 
         const value = server.getHandlerByPattern(handlerRoute);
 
-        expect(messageHandlersHasSpy.args[0][0]).to.be.equal(handlerRoute);
-        expect(messageHandlersGetSpy.called).to.be.false;
-        expect(value).to.be.null;
+        expect(messageHandlersHasSpy.mock.calls[0][0]).toBe(handlerRoute);
+        expect(messageHandlersGetSpy).not.toHaveBeenCalled();
+        expect(value).toBeNull();
       });
     });
   });

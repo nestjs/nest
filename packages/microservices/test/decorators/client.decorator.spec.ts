@@ -1,10 +1,8 @@
-import 'mocha';
-import { expect } from 'chai';
 import {
   CLIENT_METADATA,
   CLIENT_CONFIGURATION_METADATA,
-} from '../../constants';
-import { Client } from '../../decorators/client.decorator';
+} from '../../constants.js';
+import { Client } from '../../decorators/client.decorator.js';
 
 describe('@Client', () => {
   const pattern = { role: 'test' };
@@ -24,7 +22,7 @@ describe('@Client', () => {
       'instance',
     );
 
-    expect(isClient).to.be.true;
-    expect(config).to.be.eql(pattern);
+    expect(isClient).toBe(true);
+    expect(config).toEqual(pattern);
   });
 });

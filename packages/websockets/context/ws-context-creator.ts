@@ -1,34 +1,34 @@
-import {
-  CUSTOM_ROUTE_ARGS_METADATA,
-  PARAMTYPES_METADATA,
-} from '@nestjs/common/constants';
-import {
+import type {
+  ArgumentMetadata,
   ContextType,
-  Controller,
   PipeTransform,
-} from '@nestjs/common/interfaces';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
-import { FORBIDDEN_MESSAGE } from '@nestjs/core/guards/constants';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+} from '@nestjs/common';
+import {
+  type Controller,
+  CUSTOM_ROUTE_ARGS_METADATA,
+  isEmpty,
+  PARAMTYPES_METADATA,
+} from '@nestjs/common/internal';
 import {
   ContextUtils,
-  ParamProperties,
-} from '@nestjs/core/helpers/context-utils';
-import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
-import { HandlerMetadataStorage } from '@nestjs/core/helpers/handler-metadata-storage';
-import { ParamsMetadata } from '@nestjs/core/helpers/interfaces';
-import {
-  InterceptorsConsumer,
-  InterceptorsContextCreator,
-} from '@nestjs/core/interceptors';
-import { PipesConsumer, PipesContextCreator } from '@nestjs/core/pipes';
-import { MESSAGE_METADATA, PARAM_ARGS_METADATA } from '../constants';
-import { WsException } from '../errors/ws-exception';
-import { WsParamsFactory } from '../factories/ws-params-factory';
-import { ExceptionFiltersContext } from './exception-filters-context';
-import { DEFAULT_CALLBACK_METADATA } from './ws-metadata-constants';
-import { WsProxy } from './ws-proxy';
+  type ExecutionContextHost,
+  FORBIDDEN_MESSAGE,
+  type GuardsConsumer,
+  type GuardsContextCreator,
+  HandlerMetadataStorage,
+  type InterceptorsConsumer,
+  type InterceptorsContextCreator,
+  type ParamProperties,
+  type ParamsMetadata,
+  type PipesConsumer,
+  type PipesContextCreator,
+} from '@nestjs/core/internal';
+import { MESSAGE_METADATA, PARAM_ARGS_METADATA } from '../constants.js';
+import { WsException } from '../errors/ws-exception.js';
+import { WsParamsFactory } from '../factories/ws-params-factory.js';
+import { ExceptionFiltersContext } from './exception-filters-context.js';
+import { DEFAULT_CALLBACK_METADATA } from './ws-metadata-constants.js';
+import { WsProxy } from './ws-proxy.js';
 
 type WsParamProperties = ParamProperties & { metatype?: any };
 export interface WsHandlerMetadata {
@@ -215,7 +215,7 @@ export class WsContextCreator {
     this.pipesContextCreator.setModuleContext(moduleContext);
 
     return keys.map(key => {
-      const { index, data, pipes: pipesCollection } = metadata[key];
+      const { index, data, pipes: pipesCollection, schema } = metadata[key];
       const pipes =
         this.pipesContextCreator.createConcreteContext(pipesCollection);
       const type = this.contextUtils.mapParamType(key);
@@ -227,13 +227,20 @@ export class WsContextCreator {
           data,
           contextFactory,
         );
-        return { index, extractValue: customExtractValue, type, data, pipes };
+        return {
+          index,
+          extractValue: customExtractValue,
+          type,
+          data,
+          pipes,
+          schema,
+        };
       }
       const numericType = Number(type);
       const extractValue = (...args: any[]) =>
         paramsFactory.exchangeKeyForValue(numericType, data, args);
 
-      return { index, extractValue, type: numericType, data, pipes };
+      return { index, extractValue, type: numericType, data, pipes, schema };
     });
   }
 
@@ -252,12 +259,13 @@ export class WsContextCreator {
           data,
           metatype,
           pipes: paramPipes,
+          schema,
         } = param;
         const value = extractValue(...params);
 
         args[index] = await this.getParamValue(
           value,
-          { metatype, type, data },
+          { metatype, type, data, schema } as ArgumentMetadata,
           pipes.concat(paramPipes),
         );
       };
@@ -268,11 +276,11 @@ export class WsContextCreator {
 
   public async getParamValue<T>(
     value: T,
-    { metatype, type, data }: { metatype: any; type: any; data: any },
+    metadata: ArgumentMetadata,
     pipes: PipeTransform[],
   ): Promise<any> {
     return isEmpty(pipes)
       ? value
-      : this.pipesConsumer.apply(value, { metatype, type, data }, pipes);
+      : this.pipesConsumer.apply(value, metadata, pipes);
   }
 }

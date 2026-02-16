@@ -1,15 +1,15 @@
-import { Injectable } from '../decorators/core/injectable.decorator';
-import { Optional } from '../decorators/core/optional.decorator';
-import { HttpStatus } from '../enums/http-status.enum';
+import { Injectable } from '../decorators/core/injectable.decorator.js';
+import { Optional } from '../decorators/core/optional.decorator.js';
+import { HttpStatus } from '../enums/http-status.enum.js';
 import {
   ArgumentMetadata,
   PipeTransform,
-} from '../interfaces/features/pipe-transform.interface';
+} from '../interfaces/features/pipe-transform.interface.js';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
-} from '../utils/http-error-by-code.util';
-import { isNil } from '../utils/shared.utils';
+} from '../utils/http-error-by-code.util.js';
+import { isNil } from '../utils/shared.utils.js';
 
 /**
  * @publicApi
@@ -41,9 +41,7 @@ export interface ParseBoolPipeOptions {
  * @publicApi
  */
 @Injectable()
-export class ParseBoolPipe
-  implements PipeTransform<string | boolean, Promise<boolean>>
-{
+export class ParseBoolPipe implements PipeTransform {
   protected exceptionFactory: (error: string) => any;
 
   constructor(@Optional() protected readonly options?: ParseBoolPipeOptions) {
@@ -63,9 +61,9 @@ export class ParseBoolPipe
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(
-    value: string | boolean,
+    value: unknown,
     metadata: ArgumentMetadata,
-  ): Promise<boolean> {
+  ): Promise<boolean | undefined | null> {
     if (isNil(value) && this.options?.optional) {
       return value;
     }
@@ -85,7 +83,7 @@ export class ParseBoolPipe
    * @returns `true` if `value` is said 'true', ie., if it is equal to the boolean
    * `true` or the string `"true"`
    */
-  protected isTrue(value: string | boolean): boolean {
+  protected isTrue(value: unknown): boolean {
     return value === true || value === 'true';
   }
 
@@ -94,7 +92,7 @@ export class ParseBoolPipe
    * @returns `true` if `value` is said 'false', ie., if it is equal to the boolean
    * `false` or the string `"false"`
    */
-  protected isFalse(value: string | boolean): boolean {
+  protected isFalse(value: unknown): boolean {
     return value === false || value === 'false';
   }
 }

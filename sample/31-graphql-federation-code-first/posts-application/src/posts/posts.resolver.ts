@@ -6,9 +6,9 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { Post } from './models/post.model';
-import { User } from './models/user.model';
-import { PostsService } from './posts.service';
+import { Post } from './models/post.model.js';
+import { User } from './models/user.model.js';
+import { PostsService } from './posts.service.js';
 import { ParseIntPipe } from '@nestjs/common';
 
 @Resolver((of) => Post)

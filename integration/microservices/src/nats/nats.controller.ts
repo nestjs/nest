@@ -14,7 +14,7 @@ import {
 } from '@nestjs/microservices';
 import { from, lastValueFrom, Observable, of, throwError } from 'rxjs';
 import { catchError, scan } from 'rxjs/operators';
-import { NatsService } from './nats.service';
+import { NatsService } from './nats.service.js';
 
 @Controller()
 export class NatsController {

@@ -1,4 +1,4 @@
-import { MODULE_METADATA as metadataConstants } from '../constants';
+import { MODULE_METADATA as metadataConstants } from '../constants.js';
 
 export const INVALID_MODULE_CONFIG_MESSAGE = (
   text: TemplateStringsArray,

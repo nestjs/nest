@@ -1,27 +1,27 @@
-import { LOG_LEVELS, LogLevel } from '../logger.service';
-import { isLogLevel } from './is-log-level.util';
+import { LOG_LEVELS, LogLevel } from '../logger.service.js';
+import { isLogLevel } from './is-log-level.util.js';
 
 /**
  * @publicApi
  */
 export function filterLogLevels(parseableString = ''): LogLevel[] {
-  const sanitizedSring = parseableString.replaceAll(' ', '').toLowerCase();
+  const sanitizedString = parseableString.replaceAll(' ', '').toLowerCase();
 
-  if (sanitizedSring[0] === '>') {
-    const orEqual = sanitizedSring[1] === '=';
+  if (sanitizedString[0] === '>') {
+    const orEqual = sanitizedString[1] === '=';
 
     const logLevelIndex = (LOG_LEVELS as string[]).indexOf(
-      sanitizedSring.substring(orEqual ? 2 : 1),
+      sanitizedString.substring(orEqual ? 2 : 1),
     );
 
     if (logLevelIndex === -1) {
-      throw new Error(`parse error (unknown log level): ${sanitizedSring}`);
+      throw new Error(`parse error (unknown log level): ${sanitizedString}`);
     }
 
     return LOG_LEVELS.slice(orEqual ? logLevelIndex : logLevelIndex + 1);
-  } else if (sanitizedSring.includes(',')) {
-    return sanitizedSring.split(',').filter(isLogLevel);
+  } else if (sanitizedString.includes(',')) {
+    return sanitizedString.split(',').filter(isLogLevel);
   }
 
-  return isLogLevel(sanitizedSring) ? [sanitizedSring] : LOG_LEVELS;
+  return isLogLevel(sanitizedString) ? [sanitizedString] : LOG_LEVELS;
 }

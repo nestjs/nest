@@ -1,8 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { io } from 'socket.io-client';
-import { AckGateway } from '../src/ack.gateway';
+import { AckGateway } from '../src/ack.gateway.js';
 
 async function createNestApp(...gateways): Promise<INestApplication> {
   const testingModule = await Test.createTestingModule({
@@ -22,7 +21,7 @@ describe('WebSocketGateway (ack)', () => {
     ws = io('http://localhost:8080');
     await new Promise<void>(resolve =>
       ws.emit('push', { test: 'test' }, data => {
-        expect(data).to.be.eql('pong');
+        expect(data).toEqual('pong');
         resolve();
       }),
     );
@@ -35,7 +34,40 @@ describe('WebSocketGateway (ack)', () => {
     ws = io('http://localhost:8080');
     await new Promise<void>(resolve =>
       ws.emit('push', data => {
-        expect(data).to.be.eql('pong');
+        expect(data).toEqual('pong');
+        resolve();
+      }),
+    );
+  });
+
+  it('should handle manual ack for async operations when @Ack() is used (success case)', async () => {
+    app = await createNestApp(AckGateway);
+    await app.listen(3000);
+
+    ws = io('http://localhost:8080');
+    const payload = { shouldSucceed: true };
+
+    await new Promise<void>(resolve =>
+      ws.emit('manual-ack', payload, response => {
+        expect(response).toEqual({ status: 'success', data: payload });
+        resolve();
+      }),
+    );
+  });
+
+  it('should handle manual ack for async operations when @Ack() is used (error case)', async () => {
+    app = await createNestApp(AckGateway);
+    await app.listen(3000);
+
+    ws = io('http://localhost:8080');
+    const payload = { shouldSucceed: false };
+
+    await new Promise<void>(resolve =>
+      ws.emit('manual-ack', payload, response => {
+        expect(response).toEqual({
+          status: 'error',
+          message: 'Operation failed',
+        });
         resolve();
       }),
     );

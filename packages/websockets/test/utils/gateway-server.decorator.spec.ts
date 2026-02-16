@@ -1,6 +1,5 @@
-import { expect } from 'chai';
-import { WebSocketServer } from '../../decorators/gateway-server.decorator';
-import { GATEWAY_SERVER_METADATA } from '../../constants';
+import { WebSocketServer } from '../../decorators/gateway-server.decorator.js';
+import { GATEWAY_SERVER_METADATA } from '../../constants.js';
 
 describe('@WebSocketServer', () => {
   class TestGateway {
@@ -13,9 +12,9 @@ describe('@WebSocketServer', () => {
       TestGateway,
       'server',
     );
-    expect(isServer).to.be.eql(true);
+    expect(isServer).toEqual(true);
   });
   it('should set property value to null by default', () => {
-    expect(TestGateway.server).to.be.eql(null);
+    expect(TestGateway.server).toEqual(null);
   });
 });

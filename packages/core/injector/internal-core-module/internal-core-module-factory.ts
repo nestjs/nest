@@ -1,18 +1,18 @@
 import { Logger } from '@nestjs/common';
-import { ExternalContextCreator } from '../../helpers/external-context-creator';
-import { HttpAdapterHost } from '../../helpers/http-adapter-host';
-import { GraphInspector } from '../../inspector/graph-inspector';
-import { InitializeOnPreviewAllowlist } from '../../inspector/initialize-on-preview.allowlist';
-import { SerializedGraph } from '../../inspector/serialized-graph';
-import { ModuleOverride } from '../../interfaces/module-override.interface';
-import { DependenciesScanner } from '../../scanner';
-import { ModuleCompiler } from '../compiler';
-import { NestContainer } from '../container';
-import { Injector } from '../injector';
-import { InstanceLoader } from '../instance-loader';
-import { LazyModuleLoader } from '../lazy-module-loader/lazy-module-loader';
-import { ModulesContainer } from '../modules-container';
-import { InternalCoreModule } from './internal-core-module';
+import { ExternalContextCreator } from '../../helpers/external-context-creator.js';
+import { HttpAdapterHost } from '../../helpers/http-adapter-host.js';
+import { GraphInspector } from '../../inspector/graph-inspector.js';
+import { InitializeOnPreviewAllowlist } from '../../inspector/initialize-on-preview.allowlist.js';
+import { SerializedGraph } from '../../inspector/serialized-graph.js';
+import { ModuleOverride } from '../../interfaces/module-override.interface.js';
+import { DependenciesScanner } from '../../scanner.js';
+import { ModuleCompiler } from '../compiler.js';
+import { NestContainer } from '../container.js';
+import { Injector } from '../injector.js';
+import { InstanceLoader } from '../instance-loader.js';
+import { LazyModuleLoader } from '../lazy-module-loader/lazy-module-loader.js';
+import { ModulesContainer } from '../modules-container.js';
+import { InternalCoreModule } from './internal-core-module.js';
 
 export class InternalCoreModuleFactory {
   static create(
@@ -27,7 +27,11 @@ export class InternalCoreModuleFactory {
       const logger = new Logger(LazyModuleLoader.name, {
         timestamp: false,
       });
-      const injector = new Injector();
+      const injector = new Injector({
+        preview: container.contextOptions?.preview!,
+        instanceDecorator:
+          container.contextOptions?.instrument?.instanceDecorator,
+      });
       const instanceLoader = new InstanceLoader(
         container,
         injector,

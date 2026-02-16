@@ -1,4 +1,4 @@
-import { Scope } from '../scope-options.interface';
+import { Scope } from '../scope-options.interface.js';
 
 /**
  * @publicApi

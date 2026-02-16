@@ -1,6 +1,5 @@
-import { expect } from 'chai';
-import { Provider } from '../../interfaces';
-import { ConfigurableModuleBuilder } from '../../module-utils';
+import { Provider } from '../../interfaces/index.js';
+import { ConfigurableModuleBuilder } from '../../module-utils/index.js';
 
 describe('ConfigurableModuleBuilder', () => {
   describe('setExtras', () => {
@@ -20,9 +19,37 @@ describe('ConfigurableModuleBuilder', () => {
           // No type error
           isGlobal: true,
         }),
-      ).to.deep.include({
+      ).toMatchObject({
         global: true,
       });
+    });
+
+    it('should preserve extras in registerAsync transformation', () => {
+      let capturedExtras: any;
+
+      const { ConfigurableModuleClass } = new ConfigurableModuleBuilder()
+        .setExtras(
+          { folder: 'default' },
+          (definition, extras: { folder: string }) => {
+            capturedExtras = extras;
+            return {
+              ...definition,
+              customProperty: `folder: ${extras.folder}`,
+            };
+          },
+        )
+        .build();
+
+      const asyncResult = ConfigurableModuleClass.registerAsync({
+        useFactory: () => ({}),
+        folder: 'forRootAsync',
+      });
+
+      expect(capturedExtras).toEqual({ folder: 'forRootAsync' });
+      expect(asyncResult).toHaveProperty(
+        'customProperty',
+        'folder: forRootAsync',
+      );
     });
   });
   describe('setClassMethodName', () => {
@@ -31,9 +58,9 @@ describe('ConfigurableModuleBuilder', () => {
         .setClassMethodName('forRoot')
         .build();
 
-      expect(ConfigurableModuleClass.forRoot).to.not.be.undefined;
-      expect(ConfigurableModuleClass.forRootAsync).to.not.be.undefined;
-      expect((ConfigurableModuleClass as any).register).to.be.undefined;
+      expect(ConfigurableModuleClass.forRoot).not.toBeUndefined();
+      expect(ConfigurableModuleClass.forRootAsync).not.toBeUndefined();
+      expect((ConfigurableModuleClass as any).register).toBeUndefined();
     });
   });
   describe('setFactoryMethodName', () => {
@@ -49,7 +76,7 @@ describe('ConfigurableModuleBuilder', () => {
             createOptions() {}
           },
         }),
-      ).to.not.be.undefined;
+      ).not.toBeUndefined();
     });
   });
   describe('build', () => {
@@ -102,33 +129,31 @@ describe('ConfigurableModuleBuilder', () => {
         extraProviders: ['test' as any],
       });
 
-      expect(definition.global).to.equal(true);
-      expect(definition.providers).to.have.length(5);
-      expect(definition.providers).to.deep.contain('test');
-      expect(definition.providers).to.include.members(
-        provideInjectionTokensFrom.slice(0, 2),
+      expect(definition.global).toBe(true);
+      expect(definition.providers).toHaveLength(5);
+      expect(definition.providers).toContainEqual('test');
+      expect(definition.providers).toEqual(
+        expect.arrayContaining(provideInjectionTokensFrom.slice(0, 2)),
       );
-      expect(definition.providers).not.to.include(
-        provideInjectionTokensFrom[2],
-      );
-      expect(MODULE_OPTIONS_TOKEN).to.equal('RANDOM_TEST_MODULE_OPTIONS');
-      expect((definition.providers![0] as any).provide).to.equal(
+      expect(definition.providers).not.toContain(provideInjectionTokensFrom[2]);
+      expect(MODULE_OPTIONS_TOKEN).toBe('RANDOM_TEST_MODULE_OPTIONS');
+      expect((definition.providers![0] as any).provide).toBe(
         'RANDOM_TEST_MODULE_OPTIONS',
       );
 
       try {
-        expect(ASYNC_OPTIONS_TYPE.imports).to.equal(undefined);
+        expect(ASYNC_OPTIONS_TYPE.imports).toBe(undefined);
       } catch (err) {
-        expect(err).to.be.instanceOf(Error);
-        expect(err.message).to.equal(
+        expect(err).toBeInstanceOf(Error);
+        expect(err.message).toBe(
           '"ASYNC_OPTIONS_TYPE" is not supposed to be used as a value.',
         );
       }
       try {
-        expect(OPTIONS_TYPE.isGlobal).to.equal(undefined);
+        expect(OPTIONS_TYPE.isGlobal).toBe(undefined);
       } catch (err) {
-        expect(err).to.be.instanceOf(Error);
-        expect(err.message).to.equal(
+        expect(err).toBeInstanceOf(Error);
+        expect(err.message).toBe(
           '"OPTIONS_TYPE" is not supposed to be used as a value.',
         );
       }

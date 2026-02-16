@@ -10,7 +10,7 @@ import {
 import { Client, ClientKafka, Transport } from '@nestjs/microservices';
 import { PartitionerArgs } from 'kafkajs';
 import { Observable } from 'rxjs';
-import { SumDto } from './dto/sum.dto';
+import { SumDto } from './dto/sum.dto.js';
 
 /**
  * The following function explicitly sends messages to the key representing the partition.

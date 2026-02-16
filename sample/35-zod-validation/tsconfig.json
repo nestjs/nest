@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "strictNullChecks": true,
+    "skipLibCheck": true,
+    "moduleResolution": "nodenext",
+    "types": ["vitest/globals"]
+  },
+  "include": ["src/**/*"]
+}

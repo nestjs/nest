@@ -1,14 +1,14 @@
 import { inspect, InspectOptions } from 'util';
-import { Injectable, Optional } from '../decorators/core';
-import { clc, yellow } from '../utils/cli-colors.util';
+import { Injectable, Optional } from '../decorators/core/index.js';
+import { clc, yellow, isColorAllowed } from '../utils/cli-colors.util.js';
 import {
   isFunction,
   isPlainObject,
   isString,
   isUndefined,
-} from '../utils/shared.utils';
-import { LoggerService, LogLevel } from './logger.service';
-import { isLogLevelEnabled } from './utils/is-log-level-enabled.util';
+} from '../utils/shared.utils.js';
+import { LoggerService, LogLevel } from './logger.service.js';
+import { isLogLevelEnabled } from './utils/is-log-level-enabled.util.js';
 
 const DEFAULT_DEPTH = 5;
 
@@ -44,6 +44,12 @@ export interface ConsoleLoggerOptions {
    */
   context?: string;
   /**
+   * If enabled, will force the use of console.log/console.error instead of process.stdout/stderr.write.
+   * This is useful for test environments like Jest that can buffer console calls.
+   * @default false
+   */
+  forceConsole?: boolean;
+  /**
    * If enabled, will print the log message in a single line, even if it is an object with multiple properties.
    * If set to a number, the most n inner elements are united on a single line as long as all properties fit into breakLength. Short array elements are also grouped together.
    * Default true when `json` is enabled, false otherwise.
@@ -71,7 +77,7 @@ export interface ConsoleLoggerOptions {
    */
   sorted?: boolean | ((a: string, b: string) => number);
   /**
-   * Specifies the number of times to recurse while formatting object. T
+   * Specifies the number of times to recurse while formatting object.
    * This is useful for inspecting large objects. To recurse up to the maximum call stack size pass Infinity or null.
    * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
    * @default 5
@@ -154,7 +160,7 @@ export class ConsoleLogger implements LoggerService {
 
     opts = opts ?? {};
     opts.logLevels ??= DEFAULT_LOG_LEVELS;
-    opts.colors ??= opts.colors ?? (opts.json ? false : true);
+    opts.colors ??= opts.colors ?? (opts.json ? false : isColorAllowed());
     opts.prefix ??= 'Nest';
 
     this.options = opts;
@@ -334,11 +340,46 @@ export class ConsoleLogger implements LoggerService {
         timestampDiff,
       );
 
-      process[writeStreamType ?? 'stdout'].write(formattedMessage);
+      if (this.options.forceConsole) {
+        if (writeStreamType === 'stderr') {
+          console.error(formattedMessage.trim());
+        } else {
+          console.log(formattedMessage.trim());
+        }
+      } else {
+        process[writeStreamType ?? 'stdout'].write(formattedMessage);
+      }
     });
   }
 
   protected printAsJson(
+    message: unknown,
+    options: {
+      context: string;
+      logLevel: LogLevel;
+      writeStreamType?: 'stdout' | 'stderr';
+      errorStack?: unknown;
+    },
+  ) {
+    const logObject = this.getJsonLogObject(message, options);
+    const formattedMessage =
+      !this.options.colors && this.inspectOptions.compact === true
+        ? JSON.stringify(logObject, this.stringifyReplacer)
+        : inspect(logObject, this.inspectOptions);
+    if (this.options.forceConsole) {
+      if (options.writeStreamType === 'stderr') {
+        console.error(formattedMessage);
+      } else {
+        console.log(formattedMessage);
+      }
+    } else {
+      process[options.writeStreamType ?? 'stdout'].write(
+        `${formattedMessage}\n`,
+      );
+    }
+  }
+
+  protected getJsonLogObject(
     message: unknown,
     options: {
       context: string;
@@ -370,12 +411,7 @@ export class ConsoleLogger implements LoggerService {
     if (options.errorStack) {
       logObject.stack = options.errorStack;
     }
-
-    const formattedMessage =
-      !this.options.colors && this.inspectOptions.compact === true
-        ? JSON.stringify(logObject, this.stringifyReplacer)
-        : inspect(logObject, this.inspectOptions);
-    process[options.writeStreamType ?? 'stdout'].write(`${formattedMessage}\n`);
+    return logObject;
   }
 
   protected formatPid(pid: number) {
@@ -443,7 +479,11 @@ export class ConsoleLogger implements LoggerService {
     if (!stack || this.options.json) {
       return;
     }
-    process.stderr.write(`${stack}\n`);
+    if (this.options.forceConsole) {
+      console.error(stack);
+    } else {
+      process.stderr.write(`${stack}\n`);
+    }
   }
 
   protected updateAndGetTimestampDiff(): string {
@@ -482,10 +522,10 @@ export class ConsoleLogger implements LoggerService {
       breakLength,
     };
 
-    if (this.options.maxArrayLength) {
+    if (typeof this.options.maxArrayLength !== 'undefined') {
       inspectOptions.maxArrayLength = this.options.maxArrayLength;
     }
-    if (this.options.maxStringLength) {
+    if (typeof this.options.maxStringLength !== 'undefined') {
       inspectOptions.maxStringLength = this.options.maxStringLength;
     }
 
@@ -534,10 +574,7 @@ export class ConsoleLogger implements LoggerService {
             stack: args[1] as string,
             context: this.context,
           }
-        : {
-            messages: [args[0]],
-            context: args[1] as string,
-          };
+        : { ...this.getContextAndMessagesToPrint(args) };
     }
 
     const { messages, context } = this.getContextAndMessagesToPrint(args);

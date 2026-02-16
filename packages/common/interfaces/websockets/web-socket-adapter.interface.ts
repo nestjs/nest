@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 export interface WsMessageHandler<T = string> {
   message: T;
   callback: (...args: any[]) => Observable<any> | Promise<any>;
+  isAckHandledManually: boolean;
 }
 
 /**

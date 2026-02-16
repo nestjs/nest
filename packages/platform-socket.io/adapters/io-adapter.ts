@@ -1,12 +1,12 @@
-import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import {
   AbstractWsAdapter,
-  MessageMappingProperties,
+  type MessageMappingProperties,
 } from '@nestjs/websockets';
-import { DISCONNECT_EVENT } from '@nestjs/websockets/constants';
 import { fromEvent, Observable } from 'rxjs';
 import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
 import { Server, ServerOptions, Socket } from 'socket.io';
+import { isFunction, isNil } from '@nestjs/common/internal';
+import { DISCONNECT_EVENT } from '@nestjs/websockets/internal';
 
 /**
  * @publicApi
@@ -44,22 +44,24 @@ export class IoAdapter extends AbstractWsAdapter {
       first(),
     );
 
-    handlers.forEach(({ message, callback }) => {
+    handlers.forEach(({ message, callback, isAckHandledManually }) => {
       const source$ = fromEvent(socket, message).pipe(
         mergeMap((payload: any) => {
           const { data, ack } = this.mapPayload(payload);
           return transform(callback(data, ack)).pipe(
             filter((response: any) => !isNil(response)),
-            map((response: any) => [response, ack]),
+            map((response: any) => [response, ack, isAckHandledManually]),
           );
         }),
         takeUntil(disconnect$),
       );
-      source$.subscribe(([response, ack]) => {
+      source$.subscribe(([response, ack, isAckHandledManually]) => {
         if (response.event) {
           return socket.emit(response.event, response.data);
         }
-        isFunction(ack) && ack(response);
+        if (!isAckHandledManually && isFunction(ack)) {
+          ack(response);
+        }
       });
     });
   }
@@ -81,6 +83,10 @@ export class IoAdapter extends AbstractWsAdapter {
       };
     }
     return { data: payload };
+  }
+
+  public bindClientDisconnect(client: Socket, callback: Function) {
+    client.on(DISCONNECT_EVENT, (reason: string) => callback(reason));
   }
 
   public async close(server: Server): Promise<void> {

@@ -1,11 +1,11 @@
-import { Injectable, Optional } from '../decorators/core';
-import { ArgumentMetadata, HttpStatus } from '../index';
-import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import { Injectable, Optional } from '../decorators/core/index.js';
+import { ArgumentMetadata, HttpStatus } from '../index.js';
+import { PipeTransform } from '../interfaces/features/pipe-transform.interface.js';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
-} from '../utils/http-error-by-code.util';
-import { isNil } from '../utils/shared.utils';
+} from '../utils/http-error-by-code.util.js';
+import { isNil } from '../utils/shared.utils.js';
 
 /**
  * @publicApi
@@ -64,7 +64,10 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
    * @param value currently processed route argument
    * @param metadata contains metadata about the currently processed route argument
    */
-  async transform(value: T, metadata: ArgumentMetadata): Promise<T> {
+  async transform(
+    value: unknown,
+    metadata: ArgumentMetadata,
+  ): Promise<T | undefined | null> {
     if (isNil(value) && this.options?.optional) {
       return value;
     }
@@ -73,10 +76,10 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
         'Validation failed (enum string is expected)',
       );
     }
-    return value;
+    return value as T;
   }
 
-  protected isEnum(value: T): boolean {
+  protected isEnum(value: unknown): boolean {
     const enumValues = Object.keys(this.enumType as object).map(
       item => this.enumType[item],
     );

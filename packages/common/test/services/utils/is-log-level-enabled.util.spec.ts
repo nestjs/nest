@@ -1,6 +1,5 @@
-import { expect } from 'chai';
-import { LogLevel } from '../../../services/logger.service';
-import { isLogLevelEnabled } from '../../../services/utils';
+import { LogLevel } from '../../../services/logger.service.js';
+import { isLogLevelEnabled } from '../../../services/utils/index.js';
 
 describe('isLogLevelEnabled', () => {
   const tests = [
@@ -27,7 +26,7 @@ describe('isLogLevelEnabled', () => {
         it('should return true', () => {
           expect(
             isLogLevelEnabled(...(inputArgs as [LogLevel, LogLevel[]])),
-          ).to.equal(expectedReturnValue);
+          ).toBe(expectedReturnValue);
         });
       });
     });
@@ -35,7 +34,7 @@ describe('isLogLevelEnabled', () => {
 
   describe(`when log levels = undefined`, () => {
     it('should return false', () => {
-      expect(isLogLevelEnabled('warn', undefined)).to.be.false;
+      expect(isLogLevelEnabled('warn', undefined)).toBe(false);
     });
   });
 });

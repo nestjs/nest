@@ -1,2 +1,3 @@
-export * from './route-config.decorator';
-export * from './route-constraints.decorator';
+export * from './route-config.decorator.js';
+export * from './route-constraints.decorator.js';
+export * from './route-schema.decorator.js';

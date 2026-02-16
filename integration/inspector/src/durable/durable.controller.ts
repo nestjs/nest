@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { DurableService } from './durable.service';
+import { DurableService } from './durable.service.js';
 
 @Controller('durable')
 export class DurableController {

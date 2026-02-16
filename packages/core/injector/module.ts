@@ -1,45 +1,43 @@
+import { iterate } from 'iterare';
+import { ApplicationConfig } from '../application-config.js';
 import {
-  EnhancerSubtype,
+  InvalidClassException,
+  RuntimeException,
+  UnknownExportException,
+} from '../errors/exceptions/index.js';
+import { createContextId } from '../helpers/context-id-factory.js';
+import { getClassScope } from '../helpers/get-class-scope.js';
+import { isDurable } from '../helpers/is-durable.js';
+import { UuidFactory } from '../inspector/uuid-factory.js';
+import { CONTROLLER_ID_KEY } from './constants.js';
+import { NestContainer } from './container.js';
+import { ContextId, InstanceWrapper } from './instance-wrapper.js';
+import { ModuleRef, ModuleRefGetOrResolveOpts } from './module-ref.js';
+import {
+  type EnhancerSubtype,
   ENTRY_PROVIDER_WATERMARK,
-} from '@nestjs/common/constants';
-import {
-  ClassProvider,
-  Controller,
-  DynamicModule,
-  ExistingProvider,
-  FactoryProvider,
-  Injectable,
-  InjectionToken,
-  NestModule,
-  Provider,
-  Scope,
-  Type,
-  ValueProvider,
-} from '@nestjs/common/interfaces';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
-import {
+  type Controller,
+  type Injectable,
+  randomStringGenerator,
   isFunction,
   isNil,
   isObject,
   isString,
   isSymbol,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
-import { iterate } from 'iterare';
-import { ApplicationConfig } from '../application-config';
+} from '@nestjs/common/internal';
 import {
-  InvalidClassException,
-  RuntimeException,
-  UnknownExportException,
-} from '../errors/exceptions';
-import { createContextId } from '../helpers/context-id-factory';
-import { getClassScope } from '../helpers/get-class-scope';
-import { isDurable } from '../helpers/is-durable';
-import { UuidFactory } from '../inspector/uuid-factory';
-import { CONTROLLER_ID_KEY } from './constants';
-import { NestContainer } from './container';
-import { ContextId, InstanceWrapper } from './instance-wrapper';
-import { ModuleRef, ModuleRefGetOrResolveOpts } from './module-ref';
+  type ClassProvider,
+  type DynamicModule,
+  type ExistingProvider,
+  type FactoryProvider,
+  type InjectionToken,
+  type NestModule,
+  type Provider,
+  Scope,
+  type Type,
+  type ValueProvider,
+} from '@nestjs/common';
 
 export class Module {
   private readonly _id: string;
@@ -384,13 +382,16 @@ export class Module {
     enhancerSubtype?: EnhancerSubtype,
   ) {
     const { useValue: value, provide: providerToken } = provider;
+
+    const instanceDecorator =
+      this.container.contextOptions?.instrument?.instanceDecorator;
     collection.set(
       providerToken,
       new InstanceWrapper({
         token: providerToken,
         name: (providerToken as Function)?.name || providerToken,
         metatype: null!,
-        instance: value,
+        instance: instanceDecorator ? instanceDecorator(value) : value,
         isResolved: true,
         async: value instanceof Promise,
         host: this,
@@ -554,38 +555,44 @@ export class Module {
     return this._injectables.has(token);
   }
 
-  public getProviderByKey<T = any>(name: InjectionToken): InstanceWrapper<T> {
+  public getProviderByKey<T = any>(
+    name: InjectionToken<T>,
+  ): InstanceWrapper<T> {
     return this._providers.get(name) as InstanceWrapper<T>;
   }
 
   public getProviderById<T = any>(id: string): InstanceWrapper<T> | undefined {
-    return Array.from(this._providers.values()).find(
-      item => item.id === id,
-    ) as InstanceWrapper<T>;
+    for (const item of this._providers.values()) {
+      if (item.id === id) return item as InstanceWrapper<T>;
+    }
+    return undefined;
   }
 
   public getControllerById<T = any>(
     id: string,
   ): InstanceWrapper<T> | undefined {
-    return Array.from(this._controllers.values()).find(
-      item => item.id === id,
-    ) as InstanceWrapper<T>;
+    for (const item of this._controllers.values()) {
+      if (item.id === id) return item as InstanceWrapper<T>;
+    }
+    return undefined;
   }
 
   public getInjectableById<T = any>(
     id: string,
   ): InstanceWrapper<T> | undefined {
-    return Array.from(this._injectables.values()).find(
-      item => item.id === id,
-    ) as InstanceWrapper<T>;
+    for (const item of this._injectables.values()) {
+      if (item.id === id) return item as InstanceWrapper<T>;
+    }
+    return undefined;
   }
 
   public getMiddlewareById<T = any>(
     id: string,
   ): InstanceWrapper<T> | undefined {
-    return Array.from(this._middlewares.values()).find(
-      item => item.id === id,
-    ) as InstanceWrapper<T>;
+    for (const item of this._middlewares.values()) {
+      if (item.id === id) return item as InstanceWrapper<T>;
+    }
+    return undefined;
   }
 
   public getNonAliasProviders(): Array<

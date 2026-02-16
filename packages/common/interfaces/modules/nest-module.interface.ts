@@ -1,4 +1,4 @@
-import { MiddlewareConsumer } from '../middleware/middleware-consumer.interface';
+import { MiddlewareConsumer } from '../middleware/middleware-consumer.interface.js';
 
 /**
  * @publicApi

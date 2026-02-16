@@ -1,11 +1,11 @@
-import { expect } from 'chai';
-import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception';
+import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception.js';
 import {
   INVALID_MODULE_MESSAGE,
   UNDEFINED_MODULE_MESSAGE,
-} from '../../../errors/messages';
-import { Module } from '../../../injector/module';
-import { stringCleaner } from '../../utils/string.cleaner';
+  UNKNOWN_EXPORT_MESSAGE,
+} from '../../../errors/messages.js';
+import { Module } from '../../../injector/module.js';
+import { stringCleaner } from '../../utils/string.cleaner.js';
 
 describe('Error Messages', () => {
   const CatsModule = { name: 'CatsModule' };
@@ -23,6 +23,8 @@ describe('Error Messages', () => {
       @Module({
         imports: [ /* the Module containing dependency */ ]
       })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
       `);
 
       class CatService {}
@@ -34,7 +36,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the provide token', () => {
       const expectedResult =
@@ -46,6 +48,8 @@ describe('Error Messages', () => {
       @Module({
       imports: [ /* the Module containing dependency */ ]
       })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
       `);
 
       const actualMessage = stringCleaner(
@@ -55,7 +59,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the provide token as double-quoted string for string-based tokens', () => {
       const expectedResult =
@@ -67,6 +71,8 @@ describe('Error Messages', () => {
       @Module({
       imports: [ /* the Module containing "FooRepository" */ ]
       })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
       `);
 
       const actualMessage = stringCleaner(
@@ -77,7 +83,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the function name', () => {
       const expectedResult =
@@ -89,6 +95,8 @@ describe('Error Messages', () => {
       @Module({
         imports: [ /* the Module containing dependency */ ]
       })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
       `);
 
       function CatFunction() {}
@@ -98,7 +106,7 @@ describe('Error Messages', () => {
           dependencies: ['', CatFunction],
         }).message,
       );
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should use "+" if unknown dependency name', () => {
       const expectedResult =
@@ -110,6 +118,8 @@ describe('Error Messages', () => {
         @Module({
           imports: [ /* the Module containing dependency */ ]
         })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
       `);
 
       const actualMessage = stringCleaner(
@@ -119,7 +129,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the module name', () => {
       const expectedResult =
@@ -132,6 +142,8 @@ describe('Error Messages', () => {
         @Module({
           imports: [ /* the Module containing dependency */ ]
         })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
       `);
 
       class MetaType {
@@ -153,7 +165,7 @@ describe('Error Messages', () => {
         ).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the symbol name of the provider', () => {
       const expectedResult =
@@ -165,6 +177,8 @@ describe('Error Messages', () => {
         @Module({
           imports: [ /* the Module containing dependency */ ]
         })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
       `);
 
       const actualMessage = stringCleaner(
@@ -174,7 +188,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the symbol dependency of the provider', () => {
       const expectedResult =
@@ -186,6 +200,8 @@ describe('Error Messages', () => {
         @Module({
           imports: [ /* the Module containing dependency */ ]
         })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
       `);
 
       const actualMessage = stringCleaner(
@@ -195,7 +211,78 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
+    });
+    it('should detect likely import type issue and provide specific guidance', () => {
+      const expectedResult =
+        stringCleaner(`Nest can't resolve dependencies of the ResourceController (ResourceService, ?). Please make sure that the argument dependency at index [1] is available in the current context.
+
+      Potential solutions:
+      - The dependency at index [1] appears to be undefined at runtime
+      - This commonly occurs when using 'import type' instead of 'import' for injectable classes
+      - Check your imports and change:
+        ❌ import type { SomeService } from './some.service';
+        ✅ import { SomeService } from './some.service';
+      - Ensure the imported class is decorated with @Injectable() or is a valid provider
+      - If using dynamic imports, ensure the class is available at runtime, not just for type checking
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+      `);
+
+      const actualMessage = stringCleaner(
+        new UnknownDependenciesException('ResourceController', {
+          index: 1,
+          dependencies: ['ResourceService', Object], // Object simulates import type issue
+          name: 'SomeService',
+        }).message,
+      );
+
+      expect(actualMessage).toBe(expectedResult);
+    });
+    it('should detect import type issue with mixed dependencies', () => {
+      const expectedResult =
+        stringCleaner(`Nest can't resolve dependencies of the ResourceController (ValidService, ?, AnotherService). Please make sure that the argument dependency at index [1] is available in the current context.
+
+      Potential solutions:
+      - The dependency at index [1] appears to be undefined at runtime
+      - This commonly occurs when using 'import type' instead of 'import' for injectable classes
+      - Check your imports and change:
+        ❌ import type { SomeService } from './some.service';
+        ✅ import { SomeService } from './some.service';
+      - Ensure the imported class is decorated with @Injectable() or is a valid provider
+      - If using dynamic imports, ensure the class is available at runtime, not just for type checking
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+      `);
+
+      class ValidService {}
+      class AnotherService {}
+
+      const actualMessage = stringCleaner(
+        new UnknownDependenciesException('ResourceController', {
+          index: 1,
+          dependencies: [ValidService, Object, AnotherService], // mixed valid/Object
+          name: 'SomeService',
+        }).message,
+      );
+
+      expect(actualMessage).toBe(expectedResult);
+    });
+    it('should add documentation links to export errors', () => {
+      const expectedResult =
+        stringCleaner(`Nest cannot export a provider/module that is not a part of the currently processed module (TestModule). Please verify whether the exported TestService is available in this particular context.
+
+      Possible Solutions:
+      - Is TestService part of the relevant providers/imports within TestModule?
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+      `);
+
+      const actualMessage = stringCleaner(
+        UNKNOWN_EXPORT_MESSAGE('TestService', 'TestModule'),
+      );
+
+      expect(actualMessage).toBe(expectedResult);
     });
   });
 
@@ -215,7 +302,7 @@ Scope [AppModule -> CatsModule]`);
         UNDEFINED_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule]),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
     });
   });
 
@@ -231,7 +318,7 @@ Scope [AppModule -> CatsModule]`);
         INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule]),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
     });
   });
 });

@@ -1,8 +1,8 @@
-import { GUARDS_METADATA } from '../../constants';
-import { CanActivate } from '../../interfaces';
-import { extendArrayMetadata } from '../../utils/extend-metadata.util';
-import { isFunction } from '../../utils/shared.utils';
-import { validateEach } from '../../utils/validate-each.util';
+import { GUARDS_METADATA } from '../../constants.js';
+import { CanActivate } from '../../interfaces/index.js';
+import { extendArrayMetadata } from '../../utils/extend-metadata.util.js';
+import { isFunction } from '../../utils/shared.utils.js';
+import { validateEach } from '../../utils/validate-each.util.js';
 
 /**
  * Decorator that binds guards to the scope of the controller or method,

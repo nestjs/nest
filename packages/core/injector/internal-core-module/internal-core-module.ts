@@ -1,12 +1,12 @@
-import { DynamicModule, Global, Module } from '@nestjs/common';
-import {
+import { type DynamicModule, Global, Module } from '@nestjs/common';
+import { requestProvider } from '../../router/request/request-providers.js';
+import { Reflector } from '../../services/index.js';
+import { inquirerProvider } from '../inquirer/inquirer-providers.js';
+import type {
   ExistingProvider,
   FactoryProvider,
   ValueProvider,
-} from '@nestjs/common/interfaces';
-import { requestProvider } from '../../router/request/request-providers';
-import { Reflector } from '../../services';
-import { inquirerProvider } from '../inquirer/inquirer-providers';
+} from '@nestjs/common';
 
 const ReflectorAliasProvider = {
   provide: Reflector.name,

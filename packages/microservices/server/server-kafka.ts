@@ -1,5 +1,3 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { isNil } from '@nestjs/common/utils/shared.utils';
 import { isObservable, lastValueFrom, Observable, ReplaySubject } from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
@@ -7,12 +5,12 @@ import {
   KAFKA_DEFAULT_GROUP,
   NO_EVENT_HANDLER,
   NO_MESSAGE_HANDLER,
-} from '../constants';
-import { KafkaContext } from '../ctx-host';
-import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer';
-import { KafkaHeaders, Transport } from '../enums';
-import { KafkaStatus } from '../events';
-import { KafkaRetriableException } from '../exceptions';
+} from '../constants.js';
+import { KafkaContext } from '../ctx-host/index.js';
+import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer.js';
+import { KafkaHeaders, Transport } from '../enums/index.js';
+import { KafkaStatus } from '../events/index.js';
+import { KafkaRetriableException } from '../exceptions/index.js';
 import {
   BrokersFunction,
   Consumer,
@@ -24,18 +22,18 @@ import {
   Message,
   Producer,
   RecordMetadata,
-} from '../external/kafka.interface';
-import { KafkaLogger, KafkaParser } from '../helpers';
+} from '../external/kafka.interface.js';
+import { KafkaLogger, KafkaParser } from '../helpers/index.js';
 import {
   KafkaOptions,
   OutgoingResponse,
   ReadPacket,
   TransportId,
-} from '../interfaces';
-import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
-import { Server } from './server';
-
-let kafkaPackage: any = {};
+} from '../interfaces/index.js';
+import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
+import { Server } from './server.js';
+import { Logger } from '@nestjs/common';
+import { isNil } from '@nestjs/common/internal';
 
 /**
  * @publicApi
@@ -75,10 +73,6 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
     this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
 
-    kafkaPackage = this.loadPackage('kafkajs', ServerKafka.name, () =>
-      require('kafkajs'),
-    );
-
     this.parser = new KafkaParser((options && options.parser) || undefined);
 
     this.initializeSerializer(options);
@@ -89,7 +83,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ): Promise<void> {
     try {
-      this.client = this.createClient();
+      this.client = await this.createClient();
       await this.start(callback);
     } catch (err) {
       callback(err);
@@ -105,9 +99,10 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async start(callback: () => void): Promise<void> {
-    const consumerOptions = Object.assign(this.options.consumer || {}, {
+    const consumerOptions = {
+      ...(this.options.consumer || {}),
       groupId: this.groupId,
-    });
+    };
     this.consumer = this.client!.consumer(consumerOptions);
     this.producer = this.client!.producer(this.options.producer);
     this.registerConsumerEventListeners();
@@ -152,14 +147,18 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     );
   }
 
-  public createClient<T = any>(): T {
-    return new kafkaPackage.Kafka(
-      Object.assign(
-        { logCreator: KafkaLogger.bind(null, this.logger) },
-        this.options.client,
-        { clientId: this.clientId, brokers: this.brokers },
-      ) as KafkaConfig,
+  public async createClient<T = any>(): Promise<T> {
+    const kafkaPackage = await this.loadPackage(
+      'kafkajs',
+      ServerKafka.name,
+      () => import('kafkajs'),
     );
+    return new kafkaPackage.Kafka({
+      logCreator: KafkaLogger.bind(null, this.logger),
+      ...this.options.client,
+      clientId: this.clientId,
+      brokers: this.brokers,
+    } as KafkaConfig) as T;
   }
 
   public async bindEvents(consumer: Consumer) {
@@ -173,9 +172,10 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       });
     }
 
-    const consumerRunOptions = Object.assign(this.options.run || {}, {
+    const consumerRunOptions = {
+      ...(this.options.run || {}),
       eachMessage: this.getMessageHandler(),
-    });
+    };
     await consumer.run(consumerRunOptions);
   }
 
@@ -187,9 +187,16 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     replyTopic: string,
     replyPartition: string,
     correlationId: string,
+    context: KafkaContext,
   ): (data: any) => Promise<RecordMetadata[]> {
     return (data: any) =>
-      this.sendMessage(data, replyTopic, replyPartition, correlationId);
+      this.sendMessage(
+        data,
+        replyTopic,
+        replyPartition,
+        correlationId,
+        context,
+      );
   }
 
   public async handleMessage(payload: EachMessagePayload) {
@@ -225,6 +232,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       replyTopic,
       replyPartition,
       correlationId,
+      kafkaContext,
     );
 
     if (!handler) {
@@ -233,15 +241,20 @@ export class ServerKafka extends Server<never, KafkaStatus> {
         err: NO_MESSAGE_HANDLER,
       });
     }
+    return this.onProcessingStartHook(
+      this.transportId,
+      kafkaContext,
+      async () => {
+        const response$ = this.transformToObservable(
+          handler(packet.data, kafkaContext),
+        );
 
-    const response$ = this.transformToObservable(
-      handler(packet.data, kafkaContext),
+        const replayStream$ = new ReplaySubject();
+        await this.combineStreamsAndThrowIfRetriable(response$, replayStream$);
+
+        this.send(replayStream$, publish);
+      },
     );
-
-    const replayStream$ = new ReplaySubject();
-    await this.combineStreamsAndThrowIfRetriable(response$, replayStream$);
-
-    this.send(replayStream$, publish);
   }
 
   public unwrap<T>(): T {
@@ -293,6 +306,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     replyTopic: string,
     replyPartition: string | undefined | null,
     correlationId: string,
+    context: KafkaContext,
   ): Promise<RecordMetadata[]> {
     const outgoingMessage = await this.serializer.serialize(message.response);
     this.assignReplyPartition(replyPartition, outgoingMessage);
@@ -300,14 +314,14 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     this.assignErrorHeader(message, outgoingMessage);
     this.assignIsDisposedHeader(message, outgoingMessage);
 
-    const replyMessage = Object.assign(
-      {
-        topic: replyTopic,
-        messages: [outgoingMessage],
-      },
-      this.options.send || {},
-    );
-    return this.producer!.send(replyMessage);
+    const replyMessage = {
+      topic: replyTopic,
+      messages: [outgoingMessage],
+      ...(this.options.send || {}),
+    };
+    return this.producer!.send(replyMessage).finally(() => {
+      this.onProcessingEndHook?.(this.transportId, context);
+    });
   }
 
   public assignIsDisposedHeader(
@@ -362,10 +376,14 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     if (!handler) {
       return this.logger.error(NO_EVENT_HANDLER`${pattern}`);
     }
-    const resultOrStream = await handler(packet.data, context);
-    if (isObservable(resultOrStream)) {
-      await lastValueFrom(resultOrStream);
-    }
+
+    return this.onProcessingStartHook(this.transportId, context, async () => {
+      const resultOrStream = await handler(packet.data, context);
+      if (isObservable(resultOrStream)) {
+        await lastValueFrom(resultOrStream);
+        this.onProcessingEndHook?.(this.transportId, context);
+      }
+    });
   }
 
   protected initializeSerializer(options: KafkaOptions['options']) {
