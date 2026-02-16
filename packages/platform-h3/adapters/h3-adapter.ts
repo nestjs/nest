@@ -16,12 +16,16 @@ import {
   H3Event,
   readBody,
   handleCors,
+  serveStatic,
   type CorsOptions,
 } from 'h3';
 import { toNodeHandler } from 'h3/node';
 import * as http from 'http';
 import * as https from 'https';
+import * as path from 'path';
+import * as fs from 'fs';
 import { pathToRegexp } from 'path-to-regexp';
+import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 
 export class H3Adapter extends AbstractHttpAdapter<
   http.Server | https.Server,
@@ -30,9 +34,42 @@ export class H3Adapter extends AbstractHttpAdapter<
 > {
   protected readonly instance: H3;
   private readonly logger = new Logger(H3Adapter.name);
+  private onRequestHook?: (
+    req: any,
+    res: any,
+    done: () => void,
+  ) => Promise<void> | void;
+  private onResponseHook?: (req: any, res: any) => Promise<void> | void;
 
   constructor(instance?: H3) {
     super(instance || new H3());
+  }
+
+  /**
+   * Sets a hook that is called before each request is processed.
+   * The hook can perform async operations and must call `done()` when finished.
+   *
+   * @param onRequestHook - The hook function to call before each request
+   */
+  public setOnRequestHook(
+    onRequestHook: (
+      req: any,
+      res: any,
+      done: () => void,
+    ) => Promise<void> | void,
+  ) {
+    this.onRequestHook = onRequestHook;
+  }
+
+  /**
+   * Sets a hook that is called after each response is finished.
+   *
+   * @param onResponseHook - The hook function to call after each response
+   */
+  public setOnResponseHook(
+    onResponseHook: (req: any, res: any) => Promise<void> | void,
+  ) {
+    this.onResponseHook = onResponseHook;
   }
 
   public reply(
@@ -276,8 +313,205 @@ export class H3Adapter extends AbstractHttpAdapter<
     return this.instance;
   }
 
-  public useStaticAssets(...args: any[]) {
+  /**
+   * Serves static files from the specified directory.
+   *
+   * @param staticPath - The path to the directory containing static files
+   * @param options - Options for serving static files (prefix, maxAge, etc.)
+   */
+  public useStaticAssets(staticPath: string, options?: ServeStaticOptions) {
+    const prefix = options?.prefix || '';
+    const normalizedPrefix = prefix.endsWith('/')
+      ? prefix.slice(0, -1)
+      : prefix;
+
+    // Register static file handler using H3's serveStatic
+    this.instance.use(async event => {
+      const url = event.path || event.runtime?.node?.req?.url || '';
+      const urlPath = url.split('?')[0];
+
+      // Check if URL matches prefix
+      if (normalizedPrefix && !urlPath.startsWith(normalizedPrefix)) {
+        return; // Continue to next handler
+      }
+
+      // Remove prefix from path to get the file path
+      const filePath = normalizedPrefix
+        ? urlPath.slice(normalizedPrefix.length)
+        : urlPath;
+
+      // Construct the full file path
+      const resolvedPath = path.join(staticPath, filePath);
+
+      // Security: Ensure the resolved path is within the static directory
+      const absoluteStaticPath = path.resolve(staticPath);
+      const absoluteResolvedPath = path.resolve(resolvedPath);
+      if (!absoluteResolvedPath.startsWith(absoluteStaticPath)) {
+        return; // Prevent directory traversal attacks
+      }
+
+      // Handle dotfiles
+      const basename = path.basename(filePath);
+      if (basename.startsWith('.')) {
+        const dotfileHandling = options?.dotfiles || 'ignore';
+        if (dotfileHandling === 'deny') {
+          const res = event.runtime?.node?.res;
+          if (res) {
+            res.statusCode = 403;
+            res.end('Forbidden');
+          }
+          return;
+        }
+        if (dotfileHandling === 'ignore') {
+          return; // Continue to next handler
+        }
+        // 'allow' falls through to serve the file
+      }
+
+      // Use H3's serveStatic helper
+      const result = await serveStatic(event, {
+        getContents: async id => {
+          const fullPath = path.join(absoluteStaticPath, id);
+          // Security check again
+          const absFullPath = path.resolve(fullPath);
+          if (!absFullPath.startsWith(absoluteStaticPath)) {
+            return undefined;
+          }
+          try {
+            return fs.readFileSync(absFullPath);
+          } catch {
+            return undefined;
+          }
+        },
+        getMeta: async id => {
+          const fullPath = path.join(absoluteStaticPath, id);
+          const absFullPath = path.resolve(fullPath);
+          if (!absFullPath.startsWith(absoluteStaticPath)) {
+            return undefined;
+          }
+          try {
+            const stats = fs.statSync(absFullPath);
+
+            // If it's a directory, try to serve index file
+            if (stats.isDirectory()) {
+              const indexOption = options?.index;
+              const indexFiles =
+                indexOption === false
+                  ? []
+                  : indexOption === true || indexOption === undefined
+                    ? ['index.html']
+                    : Array.isArray(indexOption)
+                      ? indexOption
+                      : [indexOption];
+
+              for (const indexFile of indexFiles) {
+                const indexPath = path.join(absFullPath, indexFile);
+                try {
+                  const indexStats = fs.statSync(indexPath);
+                  if (indexStats.isFile()) {
+                    return {
+                      size: indexStats.size,
+                      mtime: indexStats.mtime,
+                    };
+                  }
+                } catch {
+                  // Index file doesn't exist, try next
+                }
+              }
+              return undefined;
+            }
+
+            if (!stats.isFile()) {
+              return undefined;
+            }
+
+            return {
+              size: stats.size,
+              mtime: stats.mtime,
+            };
+          } catch {
+            return undefined;
+          }
+        },
+        indexNames:
+          options?.index === false
+            ? []
+            : options?.index === true || options?.index === undefined
+              ? ['index.html']
+              : Array.isArray(options?.index)
+                ? options.index
+                : [options.index],
+      });
+
+      // Apply custom headers if file was served
+      if (result !== undefined) {
+        const res = event.runtime?.node?.res;
+        if (res) {
+          // Apply ETag if enabled (default: true)
+          if (options?.etag !== false) {
+            // ETag is typically handled by serveStatic, but we could enhance it here
+          }
+
+          // Apply Last-Modified if enabled (default: true)
+          if (options?.lastModified !== false) {
+            // Last-Modified is typically handled by serveStatic
+          }
+
+          // Apply max-age cache control
+          if (options?.maxAge !== undefined) {
+            const maxAge =
+              typeof options.maxAge === 'string'
+                ? this.parseMaxAge(options.maxAge)
+                : options.maxAge;
+            let cacheControl = `max-age=${Math.floor(maxAge / 1000)}`;
+            if (options?.immutable) {
+              cacheControl += ', immutable';
+            }
+            res.setHeader('Cache-Control', cacheControl);
+          }
+
+          // Apply custom headers
+          if (options?.setHeaders) {
+            try {
+              const stats = fs.statSync(absoluteResolvedPath);
+              options.setHeaders(res, absoluteResolvedPath, stats);
+            } catch {
+              // File stats not available
+            }
+          }
+        }
+      }
+
+      return result;
+    });
+
     return this;
+  }
+
+  /**
+   * Parse a max-age string like '1d', '2h', '30m' to milliseconds
+   */
+  private parseMaxAge(maxAge: string): number {
+    const match = maxAge.match(/^(\d+)(ms|s|m|h|d)?$/);
+    if (!match) {
+      return 0;
+    }
+    const value = parseInt(match[1], 10);
+    const unit = match[2] || 'ms';
+    switch (unit) {
+      case 'ms':
+        return value;
+      case 's':
+        return value * 1000;
+      case 'm':
+        return value * 60 * 1000;
+      case 'h':
+        return value * 60 * 60 * 1000;
+      case 'd':
+        return value * 24 * 60 * 60 * 1000;
+      default:
+        return value;
+    }
   }
 
   public setBaseViewsDir(...args: any[]) {
@@ -507,6 +741,27 @@ export class H3Adapter extends AbstractHttpAdapter<
       (req as any).params = getRouterParams(event) || {};
       (req as any).body = (event as any).body;
       (req as any).h3Event = event;
+
+      // Register onResponse hook if set
+      if (this.onResponseHook) {
+        res.on('finish', () => {
+          void this.onResponseHook?.apply(this, [req, res]);
+        });
+      }
+
+      // Call onRequest hook if set
+      if (this.onRequestHook) {
+        await new Promise<void>((resolve, reject) => {
+          try {
+            const result = this.onRequestHook?.apply(this, [req, res, resolve]);
+            if (result && typeof result.then === 'function') {
+              result.then(resolve).catch(reject);
+            }
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }
 
       // Create a promise that resolves when the response is sent
       return new Promise<void>((resolve, reject) => {
