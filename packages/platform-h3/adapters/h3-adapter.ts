@@ -302,7 +302,17 @@ export class H3Adapter extends AbstractHttpAdapter<
     // Not found handler should be registered as a catch-all route, not middleware
     // This ensures it only runs when no other routes match
     this.instance.all('/**', async event => {
-      return handler(event.runtime?.node?.req, event.runtime?.node?.res);
+      const req = event.runtime?.node?.req;
+      const res = event.runtime?.node?.res;
+
+      // Register onResponse hook if set (same as wrapHandler)
+      if (this.onResponseHook && res) {
+        res.on('finish', () => {
+          void this.onResponseHook?.apply(this, [req, res]);
+        });
+      }
+
+      return handler(req, res);
     });
     return this;
   }
@@ -451,7 +461,11 @@ export class H3Adapter extends AbstractHttpAdapter<
       // Use H3's serveStatic helper
       const result = await serveStatic(event, {
         getContents: async id => {
-          const fullPath = path.join(absoluteStaticPath, id);
+          // Strip prefix from id since serveStatic passes the full path
+          const idWithoutPrefix = normalizedPrefix
+            ? id.replace(normalizedPrefix, '')
+            : id;
+          const fullPath = path.join(absoluteStaticPath, idWithoutPrefix);
           // Security check again
           const absFullPath = path.resolve(fullPath);
           if (!absFullPath.startsWith(absoluteStaticPath)) {
@@ -464,7 +478,11 @@ export class H3Adapter extends AbstractHttpAdapter<
           }
         },
         getMeta: async id => {
-          const fullPath = path.join(absoluteStaticPath, id);
+          // Strip prefix from id since serveStatic passes the full path
+          const idWithoutPrefix = normalizedPrefix
+            ? id.replace(normalizedPrefix, '')
+            : id;
+          const fullPath = path.join(absoluteStaticPath, idWithoutPrefix);
           const absFullPath = path.resolve(fullPath);
           if (!absFullPath.startsWith(absoluteStaticPath)) {
             return undefined;
@@ -472,35 +490,8 @@ export class H3Adapter extends AbstractHttpAdapter<
           try {
             const stats = fs.statSync(absFullPath);
 
-            // If it's a directory, try to serve index file
-            if (stats.isDirectory()) {
-              const indexOption = options?.index;
-              const indexFiles =
-                indexOption === false
-                  ? []
-                  : indexOption === true || indexOption === undefined
-                    ? ['index.html']
-                    : Array.isArray(indexOption)
-                      ? indexOption
-                      : [indexOption];
-
-              for (const indexFile of indexFiles) {
-                const indexPath = path.join(absFullPath, indexFile);
-                try {
-                  const indexStats = fs.statSync(indexPath);
-                  if (indexStats.isFile()) {
-                    return {
-                      size: indexStats.size,
-                      mtime: indexStats.mtime,
-                    };
-                  }
-                } catch {
-                  // Index file doesn't exist, try next
-                }
-              }
-              return undefined;
-            }
-
+            // H3's serveStatic handles index file lookup via indexNames option
+            // So we only return metadata for actual files
             if (!stats.isFile()) {
               return undefined;
             }
@@ -517,10 +508,18 @@ export class H3Adapter extends AbstractHttpAdapter<
           options?.index === false
             ? []
             : options?.index === true || options?.index === undefined
-              ? ['index.html']
+              ? ['/index.html']
               : Array.isArray(options?.index)
-                ? options.index
-                : [options.index],
+                ? options.index.map((f: string) =>
+                    f.startsWith('/') ? f : `/${f}`,
+                  )
+                : [
+                    options.index.startsWith('/')
+                      ? options.index
+                      : `/${options.index}`,
+                  ],
+        // Allow fallthrough to next handler if file not found
+        fallthrough: true,
       });
 
       // Apply custom headers if file was served
@@ -629,9 +628,21 @@ export class H3Adapter extends AbstractHttpAdapter<
   public enableCors(options?: CorsOptions) {
     // Use plain middleware function - don't wrap in eventHandler()
     this.instance.use(event => {
-      // Configure preflight status code if not set
-      const corsOptions = {
-        ...options,
+      // Map NestJS CORS options to H3 CORS options
+      // H3 uses different property names: exposeHeaders instead of exposedHeaders,
+      // allowHeaders instead of allowedHeaders
+      const h3CorsOptions: CorsOptions = {
+        origin: options?.origin,
+        methods: options?.methods,
+        credentials: options?.credentials,
+        maxAge: options?.maxAge,
+        // Map NestJS names to H3 names
+        allowHeaders: (options as Record<string, unknown>)?.allowedHeaders as
+          | string[]
+          | undefined,
+        exposeHeaders: (options as Record<string, unknown>)?.exposedHeaders as
+          | string[]
+          | undefined,
         preflight: {
           statusCode: 204,
           ...options?.preflight,
@@ -639,7 +650,7 @@ export class H3Adapter extends AbstractHttpAdapter<
       };
 
       // handleCors returns true/response if it handled the request (preflight)
-      const corsResult = handleCors(event, corsOptions);
+      const corsResult = handleCors(event, h3CorsOptions);
 
       if (corsResult) {
         return corsResult;
