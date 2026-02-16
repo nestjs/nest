@@ -30,6 +30,8 @@
     "@eslint/js": "9.39.2",
     "@nestjs/cli": "11.0.16",
     "@nestjs/schematics": "11.0.9",
+    "@nestjs/testing": "11.1.13",
+    "@types/jest": "30.0.0",
     "@types/node": "24.10.13",
     "@types/supertest": "6.0.3",
     "jest": "30.2.0",
@@ -44,5 +46,22 @@
     "globals": "17.3.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.55.0"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
   }
 }
