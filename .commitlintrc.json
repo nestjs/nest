@@ -38,7 +38,8 @@
         "ws",
         "testing",
         "websockets",
-        "release"
+        "release",
+        "h3"
       ]
     ]
   }
