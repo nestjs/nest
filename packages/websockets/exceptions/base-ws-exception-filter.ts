@@ -5,7 +5,7 @@ import {
   type WsExceptionFilter,
 } from '@nestjs/common';
 import { WsException } from '../errors/ws-exception.js';
-import { isFunction, isObject } from '@nestjs/common/internal';
+import { isFunction, isNumber, isObject } from '@nestjs/common/internal';
 import { MESSAGES } from '@nestjs/core/internal';
 
 export interface ErrorPayload<Cause = { pattern: string; data: unknown }> {
@@ -120,19 +120,38 @@ export class BaseWsExceptionFilter<
   /**
    * Sends an error message to the client. Supports both Socket.IO clients
    * (which use `emit`) and native WebSocket clients (which use `send`).
+   *
+   * Native WebSocket clients (e.g. from the `ws` package) inherit from
+   * EventEmitter and therefore also have an `emit` method, but that method
+   * only dispatches events locally. To distinguish native WebSocket clients
+   * from Socket.IO clients, we check for a numeric `readyState` property
+   * (part of the WebSocket specification) before falling back to `emit`.
    */
-  protected emitMessage<
-    TClient extends { emit?: Function; send?: Function },
-  >(client: TClient, event: string, payload: unknown): void {
-    if (isFunction(client.emit)) {
-      client.emit(event, payload);
-    } else if (isFunction(client.send)) {
+  protected emitMessage<TClient extends { emit?: Function; send?: Function }>(
+    client: TClient,
+    event: string,
+    payload: unknown,
+  ): void {
+    if (this.isNativeWebSocket(client)) {
       client.send(
         JSON.stringify({
           event,
           data: payload,
         }),
       );
+    } else if (isFunction(client.emit)) {
+      client.emit(event, payload);
     }
+  }
+
+  /**
+   * Determines whether the given client is a native WebSocket (e.g. from the
+   * `ws` package) as opposed to a Socket.IO socket. Native WebSocket objects
+   * expose a numeric `readyState` property per the WebSocket specification.
+   */
+  private isNativeWebSocket(
+    client: Record<string, any>,
+  ): client is { send: Function; readyState: number } {
+    return isNumber(client.readyState) && isFunction(client.send);
   }
 }

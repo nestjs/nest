@@ -100,13 +100,13 @@ describe('WsExceptionsHandler', () => {
 
     describe('when client uses "send" instead of "emit" (native WebSocket)', () => {
       let sendStub: sinon.SinonStub;
-      let wsClient: { send: sinon.SinonStub };
+      let wsClient: { send: sinon.SinonStub; readyState: number };
       let wsExecutionContextHost: ExecutionContextHost;
 
       beforeEach(() => {
         handler = new WsExceptionsHandler();
         sendStub = sinon.stub();
-        wsClient = { send: sendStub };
+        wsClient = { send: sendStub, readyState: 1 };
         wsExecutionContextHost = new ExecutionContextHost([
           wsClient,
           data,
