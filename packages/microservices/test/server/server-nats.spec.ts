@@ -1,11 +1,10 @@
-import { JSONCodec } from 'nats';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { NatsContext } from '../../ctx-host/index.js';
 import { ServerNats } from '../../server/server-nats.js';
 import { objectToMap } from './utils/object-to-map.js';
 
-// type NatsMsg = import('nats').Msg;
+// type NatsMsg = import('@nats-io/nats-core').Msg;
 type NatsMsg = any;
 
 describe('ServerNats', () => {
@@ -44,7 +43,7 @@ describe('ServerNats', () => {
         vi.spyOn(server, 'start').mockImplementation(() => {
           throw error;
         });
-        await server.listen(callbackSpy);
+        await server.listen(callbackSpy as any);
         expect(callbackSpy).toHaveBeenCalledWith(error);
       });
     });
@@ -178,23 +177,24 @@ describe('ServerNats', () => {
     beforeEach(() => {
       getPublisherSpy = vi.fn();
       vi.spyOn(server, 'getPublisher').mockImplementation(
-        () => getPublisherSpy,
+        () => getPublisherSpy as any,
       );
     });
     it('should call "handleEvent" if identifier is not present', async () => {
       const handleEventSpy = vi.spyOn(server, 'handleEvent');
-      const data = JSONCodec().encode({ id: 10 });
+      const data = JSON.stringify({ id: 10 });
       const natsMsg: NatsMsg = {
         data,
         subject: channel,
         sid: +id,
         respond: vi.fn(),
+        json: () => JSON.parse(data),
       };
       await server.handleMessage(channel, natsMsg);
       expect(handleEventSpy).toHaveBeenCalled();
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern does not exist in messageHandlers object`, async () => {
-      const data = JSONCodec().encode({
+      const data = JSON.stringify({
         id,
         pattern: 'test',
         data: 'test',
@@ -204,6 +204,7 @@ describe('ServerNats', () => {
         subject: channel,
         sid: +id,
         respond: vi.fn(),
+        json: () => JSON.parse(data),
       };
 
       await server.handleMessage(channel, natsMsg);
@@ -222,7 +223,7 @@ describe('ServerNats', () => {
       const headers = {};
       const natsContext = new NatsContext([channel, headers]);
 
-      const data = JSONCodec().encode({
+      const data = JSON.stringify({
         pattern: channel,
         data: 'test',
         id,
@@ -233,6 +234,7 @@ describe('ServerNats', () => {
         sid: +id,
         respond: vi.fn(),
         headers,
+        json: () => JSON.parse(data),
       };
       await server.handleMessage(channel, natsMsg);
       expect(handler).toHaveBeenCalledWith('test', natsContext);
@@ -261,13 +263,13 @@ describe('ServerNats', () => {
         sid: +id,
         respond: vi.fn(),
         reply: replyTo,
-      };
+      } as NatsMsg;
       const publisher = server.getPublisher(natsMsg, id, context);
 
       const respond = 'test';
       publisher({ respond, id });
       expect(natsMsg.respond).toHaveBeenCalledWith(
-        JSONCodec().encode({ respond, id }),
+        JSON.stringify({ respond, id }),
         expect.objectContaining({}),
       );
     });
@@ -279,7 +281,7 @@ describe('ServerNats', () => {
         reply: replyTo,
         sid: +id,
         respond: vi.fn(),
-      };
+      } as NatsMsg;
       const publisher = server.getPublisher(natsMsg, id, context);
 
       const respond = 'test';
@@ -321,18 +323,18 @@ describe('ServerNats', () => {
       const serverMock = {
         status: vi.fn().mockReturnValue({
           async *[Symbol.asyncIterator]() {
-            yield { type: 'disconnect', data: 'localhost' };
-            yield { type: 'error', data: {} };
+            yield { type: 'disconnect' };
+            yield { type: 'error', error: 'Test error' };
           },
         }),
       };
       await server.handleStatusUpdates(serverMock as any);
       expect(logErrorSpy).toHaveBeenCalledTimes(2);
       expect(logErrorSpy).toHaveBeenCalledWith(
-        `NatsError: type: "disconnect", data: "localhost".`,
+        `NatsError: type: "disconnect".`,
       );
       expect(logErrorSpy).toHaveBeenCalledWith(
-        `NatsError: type: "error", data: "{}".`,
+        `NatsError: type: "error", error: "Test error".`,
       );
     });
     it('should log other statuses as "logs"', async () => {

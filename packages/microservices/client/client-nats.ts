@@ -1,5 +1,7 @@
-import { createRequire } from 'module';
+import { Logger } from '@nestjs/common';
+import { isObject, loadPackageSync } from '@nestjs/common/internal';
 import { EventEmitter } from 'events';
+import { createRequire } from 'module';
 import { NATS_DEFAULT_URL } from '../constants.js';
 import { NatsResponseJSONDeserializer } from '../deserializers/nats-response-json.deserializer.js';
 import { EmptyResponseException } from '../errors/empty-response.exception.js';
@@ -17,8 +19,6 @@ import {
 import { NatsRecord } from '../record-builders/index.js';
 import { NatsRecordSerializer } from '../serializers/nats-record.serializer.js';
 import { ClientProxy } from './client-proxy.js';
-import { Logger } from '@nestjs/common';
-import { loadPackageSync, isObject } from '@nestjs/common/internal';
 
 let natsPackage = {} as any;
 
@@ -26,8 +26,8 @@ let natsPackage = {} as any;
 // because it would require the user to install the nats package even if they dont use Nats
 // Otherwise, TypeScript would fail to compile the code.
 //
-// type Client = import('nats').NatsConnection;
-// type NatsMsg = import('nats').Msg;
+// type Client = import('@nats-io/transport-node').NatsConnection;
+// type NatsMsg = import('@nats-io/transport-node').Msg;
 
 type Client = Record<string, any>;
 type NatsMsg = Record<string, any>;
@@ -46,8 +46,10 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
   constructor(protected readonly options: Required<NatsOptions>['options']) {
     super();
-    natsPackage = loadPackageSync('nats', ClientNats.name, () =>
-      createRequire(import.meta.url)('nats'),
+    natsPackage = loadPackageSync(
+      '@nats-io/transport-node',
+      ClientNats.name,
+      () => createRequire(import.meta.url)('@nats-io/transport-node'),
     );
 
     this.initializeSerializer(options);
@@ -101,15 +103,10 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
   public async handleStatusUpdates(client: Client) {
     for await (const status of client.status()) {
-      const data =
-        status.data && isObject(status.data)
-          ? JSON.stringify(status.data)
-          : status.data;
-
       switch (status.type) {
         case 'error':
           this.logger.error(
-            `NatsError: type: "${status.type}", data: "${data}".`,
+            `NatsError: type: "${status.type}", error: "${status.error}".`,
           );
           break;
 
@@ -120,14 +117,12 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
           // Prevent unhandled promise rejection
           this.connectionPromise.catch(() => {});
 
-          this.logger.error(
-            `NatsError: type: "${status.type}", data: "${data}".`,
-          );
+          this.logger.error(`NatsError: type: "${status.type}".`);
 
           this._status$.next(NatsStatus.DISCONNECTED);
           this.statusEventEmitter.emit(
             NatsEventsMap.DISCONNECT,
-            status.data as string,
+            status.server as string,
           );
           break;
 
@@ -137,37 +132,42 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
         case 'reconnect':
           this.connectionPromise = Promise.resolve(client);
-          this.logger.log(
-            `NatsStatus: type: "${status.type}", data: "${data}".`,
-          );
+          this.logger.log(`NatsStatus: type: "${status.type}".`);
 
           this._status$.next(NatsStatus.CONNECTED);
           this.statusEventEmitter.emit(
             NatsEventsMap.RECONNECT,
-            status.data as string,
+            status.server as string,
           );
           break;
 
-        case 'pingTimer':
+        case 'ping':
           if (this.options.debug) {
             this.logger.debug(
-              `NatsStatus: type: "${status.type}", data: "${data}".`,
+              `NatsStatus: type: "${status.type}", pending pings: "${status.pendingPings}".`,
             );
           }
           break;
 
         case 'update':
           this.logger.log(
-            `NatsStatus: type: "${status.type}", data: "${data}".`,
+            `NatsStatus: type: "${status.type}", added: "${status.added}", deleted: "${status.deleted}".`,
           );
-          this.statusEventEmitter.emit(NatsEventsMap.UPDATE, status.data);
+          this.statusEventEmitter.emit(NatsEventsMap.UPDATE, undefined);
           break;
 
-        default:
+        default: {
+          const data =
+            'data' in status && isObject(status.data)
+              ? JSON.stringify(status.data)
+              : 'data' in status
+                ? status.data
+                : '';
           this.logger.log(
             `NatsStatus: type: "${status.type}", data: "${data}".`,
           );
           break;
+        }
       }
     }
   }
@@ -192,7 +192,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     packet: ReadPacket & PacketId,
     callback: (packet: WritePacket) => any,
   ) {
-    return async (error: string | Error | undefined, natsMsg: NatsMsg) => {
+    return async (error: Error | null, natsMsg: NatsMsg) => {
       if (error) {
         return callback({
           err: error,
@@ -207,7 +207,7 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
           isDisposed: true,
         });
       }
-      const message = await this.deserializer.deserialize(rawPacket);
+      const message = await this.deserializer.deserialize(natsMsg);
       if (message.id && message.id !== packet.id) {
         return undefined;
       }
@@ -244,7 +244,10 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
       );
 
       const subscription = this.natsClient!.subscribe(inbox, {
-        callback: subscriptionHandler,
+        callback: subscriptionHandler as (
+          err: Error | null,
+          msg: NatsMsg,
+        ) => Promise<never>,
       });
 
       const headers = this.mergeHeaders(serializedPacket.headers);

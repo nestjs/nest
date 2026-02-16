@@ -1,8 +1,6 @@
-import * as nats from 'nats';
+import * as nats from '@nats-io/nats-core';
 import { NatsRecordBuilder } from '../../record-builders/index.js';
 import { NatsRecordSerializer } from '../../serializers/nats-record.serializer.js';
-
-const jsonCodec = nats.JSONCodec();
 
 describe('NatsRecordSerializer', () => {
   let instance: NatsRecordSerializer;
@@ -13,42 +11,42 @@ describe('NatsRecordSerializer', () => {
     it('undefined', () => {
       expect(instance.serialize({ data: undefined })).toEqual({
         headers: undefined,
-        data: jsonCodec.encode({ data: undefined }),
+        data: JSON.stringify({ data: undefined }),
       });
     });
 
     it('null', () => {
       expect(instance.serialize({ data: null })).toEqual({
         headers: undefined,
-        data: jsonCodec.encode({ data: null }),
+        data: JSON.stringify({ data: null }),
       });
     });
 
     it('string', () => {
       expect(instance.serialize({ data: 'string' })).toEqual({
         headers: undefined,
-        data: jsonCodec.encode({ data: 'string' }),
+        data: JSON.stringify({ data: 'string' }),
       });
     });
 
     it('number', () => {
       expect(instance.serialize({ data: 12345 })).toEqual({
         headers: undefined,
-        data: jsonCodec.encode({ data: 12345 }),
+        data: JSON.stringify({ data: 12345 }),
       });
     });
 
     it('buffer', () => {
       expect(instance.serialize({ data: Buffer.from('buffer') })).toEqual({
         headers: undefined,
-        data: jsonCodec.encode({ data: Buffer.from('buffer') }),
+        data: JSON.stringify({ data: Buffer.from('buffer') }),
       });
     });
 
     it('array', () => {
       expect(instance.serialize({ data: [1, 2, 3, 4, 5] })).toEqual({
         headers: undefined,
-        data: jsonCodec.encode({ data: [1, 2, 3, 4, 5] }),
+        data: JSON.stringify({ data: [1, 2, 3, 4, 5] }),
       });
     });
 
@@ -56,7 +54,7 @@ describe('NatsRecordSerializer', () => {
       const serObject = { prop: 'value' };
       expect(instance.serialize({ data: serObject })).toEqual({
         headers: undefined,
-        data: jsonCodec.encode({ data: serObject }),
+        data: JSON.stringify({ data: serObject }),
       });
     });
 
@@ -73,7 +71,7 @@ describe('NatsRecordSerializer', () => {
         }),
       ).toEqual({
         headers: natsHeaders,
-        data: jsonCodec.encode({
+        data: JSON.stringify({
           data: {
             value: 'string',
           },

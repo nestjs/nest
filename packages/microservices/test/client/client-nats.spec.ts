@@ -1,6 +1,6 @@
-import { headers as createHeaders, JSONCodec } from 'nats';
+import { headers as createHeaders } from '@nats-io/transport-node';
 import { ClientNats } from '../../client/client-nats.js';
-import { ReadPacket } from '../../interfaces/index.js';
+import { ReadPacket, WritePacket } from '../../interfaces/index.js';
 import { NatsRecord } from '../../record-builders/index.js';
 
 describe('ClientNats', () => {
@@ -93,7 +93,10 @@ describe('ClientNats', () => {
             Object.assign(packet as object, { id }),
           );
 
-        subscription = client['publish'](msg, callback);
+        subscription = client['publish'](
+          msg,
+          callback as (packet: WritePacket) => any,
+        );
         subscription();
       });
       afterEach(() => {
@@ -160,7 +163,8 @@ describe('ClientNats', () => {
       id: '1',
     };
     const natsMessage = {
-      data: JSONCodec().encode(responseMessage),
+      data: JSON.stringify(responseMessage),
+      json: () => responseMessage,
     };
 
     let callback: ReturnType<typeof vi.fn>, subscription;
@@ -169,7 +173,10 @@ describe('ClientNats', () => {
       beforeEach(async () => {
         callback = vi.fn();
 
-        subscription = client.createSubscriptionHandler(msg, callback);
+        subscription = client.createSubscriptionHandler(
+          msg,
+          callback as (packet: WritePacket) => any,
+        );
         await subscription(undefined, natsMessage);
       });
       it('should call callback with expected arguments', () => {
@@ -182,12 +189,18 @@ describe('ClientNats', () => {
     describe('disposed and "id" is correct', () => {
       beforeEach(async () => {
         callback = vi.fn();
-        subscription = client.createSubscriptionHandler(msg, callback);
-        await subscription(undefined, {
-          data: JSONCodec().encode({
+        subscription = client.createSubscriptionHandler(
+          msg,
+          callback as (packet: WritePacket) => any,
+        );
+        subscription(undefined, {
+          data: JSON.stringify({
             ...responseMessage,
             isDisposed: true,
           }),
+          json: function () {
+            return JSON.parse(this.data);
+          },
         });
       });
 
@@ -207,13 +220,16 @@ describe('ClientNats', () => {
             ...msg,
             id: '2',
           },
-          callback,
+          callback as (packet: WritePacket) => any,
         );
         subscription(undefined, {
-          data: JSONCodec().encode({
+          data: JSON.stringify({
             ...responseMessage,
             isDisposed: true,
           }),
+          json: function () {
+            return JSON.parse(this.data);
+          },
         });
       });
 
@@ -296,18 +312,20 @@ describe('ClientNats', () => {
       const clientMock = {
         status: vi.fn().mockReturnValue({
           async *[Symbol.asyncIterator]() {
-            yield { type: 'disconnect', data: 'localhost' };
-            yield { type: 'error', data: {} };
+            yield { type: 'disconnect' };
+            yield { type: 'error', error: 'Test error' };
           },
         }),
       };
       await client.handleStatusUpdates(clientMock as any);
       expect(logErrorSpy).toHaveBeenCalledTimes(2);
-      expect(logErrorSpy).toHaveBeenCalledWith(
-        'NatsError: type: "disconnect", data: "localhost".',
+      expect(logErrorSpy).toHaveBeenNthCalledWith(
+        1,
+        'NatsError: type: "disconnect".',
       );
-      expect(logErrorSpy).toHaveBeenCalledWith(
-        'NatsError: type: "error", data: "{}".',
+      expect(logErrorSpy).toHaveBeenNthCalledWith(
+        2,
+        'NatsError: type: "error", error: "Test error".',
       );
     });
     it('should log other statuses as "logs"', async () => {
