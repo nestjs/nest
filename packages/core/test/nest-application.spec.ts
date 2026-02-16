@@ -1,5 +1,6 @@
 import { RequestMethod } from '@nestjs/common';
 import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
+import * as microservicesPackage from '@nestjs/microservices';
 import { MicroserviceOptions } from '@nestjs/microservices';
 import { ApplicationConfig } from '../application-config.js';
 import { NestContainer } from '../injector/container.js';
@@ -12,12 +13,13 @@ describe('NestApplication', () => {
   beforeAll(async () => {
     // Pre-populate the package cache so that connectMicroservice()
     // can synchronously retrieve @nestjs/microservices via loadPackageCached.
+    // Use the already-imported module to avoid a slow dynamic import() on CI.
     await loadPackage(
       '@nestjs/microservices',
       'NestApplication tests',
-      () => import('@nestjs/microservices'),
+      () => microservicesPackage,
     );
-  }, 30_000);
+  });
 
   describe('Hybrid Application', () => {
     class Interceptor {
