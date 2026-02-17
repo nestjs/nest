@@ -4,7 +4,7 @@ import { RpcExceptionsHandler } from '../exceptions/rpc-exceptions-handler.js';
 import {
   EXCEPTION_FILTERS_METADATA,
   type Controller,
-  isEmpty,
+  isEmptyArray,
 } from '@nestjs/common/internal';
 import type { ApplicationConfig, NestContainer } from '@nestjs/core';
 import {
@@ -41,7 +41,7 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
       contextId,
       inquirerId,
     );
-    if (isEmpty(filters)) {
+    if (isEmptyArray(filters)) {
       return exceptionHandler;
     }
     exceptionHandler.setCustomFilters(filters.reverse());

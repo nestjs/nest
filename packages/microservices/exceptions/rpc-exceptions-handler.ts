@@ -4,7 +4,7 @@ import { RpcException } from './rpc-exception.js';
 import {
   type RpcExceptionFilterMetadata,
   selectExceptionFilterMetadata,
-  isEmpty,
+  isEmptyArray,
 } from '@nestjs/common/internal';
 import type { ArgumentsHost } from '@nestjs/common';
 import { InvalidExceptionFilterException } from '@nestjs/core/internal';
@@ -37,7 +37,7 @@ export class RpcExceptionsHandler extends BaseRpcExceptionFilter {
     exception: T,
     host: ArgumentsHost,
   ): Observable<any> | null {
-    if (isEmpty(this.filters)) {
+    if (isEmptyArray(this.filters)) {
       return null;
     }
 

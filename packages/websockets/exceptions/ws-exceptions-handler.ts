@@ -4,7 +4,7 @@ import { BaseWsExceptionFilter } from './base-ws-exception-filter.js';
 import {
   type ExceptionFilterMetadata,
   selectExceptionFilterMetadata,
-  isEmpty,
+  isEmptyArray,
 } from '@nestjs/common/internal';
 import { InvalidExceptionFilterException } from '@nestjs/core/internal';
 
@@ -33,7 +33,7 @@ export class WsExceptionsHandler extends BaseWsExceptionFilter {
     exception: T,
     args: ArgumentsHost,
   ): boolean {
-    if (isEmpty(this.filters)) return false;
+    if (isEmptyArray(this.filters)) return false;
 
     const filter = selectExceptionFilterMetadata(this.filters, exception);
     filter && filter.func(exception, args);

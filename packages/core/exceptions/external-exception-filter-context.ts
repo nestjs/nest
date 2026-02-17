@@ -10,7 +10,7 @@ import {
   EXCEPTION_FILTERS_METADATA,
   type Controller,
   type ExceptionFilterMetadata,
-  isEmpty,
+  isEmptyArray,
 } from '@nestjs/common/internal';
 
 export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
@@ -38,7 +38,7 @@ export class ExternalExceptionFilterContext extends BaseExceptionFilterContext {
       contextId,
       inquirerId,
     );
-    if (isEmpty(filters)) {
+    if (isEmptyArray(filters)) {
       return exceptionHandler;
     }
     exceptionHandler.setCustomFilters(filters.reverse());
