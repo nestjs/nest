@@ -6,6 +6,7 @@ import { InvalidExceptionFilterException } from '../../errors/exceptions/invalid
 import { ExceptionsHandler } from '../../exceptions/exceptions-handler.js';
 import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
 import { NoopHttpAdapter } from '../utils/noop-adapter.js';
+import fastifyErrors from '@fastify/error';
 
 describe('ExceptionsHandler', () => {
   let adapter: AbstractHttpAdapter;
@@ -46,6 +47,62 @@ describe('ExceptionsHandler', () => {
     });
     it('should send expected response status code and message when exception is unknown', () => {
       handler.next(new Error(), new ExecutionContextHost([0, response]));
+
+      expect(statusStub).toHaveBeenCalledWith(500);
+      expect(jsonStub).toHaveBeenCalledWith({
+        statusCode: 500,
+        message: 'Internal server error',
+      });
+    });
+    it('should treat fastify errors as http errors', () => {
+      const fastifyError = fastifyErrors.createError(
+        'FST_ERR_CTP_EMPTY_JSON_BODY',
+        "Body cannot be empty when content-type is set to 'application/json'",
+        400,
+      )();
+      handler.next(fastifyError, new ExecutionContextHost([0, response]));
+
+      expect(statusStub).toHaveBeenCalledWith(400);
+      expect(jsonStub).toHaveBeenCalledWith({
+        statusCode: 400,
+        message:
+          "Body cannot be empty when content-type is set to 'application/json'",
+      });
+    });
+    it('should not treat errors from external API calls as errors from "http-errors" library', () => {
+      const apiCallError = Object.assign(
+        new Error('Some external API call failed'),
+        { status: 400 },
+      );
+      handler.next(apiCallError, new ExecutionContextHost([0, response]));
+
+      expect(statusStub).toHaveBeenCalledWith(500);
+      expect(jsonStub).toHaveBeenCalledWith({
+        statusCode: 500,
+        message: 'Internal server error',
+      });
+    });
+    it('should treat fastify errors as http errors', () => {
+      const fastifyError = fastifyErrors.createError(
+        'FST_ERR_CTP_EMPTY_JSON_BODY',
+        "Body cannot be empty when content-type is set to 'application/json'",
+        400,
+      )();
+      handler.next(fastifyError, new ExecutionContextHost([0, response]));
+
+      expect(statusStub).toHaveBeenCalledWith(400);
+      expect(jsonStub).toHaveBeenCalledWith({
+        statusCode: 400,
+        message:
+          "Body cannot be empty when content-type is set to 'application/json'",
+      });
+    });
+    it('should not treat errors from external API calls as errors from "http-errors" library', () => {
+      const apiCallError = Object.assign(
+        new Error('Some external API call failed'),
+        { status: 400 },
+      );
+      handler.next(apiCallError, new ExecutionContextHost([0, response]));
 
       expect(statusStub).toHaveBeenCalledWith(500);
       expect(jsonStub).toHaveBeenCalledWith({

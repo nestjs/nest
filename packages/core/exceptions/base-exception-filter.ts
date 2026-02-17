@@ -79,10 +79,28 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
   }
 
   /**
-   * Checks if the thrown error comes from the "http-errors" library.
+   * Checks if the thrown error is a FastifyError or comes from the "http-errors" library.
    * @param err error object
    */
   public isHttpError(err: any): err is { statusCode: number; message: string } {
-    return err?.statusCode && err?.message;
+    if (!err || typeof err !== 'object') {
+      return false;
+    }
+
+    if (
+      err.constructor.name === 'FastifyError' &&
+      typeof err.code === 'string' &&
+      typeof err.statusCode === 'number'
+    ) {
+      return true;
+    }
+
+    // "http-errors" error signature
+    return (
+      typeof err.expose === 'boolean' &&
+      typeof err.statusCode === 'number' &&
+      err.status === err.statusCode &&
+      err instanceof Error
+    );
   }
 }
