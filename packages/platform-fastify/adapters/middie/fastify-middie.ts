@@ -5,6 +5,7 @@ import {
   FastifyPluginCallback,
   FastifyReply,
   FastifyRequest,
+  FastifyServerOptions,
   HookHandlerDoneFunction,
 } from 'fastify';
 import fp from 'fastify-plugin';
@@ -28,6 +29,17 @@ interface MiddlewareEntry<
   fn: MiddlewareFn<Req, Res, Ctx>;
 }
 
+function bindLast<F extends (...args: any[]) => any>(
+  fn: F,
+  last: Last<Parameters<F>>,
+): (...args: DropLast<Parameters<F>>) => ReturnType<F> {
+  return (...args: any[]) => fn(...args, last);
+}
+
+// Helper types
+type Last<T extends any[]> = T extends [...any[], infer L] ? L : never;
+type DropLast<T extends any[]> = T extends [...infer Rest, any] ? Rest : never;
+
 /**
  * A clone of `@fastify/middie` engine https://github.com/fastify/middie
  * with an extra vulnerability fix. Path is now decoded before matching to
@@ -37,13 +49,16 @@ function middie<
   Req extends { url: string; originalUrl?: string },
   Res extends { finished?: boolean; writableEnded?: boolean },
   Ctx = unknown,
->(complete: (err: unknown, req: Req, res: Res, ctx: Ctx) => void) {
+>(
+  complete: (err: unknown, req: Req, res: Res, ctx: Ctx) => void,
+  initialConfig: FastifyServerOptions | null,
+) {
   const middlewares: MiddlewareEntry<Req, Res, Ctx>[] = [];
   const pool = reusify(Holder as any);
 
   return {
     use,
-    run,
+    run: bindLast(run, initialConfig),
   };
 
   function use(
@@ -79,7 +94,12 @@ function middie<
     return this;
   }
 
-  function run(req: Req, res: Res, ctx: Ctx) {
+  function run(
+    req: Req,
+    res: Res,
+    ctx: Ctx,
+    initialConfig: FastifyServerOptions | null,
+  ) {
     if (!middlewares.length) {
       complete(null, req, res, ctx);
       return;
@@ -92,6 +112,7 @@ function middie<
     holder.res = res;
     holder.url = sanitizeUrl(req.url);
     holder.context = ctx;
+    holder.initialConfig = initialConfig;
     holder.done();
   }
 
@@ -100,6 +121,7 @@ function middie<
     res: Res | null;
     url: string | null;
     context: Ctx | null;
+    initialConfig: FastifyServerOptions | null;
     i: number;
     done: (err?: unknown) => void;
   }
@@ -109,6 +131,7 @@ function middie<
     this.res = null;
     this.url = null;
     this.context = null;
+    this.initialConfig = null;
     this.i = 0;
 
     const that = this;
@@ -135,7 +158,33 @@ function middie<
 
         if (regexp) {
           // Decode URL before matching to avoid bypassing middleware
-          const decodedUrl = safeDecodeURI(url).path;
+          let sanitizedUrl = url;
+          if (
+            that.initialConfig!.ignoreDuplicateSlashes ||
+            that.initialConfig!.routerOptions?.ignoreDuplicateSlashes
+          ) {
+            sanitizedUrl = removeDuplicateSlashes(sanitizedUrl);
+          }
+
+          if (
+            that.initialConfig!.ignoreTrailingSlash ||
+            that.initialConfig!.routerOptions?.ignoreTrailingSlash
+          ) {
+            sanitizedUrl = trimLastSlash(sanitizedUrl);
+          }
+
+          if (
+            that.initialConfig!.caseSensitive === false ||
+            that.initialConfig!.routerOptions?.caseSensitive === false
+          ) {
+            sanitizedUrl = sanitizedUrl.toLowerCase();
+          }
+
+          const decodedUrl = safeDecodeURI(
+            sanitizedUrl,
+            (that.initialConfig?.routerOptions as any)?.useSemicolonDelimiter ||
+              that.initialConfig?.useSemicolonDelimiter,
+          ).path;
           const result = regexp.exec(decodedUrl);
           if (result) {
             req.url = req.url.replace(result[0], '');
@@ -154,10 +203,25 @@ function middie<
       that.req = null;
       that.res = null;
       that.context = null;
+      that.initialConfig = null;
       that.i = 0;
       pool.release(that as any);
     }
   }
+}
+
+function removeDuplicateSlashes(path: string) {
+  const REMOVE_DUPLICATE_SLASHES_REGEXP = /\/\/+/g;
+  return path.indexOf('//') !== -1
+    ? path.replace(REMOVE_DUPLICATE_SLASHES_REGEXP, '/')
+    : path;
+}
+
+function trimLastSlash(path: string) {
+  if (path.length > 1 && path.charCodeAt(path.length - 1) === 47) {
+    return path.slice(0, -1);
+  }
+  return path;
 }
 
 function sanitizeUrl(url: string): string {
@@ -214,7 +278,7 @@ function fastifyMiddie(
   fastify.decorate('use', use as any);
   fastify[kMiddlewares] = [];
   fastify[kMiddieHasMiddlewares] = false;
-  fastify[kMiddie] = middie(onMiddieEnd);
+  fastify[kMiddie] = middie(onMiddieEnd, fastify.initialConfig);
 
   const hook = options.hook || 'onRequest';
 
@@ -295,7 +359,7 @@ function fastifyMiddie(
   function onRegister(instance: FastifyInstance) {
     const middlewares = instance[kMiddlewares].slice() as Array<Array<unknown>>;
     instance[kMiddlewares] = [];
-    instance[kMiddie] = middie(onMiddieEnd);
+    instance[kMiddie] = middie(onMiddieEnd, instance.initialConfig);
     instance[kMiddieHasMiddlewares] = false;
     instance.decorate('use', use as any);
     for (const middleware of middlewares) {
