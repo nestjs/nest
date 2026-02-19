@@ -22,10 +22,10 @@
   "dependencies": {
     "@apollo/server": "5.4.0",
     "@nestjs/apollo": "13.2.4",
-    "@nestjs/common": "11.1.13",
-    "@nestjs/core": "11.1.13",
+    "@nestjs/common": "11.1.14",
+    "@nestjs/core": "11.1.14",
     "@nestjs/graphql": "13.2.4",
-    "@nestjs/platform-express": "11.1.13",
+    "@nestjs/platform-express": "11.1.14",
     "@prisma/adapter-better-sqlite3": "7.4.0",
     "@prisma/client": "7.4.0",
     "class-transformer": "0.5.1",
@@ -33,7 +33,7 @@
     "graphql": "16.10.0",
     "graphql-subscriptions": "3.0.0",
     "reflect-metadata": "0.2.2",
-    "rimraf": "6.1.2",
+    "rimraf": "6.1.3",
     "rxjs": "7.8.2"
   },
   "devDependencies": {
@@ -41,12 +41,12 @@
     "@eslint/js": "9.39.2",
     "@nestjs/cli": "11.0.16",
     "@nestjs/schematics": "11.0.9",
-    "@nestjs/testing": "11.1.13",
+    "@nestjs/testing": "11.1.14",
     "@types/express": "5.0.6",
     "@types/node": "24.10.13",
     "@types/supertest": "6.0.3",
-    "@typescript-eslint/eslint-plugin": "8.55.0",
-    "@typescript-eslint/parser": "8.55.0",
+    "@typescript-eslint/eslint-plugin": "8.56.0",
+    "@typescript-eslint/parser": "8.56.0",
     "eslint": "9.39.2",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-import": "2.32.0",
@@ -62,6 +62,6 @@
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.55.0"
+    "typescript-eslint": "8.56.0"
   }
 }
