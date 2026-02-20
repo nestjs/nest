@@ -124,14 +124,14 @@ describe('transformPatternToRoute', () => {
   describe('when gets value exceeding max depth or max keys', () => {
     it('should return special string indicating the limit was reached', () => {
       const deepNestedPattern = {
-        a: { b: { c: { d: { e: { f: 'too deep' } } } } },
+        a: { b: { c: { d: { e: { f: { g: 'too deep' } } } } } },
       };
       const tooManyKeysPattern = Object.fromEntries(
         Array.from({ length: 25 }, (_, i) => [`key${i}`, `value${i}`]),
       );
 
       expect(transformPatternToRoute(deepNestedPattern)).to.be.equal(
-        '{"a":{"b":{"c":{"d":{"e":"[MAX_DEPTH_REACHED]"}}}}}',
+        '{"a":{"b":{"c":{"d":{"e":{"f":[MAX_DEPTH_REACHED]}}}}}}',
       );
       expect(transformPatternToRoute(tooManyKeysPattern)).to.be.equal(
         '"[TOO_MANY_KEYS]"',

@@ -23,38 +23,45 @@ export function transformPatternToRoute(
   maxDepth = DEFAULT_MAX_DEPTH,
   maxKeys = DEFAULT_MAX_KEYS,
 ): string {
-  // Prevent excessively deep recursion
-  if (depth > maxDepth) {
-    return '"[MAX_DEPTH_REACHED]"';
-  }
-
   if (isString(pattern) || isNumber(pattern)) {
     return `${pattern}`;
   }
 
   if (!isObject(pattern)) {
-    return `"${String(pattern)}"`;
+    // For non-string, non-number, non-object values
+    return pattern;
+  }
+
+  if (depth > maxDepth) {
+    return '[MAX_DEPTH_REACHED]';
   }
 
   const keys = Object.keys(pattern);
 
-  // Limit number of keys to prevent huge objects
   if (keys.length > maxKeys) {
-    return '"[TOO_MANY_KEYS]"';
+    return '[TOO_MANY_KEYS]';
   }
 
   const sortedKeys = keys.sort((a, b) => ('' + a).localeCompare(b));
 
-  const sortedPatternParams = sortedKeys.map(key => {
+  const parts = sortedKeys.map(key => {
     const value = pattern[key];
-    const partialRoute = `"${key}":${transformPatternToRoute(
-      value,
-      depth + 1,
-      maxDepth,
-      maxKeys,
-    )}`;
+    let partialRoute = `"${key}":`;
+
+    // Only quote strings, numbers and objects are handled recursively
+    if (isString(value)) {
+      partialRoute += `"${transformPatternToRoute(value, depth + 1, maxDepth, maxKeys)}"`;
+    } else {
+      partialRoute += transformPatternToRoute(
+        value,
+        depth + 1,
+        maxDepth,
+        maxKeys,
+      );
+    }
+
     return partialRoute;
   });
 
-  return `{${sortedPatternParams.join(',')}}`;
+  return `{${parts.join(',')}}`;
 }
