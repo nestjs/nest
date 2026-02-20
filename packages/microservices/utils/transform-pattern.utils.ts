@@ -1,43 +1,60 @@
 import {
+  isNumber,
   isObject,
   isString,
-  isNumber,
 } from '@nestjs/common/utils/shared.utils';
 import { MsPattern } from '../interfaces';
 
+const DEFAULT_MAX_DEPTH = 5;
+const DEFAULT_MAX_KEYS = 20;
+
 /**
- * Transforms the Pattern to Route.
- * 1. If Pattern is a `string`, it will be returned as it is.
- * 2. If Pattern is a `number`, it will be converted to `string`.
- * 3. If Pattern is a `JSON` object, it will be transformed to Route. For that end,
- * the function will sort properties of `JSON` Object and creates `route` string
- * according to the following template:
- * <key1>:<value1>/<key2>:<value2>/.../<keyN>:<valueN>
+ * Transforms the Pattern to Route safely.
  *
- * @param  {MsPattern} pattern - client pattern
+ * @param pattern - client pattern
+ * @param depth - current recursion depth
+ * @param maxDepth - maximum allowed recursion depth
+ * @param maxKeys - maximum allowed keys per object
  * @returns string
  */
-export function transformPatternToRoute(pattern: MsPattern): string {
+export function transformPatternToRoute(
+  pattern: MsPattern,
+  depth = 0,
+  maxDepth = DEFAULT_MAX_DEPTH,
+  maxKeys = DEFAULT_MAX_KEYS,
+): string {
+  // Prevent excessively deep recursion
+  if (depth > maxDepth) {
+    return '"[MAX_DEPTH_REACHED]"';
+  }
+
   if (isString(pattern) || isNumber(pattern)) {
     return `${pattern}`;
   }
+
   if (!isObject(pattern)) {
-    return pattern;
+    return `"${String(pattern)}"`;
   }
 
-  const sortedKeys = Object.keys(pattern).sort((a, b) =>
-    ('' + a).localeCompare(b),
-  );
+  const keys = Object.keys(pattern);
 
-  // Creates the array of Pattern params from sorted keys and their corresponding values
+  // Limit number of keys to prevent huge objects
+  if (keys.length > maxKeys) {
+    return '"[TOO_MANY_KEYS]"';
+  }
+
+  const sortedKeys = keys.sort((a, b) => ('' + a).localeCompare(b));
+
   const sortedPatternParams = sortedKeys.map(key => {
-    let partialRoute = `"${key}":`;
-    partialRoute += isString(pattern[key])
-      ? `"${transformPatternToRoute(pattern[key])}"`
-      : transformPatternToRoute(pattern[key]);
+    const value = pattern[key];
+    const partialRoute = `"${key}":${transformPatternToRoute(
+      value,
+      depth + 1,
+      maxDepth,
+      maxKeys,
+    )}`;
     return partialRoute;
   });
 
-  const route = sortedPatternParams.join(',');
-  return `{${route}}`;
+  return `{${sortedPatternParams.join(',')}}`;
 }
