@@ -472,7 +472,7 @@ export class ServerGrpc extends Server<never, never> {
               .toLowerCase()
               .indexOf('cancelled');
 
-            if (isCancelledError) {
+            if (isCancelledError !== -1) {
               call.end();
               return;
             }
