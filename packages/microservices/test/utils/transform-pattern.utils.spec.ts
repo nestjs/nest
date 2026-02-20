@@ -134,7 +134,7 @@ describe('transformPatternToRoute', () => {
         '{"a":{"b":{"c":{"d":{"e":{"f":[MAX_DEPTH_REACHED]}}}}}}',
       );
       expect(transformPatternToRoute(tooManyKeysPattern)).to.be.equal(
-        '"[TOO_MANY_KEYS]"',
+        '[TOO_MANY_KEYS]',
       );
     });
   });
