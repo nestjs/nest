@@ -99,13 +99,13 @@ describe('WsExceptionsHandler', () => {
     });
 
     describe('when client uses "send" instead of "emit" (native WebSocket)', () => {
-      let sendStub: sinon.SinonStub;
-      let wsClient: { send: sinon.SinonStub; readyState: number };
+      let sendStub: ReturnType<typeof vi.fn>;
+      let wsClient: { send: ReturnType<typeof vi.fn>; readyState: number };
       let wsExecutionContextHost: ExecutionContextHost;
 
       beforeEach(() => {
         handler = new WsExceptionsHandler();
-        sendStub = sinon.stub();
+        sendStub = vi.fn();
         wsClient = { send: sendStub, readyState: 1 };
         wsExecutionContextHost = new ExecutionContextHost([
           wsClient,
@@ -116,9 +116,9 @@ describe('WsExceptionsHandler', () => {
 
       it('should send JSON-stringified error via "send" when exception is unknown', () => {
         handler.handle(new Error(), wsExecutionContextHost);
-        expect(sendStub.calledOnce).to.be.true;
-        const sent = JSON.parse(sendStub.getCall(0).args[0]);
-        expect(sent).to.deep.equal({
+        expect(sendStub).toHaveBeenCalledTimes(1);
+        const sent = JSON.parse(sendStub.mock.calls[0][0]);
+        expect(sent).toEqual({
           event: 'exception',
           data: {
             status: 'error',
@@ -134,9 +134,9 @@ describe('WsExceptionsHandler', () => {
       it('should send JSON-stringified error via "send" for WsException with object', () => {
         const message = { custom: 'Unauthorized' };
         handler.handle(new WsException(message), wsExecutionContextHost);
-        expect(sendStub.calledOnce).to.be.true;
-        const sent = JSON.parse(sendStub.getCall(0).args[0]);
-        expect(sent).to.deep.equal({
+        expect(sendStub).toHaveBeenCalledTimes(1);
+        const sent = JSON.parse(sendStub.mock.calls[0][0]);
+        expect(sent).toEqual({
           event: 'exception',
           data: message,
         });
@@ -145,9 +145,9 @@ describe('WsExceptionsHandler', () => {
       it('should send JSON-stringified error via "send" for WsException with string', () => {
         const message = 'Unauthorized';
         handler.handle(new WsException(message), wsExecutionContextHost);
-        expect(sendStub.calledOnce).to.be.true;
-        const sent = JSON.parse(sendStub.getCall(0).args[0]);
-        expect(sent).to.deep.equal({
+        expect(sendStub).toHaveBeenCalledTimes(1);
+        const sent = JSON.parse(sendStub.mock.calls[0][0]);
+        expect(sent).toEqual({
           event: 'exception',
           data: {
             message,
@@ -168,9 +168,9 @@ describe('WsExceptionsHandler', () => {
         it('should send error without cause via "send"', () => {
           const message = 'Unauthorized';
           handler.handle(new WsException(message), wsExecutionContextHost);
-          expect(sendStub.calledOnce).to.be.true;
-          const sent = JSON.parse(sendStub.getCall(0).args[0]);
-          expect(sent).to.deep.equal({
+          expect(sendStub).toHaveBeenCalledTimes(1);
+          const sent = JSON.parse(sendStub.mock.calls[0][0]);
+          expect(sent).toEqual({
             event: 'exception',
             data: {
               message,
