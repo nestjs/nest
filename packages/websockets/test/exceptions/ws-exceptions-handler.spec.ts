@@ -50,7 +50,6 @@ describe('WsExceptionsHandler', () => {
           const message = 'Unauthorized';
 
           handler.handle(new WsException(message), executionContextHost);
-          console.log(emitStub.mock.calls[0]);
           expect(emitStub).toHaveBeenCalledWith('exception', {
             message,
             status: 'error',

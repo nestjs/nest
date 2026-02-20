@@ -1,9 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as WebSocket from 'ws';
-import { WsErrorGateway } from '../src/ws-error.gateway';
+import WebSocket from 'ws';
+import { WsErrorGateway } from '../src/ws-error.gateway.js';
 
 async function createNestApp(...gateways: any[]): Promise<INestApplication> {
   const testingModule = await Test.createTestingModule({
@@ -36,7 +35,7 @@ describe('WebSocketGateway (WsAdapter) - Error Handling', () => {
     await new Promise<void>(resolve =>
       ws.on('message', data => {
         const response = JSON.parse(data.toString());
-        expect(response).to.deep.equal({
+        expect(response).toEqual({
           event: 'exception',
           data: {
             status: 'error',
