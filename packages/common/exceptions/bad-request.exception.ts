@@ -37,13 +37,13 @@ export class BadRequestException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Bad Request',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Bad Request', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.BAD_REQUEST,
       ),
       HttpStatus.BAD_REQUEST,

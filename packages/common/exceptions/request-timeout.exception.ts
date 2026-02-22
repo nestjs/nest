@@ -37,13 +37,13 @@ export class RequestTimeoutException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Request Timeout',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Request Timeout', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.REQUEST_TIMEOUT,
       ),
       HttpStatus.REQUEST_TIMEOUT,

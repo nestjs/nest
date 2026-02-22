@@ -37,13 +37,13 @@ export class MisdirectedException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Misdirected',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Misdirected', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.MISDIRECTED,
       ),
       HttpStatus.MISDIRECTED,
