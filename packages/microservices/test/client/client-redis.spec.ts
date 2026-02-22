@@ -390,4 +390,26 @@ describe('ClientRedis', () => {
       );
     });
   });
+
+  describe('createClient', () => {
+    it('should use default clientInfoTag when not provided', () => {
+      const clientWithoutTag = new ClientRedis({});
+      const redisClient = clientWithoutTag.createClient();
+
+      expect(redisClient).to.be.ok;
+      // Verify the clientInfoTag was set to the default value (nestjs_v{version})
+      expect(redisClient.options.clientInfoTag).to.match(
+        /^nestjs_v\d+\.\d+\.\d+$/,
+      );
+    });
+
+    it('should use custom clientInfoTag when provided', () => {
+      const clientWithTag = new ClientRedis({ clientInfoTag: 'my-app' });
+      const redisClient = clientWithTag.createClient();
+
+      expect(redisClient).to.be.ok;
+      // Verify the custom clientInfoTag was used
+      expect(redisClient.options.clientInfoTag).to.equal('my-app');
+    });
+  });
 });

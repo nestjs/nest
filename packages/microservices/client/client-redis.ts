@@ -8,6 +8,7 @@ import {
 } from '../events/redis.events';
 import { ReadPacket, RedisOptions, WritePacket } from '../interfaces';
 import { ClientProxy } from './client-proxy';
+import { getRedisClientInfoTag } from './redis-client-info.util';
 
 // To enable type safety for Redis. This cant be uncommented by default
 // because it would require the user to install the ioredis package even if they dont use Redis
@@ -93,6 +94,11 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       host: REDIS_DEFAULT_HOST,
       port: REDIS_DEFAULT_PORT,
       ...this.getClientOptions(),
+      clientInfoTag: this.getOptionsProp(
+        this.options,
+        'clientInfoTag',
+        getRedisClientInfoTag(),
+      ),
       lazyConnect: true,
     });
   }
