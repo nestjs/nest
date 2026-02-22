@@ -1,0 +1,166 @@
+{
+  "name": "NestJS Development Environment",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "devcontainer",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "node",
+  "updateRemoteUserUID": true,
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.vscode-typescript-next",
+        "ms-vscode.vscode-json",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-vscode.vscode-npm-script",
+        "christian-kohler.npm-intellisense",
+        "leizongmin.node-module-intellisense",
+        "christian-kohler.path-intellisense",
+        "formulahendry.auto-rename-tag",
+        "bradlc.vscode-tailwindcss",
+        "hbenl.vscode-test-explorer",
+        "hbenl.vscode-mocha-test-adapter",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens",
+        "yzhang.markdown-all-in-one"
+      ],
+
+      "settings": {
+        "typescript.updateImportsOnFileMove.enabled": "always",
+        "typescript.preferences.importModuleSpecifier": "relative",
+        "typescript.suggest.autoImports": true,
+        "typescript.suggest.completeFunctionCalls": true,
+        "typescript.workspaceSymbols.scope": "allOpenProjects",
+
+        "editor.rulers": [100],
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "editor.detectIndentation": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit",
+          "source.organizeImports": "explicit"
+        },
+
+        "prettier.configPath": ".prettierrc",
+        "prettier.ignorePath": ".prettierignore",
+        "prettier.requireConfig": true,
+
+        "eslint.workingDirectories": [
+          "./packages",
+          "./integration",
+          "./sample"
+        ],
+        "eslint.validate": ["javascript", "typescript"],
+
+        "files.exclude": {
+          "**/node_modules": true,
+          "**/dist": true,
+          "**/.nyc_output": true,
+          "**/coverage": true
+        },
+        "search.exclude": {
+          "**/node_modules": true,
+          "**/dist": true,
+          "**/.nyc_output": true,
+          "**/coverage": true
+        },
+
+        "docker.composeCommand": "docker-compose",
+        "docker.dockerComposeDetached": true,
+        "docker.environment": {},
+        "docker.dockerPath": "docker",
+        "docker.explorerRefreshInterval": 2000,
+        "docker.showExplorer": false,
+
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.env.linux": {
+          "NODE_ENV": "development"
+        },
+
+        "mochaExplorer.files": [
+          "packages/**/*.spec.ts",
+          "integration/**/*.spec.ts"
+        ],
+        "mochaExplorer.env": {
+          "NODE_ENV": "test"
+        },
+
+        "git.confirmSync": false,
+        "git.enableSmartCommit": true,
+        "git.autofetch": true,
+
+        "npm.enableRunFromFolder": true,
+        "npm.packageManager": "npm",
+        "emmet.includeLanguages": {
+          "typescript": "html",
+          "javascript": "html"
+        }
+      }
+    }
+  },
+
+  "forwardPorts": [
+    3000, 3001, 3002, 3003, 3004, 3005, 3006, 3007, 3008, 3009, 3010, 8080,
+    8081, 8082, 14223, 16222, 18222, 16379, 11883, 19001, 13306
+  ],
+
+  "portsAttributes": {
+    "3000": {
+      "label": "Main Application",
+      "onAutoForward": "notify"
+    },
+    "14223": {
+      "label": "NATS",
+      "onAutoForward": "silent"
+    },
+    "16222": {
+      "label": "NATS Cluster",
+      "onAutoForward": "silent"
+    },
+    "18222": {
+      "label": "NATS HTTP",
+      "onAutoForward": "silent"
+    },
+    "16379": {
+      "label": "Redis",
+      "onAutoForward": "silent"
+    },
+    "11883": {
+      "label": "MQTT",
+      "onAutoForward": "silent"
+    },
+    "19001": {
+      "label": "MQTT WebSocket",
+      "onAutoForward": "silent"
+    },
+    "13306": {
+      "label": "MySQL",
+      "onAutoForward": "silent"
+    }
+  },
+
+  "postCreateCommand": "bash .devcontainer/scripts/post-create.sh",
+
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": "true"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    }
+  },
+
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"
+  ],
+
+  "containerEnv": {
+    "NODE_ENV": "development",
+    "npm_config_legacy_peer_deps": "true",
+    "DOCKER_HOST": "unix:///var/run/docker-host.sock"
+  }
+}
