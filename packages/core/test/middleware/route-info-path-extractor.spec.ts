@@ -35,7 +35,7 @@ describe('RouteInfoPathExtractor', () => {
     });
 
     it(`should return correct paths when set global prefix`, () => {
-      Reflect.set(routeInfoPathExtractor, 'prefixPath', '/api');
+      Reflect.set(routeInfoPathExtractor, 'prefixPaths', ['/api']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -54,7 +54,7 @@ describe('RouteInfoPathExtractor', () => {
     });
 
     it(`should return correct paths when set global prefix and global prefix options`, () => {
-      Reflect.set(routeInfoPathExtractor, 'prefixPath', '/api');
+      Reflect.set(routeInfoPathExtractor, 'prefixPaths', ['/api']);
       Reflect.set(
         routeInfoPathExtractor,
         'excludedGlobalPrefixRoutes',
@@ -124,7 +124,7 @@ describe('RouteInfoPathExtractor', () => {
     });
 
     it(`should return correct path when set global prefix`, () => {
-      Reflect.set(routeInfoPathExtractor, 'prefixPath', '/api');
+      Reflect.set(routeInfoPathExtractor, 'prefixPaths', ['/api']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -143,7 +143,7 @@ describe('RouteInfoPathExtractor', () => {
     });
 
     it(`should return correct path when set global prefix and global prefix options`, () => {
-      Reflect.set(routeInfoPathExtractor, 'prefixPath', '/api');
+      Reflect.set(routeInfoPathExtractor, 'prefixPaths', ['/api']);
       Reflect.set(
         routeInfoPathExtractor,
         'excludedGlobalPrefixRoutes',

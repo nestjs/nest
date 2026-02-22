@@ -11,7 +11,7 @@ import { InstanceWrapper } from './injector/instance-wrapper';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
 
 export class ApplicationConfig {
-  private globalPrefix = '';
+  private globalPrefixes: string[] = [];
   private globalPrefixOptions: GlobalPrefixOptions<ExcludeRouteMetadata> = {};
   private globalPipes: Array<PipeTransform> = [];
   private globalFilters: Array<ExceptionFilter> = [];
@@ -27,12 +27,16 @@ export class ApplicationConfig {
 
   constructor(private ioAdapter: WebSocketAdapter | null = null) {}
 
-  public setGlobalPrefix(prefix: string) {
-    this.globalPrefix = prefix;
+  public setGlobalPrefix(prefix: string | string[]) {
+    this.globalPrefixes = Array.isArray(prefix) ? prefix : [prefix];
   }
 
-  public getGlobalPrefix() {
-    return this.globalPrefix;
+  public getGlobalPrefix(): string {
+    return this.globalPrefixes[0] ?? '';
+  }
+
+  public getGlobalPrefixes(): string[] {
+    return this.globalPrefixes;
   }
 
   public setGlobalPrefixOptions(
