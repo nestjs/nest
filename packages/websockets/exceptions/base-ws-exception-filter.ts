@@ -5,7 +5,7 @@ import {
   type WsExceptionFilter,
 } from '@nestjs/common';
 import { WsException } from '../errors/ws-exception.js';
-import { isObject } from '@nestjs/common/internal';
+import { isFunction, isNumber, isObject } from '@nestjs/common/internal';
 import { MESSAGES } from '@nestjs/core/internal';
 
 export interface ErrorPayload<Cause = { pattern: string; data: unknown }> {
@@ -64,7 +64,7 @@ export class BaseWsExceptionFilter<
     });
   }
 
-  public handleError<TClient extends { emit: Function }>(
+  public handleError<TClient extends { emit?: Function; send?: Function }>(
     client: TClient,
     exception: TError,
     cause: ErrorPayload['cause'],
@@ -77,7 +77,7 @@ export class BaseWsExceptionFilter<
     const result = exception.getError();
 
     if (isObject(result)) {
-      return client.emit('exception', result);
+      return this.emitMessage(client, 'exception', result);
     }
 
     const payload: ErrorPayload<unknown> = {
@@ -89,14 +89,12 @@ export class BaseWsExceptionFilter<
       payload.cause = this.options.causeFactory!(cause.pattern, cause.data);
     }
 
-    client.emit('exception', payload);
+    this.emitMessage(client, 'exception', payload);
   }
 
-  public handleUnknownError<TClient extends { emit: Function }>(
-    exception: TError,
-    client: TClient,
-    data: ErrorPayload['cause'],
-  ) {
+  public handleUnknownError<
+    TClient extends { emit?: Function; send?: Function },
+  >(exception: TError, client: TClient, data: ErrorPayload['cause']) {
     const status = 'error';
     const payload: ErrorPayload<unknown> = {
       status,
@@ -107,7 +105,7 @@ export class BaseWsExceptionFilter<
       payload.cause = this.options.causeFactory!(data.pattern, data.data);
     }
 
-    client.emit('exception', payload);
+    this.emitMessage(client, 'exception', payload);
 
     if (!(exception instanceof IntrinsicException)) {
       const logger = BaseWsExceptionFilter.logger;
@@ -117,5 +115,43 @@ export class BaseWsExceptionFilter<
 
   public isExceptionObject(err: any): err is Error {
     return isObject(err) && !!(err as Error).message;
+  }
+
+  /**
+   * Sends an error message to the client. Supports both Socket.IO clients
+   * (which use `emit`) and native WebSocket clients (which use `send`).
+   *
+   * Native WebSocket clients (e.g. from the `ws` package) inherit from
+   * EventEmitter and therefore also have an `emit` method, but that method
+   * only dispatches events locally. To distinguish native WebSocket clients
+   * from Socket.IO clients, we check for a numeric `readyState` property
+   * (part of the WebSocket specification) before falling back to `emit`.
+   */
+  protected emitMessage<TClient extends { emit?: Function; send?: Function }>(
+    client: TClient,
+    event: string,
+    payload: unknown,
+  ): void {
+    if (this.isNativeWebSocket(client)) {
+      client.send(
+        JSON.stringify({
+          event,
+          data: payload,
+        }),
+      );
+    } else if (isFunction(client.emit)) {
+      client.emit(event, payload);
+    }
+  }
+
+  /**
+   * Determines whether the given client is a native WebSocket (e.g. from the
+   * `ws` package) as opposed to a Socket.IO socket. Native WebSocket objects
+   * expose a numeric `readyState` property per the WebSocket specification.
+   */
+  private isNativeWebSocket(
+    client: Record<string, any>,
+  ): client is { send: Function; readyState: number } {
+    return isNumber(client.readyState) && isFunction(client.send);
   }
 }
