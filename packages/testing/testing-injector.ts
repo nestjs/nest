@@ -53,6 +53,7 @@ export class TestingInjector extends Injector {
     instanceWrapper: InstanceWrapper<T>,
     contextId = STATIC_CONTEXT,
     inquirer?: InstanceWrapper,
+    inquirerIdOverride?: string,
   ): Promise<InstanceWrapper> {
     try {
       const existingProviderWrapper = await super.resolveComponentHost(
@@ -60,6 +61,7 @@ export class TestingInjector extends Injector {
         instanceWrapper,
         contextId,
         inquirer,
+        inquirerIdOverride,
       );
       return existingProviderWrapper;
     } catch (err) {
