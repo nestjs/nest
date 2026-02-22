@@ -14,7 +14,10 @@ export class WsExceptionsHandler extends BaseWsExceptionFilter {
 
   public handle(exception: Error | WsException, host: ArgumentsHost) {
     const client = host.switchToWs().getClient();
-    if (this.invokeCustomFilters(exception, host) || !client.emit) {
+    if (
+      this.invokeCustomFilters(exception, host) ||
+      (!client.emit && !client.send)
+    ) {
       return;
     }
     super.catch(exception, host);
