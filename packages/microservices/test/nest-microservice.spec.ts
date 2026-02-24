@@ -152,4 +152,70 @@ describe('NestMicroservice', () => {
     instance.on('test:event', cb);
     expect(onStub).toHaveBeenCalledWith('test:event', cb);
   });
+
+  describe('useGlobalPreRequestHooks', () => {
+    it('should delegate to applicationConfig.useGlobalPreRequestHooks', () => {
+      const mockConfig = {
+        ...createMockAppConfig(),
+        useGlobalPreRequestHooks: sinon.stub(),
+      } as unknown as ApplicationConfig;
+
+      const instance = new NestMicroservice(
+        mockContainer,
+        { transport: Transport.TCP },
+        mockGraphInspector,
+        mockConfig,
+      );
+
+      const hook = (_ctx: any, next: any) => next();
+      instance.useGlobalPreRequestHooks(hook);
+
+      expect(
+        (mockConfig.useGlobalPreRequestHooks as sinon.SinonStub).calledWith(
+          hook,
+        ),
+      ).to.be.true;
+    });
+
+    it('should warn when called after initialization', () => {
+      const mockConfig = {
+        ...createMockAppConfig(),
+        useGlobalPreRequestHooks: sinon.stub(),
+      } as unknown as ApplicationConfig;
+
+      const instance = new NestMicroservice(
+        mockContainer,
+        { transport: Transport.TCP },
+        mockGraphInspector,
+        mockConfig,
+      );
+
+      const warnSpy = sinon.stub((instance as any).logger, 'warn');
+      (instance as any).isInitialized = true;
+
+      const hook = (_ctx: any, next: any) => next();
+      instance.useGlobalPreRequestHooks(hook);
+
+      expect(warnSpy.called).to.be.true;
+    });
+
+    it('should return this for fluent API chaining', () => {
+      const mockConfig = {
+        ...createMockAppConfig(),
+        useGlobalPreRequestHooks: sinon.stub(),
+      } as unknown as ApplicationConfig;
+
+      const instance = new NestMicroservice(
+        mockContainer,
+        { transport: Transport.TCP },
+        mockGraphInspector,
+        mockConfig,
+      );
+
+      const hook = (_ctx: any, next: any) => next();
+      const result = instance.useGlobalPreRequestHooks(hook);
+
+      expect(result).to.equal(instance);
+    });
+  });
 });

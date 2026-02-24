@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs';
-import { ExceptionFilter } from './exceptions/exception-filter.interface.js';
-import { CanActivate } from './features/can-activate.interface.js';
-import { NestInterceptor } from './features/nest-interceptor.interface.js';
-import { PipeTransform } from './features/pipe-transform.interface.js';
-import { INestApplicationContext } from './nest-application-context.interface.js';
-import { WebSocketAdapter } from './websockets/web-socket-adapter.interface.js';
+import { ExceptionFilter } from './exceptions/exception-filter.interface';
+import { CanActivate } from './features/can-activate.interface';
+import { NestInterceptor } from './features/nest-interceptor.interface';
+import { PipeTransform } from './features/pipe-transform.interface';
+import { PreRequestHook } from './microservices/pre-request-hook.interface';
+import { INestApplicationContext } from './nest-application-context.interface';
+import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 
 /**
  * Interface describing Microservice Context.
@@ -55,6 +56,15 @@ export interface INestMicroservice extends INestApplicationContext {
    * @param {...CanActivate} guards
    */
   useGlobalGuards(...guards: CanActivate[]): this;
+
+  /**
+   * Registers global preRequest hooks (will be executed before guards for every pattern handler).
+   * Hooks receive an `ExecutionContext` and a `next` function that executes the rest of the pipeline.
+   * Useful for setting up AsyncLocalStorage context, tracing, or correlation IDs.
+   *
+   * @param {...PreRequestHook} hooks
+   */
+  useGlobalPreRequestHooks(...hooks: PreRequestHook[]): this;
 
   /**
    * Terminates the application.
