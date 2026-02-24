@@ -4,6 +4,7 @@ import type {
   INestMicroservice,
   NestInterceptor,
   PipeTransform,
+  PreRequestHook,
   WebSocketAdapter,
 } from '@nestjs/common';
 import { Transport } from './enums/transport.enum.js';
@@ -244,6 +245,21 @@ export class NestMicroservice
         ref: item,
       }),
     );
+    return this;
+  }
+
+  /**
+   * Registers global preRequest hooks (executed before guards for every pattern handler).
+   *
+   * @param {...PreRequestHook} hooks
+   */
+  public useGlobalPreRequestHooks(...hooks: PreRequestHook[]): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Cannot apply global preRequest hooks: registration must occur before initialization.',
+      );
+    }
+    this.applicationConfig.useGlobalPreRequestHooks(...hooks);
     return this;
   }
 

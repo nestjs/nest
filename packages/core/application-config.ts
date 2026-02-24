@@ -3,6 +3,7 @@ import type {
   ExceptionFilter,
   NestInterceptor,
   PipeTransform,
+  PreRequestHook,
   VersioningOptions,
   WebSocketAdapter,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ export class ApplicationConfig {
   private globalFilters: Array<ExceptionFilter> = [];
   private globalInterceptors: Array<NestInterceptor> = [];
   private globalGuards: Array<CanActivate> = [];
+  private globalPreRequestHooks: Array<PreRequestHook> = [];
   private versioningOptions: VersioningOptions;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
   private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] =
@@ -133,6 +135,14 @@ export class ApplicationConfig {
 
   public getGlobalRequestGuards(): InstanceWrapper<CanActivate>[] {
     return this.globalRequestGuards;
+  }
+
+  public useGlobalPreRequestHooks(...hooks: PreRequestHook[]) {
+    this.globalPreRequestHooks = this.globalPreRequestHooks.concat(hooks);
+  }
+
+  public getGlobalPreRequestHooks(): PreRequestHook[] {
+    return this.globalPreRequestHooks;
   }
 
   public enableVersioning(options: VersioningOptions): void {

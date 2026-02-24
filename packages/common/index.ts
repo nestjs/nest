@@ -41,6 +41,7 @@ export {
   NestHybridApplicationOptions,
   NestInterceptor,
   NestMiddleware,
+  PreRequestHook,
   NestModule,
   OnApplicationBootstrap,
   OnApplicationShutdown,

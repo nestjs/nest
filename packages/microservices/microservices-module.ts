@@ -54,6 +54,7 @@ export class MicroservicesModule<
       new GuardsConsumer(),
       new InterceptorsContextCreator(container, config),
       new InterceptorsConsumer(),
+      config,
     );
 
     const injector = new Injector({
