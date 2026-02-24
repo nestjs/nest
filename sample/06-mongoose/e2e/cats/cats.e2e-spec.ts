@@ -4,9 +4,9 @@ import { getModelToken } from '@nestjs/mongoose';
 import { MongooseModule } from '@nestjs/mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import * as mongoose from 'mongoose';
-import * as request from 'supertest';
-import { CatsModule } from '../../src/cats/cats.module';
-import { Cat } from '../../src/cats/schemas/cat.schema';
+import request from 'supertest';
+import { CatsModule } from '../../src/cats/cats.module.js';
+import { Cat } from '../../src/cats/schemas/cat.schema.js';
 import { Model } from 'mongoose';
 
 describe('CatsController (e2e)', () => {
