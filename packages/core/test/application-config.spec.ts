@@ -105,6 +105,25 @@ describe('ApplicationConfig', () => {
       expect(appConfig.getGlobalRequestGuards()).toContain(guard);
     });
   });
+  describe('PreRequestHooks', () => {
+    it('should set global preRequest hooks', () => {
+      const hooks = [() => {}, () => {}];
+      appConfig.useGlobalPreRequestHooks(...(hooks as any));
+
+      expect(appConfig.getGlobalPreRequestHooks()).to.be.eql(hooks);
+    });
+    it('should accumulate multiple useGlobalPreRequestHooks calls', () => {
+      const hook1 = () => {};
+      const hook2 = () => {};
+      appConfig.useGlobalPreRequestHooks(hook1 as any);
+      appConfig.useGlobalPreRequestHooks(hook2 as any);
+
+      expect(appConfig.getGlobalPreRequestHooks()).to.deep.equal([
+        hook1,
+        hook2,
+      ]);
+    });
+  });
   describe('Interceptors', () => {
     it('should set global interceptors', () => {
       const interceptors = ['test', 'test2'];
