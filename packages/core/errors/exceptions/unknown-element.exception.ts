@@ -2,11 +2,10 @@ import { RuntimeException } from './runtime.exception';
 
 export class UnknownElementException extends RuntimeException {
   constructor(name?: string | symbol) {
-    name = name && name.toString();
+    const elementName = name?.toString() ?? 'the given';
+
     super(
-      `Nest could not find ${
-        name || 'given'
-      } element (this provider does not exist in the current context)`,
+      `Nest could not find ${elementName} element (this provider does not exist in the current context)`,
     );
   }
 }
