@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { ExecutionContext } from '../features/execution-context.interface';
+import { ExecutionContext } from '../features/execution-context.interface.js';
 
 /**
  * Interface describing a global preRequest hook for microservices.
