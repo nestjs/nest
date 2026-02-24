@@ -33,12 +33,14 @@
     "@nestjs/cli": "11.0.16",
     "@nestjs/schematics": "11.0.9",
     "@nestjs/testing": "11.1.13",
+    "@swc/core": "1.13.1",
     "@types/express": "5.0.6",
     "@types/node": "24.10.11",
     "@types/supertest": "6.0.3",
     "eslint": "9.39.2",
     "eslint-plugin-prettier": "5.5.5",
     "globals": "17.3.0",
+    "mongodb-memory-server": "^11.0.1",
     "prettier": "3.8.1",
     "supertest": "7.2.2",
     "ts-loader": "9.5.4",
@@ -46,9 +48,8 @@
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.54.0",
-    "vitest": "3.2.4",
     "unplugin-swc": "1.5.5",
-    "@swc/core": "1.13.1"
+    "vitest": "3.2.4"
   },
   "type": "module"
 }
