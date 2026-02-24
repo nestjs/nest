@@ -110,7 +110,7 @@ describe('ApplicationConfig', () => {
       const hooks = [() => {}, () => {}];
       appConfig.useGlobalPreRequestHooks(...(hooks as any));
 
-      expect(appConfig.getGlobalPreRequestHooks()).to.be.eql(hooks);
+      expect(appConfig.getGlobalPreRequestHooks()).toEqual(hooks);
     });
     it('should accumulate multiple useGlobalPreRequestHooks calls', () => {
       const hook1 = () => {};
@@ -118,10 +118,7 @@ describe('ApplicationConfig', () => {
       appConfig.useGlobalPreRequestHooks(hook1 as any);
       appConfig.useGlobalPreRequestHooks(hook2 as any);
 
-      expect(appConfig.getGlobalPreRequestHooks()).to.deep.equal([
-        hook1,
-        hook2,
-      ]);
+      expect(appConfig.getGlobalPreRequestHooks()).toEqual([hook1, hook2]);
     });
   });
   describe('Interceptors', () => {

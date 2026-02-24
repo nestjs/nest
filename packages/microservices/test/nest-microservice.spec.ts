@@ -157,7 +157,7 @@ describe('NestMicroservice', () => {
     it('should delegate to applicationConfig.useGlobalPreRequestHooks', () => {
       const mockConfig = {
         ...createMockAppConfig(),
-        useGlobalPreRequestHooks: sinon.stub(),
+        useGlobalPreRequestHooks: vi.fn(),
       } as unknown as ApplicationConfig;
 
       const instance = new NestMicroservice(
@@ -170,17 +170,13 @@ describe('NestMicroservice', () => {
       const hook = (_ctx: any, next: any) => next();
       instance.useGlobalPreRequestHooks(hook);
 
-      expect(
-        (mockConfig.useGlobalPreRequestHooks as sinon.SinonStub).calledWith(
-          hook,
-        ),
-      ).to.be.true;
+      expect(mockConfig.useGlobalPreRequestHooks).toHaveBeenCalledWith(hook);
     });
 
     it('should warn when called after initialization', () => {
       const mockConfig = {
         ...createMockAppConfig(),
-        useGlobalPreRequestHooks: sinon.stub(),
+        useGlobalPreRequestHooks: vi.fn(),
       } as unknown as ApplicationConfig;
 
       const instance = new NestMicroservice(
@@ -190,19 +186,19 @@ describe('NestMicroservice', () => {
         mockConfig,
       );
 
-      const warnSpy = sinon.stub((instance as any).logger, 'warn');
+      const warnSpy = vi.spyOn((instance as any).logger, 'warn');
       (instance as any).isInitialized = true;
 
       const hook = (_ctx: any, next: any) => next();
       instance.useGlobalPreRequestHooks(hook);
 
-      expect(warnSpy.called).to.be.true;
+      expect(warnSpy).toHaveBeenCalled();
     });
 
     it('should return this for fluent API chaining', () => {
       const mockConfig = {
         ...createMockAppConfig(),
-        useGlobalPreRequestHooks: sinon.stub(),
+        useGlobalPreRequestHooks: vi.fn(),
       } as unknown as ApplicationConfig;
 
       const instance = new NestMicroservice(
@@ -215,7 +211,7 @@ describe('NestMicroservice', () => {
       const hook = (_ctx: any, next: any) => next();
       const result = instance.useGlobalPreRequestHooks(hook);
 
-      expect(result).to.equal(instance);
+      expect(result).toBe(instance);
     });
   });
 });
