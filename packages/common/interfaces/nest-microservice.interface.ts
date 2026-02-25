@@ -64,7 +64,7 @@ export interface INestMicroservice extends INestApplicationContext {
    *
    * @param {...PreRequestHook} hooks
    */
-  useGlobalPreRequestHooks(...hooks: PreRequestHook[]): this;
+  registerPreRequestHook(...hooks: PreRequestHook[]): this;
 
   /**
    * Terminates the application.
