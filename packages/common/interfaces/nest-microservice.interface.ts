@@ -58,7 +58,7 @@ export interface INestMicroservice extends INestApplicationContext {
   useGlobalGuards(...guards: CanActivate[]): this;
 
   /**
-   * Registers global preRequest hooks (will be executed before guards for every pattern handler).
+   * Registers a global preRequest hook (executed before all enhancers for every pattern handler).
    * Hooks receive an `ExecutionContext` and a `next` function that executes the rest of the pipeline.
    * Useful for setting up AsyncLocalStorage context, tracing, or correlation IDs.
    *
