@@ -68,3 +68,5 @@ export * from './pipes';
 export * from './serializer';
 export * from './services';
 export * from './utils';
+export * from './guards/hmac.guard';
+export * from './interceptors/rate-limit.interceptor';
