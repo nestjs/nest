@@ -39,7 +39,7 @@ describe('AudioController (e2e)', () => {
 
   describe('/audio/transcode-bulk (POST)', () => {
     it('should queue 1000 transcoding jobs in bulk and return success', () => {
-      return request(app.getHttpServer() as any)
+      return request(app.getHttpServer())
         .post('/audio/transcode-bulk')
         .expect(201)
         .expect((res) => {
