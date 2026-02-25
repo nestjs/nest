@@ -137,7 +137,7 @@ export class ApplicationConfig {
     return this.globalRequestGuards;
   }
 
-  public useGlobalPreRequestHooks(...hooks: PreRequestHook[]) {
+  public registerPreRequestHook(...hooks: PreRequestHook[]) {
     this.globalPreRequestHooks = this.globalPreRequestHooks.concat(hooks);
   }
 

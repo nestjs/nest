@@ -153,11 +153,11 @@ describe('NestMicroservice', () => {
     expect(onStub).toHaveBeenCalledWith('test:event', cb);
   });
 
-  describe('useGlobalPreRequestHooks', () => {
-    it('should delegate to applicationConfig.useGlobalPreRequestHooks', () => {
+  describe('registerPreRequestHook', () => {
+    it('should delegate to applicationConfig.registerPreRequestHook', () => {
       const mockConfig = {
         ...createMockAppConfig(),
-        useGlobalPreRequestHooks: vi.fn(),
+        registerPreRequestHook: vi.fn(),
       } as unknown as ApplicationConfig;
 
       const instance = new NestMicroservice(
@@ -168,15 +168,15 @@ describe('NestMicroservice', () => {
       );
 
       const hook = (_ctx: any, next: any) => next();
-      instance.useGlobalPreRequestHooks(hook);
+      instance.registerPreRequestHook(hook);
 
-      expect(mockConfig.useGlobalPreRequestHooks).toHaveBeenCalledWith(hook);
+      expect(mockConfig.registerPreRequestHook).toHaveBeenCalledWith(hook);
     });
 
     it('should warn when called after initialization', () => {
       const mockConfig = {
         ...createMockAppConfig(),
-        useGlobalPreRequestHooks: vi.fn(),
+        registerPreRequestHook: vi.fn(),
       } as unknown as ApplicationConfig;
 
       const instance = new NestMicroservice(
@@ -190,7 +190,7 @@ describe('NestMicroservice', () => {
       (instance as any).isInitialized = true;
 
       const hook = (_ctx: any, next: any) => next();
-      instance.useGlobalPreRequestHooks(hook);
+      instance.registerPreRequestHook(hook);
 
       expect(warnSpy).toHaveBeenCalled();
     });
@@ -198,7 +198,7 @@ describe('NestMicroservice', () => {
     it('should return this for fluent API chaining', () => {
       const mockConfig = {
         ...createMockAppConfig(),
-        useGlobalPreRequestHooks: vi.fn(),
+        registerPreRequestHook: vi.fn(),
       } as unknown as ApplicationConfig;
 
       const instance = new NestMicroservice(
@@ -209,7 +209,7 @@ describe('NestMicroservice', () => {
       );
 
       const hook = (_ctx: any, next: any) => next();
-      const result = instance.useGlobalPreRequestHooks(hook);
+      const result = instance.registerPreRequestHook(hook);
 
       expect(result).toBe(instance);
     });

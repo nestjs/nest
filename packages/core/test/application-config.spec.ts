@@ -108,15 +108,15 @@ describe('ApplicationConfig', () => {
   describe('PreRequestHooks', () => {
     it('should set global preRequest hooks', () => {
       const hooks = [() => {}, () => {}];
-      appConfig.useGlobalPreRequestHooks(...(hooks as any));
+      appConfig.registerPreRequestHook(...(hooks as any));
 
       expect(appConfig.getGlobalPreRequestHooks()).toEqual(hooks);
     });
-    it('should accumulate multiple useGlobalPreRequestHooks calls', () => {
+    it('should accumulate multiple registerPreRequestHook calls', () => {
       const hook1 = () => {};
       const hook2 = () => {};
-      appConfig.useGlobalPreRequestHooks(hook1 as any);
-      appConfig.useGlobalPreRequestHooks(hook2 as any);
+      appConfig.registerPreRequestHook(hook1 as any);
+      appConfig.registerPreRequestHook(hook2 as any);
 
       expect(appConfig.getGlobalPreRequestHooks()).toEqual([hook1, hook2]);
     });

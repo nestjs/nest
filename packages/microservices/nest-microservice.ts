@@ -253,13 +253,13 @@ export class NestMicroservice
    *
    * @param {...PreRequestHook} hooks
    */
-  public useGlobalPreRequestHooks(...hooks: PreRequestHook[]): this {
+  public registerPreRequestHook(...hooks: PreRequestHook[]): this {
     if (this.isInitialized) {
       this.logger.warn(
         'Cannot apply global preRequest hooks: registration must occur before initialization.',
       );
     }
-    this.applicationConfig.useGlobalPreRequestHooks(...hooks);
+    this.applicationConfig.registerPreRequestHook(...hooks);
     return this;
   }
 

@@ -10,7 +10,7 @@ import { ExecutionContext } from '../features/execution-context.interface.js';
  * @example
  * ```typescript
  * const als = new AsyncLocalStorage();
- * app.useGlobalPreRequestHooks((context, next) => {
+ * app.registerPreRequestHook((context, next) => {
  *   als.enterWith({ correlationId: uuid() });
  *   return next();
  * });
