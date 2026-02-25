@@ -1,13 +1,18 @@
-import type { ContextType, PipeTransform } from '@nestjs/common';
+import type {
+  ContextType,
+  PipeTransform,
+  PreRequestHook,
+} from '@nestjs/common';
 import {
   type Controller,
   CUSTOM_ROUTE_ARGS_METADATA,
   isEmptyArray,
   PARAMTYPES_METADATA,
 } from '@nestjs/common/internal';
+import type { ApplicationConfig } from '@nestjs/core';
 import {
   ContextUtils,
-  type ExecutionContextHost,
+  ExecutionContextHost,
   FORBIDDEN_MESSAGE,
   type GuardsConsumer,
   type GuardsContextCreator,
@@ -20,7 +25,7 @@ import {
   type PipesContextCreator,
   STATIC_CONTEXT,
 } from '@nestjs/core/internal';
-import { Observable } from 'rxjs';
+import { defer, from, mergeMap, Observable } from 'rxjs';
 import { PARAM_ARGS_METADATA } from '../constants.js';
 import { RpcException } from '../exceptions/index.js';
 import { RpcParamsFactory } from '../factories/rpc-params-factory.js';
@@ -50,6 +55,7 @@ export class RpcContextCreator {
     private readonly guardsConsumer: GuardsConsumer,
     private readonly interceptorsContextCreator: InterceptorsContextCreator,
     private readonly interceptorsConsumer: InterceptorsConsumer,
+    private readonly applicationConfig?: ApplicationConfig,
   ) {}
 
   public create<T extends ParamsMetadata = ParamsMetadata>(
@@ -119,18 +125,46 @@ export class RpcContextCreator {
       return callback.apply(instance, args);
     };
 
+    const preRequestHooks =
+      this.applicationConfig?.getGlobalPreRequestHooks() ?? [];
+
     return this.rpcProxy.create(async (...args: unknown[]) => {
       const initialArgs = this.contextUtils.createNullArray(argsLength);
-      fnCanActivate && (await fnCanActivate(args));
 
-      return this.interceptorsConsumer.intercept(
-        interceptors,
+      const executePipeline = async () => {
+        fnCanActivate && (await fnCanActivate(args));
+        return this.interceptorsConsumer.intercept(
+          interceptors,
+          args,
+          instance,
+          callback,
+          handler(initialArgs, args),
+          contextType,
+        ) as Promise<Observable<unknown>>;
+      };
+
+      if (preRequestHooks.length === 0) {
+        return executePipeline();
+      }
+
+      const executionContext = new ExecutionContextHost(
         args,
-        instance,
+        instance.constructor as any,
         callback,
-        handler(initialArgs, args),
-        contextType,
-      ) as Promise<Observable<unknown>>;
+      );
+      executionContext.setType(contextType);
+
+      const pipelineObs: Observable<unknown> = defer(() =>
+        from(executePipeline()).pipe(mergeMap(obs => obs)),
+      );
+
+      let index = 0;
+      const next = (): Observable<unknown> => {
+        if (index >= preRequestHooks.length) return pipelineObs;
+        return preRequestHooks[index++](executionContext, next);
+      };
+
+      return next();
     }, exceptionHandler);
   }
 

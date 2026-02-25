@@ -1,21 +1,21 @@
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
-import { of } from 'rxjs';
-import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
-import { Injectable, UseGuards, UsePipes } from '../../../common/index.js';
-import { ApplicationConfig } from '../../../core/application-config.js';
-import { GuardsConsumer } from '../../../core/guards/guards-consumer.js';
-import { GuardsContextCreator } from '../../../core/guards/guards-context-creator.js';
-import { NestContainer } from '../../../core/injector/container.js';
-import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer.js';
-import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator.js';
-import { PipesConsumer } from '../../../core/pipes/pipes-consumer.js';
-import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator.js';
-import { ExceptionFiltersContext } from '../../context/exception-filters-context.js';
-import { RpcContextCreator } from '../../context/rpc-context-creator.js';
-import { RpcProxy } from '../../context/rpc-proxy.js';
-import { RpcParamtype } from '../../enums/rpc-paramtype.enum.js';
-import { RpcParamsFactory } from '../../factories/rpc-params-factory.js';
-import { RpcException } from '../../index.js';
+import { Observable, of } from 'rxjs';
+import { Injectable, UseGuards, UsePipes } from '../../../common';
+import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
+import { ApplicationConfig } from '../../../core/application-config';
+import { GuardsConsumer } from '../../../core/guards/guards-consumer';
+import { GuardsContextCreator } from '../../../core/guards/guards-context-creator';
+import { NestContainer } from '../../../core/injector/container';
+import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer';
+import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator';
+import { PipesConsumer } from '../../../core/pipes/pipes-consumer';
+import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator';
+import { ExceptionFiltersContext } from '../../context/exception-filters-context';
+import { RpcContextCreator } from '../../context/rpc-context-creator';
+import { RpcProxy } from '../../context/rpc-proxy';
+import { RpcParamtype } from '../../enums/rpc-paramtype.enum';
+import { RpcParamsFactory } from '../../factories/rpc-params-factory';
+import { RpcException } from '../../index';
 
 @Injectable()
 class TestGuard {
@@ -76,6 +76,11 @@ describe('RpcContextCreator', () => {
     instance = new Test();
     module = 'test';
   });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('create', () => {
     it('should create exception handler', () => {
       const handlerCreateSpy = vi.spyOn(exceptionFiltersContext, 'create');
@@ -199,7 +204,7 @@ describe('RpcContextCreator', () => {
     });
   });
   describe('getParamValue', () => {
-    let consumerApplySpy: ReturnType<typeof vi.fn>;
+    let consumerApplySpy: any;
     const value = 3,
       metatype = null,
       transforms = [{ transform: vi.fn() }];
@@ -240,6 +245,282 @@ describe('RpcContextCreator', () => {
         await pipesFn([]);
         expect(pipesFn).toBeTypeOf('function');
       });
+    });
+  });
+
+  describe('preRequest hooks', () => {
+    function makeCreatorWithHooks(hooks: any[]) {
+      const container: any = new NestContainer();
+      const localRpcProxy = new RpcProxy();
+      const localExceptionFiltersContext = new ExceptionFiltersContext(
+        container,
+        new ApplicationConfig() as any,
+      );
+      vi.spyOn(localRpcProxy, 'create').mockImplementation(a => a);
+
+      const mockConfig = {
+        getGlobalPreRequestHooks: () => hooks,
+      } as any;
+
+      return new RpcContextCreator(
+        localRpcProxy,
+        localExceptionFiltersContext,
+        new PipesContextCreator(container) as any,
+        new PipesConsumer() as any,
+        new GuardsContextCreator(container) as any,
+        new GuardsConsumer() as any,
+        new InterceptorsContextCreator(container) as any,
+        new InterceptorsConsumer() as any,
+        mockConfig,
+      );
+    }
+
+    it('should execute preRequest hook before guards', async () => {
+      const executionOrder: string[] = [];
+
+      const hookFn = (_ctx: any, next: () => Observable<unknown>) => {
+        executionOrder.push('hook');
+        return next();
+      };
+
+      const creator = makeCreatorWithHooks([hookFn]);
+      vi.spyOn(
+        new GuardsContextCreator(new NestContainer() as any),
+        'create',
+      ).mockReturnValue([] as any);
+
+      const localGuardsConsumer = new GuardsConsumer();
+      vi.spyOn(localGuardsConsumer, 'tryActivate').mockImplementation(
+        async () => {
+          executionOrder.push('guard');
+          return true;
+        },
+      );
+
+      const container: any = new NestContainer();
+      const localRpcProxy = new RpcProxy();
+      const localExceptionFiltersContext = new ExceptionFiltersContext(
+        container,
+        new ApplicationConfig() as any,
+      );
+      vi.spyOn(localRpcProxy, 'create').mockImplementation(a => a);
+      const mockConfig = { getGlobalPreRequestHooks: () => [hookFn] } as any;
+      const localGuardsContextCreator = new GuardsContextCreator(container);
+      vi.spyOn(localGuardsContextCreator, 'create').mockReturnValue([
+        {
+          canActivate: () => {
+            executionOrder.push('guard');
+            return true;
+          },
+        },
+      ] as any);
+
+      const hookCreator = new RpcContextCreator(
+        localRpcProxy,
+        localExceptionFiltersContext,
+        new PipesContextCreator(container) as any,
+        new PipesConsumer() as any,
+        localGuardsContextCreator as any,
+        new GuardsConsumer() as any,
+        new InterceptorsContextCreator(container) as any,
+        new InterceptorsConsumer() as any,
+        mockConfig,
+      );
+
+      const proxy = hookCreator.create(instance, instance.test, module, 'test');
+      const result = await proxy('data');
+      if (result && typeof (result as any).subscribe === 'function') {
+        await new Promise<void>(resolve => {
+          (result as Observable<unknown>).subscribe({
+            complete: resolve,
+            error: resolve,
+          });
+        });
+      }
+
+      expect(executionOrder[0]).toBe('hook');
+      expect(executionOrder[1]).toBe('guard');
+    });
+
+    it('should chain multiple hooks in registration order', async () => {
+      const order: string[] = [];
+
+      const hook1 = (_ctx: any, next: () => Observable<unknown>) => {
+        order.push('hook1');
+        return next();
+      };
+      const hook2 = (_ctx: any, next: () => Observable<unknown>) => {
+        order.push('hook2');
+        return next();
+      };
+
+      const container: any = new NestContainer();
+      const localRpcProxy = new RpcProxy();
+      vi.spyOn(localRpcProxy, 'create').mockImplementation(a => a);
+      const mockConfig = {
+        getGlobalPreRequestHooks: () => [hook1, hook2],
+      } as any;
+      const localGuardsContextCreator = new GuardsContextCreator(container);
+      vi.spyOn(localGuardsContextCreator, 'create').mockReturnValue([
+        {
+          canActivate: () => {
+            order.push('guard');
+            return true;
+          },
+        },
+      ] as any);
+
+      const hookCreator = new RpcContextCreator(
+        localRpcProxy,
+        new ExceptionFiltersContext(container, new ApplicationConfig() as any),
+        new PipesContextCreator(container) as any,
+        new PipesConsumer() as any,
+        localGuardsContextCreator as any,
+        new GuardsConsumer() as any,
+        new InterceptorsContextCreator(container) as any,
+        new InterceptorsConsumer() as any,
+        mockConfig,
+      );
+
+      const proxy = hookCreator.create(instance, instance.test, module, 'test');
+      const result = await proxy('data');
+      if (result && typeof (result as any).subscribe === 'function') {
+        await new Promise<void>(resolve => {
+          (result as Observable<unknown>).subscribe({
+            complete: resolve,
+            error: resolve,
+          });
+        });
+      }
+
+      expect(order).toEqual(['hook1', 'hook2', 'guard']);
+    });
+
+    it('should not call hook when no hooks are registered (fast-path)', async () => {
+      const hookFn = vi.fn((_ctx: any, next: () => Observable<unknown>) =>
+        next(),
+      );
+      const creator = makeCreatorWithHooks([]);
+
+      const guardSpy = vi.spyOn(guardsConsumer, 'tryActivate');
+      vi.spyOn(guardsContextCreator, 'create').mockImplementation(
+        () => [{ canActivate: () => true }] as any,
+      );
+
+      contextCreator = new RpcContextCreator(
+        rpcProxy,
+        exceptionFiltersContext,
+        pipesCreator as any,
+        pipesConsumer as any,
+        guardsContextCreator as any,
+        guardsConsumer as any,
+        new InterceptorsContextCreator(new NestContainer() as any) as any,
+        new InterceptorsConsumer() as any,
+        { getGlobalPreRequestHooks: () => [] } as any,
+      );
+
+      const proxy = contextCreator.create(
+        instance,
+        instance.test,
+        module,
+        'test',
+      );
+      await proxy('data');
+      expect(hookFn).not.toHaveBeenCalled();
+      expect(guardSpy).toHaveBeenCalled();
+    });
+
+    it('should provide ExecutionContext with getClass() and getHandler() to the hook', async () => {
+      let capturedContext: any;
+
+      const hookFn = (ctx: any, next: () => Observable<unknown>) => {
+        capturedContext = ctx;
+        return next();
+      };
+
+      const container: any = new NestContainer();
+      const localRpcProxy = new RpcProxy();
+      vi.spyOn(localRpcProxy, 'create').mockImplementation(a => a);
+      const mockConfig = { getGlobalPreRequestHooks: () => [hookFn] } as any;
+      const localGuardsContextCreator = new GuardsContextCreator(container);
+      vi.spyOn(localGuardsContextCreator, 'create').mockReturnValue([] as any);
+
+      const hookCreator = new RpcContextCreator(
+        localRpcProxy,
+        new ExceptionFiltersContext(container, new ApplicationConfig() as any),
+        new PipesContextCreator(container) as any,
+        new PipesConsumer() as any,
+        localGuardsContextCreator as any,
+        new GuardsConsumer() as any,
+        new InterceptorsContextCreator(container) as any,
+        new InterceptorsConsumer() as any,
+        mockConfig,
+      );
+
+      const proxy = hookCreator.create(instance, instance.test, module, 'test');
+      const result = await proxy('data');
+      if (result && typeof (result as any).subscribe === 'function') {
+        await new Promise<void>(resolve => {
+          (result as Observable<unknown>).subscribe({
+            complete: resolve,
+            error: resolve,
+          });
+        });
+      }
+
+      expect(capturedContext).not.toBeUndefined();
+      expect(capturedContext.getClass()).toBe(Test);
+      expect(capturedContext.getHandler()).toBe(instance.test);
+      expect(capturedContext.getType()).toBe('rpc');
+    });
+
+    it('should simulate ALS context available in guard (AsyncLocalStorage scenario)', async () => {
+      const store = new Map<string, string>();
+      let correlationIdInGuard: string | undefined;
+
+      const hookFn = (_ctx: any, next: () => Observable<unknown>) => {
+        store.set('correlationId', 'test-id-123');
+        return next();
+      };
+
+      const container: any = new NestContainer();
+      const localRpcProxy = new RpcProxy();
+      vi.spyOn(localRpcProxy, 'create').mockImplementation(a => a);
+      const mockConfig = { getGlobalPreRequestHooks: () => [hookFn] } as any;
+      const localGuardsContextCreator = new GuardsContextCreator(container);
+      vi.spyOn(localGuardsContextCreator, 'create').mockReturnValue([
+        {
+          canActivate: () => {
+            correlationIdInGuard = store.get('correlationId');
+            return true;
+          },
+        },
+      ] as any);
+
+      const hookCreator = new RpcContextCreator(
+        localRpcProxy,
+        new ExceptionFiltersContext(container, new ApplicationConfig() as any),
+        new PipesContextCreator(container) as any,
+        new PipesConsumer() as any,
+        localGuardsContextCreator as any,
+        new GuardsConsumer() as any,
+        new InterceptorsContextCreator(container) as any,
+        new InterceptorsConsumer() as any,
+        mockConfig,
+      );
+
+      const proxy = hookCreator.create(instance, instance.test, module, 'test');
+      const result = await proxy('data');
+      if (result && typeof (result as any).subscribe === 'function') {
+        await new Promise<void>(resolve => {
+          (result as Observable<unknown>).subscribe({
+            complete: resolve,
+            error: resolve,
+          });
+        });
+      }
+
+      expect(correlationIdInGuard).toBe('test-id-123');
     });
   });
 });

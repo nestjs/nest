@@ -152,4 +152,66 @@ describe('NestMicroservice', () => {
     instance.on('test:event', cb);
     expect(onStub).toHaveBeenCalledWith('test:event', cb);
   });
+
+  describe('registerPreRequestHook', () => {
+    it('should delegate to applicationConfig.registerPreRequestHook', () => {
+      const mockConfig = {
+        ...createMockAppConfig(),
+        registerPreRequestHook: vi.fn(),
+      } as unknown as ApplicationConfig;
+
+      const instance = new NestMicroservice(
+        mockContainer,
+        { transport: Transport.TCP },
+        mockGraphInspector,
+        mockConfig,
+      );
+
+      const hook = (_ctx: any, next: any) => next();
+      instance.registerPreRequestHook(hook);
+
+      expect(mockConfig.registerPreRequestHook).toHaveBeenCalledWith(hook);
+    });
+
+    it('should warn when called after initialization', () => {
+      const mockConfig = {
+        ...createMockAppConfig(),
+        registerPreRequestHook: vi.fn(),
+      } as unknown as ApplicationConfig;
+
+      const instance = new NestMicroservice(
+        mockContainer,
+        { transport: Transport.TCP },
+        mockGraphInspector,
+        mockConfig,
+      );
+
+      const warnSpy = vi.spyOn((instance as any).logger, 'warn');
+      (instance as any).isInitialized = true;
+
+      const hook = (_ctx: any, next: any) => next();
+      instance.registerPreRequestHook(hook);
+
+      expect(warnSpy).toHaveBeenCalled();
+    });
+
+    it('should return this for fluent API chaining', () => {
+      const mockConfig = {
+        ...createMockAppConfig(),
+        registerPreRequestHook: vi.fn(),
+      } as unknown as ApplicationConfig;
+
+      const instance = new NestMicroservice(
+        mockContainer,
+        { transport: Transport.TCP },
+        mockGraphInspector,
+        mockConfig,
+      );
+
+      const hook = (_ctx: any, next: any) => next();
+      const result = instance.registerPreRequestHook(hook);
+
+      expect(result).toBe(instance);
+    });
+  });
 });
