@@ -276,6 +276,47 @@ describe('HttpException', () => {
       const error = new HttpException('test', 400);
       expect(error.cause).toBeUndefined();
     });
+
+    it('should preserve default description when using options with cause', () => {
+      const builtInExceptionsWithDefaults: [Type<HttpException>, string][] = [
+        [BadGatewayException, 'Bad Gateway'],
+        [BadRequestException, 'Bad Request'],
+        [ConflictException, 'Conflict'],
+        [ForbiddenException, 'Forbidden'],
+        [GatewayTimeoutException, 'Gateway Timeout'],
+        [GoneException, 'Gone'],
+        [HttpVersionNotSupportedException, 'HTTP Version Not Supported'],
+        [ImATeapotException, `I'm a teapot`],
+        [InternalServerErrorException, 'Internal Server Error'],
+        [MethodNotAllowedException, 'Method Not Allowed'],
+        [MisdirectedException, 'Misdirected'],
+        [NotAcceptableException, 'Not Acceptable'],
+        [NotFoundException, 'Not Found'],
+        [NotImplementedException, 'Not Implemented'],
+        [PayloadTooLargeException, 'Payload Too Large'],
+        [PreconditionFailedException, 'Precondition Failed'],
+        [RequestTimeoutException, 'Request Timeout'],
+        [ServiceUnavailableException, 'Service Unavailable'],
+        [UnauthorizedException, 'Unauthorized'],
+        [UnprocessableEntityException, 'Unprocessable Entity'],
+        [UnsupportedMediaTypeException, 'Unsupported Media Type'],
+      ];
+
+      builtInExceptionsWithDefaults.forEach(
+        ([ExceptionClass, expectedDescription]) => {
+          const error = new ExceptionClass('Custom message', {
+            cause: errorCause,
+          });
+
+          const response = error.getResponse() as {
+            message: string;
+            error: string;
+          };
+
+          expect(response.error).toEqual(expectedDescription);
+        },
+      );
+    });
   });
 
   describe('initMessage', () => {

@@ -37,15 +37,11 @@ export class ConflictException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Conflict',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Conflict', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
-      HttpException.createBody(
-        objectOrError,
-        description!,
-        HttpStatus.CONFLICT,
-      ),
+      HttpException.createBody(objectOrError, description, HttpStatus.CONFLICT),
       HttpStatus.CONFLICT,
       httpExceptionOptions,
     );

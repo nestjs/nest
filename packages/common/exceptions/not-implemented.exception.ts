@@ -37,13 +37,13 @@ export class NotImplementedException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Not Implemented',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Not Implemented', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.NOT_IMPLEMENTED,
       ),
       HttpStatus.NOT_IMPLEMENTED,
