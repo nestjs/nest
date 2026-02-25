@@ -249,7 +249,7 @@ export class NestMicroservice
   }
 
   /**
-   * Registers global preRequest hooks (executed before guards for every pattern handler).
+   * Registers a global preRequest hooks(executed before all enhancers for every pattern handler).
    *
    * @param {...PreRequestHook} hooks
    */
