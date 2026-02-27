@@ -1,4 +1,6 @@
 # Security Policy
+# google policy 
+# microsoft security
 
 ## Reporting a Vulnerability
 
