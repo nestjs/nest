@@ -96,8 +96,16 @@ export interface ConsoleLoggerOptions {
    */
   breakLength?: number;
   /**
+   * If enabled, plain objects passed after the message are treated as structured
+   * metadata (params) attached to the log entry, instead of being logged as
+   * separate messages.
+   * @default true
+   */
+  structuredParams?: boolean;
+  /**
    * When true and `json` mode is enabled, structured params are spread into the root JSON object
    * instead of being nested under a `params` key.
+   * Requires `structuredParams` to be enabled.
    * @default false
    */
   flattenParams?: boolean;
@@ -602,6 +610,10 @@ export class ConsoleLogger implements LoggerService {
     } else {
       context = this.context;
       remainingArgs = args;
+    }
+
+    if (this.options.structuredParams === false) {
+      return { messages: remainingArgs, context };
     }
 
     // Extract plain objects (excluding the first arg which is always the message) as params

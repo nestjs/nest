@@ -1115,6 +1115,40 @@ describe('Logger', () => {
         expect(json.stack).toBeUndefined();
       });
     });
+
+    describe('structuredParams: false (legacy behavior)', () => {
+      it('should treat plain objects as separate messages in text mode', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          structuredParams: false,
+        });
+        logger.log('User created', { userId: 1 });
+
+        // Two write calls: one for the message, one for the object
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
+          'User created',
+        );
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain('Object(1)');
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain('userId: 1');
+      });
+
+      it('should treat plain objects as separate JSON entries', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          structuredParams: false,
+        });
+        logger.log('User created', { userId: 1 });
+
+        // Two JSON lines: one for the string, one for the object
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(2);
+        const json1 = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        const json2 = JSON.parse(processStdoutWriteSpy.mock.calls[1][0]);
+        expect(json1.message).toBe('User created');
+        expect(json1.params).toBeUndefined();
+        expect(json2.message).toEqual({ userId: 1 });
+      });
+    });
   });
 });
 
