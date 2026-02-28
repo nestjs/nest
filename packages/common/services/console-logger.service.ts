@@ -481,7 +481,11 @@ export class ConsoleLogger implements LoggerService {
   }
 
   protected stringifyParams(params: Record<string, any>): string {
-    return inspect(params, this.inspectOptions);
+    return inspect(params, {
+      ...this.inspectOptions,
+      compact: true,
+      breakLength: Infinity,
+    });
   }
 
   protected stringifyMessage(message: unknown, logLevel: LogLevel) {
@@ -644,6 +648,19 @@ export class ConsoleLogger implements LoggerService {
         };
       }
       return { ...this.getContextAndMessagesToPrint(args) };
+    }
+
+    const trailingArg = args[args.length - 1];
+    if (this.isStackFormat(trailingArg)) {
+      const { messages, context, params } = this.getContextAndMessagesToPrint(
+        args.slice(0, -1),
+      );
+      return {
+        messages,
+        context,
+        stack: trailingArg as string,
+        params,
+      };
     }
 
     const { messages, context, params } =

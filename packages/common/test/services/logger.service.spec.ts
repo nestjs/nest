@@ -1006,25 +1006,38 @@ describe('Logger', () => {
     });
 
     describe('text mode', () => {
+      class DeterministicConsoleLogger extends ConsoleLogger {
+        protected formatPid() {
+          return '[Nest] 123  - ';
+        }
+
+        protected getTimestamp(): string {
+          return '01/01/2026, 12:00:00 AM';
+        }
+
+        protected updateAndGetTimestampDiff(): string {
+          return '';
+        }
+      }
+
       it('should inline single plain object as params after message', () => {
-        const logger = new ConsoleLogger({ colors: false });
+        const logger = new DeterministicConsoleLogger({ colors: false });
         logger.log('User created', { userId: 1 });
 
         expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
-        const output = processStdoutWriteSpy.mock.calls[0][0];
-        expect(output).toContain('User created');
-        expect(output).toContain('userId: 1');
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(
+          '[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG User created { userId: 1 }\n',
+        );
       });
 
       it('should merge multiple plain objects into single params', () => {
-        const logger = new ConsoleLogger({ colors: false });
+        const logger = new DeterministicConsoleLogger({ colors: false });
         logger.log('Request', { userId: 1 }, { reqId: 'abc' });
 
         expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
-        const output = processStdoutWriteSpy.mock.calls[0][0];
-        expect(output).toContain('Request');
-        expect(output).toContain('userId: 1');
-        expect(output).toContain("reqId: 'abc'");
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(
+          "[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG Request { userId: 1, reqId: 'abc' }\n",
+        );
       });
 
       it('should treat plain object as first arg as message, not params', () => {
@@ -1038,15 +1051,17 @@ describe('Logger', () => {
       });
 
       it('should keep strings as messages and extract objects as params', () => {
-        const logger = new ConsoleLogger({ colors: false });
+        const logger = new DeterministicConsoleLogger({ colors: false });
         logger.log('msg1', 'msg2', { meta: true }, 'Context');
 
         // msg1 and msg2 are messages, { meta: true } is params, 'Context' is context
         expect(processStdoutWriteSpy).toHaveBeenCalledTimes(2);
-        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('msg1');
-        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('[Context]');
-        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('meta: true');
-        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain('msg2');
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(
+          '[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG [Context] msg1 { meta: true }\n',
+        );
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toBe(
+          '[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG [Context] msg2 { meta: true }\n',
+        );
       });
 
       it('should not treat arrays as params', () => {
@@ -1092,6 +1107,21 @@ describe('Logger', () => {
         expect(json.params).toEqual({ reqId: 'abc' });
       });
 
+      it('should keep reserved keys nested under params by default', () => {
+        const logger = new ConsoleLogger({ json: true });
+        logger.log(
+          'User created',
+          { message: 'override', level: 'debug' },
+          'UserService',
+        );
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.level).toBe('log');
+        expect(json.message).toBe('User created');
+        expect(json.context).toBe('UserService');
+        expect(json.params).toEqual({ message: 'override', level: 'debug' });
+      });
+
       it('should flatten params to root when flattenParams is true', () => {
         const logger = new ConsoleLogger({ json: true, flattenParams: true });
         logger.log('User created', { userId: 1, action: 'create' }, 'Svc');
@@ -1113,6 +1143,18 @@ describe('Logger', () => {
         expect(json.context).toBe('AppService');
         expect(json.params).toEqual({ reqId: 'abc' });
         expect(json.stack).toBeUndefined();
+      });
+
+      it('should treat trailing stack-like string as stack when params are present', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const stack = 'Error: test\n    at AppService.run (app.ts:1:1)';
+        logger.error('fail', { reqId: 'abc' }, stack);
+
+        const json = JSON.parse(processStderrWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('fail');
+        expect(json.context).toBeUndefined();
+        expect(json.params).toEqual({ reqId: 'abc' });
+        expect(json.stack).toBe(stack);
       });
     });
 
