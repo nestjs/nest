@@ -1,0 +1,26 @@
+name: Inclusive Language
+
+on:
+  pull_request:
+    paths:
+      - '**.md'
+      - '**.mdx'
+      - 'docs/**'
+
+permissions:
+  contents: read
+
+jobs:
+  language-check:
+    name: Language Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for insensitive language
+        uses: Open-Paws/no-animal-violence-action@v1
+        with:
+          severity: warning
+          paths: docs/
