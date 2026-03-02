@@ -34,7 +34,7 @@
     "run-script-webpack-plugin": "0.2.3",
     "webpack": "5.105.2",
     "webpack-node-externals": "3.0.0",
-    "@eslint/eslintrc": "3.3.3",
+    "@eslint/eslintrc": "3.3.4",
     "@eslint/js": "9.39.3",
     "@nestjs/cli": "11.0.16",
     "@nestjs/schematics": "11.0.9",
