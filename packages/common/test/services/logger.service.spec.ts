@@ -1016,6 +1016,90 @@ describe('Logger', () => {
       expect(consoleLoggerSpy.getCall(4).returnValue).to.equal('null');
       expect(consoleLoggerSpy.getCall(5).returnValue).to.equal('1');
     });
+
+    describe('colorText feature', () => {
+      const noColorEnv = 'NO_COLOR';
+
+      beforeEach(() => {
+        delete process.env[noColorEnv];
+      });
+
+      it('should output plain context and no ANSI when colors is false', () => {
+        const logger = new ConsoleLogger({ colors: false });
+        const context = 'PlainContext';
+        const message = 'test message';
+
+        logger.log(message, context);
+
+        expect(processStdoutWriteSpy.calledOnce).to.be.true;
+        const output = processStdoutWriteSpy.firstCall.firstArg;
+        expect(output).to.include(`[${context}]`);
+        expect(output).to.include(message);
+        expect(output).not.to.include('\x1B[');
+      });
+
+      it('should output context with ANSI color (via colorText) when colors is true', () => {
+        const logger = new ConsoleLogger({ colors: true });
+        const context = 'ColoredContext';
+        const message = 'test message';
+
+        logger.log(message, context);
+
+        expect(processStdoutWriteSpy.calledOnce).to.be.true;
+        const output = processStdoutWriteSpy.firstCall.firstArg;
+        expect(output).to.include(`[${context}]`);
+        expect(output).to.include(message);
+        expect(output).to.include('\x1B[');
+        expect(output).to.include('\x1B[39m');
+      });
+
+      it('should output plain timestamp diff when colors is false and timestamp is true', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          timestamp: true,
+        });
+        const message = 'first';
+
+        logger.log(message);
+        logger.log('second');
+
+        expect(processStdoutWriteSpy.calledTwice).to.be.true;
+        const secondOutput = processStdoutWriteSpy.secondCall.firstArg;
+        expect(secondOutput).to.match(/ \+?\d+ms/);
+        expect(secondOutput).not.to.include('\x1B[');
+      });
+
+      it('should output timestamp diff with ANSI color (via colorText) when colors and timestamp are true', () => {
+        const logger = new ConsoleLogger({
+          colors: true,
+          timestamp: true,
+        });
+        const context = 'TimestampContext';
+
+        logger.log('first', context);
+        logger.log('second', context);
+
+        expect(processStdoutWriteSpy.calledTwice).to.be.true;
+        const secondOutput = processStdoutWriteSpy.secondCall.firstArg;
+        expect(secondOutput).to.match(/ \+?\d+ms/);
+        expect(secondOutput).to.include('\x1B[');
+        expect(secondOutput).to.include('\x1B[39m');
+      });
+
+      it('should not apply colorText when NO_COLOR is set even if options.colors is true', () => {
+        process.env[noColorEnv] = '1';
+        const logger = new ConsoleLogger({ colors: true });
+        const context = 'NoColorEnv';
+        const message = 'test';
+
+        logger.log(message, context);
+
+        expect(processStdoutWriteSpy.calledOnce).to.be.true;
+        const output = processStdoutWriteSpy.firstCall.firstArg;
+        expect(output).to.include(`[${context}]`);
+        expect(output).not.to.include('\x1B[');
+      });
+    });
   });
 });
 

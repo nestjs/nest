@@ -1,6 +1,6 @@
 import { inspect, InspectOptions } from 'util';
 import { Injectable, Optional } from '../decorators/core';
-import { clc, yellow, isColorAllowed } from '../utils/cli-colors.util';
+import { clc, isColorAllowed, colorText } from '../utils/cli-colors.util';
 import {
   isFunction,
   isPlainObject,
@@ -329,7 +329,7 @@ export class ConsoleLogger implements LoggerService {
       }
       const pidMessage = this.formatPid(process.pid);
       const contextMessage = this.formatContext(context);
-      const timestampDiff = this.updateAndGetTimestampDiff();
+      const timestampDiff = this.updateAndGetTimestampDiff(context);
       const formattedLogLevel = logLevel.toUpperCase().padStart(7, ' ');
       const formattedMessage = this.formatMessage(
         logLevel,
@@ -423,8 +423,10 @@ export class ConsoleLogger implements LoggerService {
       return '';
     }
 
-    context = `[${context}] `;
-    return this.options.colors ? yellow(context) : context;
+    const formattedContext = `[${context}] `;
+    return this.options.colors
+      ? colorText(context, formattedContext)
+      : formattedContext;
   }
 
   protected formatMessage(
@@ -486,19 +488,24 @@ export class ConsoleLogger implements LoggerService {
     }
   }
 
-  protected updateAndGetTimestampDiff(): string {
+  protected updateAndGetTimestampDiff(context: string): string {
     const includeTimestamp =
       ConsoleLogger.lastTimestampAt && this.options?.timestamp;
     const result = includeTimestamp
-      ? this.formatTimestampDiff(Date.now() - ConsoleLogger.lastTimestampAt!)
+      ? this.formatTimestampDiff(
+          context,
+          Date.now() - ConsoleLogger.lastTimestampAt!,
+        )
       : '';
     ConsoleLogger.lastTimestampAt = Date.now();
     return result;
   }
 
-  protected formatTimestampDiff(timestampDiff: number) {
+  protected formatTimestampDiff(context: string, timestampDiff: number) {
     const formattedDiff = ` +${timestampDiff}ms`;
-    return this.options.colors ? yellow(formattedDiff) : formattedDiff;
+    return this.options.colors
+      ? colorText(context, formattedDiff)
+      : formattedDiff;
   }
 
   protected getInspectOptions() {
