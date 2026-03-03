@@ -118,7 +118,7 @@ describe('Optional factory provider deps', () => {
       } catch (err) {
         expect(err).to.be.instanceOf(UnknownDependenciesException);
         expect(err.message).to
-          .equal(`Nest can't resolve dependencies of the POSSIBLY_MISSING_DEP (?). Please make sure that the argument "MISSING_DEP" at index [0] is available in the RootTestModule context.
+          .equal(`Nest can't resolve dependencies of the POSSIBLY_MISSING_DEP (?). Please make sure that the argument "MISSING_DEP" at index [0] is available in the RootTestModule module.
 
 Potential solutions:
 - Is RootTestModule a valid NestJS module?
