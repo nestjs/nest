@@ -95,6 +95,20 @@ export interface ConsoleLoggerOptions {
    * Ignored when `json` is enabled, colors are disabled, and `compact` is set to true as it produces a parseable JSON output.
    */
   breakLength?: number;
+  /**
+   * If enabled, plain objects passed after the message are treated as structured
+   * metadata (params) attached to the log entry, instead of being logged as
+   * separate messages.
+   * @default true
+   */
+  structuredParams?: boolean;
+  /**
+   * When true and `json` mode is enabled, structured params are spread into the root JSON object
+   * instead of being nested under a `params` key.
+   * Requires `structuredParams` to be enabled.
+   * @default false
+   */
+  flattenParams?: boolean;
 }
 
 const DEFAULT_LOG_LEVELS: LogLevel[] = [
@@ -182,11 +196,11 @@ export class ConsoleLogger implements LoggerService {
     if (!this.isLevelEnabled('log')) {
       return;
     }
-    const { messages, context } = this.getContextAndMessagesToPrint([
+    const { messages, context, params } = this.getContextAndMessagesToPrint([
       message,
       ...optionalParams,
     ]);
-    this.printMessages(messages, context, 'log');
+    this.printMessages(messages, context, 'log', 'stdout', undefined, params);
   }
 
   /**
@@ -200,10 +214,10 @@ export class ConsoleLogger implements LoggerService {
     if (!this.isLevelEnabled('error')) {
       return;
     }
-    const { messages, context, stack } =
+    const { messages, context, stack, params } =
       this.getContextAndStackAndMessagesToPrint([message, ...optionalParams]);
 
-    this.printMessages(messages, context, 'error', 'stderr', stack);
+    this.printMessages(messages, context, 'error', 'stderr', stack, params);
     this.printStackTrace(stack!);
   }
 
@@ -217,11 +231,11 @@ export class ConsoleLogger implements LoggerService {
     if (!this.isLevelEnabled('warn')) {
       return;
     }
-    const { messages, context } = this.getContextAndMessagesToPrint([
+    const { messages, context, params } = this.getContextAndMessagesToPrint([
       message,
       ...optionalParams,
     ]);
-    this.printMessages(messages, context, 'warn');
+    this.printMessages(messages, context, 'warn', 'stdout', undefined, params);
   }
 
   /**
@@ -234,11 +248,11 @@ export class ConsoleLogger implements LoggerService {
     if (!this.isLevelEnabled('debug')) {
       return;
     }
-    const { messages, context } = this.getContextAndMessagesToPrint([
+    const { messages, context, params } = this.getContextAndMessagesToPrint([
       message,
       ...optionalParams,
     ]);
-    this.printMessages(messages, context, 'debug');
+    this.printMessages(messages, context, 'debug', 'stdout', undefined, params);
   }
 
   /**
@@ -251,11 +265,18 @@ export class ConsoleLogger implements LoggerService {
     if (!this.isLevelEnabled('verbose')) {
       return;
     }
-    const { messages, context } = this.getContextAndMessagesToPrint([
+    const { messages, context, params } = this.getContextAndMessagesToPrint([
       message,
       ...optionalParams,
     ]);
-    this.printMessages(messages, context, 'verbose');
+    this.printMessages(
+      messages,
+      context,
+      'verbose',
+      'stdout',
+      undefined,
+      params,
+    );
   }
 
   /**
@@ -268,11 +289,11 @@ export class ConsoleLogger implements LoggerService {
     if (!this.isLevelEnabled('fatal')) {
       return;
     }
-    const { messages, context } = this.getContextAndMessagesToPrint([
+    const { messages, context, params } = this.getContextAndMessagesToPrint([
       message,
       ...optionalParams,
     ]);
-    this.printMessages(messages, context, 'fatal');
+    this.printMessages(messages, context, 'fatal', 'stdout', undefined, params);
   }
 
   /**
@@ -316,6 +337,7 @@ export class ConsoleLogger implements LoggerService {
     logLevel: LogLevel = 'log',
     writeStreamType?: 'stdout' | 'stderr',
     errorStack?: unknown,
+    params?: Record<string, any>,
   ) {
     messages.forEach(message => {
       if (this.options.json) {
@@ -324,6 +346,7 @@ export class ConsoleLogger implements LoggerService {
           logLevel,
           writeStreamType,
           errorStack,
+          params,
         });
         return;
       }
@@ -338,6 +361,7 @@ export class ConsoleLogger implements LoggerService {
         formattedLogLevel,
         contextMessage,
         timestampDiff,
+        params,
       );
 
       if (this.options.forceConsole) {
@@ -359,6 +383,7 @@ export class ConsoleLogger implements LoggerService {
       logLevel: LogLevel;
       writeStreamType?: 'stdout' | 'stderr';
       errorStack?: unknown;
+      params?: Record<string, any>;
     },
   ) {
     const logObject = this.getJsonLogObject(message, options);
@@ -386,6 +411,7 @@ export class ConsoleLogger implements LoggerService {
       logLevel: LogLevel;
       writeStreamType?: 'stdout' | 'stderr';
       errorStack?: unknown;
+      params?: Record<string, any>;
     },
   ) {
     type JsonLogObject = {
@@ -395,6 +421,8 @@ export class ConsoleLogger implements LoggerService {
       message: unknown;
       context?: string;
       stack?: unknown;
+      params?: Record<string, any>;
+      [key: string]: unknown;
     };
 
     const logObject: JsonLogObject = {
@@ -411,6 +439,15 @@ export class ConsoleLogger implements LoggerService {
     if (options.errorStack) {
       logObject.stack = options.errorStack;
     }
+
+    if (options.params) {
+      if (this.options.flattenParams) {
+        Object.assign(logObject, options.params);
+      } else {
+        logObject.params = options.params;
+      }
+    }
+
     return logObject;
   }
 
@@ -434,11 +471,21 @@ export class ConsoleLogger implements LoggerService {
     formattedLogLevel: string,
     contextMessage: string,
     timestampDiff: string,
+    params?: Record<string, any>,
   ) {
     const output = this.stringifyMessage(message, logLevel);
     pidMessage = this.colorize(pidMessage, logLevel);
     formattedLogLevel = this.colorize(formattedLogLevel, logLevel);
-    return `${pidMessage}${this.getTimestamp()} ${formattedLogLevel} ${contextMessage}${output}${timestampDiff}\n`;
+    const paramsOutput = params ? ` ${this.stringifyParams(params)}` : '';
+    return `${pidMessage}${this.getTimestamp()} ${formattedLogLevel} ${contextMessage}${output}${paramsOutput}${timestampDiff}\n`;
+  }
+
+  protected stringifyParams(params: Record<string, any>): string {
+    return inspect(params, {
+      ...this.inspectOptions,
+      compact: true,
+      breakLength: Infinity,
+    });
   }
 
   protected stringifyMessage(message: unknown, logLevel: LogLevel) {
@@ -557,40 +604,81 @@ export class ConsoleLogger implements LoggerService {
     }
     const lastElement = args[args.length - 1];
     const isContext = isString(lastElement);
-    if (!isContext) {
-      return { messages: args, context: this.context };
+
+    let context: string | undefined;
+    let remainingArgs: unknown[];
+
+    if (isContext) {
+      context = lastElement;
+      remainingArgs = args.slice(0, args.length - 1);
+    } else {
+      context = this.context;
+      remainingArgs = args;
     }
-    return {
-      context: lastElement,
-      messages: args.slice(0, args.length - 1),
-    };
+
+    if (this.options.structuredParams === false) {
+      return { messages: remainingArgs, context };
+    }
+
+    // Extract plain objects (excluding the first arg which is always the message) as params
+    const messages: unknown[] = [remainingArgs[0]];
+    const paramObjects: Record<string, any>[] = [];
+
+    for (let i = 1; i < remainingArgs.length; i++) {
+      if (isPlainObject(remainingArgs[i])) {
+        paramObjects.push(remainingArgs[i] as Record<string, any>);
+      } else {
+        messages.push(remainingArgs[i]);
+      }
+    }
+
+    const params =
+      paramObjects.length > 0 ? Object.assign({}, ...paramObjects) : undefined;
+
+    return { messages, context, params };
   }
 
   private getContextAndStackAndMessagesToPrint(args: unknown[]) {
     if (args.length === 2) {
-      return this.isStackFormat(args[1])
-        ? {
-            messages: [args[0]],
-            stack: args[1] as string,
-            context: this.context,
-          }
-        : { ...this.getContextAndMessagesToPrint(args) };
+      if (this.isStackFormat(args[1])) {
+        return {
+          messages: [args[0]],
+          stack: args[1] as string,
+          context: this.context,
+        };
+      }
+      return { ...this.getContextAndMessagesToPrint(args) };
     }
 
-    const { messages, context } = this.getContextAndMessagesToPrint(args);
+    const trailingArg = args[args.length - 1];
+    if (this.isStackFormat(trailingArg)) {
+      const { messages, context, params } = this.getContextAndMessagesToPrint(
+        args.slice(0, -1),
+      );
+      return {
+        messages,
+        context,
+        stack: trailingArg as string,
+        params,
+      };
+    }
+
+    const { messages, context, params } =
+      this.getContextAndMessagesToPrint(args);
     if (messages?.length <= 1) {
-      return { messages, context };
+      return { messages, context, params };
     }
     const lastElement = messages[messages.length - 1];
     const isStack = isString(lastElement);
     // https://github.com/nestjs/nest/issues/11074#issuecomment-1421680060
     if (!isStack && !isUndefined(lastElement)) {
-      return { messages, context };
+      return { messages, context, params };
     }
     return {
       stack: lastElement,
       messages: messages.slice(0, messages.length - 1),
       context,
+      params,
     };
   }
 

@@ -950,7 +950,7 @@ describe('Logger', () => {
       expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(`Prefix: ~~~test~~~`);
     });
 
-    it('should stringify messages', () => {
+    it('should stringify messages (plain objects extracted as params)', () => {
       class CustomConsoleLogger extends ConsoleLogger {
         protected colorize(message: string, _: LogLevel): string {
           return message;
@@ -962,6 +962,7 @@ describe('Logger', () => {
         consoleLogger as any,
         'stringifyMessage',
       );
+      // { key: 'str2' } is now extracted as params, not passed through stringifyMessage
       consoleLogger.debug(
         'str1',
         { key: 'str2' },
@@ -971,26 +972,224 @@ describe('Logger', () => {
         1,
       );
 
+      // stringifyMessage is called for: 'str1', ['str3'], [{ key: 'str4' }], null, 1
+      // { key: 'str2' } is extracted as params
       expect(consoleLoggerSpy.mock.results[0].value).toBe('str1');
       expect(consoleLoggerSpy.mock.results[1].value).toBe(
-        `Object(1) {
-  key: 'str2'
-}`,
-      );
-      expect(consoleLoggerSpy.mock.results[2].value).toBe(
         `Array(1) [
   'str3'
 ]`,
       );
-      expect(consoleLoggerSpy.mock.results[3].value).toBe(
+      expect(consoleLoggerSpy.mock.results[2].value).toBe(
         `Array(1) [
   {
     key: 'str4'
   }
 ]`,
       );
-      expect(consoleLoggerSpy.mock.results[4].value).toBe('null');
-      expect(consoleLoggerSpy.mock.results[5].value).toBe('1');
+      expect(consoleLoggerSpy.mock.results[3].value).toBe('null');
+      expect(consoleLoggerSpy.mock.results[4].value).toBe('1');
+    });
+  });
+
+  describe('ConsoleLogger - structured logging params', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
+      processStderrWriteSpy = vi.spyOn(process.stderr, 'write');
+    });
+    afterEach(() => {
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+    });
+
+    describe('text mode', () => {
+      class DeterministicConsoleLogger extends ConsoleLogger {
+        protected formatPid() {
+          return '[Nest] 123  - ';
+        }
+
+        protected getTimestamp(): string {
+          return '01/01/2026, 12:00:00 AM';
+        }
+
+        protected updateAndGetTimestampDiff(): string {
+          return '';
+        }
+      }
+
+      it('should inline single plain object as params after message', () => {
+        const logger = new DeterministicConsoleLogger({ colors: false });
+        logger.log('User created', { userId: 1 });
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(
+          '[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG User created { userId: 1 }\n',
+        );
+      });
+
+      it('should merge multiple plain objects into single params', () => {
+        const logger = new DeterministicConsoleLogger({ colors: false });
+        logger.log('Request', { userId: 1 }, { reqId: 'abc' });
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(
+          "[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG Request { userId: 1, reqId: 'abc' }\n",
+        );
+      });
+
+      it('should treat plain object as first arg as message, not params', () => {
+        const logger = new ConsoleLogger({ colors: false });
+        logger.log({ randomError: true });
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(output).toContain('Object(1)');
+        expect(output).toContain('randomError: true');
+      });
+
+      it('should keep strings as messages and extract objects as params', () => {
+        const logger = new DeterministicConsoleLogger({ colors: false });
+        logger.log('msg1', 'msg2', { meta: true }, 'Context');
+
+        // msg1 and msg2 are messages, { meta: true } is params, 'Context' is context
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(
+          '[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG [Context] msg1 { meta: true }\n',
+        );
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toBe(
+          '[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG [Context] msg2 { meta: true }\n',
+        );
+      });
+
+      it('should not treat arrays as params', () => {
+        const logger = new ConsoleLogger({ colors: false });
+        logger.log('msg', [1, 2, 3]);
+
+        // Array stays as a separate message, not params
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('msg');
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain('Array(3)');
+      });
+    });
+
+    describe('JSON mode', () => {
+      it('should include params under params key', () => {
+        const logger = new ConsoleLogger({ json: true });
+        logger.log('User created', { userId: 1 }, 'UserService');
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('User created');
+        expect(json.context).toBe('UserService');
+        expect(json.params).toEqual({ userId: 1 });
+      });
+
+      it('should not include params key when no objects are passed', () => {
+        const logger = new ConsoleLogger({ json: true });
+        logger.log('simple message');
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('simple message');
+        expect(json.params).toBeUndefined();
+      });
+
+      it('should include params, stack, and context for error', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const stack = 'Error: test\n    at <anonymous>:1:1';
+        logger.error('fail', { reqId: 'abc' }, stack, 'AppService');
+
+        const json = JSON.parse(processStderrWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('fail');
+        expect(json.context).toBe('AppService');
+        expect(json.stack).toBe(stack);
+        expect(json.params).toEqual({ reqId: 'abc' });
+      });
+
+      it('should keep reserved keys nested under params by default', () => {
+        const logger = new ConsoleLogger({ json: true });
+        logger.log(
+          'User created',
+          { message: 'override', level: 'debug' },
+          'UserService',
+        );
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.level).toBe('log');
+        expect(json.message).toBe('User created');
+        expect(json.context).toBe('UserService');
+        expect(json.params).toEqual({ message: 'override', level: 'debug' });
+      });
+
+      it('should flatten params to root when flattenParams is true', () => {
+        const logger = new ConsoleLogger({ json: true, flattenParams: true });
+        logger.log('User created', { userId: 1, action: 'create' }, 'Svc');
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('User created');
+        expect(json.context).toBe('Svc');
+        expect(json.userId).toBe(1);
+        expect(json.action).toBe('create');
+        expect(json.params).toBeUndefined();
+      });
+
+      it('should handle error with params but no stack', () => {
+        const logger = new ConsoleLogger({ json: true });
+        logger.error('fail', { reqId: 'abc' }, 'AppService');
+
+        const json = JSON.parse(processStderrWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('fail');
+        expect(json.context).toBe('AppService');
+        expect(json.params).toEqual({ reqId: 'abc' });
+        expect(json.stack).toBeUndefined();
+      });
+
+      it('should treat trailing stack-like string as stack when params are present', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const stack = 'Error: test\n    at AppService.run (app.ts:1:1)';
+        logger.error('fail', { reqId: 'abc' }, stack);
+
+        const json = JSON.parse(processStderrWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('fail');
+        expect(json.context).toBeUndefined();
+        expect(json.params).toEqual({ reqId: 'abc' });
+        expect(json.stack).toBe(stack);
+      });
+    });
+
+    describe('structuredParams: false (legacy behavior)', () => {
+      it('should treat plain objects as separate messages in text mode', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          structuredParams: false,
+        });
+        logger.log('User created', { userId: 1 });
+
+        // Two write calls: one for the message, one for the object
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
+          'User created',
+        );
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain('Object(1)');
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain('userId: 1');
+      });
+
+      it('should treat plain objects as separate JSON entries', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          structuredParams: false,
+        });
+        logger.log('User created', { userId: 1 });
+
+        // Two JSON lines: one for the string, one for the object
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(2);
+        const json1 = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        const json2 = JSON.parse(processStdoutWriteSpy.mock.calls[1][0]);
+        expect(json1.message).toBe('User created');
+        expect(json1.params).toBeUndefined();
+        expect(json2.message).toEqual({ userId: 1 });
+      });
     });
   });
 });
