@@ -132,7 +132,7 @@
     "fastify-plugin": "5.1.0",
     "find-my-way": "9.5.0",
     "globals": "17.4.0",
-    "graphql": "16.12.0",
+    "graphql": "16.13.0",
     "graphql-subscriptions": "3.0.0",
     "gulp": "5.0.1",
     "gulp-clang-format": "1.0.27",
