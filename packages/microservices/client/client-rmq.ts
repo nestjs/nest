@@ -338,7 +338,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       options,
     );
     if (isDisposed || err) {
-      callback?.({
+      return callback?.({
         err,
         response,
         isDisposed: true,
