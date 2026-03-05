@@ -160,7 +160,7 @@
     "redis": "5.11.0",
     "reusify": "1.1.0",
     "rxjs-compat": "6.6.7",
-    "sinon": "21.0.1",
+    "sinon": "21.0.2",
     "sinon-chai": "3.7.0",
     "socket.io-client": "4.8.3",
     "supertest": "7.2.2",
