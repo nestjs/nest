@@ -50,7 +50,6 @@ describe('WsExceptionsHandler', () => {
           const message = 'Unauthorized';
 
           handler.handle(new WsException(message), executionContextHost);
-          console.log(emitStub.mock.calls[0]);
           expect(emitStub).toHaveBeenCalledWith('exception', {
             message,
             status: 'error',
@@ -93,6 +92,89 @@ describe('WsExceptionsHandler', () => {
           expect(emitStub).toHaveBeenCalledWith('exception', {
             message,
             status: 'error',
+          });
+        });
+      });
+    });
+
+    describe('when client uses "send" instead of "emit" (native WebSocket)', () => {
+      let sendStub: ReturnType<typeof vi.fn>;
+      let wsClient: { send: ReturnType<typeof vi.fn>; readyState: number };
+      let wsExecutionContextHost: ExecutionContextHost;
+
+      beforeEach(() => {
+        handler = new WsExceptionsHandler();
+        sendStub = vi.fn();
+        wsClient = { send: sendStub, readyState: 1 };
+        wsExecutionContextHost = new ExecutionContextHost([
+          wsClient,
+          data,
+          pattern,
+        ]);
+      });
+
+      it('should send JSON-stringified error via "send" when exception is unknown', () => {
+        handler.handle(new Error(), wsExecutionContextHost);
+        expect(sendStub).toHaveBeenCalledTimes(1);
+        const sent = JSON.parse(sendStub.mock.calls[0][0]);
+        expect(sent).toEqual({
+          event: 'exception',
+          data: {
+            status: 'error',
+            message: 'Internal server error',
+            cause: {
+              pattern,
+              data,
+            },
+          },
+        });
+      });
+
+      it('should send JSON-stringified error via "send" for WsException with object', () => {
+        const message = { custom: 'Unauthorized' };
+        handler.handle(new WsException(message), wsExecutionContextHost);
+        expect(sendStub).toHaveBeenCalledTimes(1);
+        const sent = JSON.parse(sendStub.mock.calls[0][0]);
+        expect(sent).toEqual({
+          event: 'exception',
+          data: message,
+        });
+      });
+
+      it('should send JSON-stringified error via "send" for WsException with string', () => {
+        const message = 'Unauthorized';
+        handler.handle(new WsException(message), wsExecutionContextHost);
+        expect(sendStub).toHaveBeenCalledTimes(1);
+        const sent = JSON.parse(sendStub.mock.calls[0][0]);
+        expect(sent).toEqual({
+          event: 'exception',
+          data: {
+            message,
+            status: 'error',
+            cause: {
+              pattern,
+              data,
+            },
+          },
+        });
+      });
+
+      describe('when "includeCause" is set to false', () => {
+        beforeEach(() => {
+          handler = new WsExceptionsHandler({ includeCause: false });
+        });
+
+        it('should send error without cause via "send"', () => {
+          const message = 'Unauthorized';
+          handler.handle(new WsException(message), wsExecutionContextHost);
+          expect(sendStub).toHaveBeenCalledTimes(1);
+          const sent = JSON.parse(sendStub.mock.calls[0][0]);
+          expect(sent).toEqual({
+            event: 'exception',
+            data: {
+              message,
+              status: 'error',
+            },
           });
         });
       });
