@@ -451,7 +451,7 @@ export class Injector {
   }
 
   public reflectOptionalParams<T>(type: Type<T>): any[] {
-    return Reflect.getMetadata(OPTIONAL_DEPS_METADATA, type) || [];
+    return Reflect.getOwnMetadata(OPTIONAL_DEPS_METADATA, type) || [];
   }
 
   public reflectSelfParams<T>(type: Type<T>): any[] {
