@@ -5,6 +5,7 @@ import { expect } from 'chai';
 import * as WebSocket from 'ws';
 import { ApplicationGateway } from '../src/app.gateway';
 import { CoreGateway } from '../src/core.gateway';
+import { ErrorGateway } from '../src/error.gateway';
 import { ExamplePathGateway } from '../src/example-path.gateway';
 import { ServerGateway } from '../src/server.gateway';
 import { WsPathGateway } from '../src/ws-path.gateway';
@@ -271,6 +272,41 @@ describe('WebSocketGateway (WsAdapter)', () => {
         resolve();
       }),
     );
+  });
+
+  it(`should handle WsException and send error to client`, async () => {
+    app = await createNestApp(ErrorGateway);
+    await app.listen(3000);
+
+    ws = new WebSocket('ws://localhost:8080');
+    await new Promise(resolve => ws.on('open', resolve));
+
+    ws.send(
+      JSON.stringify({
+        event: 'push',
+        data: {
+          test: 'test',
+        },
+      }),
+    );
+
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(
+        () => reject(new Error('Timeout: no error message received')),
+        5000,
+      );
+      ws.on('message', data => {
+        clearTimeout(timeout);
+        const parsed = JSON.parse(data.toString());
+        expect(parsed.event).to.be.eql('exception');
+        expect(parsed.data).to.deep.include({
+          status: 'error',
+          message: 'test',
+        });
+        ws.close();
+        resolve();
+      });
+    });
   });
 
   afterEach(async function () {

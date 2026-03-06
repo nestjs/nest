@@ -64,7 +64,7 @@ export class BaseWsExceptionFilter<
     });
   }
 
-  public handleError<TClient extends { emit: Function }>(
+  public handleError<TClient extends { emit?: Function; send?: Function }>(
     client: TClient,
     exception: TError,
     cause: ErrorPayload['cause'],
@@ -77,7 +77,7 @@ export class BaseWsExceptionFilter<
     const result = exception.getError();
 
     if (isObject(result)) {
-      return client.emit('exception', result);
+      return this.sendExceptionToClient(client, 'exception', result);
     }
 
     const payload: ErrorPayload<unknown> = {
@@ -89,14 +89,12 @@ export class BaseWsExceptionFilter<
       payload.cause = this.options.causeFactory!(cause.pattern, cause.data);
     }
 
-    client.emit('exception', payload);
+    this.sendExceptionToClient(client, 'exception', payload);
   }
 
-  public handleUnknownError<TClient extends { emit: Function }>(
-    exception: TError,
-    client: TClient,
-    data: ErrorPayload['cause'],
-  ) {
+  public handleUnknownError<
+    TClient extends { emit?: Function; send?: Function },
+  >(exception: TError, client: TClient, data: ErrorPayload['cause']) {
     const status = 'error';
     const payload: ErrorPayload<unknown> = {
       status,
@@ -107,12 +105,46 @@ export class BaseWsExceptionFilter<
       payload.cause = this.options.causeFactory!(data.pattern, data.data);
     }
 
-    client.emit('exception', payload);
+    this.sendExceptionToClient(client, 'exception', payload);
 
     if (!(exception instanceof IntrinsicException)) {
       const logger = BaseWsExceptionFilter.logger;
       logger.error(exception);
     }
+  }
+
+  /**
+   * Sends the exception payload to the client using the appropriate transport.
+   * For native WebSocket clients (e.g., `ws` library), uses `client.send()`.
+   * For socket.io clients, uses `client.emit()`.
+   *
+   * Override this method if you use a custom WebSocket adapter with a
+   * different sending mechanism.
+   */
+  protected sendExceptionToClient(
+    client: any,
+    event: string,
+    payload: any,
+  ): void {
+    if (this.isNativeWebSocket(client)) {
+      if (client.readyState === 1) {
+        client.send(JSON.stringify({ event, data: payload }));
+      }
+    } else if (typeof client.emit === 'function') {
+      client.emit(event, payload);
+    }
+  }
+
+  /**
+   * Determines whether the client is a native WebSocket instance (e.g., from
+   * the `ws` library) rather than a socket.io socket.
+   */
+  protected isNativeWebSocket(client: any): boolean {
+    return (
+      typeof client.send === 'function' &&
+      typeof client.readyState === 'number' &&
+      !client.nsp
+    );
   }
 
   public isExceptionObject(err: any): err is Error {
