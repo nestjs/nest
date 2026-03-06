@@ -8,15 +8,9 @@
   "main": "./index.js",
   "exports": {
     ".": "./index.js",
+    "./internal": "./internal.js",
     "./*.js": "./*.js",
-    "./*": "./*.js",
-    "./adapters": "./adapters/index.js",
-    "./decorators": "./decorators/index.js",
-    "./errors": "./errors/index.js",
-    "./exceptions": "./exceptions/index.js",
-    "./interfaces": "./interfaces/index.js",
-    "./interfaces/hooks": "./interfaces/hooks/index.js",
-    "./utils": "./utils/index.js"
+    "./*": "./*.js"
   },
   "repository": {
     "type": "git",

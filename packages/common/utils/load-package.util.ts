@@ -2,7 +2,7 @@ import { createRequire } from 'module';
 import { Logger } from '../services/logger.service.js';
 
 const MISSING_REQUIRED_DEPENDENCY = (name: string, reason: string) =>
-  `The "${name}" package is missing. Please, make sure to install it to take advantage of ${reason}.`;
+  `The "${name}" package is missing. Please, make sure to install it to use ${reason}.`;
 
 const logger = new Logger('PackageLoader');
 
@@ -82,4 +82,28 @@ export function loadPackageCached(packageName: string): any {
     );
   }
   return cached;
+}
+
+/**
+ * Attempts to load and cache a package. Returns the loaded module on success
+ * or `null` if the package is not installed.
+ *
+ * Unlike {@link loadPackage}, this function does **not** terminate the process
+ * when the package is missing, making it suitable for optional dependencies.
+ */
+export async function tryLoadPackage(
+  packageName: string,
+  loaderFn?: Function,
+): Promise<any> {
+  const cached = packageCache.get(packageName);
+  if (cached) {
+    return cached;
+  }
+  try {
+    const pkg = loaderFn ? await loaderFn() : await import(packageName);
+    packageCache.set(packageName, pkg);
+    return pkg;
+  } catch {
+    return null;
+  }
 }

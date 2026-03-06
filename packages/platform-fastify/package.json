@@ -9,11 +9,7 @@
   "exports": {
     ".": "./index.js",
     "./*.js": "./*.js",
-    "./*": "./*.js",
-    "./adapters": "./adapters/index.js",
-    "./decorators": "./decorators/index.js",
-    "./interfaces": "./interfaces/index.js",
-    "./interfaces/external": "./interfaces/external/index.js"
+    "./*": "./*.js"
   },
   "homepage": "https://nestjs.com",
   "funding": {

@@ -9,12 +9,7 @@
   "exports": {
     ".": "./index.js",
     "./*.js": "./*.js",
-    "./*": "./*.js",
-    "./adapters": "./adapters/index.js",
-    "./interfaces": "./interfaces/index.js",
-    "./multer": "./multer/index.js",
-    "./multer/interceptors": "./multer/interceptors/index.js",
-    "./multer/interfaces": "./multer/interfaces/index.js"
+    "./*": "./*.js"
   },
   "homepage": "https://nestjs.com",
   "funding": {

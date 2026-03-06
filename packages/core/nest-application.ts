@@ -31,6 +31,7 @@ import {
   type GlobalPrefixOptions,
   loadPackage,
   loadPackageCached,
+  tryLoadPackage,
   addLeadingSlash,
   isFunction,
   isObject,
@@ -463,16 +464,14 @@ export class NestApplication
    */
   public async preloadLazyPackages(): Promise<void> {
     // Best-effort: silently swallow if packages are not installed
-    await loadPackage(
+    await tryLoadPackage(
       '@nestjs/platform-express',
-      'TestingModule',
       () => import('@nestjs/platform-express'),
-    ).catch(() => {});
-    await loadPackage(
+    );
+    await tryLoadPackage(
       '@nestjs/microservices',
-      'TestingModule',
       () => import('@nestjs/microservices'),
-    ).catch(() => {});
+    );
   }
 
   private host(): string | undefined {
