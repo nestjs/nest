@@ -26,9 +26,11 @@ import { isNil, isUndefined } from '../utils/shared.utils';
 export interface ValidationPipeOptions extends ValidatorOptions {
   transform?: boolean;
   disableErrorMessages?: boolean;
+  disableFlattenErrorMessages?: boolean;
+  flatExceptionFactoryMessage?: boolean;
   transformOptions?: ClassTransformOptions;
   errorHttpStatusCode?: ErrorHttpStatusCode;
-  exceptionFactory?: (errors: ValidationError[]) => any;
+  exceptionFactory?: (errors: ValidationError[] | string[]) => any;
   validateCustomDecorators?: boolean;
   expectedType?: Type<any>;
   validatorPackage?: ValidatorPackage;
@@ -53,18 +55,23 @@ const BUILT_IN_TYPES = [Date, RegExp, Error, Map, Set, WeakMap, WeakSet];
 export class ValidationPipe implements PipeTransform<any> {
   protected isTransformEnabled: boolean;
   protected isDetailedOutputDisabled?: boolean;
+  protected isFlattenErrorMessagesDisabled?: boolean;
+  protected isFlattenExceptionFactoryErrorsEnabled?: boolean;
   protected validatorOptions: ValidatorOptions;
   protected transformOptions: ClassTransformOptions | undefined;
   protected errorHttpStatusCode: ErrorHttpStatusCode;
   protected expectedType: Type<any> | undefined;
-  protected exceptionFactory: (errors: ValidationError[]) => any;
+  protected exceptionFactory: (errors: ValidationError[] | string[]) => any;
   protected validateCustomDecorators: boolean;
+  protected hasExceptionFactory: boolean;
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
     const {
       transform,
       disableErrorMessages,
+      disableFlattenErrorMessages,
+      flatExceptionFactoryMessage,
       errorHttpStatusCode,
       expectedType,
       transformOptions,
@@ -78,11 +85,14 @@ export class ValidationPipe implements PipeTransform<any> {
     this.isTransformEnabled = !!transform;
     this.transformOptions = transformOptions;
     this.isDetailedOutputDisabled = disableErrorMessages;
+    this.isFlattenErrorMessagesDisabled = disableFlattenErrorMessages;
+    this.isFlattenExceptionFactoryErrorsEnabled = flatExceptionFactoryMessage;
     this.validateCustomDecorators = validateCustomDecorators || false;
     this.errorHttpStatusCode = errorHttpStatusCode || HttpStatus.BAD_REQUEST;
     this.expectedType = expectedType;
     this.exceptionFactory =
       options.exceptionFactory || this.createExceptionFactory();
+    this.hasExceptionFactory = !!options.exceptionFactory;
 
     classValidator = this.loadValidator(options.validatorPackage);
     classTransformer = this.loadTransformer(options.transformerPackage);
@@ -147,7 +157,11 @@ export class ValidationPipe implements PipeTransform<any> {
 
     const errors = await this.validate(entity, this.validatorOptions);
     if (errors.length > 0) {
-      throw await this.exceptionFactory(errors);
+      let validationErrors: ValidationError[] | string[] = errors;
+      if (this.shouldFlatErrors()) {
+        validationErrors = this.flattenValidationErrors(errors);
+      }
+      throw await this.exceptionFactory(validationErrors);
     }
 
     if (originalValue === undefined && originalEntity === '') {
@@ -179,12 +193,11 @@ export class ValidationPipe implements PipeTransform<any> {
   }
 
   public createExceptionFactory() {
-    return (validationErrors: ValidationError[] = []) => {
+    return (validationErrors: ValidationError[] | string[] = []) => {
       if (this.isDetailedOutputDisabled) {
         return new HttpErrorByCode[this.errorHttpStatusCode]();
       }
-      const errors = this.flattenValidationErrors(validationErrors);
-      return new HttpErrorByCode[this.errorHttpStatusCode](errors);
+      return new HttpErrorByCode[this.errorHttpStatusCode](validationErrors);
     };
   }
 
@@ -346,5 +359,13 @@ export class ValidationPipe implements PipeTransform<any> {
       ...error,
       constraints,
     };
+  }
+
+  protected shouldFlatErrors(): boolean {
+    if (this.hasExceptionFactory) {
+      return !!this.isFlattenExceptionFactoryErrorsEnabled;
+    }
+
+    return !this.isFlattenErrorMessagesDisabled;
   }
 }

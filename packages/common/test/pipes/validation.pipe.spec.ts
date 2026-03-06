@@ -9,12 +9,23 @@ import {
   IsOptional,
   IsString,
   ValidateNested,
+  ValidationError,
 } from 'class-validator';
 import { HttpStatus } from '../../enums';
-import { UnprocessableEntityException } from '../../exceptions';
+import {
+  BadRequestException,
+  HttpException,
+  UnprocessableEntityException,
+} from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ValidationPipe } from '../../pipes/validation.pipe';
 chai.use(chaiAsPromised);
+
+class CustomTestError extends HttpException {
+  constructor(errors: any) {
+    super(errors, 418);
+  }
+}
 
 @Exclude()
 class TestModelInternal {
@@ -609,6 +620,7 @@ describe('ValidationPipe', () => {
       expect(await target.transform(testObj, m)).to.deep.equal(testObj);
     });
   });
+
   describe('stripProtoKeys', () => {
     beforeEach(() => {
       target = new ValidationPipe();
@@ -735,6 +747,193 @@ describe('ValidationPipe', () => {
         testCases.forEach(testCase => {
           expect(() => target['stripProtoKeys'](testCase)).to.not.throw();
         });
+      });
+    });
+  });
+
+  describe('option: "exceptionFactory"', () => {
+    describe('when validation fails', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({
+          exceptionFactory: errors => new CustomTestError(errors),
+        });
+      });
+      it('should throw a CustomTestError exception', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          expect(err).to.be.instanceOf(CustomTestError);
+        }
+      });
+    });
+  });
+
+  describe('option: "disableFlattenErrorMessages"', () => {
+    describe('when disableFlattenErrorMessages is true', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({
+          disableFlattenErrorMessages: true,
+        });
+      });
+      it('should throw an exception without flatten errors', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          const message = err.getResponse().message;
+          expect(err).to.be.instanceOf(BadRequestException);
+          expect(message).to.be.an('array');
+          message.forEach((error: any) => {
+            expect(error).to.be.instanceOf(ValidationError);
+          });
+        }
+      });
+    });
+
+    describe('when disableFlattenErrorMessages is false', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({
+          disableFlattenErrorMessages: false,
+        });
+      });
+      it('should throw an exception with flatten errors', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          const message = err.getResponse().message;
+          expect(err).to.be.instanceOf(BadRequestException);
+          expect(message).to.be.an('array');
+          message.forEach((error: any) => {
+            expect(error).to.be.a('string');
+          });
+        }
+      });
+    });
+
+    describe('when disableFlattenErrorMessages is not set', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({});
+      });
+      it('should throw an exception with flatten errors', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          const message = err.getResponse().message;
+          expect(err).to.be.instanceOf(BadRequestException);
+          expect(message).to.be.an('array');
+          message.forEach((error: any) => {
+            expect(error).to.be.a('string');
+          });
+        }
+      });
+    });
+  });
+
+  describe('option: "flatExceptionFactoryMessage"', () => {
+    describe('when flatExceptionFactoryMessage is true', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({
+          flatExceptionFactoryMessage: true,
+          exceptionFactory: errors => new CustomTestError(errors),
+        });
+      });
+      it('should throw a CustomTestError with flatten errors', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          expect(err).to.be.instanceOf(CustomTestError);
+          expect(err.getResponse()).to.be.an('array');
+          err.getResponse().forEach((error: any) => {
+            expect(error).to.be.a('string');
+          });
+        }
+      });
+    });
+
+    describe('when flatExceptionFactoryMessage is false', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({
+          flatExceptionFactoryMessage: false,
+          exceptionFactory: errors => new CustomTestError(errors),
+        });
+      });
+      it('should throw a CustomTestError without flatten errors', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          expect(err).to.be.instanceOf(CustomTestError);
+          expect(err.getResponse()).to.be.an('array');
+          err.getResponse().forEach((error: any) => {
+            expect(error).to.be.instanceOf(ValidationError);
+          });
+        }
+      });
+    });
+
+    describe('when flatExceptionFactoryMessage is not set', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({
+          exceptionFactory: errors => new CustomTestError(errors),
+        });
+      });
+      it('should throw a CustomTestError without flatten errors', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          expect(err).to.be.instanceOf(CustomTestError);
+          expect(err.getResponse()).to.be.an('array');
+          err.getResponse().forEach((error: any) => {
+            expect(error).to.be.instanceOf(ValidationError);
+          });
+        }
+      });
+    });
+
+    describe('when flatExceptionFactoryMessage is false without exceptionFactory', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({
+          flatExceptionFactoryMessage: false,
+        });
+      });
+      it('should throw an exception with flatten errors', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          const message = err.getResponse().message;
+          expect(err).to.be.instanceOf(BadRequestException);
+          expect(message).to.be.an('array');
+          message.forEach((error: any) => {
+            expect(error).to.be.a('string');
+          });
+        }
+      });
+    });
+
+    describe('when flatExceptionFactoryMessage is true without exceptionFactory', () => {
+      beforeEach(() => {
+        target = new ValidationPipe({
+          flatExceptionFactoryMessage: true,
+        });
+      });
+      it('should throw an exception with flatten errors', async () => {
+        const testObj = { prop1: 'value1' };
+        try {
+          await target.transform(testObj, metadata);
+        } catch (err) {
+          const message = err.getResponse().message;
+          expect(err).to.be.instanceOf(BadRequestException);
+          expect(message).to.be.an('array');
+          message.forEach((error: any) => {
+            expect(error).to.be.a('string');
+          });
+        }
       });
     });
   });
