@@ -11,11 +11,6 @@ import { Cat } from './interfaces/cat.interface';
 export class CatsController {
   constructor(private readonly catsService: CatsService) {}
 
-  @Post()
-  @Roles(['admin'])
-  async create(@Body() createCatDto: CreateCatDto) {
-    this.catsService.create(createCatDto);
-  }
 
   @Get()
   async findAll(): Promise<Cat[]> {
