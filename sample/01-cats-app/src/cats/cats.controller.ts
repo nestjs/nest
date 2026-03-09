@@ -27,7 +27,8 @@ export class CatsController {
     @Param('id', new ParseIntPipe())
     id: number,
   ) {
-    // Retrieve a Cat instance by ID
+    // BUG: não consulta o serviço, não retorna Cat, sempre retorna 200 com null
     console.log(id);
+    return null;
   }
 }
