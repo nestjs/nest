@@ -27,6 +27,9 @@
     },
     {
       "path": "./websockets/tsconfig.build.json"
+    },
+    {
+      "path": "./trpc/tsconfig.build.json"
     }
   ]
 }
