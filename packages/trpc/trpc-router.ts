@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit, Type } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit, Type } from '@nestjs/common';
 import {
   DiscoveryService,
   MetadataScanner,
@@ -14,6 +14,7 @@ import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
 import { initTRPC, AnyRouter } from '@trpc/server';
 import {
   TRPC_INPUT_METADATA,
+  TRPC_MODULE_OPTIONS,
   TRPC_OUTPUT_METADATA,
   TRPC_PROCEDURE_METADATA,
   TRPC_PROCEDURE_TYPE_METADATA,
@@ -21,7 +22,8 @@ import {
 } from './constants';
 import { TrpcContextCreator } from './context/trpc-context-creator';
 import { ProcedureType } from './enums';
-import { TrpcRouterMetadata } from './interfaces';
+import { generateSchema, RouterInfo } from './generators/schema-generator';
+import { TrpcModuleOptions, TrpcRouterMetadata } from './interfaces';
 
 @Injectable()
 export class TrpcRouter<
@@ -30,12 +32,15 @@ export class TrpcRouter<
   private readonly logger = new Logger(TrpcRouter.name);
   private appRouter!: TRouter;
   private readonly contextCreator: TrpcContextCreator;
+  private collectedRouterInfos: RouterInfo[] = [];
 
   constructor(
     private readonly discoveryService: DiscoveryService,
     private readonly metadataScanner: MetadataScanner,
     private readonly modulesContainer: ModulesContainer,
     private readonly reflector: Reflector,
+    @Inject(TRPC_MODULE_OPTIONS)
+    private readonly options: TrpcModuleOptions,
     guardsContextCreator: GuardsContextCreator,
     guardsConsumer: GuardsConsumer,
     interceptorsContextCreator: InterceptorsContextCreator,
@@ -55,6 +60,13 @@ export class TrpcRouter<
 
   onModuleInit() {
     this.appRouter = this.buildRouter() as TRouter;
+
+    if (this.options.autoSchemaFile) {
+      generateSchema(this.collectedRouterInfos, this.options.autoSchemaFile);
+      this.logger.log(
+        `Generated AppRouter types at "${this.options.autoSchemaFile}"`,
+      );
+    }
   }
 
   getRouter(): TRouter {
@@ -73,6 +85,7 @@ export class TrpcRouter<
   private buildRouter(): AnyRouter {
     const t = initTRPC.context<any>().create();
     const routerMap: Record<string, any> = {};
+    this.collectedRouterInfos = [];
 
     const providers = this.discoveryService.getProviders();
 
@@ -94,6 +107,7 @@ export class TrpcRouter<
       const alias = routerMeta.alias;
       const moduleKey = this.resolveModuleKey(metatype);
       const procedureMap: Record<string, any> = {};
+      const routerInfo: RouterInfo = { alias, procedures: [] };
 
       const methodNames = this.metadataScanner.getAllMethodNames(
         Object.getPrototypeOf(instance),
@@ -182,6 +196,13 @@ export class TrpcRouter<
         this.logger.log(
           `Mapped {${procedureType}} "${alias ? alias + '.' : ''}${procedureName}" procedure`,
         );
+
+        routerInfo.procedures.push({
+          name: procedureName,
+          type: procedureType,
+          inputSchema,
+          outputSchema,
+        });
       }
 
       if (Object.keys(procedureMap).length > 0) {
@@ -190,6 +211,7 @@ export class TrpcRouter<
         } else {
           Object.assign(routerMap, procedureMap);
         }
+        this.collectedRouterInfos.push(routerInfo);
       }
     }
 

@@ -18,6 +18,22 @@ export interface TrpcModuleOptions {
    * @default false
    */
   isGlobal?: boolean;
+
+  /**
+   * Path to the auto-generated TypeScript file that exports the typed `AppRouter`.
+   *
+   * When set, a `.ts` file is written at this path during module initialisation.
+   * Clients can `import type { AppRouter }` from the generated file to get
+   * full end-to-end type safety, mirroring `autoSchemaFile` from `@nestjs/graphql`.
+   *
+   * @example
+   * ```ts
+   * TrpcModule.forRoot({
+   *   autoSchemaFile: join(process.cwd(), 'src/trpc-generated.ts'),
+   * })
+   * ```
+   */
+  autoSchemaFile?: string;
 }
 
 export interface TrpcModuleAsyncOptions extends Pick<
