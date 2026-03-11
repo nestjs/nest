@@ -1,24 +1,9 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
 import { DiscoveryModule } from '@nestjs/core';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
-import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
 import { TRPC_MODULE_OPTIONS } from './constants';
 import { TrpcModuleAsyncOptions, TrpcModuleOptions } from './interfaces';
 import { TrpcHttpAdapter } from './trpc-http-adapter';
 import { TrpcRouter } from './trpc-router';
-
-const LIFECYCLE_PROVIDERS: Provider[] = [
-  GuardsContextCreator,
-  GuardsConsumer,
-  InterceptorsContextCreator,
-  InterceptorsConsumer,
-  PipesContextCreator,
-  PipesConsumer,
-];
 
 /**
  * NestJS module providing native tRPC integration.
@@ -50,12 +35,7 @@ export class TrpcModule {
       module: TrpcModule,
       global: options.isGlobal ?? false,
       imports: [DiscoveryModule],
-      providers: [
-        optionsProvider,
-        ...LIFECYCLE_PROVIDERS,
-        TrpcRouter,
-        TrpcHttpAdapter,
-      ],
+      providers: [optionsProvider, TrpcRouter, TrpcHttpAdapter],
       exports: [TrpcRouter],
     };
   }
@@ -74,7 +54,6 @@ export class TrpcModule {
       providers: [
         asyncOptionsProvider,
         ...(options.extraProviders ?? []),
-        ...LIFECYCLE_PROVIDERS,
         TrpcRouter,
         TrpcHttpAdapter,
       ],

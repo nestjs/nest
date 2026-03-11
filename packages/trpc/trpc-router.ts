@@ -1,12 +1,18 @@
 import { Inject, Injectable, Logger, OnModuleInit, Type } from '@nestjs/common';
+import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
 import {
+  ApplicationConfig,
+  ModuleRef,
   DiscoveryService,
   MetadataScanner,
   ModulesContainer,
   Reflector,
 } from '@nestjs/core';
+import { ExternalExceptionFilterContext } from '@nestjs/core/exceptions/external-exception-filter-context';
 import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
 import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
+import { ContextIdFactory } from '@nestjs/core/helpers/context-id-factory';
+import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
 import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
 import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
 import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
@@ -24,6 +30,7 @@ import { TrpcContextCreator } from './context/trpc-context-creator';
 import { ProcedureType } from './enums';
 import { generateSchema, RouterInfo } from './generators/schema-generator';
 import { TrpcModuleOptions, TrpcRouterMetadata } from './interfaces';
+import { trpcRequestStorage } from './trpc-request-storage';
 
 @Injectable()
 export class TrpcRouter<
@@ -39,22 +46,22 @@ export class TrpcRouter<
     private readonly metadataScanner: MetadataScanner,
     private readonly modulesContainer: ModulesContainer,
     private readonly reflector: Reflector,
+    private readonly applicationConfig: ApplicationConfig,
+    private readonly moduleRef: ModuleRef,
     @Inject(TRPC_MODULE_OPTIONS)
     private readonly options: TrpcModuleOptions,
-    guardsContextCreator: GuardsContextCreator,
-    guardsConsumer: GuardsConsumer,
-    interceptorsContextCreator: InterceptorsContextCreator,
-    interceptorsConsumer: InterceptorsConsumer,
-    pipesContextCreator: PipesContextCreator,
-    pipesConsumer: PipesConsumer,
   ) {
+    const containerRef = {
+      getModules: () => this.modulesContainer,
+    } as any;
     this.contextCreator = new TrpcContextCreator(
-      guardsContextCreator,
-      guardsConsumer,
-      interceptorsContextCreator,
-      interceptorsConsumer,
-      pipesContextCreator,
-      pipesConsumer,
+      new GuardsContextCreator(containerRef, this.applicationConfig),
+      new GuardsConsumer(),
+      new InterceptorsContextCreator(containerRef, this.applicationConfig),
+      new InterceptorsConsumer(),
+      new PipesContextCreator(containerRef, this.applicationConfig),
+      new PipesConsumer(),
+      new ExternalExceptionFilterContext(containerRef, this.applicationConfig),
     );
   }
 
@@ -91,7 +98,7 @@ export class TrpcRouter<
 
     for (const wrapper of providers) {
       const { instance, metatype } = wrapper;
-      if (!instance || !metatype) {
+      if (!metatype) {
         continue;
       }
 
@@ -108,13 +115,18 @@ export class TrpcRouter<
       const moduleKey = this.resolveModuleKey(metatype);
       const procedureMap: Record<string, any> = {};
       const routerInfo: RouterInfo = { alias, procedures: [] };
+      const prototype =
+        instance && typeof instance === 'object'
+          ? Object.getPrototypeOf(instance)
+          : (metatype as Type).prototype;
+      if (!prototype) {
+        continue;
+      }
 
-      const methodNames = this.metadataScanner.getAllMethodNames(
-        Object.getPrototypeOf(instance),
-      );
+      const methodNames = this.metadataScanner.getAllMethodNames(prototype);
 
       for (const methodName of methodNames) {
-        const methodRef = instance[methodName];
+        const methodRef = prototype[methodName];
         if (typeof methodRef !== 'function') {
           continue;
         }
@@ -143,16 +155,25 @@ export class TrpcRouter<
         if (inputSchema) {
           procedure = procedure.input(inputSchema) as any;
         }
-        if (outputSchema) {
+        if (outputSchema && procedureType !== ProcedureType.SUBSCRIPTION) {
           procedure = procedure.output(outputSchema) as any;
         }
 
-        // Create a context-aware handler that runs guards → interceptors → pipes → handler
-        const wrappedHandler = this.contextCreator.create(
-          instance,
-          methodRef,
+        const paramTypes: unknown[] =
+          Reflect.getMetadata(PARAMTYPES_METADATA, prototype, methodName) ?? [];
+
+        // Create a context-aware handler that runs guards → interceptors → pipes → handler,
+        // including request-scoped providers and filters.
+        const wrappedHandler = this.contextCreator.create({
+          callback: methodRef,
+          methodName,
           moduleKey,
-        );
+          paramTypes,
+          inquirerId: wrapper.id,
+          resolveContextId: () => this.resolveContextId(wrapper),
+          resolveInstance: (contextId: { id: number }) =>
+            this.resolveRouterInstance(wrapper, metatype, contextId),
+        });
 
         switch (procedureType) {
           case ProcedureType.QUERY:
@@ -169,7 +190,9 @@ export class TrpcRouter<
               },
             );
             break;
-          case ProcedureType.SUBSCRIPTION:
+          case ProcedureType.SUBSCRIPTION: {
+            const validateOutput = (value: unknown) =>
+              this.validateSubscriptionOutput(outputSchema, value);
             procedureMap[procedureName] = procedure.subscription(
               async function* ({
                 input,
@@ -184,13 +207,16 @@ export class TrpcRouter<
                   typeof result === 'object' &&
                   Symbol.asyncIterator in (result as any)
                 ) {
-                  yield* result as AsyncIterable<unknown>;
+                  for await (const chunk of result as AsyncIterable<unknown>) {
+                    yield await validateOutput(chunk);
+                  }
                 } else {
-                  yield result;
+                  yield await validateOutput(result);
                 }
               },
             );
             break;
+          }
         }
 
         this.logger.log(
@@ -216,5 +242,83 @@ export class TrpcRouter<
     }
 
     return t.router(routerMap);
+  }
+
+  private resolveContextId(wrapper: any): { id: number } {
+    const store = trpcRequestStorage.getStore();
+    if (!store?.req) {
+      return STATIC_CONTEXT;
+    }
+
+    if (!store.contextId) {
+      store.contextId = ContextIdFactory.getByRequest(store.req);
+    }
+
+    if (!store.requestRegistered) {
+      const requestProviderValue =
+        wrapper?.isDependencyTreeDurable?.() && store.contextId.payload
+          ? store.contextId.payload
+          : Object.assign(store.req, store.contextId.payload ?? {});
+      this.moduleRef.registerRequestByContextId(
+        requestProviderValue,
+        store.contextId,
+      );
+      store.requestRegistered = true;
+    }
+
+    return store.contextId;
+  }
+
+  private async resolveRouterInstance(
+    wrapper: any,
+    metatype: Type | Function,
+    contextId: { id: number },
+  ): Promise<any> {
+    if (contextId === STATIC_CONTEXT && wrapper?.instance) {
+      return wrapper.instance;
+    }
+
+    try {
+      return await this.moduleRef.resolve(
+        metatype as Type<unknown>,
+        contextId,
+        {
+          strict: false,
+        },
+      );
+    } catch {
+      return wrapper?.instance;
+    }
+  }
+
+  private async validateSubscriptionOutput(
+    outputSchema: any,
+    value: unknown,
+  ): Promise<unknown> {
+    if (!outputSchema) {
+      return value;
+    }
+
+    if (typeof outputSchema.parseAsync === 'function') {
+      return outputSchema.parseAsync(value);
+    }
+    if (typeof outputSchema.parse === 'function') {
+      return outputSchema.parse(value);
+    }
+    if (typeof outputSchema.validateSync === 'function') {
+      return outputSchema.validateSync(value);
+    }
+    if (typeof outputSchema.create === 'function') {
+      return outputSchema.create(value);
+    }
+    if (typeof outputSchema.assert === 'function') {
+      outputSchema.assert(value);
+      return value;
+    }
+    if (typeof outputSchema === 'function') {
+      return outputSchema(value);
+    }
+
+    return value;
   }
 }

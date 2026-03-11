@@ -1,12 +1,22 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { TrpcParamtype } from '../enums';
+import { addTrpcParamMetadata } from './param-metadata.util';
 
 /**
- * Extracts the tRPC context object from the execution context.
+ * Extracts request context data from a tRPC procedure call.
+ *
+ * - `@TrpcContext()` injects the full tRPC context object.
+ * - `@TrpcContext('field')` injects a field from the context object.
  *
  * @publicApi
  */
-export const TrpcContext = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext) => {
-    return ctx.switchToRpc().getContext();
-  },
-);
+export function TrpcContext(data?: string): ParameterDecorator {
+  return (target: object, propertyKey: string | symbol | undefined, index) => {
+    addTrpcParamMetadata(
+      target,
+      propertyKey,
+      index,
+      TrpcParamtype.CONTEXT,
+      data,
+    );
+  };
+}

@@ -23,6 +23,8 @@
     "clean": "tsc -b --clean packages",
     "move:samples": "gulp move:samples",
     "move:node_modules": "gulp move:node_modules",
+    "pack:trpc:sample": "node sample/37-trpc/scripts/prepare-local-trpc.cjs --pack-only",
+    "prepare:sample:37-trpc": "node sample/37-trpc/scripts/prepare-local-trpc.cjs",
     "build:samples": "gulp install:samples && npm run build && npm run move:samples && gulp build:samples && gulp test:samples && gulp test:e2e:samples",
     "codechecks:benchmarks": "codechecks ./tools/benchmarks/check-benchmarks.ts",
     "coverage": "nyc report --reporter=text-lcov | coveralls -v",

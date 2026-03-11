@@ -48,13 +48,6 @@ export interface TrpcModuleAsyncOptions extends Pick<
   isGlobal?: boolean;
 }
 
-export interface TrpcProcedureMetadata {
-  name: string;
-  type: string;
-  inputSchema?: any;
-  outputSchema?: any;
-}
-
 export interface TrpcRouterMetadata {
   /**
    * Prefix for all procedures in this router.

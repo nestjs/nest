@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true
+  },
+  "include": [
+    "src/client.typecheck.ts",
+    "src/client.ts",
+    "src/subscription-client.ts",
+    "src/@generated/server.ts"
+  ]
+}

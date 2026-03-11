@@ -15,6 +15,11 @@ export interface RouterInfo {
   procedures: ProcedureInfo[];
 }
 
+interface RenderableProcedure extends ProcedureInfo {
+  inputSchemaVarName?: string;
+  outputSchemaVarName?: string;
+}
+
 /**
  * Generates a TypeScript file containing the typed `AppRouter`
  * for tRPC client consumption.
@@ -59,17 +64,53 @@ export function generateSchemaContent(routers: RouterInfo[]): string {
   lines.push('');
 
   // Group procedures: aliased → sub-routers, un-aliased → root
-  const rootProcedures: ProcedureInfo[] = [];
-  const aliasedGroups = new Map<string, ProcedureInfo[]>();
+  const schemaDeclarations: string[] = [];
+  const rootProcedures: RenderableProcedure[] = [];
+  const aliasedGroups = new Map<string, RenderableProcedure[]>();
+  let schemaDeclarationIndex = 0;
 
   for (const router of routers) {
+    const scope = router.alias ?? 'root';
+    const mapProcedure = (procedure: ProcedureInfo): RenderableProcedure => {
+      const renderable: RenderableProcedure = { ...procedure };
+
+      if (procedure.inputSchema) {
+        renderable.inputSchemaVarName = createSchemaVariableName(
+          scope,
+          procedure.name,
+          'input',
+          schemaDeclarationIndex++,
+        );
+        schemaDeclarations.push(
+          `const ${renderable.inputSchemaVarName} = ${serializeZodSchema(procedure.inputSchema)};`,
+        );
+      }
+      if (procedure.outputSchema) {
+        renderable.outputSchemaVarName = createSchemaVariableName(
+          scope,
+          procedure.name,
+          'output',
+          schemaDeclarationIndex++,
+        );
+        schemaDeclarations.push(
+          `const ${renderable.outputSchemaVarName} = ${serializeZodSchema(procedure.outputSchema)};`,
+        );
+      }
+      return renderable;
+    };
+
     if (router.alias) {
       const existing = aliasedGroups.get(router.alias) ?? [];
-      existing.push(...router.procedures);
+      existing.push(...router.procedures.map(mapProcedure));
       aliasedGroups.set(router.alias, existing);
     } else {
-      rootProcedures.push(...router.procedures);
+      rootProcedures.push(...router.procedures.map(mapProcedure));
     }
+  }
+
+  if (schemaDeclarations.length > 0) {
+    lines.push(...schemaDeclarations);
+    lines.push('');
   }
 
   const routerEntries: string[] = [];
@@ -95,17 +136,17 @@ export function generateSchemaContent(routers: RouterInfo[]): string {
   return lines.join('\n');
 }
 
-function formatProcedure(proc: ProcedureInfo): string {
+function formatProcedure(proc: RenderableProcedure): string {
   let chain = 't.procedure';
 
-  if (proc.inputSchema) {
-    chain += `.input(${serializeZodSchema(proc.inputSchema)})`;
+  if (proc.inputSchemaVarName) {
+    chain += `.input(${proc.inputSchemaVarName})`;
   }
-  if (proc.outputSchema) {
-    chain += `.output(${serializeZodSchema(proc.outputSchema)})`;
+  if (proc.outputSchemaVarName && proc.type !== ProcedureType.SUBSCRIPTION) {
+    chain += `.output(${proc.outputSchemaVarName})`;
   }
 
-  const placeholder = "'PLACEHOLDER_DO_NOT_REMOVE' as any";
+  const placeholder = getTypedPlaceholder(proc.outputSchemaVarName);
 
   switch (proc.type) {
     case ProcedureType.QUERY:
@@ -115,9 +156,38 @@ function formatProcedure(proc: ProcedureInfo): string {
       chain += `.mutation(() => ${placeholder})`;
       break;
     case ProcedureType.SUBSCRIPTION:
-      chain += `.subscription(() => ${placeholder})`;
+      chain += `.subscription(async function* () { yield ${placeholder}; })`;
       break;
   }
 
   return `${proc.name}: ${chain}`;
+}
+
+function getTypedPlaceholder(outputSchemaVarName?: string): string {
+  if (!outputSchemaVarName) {
+    return 'undefined as unknown';
+  }
+  return `null as unknown as z.infer<typeof ${outputSchemaVarName}>`;
+}
+
+function createSchemaVariableName(
+  scope: string,
+  procedureName: string,
+  kind: 'input' | 'output',
+  index: number,
+): string {
+  const safeScope = sanitizeIdentifier(scope);
+  const safeProcedureName = sanitizeIdentifier(procedureName);
+  return `schema_${safeScope}_${safeProcedureName}_${kind}_${index}`;
+}
+
+function sanitizeIdentifier(value: string): string {
+  const sanitized = value.replace(/[^a-zA-Z0-9_]/g, '_');
+  if (!sanitized) {
+    return 'unknown';
+  }
+  if (/^[0-9]/.test(sanitized)) {
+    return `_${sanitized}`;
+  }
+  return sanitized;
 }
