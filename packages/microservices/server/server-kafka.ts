@@ -33,7 +33,7 @@ import {
 import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
 import { Server } from './server.js';
 import { Logger } from '@nestjs/common';
-import { isNil } from '@nestjs/common/internal';
+import { isNil } from '@nestjs/common/utils/shared.utils.js';
 
 /**
  * @publicApi
