@@ -546,20 +546,20 @@ describe('ServerKafka', () => {
 
     let perTopicServer: ServerKafka;
     let perTopicUntyped: any;
-    let perTopicConnect: ReturnType<typeof vi.fn>;
-    let perTopicSubscribe: ReturnType<typeof vi.fn>;
-    let perTopicRun: ReturnType<typeof vi.fn>;
-    let perTopicOn: ReturnType<typeof vi.fn>;
-    let perTopicConsumerFactory: ReturnType<typeof vi.fn>;
+    let perTopicConnect: sinon.SinonStub;
+    let perTopicSubscribe: sinon.SinonStub;
+    let perTopicRun: sinon.SinonStub;
+    let perTopicOn: sinon.SinonStub;
+    let perTopicConsumerFactory: sinon.SinonStub;
 
     beforeEach(() => {
       perTopicServer = new ServerKafka({ topicConsumers: true });
       perTopicUntyped = perTopicServer as any;
 
-      perTopicConnect = vi.fn();
-      perTopicSubscribe = vi.fn();
-      perTopicRun = vi.fn();
-      perTopicOn = vi.fn();
+      perTopicConnect = sinon.stub();
+      perTopicSubscribe = sinon.stub();
+      perTopicRun = sinon.stub();
+      perTopicOn = sinon.stub();
 
       const mockConsumer = () => ({
         connect: perTopicConnect,
@@ -569,160 +569,157 @@ describe('ServerKafka', () => {
         events: mockConsumerEvents,
       });
 
-      perTopicConsumerFactory = vi.fn().mockImplementation(mockConsumer);
+      perTopicConsumerFactory = sinon.stub().callsFake(mockConsumer);
 
-      vi.spyOn(perTopicServer, 'createClient').mockImplementation(
-        async () =>
-          ({
-            consumer: perTopicConsumerFactory,
-            producer: vi.fn().mockReturnValue({
-              connect: perTopicConnect,
-              send: vi.fn(),
-              on: perTopicOn,
-              events: {
-                CONNECT: 'producer.connect',
-                DISCONNECT: 'producer.disconnect',
-              },
-            }),
-          }) as any,
-      );
+      sinon.stub(perTopicServer, 'createClient').resolves({
+        consumer: perTopicConsumerFactory,
+        producer: sinon.stub().returns({
+          connect: perTopicConnect,
+          send: sinon.stub(),
+          on: perTopicOn,
+          events: {
+            CONNECT: 'producer.connect',
+            DISCONNECT: 'producer.disconnect',
+          },
+        }),
+      } as any);
     });
 
-    afterEach(() => vi.restoreAllMocks());
+    afterEach(() => sinon.restore());
 
     describe('bindEventsPerTopic', () => {
       it('should create a separate consumer for each registered topic', async () => {
         perTopicUntyped.messageHandlers = objectToMap({
-          'topic-a': vi.fn(),
-          'topic-b': vi.fn(),
+          'topic-a': sinon.stub(),
+          'topic-b': sinon.stub(),
         });
 
-        await perTopicServer.listen(vi.fn());
+        await perTopicServer.listen(sinon.stub());
 
-        expect(perTopicConsumerFactory).toHaveBeenCalledTimes(2);
+        expect(perTopicConsumerFactory.callCount).to.equal(2);
       });
 
       it('should suffix groupId with topic name for each consumer', async () => {
         perTopicUntyped.messageHandlers = objectToMap({
-          'topic-a': vi.fn(),
-          'topic-b': vi.fn(),
+          'topic-a': sinon.stub(),
+          'topic-b': sinon.stub(),
         });
 
-        await perTopicServer.listen(vi.fn());
+        await perTopicServer.listen(sinon.stub());
 
-        const groupIds = perTopicConsumerFactory.mock.calls.map(
+        const groupIds = perTopicConsumerFactory.args.map(
           args => args[0].groupId,
         );
-        expect(groupIds.some(id => id.endsWith('-topic-a'))).toBe(true);
-        expect(groupIds.some(id => id.endsWith('-topic-b'))).toBe(true);
+        expect(groupIds.some(id => id.endsWith('-topic-a'))).to.be.true;
+        expect(groupIds.some(id => id.endsWith('-topic-b'))).to.be.true;
       });
 
       it('should subscribe each consumer to exactly one topic', async () => {
         perTopicUntyped.messageHandlers = objectToMap({
-          'topic-a': vi.fn(),
-          'topic-b': vi.fn(),
+          'topic-a': sinon.stub(),
+          'topic-b': sinon.stub(),
         });
 
-        await perTopicServer.listen(vi.fn());
+        await perTopicServer.listen(sinon.stub());
 
-        expect(perTopicSubscribe).toHaveBeenCalledTimes(2);
-        perTopicSubscribe.mock.calls.forEach(args => {
-          expect(args[0].topics.length).toEqual(1);
+        expect(perTopicSubscribe.callCount).to.equal(2);
+        perTopicSubscribe.args.forEach(args => {
+          expect(args[0].topics.length).to.equal(1);
         });
-        const subscribedTopics = perTopicSubscribe.mock.calls
+        const subscribedTopics = perTopicSubscribe.args
           .map(args => args[0].topics[0])
           .sort();
-        expect(subscribedTopics).toEqual(['topic-a', 'topic-b']);
+        expect(subscribedTopics).to.deep.equal(['topic-a', 'topic-b']);
       });
 
       it('should call run on each per-topic consumer', async () => {
         perTopicUntyped.messageHandlers = objectToMap({
-          'topic-a': vi.fn(),
-          'topic-b': vi.fn(),
+          'topic-a': sinon.stub(),
+          'topic-b': sinon.stub(),
         });
 
-        await perTopicServer.listen(vi.fn());
+        await perTopicServer.listen(sinon.stub());
 
-        expect(perTopicRun).toHaveBeenCalledTimes(2);
-        perTopicRun.mock.calls.forEach(args => {
-          expect(args[0]).toHaveProperty('eachMessage');
+        expect(perTopicRun.callCount).to.equal(2);
+        perTopicRun.args.forEach(args => {
+          expect(args[0]).to.have.property('eachMessage');
         });
       });
 
       it('should populate consumers map with one entry per topic', async () => {
         perTopicUntyped.messageHandlers = objectToMap({
-          'topic-a': vi.fn(),
-          'topic-b': vi.fn(),
+          'topic-a': sinon.stub(),
+          'topic-b': sinon.stub(),
         });
 
-        await perTopicServer.listen(vi.fn());
+        await perTopicServer.listen(sinon.stub());
 
-        expect(perTopicUntyped.consumers.size).toEqual(2);
-        expect(perTopicUntyped.consumers.has('topic-a')).toBe(true);
-        expect(perTopicUntyped.consumers.has('topic-b')).toBe(true);
+        expect(perTopicUntyped.consumers.size).to.equal(2);
+        expect(perTopicUntyped.consumers.has('topic-a')).to.be.true;
+        expect(perTopicUntyped.consumers.has('topic-b')).to.be.true;
       });
 
       it('should not create any consumer when there are no messageHandlers', async () => {
-        await perTopicServer.listen(vi.fn());
+        await perTopicServer.listen(sinon.stub());
 
-        expect(perTopicConsumerFactory).not.toHaveBeenCalled();
-        expect(perTopicUntyped.consumers.size).toEqual(0);
+        expect(perTopicConsumerFactory.called).to.be.false;
+        expect(perTopicUntyped.consumers.size).to.equal(0);
       });
 
       it('should clean up connected consumers and rethrow when a topic connect fails', async () => {
-        const disconnectOk = vi.fn();
+        const disconnectOk = sinon.stub();
         const connectError = new Error('connect failed');
         let callCount = 0;
 
-        perTopicConsumerFactory.mockImplementation(() => ({
-          connect: vi.fn().mockImplementation(() => {
+        perTopicConsumerFactory.callsFake(() => ({
+          connect: sinon.stub().callsFake(() => {
             callCount++;
             if (callCount === 2) throw connectError;
           }),
-          subscribe: vi.fn(),
-          run: vi.fn(),
+          subscribe: sinon.stub(),
+          run: sinon.stub(),
           on: perTopicOn,
           events: mockConsumerEvents,
           disconnect: disconnectOk,
         }));
 
         perTopicUntyped.messageHandlers = objectToMap({
-          'topic-a': vi.fn(),
-          'topic-b': vi.fn(),
+          'topic-a': sinon.stub(),
+          'topic-b': sinon.stub(),
         });
 
-        const cb = vi.fn();
+        const cb = sinon.stub();
         await perTopicServer.listen(cb);
 
-        expect(cb).toHaveBeenCalledWith(connectError);
-        expect(disconnectOk).toHaveBeenCalledOnce();
-        expect(perTopicUntyped.consumers.size).toEqual(0);
+        expect(cb.calledWith(connectError)).to.be.true;
+        expect(disconnectOk.calledOnce).to.be.true;
+        expect(perTopicUntyped.consumers.size).to.equal(0);
       });
     });
 
     describe('close with topicConsumers', () => {
       it('should disconnect all per-topic consumers and null refs', async () => {
-        const disconnectA = vi.fn();
-        const disconnectB = vi.fn();
+        const disconnectA = sinon.stub();
+        const disconnectB = sinon.stub();
         perTopicUntyped.consumers = new Map([
           ['topic-a', { disconnect: disconnectA }],
           ['topic-b', { disconnect: disconnectB }],
         ]);
-        perTopicUntyped.producer = { disconnect: vi.fn() };
+        perTopicUntyped.producer = { disconnect: sinon.stub() };
 
         await perTopicServer.close();
 
-        expect(disconnectA).toHaveBeenCalledOnce();
-        expect(disconnectB).toHaveBeenCalledOnce();
-        expect(perTopicUntyped.consumers.size).toEqual(0);
-        expect(perTopicUntyped.producer).toBeNull();
-        expect(perTopicUntyped.client).toBeNull();
+        expect(disconnectA.calledOnce).to.be.true;
+        expect(disconnectB.calledOnce).to.be.true;
+        expect(perTopicUntyped.consumers.size).to.equal(0);
+        expect(perTopicUntyped.producer).to.be.null;
+        expect(perTopicUntyped.client).to.be.null;
       });
     });
   });
 
   describe('createClient', () => {
-    it('should accept a custom logCreator in client options', () => {
+    it('should accept a custom logCreator in client options', async () => {
       const logCreatorSpy = sinon.spy(() => 'test');
       const logCreator = () => logCreatorSpy;
 
@@ -736,21 +733,16 @@ describe('ServerKafka', () => {
         }
       }
 
-      vi.spyOn(
-        ServerKafka.prototype as any,
-        'loadPackage',
-      ).mockResolvedValueOnce({
-        Kafka: MockKafka,
-      });
-
       server = new ServerKafka({
         client: {
           brokers: [],
           logCreator,
         },
       });
+      sinon.stub(server as any, 'loadPackage').resolves({ Kafka: MockKafka });
 
-      const logger = server.createClient().logger();
+      const kafkaClient = await server.createClient();
+      const logger = kafkaClient.logger();
 
       logger.info({ namespace: '', level: 1, log: 'test' });
 
