@@ -1,3 +1,5 @@
+import { Logger } from '@nestjs/common/services/logger.service';
+import { isNil } from '@nestjs/common/utils/shared.utils';
 import { isObservable, lastValueFrom, Observable, ReplaySubject } from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
@@ -5,12 +7,12 @@ import {
   KAFKA_DEFAULT_GROUP,
   NO_EVENT_HANDLER,
   NO_MESSAGE_HANDLER,
-} from '../constants.js';
-import { KafkaContext } from '../ctx-host/index.js';
-import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer.js';
-import { KafkaHeaders, Transport } from '../enums/index.js';
-import { KafkaStatus } from '../events/index.js';
-import { KafkaRetriableException } from '../exceptions/index.js';
+} from '../constants';
+import { KafkaContext } from '../ctx-host';
+import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer';
+import { KafkaHeaders, Transport } from '../enums';
+import { KafkaStatus } from '../events';
+import { KafkaRetriableException } from '../exceptions';
 import {
   BrokersFunction,
   Consumer,
@@ -22,18 +24,16 @@ import {
   Message,
   Producer,
   RecordMetadata,
-} from '../external/kafka.interface.js';
-import { KafkaLogger, KafkaParser } from '../helpers/index.js';
+} from '../external/kafka.interface';
+import { KafkaLogger, KafkaParser } from '../helpers';
 import {
   KafkaOptions,
   OutgoingResponse,
   ReadPacket,
   TransportId,
-} from '../interfaces/index.js';
-import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
-import { Server } from './server.js';
-import { Logger } from '@nestjs/common';
-import { isNil } from '@nestjs/common/utils/shared.utils.js';
+} from '../interfaces';
+import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
+import { Server } from './server';
 
 /**
  * @publicApi
