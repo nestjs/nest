@@ -10,7 +10,7 @@
     "start:dev": "nodemon",
     "test": "jest",
     "test:cov": "jest --coverage",
-    "test:e2e": "echo 'No e2e tests implemented yet.'"
+    "test:e2e": "jest --config ./e2e/jest-e2e.json"
   },
   "dependencies": {
     "@nestjs/common": "11.1.16",

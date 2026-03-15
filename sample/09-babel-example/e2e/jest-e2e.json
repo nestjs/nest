@@ -1,0 +1,11 @@
+{
+  "moduleFileExtensions": ["js", "json"],
+  "rootDir": "..",
+  "testRegex": "/e2e/.*\\.(e2e-test|e2e-spec).js$",
+  "collectCoverageFrom": [
+    "src/**/*.js",
+    "!**/node_modules/**",
+    "!**/vendor/**"
+  ],
+  "coverageReporters": ["json", "lcov"]
+}
