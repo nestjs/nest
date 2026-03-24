@@ -167,7 +167,7 @@
     "ts-morph": "27.0.2",
     "ts-node": "10.9.2",
     "typeorm": "0.3.28",
-    "typescript": "5.9.3",
+    "typescript": "6.0.2",
     "typescript-eslint": "8.57.1",
     "ws": "8.20.0"
   },

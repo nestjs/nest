@@ -24,8 +24,6 @@ import {
 import { AbstractHttpAdapter } from '@nestjs/core/adapters/http-adapter';
 import { RouterMethodFactory } from '@nestjs/core/helpers/router-method-factory';
 import { LegacyRouteConverter } from '@nestjs/core/router/legacy-route-converter';
-import * as cors from 'cors';
-import * as express from 'express';
 import type { Server } from 'http';
 import * as http from 'http';
 import * as https from 'https';
@@ -35,6 +33,8 @@ import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-pa
 import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util';
+import cors = require('cors');
+import express = require('express');
 
 type VersionedRoute = <
   TRequest extends Record<string, any> = any,

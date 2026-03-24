@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "node16",
+    "moduleResolution": "node16",
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "removeComments": true,
@@ -15,7 +16,6 @@
     "sourceMap": true,
     "allowJs": false,
     "outDir": "dist",
-    "baseUrl": ".",
     "paths": {
       "@nestjs/common": ["./packages/common"],
       "@nestjs/common/*": ["./packages/common/*"],

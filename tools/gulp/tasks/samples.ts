@@ -1,5 +1,3 @@
-import { blue, magenta } from 'ansis';
-import * as childProcess from 'child_process';
 import { execFile as execFileCb } from 'child_process';
 import * as log from 'fancy-log';
 import { task } from 'gulp';
@@ -8,7 +6,6 @@ import { promisify } from 'util';
 import { samplePath } from '../config';
 import { containsPackageJson, getDirs } from '../util/task-helpers';
 
-const exec = promisify(childProcess.exec);
 const execFile = promisify(execFileCb);
 
 async function executeNpmScriptInSamples(
@@ -35,7 +32,7 @@ async function executeNpmScriptInSamples(
     '35': 22,
   };
 
-  for await (const dir of directories) {
+  for (const dir of directories) {
     const sampleIdentifier = dir.match(/\d+/)?.[0];
     const minNodejsVersionForDir =
       sampleIdentifier && sampleIdentifier in minNodejsVersionBySampleNumber
@@ -77,6 +74,7 @@ async function executeNPMScriptInDirectory(
   script: string,
   appendScript?: string,
 ) {
+  const { blue, magenta } = await import('ansis');
   const dirName = dir.replace(resolve(__dirname, '../../../'), '');
   log.info(`Running ${blue(script)} in ${magenta(dirName)}`);
   try {
