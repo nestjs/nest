@@ -378,7 +378,7 @@ export class ClientKafka
 
   protected getReplyTopicPartition(topic: string): string {
     const minimumPartition = this.consumerAssignments[topic];
-    if (isUndefined(minimumPartition)) {
+    if (isNil(minimumPartition)) {
       throw new InvalidKafkaClientTopicException(topic);
     }
 
