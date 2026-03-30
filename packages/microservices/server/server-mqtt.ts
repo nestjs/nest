@@ -25,7 +25,7 @@ import { Server } from './server';
 
 let mqttPackage: any = {};
 
-// To enable type safety for MQTT. This cant be uncommented by default
+// To enable type safety for MQTT. This can't be uncommented by default
 // because it would require the user to install the mqtt package even if they dont use MQTT
 // Otherwise, TypeScript would fail to compile the code.
 //

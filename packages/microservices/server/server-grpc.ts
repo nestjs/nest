@@ -30,7 +30,7 @@ import { Server } from './server';
 
 const CANCELLED_EVENT = 'cancelled';
 
-// To enable type safety for gRPC. This cant be uncommented by default
+// To enable type safety for gRPC. This can't be uncommented by default
 // because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
 // Otherwise, TypeScript would fail to compile the code.
 //
@@ -747,8 +747,8 @@ export class ServerGrpc extends Server<never, never> {
 
       // Replay buffered values to the new subscriber
       setImmediate(() => {
-        const subcription = replayBuffer!.subscribe(subject);
-        subcription.unsubscribe();
+        const subscription = replayBuffer!.subscribe(subject);
+        subscription.unsubscribe();
         replayBuffer = null;
       });
     }

@@ -15,7 +15,7 @@ import { ClientProxy } from './client-proxy';
 
 let mqttPackage: any = {};
 
-// To enable type safety for MQTT. This cant be uncommented by default
+// To enable type safety for MQTT. This can't be uncommented by default
 // because it would require the user to install the mqtt package even if they dont use MQTT
 // Otherwise, TypeScript would fail to compile the code.
 //
@@ -307,7 +307,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
       return undefined;
     }
 
-    // Cant just spread objects as MQTT won't deliver
+    // Can't just spread objects as MQTT won't deliver
     // any message with empty object as "userProperties" field
     // @url https://github.com/nestjs/nest/issues/14079
     let options: MqttRecordOptions = {};

@@ -13,7 +13,7 @@ import { ClientProxy } from './client-proxy';
 
 const GRPC_CANCELLED = 'Cancelled';
 
-// To enable type safety for gRPC. This cant be uncommented by default
+// To enable type safety for gRPC. This can't be uncommented by default
 // because it would require the user to install the @grpc/grpc-js package even if they dont use gRPC
 // Otherwise, TypeScript would fail to compile the code.
 //

@@ -15,7 +15,7 @@ import { isString, isUndefined } from '../../utils/shared.utils';
  */
 export interface ControllerOptions extends ScopeOptions, VersionOptions {
   /**
-   * Specifies an optional `route path prefix`.  The prefix is pre-pended to the
+   * Specifies an optional `route path prefix`.  The prefix is prepended to the
    * path specified in any request decorator in the class.
    *
    * Supported only by HTTP-based applications (does not apply to non-HTTP microservices).
@@ -70,7 +70,7 @@ export function Controller(): ClassDecorator;
  * handlers.
  *
  * @param {string|Array} prefix string that defines a `route path prefix`.  The prefix
- * is pre-pended to the path specified in any request decorator in the class.
+ * is prepended to the path specified in any request decorator in the class.
  *
  * @see [Routing](https://docs.nestjs.com/controllers#routing)
  * @see [Controllers](https://docs.nestjs.com/controllers)
@@ -100,7 +100,7 @@ export function Controller(prefix: string | string[]): ClassDecorator;
  * [See Scope](https://docs.nestjs.com/fundamentals/injection-scopes#usage) for
  * more details.
  * - `prefix` - string that defines a `route path prefix`.  The prefix
- * is pre-pended to the path specified in any request decorator in the class.
+ * is prepended to the path specified in any request decorator in the class.
  * - `version` - string, array of strings, or Symbol that defines the version
  * of all routes in the class. [See Versioning](https://docs.nestjs.com/techniques/versioning)
  * for more details.
@@ -129,13 +129,13 @@ export function Controller(options: ControllerOptions): ClassDecorator;
  * handlers.
  *
  * @param prefixOrOptions a `route path prefix` or a `ControllerOptions` object.
- * A `route path prefix` is pre-pended to the path specified in any request decorator
+ * A `route path prefix` is prepended to the path specified in any request decorator
  * in the class. `ControllerOptions` is an options configuration object specifying:
  * - `scope` - symbol that determines the lifetime of a Controller instance.
  * [See Scope](https://docs.nestjs.com/fundamentals/injection-scopes#usage) for
  * more details.
  * - `prefix` - string that defines a `route path prefix`.  The prefix
- * is pre-pended to the path specified in any request decorator in the class.
+ * is prepended to the path specified in any request decorator in the class.
  * - `version` - string, array of strings, or Symbol that defines the version
  * of all routes in the class. [See Versioning](https://docs.nestjs.com/techniques/versioning)
  * for more details.

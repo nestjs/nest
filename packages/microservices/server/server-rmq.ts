@@ -34,7 +34,7 @@ import {
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer';
 import { Server } from './server';
 
-// To enable type safety for RMQ. This cant be uncommented by default
+// To enable type safety for RMQ. This can't be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
 // Otherwise, TypeScript would fail to compile the code.
 //

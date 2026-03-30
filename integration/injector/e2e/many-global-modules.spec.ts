@@ -53,7 +53,7 @@ class RequestProvider {}
 class ForeignTransientProvider {}
 
 @Injectable()
-export class Dependant {
+export class Dependent {
   constructor(
     private readonly transientProvider: TransientProvider,
 
@@ -94,9 +94,9 @@ export class ModuleWithForeignTransientProvider {}
       useClass: TransientProvider,
     },
     {
-      provide: Dependant,
+      provide: Dependent,
       scope: Scope.DEFAULT,
-      useClass: Dependant,
+      useClass: Dependent,
     },
   ],
 })
@@ -148,9 +148,9 @@ describe('Many global modules', () => {
     });
     const moduleRef = await moduleBuilder.compile();
 
-    const dependant = await moduleRef.resolve(Dependant);
-    const checkDependenciesSpy = sinon.spy(dependant, 'checkDependencies');
-    dependant.checkDependencies();
+    const dependent = await moduleRef.resolve(Dependent);
+    const checkDependenciesSpy = sinon.spy(dependent, 'checkDependencies');
+    dependent.checkDependencies();
 
     expect(checkDependenciesSpy.called).to.be.true;
   });

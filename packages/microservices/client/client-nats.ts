@@ -13,7 +13,7 @@ import { ClientProxy } from './client-proxy';
 
 let natsPackage = {} as any;
 
-// To enable type safety for Nats. This cant be uncommented by default
+// To enable type safety for Nats. This can't be uncommented by default
 // because it would require the user to install the nats package even if they dont use Nats
 // Otherwise, TypeScript would fail to compile the code.
 //

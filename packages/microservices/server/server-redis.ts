@@ -15,7 +15,7 @@ import { IncomingRequest, RedisOptions, TransportId } from '../interfaces';
 
 import { Server } from './server';
 
-// To enable type safety for Redis. This cant be uncommented by default
+// To enable type safety for Redis. This can't be uncommented by default
 // because it would require the user to install the ioredis package even if they dont use Redis
 // Otherwise, TypeScript would fail to compile the code.
 //
