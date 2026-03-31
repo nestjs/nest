@@ -22,7 +22,7 @@ describe('HttpAdapterHost', () => {
     applicationRefHost.listening = true;
   });
 
-  it('listening should return false if the application isn't listening yet', () => {
+  it("listening should return false if the application isn't listening yet", () => {
     expect(applicationRefHost.listening).to.be.false;
   });
 });
