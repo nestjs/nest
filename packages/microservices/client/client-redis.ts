@@ -16,6 +16,10 @@ import { ClientProxy } from './client-proxy';
 // type Redis = import('ioredis').Redis;
 type Redis = any;
 
+type RedisOutputOptions = {
+  returnBuffers?: boolean;
+};
+
 let redisPackage = {} as any;
 
 /**
@@ -34,7 +38,10 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     callback: RedisEvents[keyof RedisEvents];
   }> = [];
 
-  constructor(protected readonly options: Required<RedisOptions>['options']) {
+  constructor(
+    protected readonly options: Required<RedisOptions>['options'] &
+      RedisOutputOptions,
+  ) {
     super();
 
     redisPackage = loadPackage('ioredis', ClientRedis.name, () =>
@@ -139,7 +146,10 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
       if (!this.wasInitialConnectionSuccessful) {
         this.wasInitialConnectionSuccessful = true;
-        this.subClient.on('message', this.createResponseCallback());
+        this.subClient.on(
+          this.options.returnBuffers ? 'messageBuffer' : 'message',
+          this.createResponseCallback(),
+        );
       }
     });
   }
@@ -223,12 +233,27 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     buffer: string,
   ) => Promise<void> {
     return async (channel: string, buffer: string) => {
-      const packet = JSON.parse(buffer);
+      let packet: any;
+      try {
+        packet = JSON.parse(buffer);
+      } catch (err) {
+        this.logger.debug(
+          'Redis response packet is not in json format, bypassing...',
+        );
+        packet = buffer;
+      }
       const { err, response, isDisposed, id } =
         await this.deserializer.deserialize(packet);
 
       const callback = this.routingMap.get(id);
       if (!callback) {
+        if (Buffer.isBuffer(buffer))
+          this.logger.debug(
+            'You have to parse your buffer on your own to get id from it, because it is not in json format',
+          );
+        this.logger.debug(
+          'No matching callback found for Redis response packet with id: ' + id,
+        );
         return;
       }
       if (isDisposed || err) {

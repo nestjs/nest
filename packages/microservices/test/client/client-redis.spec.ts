@@ -179,6 +179,32 @@ describe('ClientRedis', () => {
         expect(callback.called).to.be.false;
       });
     });
+    describe('custom binary format (not json)', () => {
+      it('should use buffer directly without parsing it as json', async () => {
+        const clientWithBuffers = new ClientRedis({ returnBuffers: true });
+        const callback = sinon.spy();
+        const str = `${responseMessage.id}|${responseMessage.response}`;
+        const bufferMessage = Buffer.from(str);
+        sinon
+          .stub(Reflect.get(clientWithBuffers, 'deserializer'), 'deserialize')
+          .resolves({
+            ...responseMessage,
+            response: bufferMessage,
+          });
+        const subscription = clientWithBuffers.createResponseCallback();
+
+        clientWithBuffers['routingMap'].set(responseMessage.id, callback);
+        await subscription('channel', bufferMessage as any);
+
+        expect(callback.called).to.be.true;
+        expect(
+          callback.calledWith({
+            err: undefined,
+            response: bufferMessage,
+          }),
+        ).to.be.true;
+      });
+    });
   });
   describe('close', () => {
     const untypedClient = client as any;
@@ -302,6 +328,62 @@ describe('ClientRedis', () => {
       };
       client.registerReadyListener(emitter as any);
       expect(callback.getCall(0).args[0]).to.be.eql(RedisEventsMap.READY);
+    });
+    it('should register "message" event when returnBuffers is not set', () => {
+      const onSpy = sinon.spy();
+      const client = new ClientRedis({});
+      const untypedClient = client as any;
+      const emitter = {
+        on: onSpy,
+      };
+
+      untypedClient.wasInitialConnectionSuccessful = false;
+      untypedClient.subClient = emitter;
+
+      client.registerReadyListener(emitter as any);
+      const readyHandler = onSpy.getCall(0).args[1];
+      readyHandler();
+
+      expect(onSpy.calledTwice).to.be.true;
+      expect(onSpy.getCall(1).args[0]).to.equal('message');
+    });
+    it('should register "message" event when returnBuffers is false', () => {
+      const onSpy = sinon.spy();
+      const client = new ClientRedis({ returnBuffers: false });
+      const untypedClient = client as any;
+
+      const emitter = {
+        on: onSpy,
+      };
+
+      untypedClient.wasInitialConnectionSuccessful = false;
+      untypedClient.subClient = emitter;
+
+      client.registerReadyListener(emitter as any);
+      const readyHandler = onSpy.getCall(0).args[1];
+      readyHandler();
+
+      expect(onSpy.calledTwice).to.be.true;
+      expect(onSpy.getCall(1).args[0]).to.equal('message');
+    });
+    it('should register "messageBuffer" event when returnBuffers is true', () => {
+      const onSpy = sinon.spy();
+      const clientWithBuffers = new ClientRedis({ returnBuffers: true });
+      const untypedClientWithBuffers = clientWithBuffers as any;
+
+      const emitter = {
+        on: onSpy,
+      };
+
+      untypedClientWithBuffers.wasInitialConnectionSuccessful = false;
+      untypedClientWithBuffers.subClient = emitter;
+
+      clientWithBuffers.registerReadyListener(emitter as any);
+      const readyHandler = onSpy.getCall(0).args[1];
+      readyHandler();
+
+      expect(onSpy.calledTwice).to.be.true;
+      expect(onSpy.getCall(1).args[0]).to.equal('messageBuffer');
     });
   });
   describe('registerReconnectListener', () => {
