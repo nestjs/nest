@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@nestjs/common": "11.1.17",
-    "@nestjs/core": "11.1.17",
+    "@nestjs/core": "11.1.18",
     "@nestjs/platform-fastify": "11.1.17",
     "@fastify/static": "9.0.0",
     "handlebars": "4.7.9",
