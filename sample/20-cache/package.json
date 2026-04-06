@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/cache-manager": "3.1.0",
     "@nestjs/common": "11.1.17",
-    "@nestjs/core": "11.1.17",
+    "@nestjs/core": "11.1.18",
     "@nestjs/platform-express": "11.1.17",
     "cache-manager": "7.2.8",
     "class-transformer": "0.5.1",
