@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@nestjs/common": "11.1.17",
-    "@nestjs/core": "11.1.17",
+    "@nestjs/core": "11.1.18",
     "@nestjs/platform-express": "11.1.17",
     "@nestjs/sequelize": "11.0.1",
     "mysql2": "3.20.0",
