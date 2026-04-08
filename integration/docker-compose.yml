@@ -7,6 +7,9 @@ services:
     ports:
       - "6379:6379"
     restart: always
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
   nats:
     container_name: test-nats
     image: nats
@@ -15,6 +18,9 @@ services:
       - "4222:4222"
       - "6222:6222"
     restart: always
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
   mqtt:
     container_name: test-mqtt
     image: eclipse-mosquitto
@@ -24,6 +30,9 @@ services:
       - "1883:1883"
       - "9001:9001"
     restart: always
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
   mysql:
     image: mysql:9.6.0
     environment:
@@ -33,6 +42,9 @@ services:
     ports:
       - "3306:3306"
     restart: always
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
   mongodb:
     container_name: test-mongodb
     image: mongo:latest
@@ -40,6 +52,9 @@ services:
       - MONGODB_DATABASE="test"
     ports:
       - 27017:27017
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
   rabbit:
     container_name: test-rabbit
     hostname: rabbit
@@ -48,6 +63,9 @@ services:
       - "15672:15672"
       - "5672:5672"
     tty: true
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
   zookeeper:
     container_name: test-zookeeper
     hostname: zookeeper
@@ -57,6 +75,9 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
   kafka:
     container_name: test-kafka
     hostname: kafka
@@ -74,3 +95,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
