@@ -1,0 +1,47 @@
+---
+description: Governance rules for @nestjs/core — quality gates, security, conventions
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+alwaysApply: true
+---
+
+# Governance — @nestjs/core
+
+> Generated from governance.md by crag. Regenerate: `crag compile --target cursor`
+
+**Stack:** node, express, typescript, fastify
+
+## Quality Gates
+
+Run these checks in order before committing:
+### Lint
+- `npm run lint`
+- `npx tsc --noEmit`
+
+### Test
+- `npm run test`
+
+### Build
+- `npm run build`
+
+### Ci (inferred from workflow)
+- `sudo npm install -g npm@^9`
+- `npm run test:cov`
+- `npm run coverage`
+- `npm run lint:ci`
+- `npm run test:integration`
+- `npm run build:samples`
+
+### Contributor docs (advisory — confirm before enforcing)
+- `npm run format  # from CONTRIBUTING.md`
+## Security
+
+- No hardcoded secrets — grep for sk_live, AKIA, password= before commit
+
+## Conventions
+
+- Follow project commit conventions
+- Runtimes: node
