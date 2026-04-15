@@ -422,7 +422,20 @@ export class NestApplicationContext<
   protected async callInitHook(): Promise<void> {
     const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
     for (const module of modulesSortedByDistance) {
-      await callModuleInitHook(module);
+      try {
+        await callModuleInitHook(module);
+      } catch (err) {
+        // Re-throw as a real Error so that user-land third-party tools
+        // throwing non-Error objects from `onModuleInit` produce a useful
+        // stack trace instead of an opaque UnhandledPromiseRejection.
+        // See nestjs/nest#16774.
+        throw err instanceof Error
+          ? err
+          : new Error(
+              `onModuleInit threw a non-Error value in module "${module.name}": ${String(err)}`,
+              { cause: err },
+            );
+      }
     }
   }
 
@@ -447,7 +460,19 @@ export class NestApplicationContext<
   protected async callBootstrapHook(): Promise<void> {
     const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
     for (const module of modulesSortedByDistance) {
-      await callModuleBootstrapHook(module);
+      try {
+        await callModuleBootstrapHook(module);
+      } catch (err) {
+        // See callInitHook above. Same reason — surface non-Error throws
+        // from onApplicationBootstrap with a useful message instead of
+        // letting them bubble up as an UnhandledPromiseRejection.
+        throw err instanceof Error
+          ? err
+          : new Error(
+              `onApplicationBootstrap threw a non-Error value in module "${module.name}": ${String(err)}`,
+              { cause: err },
+            );
+      }
     }
   }
 
