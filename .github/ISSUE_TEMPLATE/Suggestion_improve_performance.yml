@@ -2,12 +2,11 @@ title: "perf: "
 name: "\U0001F525 Suggestion for Improving Performance"
 description: "I have a suggestion that might improve the performance of Nest \U00002728"
 labels: ["type: enhancement :wolf:", "needs triage"]
-type: task
 body:
   - type: checkboxes
     attributes:
       label: "Is there an existing issue that is already proposing this?"
-      description: "Please search [here](../issues?q=is%3Aissue) to see if an issue already exists for this"
+      description: "Please search [here](./issues?q=is%3Aissue) to see if an issue already exists for this"
       options:
       - label: "I have searched the existing issues"
         required: true
