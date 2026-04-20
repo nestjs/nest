@@ -138,6 +138,7 @@ describe('Shared utils', () => {
     it('should replace all slashes with only one slash', () => {
       expect(normalizePath('////path/')).to.be.eql('/path');
       expect(normalizePath('///')).to.be.eql('/');
+      expect(normalizePath('path////path///')).to.be.eql('/path/path');
       expect(normalizePath('/path////path///')).to.be.eql('/path/path');
     });
     it('should return / for empty path', () => {
