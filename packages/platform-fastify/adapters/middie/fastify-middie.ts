@@ -320,21 +320,41 @@ function fastifyMiddie(
     reply: FastifyReply,
     next: HookHandlerDoneFunction,
   ) {
-    if (this[kMiddieHasMiddlewares]) {
-      const raw = req.raw as any;
-      raw.id = req.id;
-      raw.hostname = req.hostname;
-      raw.protocol = req.protocol;
-      raw.ip = req.ip;
-      raw.ips = req.ips;
-      raw.log = req.log;
-      (req.raw as any).query = req.query;
-      (reply.raw as any).log = req.log;
-      if (req.body !== undefined) (req.raw as any).body = req.body;
-      this[kMiddie].run(req.raw, reply.raw, next);
-    } else {
-      next();
+    const engines: any[] = [];
+    let current: any = this;
+    while (current && current[kMiddie]) {
+      if (
+        Object.prototype.hasOwnProperty.call(current, kMiddieHasMiddlewares)
+      ) {
+        if (current[kMiddieHasMiddlewares]) {
+          engines.push(current[kMiddie]);
+        }
+      }
+      current = Object.getPrototypeOf(current);
     }
+
+    if (engines.length === 0) {
+      return next();
+    }
+
+    const raw = req.raw as any;
+    raw.id = req.id;
+    raw.hostname = req.hostname;
+    raw.protocol = req.protocol;
+    raw.ip = req.ip;
+    raw.ips = req.ips;
+    raw.log = req.log;
+    (req.raw as any).query = req.query;
+    (reply.raw as any).log = req.log;
+    if (req.body !== undefined) (req.raw as any).body = req.body;
+
+    let i = engines.length - 1;
+    function executeEngine(err?: unknown) {
+      if (err) return next(err as Error);
+      if (i < 0) return next();
+      engines[i--].run(req.raw, reply.raw, executeEngine);
+    }
+    executeEngine();
   }
 
   function runMiddieWithPayload(
@@ -357,14 +377,10 @@ function fastifyMiddie(
   }
 
   function onRegister(instance: FastifyInstance) {
-    const middlewares = instance[kMiddlewares].slice() as Array<Array<unknown>>;
     instance[kMiddlewares] = [];
     instance[kMiddie] = middie(onMiddieEnd, instance.initialConfig);
     instance[kMiddieHasMiddlewares] = false;
     instance.decorate('use', use as any);
-    for (const middleware of middlewares) {
-      (instance.use as any)(...middleware);
-    }
   }
 
   next();
