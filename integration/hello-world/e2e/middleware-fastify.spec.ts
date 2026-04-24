@@ -793,4 +793,73 @@ describe('Middleware (FastifyAdapter)', () => {
       });
     });
   });
+
+  describe('should apply middleware to routes registered via Fastify plugin with prefix', () => {
+    const MIDDLEWARE_VALUE = 'middleware_applied';
+
+    @Controller()
+    class PluginPrefixController {
+      @Get('other')
+      other() {
+        return 'other_route';
+      }
+    }
+
+    @Module({
+      controllers: [PluginPrefixController],
+    })
+    class PluginPrefixModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            req.middlewareApplied = true;
+            next();
+          })
+          .forRoutes('/my-prefix');
+      }
+    }
+
+    beforeEach(async () => {
+      const fastifyAdapter = new FastifyAdapter();
+
+      app = (
+        await Test.createTestingModule({
+          imports: [PluginPrefixModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(fastifyAdapter);
+
+      // Register a Fastify plugin with a prefix (simulating third-party plugin)
+      fastifyAdapter
+        .getInstance()
+        .register(
+          async (instance) => {
+            instance.get('/', async () => MIDDLEWARE_VALUE);
+            instance.get('/sub-route', async (req) => {
+              return (req.raw as any).middlewareApplied
+                ? MIDDLEWARE_VALUE
+                : 'no_middleware';
+            });
+          },
+          { prefix: '/my-prefix' },
+        );
+
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+    });
+
+    it(`forRoutes('/my-prefix') should match sub-routes under the prefix`, () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/my-prefix/sub-route',
+        })
+        .then(({ payload }) =>
+          expect(payload).to.be.eql(JSON.stringify(MIDDLEWARE_VALUE)),
+        );
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
 });

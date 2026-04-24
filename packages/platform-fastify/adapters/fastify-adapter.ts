@@ -693,10 +693,9 @@ export class FastifyAdapter<
       }
 
       try {
-        let { regexp: re } = pathToRegexp(normalizedPath);
-        re = hasEndOfStringCharacter
-          ? new RegExp(re.source + '$', re.flags)
-          : re;
+        const { regexp: re } = pathToRegexp(normalizedPath, {
+          end: hasEndOfStringCharacter,
+        });
 
         // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
         // ref https://github.com/fastify/middie/pull/55
