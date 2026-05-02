@@ -17,6 +17,7 @@ import {
   NotFoundException,
   NotImplementedException,
   PayloadTooLargeException,
+  PaymentRequiredException,
   PreconditionFailedException,
   RequestTimeoutException,
   ServiceUnavailableException,
@@ -66,6 +67,7 @@ describe('HttpException', () => {
         const testCases: [Type<HttpException>, number][] = [
           [BadRequestException, 400],
           [UnauthorizedException, 401],
+          [PaymentRequiredException, 402],
           [ForbiddenException, 403],
           [NotFoundException, 404],
           [MethodNotAllowedException, 405],
@@ -98,6 +100,7 @@ describe('HttpException', () => {
         const testCases: [Type<HttpException>, number, string][] = [
           [BadRequestException, 400, 'Bad Request'],
           [UnauthorizedException, 401, 'Unauthorized'],
+          [PaymentRequiredException, 402, 'Payment Required'],
           [ForbiddenException, 403, 'Forbidden'],
           [NotFoundException, 404, 'Not Found'],
           [MethodNotAllowedException, 405, 'Method Not Allowed'],
@@ -248,6 +251,7 @@ describe('HttpException', () => {
         NotFoundException,
         NotImplementedException,
         PayloadTooLargeException,
+        PaymentRequiredException,
         PreconditionFailedException,
         RequestTimeoutException,
         ServiceUnavailableException,
