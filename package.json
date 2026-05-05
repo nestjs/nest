@@ -115,7 +115,7 @@
     "@typescript-eslint/eslint-plugin": "8.58.2",
     "@typescript-eslint/parser": "8.58.2",
     "amqp-connection-manager": "5.0.0",
-    "amqplib": "1.0.3",
+    "amqplib": "1.0.4",
     "body-parser": "2.2.2",
     "cache-manager": "7.2.8",
     "chai": "4.5.0",
