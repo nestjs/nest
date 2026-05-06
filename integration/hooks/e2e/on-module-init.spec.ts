@@ -111,4 +111,42 @@ describe('OnModuleInit', () => {
     const instance = module.get(AA);
     expect(instance.field).to.equal('c-field_b-field_a-field');
   });
+
+  it('should run sibling modules onModuleInit concurrently', async () => {
+    @Injectable()
+    class ServiceA implements OnModuleInit {
+      async onModuleInit() {
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+
+    @Injectable()
+    class ServiceB implements OnModuleInit {
+      async onModuleInit() {
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+
+    @Module({ providers: [ServiceA] })
+    class ModuleA {}
+
+    @Module({ providers: [ServiceB] })
+    class ModuleB {}
+
+    @Module({ imports: [ModuleA, ModuleB] })
+    class AppModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    const app = module.createNestApplication();
+
+    const start = Date.now();
+    await app.init();
+    const elapsed = Date.now() - start;
+
+    // Sequential: ~400ms (200+200), Concurrent: ~200ms (max)
+    expect(elapsed).to.be.lessThan(350);
+    await app.close();
+  });
 });

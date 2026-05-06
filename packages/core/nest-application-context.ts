@@ -421,8 +421,11 @@ export class NestApplicationContext<
    */
   protected async callInitHook(): Promise<void> {
     const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
-    for (const module of modulesSortedByDistance) {
-      await callModuleInitHook(module);
+    const modulesGroupedByDistance = this.groupModulesByDistance(
+      modulesSortedByDistance,
+    );
+    for (const modules of modulesGroupedByDistance) {
+      await Promise.all(modules.map(module => callModuleInitHook(module)));
     }
   }
 
@@ -446,8 +449,11 @@ export class NestApplicationContext<
    */
   protected async callBootstrapHook(): Promise<void> {
     const modulesSortedByDistance = this.getModulesToTriggerHooksOn();
-    for (const module of modulesSortedByDistance) {
-      await callModuleBootstrapHook(module);
+    const modulesGroupedByDistance = this.groupModulesByDistance(
+      modulesSortedByDistance,
+    );
+    for (const modules of modulesGroupedByDistance) {
+      await Promise.all(modules.map(module => callModuleBootstrapHook(module)));
     }
   }
 
@@ -501,6 +507,18 @@ export class NestApplicationContext<
       ? modulesSortedByDistance.filter(moduleRef => moduleRef.initOnPreview)
       : modulesSortedByDistance;
     return this._moduleRefsForHooksByDistance;
+  }
+
+  private groupModulesByDistance(modules: Module[]): Module[][] {
+    const groupsMap = new Map<number, Module[]>();
+    modules.forEach(moduleRef => {
+      const { distance } = moduleRef;
+      if (!groupsMap.has(distance)) {
+        groupsMap.set(distance, []);
+      }
+      groupsMap.get(distance)!.push(moduleRef);
+    });
+    return Array.from(groupsMap.values());
   }
 
   private printInPreviewModeWarning() {
