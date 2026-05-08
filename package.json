@@ -167,7 +167,7 @@
     "supertest": "7.2.2",
     "ts-morph": "28.0.0",
     "ts-node": "10.9.2",
-    "typeorm": "0.3.28",
+    "typeorm": "0.3.29",
     "typescript": "5.9.3",
     "typescript-eslint": "8.58.2",
     "ws": "8.20.0"
