@@ -369,7 +369,7 @@ describe('Nested Transient Isolation', () => {
       const parent1Instance = parent1Wrapper.instance;
       const parent2Instance = parent2Wrapper.instance;
 
-      // 각 DEFAULT parent는 서로 다른 TransientService instance를 가져야 함
+      // Each DEFAULT parent should get its own TransientService instance
       expect(parent1Instance.transient.instanceId).to.not.equal(
         parent2Instance.transient.instanceId,
       );
@@ -394,7 +394,7 @@ describe('Nested Transient Isolation', () => {
       const parent1Instance = parent1Wrapper.instance;
       const parent2Instance = parent2Wrapper.instance;
 
-      // 각 TransientService는 서로 다른 NestedTransientService instance를 가져야 함
+      // Each TransientService should get its own NestedTransientService instance
       expect(parent1Instance.transient.nested.instanceId).to.not.equal(
         parent2Instance.transient.nested.instanceId,
       );
@@ -522,7 +522,7 @@ describe('Nested Transient Isolation', () => {
       const parent1Instance = parent1Wrapper.instance;
       const parent2Instance = parent2Wrapper.instance;
 
-      // 깊이 3 레벨의 TRANSIENT 체인이 모든 단계에서 격리되어야 함
+      // The depth-3 TRANSIENT chain should be isolated at every level
       expect(parent1Instance.top.instanceId).to.not.equal(
         parent2Instance.top.instanceId,
       );
