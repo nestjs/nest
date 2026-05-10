@@ -986,11 +986,7 @@ export class Injector {
     parentInquirer: InstanceWrapper | undefined,
     contextId: ContextId,
   ): InstanceWrapper | undefined {
-    if (
-      !dependency?.isTransient ||
-      !inquirer?.isTransient ||
-      !parentInquirer
-    ) {
+    if (!dependency?.isTransient || !inquirer?.isTransient || !parentInquirer) {
       return inquirer;
     }
     if (contextId === STATIC_CONTEXT) {
