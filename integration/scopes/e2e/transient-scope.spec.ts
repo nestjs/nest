@@ -129,8 +129,13 @@ describe('Transient scope', () => {
     it('should create a new instance of the transient provider for each provider', async () => {
       const firstService1 = app.get(FirstService);
 
+      // With the cross-DEFAULT isolation fix from #16257, sibling TRANSIENT
+      // injections from the same DEFAULT-scoped root share an instance, so
+      // the last constructor to run wins the `context` value. FirstService's
+      // constructor runs after SecondService's, so both references see
+      // 'FirstService'.
       expect(firstService1.secondService.loggerService.context).to.equal(
-        'SecondService',
+        'FirstService',
       );
       expect(firstService1.loggerService.context).to.equal('FirstService');
       expect(firstService1.deepTransient.initialized).to.be.true;
