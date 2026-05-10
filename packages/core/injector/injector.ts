@@ -968,10 +968,16 @@ export class Injector {
   }
 
   /**
-   * For nested TRANSIENT dependencies (TRANSIENT -> TRANSIENT) in non-static contexts,
-   * returns parentInquirer to ensure each parent TRANSIENT gets its own instance.
-   * This is necessary because in REQUEST/DURABLE scopes, the same TRANSIENT wrapper
-   * can be used by multiple parents, causing nested TRANSIENTs to be shared incorrectly.
+   * For nested TRANSIENT dependencies (TRANSIENT -> TRANSIENT), returns an
+   * inquirer that ensures each parent TRANSIENT gets its own nested instance.
+   * The same TRANSIENT wrapper can be used by multiple parents, which would
+   * otherwise cause nested TRANSIENTs to be shared incorrectly because the
+   * `transientMap` keys by wrapper id (per-class, not per-instance).
+   *
+   * In REQUEST/DURABLE scopes, returning `parentInquirer` is enough because
+   * `contextId` differentiates between requests. In STATIC context there is
+   * no per-request differentiator, so we walk up to the closest non-transient
+   * ancestor (rootInquirer) to keep nested chains isolated for arbitrary depth.
    * For non-TRANSIENT -> TRANSIENT, returns inquirer (current wrapper being created).
    */
   private getEffectiveInquirer(
@@ -980,12 +986,17 @@ export class Injector {
     parentInquirer: InstanceWrapper | undefined,
     contextId: ContextId,
   ): InstanceWrapper | undefined {
-    return dependency?.isTransient &&
-      inquirer?.isTransient &&
-      parentInquirer &&
-      contextId !== STATIC_CONTEXT
-      ? parentInquirer
-      : inquirer;
+    if (
+      !dependency?.isTransient ||
+      !inquirer?.isTransient ||
+      !parentInquirer
+    ) {
+      return inquirer;
+    }
+    if (contextId === STATIC_CONTEXT) {
+      return parentInquirer.getRootInquirer() ?? parentInquirer;
+    }
+    return parentInquirer;
   }
 
   private resolveScopedComponentHost(
