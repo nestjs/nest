@@ -83,8 +83,8 @@
   "devDependencies": {
     "@apollo/server": "5.5.1",
     "@as-integrations/express5": "1.1.2",
-    "@commitlint/cli": "21.0.0",
-    "@commitlint/config-angular": "21.0.0",
+    "@commitlint/cli": "21.0.1",
+    "@commitlint/config-angular": "21.0.1",
     "@eslint/eslintrc": "3.3.5",
     "@eslint/js": "9.39.4",
     "@fastify/cors": "11.2.0",
