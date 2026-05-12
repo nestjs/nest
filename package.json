@@ -235,7 +235,7 @@
   "mocha": {
     "require": [
       "ts-node/register",
-      "tsconfig-paths/register",
+      "tsconfig-paths/register.js",
       "node_modules/reflect-metadata/Reflect.js",
       "hooks/mocha-init-hook.ts"
     ],
