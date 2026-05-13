@@ -3,6 +3,7 @@ import {
   Client,
   ClientGrpc,
   ClientGrpcProxy,
+  GrpcAlreadyExistsException,
   GrpcMethod,
   GrpcStreamCall,
   GrpcStreamMethod,
@@ -105,6 +106,11 @@ export class GrpcController {
     return {
       result: request.dividend / request.divisor,
     };
+  }
+
+  @GrpcMethod('Math')
+  async alreadyExists(): Promise<any> {
+    throw new GrpcAlreadyExistsException('email already exists');
   }
 
   // contrived example meant to show when an error is encountered, like dividing by zero, the
