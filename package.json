@@ -28,11 +28,11 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls -v",
     "format": "prettier \"**/*.ts\" \"packages/**/*.json\" --ignore-path ./.prettierignore --write && git status",
     "postinstall": "opencollective",
-    "test": "mocha packages/**/*.spec.ts",
-    "test:dev": "mocha -w --watch-files \"packages\" packages/**/*.spec.ts",
+    "test": "node --loader ts-node/esm ./node_modules/mocha/bin/mocha.js packages/**/*.spec.ts",
+    "test:dev": "node --loader ts-node/esm ./node_modules/mocha/bin/mocha.js -w --watch-files \"packages\" packages/**/*.spec.ts",
     "pretest:cov": "npm run clean",
     "test:cov": "nyc mocha packages/**/*.spec.ts --reporter spec",
-    "test:integration": "mocha --reporter-option maxDiffSize=0 \"integration/*/{,!(node_modules)/**/}/*.spec.ts\"",
+    "test:integration": "node --loader ts-node/esm ./node_modules/mocha/bin/mocha.js --reporter-option maxDiffSize=0 \"integration/*/{,!(node_modules)/**/}/*.spec.ts\"",
     "test:docker:up": "node scripts/docker-compose.js -f integration/docker-compose.yml up -d",
     "test:docker:wait:rmq": "node scripts/wait-for-rabbitmq.js",
     "test:docker:down": "node scripts/docker-compose.js -f integration/docker-compose.yml down",
@@ -167,6 +167,7 @@
     "supertest": "7.2.2",
     "ts-morph": "28.0.0",
     "ts-node": "10.9.2",
+    "tsconfig-paths": "4.2.0",
     "typeorm": "0.3.29",
     "typescript": "5.9.3",
     "typescript-eslint": "8.58.2",
@@ -234,7 +235,7 @@
   "mocha": {
     "require": [
       "ts-node/register",
-      "tsconfig-paths/register",
+      "tsconfig-paths/register.js",
       "node_modules/reflect-metadata/Reflect.js",
       "hooks/mocha-init-hook.ts"
     ],

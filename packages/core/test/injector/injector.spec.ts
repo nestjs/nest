@@ -568,7 +568,9 @@ describe('Injector', () => {
           .stub(injector, 'loadProvider')
           .callsFake(() => Promise.reject(error));
 
-        await injector.resolveComponentHost(module, wrapper, contextId);
+        await injector.resolveComponentHost(module, wrapper, {
+          contextId,
+        });
         await new Promise(resolve => setImmediate(resolve));
 
         expect(errorSpy.calledOnce).to.be.true;
@@ -607,7 +609,9 @@ describe('Injector', () => {
     describe('when context is static', () => {
       it('should instantiate class', async () => {
         const wrapper = new InstanceWrapper({ metatype: TestClass });
-        await injector.instantiateClass([], wrapper, wrapper, STATIC_CONTEXT);
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: STATIC_CONTEXT,
+        });
 
         expect(wrapper.instance).to.not.be.undefined;
         expect(wrapper.instance).to.be.instanceOf(TestClass);
@@ -617,7 +621,9 @@ describe('Injector', () => {
           inject: [],
           metatype: (() => ({})) as any,
         });
-        await injector.instantiateClass([], wrapper, wrapper, STATIC_CONTEXT);
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: STATIC_CONTEXT,
+        });
 
         expect(wrapper.instance).to.not.be.undefined;
       });
@@ -626,7 +632,9 @@ describe('Injector', () => {
       it('should not instantiate class', async () => {
         const ctx = { id: 3 };
         const wrapper = new InstanceWrapper({ metatype: TestClass });
-        await injector.instantiateClass([], wrapper, wrapper, ctx);
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: ctx,
+        });
 
         expect(wrapper.instance).to.be.undefined;
         expect(wrapper.getInstanceByContextId(ctx).isResolved).to.be.true;
@@ -637,7 +645,9 @@ describe('Injector', () => {
           inject: [],
           metatype: sinon.spy() as any,
         });
-        await injector.instantiateClass([], wrapper, wrapper, { id: 2 });
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: { id: 2 },
+        });
         expect(wrapper.instance).to.be.undefined;
         expect((wrapper.metatype as any).called).to.be.false;
       });
@@ -669,7 +679,7 @@ describe('Injector', () => {
   });
 
   describe('loadEnhancersPerContext', () => {
-    it('should load enhancers per context id', async () => {
+    it('should skip enhancer loading in the static context', async () => {
       const wrapper = new InstanceWrapper();
       wrapper.addEnhancerMetadata(
         new InstanceWrapper({
@@ -687,6 +697,27 @@ describe('Injector', () => {
         .callsFake(async () => ({}) as any);
 
       await injector.loadEnhancersPerContext(wrapper, STATIC_CONTEXT);
+      expect(loadInstanceStub.called).to.be.false;
+    });
+
+    it('should load enhancers per context id outside the static context', async () => {
+      const wrapper = new InstanceWrapper();
+      wrapper.addEnhancerMetadata(
+        new InstanceWrapper({
+          host: new Module(class {}, new NestContainer()),
+        }),
+      );
+      wrapper.addEnhancerMetadata(
+        new InstanceWrapper({
+          host: new Module(class {}, new NestContainer()),
+        }),
+      );
+
+      const loadInstanceStub = sinon
+        .stub(injector, 'loadInstance')
+        .callsFake(async () => ({}) as any);
+
+      await injector.loadEnhancersPerContext(wrapper, { id: 1 } as any);
       expect(loadInstanceStub.calledTwice).to.be.true;
     });
   });
@@ -741,7 +772,7 @@ describe('Injector', () => {
         () => {
           expect(loadCtorMetadataSpy.called).to.be.true;
         },
-        { id: 2 },
+        { contextId: { id: 2 } },
       );
     });
 
@@ -803,7 +834,9 @@ describe('Injector', () => {
         injector,
         'loadPropertiesMetadata',
       );
-      await injector.resolveProperties(wrapper, null!, null!, { id: 2 });
+      await injector.resolveProperties(wrapper, null!, null!, {
+        contextId: { id: 2 },
+      });
       expect(loadPropertiesMetadataSpy.called).to.be.true;
     });
   });

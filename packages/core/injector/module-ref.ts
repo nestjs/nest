@@ -37,10 +37,12 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
   constructor(protected readonly container: NestContainer) {
     super();
 
+    const contextOptions = container.contextOptions;
+
     this.injector = new Injector({
-      preview: container.contextOptions?.preview!,
-      instanceDecorator:
-        container.contextOptions?.instrument?.instanceDecorator,
+      preview: contextOptions?.preview ?? false,
+      snapshot: contextOptions?.snapshot,
+      instanceDecorator: contextOptions?.instrument?.instanceDecorator,
     });
   }
 
@@ -180,7 +182,6 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
       });
     }
 
-    /* eslint-disable-next-line no-async-promise-executor */
     return new Promise<T>(async (resolve, reject) => {
       try {
         const callback = async (instances: any[]) => {
@@ -188,8 +189,10 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
             wrapper,
             moduleRef,
             undefined,
-            contextId,
-            wrapper,
+            {
+              contextId: contextId ?? STATIC_CONTEXT,
+              inquirer: wrapper,
+            },
           );
           const instance = new type(...instances);
           this.injector.applyProperties(instance, properties);
@@ -200,8 +203,10 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
           moduleRef,
           undefined,
           callback,
-          contextId,
-          wrapper,
+          {
+            contextId: contextId ?? STATIC_CONTEXT,
+            inquirer: wrapper,
+          },
         );
       } catch (err) {
         reject(err);
