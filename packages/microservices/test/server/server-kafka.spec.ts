@@ -255,20 +255,18 @@ describe('ServerKafka', () => {
       await server.listen(callback);
 
       const pattern = /test\..*/;
-      const handler = sinon.spy();
+      const handler = vi.fn();
       server.addHandler(pattern, handler);
 
       await server.bindEvents(untypedServer.consumer);
 
-      expect(subscribe.called).to.be.true;
-      expect(
-        subscribe.calledWith({
-          topics: [pattern],
-        }),
-      ).to.be.true;
+      expect(subscribe).toHaveBeenCalled();
+      expect(subscribe).toHaveBeenCalledWith({
+        topics: [pattern],
+      });
 
-      expect(run.called).to.be.true;
-      expect(connect.called).to.be.true;
+      expect(run).toHaveBeenCalled();
+      expect(connect).toHaveBeenCalled();
     });
     it('should pass run options with partitionsConsumedConcurrently to consumer.run()', async () => {
       untypedServer.logger = new NoopLogger();
@@ -364,17 +362,17 @@ describe('ServerKafka', () => {
 
   describe('getHandlerByPattern', () => {
     it('should return a handler when topic matches a regex pattern', () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       server.addHandler(/test\..*/, handler);
 
-      expect(server.getHandlerByPattern(topic)).to.be.equal(handler);
+      expect(server.getHandlerByPattern(topic)).toBe(handler);
     });
 
     it('should return null when topic does not match a regex pattern', () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       server.addHandler(/another\..*/, handler);
 
-      expect(server.getHandlerByPattern(topic)).to.be.null;
+      expect(server.getHandlerByPattern(topic)).toBeNull();
     });
   });
 
@@ -477,11 +475,11 @@ describe('ServerKafka', () => {
     });
 
     it('should call handler when topic matches a regex pattern', async () => {
-      const handler = sinon.spy();
+      const handler = vi.fn();
       server.addHandler(/test\..*/, handler);
 
       await server.handleMessage(payload);
-      expect(handler.called).to.be.true;
+      expect(handler).toHaveBeenCalled();
     });
   });
 
