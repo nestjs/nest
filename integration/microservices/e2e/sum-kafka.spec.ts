@@ -86,6 +86,14 @@ describe.skip('Kafka transport', function () {
       .expect(200, '15');
   });
 
+  it(`/POST (sync sum regexp message pattern)`, () => {
+    return request(server)
+      .post('/mathSumSyncRegex')
+      .send([1, 2, 3, 4, 5])
+      .expect(200)
+      .expect(200, '15');
+  });
+
   it(`/POST (async event notification)`, () =>
     new Promise<void>(done => {
       void request(server)

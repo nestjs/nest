@@ -36,6 +36,7 @@ export class KafkaController implements OnModuleInit, OnModuleDestroy {
       'math.sum.sync.array',
       'math.sum.sync.string',
       'math.sum.sync.number',
+      'math.sum.sync.regex.integration',
       'user.create',
       'business.create',
     ];
@@ -123,6 +124,17 @@ export class KafkaController implements OnModuleInit, OnModuleDestroy {
   async mathSumSyncNumber(@Body() data: number[]): Promise<Observable<any>> {
     const result = await lastValueFrom(
       this.client.send('math.sum.sync.number', data[0]),
+    );
+    return result;
+  }
+
+  @Post('mathSumSyncRegex')
+  @HttpCode(200)
+  async mathSumSyncRegex(@Body() data: number[]): Promise<Observable<any>> {
+    const result = await lastValueFrom(
+      this.client.send('math.sum.sync.regex.integration', {
+        numbers: data,
+      }),
     );
     return result;
   }

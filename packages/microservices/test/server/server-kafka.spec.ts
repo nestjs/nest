@@ -250,6 +250,26 @@ describe('ServerKafka', () => {
       expect(run).toHaveBeenCalled();
       expect(connect).toHaveBeenCalled();
     });
+    it('should subscribe to regex message patterns', async () => {
+      untypedServer.logger = new NoopLogger();
+      await server.listen(callback);
+
+      const pattern = /test\..*/;
+      const handler = sinon.spy();
+      server.addHandler(pattern, handler);
+
+      await server.bindEvents(untypedServer.consumer);
+
+      expect(subscribe.called).to.be.true;
+      expect(
+        subscribe.calledWith({
+          topics: [pattern],
+        }),
+      ).to.be.true;
+
+      expect(run.called).to.be.true;
+      expect(connect.called).to.be.true;
+    });
     it('should pass run options with partitionsConsumedConcurrently to consumer.run()', async () => {
       untypedServer.logger = new NoopLogger();
       untypedServer.options.run = {
@@ -339,6 +359,22 @@ describe('ServerKafka', () => {
         correlationId,
         context,
       );
+    });
+  });
+
+  describe('getHandlerByPattern', () => {
+    it('should return a handler when topic matches a regex pattern', () => {
+      const handler = sinon.spy();
+      server.addHandler(/test\..*/, handler);
+
+      expect(server.getHandlerByPattern(topic)).to.be.equal(handler);
+    });
+
+    it('should return null when topic does not match a regex pattern', () => {
+      const handler = sinon.spy();
+      server.addHandler(/another\..*/, handler);
+
+      expect(server.getHandlerByPattern(topic)).to.be.null;
     });
   });
 
@@ -438,6 +474,14 @@ describe('ServerKafka', () => {
 
       await server.handleMessage(payload);
       expect(handler).toHaveBeenCalled();
+    });
+
+    it('should call handler when topic matches a regex pattern', async () => {
+      const handler = sinon.spy();
+      server.addHandler(/test\..*/, handler);
+
+      await server.handleMessage(payload);
+      expect(handler.called).to.be.true;
     });
   });
 

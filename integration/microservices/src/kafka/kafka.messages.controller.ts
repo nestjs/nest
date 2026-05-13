@@ -51,6 +51,11 @@ export class KafkaMessagesController {
       .reduce((a, b) => a + b);
   }
 
+  @MessagePattern(/^math\.sum\.sync\.regex\..+$/)
+  mathSumSyncRegex(data: any) {
+    return (data.value.numbers || []).reduce((a, b) => a + b);
+  }
+
   @EventPattern('notify')
   eventHandler(data: any) {
     KafkaController.IS_NOTIFIED = data.value.notify;

@@ -26,6 +26,7 @@ import {
 import { KafkaLogger, KafkaParser } from '../helpers/index.js';
 import {
   KafkaOptions,
+  MessageHandler,
   OutgoingResponse,
   ReadPacket,
   TransportId,
@@ -77,6 +78,35 @@ export class ServerKafka extends Server<never, KafkaStatus> {
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
+  }
+
+  public addHandler(
+    pattern: any,
+    callback: MessageHandler,
+    isEventHandler = false,
+    extras: Record<string, any> = {},
+  ) {
+    if (!(pattern instanceof RegExp)) {
+      return super.addHandler(pattern, callback, isEventHandler, extras);
+    }
+
+    const messageHandlers = this.messageHandlers as Map<
+      string | RegExp,
+      MessageHandler
+    >;
+    callback.isEventHandler = isEventHandler;
+    callback.extras = extras;
+
+    if (messageHandlers.has(pattern) && isEventHandler) {
+      const headRef = messageHandlers.get(pattern)!;
+      const getTail = (handler: MessageHandler) =>
+        handler?.next ? getTail(handler.next) : handler;
+
+      const tailRef = getTail(headRef);
+      tailRef.next = callback;
+    } else {
+      messageHandlers.set(pattern, callback);
+    }
   }
 
   public async listen(
@@ -177,6 +207,36 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       eachMessage: this.getMessageHandler(),
     };
     await consumer.run(consumerRunOptions);
+  }
+
+  public getHandlerByPattern(pattern: string): MessageHandler | null {
+    const handler = super.getHandlerByPattern(pattern);
+    if (handler) {
+      return handler;
+    }
+
+    const route = this.getRouteFromPattern(pattern);
+    const messageHandlers = this.messageHandlers as Map<
+      string | RegExp,
+      MessageHandler
+    >;
+    for (const [registeredPattern, registeredHandler] of messageHandlers) {
+      if (
+        registeredPattern instanceof RegExp &&
+        this.isPatternMatch(registeredPattern, route)
+      ) {
+        return registeredHandler;
+      }
+    }
+
+    return null;
+  }
+
+  private isPatternMatch(pattern: RegExp, route: string): boolean {
+    pattern.lastIndex = 0;
+    const isMatch = pattern.test(route);
+    pattern.lastIndex = 0;
+    return isMatch;
   }
 
   public getMessageHandler() {
