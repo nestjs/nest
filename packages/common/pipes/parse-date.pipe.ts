@@ -55,7 +55,7 @@ export class ParseDatePipe implements PipeTransform {
       return this.options.default ? this.options.default() : value;
     }
 
-    if (!value) {
+    if (isNil(value) || value === '') {
       throw this.exceptionFactory('Validation failed (no Date provided)');
     }
 

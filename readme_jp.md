@@ -32,7 +32,7 @@
 ## 哲学
 
 <p>
-近年、Node.jsの発展によって、JavaScriptはフロントエンドとバックエンドの両方でWebの「共通言語」になりました。そしてフロントエンドでは、<a href="https://angular.io/" target="_blank">Angular</a>、<a href="https://github.com/facebook/react" target="_blank">React</a>、<a href="https://github.com/vuejs/vue" target="_blank">Vue</a>などの素晴らしいプロジェクトが生まれ、開発効率が飛躍的に向上しました。一方で、サーバーサイドでは、Node.jsエコシステム上に優れたライブラリ、ヘルパー、ツールがたくさんありますが、それらのどれもが主要な問題であるアーキテクチャを効果的に解決するものではありませんでした。
+近年、Node.jsの発展によって、JavaScriptはフロントエンドとバックエンドの両方でWebの「共通言語」になりました。そしてフロントエンドでは、<a href="https://angular.dev/" target="_blank">Angular</a>、<a href="https://react.dev/" target="_blank">React</a>、<a href="https://vuejs.org/" target="_blank">Vue</a>などの素晴らしいプロジェクトが生まれ、開発効率が飛躍的に向上しました。一方で、サーバーサイドでは、Node.jsエコシステム上に優れたライブラリ、ヘルパー、ツールがたくさんありますが、それらのどれもが主要な問題であるアーキテクチャを効果的に解決するものではありませんでした。
 </p>
 
 <p>Nestは、実用的なアーキテクチャをすぐに構築できることを目的としています。具体的には、テストフレンドリーで、スケーラブルで、疎結合で、運用にやさしいアプリケーションを構築できるようになっています。また、アーキテクチャはAngularにインスパイアされています。</p>

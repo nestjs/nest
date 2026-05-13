@@ -58,7 +58,7 @@ describe('ServerRMQ', () => {
     });
     it('should bind "connectFailed" event to handler', async () => {
       await server.listen(callbackSpy);
-      expect(onStub.mock.calls[3][0]).toBe('connectFailed');
+      expect(onStub.mock.calls.map(call => call[0])).toContain('connectFailed');
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {

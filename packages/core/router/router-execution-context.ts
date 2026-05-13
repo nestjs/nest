@@ -449,11 +449,17 @@ export class RouterExecutionContext {
         res: TResponse,
         req: TRequest,
       ) => {
+        const rawResponse = (res as { raw?: TResponse }).raw ?? res;
         await this.responseController.sse(
           result,
-          (res as any).raw || res,
+          rawResponse,
           (req as any).raw || req,
-          { additionalHeaders: res.getHeaders?.() as any },
+          {
+            additionalHeaders: res.getHeaders?.(),
+            statusCode:
+              (res as { statusCode?: number }).statusCode ??
+              (rawResponse as { statusCode?: number }).statusCode,
+          },
         );
       };
     }

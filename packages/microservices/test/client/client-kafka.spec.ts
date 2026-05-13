@@ -291,6 +291,47 @@ describe('ClientKafka', () => {
     });
   });
 
+  describe('registerConsumerEventListeners', () => {
+    it('should use the _consumer backing field, not the consumer getter', () => {
+      const consumerOnSpy = vi.fn();
+      const fakeConsumer = {
+        events: {
+          CONNECT: 'consumer.connect',
+          DISCONNECT: 'consumer.disconnect',
+          REBALANCING: 'consumer.rebalancing',
+          STOP: 'consumer.stop',
+          CRASH: 'consumer.crash',
+        },
+        on: consumerOnSpy,
+      };
+
+      // Set the backing field directly
+      untypedClient._consumer = fakeConsumer;
+
+      // Replace the consumer getter stub with one that throws,
+      // ensuring the method only uses _consumer (backing field)
+      consumerStub.mockImplementation(() => {
+        throw new Error(
+          'Consumer getter should not be called in registerConsumerEventListeners',
+        );
+      });
+
+      expect(() =>
+        untypedClient.registerConsumerEventListeners(),
+      ).to.not.throw();
+      expect(consumerOnSpy).toHaveBeenCalledTimes(5);
+
+      const registeredEvents = consumerOnSpy.mock.calls.map(
+        (args: any[]) => args[0],
+      );
+      expect(registeredEvents).toContain('consumer.connect');
+      expect(registeredEvents).toContain('consumer.disconnect');
+      expect(registeredEvents).toContain('consumer.rebalancing');
+      expect(registeredEvents).toContain('consumer.stop');
+      expect(registeredEvents).toContain('consumer.crash');
+    });
+  });
+
   describe('connect', () => {
     let consumerAssignmentsStub: any;
     let bindTopicsStub: ReturnType<typeof vi.fn>;

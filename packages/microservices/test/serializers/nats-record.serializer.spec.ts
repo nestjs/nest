@@ -4,6 +4,7 @@ import { NatsRecordSerializer } from '../../serializers/nats-record.serializer.j
 
 describe('NatsRecordSerializer', () => {
   let instance: NatsRecordSerializer;
+
   beforeEach(() => {
     instance = new NatsRecordSerializer();
   });
@@ -55,6 +56,26 @@ describe('NatsRecordSerializer', () => {
       expect(instance.serialize({ data: serObject })).toEqual({
         headers: undefined,
         data: JSON.stringify({ data: serObject }),
+      });
+    });
+
+    it('applies packet headers when data is not a NatsRecord', () => {
+      const natsHeaders = nats.headers();
+      natsHeaders.set('x-response', 'enabled');
+
+      expect(
+        instance.serialize({
+          data: { value: 'string' },
+          headers: natsHeaders,
+        }),
+      ).to.deep.eq({
+        headers: natsHeaders,
+        data: JSON.stringify({
+          data: {
+            value: 'string',
+          },
+          headers: natsHeaders,
+        }),
       });
     });
 

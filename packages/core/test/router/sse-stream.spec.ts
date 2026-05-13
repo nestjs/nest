@@ -142,6 +142,7 @@ data: hello
         },
       );
       sse.pipe(sink);
+      sse.writeMessage({ data: 'hello' }, noop);
     }));
 
   it('sets additional headers when provided', () =>
@@ -159,6 +160,7 @@ data: hello
       sse.pipe(sink, {
         additionalHeaders: { 'access-control-headers': 'some-cors-value' },
       });
+      sse.writeMessage({ data: 'hello' }, noop);
     }));
 
   it('sets custom status code when provided', () =>
@@ -175,6 +177,7 @@ data: hello
       sse.pipe(sink, {
         statusCode: 404,
       });
+      sse.writeMessage({ data: 'hello' }, noop);
     }));
 
   it('defaults to 200 status code when not provided', () =>
@@ -189,6 +192,7 @@ data: hello
       );
 
       sse.pipe(sink);
+      sse.writeMessage({ data: 'hello' }, noop);
     }));
 
   it('allows an eventsource to connect', () =>
@@ -197,6 +201,7 @@ data: hello
       const server = createServer((req, res) => {
         sse = new SseStream(req);
         sse.pipe(res);
+        process.nextTick(() => sse.writeMessage({ data: 'hello' }, noop));
       });
 
       server.listen(() => {
@@ -208,7 +213,6 @@ data: hello
           es.close();
           server.close(() => resolve());
         };
-        es.onopen = () => sse.writeMessage({ data: 'hello' }, noop);
         es.onerror = e =>
           reject(new Error(`Error from EventSource: ${JSON.stringify(e)}`));
       });

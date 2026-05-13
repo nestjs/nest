@@ -525,6 +525,45 @@ describe('RouterExecutionContext', () => {
           }),
         );
       });
+
+      it('should pass through status and headers from the wrapper response at handle time', async () => {
+        const rawResponse = new PassThrough() as HeaderStream;
+        rawResponse.write = vi.fn() as any;
+        rawResponse.writeHead = vi.fn() as any;
+        rawResponse.flushHeaders = vi.fn() as any;
+
+        const response = {
+          raw: rawResponse,
+          statusCode: 203,
+          getHeaders: vi
+            .fn()
+            .mockReturnValue({ 'access-control-headers': 'at-handle-time' }),
+        };
+        const result = of('test');
+
+        const request = new PassThrough();
+        request.on = vi.fn() as any;
+
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue('/');
+
+        const handler = contextCreator.createHandleResponseFn(
+          null!,
+          true,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        await handler(result, response as any, request);
+
+        expect(rawResponse.writeHead).toHaveBeenCalledWith(
+          203,
+          expect.objectContaining({
+            'access-control-headers': 'at-handle-time',
+          }),
+        );
+      });
     });
   });
 });

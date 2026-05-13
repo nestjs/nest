@@ -110,6 +110,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   }
 
   public async createRedisClient(): Promise<Redis> {
+    const clientInfoTag = this.getOptionsProp(this.options, 'clientInfoTag');
     const redisPackage = await this.loadPackage(
       'ioredis',
       ServerRedis.name,
@@ -120,6 +121,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       port: REDIS_DEFAULT_PORT,
       host: REDIS_DEFAULT_HOST,
       ...this.getClientOptions(),
+      ...(clientInfoTag && { clientInfoTag }),
       lazyConnect: true,
     });
   }

@@ -52,6 +52,10 @@ export type HeaderStream = WritableHeaderStream & ReadHeaders;
  */
 export class SseStream extends Transform {
   private lastEventId: number | null = null;
+  private _headersCommitted = false;
+  private _destination: WritableHeaderStream | null = null;
+  private _statusCode = 200;
+  private _additionalHeaders: AdditionalHeaders | undefined;
 
   constructor(req?: IncomingMessage) {
     super({ objectMode: true });
@@ -62,6 +66,10 @@ export class SseStream extends Transform {
     }
   }
 
+  get headersCommitted(): boolean {
+    return this._headersCommitted;
+  }
+
   pipe<T extends WritableHeaderStream>(
     destination: T,
     options?: {
@@ -70,10 +78,31 @@ export class SseStream extends Transform {
       end?: boolean;
     },
   ): T {
-    if (destination.writeHead) {
-      const statusCode = options?.statusCode ?? 200;
-      destination.writeHead(statusCode, {
-        ...options?.additionalHeaders,
+    this._destination = destination;
+    this._statusCode = options?.statusCode ?? 200;
+    this._additionalHeaders = options?.additionalHeaders;
+    return super.pipe(destination, options);
+  }
+
+  /**
+   * Writes SSE headers to the destination if they have not been sent yet.
+   * Headers are deferred until the first message so that, if the observable
+   * errors before any data is emitted, the HTTP status code can still be
+   * changed by an exception filter.
+   */
+  commitHeaders(): void {
+    if (this._headersCommitted || !this._destination) {
+      return;
+    }
+    if (this._destination.writableEnded) {
+      return;
+    }
+    this._headersCommitted = true;
+    const statusCode = this._statusCode ?? 200;
+    const additionalHeaders = this._additionalHeaders;
+    if (this._destination.writeHead) {
+      this._destination.writeHead(statusCode, {
+        ...additionalHeaders,
         // See https://github.com/dunglas/mercure/blob/master/hub/subscribe.go#L124-L130
         'Content-Type': 'text/event-stream',
         Connection: 'keep-alive',
@@ -85,11 +114,9 @@ export class SseStream extends Transform {
         // NGINX support https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/#x-accel-buffering
         'X-Accel-Buffering': 'no',
       });
-      destination.flushHeaders?.();
+      this._destination.flushHeaders?.();
     }
-
-    destination.write('\n');
-    return super.pipe(destination, options);
+    this._destination.write('\n');
   }
 
   _transform(
@@ -97,9 +124,17 @@ export class SseStream extends Transform {
     encoding: string,
     callback: (error?: Error | null, data?: any) => void,
   ) {
-    let data = message.type ? `event: ${message.type}\n` : '';
-    data += message.id ? `id: ${message.id}\n` : '';
-    data += message.retry ? `retry: ${message.retry}\n` : '';
+    this.commitHeaders();
+
+    const sanitize = (val: string | number) =>
+      String(val).replace(/[\r\n]/g, '');
+
+    let data = message.type ? `event: ${sanitize(message.type)}\n` : '';
+    data +=
+      message.id !== undefined && message.id !== null
+        ? `id: ${sanitize(message.id)}\n`
+        : '';
+    data += message.retry ? `retry: ${sanitize(message.retry)}\n` : '';
     data += message.data ? toDataString(message.data) : '';
     data += '\n';
     this.push(data);
@@ -113,7 +148,7 @@ export class SseStream extends Transform {
     message: MessageEvent,
     cb: (error: Error | null | undefined) => void,
   ) {
-    if (!message.id) {
+    if (message.id === undefined || message.id === null) {
       this.lastEventId!++;
       message.id = this.lastEventId!.toString();
     }

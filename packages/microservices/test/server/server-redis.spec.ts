@@ -294,4 +294,24 @@ describe('ServerRedis', () => {
       expect(handler).toHaveBeenCalledWith(data, expect.any(BaseRpcContext));
     });
   });
+
+  describe('createRedisClient', () => {
+    it('should not set clientInfoTag when not provided', async () => {
+      const serverWithoutTag = new ServerRedis({});
+      const redisClient = await serverWithoutTag.createRedisClient();
+
+      expect(redisClient).to.be.ok;
+      // Verify no clientInfoTag was set (opt-in only)
+      expect(redisClient.options.clientInfoTag).to.be.undefined;
+    });
+
+    it('should use clientInfoTag when provided', async () => {
+      const serverWithTag = new ServerRedis({ clientInfoTag: 'my-app' });
+      const redisClient = await serverWithTag.createRedisClient();
+
+      expect(redisClient).to.be.ok;
+      // Verify the clientInfoTag was used
+      expect(redisClient.options.clientInfoTag).to.equal('my-app');
+    });
+  });
 });

@@ -1,4 +1,5 @@
 import type { NestContainer } from '@nestjs/core';
+import type { ContextId } from '@nestjs/core/injector/instance-wrapper.js';
 import { MockFactory } from './interfaces/index.js';
 import {
   STATIC_CONTEXT,
@@ -7,6 +8,12 @@ import {
   InstanceWrapper,
   type Module,
 } from '@nestjs/core/internal';
+
+interface ResolutionContext {
+  contextId: ContextId;
+  inquirer?: InstanceWrapper;
+  effectiveInquirerId?: string;
+}
 
 /**
  * @publicApi
@@ -28,8 +35,7 @@ export class TestingInjector extends Injector {
     name: any,
     dependencyContext: InjectorDependencyContext,
     wrapper: InstanceWrapper<T>,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
     keyOrIndex?: string | number,
   ): Promise<InstanceWrapper> {
     try {
@@ -38,8 +44,7 @@ export class TestingInjector extends Injector {
         name,
         dependencyContext,
         wrapper,
-        contextId,
-        inquirer,
+        resolutionContext,
         keyOrIndex,
       );
       return existingProviderWrapper;
@@ -51,15 +56,13 @@ export class TestingInjector extends Injector {
   public async resolveComponentHost<T>(
     moduleRef: Module,
     instanceWrapper: InstanceWrapper<T>,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
   ): Promise<InstanceWrapper> {
     try {
       const existingProviderWrapper = await super.resolveComponentHost(
         moduleRef,
         instanceWrapper,
-        contextId,
-        inquirer,
+        resolutionContext,
       );
       return existingProviderWrapper;
     } catch (err) {

@@ -185,6 +185,221 @@ describe('Transient scope', () => {
     });
   });
 
+  describe('when multiple DEFAULT parents inject the same TRANSIENT -> TRANSIENT chain', () => {
+    let app: INestApplication;
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class IsolatedNestedTransient {
+      public static instanceCount = 0;
+      public readonly instanceId: number;
+
+      constructor() {
+        IsolatedNestedTransient.instanceCount++;
+        this.instanceId = IsolatedNestedTransient.instanceCount;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class IsolatedTransientLogger {
+      public static instanceCount = 0;
+      public readonly instanceId: number;
+
+      constructor(public readonly nested: IsolatedNestedTransient) {
+        IsolatedTransientLogger.instanceCount++;
+        this.instanceId = IsolatedTransientLogger.instanceCount;
+      }
+    }
+
+    @Injectable()
+    class ServiceA {
+      constructor(public readonly logger: IsolatedTransientLogger) {}
+    }
+
+    @Injectable()
+    class ServiceB {
+      constructor(public readonly logger: IsolatedTransientLogger) {}
+    }
+
+    beforeAll(async () => {
+      IsolatedNestedTransient.instanceCount = 0;
+      IsolatedTransientLogger.instanceCount = 0;
+
+      const module = await Test.createTestingModule({
+        providers: [
+          ServiceA,
+          ServiceB,
+          IsolatedTransientLogger,
+          IsolatedNestedTransient,
+        ],
+      }).compile();
+
+      app = module.createNestApplication();
+      await app.init();
+    });
+
+    it('should create separate TransientLogger instances for each DEFAULT parent', () => {
+      const serviceA = app.get(ServiceA);
+      const serviceB = app.get(ServiceB);
+
+      expect(serviceA.logger.instanceId).to.not.equal(
+        serviceB.logger.instanceId,
+      );
+    });
+
+    it('should create separate nested TRANSIENT instances for each DEFAULT parent', () => {
+      const serviceA = app.get(ServiceA);
+      const serviceB = app.get(ServiceB);
+
+      expect(serviceA.logger.nested.instanceId).to.not.equal(
+        serviceB.logger.nested.instanceId,
+      );
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
+  });
+
+  describe('when multiple DEFAULT parents inject a deeply nested TRANSIENT chain', () => {
+    let app: INestApplication;
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class DepthSixTransient {
+      public static constructorCalled = false;
+      public static instanceCount = 0;
+      public readonly instanceId: number;
+      public readonly initialized = true;
+
+      constructor() {
+        DepthSixTransient.constructorCalled = true;
+        DepthSixTransient.instanceCount++;
+        this.instanceId = DepthSixTransient.instanceCount;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class DepthFiveTransient {
+      public static constructorCalled = false;
+      public static instanceCount = 0;
+      public readonly instanceId: number;
+
+      constructor(public readonly next: DepthSixTransient) {
+        DepthFiveTransient.constructorCalled = true;
+        DepthFiveTransient.instanceCount++;
+        this.instanceId = DepthFiveTransient.instanceCount;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class DepthFourTransient {
+      public static constructorCalled = false;
+
+      constructor(public readonly next: DepthFiveTransient) {
+        DepthFourTransient.constructorCalled = true;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class DepthThreeTransient {
+      public static constructorCalled = false;
+
+      constructor(public readonly next: DepthFourTransient) {
+        DepthThreeTransient.constructorCalled = true;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class DepthTwoTransient {
+      public static constructorCalled = false;
+
+      constructor(public readonly next: DepthThreeTransient) {
+        DepthTwoTransient.constructorCalled = true;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class DepthOneTransient {
+      public static constructorCalled = false;
+
+      constructor(public readonly next: DepthTwoTransient) {
+        DepthOneTransient.constructorCalled = true;
+      }
+    }
+
+    @Injectable()
+    class DeepServiceA {
+      constructor(public readonly chain: DepthOneTransient) {}
+    }
+
+    @Injectable()
+    class DeepServiceB {
+      constructor(public readonly chain: DepthOneTransient) {}
+    }
+
+    beforeAll(async () => {
+      DepthOneTransient.constructorCalled = false;
+      DepthTwoTransient.constructorCalled = false;
+      DepthThreeTransient.constructorCalled = false;
+      DepthFourTransient.constructorCalled = false;
+      DepthFiveTransient.constructorCalled = false;
+      DepthSixTransient.constructorCalled = false;
+      DepthFiveTransient.instanceCount = 0;
+      DepthSixTransient.instanceCount = 0;
+
+      const module = await Test.createTestingModule({
+        providers: [
+          DeepServiceA,
+          DeepServiceB,
+          DepthOneTransient,
+          DepthTwoTransient,
+          DepthThreeTransient,
+          DepthFourTransient,
+          DepthFiveTransient,
+          DepthSixTransient,
+        ],
+      }).compile();
+
+      app = module.createNestApplication();
+      await app.init();
+    });
+
+    it('should create separate level-5 transient instances for each DEFAULT parent', () => {
+      const serviceA = app.get(DeepServiceA);
+      const serviceB = app.get(DeepServiceB);
+
+      expect(serviceA.chain.next.next.next.next.instanceId).to.not.equal(
+        serviceB.chain.next.next.next.next.instanceId,
+      );
+    });
+
+    it('should create separate level-6 transient instances for each DEFAULT parent', () => {
+      const serviceA = app.get(DeepServiceA);
+      const serviceB = app.get(DeepServiceB);
+
+      expect(serviceA.chain.next.next.next.next.next.instanceId).to.not.equal(
+        serviceB.chain.next.next.next.next.next.instanceId,
+      );
+      expect(serviceA.chain.next.next.next.next.next.initialized).to.be.true;
+      expect(serviceB.chain.next.next.next.next.next.initialized).to.be.true;
+    });
+
+    it('should call constructors for every transient provider in the deep chain', () => {
+      app.get(DeepServiceA);
+      app.get(DeepServiceB);
+
+      expect(DepthOneTransient.constructorCalled).to.be.true;
+      expect(DepthTwoTransient.constructorCalled).to.be.true;
+      expect(DepthThreeTransient.constructorCalled).to.be.true;
+      expect(DepthFourTransient.constructorCalled).to.be.true;
+      expect(DepthFiveTransient.constructorCalled).to.be.true;
+      expect(DepthSixTransient.constructorCalled).to.be.true;
+    });
+
+    afterAll(async () => {
+      await app.close();
+    });
+  });
+
   describe('when nested transient providers are used in request scope', () => {
     let server: any;
     let app: INestApplication;

@@ -176,6 +176,30 @@ describe('ClientRedis', () => {
         expect(callback).not.toHaveBeenCalled();
       });
     });
+    describe('custom binary format (not json)', () => {
+      it('should use buffer directly without parsing it as json', async () => {
+        const clientWithBuffers = new ClientRedis({ returnBuffers: true });
+        const callback = vi.fn();
+        const str = `${responseMessage.id}|${responseMessage.response}`;
+        const bufferMessage = Buffer.from(str);
+        vi.spyOn(
+          Reflect.get(clientWithBuffers, 'deserializer'),
+          'deserialize',
+        ).mockResolvedValue({
+          ...responseMessage,
+          response: bufferMessage,
+        });
+        const subscription = clientWithBuffers.createResponseCallback();
+
+        clientWithBuffers['routingMap'].set(responseMessage.id, callback);
+        await subscription('channel', bufferMessage as any);
+
+        expect(callback).toHaveBeenCalledWith({
+          err: undefined,
+          response: bufferMessage,
+        });
+      });
+    });
   });
   describe('close', () => {
     const untypedClient = client as any;
@@ -307,6 +331,62 @@ describe('ClientRedis', () => {
       client.registerReadyListener(emitter as any);
       expect(callback.mock.calls[0][0]).toEqual('ready');
     });
+    it('should register "message" event when returnBuffers is not set', () => {
+      const onSpy = vi.fn();
+      const client = new ClientRedis({});
+      const untypedClient = client as any;
+      const emitter = {
+        on: onSpy,
+      };
+
+      untypedClient.wasInitialConnectionSuccessful = false;
+      untypedClient.subClient = emitter;
+
+      client.registerReadyListener(emitter as any);
+      const readyHandler = onSpy.mock.calls[0][1];
+      readyHandler();
+
+      expect(onSpy).toHaveBeenCalledTimes(2);
+      expect(onSpy.mock.calls[1][0]).toEqual('message');
+    });
+    it('should register "message" event when returnBuffers is false', () => {
+      const onSpy = vi.fn();
+      const client = new ClientRedis({ returnBuffers: false });
+      const untypedClient = client as any;
+
+      const emitter = {
+        on: onSpy,
+      };
+
+      untypedClient.wasInitialConnectionSuccessful = false;
+      untypedClient.subClient = emitter;
+
+      client.registerReadyListener(emitter as any);
+      const readyHandler = onSpy.mock.calls[0][1];
+      readyHandler();
+
+      expect(onSpy).toHaveBeenCalledTimes(2);
+      expect(onSpy.mock.calls[1][0]).toEqual('message');
+    });
+    it('should register "messageBuffer" event when returnBuffers is true', () => {
+      const onSpy = vi.fn();
+      const clientWithBuffers = new ClientRedis({ returnBuffers: true });
+      const untypedClientWithBuffers = clientWithBuffers as any;
+
+      const emitter = {
+        on: onSpy,
+      };
+
+      untypedClientWithBuffers.wasInitialConnectionSuccessful = false;
+      untypedClientWithBuffers.subClient = emitter;
+
+      clientWithBuffers.registerReadyListener(emitter as any);
+      const readyHandler = onSpy.mock.calls[0][1];
+      readyHandler();
+
+      expect(onSpy).toHaveBeenCalledTimes(2);
+      expect(onSpy.mock.calls[1][0]).toEqual('messageBuffer');
+    });
   });
   describe('registerReconnectListener', () => {
     it('should bind reconnect event handler', () => {
@@ -392,6 +472,26 @@ describe('ClientRedis', () => {
       client['dispatchEvent'](msg).catch(err =>
         expect(err).toBeInstanceOf(Error),
       );
+    });
+  });
+
+  describe('createClient', () => {
+    it('should not set clientInfoTag when not provided', async () => {
+      const clientWithoutTag = new ClientRedis({});
+      const redisClient = await clientWithoutTag.createClient();
+
+      expect(redisClient).to.be.ok;
+      // Verify no clientInfoTag was set (opt-in only)
+      expect(redisClient.options.clientInfoTag).to.be.undefined;
+    });
+
+    it('should use clientInfoTag when provided', async () => {
+      const clientWithTag = new ClientRedis({ clientInfoTag: 'my-app' });
+      const redisClient = await clientWithTag.createClient();
+
+      expect(redisClient).to.be.ok;
+      // Verify the clientInfoTag was used
+      expect(redisClient.options.clientInfoTag).to.equal('my-app');
     });
   });
 });
