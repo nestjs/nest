@@ -127,9 +127,14 @@ For more common dependency resolution issues, see: https://docs.nestjs.com/faq/c
   );
   dependenciesName[index] = '?';
 
+  const tokenFragment =
+    !isImportTypeIssue && name !== undefined ? ` ${dependencyName}` : '';
+  const contextLabel = isImportTypeIssue ? 'current' : moduleName;
+
   message += ` (`;
   message += dependenciesName.join(', ');
-  message += `). Please make sure that the argument ${isImportTypeIssue ? 'dependency' : dependencyName} at index [${index}] is available in the ${isImportTypeIssue ? 'current' : moduleName} context.`;
+  message += `). Please make sure that the argument${tokenFragment} at index [${index}]`;
+  message += ` is available in the ${contextLabel} module.`;
   message += potentialSolutions;
 
   return message;

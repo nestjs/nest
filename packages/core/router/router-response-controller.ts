@@ -107,7 +107,10 @@ export class RouterResponseController {
     result: TInput | Promise<TInput>,
     response: TResponse,
     request: TRequest,
-    options?: { additionalHeaders: AdditionalHeaders },
+    options?: {
+      additionalHeaders?: AdditionalHeaders;
+      statusCode?: number;
+    },
   ) {
     // It's possible that we sent headers already so don't use a stream
     if (response.writableEnded) {
@@ -120,52 +123,90 @@ export class RouterResponseController {
 
     const stream = new SseStream(request);
 
-    // Extract custom status code from response if it was set
-    const customStatusCode = (response as any).statusCode;
-    const pipeOptions =
-      typeof customStatusCode !== 'undefined'
-        ? { ...options, statusCode: customStatusCode }
-        : options;
+    const statusCode =
+      options?.statusCode ??
+      (response as { statusCode?: number }).statusCode ??
+      200;
 
-    stream.pipe(response, pipeOptions);
+    stream.pipe(response, {
+      additionalHeaders: options?.additionalHeaders,
+      statusCode,
+    });
 
-    const subscription = observableResult
-      .pipe(
-        map((message): MessageEvent => {
-          if (isObject(message)) {
-            return message as MessageEvent;
-          }
+    return new Promise<void>((resolve, reject) => {
+      let settled = false;
 
-          return { data: message as object | string };
-        }),
-        concatMap(
-          message =>
-            new Promise<void>(resolve =>
-              stream.writeMessage(message, () => resolve()),
-            ),
-        ),
-        catchError(err => {
-          const data = err instanceof Error ? err.message : err;
-          stream.writeMessage({ type: 'error', data }, writeError => {
-            if (writeError) {
-              this.logger.error(writeError);
+      const onClose = () => {
+        settled = true;
+        subscription.unsubscribe();
+        if (!stream.writableEnded) {
+          stream.end();
+        }
+        response.end();
+        resolve();
+      };
+
+      const subscription = observableResult
+        .pipe(
+          map((message): MessageEvent => {
+            if (isObject(message)) {
+              return message as MessageEvent;
             }
-          });
 
-          return EMPTY;
-        }),
-      )
-      .subscribe({
-        complete: () => {
-          response.end();
-        },
-      });
+            return { data: message as object | string };
+          }),
+          concatMap(
+            message =>
+              new Promise<void>(resolve =>
+                stream.writeMessage(message, () => resolve()),
+              ),
+          ),
+          catchError(err => {
+            if (!stream.headersCommitted) {
+              throw err;
+            }
 
-    request.on('close', () => {
-      subscription.unsubscribe();
-      if (!stream.writableEnded) {
-        stream.end();
-      }
+            const data = err instanceof Error ? err.message : err;
+            stream.writeMessage({ type: 'error', data }, writeError => {
+              if (writeError) {
+                this.logger.error(writeError);
+              }
+            });
+
+            return EMPTY;
+          }),
+        )
+        .subscribe({
+          error: err => {
+            settled = true;
+            request.removeListener('close', onClose);
+            if (!stream.writableEnded) {
+              stream.end();
+            }
+            reject(err);
+          },
+          complete: () => {
+            settled = true;
+            request.removeListener('close', onClose);
+            if (!stream.writableEnded) {
+              stream.end();
+            }
+            resolve();
+          },
+        });
+
+      // Commit SSE headers on the next macrotask. Pipe validation errors
+      // propagate through microtasks (which complete before macrotasks),
+      // so if the lifecycle errored, `settled` is already true and we
+      // skip the write. Otherwise headers are sent immediately rather
+      // than waiting for the first Observable emission.
+      setTimeout(() => {
+        if (!settled) {
+          stream.commitHeaders();
+        }
+      }, 0);
+
+      request.on('close', onClose);
     });
   }
 

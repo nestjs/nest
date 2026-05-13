@@ -518,26 +518,31 @@ data: test
     });
 
     describe('when there is an error', () => {
-      it('should close the request', () =>
-        new Promise<void>(done => {
-          const result = new Subject();
-          const response = new Writable();
-          response.end = done as any;
-          response._write = () => {};
+      it('should reject when the stream errors before headers are committed', async () => {
+        const result = new Subject();
+        const response = new Writable();
+        response._write = () => {};
 
-          const request = new Writable();
-          request._write = () => {};
+        const request = new Writable();
+        request._write = () => {};
 
-          void routerResponseController.sse(
-            result,
-            response as unknown as ServerResponse,
-            request as unknown as IncomingMessage,
-          );
+        const promise = routerResponseController.sse(
+          result,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
 
-          result.error(new Error('Some error'));
-        }));
+        result.error(new Error('Some error'));
+
+        await expect(promise).rejects.toThrow('Some error');
+      });
 
       it('should write the error message to the stream', async () => {
+        let resolveFirstChunk: (() => void) | undefined;
+        const firstChunkWritten = new Promise<void>(resolve => {
+          resolveFirstChunk = resolve;
+        });
+
         class Sink extends Writable {
           private readonly chunks: string[] = [];
 
@@ -547,6 +552,8 @@ data: test
             callback: (error?: Error | null) => void,
           ): void {
             this.chunks.push(chunk);
+            resolveFirstChunk?.();
+            resolveFirstChunk = undefined;
             callback();
           }
 
@@ -563,24 +570,21 @@ data: test
         const result = new Subject();
         const response = new Sink();
         const request = new PassThrough();
-        void routerResponseController.sse(
+        const promise = routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
         );
 
+        result.next('hello');
+        await firstChunkWritten;
         result.error(new Error('Some error'));
         request.destroy();
 
+        await promise;
         await written(response);
-        expect(response.content).toEqual(
-          `
-event: error
-id: 1
-data: Some error
-
-`,
-        );
+        expect(response.content).toContain('event: error');
+        expect(response.content).toContain('data: Some error');
       });
     });
   });

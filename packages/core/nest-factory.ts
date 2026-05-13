@@ -36,7 +36,12 @@ import {
   Logger,
 } from '@nestjs/common';
 
-type IEntryNestModule =
+/**
+ * Represents the entry (root) module type accepted by the NestFactory methods.
+ *
+ * @publicApi
+ */
+export type IEntryNestModule =
   | Type<any>
   | DynamicModule
   | ForwardReference
@@ -218,6 +223,7 @@ export class NestFactoryStatic {
 
     const injector = new Injector({
       preview: options.preview!,
+      snapshot: options.snapshot,
       instanceDecorator: options.instrument?.instanceDecorator,
     });
     const instanceLoader = new InstanceLoader(

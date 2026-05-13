@@ -30,7 +30,7 @@ Nest는 효율적이고 확장 가능한 <a href="https://nodejs.org" target="_b
 
 ## 철학
 
-<p>최근 몇 년간 Javascript는 Node.js의 발전에 따라 웹의 프론트엔드와 백엔드에 있어서 "공용어"가 되었습니다. 그리고 프론트엔드에서는 <a href="https://angular.io/" target="_blank">Angular</a>와 <a href="https://github.com/facebook/react" target="_blank">React</a>, <a href="https://github.com/vuejs/vue" target="_blank">Vue</a>와 같이 멋진 프로젝트들이 등장하여 개발자의 생산성을 향상시켰으며, 빠르고 테스트와 확장이 가능한 프론트엔드 애플리케이션을 만들 수 있게 해주었습니다. 하지만 서버 사이드에서는 Node.js를 위한 우수한 라이브러리와 툴이 많은 가운데, 주요 문제를 효과적으로 해결하는 것은 없었습니다. 그 주요 문제란 바로 아키텍처(architecture)입니다.</p>
+<p>최근 몇 년간 Javascript는 Node.js의 발전에 따라 웹의 프론트엔드와 백엔드에 있어서 "공용어"가 되었습니다. 그리고 프론트엔드에서는 <a href="https://angular.dev/" target="_blank">Angular</a>와 <a href="https://react.dev/" target="_blank">React</a>, <a href="https://vuejs.org/" target="_blank">Vue</a>와 같이 멋진 프로젝트들이 등장하여 개발자의 생산성을 향상시켰으며, 빠르고 테스트와 확장이 가능한 프론트엔드 애플리케이션을 만들 수 있게 해주었습니다. 하지만 서버 사이드에서는 Node.js를 위한 우수한 라이브러리와 툴이 많은 가운데, 주요 문제를 효과적으로 해결하는 것은 없었습니다. 그 주요 문제란 바로 아키텍처(architecture)입니다.</p>
 <p>Nest는 테스트 친화적이면서 확장이 가능하고 결합이 느슨하며, 유지 관리가 용이한 애플리케이션을 손쉽게 만들 수 있는 애플리케이션 아키텍처 제공을 목표로 합니다. 이 아키텍처는 Angular에서 많은 영감을 받았습니다.</p>
 
 ## 시작하기

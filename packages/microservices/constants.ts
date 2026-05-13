@@ -58,5 +58,8 @@ export const NO_MESSAGE_HANDLER = `There is no matching message handler defined 
 export const DISCONNECTED_RMQ_MESSAGE = `Disconnected from RMQ. Trying to reconnect.`;
 export const CONNECTION_FAILED_MESSAGE =
   'Connection to transport failed. Trying to reconnect...';
+export const BLOCKED_RMQ_MESSAGE = (reason: string) =>
+  `RMQ broker has blocked the connection (flow control). Reason: ${reason}`;
+export const UNBLOCKED_RMQ_MESSAGE = 'RMQ broker has unblocked the connection.';
 
 export const NATS_DEFAULT_GRACE_PERIOD = 10000;

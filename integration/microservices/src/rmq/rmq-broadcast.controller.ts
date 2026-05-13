@@ -18,7 +18,7 @@ export class RMQBroadcastController {
       options: {
         urls: [`amqp://localhost:5672`],
         queue: 'test_broadcast',
-        queueOptions: { durable: false },
+        queueOptions: { durable: true },
         socketOptions: { noDelay: true },
       },
     });

@@ -598,7 +598,7 @@ export class ConsoleLogger implements LoggerService {
     return value;
   }
 
-  private getContextAndMessagesToPrint(args: unknown[]) {
+  protected getContextAndMessagesToPrint(args: unknown[]) {
     if (args?.length <= 1) {
       return { messages: args, context: this.context };
     }
@@ -638,7 +638,7 @@ export class ConsoleLogger implements LoggerService {
     return { messages, context, params };
   }
 
-  private getContextAndStackAndMessagesToPrint(args: unknown[]) {
+  protected getContextAndStackAndMessagesToPrint(args: unknown[]) {
     if (args.length === 2) {
       if (this.isStackFormat(args[1])) {
         return {
@@ -682,7 +682,7 @@ export class ConsoleLogger implements LoggerService {
     };
   }
 
-  private isStackFormat(stack: unknown) {
+  protected isStackFormat(stack: unknown) {
     if (!isString(stack) && !isUndefined(stack)) {
       return false;
     }
@@ -690,7 +690,7 @@ export class ConsoleLogger implements LoggerService {
     return /^(.)+\n\s+at .+:\d+:\d+/.test(stack!);
   }
 
-  private getColorByLogLevel(level: LogLevel) {
+  protected getColorByLogLevel(level: LogLevel) {
     switch (level) {
       case 'debug':
         return clc.magentaBright;

@@ -261,8 +261,10 @@ describe('Injector', () => {
         wrapper,
         module.controllers,
         module,
-        expect.anything(),
-        wrapper,
+        expect.objectContaining({
+          contextId: STATIC_CONTEXT,
+          inquirer: wrapper,
+        }),
       );
     });
   });
@@ -284,8 +286,10 @@ describe('Injector', () => {
         wrapper,
         module.injectables,
         module,
-        expect.anything(),
-        undefined,
+        expect.objectContaining({
+          contextId: STATIC_CONTEXT,
+          inquirer: undefined,
+        }),
       );
     });
   });
@@ -570,7 +574,9 @@ describe('Injector', () => {
           Promise.reject(error),
         );
 
-        await injector.resolveComponentHost(module, wrapper, contextId);
+        await injector.resolveComponentHost(module, wrapper, {
+          contextId,
+        });
         await new Promise(resolve => setImmediate(resolve));
 
         expect(errorSpy).toHaveBeenCalledOnce();
@@ -609,7 +615,9 @@ describe('Injector', () => {
     describe('when context is static', () => {
       it('should instantiate class', async () => {
         const wrapper = new InstanceWrapper({ metatype: TestClass });
-        await injector.instantiateClass([], wrapper, wrapper, STATIC_CONTEXT);
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: STATIC_CONTEXT,
+        });
 
         expect(wrapper.instance).not.toBeUndefined();
         expect(wrapper.instance).toBeInstanceOf(TestClass);
@@ -619,7 +627,9 @@ describe('Injector', () => {
           inject: [],
           metatype: (() => ({})) as any,
         });
-        await injector.instantiateClass([], wrapper, wrapper, STATIC_CONTEXT);
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: STATIC_CONTEXT,
+        });
 
         expect(wrapper.instance).not.toBeUndefined();
       });
@@ -628,7 +638,9 @@ describe('Injector', () => {
       it('should not instantiate class', async () => {
         const ctx = { id: 3 };
         const wrapper = new InstanceWrapper({ metatype: TestClass });
-        await injector.instantiateClass([], wrapper, wrapper, ctx);
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: ctx,
+        });
 
         expect(wrapper.instance).toBeUndefined();
         expect(wrapper.getInstanceByContextId(ctx).isResolved).toBe(true);
@@ -639,7 +651,9 @@ describe('Injector', () => {
           inject: [],
           metatype: vi.fn() as any,
         });
-        await injector.instantiateClass([], wrapper, wrapper, { id: 2 });
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: { id: 2 },
+        });
         expect(wrapper.instance).toBeUndefined();
         expect(wrapper.metatype as any).not.toHaveBeenCalled();
       });
@@ -672,6 +686,7 @@ describe('Injector', () => {
 
   describe('loadEnhancersPerContext', () => {
     it('should load enhancers per context id', async () => {
+      const contextId = { id: 1 };
       const wrapper = new InstanceWrapper();
       wrapper.addEnhancerMetadata(
         new InstanceWrapper({
@@ -688,7 +703,7 @@ describe('Injector', () => {
         .spyOn(injector, 'loadInstance')
         .mockImplementation(async () => ({}) as any);
 
-      await injector.loadEnhancersPerContext(wrapper, STATIC_CONTEXT);
+      await injector.loadEnhancersPerContext(wrapper, contextId);
       expect(loadInstanceStub).toHaveBeenCalledTimes(2);
     });
   });

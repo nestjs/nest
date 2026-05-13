@@ -623,7 +623,9 @@ export class FastifyAdapter<
 
   public enableCors(options?: FastifyCorsOptions) {
     this.register(
-      import('@fastify/cors') as Parameters<TInstance['register']>[0],
+      import('@fastify/cors') as unknown as Parameters<
+        TInstance['register']
+      >[0],
       options,
     );
   }
@@ -720,7 +722,8 @@ export class FastifyAdapter<
               queryParamsIndex >= 0
                 ? req.originalUrl.slice(0, queryParamsIndex)
                 : req.originalUrl;
-            pathname = safeDecodeURI(pathname).path;
+
+            pathname = this.sanitizeUrl(pathname);
 
             if (!re.exec(pathname + '/') && normalizedPath) {
               return next();
@@ -825,7 +828,9 @@ export class FastifyAdapter<
 
   private async registerMiddie() {
     this.isMiddieRegistered = true;
-    await this.register(middie as Parameters<TInstance['register']>[0]);
+    await this.register(
+      middie as unknown as Parameters<TInstance['register']>[0],
+    );
   }
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {
@@ -897,5 +902,51 @@ export class FastifyAdapter<
       }
     }
     return this.instance.route(routeToInject);
+  }
+
+  private sanitizeUrl(url: string): string {
+    const initialConfig = this.instance.initialConfig as FastifyServerOptions;
+    const routerOptions =
+      initialConfig.routerOptions as Partial<FastifyServerOptions>;
+
+    if (
+      routerOptions.ignoreDuplicateSlashes ||
+      initialConfig.ignoreDuplicateSlashes
+    ) {
+      url = this.removeDuplicateSlashes(url);
+    }
+
+    if (
+      routerOptions.ignoreTrailingSlash ||
+      initialConfig.ignoreTrailingSlash
+    ) {
+      url = this.trimLastSlash(url);
+    }
+
+    if (
+      routerOptions.caseSensitive === false ||
+      initialConfig.caseSensitive === false
+    ) {
+      url = url.toLowerCase();
+    }
+    return safeDecodeURI(
+      url,
+      routerOptions.useSemicolonDelimiter ||
+        initialConfig.useSemicolonDelimiter,
+    ).path;
+  }
+
+  private removeDuplicateSlashes(path: string) {
+    const REMOVE_DUPLICATE_SLASHES_REGEXP = /\/\/+/g;
+    return path.indexOf('//') !== -1
+      ? path.replace(REMOVE_DUPLICATE_SLASHES_REGEXP, '/')
+      : path;
+  }
+
+  private trimLastSlash(path: string) {
+    if (path.length > 1 && path.charCodeAt(path.length - 1) === 47) {
+      return path.slice(0, -1);
+    }
+    return path;
   }
 }

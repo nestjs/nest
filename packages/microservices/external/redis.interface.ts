@@ -36,6 +36,13 @@ export interface IORedisOptions {
   connectionName?: string;
 
   /**
+   * Set a tag to identify the framework using the Redis client library.
+   * This is appended to the library name (e.g., "ioredis(nestjs_v11.0.0)").
+   * @link https://redis.io/docs/latest/commands/client-setinfo/
+   */
+  clientInfoTag?: string;
+
+  /**
    * If set, client will send AUTH command with the value of this option as the first argument when connected.
    * This is supported since Redis 6.
    */

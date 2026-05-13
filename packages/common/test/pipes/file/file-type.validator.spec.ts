@@ -14,6 +14,10 @@ const jpegBuffer = Buffer.from([
   0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
 ]);
 
+const pdfBuffer = Buffer.from([
+  0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x37, 0x0a,
+]);
+
 describe('FileTypeValidator', () => {
   describe('isValid', () => {
     describe('support file types', () => {
@@ -279,7 +283,7 @@ describe('FileTypeValidator', () => {
         fileType,
       });
 
-      const file = { mimetype: currentFileType } as IFile;
+      const file = { mimetype: currentFileType, buffer: pngBuffer } as IFile;
 
       expect(fileTypeValidator.buildErrorMessage(file)).toBe(
         `Validation failed (current file type is ${currentFileType}, expected type is ${fileType})`,
@@ -290,7 +294,7 @@ describe('FileTypeValidator', () => {
       const fileTypeValidator = new FileTypeValidator({
         fileType: /^image\//,
       });
-      const file = { mimetype: 'application/pdf' } as IFile;
+      const file = { mimetype: 'application/pdf', buffer: pdfBuffer } as IFile;
 
       expect(fileTypeValidator.buildErrorMessage(file)).toBe(
         `Validation failed (current file type is application/pdf, expected type is /^image\\//)`,
@@ -301,10 +305,25 @@ describe('FileTypeValidator', () => {
       const fileTypeValidator = new FileTypeValidator({
         fileType: 'jpeg',
       });
-      const file = { mimetype: 'image/png' } as IFile;
+      const file = { mimetype: 'image/png', buffer: pngBuffer } as IFile;
 
       expect(fileTypeValidator.buildErrorMessage(file)).toBe(
         'Validation failed (current file type is image/png, expected type is jpeg)',
+      );
+    });
+
+    it('should return a specific error message when file buffer is not available and fallbackToMimetype is not enabled', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/jpeg',
+        fallbackToMimetype: false,
+      });
+
+      const file = {
+        mimetype: 'image/jpeg',
+      } as IFile;
+
+      expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
+        `Validation failed (file buffer is not available; file type validation could not be performed; expected type is image/jpeg)`,
       );
     });
 

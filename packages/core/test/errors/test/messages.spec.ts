@@ -15,7 +15,7 @@ describe('Error Messages', () => {
     const index = 0;
     it('should display class', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?, CatService). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?, CatService). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -40,7 +40,7 @@ describe('Error Messages', () => {
     });
     it('should display the provide token', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?, MY_TOKEN). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?, MY_TOKEN). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -63,7 +63,7 @@ describe('Error Messages', () => {
     });
     it('should display the provide token as double-quoted string for string-based tokens', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?). Please make sure that the argument "FooRepository" at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?). Please make sure that the argument "FooRepository" at index [0] is available in the current module.
 
       Potential solutions:
       - If "FooRepository" is a provider, is it part of the current Module?
@@ -87,7 +87,7 @@ describe('Error Messages', () => {
     });
     it('should display the function name', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?, CatFunction). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?, CatFunction). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -110,7 +110,7 @@ describe('Error Messages', () => {
     });
     it('should use "+" if unknown dependency name', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?, +). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?, +). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -133,7 +133,7 @@ describe('Error Messages', () => {
     });
     it('should display the module name', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?, MY_TOKEN). Please make sure that the argument dependency at index [0] is available in the TestModule context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?, MY_TOKEN). Please make sure that the argument at index [0] is available in the TestModule module.
 
       Potential solutions:
       - Is TestModule a valid NestJS module?
@@ -169,7 +169,7 @@ describe('Error Messages', () => {
     });
     it('should display the symbol name of the provider', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the Symbol(CatProvider) (?). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the Symbol(CatProvider) (?). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -192,7 +192,7 @@ describe('Error Messages', () => {
     });
     it('should display the symbol dependency of the provider', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatProvider (?, Symbol(DogProvider)). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatProvider (?, Symbol(DogProvider)). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -215,7 +215,7 @@ describe('Error Messages', () => {
     });
     it('should detect likely import type issue and provide specific guidance', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the ResourceController (ResourceService, ?). Please make sure that the argument dependency at index [1] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the ResourceController (ResourceService, ?). Please make sure that the argument at index [1] is available in the current module.
 
       Potential solutions:
       - The dependency at index [1] appears to be undefined at runtime
@@ -241,7 +241,7 @@ describe('Error Messages', () => {
     });
     it('should detect import type issue with mixed dependencies', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the ResourceController (ValidService, ?, AnotherService). Please make sure that the argument dependency at index [1] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the ResourceController (ValidService, ?, AnotherService). Please make sure that the argument at index [1] is available in the current module.
 
       Potential solutions:
       - The dependency at index [1] appears to be undefined at runtime
@@ -267,6 +267,82 @@ describe('Error Messages', () => {
       );
 
       expect(actualMessage).toBe(expectedResult);
+    });
+    it('should display class token name in argument label when name is provided', () => {
+      class UserRepository {}
+
+      const expectedResult =
+        stringCleaner(`Nest can't resolve dependencies of the UserService (?). Please make sure that the argument UserRepository at index [0] is available in the current module.
+
+      Potential solutions:
+      - If UserRepository is a provider, is it part of the current Module?
+      - If UserRepository is exported from a separate @Module, is that module imported within Module?
+      @Module({
+        imports: [ /* the Module containing UserRepository */ ]
+      })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+      `);
+
+      const actualMessage = stringCleaner(
+        new UnknownDependenciesException('UserService', {
+          index: 0,
+          dependencies: [UserRepository],
+          name: UserRepository,
+        }).message,
+      );
+
+      expect(actualMessage).to.equal(expectedResult);
+    });
+    it('should display string token name in argument label when name is provided', () => {
+      const expectedResult =
+        stringCleaner(`Nest can't resolve dependencies of the UserService (?). Please make sure that the argument "DATABASE_URL" at index [0] is available in the current module.
+
+      Potential solutions:
+      - If "DATABASE_URL" is a provider, is it part of the current Module?
+      - If "DATABASE_URL" is exported from a separate @Module, is that module imported within Module?
+      @Module({
+        imports: [ /* the Module containing "DATABASE_URL" */ ]
+      })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+      `);
+
+      const actualMessage = stringCleaner(
+        new UnknownDependenciesException('UserService', {
+          index: 0,
+          dependencies: ['DATABASE_URL'],
+          name: 'DATABASE_URL',
+        }).message,
+      );
+
+      expect(actualMessage).to.equal(expectedResult);
+    });
+    it('should display symbol token name in argument label when name is provided', () => {
+      const TOKEN = Symbol('MY_TOKEN');
+
+      const expectedResult =
+        stringCleaner(`Nest can't resolve dependencies of the UserService (?). Please make sure that the argument Symbol(MY_TOKEN) at index [0] is available in the current module.
+
+      Potential solutions:
+      - If Symbol(MY_TOKEN) is a provider, is it part of the current Module?
+      - If Symbol(MY_TOKEN) is exported from a separate @Module, is that module imported within Module?
+      @Module({
+        imports: [ /* the Module containing Symbol(MY_TOKEN) */ ]
+      })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+      `);
+
+      const actualMessage = stringCleaner(
+        new UnknownDependenciesException('UserService', {
+          index: 0,
+          dependencies: [TOKEN],
+          name: TOKEN,
+        }).message,
+      );
+
+      expect(actualMessage).to.equal(expectedResult);
     });
     it('should add documentation links to export errors', () => {
       const expectedResult =
