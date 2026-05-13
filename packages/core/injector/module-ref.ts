@@ -182,8 +182,8 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
       });
     }
 
-    return new Promise<T>(async (resolve, reject) => {
-      try {
+    return new Promise<T>((resolve, reject) => {
+      const loadInstance = async () => {
         const callback = async (instances: any[]) => {
           const properties = await this.injector.resolveProperties(
             wrapper,
@@ -198,6 +198,7 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
           this.injector.applyProperties(instance, properties);
           resolve(instance);
         };
+
         await this.injector.resolveConstructorParams<T>(
           wrapper,
           moduleRef,
@@ -208,9 +209,9 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
             inquirer: wrapper,
           },
         );
-      } catch (err) {
-        reject(err);
-      }
+      };
+
+      void loadInstance().catch(reject);
     });
   }
 }

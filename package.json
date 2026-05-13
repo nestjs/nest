@@ -37,6 +37,7 @@
     "test:cov": "vitest run --coverage --config vitest.config.coverage.mts || true",
     "test:integration": "vitest run --config vitest.config.integration.mts",
     "test:docker:up": "docker-compose -f integration/docker-compose.yml up -d",
+    "test:docker:wait:rmq": "node scripts/wait-for-rabbitmq.js",
     "test:docker:down": "docker-compose -f integration/docker-compose.yml down",
     "lint": "oxlint packages integration",
     "lint:fix": "oxlint --fix packages integration",
