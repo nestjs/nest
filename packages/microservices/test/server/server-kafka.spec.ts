@@ -250,6 +250,24 @@ describe('ServerKafka', () => {
       expect(run).toHaveBeenCalled();
       expect(connect).toHaveBeenCalled();
     });
+    it('should subscribe to regex message patterns', async () => {
+      untypedServer.logger = new NoopLogger();
+      await server.listen(callback);
+
+      const pattern = /test\..*/;
+      const handler = vi.fn();
+      server.addHandler(pattern, handler);
+
+      await server.bindEvents(untypedServer.consumer);
+
+      expect(subscribe).toHaveBeenCalled();
+      expect(subscribe).toHaveBeenCalledWith({
+        topics: [pattern],
+      });
+
+      expect(run).toHaveBeenCalled();
+      expect(connect).toHaveBeenCalled();
+    });
     it('should pass run options with partitionsConsumedConcurrently to consumer.run()', async () => {
       untypedServer.logger = new NoopLogger();
       untypedServer.options.run = {
@@ -339,6 +357,22 @@ describe('ServerKafka', () => {
         correlationId,
         context,
       );
+    });
+  });
+
+  describe('getHandlerByPattern', () => {
+    it('should return a handler when topic matches a regex pattern', () => {
+      const handler = vi.fn();
+      server.addHandler(/test\..*/, handler);
+
+      expect(server.getHandlerByPattern(topic)).toBe(handler);
+    });
+
+    it('should return null when topic does not match a regex pattern', () => {
+      const handler = vi.fn();
+      server.addHandler(/another\..*/, handler);
+
+      expect(server.getHandlerByPattern(topic)).toBeNull();
     });
   });
 
@@ -435,6 +469,14 @@ describe('ServerKafka', () => {
       untypedServer.messageHandlers = objectToMap({
         [topic]: handler,
       });
+
+      await server.handleMessage(payload);
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('should call handler when topic matches a regex pattern', async () => {
+      const handler = vi.fn();
+      server.addHandler(/test\..*/, handler);
 
       await server.handleMessage(payload);
       expect(handler).toHaveBeenCalled();
