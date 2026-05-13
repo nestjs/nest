@@ -1,15 +1,18 @@
 import {
   Controller,
   Get,
+  Injectable,
   MiddlewareConsumer,
   Module,
   NestMiddleware,
   NestModule,
+  OnModuleInit,
   Param,
   Query,
   Req,
   RequestMethod,
 } from '@nestjs/common';
+import { HttpAdapterHost } from '@nestjs/core';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -791,6 +794,82 @@ describe('Middleware (FastifyAdapter)', () => {
       afterEach(async () => {
         await app.close();
       });
+    });
+  });
+
+  describe('when route is registered through a Fastify plugin', () => {
+    const MIDDLEWARE_HEADER = 'x-plugin-middleware';
+    const MIDDLEWARE_VALUE = 'applied';
+    const PLUGIN_RESPONSE = 'plugin-response';
+
+    @Injectable()
+    class FastifyPluginRegistrar implements OnModuleInit {
+      constructor(private readonly adapterHost: HttpAdapterHost) {}
+
+      onModuleInit() {
+        this.adapterHost.httpAdapter.getInstance().register(
+          (instance, _options, done) => {
+            instance.get('/', (_request, reply) => reply.send(PLUGIN_RESPONSE));
+            instance.get('/child', (_request, reply) =>
+              reply.send(PLUGIN_RESPONSE),
+            );
+            done();
+          },
+          { prefix: '/plugin' },
+        );
+      }
+    }
+
+    @Module({
+      providers: [FastifyPluginRegistrar],
+    })
+    class TestModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            res.setHeader(MIDDLEWARE_HEADER, MIDDLEWARE_VALUE);
+            next();
+          })
+          .forRoutes('/plugin', 'plugin', '/plugin/*');
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [TestModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+
+      await app.init();
+    });
+
+    it('should apply middleware to the plugin route', () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/plugin',
+        })
+        .then(({ headers, payload }) => {
+          expect(payload).to.be.eql(PLUGIN_RESPONSE);
+          expect(headers[MIDDLEWARE_HEADER]).to.be.eql(MIDDLEWARE_VALUE);
+        });
+    });
+
+    it('should apply middleware to nested plugin routes', () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/plugin/child',
+        })
+        .then(({ headers, payload }) => {
+          expect(payload).to.be.eql(PLUGIN_RESPONSE);
+          expect(headers[MIDDLEWARE_HEADER]).to.be.eql(MIDDLEWARE_VALUE);
+        });
+    });
+
+    afterEach(async () => {
+      await app.close();
     });
   });
 });

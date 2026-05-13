@@ -302,16 +302,23 @@ function fastifyMiddie(
       path = prefix + (path === '/' && prefix.length > 0 ? '' : path);
     }
 
-    this[kMiddlewares].push([path, fn]);
+    addMiddleware(this, path, fn);
+    return this;
+  }
 
+  function addMiddleware(
+    instance: FastifyInstance,
+    path: string | null,
+    fn?: Function,
+  ) {
+    instance[kMiddlewares].push([path, fn]);
     if (fn == null) {
-      this[kMiddie].use(path);
+      instance[kMiddie].use(path);
     } else {
-      this[kMiddie].use(path, fn);
+      instance[kMiddie].use(path, fn);
     }
 
-    this[kMiddieHasMiddlewares] = true;
-    return this;
+    instance[kMiddieHasMiddlewares] = true;
   }
 
   function runMiddie(
@@ -362,8 +369,8 @@ function fastifyMiddie(
     instance[kMiddie] = middie(onMiddieEnd, instance.initialConfig);
     instance[kMiddieHasMiddlewares] = false;
     instance.decorate('use', use as any);
-    for (const middleware of middlewares) {
-      (instance.use as any)(...middleware);
+    for (const [path, fn] of middlewares) {
+      addMiddleware(instance, path as string | null, fn as Function);
     }
   }
 
