@@ -1,7 +1,11 @@
 import * as GRPC from '@grpc/grpc-js';
 import * as ProtoLoader from '@grpc/proto-loader';
 import { INestApplication } from '@nestjs/common';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import {
+  GrpcExceptionFilter,
+  MicroserviceOptions,
+  Transport,
+} from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { fail } from 'assert';
 import { join } from 'path';
@@ -21,16 +25,20 @@ describe('GRPC transport', () => {
     app = module.createNestApplication();
     server = app.getHttpAdapter().getInstance();
 
-    app.connectMicroservice<MicroserviceOptions>({
-      transport: Transport.GRPC,
-      options: {
-        package: ['math', 'math2'],
-        protoPath: [
-          join(import.meta.dirname, '../src/grpc/math.proto'),
-          join(import.meta.dirname, '../src/grpc/math2.proto'),
-        ],
+    app.useGlobalFilters(new GrpcExceptionFilter());
+    app.connectMicroservice<MicroserviceOptions>(
+      {
+        transport: Transport.GRPC,
+        options: {
+          package: ['math', 'math2'],
+          protoPath: [
+            join(import.meta.dirname, '../src/grpc/math.proto'),
+            join(import.meta.dirname, '../src/grpc/math2.proto'),
+          ],
+        },
       },
-    });
+      { inheritAppConfig: true },
+    );
 
     // Start gRPC microservice
     await app.startAllMicroservices();
@@ -70,6 +78,22 @@ describe('GRPC transport', () => {
       .post('/error?client=custom')
       .expect(200)
       .expect('true');
+  });
+
+  it('GRPC maps GrpcException to gRPC status code', async () => {
+    const call = new Promise<void>((resolve, reject) => {
+      client.alreadyExists({}, (err: any) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+    });
+
+    await expect(call).rejects.toThrow(
+      '6 ALREADY_EXISTS: email already exists',
+    );
   });
 
   it(`GRPC Sending and Receiving HTTP POST (multiple proto)`, async () => {
