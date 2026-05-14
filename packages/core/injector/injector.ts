@@ -208,6 +208,9 @@ export class Injector {
         localResolutionContext,
         resolutionContext.inquirer,
       );
+      if (!instanceHost.isResolved) {
+        settlementSignal.complete();
+      }
     } catch (err) {
       wrapper.removeInstanceByContextId(
         this.getContextId(resolutionContext.contextId, wrapper),
