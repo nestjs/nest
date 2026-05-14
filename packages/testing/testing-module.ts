@@ -14,7 +14,7 @@ import {
 import {
   type NestMicroserviceOptions,
   type NestApplicationContextOptions,
-  loadPackage,
+  tryLoadPackage,
   loadPackageCached,
   isUndefined,
 } from '@nestjs/common/internal';
@@ -50,17 +50,14 @@ export class TestingModule extends NestApplicationContext {
    * Called from TestingModuleBuilder.compile().
    */
   private async preloadLazyPackages(): Promise<void> {
-    // Best-effort: silently swallow if packages are not installed
-    await loadPackage(
+    await tryLoadPackage(
       '@nestjs/platform-express',
-      'TestingModule',
       () => import('@nestjs/platform-express'),
-    ).catch(() => {});
-    await loadPackage(
+    );
+    await tryLoadPackage(
       '@nestjs/microservices',
-      'TestingModule',
       () => import('@nestjs/microservices'),
-    ).catch(() => {});
+    );
   }
 
   private isHttpServer(
