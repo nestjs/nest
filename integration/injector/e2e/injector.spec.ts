@@ -1,6 +1,8 @@
+import { Global, Injectable, Module, Scope } from '@nestjs/common';
 import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
 import { UnknownDependenciesException } from '@nestjs/core/errors/exceptions/unknown-dependencies.exception';
 import { UnknownExportException } from '@nestjs/core/errors/exceptions/unknown-export.exception';
+import { NestFactory } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as chai from 'chai';
@@ -21,6 +23,65 @@ import {
 chai.use(chaiAsPromised);
 
 describe('Injector', () => {
+  describe('when the same provider class is declared in multiple modules', () => {
+    it('should bootstrap when module-local provider instances have non-static dependency trees', async () => {
+      @Injectable()
+      class FirstGlobalDependency {}
+
+      @Injectable()
+      class SecondGlobalDependency {}
+
+      @Injectable({ scope: Scope.REQUEST })
+      class RequestScopedDependency {}
+
+      @Global()
+      @Module({
+        providers: [FirstGlobalDependency, SecondGlobalDependency],
+        exports: [FirstGlobalDependency, SecondGlobalDependency],
+      })
+      class GlobalDepsModule {}
+
+      @Injectable()
+      class SharedService {
+        constructor(
+          public readonly firstDependency: FirstGlobalDependency,
+          public readonly secondDependency: SecondGlobalDependency,
+          public readonly requestScopedDependency: RequestScopedDependency,
+        ) {}
+      }
+
+      @Module({
+        providers: [SharedService, RequestScopedDependency],
+        exports: [SharedService],
+      })
+      class ModuleA {}
+
+      @Module({
+        providers: [SharedService, RequestScopedDependency],
+      })
+      class ModuleB {}
+
+      @Module({
+        imports: [GlobalDepsModule, ModuleA, ModuleB],
+      })
+      class AppModule {}
+
+      let timeout: NodeJS.Timeout;
+      const app = await Promise.race([
+        NestFactory.create(AppModule, { logger: false }),
+        new Promise<never>((_, reject) => {
+          timeout = setTimeout(
+            () => reject(new Error('Application initialization timed out')),
+            1000,
+          );
+        }),
+      ]);
+      clearTimeout(timeout!);
+
+      await app.close();
+    });
+  });
+
   describe('when "providers" and "exports" properties are inconsistent', () => {
     it(`should fail with "UnknownExportException"`, async () => {
       try {
