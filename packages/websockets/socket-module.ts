@@ -20,6 +20,7 @@ import type {
   GraphInspector,
 } from '@nestjs/core';
 import {
+  Injector,
   GuardsConsumer,
   GuardsContextCreator,
   loadAdapter,
@@ -41,6 +42,7 @@ export class SocketModule<
   private isAdapterInitialized: boolean;
   private httpServer: THttpServer | undefined;
   private appOptions: TAppOptions;
+  private injector: Injector;
 
   public register(
     container: NestContainer,
@@ -53,7 +55,18 @@ export class SocketModule<
     this.appOptions = appOptions;
     this.httpServer = httpServer;
 
-    const contextCreator = this.getContextCreator(container);
+    this.injector = new Injector({
+      preview: container.contextOptions?.preview!,
+      instanceDecorator:
+        container.contextOptions?.instrument?.instanceDecorator,
+    });
+
+    const exceptionFiltersContext = new ExceptionFiltersContext(container);
+    const contextCreator = this.getContextCreator(
+      container,
+      applicationConfig,
+      exceptionFiltersContext,
+    );
     const serverProvider = new SocketServerProvider(
       this.socketsContainer,
       applicationConfig,
@@ -62,6 +75,9 @@ export class SocketModule<
       serverProvider,
       applicationConfig,
       contextCreator,
+      container,
+      this.injector,
+      exceptionFiltersContext,
       graphInspector,
       this.appOptions,
     );
@@ -93,10 +109,8 @@ export class SocketModule<
       await this.initializeAdapter();
     }
     this.webSocketsController.connectGatewayToServer(
-      instance as NestGateway,
-      metatype!,
+      wrapper as InstanceWrapper<NestGateway>,
       moduleName,
-      wrapper.id,
     );
   }
 
@@ -141,15 +155,19 @@ export class SocketModule<
     this.isAdapterInitialized = true;
   }
 
-  private getContextCreator(container: NestContainer): WsContextCreator {
+  private getContextCreator(
+    container: NestContainer,
+    config: ApplicationConfig,
+    exceptionFiltersContext: ExceptionFiltersContext,
+  ): WsContextCreator {
     return new WsContextCreator(
       new WsProxy(),
-      new ExceptionFiltersContext(container),
-      new PipesContextCreator(container),
+      exceptionFiltersContext,
+      new PipesContextCreator(container, config),
       new PipesConsumer(),
-      new GuardsContextCreator(container),
+      new GuardsContextCreator(container, config),
       new GuardsConsumer(),
-      new InterceptorsContextCreator(container),
+      new InterceptorsContextCreator(container, config),
       new InterceptorsConsumer(),
     );
   }

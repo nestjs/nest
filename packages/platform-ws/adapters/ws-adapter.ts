@@ -185,6 +185,10 @@ export class WsAdapter extends AbstractWsAdapter {
   }
 
   public bindClientDisconnect(client: any, callback: Function) {
+    if (typeof client.once === 'function') {
+      client.once(CLOSE_EVENT, callback);
+      return;
+    }
     client.on(CLOSE_EVENT, callback);
   }
 

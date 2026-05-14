@@ -3,7 +3,10 @@ import {
   EXCEPTION_FILTERS_METADATA,
   isEmptyArray,
 } from '@nestjs/common/internal';
-import { BaseExceptionFilterContext } from '@nestjs/core/internal';
+import {
+  BaseExceptionFilterContext,
+  STATIC_CONTEXT,
+} from '@nestjs/core/internal';
 import type { NestContainer } from '@nestjs/core';
 
 /**
@@ -18,6 +21,8 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
     instance: object,
     callback: <TClient>(client: TClient, data: any) => any,
     moduleKey: string,
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): WsExceptionsHandler {
     this.moduleContext = moduleKey;
 
@@ -26,6 +31,8 @@ export class ExceptionFiltersContext extends BaseExceptionFilterContext {
       instance,
       callback,
       EXCEPTION_FILTERS_METADATA,
+      contextId,
+      inquirerId,
     );
     if (isEmptyArray(filters)) {
       return exceptionHandler;
