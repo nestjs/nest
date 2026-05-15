@@ -39,6 +39,10 @@ export abstract class AbstractWsAdapter<
   }
 
   public bindClientDisconnect(client: TClient, callback: Function) {
+    if (typeof (client as any).once === 'function') {
+      (client as any).once(DISCONNECT_EVENT, callback);
+      return;
+    }
     client.on(DISCONNECT_EVENT, callback);
   }
 

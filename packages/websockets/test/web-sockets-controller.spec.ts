@@ -1,3 +1,7 @@
+import { REQUEST } from '@nestjs/core';
+import { Injector } from '@nestjs/core/injector/injector.js';
+import { Module } from '@nestjs/core/injector/module.js';
+import { REQUEST_CONTEXT_ID } from '@nestjs/core/router/request/request-constants.js';
 import { NestContainer } from '@nestjs/core';
 import { ApplicationConfig } from '@nestjs/core/application-config.js';
 import { fromEvent, lastValueFrom, Observable, of } from 'rxjs';
@@ -5,6 +9,7 @@ import { GraphInspector } from '../../core/inspector/graph-inspector.js';
 import { MetadataScanner } from '../../core/metadata-scanner.js';
 import { AbstractWsAdapter } from '../adapters/ws-adapter.js';
 import { PORT_METADATA } from '../constants.js';
+import { ExceptionFiltersContext } from '../context/exception-filters-context.js';
 import { WsContextCreator } from '../context/ws-context-creator.js';
 import { WebSocketGateway } from '../decorators/socket-gateway.decorator.js';
 import { InvalidSocketPortException } from '../errors/invalid-socket-port.exception.js';
@@ -34,7 +39,10 @@ describe('WebSocketsController', () => {
   let untypedInstance: any;
   let provider: SocketServerProvider,
     graphInspector: GraphInspector,
-    config: ApplicationConfig;
+    config: ApplicationConfig,
+    container: NestContainer,
+    injector: Injector,
+    exceptionFiltersContext: ExceptionFiltersContext;
 
   const messageHandlerCallback = () => Promise.resolve();
   const port = 90,
@@ -43,9 +51,12 @@ describe('WebSocketsController', () => {
   class Test {}
 
   beforeEach(() => {
+    container = new NestContainer();
     config = new ApplicationConfig(new NoopAdapter());
     provider = new SocketServerProvider(null!, config);
-    graphInspector = new GraphInspector(new NestContainer());
+    graphInspector = new GraphInspector(container);
+    injector = new Injector();
+    exceptionFiltersContext = new ExceptionFiltersContext(container);
 
     const contextCreator = {
       ...Object.fromEntries(
@@ -60,6 +71,9 @@ describe('WebSocketsController', () => {
       provider,
       config,
       contextCreator,
+      container,
+      injector,
+      exceptionFiltersContext,
       graphInspector,
     );
     untypedInstance = instance as any;
@@ -81,23 +95,31 @@ describe('WebSocketsController', () => {
       Reflect.defineMetadata(PORT_METADATA, 'test', InvalidGateway);
       expect(() =>
         instance.connectGatewayToServer(
-          new InvalidGateway(),
-          InvalidGateway,
+          {
+            instance: new InvalidGateway(),
+            metatype: InvalidGateway,
+            id: 'instanceWrapperId',
+          } as any,
           'moduleKey',
-          'instanceWrapperId',
         ),
       ).toThrow(InvalidSocketPortException);
     });
     it('should call "subscribeToServerEvents" with default values when metadata is empty', () => {
       const gateway = new DefaultGateway();
       instance.connectGatewayToServer(
-        gateway,
-        DefaultGateway,
+        {
+          instance: gateway,
+          metatype: DefaultGateway,
+          id: 'instanceWrapperId',
+        } as any,
         'moduleKey',
-        'instanceWrapperId',
       );
       expect(subscribeToServerEvents).toHaveBeenCalledWith(
-        gateway,
+        {
+          instance: gateway,
+          metatype: DefaultGateway,
+          id: 'instanceWrapperId',
+        },
         {},
         0,
         'moduleKey',
@@ -107,13 +129,19 @@ describe('WebSocketsController', () => {
     it('should call "subscribeToServerEvents" when metadata is valid', () => {
       const gateway = new Test();
       instance.connectGatewayToServer(
-        gateway,
-        Test,
+        {
+          instance: gateway,
+          metatype: Test,
+          id: 'instanceWrapperId',
+        } as any,
         'moduleKey',
-        'instanceWrapperId',
       );
       expect(subscribeToServerEvents).toHaveBeenCalledWith(
-        gateway,
+        {
+          instance: gateway,
+          metatype: Test,
+          id: 'instanceWrapperId',
+        },
         { namespace },
         port,
         'moduleKey',
@@ -134,6 +162,9 @@ describe('WebSocketsController', () => {
       gateway = new Test();
       explorer = new GatewayMetadataExplorer(new MetadataScanner());
       untypedInstance.metadataExplorer = explorer;
+      vi.spyOn(container, 'getModuleByKey').mockReturnValue({
+        providers: new Map(),
+      } as any);
 
       handlers = [
         {
@@ -150,12 +181,17 @@ describe('WebSocketsController', () => {
 
       assignServerToProperties = vi.fn();
       subscribeEvents = vi.fn();
-      instance['assignServerToProperties'] = assignServerToProperties;
-      instance['subscribeEvents'] = subscribeEvents;
+      untypedInstance.assignServerToProperties = assignServerToProperties;
+      untypedInstance.subscribeEvents = subscribeEvents;
     });
     it('should call "assignServerToProperties" with expected arguments', () => {
       instance.subscribeToServerEvents(
-        gateway,
+        {
+          instance: gateway,
+          metatype: Test,
+          id: 'instanceWrapperId',
+          isDependencyTreeStatic: () => true,
+        } as any,
         { namespace },
         port,
         'moduleKey',
@@ -168,13 +204,23 @@ describe('WebSocketsController', () => {
     });
     it('should call "subscribeEvents" with expected arguments', () => {
       instance.subscribeToServerEvents(
-        gateway,
+        {
+          instance: gateway,
+          metatype: Test,
+          id: 'instanceWrapperId',
+          isDependencyTreeStatic: () => true,
+        } as any,
         { namespace },
         port,
         'moduleKey',
         'instanceWrapperId',
       );
-      expect(subscribeEvents.mock.calls[0][0]).toBe(gateway);
+      expect(subscribeEvents.mock.calls[0][0]).toEqual({
+        instance: gateway,
+        metatype: Test,
+        id: 'instanceWrapperId',
+        isDependencyTreeStatic: expect.any(Function),
+      });
       expect(subscribeEvents.mock.calls[0][2]).toBe(server);
       expect(subscribeEvents.mock.calls[0][1]).toEqual([
         {
@@ -265,6 +311,7 @@ describe('WebSocketsController', () => {
       onSpy = vi.fn();
       subscribeInitEvent = vi.fn();
       getConnectionHandler = vi.fn();
+      getConnectionHandler.mockReturnValue('connection-handler');
       subscribeConnectionEvent = vi.fn();
       subscribeDisconnectEvent = vi.fn();
 
@@ -286,29 +333,29 @@ describe('WebSocketsController', () => {
     });
 
     it('should call "subscribeConnectionEvent" with expected arguments', () => {
-      instance.subscribeEvents(gateway, handlers, server);
+      instance.subscribeEvents({ instance: gateway } as any, handlers, server);
       expect(subscribeConnectionEvent).toHaveBeenCalledWith(
-        gateway,
+        (gateway as any).handleConnection?.bind(gateway),
         server.connection,
       );
     });
     it('should call "subscribeDisconnectEvent" with expected arguments', () => {
-      instance.subscribeEvents(gateway, handlers, server);
+      instance.subscribeEvents({ instance: gateway } as any, handlers, server);
       expect(subscribeDisconnectEvent).toHaveBeenCalledWith(
-        gateway,
+        (gateway as any).handleDisconnect?.bind(gateway),
         server.disconnect,
       );
     });
     it('should call "subscribeInitEvent" with expected arguments', () => {
-      instance.subscribeEvents(gateway, handlers, server);
+      instance.subscribeEvents({ instance: gateway } as any, handlers, server);
       expect(subscribeInitEvent).toHaveBeenCalledWith(gateway, server.init);
     });
     it('should bind connection handler to server', () => {
-      instance.subscribeEvents(gateway, handlers, server);
-      expect(onSpy).toHaveBeenCalledWith('connection', getConnectionHandler());
+      instance.subscribeEvents({ instance: gateway } as any, handlers, server);
+      expect(onSpy).toHaveBeenCalledWith('connection', 'connection-handler');
     });
     it('should call "getConnectionHandler" with expected arguments', () => {
-      instance.subscribeEvents(gateway, handlers, server);
+      instance.subscribeEvents({ instance: gateway } as any, handlers, server);
       expect(getConnectionHandler).toHaveBeenCalledWith(
         instance,
         gateway,
@@ -316,6 +363,101 @@ describe('WebSocketsController', () => {
         server.disconnect,
         server.connection,
       );
+    });
+  });
+  describe('createRequestScopedHandler', () => {
+    it('should reuse the same context id for the same client', async () => {
+      const client = {};
+      const moduleRef = {
+        providers: new Map(),
+      } as Module;
+      const instanceWrapper = {
+        id: 'wrapper-id',
+        instance: { onMessage() {} },
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const perContextMethod = vi.fn();
+      const perContextInstance = {
+        onMessage: perContextMethod,
+      };
+      const loadPerContext = vi
+        .spyOn(injector, 'loadPerContext')
+        .mockResolvedValue(perContextInstance as never);
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+
+      const createSpy = vi
+        .spyOn(untypedInstance.contextCreator, 'create')
+        .mockImplementation(
+          (contextInstance: any, callback: (...args: unknown[]) => unknown) =>
+            (...args: unknown[]) =>
+              callback.apply(contextInstance, args),
+        );
+
+      const handler = instance.createRequestScopedHandler(
+        instanceWrapper,
+        moduleRef,
+        'moduleKey',
+        'onMessage',
+      );
+
+      await handler(client, 'first');
+      await handler(client, 'second');
+
+      expect(loadPerContext).toHaveBeenCalledTimes(2);
+      expect(loadPerContext.mock.calls[0][3]).toBe(
+        loadPerContext.mock.calls[1][3],
+      );
+      expect(createSpy.mock.calls[0][4]).toBe(createSpy.mock.calls[1][4]);
+      expect(container.registerRequestProvider).toHaveBeenCalledTimes(1);
+      expect(client[REQUEST_CONTEXT_ID as any]).toBeDefined();
+      expect(perContextMethod).toHaveBeenCalledWith(client, 'first');
+      expect(perContextMethod).toHaveBeenCalledWith(client, 'second');
+    });
+  });
+  describe('createRequestScopedEventHandler', () => {
+    it('should cleanup request-scoped context on disconnect', async () => {
+      const client = {};
+      const gatewayWrapper = {
+        id: 'gateway-wrapper',
+        token: Symbol('gateway-wrapper'),
+        instance: {
+          handleDisconnect() {},
+        },
+        isDependencyTreeDurable: () => false,
+      } as any;
+      const moduleRef = {
+        providers: new Map([[gatewayWrapper.token, gatewayWrapper]]),
+      } as Module;
+      const contextInstance = {
+        handleDisconnect: vi.fn(),
+      };
+
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      const loadPerContext = vi
+        .spyOn(injector, 'loadPerContext')
+        .mockResolvedValue(contextInstance as never);
+
+      const handler = instance.createRequestScopedEventHandler(
+        gatewayWrapper,
+        moduleRef,
+        'moduleKey',
+        'handleDisconnect',
+        {},
+      );
+
+      await handler(client, 'test reason');
+
+      const contextId = loadPerContext.mock.calls[0][3];
+      expect(contextInstance.handleDisconnect).toHaveBeenCalledWith(
+        client,
+        'test reason',
+      );
+      expect(contextId).toBeDefined();
+      expect(client[REQUEST_CONTEXT_ID as any]).toBeUndefined();
     });
   });
   describe('getConnectionHandler', () => {
@@ -599,7 +741,11 @@ describe('WebSocketsController', () => {
 
       instance.connectGatewayToServer(gateway, EmptyGateway, 'mod', 'wrId');
       expect(subscribeToServerEvents).toHaveBeenCalledWith(
-        gateway,
+        expect.objectContaining({
+          instance: gateway,
+          metatype: EmptyGateway,
+          id: 'wrId',
+        }),
         {},
         0,
         'mod',
@@ -626,6 +772,9 @@ describe('WebSocketsController', () => {
         previewProvider,
         previewConfig,
         contextCreator,
+        container,
+        injector,
+        exceptionFiltersContext,
         graphInspector,
         { preview: true },
       );
@@ -634,7 +783,13 @@ describe('WebSocketsController', () => {
       const gateway = new Test();
 
       previewInstance.subscribeToServerEvents(
-        gateway,
+        {
+          instance: gateway,
+          metatype: Test,
+          id: 'wrapperId',
+          isDependencyTreeStatic: () => true,
+          isDependencyTreeDurable: () => false,
+        } as any,
         { namespace: '/' },
         90,
         'moduleKey',

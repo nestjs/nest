@@ -22,6 +22,7 @@ import {
   type ParamsMetadata,
   type PipesConsumer,
   type PipesContextCreator,
+  STATIC_CONTEXT,
 } from '@nestjs/core/internal';
 import { MESSAGE_METADATA, PARAM_ARGS_METADATA } from '../constants.js';
 import { WsException } from '../errors/ws-exception.js';
@@ -59,6 +60,8 @@ export class WsContextCreator {
     callback: (...args: unknown[]) => void,
     moduleKey: string,
     methodName: string,
+    contextId = STATIC_CONTEXT,
+    inquirerId?: string,
   ): (...args: any[]) => Promise<void> {
     const contextType: ContextType = 'ws';
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
@@ -70,21 +73,29 @@ export class WsContextCreator {
       instance,
       callback,
       moduleKey,
+      contextId,
+      inquirerId,
     );
     const pipes = this.pipesContextCreator.create(
       instance,
       callback,
       moduleKey,
+      contextId,
+      inquirerId,
     );
     const guards = this.guardsContextCreator.create(
       instance,
       callback,
       moduleKey,
+      contextId,
+      inquirerId,
     );
     const interceptors = this.interceptorsContextCreator.create(
       instance,
       callback,
       moduleKey,
+      contextId,
+      inquirerId,
     );
 
     const paramsMetadata = getParamsMetadata(moduleKey);

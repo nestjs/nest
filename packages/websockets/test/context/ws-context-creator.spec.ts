@@ -4,6 +4,7 @@ import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
 import { Injectable, UseGuards, UsePipes } from '../../../common/index.js';
 import { GuardsConsumer } from '../../../core/guards/guards-consumer.js';
 import { GuardsContextCreator } from '../../../core/guards/guards-context-creator.js';
+import { STATIC_CONTEXT } from '../../../core/injector/constants.js';
 import { NestContainer } from '../../../core/injector/container.js';
 import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-consumer.js';
 import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator.js';
@@ -81,6 +82,8 @@ describe('WsContextCreator', () => {
         instance,
         instance.test as any,
         module,
+        STATIC_CONTEXT,
+        undefined,
       );
     });
     it('should create pipes context', () => {
@@ -90,6 +93,8 @@ describe('WsContextCreator', () => {
         instance,
         instance.test,
         module,
+        STATIC_CONTEXT,
+        undefined,
       );
     });
     it('should create guards context', () => {
@@ -99,6 +104,8 @@ describe('WsContextCreator', () => {
         instance,
         instance.test,
         module,
+        STATIC_CONTEXT,
+        undefined,
       );
     });
     describe('when proxy called', () => {
