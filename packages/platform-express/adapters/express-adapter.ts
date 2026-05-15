@@ -371,6 +371,10 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     return 'express';
   }
 
+  public isRouteOrderSensitive(): boolean {
+    return true;
+  }
+
   public applyVersionFilter(
     handler: Function,
     version: VersionValue,

@@ -27,7 +27,9 @@ import {
 import { MetadataScanner } from '../metadata-scanner.js';
 import { PipesConsumer, PipesContextCreator } from '../pipes/index.js';
 import { ExceptionsFilter } from './interfaces/exceptions-filter.interface.js';
+import { ResolvedRoute } from './interfaces/resolved-route.interface.js';
 import { RoutePathMetadata } from './interfaces/route-path-metadata.interface.js';
+import { RouteResolutionOptions } from './interfaces/route-resolution-options.interface.js';
 import { PathsExplorer } from './paths-explorer.js';
 import { REQUEST_CONTEXT_ID } from './request/request-constants.js';
 import { RouteParamsFactory } from './route-params-factory.js';
@@ -107,6 +109,7 @@ export class RouterExplorer {
     httpAdapterRef: T,
     host: string | RegExp | Array<string | RegExp>,
     routePathMetadata: RoutePathMetadata,
+    options: RouteResolutionOptions = {},
   ) {
     const { instance } = instanceWrapper;
     const routerPaths = this.pathsExplorer.scanForPaths(instance);
@@ -117,6 +120,7 @@ export class RouterExplorer {
       moduleKey,
       routePathMetadata,
       host,
+      options,
     );
   }
 
@@ -139,6 +143,7 @@ export class RouterExplorer {
     moduleKey: string,
     routePathMetadata: RoutePathMetadata,
     host: string | RegExp | Array<string | RegExp>,
+    options: RouteResolutionOptions = {},
   ) {
     (routeDefinitions || []).forEach(routeDefinition => {
       const { version: methodVersion } = routeDefinition;
@@ -151,6 +156,7 @@ export class RouterExplorer {
         moduleKey,
         routePathMetadata,
         host,
+        options,
       );
     });
   }
@@ -162,7 +168,9 @@ export class RouterExplorer {
     moduleKey: string,
     routePathMetadata: RoutePathMetadata,
     host: string | RegExp | Array<string | RegExp>,
+    options: RouteResolutionOptions = {},
   ) {
+    const { onRouteResolved, deferRegistration = false } = options;
     const {
       path: paths,
       requestMethod,
@@ -233,21 +241,38 @@ export class RouterExplorer {
           },
         };
 
-        this.copyMetadataToCallback(targetCallback, routeHandler);
-        const normalizedPath = router.normalizePath
-          ? router.normalizePath(path)
-          : path;
+        if (!deferRegistration) {
+          this.copyMetadataToCallback(targetCallback, routeHandler);
+          const normalizedPath = router.normalizePath
+            ? router.normalizePath(path)
+            : path;
 
-        const httpAdapter = this.container.getHttpAdapterRef();
-        const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
-        if (onRouteTriggered) {
-          routerMethodRef(normalizedPath, (...args: unknown[]) => {
-            onRouteTriggered(requestMethod, path);
-            return routeHandler(...args);
-          });
-        } else {
-          routerMethodRef(normalizedPath, routeHandler);
+          const httpAdapter = this.container.getHttpAdapterRef();
+          const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
+          if (onRouteTriggered) {
+            routerMethodRef(normalizedPath, (...args: unknown[]) => {
+              onRouteTriggered(requestMethod, path);
+              return routeHandler(...args);
+            });
+          } else {
+            routerMethodRef(normalizedPath, routeHandler);
+          }
         }
+
+        onRouteResolved?.({
+          method: requestMethod,
+          path,
+          host,
+          version:
+            routePathMetadata.methodVersion ??
+            routePathMetadata.controllerVersion,
+          methodVersion: routePathMetadata.methodVersion,
+          controllerVersion: routePathMetadata.controllerVersion,
+          handler: routeHandler as unknown as (...args: unknown[]) => unknown,
+          targetCallback,
+          methodName,
+          instanceWrapper,
+        });
 
         this.graphInspector.insertEntrypointDefinition<HttpEntrypointMetadata>(
           entrypointDefinition,
@@ -273,6 +298,37 @@ export class RouterExplorer {
         }
       });
     });
+  }
+
+  /**
+   * Registers a previously resolved route on the underlying HTTP adapter.
+   * Used when route registration has been deferred (e.g. when sorting
+   * routes by specificity) so the caller can choose the order in which
+   * routes are installed on the adapter.
+   */
+  public registerResolvedRoute<T extends HttpServer>(
+    router: T,
+    route: ResolvedRoute,
+  ): void {
+    const routerMethodRef = this.routerMethodFactory
+      .get(router, route.method)
+      .bind(router);
+
+    this.copyMetadataToCallback(route.targetCallback, route.handler);
+    const normalizedPath = router.normalizePath
+      ? router.normalizePath(route.path)
+      : route.path;
+
+    const httpAdapter = this.container.getHttpAdapterRef();
+    const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
+    if (onRouteTriggered) {
+      routerMethodRef(normalizedPath, (...args: unknown[]) => {
+        onRouteTriggered(route.method, route.path);
+        return route.handler(...args);
+      });
+    } else {
+      routerMethodRef(normalizedPath, route.handler);
+    }
   }
 
   private applyHostFilter(

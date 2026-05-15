@@ -744,6 +744,10 @@ export class FastifyAdapter<
     return 'fastify';
   }
 
+  public isRouteOrderSensitive(): boolean {
+    return false;
+  }
+
   public use(...args: any[]) {
     // Fastify requires @fastify/middie plugin to be registered before middleware can be used.
     // If middie is not registered yet, we queue the middleware and register it later during init.

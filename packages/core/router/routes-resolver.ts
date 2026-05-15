@@ -3,6 +3,14 @@ import {
   HttpException,
   NotFoundException,
 } from '@nestjs/common';
+import { type HttpServer, type Type, Logger } from '@nestjs/common';
+import {
+  HOST_METADATA,
+  MODULE_PATH,
+  VERSION_METADATA,
+  type Controller,
+  type VersionValue,
+} from '@nestjs/common/internal';
 import { ApplicationConfig } from '../application-config.js';
 import {
   CONTROLLER_MAPPING_MESSAGE,
@@ -13,20 +21,14 @@ import { Injector } from '../injector/injector.js';
 import { InstanceWrapper } from '../injector/instance-wrapper.js';
 import { GraphInspector } from '../inspector/graph-inspector.js';
 import { MetadataScanner } from '../metadata-scanner.js';
+import { ResolvedRoute } from './interfaces/resolved-route.interface.js';
 import { Resolver } from './interfaces/resolver.interface.js';
 import { RoutePathMetadata } from './interfaces/route-path-metadata.interface.js';
+import { RouteResolutionOptions } from './interfaces/route-resolution-options.interface.js';
 import { RoutePathFactory } from './route-path-factory.js';
 import { RouterExceptionFilters } from './router-exception-filters.js';
 import { RouterExplorer } from './router-explorer.js';
 import { RouterProxy } from './router-proxy.js';
-import {
-  HOST_METADATA,
-  MODULE_PATH,
-  VERSION_METADATA,
-  type Controller,
-  type VersionValue,
-} from '@nestjs/common/internal';
-import { type HttpServer, type Type, Logger } from '@nestjs/common';
 
 export class RoutesResolver implements Resolver {
   private readonly logger = new Logger(RoutesResolver.name, {
@@ -67,6 +69,7 @@ export class RoutesResolver implements Resolver {
   public resolve<T extends HttpServer>(
     applicationRef: T,
     globalPrefix: string,
+    options: RouteResolutionOptions = {},
   ) {
     const modules = this.container.getModules();
     modules.forEach(({ controllers, metatype }, moduleName) => {
@@ -77,8 +80,16 @@ export class RoutesResolver implements Resolver {
         globalPrefix,
         modulePath,
         applicationRef,
+        options,
       );
     });
+  }
+
+  public registerResolvedRoute<T extends HttpServer>(
+    applicationRef: T,
+    route: ResolvedRoute,
+  ): void {
+    this.routerExplorer.registerResolvedRoute(applicationRef, route);
   }
 
   public registerRouters(
@@ -87,6 +98,7 @@ export class RoutesResolver implements Resolver {
     globalPrefix: string,
     modulePath: string,
     applicationRef: HttpServer,
+    options: RouteResolutionOptions = {},
   ) {
     routes.forEach(instanceWrapper => {
       const { metatype } = instanceWrapper;
@@ -134,6 +146,7 @@ export class RoutesResolver implements Resolver {
           applicationRef,
           host!,
           routePathMetadata,
+          options,
         );
       });
     });

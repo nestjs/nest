@@ -212,4 +212,42 @@ describe('ApplicationConfig', () => {
       expect(appConfig.getGlobalInterceptors()).toEqual(['i1', 'i2']);
     });
   });
+  describe('Router conflict policy', () => {
+    it('should default to undefined', () => {
+      expect(appConfig.getRouterConflictPolicy()).to.be.eql(undefined);
+    });
+
+    it('should store the provided policy', () => {
+      const policy = { duplicate: 'error', shadow: 'warn' } as const;
+      appConfig.setRouterConflictPolicy(policy);
+
+      expect(appConfig.getRouterConflictPolicy()).to.be.eql(policy);
+    });
+
+    it('should reset to undefined when explicitly cleared', () => {
+      appConfig.setRouterConflictPolicy({ duplicate: 'warn' });
+      appConfig.setRouterConflictPolicy(undefined);
+
+      expect(appConfig.getRouterConflictPolicy()).to.be.eql(undefined);
+    });
+  });
+
+  describe('Router resolution strategy', () => {
+    it('should default to undefined', () => {
+      expect(appConfig.getRouterResolutionStrategy()).to.be.eql(undefined);
+    });
+
+    it('should store the provided strategy', () => {
+      appConfig.setRouterResolutionStrategy('specificity');
+
+      expect(appConfig.getRouterResolutionStrategy()).to.be.eql('specificity');
+    });
+
+    it('should reset to undefined when explicitly cleared', () => {
+      appConfig.setRouterResolutionStrategy('specificity');
+      appConfig.setRouterResolutionStrategy(undefined);
+
+      expect(appConfig.getRouterResolutionStrategy()).to.be.eql(undefined);
+    });
+  });
 });

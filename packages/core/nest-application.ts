@@ -37,6 +37,9 @@ import {
   isObject,
   isString,
 } from '@nestjs/common/internal';
+import { ResolvedRoute } from './router/interfaces/resolved-route.interface.js';
+import { RouteConflictDetector } from './router/route-conflict-detector.js';
+import { RouteSpecificitySorter } from './router/route-specificity-sorter.js';
 
 /**
  * @publicApi
@@ -68,6 +71,10 @@ export class NestApplication
   ) {
     super(container, appOptions);
 
+    this.config.setRouterConflictPolicy(appOptions.routerConflictPolicy);
+    this.config.setRouterResolutionStrategy(
+      appOptions.routerResolutionStrategy,
+    );
     this.selectContextModule();
     this.registerHttpServer();
     this.injector = new Injector({
@@ -205,7 +212,42 @@ export class NestApplication
 
     const prefix = this.config.getGlobalPrefix();
     const basePath = addLeadingSlash(prefix);
-    this.routesResolver.resolve(this.httpAdapter, basePath);
+
+    const conflictPolicy = this.config.getRouterConflictPolicy();
+    const resolutionStrategy = this.config.getRouterResolutionStrategy();
+    const adapterIsOrderSensitive =
+      this.httpAdapter.isRouteOrderSensitive?.() ?? true;
+    const shouldSortBySpecificity =
+      resolutionStrategy === 'specificity' && adapterIsOrderSensitive;
+
+    if (!conflictPolicy && !shouldSortBySpecificity) {
+      this.routesResolver.resolve(this.httpAdapter, basePath);
+      return;
+    }
+
+    const resolvedRoutes: ResolvedRoute[] = [];
+    this.routesResolver.resolve(this.httpAdapter, basePath, {
+      onRouteResolved: route => resolvedRoutes.push(route),
+      deferRegistration: shouldSortBySpecificity,
+    });
+
+    if (shouldSortBySpecificity) {
+      RouteSpecificitySorter.sort(resolvedRoutes).forEach(route =>
+        this.routesResolver.registerResolvedRoute(this.httpAdapter, route),
+      );
+    }
+
+    if (conflictPolicy) {
+      const filteredPolicy = adapterIsOrderSensitive
+        ? conflictPolicy
+        : { duplicate: conflictPolicy.duplicate };
+
+      const conflicts = RouteConflictDetector.detect(
+        resolvedRoutes,
+        this.config.getVersioning(),
+      );
+      RouteConflictDetector.handle(conflicts, filteredPolicy, this.logger);
+    }
   }
 
   public async registerRouterHooks() {

@@ -4,12 +4,14 @@ import type {
   NestInterceptor,
   PipeTransform,
   PreRequestHook,
+  RouteConflictPolicy,
+  RouteResolutionStrategy,
   VersioningOptions,
   WebSocketAdapter,
 } from '@nestjs/common';
+import type { GlobalPrefixOptions } from '@nestjs/common/internal';
 import { InstanceWrapper } from './injector/instance-wrapper.js';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface.js';
-import type { GlobalPrefixOptions } from '@nestjs/common/internal';
 
 export class ApplicationConfig {
   private globalPrefix = '';
@@ -20,6 +22,8 @@ export class ApplicationConfig {
   private globalGuards: Array<CanActivate> = [];
   private globalPreRequestHooks: Array<PreRequestHook> = [];
   private versioningOptions: VersioningOptions;
+  private routerConflictPolicy: RouteConflictPolicy | undefined;
+  private routerResolutionStrategy: RouteResolutionStrategy | undefined;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
   private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] =
     [];
@@ -156,5 +160,25 @@ export class ApplicationConfig {
 
   public getVersioning(): VersioningOptions | undefined {
     return this.versioningOptions;
+  }
+
+  public setRouterConflictPolicy(
+    policy: RouteConflictPolicy | undefined,
+  ): void {
+    this.routerConflictPolicy = policy;
+  }
+
+  public getRouterConflictPolicy(): RouteConflictPolicy | undefined {
+    return this.routerConflictPolicy;
+  }
+
+  public setRouterResolutionStrategy(
+    strategy: RouteResolutionStrategy | undefined,
+  ): void {
+    this.routerResolutionStrategy = strategy;
+  }
+
+  public getRouterResolutionStrategy(): RouteResolutionStrategy | undefined {
+    return this.routerResolutionStrategy;
   }
 }

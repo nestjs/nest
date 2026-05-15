@@ -103,4 +103,5 @@ export interface HttpServer<
     versioningOptions: VersioningOptions,
   ): (req: TRequest, res: TResponse, next: () => void) => Function;
   normalizePath?(path: string): string;
+  isRouteOrderSensitive?(): boolean;
 }
