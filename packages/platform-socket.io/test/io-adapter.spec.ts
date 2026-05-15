@@ -1,7 +1,5 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { IoAdapter } from '../adapters/io-adapter';
 import { of } from 'rxjs';
+import { IoAdapter } from '../adapters/io-adapter.js';
 
 describe('IoAdapter', () => {
   let adapter: IoAdapter;
@@ -12,18 +10,18 @@ describe('IoAdapter', () => {
 
   describe('bindMessageHandlers', () => {
     it('should register only one disconnect listener regardless of call count', () => {
-      const addListenerSpy = sinon.spy();
+      const addListenerSpy = vi.fn();
       const fakeSocket = {
         on: addListenerSpy,
-        off: sinon.stub(),
+        off: vi.fn(),
         addListener: addListenerSpy,
-        removeListener: sinon.stub(),
+        removeListener: vi.fn(),
       } as any;
 
       const handler = {
         message: 'test-event',
         methodName: 'handleTestEvent',
-        callback: sinon.stub().returns({ data: 'response' }),
+        callback: vi.fn().mockReturnValue({ data: 'response' }),
         isAckHandledManually: false,
       };
 
@@ -34,17 +32,17 @@ describe('IoAdapter', () => {
       adapter.bindMessageHandlers(fakeSocket, [handler], transform);
       adapter.bindMessageHandlers(fakeSocket, [handler], transform);
 
-      const disconnectCalls = addListenerSpy
-        .getCalls()
-        .filter(call => call.args[0] === 'disconnect');
+      const disconnectCalls = addListenerSpy.mock.calls.filter(
+        call => call[0] === 'disconnect',
+      );
 
-      expect(disconnectCalls).to.have.lengthOf(1);
+      expect(disconnectCalls).toHaveLength(1);
 
       // message handlers should still be registered per call
-      const messageCalls = addListenerSpy
-        .getCalls()
-        .filter(call => call.args[0] === 'test-event');
-      expect(messageCalls).to.have.lengthOf(2);
+      const messageCalls = addListenerSpy.mock.calls.filter(
+        call => call[0] === 'test-event',
+      );
+      expect(messageCalls).toHaveLength(2);
     });
   });
 });

@@ -1,17 +1,23 @@
 import {
-  isNil,
-  isNumber,
-  isObject,
-  isSymbol,
-} from '@nestjs/common/utils/shared.utils';
-import {
   PATTERN_EXTRAS_METADATA,
   PATTERN_HANDLER_METADATA,
   PATTERN_METADATA,
   TRANSPORT_METADATA,
-} from '../constants';
-import { Transport } from '../enums';
-import { PatternHandler } from '../enums/pattern-handler.enum';
+} from '../constants.js';
+import { Transport } from '../enums/index.js';
+import { PatternHandler } from '../enums/pattern-handler.enum.js';
+import { isNil, isNumber, isObject, isSymbol } from '@nestjs/common/internal';
+
+export type EventDataMethodDecorator<
+  TEventTypes extends Record<string, any>,
+  TKey extends keyof TEventTypes,
+> = (
+  target: object,
+  propertyKey: string | symbol,
+  descriptor: TypedPropertyDescriptor<
+    (data: TEventTypes[TKey], ...args: unknown[]) => any
+  >,
+) => void;
 
 /**
  * Subscribes to incoming events which fulfils chosen pattern.
@@ -19,6 +25,22 @@ import { PatternHandler } from '../enums/pattern-handler.enum';
  * @publicApi
  */
 export const EventPattern: {
+  <TEventTypes extends Record<string, any>>(
+    topic: keyof TEventTypes,
+  ): EventDataMethodDecorator<TEventTypes, typeof topic>;
+  <TEventTypes extends Record<string, any>>(
+    topic: keyof TEventTypes,
+    transport: Transport | symbol,
+  ): EventDataMethodDecorator<TEventTypes, typeof topic>;
+  <TEventTypes extends Record<string, any>>(
+    topic: keyof TEventTypes,
+    extras: Record<string, any>,
+  ): EventDataMethodDecorator<TEventTypes, typeof topic>;
+  <TEventTypes extends Record<string, any>>(
+    topic: keyof TEventTypes,
+    transport: Transport | symbol,
+    extras: Record<string, any>,
+  ): EventDataMethodDecorator<TEventTypes, typeof topic>;
   <T = string>(metadata?: T): MethodDecorator;
   <T = string>(metadata?: T, transport?: Transport | symbol): MethodDecorator;
   <T = string>(metadata?: T, extras?: Record<string, any>): MethodDecorator;

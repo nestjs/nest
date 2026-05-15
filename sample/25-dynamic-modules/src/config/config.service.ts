@@ -2,8 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-import { CONFIG_OPTIONS } from './constants';
-import { ConfigOptions, EnvConfig } from './interfaces';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { CONFIG_OPTIONS } from './constants.js';
+import { ConfigOptions, EnvConfig } from './interfaces/index.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 @Injectable()
 export class ConfigService {

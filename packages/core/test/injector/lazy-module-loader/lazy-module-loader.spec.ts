@@ -1,16 +1,15 @@
 import { Module } from '@nestjs/common';
-import { expect } from 'chai';
 import {
   LazyModuleLoader,
   ModuleRef,
   ModulesContainer,
   NestContainer,
-} from '../../../injector';
-import { Injector } from '../../../injector/injector';
-import { InstanceLoader } from '../../../injector/instance-loader';
-import { GraphInspector } from '../../../inspector/graph-inspector';
-import { MetadataScanner } from '../../../metadata-scanner';
-import { DependenciesScanner } from '../../../scanner';
+} from '../../../injector/index.js';
+import { Injector } from '../../../injector/injector.js';
+import { InstanceLoader } from '../../../injector/instance-loader.js';
+import { GraphInspector } from '../../../inspector/graph-inspector.js';
+import { MetadataScanner } from '../../../metadata-scanner.js';
+import { DependenciesScanner } from '../../../scanner.js';
 
 describe('LazyModuleLoader', () => {
   let lazyModuleLoader: LazyModuleLoader;
@@ -60,8 +59,8 @@ describe('LazyModuleLoader', () => {
     describe('when module was not loaded yet', () => {
       it('should load it and return a module reference', async () => {
         const moduleRef = await lazyModuleLoader.load(() => ModuleA);
-        expect(moduleRef).to.be.instanceOf(ModuleRef);
-        expect(moduleRef.get(bProvider.provide, { strict: false })).to.equal(
+        expect(moduleRef).toBeInstanceOf(ModuleRef);
+        expect(moduleRef.get(bProvider.provide, { strict: false })).toBe(
           bProvider.useValue,
         );
       });
@@ -73,7 +72,7 @@ describe('LazyModuleLoader', () => {
       it('should return an existing module reference', async () => {
         const moduleRef = await lazyModuleLoader.load(() => ModuleC);
         const moduleRef2 = await lazyModuleLoader.load(() => ModuleC);
-        expect(moduleRef).to.equal(moduleRef2);
+        expect(moduleRef).toBe(moduleRef2);
       });
     });
   });

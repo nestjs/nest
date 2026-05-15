@@ -1,15 +1,16 @@
-import {
+import type {
   CanActivate,
   ExceptionFilter,
   NestInterceptor,
   PipeTransform,
   RouteConflictOptions,
+  PreRequestHook,
   VersioningOptions,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
-import { InstanceWrapper } from './injector/instance-wrapper';
-import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
+import { InstanceWrapper } from './injector/instance-wrapper.js';
+import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface.js';
+import type { GlobalPrefixOptions } from '@nestjs/common/internal';
 
 export class ApplicationConfig {
   private globalPrefix = '';
@@ -18,6 +19,7 @@ export class ApplicationConfig {
   private globalFilters: Array<ExceptionFilter> = [];
   private globalInterceptors: Array<NestInterceptor> = [];
   private globalGuards: Array<CanActivate> = [];
+  private globalPreRequestHooks: Array<PreRequestHook> = [];
   private versioningOptions: VersioningOptions;
   private routeConflictOptions?: RouteConflictOptions;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
@@ -135,6 +137,14 @@ export class ApplicationConfig {
 
   public getGlobalRequestGuards(): InstanceWrapper<CanActivate>[] {
     return this.globalRequestGuards;
+  }
+
+  public registerPreRequestHook(...hooks: PreRequestHook[]) {
+    this.globalPreRequestHooks = this.globalPreRequestHooks.concat(hooks);
+  }
+
+  public getGlobalPreRequestHooks(): PreRequestHook[] {
+    return this.globalPreRequestHooks;
   }
 
   public enableVersioning(options: VersioningOptions): void {

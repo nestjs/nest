@@ -2,13 +2,16 @@ import {
   OutgoingEvent,
   OutgoingRequest,
   OutgoingResponse,
-} from './packet.interface';
+} from './packet.interface.js';
 
 /**
  * @publicApi
  */
 export interface Serializer<TInput = any, TOutput = any> {
-  serialize(value: TInput, options?: Record<string, any>): TOutput;
+  serialize(
+    value: TInput,
+    options?: Record<string, any>,
+  ): TOutput | Promise<TOutput>;
 }
 
 export type ProducerSerializer = Serializer<

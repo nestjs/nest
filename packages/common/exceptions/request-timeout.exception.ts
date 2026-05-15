@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Request Timeout* type errors.
@@ -37,13 +37,13 @@ export class RequestTimeoutException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Request Timeout',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Request Timeout', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.REQUEST_TIMEOUT,
       ),
       HttpStatus.REQUEST_TIMEOUT,

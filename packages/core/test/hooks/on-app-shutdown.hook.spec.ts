@@ -1,9 +1,7 @@
 import { OnApplicationShutdown } from '@nestjs/common';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { callAppShutdownHook } from '../../hooks/on-app-shutdown.hook';
-import { NestContainer } from '../../injector/container';
-import { Module } from '../../injector/module';
+import { callAppShutdownHook } from '../../hooks/on-app-shutdown.hook.js';
+import { NestContainer } from '../../injector/container.js';
+import { Module } from '../../injector/module.js';
 
 class SampleProvider implements OnApplicationShutdown {
   onApplicationShutdown() {}
@@ -38,10 +36,10 @@ describe('OnApplicationShutdown', () => {
 
   describe('callAppShutdownHook', () => {
     it('should call "onApplicationShutdown" hook for the entire module', async () => {
-      const hookSpy = sinon.spy(sampleProvider, 'onApplicationShutdown');
+      const hookSpy = vi.spyOn(sampleProvider, 'onApplicationShutdown');
       await callAppShutdownHook(moduleRef);
 
-      expect(hookSpy.called).to.be.true;
+      expect(hookSpy).toHaveBeenCalled();
     });
   });
 });

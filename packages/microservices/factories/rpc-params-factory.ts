@@ -1,4 +1,4 @@
-import { RpcParamtype } from '../enums/rpc-paramtype.enum';
+import { RpcParamtype } from '../enums/rpc-paramtype.enum.js';
 
 export class RpcParamsFactory {
   public exchangeKeyForValue(

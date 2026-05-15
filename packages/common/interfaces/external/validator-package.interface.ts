@@ -1,5 +1,5 @@
-import { ValidationError } from './validation-error.interface';
-import { ValidatorOptions } from './validator-options.interface';
+import { ValidationError } from './validation-error.interface.js';
+import { ValidatorOptions } from './validator-options.interface.js';
 
 export interface ValidatorPackage {
   validate(

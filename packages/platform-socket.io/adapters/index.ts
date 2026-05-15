@@ -1,1 +1,1 @@
-export * from './io-adapter';
+export * from './io-adapter.js';

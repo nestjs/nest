@@ -15,10 +15,9 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { FastifyRequest } from 'fastify';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 describe('Middleware (FastifyAdapter)', () => {
   let app: NestFastifyApplication;
@@ -117,7 +116,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/hello',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(RETURN_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(RETURN_VALUE));
     });
 
     it(`forRoutes(TestController)`, () => {
@@ -126,7 +125,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/test',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(SCOPED_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(SCOPED_VALUE));
     });
 
     it(`query?test=${QUERY_VALUE} forRoutes(query)`, () => {
@@ -138,7 +137,7 @@ describe('Middleware (FastifyAdapter)', () => {
             test: QUERY_VALUE,
           },
         })
-        .then(({ payload }) => expect(payload).to.be.eql(QUERY_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(QUERY_VALUE));
     });
 
     it(`${QUERY_VALUE}?test=${QUERY_VALUE} forRoutes(${QUERY_VALUE})`, () => {
@@ -150,7 +149,7 @@ describe('Middleware (FastifyAdapter)', () => {
             test: QUERY_VALUE,
           },
         })
-        .then(({ payload }) => expect(payload).to.be.eql(QUERY_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(QUERY_VALUE));
     });
 
     it(`forRoutes(tests/*path)`, () => {
@@ -159,7 +158,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/tests/wildcard_nested',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(WILDCARD_VALUE));
     });
 
     it(`forRoutes(express_style_wildcard/*)`, () => {
@@ -168,7 +167,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/express_style_wildcard/wildcard_nested',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(WILDCARD_VALUE));
     });
 
     it(`forRoutes(legacy_style_wildcard/*)`, () => {
@@ -177,7 +176,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/legacy_style_wildcard/wildcard_nested',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(WILDCARD_VALUE));
     });
 
     it(`forRoutes(req/url/)`, () => {
@@ -187,7 +186,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: `/req/url${reqUrl}`,
         })
-        .then(({ payload }) => expect(payload).to.be.eql(REQ_URL_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(REQ_URL_VALUE));
     });
 
     it(`GET forRoutes(POST tests/included)`, () => {
@@ -196,7 +195,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/tests/included',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(WILDCARD_VALUE));
     });
 
     it(`POST forRoutes(POST tests/included)`, () => {
@@ -205,7 +204,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'POST',
           url: '/tests/included',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(INCLUDED_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(INCLUDED_VALUE));
     });
 
     it(`GET forRoutes(POST /tests/%69ncluded) - ensure middleware is executed correctly with encoded characters`, () => {
@@ -214,7 +213,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'POST',
           url: '/tests/%69ncluded', // 'i' character is encoded
         })
-        .then(({ payload }) => expect(payload).to.be.eql(INCLUDED_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(INCLUDED_VALUE));
     });
 
     afterEach(async () => {
@@ -329,7 +328,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/a/b/c',
         })
         .then(({ payload }) => {
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -346,7 +345,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/a/b',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -363,7 +362,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/a',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -380,7 +379,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/similar',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -397,7 +396,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/similar/test',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -414,7 +413,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/similar/arbitrary',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -494,7 +493,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/api/pong',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               pong: 'pong',
@@ -513,7 +512,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/api',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               pong: 'pong',
@@ -531,7 +530,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/pong',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               pong: 'pong',

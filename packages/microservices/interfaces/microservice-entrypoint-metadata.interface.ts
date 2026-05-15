@@ -1,5 +1,5 @@
-import { Transport } from '../enums';
-import { PatternMetadata } from './pattern-metadata.interface';
+import { Transport } from '../enums/index.js';
+import { PatternMetadata } from './pattern-metadata.interface.js';
 
 export type MicroserviceEntrypointMetadata = {
   transportId: keyof typeof Transport | symbol;

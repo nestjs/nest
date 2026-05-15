@@ -1,4 +1,4 @@
-import { IFile } from './interfaces';
+import { IFile } from './interfaces/index.js';
 
 /**
  * Interface describing FileValidators, which can be added to a ParseFilePipe

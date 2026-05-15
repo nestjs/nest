@@ -1,6 +1,6 @@
 import type { Type } from '@nestjs/common';
-import { RuntimeException } from './runtime.exception';
-import { UNKNOWN_REQUEST_MAPPING } from '../messages';
+import { RuntimeException } from './runtime.exception.js';
+import { UNKNOWN_REQUEST_MAPPING } from '../messages.js';
 
 export class UnknownRequestMappingException extends RuntimeException {
   constructor(metatype: Type) {

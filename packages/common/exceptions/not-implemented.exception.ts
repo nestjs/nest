@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Not Implemented* type errors.
@@ -37,13 +37,13 @@ export class NotImplementedException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Not Implemented',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Not Implemented', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.NOT_IMPLEMENTED,
       ),
       HttpStatus.NOT_IMPLEMENTED,

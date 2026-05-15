@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Unprocessable Entity* type errors.
@@ -39,13 +39,13 @@ export class UnprocessableEntityException extends HttpException {
       | string
       | HttpExceptionOptions = 'Unprocessable Entity',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Unprocessable Entity', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.UNPROCESSABLE_ENTITY,
       ),
       HttpStatus.UNPROCESSABLE_ENTITY,

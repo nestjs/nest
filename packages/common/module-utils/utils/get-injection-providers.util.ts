@@ -1,10 +1,10 @@
-import { isUndefined } from '../../utils/shared.utils';
+import { isUndefined } from '../../utils/shared.utils.js';
 import {
   FactoryProvider,
   InjectionToken,
   OptionalFactoryDependency,
   Provider,
-} from '../../interfaces';
+} from '../../interfaces/index.js';
 
 /**
  * @param value

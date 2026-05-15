@@ -1,7 +1,6 @@
-import { expect } from 'chai';
 import { Test } from '@nestjs/testing';
-import { CircularModule } from '../src/circular-structure-dynamic-module/circular.module';
-import { InputService } from '../src/circular-structure-dynamic-module/input.service';
+import { CircularModule } from '../src/circular-structure-dynamic-module/circular.module.js';
+import { InputService } from '../src/circular-structure-dynamic-module/input.service.js';
 
 describe('Circular structure for dynamic modules', () => {
   it('should resolve circular structure with dynamic modules', async () => {
@@ -11,6 +10,6 @@ describe('Circular structure for dynamic modules', () => {
     const testingModule = await builder.compile();
     const inputService = testingModule.get<InputService>(InputService);
 
-    expect(inputService).to.be.instanceof(InputService);
+    expect(inputService).toBeInstanceOf(InputService);
   });
 });

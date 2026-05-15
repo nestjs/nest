@@ -1,5 +1,5 @@
-import { TcpSocket } from '../helpers';
-import { BaseRpcContext } from './base-rpc.context';
+import { TcpSocket } from '../helpers/index.js';
+import { BaseRpcContext } from './base-rpc.context.js';
 
 type TcpContextArgs = [TcpSocket, string];
 

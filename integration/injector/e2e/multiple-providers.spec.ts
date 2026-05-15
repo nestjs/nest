@@ -1,6 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import { MultipleProvidersModule } from '../src/multiple-providers/multiple-providers.module';
+import { MultipleProvidersModule } from '../src/multiple-providers/multiple-providers.module.js';
 
 describe('Multiple providers under the same token ("each" feature)', () => {
   describe('get()', () => {
@@ -20,7 +19,7 @@ describe('Multiple providers under the same token ("each" feature)', () => {
       // @ts-expect-error: make sure "multiProviderInstances" is string[] not string
       multiProviderInstances.charAt;
 
-      expect(multiProviderInstances).to.be.eql(['A', 'B', 'C']);
+      expect(multiProviderInstances).toEqual(['A', 'B', 'C']);
     });
   });
   describe('resolve()', () => {
@@ -41,7 +40,7 @@ describe('Multiple providers under the same token ("each" feature)', () => {
       // @ts-expect-error: make sure "multiProviderInstances" is string[] not string
       multiProviderInstances.charAt;
 
-      expect(multiProviderInstances).to.be.eql(['A', 'B', 'C']);
+      expect(multiProviderInstances).toEqual(['A', 'B', 'C']);
     });
 
     it('should return an array of default-scoped providers', async () => {
@@ -61,7 +60,7 @@ describe('Multiple providers under the same token ("each" feature)', () => {
       // @ts-expect-error: make sure "multiProviderInstances" is string[] not string
       multiProviderInstances.charAt;
 
-      expect(multiProviderInstances).to.be.eql(['A', 'B', 'C']);
+      expect(multiProviderInstances).toEqual(['A', 'B', 'C']);
     });
   });
 });

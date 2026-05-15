@@ -1,6 +1,4 @@
-'use strict';
-
-const amqp = require('amqplib');
+import amqp from 'amqplib';
 
 const url = process.env.RABBITMQ_URL || 'amqp://localhost:5672';
 const readPositiveInteger = (value, fallback) => {

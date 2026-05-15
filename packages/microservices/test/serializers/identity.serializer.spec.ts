@@ -1,5 +1,4 @@
-import { expect } from 'chai';
-import { IdentitySerializer } from '../../serializers/identity.serializer';
+import { IdentitySerializer } from '../../serializers/identity.serializer.js';
 
 describe('IdentitySerializer', () => {
   let instance: IdentitySerializer;
@@ -9,7 +8,7 @@ describe('IdentitySerializer', () => {
   describe('serialize', () => {
     it('should return the value unchanged', () => {
       const value = {};
-      expect(instance.serialize(value)).to.be.eql(value);
+      expect(instance.serialize(value)).toEqual(value);
     });
   });
 });

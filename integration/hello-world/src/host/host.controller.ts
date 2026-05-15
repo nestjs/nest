@@ -1,7 +1,7 @@
 import { Controller, Get, Header, HostParam, Param } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
-import { HostService } from './host.service';
-import { UserByIdPipe } from './users/user-by-id.pipe';
+import { HostService } from './host.service.js';
+import { UserByIdPipe } from './users/user-by-id.pipe.js';
 
 @Controller({
   path: 'host',

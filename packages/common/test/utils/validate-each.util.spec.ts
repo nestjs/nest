@@ -1,22 +1,22 @@
-import { expect } from 'chai';
-import { isFunction } from '../../utils/shared.utils';
+import { isFunction } from '../../utils/shared.utils.js';
 import {
   validateEach,
   InvalidDecoratorItemException,
-} from '../../utils/validate-each.util';
+} from '../../utils/validate-each.util.js';
 
 describe('validateEach', () => {
   describe('when any item will not pass predicate', () => {
     it('should throw exception', () => {
       expect(() =>
         validateEach({ name: 'test' } as any, ['test'], isFunction, '', ''),
-      ).to.throws(InvalidDecoratorItemException);
+      ).toThrow(InvalidDecoratorItemException);
     });
   });
   describe('when all items passed predicate', () => {
     it('should return true', () => {
-      expect(validateEach({} as any, [() => null], isFunction, '', '')).to.be
-        .true;
+      expect(validateEach({} as any, [() => null], isFunction, '', '')).toBe(
+        true,
+      );
     });
   });
 });

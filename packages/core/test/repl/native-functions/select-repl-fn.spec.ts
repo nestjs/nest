@@ -1,8 +1,6 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { SelectReplFn } from '../../../repl/native-functions';
-import { ReplContext } from '../../../repl/repl-context';
-import { NestContainer } from '../../../injector/container';
+import { SelectReplFn } from '../../../repl/native-functions/index.js';
+import { ReplContext } from '../../../repl/repl-context.js';
+import { NestContainer } from '../../../injector/container.js';
 
 describe('SelectReplFn', () => {
   let selectReplFn: SelectReplFn;
@@ -10,19 +8,19 @@ describe('SelectReplFn', () => {
   let replContext: ReplContext;
   let mockApp: {
     container: NestContainer;
-    get: sinon.SinonStub;
-    resolve: sinon.SinonSpy;
-    select: sinon.SinonSpy;
+    get: ReturnType<typeof vi.fn>;
+    resolve: ReturnType<typeof vi.fn>;
+    select: ReturnType<typeof vi.fn>;
   };
 
-  before(async () => {
+  beforeAll(async () => {
     const container = new NestContainer();
 
     mockApp = {
       container,
-      get: sinon.stub(),
-      resolve: sinon.spy(),
-      select: sinon.spy(),
+      get: vi.fn(),
+      resolve: vi.fn(),
+      select: vi.fn(),
     };
     replContext = new ReplContext(mockApp as any);
   });
@@ -30,18 +28,18 @@ describe('SelectReplFn', () => {
   beforeEach(() => {
     selectReplFn = replContext.nativeFunctions.get('select') as SelectReplFn;
   });
-  afterEach(() => sinon.restore());
+  afterEach(() => vi.restoreAllMocks());
 
   it('the function name should be "select"', () => {
-    expect(selectReplFn).to.not.be.undefined;
-    expect(selectReplFn.fnDefinition.name).to.eql('select');
+    expect(selectReplFn).not.toBeUndefined();
+    expect(selectReplFn.fnDefinition.name).toEqual('select');
   });
 
   describe('action', () => {
     it('should pass arguments down to the application context', () => {
       const moduleCls = class TestModule {};
       selectReplFn.action(moduleCls);
-      expect(mockApp.select.calledWith(moduleCls)).to.be.true;
+      expect(mockApp.select).toHaveBeenCalledWith(moduleCls);
     });
   });
 });

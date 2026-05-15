@@ -1,6 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigService } from './config.service';
-import { CONFIG_OPTIONS } from './constants';
+import { ConfigService } from './config.service.js';
+import { CONFIG_OPTIONS } from './constants.js';
 
 export interface ConfigModuleOptions {
   folder: string;

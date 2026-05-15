@@ -1,7 +1,6 @@
-import { expect } from 'chai';
-import { PARAM_ARGS_METADATA } from '../../constants';
-import { ConnectedSocket } from '../../decorators';
-import { WsParamtype } from '../../enums/ws-paramtype.enum';
+import { PARAM_ARGS_METADATA } from '../../constants.js';
+import { ConnectedSocket } from '../../decorators/index.js';
+import { WsParamtype } from '../../enums/ws-paramtype.enum.js';
 
 class ConnectedSocketTest {
   public test(@ConnectedSocket() socket: any) {}
@@ -21,6 +20,6 @@ describe('@ConnectedSocket', () => {
         pipes: [],
       },
     };
-    expect(argsMetadata).to.be.eql(expectedMetadata);
+    expect(argsMetadata).toEqual(expectedMetadata);
   });
 });

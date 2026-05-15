@@ -1,12 +1,11 @@
-import { expect } from 'chai';
-import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception';
+import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception.js';
 import {
   INVALID_MODULE_MESSAGE,
   UNDEFINED_MODULE_MESSAGE,
   UNKNOWN_EXPORT_MESSAGE,
-} from '../../../errors/messages';
-import { Module } from '../../../injector/module';
-import { stringCleaner } from '../../utils/string.cleaner';
+} from '../../../errors/messages.js';
+import { Module } from '../../../injector/module.js';
+import { stringCleaner } from '../../utils/string.cleaner.js';
 
 describe('Error Messages', () => {
   const CatsModule = { name: 'CatsModule' };
@@ -37,7 +36,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the provide token', () => {
       const expectedResult =
@@ -60,7 +59,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the provide token as double-quoted string for string-based tokens', () => {
       const expectedResult =
@@ -84,7 +83,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the function name', () => {
       const expectedResult =
@@ -107,7 +106,7 @@ describe('Error Messages', () => {
           dependencies: ['', CatFunction],
         }).message,
       );
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should use "+" if unknown dependency name', () => {
       const expectedResult =
@@ -130,7 +129,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the module name', () => {
       const expectedResult =
@@ -166,7 +165,7 @@ describe('Error Messages', () => {
         ).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the symbol name of the provider', () => {
       const expectedResult =
@@ -189,7 +188,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the symbol dependency of the provider', () => {
       const expectedResult =
@@ -212,7 +211,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should detect likely import type issue and provide specific guidance', () => {
       const expectedResult =
@@ -238,7 +237,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should detect import type issue with mixed dependencies', () => {
       const expectedResult =
@@ -267,7 +266,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display class token name in argument label when name is provided', () => {
       class UserRepository {}
@@ -359,7 +358,7 @@ describe('Error Messages', () => {
         UNKNOWN_EXPORT_MESSAGE('TestService', 'TestModule'),
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
   });
 
@@ -379,7 +378,7 @@ Scope [AppModule -> CatsModule]`);
         UNDEFINED_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule]),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
     });
   });
 
@@ -395,7 +394,7 @@ Scope [AppModule -> CatsModule]`);
         INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule]),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
     });
   });
 });

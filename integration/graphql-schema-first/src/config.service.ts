@@ -6,7 +6,7 @@ import { join } from 'path';
 export class ConfigService implements GqlOptionsFactory {
   createGqlOptions(): GqlModuleOptions {
     return {
-      typePaths: [join(__dirname, '**', '*.graphql')],
+      typePaths: [join(import.meta.dirname, '**', '*.graphql')],
     };
   }
 }

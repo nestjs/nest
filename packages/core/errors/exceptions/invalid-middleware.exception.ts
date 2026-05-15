@@ -1,5 +1,5 @@
-import { INVALID_MIDDLEWARE_MESSAGE } from '../messages';
-import { RuntimeException } from './runtime.exception';
+import { INVALID_MIDDLEWARE_MESSAGE } from '../messages.js';
+import { RuntimeException } from './runtime.exception.js';
 
 export class InvalidMiddlewareException extends RuntimeException {
   constructor(name: string) {

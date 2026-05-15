@@ -1,12 +1,12 @@
 import { NotFoundException, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Args, Mutation, Query, Resolver, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
-import { AuthGuard } from '../common/guards/auth.guard';
-import { DataInterceptor } from '../common/interceptors/data.interceptor';
-import { NewRecipeInput } from './dto/new-recipe.input';
-import { RecipesArgs } from './dto/recipes.args';
-import { Recipe } from './models/recipe';
-import { RecipesService } from './recipes.service';
+import { AuthGuard } from '../common/guards/auth.guard.js';
+import { DataInterceptor } from '../common/interceptors/data.interceptor.js';
+import { NewRecipeInput } from './dto/new-recipe.input.js';
+import { RecipesArgs } from './dto/recipes.args.js';
+import { Recipe } from './models/recipe.js';
+import { RecipesService } from './recipes.service.js';
 
 const pubSub = new PubSub();
 

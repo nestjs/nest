@@ -5,7 +5,7 @@ import {
   Module,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 
 const RETURN_VALUE_A = 'test_A';
 const RETURN_VALUE_B = 'test_B';

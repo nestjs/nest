@@ -4,8 +4,8 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 /**
  * `.enableVersioning()` uses `VersioningType.URI` type by default
@@ -16,7 +16,7 @@ describe('Default Versioning behavior', () => {
   // ======================================================================== //
   describe('Express', () => {
     let app: INestApplication;
-    before(async () => {
+    beforeAll(async () => {
       const moduleRef = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
@@ -48,7 +48,7 @@ describe('Default Versioning behavior', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
@@ -56,7 +56,7 @@ describe('Default Versioning behavior', () => {
   // ======================================================================== //
   describe('Fastify', () => {
     let app: INestApplication;
-    before(async () => {
+    beforeAll(async () => {
       const moduleRef = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
@@ -91,7 +91,7 @@ describe('Default Versioning behavior', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });

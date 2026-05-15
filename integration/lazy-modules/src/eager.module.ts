@@ -1,5 +1,5 @@
-import { Injectable, Module } from '@nestjs/common';
-import { GlobalService } from './global.module';
+import { Module, Injectable } from '@nestjs/common';
+import { GlobalService } from './global.module.js';
 
 @Injectable()
 export class EagerService {

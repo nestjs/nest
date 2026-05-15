@@ -1,5 +1,8 @@
-import { CLIENT_CONFIGURATION_METADATA, CLIENT_METADATA } from '../constants';
-import { ClientOptions } from '../interfaces/client-metadata.interface';
+import {
+  CLIENT_CONFIGURATION_METADATA,
+  CLIENT_METADATA,
+} from '../constants.js';
+import { ClientOptions } from '../interfaces/client-metadata.interface.js';
 
 /**
  * Attaches the `ClientProxy` instance to the given property

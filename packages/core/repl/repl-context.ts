@@ -1,12 +1,12 @@
 import {
-  INestApplicationContext,
-  InjectionToken,
+  type INestApplicationContext,
+  type InjectionToken,
   Logger,
 } from '@nestjs/common';
-import { ApplicationConfig } from '../application-config';
-import { ModuleRef, NestContainer } from '../injector';
-import { InternalCoreModule } from '../injector/internal-core-module/internal-core-module';
-import { Module } from '../injector/module';
+import { ApplicationConfig } from '../application-config.js';
+import { ModuleRef, NestContainer } from '../injector/index.js';
+import { InternalCoreModule } from '../injector/internal-core-module/internal-core-module.js';
+import { Module } from '../injector/module.js';
 import {
   DebugReplFn,
   GetReplFn,
@@ -14,9 +14,9 @@ import {
   MethodsReplFn,
   ResolveReplFn,
   SelectReplFn,
-} from './native-functions';
-import { ReplFunction } from './repl-function';
-import type { ReplFunctionClass } from './repl.interfaces';
+} from './native-functions/index.js';
+import { ReplFunction } from './repl-function.js';
+import type { ReplFunctionClass } from './repl.interfaces.js';
 
 type ModuleKey = string;
 export type ModuleDebugEntry = {

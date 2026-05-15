@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Gateway Timeout* type errors.
@@ -37,13 +37,13 @@ export class GatewayTimeoutException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Gateway Timeout',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Gateway Timeout', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.GATEWAY_TIMEOUT,
       ),
       HttpStatus.GATEWAY_TIMEOUT,

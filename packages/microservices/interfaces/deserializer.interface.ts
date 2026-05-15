@@ -2,7 +2,7 @@ import {
   IncomingEvent,
   IncomingRequest,
   IncomingResponse,
-} from './packet.interface';
+} from './packet.interface.js';
 
 /**
  * @publicApi

@@ -5,7 +5,7 @@
  * MIT Licensed
  */
 
-export * from './interfaces';
-export * from './test';
-export * from './testing-module';
-export * from './testing-module.builder';
+export * from './interfaces/index.js';
+export * from './test.js';
+export * from './testing-module.js';
+export * from './testing-module.builder.js';

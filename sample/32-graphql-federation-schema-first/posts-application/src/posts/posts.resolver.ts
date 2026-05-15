@@ -6,8 +6,8 @@ import {
   ResolveField,
   Resolver,
 } from '@nestjs/graphql';
-import { Post } from './posts.interfaces';
-import { PostsService } from './posts.service';
+import { Post } from './posts.interfaces.js';
+import { PostsService } from './posts.service.js';
 
 @Resolver('Post')
 export class PostsResolver {

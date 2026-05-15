@@ -1,11 +1,12 @@
+import { MockInstance } from 'vitest';
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Job } from 'bull';
-import { AudioProcessor } from './audio.processor';
+import { AudioProcessor } from './audio.processor.js';
 
 describe('AudioProcessor', () => {
   let audioProcessor: AudioProcessor;
-  let loggerSpy: jest.SpyInstance;
+  let loggerSpy: MockInstance;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -13,11 +14,11 @@ describe('AudioProcessor', () => {
     }).compile();
 
     audioProcessor = module.get<AudioProcessor>(AudioProcessor);
-    loggerSpy = jest.spyOn(Logger.prototype, 'debug').mockImplementation();
+    loggerSpy = vi.spyOn(Logger.prototype, 'debug').mockImplementation();
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('handleTranscode', () => {

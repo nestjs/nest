@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { EagerService } from './eager.module';
-import { GlobalService } from './global.module';
-import { RequestService } from './request.service';
+import { EagerService } from './eager.module.js';
+import { GlobalService } from './global.module.js';
+import { RequestService } from './request.service.js';
 
 @Module({
   imports: [],

@@ -1,23 +1,23 @@
-import { InjectionToken } from '@nestjs/common';
-import { ApplicationConfig } from '../application-config';
-import { ExternalContextCreator } from '../helpers/external-context-creator';
-import { HttpAdapterHost } from '../helpers/http-adapter-host';
-import { INQUIRER } from '../injector/inquirer/inquirer-constants';
-import { LazyModuleLoader } from '../injector/lazy-module-loader/lazy-module-loader';
-import { ModuleRef } from '../injector/module-ref';
-import { ModulesContainer } from '../injector/modules-container';
-import { REQUEST } from '../router/request/request-constants';
-import { Reflector } from '../services/reflector.service';
-import { DeterministicUuidRegistry } from './deterministic-uuid-registry';
-import { Edge } from './interfaces/edge.interface';
-import { Entrypoint } from './interfaces/entrypoint.interface';
+import type { InjectionToken } from '@nestjs/common';
+import { ApplicationConfig } from '../application-config.js';
+import { ExternalContextCreator } from '../helpers/external-context-creator.js';
+import { HttpAdapterHost } from '../helpers/http-adapter-host.js';
+import { INQUIRER } from '../injector/inquirer/inquirer-constants.js';
+import { LazyModuleLoader } from '../injector/lazy-module-loader/lazy-module-loader.js';
+import { ModuleRef } from '../injector/module-ref.js';
+import { ModulesContainer } from '../injector/modules-container.js';
+import { REQUEST } from '../router/request/request-constants.js';
+import { Reflector } from '../services/reflector.service.js';
+import { DeterministicUuidRegistry } from './deterministic-uuid-registry.js';
+import { Edge } from './interfaces/edge.interface.js';
+import { Entrypoint } from './interfaces/entrypoint.interface.js';
 import {
   Extras,
   OrphanedEnhancerDefinition,
-} from './interfaces/extras.interface';
-import { Node } from './interfaces/node.interface';
-import { SerializedGraphJson } from './interfaces/serialized-graph-json.interface';
-import { SerializedGraphMetadata } from './interfaces/serialized-graph-metadata.interface';
+} from './interfaces/extras.interface.js';
+import { Node } from './interfaces/node.interface.js';
+import { SerializedGraphJson } from './interfaces/serialized-graph-json.interface.js';
+import { SerializedGraphMetadata } from './interfaces/serialized-graph-metadata.interface.js';
 
 export type SerializedGraphStatus = 'partial' | 'complete';
 type WithOptionalId<T extends Record<'id', string>> = Omit<T, 'id'> &

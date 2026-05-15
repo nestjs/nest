@@ -1,5 +1,5 @@
-import { Type } from '../type.interface';
-import { MiddlewareConfigProxy } from './middleware-config-proxy.interface';
+import { Type } from '../type.interface.js';
+import { MiddlewareConfigProxy } from './middleware-config-proxy.interface.js';
 
 /**
  * Interface defining method for applying user defined middleware to routes.

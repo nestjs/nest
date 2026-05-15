@@ -1,18 +1,18 @@
 import {
-  ArgumentsHost,
-  ExceptionFilter,
+  type ArgumentsHost,
+  type ExceptionFilter,
   HttpException,
-  HttpServer,
+  type HttpServer,
   HttpStatus,
   Inject,
   IntrinsicException,
   Logger,
   Optional,
 } from '@nestjs/common';
-import { isObject } from '@nestjs/common/utils/shared.utils';
-import { AbstractHttpAdapter } from '../adapters';
-import { MESSAGES } from '../constants';
-import { HttpAdapterHost } from '../helpers/http-adapter-host';
+import { AbstractHttpAdapter } from '../adapters/index.js';
+import { MESSAGES } from '../constants.js';
+import { HttpAdapterHost } from '../helpers/http-adapter-host.js';
+import { isObject } from '@nestjs/common/internal';
 
 export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
   private static readonly logger = new Logger('ExceptionsHandler');
@@ -79,10 +79,28 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
   }
 
   /**
-   * Checks if the thrown error comes from the "http-errors" library.
+   * Checks if the thrown error is a FastifyError or comes from the "http-errors" library.
    * @param err error object
    */
   public isHttpError(err: any): err is { statusCode: number; message: string } {
-    return err?.statusCode && err?.message;
+    if (!err || typeof err !== 'object') {
+      return false;
+    }
+
+    if (
+      err.constructor.name === 'FastifyError' &&
+      typeof err.code === 'string' &&
+      typeof err.statusCode === 'number'
+    ) {
+      return true;
+    }
+
+    // "http-errors" error signature
+    return (
+      typeof err.expose === 'boolean' &&
+      typeof err.statusCode === 'number' &&
+      err.status === err.statusCode &&
+      err instanceof Error
+    );
   }
 }

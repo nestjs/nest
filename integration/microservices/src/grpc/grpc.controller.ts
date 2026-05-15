@@ -3,6 +3,7 @@ import {
   Client,
   ClientGrpc,
   ClientGrpcProxy,
+  GrpcAlreadyExistsException,
   GrpcMethod,
   GrpcStreamCall,
   GrpcStreamMethod,
@@ -24,7 +25,7 @@ export class GrpcController {
   constructor() {
     this.customClient = new ErrorHandlingProxy({
       package: 'math',
-      protoPath: join(__dirname, 'math.proto'),
+      protoPath: join(import.meta.dirname, 'math.proto'),
     });
   }
 
@@ -32,7 +33,7 @@ export class GrpcController {
     transport: Transport.GRPC,
     options: {
       package: 'math',
-      protoPath: join(__dirname, 'math.proto'),
+      protoPath: join(import.meta.dirname, 'math.proto'),
     },
   })
   client: ClientGrpc;
@@ -42,8 +43,8 @@ export class GrpcController {
     options: {
       package: ['math', 'math2'],
       protoPath: [
-        join(__dirname, 'math.proto'),
-        join(__dirname, 'math2.proto'),
+        join(import.meta.dirname, 'math.proto'),
+        join(import.meta.dirname, 'math2.proto'),
       ],
     },
   })
@@ -105,6 +106,11 @@ export class GrpcController {
     return {
       result: request.dividend / request.divisor,
     };
+  }
+
+  @GrpcMethod('Math')
+  async alreadyExists(): Promise<any> {
+    throw new GrpcAlreadyExistsException('email already exists');
   }
 
   // contrived example meant to show when an error is encountered, like dividing by zero, the

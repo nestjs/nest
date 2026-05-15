@@ -1,15 +1,14 @@
-import { expect } from 'chai';
-import { Version, VersioningType } from '../../../common';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
+import { Version, VersioningType } from '../../../common/index.js';
+import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import {
   Get,
   RequestMapping,
-} from '../../../common/decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { MiddlewareConfiguration } from '../../../common/interfaces';
-import { ApplicationConfig } from '../../application-config';
-import { NestContainer } from '../../injector/container';
-import { RoutesMapper } from '../../middleware/routes-mapper';
+} from '../../../common/decorators/http/request-mapping.decorator.js';
+import { RequestMethod } from '../../../common/enums/request-method.enum.js';
+import { MiddlewareConfiguration } from '../../../common/interfaces/index.js';
+import { ApplicationConfig } from '../../application-config.js';
+import { NestContainer } from '../../injector/container.js';
+import { RoutesMapper } from '../../middleware/routes-mapper.js';
 
 describe('RoutesMapper', () => {
   @Controller('test')
@@ -42,15 +41,15 @@ describe('RoutesMapper', () => {
       ],
     };
 
-    expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).to.deep.equal([
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).toEqual([
       { path: '/test', method: RequestMethod.GET },
     ]);
 
-    expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).toEqual([
       { path: '/versioned', version: '1', method: RequestMethod.GET },
     ]);
 
-    expect(mapper.mapRouteToRouteInfo(config.forRoutes[2])).to.deep.equal([
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[2])).toEqual([
       { path: '/test/test', method: RequestMethod.GET },
       { path: '/test/another', method: RequestMethod.DELETE },
       { path: '/test/versioned', method: RequestMethod.GET, version: '1' },
@@ -74,10 +73,10 @@ describe('RoutesMapper', () => {
       ],
     };
 
-    expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).to.deep.equal([
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[0])).toEqual([
       { path: '/test', method: RequestMethod.GET },
     ]);
-    expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).to.deep.equal([
+    expect(mapper.mapRouteToRouteInfo(config.forRoutes[1])).toEqual([
       { path: '/test/test', method: RequestMethod.GET },
       { path: '/test/another', method: RequestMethod.DELETE },
       { path: '/test2/test', method: RequestMethod.GET },
@@ -113,18 +112,16 @@ describe('RoutesMapper', () => {
   }
 
   it('should map a versioned controller to the corresponding route info objects (single version)', () => {
-    expect(mapper.mapRouteToRouteInfo(VersionedController)).to.deep.equal([
+    expect(mapper.mapRouteToRouteInfo(VersionedController)).toEqual([
       { path: '/versioned/', version: '1', method: RequestMethod.GET },
       { path: '/versioned/override', version: '2', method: RequestMethod.GET },
     ]);
   });
 
   it('should map a versioned controller to the corresponding route info objects (multiple versions)', () => {
-    expect(mapper.mapRouteToRouteInfo(MultipleVersionController)).to.deep.equal(
-      [
-        { path: '/multiple', version: '1', method: RequestMethod.GET },
-        { path: '/multiple', version: '2', method: RequestMethod.GET },
-      ],
-    );
+    expect(mapper.mapRouteToRouteInfo(MultipleVersionController)).toEqual([
+      { path: '/multiple', version: '1', method: RequestMethod.GET },
+      { path: '/multiple', version: '2', method: RequestMethod.GET },
+    ]);
   });
 });

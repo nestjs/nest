@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Method Not Allowed* type errors.
@@ -37,13 +37,13 @@ export class MethodNotAllowedException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Method Not Allowed',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Method Not Allowed', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.METHOD_NOT_ALLOWED,
       ),
       HttpStatus.METHOD_NOT_ALLOWED,

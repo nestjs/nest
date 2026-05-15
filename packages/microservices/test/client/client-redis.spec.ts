@@ -1,7 +1,4 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { ClientRedis } from '../../client/client-redis';
-import { RedisEventsMap } from '../../events/redis.events';
+import { ClientRedis } from '../../client/client-redis.js';
 
 describe('ClientRedis', () => {
   const test = 'test';
@@ -11,33 +8,33 @@ describe('ClientRedis', () => {
   describe('getRequestPattern', () => {
     it(`should leave pattern as it is`, () => {
       const expectedResult = test;
-      expect(client.getRequestPattern(test)).to.equal(expectedResult);
+      expect(client.getRequestPattern(test)).toBe(expectedResult);
     });
   });
   describe('getReplyPattern', () => {
     it(`should append ".reply" to string`, () => {
       const expectedResult = test + '.reply';
-      expect(client.getReplyPattern(test)).to.equal(expectedResult);
+      expect(client.getReplyPattern(test)).toBe(expectedResult);
     });
   });
   describe('publish', () => {
     const pattern = 'test';
     const msg = { pattern, data: 'data' };
-    let subscribeSpy: sinon.SinonSpy,
-      publishSpy: sinon.SinonSpy,
-      onSpy: sinon.SinonSpy,
-      removeListenerSpy: sinon.SinonSpy,
-      unsubscribeSpy: sinon.SinonSpy,
-      connectSpy: sinon.SinonSpy,
+    let subscribeSpy: ReturnType<typeof vi.fn>,
+      publishSpy: ReturnType<typeof vi.fn>,
+      onSpy: ReturnType<typeof vi.fn>,
+      removeListenerSpy: ReturnType<typeof vi.fn>,
+      unsubscribeSpy: ReturnType<typeof vi.fn>,
+      connectSpy: ReturnType<typeof vi.fn>,
       sub: Record<string, Function>,
       pub: Record<string, Function>;
 
     beforeEach(() => {
-      subscribeSpy = sinon.spy((name, fn) => fn());
-      publishSpy = sinon.spy();
-      onSpy = sinon.spy();
-      removeListenerSpy = sinon.spy();
-      unsubscribeSpy = sinon.spy();
+      subscribeSpy = vi.fn((name, fn) => fn());
+      publishSpy = vi.fn();
+      onSpy = vi.fn();
+      removeListenerSpy = vi.fn();
+      unsubscribeSpy = vi.fn();
 
       sub = {
         subscribe: subscribeSpy,
@@ -48,74 +45,79 @@ describe('ClientRedis', () => {
       pub = { publish: publishSpy };
       untypedClient.subClient = sub;
       untypedClient.pubClient = pub;
-      connectSpy = sinon.spy(client, 'connect');
+      untypedClient.connectionPromise = Promise.resolve();
+      connectSpy = vi.spyOn(client, 'connect');
     });
     afterEach(() => {
-      connectSpy.restore();
+      connectSpy.mockRestore();
+      untypedClient.connectionPromise = null;
     });
     it('should subscribe to response pattern name', () => {
       client['publish'](msg, () => {});
-      expect(subscribeSpy.calledWith(`${pattern}.reply`)).to.be.true;
+      expect(subscribeSpy.mock.calls[0][0]).toEqual(`${pattern}.reply`);
     });
     it('should publish stringified message to request pattern name', () => {
       client['publish'](msg, () => {});
-      expect(publishSpy.calledWith(pattern, JSON.stringify(msg))).to.be.true;
+      expect(publishSpy).toHaveBeenCalledWith(pattern, JSON.stringify(msg));
     });
     describe('on error', () => {
-      let assignPacketIdStub: sinon.SinonStub;
+      let assignPacketIdStub: ReturnType<typeof vi.fn>;
       beforeEach(() => {
-        assignPacketIdStub = sinon
-          .stub(client, 'assignPacketId' as any)
-          .callsFake(() => {
+        assignPacketIdStub = vi
+          .spyOn(client, 'assignPacketId' as any)
+          .mockImplementation(() => {
             throw new Error();
           });
       });
       afterEach(() => {
-        assignPacketIdStub.restore();
+        assignPacketIdStub.mockRestore();
       });
 
       it('should call callback', () => {
-        const callback = sinon.spy();
+        const callback = vi.fn();
         client['publish'](msg, callback);
 
-        expect(callback.called).to.be.true;
-        expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
+        expect(callback).toHaveBeenCalled();
+        expect(callback.mock.calls[0][0].err).toBeInstanceOf(Error);
       });
     });
     describe('dispose callback', () => {
-      let assignStub: sinon.SinonStub, getReplyPatternStub: sinon.SinonStub;
-      let callback: sinon.SinonSpy, subscription;
+      let assignStub: ReturnType<typeof vi.fn>,
+        getReplyPatternStub: ReturnType<typeof vi.fn>;
+      let callback: ReturnType<typeof vi.fn>, subscription;
 
       const channel = 'channel';
       const id = '1';
 
       beforeEach(async () => {
-        callback = sinon.spy();
-        assignStub = sinon
-          .stub(client, 'assignPacketId' as any)
-          .callsFake(packet => Object.assign(packet as object, { id }));
+        callback = vi.fn();
+        assignStub = vi
+          .spyOn(client, 'assignPacketId' as any)
+          .mockImplementation(packet =>
+            Object.assign(packet as object, { id }),
+          );
 
-        getReplyPatternStub = sinon
-          .stub(client, 'getReplyPattern')
-          .callsFake(() => channel);
+        getReplyPatternStub = vi
+          .spyOn(client, 'getReplyPattern')
+          .mockImplementation(() => channel);
         subscription = client['publish'](msg, callback);
         subscription(channel, JSON.stringify({ isDisposed: true, id }));
       });
       afterEach(() => {
-        assignStub.restore();
-        getReplyPatternStub.restore();
+        assignStub.mockRestore();
+        getReplyPatternStub.mockRestore();
       });
 
       it('should unsubscribe to response pattern name', () => {
-        expect(unsubscribeSpy.calledWith(channel)).to.be.true;
+        expect(unsubscribeSpy).toHaveBeenCalledWith(channel);
       });
       it('should clean routingMap', () => {
-        expect(client['routingMap'].has(id)).to.be.false;
+        expect(client['routingMap'].has(id)).toBe(false);
       });
     });
   });
   describe('createResponseCallback', () => {
-    let callback: sinon.SinonSpy, subscription; // : ReturnType<typeof client['createResponseCallback']>;
+    let callback: ReturnType<typeof vi.fn>, subscription; // : ReturnType<typeof client['createResponseCallback']>;
     const responseMessage = {
       response: 'test',
       id: '1',
@@ -123,7 +125,7 @@ describe('ClientRedis', () => {
 
     describe('not completed', () => {
       beforeEach(async () => {
-        callback = sinon.spy();
+        callback = vi.fn();
 
         subscription = client.createResponseCallback();
         client['routingMap'].set(responseMessage.id, callback);
@@ -133,17 +135,15 @@ describe('ClientRedis', () => {
         );
       });
       it('should call callback with expected arguments', () => {
-        expect(
-          callback.calledWith({
-            err: undefined,
-            response: responseMessage.response,
-          }),
-        ).to.be.true;
+        expect(callback).toHaveBeenCalledWith({
+          err: undefined,
+          response: responseMessage.response,
+        });
       });
     });
     describe('disposed and "id" is correct', () => {
       beforeEach(async () => {
-        callback = sinon.spy();
+        callback = vi.fn();
         subscription = client.createResponseCallback();
         client['routingMap'].set(responseMessage.id, callback);
         subscription(
@@ -158,64 +158,59 @@ describe('ClientRedis', () => {
       });
 
       it('should call callback with dispose param', () => {
-        expect(callback.called).to.be.true;
-        expect(
-          callback.calledWith({
-            isDisposed: true,
-            response: responseMessage.response,
-            err: undefined,
-          }),
-        ).to.be.true;
+        expect(callback).toHaveBeenCalledWith({
+          isDisposed: true,
+          response: responseMessage.response,
+          err: undefined,
+        });
       });
     });
     describe('disposed and "id" is incorrect', () => {
       beforeEach(() => {
-        callback = sinon.spy();
+        callback = vi.fn();
         subscription = client.createResponseCallback();
         subscription('channel', Buffer.from(JSON.stringify(responseMessage)));
       });
 
       it('should not call callback', () => {
-        expect(callback.called).to.be.false;
+        expect(callback).not.toHaveBeenCalled();
       });
     });
     describe('custom binary format (not json)', () => {
       it('should use buffer directly without parsing it as json', async () => {
         const clientWithBuffers = new ClientRedis({ returnBuffers: true });
-        const callback = sinon.spy();
+        const callback = vi.fn();
         const str = `${responseMessage.id}|${responseMessage.response}`;
         const bufferMessage = Buffer.from(str);
-        sinon
-          .stub(Reflect.get(clientWithBuffers, 'deserializer'), 'deserialize')
-          .resolves({
-            ...responseMessage,
-            response: bufferMessage,
-          });
+        vi.spyOn(
+          Reflect.get(clientWithBuffers, 'deserializer'),
+          'deserialize',
+        ).mockResolvedValue({
+          ...responseMessage,
+          response: bufferMessage,
+        });
         const subscription = clientWithBuffers.createResponseCallback();
 
         clientWithBuffers['routingMap'].set(responseMessage.id, callback);
         await subscription('channel', bufferMessage as any);
 
-        expect(callback.called).to.be.true;
-        expect(
-          callback.calledWith({
-            err: undefined,
-            response: bufferMessage,
-          }),
-        ).to.be.true;
+        expect(callback).toHaveBeenCalledWith({
+          err: undefined,
+          response: bufferMessage,
+        });
       });
     });
   });
   describe('close', () => {
     const untypedClient = client as any;
 
-    let pubClose: sinon.SinonSpy;
-    let subClose: sinon.SinonSpy;
+    let pubClose: ReturnType<typeof vi.fn>;
+    let subClose: ReturnType<typeof vi.fn>;
     let pub: any, sub: any;
 
     beforeEach(() => {
-      pubClose = sinon.spy();
-      subClose = sinon.spy();
+      pubClose = vi.fn();
+      subClose = vi.fn();
       pub = { quit: pubClose };
       sub = { quit: subClose };
       untypedClient.pubClient = pub;
@@ -223,21 +218,21 @@ describe('ClientRedis', () => {
     });
     it('should close "pub" when it is not null', async () => {
       await client.close();
-      expect(pubClose.called).to.be.true;
+      expect(pubClose).toHaveBeenCalled();
     });
     it('should not close "pub" when it is null', async () => {
       untypedClient.pubClient = null;
       await client.close();
-      expect(pubClose.called).to.be.false;
+      expect(pubClose).not.toHaveBeenCalled();
     });
     it('should close "sub" when it is not null', async () => {
       await client.close();
-      expect(subClose.called).to.be.true;
+      expect(subClose).toHaveBeenCalled();
     });
     it('should not close "sub" when it is null', async () => {
       untypedClient.subClient = null;
       await client.close();
-      expect(subClose.called).to.be.false;
+      expect(subClose).not.toHaveBeenCalled();
     });
     it('should have isManuallyClosed set to true when "end" event is handled during close', async () => {
       let endHandler: Function | undefined;
@@ -247,7 +242,7 @@ describe('ClientRedis', () => {
       sub.quit = async () => {
         if (endHandler) {
           endHandler();
-          expect(untypedClient.isManuallyClosed).to.be.true;
+          expect(untypedClient.isManuallyClosed).toBe(true);
         }
       };
       client.registerEndListener(sub);
@@ -256,7 +251,7 @@ describe('ClientRedis', () => {
 
     it('should not log error when "end" event is handled during close', async () => {
       let endHandler: Function | undefined;
-      const logError = sinon.spy(untypedClient.logger, 'error');
+      const logError = vi.spyOn(untypedClient.logger, 'error');
       sub.on = (event, handler) => {
         if (event === 'end') endHandler = handler;
       };
@@ -267,15 +262,16 @@ describe('ClientRedis', () => {
       };
       client.registerEndListener(sub);
       await client.close();
-      expect(logError.called).to.be.false;
+      expect(logError).not.toHaveBeenCalled();
     });
   });
   describe('connect', () => {
-    let createClientSpy: sinon.SinonSpy;
-    let registerErrorListenerSpy: sinon.SinonSpy;
+    let createClientSpy: ReturnType<typeof vi.fn>;
+    let registerErrorListenerSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-      createClientSpy = sinon.stub(client, 'createClient').callsFake(
+      untypedClient.connectionPromise = null;
+      createClientSpy = vi.spyOn(client, 'createClient').mockImplementation(
         () =>
           ({
             on: () => null,
@@ -284,53 +280,59 @@ describe('ClientRedis', () => {
             connect: () => Promise.resolve(),
           }) as any,
       );
-      registerErrorListenerSpy = sinon.spy(client, 'registerErrorListener');
+      registerErrorListenerSpy = vi.spyOn(client, 'registerErrorListener');
 
       await client.connect();
       client['pubClient'] = null;
     });
     afterEach(() => {
-      createClientSpy.restore();
-      registerErrorListenerSpy.restore();
+      createClientSpy.mockRestore();
+      registerErrorListenerSpy.mockRestore();
     });
     it('should call "createClient" twice', () => {
-      expect(createClientSpy.calledTwice).to.be.true;
+      expect(createClientSpy).toHaveBeenCalledTimes(2);
     });
     it('should call "registerErrorListener" twice', () => {
-      expect(registerErrorListenerSpy.calledTwice).to.be.true;
+      expect(registerErrorListenerSpy).toHaveBeenCalledTimes(2);
     });
   });
   describe('registerErrorListener', () => {
     it('should bind error event handler', () => {
-      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const callback = vi
+        .fn()
+        .mockImplementation((_, fn) => fn({ code: 'test' }));
       const emitter = {
         addListener: callback,
       };
       client.registerErrorListener(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(RedisEventsMap.ERROR);
+      expect(callback.mock.calls[0][0]).toEqual('error');
     });
   });
   describe('registerEndListener', () => {
     it('should bind end event handler', () => {
-      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const callback = vi
+        .fn()
+        .mockImplementation((_, fn) => fn({ code: 'test' }));
       const emitter = {
         on: callback,
       };
       client.registerEndListener(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(RedisEventsMap.END);
+      expect(callback.mock.calls[0][0]).toEqual('end');
     });
   });
   describe('registerReadyListener', () => {
     it('should bind ready event handler', () => {
-      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const callback = vi
+        .fn()
+        .mockImplementation((_, fn) => fn({ code: 'test' }));
       const emitter = {
         on: callback,
       };
       client.registerReadyListener(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(RedisEventsMap.READY);
+      expect(callback.mock.calls[0][0]).toEqual('ready');
     });
     it('should register "message" event when returnBuffers is not set', () => {
-      const onSpy = sinon.spy();
+      const onSpy = vi.fn();
       const client = new ClientRedis({});
       const untypedClient = client as any;
       const emitter = {
@@ -341,14 +343,14 @@ describe('ClientRedis', () => {
       untypedClient.subClient = emitter;
 
       client.registerReadyListener(emitter as any);
-      const readyHandler = onSpy.getCall(0).args[1];
+      const readyHandler = onSpy.mock.calls[0][1];
       readyHandler();
 
-      expect(onSpy.calledTwice).to.be.true;
-      expect(onSpy.getCall(1).args[0]).to.equal('message');
+      expect(onSpy).toHaveBeenCalledTimes(2);
+      expect(onSpy.mock.calls[1][0]).toEqual('message');
     });
     it('should register "message" event when returnBuffers is false', () => {
-      const onSpy = sinon.spy();
+      const onSpy = vi.fn();
       const client = new ClientRedis({ returnBuffers: false });
       const untypedClient = client as any;
 
@@ -360,14 +362,14 @@ describe('ClientRedis', () => {
       untypedClient.subClient = emitter;
 
       client.registerReadyListener(emitter as any);
-      const readyHandler = onSpy.getCall(0).args[1];
+      const readyHandler = onSpy.mock.calls[0][1];
       readyHandler();
 
-      expect(onSpy.calledTwice).to.be.true;
-      expect(onSpy.getCall(1).args[0]).to.equal('message');
+      expect(onSpy).toHaveBeenCalledTimes(2);
+      expect(onSpy.mock.calls[1][0]).toEqual('message');
     });
     it('should register "messageBuffer" event when returnBuffers is true', () => {
-      const onSpy = sinon.spy();
+      const onSpy = vi.fn();
       const clientWithBuffers = new ClientRedis({ returnBuffers: true });
       const untypedClientWithBuffers = clientWithBuffers as any;
 
@@ -379,35 +381,35 @@ describe('ClientRedis', () => {
       untypedClientWithBuffers.subClient = emitter;
 
       clientWithBuffers.registerReadyListener(emitter as any);
-      const readyHandler = onSpy.getCall(0).args[1];
+      const readyHandler = onSpy.mock.calls[0][1];
       readyHandler();
 
-      expect(onSpy.calledTwice).to.be.true;
-      expect(onSpy.getCall(1).args[0]).to.equal('messageBuffer');
+      expect(onSpy).toHaveBeenCalledTimes(2);
+      expect(onSpy.mock.calls[1][0]).toEqual('messageBuffer');
     });
   });
   describe('registerReconnectListener', () => {
     it('should bind reconnect event handler', () => {
-      const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
+      const callback = vi
+        .fn()
+        .mockImplementation((_, fn) => fn({ code: 'test' }));
       const emitter = {
         on: callback,
       };
       client.registerReconnectListener(emitter as any);
-      expect(callback.getCall(0).args[0]).to.be.eql(
-        RedisEventsMap.RECONNECTING,
-      );
+      expect(callback.mock.calls[0][0]).toEqual('reconnecting');
     });
   });
   describe('getClientOptions', () => {
     it('should return options object with "retryStrategy" and call "createRetryStrategy"', () => {
-      const createSpy = sinon.spy(client, 'createRetryStrategy');
+      const createSpy = vi.spyOn(client, 'createRetryStrategy');
       const { retryStrategy } = client.getClientOptions()!;
       try {
         retryStrategy!({} as any);
       } catch {
         // No empty
       }
-      expect(createSpy.called).to.be.true;
+      expect(createSpy).toHaveBeenCalled();
     });
   });
   describe('createRetryStrategy', () => {
@@ -415,7 +417,7 @@ describe('ClientRedis', () => {
       it('should return undefined', () => {
         untypedClient.isManuallyClosed = true;
         const result = client.createRetryStrategy(0);
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('when "retryAttempts" does not exist', () => {
@@ -424,7 +426,7 @@ describe('ClientRedis', () => {
         untypedClient.options.options = {};
         untypedClient.options.options.retryAttempts = undefined;
         const result = client.createRetryStrategy(1);
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('when "attempts" count is max', () => {
@@ -433,7 +435,7 @@ describe('ClientRedis', () => {
         untypedClient.options.options = {};
         untypedClient.options.options.retryAttempts = 3;
         const result = client.createRetryStrategy(4);
-        expect(result).to.be.undefined;
+        expect(result).toBeUndefined();
       });
     });
     describe('otherwise', () => {
@@ -443,16 +445,16 @@ describe('ClientRedis', () => {
         untypedClient.options.retryAttempts = 3;
         untypedClient.options.retryDelay = 3;
         const result = client.createRetryStrategy(2);
-        expect(result).to.be.eql(untypedClient.options.retryDelay);
+        expect(result).toEqual(untypedClient.options.retryDelay);
       });
     });
   });
   describe('dispatchEvent', () => {
     const msg = { pattern: 'pattern', data: 'data' };
-    let publishStub: sinon.SinonStub, pubClient;
+    let publishStub: ReturnType<typeof vi.fn>, pubClient;
 
     beforeEach(() => {
-      publishStub = sinon.stub();
+      publishStub = vi.fn();
       pubClient = {
         publish: publishStub,
       };
@@ -460,32 +462,32 @@ describe('ClientRedis', () => {
     });
 
     it('should publish packet', async () => {
-      publishStub.callsFake((a, b, c) => c());
+      publishStub.mockImplementation((a, b, c) => c());
       await client['dispatchEvent'](msg);
 
-      expect(publishStub.called).to.be.true;
+      expect(publishStub).toHaveBeenCalled();
     });
     it('should throw error', async () => {
-      publishStub.callsFake((a, b, c) => c(new Error()));
+      publishStub.mockImplementation((a, b, c) => c(new Error()));
       client['dispatchEvent'](msg).catch(err =>
-        expect(err).to.be.instanceOf(Error),
+        expect(err).toBeInstanceOf(Error),
       );
     });
   });
 
   describe('createClient', () => {
-    it('should not set clientInfoTag when not provided', () => {
+    it('should not set clientInfoTag when not provided', async () => {
       const clientWithoutTag = new ClientRedis({});
-      const redisClient = clientWithoutTag.createClient();
+      const redisClient = await clientWithoutTag.createClient();
 
       expect(redisClient).to.be.ok;
       // Verify no clientInfoTag was set (opt-in only)
       expect(redisClient.options.clientInfoTag).to.be.undefined;
     });
 
-    it('should use clientInfoTag when provided', () => {
+    it('should use clientInfoTag when provided', async () => {
       const clientWithTag = new ClientRedis({ clientInfoTag: 'my-app' });
-      const redisClient = clientWithTag.createClient();
+      const redisClient = await clientWithTag.createClient();
 
       expect(redisClient).to.be.ok;
       // Verify the clientInfoTag was used
