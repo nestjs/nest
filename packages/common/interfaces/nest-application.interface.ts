@@ -9,6 +9,7 @@ import {
   PipeTransform,
 } from './index';
 import { INestApplicationContext } from './nest-application-context.interface';
+import { RouteConflictOptions } from './route-conflict-options.interface';
 import { VersioningOptions } from './version-options.interface';
 import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 
@@ -43,6 +44,18 @@ export interface INestApplication<
    * @returns {this}
    */
   enableVersioning(options?: VersioningOptions): this;
+
+  /**
+   * Enables diagnostics for ambiguous HTTP route paths shadowing.
+   *
+   * When enabled, Nest detects routes that may be shadowed by earlier
+   * registered parameterized or wildcard routes. Parameter pipes and validation
+   * do not affect route selection.
+   *
+   * @param {RouteConflictOptions} options
+   * @returns {this}
+   */
+  enableRouteConflictDetection(options?: RouteConflictOptions): this;
 
   /**
    * Starts the application.

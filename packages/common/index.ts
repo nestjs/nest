@@ -52,6 +52,8 @@ export {
   Provider,
   RawBodyRequest,
   RpcExceptionFilter,
+  RouteConflictOptions,
+  RouteConflictPolicy,
   Scope,
   ScopeOptions,
   Type,

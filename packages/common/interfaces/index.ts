@@ -23,6 +23,7 @@ export * from './nest-application-context.interface';
 export * from './nest-application-options.interface';
 export * from './nest-application.interface';
 export * from './nest-microservice.interface';
+export * from './route-conflict-options.interface';
 export * from './scope-options.interface';
 export * from './shutdown-hooks-options.interface';
 export * from './type.interface';

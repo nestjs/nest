@@ -7,6 +7,7 @@ import {
   NestHybridApplicationOptions,
   NestInterceptor,
   PipeTransform,
+  RouteConflictOptions,
   VersioningOptions,
   VersioningType,
   WebSocketAdapter,
@@ -287,6 +288,13 @@ export class NestApplication
     options: VersioningOptions = { type: VersioningType.URI },
   ): this {
     this.config.enableVersioning(options);
+    return this;
+  }
+
+  public enableRouteConflictDetection(
+    options: RouteConflictOptions = {},
+  ): this {
+    this.config.enableRouteConflictDetection(options);
     return this;
   }
 

@@ -3,6 +3,7 @@ import {
   ExceptionFilter,
   NestInterceptor,
   PipeTransform,
+  RouteConflictOptions,
   VersioningOptions,
   WebSocketAdapter,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ export class ApplicationConfig {
   private globalInterceptors: Array<NestInterceptor> = [];
   private globalGuards: Array<CanActivate> = [];
   private versioningOptions: VersioningOptions;
+  private routeConflictOptions?: RouteConflictOptions;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
   private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] =
     [];
@@ -146,5 +148,15 @@ export class ApplicationConfig {
 
   public getVersioning(): VersioningOptions | undefined {
     return this.versioningOptions;
+  }
+
+  public enableRouteConflictDetection(
+    options: RouteConflictOptions = {},
+  ): void {
+    this.routeConflictOptions = options;
+  }
+
+  public getRouteConflictOptions(): RouteConflictOptions | undefined {
+    return this.routeConflictOptions;
   }
 }

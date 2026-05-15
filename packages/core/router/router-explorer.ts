@@ -1,4 +1,5 @@
 import { HttpServer } from '@nestjs/common';
+import { RouteConflictOptions } from '@nestjs/common/interfaces';
 import { PATH_METADATA } from '@nestjs/common/constants';
 import { RequestMethod, VersioningType } from '@nestjs/common/enums';
 import { InternalServerErrorException } from '@nestjs/common/exceptions';
@@ -12,6 +13,7 @@ import {
 } from '@nestjs/common/utils/shared.utils';
 import { pathToRegexp } from 'path-to-regexp';
 import { ApplicationConfig } from '../application-config';
+import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UnknownRequestMappingException } from '../errors/exceptions/unknown-request-mapping.exception';
 import { GuardsConsumer, GuardsContextCreator } from '../guards';
 import { ContextIdFactory } from '../helpers/context-id-factory';
@@ -43,6 +45,11 @@ import { PathsExplorer } from './paths-explorer';
 import { REQUEST_CONTEXT_ID } from './request/request-constants';
 import { RouteParamsFactory } from './route-params-factory';
 import { RoutePathFactory } from './route-path-factory';
+import {
+  RouteConflict,
+  RouteConflictDetector,
+  isRouteConflictDetectionCompatibleAdapter,
+} from './route-conflict-detector';
 import { RouterExecutionContext } from './router-execution-context';
 import { RouterProxy, RouterProxyCallback } from './router-proxy';
 
@@ -54,14 +61,21 @@ export interface RouteDefinition {
   version?: VersionValue;
 }
 
+type ResolvedRouteConflictPolicy = NonNullable<RouteConflictOptions['policy']>;
+
+const DEFAULT_ROUTE_CONFLICT_POLICY: ResolvedRouteConflictPolicy = 'warn';
+const ROUTE_CONFLICT_ERROR_POLICY: ResolvedRouteConflictPolicy = 'error';
+
 export class RouterExplorer {
   private readonly executionContextCreator: RouterExecutionContext;
   private readonly pathsExplorer: PathsExplorer;
   private readonly routerMethodFactory = new RouterMethodFactory();
+  private readonly routeConflictDetector = new RouteConflictDetector();
   private readonly logger = new Logger(RouterExplorer.name, {
     timestamp: true,
   });
   private readonly exceptionFiltersCache = new WeakMap();
+  private readonly config: ApplicationConfig;
 
   constructor(
     metadataScanner: MetadataScanner,
@@ -73,6 +87,7 @@ export class RouterExplorer {
     private readonly routePathFactory: RoutePathFactory,
     private readonly graphInspector: GraphInspector,
   ) {
+    this.config = config;
     this.pathsExplorer = new PathsExplorer(metadataScanner);
 
     const routeParamsFactory = new RouteParamsFactory();
@@ -160,6 +175,10 @@ export class RouterExplorer {
     routePathMetadata: RoutePathMetadata,
     host: string | RegExp | Array<string | RegExp>,
   ) {
+    const routeConflictOptions = this.config.getRouteConflictOptions();
+    const shouldDetectRouteConflicts =
+      !!routeConflictOptions &&
+      isRouteConflictDetectionCompatibleAdapter(router);
     const {
       path: paths,
       requestMethod,
@@ -235,6 +254,21 @@ export class RouterExplorer {
           ? router.normalizePath(path)
           : path;
 
+        if (shouldDetectRouteConflicts) {
+          const conflicts = this.routeConflictDetector.register({
+            path,
+            normalizedPath,
+            requestMethod,
+            className: instanceWrapper.name,
+            methodName,
+            moduleKey,
+            host,
+            version: this.routePathFactory.getVersion(routePathMetadata),
+            versioningOptions: routePathMetadata.versioningOptions,
+          });
+          this.reportRouteConflicts(conflicts, routeConflictOptions);
+        }
+
         const httpAdapter = this.container.getHttpAdapterRef();
         const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
         if (onRouteTriggered) {
@@ -270,6 +304,32 @@ export class RouterExplorer {
         }
       });
     });
+  }
+
+  private reportRouteConflicts(
+    conflicts: RouteConflict[],
+    options: RouteConflictOptions,
+  ) {
+    const policy = this.getRouteConflictPolicy(options);
+
+    conflicts.forEach(conflict => {
+      if (this.isRouteConflictErrorPolicy(policy)) {
+        throw new RuntimeException(conflict.message);
+      }
+      this.logger.warn(conflict.message);
+    });
+  }
+
+  private getRouteConflictPolicy(
+    options: RouteConflictOptions,
+  ): ResolvedRouteConflictPolicy {
+    return options.policy ?? DEFAULT_ROUTE_CONFLICT_POLICY;
+  }
+
+  private isRouteConflictErrorPolicy(
+    policy: ResolvedRouteConflictPolicy,
+  ): boolean {
+    return policy === ROUTE_CONFLICT_ERROR_POLICY;
   }
 
   private applyHostFilter(

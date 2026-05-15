@@ -145,4 +145,22 @@ describe('ApplicationConfig', () => {
       expect(appConfig.getVersioning()).to.be.eql(undefined);
     });
   });
+  describe('Route conflict detection', () => {
+    it('should have undefined as the route conflict options by default', () => {
+      expect(appConfig.getRouteConflictOptions()).to.be.eql(undefined);
+    });
+
+    it('should enable route conflict detection with default options', () => {
+      appConfig.enableRouteConflictDetection();
+
+      expect(appConfig.getRouteConflictOptions()).to.be.eql({});
+    });
+
+    it('should set route conflict detection options', () => {
+      const options = { policy: 'error' } as const;
+      appConfig.enableRouteConflictDetection(options);
+
+      expect(appConfig.getRouteConflictOptions()).to.be.eql(options);
+    });
+  });
 });

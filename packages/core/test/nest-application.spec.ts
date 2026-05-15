@@ -120,6 +120,26 @@ describe('NestApplication', () => {
       });
     });
   });
+  describe('Route conflict detection', () => {
+    it('should set route conflict detection options', () => {
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const instance = new NestApplication(
+        container,
+        new NoopHttpAdapter({}),
+        applicationConfig,
+        new GraphInspector(container),
+        {},
+      );
+
+      expect(instance.enableRouteConflictDetection({ policy: 'error' })).to.eq(
+        instance,
+      );
+      expect(applicationConfig.getRouteConflictOptions()).to.eql({
+        policy: 'error',
+      });
+    });
+  });
   describe('Double initialization', () => {
     it('should initialize application only once', async () => {
       const noopHttpAdapter = new NoopHttpAdapter({});
