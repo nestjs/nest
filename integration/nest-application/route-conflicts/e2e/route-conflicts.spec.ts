@@ -1,7 +1,7 @@
 import { Controller, Get, Module } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
-import * as request from 'supertest';
+import request from 'supertest';
 
 @Controller('users')
 class UsersController {

@@ -4,7 +4,7 @@ import {
   VersioningOptions,
   VersioningType,
 } from '@nestjs/common';
-import { VersionValue } from '@nestjs/common/interfaces';
+import type { VersionValue } from '@nestjs/common/internal';
 import { MatchFunction, Token, match, parse } from 'path-to-regexp';
 
 type RouteHost = string | RegExp | Array<string | RegExp> | undefined;
