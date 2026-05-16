@@ -188,12 +188,22 @@ export class DependenciesScanner {
       ? moduleDefinition.forwardRef()
       : moduleDefinition;
 
-    if (
-      this.isInjectable(moduleToAdd) ||
-      this.isController(moduleToAdd) ||
-      this.isExceptionFilter(moduleToAdd)
-    ) {
-      throw new InvalidClassModuleException(moduleDefinition, scope);
+    if (this.isInjectable(moduleToAdd)) {
+      throw new InvalidClassModuleException(
+        moduleDefinition,
+        scope,
+        'provider',
+      );
+    }
+    if (this.isController(moduleToAdd)) {
+      throw new InvalidClassModuleException(
+        moduleDefinition,
+        scope,
+        'controller',
+      );
+    }
+    if (this.isExceptionFilter(moduleToAdd)) {
+      throw new InvalidClassModuleException(moduleDefinition, scope, 'filter');
     }
 
     return this.container.addModule(moduleToAdd, scope);

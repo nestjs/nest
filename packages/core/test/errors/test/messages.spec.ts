@@ -4,6 +4,7 @@ import {
   INVALID_MODULE_MESSAGE,
   UNDEFINED_MODULE_MESSAGE,
   UNKNOWN_EXPORT_MESSAGE,
+  USING_INVALID_CLASS_AS_A_MODULE_MESSAGE,
 } from '../../../errors/messages';
 import { Module } from '../../../injector/module';
 import { stringCleaner } from '../../utils/string.cleaner';
@@ -393,6 +394,61 @@ Scope [AppModule -> CatsModule]`);
 
       const actualMessage = stringCleaner(
         INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule]),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+  });
+
+  describe('USING_INVALID_CLASS_AS_A_MODULE_MESSAGE', () => {
+    class FooClass {}
+
+    it('should identify a class decorated with @Controller() and direct it to the "controllers" array', () => {
+      const expectedMessage =
+        stringCleaner(`"FooClass" is decorated with @Controller() and cannot appear in the "imports" array of a module. Please move "FooClass" to the "controllers" array of the importing module instead.
+
+Scope [AppModule]`);
+
+      const actualMessage = stringCleaner(
+        USING_INVALID_CLASS_AS_A_MODULE_MESSAGE(
+          FooClass,
+          [AppModule],
+          'controller',
+        ),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+
+    it('should identify a class decorated with @Injectable() and direct it to the "providers" array', () => {
+      const expectedMessage =
+        stringCleaner(`"FooClass" is decorated with @Injectable() and cannot appear in the "imports" array of a module. Please move "FooClass" to the "providers" array of the importing module instead.
+
+Scope [AppModule]`);
+
+      const actualMessage = stringCleaner(
+        USING_INVALID_CLASS_AS_A_MODULE_MESSAGE(
+          FooClass,
+          [AppModule],
+          'provider',
+        ),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+
+    it('should identify a class decorated with @Catch() and direct it to the "providers" array or @UseFilters()', () => {
+      const expectedMessage =
+        stringCleaner(`"FooClass" is decorated with @Catch() and cannot appear in the "imports" array of a module. Please move "FooClass" to the "providers" array (using the APP_FILTER token to apply it globally) or apply it via @UseFilters() instead.
+
+Scope [AppModule]`);
+
+      const actualMessage = stringCleaner(
+        USING_INVALID_CLASS_AS_A_MODULE_MESSAGE(
+          FooClass,
+          [AppModule],
+          'filter',
+        ),
       );
 
       expect(actualMessage).to.be.eq(expectedMessage);
