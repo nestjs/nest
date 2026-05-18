@@ -212,42 +212,42 @@ describe('ApplicationConfig', () => {
       expect(appConfig.getGlobalInterceptors()).toEqual(['i1', 'i2']);
     });
   });
-  describe('Router conflict policy', () => {
+  describe('Route conflict policy', () => {
     it('should default to undefined', () => {
-      expect(appConfig.getRouterConflictPolicy()).to.be.eql(undefined);
+      expect(appConfig.getRouteConflictPolicy()).to.be.eql(undefined);
     });
 
     it('should store the provided policy', () => {
       const policy = { duplicate: 'error', shadow: 'warn' } as const;
-      appConfig.setRouterConflictPolicy(policy);
+      appConfig.setRouteConflictPolicy(policy);
 
-      expect(appConfig.getRouterConflictPolicy()).to.be.eql(policy);
+      expect(appConfig.getRouteConflictPolicy()).to.be.eql(policy);
     });
 
     it('should reset to undefined when explicitly cleared', () => {
-      appConfig.setRouterConflictPolicy({ duplicate: 'warn' });
-      appConfig.setRouterConflictPolicy(undefined);
+      appConfig.setRouteConflictPolicy({ duplicate: 'warn' });
+      appConfig.setRouteConflictPolicy(undefined);
 
-      expect(appConfig.getRouterConflictPolicy()).to.be.eql(undefined);
+      expect(appConfig.getRouteConflictPolicy()).to.be.eql(undefined);
     });
   });
 
-  describe('Router resolution strategy', () => {
+  describe('Route resolution strategy', () => {
     it('should default to undefined', () => {
-      expect(appConfig.getRouterResolutionStrategy()).to.be.eql(undefined);
+      expect(appConfig.getRouteResolutionStrategy()).to.be.eql(undefined);
     });
 
     it('should store the provided strategy', () => {
-      appConfig.setRouterResolutionStrategy('specificity');
+      appConfig.setRouteResolutionStrategy('specificity');
 
-      expect(appConfig.getRouterResolutionStrategy()).to.be.eql('specificity');
+      expect(appConfig.getRouteResolutionStrategy()).to.be.eql('specificity');
     });
 
     it('should reset to undefined when explicitly cleared', () => {
-      appConfig.setRouterResolutionStrategy('specificity');
-      appConfig.setRouterResolutionStrategy(undefined);
+      appConfig.setRouteResolutionStrategy('specificity');
+      appConfig.setRouteResolutionStrategy(undefined);
 
-      expect(appConfig.getRouterResolutionStrategy()).to.be.eql(undefined);
+      expect(appConfig.getRouteResolutionStrategy()).to.be.eql(undefined);
     });
   });
 });

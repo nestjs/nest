@@ -16,7 +16,7 @@ describe('Route resolution strategy with wildcards: specificity (Express)', () =
   let app: INestApplication | undefined;
 
   beforeEach(async () => {
-    app = await buildApp({ routerResolutionStrategy: 'specificity' });
+    app = await buildApp({ routeResolutionStrategy: 'specificity' });
     await app.init();
   });
 

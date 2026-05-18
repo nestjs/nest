@@ -78,7 +78,7 @@ describe('Route conflict policy with wildcards (Express, declaration strategy)',
 
   it('with shadow=warn, emits one warning per overlapping pair', async () => {
     const capture = createCaptureLogger();
-    app = await buildApp({ routerConflictPolicy: { shadow: 'warn' } }, capture);
+    app = await buildApp({ routeConflictPolicy: { shadow: 'warn' } }, capture);
     await app.init();
 
     expect(capture.warnings).toHaveLength(WILDCARD_SHADOW_PAIRS);
@@ -86,7 +86,7 @@ describe('Route conflict policy with wildcards (Express, declaration strategy)',
 
   it('with shadow=warn, the warnings name the wildcard, param and literal routes', async () => {
     const capture = createCaptureLogger();
-    app = await buildApp({ routerConflictPolicy: { shadow: 'warn' } }, capture);
+    app = await buildApp({ routeConflictPolicy: { shadow: 'warn' } }, capture);
     await app.init();
 
     const joined = capture.warnings.join('\n');
@@ -98,7 +98,7 @@ describe('Route conflict policy with wildcards (Express, declaration strategy)',
   it('with shadow=error, bootstrap is aborted', async () => {
     const capture = createCaptureLogger();
     const builtApp = await buildApp(
-      { routerConflictPolicy: { shadow: 'error' } },
+      { routeConflictPolicy: { shadow: 'error' } },
       capture,
     );
     await expect(builtApp.init()).rejects.toThrow();
@@ -107,7 +107,7 @@ describe('Route conflict policy with wildcards (Express, declaration strategy)',
   it('with duplicate=error alone, bootstrap succeeds (no duplicates exist)', async () => {
     const capture = createCaptureLogger();
     app = await buildApp(
-      { routerConflictPolicy: { duplicate: 'error' } },
+      { routeConflictPolicy: { duplicate: 'error' } },
       capture,
     );
     await app.init();

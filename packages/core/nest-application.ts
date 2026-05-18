@@ -71,10 +71,8 @@ export class NestApplication
   ) {
     super(container, appOptions);
 
-    this.config.setRouterConflictPolicy(appOptions.routerConflictPolicy);
-    this.config.setRouterResolutionStrategy(
-      appOptions.routerResolutionStrategy,
-    );
+    this.config.setRouteConflictPolicy(appOptions.routeConflictPolicy);
+    this.config.setRouteResolutionStrategy(appOptions.routeResolutionStrategy);
     this.selectContextModule();
     this.registerHttpServer();
     this.injector = new Injector({
@@ -213,8 +211,8 @@ export class NestApplication
     const prefix = this.config.getGlobalPrefix();
     const basePath = addLeadingSlash(prefix);
 
-    const conflictPolicy = this.config.getRouterConflictPolicy();
-    const resolutionStrategy = this.config.getRouterResolutionStrategy();
+    const conflictPolicy = this.config.getRouteConflictPolicy();
+    const resolutionStrategy = this.config.getRouteResolutionStrategy();
     const adapterIsOrderSensitive =
       this.httpAdapter.isRouteOrderSensitive?.() ?? true;
     const shouldSortBySpecificity =

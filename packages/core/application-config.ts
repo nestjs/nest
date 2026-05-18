@@ -22,8 +22,8 @@ export class ApplicationConfig {
   private globalGuards: Array<CanActivate> = [];
   private globalPreRequestHooks: Array<PreRequestHook> = [];
   private versioningOptions: VersioningOptions;
-  private routerConflictPolicy: RouteConflictPolicy | undefined;
-  private routerResolutionStrategy: RouteResolutionStrategy | undefined;
+  private routeConflictPolicy: RouteConflictPolicy | undefined;
+  private routeResolutionStrategy: RouteResolutionStrategy | undefined;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
   private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] =
     [];
@@ -162,23 +162,21 @@ export class ApplicationConfig {
     return this.versioningOptions;
   }
 
-  public setRouterConflictPolicy(
-    policy: RouteConflictPolicy | undefined,
-  ): void {
-    this.routerConflictPolicy = policy;
+  public setRouteConflictPolicy(policy: RouteConflictPolicy | undefined): void {
+    this.routeConflictPolicy = policy;
   }
 
-  public getRouterConflictPolicy(): RouteConflictPolicy | undefined {
-    return this.routerConflictPolicy;
+  public getRouteConflictPolicy(): RouteConflictPolicy | undefined {
+    return this.routeConflictPolicy;
   }
 
-  public setRouterResolutionStrategy(
+  public setRouteResolutionStrategy(
     strategy: RouteResolutionStrategy | undefined,
   ): void {
-    this.routerResolutionStrategy = strategy;
+    this.routeResolutionStrategy = strategy;
   }
 
-  public getRouterResolutionStrategy(): RouteResolutionStrategy | undefined {
-    return this.routerResolutionStrategy;
+  public getRouteResolutionStrategy(): RouteResolutionStrategy | undefined {
+    return this.routeResolutionStrategy;
   }
 }

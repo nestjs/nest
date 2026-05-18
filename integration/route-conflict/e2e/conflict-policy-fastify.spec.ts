@@ -33,7 +33,7 @@ describe('Route conflict policy (Fastify)', () => {
   describe('multi-user fixture', () => {
     it('boots even with shadow=error because Fastify is not order-sensitive', async () => {
       app = await buildFastifyApp(MultiUserModule, {
-        routerConflictPolicy: { shadow: 'error' },
+        routeConflictPolicy: { shadow: 'error' },
       });
       await expect(app.init()).resolves.toBeDefined();
     });
@@ -68,7 +68,7 @@ describe('Route conflict policy (Fastify)', () => {
   describe('duplicate fixture', () => {
     it('still throws on duplicate=error (duplicates are universal)', async () => {
       const builtApp = await buildFastifyApp(DuplicateModule, {
-        routerConflictPolicy: { duplicate: 'error' },
+        routeConflictPolicy: { duplicate: 'error' },
       });
       await expect(builtApp.init()).rejects.toThrow();
     });

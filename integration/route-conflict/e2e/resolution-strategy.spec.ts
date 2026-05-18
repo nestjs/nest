@@ -24,7 +24,7 @@ describe('Route resolution strategy: specificity (Express)', () => {
 
   describe('with the multi-user fixture', () => {
     beforeEach(async () => {
-      app = await buildApp({ routerResolutionStrategy: 'specificity' });
+      app = await buildApp({ routeResolutionStrategy: 'specificity' });
       await app.init();
     });
 

@@ -46,12 +46,12 @@ export interface NestApplicationOptions extends NestApplicationContextOptions {
    * `shadow` (patterns that can match the same request, e.g. `/users/me`
    * vs `/users/:id`). Each kind defaults to `'off'`.
    */
-  routerConflictPolicy?: RouteConflictPolicy;
+  routeConflictPolicy?: RouteConflictPolicy;
   /**
    * Order in which HTTP routes are registered on the underlying adapter.
    * `'specificity'` registers literal segments before parametric and
    * wildcard ones on order-sensitive adapters (such as Express). Defaults
    * to `'declaration'`.
    */
-  routerResolutionStrategy?: RouteResolutionStrategy;
+  routeResolutionStrategy?: RouteResolutionStrategy;
 }

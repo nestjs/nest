@@ -149,7 +149,7 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
         const capture = createCaptureLogger();
         const builtApp = await buildApp(
           MultiUserModule,
-          { routerConflictPolicy: conflictPolicy },
+          { routeConflictPolicy: conflictPolicy },
           capture,
         );
 
@@ -186,7 +186,7 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
       const capture = createCaptureLogger();
       app = await buildApp(
         MultiUserModule,
-        { routerConflictPolicy: { shadow: 'warn' } },
+        { routeConflictPolicy: { shadow: 'warn' } },
         capture,
       );
       await app.init();
@@ -212,7 +212,7 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
       const capture = createCaptureLogger();
       app = await buildApp(
         DuplicateModule,
-        { routerConflictPolicy: { duplicate: 'off' } },
+        { routeConflictPolicy: { duplicate: 'off' } },
         capture,
       );
       await app.init();
@@ -227,7 +227,7 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
       const capture = createCaptureLogger();
       app = await buildApp(
         DuplicateModule,
-        { routerConflictPolicy: { duplicate: 'warn' } },
+        { routeConflictPolicy: { duplicate: 'warn' } },
         capture,
       );
       await app.init();
@@ -240,7 +240,7 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
       const capture = createCaptureLogger();
       const builtApp = await buildApp(
         DuplicateModule,
-        { routerConflictPolicy: { duplicate: 'error' } },
+        { routeConflictPolicy: { duplicate: 'error' } },
         capture,
       );
       await expect(builtApp.init()).rejects.toThrow();
@@ -250,7 +250,7 @@ describe('Route conflict policy (Express, declaration strategy)', () => {
       const capture = createCaptureLogger();
       app = await buildApp(
         DuplicateModule,
-        { routerConflictPolicy: { shadow: 'error' } },
+        { routeConflictPolicy: { shadow: 'error' } },
         capture,
       );
       await app.init();
