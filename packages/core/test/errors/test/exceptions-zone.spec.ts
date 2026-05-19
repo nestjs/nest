@@ -1,7 +1,11 @@
+import * as chai from 'chai';
 import { expect } from 'chai';
+import chaiAsPromised = require('chai-as-promised');
 import * as sinon from 'sinon';
 import { Logger } from '@nestjs/common';
 import { ExceptionsZone } from '../../../errors/exceptions-zone';
+
+chai.use(chaiAsPromised);
 
 describe('ExceptionsZone', () => {
   const rethrow = err => {

@@ -1,7 +1,11 @@
 import { HttpStatus } from '../../../enums';
 import { BadRequestException, ConflictException } from '../../../exceptions';
 import { FileValidator, ParseFilePipe } from '../../../pipes';
+import * as chai from 'chai';
 import { expect } from 'chai';
+import chaiAsPromised = require('chai-as-promised');
+
+chai.use(chaiAsPromised);
 
 class AlwaysValidValidator extends FileValidator {
   isValid(): boolean {

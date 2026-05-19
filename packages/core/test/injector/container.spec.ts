@@ -1,4 +1,6 @@
+import * as chai from 'chai';
 import { expect } from 'chai';
+import chaiAsPromised = require('chai-as-promised');
 import * as sinon from 'sinon';
 import { Module } from '../../../common/decorators/modules/module.decorator';
 import { Global } from '../../../common/index';
@@ -6,6 +8,8 @@ import { CircularDependencyException } from '../../errors/exceptions/circular-de
 import { UnknownModuleException } from '../../errors/exceptions/unknown-module.exception';
 import { NestContainer } from '../../injector/container';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+
+chai.use(chaiAsPromised);
 
 describe('NestContainer', () => {
   let container: NestContainer;

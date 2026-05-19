@@ -1,7 +1,11 @@
+import * as chai from 'chai';
 import { expect } from 'chai';
+import chaiAsPromised = require('chai-as-promised');
 import { HttpException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseFloatPipe } from '../../pipes/parse-float.pipe';
+
+chai.use(chaiAsPromised);
 
 class CustomTestError extends HttpException {
   constructor() {

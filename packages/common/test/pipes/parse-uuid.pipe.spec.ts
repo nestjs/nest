@@ -1,8 +1,12 @@
+import * as chai from 'chai';
 import { expect } from 'chai';
+import chaiAsPromised = require('chai-as-promised');
 import { HttpStatus } from '../../enums';
 import { HttpException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseUUIDPipe } from '../../pipes/parse-uuid.pipe';
+
+chai.use(chaiAsPromised);
 
 class TestException extends HttpException {
   constructor() {

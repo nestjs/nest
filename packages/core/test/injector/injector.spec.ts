@@ -2,7 +2,7 @@ import { Optional } from '@nestjs/common';
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
 import * as chai from 'chai';
 import { expect } from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
+import chaiAsPromised = require('chai-as-promised');
 import * as sinon from 'sinon';
 import { Inject } from '../../../common/decorators/core/inject.decorator';
 import { Injectable } from '../../../common/decorators/core/injectable.decorator';

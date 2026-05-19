@@ -1,5 +1,7 @@
 import { Catch, Injectable } from '@nestjs/common';
+import * as chai from 'chai';
 import { expect } from 'chai';
+import chaiAsPromised = require('chai-as-promised');
 import * as sinon from 'sinon';
 import { GUARDS_METADATA } from '../../common/constants';
 import { Controller } from '../../common/decorators/core/controller.decorator';
@@ -18,6 +20,8 @@ import { ModuleOverride } from '../interfaces/module-override.interface';
 import { MetadataScanner } from '../metadata-scanner';
 import { DependenciesScanner } from '../scanner';
 import Sinon = require('sinon');
+
+chai.use(chaiAsPromised);
 
 describe('DependenciesScanner', () => {
   class Guard {}

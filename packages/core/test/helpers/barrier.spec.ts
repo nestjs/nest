@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { Barrier } from '../../../core/helpers/barrier';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
+import chaiAsPromised = require('chai-as-promised');
 import { setTimeout } from 'timers/promises';
 chai.use(chaiAsPromised);
 
