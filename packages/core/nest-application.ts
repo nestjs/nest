@@ -37,6 +37,9 @@ import {
   isObject,
   isString,
 } from '@nestjs/common/internal';
+import { ResolvedRoute } from './router/interfaces/resolved-route.interface.js';
+import { RouteConflictDetector } from './router/route-conflict-detector.js';
+import { RouteSpecificitySorter } from './router/route-specificity-sorter.js';
 
 /**
  * @publicApi
@@ -68,6 +71,8 @@ export class NestApplication
   ) {
     super(container, appOptions);
 
+    this.config.setRouteConflictPolicy(appOptions.routeConflictPolicy);
+    this.config.setRouteResolutionStrategy(appOptions.routeResolutionStrategy);
     this.selectContextModule();
     this.registerHttpServer();
     this.injector = new Injector({
@@ -205,7 +210,95 @@ export class NestApplication
 
     const prefix = this.config.getGlobalPrefix();
     const basePath = addLeadingSlash(prefix);
-    this.routesResolver.resolve(this.httpAdapter, basePath);
+
+    const conflictPolicy = this.config.getRouteConflictPolicy();
+    const resolutionStrategy = this.config.getRouteResolutionStrategy();
+    const adapterIsOrderSensitive =
+      this.httpAdapter.isRouteOrderSensitive?.() ?? true;
+    const shouldSortBySpecificity =
+      resolutionStrategy === 'specificity' && adapterIsOrderSensitive;
+    // Adapters that are not order-sensitive (e.g. Fastify) currently
+    // also reject duplicate (method, URL) registrations synchronously
+    // from the underlying router. Treat the two properties as one
+    // signal until a separate capability flag is introduced.
+    const adapterRejectsDuplicates = !adapterIsOrderSensitive;
+
+    if (!conflictPolicy && !shouldSortBySpecificity) {
+      this.routesResolver.resolve(this.httpAdapter, basePath);
+      return;
+    }
+
+    // Defer registration whenever we collect routes for diagnostics or
+    // re-ordering. In particular, when a conflict policy is set we
+    // must run detection *before* the adapter sees any route, because
+    // duplicate-rejecting adapters like Fastify throw synchronously
+    // from `instance.route()` and would short-circuit both the resolve
+    // loop and the aggregated `RouteConflictException`.
+    const resolvedRoutes: ResolvedRoute[] = [];
+    this.routesResolver.resolve(this.httpAdapter, basePath, {
+      onRouteResolved: route => resolvedRoutes.push(route),
+      deferRegistration: true,
+    });
+
+    // Sort before conflict detection so that winner/shadowed pairs in every
+    // conflict record reflect actual adapter registration order. Without this,
+    // the reported winner could be the declaration-first (less-specific) route
+    // even though the sorted-first (more-specific) route is what really wins.
+    const orderedRoutes = shouldSortBySpecificity
+      ? RouteSpecificitySorter.sort(resolvedRoutes)
+      : resolvedRoutes;
+
+    const routesToSkip = new Set<ResolvedRoute>();
+    if (conflictPolicy) {
+      const filteredPolicy = adapterIsOrderSensitive
+        ? conflictPolicy
+        : { duplicate: conflictPolicy.duplicate };
+
+      const conflicts = RouteConflictDetector.detect(
+        orderedRoutes,
+        this.config.getVersioning(),
+      );
+
+      // On adapters that reject duplicate registrations the policy
+      // cannot be honoured by simply logging — the adapter would
+      // throw on the second `instance.route()` call. Drop the
+      // shadowed route of every duplicate conflict so the detector
+      // (not the adapter) decides which one wins. The detector
+      // always picks the earlier-registered route as the winner.
+      if (adapterRejectsDuplicates) {
+        conflicts.forEach(conflict => {
+          if (conflict.kind === 'duplicate') {
+            routesToSkip.add(conflict.shadowed);
+          }
+        });
+      }
+
+      // When specificity sorting is active, shadow conflicts where the sort
+      // promoted the winner (declared later but more specific) are resolved
+      // at runtime: the more-specific route is first-registered and handles
+      // its requests, the less-specific route handles the rest. Filtering
+      // these out prevents shadow: 'error' from aborting an app whose routes
+      // work correctly after specificity ordering. Genuine shadows — where the
+      // winner was already first in declaration order and the sort did not help
+      // — are kept and still apply the configured policy.
+      const effectiveConflicts = shouldSortBySpecificity
+        ? RouteConflictDetector.filterSortResolvedShadows(
+            conflicts,
+            resolvedRoutes,
+          )
+        : conflicts;
+
+      RouteConflictDetector.handle(
+        effectiveConflicts,
+        filteredPolicy,
+        this.logger,
+      );
+    }
+
+    orderedRoutes.forEach(route => {
+      if (routesToSkip.has(route)) return;
+      this.routesResolver.registerResolvedRoute(this.httpAdapter, route);
+    });
   }
 
   public async registerRouterHooks() {

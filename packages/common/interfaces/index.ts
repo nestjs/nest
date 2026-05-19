@@ -24,6 +24,7 @@ export * from './nest-application-context.interface.js';
 export * from './nest-application-options.interface.js';
 export * from './nest-application.interface.js';
 export * from './nest-microservice.interface.js';
+export * from './router-options.interface.js';
 export * from './scope-options.interface.js';
 export * from './shutdown-hooks-options.interface.js';
 export * from './type.interface.js';

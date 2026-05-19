@@ -4,6 +4,10 @@ import {
 } from './external/cors-options.interface.js';
 import { HttpsOptions } from './external/https-options.interface.js';
 import { NestApplicationContextOptions } from './nest-application-context-options.interface.js';
+import {
+  RouteConflictPolicy,
+  RouteResolutionStrategy,
+} from './router-options.interface.js';
 
 /**
  * @publicApi
@@ -36,4 +40,18 @@ export interface NestApplicationOptions extends NestApplicationContextOptions {
    * @default false
    */
   return503OnClosing?: boolean;
+  /**
+   * Per-kind policy for overlapping HTTP routes detected at bootstrap.
+   * Distinguishes `duplicate` (identical method+path+host+version) from
+   * `shadow` (patterns that can match the same request, e.g. `/users/me`
+   * vs `/users/:id`). Each kind defaults to `'off'`.
+   */
+  routeConflictPolicy?: RouteConflictPolicy;
+  /**
+   * Order in which HTTP routes are registered on the underlying adapter.
+   * `'specificity'` registers literal segments before parametric and
+   * wildcard ones on order-sensitive adapters (such as Express). Defaults
+   * to `'declaration'`.
+   */
+  routeResolutionStrategy?: RouteResolutionStrategy;
 }

@@ -112,6 +112,7 @@ describe('RouterExplorer', () => {
         '',
         { methodVersion: undefined },
         '',
+        {},
       );
       expect(bindStub).toHaveBeenCalledTimes(paths.length);
     });
@@ -146,6 +147,7 @@ describe('RouterExplorer', () => {
         '',
         routePathMetadata,
         '1',
+        {},
       );
       expect(bindStub).toHaveBeenCalledTimes(paths.length);
     });

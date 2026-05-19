@@ -118,6 +118,7 @@ describe('RoutesResolver', () => {
         appInstance,
         undefined,
         routePathMetadata,
+        {},
       );
     });
 
@@ -160,6 +161,7 @@ describe('RoutesResolver', () => {
         appInstance,
         'api.example.com',
         routePathMetadata,
+        {},
       );
     });
 
@@ -216,6 +218,7 @@ describe('RoutesResolver', () => {
         appInstance,
         undefined,
         routePathMetadata,
+        {},
       );
     });
   });
