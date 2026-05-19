@@ -1,4 +1,5 @@
 import { NestApplicationOptions } from '@nestjs/common';
+import { RouteConflictException } from '@nestjs/core/errors/exceptions/route-conflict.exception.js';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -7,17 +8,49 @@ import { Test } from '@nestjs/testing';
 import { DuplicateModule } from '../src/duplicate/duplicate.module.js';
 import { MultiUserModule } from '../src/multi-user/multi-user.module.js';
 
+interface CapturedLogger {
+  warnings: string[];
+  logger: {
+    log(message: any, ...rest: any[]): void;
+    warn(message: any, ...rest: any[]): void;
+    error(message: any, ...rest: any[]): void;
+    debug(message: any, ...rest: any[]): void;
+    verbose(message: any, ...rest: any[]): void;
+    fatal(message: any, ...rest: any[]): void;
+  };
+}
+
+function createCaptureLogger(): CapturedLogger {
+  const warnings: string[] = [];
+  return {
+    warnings,
+    logger: {
+      log: () => {},
+      warn: (message: any) => warnings.push(String(message)),
+      error: () => {},
+      debug: () => {},
+      verbose: () => {},
+      fatal: () => {},
+    },
+  };
+}
+
 async function buildFastifyApp(
   moduleClass: any,
   options: NestApplicationOptions,
+  capture?: CapturedLogger,
 ): Promise<NestFastifyApplication> {
   const moduleRef = await Test.createTestingModule({
     imports: [moduleClass],
   }).compile();
-  return moduleRef.createNestApplication<NestFastifyApplication>(
+  const app = moduleRef.createNestApplication<NestFastifyApplication>(
     new FastifyAdapter(),
     options,
   );
+  if (capture) {
+    app.useLogger(capture.logger);
+  }
+  return app;
 }
 
 describe('Route conflict policy (Fastify)', () => {
@@ -66,11 +99,41 @@ describe('Route conflict policy (Fastify)', () => {
   });
 
   describe('duplicate fixture', () => {
-    it('still throws on duplicate=error (duplicates are universal)', async () => {
+    it('aborts on duplicate=error with the aggregated RouteConflictException', async () => {
       const builtApp = await buildFastifyApp(DuplicateModule, {
         routeConflictPolicy: { duplicate: 'error' },
       });
-      await expect(builtApp.init()).rejects.toThrow();
+      await expect(builtApp.init()).rejects.toBeInstanceOf(
+        RouteConflictException,
+      );
+    });
+
+    it('boots on duplicate=warn and emits one warning instead of throwing from Fastify', async () => {
+      const capture = createCaptureLogger();
+      app = await buildFastifyApp(
+        DuplicateModule,
+        { routeConflictPolicy: { duplicate: 'warn' } },
+        capture,
+      );
+      await expect(app.init()).resolves.toBeDefined();
+      expect(capture.warnings).toHaveLength(1);
+      expect(capture.warnings[0]).toContain('/users/me');
+    });
+
+    it('boots on duplicate=off silently (later duplicate is dropped, first wins)', async () => {
+      const capture = createCaptureLogger();
+      app = await buildFastifyApp(
+        DuplicateModule,
+        { routeConflictPolicy: { duplicate: 'off' } },
+        capture,
+      );
+      await expect(app.init()).resolves.toBeDefined();
+      await app.getHttpAdapter().getInstance().ready();
+
+      const response = await app.inject({ method: 'GET', url: '/users/me' });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ from: 'A' });
+      expect(capture.warnings).toHaveLength(0);
     });
   });
 });

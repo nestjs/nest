@@ -65,12 +65,18 @@ export class RouteConflictDetector {
     const rightEndsInWildcard =
       rightSegments[rightSegments.length - 1]?.kind === 'wildcard';
 
-    const lengthsDiffer = leftSegments.length !== rightSegments.length;
-    const wildcardCanAbsorbDifference =
-      leftEndsInWildcard || rightEndsInWildcard;
-
-    if (lengthsDiffer && !wildcardCanAbsorbDifference) {
-      return false;
+    // A named wildcard like `*path` requires at least one matched segment,
+    // so only the *shorter* side's trailing wildcard can absorb the
+    // difference. If the longer side has the wildcard, the other side
+    // simply does not have enough segments to ever reach that position.
+    if (leftSegments.length !== rightSegments.length) {
+      const shorterEndsInWildcard =
+        leftSegments.length < rightSegments.length
+          ? leftEndsInWildcard
+          : rightEndsInWildcard;
+      if (!shorterEndsInWildcard) {
+        return false;
+      }
     }
 
     const sharedLength = Math.min(leftSegments.length, rightSegments.length);
@@ -139,11 +145,15 @@ export class RouteConflictDetector {
           return;
         }
 
-        const samePath = earlierRoute.path === laterRoute.path;
+        const isIdentical = RouteConflictDetector.routesAreIdentical(
+          earlierRoute,
+          laterRoute,
+          versioningOptions,
+        );
         conflicts.push({
           winner: earlierRoute,
           shadowed: laterRoute,
-          kind: samePath ? 'duplicate' : 'shadow',
+          kind: isIdentical ? 'duplicate' : 'shadow',
         });
       },
     );
@@ -236,7 +246,108 @@ export class RouteConflictDetector {
     rightHost: ResolvedRoute['host'],
   ): boolean {
     if (leftHost === undefined || rightHost === undefined) return true;
-    return String(leftHost) === String(rightHost);
+
+    const leftHosts = Array.isArray(leftHost) ? leftHost : [leftHost];
+    const rightHosts = Array.isArray(rightHost) ? rightHost : [rightHost];
+
+    return leftHosts.some(leftValue =>
+      rightHosts.some(rightValue =>
+        RouteConflictDetector.hostValuesCanMatchSameRequest(
+          leftValue,
+          rightValue,
+        ),
+      ),
+    );
+  }
+
+  private static hostValuesCanMatchSameRequest(
+    leftValue: string | RegExp,
+    rightValue: string | RegExp,
+  ): boolean {
+    const leftIsRegExp = leftValue instanceof RegExp;
+    const rightIsRegExp = rightValue instanceof RegExp;
+    if (leftIsRegExp && rightIsRegExp) return true;
+    if (leftIsRegExp) return leftValue.test(rightValue as string);
+    if (rightIsRegExp) return rightValue.test(leftValue as string);
+    return leftValue === rightValue;
+  }
+
+  private static routesAreIdentical(
+    leftRoute: ResolvedRoute,
+    rightRoute: ResolvedRoute,
+    versioningOptions: VersioningOptions | undefined,
+  ): boolean {
+    return (
+      leftRoute.method === rightRoute.method &&
+      leftRoute.path === rightRoute.path &&
+      RouteConflictDetector.hostsAreIdentical(
+        leftRoute.host,
+        rightRoute.host,
+      ) &&
+      RouteConflictDetector.versionsAreIdentical(
+        leftRoute.version,
+        rightRoute.version,
+        versioningOptions,
+      )
+    );
+  }
+
+  private static hostsAreIdentical(
+    leftHost: ResolvedRoute['host'],
+    rightHost: ResolvedRoute['host'],
+  ): boolean {
+    if (leftHost === undefined && rightHost === undefined) return true;
+    if (leftHost === undefined || rightHost === undefined) return false;
+
+    const leftHosts = Array.isArray(leftHost) ? leftHost : [leftHost];
+    const rightHosts = Array.isArray(rightHost) ? rightHost : [rightHost];
+    if (leftHosts.length !== rightHosts.length) return false;
+
+    // Order-insensitive set comparison: ['a', 'b'] and ['b', 'a']
+    // describe the same allowed-host set, so they are identical for
+    // duplicate-classification purposes.
+    return leftHosts.every(leftValue =>
+      rightHosts.some(rightValue =>
+        RouteConflictDetector.hostValuesAreIdentical(leftValue, rightValue),
+      ),
+    );
+  }
+
+  private static hostValuesAreIdentical(
+    leftValue: string | RegExp,
+    rightValue: string | RegExp,
+  ): boolean {
+    if (leftValue instanceof RegExp && rightValue instanceof RegExp) {
+      return (
+        leftValue.source === rightValue.source &&
+        leftValue.flags === rightValue.flags
+      );
+    }
+    return leftValue === rightValue;
+  }
+
+  private static versionsAreIdentical(
+    leftVersion: ResolvedRoute['version'],
+    rightVersion: ResolvedRoute['version'],
+    versioningOptions: VersioningOptions | undefined,
+  ): boolean {
+    // When versioning is not configured (or URI-based, where the
+    // version is encoded in the path), version metadata does not
+    // gate request matching at runtime, so two routes that differ
+    // only in their declared `version` are runtime duplicates.
+    if (!versioningOptions || versioningOptions.type === VersioningType.URI) {
+      return true;
+    }
+
+    if (leftVersion === rightVersion) return true;
+
+    const leftValues = Array.isArray(leftVersion) ? leftVersion : [leftVersion];
+    const rightValues = Array.isArray(rightVersion)
+      ? rightVersion
+      : [rightVersion];
+    if (leftValues.length !== rightValues.length) return false;
+
+    return leftValues.every(value => rightValues.includes(value as never));
   }
 
   private static forEachUniquePair<TItem>(

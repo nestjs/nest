@@ -100,6 +100,13 @@ describe('RouteConflictDetector', () => {
       ).to.be.true;
     });
 
+    it('should return false when the wildcard is on the longer side (named wildcard requires ≥1 segment)', () => {
+      expect(RouteConflictDetector.pathsCanOverlap('/files/*path', '/files')).to
+        .be.false;
+      expect(RouteConflictDetector.pathsCanOverlap('/files', '/files/*path')).to
+        .be.false;
+    });
+
     it('should return false for URI-versioned paths because the version is in the path', () => {
       expect(
         RouteConflictDetector.pathsCanOverlap(
@@ -205,7 +212,7 @@ describe('RouteConflictDetector', () => {
       expect(conflicts).to.be.empty;
     });
 
-    it('should flag overlap when one of the two header-versioned routes is version-neutral', () => {
+    it('should flag overlap as a shadow (not duplicate) when one of the two header-versioned routes is version-neutral', () => {
       const versioningOptions: VersioningOptions = {
         type: VersioningType.HEADER,
         header: 'Accept-Version',
@@ -222,6 +229,107 @@ describe('RouteConflictDetector', () => {
       const conflicts = RouteConflictDetector.detect(
         [neutralRoute, versionedRoute],
         versioningOptions,
+      );
+
+      expect(conflicts).to.have.lengthOf(1);
+      // The tuples differ on `version` (VERSION_NEUTRAL vs '1'), so by
+      // the documented "identical method+path+host+version" rule this
+      // is a shadow, not a duplicate. `duplicate: 'error'` must not
+      // reject this configuration.
+      expect(conflicts[0].kind).to.equal('shadow');
+    });
+
+    it('should flag overlap as a shadow when a hostless route faces a host-specific route on the same path', () => {
+      const hostlessRoute = makeResolvedRoute({ path: '/users/me' });
+      const hostBoundRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: 'api.example.com',
+        methodName: 'meOnApi',
+      });
+
+      const conflicts = RouteConflictDetector.detect(
+        [hostlessRoute, hostBoundRoute],
+        undefined,
+      );
+
+      expect(conflicts).to.have.lengthOf(1);
+      expect(conflicts[0].kind).to.equal('shadow');
+    });
+
+    it('should detect host-array overlap when arrays share a value (set membership, not stringified equality)', () => {
+      const multiHostRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: ['api.example.com', 'admin.example.com'],
+      });
+      const singleHostRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: ['admin.example.com'],
+        methodName: 'meOnAdmin',
+      });
+
+      const conflicts = RouteConflictDetector.detect(
+        [multiHostRoute, singleHostRoute],
+        undefined,
+      );
+
+      expect(conflicts).to.have.lengthOf(1);
+      // Hosts overlap on 'admin.example.com' but are not identical
+      // (different host sets), so this is a shadow.
+      expect(conflicts[0].kind).to.equal('shadow');
+    });
+
+    it('should not flag host arrays with no shared value as overlapping', () => {
+      const apiOnlyRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: ['api.example.com'],
+      });
+      const adminOnlyRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: ['admin.example.com'],
+      });
+
+      const conflicts = RouteConflictDetector.detect(
+        [apiOnlyRoute, adminOnlyRoute],
+        undefined,
+      );
+
+      expect(conflicts).to.be.empty;
+    });
+
+    it('should detect host overlap between a RegExp host and a string host the RegExp matches', () => {
+      const regExpHostRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: /\.example\.com$/,
+      });
+      const literalHostRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: 'api.example.com',
+        methodName: 'meOnApi',
+      });
+
+      const conflicts = RouteConflictDetector.detect(
+        [regExpHostRoute, literalHostRoute],
+        undefined,
+      );
+
+      expect(conflicts).to.have.lengthOf(1);
+      expect(conflicts[0].kind).to.equal('shadow');
+    });
+
+    it('should classify identical host arrays declared in different order as a duplicate', () => {
+      const earlierRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: ['api.example.com', 'admin.example.com'],
+      });
+      const laterRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: ['admin.example.com', 'api.example.com'],
+        methodName: 'meAgain',
+      });
+
+      const conflicts = RouteConflictDetector.detect(
+        [earlierRoute, laterRoute],
+        undefined,
       );
 
       expect(conflicts).to.have.lengthOf(1);

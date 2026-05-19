@@ -233,7 +233,7 @@ export const ROUTE_CONFLICT_MESSAGE = (messages: string[]) =>
   [
     'Conflicting HTTP routes detected:',
     ...messages.map(message => `  - ${message}`),
-    `Adjust route declarations or relax 'router.conflictPolicy' to allow the application to start.`,
+    `Adjust route declarations or relax the 'routeConflictPolicy' option passed to NestFactory.create() to allow the application to start.`,
   ].join('\n');
 
 export const DUPLICATE_ROUTE_MESSAGE = (
