@@ -1,5 +1,4 @@
 import { RequestMethod } from '@nestjs/common';
-import { expect } from 'chai';
 import { ResolvedRoute } from '../../router/interfaces/resolved-route.interface.js';
 import { RouteSpecificitySorter } from '../../router/route-specificity-sorter.js';
 
@@ -34,7 +33,7 @@ describe('RouteSpecificitySorter', () => {
         staticRoute,
       ]);
 
-      expect(pathsOf(sorted)).to.eql(['/users/me', '/users/:userId']);
+      expect(pathsOf(sorted)).toEqual(['/users/me', '/users/:userId']);
     });
 
     it('should put a parametric route before a wildcard route at the same length', () => {
@@ -46,7 +45,19 @@ describe('RouteSpecificitySorter', () => {
         parametricRoute,
       ]);
 
-      expect(pathsOf(sorted)).to.eql(['/users/:userId', '/users/*rest']);
+      expect(pathsOf(sorted)).toEqual(['/users/:userId', '/users/*rest']);
+    });
+
+    it('should treat adapter-normalized wildcard groups as wildcard routes', () => {
+      const wildcardRoute = makeResolvedRoute({ path: '/users/{*rest}' });
+      const parametricRoute = makeResolvedRoute({ path: '/users/:userId' });
+
+      const sorted = RouteSpecificitySorter.sort([
+        wildcardRoute,
+        parametricRoute,
+      ]);
+
+      expect(pathsOf(sorted)).toEqual(['/users/:userId', '/users/{*rest}']);
     });
 
     it('should fully order literal < param < wildcard across a triple', () => {
@@ -60,7 +71,7 @@ describe('RouteSpecificitySorter', () => {
         parametricRoute,
       ]);
 
-      expect(pathsOf(sorted)).to.eql([
+      expect(pathsOf(sorted)).toEqual([
         '/users/me',
         '/users/:userId',
         '/users/*rest',
@@ -87,7 +98,7 @@ describe('RouteSpecificitySorter', () => {
         thirdStatic,
       ]);
 
-      expect(sorted.map(route => route.methodName)).to.eql([
+      expect(sorted.map(route => route.methodName)).toEqual([
         'first',
         'second',
         'third',
@@ -107,7 +118,7 @@ describe('RouteSpecificitySorter', () => {
         specificEarlier,
       ]);
 
-      expect(pathsOf(sorted)).to.eql([
+      expect(pathsOf(sorted)).toEqual([
         '/users/me/:resource',
         '/users/:userId/orders',
       ]);
@@ -119,7 +130,7 @@ describe('RouteSpecificitySorter', () => {
 
       const sorted = RouteSpecificitySorter.sort([shorterRoute, longerRoute]);
 
-      expect(pathsOf(sorted)).to.eql(['/users/me', '/users']);
+      expect(pathsOf(sorted)).toEqual(['/users/me', '/users']);
     });
 
     it('should not mutate the input array', () => {
@@ -129,7 +140,7 @@ describe('RouteSpecificitySorter', () => {
 
       RouteSpecificitySorter.sort(input);
 
-      expect(input).to.eql([parametricRoute, staticRoute]);
+      expect(input).toEqual([parametricRoute, staticRoute]);
     });
 
     it('should return references to the same route objects (no defensive copy)', () => {
@@ -141,17 +152,17 @@ describe('RouteSpecificitySorter', () => {
         staticRoute,
       ]);
 
-      expect(sorted[0]).to.equal(staticRoute);
-      expect(sorted[1]).to.equal(parametricRoute);
+      expect(sorted[0]).toBe(staticRoute);
+      expect(sorted[1]).toBe(parametricRoute);
     });
 
     it('should handle an empty input', () => {
-      expect(RouteSpecificitySorter.sort([])).to.eql([]);
+      expect(RouteSpecificitySorter.sort([])).toEqual([]);
     });
 
     it('should handle a single-element input by returning it unchanged', () => {
       const onlyRoute = makeResolvedRoute({ path: '/users/me' });
-      expect(RouteSpecificitySorter.sort([onlyRoute])).to.eql([onlyRoute]);
+      expect(RouteSpecificitySorter.sort([onlyRoute])).toEqual([onlyRoute]);
     });
   });
 });

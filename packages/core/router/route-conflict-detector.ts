@@ -28,8 +28,10 @@ interface PathSegment {
  */
 export class RouteConflictDetector {
   /**
-   * Strips the leading `:` or `*` marker (if present) and tags each
-   * segment as a literal, named param, or named wildcard.
+   * Strips the leading `:` / `*` marker (if present) and tags each
+   * segment as a literal, named param, or named wildcard. Supports both
+   * bare named wildcards (`*path`) and adapter-normalized path-to-regexp
+   * wildcard groups (`{*path}`).
    */
   public static tokenizePath(rawPath: string): PathSegment[] {
     const segments: PathSegment[] = [];
@@ -40,6 +42,13 @@ export class RouteConflictDetector {
       .forEach(rawSegment => {
         if (rawSegment.startsWith('*')) {
           segments.push({ kind: 'wildcard', value: rawSegment.slice(1) });
+          return;
+        }
+        if (rawSegment.startsWith('{*') && rawSegment.endsWith('}')) {
+          segments.push({
+            kind: 'wildcard',
+            value: rawSegment.slice(2, -1),
+          });
           return;
         }
         if (rawSegment.startsWith(':')) {

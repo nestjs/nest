@@ -1,9 +1,9 @@
 import {
-  BadRequestException,
-  HttpException,
+  type HttpServer,
+  type Type,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { type HttpServer, type Type, Logger } from '@nestjs/common';
 import {
   HOST_METADATA,
   MODULE_PATH,

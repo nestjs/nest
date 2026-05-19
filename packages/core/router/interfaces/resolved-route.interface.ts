@@ -22,6 +22,7 @@ export type ResolvedRouteHandler = (...args: unknown[]) => unknown;
 export interface ResolvedRoute {
   method: RequestMethod;
   path: string;
+  rawPath?: string;
   host: string | RegExp | Array<string | RegExp> | undefined;
   version: VersionValue | undefined;
   methodVersion: VersionValue | undefined;

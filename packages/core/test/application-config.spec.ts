@@ -214,40 +214,40 @@ describe('ApplicationConfig', () => {
   });
   describe('Route conflict policy', () => {
     it('should default to undefined', () => {
-      expect(appConfig.getRouteConflictPolicy()).to.be.eql(undefined);
+      expect(appConfig.getRouteConflictPolicy()).toEqual(undefined);
     });
 
     it('should store the provided policy', () => {
       const policy = { duplicate: 'error', shadow: 'warn' } as const;
       appConfig.setRouteConflictPolicy(policy);
 
-      expect(appConfig.getRouteConflictPolicy()).to.be.eql(policy);
+      expect(appConfig.getRouteConflictPolicy()).toEqual(policy);
     });
 
     it('should reset to undefined when explicitly cleared', () => {
       appConfig.setRouteConflictPolicy({ duplicate: 'warn' });
       appConfig.setRouteConflictPolicy(undefined);
 
-      expect(appConfig.getRouteConflictPolicy()).to.be.eql(undefined);
+      expect(appConfig.getRouteConflictPolicy()).toEqual(undefined);
     });
   });
 
   describe('Route resolution strategy', () => {
     it('should default to undefined', () => {
-      expect(appConfig.getRouteResolutionStrategy()).to.be.eql(undefined);
+      expect(appConfig.getRouteResolutionStrategy()).toEqual(undefined);
     });
 
     it('should store the provided strategy', () => {
       appConfig.setRouteResolutionStrategy('specificity');
 
-      expect(appConfig.getRouteResolutionStrategy()).to.be.eql('specificity');
+      expect(appConfig.getRouteResolutionStrategy()).toEqual('specificity');
     });
 
     it('should reset to undefined when explicitly cleared', () => {
       appConfig.setRouteResolutionStrategy('specificity');
       appConfig.setRouteResolutionStrategy(undefined);
 
-      expect(appConfig.getRouteResolutionStrategy()).to.be.eql(undefined);
+      expect(appConfig.getRouteResolutionStrategy()).toEqual(undefined);
     });
   });
 });

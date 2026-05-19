@@ -6,7 +6,6 @@ import {
   type RouteConflictPolicy,
   type VersioningOptions,
 } from '@nestjs/common';
-import { expect } from 'chai';
 import { RouteConflictException } from '../../errors/exceptions/route-conflict.exception.js';
 import { ResolvedRoute } from '../../router/interfaces/resolved-route.interface.js';
 import { RouteConflictDetector } from '../../router/route-conflict-detector.js';
@@ -31,28 +30,35 @@ const makeResolvedRoute = (
 describe('RouteConflictDetector', () => {
   describe('tokenizePath', () => {
     it('should classify literal segments', () => {
-      expect(RouteConflictDetector.tokenizePath('/users/me')).to.eql([
+      expect(RouteConflictDetector.tokenizePath('/users/me')).toEqual([
         { kind: 'literal', value: 'users' },
         { kind: 'literal', value: 'me' },
       ]);
     });
 
     it('should classify named param segments', () => {
-      expect(RouteConflictDetector.tokenizePath('/users/:userId')).to.eql([
+      expect(RouteConflictDetector.tokenizePath('/users/:userId')).toEqual([
         { kind: 'literal', value: 'users' },
         { kind: 'param', value: 'userId' },
       ]);
     });
 
     it('should classify named wildcard segments', () => {
-      expect(RouteConflictDetector.tokenizePath('/files/*path')).to.eql([
+      expect(RouteConflictDetector.tokenizePath('/files/*path')).toEqual([
+        { kind: 'literal', value: 'files' },
+        { kind: 'wildcard', value: 'path' },
+      ]);
+    });
+
+    it('should classify adapter-normalized wildcard group segments', () => {
+      expect(RouteConflictDetector.tokenizePath('/files/{*path}')).toEqual([
         { kind: 'literal', value: 'files' },
         { kind: 'wildcard', value: 'path' },
       ]);
     });
 
     it('should ignore leading and trailing slashes and empty segments', () => {
-      expect(RouteConflictDetector.tokenizePath('//users//me/')).to.eql([
+      expect(RouteConflictDetector.tokenizePath('//users//me/')).toEqual([
         { kind: 'literal', value: 'users' },
         { kind: 'literal', value: 'me' },
       ]);
@@ -66,20 +72,21 @@ describe('RouteConflictDetector', () => {
     });
 
     it('should return false for different static paths of equal length', () => {
-      expect(RouteConflictDetector.pathsCanOverlap('/users/me', '/users/admin'))
-        .to.be.false;
+      expect(
+        RouteConflictDetector.pathsCanOverlap('/users/me', '/users/admin'),
+      ).toBe(false);
     });
 
     it('should return true when a param can match a literal', () => {
       expect(
         RouteConflictDetector.pathsCanOverlap('/users/:userId', '/users/me'),
-      ).to.be.true;
+      ).toBe(true);
     });
 
     it('should return true for two parametric paths of the same shape', () => {
       expect(
         RouteConflictDetector.pathsCanOverlap('/users/:userId', '/users/:slug'),
-      ).to.be.true;
+      ).toBe(true);
     });
 
     it('should return false when segment counts differ and no wildcard absorbs', () => {
@@ -88,7 +95,7 @@ describe('RouteConflictDetector', () => {
           '/users/:userId',
           '/users/:userId/images/:imageId',
         ),
-      ).to.be.false;
+      ).toBe(false);
     });
 
     it('should return true when a trailing wildcard absorbs extra segments', () => {
@@ -97,7 +104,16 @@ describe('RouteConflictDetector', () => {
           '/files/*path',
           '/files/images/avatar.png',
         ),
-      ).to.be.true;
+      ).toBe(true);
+    });
+
+    it('should return true when an adapter-normalized trailing wildcard absorbs extra segments', () => {
+      expect(
+        RouteConflictDetector.pathsCanOverlap(
+          '/files/{*path}',
+          '/files/images/avatar.png',
+        ),
+      ).toBe(true);
     });
 
     it('should return false when the wildcard is on the longer side (named wildcard requires ≥1 segment)', () => {
@@ -113,7 +129,7 @@ describe('RouteConflictDetector', () => {
           '/api/users/me',
           '/api/v1/users/me',
         ),
-      ).to.be.false;
+      ).toBe(false);
     });
   });
 
@@ -130,10 +146,10 @@ describe('RouteConflictDetector', () => {
         undefined,
       );
 
-      expect(conflicts).to.have.lengthOf(1);
-      expect(conflicts[0].kind).to.equal('duplicate');
-      expect(conflicts[0].winner).to.equal(earlierRoute);
-      expect(conflicts[0].shadowed).to.equal(laterRoute);
+      expect(conflicts).toHaveLength(1);
+      expect(conflicts[0].kind).toBe('duplicate');
+      expect(conflicts[0].winner).toBe(earlierRoute);
+      expect(conflicts[0].shadowed).toBe(laterRoute);
     });
 
     it('should flag overlapping but non-identical routes as a shadow', () => {
@@ -148,10 +164,10 @@ describe('RouteConflictDetector', () => {
         undefined,
       );
 
-      expect(conflicts).to.have.lengthOf(1);
-      expect(conflicts[0].kind).to.equal('shadow');
-      expect(conflicts[0].winner).to.equal(parametricRoute);
-      expect(conflicts[0].shadowed).to.equal(staticRoute);
+      expect(conflicts).toHaveLength(1);
+      expect(conflicts[0].kind).toBe('shadow');
+      expect(conflicts[0].winner).toBe(parametricRoute);
+      expect(conflicts[0].shadowed).toBe(staticRoute);
     });
 
     it('should not flag routes on different HTTP methods', () => {
@@ -169,7 +185,7 @@ describe('RouteConflictDetector', () => {
         undefined,
       );
 
-      expect(conflicts).to.be.empty;
+      expect(conflicts).toHaveLength(0);
     });
 
     it('should not flag routes on different hosts', () => {
@@ -187,7 +203,7 @@ describe('RouteConflictDetector', () => {
         undefined,
       );
 
-      expect(conflicts).to.be.empty;
+      expect(conflicts).toHaveLength(0);
     });
 
     it('should not flag routes on different versions when versioning is header-based', () => {
@@ -209,7 +225,7 @@ describe('RouteConflictDetector', () => {
         versioningOptions,
       );
 
-      expect(conflicts).to.be.empty;
+      expect(conflicts).toHaveLength(0);
     });
 
     it('should flag overlap as a shadow (not duplicate) when one of the two header-versioned routes is version-neutral', () => {
@@ -231,12 +247,12 @@ describe('RouteConflictDetector', () => {
         versioningOptions,
       );
 
-      expect(conflicts).to.have.lengthOf(1);
+      expect(conflicts).toHaveLength(1);
       // The tuples differ on `version` (VERSION_NEUTRAL vs '1'), so by
       // the documented "identical method+path+host+version" rule this
       // is a shadow, not a duplicate. `duplicate: 'error'` must not
       // reject this configuration.
-      expect(conflicts[0].kind).to.equal('shadow');
+      expect(conflicts[0].kind).toBe('shadow');
     });
 
     it('should flag overlap as a shadow when a hostless route faces a host-specific route on the same path', () => {
@@ -252,8 +268,8 @@ describe('RouteConflictDetector', () => {
         undefined,
       );
 
-      expect(conflicts).to.have.lengthOf(1);
-      expect(conflicts[0].kind).to.equal('shadow');
+      expect(conflicts).toHaveLength(1);
+      expect(conflicts[0].kind).toBe('shadow');
     });
 
     it('should detect host-array overlap when arrays share a value (set membership, not stringified equality)', () => {
@@ -272,10 +288,10 @@ describe('RouteConflictDetector', () => {
         undefined,
       );
 
-      expect(conflicts).to.have.lengthOf(1);
+      expect(conflicts).toHaveLength(1);
       // Hosts overlap on 'admin.example.com' but are not identical
       // (different host sets), so this is a shadow.
-      expect(conflicts[0].kind).to.equal('shadow');
+      expect(conflicts[0].kind).toBe('shadow');
     });
 
     it('should not flag host arrays with no shared value as overlapping', () => {
@@ -293,7 +309,7 @@ describe('RouteConflictDetector', () => {
         undefined,
       );
 
-      expect(conflicts).to.be.empty;
+      expect(conflicts).toHaveLength(0);
     });
 
     it('should detect host overlap between a RegExp host and a string host the RegExp matches', () => {
@@ -312,8 +328,8 @@ describe('RouteConflictDetector', () => {
         undefined,
       );
 
-      expect(conflicts).to.have.lengthOf(1);
-      expect(conflicts[0].kind).to.equal('shadow');
+      expect(conflicts).toHaveLength(1);
+      expect(conflicts[0].kind).toBe('shadow');
     });
 
     it('should classify identical host arrays declared in different order as a duplicate', () => {
@@ -332,8 +348,8 @@ describe('RouteConflictDetector', () => {
         undefined,
       );
 
-      expect(conflicts).to.have.lengthOf(1);
-      expect(conflicts[0].kind).to.equal('duplicate');
+      expect(conflicts).toHaveLength(1);
+      expect(conflicts[0].kind).toBe('duplicate');
     });
 
     it('should compare across multiple routes only once per unique pair', () => {
@@ -347,7 +363,7 @@ describe('RouteConflictDetector', () => {
       );
 
       // pairs: (1,2), (1,3), (2,3) — three conflicts, not six.
-      expect(conflicts).to.have.lengthOf(3);
+      expect(conflicts).toHaveLength(3);
     });
   });
 
@@ -374,7 +390,7 @@ describe('RouteConflictDetector', () => {
         { duplicate: 'error', shadow: 'error' },
         logger,
       );
-      expect(warnSpy.mock.calls).to.have.lengthOf(0);
+      expect(warnSpy.mock.calls).toHaveLength(0);
     });
 
     it('should do nothing when policy is undefined', () => {
@@ -385,7 +401,7 @@ describe('RouteConflictDetector', () => {
       };
 
       RouteConflictDetector.handle([fakeConflict], undefined, logger);
-      expect(warnSpy.mock.calls).to.have.lengthOf(0);
+      expect(warnSpy.mock.calls).toHaveLength(0);
     });
 
     it('should warn once per shadow conflict when shadow policy is "warn"', () => {
@@ -398,11 +414,11 @@ describe('RouteConflictDetector', () => {
 
       RouteConflictDetector.handle([fakeConflict], policy, logger);
 
-      expect(warnSpy.mock.calls).to.have.lengthOf(1);
+      expect(warnSpy.mock.calls).toHaveLength(1);
       const loggedMessage = warnSpy.mock.calls[0][0] as string;
-      expect(loggedMessage).to.include('shadowed');
-      expect(loggedMessage).to.include('/users/me');
-      expect(loggedMessage).to.include('/users/:userId');
+      expect(loggedMessage).toContain('shadowed');
+      expect(loggedMessage).toContain('/users/me');
+      expect(loggedMessage).toContain('/users/:userId');
     });
 
     it('should remain silent when the matching kind is set to "off"', () => {
@@ -418,7 +434,7 @@ describe('RouteConflictDetector', () => {
 
       RouteConflictDetector.handle([fakeShadowConflict], policy, logger);
 
-      expect(warnSpy.mock.calls).to.have.lengthOf(0);
+      expect(warnSpy.mock.calls).toHaveLength(0);
     });
 
     it('should throw a RouteConflictException when policy is "error"', () => {
@@ -432,9 +448,14 @@ describe('RouteConflictDetector', () => {
         kind: 'duplicate' as const,
       };
 
-      expect(() =>
-        RouteConflictDetector.handle([fakeDuplicate], policy, logger),
-      ).to.throw(RouteConflictException, /Duplicate route/);
+      let capturedError: RouteConflictException | undefined;
+      try {
+        RouteConflictDetector.handle([fakeDuplicate], policy, logger);
+      } catch (error) {
+        capturedError = error as RouteConflictException;
+      }
+      expect(capturedError).toBeInstanceOf(RouteConflictException);
+      expect(capturedError!.message).toMatch(/Duplicate route/);
     });
 
     it('should aggregate every error-policy conflict into one exception', () => {
@@ -467,9 +488,9 @@ describe('RouteConflictDetector', () => {
         capturedError = error as RouteConflictException;
       }
 
-      expect(capturedError).to.be.instanceOf(RouteConflictException);
-      expect(capturedError!.message).to.include('Duplicate route');
-      expect(capturedError!.message).to.include('shadowed');
+      expect(capturedError).toBeInstanceOf(RouteConflictException);
+      expect(capturedError!.message).toContain('Duplicate route');
+      expect(capturedError!.message).toContain('shadowed');
     });
 
     it('should mix warn and error policies when the kinds differ', () => {
@@ -491,14 +512,19 @@ describe('RouteConflictDetector', () => {
         kind: 'duplicate' as const,
       };
 
-      expect(() =>
+      let capturedError: RouteConflictException | undefined;
+      try {
         RouteConflictDetector.handle(
           [fakeShadow, fakeDuplicate],
           policy,
           logger,
-        ),
-      ).to.throw(RouteConflictException, /Duplicate route/);
-      expect(warnSpy.mock.calls).to.have.lengthOf(1);
+        );
+      } catch (error) {
+        capturedError = error as RouteConflictException;
+      }
+      expect(capturedError).toBeInstanceOf(RouteConflictException);
+      expect(capturedError!.message).toMatch(/Duplicate route/);
+      expect(warnSpy.mock.calls).toHaveLength(1);
     });
   });
 });

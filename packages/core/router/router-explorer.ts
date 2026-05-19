@@ -225,6 +225,9 @@ export class RouterExplorer {
         requestMethod,
       );
       pathsToRegister.forEach(path => {
+        const normalizedPath = router.normalizePath
+          ? router.normalizePath(path)
+          : path;
         const entrypointDefinition: Entrypoint<HttpEntrypointMetadata> = {
           type: 'http-endpoint',
           methodName,
@@ -243,9 +246,6 @@ export class RouterExplorer {
 
         if (!deferRegistration) {
           this.copyMetadataToCallback(targetCallback, routeHandler);
-          const normalizedPath = router.normalizePath
-            ? router.normalizePath(path)
-            : path;
 
           const httpAdapter = this.container.getHttpAdapterRef();
           const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
@@ -261,7 +261,8 @@ export class RouterExplorer {
 
         onRouteResolved?.({
           method: requestMethod,
-          path,
+          path: normalizedPath,
+          rawPath: path,
           host,
           version:
             routePathMetadata.methodVersion ??
@@ -315,15 +316,14 @@ export class RouterExplorer {
       .bind(router);
 
     this.copyMetadataToCallback(route.targetCallback, route.handler);
-    const normalizedPath = router.normalizePath
-      ? router.normalizePath(route.path)
-      : route.path;
+    const normalizedPath = route.path;
+    const rawPath = route.rawPath ?? route.path;
 
     const httpAdapter = this.container.getHttpAdapterRef();
     const onRouteTriggered = httpAdapter.getOnRouteTriggered?.();
     if (onRouteTriggered) {
       routerMethodRef(normalizedPath, (...args: unknown[]) => {
-        onRouteTriggered(route.method, route.path);
+        onRouteTriggered(route.method, rawPath);
         return route.handler(...args);
       });
     } else {
