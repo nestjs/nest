@@ -332,6 +332,33 @@ describe('RouteConflictDetector', () => {
       expect(conflicts[0].kind).toBe('shadow');
     });
 
+    it('should detect host overlap consistently when the RegExp host has the g flag (stateful lastIndex)', () => {
+      const globalRegExp = /\.example\.com$/g;
+      const regExpHostRoute = makeResolvedRoute({
+        path: '/users/me',
+        host: globalRegExp,
+      });
+      const routeA = makeResolvedRoute({
+        path: '/users/me',
+        host: 'api.example.com',
+        methodName: 'meOnApi',
+      });
+      const routeB = makeResolvedRoute({
+        path: '/users/me',
+        host: 'admin.example.com',
+        methodName: 'meOnAdmin',
+      });
+      const conflicts = RouteConflictDetector.detect(
+        [regExpHostRoute, routeA, routeB],
+        undefined,
+      );
+
+      const regExpPairs = conflicts.filter(
+        c => c.winner === regExpHostRoute || c.shadowed === regExpHostRoute,
+      );
+      expect(regExpPairs).toHaveLength(2);
+    });
+
     it('should classify identical host arrays declared in different order as a duplicate', () => {
       const earlierRoute = makeResolvedRoute({
         path: '/users/me',

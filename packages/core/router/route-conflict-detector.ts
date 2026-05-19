@@ -314,8 +314,18 @@ export class RouteConflictDetector {
     const leftIsRegExp = leftValue instanceof RegExp;
     const rightIsRegExp = rightValue instanceof RegExp;
     if (leftIsRegExp && rightIsRegExp) return true;
-    if (leftIsRegExp) return leftValue.test(rightValue as string);
-    if (rightIsRegExp) return rightValue.test(leftValue as string);
+    // Reset lastIndex before calling test() to guard against RegExps with the
+    // `g` or `y` flags: those are stateful and would produce inconsistent
+    // results (false negatives) when the same instance is reused across the
+    // multiple pair comparisons that a single detect() run performs.
+    if (leftIsRegExp) {
+      leftValue.lastIndex = 0;
+      return leftValue.test(rightValue as string);
+    }
+    if (rightIsRegExp) {
+      rightValue.lastIndex = 0;
+      return rightValue.test(leftValue as string);
+    }
     return leftValue === rightValue;
   }
 
