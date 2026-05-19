@@ -170,7 +170,7 @@
     "tsconfig-paths": "4.2.0",
     "typeorm": "0.3.30",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.58.2",
+    "typescript-eslint": "8.59.4",
     "ws": "8.20.1"
   },
   "engines": {
