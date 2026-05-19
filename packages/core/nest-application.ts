@@ -240,6 +240,14 @@ export class NestApplication
       deferRegistration: true,
     });
 
+    // Sort before conflict detection so that winner/shadowed pairs in every
+    // conflict record reflect actual adapter registration order. Without this,
+    // the reported winner could be the declaration-first (less-specific) route
+    // even though the sorted-first (more-specific) route is what really wins.
+    const orderedRoutes = shouldSortBySpecificity
+      ? RouteSpecificitySorter.sort(resolvedRoutes)
+      : resolvedRoutes;
+
     const routesToSkip = new Set<ResolvedRoute>();
     if (conflictPolicy) {
       const filteredPolicy = adapterIsOrderSensitive
@@ -247,7 +255,7 @@ export class NestApplication
         : { duplicate: conflictPolicy.duplicate };
 
       const conflicts = RouteConflictDetector.detect(
-        resolvedRoutes,
+        orderedRoutes,
         this.config.getVersioning(),
       );
 
@@ -256,7 +264,7 @@ export class NestApplication
       // throw on the second `instance.route()` call. Drop the
       // shadowed route of every duplicate conflict so the detector
       // (not the adapter) decides which one wins. The detector
-      // always picks the earlier-declared route as the winner.
+      // always picks the earlier-registered route as the winner.
       if (adapterRejectsDuplicates) {
         conflicts.forEach(conflict => {
           if (conflict.kind === 'duplicate') {
@@ -265,12 +273,27 @@ export class NestApplication
         });
       }
 
-      RouteConflictDetector.handle(conflicts, filteredPolicy, this.logger);
-    }
+      // When specificity sorting is active, shadow conflicts where the sort
+      // promoted the winner (declared later but more specific) are resolved
+      // at runtime: the more-specific route is first-registered and handles
+      // its requests, the less-specific route handles the rest. Filtering
+      // these out prevents shadow: 'error' from aborting an app whose routes
+      // work correctly after specificity ordering. Genuine shadows — where the
+      // winner was already first in declaration order and the sort did not help
+      // — are kept and still apply the configured policy.
+      const effectiveConflicts = shouldSortBySpecificity
+        ? RouteConflictDetector.filterSortResolvedShadows(
+            conflicts,
+            resolvedRoutes,
+          )
+        : conflicts;
 
-    const orderedRoutes = shouldSortBySpecificity
-      ? RouteSpecificitySorter.sort(resolvedRoutes)
-      : resolvedRoutes;
+      RouteConflictDetector.handle(
+        effectiveConflicts,
+        filteredPolicy,
+        this.logger,
+      );
+    }
 
     orderedRoutes.forEach(route => {
       if (routesToSkip.has(route)) return;

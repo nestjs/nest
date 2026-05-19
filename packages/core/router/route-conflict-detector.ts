@@ -202,6 +202,44 @@ export class RouteConflictDetector {
     }
   }
 
+  /**
+   * Removes shadow conflicts that specificity sorting has already resolved.
+   *
+   * When `routeResolutionStrategy: 'specificity'` is active, the sort
+   * promotes more-specific routes ahead of less-specific ones. A shadow
+   * where the sort promoted the winner (it was declared *later* but sorted
+   * *first*) is handled correctly at runtime — the more-specific route is
+   * registered first and handles its requests while the less-specific route
+   * handles the rest. Retaining such a conflict would cause `shadow: 'error'`
+   * to abort an application whose routes actually work as intended.
+   *
+   * Shadows where the winner was already first in declaration order (the
+   * sort did not swap them) are genuine and are kept unchanged. Duplicate
+   * conflicts are always kept.
+   *
+   * @param conflicts     Conflicts detected on the sorted route list.
+   * @param declarationOrder  Routes in their original declaration order
+   *                          (i.e. before specificity sorting was applied).
+   */
+  public static filterSortResolvedShadows(
+    conflicts: RouteConflict[],
+    declarationOrder: ResolvedRoute[],
+  ): RouteConflict[] {
+    const declarationIndex = new Map(
+      declarationOrder.map((route, idx) => [route, idx]),
+    );
+    return conflicts.filter(conflict => {
+      if (conflict.kind !== 'shadow') return true;
+      const winnerDeclIdx = declarationIndex.get(conflict.winner) ?? -1;
+      const shadowedDeclIdx = declarationIndex.get(conflict.shadowed) ?? -1;
+      // The sort promoted the winner (declared later, but sorted to the
+      // front because it is more specific). The shadow is resolved at
+      // runtime — drop it. Keep only genuine shadows where the winner was
+      // already first in declaration order.
+      return winnerDeclIdx < shadowedDeclIdx;
+    });
+  }
+
   private static segmentsCanOverlap(
     leftSegment: PathSegment,
     rightSegment: PathSegment,

@@ -527,4 +527,110 @@ describe('RouteConflictDetector', () => {
       expect(warnSpy.mock.calls).toHaveLength(1);
     });
   });
+
+  describe('filterSortResolvedShadows', () => {
+    // Two routes where the sort promoted the more-specific literal route
+    // to the front (it was declared *after* the param route).
+    const declaredFirst = makeResolvedRoute({ path: '/users/:userId' }); // idx 0
+    const declaredSecond = makeResolvedRoute({ path: '/users/me' }); // idx 1
+    const declarationOrder = [declaredFirst, declaredSecond];
+
+    it('should drop a shadow whose winner was promoted by the sort', () => {
+      // After specificity sort, /users/me (literal) is first → winner.
+      // In declaration order, /users/:userId was first → the sort swapped them.
+      const sortResolvedShadow = {
+        winner: declaredSecond, // sorted to front (declared later)
+        shadowed: declaredFirst, // sorted to back  (declared first)
+        kind: 'shadow' as const,
+      };
+      const result = RouteConflictDetector.filterSortResolvedShadows(
+        [sortResolvedShadow],
+        declarationOrder,
+      );
+      expect(result).toHaveLength(0);
+    });
+
+    it('should keep a genuine shadow whose winner was already first in declaration order', () => {
+      // Two param routes: sorting cannot resolve this shadow.
+      const paramA = makeResolvedRoute({
+        path: '/users/:userId',
+        methodName: 'findById',
+      });
+      const paramB = makeResolvedRoute({
+        path: '/users/:slug',
+        methodName: 'findBySlug',
+      });
+      const genuineShadow = {
+        winner: paramA,
+        shadowed: paramB,
+        kind: 'shadow' as const,
+      };
+      const result = RouteConflictDetector.filterSortResolvedShadows(
+        [genuineShadow],
+        [paramA, paramB],
+      );
+      expect(result).toEqual([genuineShadow]);
+    });
+
+    it('should always keep duplicate conflicts regardless of declaration order', () => {
+      const dup = {
+        winner: declaredFirst,
+        shadowed: declaredSecond,
+        kind: 'duplicate' as const,
+      };
+      const result = RouteConflictDetector.filterSortResolvedShadows(
+        [dup],
+        declarationOrder,
+      );
+      expect(result).toEqual([dup]);
+    });
+
+    it('should keep genuine shadows and drop sort-resolved shadows in the same list', () => {
+      const sortResolved = {
+        winner: declaredSecond,
+        shadowed: declaredFirst,
+        kind: 'shadow' as const,
+      };
+      const paramA = makeResolvedRoute({
+        path: '/users/:userId',
+        methodName: 'a',
+      });
+      const paramB = makeResolvedRoute({
+        path: '/users/:slug',
+        methodName: 'b',
+      });
+      const genuine = {
+        winner: paramA,
+        shadowed: paramB,
+        kind: 'shadow' as const,
+      };
+      const dup = {
+        winner: makeResolvedRoute({ path: '/orders/:id', methodName: 'c' }),
+        shadowed: makeResolvedRoute({ path: '/orders/:id', methodName: 'd' }),
+        kind: 'duplicate' as const,
+      };
+
+      const result = RouteConflictDetector.filterSortResolvedShadows(
+        [sortResolved, genuine, dup],
+        [
+          declaredFirst,
+          declaredSecond,
+          paramA,
+          paramB,
+          dup.winner,
+          dup.shadowed,
+        ],
+      );
+      // sort-resolved shadow is dropped; genuine shadow and duplicate are kept
+      expect(result).toHaveLength(2);
+      expect(result).toContain(genuine);
+      expect(result).toContain(dup);
+    });
+
+    it('should return an empty list when given an empty conflicts array', () => {
+      expect(
+        RouteConflictDetector.filterSortResolvedShadows([], declarationOrder),
+      ).toHaveLength(0);
+    });
+  });
 });

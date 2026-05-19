@@ -87,4 +87,40 @@ describe('Route resolution strategy: specificity (Express)', () => {
       expect(response.status).toBe(404);
     });
   });
+
+  describe('combined with routeConflictPolicy', () => {
+    it('boots without error when shadow=error and specificity ordering resolves all shadows', async () => {
+      // The multi-user fixture has GET /users/:userId (declared first) and
+      // GET /users/me (declared second). In declaration order this is a shadow
+      // conflict that would abort the app. With specificity sorting, the literal
+      // /users/me is registered before /:userId, so at runtime every route is
+      // reachable — the shadow is resolved by the sort and should not trigger
+      // shadow: 'error'.
+      await expect(
+        buildApp({
+          routeResolutionStrategy: 'specificity',
+          routeConflictPolicy: { shadow: 'error' },
+        }).then(a => {
+          app = a;
+          return a.init();
+        }),
+      ).resolves.not.toThrow();
+    });
+
+    it('routes correctly when both options are active together', async () => {
+      app = await buildApp({
+        routeResolutionStrategy: 'specificity',
+        routeConflictPolicy: { shadow: 'warn' },
+      });
+      await app.init();
+
+      const meRes = await request(app.getHttpServer()).get('/users/me');
+      expect(meRes.status).toBe(200);
+      expect(meRes.body).toEqual({ handler: 'me' });
+
+      const idRes = await request(app.getHttpServer()).get('/users/42');
+      expect(idRes.status).toBe(200);
+      expect(idRes.body).toEqual({ handler: 'byId', userId: '42' });
+    });
+  });
 });
