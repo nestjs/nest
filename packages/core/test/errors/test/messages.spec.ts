@@ -385,15 +385,76 @@ Scope [AppModule -> CatsModule]`);
   });
 
   describe('INVALID_MODULE_MESSAGE', () => {
-    it('should display the module name with the invalid index and scope', () => {
+    it('should display the received `null` value and its type', () => {
       const expectedMessage =
         stringCleaner(`Nest cannot create the CatsModule instance.
 Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`null\` is of type "null".
 
 Scope [AppModule -> CatsModule]`);
 
       const actualMessage = stringCleaner(
-        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule]),
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], null),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+
+    it('should display the received `false` value and its type', () => {
+      const expectedMessage =
+        stringCleaner(`Nest cannot create the CatsModule instance.
+Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`false\` is of type "boolean".
+
+Scope [AppModule -> CatsModule]`);
+
+      const actualMessage = stringCleaner(
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], false),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+
+    it('should display the received `0` value and its type', () => {
+      const expectedMessage =
+        stringCleaner(`Nest cannot create the CatsModule instance.
+Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`0\` is of type "number".
+
+Scope [AppModule -> CatsModule]`);
+
+      const actualMessage = stringCleaner(
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], 0),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+
+    it('should display the received empty string value and its type', () => {
+      const expectedMessage =
+        stringCleaner(`Nest cannot create the CatsModule instance.
+Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`""\` is of type "string".
+
+Scope [AppModule -> CatsModule]`);
+
+      const actualMessage = stringCleaner(
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], ''),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+
+    it('should display the received `NaN` value and its type', () => {
+      const expectedMessage =
+        stringCleaner(`Nest cannot create the CatsModule instance.
+Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`NaN\` is of type "number".
+
+Scope [AppModule -> CatsModule]`);
+
+      const actualMessage = stringCleaner(
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], NaN),
       );
 
       expect(actualMessage).to.be.eq(expectedMessage);
