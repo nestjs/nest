@@ -776,6 +776,29 @@ describe('Injector', () => {
       );
     });
 
+    it('should fall back to the resolve-each-param path when ctor metadata is sparse', async () => {
+      const wrapper = new InstanceWrapper();
+      // Simulate a concurrent request observing a half-populated metadata
+      // array (one dep registered, one still in flight).
+      const metadata = [new InstanceWrapper()];
+      metadata.length = 2;
+      sinon.stub(wrapper, 'getCtorMetadata').callsFake(() => metadata);
+
+      const loadCtorMetadataSpy = sinon.spy(injector, 'loadCtorMetadata');
+      await injector
+        .resolveConstructorParams(
+          wrapper,
+          null!,
+          ['Provider1', 'Provider2'],
+          () => {},
+          { contextId: { id: 2 } },
+        )
+        .catch(() => {});
+
+      expect(loadCtorMetadataSpy.called).to.be.false;
+      loadCtorMetadataSpy.restore();
+    });
+
     it('should not hang when a parameter is missing @Inject and design:paramtypes is absent', async function () {
       this.timeout(500);
 

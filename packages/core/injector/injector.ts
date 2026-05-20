@@ -316,8 +316,32 @@ export class Injector {
     parentInquirer?: InstanceWrapper,
   ) {
     const metadata = wrapper.getCtorMetadata();
+    // The fast path requires a fully populated metadata array. While a
+    // concurrent request is still calling `addDependencyMetadata` for each
+    // dep position, the array is sparse and reading it here would feed the
+    // factory `undefined` for any unset position.
+    let expectedDepsLength: number;
+    if (!isNil(inject)) {
+      expectedDepsLength = inject.length;
+    } else if (wrapper.metatype) {
+      expectedDepsLength = this.reflectConstructorParams(
+        wrapper.metatype,
+      ).length;
+    } else {
+      expectedDepsLength = 0;
+    }
+    let isMetadataDense = false;
+    if (metadata && metadata.length === expectedDepsLength) {
+      isMetadataDense = true;
+      for (let i = 0; i < expectedDepsLength; i++) {
+        if (metadata[i] === undefined) {
+          isMetadataDense = false;
+          break;
+        }
+      }
+    }
 
-    if (metadata && resolutionContext.contextId !== STATIC_CONTEXT) {
+    if (isMetadataDense && resolutionContext.contextId !== STATIC_CONTEXT) {
       const deps = await this.loadCtorMetadata(
         metadata,
         resolutionContext.contextId,
@@ -461,21 +485,21 @@ export class Injector {
     ];
   }
 
-  public reflectConstructorParams<T>(type: Type<T>): any[] {
+  public reflectConstructorParams(type: Type<unknown> | Function): any[] {
     const paramtypes = [
       ...(Reflect.getMetadata(PARAMTYPES_METADATA, type) || []),
     ];
-    const selfParams = this.reflectSelfParams<T>(type);
+    const selfParams = this.reflectSelfParams(type);
 
     selfParams.forEach(({ index, param }) => (paramtypes[index] = param));
     return Array.from(paramtypes);
   }
 
-  public reflectOptionalParams<T>(type: Type<T>): any[] {
+  public reflectOptionalParams(type: Type<unknown> | Function): any[] {
     return Reflect.getMetadata(OPTIONAL_DEPS_METADATA, type) || [];
   }
 
-  public reflectSelfParams<T>(type: Type<T>): any[] {
+  public reflectSelfParams(type: Type<unknown> | Function): any[] {
     return Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, type) || [];
   }
 
