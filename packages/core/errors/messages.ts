@@ -157,11 +157,26 @@ export const INVALID_MODULE_MESSAGE = (
   parentModule: any,
   index: number,
   scope: any[],
+  receivedValue: unknown,
 ) => {
   const parentModuleName = parentModule?.name || 'module';
 
+  let formattedValue: string;
+  let receivedType: string;
+  if (receivedValue === null) {
+    formattedValue = 'null';
+    receivedType = 'null';
+  } else if (typeof receivedValue === 'string') {
+    formattedValue = `"${receivedValue}"`;
+    receivedType = 'string';
+  } else {
+    formattedValue = String(receivedValue);
+    receivedType = typeof receivedValue;
+  }
+
   return `Nest cannot create the ${parentModuleName} instance.
 Received an unexpected value at index [${index}] of the ${parentModuleName} "imports" array.
+The received value \`${formattedValue}\` is of type "${receivedType}".
 
 Scope [${stringifyScope(scope)}]`;
 };

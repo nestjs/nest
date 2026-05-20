@@ -150,7 +150,12 @@ export class DependenciesScanner {
         throw new UndefinedModuleException(moduleDefinition, index, scope);
       }
       if (!innerModule) {
-        throw new InvalidModuleException(moduleDefinition, index, scope);
+        throw new InvalidModuleException(
+          moduleDefinition,
+          index,
+          scope,
+          innerModule,
+        );
       }
       if (ctxRegistry.includes(innerModule)) {
         continue;
