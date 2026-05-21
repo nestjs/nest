@@ -1,4 +1,4 @@
-import { Optional } from '@nestjs/common';
+import { Optional, Scope } from '@nestjs/common';
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
 import * as chai from 'chai';
 import { expect } from 'chai';
@@ -307,6 +307,38 @@ describe('Injector', () => {
       await injector.loadInjectable(wrapper as any, module as any);
       expect(loadInstance.calledWith(wrapper, module.injectables, module)).to.be
         .true;
+    });
+  });
+
+  describe('loadProvider', () => {
+    @Injectable({ scope: Scope.TRANSIENT })
+    class TransientProvider {}
+
+    it('should not eagerly load a top-level transient provider during snapshot bootstrap', async () => {
+      const snapshotInjector = new Injector({
+        preview: false,
+        snapshot: true,
+      });
+      const loadInstance = sinon.spy(snapshotInjector, 'loadInstance');
+      const loadEnhancersPerContext = sinon.spy(
+        snapshotInjector,
+        'loadEnhancersPerContext',
+      );
+
+      const wrapper = new InstanceWrapper({
+        metatype: TransientProvider,
+        instance: null,
+        isResolved: false,
+        scope: Scope.TRANSIENT,
+      });
+      const moduleRef = {
+        providers: new Map([[TransientProvider, wrapper]]),
+      } as any;
+
+      await snapshotInjector.loadProvider(wrapper as any, moduleRef);
+
+      expect(loadInstance.called).to.be.false;
+      expect(loadEnhancersPerContext.called).to.be.false;
     });
   });
 

@@ -545,4 +545,44 @@ describe('NestApplicationContext', () => {
       expect(instances[2]).to.be.instanceOf(Service3);
     });
   });
+
+  describe('snapshot bootstrap', () => {
+    it('should not eagerly instantiate an unused transient provider', async () => {
+      @Injectable({ scope: Scope.TRANSIENT })
+      class UnusedTransient {
+        static constructorCalls = 0;
+
+        constructor() {
+          UnusedTransient.constructorCalls++;
+        }
+      }
+
+      const nestContainer = new NestContainer();
+      const injector = new Injector({
+        preview: false,
+        snapshot: true,
+      });
+      const instanceLoader = new InstanceLoader(
+        nestContainer,
+        injector,
+        new GraphInspector(nestContainer),
+      );
+      const { moduleRef } = (await nestContainer.addModule(class T {}, []))!;
+
+      nestContainer.addProvider(UnusedTransient, moduleRef.token);
+
+      const modules = nestContainer.getModules();
+      await instanceLoader.createInstancesOfDependencies(modules);
+
+      expect(UnusedTransient.constructorCalls).to.equal(0);
+
+      const appCtx = new NestApplicationContext(nestContainer, {
+        snapshot: true,
+      });
+      const instance = await appCtx.resolve(UnusedTransient);
+
+      expect(instance).to.be.instanceOf(UnusedTransient);
+      expect(UnusedTransient.constructorCalls).to.equal(1);
+    });
+  });
 });

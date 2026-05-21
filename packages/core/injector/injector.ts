@@ -1046,7 +1046,6 @@ export class Injector {
     wrapper: InstanceWrapper<Injectable>,
     resolutionContext: ResolutionContext,
   ): boolean {
-    const isSnapshotGraphCompilation = !!this.options?.snapshot;
     const isStaticContext = resolutionContext.contextId === STATIC_CONTEXT;
     const hasNoInquirer = !resolutionContext.inquirer;
     const isTopLevelStaticTransientOrRequestProvider =
@@ -1065,7 +1064,7 @@ export class Injector {
       (isTopLevelStaticTransientOrRequestProvider ||
         isStaticInquirerOutsideResolutionContext);
 
-    return !isSnapshotGraphCompilation && shouldSkipForStaticBootstrap;
+    return shouldSkipForStaticBootstrap;
   }
 
   /**
