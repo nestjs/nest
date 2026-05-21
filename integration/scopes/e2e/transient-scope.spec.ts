@@ -1,4 +1,5 @@
 import { INestApplication, Injectable, Scope } from '@nestjs/common';
+import { createContextId } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as request from 'supertest';
@@ -446,6 +447,156 @@ describe('Transient scope', () => {
     });
 
     after(async () => {
+      await app.close();
+    });
+  });
+
+  describe('when request-scoped providers have a deeply nested transient chain', () => {
+    let app: INestApplication;
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class RequestDepthSixTransient {
+      public static instanceCount = 0;
+      public readonly instanceId: number;
+
+      constructor() {
+        RequestDepthSixTransient.instanceCount++;
+        this.instanceId = RequestDepthSixTransient.instanceCount;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class RequestDepthFiveTransient {
+      public static instanceCount = 0;
+      public readonly instanceId: number;
+
+      constructor(public readonly next: RequestDepthSixTransient) {
+        RequestDepthFiveTransient.instanceCount++;
+        this.instanceId = RequestDepthFiveTransient.instanceCount;
+      }
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class RequestDepthFourTransient {
+      constructor(public readonly next: RequestDepthFiveTransient) {}
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class RequestDepthThreeTransient {
+      constructor(public readonly next: RequestDepthFourTransient) {}
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class RequestDepthTwoTransient {
+      constructor(public readonly next: RequestDepthThreeTransient) {}
+    }
+
+    @Injectable({ scope: Scope.TRANSIENT })
+    class RequestDepthOneTransient {
+      constructor(public readonly next: RequestDepthTwoTransient) {}
+    }
+
+    @Injectable({ scope: Scope.REQUEST })
+    class RequestScopedParentA {
+      constructor(public readonly chain: RequestDepthOneTransient) {}
+    }
+
+    @Injectable({ scope: Scope.REQUEST })
+    class RequestScopedParentB {
+      constructor(public readonly chain: RequestDepthOneTransient) {}
+    }
+
+    beforeEach(async () => {
+      RequestDepthFiveTransient.instanceCount = 0;
+      RequestDepthSixTransient.instanceCount = 0;
+
+      const module = await Test.createTestingModule({
+        providers: [
+          RequestScopedParentA,
+          RequestScopedParentB,
+          RequestDepthOneTransient,
+          RequestDepthTwoTransient,
+          RequestDepthThreeTransient,
+          RequestDepthFourTransient,
+          RequestDepthFiveTransient,
+          RequestDepthSixTransient,
+        ],
+      }).compile();
+
+      app = module.createNestApplication();
+      await app.init();
+    });
+
+    it('should create separate deep transient chains for different request-scoped parents in the same context', async function () {
+      this.timeout(20000);
+
+      const contextId = createContextId();
+      const [parentA, parentB] = await Promise.all([
+        app.resolve(RequestScopedParentA, contextId),
+        app.resolve(RequestScopedParentB, contextId),
+      ]);
+
+      expect(parentA).to.not.equal(parentB);
+      expect(parentA.chain).to.not.equal(parentB.chain);
+      expect(parentA.chain.next.next.next.next.instanceId).to.not.equal(
+        parentB.chain.next.next.next.next.instanceId,
+      );
+      expect(parentA.chain.next.next.next.next.next.instanceId).to.not.equal(
+        parentB.chain.next.next.next.next.next.instanceId,
+      );
+    });
+
+    it('should isolate deep transient chains across overlapping request contexts', async function () {
+      this.timeout(20000);
+
+      const contextIds = Array.from({ length: 200 }, () => createContextId());
+      const parents = await Promise.all(
+        contextIds.map(contextId =>
+          app.resolve(RequestScopedParentA, contextId),
+        ),
+      );
+
+      expect(new Set(parents).size).to.equal(contextIds.length);
+      expect(
+        new Set(
+          parents.map(parent => parent.chain.next.next.next.next.instanceId),
+        ).size,
+      ).to.equal(contextIds.length);
+      expect(
+        new Set(
+          parents.map(
+            parent => parent.chain.next.next.next.next.next.instanceId,
+          ),
+        ).size,
+      ).to.equal(contextIds.length);
+    });
+
+    it('should reuse the same request-scoped parent while preserving a single deep transient chain per context', async function () {
+      this.timeout(20000);
+
+      const contextId = createContextId();
+      const parents = await Promise.all(
+        Array.from({ length: 200 }, () =>
+          app.resolve(RequestScopedParentA, contextId),
+        ),
+      );
+
+      expect(new Set(parents).size).to.equal(1);
+      expect(
+        new Set(
+          parents.map(parent => parent.chain.next.next.next.next.instanceId),
+        ).size,
+      ).to.equal(1);
+      expect(
+        new Set(
+          parents.map(
+            parent => parent.chain.next.next.next.next.next.instanceId,
+          ),
+        ).size,
+      ).to.equal(1);
+    });
+
+    afterEach(async () => {
       await app.close();
     });
   });
