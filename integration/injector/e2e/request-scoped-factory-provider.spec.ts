@@ -20,6 +20,7 @@ import { expect } from 'chai';
 
 describe('Request-scoped factory provider', () => {
   const REQUEST_SCOPED_FACTORY = 'REQUEST_SCOPED_FACTORY';
+  const REQUEST_COUNT = 1000;
 
   @Catch()
   class RecordingFilter implements ExceptionFilter {
@@ -66,6 +67,29 @@ describe('Request-scoped factory provider', () => {
   class ConfigService {
     get(_key: string) {
       return 'config-value';
+    }
+  }
+
+  @Injectable()
+  class InflightGate {
+    private arrivalCount = 0;
+    private released = false;
+    private waitingResolver?: () => void;
+
+    async waitForOverlap() {
+      if (this.released) {
+        return;
+      }
+      this.arrivalCount++;
+      if (this.arrivalCount === 1) {
+        await new Promise<void>(resolve => {
+          this.waitingResolver = resolve;
+        });
+        return;
+      }
+      this.released = true;
+      this.waitingResolver?.();
+      this.waitingResolver = undefined;
     }
   }
 
@@ -128,17 +152,23 @@ describe('Request-scoped factory provider', () => {
     imports: [AuthModule, ActorModule],
     controllers: [TestController],
     providers: [
+      InflightGate,
       {
         provide: REQUEST_SCOPED_FACTORY,
         scope: Scope.REQUEST,
-        inject: [AuthenticatedTenant, ActorService],
+        inject: [AuthenticatedTenant, ActorService, InflightGate],
         useFactory: async (
           authenticatedTenant: AuthenticatedTenant,
           actorService: ActorService,
-        ) => ({
-          actorId: actorService.getActor() ?? '',
-          tenantId: authenticatedTenant.tenantName,
-        }),
+          inflightGate: InflightGate,
+        ) => {
+          await inflightGate.waitForOverlap();
+
+          return {
+            actorId: actorService.getActor() ?? '',
+            tenantId: authenticatedTenant.tenantName,
+          };
+        },
       },
     ],
   })
@@ -163,10 +193,10 @@ describe('Request-scoped factory provider', () => {
     await app.close();
   });
 
-  it('should resolve all injected dependencies across overlapping requests', async () => {
-    const requestCount = 10;
+  it('should resolve all injected dependencies across overlapping requests', async function () {
+    this.timeout(20000);
     const responses = await Promise.all(
-      Array.from({ length: requestCount }, (_, index) =>
+      Array.from({ length: REQUEST_COUNT }, (_, index) =>
         app.inject({
           method: 'GET',
           url: '/posts',
@@ -193,5 +223,13 @@ describe('Request-scoped factory provider', () => {
     });
 
     expect(failures).to.deep.equal([]);
+
+    const payloads = responses.map(response => JSON.parse(response.body));
+    expect(payloads).to.deep.equal(
+      Array.from({ length: REQUEST_COUNT }, (_, index) => ({
+        actorId: `actor-${index}`,
+        tenantId: `tenant-${index}`,
+      })),
+    );
   });
 });
