@@ -211,6 +211,30 @@ describe('Injector', () => {
     });
   });
 
+  describe('resolveConstructorParams', () => {
+    it('should fall back to resolving each param when ctor metadata is sparse', async () => {
+      const wrapper = new InstanceWrapper();
+      const metadata = [new InstanceWrapper()];
+      metadata.length = 2;
+
+      sinon.stub(wrapper, 'getCtorMetadata').callsFake(() => metadata);
+
+      const loadCtorMetadataSpy = sinon.spy(injector, 'loadCtorMetadata');
+      await injector
+        .resolveConstructorParams(
+          wrapper,
+          null!,
+          ['Provider1', 'Provider2'],
+          () => {},
+          { contextId: { id: 2 } },
+        )
+        .catch(() => {});
+
+      expect(loadCtorMetadataSpy.called).to.be.false;
+      loadCtorMetadataSpy.restore();
+    });
+  });
+
   describe('loadMiddleware', () => {
     let loadInstanceSpy: sinon.SinonSpy;
 
