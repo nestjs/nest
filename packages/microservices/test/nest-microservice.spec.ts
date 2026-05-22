@@ -154,4 +154,22 @@ describe('NestMicroservice', () => {
     instance.on('test:event', cb);
     expect(onStub.calledWith('test:event', cb)).to.be.true;
   });
+
+  it('should return the transport server instance via getTransportServer()', () => {
+    const strategy = new (class extends Server {
+      listen = sinon.spy();
+      close = sinon.spy();
+      on = sinon.stub();
+      unwrap = sinon.stub();
+    })();
+
+    const instance = new NestMicroservice(
+      mockContainer,
+      { strategy },
+      mockGraphInspector,
+      mockAppConfig,
+    );
+
+    expect(instance.getTransportServer()).to.equal(strategy);
+  });
 });

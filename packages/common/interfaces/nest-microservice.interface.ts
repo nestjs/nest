@@ -3,6 +3,7 @@ import { ExceptionFilter } from './exceptions/exception-filter.interface';
 import { CanActivate } from './features/can-activate.interface';
 import { NestInterceptor } from './features/nest-interceptor.interface';
 import { PipeTransform } from './features/pipe-transform.interface';
+import { ITransportServer } from './microservices/transport-server.interface';
 import { INestApplicationContext } from './nest-application-context.interface';
 import { WebSocketAdapter } from './websockets/web-socket-adapter.interface';
 
@@ -89,4 +90,11 @@ export interface INestMicroservice extends INestApplicationContext {
    * or a group of servers if there are more than one.
    */
   unwrap<T>(): T;
+
+  /**
+   * Returns the underlying transport server instance.
+   * Use this to close only the transport (port/connection) without
+   * triggering the full application shutdown lifecycle.
+   */
+  getTransportServer(): ITransportServer;
 }
