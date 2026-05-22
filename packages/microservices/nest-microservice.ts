@@ -2,6 +2,7 @@ import {
   CanActivate,
   ExceptionFilter,
   INestMicroservice,
+  ITransportServer,
   NestInterceptor,
   PipeTransform,
   WebSocketAdapter,
@@ -350,7 +351,7 @@ export class NestMicroservice
    * Use this to close only the transport (port/connection) without
    * triggering the full application shutdown lifecycle.
    */
-  public getTransportServer(): Server {
+  public getTransportServer(): ITransportServer {
     return this.serverInstance;
   }
 

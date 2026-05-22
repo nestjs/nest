@@ -1,3 +1,4 @@
+import { ITransportServer } from '@nestjs/common';
 import { Logger, LoggerService } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import {
@@ -47,7 +48,7 @@ import { transformPatternToRoute } from '../utils';
 export abstract class Server<
   EventsMap extends Record<string, Function> = Record<string, Function>,
   Status extends string = string,
-> {
+> implements ITransportServer {
   /**
    * Unique transport identifier.
    */
