@@ -16,7 +16,6 @@ import {
 } from '@nestjs/platform-fastify';
 import type { FastifyRequest } from 'fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 
 describe('Request-scoped factory provider', () => {
   const REQUEST_SCOPED_FACTORY = 'REQUEST_SCOPED_FACTORY';
@@ -193,8 +192,7 @@ describe('Request-scoped factory provider', () => {
     await app.close();
   });
 
-  it('should resolve all injected dependencies across overlapping requests', async function () {
-    this.timeout(20000);
+  it('should resolve all injected dependencies across overlapping requests', async () => {
     const responses = await Promise.all(
       Array.from({ length: REQUEST_COUNT }, (_, index) =>
         app.inject({
@@ -222,14 +220,14 @@ describe('Request-scoped factory provider', () => {
       return [];
     });
 
-    expect(failures).to.deep.equal([]);
+    expect(failures).toEqual([]);
 
     const payloads = responses.map(response => JSON.parse(response.body));
-    expect(payloads).to.deep.equal(
+    expect(payloads).toEqual(
       Array.from({ length: REQUEST_COUNT }, (_, index) => ({
         actorId: `actor-${index}`,
         tenantId: `tenant-${index}`,
       })),
     );
-  });
+  }, 20000);
 });
