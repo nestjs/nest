@@ -152,7 +152,7 @@ describe('GRPC transport', () => {
     });
   });
 
-  it(`GRPC with backpressure control`, async function () {
+  it(`GRPC with backpressure control`, async () => {
     // This test hit the gRPC server with 1000 messages, but the server
     // has to process large (> 1MB) messages, so it will definitely hit
     // issues where writing to the stream needs to be paused until a drain
@@ -169,7 +169,7 @@ describe('GRPC transport', () => {
     });
 
     expect(receivedIds).toEqual(expectedIds);
-  });
+  }, 30000);
 
   describe('streaming calls that error', () => {
     // We want to assert that the application does not crash when an error is encountered with an unhandledRejection

@@ -151,4 +151,52 @@ describe('NestApplication', () => {
       expect((noopHttpAdapter as any).init).toHaveBeenCalledOnce();
     });
   });
+  describe('useWebSocketAdapter', () => {
+    function createInstance(): NestApplication {
+      const noopHttpAdapter = new NoopHttpAdapter({});
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      container.setHttpAdapter(noopHttpAdapter);
+      return new NestApplication(
+        container,
+        noopHttpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        {},
+      );
+    }
+
+    it('should not warn when called before WS module registration', () => {
+      const instance = createInstance();
+      const warnSpy = vi.spyOn((instance as any).logger, 'warn');
+
+      instance.useWebSocketAdapter({} as any);
+
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it('should warn when called after WS module registration', () => {
+      const instance = createInstance();
+      (instance as any).socketModule = { register: vi.fn() };
+      instance.registerWsModule();
+      const warnSpy = vi.spyOn((instance as any).logger, 'warn');
+
+      instance.useWebSocketAdapter({} as any);
+
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0]?.[0]).toMatch(
+        /useWebSocketAdapter\(\) was called after WebSocket gateways were already initialized/,
+      );
+    });
+
+    it('should still set the adapter on ApplicationConfig even when called too late', () => {
+      const instance = createInstance();
+      instance.registerWsModule();
+      const adapter = { create: () => undefined } as any;
+
+      instance.useWebSocketAdapter(adapter);
+
+      expect((instance as any).config.getIoAdapter()).toBe(adapter);
+    });
+  });
 });

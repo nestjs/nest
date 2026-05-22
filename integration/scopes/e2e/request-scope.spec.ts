@@ -16,8 +16,10 @@ class Meta {
 }
 
 describe('Request scope', () => {
+  const OVERLAP_REQUEST_COUNT = 1000;
   let server;
   let app: INestApplication;
+  let baseUrl: string;
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -31,7 +33,8 @@ describe('Request scope', () => {
 
     app = module.createNestApplication();
     server = app.getHttpServer();
-    await app.init();
+    await app.listen(0);
+    baseUrl = await app.getUrl();
   });
 
   describe('when one service is request scoped', () => {
@@ -73,6 +76,69 @@ describe('Request scope', () => {
     it(`should create request scoped guard for each request`, () => {
       expect(Guard.COUNTER).toEqual(3);
       expect(Guard.REQUEST_SCOPED_DATA).toEqual([1, 1, 1]);
+    });
+  });
+
+  describe('when overlapping requests are handled', () => {
+    let controllerCounterBefore: number;
+    let usersCounterBefore: number;
+    let pipeCounterBefore: number;
+    let interceptorCounterBefore: number;
+    let guardCounterBefore: number;
+    let pipeDataLengthBefore: number;
+    let interceptorDataLengthBefore: number;
+    let guardDataLengthBefore: number;
+    let responses: request.Response[];
+
+    beforeAll(async () => {
+      controllerCounterBefore = HelloController.COUNTER;
+      usersCounterBefore = UsersService.COUNTER;
+      pipeCounterBefore = UserByIdPipe.COUNTER;
+      interceptorCounterBefore = Interceptor.COUNTER;
+      guardCounterBefore = Guard.COUNTER;
+      pipeDataLengthBefore = UserByIdPipe.REQUEST_SCOPED_DATA.length;
+      interceptorDataLengthBefore = Interceptor.REQUEST_SCOPED_DATA.length;
+      guardDataLengthBefore = Guard.REQUEST_SCOPED_DATA.length;
+
+      responses = await Promise.all(
+        Array.from({ length: OVERLAP_REQUEST_COUNT }, () =>
+          request(baseUrl).get('/hello'),
+        ),
+      );
+    }, 20000);
+
+    it('should complete every overlapping request successfully', () => {
+      expect(responses.map(response => response.status)).toEqual(
+        Array.from({ length: OVERLAP_REQUEST_COUNT }, () => 200),
+      );
+    });
+
+    it('should create a request-scoped controller and service for every overlapping request', () => {
+      expect(HelloController.COUNTER - controllerCounterBefore).toBe(
+        OVERLAP_REQUEST_COUNT,
+      );
+      expect(UsersService.COUNTER - usersCounterBefore).toBe(
+        OVERLAP_REQUEST_COUNT,
+      );
+    });
+
+    it('should create request-scoped enhancers for every overlapping request', () => {
+      expect(UserByIdPipe.COUNTER - pipeCounterBefore).toBe(
+        OVERLAP_REQUEST_COUNT,
+      );
+      expect(Interceptor.COUNTER - interceptorCounterBefore).toBe(
+        OVERLAP_REQUEST_COUNT,
+      );
+      expect(Guard.COUNTER - guardCounterBefore).toBe(OVERLAP_REQUEST_COUNT);
+      expect(
+        UserByIdPipe.REQUEST_SCOPED_DATA.slice(pipeDataLengthBefore),
+      ).toEqual(Array.from({ length: OVERLAP_REQUEST_COUNT }, () => 1));
+      expect(
+        Interceptor.REQUEST_SCOPED_DATA.slice(interceptorDataLengthBefore),
+      ).toEqual(Array.from({ length: OVERLAP_REQUEST_COUNT }, () => 1));
+      expect(Guard.REQUEST_SCOPED_DATA.slice(guardDataLengthBefore)).toEqual(
+        Array.from({ length: OVERLAP_REQUEST_COUNT }, () => 1),
+      );
     });
   });
 

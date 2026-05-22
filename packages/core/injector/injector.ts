@@ -205,6 +205,9 @@ export class Injector {
         localResolutionContext,
         resolutionContext.inquirer,
       );
+      if (!instanceHost.isResolved) {
+        settlementSignal.complete();
+      }
     } catch (err) {
       wrapper.removeInstanceByContextId(
         this.getContextId(resolutionContext.contextId, wrapper),
@@ -311,7 +314,10 @@ export class Injector {
   ) {
     const metadata = wrapper.getCtorMetadata();
 
-    if (metadata && resolutionContext.contextId !== STATIC_CONTEXT) {
+    if (
+      resolutionContext.contextId !== STATIC_CONTEXT &&
+      this.hasDenseCtorMetadata(wrapper, inject, metadata)
+    ) {
       const deps = await this.loadCtorMetadata(
         metadata,
         resolutionContext.contextId,
@@ -461,21 +467,21 @@ export class Injector {
     ];
   }
 
-  public reflectConstructorParams<T>(type: Type<T>): any[] {
+  public reflectConstructorParams(type: Type<unknown> | Function): any[] {
     const paramtypes = [
       ...(Reflect.getMetadata(PARAMTYPES_METADATA, type) || []),
     ];
-    const selfParams = this.reflectSelfParams<T>(type);
+    const selfParams = this.reflectSelfParams(type);
 
     selfParams.forEach(({ index, param }) => (paramtypes[index] = param));
     return Array.from(paramtypes);
   }
 
-  public reflectOptionalParams<T>(type: Type<T>): any[] {
-    return Reflect.getOwnMetadata(OPTIONAL_DEPS_METADATA, type) || [];
+  public reflectOptionalParams(type: Type<unknown> | Function): any[] {
+    return Reflect.getMetadata(OPTIONAL_DEPS_METADATA, type) || [];
   }
 
-  public reflectSelfParams<T>(type: Type<T>): any[] {
+  public reflectSelfParams(type: Type<unknown> | Function): any[] {
     return Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, type) || [];
   }
 
@@ -1043,7 +1049,6 @@ export class Injector {
     wrapper: InstanceWrapper<Injectable>,
     resolutionContext: ResolutionContext,
   ): boolean {
-    const isSnapshotGraphCompilation = !!this.options?.snapshot;
     const isStaticContext = resolutionContext.contextId === STATIC_CONTEXT;
     const hasNoInquirer = !resolutionContext.inquirer;
     const isTopLevelStaticTransientOrRequestProvider =
@@ -1062,7 +1067,7 @@ export class Injector {
       (isTopLevelStaticTransientOrRequestProvider ||
         isStaticInquirerOutsideResolutionContext);
 
-    return !isSnapshotGraphCompilation && shouldSkipForStaticBootstrap;
+    return shouldSkipForStaticBootstrap;
   }
 
   /**
@@ -1147,6 +1152,37 @@ export class Injector {
         parentInquirer,
       ),
     );
+  }
+
+  private hasDenseCtorMetadata<T>(
+    wrapper: InstanceWrapper<T>,
+    inject: InjectorDependency[] | undefined,
+    metadata: InstanceWrapper[] | undefined,
+  ): boolean {
+    if (!metadata) {
+      return false;
+    }
+
+    // The fast path requires a fully populated metadata array.
+    // While another request is still registering dependency metadata,
+    // sparse entries here would feed request-scoped factories `undefined`.
+    const expectedDepsLength = !isNil(inject)
+      ? inject.length
+      : wrapper.metatype
+        ? this.reflectConstructorParams(wrapper.metatype).length
+        : 0;
+
+    if (metadata.length !== expectedDepsLength) {
+      return false;
+    }
+
+    for (let index = 0; index < expectedDepsLength; index++) {
+      if (metadata[index] === undefined) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private resolveScopedComponentHost(

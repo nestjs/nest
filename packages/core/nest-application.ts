@@ -61,6 +61,7 @@ export class NestApplication
   private readonly microservices: any[] = [];
   private httpServer: any;
   private isListening = false;
+  private isWsModuleRegistered = false;
 
   constructor(
     container: NestContainer,
@@ -169,6 +170,7 @@ export class NestApplication
       this.appOptions,
       this.httpServer,
     );
+    this.isWsModuleRegistered = true;
   }
 
   public async init(): Promise<this> {
@@ -476,6 +478,11 @@ export class NestApplication
   }
 
   public useWebSocketAdapter(adapter: WebSocketAdapter): this {
+    if (this.isWsModuleRegistered) {
+      this.logger.warn(
+        'useWebSocketAdapter() was called after WebSocket gateways were already initialized. The provided adapter will be stored but will NOT be applied to existing gateways — they remain bound to the previously installed adapter. To install a custom adapter, call app.useWebSocketAdapter(...) BEFORE app.init() (or app.listen()).',
+      );
+    }
     this.config.setIoAdapter(adapter);
     return this;
   }

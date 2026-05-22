@@ -129,6 +129,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <tr>
 <td align="center" valign="middle"><a href="https://solcellsforetag.se/" target="_blank"><img src="https://nestjs.com/img/logos/solcellsforetag-logo.svg" width="140" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://www.route4me.com/" target="_blank"><img src="https://nestjs.com/img/logos/route4me-logo.svg" width="100" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://memory2.co/" target="_blank"><img src="https://images.opencollective.com/memory-squared/bbe37f5/avatar/256.png?height=50" width="50" valign="middle" /></a></td>
 </tr>
 </table>
 

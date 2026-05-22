@@ -1,4 +1,4 @@
-import { Optional } from '@nestjs/common';
+import { Optional, Scope } from '@nestjs/common';
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants.js';
 import { Inject } from '../../../common/decorators/core/inject.decorator.js';
 import { Injectable } from '../../../common/decorators/core/injectable.decorator.js';
@@ -205,6 +205,33 @@ describe('Injector', () => {
     });
   });
 
+  describe('resolveConstructorParams', () => {
+    it('should fall back to resolving each param when ctor metadata is sparse', async () => {
+      const wrapper = new InstanceWrapper();
+      const metadata = [new InstanceWrapper()];
+      metadata.length = 2;
+
+      const getCtorMetadataSpy = vi
+        .spyOn(wrapper, 'getCtorMetadata')
+        .mockReturnValue(metadata);
+      const loadCtorMetadataSpy = vi.spyOn(injector, 'loadCtorMetadata');
+      await injector
+        .resolveConstructorParams(
+          wrapper,
+          null!,
+          ['Provider1', 'Provider2'],
+          () => {},
+          { contextId: { id: 2 } },
+        )
+        .catch(() => {});
+
+      expect(loadCtorMetadataSpy).not.toHaveBeenCalled();
+
+      getCtorMetadataSpy.mockRestore();
+      loadCtorMetadataSpy.mockRestore();
+    });
+  });
+
   describe('loadMiddleware', () => {
     let loadInstanceSpy: ReturnType<typeof vi.fn>;
 
@@ -291,6 +318,38 @@ describe('Injector', () => {
           inquirer: undefined,
         }),
       );
+    });
+  });
+
+  describe('loadProvider', () => {
+    @Injectable({ scope: Scope.TRANSIENT })
+    class TransientProvider {}
+
+    it('should not eagerly load a top-level transient provider during snapshot bootstrap', async () => {
+      const snapshotInjector = new Injector({
+        preview: false,
+        snapshot: true,
+      });
+      const loadInstance = vi.spyOn(snapshotInjector, 'loadInstance');
+      const loadEnhancersPerContext = vi.spyOn(
+        snapshotInjector,
+        'loadEnhancersPerContext',
+      );
+
+      const wrapper = new InstanceWrapper({
+        metatype: TransientProvider,
+        instance: null,
+        isResolved: false,
+        scope: Scope.TRANSIENT,
+      });
+      const moduleRef = {
+        providers: new Map([[TransientProvider, wrapper]]),
+      } as any;
+
+      await snapshotInjector.loadProvider(wrapper as any, moduleRef);
+
+      expect(loadInstance).not.toHaveBeenCalled();
+      expect(loadEnhancersPerContext).not.toHaveBeenCalled();
     });
   });
 
