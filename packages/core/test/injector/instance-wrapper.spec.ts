@@ -96,6 +96,19 @@ describe('InstanceWrapper', () => {
         const wrapper = new InstanceWrapper({});
         expect(wrapper.isDependencyTreeStatic()).to.be.true;
       });
+      it('should recompute when dependencies are added after static introspection', () => {
+        const wrapper = new InstanceWrapper({});
+        expect(wrapper.isDependencyTreeStatic()).to.be.true;
+
+        wrapper.addCtorMetadata(
+          0,
+          new InstanceWrapper({
+            scope: Scope.REQUEST,
+          }),
+        );
+
+        expect(wrapper.isDependencyTreeStatic()).to.be.false;
+      });
     });
     describe('when statically scoped', () => {
       describe('dependencies, properties, enhancers', () => {

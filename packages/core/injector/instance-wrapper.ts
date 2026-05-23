@@ -196,6 +196,7 @@ export class InstanceWrapper<T = any> {
   }
 
   public addCtorMetadata(index: number, wrapper: InstanceWrapper) {
+    this.resetDependencyTreeState();
     if (!this[INSTANCE_METADATA_SYMBOL].dependencies) {
       this[INSTANCE_METADATA_SYMBOL].dependencies = [];
     }
@@ -207,6 +208,7 @@ export class InstanceWrapper<T = any> {
   }
 
   public addPropertiesMetadata(key: symbol | string, wrapper: InstanceWrapper) {
+    this.resetDependencyTreeState();
     if (!this[INSTANCE_METADATA_SYMBOL].properties) {
       this[INSTANCE_METADATA_SYMBOL].properties = [];
     }
@@ -221,6 +223,7 @@ export class InstanceWrapper<T = any> {
   }
 
   public addEnhancerMetadata(wrapper: InstanceWrapper) {
+    this.resetDependencyTreeState();
     if (!this[INSTANCE_METADATA_SYMBOL].enhancers) {
       this[INSTANCE_METADATA_SYMBOL].enhancers = [];
     }
@@ -490,6 +493,11 @@ export class InstanceWrapper<T = any> {
 
   private isNewable(): boolean {
     return isNil(this.inject) && this.metatype && this.metatype.prototype;
+  }
+
+  private resetDependencyTreeState() {
+    this.isTreeStatic = undefined;
+    this.isTreeDurable = undefined;
   }
 
   private initialize(
