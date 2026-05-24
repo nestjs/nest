@@ -58,6 +58,11 @@ interface InstanceMetadataStore {
   enhancers?: InstanceWrapper[];
 }
 
+const dependencyTreeParents = new WeakMap<
+  InstanceWrapper,
+  Set<InstanceWrapper>
+>();
+
 export class InstanceWrapper<T = any> {
   public readonly name: any;
   public readonly token: InjectionToken;
@@ -78,7 +83,6 @@ export class InstanceWrapper<T = any> {
   private readonly values = new WeakMap<ContextId, InstancePerContext<T>>();
   private readonly [INSTANCE_METADATA_SYMBOL]: InstanceMetadataStore = {};
   private readonly [INSTANCE_ID_SYMBOL]: string;
-  private readonly dependencyTreeParents = new Set<InstanceWrapper>();
   private transientMap?:
     | Map<string, WeakMap<ContextId, InstancePerContext<T>>>
     | undefined;
@@ -501,7 +505,9 @@ export class InstanceWrapper<T = any> {
 
   private registerDependencyTreeParent(wrapper: InstanceWrapper) {
     if (wrapper instanceof InstanceWrapper) {
-      wrapper.dependencyTreeParents.add(this);
+      const parents = dependencyTreeParents.get(wrapper) ?? new Set();
+      parents.add(this);
+      dependencyTreeParents.set(wrapper, parents);
     }
   }
 
@@ -512,9 +518,9 @@ export class InstanceWrapper<T = any> {
     lookupRegistry.add(this[INSTANCE_ID_SYMBOL]);
     this.isTreeStatic = undefined;
     this.isTreeDurable = undefined;
-    this.dependencyTreeParents.forEach(parent =>
-      parent.resetDependencyTreeState(lookupRegistry),
-    );
+    dependencyTreeParents
+      .get(this)
+      ?.forEach(parent => parent.resetDependencyTreeState(lookupRegistry));
   }
 
   private initialize(
