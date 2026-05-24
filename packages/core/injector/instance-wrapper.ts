@@ -78,6 +78,7 @@ export class InstanceWrapper<T = any> {
   private readonly values = new WeakMap<ContextId, InstancePerContext<T>>();
   private readonly [INSTANCE_METADATA_SYMBOL]: InstanceMetadataStore = {};
   private readonly [INSTANCE_ID_SYMBOL]: string;
+  private readonly dependencyTreeParents = new Set<InstanceWrapper>();
   private transientMap?:
     | Map<string, WeakMap<ContextId, InstancePerContext<T>>>
     | undefined;
@@ -196,11 +197,12 @@ export class InstanceWrapper<T = any> {
   }
 
   public addCtorMetadata(index: number, wrapper: InstanceWrapper) {
-    this.resetDependencyTreeState();
     if (!this[INSTANCE_METADATA_SYMBOL].dependencies) {
       this[INSTANCE_METADATA_SYMBOL].dependencies = [];
     }
     this[INSTANCE_METADATA_SYMBOL].dependencies[index] = wrapper;
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getCtorMetadata(): InstanceWrapper[] {
@@ -208,7 +210,6 @@ export class InstanceWrapper<T = any> {
   }
 
   public addPropertiesMetadata(key: symbol | string, wrapper: InstanceWrapper) {
-    this.resetDependencyTreeState();
     if (!this[INSTANCE_METADATA_SYMBOL].properties) {
       this[INSTANCE_METADATA_SYMBOL].properties = [];
     }
@@ -216,6 +217,8 @@ export class InstanceWrapper<T = any> {
       key,
       wrapper,
     });
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getPropertiesMetadata(): PropertyMetadata[] {
@@ -223,11 +226,12 @@ export class InstanceWrapper<T = any> {
   }
 
   public addEnhancerMetadata(wrapper: InstanceWrapper) {
-    this.resetDependencyTreeState();
     if (!this[INSTANCE_METADATA_SYMBOL].enhancers) {
       this[INSTANCE_METADATA_SYMBOL].enhancers = [];
     }
     this[INSTANCE_METADATA_SYMBOL].enhancers.push(wrapper);
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getEnhancersMetadata(): InstanceWrapper[] {
@@ -495,9 +499,22 @@ export class InstanceWrapper<T = any> {
     return isNil(this.inject) && this.metatype && this.metatype.prototype;
   }
 
-  private resetDependencyTreeState() {
+  private registerDependencyTreeParent(wrapper: InstanceWrapper) {
+    if (wrapper instanceof InstanceWrapper) {
+      wrapper.dependencyTreeParents.add(this);
+    }
+  }
+
+  private resetDependencyTreeState(lookupRegistry = new Set<string>()) {
+    if (lookupRegistry.has(this[INSTANCE_ID_SYMBOL])) {
+      return;
+    }
+    lookupRegistry.add(this[INSTANCE_ID_SYMBOL]);
     this.isTreeStatic = undefined;
     this.isTreeDurable = undefined;
+    this.dependencyTreeParents.forEach(parent =>
+      parent.resetDependencyTreeState(lookupRegistry),
+    );
   }
 
   private initialize(
