@@ -171,7 +171,7 @@
     "typeorm": "0.3.30",
     "typescript": "5.9.3",
     "typescript-eslint": "8.58.2",
-    "ws": "8.20.1"
+    "ws": "8.21.0"
   },
   "engines": {
     "node": ">= 20"
