@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { CatsModule } from './cats/cats.module';
-import { CoreModule } from './core/core.module';
+import { CatsModule } from './cats/cats.module.js';
+import { CoreModule } from './core/core.module.js';
 
 @Module({
   imports: [CatsModule, CoreModule],

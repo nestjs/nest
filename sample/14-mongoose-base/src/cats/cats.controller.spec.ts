@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CatsController } from './cats.controller';
-import { CreateCatDto } from './dto/create-cat.dto';
-import { CatsService } from './cats.service';
+import { CatsController } from './cats.controller.js';
+import { CreateCatDto } from './dto/create-cat.dto.js';
+import { CatsService } from './cats.service.js';
 
 describe('CatsController', () => {
   let controller: CatsController;
@@ -14,7 +14,7 @@ describe('CatsController', () => {
         {
           provide: CatsService,
           useValue: {
-            findAll: jest.fn().mockResolvedValue([
+            findAll: vi.fn().mockResolvedValue([
               {
                 name: 'Cat #1',
                 breed: 'Bread #1',
@@ -31,7 +31,7 @@ describe('CatsController', () => {
                 age: 2,
               },
             ]),
-            create: jest
+            create: vi
               .fn()
               .mockImplementation((createCatDto: CreateCatDto) =>
                 Promise.resolve({ _id: '1', ...createCatDto }),

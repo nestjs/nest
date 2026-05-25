@@ -1,32 +1,34 @@
-import { isObject, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isObject, isUndefined } from '@nestjs/common/internal';
 import { EventEmitter } from 'events';
 import {
   NATS_DEFAULT_GRACE_PERIOD,
   NATS_DEFAULT_URL,
   NO_MESSAGE_HANDLER,
-} from '../constants';
-import { NatsContext } from '../ctx-host/nats.context';
-import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer';
-import { Transport } from '../enums';
-import { NatsEvents, NatsEventsMap, NatsStatus } from '../events/nats.events';
+} from '../constants.js';
+import { NatsContext } from '../ctx-host/nats.context.js';
+import { NatsRequestJSONDeserializer } from '../deserializers/nats-request-json.deserializer.js';
+import { Transport } from '../enums/index.js';
+import {
+  NatsEvents,
+  NatsEventsMap,
+  NatsStatus,
+} from '../events/nats.events.js';
 import {
   NatsOptions,
   TransportId,
-} from '../interfaces/microservice-configuration.interface';
-import { IncomingRequest } from '../interfaces/packet.interface';
-import { NatsRecord } from '../record-builders';
-import { NatsRecordSerializer } from '../serializers/nats-record.serializer';
-import { Server } from './server';
-
-let natsPackage = {} as any;
+} from '../interfaces/microservice-configuration.interface.js';
+import { IncomingRequest } from '../interfaces/packet.interface.js';
+import { NatsRecord } from '../record-builders/index.js';
+import { NatsRecordSerializer } from '../serializers/nats-record.serializer.js';
+import { Server } from './server.js';
 
 // To enable type safety for Nats. This cant be uncommented by default
 // because it would require the user to install the nats package even if they dont use Nats
 // Otherwise, TypeScript would fail to compile the code.
 //
-// type Client = import('nats').NatsConnection;
-// type NatsMsg = import('nats').Msg;
-// type Subscription = import('nats').Subscription;
+// type Client = import('@nats-io/transport-node').NatsConnection;
+// type NatsMsg = import('@nats-io/transport-node').Msg;
+// type Subscription = import('@nats-io/transport-node').Subscription;
 
 type Client = any;
 type NatsMsg = any;
@@ -49,10 +51,6 @@ export class ServerNats<
 
   constructor(private readonly options: Required<NatsOptions>['options']) {
     super();
-
-    natsPackage = this.loadPackage('nats', ServerNats.name, () =>
-      require('nats'),
-    );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -123,7 +121,13 @@ export class ServerNats<
     this.natsClient = null;
   }
 
-  public createNatsClient(): Promise<Client> {
+  public async createNatsClient(): Promise<Client> {
+    const natsPackage = await this.loadPackage(
+      '@nats-io/transport-node',
+      ServerNats.name,
+      () => import('@nats-io/transport-node'),
+    );
+
     const options = this.options || ({} as NatsOptions);
     return natsPackage.connect({
       servers: NATS_DEFAULT_URL,
@@ -146,7 +150,7 @@ export class ServerNats<
     const replyTo = natsMsg.reply;
 
     const natsCtx = new NatsContext([callerSubject, natsMsg.headers]);
-    const message = await this.deserializer.deserialize(rawMessage, {
+    const message = await this.deserializer.deserialize(natsMsg, {
       channel,
       replyTo,
     });
@@ -198,34 +202,24 @@ export class ServerNats<
 
   public async handleStatusUpdates(client: Client) {
     for await (const status of client.status()) {
-      const data =
-        status.data && isObject(status.data)
-          ? JSON.stringify(status.data)
-          : status.data;
-
       switch (status.type) {
         case 'error':
           this.logger.error(
-            `NatsError: type: "${status.type}", data: "${data}".`,
+            `NatsError: type: "${status.type}", error: "${status.error}".`,
           );
           break;
 
         case 'disconnect':
-          this.logger.error(
-            `NatsError: type: "${status.type}", data: "${data}".`,
-          );
+          this.logger.error(`NatsError: type: "${status.type}".`);
 
           this._status$.next(NatsStatus.DISCONNECTED as S);
-          this.statusEventEmitter.emit(
-            NatsEventsMap.DISCONNECT,
-            status.data as string,
-          );
+          this.statusEventEmitter.emit(NatsEventsMap.DISCONNECT, status.server);
           break;
 
-        case 'pingTimer':
+        case 'ping':
           if (this.options.debug) {
             this.logger.debug!(
-              `NatsStatus: type: "${status.type}", data: "${data}".`,
+              `NatsStatus: type: "${status.type}", pending pings: "${status.pendingPings}".`,
             );
           }
           break;
@@ -235,29 +229,31 @@ export class ServerNats<
           break;
 
         case 'reconnect':
-          this.logger.log(
-            `NatsStatus: type: "${status.type}", data: "${data}".`,
-          );
+          this.logger.log(`NatsStatus: type: "${status.type}".`);
 
           this._status$.next(NatsStatus.CONNECTED as S);
-          this.statusEventEmitter.emit(
-            NatsEventsMap.RECONNECT,
-            status.data as string,
-          );
+          this.statusEventEmitter.emit(NatsEventsMap.RECONNECT, status.server);
           break;
 
         case 'update':
           this.logger.log(
-            `NatsStatus: type: "${status.type}", data: "${data}".`,
+            `NatsStatus: type: "${status.type}", added: "${status.added}", deleted: "${status.deleted}".`,
           );
-          this.statusEventEmitter.emit(NatsEventsMap.UPDATE, status.data);
+          this.statusEventEmitter.emit(NatsEventsMap.UPDATE, undefined);
           break;
 
-        default:
+        default: {
+          const data =
+            'data' in status && isObject(status.data)
+              ? JSON.stringify(status.data)
+              : 'data' in status
+                ? status.data
+                : '';
           this.logger.log(
             `NatsStatus: type: "${status.type}", data: "${data}".`,
           );
           break;
+        }
       }
     }
   }

@@ -9,10 +9,11 @@ import {
   HookHandlerDoneFunction,
 } from 'fastify';
 import fp from 'fastify-plugin';
-import { safeDecodeURI } from 'find-my-way/lib/url-sanitizer';
+import urlSanitizer from 'find-my-way/lib/url-sanitizer.js';
 import * as http from 'node:http';
 import { Path, pathToRegexp } from 'path-to-regexp';
-import reusify = require('reusify');
+import reusify from 'reusify';
+const { safeDecodeURI } = urlSanitizer;
 
 export type MiddlewareFn<
   Req extends { url: string; originalUrl?: string },
@@ -422,9 +423,9 @@ declare module 'fastify' {
  * with an extra vulnerability fix. Path is now decoded before matching to
  * avoid bypassing middleware with encoded characters.
  */
-export default fp(fastifyMiddie, {
+export default (fp as any)(fastifyMiddie, {
   fastify: '5.x',
   name: '@fastify/middie',
-});
+}) as unknown as typeof fastifyMiddie;
 
 export { fastifyMiddie };

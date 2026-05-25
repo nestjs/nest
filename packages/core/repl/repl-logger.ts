@@ -1,7 +1,7 @@
 import { ConsoleLogger } from '@nestjs/common';
-import { NestApplication } from '../nest-application';
-import { RouterExplorer } from '../router/router-explorer';
-import { RoutesResolver } from '../router/routes-resolver';
+import { NestApplication } from '../nest-application.js';
+import { RouterExplorer } from '../router/router-explorer.js';
+import { RoutesResolver } from '../router/routes-resolver.js';
 
 export class ReplLogger extends ConsoleLogger {
   private static readonly ignoredContexts = [

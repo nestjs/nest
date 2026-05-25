@@ -2,17 +2,7 @@
   "extends": "../tsconfig.build.json",
   "compilerOptions": {
     "outDir": ".",
-    "rootDir": ".",
-    "paths": {
-      "@nestjs/common": ["../common"],
-      "@nestjs/common/*": ["../common/*"],
-      "@nestjs/core": ["../core"],
-      "@nestjs/core/*": ["../core/*"],
-      "@nestjs/microservices": ["../microservices"],
-      "@nestjs/microservices/*": ["../microservices/*"],
-      "@nestjs/platform-express": ["../platform-express"],
-      "@nestjs/platform-express/*": ["../platform-express/*"]
-    }
+    "rootDir": "."
   },
   "exclude": ["node_modules", "dist", "test/**/*", "*.spec.ts"],
   "references": [

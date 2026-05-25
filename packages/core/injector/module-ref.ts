@@ -1,13 +1,13 @@
-import { IntrospectionResult, Scope, Type } from '@nestjs/common';
-import { getClassScope } from '../helpers/get-class-scope';
-import { isDurable } from '../helpers/is-durable';
-import { AbstractInstanceResolver } from './abstract-instance-resolver';
-import { STATIC_CONTEXT } from './constants';
-import { NestContainer } from './container';
-import { Injector } from './injector';
-import { InstanceLinksHost } from './instance-links-host';
-import { ContextId, InstanceWrapper } from './instance-wrapper';
-import { Module } from './module';
+import { type IntrospectionResult, Scope, type Type } from '@nestjs/common';
+import { getClassScope } from '../helpers/get-class-scope.js';
+import { isDurable } from '../helpers/is-durable.js';
+import { AbstractInstanceResolver } from './abstract-instance-resolver.js';
+import { STATIC_CONTEXT } from './constants.js';
+import { NestContainer } from './container.js';
+import { Injector } from './injector.js';
+import { InstanceLinksHost } from './instance-links-host.js';
+import { ContextId, InstanceWrapper } from './instance-wrapper.js';
+import { Module } from './module.js';
 
 export interface ModuleRefGetOrResolveOpts {
   /**
@@ -182,8 +182,8 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
       });
     }
 
-    return new Promise<T>(async (resolve, reject) => {
-      try {
+    return new Promise<T>((resolve, reject) => {
+      const loadInstance = async () => {
         const callback = async (instances: any[]) => {
           const properties = await this.injector.resolveProperties(
             wrapper,
@@ -198,6 +198,7 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
           this.injector.applyProperties(instance, properties);
           resolve(instance);
         };
+
         await this.injector.resolveConstructorParams<T>(
           wrapper,
           moduleRef,
@@ -208,9 +209,9 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
             inquirer: wrapper,
           },
         );
-      } catch (err) {
-        reject(err);
-      }
+      };
+
+      void loadInstance().catch(reject);
     });
   }
 }

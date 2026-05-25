@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { TransientLogger } from './transient-logger.service';
+import { TransientLogger } from './transient-logger.service.js';
 
 @Injectable()
 export class HelloTransientService {

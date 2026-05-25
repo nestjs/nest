@@ -1,6 +1,5 @@
-import { expect } from 'chai';
-import { SELF_DECLARED_DEPS_METADATA } from '../../constants';
-import { Inject } from '../../index';
+import { SELF_DECLARED_DEPS_METADATA } from '../../constants.js';
+import { Inject } from '../../index.js';
 
 describe('@Inject', () => {
   const opaqueToken = () => ({});
@@ -20,6 +19,6 @@ describe('@Inject', () => {
       { index: 1, param: 'test2' },
       { index: 0, param: 'test' },
     ];
-    expect(metadata).to.be.eql(expectedMetadata);
+    expect(metadata).toEqual(expectedMetadata);
   });
 });

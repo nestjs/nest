@@ -1,6 +1,6 @@
-import { CustomDecorator, SetMetadata, Type } from '@nestjs/common';
-import { isEmpty, isObject } from '@nestjs/common/utils/shared.utils';
+import { type CustomDecorator, SetMetadata, type Type } from '@nestjs/common';
 import { uid } from 'uid';
+import { isEmptyArray, isObject } from '@nestjs/common/internal';
 
 /**
  * @publicApi
@@ -200,7 +200,7 @@ export class Reflector {
       targets,
     ).filter(item => item !== undefined);
 
-    if (isEmpty(metadataCollection)) {
+    if (isEmptyArray(metadataCollection)) {
       return metadataCollection as TResult;
     }
     if (metadataCollection.length === 1) {

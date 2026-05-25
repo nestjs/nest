@@ -1,28 +1,35 @@
-import { NestApplicationOptions } from '@nestjs/common';
-import { InjectionToken } from '@nestjs/common/interfaces';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { GuardsConsumer } from '@nestjs/core/guards/guards-consumer';
-import { GuardsContextCreator } from '@nestjs/core/guards/guards-context-creator';
-import { loadAdapter } from '@nestjs/core/helpers/load-adapter';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
-import { InterceptorsConsumer } from '@nestjs/core/interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '@nestjs/core/interceptors/interceptors-context-creator';
-import { PipesConsumer } from '@nestjs/core/pipes/pipes-consumer';
-import { PipesContextCreator } from '@nestjs/core/pipes/pipes-context-creator';
+import type { NestApplicationOptions } from '@nestjs/common';
 import { iterate } from 'iterare';
-import { AbstractWsAdapter } from './adapters';
-import { GATEWAY_METADATA } from './constants';
-import { ExceptionFiltersContext } from './context/exception-filters-context';
-import { WsContextCreator } from './context/ws-context-creator';
-import { WsProxy } from './context/ws-proxy';
-import { NestGateway } from './interfaces/nest-gateway.interface';
-import { SocketServerProvider } from './socket-server-provider';
-import { SocketsContainer } from './sockets-container';
-import { WebSocketsController } from './web-sockets-controller';
+import { AbstractWsAdapter } from './adapters/index.js';
+import { GATEWAY_METADATA } from './constants.js';
+import { ExceptionFiltersContext } from './context/exception-filters-context.js';
+import { WsContextCreator } from './context/ws-context-creator.js';
+import { WsProxy } from './context/ws-proxy.js';
+import { NestGateway } from './interfaces/nest-gateway.interface.js';
+import { SocketServerProvider } from './socket-server-provider.js';
+import { SocketsContainer } from './sockets-container.js';
+import { WebSocketsController } from './web-sockets-controller.js';
+import type { InjectionToken } from '@nestjs/common';
+import type {
+  Injectable,
+  NestApplicationContextOptions,
+} from '@nestjs/common/internal';
+import type {
+  ApplicationConfig,
+  NestContainer,
+  GraphInspector,
+} from '@nestjs/core';
+import {
+  Injector,
+  GuardsConsumer,
+  GuardsContextCreator,
+  loadAdapter,
+  type InstanceWrapper,
+  InterceptorsConsumer,
+  InterceptorsContextCreator,
+  PipesConsumer,
+  PipesContextCreator,
+} from '@nestjs/core/internal';
 
 export class SocketModule<
   THttpServer = any,
@@ -35,6 +42,7 @@ export class SocketModule<
   private isAdapterInitialized: boolean;
   private httpServer: THttpServer | undefined;
   private appOptions: TAppOptions;
+  private injector: Injector;
 
   public register(
     container: NestContainer,
@@ -47,7 +55,18 @@ export class SocketModule<
     this.appOptions = appOptions;
     this.httpServer = httpServer;
 
-    const contextCreator = this.getContextCreator(container);
+    this.injector = new Injector({
+      preview: container.contextOptions?.preview!,
+      instanceDecorator:
+        container.contextOptions?.instrument?.instanceDecorator,
+    });
+
+    const exceptionFiltersContext = new ExceptionFiltersContext(container);
+    const contextCreator = this.getContextCreator(
+      container,
+      applicationConfig,
+      exceptionFiltersContext,
+    );
     const serverProvider = new SocketServerProvider(
       this.socketsContainer,
       applicationConfig,
@@ -56,6 +75,9 @@ export class SocketModule<
       serverProvider,
       applicationConfig,
       contextCreator,
+      container,
+      this.injector,
+      exceptionFiltersContext,
       graphInspector,
       this.appOptions,
     );
@@ -74,7 +96,7 @@ export class SocketModule<
       .forEach(wrapper => this.connectGatewayToServer(wrapper, moduleName));
   }
 
-  public connectGatewayToServer(
+  public async connectGatewayToServer(
     wrapper: InstanceWrapper<Injectable>,
     moduleName: string,
   ) {
@@ -84,13 +106,11 @@ export class SocketModule<
       return;
     }
     if (!this.isAdapterInitialized) {
-      this.initializeAdapter();
+      await this.initializeAdapter();
     }
     this.webSocketsController.connectGatewayToServer(
-      instance as NestGateway,
-      metatype!,
+      wrapper as InstanceWrapper<NestGateway>,
       moduleName,
-      wrapper.id,
     );
   }
 
@@ -113,7 +133,7 @@ export class SocketModule<
     this.socketsContainer.clear();
   }
 
-  private initializeAdapter() {
+  private async initializeAdapter() {
     const forceCloseConnections = (this.appOptions as NestApplicationOptions)
       .forceCloseConnections;
     const adapter = this.applicationConfig.getIoAdapter();
@@ -123,10 +143,10 @@ export class SocketModule<
       this.isAdapterInitialized = true;
       return;
     }
-    const { IoAdapter } = loadAdapter(
+    const { IoAdapter } = await loadAdapter(
       '@nestjs/platform-socket.io',
       'WebSockets',
-      () => require('@nestjs/platform-socket.io'),
+      () => import('@nestjs/platform-socket.io'),
     );
     const ioAdapter = new IoAdapter(this.httpServer);
     ioAdapter.forceCloseConnections = forceCloseConnections;
@@ -135,15 +155,19 @@ export class SocketModule<
     this.isAdapterInitialized = true;
   }
 
-  private getContextCreator(container: NestContainer): WsContextCreator {
+  private getContextCreator(
+    container: NestContainer,
+    config: ApplicationConfig,
+    exceptionFiltersContext: ExceptionFiltersContext,
+  ): WsContextCreator {
     return new WsContextCreator(
       new WsProxy(),
-      new ExceptionFiltersContext(container),
-      new PipesContextCreator(container),
+      exceptionFiltersContext,
+      new PipesContextCreator(container, config),
       new PipesConsumer(),
-      new GuardsContextCreator(container),
+      new GuardsContextCreator(container, config),
       new GuardsConsumer(),
-      new InterceptorsContextCreator(container),
+      new InterceptorsContextCreator(container, config),
       new InterceptorsConsumer(),
     );
   }

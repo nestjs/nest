@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PhotoController } from './photo.controller';
-import { PhotoService } from './photo.service';
+import { PhotoController } from './photo.controller.js';
+import { PhotoService } from './photo.service.js';
 
 describe('Photo Controller', () => {
   let controller: PhotoController;
@@ -12,7 +12,7 @@ describe('Photo Controller', () => {
         {
           provide: PhotoService,
           useValue: {
-            findAll: jest.fn().mockResolvedValue([
+            findAll: vi.fn().mockResolvedValue([
               {
                 name: 'Photo #1',
                 description: 'Description #1',

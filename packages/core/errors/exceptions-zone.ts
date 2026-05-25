@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { ExceptionHandler } from './exception-handler';
+import { ExceptionHandler } from './exception-handler.js';
 
 const DEFAULT_TEARDOWN = () => process.exit(1);
 

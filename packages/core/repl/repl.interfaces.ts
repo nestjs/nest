@@ -1,5 +1,5 @@
-import type { ReplContext } from './repl-context';
-import type { ReplFunction } from './repl-function';
+import type { ReplContext } from './repl-context.js';
+import type { ReplFunction } from './repl-function.js';
 
 export type ReplFnDefinition = {
   /** Function's name. Note that this should be a valid JavaScript function name. */

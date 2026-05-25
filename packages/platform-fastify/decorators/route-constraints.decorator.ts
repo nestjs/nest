@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { FASTIFY_ROUTE_CONSTRAINTS_METADATA } from '../constants';
+import { FASTIFY_ROUTE_CONSTRAINTS_METADATA } from '../constants.js';
 import { RouteShorthandOptions } from 'fastify';
 
 /**

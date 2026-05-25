@@ -1,14 +1,10 @@
-import { NestInterceptor, Type } from '@nestjs/common';
-import {
-  CallHandler,
-  ContextType,
-  Controller,
-} from '@nestjs/common/interfaces';
-import { isEmpty } from '@nestjs/common/utils/shared.utils';
+import type { NestInterceptor, Type } from '@nestjs/common';
 import { AsyncResource } from 'async_hooks';
 import { Observable, defer, from as fromPromise } from 'rxjs';
 import { mergeAll, switchMap } from 'rxjs/operators';
-import { ExecutionContextHost } from '../helpers/execution-context-host';
+import { ExecutionContextHost } from '../helpers/execution-context-host.js';
+import type { CallHandler, ContextType } from '@nestjs/common';
+import { type Controller, isEmptyArray } from '@nestjs/common/internal';
 
 export class InterceptorsConsumer {
   public async intercept<TContext extends string = ContextType>(
@@ -19,7 +15,7 @@ export class InterceptorsConsumer {
     next: () => Promise<unknown>,
     type?: TContext,
   ): Promise<unknown> {
-    if (isEmpty(interceptors)) {
+    if (isEmptyArray(interceptors)) {
       return next();
     }
     const context = this.createContext(args, instance, callback);

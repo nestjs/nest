@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Payload Too Large* type errors.
@@ -37,13 +37,13 @@ export class PayloadTooLargeException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Payload Too Large',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Payload Too Large', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.PAYLOAD_TOO_LARGE,
       ),
       HttpStatus.PAYLOAD_TOO_LARGE,

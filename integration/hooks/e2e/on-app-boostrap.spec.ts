@@ -1,11 +1,8 @@
 import { Injectable, Module, OnApplicationBootstrap } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as Sinon from 'sinon';
-
 @Injectable()
 class TestInjectable implements OnApplicationBootstrap {
-  onApplicationBootstrap = Sinon.spy();
+  onApplicationBootstrap = vi.fn();
 }
 
 describe('OnApplicationBootstrap', () => {
@@ -17,7 +14,8 @@ describe('OnApplicationBootstrap', () => {
     const app = module.createNestApplication();
     await app.init();
     const instance = module.get(TestInjectable);
-    expect(instance.onApplicationBootstrap.called).to.be.true;
+    expect(instance.onApplicationBootstrap).toHaveBeenCalled();
+    await app.close();
   });
 
   it('should not throw an error when onApplicationBootstrap is null', async () => {
@@ -28,7 +26,8 @@ describe('OnApplicationBootstrap', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then(obj => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should not throw an error when onApplicationBootstrap is undefined', async () => {
@@ -39,7 +38,8 @@ describe('OnApplicationBootstrap', () => {
     }).compile();
 
     const app = module.createNestApplication();
-    await app.init().then(obj => expect(obj).to.not.be.undefined);
+    await app.init().then(obj => expect(obj).not.toBeUndefined());
+    await app.close();
   });
 
   it('should sort modules by distance (topological sort) - DESC order', async () => {
@@ -80,6 +80,53 @@ describe('OnApplicationBootstrap', () => {
     await app.init();
 
     const instance = module.get(AA);
-    expect(instance.field).to.equal('b-field_a-field');
+    expect(instance.field).toBe('b-field_a-field');
+    await app.close();
+  });
+
+  it('should sort components within a single module by injection hierarchy - DESC order', async () => {
+    @Injectable()
+    class A implements OnApplicationBootstrap {
+      onApplicationBootstrap = vi.fn();
+    }
+
+    @Injectable()
+    class AHost implements OnApplicationBootstrap {
+      constructor(private a: A) {}
+      onApplicationBootstrap = vi.fn();
+    }
+
+    @Injectable()
+    class Composition implements OnApplicationBootstrap {
+      constructor(
+        private a: A,
+        private host: AHost,
+      ) {}
+      onApplicationBootstrap = vi.fn();
+    }
+
+    @Module({
+      providers: [AHost, A, Composition],
+    })
+    class AModule {}
+
+    const module = await Test.createTestingModule({
+      imports: [AModule],
+    }).compile();
+
+    const app = module.createNestApplication();
+    await app.init();
+    await app.close();
+
+    const child = module.get(A);
+    const parent = module.get(AHost);
+    const composition = module.get(Composition);
+
+    expect(child.onApplicationBootstrap).toHaveBeenCalledBefore(
+      parent.onApplicationBootstrap,
+    );
+    expect(parent.onApplicationBootstrap).toHaveBeenCalledBefore(
+      composition.onApplicationBootstrap,
+    );
   });
 });

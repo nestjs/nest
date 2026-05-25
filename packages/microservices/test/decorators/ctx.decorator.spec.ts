@@ -1,7 +1,6 @@
-import { expect } from 'chai';
-import { PARAM_ARGS_METADATA } from '../../constants';
-import { Ctx } from '../../decorators';
-import { RpcParamtype } from '../../enums/rpc-paramtype.enum';
+import { PARAM_ARGS_METADATA } from '../../constants.js';
+import { Ctx } from '../../decorators/index.js';
+import { RpcParamtype } from '../../enums/rpc-paramtype.enum.js';
 
 class CtxTest {
   public test(@Ctx() ctx: any) {}
@@ -21,6 +20,6 @@ describe('@Ctx', () => {
         pipes: [],
       },
     };
-    expect(argsMetadata).to.be.eql(expectedMetadata);
+    expect(argsMetadata).toEqual(expectedMetadata);
   });
 });

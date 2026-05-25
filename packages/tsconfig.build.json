@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "composite": true,
-    "module": "commonjs",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "esModuleInterop": true,
     "declaration": true,
     "noImplicitAny": false,
     "skipLibCheck": true,
@@ -12,7 +14,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "useUnknownInCatchVariables": false,
-    "target": "ES2021",
+    "target": "ES2023",
     "sourceMap": false,
     "allowJs": false,
     "strict": true,

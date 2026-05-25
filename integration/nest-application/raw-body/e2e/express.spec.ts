@@ -1,8 +1,7 @@
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as request from 'supertest';
-import { ExpressModule } from '../src/express.module';
+import request from 'supertest';
+import { ExpressModule } from '../src/express.module.js';
 
 describe('Raw body (Express Application)', () => {
   let app: NestExpressApplication;
@@ -33,7 +32,7 @@ describe('Raw body (Express Application)', () => {
         .send(body)
         .expect(201);
 
-      expect(response.body).to.eql({
+      expect(response.body).toEqual({
         parsed: {
           amount: 0,
         },
@@ -59,7 +58,7 @@ describe('Raw body (Express Application)', () => {
         .send(body)
         .expect(201);
 
-      expect(response.body).to.eql({
+      expect(response.body).toEqual({
         parsed: {
           content: 'this is a post\'s content by "Nest"',
         },

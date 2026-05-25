@@ -6,10 +6,10 @@
  */
 import 'reflect-metadata';
 
-export * from './decorators';
-export * from './enums';
-export * from './exceptions';
-export * from './file-stream';
+export * from './decorators/index.js';
+export * from './enums/index.js';
+export * from './exceptions/index.js';
+export * from './file-stream/index.js';
 export {
   Abstract,
   ArgumentMetadata,
@@ -41,6 +41,7 @@ export {
   NestHybridApplicationOptions,
   NestInterceptor,
   NestMiddleware,
+  PreRequestHook,
   NestModule,
   OnApplicationBootstrap,
   OnApplicationShutdown,
@@ -51,6 +52,9 @@ export {
   PipeTransform,
   Provider,
   RawBodyRequest,
+  RouteConflictPolicy,
+  RouteConflictPolicyLevel,
+  RouteResolutionStrategy,
   RpcExceptionFilter,
   Scope,
   ScopeOptions,
@@ -62,9 +66,9 @@ export {
   WebSocketAdapter,
   WsExceptionFilter,
   WsMessageHandler,
-} from './interfaces';
-export * from './module-utils';
-export * from './pipes';
-export * from './serializer';
-export * from './services';
-export * from './utils';
+} from './interfaces/index.js';
+export * from './module-utils/index.js';
+export * from './pipes/index.js';
+export * from './serializer/index.js';
+export * from './services/index.js';
+export * from './utils/index.js';

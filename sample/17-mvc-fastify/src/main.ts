@@ -3,8 +3,12 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { join } from 'path';
-import { AppModule } from './app.module';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import handlebars from 'handlebars';
+import { AppModule } from './app.module.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -17,7 +21,7 @@ async function bootstrap() {
   });
   app.setViewEngine({
     engine: {
-      handlebars: require('handlebars'),
+      handlebars,
     },
     templates: join(__dirname, '..', 'views'),
   });
@@ -25,4 +29,4 @@ async function bootstrap() {
   await app.listen(3000);
   console.log(`Application is running on: ${await app.getUrl()}`);
 }
-bootstrap();
+await bootstrap();

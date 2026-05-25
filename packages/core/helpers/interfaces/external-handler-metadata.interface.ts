@@ -1,5 +1,5 @@
-import { ContextId } from '../../injector';
-import { ParamProperties } from '../context-utils';
+import { ContextId } from '../../injector/index.js';
+import { ParamProperties } from '../context-utils.js';
 
 type ParamPropertiesWithMetatype<T = any> = ParamProperties & { metatype?: T };
 export interface ExternalHandlerMetadata {

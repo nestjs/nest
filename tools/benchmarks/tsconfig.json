@@ -5,7 +5,7 @@
   "compilerOptions": {
     "lib": ["es2023"],
     "module": "node16",
-    "target": "es2022",
+    "target": "es2023",
 
     "strict": true,
     "esModuleInterop": true,

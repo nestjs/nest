@@ -7,12 +7,14 @@ import {
   RpcException,
   Transport,
 } from '@nestjs/microservices';
-import { AppController } from './app.controller';
+import { AppController } from './app.controller.js';
 
 import * as fs from 'fs';
 import * as path from 'path';
 
-const caCert = fs.readFileSync(path.join(__dirname, 'ca.cert.pem')).toString();
+const caCert = fs
+  .readFileSync(path.join(import.meta.dirname, 'ca.cert.pem'))
+  .toString();
 
 class ErrorHandlingProxy extends ClientTCP {
   constructor() {

@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
-import { NatsBroadcastController } from '../src/nats/nats-broadcast.controller';
+import request from 'supertest';
+import { NatsBroadcastController } from '../src/nats/nats-broadcast.controller.js';
 
 describe('NATS transport', () => {
   let server;

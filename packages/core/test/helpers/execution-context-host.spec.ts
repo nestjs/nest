@@ -1,5 +1,4 @@
-import { expect } from 'chai';
-import { ExecutionContextHost } from '../../helpers/execution-context-host';
+import { ExecutionContextHost } from '../../helpers/execution-context-host.js';
 
 describe('ExecutionContextHost', () => {
   let contextHost: ExecutionContextHost;
@@ -18,57 +17,93 @@ describe('ExecutionContextHost', () => {
 
   describe('getClass', () => {
     it('should return constructorRef', () => {
-      expect(contextHost.getClass()).to.be.eql(constructorRef);
+      expect(contextHost.getClass()).toEqual(constructorRef);
     });
   });
 
   describe('getHandler', () => {
     it('should return handler', () => {
-      expect(contextHost.getHandler()).to.be.eql(callback);
+      expect(contextHost.getHandler()).toEqual(callback);
     });
   });
 
   describe('getArgs', () => {
     it('should return args', () => {
-      expect(contextHost.getArgs()).to.be.eql(args);
+      expect(contextHost.getArgs()).toEqual(args);
     });
   });
 
   describe('getArgByIndex', () => {
     it('should return argument by index', () => {
-      expect(contextHost.getArgByIndex(0)).to.be.eql(args[0]);
+      expect(contextHost.getArgByIndex(0)).toEqual(args[0]);
     });
   });
 
   describe('switchToRpc', () => {
     it('should return rpc proxy', () => {
       const proxy = contextHost.switchToRpc();
-      expect(proxy.getData).to.be.a('function');
-      expect(proxy.getContext).to.be.a('function');
-      expect(proxy.getData()).to.be.eq(args[0]);
-      expect(proxy.getContext()).to.be.eq(args[1]);
+      expect(proxy.getData).toBeTypeOf('function');
+      expect(proxy.getContext).toBeTypeOf('function');
+      expect(proxy.getData()).toBe(args[0]);
+      expect(proxy.getContext()).toBe(args[1]);
     });
   });
 
   describe('switchToHttp', () => {
     it('should return http proxy', () => {
       const proxy = contextHost.switchToHttp();
-      expect(proxy.getRequest).to.be.a('function');
-      expect(proxy.getResponse).to.be.a('function');
-      expect(proxy.getNext).to.be.a('function');
-      expect(proxy.getRequest()).to.be.eq(args[0]);
-      expect(proxy.getResponse()).to.be.eq(args[1]);
-      expect(proxy.getNext()).to.be.eq(args[2]);
+      expect(proxy.getRequest).toBeTypeOf('function');
+      expect(proxy.getResponse).toBeTypeOf('function');
+      expect(proxy.getNext).toBeTypeOf('function');
+      expect(proxy.getRequest()).toBe(args[0]);
+      expect(proxy.getResponse()).toBe(args[1]);
+      expect(proxy.getNext()).toBe(args[2]);
     });
   });
 
   describe('switchToWs', () => {
     it('should return ws proxy', () => {
       const proxy = contextHost.switchToWs();
-      expect(proxy.getData).to.be.a('function');
-      expect(proxy.getClient).to.be.a('function');
-      expect(proxy.getClient()).to.be.eq(args[0]);
-      expect(proxy.getData()).to.be.eq(args[1]);
+      expect(proxy.getData).toBeTypeOf('function');
+      expect(proxy.getClient).toBeTypeOf('function');
+      expect(proxy.getClient()).toBe(args[0]);
+      expect(proxy.getData()).toBe(args[1]);
+    });
+
+    it('should return the last arg via getPattern', () => {
+      const proxy = contextHost.switchToWs();
+      expect(proxy.getPattern()).toBe(args[args.length - 1]);
+    });
+  });
+
+  describe('getType', () => {
+    it('should return "http" by default', () => {
+      expect(contextHost.getType()).toBe('http');
+    });
+  });
+
+  describe('setType', () => {
+    it('should update the context type', () => {
+      contextHost.setType('ws');
+      expect(contextHost.getType()).toBe('ws');
+    });
+
+    it('should not update when type is falsy', () => {
+      contextHost.setType('' as any);
+      expect(contextHost.getType()).toBe('http');
+    });
+
+    it('should support custom string types', () => {
+      contextHost.setType('graphql');
+      expect(contextHost.getType()).toBe('graphql');
+    });
+  });
+
+  describe('constructor defaults', () => {
+    it('should allow null constructorRef and handler', () => {
+      const ctx = new ExecutionContextHost(['a']);
+      expect(ctx.getClass()).toBeNull();
+      expect(ctx.getHandler()).toBeNull();
     });
   });
 });

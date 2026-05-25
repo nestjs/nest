@@ -1,4 +1,4 @@
-import { RequestMethod } from '@nestjs/common';
+import type { RequestMethod } from '@nestjs/common';
 
 export interface ExcludeRouteMetadata {
   /**

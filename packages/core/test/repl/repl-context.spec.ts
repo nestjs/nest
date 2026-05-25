@@ -1,38 +1,38 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { NestContainer } from '../../injector/container';
-import { ReplContext } from '../../repl/repl-context';
+import { NestContainer } from '../../injector/container.js';
+import { ReplContext } from '../../repl/repl-context.js';
 
 describe('ReplContext', () => {
   let replContext: ReplContext;
   let mockApp: {
     container: NestContainer;
-    get: sinon.SinonStub;
-    resolve: sinon.SinonSpy;
-    select: sinon.SinonSpy;
+    get: ReturnType<typeof vi.fn>;
+    resolve: ReturnType<typeof vi.fn>;
+    select: ReturnType<typeof vi.fn>;
   };
 
-  before(async () => {
+  beforeAll(async () => {
     const container = new NestContainer();
 
     mockApp = {
       container,
-      get: sinon.stub(),
-      resolve: sinon.spy(),
-      select: sinon.spy(),
+      get: vi.fn(),
+      resolve: vi.fn(),
+      select: vi.fn(),
     };
     replContext = new ReplContext(mockApp as any);
   });
 
-  afterEach(() => sinon.restore());
+  afterEach(() => vi.restoreAllMocks());
 
   it('writeToStdout', () => {
-    const stdOutWrite = sinon.stub(process.stdout, 'write');
-    const text = sinon.stub() as unknown as string;
+    const stdOutWrite = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => ({}) as any);
+    const text = vi.fn() as unknown as string;
 
     replContext.writeToStdout(text);
 
-    expect(stdOutWrite.calledOnce).to.be.true;
-    expect(stdOutWrite.calledWith(text)).to.be.true;
+    expect(stdOutWrite).toHaveBeenCalledOnce();
+    expect(stdOutWrite).toHaveBeenCalledWith(text);
   });
 });

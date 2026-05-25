@@ -1,5 +1,5 @@
-import { HEADERS_METADATA } from '../../constants';
-import { extendArrayMetadata } from '../../utils/extend-metadata.util';
+import { HEADERS_METADATA } from '../../constants.js';
+import { extendArrayMetadata } from '../../utils/extend-metadata.util.js';
 
 /**
  * Request method Decorator.  Sets a response header.

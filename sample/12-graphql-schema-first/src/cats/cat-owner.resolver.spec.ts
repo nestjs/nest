@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Cat, Owner } from '../graphql.schema';
-import { OwnersService } from '../owners/owners.service';
-import { CatOwnerResolver } from './cat-owner.resolver';
+import { Cat, Owner } from '../graphql.schema.js';
+import { OwnersService } from '../owners/owners.service.js';
+import { CatOwnerResolver } from './cat-owner.resolver.js';
 
 describe('CatOwnerResolver', () => {
   let resolver: CatOwnerResolver;
@@ -14,7 +14,7 @@ describe('CatOwnerResolver', () => {
         {
           provide: OwnersService,
           useValue: {
-            findOneById: jest.fn(),
+            findOneById: vi.fn(),
           },
         },
       ],
@@ -32,7 +32,7 @@ describe('CatOwnerResolver', () => {
     const cat: Cat & { ownerId: number } = { id: 1, ownerId: 101 };
     const owner: Owner = { id: 101, name: 'Kambale' };
 
-    jest.spyOn(ownersService, 'findOneById').mockImplementation(() => owner);
+    vi.spyOn(ownersService, 'findOneById').mockImplementation(() => owner);
 
     const resolvedOwner = await resolver.owner(cat);
 

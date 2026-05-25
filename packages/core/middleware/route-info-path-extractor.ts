@@ -1,17 +1,15 @@
 import { VersioningType } from '@nestjs/common';
+import { ApplicationConfig } from '../application-config.js';
+import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface.js';
+import { isRouteExcluded } from '../router/utils/index.js';
+import { RoutePathFactory } from './../router/route-path-factory.js';
+import type { VersioningOptions } from '@nestjs/common';
 import {
-  RouteInfo,
-  VersioningOptions,
-  VersionValue,
-} from '@nestjs/common/interfaces';
-import {
+  type RouteInfo,
+  type VersionValue,
   addLeadingSlash,
   stripEndSlash,
-} from '@nestjs/common/utils/shared.utils';
-import { ApplicationConfig } from '../application-config';
-import { ExcludeRouteMetadata } from '../router/interfaces/exclude-route-metadata.interface';
-import { isRouteExcluded } from '../router/utils';
-import { RoutePathFactory } from './../router/route-path-factory';
+} from '@nestjs/common/internal';
 
 export class RouteInfoPathExtractor {
   private readonly routePathFactory: RoutePathFactory;

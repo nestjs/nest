@@ -1,16 +1,8 @@
-import { expect } from 'chai';
 import { spawn } from 'child_process';
-import { join } from 'path';
 
 const PROMPT = '> ';
-const workspaceRoot = join(__dirname, '../../..');
-const localPackageResolver = join(
-  workspaceRoot,
-  'integration/_support/register-local-packages.ts',
-);
-const replEntrypoint = join(__dirname, '../src/repl.ts');
 
-describe('REPL process', function () {
+describe('REPL process', () => {
   let replProcess: ReturnType<typeof spawn>;
 
   function waitForReplToStart(
@@ -42,43 +34,27 @@ describe('REPL process', function () {
     });
   }
 
-  beforeEach(async function () {
-    this.timeout(15000);
+  beforeEach(async () => {
     replProcess = spawn(
       process.execPath,
-      [
-        '-r',
-        'ts-node/register/transpile-only',
-        '-r',
-        localPackageResolver,
-        replEntrypoint,
-      ],
+      ['--import', 'jiti/register', '../src/repl.ts'],
       {
-        cwd: workspaceRoot,
-        env: {
-          ...process.env,
-          TS_NODE_PROJECT: join(
-            workspaceRoot,
-            'integration/repl/tsconfig.json',
-          ),
-        },
+        cwd: import.meta.dirname,
       },
     );
     await waitForReplToStart(replProcess, PROMPT);
-  });
+  }, 15000);
 
-  afterEach(function () {
+  afterEach(() => {
     if (replProcess) {
       replProcess.kill(9);
     }
   });
 
-  it('exits on .exit', async function () {
-    this.timeout(1000);
-
+  it('exits on .exit', async () => {
     return new Promise((resolve, reject) => {
       replProcess.on('exit', _ => {
-        expect(replProcess.exitCode).to.equal(0);
+        expect(replProcess.exitCode).toBe(0);
         resolve();
       });
 
@@ -92,5 +68,5 @@ describe('REPL process', function () {
         reject(new Error('REPL stdin is not available'));
       }
     });
-  });
+  }, 5000);
 });

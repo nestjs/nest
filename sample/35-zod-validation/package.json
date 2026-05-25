@@ -1,0 +1,47 @@
+{
+  "name": "nest-typescript-starter",
+  "version": "1.0.0",
+  "description": "Nest TypeScript starter repository",
+  "license": "MIT",
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "oxlint src --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage",
+    "test:debug": "vitest --inspect-brk --no-file-parallelism",
+    "test:e2e": "vitest run --config ./vitest.config.e2e.mts"
+  },
+  "dependencies": {
+    "@nestjs/common": "11.1.13",
+    "@nestjs/core": "11.1.13",
+    "@nestjs/platform-express": "11.1.13",
+    "reflect-metadata": "0.2.2",
+    "rimraf": "6.1.2",
+    "rxjs": "7.8.2",
+    "zod": "3.25.67"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "11.0.16",
+    "@nestjs/schematics": "11.0.9",
+    "@nestjs/testing": "11.1.13",
+    "@types/express": "5.0.6",
+    "@types/node": "24.10.11",
+    "@types/supertest": "6.0.3",
+    "oxlint": "1.58.0",
+    "prettier": "3.8.1",
+    "supertest": "7.2.2",
+    "ts-loader": "9.5.4",
+    "ts-node": "10.9.2",
+    "tsconfig-paths": "4.2.0",
+    "typescript": "6.0.2",
+    "vitest": "4.1.2"
+  },
+  "type": "module"
+}

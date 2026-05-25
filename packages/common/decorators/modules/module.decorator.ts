@@ -1,5 +1,5 @@
-import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface';
-import { validateModuleKeys } from '../../utils/validate-module-keys.util';
+import { ModuleMetadata } from '../../interfaces/modules/module-metadata.interface.js';
+import { validateModuleKeys } from '../../utils/validate-module-keys.util.js';
 
 /**
  * Decorator that marks a class as a [module](https://docs.nestjs.com/modules).

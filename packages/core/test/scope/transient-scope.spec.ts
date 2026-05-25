@@ -1,7 +1,6 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import { INQUIRER, ModuleRef } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 
 describe('Transient scope', () => {
   const SOME_TOKEN = Symbol('SomeToken');
@@ -53,13 +52,13 @@ describe('Transient scope', () => {
     });
 
     it('should be able to inject a regular dependency', async () => {
-      expect(service.regular.token).to.equal('some-value');
-      expect(service.regular.transient.context).to.equal(RegularService.name);
+      expect(service.regular.token).toBe('some-value');
+      expect(service.regular.transient.context).toBe(RegularService.name);
     });
 
     it('should be able to inject a transient-scoped dependency', async () => {
-      expect(service.transient.token).to.equal('some-value');
-      expect(service.transient.context).to.equal(DynamicService.name);
+      expect(service.transient.token).toBe('some-value');
+      expect(service.transient.context).toBe(DynamicService.name);
     });
 
     it('should work correctly when there is another class that injects the same dependency', async () => {
@@ -73,11 +72,11 @@ describe('Transient scope', () => {
 
       const service2 = await moduleRef.create(AnotherDynamicService);
 
-      expect(service2.regular.token).to.equal('some-value');
-      expect(service2.regular.transient.context).to.equal(RegularService.name);
+      expect(service2.regular.token).toBe('some-value');
+      expect(service2.regular.transient.context).toBe(RegularService.name);
 
-      expect(service2.transient.token).to.equal('some-value');
-      expect(service2.transient.context).to.equal(AnotherDynamicService.name);
+      expect(service2.transient.token).toBe('some-value');
+      expect(service2.transient.context).toBe(AnotherDynamicService.name);
     });
   });
 });

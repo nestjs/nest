@@ -1,20 +1,21 @@
+import { Mocked } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Types } from 'mongoose';
-import { CatsController } from './cats.controller';
-import { CatsService } from './cats.service';
-import { CreateCatDto } from './dto/create-cat.dto';
+import { CatsController } from './cats.controller.js';
+import { CatsService } from './cats.service.js';
+import { CreateCatDto } from './dto/create-cat.dto.js';
 
 const catsServiceMock = {
-  create: jest.fn(),
-  findAll: jest.fn(),
-  findOne: jest.fn(),
-  update: jest.fn(),
-  delete: jest.fn(),
+  create: vi.fn(),
+  findAll: vi.fn(),
+  findOne: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
 };
 
 describe('CatsController', () => {
   let controller: CatsController;
-  let service: jest.Mocked<CatsService>;
+  let service: Mocked<CatsService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

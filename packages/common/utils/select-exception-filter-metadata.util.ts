@@ -1,4 +1,4 @@
-import { ExceptionFilterMetadata } from '../interfaces/exceptions';
+import { ExceptionFilterMetadata } from '../interfaces/exceptions/index.js';
 
 export const selectExceptionFilterMetadata = <T = any>(
   filters: ExceptionFilterMetadata[],

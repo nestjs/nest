@@ -1,9 +1,9 @@
-import { Injectable } from '../decorators/core/injectable.decorator';
+import { Injectable } from '../decorators/core/injectable.decorator.js';
 import {
   ArgumentMetadata,
   PipeTransform,
-} from '../interfaces/features/pipe-transform.interface';
-import { isNil, isNumber } from '../utils/shared.utils';
+} from '../interfaces/features/pipe-transform.interface.js';
+import { isNil, isNumber } from '../utils/shared.utils.js';
 
 /**
  * Defines the built-in DefaultValue Pipe

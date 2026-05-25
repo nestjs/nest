@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Gone* type errors.
@@ -37,11 +37,11 @@ export class GoneException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Gone',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Gone', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
-      HttpException.createBody(objectOrError, description!, HttpStatus.GONE),
+      HttpException.createBody(objectOrError, description, HttpStatus.GONE),
       HttpStatus.GONE,
       httpExceptionOptions,
     );

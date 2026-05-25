@@ -1,5 +1,5 @@
 import { Observable, ReplaySubject, Subject } from 'rxjs';
-import { AbstractHttpAdapter } from '../adapters/http-adapter';
+import { AbstractHttpAdapter } from '../adapters/http-adapter.js';
 
 /**
  * Defines the `HttpAdapterHost` object.

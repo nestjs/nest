@@ -1,15 +1,14 @@
 import { INestApplication, Injectable, Scope } from '@nestjs/common';
 import { createContextId } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as request from 'supertest';
-import { NestedTransientModule } from '../src/nested-transient/nested-transient.module';
-import { Guard } from '../src/transient/guards/request-scoped.guard';
-import { HelloController } from '../src/transient/hello.controller';
-import { HelloModule } from '../src/transient/hello.module';
-import { Interceptor } from '../src/transient/interceptors/logging.interceptor';
-import { UserByIdPipe } from '../src/transient/users/user-by-id.pipe';
-import { UsersService } from '../src/transient/users/users.service';
+import request from 'supertest';
+import { NestedTransientModule } from '../src/nested-transient/nested-transient.module.js';
+import { Guard } from '../src/transient/guards/request-scoped.guard.js';
+import { HelloController } from '../src/transient/hello.controller.js';
+import { HelloModule } from '../src/transient/hello.module.js';
+import { Interceptor } from '../src/transient/interceptors/logging.interceptor.js';
+import { UserByIdPipe } from '../src/transient/users/user-by-id.pipe.js';
+import { UsersService } from '../src/transient/users/users.service.js';
 
 class Meta {
   static COUNTER = 0;
@@ -23,7 +22,7 @@ describe('Transient scope', () => {
     let server: any;
     let app: INestApplication;
 
-    before(async () => {
+    beforeAll(async () => {
       const module = await Test.createTestingModule({
         imports: [
           HelloModule.forRoot({
@@ -40,7 +39,7 @@ describe('Transient scope', () => {
     });
 
     describe('and when one service is request scoped', () => {
-      before(async () => {
+      beforeAll(async () => {
         const performHttpCall = end =>
           request(server)
             .get('/hello')
@@ -54,31 +53,31 @@ describe('Transient scope', () => {
       });
 
       it(`should create controller for each request`, () => {
-        expect(HelloController.COUNTER).to.be.eql(3);
+        expect(HelloController.COUNTER).toEqual(3);
       });
 
       it(`should create service for each request`, () => {
-        expect(UsersService.COUNTER).to.be.eql(3);
+        expect(UsersService.COUNTER).toEqual(3);
       });
 
       it(`should create provider for each inquirer`, () => {
-        expect(Meta.COUNTER).to.be.eql(7);
+        expect(Meta.COUNTER).toEqual(7);
       });
 
       it(`should create transient pipe for each controller (3 requests, 1 static)`, () => {
-        expect(UserByIdPipe.COUNTER).to.be.eql(4);
+        expect(UserByIdPipe.COUNTER).toEqual(4);
       });
 
       it(`should create transient interceptor for each controller (3 requests, 1 static)`, () => {
-        expect(Interceptor.COUNTER).to.be.eql(4);
+        expect(Interceptor.COUNTER).toEqual(4);
       });
 
       it(`should create transient guard for each controller (3 requests, 1 static)`, () => {
-        expect(Guard.COUNTER).to.be.eql(4);
+        expect(Guard.COUNTER).toEqual(4);
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
@@ -118,7 +117,7 @@ describe('Transient scope', () => {
       }
     }
 
-    before(async () => {
+    beforeAll(async () => {
       const module = await Test.createTestingModule({
         providers: [FirstService, SecondService, LoggerService, DeepTransient],
       }).compile();
@@ -130,14 +129,14 @@ describe('Transient scope', () => {
     it('should create a new instance of the transient provider for each provider', async () => {
       const firstService1 = app.get(FirstService);
 
-      expect(firstService1.secondService.loggerService.context).to.equal(
+      expect(firstService1.secondService.loggerService.context).toBe(
         'SecondService',
       );
-      expect(firstService1.loggerService.context).to.equal('FirstService');
-      expect(firstService1.deepTransient.initialized).to.be.true;
+      expect(firstService1.loggerService.context).toBe('FirstService');
+      expect(firstService1.deepTransient.initialized).toBe(true);
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
@@ -164,7 +163,7 @@ describe('Transient scope', () => {
       constructor(public readonly middle: MiddleTransient) {}
     }
 
-    before(async () => {
+    beforeAll(async () => {
       DeepNestedTransient.constructorCalled = false;
 
       const module = await Test.createTestingModule({
@@ -178,11 +177,11 @@ describe('Transient scope', () => {
     it('should call constructor of deeply nested TRANSIENT provider', () => {
       const rootService = app.get(RootService);
 
-      expect(DeepNestedTransient.constructorCalled).to.be.true;
-      expect(rootService.middle.nested).to.be.instanceOf(DeepNestedTransient);
+      expect(DeepNestedTransient.constructorCalled).toBe(true);
+      expect(rootService.middle.nested).toBeInstanceOf(DeepNestedTransient);
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
@@ -222,7 +221,7 @@ describe('Transient scope', () => {
       constructor(public readonly logger: IsolatedTransientLogger) {}
     }
 
-    before(async () => {
+    beforeAll(async () => {
       IsolatedNestedTransient.instanceCount = 0;
       IsolatedTransientLogger.instanceCount = 0;
 
@@ -257,7 +256,7 @@ describe('Transient scope', () => {
       );
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
@@ -338,7 +337,7 @@ describe('Transient scope', () => {
       constructor(public readonly chain: DepthOneTransient) {}
     }
 
-    before(async () => {
+    beforeAll(async () => {
       DepthOneTransient.constructorCalled = false;
       DepthTwoTransient.constructorCalled = false;
       DepthThreeTransient.constructorCalled = false;
@@ -397,7 +396,7 @@ describe('Transient scope', () => {
       expect(DepthSixTransient.constructorCalled).to.be.true;
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
@@ -406,7 +405,7 @@ describe('Transient scope', () => {
     let server: any;
     let app: INestApplication;
 
-    before(async () => {
+    beforeAll(async () => {
       const module = await Test.createTestingModule({
         imports: [NestedTransientModule],
       }).compile();
@@ -419,7 +418,7 @@ describe('Transient scope', () => {
     describe('when handling HTTP requests', () => {
       let response: any;
 
-      before(async () => {
+      beforeAll(async () => {
         const performHttpCall = () =>
           new Promise<any>((resolve, reject) => {
             request(server)
@@ -434,19 +433,15 @@ describe('Transient scope', () => {
       });
 
       it('should isolate nested transient instances for each parent service', () => {
-        expect(response.body.firstServiceContext).to.equal(
-          'NESTED-FirstService',
-        );
-        expect(response.body.secondServiceContext).to.equal(
-          'NESTED-SecondService',
-        );
-        expect(response.body.firstServiceNestedId).to.not.equal(
+        expect(response.body.firstServiceContext).toBe('NESTED-FirstService');
+        expect(response.body.secondServiceContext).toBe('NESTED-SecondService');
+        expect(response.body.firstServiceNestedId).not.toBe(
           response.body.secondServiceNestedId,
         );
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
@@ -527,28 +522,24 @@ describe('Transient scope', () => {
       await app.init();
     });
 
-    it('should create separate deep transient chains for different request-scoped parents in the same context', async function () {
-      this.timeout(20000);
-
+    it('should create separate deep transient chains for different request-scoped parents in the same context', async () => {
       const contextId = createContextId();
       const [parentA, parentB] = await Promise.all([
         app.resolve(RequestScopedParentA, contextId),
         app.resolve(RequestScopedParentB, contextId),
       ]);
 
-      expect(parentA).to.not.equal(parentB);
-      expect(parentA.chain).to.not.equal(parentB.chain);
-      expect(parentA.chain.next.next.next.next.instanceId).to.not.equal(
+      expect(parentA).not.toBe(parentB);
+      expect(parentA.chain).not.toBe(parentB.chain);
+      expect(parentA.chain.next.next.next.next.instanceId).not.toBe(
         parentB.chain.next.next.next.next.instanceId,
       );
-      expect(parentA.chain.next.next.next.next.next.instanceId).to.not.equal(
+      expect(parentA.chain.next.next.next.next.next.instanceId).not.toBe(
         parentB.chain.next.next.next.next.next.instanceId,
       );
-    });
+    }, 20000);
 
-    it('should isolate deep transient chains across overlapping request contexts', async function () {
-      this.timeout(20000);
-
+    it('should isolate deep transient chains across overlapping request contexts', async () => {
       const contextIds = Array.from({ length: 200 }, () => createContextId());
       const parents = await Promise.all(
         contextIds.map(contextId =>
@@ -556,24 +547,22 @@ describe('Transient scope', () => {
         ),
       );
 
-      expect(new Set(parents).size).to.equal(contextIds.length);
+      expect(new Set(parents).size).toBe(contextIds.length);
       expect(
         new Set(
           parents.map(parent => parent.chain.next.next.next.next.instanceId),
         ).size,
-      ).to.equal(contextIds.length);
+      ).toBe(contextIds.length);
       expect(
         new Set(
           parents.map(
             parent => parent.chain.next.next.next.next.next.instanceId,
           ),
         ).size,
-      ).to.equal(contextIds.length);
-    });
+      ).toBe(contextIds.length);
+    }, 20000);
 
-    it('should reuse the same request-scoped parent while preserving a single deep transient chain per context', async function () {
-      this.timeout(20000);
-
+    it('should reuse the same request-scoped parent while preserving a single deep transient chain per context', async () => {
       const contextId = createContextId();
       const parents = await Promise.all(
         Array.from({ length: 200 }, () =>
@@ -581,20 +570,20 @@ describe('Transient scope', () => {
         ),
       );
 
-      expect(new Set(parents).size).to.equal(1);
+      expect(new Set(parents).size).toBe(1);
       expect(
         new Set(
           parents.map(parent => parent.chain.next.next.next.next.instanceId),
         ).size,
-      ).to.equal(1);
+      ).toBe(1);
       expect(
         new Set(
           parents.map(
             parent => parent.chain.next.next.next.next.next.instanceId,
           ),
         ).size,
-      ).to.equal(1);
-    });
+      ).toBe(1);
+    }, 20000);
 
     afterEach(async () => {
       await app.close();

@@ -1,49 +1,44 @@
+import type { ForwardReference, Type } from '@nestjs/common';
 import {
-  InjectionToken,
+  type InjectionToken,
   Logger,
-  LoggerService,
-  OptionalFactoryDependency,
+  type LoggerService,
+  type OptionalFactoryDependency,
   Scope,
 } from '@nestjs/common';
 import {
+  type Controller,
+  type Injectable,
   OPTIONAL_DEPS_METADATA,
   OPTIONAL_PROPERTY_DEPS_METADATA,
   PARAMTYPES_METADATA,
   PROPERTY_DEPS_METADATA,
   SELF_DECLARED_DEPS_METADATA,
-} from '@nestjs/common/constants';
-import {
-  Controller,
-  ForwardReference,
-  Injectable,
-  Type,
-} from '@nestjs/common/interfaces';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
-import {
+  clc,
   isFunction,
   isNil,
   isObject,
   isString,
   isSymbol,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/internal';
 import { iterate } from 'iterare';
 import { performance } from 'perf_hooks';
-import { CircularDependencyException } from '../errors/exceptions';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
-import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
-import { Barrier } from '../helpers/barrier';
-import { STATIC_CONTEXT } from './constants';
-import { INQUIRER } from './inquirer';
+import { CircularDependencyException } from '../errors/exceptions/index.js';
+import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
+import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception.js';
+import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception.js';
+import { Barrier } from '../helpers/barrier.js';
+import { STATIC_CONTEXT } from './constants.js';
+import { INQUIRER } from './inquirer/index.js';
 import {
   ContextId,
   InstancePerContext,
   InstanceWrapper,
   PropertyMetadata,
-} from './instance-wrapper';
-import { Module } from './module';
-import { SettlementSignal } from './settlement-signal';
+} from './instance-wrapper.js';
+import { Module } from './module.js';
+import { SettlementSignal } from './settlement-signal.js';
 
 /**
  * The type of an injectable dependency
@@ -182,7 +177,7 @@ export class Injector {
         wrapper,
         inquirerId,
       );
-      const callback = async (instances: unknown[]) => {
+      const callback = async (instances: unknown[], depth = 0) => {
         const properties = await this.resolveProperties(
           wrapper,
           moduleRef,
@@ -197,6 +192,8 @@ export class Injector {
           wrapper.isTransient ? localResolutionContext : resolutionContext,
         );
         this.applyProperties(instance, properties);
+
+        wrapper.hierarchyLevel = depth + 1;
         wrapper.initTime = this.getNowTimestamp() - t0;
         settlementSignal.complete();
       };
@@ -311,7 +308,7 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     moduleRef: Module,
     inject: InjectorDependency[] | undefined,
-    callback: (args: unknown[]) => void | Promise<void>,
+    callback: (args: unknown[], depth?: number) => void | Promise<void>,
     resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
     parentInquirer?: InstanceWrapper,
   ) {
@@ -337,6 +334,7 @@ export class Injector {
 
     const paramBarrier = new Barrier(dependencies.length);
     let isResolved = true;
+    let depth = 0;
     const resolveParam = async (param: unknown, index: number) => {
       try {
         if (this.isInquirer(param, parentInquirer)) {
@@ -384,6 +382,11 @@ export class Injector {
           paramWrapper,
           effectiveResolutionContext,
         );
+
+        if (paramWrapperWithInstance.hierarchyLevel > depth) {
+          depth = paramWrapperWithInstance.hierarchyLevel;
+        }
+
         const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
           this.getContextId(
             effectiveResolutionContext.contextId,
@@ -411,7 +414,7 @@ export class Injector {
       }
     };
     const instances = await Promise.all(dependencies.map(resolveParam));
-    isResolved && (await callback(instances));
+    isResolved && (await callback(instances, depth));
   }
 
   public getClassDependencies<T>(
@@ -475,7 +478,7 @@ export class Injector {
   }
 
   public reflectOptionalParams(type: Type<unknown> | Function): any[] {
-    return Reflect.getMetadata(OPTIONAL_DEPS_METADATA, type) || [];
+    return Reflect.getOwnMetadata(OPTIONAL_DEPS_METADATA, type) || [];
   }
 
   public reflectSelfParams(type: Type<unknown> | Function): any[] {
@@ -839,7 +842,7 @@ export class Injector {
     properties: PropertyDependency[],
   ): void {
     if (!isObject(instance)) {
-      return undefined;
+      return;
     }
     iterate(properties)
       .filter(item => !isNil(item.instance))

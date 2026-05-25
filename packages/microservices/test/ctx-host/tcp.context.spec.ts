@@ -1,5 +1,4 @@
-import { expect } from 'chai';
-import { TcpContext } from '../../ctx-host';
+import { TcpContext } from '../../ctx-host/index.js';
 
 describe('TcpContext', () => {
   const args = [{}, 'pattern'];
@@ -10,12 +9,12 @@ describe('TcpContext', () => {
   });
   describe('getSubject', () => {
     it('should return subject', () => {
-      expect(context.getSocketRef()).to.be.eql(args[0]);
+      expect(context.getSocketRef()).toEqual(args[0]);
     });
   });
   describe('getPattern', () => {
     it('should return pattern', () => {
-      expect(context.getPattern()).to.be.eql(args[1]);
+      expect(context.getPattern()).toEqual(args[1]);
     });
   });
 });

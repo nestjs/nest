@@ -1,3 +1,3 @@
-export * from './mqtt.record-builder';
-export * from './nats.record-builder';
-export * from './rmq.record-builder';
+export * from './mqtt.record-builder.js';
+export * from './nats.record-builder.js';
+export * from './rmq.record-builder.js';

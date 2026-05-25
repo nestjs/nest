@@ -1,16 +1,14 @@
-import { expect } from 'chai';
 import { EventEmitter } from 'events';
-import * as sinon from 'sinon';
-import { CorruptedPacketLengthException } from '../../errors/corrupted-packet-length.exception';
-import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
-import { JsonSocket } from '../../helpers/json-socket';
+import { CorruptedPacketLengthException } from '../../errors/corrupted-packet-length.exception.js';
+import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception.js';
+import { JsonSocket } from '../../helpers/json-socket.js';
 
 function makeSocketStub(): any {
   const emitter = new EventEmitter();
   return Object.assign(emitter, {
-    write: sinon.stub(),
-    end: sinon.stub(),
-    connect: sinon.stub(),
+    write: vi.fn(),
+    end: vi.fn(),
+    connect: vi.fn(),
   });
 }
 
@@ -76,9 +74,9 @@ describe('JsonSocket', () => {
 
       expect(() => {
         (jsonSocket as any).handleData(bigPayload);
-      }).not.to.throw();
+      }).not.toThrow();
 
-      expect(received).to.have.lengthOf(FRAME_COUNT);
+      expect(received).toHaveLength(FRAME_COUNT);
     });
 
     it('correctly identifies all message payloads in a pipelined burst', () => {
@@ -87,9 +85,9 @@ describe('JsonSocket', () => {
 
       (jsonSocket as any).handleData(payload);
 
-      expect(received).to.have.lengthOf(messages.length);
+      expect(received).toHaveLength(messages.length);
       messages.forEach((msg, i) => {
-        expect(received[i]).to.deep.equal(msg);
+        expect(received[i]).toEqual(msg);
       });
     });
   });
@@ -98,24 +96,24 @@ describe('JsonSocket', () => {
     it('throws CorruptedPacketLengthException for a non-numeric length prefix', () => {
       expect(() => {
         (jsonSocket as any).handleData('abc#{}');
-      }).to.throw(CorruptedPacketLengthException);
+      }).toThrow(CorruptedPacketLengthException);
     });
 
     it('throws MaxPacketLengthExceededException when buffer exceeds maxBufferSize', () => {
       const tiny = new JsonSocket(socketStub, { maxBufferSize: 5 });
       expect(() => {
         (tiny as any).handleData('123456#');
-      }).to.throw(MaxPacketLengthExceededException);
+      }).toThrow(MaxPacketLengthExceededException);
     });
 
     it('resets state after a corrupted length so subsequent valid frames are processed', () => {
-      expect(() => (jsonSocket as any).handleData('bad#')).to.throw(
+      expect(() => (jsonSocket as any).handleData('bad#')).toThrow(
         CorruptedPacketLengthException,
       );
       // After the error the socket state must be clean
       (jsonSocket as any).handleData(frame({ ok: true }));
-      expect(received).to.have.lengthOf(1);
-      expect(received[0]).to.deep.equal({ ok: true });
+      expect(received).toHaveLength(1);
+      expect(received[0]).toEqual({ ok: true });
     });
   });
 });

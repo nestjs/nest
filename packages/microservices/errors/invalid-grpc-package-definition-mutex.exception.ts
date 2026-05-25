@@ -1,4 +1,4 @@
-import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
+import { RuntimeException } from '@nestjs/core/internal';
 
 export class InvalidGrpcPackageDefinitionMutexException extends RuntimeException {
   constructor() {

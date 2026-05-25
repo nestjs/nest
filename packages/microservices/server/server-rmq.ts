@@ -1,9 +1,5 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
-import {
-  isNil,
-  isString,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+import { createRequire } from 'module';
 import {
   BLOCKED_RMQ_MESSAGE,
   CONNECTION_FAILED_MESSAGE,
@@ -12,29 +8,34 @@ import {
   RMQ_SEPARATOR,
   RMQ_WILDCARD_ALL,
   RMQ_WILDCARD_SINGLE,
-  RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
-  RQM_DEFAULT_NOACK,
-  RQM_DEFAULT_NO_ASSERT,
-  RQM_DEFAULT_PREFETCH_COUNT,
-  RQM_DEFAULT_QUEUE,
-  RQM_DEFAULT_QUEUE_OPTIONS,
-  RQM_DEFAULT_URL,
-  RQM_NO_EVENT_HANDLER,
-  RQM_NO_MESSAGE_HANDLER,
+  RMQ_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
+  RMQ_DEFAULT_NOACK,
+  RMQ_DEFAULT_NO_ASSERT,
+  RMQ_DEFAULT_PREFETCH_COUNT,
+  RMQ_DEFAULT_QUEUE,
+  RMQ_DEFAULT_QUEUE_OPTIONS,
+  RMQ_DEFAULT_URL,
+  RMQ_NO_EVENT_HANDLER,
+  RMQ_NO_MESSAGE_HANDLER,
   UNBLOCKED_RMQ_MESSAGE,
-} from '../constants';
-import { RmqContext } from '../ctx-host';
-import { Transport } from '../enums';
-import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events';
-import { RmqUrl } from '../external/rmq-url.interface';
-import { MessageHandler, RmqOptions, TransportId } from '../interfaces';
+} from '../constants.js';
+import { RmqContext } from '../ctx-host/index.js';
+import { Transport } from '../enums/index.js';
+import { RmqEvents, RmqEventsMap, RmqStatus } from '../events/rmq.events.js';
+import { RmqUrl } from '../external/rmq-url.interface.js';
+import {
+  MessageHandler,
+  RmqOptions,
+  TransportId,
+} from '../interfaces/index.js';
 import {
   IncomingRequest,
   OutgoingResponse,
   ReadPacket,
-} from '../interfaces/packet.interface';
-import { RmqRecordSerializer } from '../serializers/rmq-record.serializer';
-import { Server } from './server';
+} from '../interfaces/packet.interface.js';
+import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
+import { Server } from './server.js';
+import { isNil, isString, isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for RMQ. This cant be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
@@ -50,8 +51,6 @@ type AmqpConnectionManager = any;
 type ChannelWrapper = any;
 type Message = any;
 type Channel = any;
-
-let rmqPackage = {} as any; // as typeof import('amqp-connection-manager');
 
 const INFINITE_CONNECTION_ATTEMPTS = -1;
 
@@ -76,19 +75,16 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
 
   constructor(protected readonly options: Required<RmqOptions>['options']) {
     super();
-    this.urls = this.getOptionsProp(this.options, 'urls') || [RQM_DEFAULT_URL];
+    this.urls = this.getOptionsProp(this.options, 'urls') || [RMQ_DEFAULT_URL];
     this.queue =
-      this.getOptionsProp(this.options, 'queue') || RQM_DEFAULT_QUEUE;
-    this.noAck = this.getOptionsProp(this.options, 'noAck', RQM_DEFAULT_NOACK);
+      this.getOptionsProp(this.options, 'queue') || RMQ_DEFAULT_QUEUE;
+    this.noAck = this.getOptionsProp(this.options, 'noAck', RMQ_DEFAULT_NOACK);
     this.queueOptions =
       this.getOptionsProp(this.options, 'queueOptions') ||
-      RQM_DEFAULT_QUEUE_OPTIONS;
+      RMQ_DEFAULT_QUEUE_OPTIONS;
 
-    this.loadPackage('amqplib', ServerRMQ.name, () => require('amqplib'));
-    rmqPackage = this.loadPackage(
-      'amqp-connection-manager',
-      ServerRMQ.name,
-      () => require('amqp-connection-manager'),
+    this.loadPackageSynchronously('amqplib', ServerRMQ.name, () =>
+      createRequire(import.meta.url)('amqplib'),
     );
 
     this.initializeSerializer(options);
@@ -114,7 +110,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
   public async start(
     callback?: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
-    this.server = this.createClient();
+    this.server = await this.createClient();
     this.server!.once(RmqEventsMap.CONNECT, () => {
       if (this.channel) {
         return;
@@ -166,13 +162,18 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     );
   }
 
-  public createClient<T = any>(): T {
+  public async createClient<T = any>(): Promise<T> {
+    const rmqPackage = await this.loadPackage(
+      'amqp-connection-manager',
+      ServerRMQ.name,
+      () => import('amqp-connection-manager'),
+    );
     const socketOptions = this.getOptionsProp(this.options, 'socketOptions');
     return rmqPackage.connect(this.urls, {
       connectionOptions: socketOptions?.connectionOptions,
       heartbeatIntervalInSeconds: socketOptions?.heartbeatIntervalInSeconds,
       reconnectTimeInSeconds: socketOptions?.reconnectTimeInSeconds,
-    });
+    }) as T;
   }
 
   private registerConnectListener() {
@@ -207,11 +208,11 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     const noAssert =
       this.getOptionsProp(this.options, 'noAssert') ??
       this.queueOptions.noAssert ??
-      RQM_DEFAULT_NO_ASSERT;
+      RMQ_DEFAULT_NO_ASSERT;
 
     let createdQueue: string;
 
-    if (this.queue === RQM_DEFAULT_QUEUE || !noAssert) {
+    if (this.queue === RMQ_DEFAULT_QUEUE || !noAssert) {
       const { queue } = await channel.assertQueue(
         this.queue,
         this.queueOptions,
@@ -224,12 +225,12 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     const isGlobalPrefetchCount = this.getOptionsProp(
       this.options,
       'isGlobalPrefetchCount',
-      RQM_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
+      RMQ_DEFAULT_IS_GLOBAL_PREFETCH_COUNT,
     );
     const prefetchCount = this.getOptionsProp(
       this.options,
       'prefetchCount',
-      RQM_DEFAULT_PREFETCH_COUNT,
+      RMQ_DEFAULT_PREFETCH_COUNT,
     );
 
     if (this.options.exchange || this.options.wildcards) {
@@ -309,7 +310,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
 
     if (!handler) {
       if (!this.noAck) {
-        this.logger.warn(RQM_NO_MESSAGE_HANDLER`${pattern}`);
+        this.logger.warn(RMQ_NO_MESSAGE_HANDLER`${pattern}`);
         this.channel!.nack(rmqContext.getMessage() as Message, false, false);
       }
       const status = 'error';
@@ -354,7 +355,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     const handler = this.getHandlerByPattern(pattern);
     if (!handler && !this.noAck) {
       this.channel!.nack(context.getMessage() as Message, false, false);
-      return this.logger.warn(RQM_NO_EVENT_HANDLER`${pattern}`);
+      return this.logger.warn(RMQ_NO_EVENT_HANDLER`${pattern}`);
     }
     return super.handleEvent(pattern, packet, context);
   }

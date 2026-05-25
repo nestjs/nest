@@ -8,16 +8,16 @@
     "build": "babel src -d dist",
     "start": "babel-node index.js",
     "start:dev": "nodemon",
-    "test": "jest",
-    "test:cov": "jest --coverage",
-    "test:e2e": "echo 'No e2e tests implemented yet.'"
+    "test": "vitest run",
+    "test:cov": "vitest run --coverage",
+    "test:e2e": "vitest run --config ./vitest.config.e2e.mts"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.23",
-    "@nestjs/core": "11.1.23",
-    "@nestjs/platform-express": "11.1.23",
-    "@nestjs/microservices": "11.1.23",
-    "@nestjs/websockets": "11.1.23",
+    "@nestjs/common": "11.1.13",
+    "@nestjs/core": "11.1.13",
+    "@nestjs/platform-express": "11.1.13",
+    "@nestjs/microservices": "11.1.13",
+    "@nestjs/websockets": "11.1.13",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"
   },
@@ -27,22 +27,15 @@
     "@babel/node": "7.29.0",
     "@babel/plugin-proposal-decorators": "7.29.0",
     "@babel/plugin-transform-runtime": "7.29.0",
-    "@babel/preset-env": "7.29.5",
-    "@babel/register": "7.29.3",
-    "@babel/runtime": "7.29.2",
-    "@nestjs/testing": "11.1.23",
-    "jest": "30.4.2",
-    "nodemon": "3.1.14",
-    "prettier": "3.8.3",
-    "supertest": "7.2.2"
+    "@babel/preset-env": "7.29.0",
+    "@babel/register": "7.28.6",
+    "@babel/runtime": "7.28.6",
+    "@nestjs/testing": "11.1.13",
+    "nodemon": "3.1.11",
+    "oxlint": "1.58.0",
+    "prettier": "3.8.1",
+    "supertest": "7.2.2",
+    "vitest": "4.1.2"
   },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.js$",
-    "coverageDirectory": "../coverage"
-  }
+  "type": "module"
 }

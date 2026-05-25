@@ -1,15 +1,13 @@
-import { NestContainer } from '@nestjs/core';
-import { STATIC_CONTEXT } from '@nestjs/core/injector/constants';
+import type { NestContainer } from '@nestjs/core';
+import type { ContextId } from '@nestjs/core/injector/instance-wrapper.js';
+import { MockFactory } from './interfaces/index.js';
 import {
+  STATIC_CONTEXT,
   Injector,
-  InjectorDependencyContext,
-} from '@nestjs/core/injector/injector';
-import {
-  ContextId,
+  type InjectorDependencyContext,
   InstanceWrapper,
-} from '@nestjs/core/injector/instance-wrapper';
-import { Module } from '@nestjs/core/injector/module';
-import { MockFactory } from './interfaces';
+  type Module,
+} from '@nestjs/core/internal';
 
 interface ResolutionContext {
   contextId: ContextId;

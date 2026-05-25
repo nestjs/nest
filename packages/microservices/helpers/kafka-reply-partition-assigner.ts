@@ -1,13 +1,13 @@
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { ClientKafka } from '../client/client-kafka';
+import { createRequire } from 'module';
+import { ClientKafka } from '../client/client-kafka.js';
 import {
   Cluster,
   GroupMember,
   GroupMemberAssignment,
   GroupState,
   MemberMetadata,
-} from '../external/kafka.interface';
+} from '../external/kafka.interface.js';
+import { loadPackageSync, isUndefined } from '@nestjs/common/internal';
 
 let kafkaPackage: any = {};
 
@@ -21,10 +21,10 @@ export class KafkaReplyPartitionAssigner {
       cluster: Cluster;
     },
   ) {
-    kafkaPackage = loadPackage(
+    kafkaPackage = loadPackageSync(
       'kafkajs',
       KafkaReplyPartitionAssigner.name,
-      () => require('kafkajs'),
+      () => createRequire(import.meta.url)('kafkajs'),
     );
   }
 
@@ -39,6 +39,7 @@ export class KafkaReplyPartitionAssigner {
     members: GroupMember[];
     topics: string[];
   }): Promise<GroupMemberAssignment[]> {
+    kafkaPackage = await kafkaPackage;
     const assignment = {};
     const previousAssignment = {};
 
@@ -61,18 +62,14 @@ export class KafkaReplyPartitionAssigner {
     });
 
     // build a collection of topics and partitions
-    const topicsPartitions = group.topics
-      .map(topic => {
-        const partitionMetadata =
-          this.config.cluster.findTopicPartitionMetadata(topic);
-        return partitionMetadata.map(m => {
-          return {
-            topic,
-            partitionId: m.partitionId,
-          };
-        });
-      })
-      .reduce((acc, val) => acc.concat(val), []);
+    const topicsPartitions = group.topics.flatMap(topic => {
+      const partitionMetadata =
+        this.config.cluster.findTopicPartitionMetadata(topic);
+      return partitionMetadata.map(m => ({
+        topic,
+        partitionId: m.partitionId,
+      }));
+    });
 
     // create the new assignment by populating the members with the first partition of the topics
     sortedMemberIds.forEach(assignee => {
@@ -188,6 +185,8 @@ export class KafkaReplyPartitionAssigner {
   }
 
   public decodeMember(member: GroupMember) {
+    // kafkaPackage must be resolved before calling this method
+    // (it is resolved in assign() which calls decodeMember)
     const memberMetadata = kafkaPackage.AssignerProtocol.MemberMetadata.decode(
       member.memberMetadata,
     ) as MemberMetadata;

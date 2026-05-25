@@ -1,5 +1,5 @@
-import { Type } from '../type.interface';
-import { ModuleMetadata } from './module-metadata.interface';
+import { Type } from '../type.interface.js';
+import { ModuleMetadata } from './module-metadata.interface.js';
 
 /**
  * Interface defining a Dynamic Module.

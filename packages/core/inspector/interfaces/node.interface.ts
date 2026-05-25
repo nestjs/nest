@@ -1,5 +1,5 @@
-import { InjectionToken, Scope } from '@nestjs/common';
-import { EnhancerSubtype } from '@nestjs/common/constants';
+import type { InjectionToken, Scope } from '@nestjs/common';
+import type { EnhancerSubtype } from '@nestjs/common/internal';
 
 export type ModuleNode = {
   metadata: {

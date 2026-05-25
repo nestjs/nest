@@ -1,4 +1,4 @@
-import { Deserializer } from '../interfaces/deserializer.interface';
+import { Deserializer } from '../interfaces/deserializer.interface.js';
 
 /**
  * @publicApi

@@ -1,18 +1,16 @@
+import { MetadataScanner } from '../metadata-scanner.js';
+import { RouterProxyCallback } from './router-proxy.js';
 import {
   METHOD_METADATA,
   PATH_METADATA,
   VERSION_METADATA,
-} from '@nestjs/common/constants';
-import { RequestMethod } from '@nestjs/common/enums';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { VersionValue } from '@nestjs/common/interfaces/version-options.interface';
-import {
+  type Controller,
+  type VersionValue,
   addLeadingSlash,
   isString,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
-import { MetadataScanner } from '../metadata-scanner';
-import { RouterProxyCallback } from './router-proxy';
+} from '@nestjs/common/internal';
+import type { RequestMethod } from '@nestjs/common';
 
 export interface RouteDefinition {
   path: string[];

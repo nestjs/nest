@@ -1,4 +1,4 @@
-import { HTTP_CODE_METADATA } from '../../constants';
+import { HTTP_CODE_METADATA } from '../../constants.js';
 
 /**
  * Request method Decorator.  Defines the HTTP response status code.  Overrides

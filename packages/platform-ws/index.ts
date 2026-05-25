@@ -5,4 +5,4 @@
  * MIT Licensed
  */
 
-export * from './adapters';
+export * from './adapters/index.js';

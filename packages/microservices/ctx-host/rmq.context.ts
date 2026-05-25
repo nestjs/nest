@@ -1,4 +1,4 @@
-import { BaseRpcContext } from './base-rpc.context';
+import { BaseRpcContext } from './base-rpc.context.js';
 
 type RmqContextArgs = [Record<string, any>, any, string];
 

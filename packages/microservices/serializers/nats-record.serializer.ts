@@ -1,25 +1,12 @@
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isObject } from '@nestjs/common/utils/shared.utils';
-import { NatsCodec } from '../external/nats-codec.interface';
-import { ReadPacket } from '../interfaces';
-import { Serializer } from '../interfaces/serializer.interface';
-import { NatsRecord, NatsRecordBuilder } from '../record-builders';
-
-let natsPackage = {} as any;
+import { isObject } from '@nestjs/common/internal';
+import { ReadPacket } from '../interfaces/index.js';
+import { Serializer } from '../interfaces/serializer.interface.js';
+import { NatsRecord, NatsRecordBuilder } from '../record-builders/index.js';
 
 export class NatsRecordSerializer implements Serializer<
   ReadPacket,
   NatsRecord
 > {
-  private readonly jsonCodec: NatsCodec<unknown>;
-
-  constructor() {
-    natsPackage = loadPackage('nats', NatsRecordSerializer.name, () =>
-      require('nats'),
-    );
-    this.jsonCodec = natsPackage.JSONCodec();
-  }
-
   serialize(packet: any): NatsRecord {
     const natsMessage =
       packet?.data && isObject(packet.data) && packet.data instanceof NatsRecord
@@ -29,7 +16,7 @@ export class NatsRecordSerializer implements Serializer<
             .build();
 
     return {
-      data: this.jsonCodec.encode({ ...packet, data: natsMessage.data }),
+      data: JSON.stringify({ ...packet, data: natsMessage.data }),
       headers: natsMessage.headers,
     };
   }

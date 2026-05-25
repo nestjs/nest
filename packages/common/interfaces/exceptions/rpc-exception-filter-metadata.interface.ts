@@ -1,5 +1,5 @@
-import { RpcExceptionFilter } from './rpc-exception-filter.interface';
-import { Type } from '../type.interface';
+import { RpcExceptionFilter } from './rpc-exception-filter.interface.js';
+import { Type } from '../type.interface.js';
 
 export interface RpcExceptionFilterMetadata {
   func: RpcExceptionFilter['catch'];

@@ -1,1 +1,1 @@
-export * from './serialize-options.decorator';
+export * from './serialize-options.decorator.js';

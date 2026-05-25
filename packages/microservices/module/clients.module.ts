@@ -1,18 +1,18 @@
 import {
-  DynamicModule,
-  ForwardReference,
+  type DynamicModule,
+  type ForwardReference,
   Module,
-  OnApplicationShutdown,
-  Provider,
-  Type,
+  type OnApplicationShutdown,
+  type Provider,
+  type Type,
 } from '@nestjs/common';
-import { ClientProxy, ClientProxyFactory } from '../client';
+import { ClientProxy, ClientProxyFactory } from '../client/index.js';
 import {
   ClientsModuleAsyncOptions,
   ClientsModuleOptions,
   ClientsModuleOptionsFactory,
   ClientsProviderAsyncOptions,
-} from './interfaces';
+} from './interfaces/index.js';
 
 @Module({})
 export class ClientsModule {
@@ -34,13 +34,10 @@ export class ClientsModule {
 
   static registerAsync(options: ClientsModuleAsyncOptions): DynamicModule {
     const clientsOptions = !Array.isArray(options) ? options.clients : options;
-    const providers: Provider[] = clientsOptions.reduce(
-      (accProviders: Provider[], item) =>
-        accProviders
-          .concat(this.createAsyncProviders(item))
-          .concat(item.extraProviders || []),
-      [],
-    );
+    const providers: Provider[] = clientsOptions.flatMap(item => [
+      ...this.createAsyncProviders(item),
+      ...(item.extraProviders || []),
+    ]);
     const imports = clientsOptions.reduce(
       (accImports, option) => {
         if (!option.imports) {
