@@ -153,11 +153,12 @@
     "ts-node": "10.9.2",
     "tsx": "4.19.2",
     "tsconfig-paths": "4.2.0",
-  "typeorm": "0.3.30",
-  "typescript": "6.0.2",
-  "vite": "8.0.3",
-  "vitest": "4.1.2",
-  "ws": "8.20.1"
+    "typeorm": "0.3.30",
+    "typescript": "6.0.2",
+    "typescript-eslint": "8.58.2",
+    "vite": "8.0.3",
+    "vitest": "4.1.2",
+    "ws": "8.21.0"
   },
   "engines": {
     "node": ">= 20"

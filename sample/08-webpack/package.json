@@ -25,8 +25,6 @@
     "@types/node": "24.10.13",
     "oxlint": "1.58.0",
     "start-server-webpack-plugin": "2.2.5",
-    "ts-loader": "9.5.4",
-    "ts-node": "10.9.2",
     "vitest": "4.1.2",
     "webpack": "5.105.2",
     "webpack-cli": "6.0.1",

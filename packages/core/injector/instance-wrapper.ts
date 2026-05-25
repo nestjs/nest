@@ -64,6 +64,11 @@ interface InstanceMetadataStore {
   enhancers?: InstanceWrapper[];
 }
 
+const dependencyTreeParents = new WeakMap<
+  InstanceWrapper,
+  Set<InstanceWrapper>
+>();
+
 export class InstanceWrapper<T = any> {
   public readonly name: any;
   public readonly token: InjectionToken;
@@ -216,6 +221,8 @@ export class InstanceWrapper<T = any> {
       this[INSTANCE_METADATA_SYMBOL].dependencies = [];
     }
     this[INSTANCE_METADATA_SYMBOL].dependencies[index] = wrapper;
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getCtorMetadata(): InstanceWrapper[] {
@@ -230,6 +237,8 @@ export class InstanceWrapper<T = any> {
       key,
       wrapper,
     });
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getPropertiesMetadata(): PropertyMetadata[] {
@@ -241,6 +250,8 @@ export class InstanceWrapper<T = any> {
       this[INSTANCE_METADATA_SYMBOL].enhancers = [];
     }
     this[INSTANCE_METADATA_SYMBOL].enhancers.push(wrapper);
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getEnhancersMetadata(): InstanceWrapper[] {
@@ -506,6 +517,26 @@ export class InstanceWrapper<T = any> {
 
   private isNewable(): boolean {
     return isNil(this.inject) && this.metatype && this.metatype.prototype;
+  }
+
+  private registerDependencyTreeParent(wrapper: InstanceWrapper) {
+    if (wrapper instanceof InstanceWrapper) {
+      const parents = dependencyTreeParents.get(wrapper) ?? new Set();
+      parents.add(this);
+      dependencyTreeParents.set(wrapper, parents);
+    }
+  }
+
+  private resetDependencyTreeState(lookupRegistry = new Set<string>()) {
+    if (lookupRegistry.has(this[INSTANCE_ID_SYMBOL])) {
+      return;
+    }
+    lookupRegistry.add(this[INSTANCE_ID_SYMBOL]);
+    this.isTreeStatic = undefined;
+    this.isTreeDurable = undefined;
+    dependencyTreeParents
+      .get(this)
+      ?.forEach(parent => parent.resetDependencyTreeState(lookupRegistry));
   }
 
   private initialize(
