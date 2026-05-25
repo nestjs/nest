@@ -66,6 +66,17 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     this.subClient && (await this.subClient.quit());
     this.pubClient = this.subClient = null;
     this.pendingEventListeners = [];
+    this.handleDisconnect();
+  }
+
+  public handleDisconnect() {
+    if (this.routingMap.size > 0) {
+      const err = new Error('Connection closed');
+      for (const callback of this.routingMap.values()) {
+        callback({ err });
+      }
+      this.routingMap.clear();
+    }
   }
 
   public async connect(): Promise<any> {
@@ -169,6 +180,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
         // Clean up client instances and just recreate them when connect is called
         this.pubClient = this.subClient = null;
+        this.handleDisconnect();
       } else {
         this.logger.error('Disconnected from Redis.');
         this.connectionPromise = Promise.reject(
@@ -177,6 +189,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
         // Prevent unhandled rejections
         this.connectionPromise.catch(() => {});
+        this.handleDisconnect();
       }
     });
   }
@@ -327,7 +340,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     this.subscriptionsCount.set(channel, subscriptionCount - 1);
 
     if (subscriptionCount - 1 <= 0) {
-      this.subClient.unsubscribe(channel);
+      this.subClient?.unsubscribe(channel);
     }
   }
 }

@@ -239,6 +239,25 @@ describe('ClientRedis', () => {
       await client.close();
       expect(subClose.called).to.be.false;
     });
+    it('should clear out the routing map', async () => {
+      const routingMap = new Map<string, Function>();
+      routingMap.set('some id', sinon.spy());
+      untypedClient.routingMap = routingMap;
+      await client.close();
+      expect(untypedClient.routingMap.size).to.be.eq(0);
+    });
+    it('should call pending routingMap callbacks with "Connection closed" error', async () => {
+      const callback = sinon.spy();
+      const routingMap = new Map<string, Function>();
+      routingMap.set('some id', callback);
+      untypedClient.routingMap = routingMap;
+      await client.close();
+      expect(
+        callback.calledWith(
+          sinon.match({ err: sinon.match({ message: 'Connection closed' }) }),
+        ),
+      ).to.be.true;
+    });
     it('should have isManuallyClosed set to true when "end" event is handled during close', async () => {
       let endHandler: Function | undefined;
       sub.on = (event, handler) => {
@@ -310,6 +329,31 @@ describe('ClientRedis', () => {
       expect(callback.getCall(0).args[0]).to.be.eql(RedisEventsMap.ERROR);
     });
   });
+  describe('handleDisconnect', () => {
+    it('should clear the routing map', () => {
+      const routingMap = new Map<string, Function>();
+      routingMap.set('id1', sinon.spy());
+      untypedClient.routingMap = routingMap;
+      client.handleDisconnect();
+      expect(untypedClient.routingMap.size).to.be.eq(0);
+    });
+    it('should call each pending callback with a "Connection closed" error', () => {
+      const callback = sinon.spy();
+      const routingMap = new Map<string, Function>();
+      routingMap.set('id1', callback);
+      untypedClient.routingMap = routingMap;
+      client.handleDisconnect();
+      expect(
+        callback.calledWith(
+          sinon.match({ err: sinon.match({ message: 'Connection closed' }) }),
+        ),
+      ).to.be.true;
+    });
+    it('should do nothing when the routing map is empty', () => {
+      untypedClient.routingMap = new Map();
+      expect(() => client.handleDisconnect()).not.to.throw();
+    });
+  });
   describe('registerEndListener', () => {
     it('should bind end event handler', () => {
       const callback = sinon.stub().callsFake((_, fn) => fn({ code: 'test' }));
@@ -318,6 +362,46 @@ describe('ClientRedis', () => {
       };
       client.registerEndListener(emitter as any);
       expect(callback.getCall(0).args[0]).to.be.eql(RedisEventsMap.END);
+    });
+    it('should call handleDisconnect on unexpected disconnect (no retryAttempts)', () => {
+      const localClient = new ClientRedis({});
+      const handleDisconnectSpy = sinon.spy(localClient, 'handleDisconnect');
+      let endHandler: Function;
+      const emitter = {
+        on: (event: string, fn: Function) => {
+          if (event === 'end') endHandler = fn;
+        },
+      };
+      localClient.registerEndListener(emitter as any);
+      endHandler!();
+      expect(handleDisconnectSpy.called).to.be.true;
+    });
+    it('should call handleDisconnect on unexpected disconnect (with retryAttempts)', () => {
+      const localClient = new ClientRedis({ retryAttempts: 3 });
+      const handleDisconnectSpy = sinon.spy(localClient, 'handleDisconnect');
+      let endHandler: Function;
+      const emitter = {
+        on: (event: string, fn: Function) => {
+          if (event === 'end') endHandler = fn;
+        },
+      };
+      localClient.registerEndListener(emitter as any);
+      endHandler!();
+      expect(handleDisconnectSpy.called).to.be.true;
+    });
+    it('should not call handleDisconnect when isManuallyClosed is true', () => {
+      const localClient = new ClientRedis({});
+      (localClient as any).isManuallyClosed = true;
+      const handleDisconnectSpy = sinon.spy(localClient, 'handleDisconnect');
+      let endHandler: Function;
+      const emitter = {
+        on: (event: string, fn: Function) => {
+          if (event === 'end') endHandler = fn;
+        },
+      };
+      localClient.registerEndListener(emitter as any);
+      endHandler!();
+      expect(handleDisconnectSpy.called).to.be.false;
     });
   });
   describe('registerReadyListener', () => {
