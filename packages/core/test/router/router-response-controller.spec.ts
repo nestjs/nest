@@ -262,11 +262,17 @@ describe('RouterResponseController', () => {
   describe('Server-Sent-Events', () => {
     it('should accept only observables', async () => {
       const result = Promise.resolve('test');
+      const response = new Writable();
+      response._write = () => {};
+
+      const request = new Writable();
+      request._write = () => {};
+
       try {
         await routerResponseController.sse(
           result as unknown as any,
-          {} as unknown as ServerResponse,
-          {} as unknown as IncomingMessage,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
         );
         expect.fail('should have thrown');
       } catch (e) {
@@ -372,12 +378,11 @@ data: test
       const result = of('test');
       const response = new Sink();
       const request = new PassThrough();
-      void routerResponseController.sse(
+      await routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
       );
-      request.destroy();
       await written(response);
       expect(response.content).to.eql(
         `
@@ -405,6 +410,39 @@ data: test
       request.emit('close');
     });
 
+    it('should ignore a Promise<Observable> if request closes before it resolves', async () => {
+      let subscribed = false;
+      const result = new Promise<Observable<string>>(resolve => {
+        setTimeout(() => {
+          resolve(
+            new Observable(() => {
+              subscribed = true;
+            }),
+          );
+        }, 10);
+      });
+      const response = new Writable();
+      const responseEndSpy = sinon.spy();
+      response.end = responseEndSpy as any;
+      response._write = () => {};
+
+      const request = new PassThrough();
+
+      const ssePromise = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+      request.emit('close');
+
+      await ssePromise;
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(subscribed).to.equal(false);
+      expect(responseEndSpy.calledOnce).to.be.true;
+      expect(request.listenerCount('close')).to.equal(0);
+    });
+
     it('should close the request when observable completes', done => {
       const result = of('test');
       const response = new Writable();
@@ -419,6 +457,22 @@ data: test
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
       );
+    });
+
+    it('should remove the close listener after synchronous completion', async () => {
+      const result = of('test');
+      const response = new Writable();
+      response._write = () => {};
+
+      const request = new PassThrough();
+
+      await routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      expect(request.listenerCount('close')).to.equal(0);
     });
 
     it('should allow to intercept the response', done => {
