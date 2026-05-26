@@ -90,6 +90,7 @@ export class RouterExecutionContext {
     const {
       argsLength,
       fnHandleResponse,
+      isSseHandler,
       paramtypes,
       getParamsMetadata,
       httpStatusCode,
@@ -162,14 +163,23 @@ export class RouterExecutionContext {
       hasCustomHeaders &&
         this.responseController.setHeaders(res, responseHeaders);
 
-      const result = await this.interceptorsConsumer.intercept(
-        interceptors,
-        [req, res, next],
-        instance,
-        callback,
-        handler(args, req, res, next),
-        contextType,
-      );
+      const result = isSseHandler
+        ? this.interceptorsConsumer.intercept(
+            interceptors,
+            [req, res, next],
+            instance,
+            callback,
+            handler(args, req, res, next),
+            contextType,
+          )
+        : await this.interceptorsConsumer.intercept(
+            interceptors,
+            [req, res, next],
+            instance,
+            callback,
+            handler(args, req, res, next),
+            contextType,
+          );
       await (fnHandleResponse as HandlerResponseBasicFn)(result, res, req);
     };
   }
@@ -231,6 +241,7 @@ export class RouterExecutionContext {
       isResponseHandled,
       httpRedirectResponse,
     );
+    const isSseHandler = !!this.reflectSse(callback);
 
     const httpCode = this.reflectHttpStatusCode(callback);
     const httpStatusCode = httpCode
@@ -242,6 +253,7 @@ export class RouterExecutionContext {
     const handlerMetadata: HandlerMetadata = {
       argsLength,
       fnHandleResponse,
+      isSseHandler,
       paramtypes,
       getParamsMetadata,
       httpStatusCode,
