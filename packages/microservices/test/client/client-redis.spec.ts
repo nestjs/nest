@@ -211,15 +211,21 @@ describe('ClientRedis', () => {
 
     let pubClose: sinon.SinonSpy;
     let subClose: sinon.SinonSpy;
+    let callback: sinon.SinonSpy;
+    let routingMap: Map<string, Function>;
     let pub: any, sub: any;
 
     beforeEach(() => {
       pubClose = sinon.spy();
       subClose = sinon.spy();
+      callback = sinon.spy();
+      routingMap = new Map<string, Function>();
+      routingMap.set('some id', callback);
       pub = { quit: pubClose };
       sub = { quit: subClose };
       untypedClient.pubClient = pub;
       untypedClient.subClient = sub;
+      untypedClient.routingMap = routingMap;
     });
     it('should close "pub" when it is not null', async () => {
       await client.close();
@@ -238,6 +244,18 @@ describe('ClientRedis', () => {
       untypedClient.subClient = null;
       await client.close();
       expect(subClose.called).to.be.false;
+    });
+    it('should clear out the routing map', async () => {
+      await client.close();
+      expect(untypedClient.routingMap.size).to.be.eq(0);
+    });
+    it('should call pending callbacks with connection closed error', async () => {
+      await client.close();
+      expect(
+        callback.calledWith({
+          err: sinon.match({ message: 'Connection closed' }),
+        }),
+      ).to.be.true;
     });
     it('should have isManuallyClosed set to true when "end" event is handled during close', async () => {
       let endHandler: Function | undefined;
@@ -318,6 +336,27 @@ describe('ClientRedis', () => {
       };
       client.registerEndListener(emitter as any);
       expect(callback.getCall(0).args[0]).to.be.eql(RedisEventsMap.END);
+    });
+    it('should call pending callbacks when connection ends unexpectedly', () => {
+      const client = new ClientRedis({});
+      const callback = sinon.spy();
+      const emitter = {
+        on: sinon.stub().callsFake((_, fn) => fn()),
+      };
+
+      client['routingMap'].set('some id', callback);
+      client['subscriptionsCount'].set('channel', 1);
+      (client as any).isManuallyClosed = false;
+
+      client.registerEndListener(emitter as any);
+
+      expect(client['routingMap'].size).to.be.eq(0);
+      expect(client['subscriptionsCount'].size).to.be.eq(0);
+      expect(
+        callback.calledWith({
+          err: sinon.match({ message: 'Connection closed' }),
+        }),
+      ).to.be.true;
     });
   });
   describe('registerReadyListener', () => {
