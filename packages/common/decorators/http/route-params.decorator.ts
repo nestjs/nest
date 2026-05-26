@@ -791,6 +791,8 @@ export const Req = Request;
  *
  * Example: `logout(@Res() res)`
  *
+ * @see [Response object](https://docs.nestjs.com/controllers#response-object)
+ *
  * @publicApi
  */
 export const Res = Response;
