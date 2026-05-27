@@ -62,6 +62,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
   public async close() {
     this.isManuallyClosed = true;
+    this.handleClose();
     this.pubClient && (await this.pubClient.quit());
     this.subClient && (await this.subClient.quit());
     this.pubClient = this.subClient = null;
@@ -162,6 +163,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         return;
       }
       this._status$.next(RedisStatus.DISCONNECTED);
+      this.handleClose();
 
       if (this.getOptionsProp(this.options, 'retryAttempts') === undefined) {
         // When retryAttempts is not specified, the connection will not be re-established
@@ -179,6 +181,17 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         this.connectionPromise.catch(() => {});
       }
     });
+  }
+
+  public handleClose() {
+    if (this.routingMap.size > 0) {
+      const err = new Error('Connection closed');
+      for (const callback of this.routingMap.values()) {
+        callback({ err });
+      }
+      this.routingMap.clear();
+    }
+    this.subscriptionsCount.clear();
   }
 
   public getClientOptions(): Partial<RedisOptions['options']> {
