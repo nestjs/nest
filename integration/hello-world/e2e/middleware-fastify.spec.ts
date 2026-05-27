@@ -613,6 +613,59 @@ describe('Middleware (FastifyAdapter)', () => {
     });
   });
 
+  describe('should apply to routes registered via fastify.register() with prefix', () => {
+    @Module({})
+    class PluginPrefixModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            res.setHeader('x-middleware', 'middleware_hit');
+            next();
+          })
+          .forRoutes('/my-prefix', 'my-prefix', '/my-prefix/*');
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [PluginPrefixModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+
+      await app.init();
+
+      await app
+        .getHttpAdapter()
+        .getInstance()
+        .register(
+          async (instance: any) => {
+            instance.get('/test', async () => 'plugin_route');
+          },
+          { prefix: '/my-prefix' },
+        );
+
+      await app.getHttpAdapter().getInstance().ready();
+    });
+
+    it('GET /my-prefix/test runs Nest middleware and the plugin route', () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/my-prefix/test',
+        })
+        .then(({ statusCode, payload, headers }) => {
+          expect(statusCode).to.equal(200);
+          expect(payload).to.equal('plugin_route');
+          expect(headers['x-middleware']).to.equal('middleware_hit');
+        });
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
+
   describe('should respect fastify routing options', () => {
     const MIDDLEWARE_RETURN_VALUE = 'middleware_return';
 

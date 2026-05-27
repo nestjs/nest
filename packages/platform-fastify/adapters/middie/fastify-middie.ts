@@ -357,13 +357,25 @@ function fastifyMiddie(
   }
 
   function onRegister(instance: FastifyInstance) {
-    const middlewares = instance[kMiddlewares].slice() as Array<Array<unknown>>;
+    const middlewares = instance[kMiddlewares].slice() as Array<
+      [string | null, Function | undefined]
+    >;
     instance[kMiddlewares] = [];
     instance[kMiddie] = middie(onMiddieEnd, instance.initialConfig);
     instance[kMiddieHasMiddlewares] = false;
     instance.decorate('use', use as any);
-    for (const middleware of middlewares) {
-      (instance.use as any)(...middleware);
+    // Inherited middlewares already carry an absolute path. Re-applying them
+    // through `instance.use` would prepend the child context's prefix again,
+    // double-prefixing the path and preventing matches for plugin routes
+    // registered with `fastify.register(plugin, { prefix })`.
+    for (const [path, fn] of middlewares) {
+      instance[kMiddlewares].push([path, fn]);
+      if (fn == null) {
+        instance[kMiddie].use(path);
+      } else {
+        instance[kMiddie].use(path, fn);
+      }
+      instance[kMiddieHasMiddlewares] = true;
     }
   }
 
