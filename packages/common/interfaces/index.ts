@@ -18,6 +18,7 @@ export * from './http/index.js';
 export * from './injectable.interface.js';
 export * from './microservices/nest-hybrid-application-options.interface.js';
 export * from './microservices/pre-request-hook.interface.js';
+export * from './microservices/transport-server.interface.js';
 export * from './middleware/index.js';
 export * from './modules/index.js';
 export * from './nest-application-context.interface.js';

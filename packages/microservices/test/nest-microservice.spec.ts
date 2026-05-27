@@ -214,4 +214,22 @@ describe('NestMicroservice', () => {
       expect(result).toBe(instance);
     });
   });
+
+  it('should return the transport server instance via getTransportServer()', () => {
+    const strategy = new (class extends Server {
+      listen = vi.fn();
+      close = vi.fn();
+      on = vi.fn();
+      unwrap = vi.fn();
+    })();
+
+    const instance = new NestMicroservice(
+      mockContainer,
+      { strategy },
+      mockGraphInspector,
+      mockAppConfig,
+    );
+
+    expect(instance.getTransportServer()).toBe(strategy);
+  });
 });
