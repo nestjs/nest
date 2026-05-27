@@ -1,4 +1,4 @@
-import { FastifyAdapter } from '@nestjs/platform-fastify';
+import { FastifyAdapter } from '../../adapters/fastify-adapter';
 import { expect } from 'chai';
 
 describe('FastifyAdapter', () => {
