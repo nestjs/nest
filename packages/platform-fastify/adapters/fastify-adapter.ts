@@ -162,9 +162,7 @@ export class FastifyAdapter<
     name: 'version',
     validate(value: unknown) {
       if (!isString(value) && !Array.isArray(value)) {
-        throw new Error(
-          'Version constraint should be a string or an array of strings.',
-        );
+        throw new Error("setViewEngine() doesn't support a string argument.");
       }
     },
     storage() {
@@ -566,10 +564,7 @@ export class FastifyAdapter<
 
   public setViewEngine(options: FastifyViewOptions | string) {
     if (isString(options)) {
-      new Logger('FastifyAdapter').error(
-        "setViewEngine() doesn't support a string argument.",
-      );
-      process.exit(1);
+      throw new Error("setViewEngine() doesn't support a string argument.");
     }
     return this.register(
       loadPackage('@fastify/view', 'FastifyAdapter.setViewEngine()', () =>
