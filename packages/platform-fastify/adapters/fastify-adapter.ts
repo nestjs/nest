@@ -566,10 +566,7 @@ export class FastifyAdapter<
 
   public setViewEngine(options: FastifyViewOptions | string) {
     if (isString(options)) {
-      new Logger('FastifyAdapter').error(
-        "setViewEngine() doesn't support a string argument.",
-      );
-      process.exit(1);
+      throw new Error("setViewEngine() doesn't support a string argument.");
     }
     return this.register(
       loadPackage('@fastify/view', 'FastifyAdapter.setViewEngine()', () =>
