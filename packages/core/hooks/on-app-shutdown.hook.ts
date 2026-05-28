@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/internal';
 import { iterate } from 'iterare';
@@ -53,7 +54,17 @@ export async function callAppShutdownHook(
 
   const levels = getSortedHierarchyLevels(groupedInstances, 'DESC');
   for (const level of levels) {
-    await Promise.all(callOperator(groupedInstances.get(level)!, signal));
+    const results = await Promise.allSettled(
+      callOperator(groupedInstances.get(level)!, signal),
+    );
+    results
+      .filter(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected',
+      )
+      .forEach(result =>
+        Logger.error(result.reason, (result.reason as Error)?.stack),
+      );
   }
   // Call the instance itself
   const moduleClassInstance = moduleClassHost.instance;
