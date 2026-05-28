@@ -163,23 +163,15 @@ export class RouterExecutionContext {
       hasCustomHeaders &&
         this.responseController.setHeaders(res, responseHeaders);
 
-      const result = isSseHandler
-        ? this.interceptorsConsumer.intercept(
-            interceptors,
-            [req, res, next],
-            instance,
-            callback,
-            handler(args, req, res, next),
-            contextType,
-          )
-        : await this.interceptorsConsumer.intercept(
-            interceptors,
-            [req, res, next],
-            instance,
-            callback,
-            handler(args, req, res, next),
-            contextType,
-          );
+      const resultOrDeferred = this.interceptorsConsumer.intercept(
+        interceptors,
+        [req, res, next],
+        instance,
+        callback,
+        handler(args, req, res, next),
+        contextType,
+      );
+      const result = isSseHandler ? resultOrDeferred : await resultOrDeferred;
       await (fnHandleResponse as HandlerResponseBasicFn)(result, res, req);
     };
   }
