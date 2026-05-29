@@ -56,6 +56,31 @@ describe('RouterExecutionContext', () => {
     );
   });
   describe('create', () => {
+    it('should pass an unresolved Promise<Observable> to the SSE response handler', async () => {
+      const result = Promise.resolve(of('test'));
+      const fnHandleResponse = sinon.stub().resolves();
+
+      sinon.stub(contextCreator, 'getMetadata').returns({
+        argsLength: 0,
+        fnHandleResponse,
+        isSseHandler: true,
+        paramtypes: [],
+        getParamsMetadata: sinon.stub().returns([]),
+        httpStatusCode: 200,
+        hasCustomHeaders: false,
+        responseHeaders: [],
+      });
+      sinon.stub(contextCreator, 'createGuardsFn').returns(null as any);
+      sinon.stub(contextCreator, 'createPipesFn').returns(null as any);
+      sinon.stub(interceptorsConsumer, 'intercept').returns(result as any);
+
+      const proxy = contextCreator.create({} as any, callback, '', '', 0);
+      await proxy({}, {}, sinon.stub());
+
+      expect(fnHandleResponse.calledOnce).to.be.true;
+      expect(fnHandleResponse.firstCall.args[0]).to.equal(result);
+    });
+
     describe('when callback metadata is not undefined', () => {
       let metadata: Record<number, RouteParamMetadata>;
       let exchangeKeysForValuesSpy: sinon.SinonSpy;

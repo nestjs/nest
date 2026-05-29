@@ -4,6 +4,13 @@ import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { EventSource } from 'eventsource';
 import { AppModule } from '../src/app.module';
+import {
+  fetchPromiseDelayedSseStats,
+  releasePromiseDelayedSse,
+  sleep,
+  waitForPromiseDelayedSseClose,
+  waitForPromiseDelayedSseRequestStart,
+} from './utils';
 
 describe('Sse (Express Application)', () => {
   let app: NestExpressApplication;
@@ -156,6 +163,53 @@ describe('Sse (Express Application)', () => {
         .filter(line => line.startsWith('data: '));
 
       expect(dataLines).to.have.lengthOf(n);
+    });
+  });
+
+  describe('Promise<Observable> disconnect handling', () => {
+    beforeEach(async () => {
+      const moduleFixture = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      app = moduleFixture.createNestApplication<NestExpressApplication>({
+        forceCloseConnections: true,
+      });
+
+      await app.listen(0);
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should not start the SSE subscription if the client disconnects before the promise resolves', async () => {
+      const url = await app.getUrl();
+      const abortController = new AbortController();
+      const responsePromise = fetch(`${url}/sse/promise-delayed`, {
+        headers: {
+          accept: 'text/event-stream',
+        },
+        signal: abortController.signal,
+      });
+
+      await waitForPromiseDelayedSseRequestStart(url);
+      abortController.abort();
+
+      await responsePromise.catch(error => {
+        expect(error.name).to.equal('AbortError');
+      });
+
+      await waitForPromiseDelayedSseClose(url);
+
+      expect(await releasePromiseDelayedSse(url)).to.equal(1);
+
+      await sleep(50);
+
+      const stats = await fetchPromiseDelayedSseStats(url);
+      expect(stats.closeEventsObserved).to.equal(1);
+      expect(stats.requestsStarted).to.equal(1);
+      expect(stats.subscriptionsStarted).to.equal(0);
     });
   });
 });

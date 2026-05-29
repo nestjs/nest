@@ -28,6 +28,7 @@ export type HandleSseResponseFn = <
 
 export interface HandlerMetadata {
   argsLength: number;
+  isSseHandler: boolean;
   paramtypes: any[];
   httpStatusCode: number;
   responseHeaders: any[];
