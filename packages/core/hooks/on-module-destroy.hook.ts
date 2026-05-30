@@ -70,6 +70,10 @@ export async function callModuleDestroyHook(moduleRef: Module): Promise<any> {
     hasOnModuleDestroyHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    await moduleClassInstance.onModuleDestroy();
+    try {
+      await moduleClassInstance.onModuleDestroy();
+    } catch (err) {
+      Logger.error(err, (err as Error)?.stack);
+    }
   }
 }

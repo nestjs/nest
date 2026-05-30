@@ -99,5 +99,16 @@ describe('OnApplicationShutdown', () => {
       expect(errorSpy).toHaveBeenCalled();
       errorSpy.mockRestore();
     });
+
+    it('should not throw when the module class instance hook rejects', async () => {
+      const moduleWrapperRef = moduleRef.getProviderByKey(SampleModule);
+      moduleWrapperRef.instance = {
+        onApplicationShutdown: vi
+          .fn()
+          .mockRejectedValue(new Error('module error')),
+      };
+
+      await expect(callAppShutdownHook(moduleRef)).resolves.not.toThrow();
+    });
   });
 });
