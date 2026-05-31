@@ -22,18 +22,18 @@ describe('validateModuleKeys', () => {
   });
 
   describe('when any key is invalid', () => {
-    it('should throw an error for an unknown property', () => {
-      expect(() => validateModuleKeys(['invalid'])).to.throw();
-    });
-
-    it('should include the invalid property name in the error message', () => {
-      expect(() => validateModuleKeys(['xyz'])).to.throw("'xyz'");
+    it('should throw with the invalid key name in the message', () => {
+      expect(() => validateModuleKeys(['invalid'])).to.throw(
+        "Invalid property 'invalid' passed into the @Module() decorator.",
+      );
     });
 
     it('should throw when mixing valid and invalid keys', () => {
       expect(() =>
         validateModuleKeys(['imports', 'exports', 'bogus']),
-      ).to.throw(Error);
+      ).to.throw(
+        "Invalid property 'bogus' passed into the @Module() decorator.",
+      );
     });
   });
 
