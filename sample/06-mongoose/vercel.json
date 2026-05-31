@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "installCommand": "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true npm install --legacy-peer-deps --registry=https://registry.npmjs.org",
+  "buildCommand": "npm run build",
+  "outputDirectory": "public",
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 10,
+      "memory": 1024,
+      "includeFiles": "public/**"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
+  ]
+}
