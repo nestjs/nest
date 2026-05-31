@@ -13,9 +13,10 @@ import { isNil, isNumber } from '../utils/shared.utils';
  * @publicApi
  */
 @Injectable()
-export class DefaultValuePipe<T = any, R = any>
-  implements PipeTransform<T, T | R>
-{
+export class DefaultValuePipe<T = any, R = any> implements PipeTransform<
+  T,
+  T | R
+> {
   constructor(protected readonly defaultValue: R) {}
 
   transform(value?: T, _metadata?: ArgumentMetadata): T | R {

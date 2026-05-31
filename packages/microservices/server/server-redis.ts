@@ -12,6 +12,7 @@ import {
   RedisStatus,
 } from '../events/redis.events';
 import { IncomingRequest, RedisOptions, TransportId } from '../interfaces';
+
 import { Server } from './server';
 
 // To enable type safety for Redis. This cant be uncommented by default
@@ -112,10 +113,12 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   }
 
   public createRedisClient(): Redis {
+    const clientInfoTag = this.getOptionsProp(this.options, 'clientInfoTag');
     return new redisPackage({
       port: REDIS_DEFAULT_PORT,
       host: REDIS_DEFAULT_HOST,
       ...this.getClientOptions(),
+      ...(clientInfoTag && { clientInfoTag }),
       lazyConnect: true,
     });
   }

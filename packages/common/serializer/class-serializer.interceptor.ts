@@ -24,8 +24,7 @@ const REFLECTOR = 'Reflector';
 /**
  * @publicApi
  */
-export interface ClassSerializerInterceptorOptions
-  extends ClassTransformOptions {
+export interface ClassSerializerInterceptorOptions extends ClassTransformOptions {
   transformerPackage?: TransformerPackage;
 }
 

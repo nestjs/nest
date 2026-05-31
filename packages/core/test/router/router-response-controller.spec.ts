@@ -262,17 +262,94 @@ describe('RouterResponseController', () => {
   describe('Server-Sent-Events', () => {
     it('should accept only observables', async () => {
       const result = Promise.resolve('test');
+      const response = new Writable();
+      response._write = () => {};
+
+      const request = new Writable();
+      request._write = () => {};
+
       try {
-        routerResponseController.sse(
+        await routerResponseController.sse(
           result as unknown as any,
-          {} as unknown as ServerResponse,
-          {} as unknown as IncomingMessage,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
         );
+        expect.fail('should have thrown');
       } catch (e) {
         expect(e.message).to.eql(
           'You must return an Observable stream to use Server-Sent Events (SSE).',
         );
       }
+    });
+
+    it('should accept Promise<Observable>', async () => {
+      class Sink extends Writable {
+        private readonly chunks: string[] = [];
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          this.chunks.push(chunk);
+          callback();
+        }
+
+        get content() {
+          return this.chunks.join('');
+        }
+      }
+
+      const written = (stream: Writable) =>
+        new Promise((resolve, reject) =>
+          stream.on('error', reject).on('finish', resolve),
+        );
+
+      const result = Promise.resolve(of('test'));
+      const response = new Sink();
+      const request = new PassThrough();
+      await routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+      request.destroy();
+      await written(response);
+      expect(response.content).to.eql(
+        `
+id: 1
+data: test
+
+`,
+      );
+    });
+
+    it('should use custom status code from response', async () => {
+      class SinkWithStatusCode extends Writable {
+        statusCode = 404;
+        writeHead = sinon.spy();
+        flushHeaders = sinon.spy();
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          callback();
+        }
+      }
+
+      const result = of('test');
+      const response = new SinkWithStatusCode();
+      const request = new PassThrough();
+      await routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      expect(response.writeHead.firstCall.args[0]).to.equal(404);
+      request.destroy();
     });
 
     it('should write string', async () => {
@@ -301,12 +378,11 @@ describe('RouterResponseController', () => {
       const result = of('test');
       const response = new Sink();
       const request = new PassThrough();
-      routerResponseController.sse(
+      await routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
       );
-      request.destroy();
       await written(response);
       expect(response.content).to.eql(
         `
@@ -326,12 +402,45 @@ data: test
       const request = new Writable();
       request._write = () => {};
 
-      routerResponseController.sse(
+      void routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
       );
       request.emit('close');
+    });
+
+    it('should ignore a Promise<Observable> if request closes before it resolves', async () => {
+      let subscribed = false;
+      const result = new Promise<Observable<string>>(resolve => {
+        setTimeout(() => {
+          resolve(
+            new Observable(() => {
+              subscribed = true;
+            }),
+          );
+        }, 10);
+      });
+      const response = new Writable();
+      const responseEndSpy = sinon.spy();
+      response.end = responseEndSpy as any;
+      response._write = () => {};
+
+      const request = new PassThrough();
+
+      const ssePromise = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+      request.emit('close');
+
+      await ssePromise;
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(subscribed).to.equal(false);
+      expect(responseEndSpy.calledOnce).to.be.true;
+      expect(request.listenerCount('close')).to.equal(0);
     });
 
     it('should close the request when observable completes', done => {
@@ -343,11 +452,27 @@ data: test
       const request = new Writable();
       request._write = () => {};
 
-      routerResponseController.sse(
+      void routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
       );
+    });
+
+    it('should remove the close listener after synchronous completion', async () => {
+      const result = of('test');
+      const response = new Writable();
+      response._write = () => {};
+
+      const request = new PassThrough();
+
+      await routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      expect(request.listenerCount('close')).to.equal(0);
     });
 
     it('should allow to intercept the response', done => {
@@ -360,7 +485,7 @@ data: test
       request._write = () => {};
 
       try {
-        routerResponseController.sse(
+        void routerResponseController.sse(
           result as unknown as Observable<string>,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
@@ -423,7 +548,7 @@ data: test
         const request = new Writable();
         request._write = () => {};
 
-        routerResponseController.sse(
+        void routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
@@ -440,25 +565,67 @@ data: test
       });
     });
 
-    describe('when there is an error', () => {
-      it('should close the request', done => {
+    it('should commit headers on next tick without waiting for first emission', async () => {
+      class SinkWithWriteHead extends Writable {
+        writeHead = sinon.spy();
+        flushHeaders = sinon.spy();
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          callback();
+        }
+      }
+
+      const result = new Subject();
+      const response = new SinkWithWriteHead();
+      const request = new PassThrough();
+
+      void routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      // Wait for microtasks (subscription) + macrotask (setTimeout(0))
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      expect(response.writeHead.called).to.be.true;
+      expect(response.writeHead.firstCall.args[0]).to.equal(200);
+
+      result.complete();
+      request.destroy();
+    });
+
+    describe('when there is an error before headers are committed', () => {
+      it('should reject the promise so the exception filter can set the status', async () => {
         const result = new Subject();
         const response = new Writable();
-        response.end = done as any;
         response._write = () => {};
 
         const request = new Writable();
         request._write = () => {};
 
-        routerResponseController.sse(
+        const ssePromise = routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
         );
 
         result.error(new Error('Some error'));
-      });
 
+        try {
+          await ssePromise;
+          expect.fail('should have rejected');
+        } catch (e) {
+          expect(e.message).to.equal('Some error');
+        }
+      });
+    });
+
+    describe('when there is an error after headers are committed', () => {
       it('should write the error message to the stream', async () => {
         class Sink extends Writable {
           private readonly chunks: string[] = [];
@@ -485,24 +652,25 @@ data: test
         const result = new Subject();
         const response = new Sink();
         const request = new PassThrough();
-        routerResponseController.sse(
+        void routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
         );
 
+        // Yield so the internal `await Promise.resolve(result)` completes
+        // and the subscription is active before we emit.
+        await Promise.resolve();
+
+        result.next('first');
+        // Let the concatMap inner Promise resolve
+        await new Promise(resolve => setTimeout(resolve, 10));
         result.error(new Error('Some error'));
         request.destroy();
 
         await written(response);
-        expect(response.content).to.eql(
-          `
-event: error
-id: 1
-data: Some error
-
-`,
-        );
+        expect(response.content).to.contain('event: error');
+        expect(response.content).to.contain('data: Some error');
       });
     });
   });

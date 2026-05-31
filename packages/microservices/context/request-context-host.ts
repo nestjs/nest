@@ -7,8 +7,7 @@ import { RequestContext } from '../interfaces';
 export class RequestContextHost<
   TData = any,
   TContext extends BaseRpcContext = any,
-> implements RequestContext<TData>
-{
+> implements RequestContext<TData> {
   constructor(
     public readonly pattern: string | Record<string, any>,
     public readonly data: TData,

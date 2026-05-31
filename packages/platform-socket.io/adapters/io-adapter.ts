@@ -12,6 +12,8 @@ import { Server, ServerOptions, Socket } from 'socket.io';
  * @publicApi
  */
 export class IoAdapter extends AbstractWsAdapter {
+  private readonly disconnectMap = new WeakMap<Socket, Observable<any>>();
+
   public create(
     port: number,
     options?: ServerOptions & { namespace?: string; server?: any },
@@ -39,10 +41,11 @@ export class IoAdapter extends AbstractWsAdapter {
     handlers: MessageMappingProperties[],
     transform: (data: any) => Observable<any>,
   ) {
-    const disconnect$ = fromEvent(socket, DISCONNECT_EVENT).pipe(
-      share(),
-      first(),
-    );
+    let disconnect$ = this.disconnectMap.get(socket);
+    if (!disconnect$) {
+      disconnect$ = fromEvent(socket, DISCONNECT_EVENT).pipe(share(), first());
+      this.disconnectMap.set(socket, disconnect$);
+    }
 
     handlers.forEach(({ message, callback, isAckHandledManually }) => {
       const source$ = fromEvent(socket, message).pipe(

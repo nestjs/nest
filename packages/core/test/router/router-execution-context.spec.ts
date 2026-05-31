@@ -56,6 +56,31 @@ describe('RouterExecutionContext', () => {
     );
   });
   describe('create', () => {
+    it('should pass an unresolved Promise<Observable> to the SSE response handler', async () => {
+      const result = Promise.resolve(of('test'));
+      const fnHandleResponse = sinon.stub().resolves();
+
+      sinon.stub(contextCreator, 'getMetadata').returns({
+        argsLength: 0,
+        fnHandleResponse,
+        isSseHandler: true,
+        paramtypes: [],
+        getParamsMetadata: sinon.stub().returns([]),
+        httpStatusCode: 200,
+        hasCustomHeaders: false,
+        responseHeaders: [],
+      });
+      sinon.stub(contextCreator, 'createGuardsFn').returns(null as any);
+      sinon.stub(contextCreator, 'createPipesFn').returns(null as any);
+      sinon.stub(interceptorsConsumer, 'intercept').returns(result as any);
+
+      const proxy = contextCreator.create({} as any, callback, '', '', 0);
+      await proxy({}, {}, sinon.stub());
+
+      expect(fnHandleResponse.calledOnce).to.be.true;
+      expect(fnHandleResponse.firstCall.args[0]).to.equal(result);
+    });
+
     describe('when callback metadata is not undefined', () => {
       let metadata: Record<number, RouteParamMetadata>;
       let exchangeKeysForValuesSpy: sinon.SinonSpy;
@@ -508,6 +533,43 @@ describe('RouterExecutionContext', () => {
           (response.writeHead as sinon.SinonSpy).calledWith(
             200,
             sinon.match.hasNested('access-control-headers', 'some-cors-value'),
+          ),
+        ).to.be.true;
+      });
+
+      it('should pass through status and headers from the wrapper response at handle time', async () => {
+        const rawResponse = new PassThrough() as HeaderStream;
+        rawResponse.write = sinon.spy();
+        rawResponse.writeHead = sinon.spy();
+        rawResponse.flushHeaders = sinon.spy();
+
+        const response = {
+          raw: rawResponse,
+          statusCode: 203,
+          getHeaders: sinon
+            .stub()
+            .returns({ 'access-control-headers': 'at-handle-time' }),
+        };
+        const result = of('test');
+
+        const request = new PassThrough();
+        request.on = sinon.spy();
+
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
+        sinon.stub(contextCreator, 'reflectSse').returns('/');
+
+        const handler = contextCreator.createHandleResponseFn(
+          null!,
+          true,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        await handler(result, response as any, request);
+
+        expect(
+          (rawResponse.writeHead as sinon.SinonSpy).calledWith(
+            203,
+            sinon.match.hasNested('access-control-headers', 'at-handle-time'),
           ),
         ).to.be.true;
       });

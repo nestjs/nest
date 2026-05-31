@@ -33,8 +33,8 @@ import { RouteInfoPathExtractor } from './route-info-path-extractor';
 import { RoutesMapper } from './routes-mapper';
 
 export class MiddlewareModule<
-  TAppOptions extends
-    NestApplicationContextOptions = NestApplicationContextOptions,
+  TAppOptions extends NestApplicationContextOptions =
+    NestApplicationContextOptions,
 > {
   private readonly routerProxy = new RouterProxy();
   private readonly exceptionFiltersCache = new WeakMap();
@@ -335,7 +335,12 @@ export class MiddlewareModule<
           res: TResponse,
           next: () => void,
         ) => {
-          if (applicationRef.getRequestMethod?.(req) === requestMethod) {
+          const actualRequestMethod = applicationRef.getRequestMethod?.(req);
+          if (
+            actualRequestMethod === requestMethod ||
+            (actualRequestMethod === RequestMethod[RequestMethod.HEAD] &&
+              requestMethod === RequestMethod[RequestMethod.GET])
+          ) {
             return proxy(req, res, next);
           }
           return next();

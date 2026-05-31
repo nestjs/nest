@@ -108,25 +108,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       return response.send();
     }
     if (body instanceof StreamableFile) {
-      const streamHeaders = body.getHeaders();
-      if (
-        response.getHeader('Content-Type') === undefined &&
-        streamHeaders.type !== undefined
-      ) {
-        response.setHeader('Content-Type', streamHeaders.type);
-      }
-      if (
-        response.getHeader('Content-Disposition') === undefined &&
-        streamHeaders.disposition !== undefined
-      ) {
-        response.setHeader('Content-Disposition', streamHeaders.disposition);
-      }
-      if (
-        response.getHeader('Content-Length') === undefined &&
-        streamHeaders.length !== undefined
-      ) {
-        response.setHeader('Content-Length', streamHeaders.length);
-      }
+      this.applyStreamHeaders(response, body);
       const stream = body.getStream();
       stream.once('error', err => {
         body.errorHandler(err, response);
@@ -514,5 +496,28 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         (layer: any) => layer && layer.handle && layer.handle.name === name,
       )
     );
+  }
+
+  private setHeaderIfNotExists(
+    response: any,
+    name: string,
+    value?: string | string[] | number,
+  ) {
+    if (value !== undefined && response.getHeader(name) === undefined) {
+      const headerValue = Array.isArray(value) ? value.join(',') : value;
+      response.setHeader(name, headerValue);
+    }
+  }
+
+  private applyStreamHeaders(response: any, streamable: StreamableFile) {
+    const headers = streamable.getHeaders();
+
+    this.setHeaderIfNotExists(response, 'Content-Type', headers.type);
+    this.setHeaderIfNotExists(
+      response,
+      'Content-Disposition',
+      headers.disposition,
+    );
+    this.setHeaderIfNotExists(response, 'Content-Length', headers.length);
   }
 }

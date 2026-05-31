@@ -292,6 +292,45 @@ describe('ClientKafka', () => {
     });
   });
 
+  describe('registerConsumerEventListeners', () => {
+    it('should use the _consumer backing field, not the consumer getter', () => {
+      const consumerOnSpy = sinon.spy();
+      const fakeConsumer = {
+        events: {
+          CONNECT: 'consumer.connect',
+          DISCONNECT: 'consumer.disconnect',
+          REBALANCING: 'consumer.rebalancing',
+          STOP: 'consumer.stop',
+          CRASH: 'consumer.crash',
+        },
+        on: consumerOnSpy,
+      };
+
+      // Set the backing field directly
+      untypedClient._consumer = fakeConsumer;
+
+      // Replace the consumer getter stub with one that throws,
+      // ensuring the method only uses _consumer (backing field)
+      consumerStub.callsFake(() => {
+        throw new Error(
+          'Consumer getter should not be called in registerConsumerEventListeners',
+        );
+      });
+
+      expect(() =>
+        untypedClient.registerConsumerEventListeners(),
+      ).to.not.throw();
+      expect(consumerOnSpy.callCount).to.equal(5);
+
+      const registeredEvents = consumerOnSpy.args.map((args: any[]) => args[0]);
+      expect(registeredEvents).to.include('consumer.connect');
+      expect(registeredEvents).to.include('consumer.disconnect');
+      expect(registeredEvents).to.include('consumer.rebalancing');
+      expect(registeredEvents).to.include('consumer.stop');
+      expect(registeredEvents).to.include('consumer.crash');
+    });
+  });
+
   describe('connect', () => {
     let consumerAssignmentsStub: sinon.SinonStub;
     let bindTopicsStub: sinon.SinonStub;

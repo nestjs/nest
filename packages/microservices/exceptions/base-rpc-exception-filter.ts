@@ -12,9 +12,10 @@ import { RpcException } from './rpc-exception';
 /**
  * @publicApi
  */
-export class BaseRpcExceptionFilter<T = any, R = any>
-  implements RpcExceptionFilter<T>
-{
+export class BaseRpcExceptionFilter<
+  T = any,
+  R = any,
+> implements RpcExceptionFilter<T> {
   private static readonly logger = new Logger('RpcExceptionsHandler');
 
   public catch(exception: T, host: ArgumentsHost): Observable<R> {

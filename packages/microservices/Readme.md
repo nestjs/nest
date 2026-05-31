@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <a href="https://nestjs.com/" target="_blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
 
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
@@ -29,7 +29,7 @@ Nest is a framework for building efficient, scalable <a href="https://nodejs.org
 
 ## Philosophy
 
-<p>In recent years, thanks to Node.js, JavaScript has become the “lingua franca” of the web for both front and backend applications, giving rise to awesome projects like <a href="https://angular.io/" target="_blank">Angular</a>, <a href="https://github.com/facebook/react" target="_blank">React</a>, and <a href="https://github.com/vuejs/vue" target="_blank">Vue</a>, which improve developer productivity and enable the construction of fast, testable, and extensible frontend applications. However, on the server-side, while there are a lot of superb libraries, helpers, and tools for Node, none of them effectively solve the main problem - the architecture.</p>
+<p>In recent years, thanks to Node.js, JavaScript has become the “lingua franca” of the web for both front-end and back-end applications, giving rise to awesome projects like <a href="https://angular.dev/" target="_blank">Angular</a>, <a href="https://react.dev/" target="_blank">React</a>, and <a href="https://vuejs.org/" target="_blank">Vue</a>, which improve developer productivity and enable the construction of fast, testable, and extensible frontend applications. However, on the server-side, while there are a lot of superb libraries, helpers, and tools for Node, none of them effectively solve the main problem - the architecture.</p>
 <p>Nest aims to provide an application architecture out of the box which allows for effortless creation of highly testable, scalable, and loosely coupled and easily maintainable applications. The architecture is heavily inspired by Angular.</p>
 
 ## Getting started
@@ -49,7 +49,7 @@ Please make sure to read the [Issue Reporting Checklist](https://github.com/nest
 
 ## Consulting
 
-With official support, you can get expert help straight from Nest core team. We provide dedicated technical support, migration strategies, advice on best practices (and design decisions), PR reviews, and team augmentation. Read more about [support here](https://enterprise.nestjs.com).
+With official support, you can get expert help straight from the Nest core team. We provide dedicated technical support, migration strategies, advice on best practices (and design decisions), PR reviews, and team augmentation. Read more about [support here](https://enterprise.nestjs.com).
 
 ## Support
 
@@ -63,6 +63,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td><a href="https://microsoft.com/" target="_blank"><img src="https://nestjs.com/img/logos/microsoft-logo.png" width="180" valign="middle" /></a></td>
 <td><a href="https://mojam.co" target="_blank"><img src="https://nestjs.com/img/logos/mojam-logo.png" width="80" valign="middle" /></a></td>
 <td><a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td>
+<td><a href="https://serpapi.com/" target="_blank"><img src="https://nestjs.com/img/logos/serpapi-logo.png" width="150" valign="middle" /></a></td>
 </tr>
 </table>
 
@@ -92,6 +93,9 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <td align="center" valign="middle"><a href="https://www.itflashcards.com/" target="_blank"><img src="https://nestjs.com/img/logos/it_flashcards-logo.png" width="170" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://arcjet.com/?ref=nestjs" target="_blank"><img src="https://nestjs.com/img/logos/arcjet-logo.svg" width="170" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://crawljobs.com" target="_blank"><img src="https://nestjs.com/img/logos/crawljobs-logo.svg" width="130" valign="middle" /></a></td>
+</tr><tr>
+<td align="center" valign="middle"><a href="https://pandektes.com" target="_blank"><img src="https://nestjs.com/img/logos/pandektes-logo.png" width="65" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://www.fintechcrafts.com/" target="_blank"><img src="https://nestjs.com/img/logos/fintechcrafts-logo.svg" width="65" valign="middle" /></a></td>
 </tr>
 </table>
 
@@ -125,6 +129,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 <tr>
 <td align="center" valign="middle"><a href="https://solcellsforetag.se/" target="_blank"><img src="https://nestjs.com/img/logos/solcellsforetag-logo.svg" width="140" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://www.route4me.com/" target="_blank"><img src="https://nestjs.com/img/logos/route4me-logo.svg" width="100" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://memory2.co/" target="_blank"><img src="https://images.opencollective.com/memory-squared/bbe37f5/avatar/256.png?height=50" width="50" valign="middle" /></a></td>
 </tr>
 </table>
 

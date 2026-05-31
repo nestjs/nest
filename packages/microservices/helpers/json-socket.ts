@@ -4,7 +4,11 @@ import { CorruptedPacketLengthException } from '../errors/corrupted-packet-lengt
 import { MaxPacketLengthExceededException } from '../errors/max-packet-length-exceeded.exception';
 import { TcpSocket } from './tcp-socket';
 
-const MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
+const DEFAULT_MAX_BUFFER_SIZE = (512 * 1024 * 1024) / 4; // 512 MBs in characters with 4 bytes per character (32-bit)
+
+export interface JsonSocketOptions {
+  maxBufferSize?: number;
+}
 
 export class JsonSocket extends TcpSocket {
   private contentLength: number | null = null;
@@ -12,6 +16,12 @@ export class JsonSocket extends TcpSocket {
 
   private readonly stringDecoder = new StringDecoder();
   private readonly delimiter = '#';
+  private readonly maxBufferSize: number;
+
+  constructor(socket: any, options?: JsonSocketOptions) {
+    super(socket);
+    this.maxBufferSize = options?.maxBufferSize ?? DEFAULT_MAX_BUFFER_SIZE;
+  }
 
   protected handleSend(message: any, callback?: (err?: any) => void) {
     this.socket.write(this.formatMessageData(message), 'utf-8', callback);
@@ -23,19 +33,24 @@ export class JsonSocket extends TcpSocket {
       : dataRaw;
     this.buffer += data;
 
-    if (this.buffer.length > MAX_BUFFER_SIZE) {
-      const bufferLength = this.buffer.length;
-      this.buffer = '';
-      throw new MaxPacketLengthExceededException(bufferLength);
-    }
+    // Iterative loop replaces recursion to prevent stack overflow on pipelined
+    // TCP messages (e.g. many small frames arriving in one read event).
+    while (true) {
+      if (this.buffer.length > this.maxBufferSize) {
+        const bufferLength = this.buffer.length;
+        this.buffer = '';
+        throw new MaxPacketLengthExceededException(bufferLength);
+      }
 
-    if (this.contentLength === null) {
-      const i = this.buffer.indexOf(this.delimiter);
-      /**
-       * Check if the buffer has the delimiter (#),
-       * if not, the end of the buffer string might be in the middle of a content length string
-       */
-      if (i !== -1) {
+      if (this.contentLength === null) {
+        const i = this.buffer.indexOf(this.delimiter);
+        /**
+         * Check if the buffer has the delimiter (#),
+         * if not, the end of the buffer string might be in the middle of a content length string
+         */
+        if (i === -1) {
+          break;
+        }
         const rawContentLength = this.buffer.substring(0, i);
         this.contentLength = parseInt(rawContentLength, 10);
 
@@ -46,17 +61,24 @@ export class JsonSocket extends TcpSocket {
         }
         this.buffer = this.buffer.substring(i + 1);
       }
-    }
 
-    if (this.contentLength !== null) {
-      const length = this.buffer.length;
-      if (length === this.contentLength) {
-        this.handleMessage(this.buffer);
-      } else if (length > this.contentLength) {
-        const message = this.buffer.substring(0, this.contentLength);
-        const rest = this.buffer.substring(this.contentLength);
-        this.handleMessage(message);
-        this.handleData(rest);
+      if (this.contentLength !== null) {
+        const length = this.buffer.length;
+        if (length === this.contentLength) {
+          this.handleMessage(this.buffer);
+          // handleMessage resets contentLength and buffer; next iteration will break
+        } else if (length > this.contentLength) {
+          const message = this.buffer.substring(0, this.contentLength);
+          const rest = this.buffer.substring(this.contentLength);
+          this.handleMessage(message); // resets this.buffer to ''
+          this.buffer = rest; // restore remaining data for next iteration
+          continue;
+        } else {
+          // Incomplete message — wait for more data
+          break;
+        }
+      } else {
+        break;
       }
     }
   }

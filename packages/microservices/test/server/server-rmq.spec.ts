@@ -2,6 +2,7 @@ import { assert, expect } from 'chai';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER, RQM_DEFAULT_QUEUE } from '../../constants';
 import { RmqContext } from '../../ctx-host';
+import { MessageHandler } from '../../interfaces/message-handler.interface';
 import { ServerRMQ } from '../../server/server-rmq';
 import { objectToMap } from './utils/object-to-map';
 
@@ -54,9 +55,43 @@ describe('ServerRMQ', () => {
       await server.listen(callbackSpy);
       expect(onStub.getCall(2).args[0]).to.be.equal('disconnect');
     });
+    it('should bind "blocked" event to handler', async () => {
+      await server.listen(callbackSpy);
+      expect(onStub.getCall(3).args[0]).to.be.equal('blocked');
+    });
+    it('should bind "unblocked" event to handler', async () => {
+      await server.listen(callbackSpy);
+      expect(onStub.getCall(4).args[0]).to.be.equal('unblocked');
+    });
     it('should bind "connectFailed" event to handler', async () => {
       await server.listen(callbackSpy);
-      expect(onStub.getCall(3).args[0]).to.be.equal('connectFailed');
+      expect(onStub.getCall(5).args[0]).to.be.equal('connectFailed');
+    });
+    it('should push RmqStatus.BLOCKED when "blocked" fires', async () => {
+      await server.listen(callbackSpy);
+      const blockedCall = onStub
+        .getCalls()
+        .find(call => call.args[0] === 'blocked');
+      expect(blockedCall).to.not.be.undefined;
+
+      const statusValues: string[] = [];
+      untypedServer._status$.subscribe((s: string) => statusValues.push(s));
+
+      blockedCall!.args[1]({ reason: 'low memory' });
+      expect(statusValues[statusValues.length - 1]).to.be.equal('blocked');
+    });
+    it('should push RmqStatus.UNBLOCKED when "unblocked" fires', async () => {
+      await server.listen(callbackSpy);
+      const unblockedCall = onStub
+        .getCalls()
+        .find(call => call.args[0] === 'unblocked');
+      expect(unblockedCall).to.not.be.undefined;
+
+      const statusValues: string[] = [];
+      untypedServer._status$.subscribe((s: string) => statusValues.push(s));
+
+      unblockedCall!.args[1]();
+      expect(statusValues[statusValues.length - 1]).to.be.equal('unblocked');
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
@@ -452,6 +487,25 @@ describe('ServerRMQ', () => {
         expect(matchRmqPattern('$SYS.#', '$SYS.broker.load.messages.received'))
           .to.be.true;
       });
+    });
+  });
+
+  describe('initializeWildcardHandlersIfExist', () => {
+    it('skips non-string handler keys without throwing', () => {
+      const handlers = new Map<unknown, MessageHandler>();
+      handlers.set(undefined, () => Promise.resolve());
+      handlers.set(0, () => Promise.resolve());
+      handlers.set('orders.*', () => Promise.resolve());
+      handlers.set('orders.created', () => Promise.resolve());
+      sinon
+        .stub(server, 'getHandlers')
+        .returns(handlers as Map<string, MessageHandler>);
+
+      expect(() =>
+        untypedServer.initializeWildcardHandlersIfExist(),
+      ).to.not.throw();
+      expect(untypedServer.wildcardHandlers.size).to.equal(1);
+      expect(untypedServer.wildcardHandlers.has('orders.*')).to.be.true;
     });
   });
 });

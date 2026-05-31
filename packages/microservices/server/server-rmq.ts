@@ -5,6 +5,7 @@ import {
   isUndefined,
 } from '@nestjs/common/utils/shared.utils';
 import {
+  BLOCKED_RMQ_MESSAGE,
   CONNECTION_FAILED_MESSAGE,
   DISCONNECTED_RMQ_MESSAGE,
   NO_MESSAGE_HANDLER,
@@ -20,6 +21,7 @@ import {
   RQM_DEFAULT_URL,
   RQM_NO_EVENT_HANDLER,
   RQM_NO_MESSAGE_HANDLER,
+  UNBLOCKED_RMQ_MESSAGE,
 } from '../constants';
 import { RmqContext } from '../ctx-host';
 import { Transport } from '../enums';
@@ -132,6 +134,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
 
     this.registerConnectListener();
     this.registerDisconnectListener();
+    this.registerBlockedListener();
+    this.registerUnblockedListener();
     this.pendingEventListeners.forEach(({ event, callback }) =>
       this.server!.on(event, callback),
     );
@@ -182,6 +186,20 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       this._status$.next(RmqStatus.DISCONNECTED);
       this.logger.error(DISCONNECTED_RMQ_MESSAGE);
       this.logger.error(err);
+    });
+  }
+
+  private registerBlockedListener() {
+    this.server!.on(RmqEventsMap.BLOCKED, ({ reason }: { reason: string }) => {
+      this._status$.next(RmqStatus.BLOCKED);
+      this.logger.warn(BLOCKED_RMQ_MESSAGE(reason));
+    });
+  }
+
+  private registerUnblockedListener() {
+    this.server!.on(RmqEventsMap.UNBLOCKED, () => {
+      this._status$.next(RmqStatus.UNBLOCKED);
+      this.logger.log(UNBLOCKED_RMQ_MESSAGE);
     });
   }
 
@@ -415,13 +433,17 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     }
   }
 
-  private initializeWildcardHandlersIfExist() {
+  protected initializeWildcardHandlersIfExist() {
     if (this.wildcardHandlers.size !== 0) {
       return;
     }
     const handlers = this.getHandlers();
 
     handlers.forEach((handler, pattern) => {
+      if (typeof pattern !== 'string') {
+        return;
+      }
+
       if (
         pattern.includes(RMQ_WILDCARD_ALL) ||
         pattern.includes(RMQ_WILDCARD_SINGLE)

@@ -3,9 +3,10 @@ import { ReadPacket } from '../interfaces';
 import { Serializer } from '../interfaces/serializer.interface';
 import { RmqRecord } from '../record-builders';
 
-export class RmqRecordSerializer
-  implements Serializer<ReadPacket, ReadPacket & Partial<RmqRecord>>
-{
+export class RmqRecordSerializer implements Serializer<
+  ReadPacket,
+  ReadPacket & Partial<RmqRecord>
+> {
   serialize(packet: ReadPacket): ReadPacket & Partial<RmqRecord> {
     if (
       packet?.data &&

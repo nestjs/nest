@@ -7,9 +7,10 @@ import { NatsRecord, NatsRecordBuilder } from '../record-builders';
 
 let natsPackage = {} as any;
 
-export class NatsRecordSerializer
-  implements Serializer<ReadPacket, NatsRecord>
-{
+export class NatsRecordSerializer implements Serializer<
+  ReadPacket,
+  NatsRecord
+> {
   private readonly jsonCodec: NatsCodec<unknown>;
 
   constructor() {
@@ -23,7 +24,9 @@ export class NatsRecordSerializer
     const natsMessage =
       packet?.data && isObject(packet.data) && packet.data instanceof NatsRecord
         ? packet.data
-        : new NatsRecordBuilder(packet?.data).build();
+        : new NatsRecordBuilder(packet?.data)
+            .setHeaders(packet?.headers)
+            .build();
 
     return {
       data: this.jsonCodec.encode({ ...packet, data: natsMessage.data }),

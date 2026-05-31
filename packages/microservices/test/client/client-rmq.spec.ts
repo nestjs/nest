@@ -15,6 +15,8 @@ describe('ClientRMQ', function () {
   describe('connect', () => {
     let createClientStub: sinon.SinonStub;
     let registerErrorListenerSpy: sinon.SinonSpy;
+    let registerBlockedListenerSpy: sinon.SinonSpy;
+    let registerUnblockedListenerSpy: sinon.SinonSpy;
     let connect$Stub: sinon.SinonStub;
 
     beforeEach(async () => {
@@ -26,6 +28,11 @@ describe('ClientRMQ', function () {
         removeListener: () => ({}),
       }));
       registerErrorListenerSpy = sinon.spy(client, 'registerErrorListener');
+      registerBlockedListenerSpy = sinon.spy(client, 'registerBlockedListener');
+      registerUnblockedListenerSpy = sinon.spy(
+        client,
+        'registerUnblockedListener',
+      );
       connect$Stub = sinon.stub(client, 'connect$' as any).callsFake(() => ({
         subscribe: resolve => resolve(),
         toPromise() {
@@ -51,6 +58,12 @@ describe('ClientRMQ', function () {
       it('should call "registerErrorListener" once', async () => {
         expect(registerErrorListenerSpy.called).to.be.true;
       });
+      it('should call "registerBlockedListener" once', async () => {
+        expect(registerBlockedListenerSpy.called).to.be.true;
+      });
+      it('should call "registerUnblockedListener" once', async () => {
+        expect(registerUnblockedListenerSpy.called).to.be.true;
+      });
       it('should call "createClient" once', async () => {
         expect(createClientStub.called).to.be.true;
       });
@@ -69,9 +82,59 @@ describe('ClientRMQ', function () {
       it('should not call "registerErrorListener"', () => {
         expect(registerErrorListenerSpy.called).to.be.false;
       });
+      it('should not call "registerBlockedListener"', () => {
+        expect(registerBlockedListenerSpy.called).to.be.false;
+      });
+      it('should not call "registerUnblockedListener"', () => {
+        expect(registerUnblockedListenerSpy.called).to.be.false;
+      });
       it('should not call "connect$"', () => {
         expect(connect$Stub.called).to.be.false;
       });
+    });
+  });
+
+  describe('registerBlockedListener', () => {
+    it('should register a "blocked" listener and push RmqStatus.BLOCKED on fire', () => {
+      client = new ClientRMQ({});
+      untypedClient = client as any;
+
+      const addListener = sinon.stub();
+      const fakeClient: any = { addListener };
+
+      const statusValues: string[] = [];
+      untypedClient._status$.subscribe((s: string) => statusValues.push(s));
+
+      client.registerBlockedListener(fakeClient);
+      expect(addListener.calledOnce).to.be.true;
+      expect(addListener.getCall(0).args[0]).to.be.equal('blocked');
+
+      const registeredCallback = addListener.getCall(0).args[1];
+      registeredCallback({ reason: 'low memory' });
+
+      expect(statusValues[statusValues.length - 1]).to.be.equal('blocked');
+    });
+  });
+
+  describe('registerUnblockedListener', () => {
+    it('should register an "unblocked" listener and push RmqStatus.UNBLOCKED on fire', () => {
+      client = new ClientRMQ({});
+      untypedClient = client as any;
+
+      const addListener = sinon.stub();
+      const fakeClient: any = { addListener };
+
+      const statusValues: string[] = [];
+      untypedClient._status$.subscribe((s: string) => statusValues.push(s));
+
+      client.registerUnblockedListener(fakeClient);
+      expect(addListener.calledOnce).to.be.true;
+      expect(addListener.getCall(0).args[0]).to.be.equal('unblocked');
+
+      const registeredCallback = addListener.getCall(0).args[1];
+      registeredCallback();
+
+      expect(statusValues[statusValues.length - 1]).to.be.equal('unblocked');
     });
   });
 

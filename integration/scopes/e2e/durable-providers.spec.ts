@@ -7,8 +7,10 @@ import { DurableContextIdStrategy } from '../src/durable/durable-context-id.stra
 import { DurableModule } from '../src/durable/durable.module';
 
 describe('Durable providers', () => {
+  const OVERLAP_REQUEST_COUNT = 1000;
   let server: any;
   let app: INestApplication;
+  let baseUrl: string;
 
   before(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -17,7 +19,8 @@ describe('Durable providers', () => {
 
     app = moduleRef.createNestApplication();
     server = app.getHttpServer();
-    await app.init();
+    await app.listen(0);
+    baseUrl = await app.getUrl();
 
     ContextIdFactory.apply(new DurableContextIdStrategy());
   });
@@ -39,6 +42,18 @@ describe('Durable providers', () => {
           if (err) return end(err);
           end(res);
         });
+
+    const performHttpCallAsync = (
+      tenantId: number,
+      endpoint = '/durable',
+      opts: {
+        forceError: boolean;
+      } = { forceError: false },
+    ) =>
+      request(baseUrl)
+        .get(endpoint)
+        .set({ ['x-tenant-id']: String(tenantId) })
+        .set({ ['x-force-error']: opts.forceError ? 'true' : 'false' });
 
     it(`should share durable providers per tenant`, async () => {
       let result: request.Response;
@@ -106,6 +121,52 @@ describe('Durable providers', () => {
         durableService: '2',
         nonDurableService: '2',
       });
+    });
+
+    it(`should preserve request context across overlapping requests from different tenants`, async function () {
+      this.timeout(20000);
+      const tenantIds = Array.from(
+        { length: OVERLAP_REQUEST_COUNT },
+        (_, index) => index + 21,
+      );
+
+      const responses = await Promise.all(
+        tenantIds.map(tenantId =>
+          performHttpCallAsync(tenantId, '/durable/request-context'),
+        ),
+      );
+
+      expect(responses.map(response => response.statusCode)).to.deep.equal(
+        tenantIds.map(() => 200),
+      );
+      expect(responses.map(response => response.body)).to.deep.equal(
+        tenantIds.map(tenantId => ({
+          durableService: String(tenantId),
+          nonDurableService: String(tenantId),
+        })),
+      );
+    });
+
+    it(`should reuse the durable subtree across overlapping requests for the same tenant`, async function () {
+      this.timeout(20000);
+      const tenantId = 31;
+
+      const responses = await Promise.all(
+        Array.from({ length: OVERLAP_REQUEST_COUNT }, () =>
+          performHttpCallAsync(tenantId),
+        ),
+      );
+
+      const counters = responses
+        .map(response => Number(response.text.match(/Counter: (\d+)/)?.[1]))
+        .sort((left, right) => left - right);
+
+      expect(responses.map(response => response.statusCode)).to.deep.equal(
+        Array.from({ length: OVERLAP_REQUEST_COUNT }, () => 200),
+      );
+      expect(counters).to.deep.equal(
+        Array.from({ length: OVERLAP_REQUEST_COUNT }, (_, index) => index + 1),
+      );
     });
 
     it(`should not cache durable providers that throw errors`, async () => {

@@ -275,7 +275,7 @@ export class ServerNats<
     EventKey extends keyof E = keyof E,
     EventCallback extends E[EventKey] = E[EventKey],
   >(event: EventKey, callback: EventCallback) {
-    this.statusEventEmitter.on(event, callback as any);
+    this.statusEventEmitter.on(event as string | symbol, callback as any);
   }
 
   protected initializeSerializer(options: NatsOptions['options']) {

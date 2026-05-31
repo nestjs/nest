@@ -61,6 +61,26 @@ describe('NatsRecordSerializer', () => {
       });
     });
 
+    it('applies packet headers when data is not a NatsRecord', () => {
+      const natsHeaders = nats.headers();
+      natsHeaders.set('x-response', 'enabled');
+
+      expect(
+        instance.serialize({
+          data: { value: 'string' },
+          headers: natsHeaders,
+        }),
+      ).to.deep.eq({
+        headers: natsHeaders,
+        data: jsonCodec.encode({
+          data: {
+            value: 'string',
+          },
+          headers: natsHeaders,
+        }),
+      });
+    });
+
     it('nats message with data and nats headers', () => {
       const natsHeaders = nats.headers();
       natsHeaders.set('1', 'header_1');

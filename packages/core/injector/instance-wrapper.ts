@@ -58,6 +58,11 @@ interface InstanceMetadataStore {
   enhancers?: InstanceWrapper[];
 }
 
+const dependencyTreeParents = new WeakMap<
+  InstanceWrapper,
+  Set<InstanceWrapper>
+>();
+
 export class InstanceWrapper<T = any> {
   public readonly name: any;
   public readonly token: InjectionToken;
@@ -200,6 +205,8 @@ export class InstanceWrapper<T = any> {
       this[INSTANCE_METADATA_SYMBOL].dependencies = [];
     }
     this[INSTANCE_METADATA_SYMBOL].dependencies[index] = wrapper;
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getCtorMetadata(): InstanceWrapper[] {
@@ -214,6 +221,8 @@ export class InstanceWrapper<T = any> {
       key,
       wrapper,
     });
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getPropertiesMetadata(): PropertyMetadata[] {
@@ -225,6 +234,8 @@ export class InstanceWrapper<T = any> {
       this[INSTANCE_METADATA_SYMBOL].enhancers = [];
     }
     this[INSTANCE_METADATA_SYMBOL].enhancers.push(wrapper);
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getEnhancersMetadata(): InstanceWrapper[] {
@@ -408,17 +419,36 @@ export class InstanceWrapper<T = any> {
     contextId: ContextId,
     inquirer: InstanceWrapper | undefined,
   ): boolean {
+    if (!this.isDependencyTreeStatic() || contextId !== STATIC_CONTEXT) {
+      return false;
+    }
+
+    // Non-transient provider in static context
+    if (!this.isTransient) {
+      return true;
+    }
+
     const isInquirerRequestScoped =
       inquirer && !inquirer.isDependencyTreeStatic();
     const isStaticTransient = this.isTransient && !isInquirerRequestScoped;
     const rootInquirer = inquirer?.getRootInquirer();
-    return (
-      this.isDependencyTreeStatic() &&
-      contextId === STATIC_CONTEXT &&
-      (!this.isTransient ||
-        (isStaticTransient && !!inquirer && !inquirer.isTransient) ||
-        (isStaticTransient && !!rootInquirer && !rootInquirer.isTransient))
-    );
+
+    // Transient provider inquired by non-transient (e.g., DEFAULT -> TRANSIENT)
+    if (isStaticTransient && inquirer && !inquirer.isTransient) {
+      return true;
+    }
+
+    // Nested transient with non-transient root (e.g., DEFAULT -> TRANSIENT -> TRANSIENT)
+    if (isStaticTransient && rootInquirer && !rootInquirer.isTransient) {
+      return true;
+    }
+
+    // Nested transient during initial instantiation (rootInquirer not yet set)
+    if (isStaticTransient && inquirer?.isTransient && !rootInquirer) {
+      return true;
+    }
+
+    return false;
   }
 
   public attachRootInquirer(inquirer: InstanceWrapper) {
@@ -471,6 +501,26 @@ export class InstanceWrapper<T = any> {
 
   private isNewable(): boolean {
     return isNil(this.inject) && this.metatype && this.metatype.prototype;
+  }
+
+  private registerDependencyTreeParent(wrapper: InstanceWrapper) {
+    if (wrapper instanceof InstanceWrapper) {
+      const parents = dependencyTreeParents.get(wrapper) ?? new Set();
+      parents.add(this);
+      dependencyTreeParents.set(wrapper, parents);
+    }
+  }
+
+  private resetDependencyTreeState(lookupRegistry = new Set<string>()) {
+    if (lookupRegistry.has(this[INSTANCE_ID_SYMBOL])) {
+      return;
+    }
+    lookupRegistry.add(this[INSTANCE_ID_SYMBOL]);
+    this.isTreeStatic = undefined;
+    this.isTreeDurable = undefined;
+    dependencyTreeParents
+      .get(this)
+      ?.forEach(parent => parent.resetDependencyTreeState(lookupRegistry));
   }
 
   private initialize(

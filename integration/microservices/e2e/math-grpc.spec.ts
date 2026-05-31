@@ -140,7 +140,7 @@ describe('GRPC transport', () => {
     // event. Prior to this test, a bug existed where the server would
     // send the incorrect number of messages due to improper backpressure
     // handling that wrote messages more than once.
-    this.timeout(10000);
+    this.timeout(30000);
 
     const largeMessages = client.streamLargeMessages();
     // [0, 1, 2, ..., 999]

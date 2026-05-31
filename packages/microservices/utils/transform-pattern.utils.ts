@@ -1,43 +1,68 @@
 import {
+  isNumber,
   isObject,
   isString,
-  isNumber,
 } from '@nestjs/common/utils/shared.utils';
 import { MsPattern } from '../interfaces';
 
+const DEFAULT_MAX_DEPTH = 5;
+const DEFAULT_MAX_KEYS = 20;
+const escape = (s: string) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
 /**
- * Transforms the Pattern to Route.
- * 1. If Pattern is a `string`, it will be returned as it is.
- * 2. If Pattern is a `number`, it will be converted to `string`.
- * 3. If Pattern is a `JSON` object, it will be transformed to Route. For that end,
- * the function will sort properties of `JSON` Object and creates `route` string
- * according to the following template:
- * <key1>:<value1>/<key2>:<value2>/.../<keyN>:<valueN>
+ * Transforms the Pattern to Route safely.
  *
- * @param  {MsPattern} pattern - client pattern
+ * @param pattern - client pattern
+ * @param depth - current recursion depth
+ * @param maxDepth - maximum allowed recursion depth
+ * @param maxKeys - maximum allowed keys per object
  * @returns string
  */
-export function transformPatternToRoute(pattern: MsPattern): string {
+export function transformPatternToRoute(
+  pattern: MsPattern,
+  depth = 0,
+  maxDepth = DEFAULT_MAX_DEPTH,
+  maxKeys = DEFAULT_MAX_KEYS,
+): string {
   if (isString(pattern) || isNumber(pattern)) {
     return `${pattern}`;
   }
+
   if (!isObject(pattern)) {
+    // For non-string, non-number, non-object values
     return pattern;
   }
 
-  const sortedKeys = Object.keys(pattern).sort((a, b) =>
-    ('' + a).localeCompare(b),
-  );
+  if (depth > maxDepth) {
+    return '[MAX_DEPTH_REACHED]';
+  }
 
-  // Creates the array of Pattern params from sorted keys and their corresponding values
-  const sortedPatternParams = sortedKeys.map(key => {
-    let partialRoute = `"${key}":`;
-    partialRoute += isString(pattern[key])
-      ? `"${transformPatternToRoute(pattern[key])}"`
-      : transformPatternToRoute(pattern[key]);
+  const keys = Object.keys(pattern);
+
+  if (keys.length > maxKeys) {
+    return '[TOO_MANY_KEYS]';
+  }
+
+  const sortedKeys = keys.sort((a, b) => ('' + a).localeCompare(b));
+
+  const parts = sortedKeys.map(key => {
+    const value = pattern[key];
+    let partialRoute = `"${escape(key)}":`;
+
+    // Only quote strings, numbers and objects are handled recursively
+    if (isString(value)) {
+      partialRoute += `"${escape(transformPatternToRoute(value, depth + 1, maxDepth, maxKeys))}"`;
+    } else {
+      partialRoute += transformPatternToRoute(
+        value,
+        depth + 1,
+        maxDepth,
+        maxKeys,
+      );
+    }
+
     return partialRoute;
   });
 
-  const route = sortedPatternParams.join(',');
-  return `{${route}}`;
+  return `{${parts.join(',')}}`;
 }

@@ -5,9 +5,10 @@ import { Deserializer, IncomingResponse } from '../interfaces';
 /**
  * @publicApi
  */
-export class KafkaResponseDeserializer
-  implements Deserializer<any, IncomingResponse>
-{
+export class KafkaResponseDeserializer implements Deserializer<
+  any,
+  IncomingResponse
+> {
   deserialize(message: any, options?: Record<string, any>): IncomingResponse {
     const id = message.headers[KafkaHeaders.CORRELATION_ID].toString();
     if (!isUndefined(message.headers[KafkaHeaders.NEST_ERR])) {

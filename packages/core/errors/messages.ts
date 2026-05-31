@@ -127,9 +127,14 @@ For more common dependency resolution issues, see: https://docs.nestjs.com/faq/c
   );
   dependenciesName[index] = '?';
 
+  const tokenFragment =
+    !isImportTypeIssue && name !== undefined ? ` ${dependencyName}` : '';
+  const contextLabel = isImportTypeIssue ? 'current' : moduleName;
+
   message += ` (`;
   message += dependenciesName.join(', ');
-  message += `). Please make sure that the argument ${isImportTypeIssue ? 'dependency' : dependencyName} at index [${index}] is available in the ${isImportTypeIssue ? 'current' : moduleName} context.`;
+  message += `). Please make sure that the argument${tokenFragment} at index [${index}]`;
+  message += ` is available in the ${contextLabel} module.`;
   message += potentialSolutions;
 
   return message;
@@ -152,11 +157,26 @@ export const INVALID_MODULE_MESSAGE = (
   parentModule: any,
   index: number,
   scope: any[],
+  receivedValue: unknown,
 ) => {
   const parentModuleName = parentModule?.name || 'module';
 
+  let formattedValue: string;
+  let receivedType: string;
+  if (receivedValue === null) {
+    formattedValue = 'null';
+    receivedType = 'null';
+  } else if (typeof receivedValue === 'string') {
+    formattedValue = `"${receivedValue}"`;
+    receivedType = 'string';
+  } else {
+    formattedValue = String(receivedValue);
+    receivedType = typeof receivedValue;
+  }
+
   return `Nest cannot create the ${parentModuleName} instance.
 Received an unexpected value at index [${index}] of the ${parentModuleName} "imports" array.
+The received value \`${formattedValue}\` is of type "${receivedType}".
 
 Scope [${stringifyScope(scope)}]`;
 };
@@ -164,11 +184,24 @@ Scope [${stringifyScope(scope)}]`;
 export const USING_INVALID_CLASS_AS_A_MODULE_MESSAGE = (
   metatypeUsedAsAModule: Type | ForwardReference,
   scope: any[],
+  classKind: 'provider' | 'controller' | 'filter',
 ) => {
   const metatypeNameQuote = `"${getInstanceName(metatypeUsedAsAModule)}"`;
 
-  return `Classes annotated with @Injectable(), @Catch(), and @Controller() decorators must not appear in the "imports" array of a module.
-Please remove ${metatypeNameQuote} (including forwarded occurrences, if any) from all of the "imports" arrays.
+  let hint: string;
+  switch (classKind) {
+    case 'controller':
+      hint = `${metatypeNameQuote} is decorated with @Controller() and cannot appear in the "imports" array of a module. Please move ${metatypeNameQuote} to the "controllers" array of the importing module instead.`;
+      break;
+    case 'provider':
+      hint = `${metatypeNameQuote} is decorated with @Injectable() and cannot appear in the "imports" array of a module. Please move ${metatypeNameQuote} to the "providers" array of the importing module instead.`;
+      break;
+    case 'filter':
+      hint = `${metatypeNameQuote} is decorated with @Catch() and cannot appear in the "imports" array of a module. Please move ${metatypeNameQuote} to the "providers" array (using the APP_FILTER token to apply it globally) or apply it via @UseFilters() instead.`;
+      break;
+  }
+
+  return `${hint}
 
 Scope [${stringifyScope(scope)}]
 `;

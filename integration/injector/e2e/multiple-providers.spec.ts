@@ -24,7 +24,7 @@ describe('Multiple providers under the same token ("each" feature)', () => {
     });
   });
   describe('resolve()', () => {
-    it('should return an array of providers', async () => {
+    it('should return an array of request-scoped providers', async () => {
       const builder = Test.createTestingModule({
         imports: [MultipleProvidersModule],
       });
@@ -32,6 +32,26 @@ describe('Multiple providers under the same token ("each" feature)', () => {
 
       const multiProviderInstances = await testingModule.resolve<string>(
         'REQ_SCOPED_MULTI_PROVIDER',
+        undefined,
+        {
+          each: true,
+        },
+      );
+
+      // @ts-expect-error: make sure "multiProviderInstances" is string[] not string
+      multiProviderInstances.charAt;
+
+      expect(multiProviderInstances).to.be.eql(['A', 'B', 'C']);
+    });
+
+    it('should return an array of default-scoped providers', async () => {
+      const builder = Test.createTestingModule({
+        imports: [MultipleProvidersModule],
+      });
+      const testingModule = await builder.compile();
+
+      const multiProviderInstances = await testingModule.resolve<string>(
+        'MULTI_PROVIDER',
         undefined,
         {
           each: true,

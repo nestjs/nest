@@ -31,6 +31,9 @@ export interface MulterOptions {
   /** Keep the full path of files instead of just the base name (Default: false) */
   preservePath?: boolean;
 
+  /** Default character set for part header values (e.g. filename) (Default: 'latin1') */
+  defParamCharset?: string;
+
   fileFilter?(
     req: any,
     file: {

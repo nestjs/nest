@@ -69,6 +69,7 @@ export class NestApplication
   private readonly microservices: any[] = [];
   private httpServer: any;
   private isListening = false;
+  private isWsModuleRegistered = false;
 
   constructor(
     container: NestContainer,
@@ -171,6 +172,7 @@ export class NestApplication
       this.appOptions,
       this.httpServer,
     );
+    this.isWsModuleRegistered = true;
   }
 
   public async init(): Promise<this> {
@@ -389,11 +391,19 @@ export class NestApplication
   }
 
   public useWebSocketAdapter(adapter: WebSocketAdapter): this {
+    if (this.isWsModuleRegistered) {
+      this.logger.warn(
+        'useWebSocketAdapter() was called after WebSocket gateways were already initialized. The provided adapter will be stored but will NOT be applied to existing gateways — they remain bound to the previously installed adapter. To install a custom adapter, call app.useWebSocketAdapter(...) BEFORE app.init() (or app.listen()).',
+      );
+    }
     this.config.setIoAdapter(adapter);
     return this;
   }
 
   public useGlobalFilters(...filters: ExceptionFilter[]): this {
+    filters = this.applyInstanceDecoratorIfRegistered<ExceptionFilter>(
+      ...filters,
+    );
     this.config.useGlobalFilters(...filters);
     filters.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -405,6 +415,9 @@ export class NestApplication
   }
 
   public useGlobalPipes(...pipes: PipeTransform<any>[]): this {
+    pipes = this.applyInstanceDecoratorIfRegistered<PipeTransform<any>>(
+      ...pipes,
+    );
     this.config.useGlobalPipes(...pipes);
     pipes.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -416,6 +429,9 @@ export class NestApplication
   }
 
   public useGlobalInterceptors(...interceptors: NestInterceptor[]): this {
+    interceptors = this.applyInstanceDecoratorIfRegistered<NestInterceptor>(
+      ...interceptors,
+    );
     this.config.useGlobalInterceptors(...interceptors);
     interceptors.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -427,6 +443,7 @@ export class NestApplication
   }
 
   public useGlobalGuards(...guards: CanActivate[]): this {
+    guards = this.applyInstanceDecoratorIfRegistered<CanActivate>(...guards);
     this.config.useGlobalGuards(...guards);
     guards.forEach(item =>
       this.graphInspector.insertOrphanedEnhancer({
@@ -473,5 +490,15 @@ export class NestApplication
       this.middlewareContainer,
       instance,
     );
+  }
+
+  private applyInstanceDecoratorIfRegistered<T>(...instances: T[]): T[] {
+    if (this.appOptions.instrument?.instanceDecorator) {
+      return instances.map(
+        instance =>
+          this.appOptions.instrument!.instanceDecorator(instance) as T,
+      );
+    }
+    return instances;
   }
 }

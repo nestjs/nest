@@ -7,9 +7,7 @@ import { ModuleOpaqueKeyFactory } from './interfaces/module-opaque-key-factory.i
 
 const K_MODULE_ID = Symbol('K_MODULE_ID');
 
-export class ByReferenceModuleOpaqueKeyFactory
-  implements ModuleOpaqueKeyFactory
-{
+export class ByReferenceModuleOpaqueKeyFactory implements ModuleOpaqueKeyFactory {
   private readonly keyGenerationStrategy: 'random' | 'shallow';
 
   constructor(options?: { keyGenerationStrategy: 'random' | 'shallow' }) {

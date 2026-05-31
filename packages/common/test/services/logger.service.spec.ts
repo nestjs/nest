@@ -897,6 +897,36 @@ describe('Logger', () => {
       processStdoutWriteSpy.restore();
     });
 
+    it('should respect maxStringLength when set to 0', () => {
+      const consoleLogger = new ConsoleLogger({
+        colors: false,
+        compact: false,
+        maxStringLength: 0,
+      });
+
+      consoleLogger.log({ name: 'abcdef' });
+
+      expect(processStdoutWriteSpy.calledOnce).to.be.true;
+      expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        "''... 6 more characters",
+      );
+    });
+
+    it('should respect maxArrayLength when set to 0', () => {
+      const consoleLogger = new ConsoleLogger({
+        colors: false,
+        compact: false,
+        maxArrayLength: 0,
+      });
+
+      consoleLogger.log({ items: ['a', 'b', 'c'] });
+
+      expect(processStdoutWriteSpy.calledOnce).to.be.true;
+      expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        '... 3 more items',
+      );
+    });
+
     it('should support custom formatter', () => {
       class CustomConsoleLogger extends ConsoleLogger {
         protected formatMessage(

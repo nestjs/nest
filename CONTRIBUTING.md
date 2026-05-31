@@ -56,7 +56,7 @@ Please consider what kind of change it is:
 
 Before you submit an issue, please search the issue tracker, maybe an issue for your problem already exists and the discussion might inform you of workarounds readily available.
 
-We want to fix all the issues as soon as possible, but before fixing a bug we need to reproduce and confirm it. In order to reproduce bugs we will systematically ask you to provide a minimal reproduction scenario using a repository or [Gist](https://gist.github.com/). Having a live, reproducible scenario gives us wealth of important information without going back & forth to you with additional questions like:
+We want to fix all the issues as soon as possible, but before fixing a bug, we need to reproduce and confirm it. In order to reproduce bugs we will systematically ask you to provide a minimal reproduction scenario using a repository or [Gist](https://gist.github.com/). Having a live, reproducible scenario gives us a wealth of important information without going back & forth to you with additional questions like:
 
 - version of NestJS used
 - 3rd-party libraries and their versions
@@ -159,7 +159,7 @@ from the main (upstream) repository:
 
 ## <a name="development"></a> Development Setup
 
-You will need [Node.js](https://nodejs.org) version >= 10.13.0 (except for v13).
+You will need [Node.js](https://nodejs.org) version >= 20.
 
 1. After cloning the repo, run:
 
@@ -203,7 +203,7 @@ To ensure consistency throughout the source code, keep these rules in mind as yo
 // We're working on auto-documentation.
 * All public API methods **must be documented**. (Details TBC). -->
 
-- All features or bug fixes **must be tested** by one or more specs (unit-tests).
+- All features or bug fixes **must be tested** by one or more specs (unit tests).
 - We follow [Google's JavaScript Style Guide][js-style-guide], but wrap all code at
   **100 characters**. An automated formatter is available (`npm run format`).
 

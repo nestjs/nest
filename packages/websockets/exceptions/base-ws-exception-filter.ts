@@ -43,9 +43,9 @@ interface BaseWsExceptionFilterOptions {
 /**
  * @publicApi
  */
-export class BaseWsExceptionFilter<TError = any>
-  implements WsExceptionFilter<TError>
-{
+export class BaseWsExceptionFilter<
+  TError = any,
+> implements WsExceptionFilter<TError> {
   protected static readonly logger = new Logger('WsExceptionsHandler');
 
   constructor(protected readonly options: BaseWsExceptionFilterOptions = {}) {
