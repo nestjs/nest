@@ -675,6 +675,18 @@ export class FastifyAdapter<
     if (!this.isMiddieRegistered) {
       await this.registerMiddie();
     }
+
+    // Only string routes from forRoutes('/prefix') — represented internally
+    // as method -1 — should use prefix matching (end: false) to match
+    // sub-routes under the given path. This mirrors Express's app.use()
+    // behavior for prefix-based middleware.
+    //
+    // RequestMethod.ALL maps to the HTTP adapter's .all() which is exact-match
+    // semantics (match all HTTP methods on this exact path). Using prefix
+    // matching for ALL would cause forRoutes({ path: '/a', method: ALL }) to
+    // incorrectly match '/a/b/c', breaking the "execute only once" guarantee.
+    const isStringRoute = (requestMethod as number) === -1;
+
     return (path: string, callback: Function) => {
       const hasEndOfStringCharacter = path.endsWith('$');
       path = hasEndOfStringCharacter ? path.slice(0, -1) : path;
@@ -693,10 +705,10 @@ export class FastifyAdapter<
       }
 
       try {
-        let { regexp: re } = pathToRegexp(normalizedPath);
-        re = hasEndOfStringCharacter
-          ? new RegExp(re.source + '$', re.flags)
-          : re;
+        const endMatch = hasEndOfStringCharacter || !isStringRoute;
+        const { regexp: re } = pathToRegexp(normalizedPath, {
+          end: endMatch,
+        });
 
         // The following type assertion is valid as we use import('@fastify/middie') rather than require('@fastify/middie')
         // ref https://github.com/fastify/middie/pull/55
