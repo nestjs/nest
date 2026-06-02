@@ -110,8 +110,8 @@
     "@types/sinon": "21.0.1",
     "@types/supertest": "7.2.0",
     "@types/ws": "8.18.1",
-    "@typescript-eslint/eslint-plugin": "8.60.0",
-    "@typescript-eslint/parser": "8.59.3",
+    "@typescript-eslint/eslint-plugin": "8.60.1",
+    "@typescript-eslint/parser": "8.60.1",
     "amqp-connection-manager": "5.0.0",
     "amqplib": "2.0.1",
     "body-parser": "2.2.2",
@@ -168,7 +168,7 @@
     "tsconfig-paths": "4.2.0",
     "typeorm": "0.3.30",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.58.2",
+    "typescript-eslint": "8.60.1",
     "ws": "8.21.0"
   },
   "engines": {
