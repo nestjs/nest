@@ -27,7 +27,6 @@
     "codechecks:benchmarks": "codechecks ./tools/benchmarks/check-benchmarks.ts",
     "coverage": "nyc report --reporter=text-lcov | coveralls -v",
     "format": "prettier \"**/*.ts\" \"packages/**/*.json\" --ignore-path ./.prettierignore --write && git status",
-    "postinstall": "opencollective",
     "test": "node --loader ts-node/esm ./node_modules/mocha/bin/mocha.js packages/**/*.spec.ts",
     "test:dev": "node --loader ts-node/esm ./node_modules/mocha/bin/mocha.js -w --watch-files \"packages\" packages/**/*.spec.ts",
     "pretest:cov": "npm run clean",
