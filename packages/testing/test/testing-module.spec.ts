@@ -90,7 +90,7 @@ describe('TestingModule', () => {
         customAdapterProp: 'adapter-value',
       });
 
-      const app = module.createNestApplication(adapter as any) as any;
+      const app = module.createNestApplication(adapter as any);
 
       expect(app.getHttpAdapter).to.be.a('function');
       expect(app.customAdapterProp).to.equal('adapter-value');
