@@ -10,12 +10,15 @@ describe('TestingLogger', () => {
     logger = new TestingLogger();
   });
 
+  afterEach(() => {
+    sinon.restore();
+  });
+
   describe('log', () => {
     it('should not write to stdout', () => {
       const spy = sinon.spy(process.stdout, 'write');
       logger.log('test message');
       expect(spy.called).to.be.false;
-      spy.restore();
     });
   });
 
@@ -24,7 +27,6 @@ describe('TestingLogger', () => {
       const spy = sinon.spy(process.stdout, 'write');
       logger.warn('test warning');
       expect(spy.called).to.be.false;
-      spy.restore();
     });
   });
 
@@ -33,7 +35,6 @@ describe('TestingLogger', () => {
       const spy = sinon.spy(process.stdout, 'write');
       logger.debug('test debug');
       expect(spy.called).to.be.false;
-      spy.restore();
     });
   });
 
@@ -42,7 +43,6 @@ describe('TestingLogger', () => {
       const spy = sinon.spy(process.stdout, 'write');
       logger.verbose('test verbose');
       expect(spy.called).to.be.false;
-      spy.restore();
     });
   });
 
@@ -57,8 +57,6 @@ describe('TestingLogger', () => {
       expect(errorStub.calledOnce).to.be.true;
       expect(errorStub.firstCall.args[0]).to.equal(message);
       expect(errorStub.firstCall.args[1]).to.equal(trace);
-
-      errorStub.restore();
     });
   });
 });

@@ -1,5 +1,9 @@
 import { expect } from 'chai';
 import { Module as ModuleDecorator, Injectable } from '@nestjs/common';
+import {
+  UuidFactory,
+  UuidFactoryMode,
+} from '@nestjs/core/inspector/uuid-factory';
 import { Test } from '../test';
 import { TestingModuleBuilder } from '../testing-module.builder';
 import { TestingModule } from '../testing-module';
@@ -67,6 +71,14 @@ describe('TestingModuleBuilder', () => {
       const overrideBy = builder.overrideInterceptor('someInterceptor');
       expect(overrideBy.useValue).to.be.a('function');
     });
+
+    it('should be chainable via useValue', () => {
+      const builder = Test.createTestingModule({});
+      const result = builder
+        .overrideInterceptor('someInterceptor')
+        .useValue({});
+      expect(result).to.equal(builder);
+    });
   });
 
   describe('overrideProvider', () => {
@@ -122,6 +134,10 @@ describe('TestingModuleBuilder', () => {
   });
 
   describe('compile', () => {
+    afterEach(() => {
+      UuidFactory.mode = UuidFactoryMode.Random;
+    });
+
     it('should return a TestingModule instance', async () => {
       @ModuleDecorator({})
       class TestModule {}
