@@ -6,4 +6,4 @@ Check out the `package.json` file.
 
 ## About automated tests with Jest
 
-While Jest [does not supports](https://github.com/jestjs/jest/issues/15275) the `--experimental-require-module` flag, we cannot use Jest in this project!
+While Jest [does not support](https://github.com/jestjs/jest/issues/15275) the `--experimental-require-module` flag, we cannot use Jest in this project!
