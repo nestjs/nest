@@ -370,7 +370,6 @@ function fastifyMiddie(
   next();
 }
 
-/* @eslint-disable-next-line @typescript-eslint/no-namespace */
 declare namespace fastifyMiddie {
   export interface FastifyMiddieOptions {
     hook?:
