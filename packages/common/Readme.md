@@ -96,6 +96,8 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 </tr><tr>
 <td align="center" valign="middle"><a href="https://pandektes.com" target="_blank"><img src="https://nestjs.com/img/logos/pandektes-logo.png" width="65" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://www.fintechcrafts.com/" target="_blank"><img src="https://nestjs.com/img/logos/fintechcrafts-logo.svg" width="65" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://talordata.com/?campaignid=Ya5Xpw2gmhyee6Tg&utm_source=nestjs&utm_term=nestjs" target="_blank"><img src="https://images.opencollective.com/elowen/9ccac7f/avatar/512.png" width="65" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://www.rapidproxy.io/?ref=nestjs" target="_blank"><img src="https://nestjs.com/img/logos/rapid-logo.svg" width="120" valign="middle" /></a></td>
 </tr>
 </table>
 
