@@ -19,7 +19,7 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.25",
+    "@nestjs/common": "11.1.26",
     "@nestjs/core": "11.1.25",
     "@nestjs/graphql": "13.4.2",
     "@nestjs/mercurius": "13.4.2",
