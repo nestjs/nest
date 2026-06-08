@@ -1,5 +1,6 @@
 import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
 import { expect } from 'chai';
+import { EventEmitter } from 'events';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { PassThrough } from 'stream';
@@ -31,6 +32,21 @@ describe('RouterExecutionContext', () => {
   let guardsConsumer: GuardsConsumer;
   let interceptorsConsumer: InterceptorsConsumer;
   let adapter: AbstractHttpAdapter;
+
+  const attachSocket = <T extends PassThrough>(request: T) =>
+    Object.assign(request, {
+      socket: Object.assign(new EventEmitter(), {
+        setKeepAlive() {},
+        setNoDelay() {},
+        setTimeout() {},
+      }),
+    }) as T & {
+      socket: EventEmitter & {
+        setKeepAlive(): void;
+        setNoDelay(): void;
+        setTimeout(): void;
+      };
+    };
 
   beforeEach(() => {
     callback = {
@@ -463,8 +479,10 @@ describe('RouterExecutionContext', () => {
         const response = new PassThrough();
         response.write = sinon.spy();
 
-        const request = new PassThrough();
-        request.on = sinon.spy();
+        const request = attachSocket(new PassThrough());
+        request.socket.once = sinon.spy(
+          request.socket.once.bind(request.socket),
+        );
 
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
         sinon.stub(contextCreator, 'reflectSse').returns('/');
@@ -478,7 +496,7 @@ describe('RouterExecutionContext', () => {
         await handler(result, response, request);
 
         expect((response.write as any).called).to.be.true;
-        expect((request.on as any).called).to.be.true;
+        expect((request.socket.once as any).calledWith('close')).to.be.true;
       });
 
       it('should not allow a non-observable result', async () => {
@@ -515,8 +533,7 @@ describe('RouterExecutionContext', () => {
           .stub()
           .returns({ 'access-control-headers': 'some-cors-value' });
 
-        const request = new PassThrough();
-        request.on = sinon.spy();
+        const request = attachSocket(new PassThrough());
 
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
         sinon.stub(contextCreator, 'reflectSse').returns('/');
@@ -552,8 +569,7 @@ describe('RouterExecutionContext', () => {
         };
         const result = of('test');
 
-        const request = new PassThrough();
-        request.on = sinon.spy();
+        const request = attachSocket(new PassThrough());
 
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
         sinon.stub(contextCreator, 'reflectSse').returns('/');

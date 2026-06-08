@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Observable, of, Subject } from 'rxjs';
 import * as sinon from 'sinon';
+import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import { HttpStatus, RequestMethod } from '../../../common';
 import { RouterResponseController } from '../../router/router-response-controller';
@@ -260,6 +261,15 @@ describe('RouterResponseController', () => {
     });
   });
   describe('Server-Sent-Events', () => {
+    const attachSocket = <T extends Writable>(request: T) =>
+      Object.assign(request, {
+        socket: Object.assign(new EventEmitter(), {
+          setKeepAlive() {},
+          setNoDelay() {},
+          setTimeout() {},
+        }),
+      }) as T & { socket: EventEmitter };
+
     it('should accept only observables', async () => {
       const result = Promise.resolve('test');
       const response = new Writable();
@@ -307,7 +317,7 @@ describe('RouterResponseController', () => {
 
       const result = Promise.resolve(of('test'));
       const response = new Sink();
-      const request = new PassThrough();
+      const request = attachSocket(new PassThrough());
       await routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
@@ -341,7 +351,7 @@ data: test
 
       const result = of('test');
       const response = new SinkWithStatusCode();
-      const request = new PassThrough();
+      const request = attachSocket(new PassThrough());
       await routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
@@ -377,7 +387,7 @@ data: test
 
       const result = of('test');
       const response = new Sink();
-      const request = new PassThrough();
+      const request = attachSocket(new PassThrough());
       await routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
@@ -393,13 +403,13 @@ data: test
       );
     });
 
-    it('should close on request close', done => {
+    it('should close on socket close', done => {
       const result = of('test');
       const response = new Writable();
       response.end = () => done() as any;
       response._write = () => {};
 
-      const request = new Writable();
+      const request = attachSocket(new Writable());
       request._write = () => {};
 
       void routerResponseController.sse(
@@ -407,10 +417,10 @@ data: test
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
       );
-      request.emit('close');
+      request.socket.emit('close');
     });
 
-    it('should ignore a Promise<Observable> if request closes before it resolves', async () => {
+    it('should ignore a Promise<Observable> if socket closes before it resolves', async () => {
       let subscribed = false;
       const result = new Promise<Observable<string>>(resolve => {
         setTimeout(() => {
@@ -426,21 +436,21 @@ data: test
       response.end = responseEndSpy as any;
       response._write = () => {};
 
-      const request = new PassThrough();
+      const request = attachSocket(new PassThrough());
 
       const ssePromise = routerResponseController.sse(
         result,
         response as unknown as ServerResponse,
         request as unknown as IncomingMessage,
       );
-      request.emit('close');
+      request.socket.emit('close');
 
       await ssePromise;
       await new Promise(resolve => setTimeout(resolve, 20));
 
       expect(subscribed).to.equal(false);
       expect(responseEndSpy.calledOnce).to.be.true;
-      expect(request.listenerCount('close')).to.equal(0);
+      expect(request.socket.listenerCount('close')).to.equal(0);
     });
 
     it('should close the request when observable completes', done => {
@@ -449,7 +459,7 @@ data: test
       response.end = done as any;
       response._write = () => {};
 
-      const request = new Writable();
+      const request = attachSocket(new Writable());
       request._write = () => {};
 
       void routerResponseController.sse(
@@ -464,7 +474,7 @@ data: test
       const response = new Writable();
       response._write = () => {};
 
-      const request = new PassThrough();
+      const request = attachSocket(new PassThrough());
 
       await routerResponseController.sse(
         result,
@@ -472,7 +482,54 @@ data: test
         request as unknown as IncomingMessage,
       );
 
-      expect(request.listenerCount('close')).to.equal(0);
+      expect(request.socket.listenerCount('close')).to.equal(0);
+    });
+
+    it('should keep streaming when the request closes after body consumption', async () => {
+      class Sink extends Writable {
+        private readonly chunks: string[] = [];
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          this.chunks.push(chunk);
+          callback();
+        }
+
+        get content() {
+          return this.chunks.join('');
+        }
+      }
+
+      const written = (stream: Writable) =>
+        new Promise((resolve, reject) =>
+          stream.on('error', reject).on('finish', resolve),
+        );
+
+      const result = of('test');
+      const response = new Sink();
+      const request = attachSocket(new PassThrough());
+
+      const ssePromise = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      request.emit('close');
+
+      await ssePromise;
+      await written(response);
+
+      expect(response.content).to.eql(
+        `
+id: 1
+data: test
+
+`,
+      );
     });
 
     it('should allow to intercept the response', done => {

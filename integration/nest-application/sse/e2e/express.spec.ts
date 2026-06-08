@@ -164,6 +164,25 @@ describe('Sse (Express Application)', () => {
 
       expect(dataLines).to.have.lengthOf(n);
     });
+
+    it('should stream events from POST SSE routes with a request body', async () => {
+      const url = await app.getUrl();
+
+      const response = await fetch(`${url}/sse/post`, {
+        method: 'POST',
+        headers: {
+          accept: 'text/event-stream',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ content: 'chunk-0' }),
+      });
+
+      expect(response.status).to.equal(201);
+      expect(response.headers.get('content-type')).to.contain(
+        'text/event-stream',
+      );
+      expect(await response.text()).to.contain('data: {"content":"chunk-0"}');
+    });
   });
 
   describe('Promise<Observable> disconnect handling', () => {
