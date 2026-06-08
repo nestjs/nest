@@ -711,7 +711,7 @@ export class FastifyAdapter<
 
             pathname = this.sanitizeUrl(pathname);
 
-            if (!re.exec(pathname + '/') && normalizedPath) {
+            if (!re.exec(pathname) && normalizedPath) {
               return next();
             }
             return callback(req, res, next);

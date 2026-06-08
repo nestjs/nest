@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Injectable,
   MiddlewareConsumer,
   Module,
   NestMiddleware,
@@ -22,6 +23,96 @@ import { AppModule } from '../src/app.module';
 
 describe('Middleware (FastifyAdapter)', () => {
   let app: NestFastifyApplication;
+
+  describe('trailing slash handling', () => {
+    @Injectable()
+    class AuthMiddleware implements NestMiddleware {
+      use(
+        req: FastifyRequest['raw'] & { headers: Record<string, unknown> },
+        res,
+        next: () => void,
+      ) {
+        if (req.headers['x-auth'] === '1') {
+          return next();
+        }
+        res.statusCode = 401;
+        res.end('unauthorized');
+      }
+    }
+
+    @Controller('users')
+    class UsersController {
+      @Get()
+      findAll() {
+        return 'users';
+      }
+
+      @Get(':id')
+      findOne(@Param('id') id: string) {
+        return `user:${id}`;
+      }
+    }
+
+    @Module({
+      controllers: [UsersController],
+    })
+    class TrailingSlashModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply(AuthMiddleware)
+          .forRoutes(
+            { path: 'users', method: RequestMethod.ALL },
+            { path: 'users/:id', method: RequestMethod.ALL },
+          );
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [TrailingSlashModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+
+      await app.init();
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('does not bypass middleware on a trailing slash variant', async () => {
+      await app
+        .inject({
+          method: 'GET',
+          url: '/users',
+        })
+        .then(response => {
+          expect(response.statusCode).to.equal(401);
+          expect(response.payload).to.equal('unauthorized');
+        });
+
+      await app
+        .inject({
+          method: 'GET',
+          url: '/users/',
+        })
+        .then(response => {
+          expect(response.statusCode).to.equal(401);
+          expect(response.payload).to.equal('unauthorized');
+        });
+
+      await app
+        .inject({
+          method: 'GET',
+          url: '/users/1',
+        })
+        .then(response => {
+          expect(response.statusCode).to.equal(401);
+          expect(response.payload).to.equal('unauthorized');
+        });
+    });
+  });
 
   describe('should return expected values depending on the route', () => {
     const INCLUDED_VALUE = 'test_included';
