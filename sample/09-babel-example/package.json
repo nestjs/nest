@@ -13,10 +13,10 @@
     "test:e2e": "echo 'No e2e tests implemented yet.'"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.24",
+    "@nestjs/common": "11.1.25",
     "@nestjs/core": "11.1.24",
     "@nestjs/platform-express": "11.1.24",
-    "@nestjs/microservices": "11.1.24",
+    "@nestjs/microservices": "11.1.25",
     "@nestjs/websockets": "11.1.24",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"
