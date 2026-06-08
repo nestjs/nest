@@ -20,11 +20,11 @@
     "test:e2e": "jest --config ./e2e/jest-e2e.json"
   },
   "dependencies": {
-    "@nestjs/common": "11.1.25",
+    "@nestjs/common": "11.1.26",
     "@nestjs/core": "11.1.25",
     "@nestjs/jwt": "11.0.2",
     "@nestjs/passport": "11.0.5",
-    "@nestjs/platform-express": "11.1.25",
+    "@nestjs/platform-express": "11.1.26",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.3",
     "rxjs": "7.8.2"
