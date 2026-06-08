@@ -2,12 +2,14 @@ import { IncomingMessage } from 'node:http';
 import { Type } from 'class-transformer';
 import { IsInt } from 'class-validator';
 import {
+  Body,
   Controller,
   Get,
   MessageEvent,
   Post,
   Query,
   Req,
+  RequestMethod,
   Sse,
 } from '@nestjs/common';
 import { interval, map, Observable, of } from 'rxjs';
@@ -51,6 +53,11 @@ export class AppController {
       }
       subscriber.complete();
     });
+  }
+
+  @Sse('sse/post', { method: RequestMethod.POST })
+  ssePost(@Body() body: { content?: string }): Observable<MessageEvent> {
+    return of({ data: { content: body.content ?? 'default' } });
   }
 
   @Sse('sse/promise-delayed')

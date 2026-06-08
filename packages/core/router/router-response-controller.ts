@@ -126,8 +126,9 @@ export class RouterResponseController {
     return new Promise<void>((resolve, reject) => {
       let settled = false;
       let subscription: { unsubscribe(): void } | undefined;
+      const disconnectSource = request.socket ?? response;
 
-      const cleanup = () => request.removeListener('close', onClose);
+      const cleanup = () => disconnectSource.removeListener('close', onClose);
 
       const onClose = () => {
         if (settled) {
@@ -143,7 +144,7 @@ export class RouterResponseController {
         resolve();
       };
 
-      request.once('close', onClose);
+      disconnectSource.once('close', onClose);
 
       Promise.resolve(result)
         .then(observableResult => {
