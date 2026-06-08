@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@nestjs/common": "11.1.25",
-    "@nestjs/core": "11.1.24",
-    "@nestjs/platform-express": "11.1.24",
+    "@nestjs/core": "11.1.25",
+    "@nestjs/platform-express": "11.1.25",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "typescript": "5.9.3"
