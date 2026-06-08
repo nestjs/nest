@@ -14,10 +14,10 @@
   },
   "dependencies": {
     "@nestjs/common": "11.1.25",
-    "@nestjs/core": "11.1.24",
-    "@nestjs/platform-express": "11.1.24",
+    "@nestjs/core": "11.1.25",
+    "@nestjs/platform-express": "11.1.25",
     "@nestjs/microservices": "11.1.25",
-    "@nestjs/websockets": "11.1.24",
+    "@nestjs/websockets": "11.1.25",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"
   },
@@ -30,7 +30,7 @@
     "@babel/preset-env": "7.29.7",
     "@babel/register": "7.29.7",
     "@babel/runtime": "7.29.7",
-    "@nestjs/testing": "11.1.24",
+    "@nestjs/testing": "11.1.25",
     "jest": "30.4.2",
     "nodemon": "3.1.14",
     "prettier": "3.8.3",

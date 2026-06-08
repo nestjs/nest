@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@nestjs/common": "11.1.25",
-    "@nestjs/core": "11.1.24",
+    "@nestjs/core": "11.1.25",
     "@nestjs/graphql": "13.4.2",
     "@nestjs/mercurius": "13.4.2",
     "@nestjs/platform-fastify": "11.1.25",
@@ -36,7 +36,7 @@
     "@eslint/js": "9.39.4",
     "@nestjs/cli": "11.0.22",
     "@nestjs/schematics": "11.1.0",
-    "@nestjs/testing": "11.1.24",
+    "@nestjs/testing": "11.1.25",
     "@types/express": "5.0.6",
     "@types/node": "24.13.1",
     "@types/supertest": "7.2.0",

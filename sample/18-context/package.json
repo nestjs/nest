@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@nestjs/common": "11.1.25",
-    "@nestjs/core": "11.1.24",
+    "@nestjs/core": "11.1.25",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.3",
     "rxjs": "7.8.2"
