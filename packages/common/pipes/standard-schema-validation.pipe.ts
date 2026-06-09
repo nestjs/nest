@@ -92,9 +92,24 @@ export class StandardSchemaValidationPipe implements PipeTransform {
     this.exceptionFactory =
       exceptionFactory ||
       (issues => {
-        const messages = issues.map(issue => issue.message);
+        const messages = this.formatIssueMessages(issues);
         return new HttpErrorByCode[errorHttpStatusCode](messages);
       });
+  }
+
+  /**
+   * Formats Standard Schema validation issues into a flat list of error messages.
+   * When an issue includes a path, the path is prefixed to the message.
+   */
+  protected formatIssueMessages(
+    issues: readonly StandardSchemaV1.Issue[],
+  ): string[] {
+    return issues.map(issue => {
+      if (issue.path?.length) {
+        return `${issue.path.map(String).join('.')}: ${issue.message}`;
+      }
+      return issue.message;
+    });
   }
 
   /**

@@ -93,7 +93,33 @@ describe('StandardSchemaValidationPipe', () => {
           );
           expect((error as HttpException).getResponse()).toEqual({
             statusCode: HttpStatus.BAD_REQUEST,
-            message: ['field is required', 'must be a string'],
+            message: ['name: field is required', 'must be a string'],
+            error: 'Bad Request',
+          });
+        }
+      });
+
+      it('should prefix nested paths in issue messages', async () => {
+        const schema = createSchema(() => ({
+          issues: [
+            {
+              message: 'Invalid input: expected string, received boolean',
+              path: ['address', 'line1'],
+            },
+          ],
+        }));
+
+        try {
+          await pipe.transform({}, {
+            type: 'body',
+            schema,
+          } as ArgumentMetadata);
+        } catch (error) {
+          expect((error as HttpException).getResponse()).toEqual({
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: [
+              'address.line1: Invalid input: expected string, received boolean',
+            ],
             error: 'Bad Request',
           });
         }
