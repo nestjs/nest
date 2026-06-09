@@ -34,6 +34,6 @@
     "webpack": "5.107.2",
     "webpack-cli": "7.0.3",
     "webpack-node-externals": "3.0.0",
-    "typescript-eslint": "8.59.1"
+    "typescript-eslint": "8.61.0"
   }
 }
