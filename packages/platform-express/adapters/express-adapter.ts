@@ -256,6 +256,8 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   ): (path: string, callback: Function) => any {
     return (path: string, callback: Function) => {
       try {
+        const hasEndOfStringCharacter = path.endsWith('$');
+        path = hasEndOfStringCharacter ? path.slice(0, -1) : path;
         const convertedPath = LegacyRouteConverter.tryConvert(path);
         return this.routerMethodFactory
           .get(this.instance, requestMethod)
