@@ -2,6 +2,7 @@ import type {
   CanActivate,
   ExceptionFilter,
   INestMicroservice,
+  ITransportServer,
   NestInterceptor,
   PipeTransform,
   PreRequestHook,
@@ -357,6 +358,15 @@ export class NestMicroservice
       return this.serverInstance.unwrap();
     }
     throw new Error('"unwrap" method not supported by the underlying server');
+  }
+
+  /**
+   * Returns the underlying transport server instance.
+   * Use this to close only the transport (port/connection) without
+   * triggering the full application shutdown lifecycle.
+   */
+  public getTransportServer(): ITransportServer {
+    return this.serverInstance;
   }
 
   protected async closeApplication(): Promise<any> {
