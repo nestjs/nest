@@ -128,7 +128,7 @@
     "eventsource": "4.1.0",
     "fancy-log": "2.0.0",
     "fastify": "5.8.5",
-    "fastify-plugin": "5.1.0",
+    "fastify-plugin": "6.0.0",
     "find-my-way": "9.6.0",
     "globals": "17.6.0",
     "graphql": "16.14.1",
