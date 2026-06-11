@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
+import { AddressInfo } from 'net';
 import * as WebSocket from 'ws';
 import {
   WildcardParamGateway,
@@ -20,10 +21,14 @@ async function createNestApp(...gateways: any[]): Promise<INestApplication> {
 describe('WebSocket Wildcard URL Parameters', () => {
   let app: INestApplication;
   let ws: WebSocket;
+  let baseUrl: string;
 
   afterEach(async () => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.close();
+    if (ws && ws.readyState !== WebSocket.CLOSED) {
+      await new Promise<void>(resolve => {
+        ws.once('close', () => resolve());
+        ws.terminate();
+      });
     }
     if (app) {
       await app.close();
@@ -33,12 +38,14 @@ describe('WebSocket Wildcard URL Parameters', () => {
   describe('Single Parameter Gateway', () => {
     beforeEach(async () => {
       app = await createNestApp(WildcardParamGateway);
-      await app.listen(3000);
+      await app.listen(0);
+      const { port } = app.getHttpServer().address() as AddressInfo;
+      baseUrl = `ws://localhost:${port}`;
     });
 
     it('should extract roomId parameter from URL path', async () => {
       const roomId = 'test-room-123';
-      ws = new WebSocket(`ws://localhost:3000/chat/${roomId}/socket`);
+      ws = new WebSocket(`${baseUrl}/chat/${roomId}/socket`);
 
       await new Promise(resolve => ws.on('open', resolve));
 
@@ -64,7 +71,7 @@ describe('WebSocket Wildcard URL Parameters', () => {
 
     it('should handle different roomId values', async () => {
       const roomId = 'room-with-dashes-and-numbers-456';
-      ws = new WebSocket(`ws://localhost:3000/chat/${roomId}/socket`);
+      ws = new WebSocket(`${baseUrl}/chat/${roomId}/socket`);
 
       await new Promise(resolve => ws.on('open', resolve));
 
@@ -86,7 +93,7 @@ describe('WebSocket Wildcard URL Parameters', () => {
 
     it('should return all parameters when using @WsParam() without argument', async () => {
       const roomId = 'all-params-test';
-      ws = new WebSocket(`ws://localhost:3000/chat/${roomId}/socket`);
+      ws = new WebSocket(`${baseUrl}/chat/${roomId}/socket`);
 
       await new Promise(resolve => ws.on('open', resolve));
 
@@ -112,7 +119,7 @@ describe('WebSocket Wildcard URL Parameters', () => {
 
     it('should handle URL encoded parameters', async () => {
       const roomId = 'room%20with%20spaces';
-      ws = new WebSocket(`ws://localhost:3000/chat/${roomId}/socket`);
+      ws = new WebSocket(`${baseUrl}/chat/${roomId}/socket`);
 
       await new Promise(resolve => ws.on('open', resolve));
 
@@ -136,7 +143,9 @@ describe('WebSocket Wildcard URL Parameters', () => {
   describe('Multiple Parameters Gateway', () => {
     beforeEach(async () => {
       app = await createNestApp(MultipleParamsGateway);
-      await app.listen(3000);
+      await app.listen(0);
+      const { port } = app.getHttpServer().address() as AddressInfo;
+      baseUrl = `ws://localhost:${port}`;
     });
 
     it('should extract multiple parameters from complex URL path', async () => {
@@ -145,7 +154,7 @@ describe('WebSocket Wildcard URL Parameters', () => {
       const playerId = 'player-789';
 
       ws = new WebSocket(
-        `ws://localhost:3000/game/${gameId}/room/${roomId}/player/${playerId}/socket`,
+        `${baseUrl}/game/${gameId}/room/${roomId}/player/${playerId}/socket`,
       );
 
       await new Promise(resolve => ws.on('open', resolve));
@@ -178,7 +187,7 @@ describe('WebSocket Wildcard URL Parameters', () => {
       const playerId = 'test-player';
 
       ws = new WebSocket(
-        `ws://localhost:3000/game/${gameId}/room/${roomId}/player/${playerId}/socket`,
+        `${baseUrl}/game/${gameId}/room/${roomId}/player/${playerId}/socket`,
       );
 
       await new Promise(resolve => ws.on('open', resolve));
@@ -209,7 +218,7 @@ describe('WebSocket Wildcard URL Parameters', () => {
       const playerId = '99999';
 
       ws = new WebSocket(
-        `ws://localhost:3000/game/${gameId}/room/${roomId}/player/${playerId}/socket`,
+        `${baseUrl}/game/${gameId}/room/${roomId}/player/${playerId}/socket`,
       );
 
       await new Promise(resolve => ws.on('open', resolve));
@@ -239,12 +248,14 @@ describe('WebSocket Wildcard URL Parameters', () => {
   describe('Error Handling', () => {
     beforeEach(async () => {
       app = await createNestApp(WildcardParamGateway);
-      await app.listen(3000);
+      await app.listen(0);
+      const { port } = app.getHttpServer().address() as AddressInfo;
+      baseUrl = `ws://localhost:${port}`;
     });
 
     it('should fail to connect to non-matching static path', async () => {
       const promise = new Promise((resolve, reject) => {
-        ws = new WebSocket('ws://localhost:3000/invalid-path');
+        ws = new WebSocket(`${baseUrl}/invalid-path`);
         ws.on('open', () => reject(new Error('Should not connect')));
         ws.on('error', () => resolve('Expected error'));
         setTimeout(() => resolve('Timeout as expected'), 1000);
@@ -255,7 +266,7 @@ describe('WebSocket Wildcard URL Parameters', () => {
 
     it('should fail to connect to path missing required parameters', async () => {
       const promise = new Promise((resolve, reject) => {
-        ws = new WebSocket('ws://localhost:3000/chat/socket'); // Missing roomId
+        ws = new WebSocket(`${baseUrl}/chat/socket`); // Missing roomId
         ws.on('open', () => reject(new Error('Should not connect')));
         ws.on('error', () => resolve('Expected error'));
         setTimeout(() => resolve('Timeout as expected'), 1000);
