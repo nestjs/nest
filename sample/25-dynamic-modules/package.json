@@ -35,7 +35,7 @@
     "@nestjs/testing": "11.1.26",
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
-    "@types/node": "24.13.1",
+    "@types/node": "24.13.2",
     "@types/supertest": "7.2.0",
     "jest": "30.4.2",
     "prettier": "3.8.4",
