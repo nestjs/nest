@@ -19,7 +19,7 @@ describe('RabbitMQ transport (Topic Exchange - wildcards)', () => {
     app.connectMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
       options: {
-        urls: [`amqp://0.0.0.0:5672`],
+        urls: [`amqp://localhost:5672`],
         queue: 'test2',
         wildcards: true,
       },

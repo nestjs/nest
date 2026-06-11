@@ -767,5 +767,32 @@ export function HostParam(
   return createRouteParamDecorator(RouteParamtypes.HOST)(property);
 }
 
+/**
+ * Route handler parameter decorator. Extracts the `Request`
+ * object from the underlying platform and populates the decorated
+ * parameter with the value of `Request`.
+ *
+ * Alias for @Request().
+ *
+ * Example: `logout(@Req() req)`
+ *
+ * @see [Request object](https://docs.nestjs.com/controllers#request-object)
+ *
+ * @publicApi
+ */
 export const Req = Request;
+
+/**
+ * Route handler parameter decorator. Extracts the `Response`
+ * object from the underlying platform and populates the decorated
+ * parameter with the value of `Response`.
+ *
+ * Alias for @Response().
+ *
+ * Example: `logout(@Res() res)`
+ *
+ * @see [Response object](https://docs.nestjs.com/controllers#response-object)
+ *
+ * @publicApi
+ */
 export const Res = Response;

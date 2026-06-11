@@ -1,4 +1,4 @@
-import { Optional } from '@nestjs/common';
+import { Optional, Scope } from '@nestjs/common';
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants';
 import * as chai from 'chai';
 import { expect } from 'chai';
@@ -211,6 +211,30 @@ describe('Injector', () => {
     });
   });
 
+  describe('resolveConstructorParams', () => {
+    it('should fall back to resolving each param when ctor metadata is sparse', async () => {
+      const wrapper = new InstanceWrapper();
+      const metadata = [new InstanceWrapper()];
+      metadata.length = 2;
+
+      sinon.stub(wrapper, 'getCtorMetadata').callsFake(() => metadata);
+
+      const loadCtorMetadataSpy = sinon.spy(injector, 'loadCtorMetadata');
+      await injector
+        .resolveConstructorParams(
+          wrapper,
+          null!,
+          ['Provider1', 'Provider2'],
+          () => {},
+          { contextId: { id: 2 } },
+        )
+        .catch(() => {});
+
+      expect(loadCtorMetadataSpy.called).to.be.false;
+      loadCtorMetadataSpy.restore();
+    });
+  });
+
   describe('loadMiddleware', () => {
     let loadInstanceSpy: sinon.SinonSpy;
 
@@ -283,6 +307,38 @@ describe('Injector', () => {
       await injector.loadInjectable(wrapper as any, module as any);
       expect(loadInstance.calledWith(wrapper, module.injectables, module)).to.be
         .true;
+    });
+  });
+
+  describe('loadProvider', () => {
+    @Injectable({ scope: Scope.TRANSIENT })
+    class TransientProvider {}
+
+    it('should not eagerly load a top-level transient provider during snapshot bootstrap', async () => {
+      const snapshotInjector = new Injector({
+        preview: false,
+        snapshot: true,
+      });
+      const loadInstance = sinon.spy(snapshotInjector, 'loadInstance');
+      const loadEnhancersPerContext = sinon.spy(
+        snapshotInjector,
+        'loadEnhancersPerContext',
+      );
+
+      const wrapper = new InstanceWrapper({
+        metatype: TransientProvider,
+        instance: null,
+        isResolved: false,
+        scope: Scope.TRANSIENT,
+      });
+      const moduleRef = {
+        providers: new Map([[TransientProvider, wrapper]]),
+      } as any;
+
+      await snapshotInjector.loadProvider(wrapper as any, moduleRef);
+
+      expect(loadInstance.called).to.be.false;
+      expect(loadEnhancersPerContext.called).to.be.false;
     });
   });
 
@@ -568,7 +624,9 @@ describe('Injector', () => {
           .stub(injector, 'loadProvider')
           .callsFake(() => Promise.reject(error));
 
-        await injector.resolveComponentHost(module, wrapper, contextId);
+        await injector.resolveComponentHost(module, wrapper, {
+          contextId,
+        });
         await new Promise(resolve => setImmediate(resolve));
 
         expect(errorSpy.calledOnce).to.be.true;
@@ -607,7 +665,9 @@ describe('Injector', () => {
     describe('when context is static', () => {
       it('should instantiate class', async () => {
         const wrapper = new InstanceWrapper({ metatype: TestClass });
-        await injector.instantiateClass([], wrapper, wrapper, STATIC_CONTEXT);
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: STATIC_CONTEXT,
+        });
 
         expect(wrapper.instance).to.not.be.undefined;
         expect(wrapper.instance).to.be.instanceOf(TestClass);
@@ -617,7 +677,9 @@ describe('Injector', () => {
           inject: [],
           metatype: (() => ({})) as any,
         });
-        await injector.instantiateClass([], wrapper, wrapper, STATIC_CONTEXT);
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: STATIC_CONTEXT,
+        });
 
         expect(wrapper.instance).to.not.be.undefined;
       });
@@ -626,7 +688,9 @@ describe('Injector', () => {
       it('should not instantiate class', async () => {
         const ctx = { id: 3 };
         const wrapper = new InstanceWrapper({ metatype: TestClass });
-        await injector.instantiateClass([], wrapper, wrapper, ctx);
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: ctx,
+        });
 
         expect(wrapper.instance).to.be.undefined;
         expect(wrapper.getInstanceByContextId(ctx).isResolved).to.be.true;
@@ -637,7 +701,9 @@ describe('Injector', () => {
           inject: [],
           metatype: sinon.spy() as any,
         });
-        await injector.instantiateClass([], wrapper, wrapper, { id: 2 });
+        await injector.instantiateClass([], wrapper, wrapper, {
+          contextId: { id: 2 },
+        });
         expect(wrapper.instance).to.be.undefined;
         expect((wrapper.metatype as any).called).to.be.false;
       });
@@ -669,7 +735,7 @@ describe('Injector', () => {
   });
 
   describe('loadEnhancersPerContext', () => {
-    it('should load enhancers per context id', async () => {
+    it('should skip enhancer loading in the static context', async () => {
       const wrapper = new InstanceWrapper();
       wrapper.addEnhancerMetadata(
         new InstanceWrapper({
@@ -687,6 +753,27 @@ describe('Injector', () => {
         .callsFake(async () => ({}) as any);
 
       await injector.loadEnhancersPerContext(wrapper, STATIC_CONTEXT);
+      expect(loadInstanceStub.called).to.be.false;
+    });
+
+    it('should load enhancers per context id outside the static context', async () => {
+      const wrapper = new InstanceWrapper();
+      wrapper.addEnhancerMetadata(
+        new InstanceWrapper({
+          host: new Module(class {}, new NestContainer()),
+        }),
+      );
+      wrapper.addEnhancerMetadata(
+        new InstanceWrapper({
+          host: new Module(class {}, new NestContainer()),
+        }),
+      );
+
+      const loadInstanceStub = sinon
+        .stub(injector, 'loadInstance')
+        .callsFake(async () => ({}) as any);
+
+      await injector.loadEnhancersPerContext(wrapper, { id: 1 } as any);
       expect(loadInstanceStub.calledTwice).to.be.true;
     });
   });
@@ -741,8 +828,55 @@ describe('Injector', () => {
         () => {
           expect(loadCtorMetadataSpy.called).to.be.true;
         },
-        { id: 2 },
+        { contextId: { id: 2 } },
       );
+    });
+
+    it('should not hang when a parameter is missing @Inject and design:paramtypes is absent', async function () {
+      this.timeout(500);
+
+      @Injectable()
+      class CatService {}
+
+      @Injectable()
+      class DogService {}
+
+      @Injectable()
+      class ZooService {
+        constructor(
+          @Inject(CatService) cat: CatService,
+          dog: DogService, // no @Inject — becomes a sparse array hole without design:paramtypes
+          @Inject(CatService) cat2: CatService,
+        ) {}
+      }
+
+      // Simulate missing emitDecoratorMetadata (esbuild).
+      // @Inject writes to SELF_DECLARED_DEPS_METADATA at indices 0 and 2,
+      // so without design:paramtypes the paramtypes array is sparse: [CatService, <hole>, CatService].
+      // Before the fix, Array.map skipped the hole, so the Barrier never reached its
+      // target count and resolveConstructorParams hung forever.
+      Reflect.deleteMetadata('design:paramtypes', ZooService);
+
+      // Register CatService in the module so indices 0 and 2 resolve successfully
+      // and reach signalAndWait() — this is required to reproduce the hang.
+      const container = new NestContainer();
+      const { moduleRef } = (await container.addModule(
+        class TestModule {},
+        [],
+      ))!;
+      moduleRef.addProvider({
+        provide: CatService,
+        useClass: CatService,
+      });
+
+      const wrapper = new InstanceWrapper({ metatype: ZooService });
+
+      const result = await injector
+        .resolveConstructorParams(wrapper, moduleRef, undefined, () => {})
+        .then(() => 'resolved')
+        .catch(() => 'rejected');
+
+      expect(result).to.be.eq('rejected');
     });
   });
 
@@ -756,8 +890,41 @@ describe('Injector', () => {
         injector,
         'loadPropertiesMetadata',
       );
-      await injector.resolveProperties(wrapper, null!, null!, { id: 2 });
+      await injector.resolveProperties(wrapper, null!, null!, {
+        contextId: { id: 2 },
+      });
       expect(loadPropertiesMetadataSpy.called).to.be.true;
+    });
+  });
+
+  describe('reflectConstructorParams', () => {
+    it('should not produce sparse arrays when design:paramtypes is missing', () => {
+      @Injectable()
+      class CatService {}
+
+      @Injectable()
+      class DogService {}
+
+      @Injectable()
+      class ZooService {
+        constructor(
+          @Inject(CatService) cat: CatService,
+          dog: DogService, // no @Inject
+          @Inject(CatService) cat2: CatService,
+        ) {}
+      }
+
+      // Simulate missing emitDecoratorMetadata (esbuild)
+      Reflect.deleteMetadata('design:paramtypes', ZooService);
+
+      const injector = new Injector();
+      const params = injector.reflectConstructorParams(ZooService);
+
+      // Should be a dense array — no holes
+      expect(Object.keys(params)).to.deep.eq(['0', '1', '2']);
+      // Index 1 should be explicit undefined, not a hole
+      expect(1 in params).to.be.true;
+      expect(params[1]).to.be.undefined;
     });
   });
 

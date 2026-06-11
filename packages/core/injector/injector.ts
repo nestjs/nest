@@ -3,6 +3,7 @@ import {
   Logger,
   LoggerService,
   OptionalFactoryDependency,
+  Scope,
 } from '@nestjs/common';
 import {
   OPTIONAL_DEPS_METADATA,
@@ -83,6 +84,12 @@ export interface InjectorDependencyContext {
   dependencies?: InjectorDependency[];
 }
 
+interface ResolutionContext {
+  contextId: ContextId;
+  inquirer?: InstanceWrapper;
+  effectiveInquirerId?: string;
+}
+
 export class Injector {
   private logger: LoggerService = new Logger('InjectorLogger');
   private readonly instanceDecorator: (target: unknown) => unknown = (
@@ -95,6 +102,10 @@ export class Injector {
        * Whether to enable preview mode.
        */
       preview: boolean;
+      /**
+       * Whether to enable deterministic graph snapshot generation.
+       */
+      snapshot?: boolean;
       /**
        * Function to decorate a freshly created instance.
        */
@@ -129,18 +140,20 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     collection: Map<InjectionToken, InstanceWrapper>,
     moduleRef: Module,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
   ) {
-    const inquirerId = this.getInquirerId(inquirer);
+    const inquirerId = this.getContextInquirerId(resolutionContext);
     const instanceHost = wrapper.getInstanceByContextId(
-      this.getContextId(contextId, wrapper),
+      this.getContextId(resolutionContext.contextId, wrapper),
       inquirerId,
     );
 
     if (instanceHost.isPending) {
       const settlementSignal = wrapper.settlementSignal;
-      if (inquirer && settlementSignal?.isCycle(inquirer.id)) {
+      if (
+        resolutionContext.inquirer &&
+        settlementSignal?.isCycle(resolutionContext.inquirer.id)
+      ) {
         throw new CircularDependencyException(`"${wrapper.name}"`);
       }
 
@@ -164,21 +177,24 @@ export class Injector {
     }
     try {
       const t0 = this.getNowTimestamp();
+      const localResolutionContext = this.createResolutionContext(
+        resolutionContext.contextId,
+        wrapper,
+        inquirerId,
+      );
       const callback = async (instances: unknown[]) => {
         const properties = await this.resolveProperties(
           wrapper,
           moduleRef,
           inject as InjectionToken[],
-          contextId,
-          wrapper,
-          inquirer,
+          localResolutionContext,
+          resolutionContext.inquirer,
         );
         const instance = await this.instantiateClass(
           instances,
           wrapper,
           targetWrapper,
-          contextId,
-          inquirer,
+          wrapper.isTransient ? localResolutionContext : resolutionContext,
         );
         this.applyProperties(instance, properties);
         wrapper.initTime = this.getNowTimestamp() - t0;
@@ -189,13 +205,15 @@ export class Injector {
         moduleRef,
         inject as InjectionToken[],
         callback,
-        contextId,
-        wrapper,
-        inquirer,
+        localResolutionContext,
+        resolutionContext.inquirer,
       );
+      if (!instanceHost.isResolved) {
+        settlementSignal.complete();
+      }
     } catch (err) {
       wrapper.removeInstanceByContextId(
-        this.getContextId(contextId, wrapper),
+        this.getContextId(resolutionContext.contextId, wrapper),
         inquirerId,
       );
 
@@ -221,8 +239,7 @@ export class Injector {
       wrapper,
       collection,
       moduleRef,
-      contextId,
-      inquirer || wrapper,
+      this.createResolutionContext(contextId, inquirer || wrapper),
     );
   }
 
@@ -236,8 +253,7 @@ export class Injector {
       wrapper,
       controllers,
       moduleRef,
-      contextId,
-      wrapper,
+      this.createResolutionContext(contextId, wrapper),
     );
     await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
   }
@@ -253,26 +269,30 @@ export class Injector {
       wrapper,
       injectables,
       moduleRef,
-      contextId,
-      inquirer,
+      this.createResolutionContext(contextId, inquirer),
     );
   }
 
   public async loadProvider(
     wrapper: InstanceWrapper<Injectable>,
     moduleRef: Module,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
   ) {
+    if (this.shouldSkipProviderLoading(wrapper, resolutionContext)) {
+      return;
+    }
     const providers = moduleRef.providers;
     await this.loadInstance<Injectable>(
       wrapper,
       providers,
       moduleRef,
-      contextId,
-      inquirer,
+      resolutionContext,
     );
-    await this.loadEnhancersPerContext(wrapper, contextId, wrapper);
+    await this.loadEnhancersPerContext(
+      wrapper,
+      resolutionContext.contextId,
+      wrapper,
+    );
   }
 
   public applySettlementSignal<T>(
@@ -292,17 +312,19 @@ export class Injector {
     moduleRef: Module,
     inject: InjectorDependency[] | undefined,
     callback: (args: unknown[]) => void | Promise<void>,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
     parentInquirer?: InstanceWrapper,
   ) {
     const metadata = wrapper.getCtorMetadata();
 
-    if (metadata && contextId !== STATIC_CONTEXT) {
+    if (
+      resolutionContext.contextId !== STATIC_CONTEXT &&
+      this.hasDenseCtorMetadata(wrapper, inject, metadata)
+    ) {
       const deps = await this.loadCtorMetadata(
         metadata,
-        contextId,
-        inquirer,
+        resolutionContext.contextId,
+        resolutionContext.inquirer,
         parentInquirer,
       );
       return callback(deps);
@@ -325,19 +347,23 @@ export class Injector {
 
           return parentInquirer && parentInquirer.instance;
         }
-        if (inquirer?.isTransient && parentInquirer) {
+        if (resolutionContext.inquirer?.isTransient && parentInquirer) {
           // When `inquirer` is transient too, inherit the parent inquirer
           // This is required to ensure that transient providers are only resolved
           // when requested
-          inquirer.attachRootInquirer(parentInquirer);
+          resolutionContext.inquirer.attachRootInquirer(parentInquirer);
         }
+        const nestedResolutionContext =
+          this.getStaticTransientResolutionContext(
+            resolutionContext,
+            parentInquirer,
+          );
         const paramWrapper = await this.resolveSingleParam<T>(
           wrapper,
           param as Type | string | symbol,
           { index, dependencies },
           moduleRef,
-          contextId,
-          inquirer,
+          nestedResolutionContext,
           index,
         );
 
@@ -348,21 +374,22 @@ export class Injector {
          */
         await paramBarrier.signalAndWait();
 
-        const effectiveInquirer = this.getEffectiveInquirer(
+        const effectiveResolutionContext = this.getEffectiveResolutionContext(
           paramWrapper,
-          inquirer,
+          resolutionContext,
           parentInquirer,
-          contextId,
         );
         const paramWrapperWithInstance = await this.resolveComponentHost(
           moduleRef,
           paramWrapper,
-          contextId,
-          effectiveInquirer,
+          effectiveResolutionContext,
         );
         const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
-          this.getContextId(contextId, paramWrapperWithInstance),
-          this.getInquirerId(effectiveInquirer),
+          this.getContextId(
+            effectiveResolutionContext.contextId,
+            paramWrapperWithInstance,
+          ),
+          effectiveResolutionContext.effectiveInquirerId,
         );
         if (!instanceHost.isResolved && !paramWrapperWithInstance.forwardRef) {
           isResolved = false;
@@ -437,21 +464,21 @@ export class Injector {
     ];
   }
 
-  public reflectConstructorParams<T>(type: Type<T>): any[] {
+  public reflectConstructorParams(type: Type<unknown> | Function): any[] {
     const paramtypes = [
       ...(Reflect.getMetadata(PARAMTYPES_METADATA, type) || []),
     ];
-    const selfParams = this.reflectSelfParams<T>(type);
+    const selfParams = this.reflectSelfParams(type);
 
     selfParams.forEach(({ index, param }) => (paramtypes[index] = param));
-    return paramtypes;
+    return Array.from(paramtypes);
   }
 
-  public reflectOptionalParams<T>(type: Type<T>): any[] {
+  public reflectOptionalParams(type: Type<unknown> | Function): any[] {
     return Reflect.getMetadata(OPTIONAL_DEPS_METADATA, type) || [];
   }
 
-  public reflectSelfParams<T>(type: Type<T>): any[] {
+  public reflectSelfParams(type: Type<unknown> | Function): any[] {
     return Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, type) || [];
   }
 
@@ -460,8 +487,7 @@ export class Injector {
     param: Type<any> | string | symbol,
     dependencyContext: InjectorDependencyContext,
     moduleRef: Module,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
     keyOrIndex?: symbol | string | number,
   ) {
     if (isUndefined(param)) {
@@ -480,8 +506,7 @@ export class Injector {
       token,
       dependencyContext,
       wrapper,
-      contextId,
-      inquirer,
+      resolutionContext,
       keyOrIndex,
     );
   }
@@ -502,11 +527,10 @@ export class Injector {
     token: InjectionToken,
     dependencyContext: InjectorDependencyContext,
     wrapper: InstanceWrapper<T>,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
     keyOrIndex?: symbol | string | number,
   ): Promise<InstanceWrapper> {
-    this.printResolvingDependenciesLog(token, inquirer);
+    this.printResolvingDependenciesLog(token, resolutionContext.inquirer);
     this.printLookingForProviderLog(token, moduleRef);
     const providers = moduleRef.providers;
     return this.lookupComponent(
@@ -514,8 +538,7 @@ export class Injector {
       moduleRef,
       { ...dependencyContext, name: token },
       wrapper,
-      contextId,
-      inquirer,
+      resolutionContext,
       keyOrIndex,
     );
   }
@@ -523,27 +546,27 @@ export class Injector {
   public async resolveComponentHost<T>(
     moduleRef: Module,
     instanceWrapper: InstanceWrapper<T | Promise<T>>,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
   ): Promise<InstanceWrapper> {
-    const inquirerId = this.getInquirerId(inquirer);
+    const inquirerId = this.getContextInquirerId(resolutionContext);
     const instanceHost = instanceWrapper.getInstanceByContextId(
-      this.getContextId(contextId, instanceWrapper),
+      this.getContextId(resolutionContext.contextId, instanceWrapper),
       inquirerId,
     );
     if (!instanceHost.isResolved && !instanceWrapper.forwardRef) {
-      inquirer?.settlementSignal?.insertRef(instanceWrapper.id);
+      resolutionContext.inquirer?.settlementSignal?.insertRef(
+        instanceWrapper.id,
+      );
 
       await this.loadProvider(
         instanceWrapper,
         instanceWrapper.host ?? moduleRef,
-        contextId,
-        inquirer,
+        resolutionContext,
       );
     } else if (
       !instanceHost.isResolved &&
       instanceWrapper.forwardRef &&
-      (contextId !== STATIC_CONTEXT || !!inquirerId)
+      (resolutionContext.contextId !== STATIC_CONTEXT || !!inquirerId)
     ) {
       /**
        * When circular dependency has been detected between
@@ -555,7 +578,7 @@ export class Injector {
       instanceHost.donePromise &&
         void instanceHost.donePromise
           .then(() =>
-            this.loadProvider(instanceWrapper, moduleRef, contextId, inquirer),
+            this.loadProvider(instanceWrapper, moduleRef, resolutionContext),
           )
           .catch(err => {
             instanceWrapper.settlementSignal?.error(err);
@@ -563,11 +586,15 @@ export class Injector {
     }
     if (instanceWrapper.async) {
       const host = instanceWrapper.getInstanceByContextId(
-        this.getContextId(contextId, instanceWrapper),
+        this.getContextId(resolutionContext.contextId, instanceWrapper),
         inquirerId,
       );
       host.instance = await host.instance;
-      instanceWrapper.setInstanceByContextId(contextId, host, inquirerId);
+      instanceWrapper.setInstanceByContextId(
+        resolutionContext.contextId,
+        host,
+        inquirerId,
+      );
     }
     return instanceWrapper;
   }
@@ -577,8 +604,7 @@ export class Injector {
     moduleRef: Module,
     dependencyContext: InjectorDependencyContext,
     wrapper: InstanceWrapper<T>,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
     keyOrIndex?: symbol | string | number,
   ): Promise<InstanceWrapper<T>> {
     const token = wrapper.token || wrapper.name;
@@ -601,8 +627,7 @@ export class Injector {
       dependencyContext,
       moduleRef,
       wrapper,
-      contextId,
-      inquirer,
+      resolutionContext,
       keyOrIndex,
     );
   }
@@ -611,8 +636,7 @@ export class Injector {
     dependencyContext: InjectorDependencyContext,
     moduleRef: Module,
     wrapper: InstanceWrapper<T>,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
     keyOrIndex?: symbol | string | number,
   ) {
     const instanceWrapper = await this.lookupComponentInImports(
@@ -620,8 +644,7 @@ export class Injector {
       dependencyContext.name!,
       wrapper,
       new Set<string>(),
-      contextId,
-      inquirer,
+      resolutionContext,
       keyOrIndex,
     );
     if (isNil(instanceWrapper)) {
@@ -640,8 +663,7 @@ export class Injector {
     name: InjectionToken,
     wrapper: InstanceWrapper,
     moduleRegistry: Set<string> = new Set<string>(),
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
     keyOrIndex?: symbol | string | number,
     isTraversing?: boolean,
   ): Promise<any> {
@@ -670,8 +692,7 @@ export class Injector {
           name,
           wrapper,
           moduleRegistry,
-          contextId,
-          inquirer,
+          resolutionContext,
           keyOrIndex,
           true,
         );
@@ -685,9 +706,9 @@ export class Injector {
       instanceWrapperRef = providers.get(name)!;
       this.addDependencyMetadata(keyOrIndex!, wrapper, instanceWrapperRef);
 
-      const inquirerId = this.getInquirerId(inquirer);
+      const inquirerId = this.getContextInquirerId(resolutionContext);
       const instanceHost = instanceWrapperRef.getInstanceByContextId(
-        this.getContextId(contextId, instanceWrapperRef),
+        this.getContextId(resolutionContext.contextId, instanceWrapperRef),
         inquirerId,
       );
       if (!instanceHost.isResolved && !instanceWrapperRef.forwardRef) {
@@ -706,16 +727,19 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     moduleRef: Module,
     inject?: InjectorDependency[],
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
     parentInquirer?: InstanceWrapper,
   ): Promise<PropertyDependency[]> {
     if (!isNil(inject)) {
       return [];
     }
     const metadata = wrapper.getPropertiesMetadata();
-    if (metadata && contextId !== STATIC_CONTEXT) {
-      return this.loadPropertiesMetadata(metadata, contextId, inquirer);
+    if (metadata && resolutionContext.contextId !== STATIC_CONTEXT) {
+      return this.loadPropertiesMetadata(
+        metadata,
+        resolutionContext.contextId,
+        resolutionContext.inquirer,
+      );
     }
     const properties = this.reflectProperties(wrapper.metatype as Type<any>);
     const propertyBarrier = new Barrier(properties.length);
@@ -734,13 +758,17 @@ export class Injector {
 
             return parentInquirer && parentInquirer.instance;
           }
+          const nestedResolutionContext =
+            this.getStaticTransientResolutionContext(
+              resolutionContext,
+              parentInquirer,
+            );
           const paramWrapper = await this.resolveSingleParam<T>(
             wrapper,
             item.name as string,
             dependencyContext,
             moduleRef,
-            contextId,
-            inquirer,
+            nestedResolutionContext,
             item.key,
           );
 
@@ -751,24 +779,26 @@ export class Injector {
            */
           await propertyBarrier.signalAndWait();
 
-          const effectivePropertyInquirer = this.getEffectiveInquirer(
-            paramWrapper,
-            inquirer,
-            parentInquirer,
-            contextId,
-          );
+          const effectivePropertyResolutionContext =
+            this.getEffectiveResolutionContext(
+              paramWrapper,
+              resolutionContext,
+              parentInquirer,
+            );
           const paramWrapperWithInstance = await this.resolveComponentHost(
             moduleRef,
             paramWrapper,
-            contextId,
-            effectivePropertyInquirer,
+            effectivePropertyResolutionContext,
           );
           if (!paramWrapperWithInstance) {
             return undefined;
           }
           const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
-            this.getContextId(contextId, paramWrapperWithInstance),
-            this.getInquirerId(effectivePropertyInquirer),
+            this.getContextId(
+              effectivePropertyResolutionContext.contextId,
+              paramWrapperWithInstance,
+            ),
+            effectivePropertyResolutionContext.effectiveInquirerId,
           );
           return instanceHost.instance;
         } catch (err) {
@@ -820,20 +850,15 @@ export class Injector {
     instances: any[],
     wrapper: InstanceWrapper,
     targetMetatype: InstanceWrapper,
-    contextId = STATIC_CONTEXT,
-    inquirer?: InstanceWrapper,
+    resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
   ): Promise<T> {
     const { metatype, inject } = wrapper;
-    const inquirerId = this.getInquirerId(inquirer);
+    const inquirerId = this.getContextInquirerId(resolutionContext);
     const instanceHost = targetMetatype.getInstanceByContextId(
-      this.getContextId(contextId, targetMetatype),
+      this.getContextId(resolutionContext.contextId, targetMetatype),
       inquirerId,
     );
-    const isInContext =
-      wrapper.isStatic(contextId, inquirer) ||
-      wrapper.isInRequestScope(contextId, inquirer) ||
-      wrapper.isLazyTransient(contextId, inquirer) ||
-      wrapper.isExplicitlyRequested(contextId, inquirer);
+    const isInContext = this.isInContext(wrapper, resolutionContext);
 
     if (this.options?.preview && !wrapper.host?.initOnPreview) {
       instanceHost.isResolved = true;
@@ -872,8 +897,15 @@ export class Injector {
     if (!wrapper) {
       const injectionToken = (instance as any).constructor!;
       wrapper = collection.get(injectionToken);
+    } else {
+      wrapper = collection.get(wrapper.token) ?? wrapper;
     }
-    await this.loadInstance(wrapper!, collection, moduleRef, ctx, wrapper);
+    await this.loadInstance(
+      wrapper!,
+      collection,
+      moduleRef,
+      this.createResolutionContext(ctx, wrapper),
+    );
     await this.loadEnhancersPerContext(wrapper!, ctx, wrapper);
 
     const host = wrapper!.getInstanceByContextId(
@@ -888,6 +920,9 @@ export class Injector {
     ctx: ContextId,
     inquirer?: InstanceWrapper,
   ) {
+    if (ctx === STATIC_CONTEXT) {
+      return;
+    }
     const enhancers = wrapper.getEnhancersMetadata() || [];
     const loadEnhancer = (item: InstanceWrapper) => {
       const hostModule = item.host!;
@@ -895,8 +930,7 @@ export class Injector {
         item,
         hostModule.injectables,
         hostModule,
-        ctx,
-        inquirer,
+        this.createResolutionContext(ctx, inquirer),
       );
     };
     await Promise.all(enhancers.map(loadEnhancer));
@@ -920,16 +954,15 @@ export class Injector {
     );
     return hosts.map((item, index) => {
       const dependency = metadata[index];
-      const effectiveInquirer = this.getEffectiveInquirer(
+      const effectiveInquirerId = this.getEffectiveInquirerId(
         dependency,
-        inquirer,
+        this.createResolutionContext(contextId, inquirer),
         parentInquirer,
-        contextId,
       );
 
       return item?.getInstanceByContextId(
         this.getContextId(contextId, item),
-        this.getInquirerId(effectiveInquirer),
+        effectiveInquirerId,
       ).instance;
     });
   }
@@ -945,8 +978,7 @@ export class Injector {
         host: await this.resolveComponentHost(
           item.host!,
           item,
-          contextId,
-          inquirer,
+          this.createResolutionContext(contextId, inquirer),
         ),
       })),
     );
@@ -967,6 +999,74 @@ export class Injector {
     return inquirer ? inquirer.id : undefined;
   }
 
+  private createResolutionContext(
+    contextId: ContextId,
+    inquirer?: InstanceWrapper,
+    effectiveInquirerId?: string,
+  ): ResolutionContext {
+    return {
+      contextId,
+      inquirer,
+      effectiveInquirerId,
+    };
+  }
+
+  private getContextInquirerId({
+    inquirer,
+    effectiveInquirerId,
+  }: ResolutionContext): string | undefined {
+    return effectiveInquirerId ?? this.getInquirerId(inquirer);
+  }
+
+  private isInContext(
+    wrapper: InstanceWrapper,
+    resolutionContext: ResolutionContext,
+  ) {
+    return (
+      wrapper.isStatic(
+        resolutionContext.contextId,
+        resolutionContext.inquirer,
+      ) ||
+      wrapper.isInRequestScope(
+        resolutionContext.contextId,
+        resolutionContext.inquirer,
+      ) ||
+      wrapper.isLazyTransient(
+        resolutionContext.contextId,
+        resolutionContext.inquirer,
+      ) ||
+      wrapper.isExplicitlyRequested(
+        resolutionContext.contextId,
+        resolutionContext.inquirer,
+      )
+    );
+  }
+
+  private shouldSkipProviderLoading(
+    wrapper: InstanceWrapper<Injectable>,
+    resolutionContext: ResolutionContext,
+  ): boolean {
+    const isStaticContext = resolutionContext.contextId === STATIC_CONTEXT;
+    const hasNoInquirer = !resolutionContext.inquirer;
+    const isTopLevelStaticTransientOrRequestProvider =
+      hasNoInquirer && (wrapper.isTransient || wrapper.scope === Scope.REQUEST);
+    const isStaticInquirerOutsideResolutionContext =
+      !!resolutionContext.inquirer &&
+      !this.isInContext(
+        resolutionContext.inquirer,
+        this.createResolutionContext(
+          resolutionContext.contextId,
+          resolutionContext.inquirer,
+        ),
+      );
+    const shouldSkipForStaticBootstrap =
+      isStaticContext &&
+      (isTopLevelStaticTransientOrRequestProvider ||
+        isStaticInquirerOutsideResolutionContext);
+
+    return shouldSkipForStaticBootstrap;
+  }
+
   /**
    * For nested TRANSIENT dependencies (TRANSIENT -> TRANSIENT) in non-static contexts,
    * returns parentInquirer to ensure each parent TRANSIENT gets its own instance.
@@ -976,16 +1076,110 @@ export class Injector {
    */
   private getEffectiveInquirer(
     dependency: InstanceWrapper | undefined,
-    inquirer: InstanceWrapper | undefined,
+    resolutionContext: ResolutionContext,
     parentInquirer: InstanceWrapper | undefined,
-    contextId: ContextId,
   ): InstanceWrapper | undefined {
-    return dependency?.isTransient &&
+    const { inquirer, contextId } = resolutionContext;
+    if (dependency?.isTransient && inquirer?.isTransient && parentInquirer) {
+      if (contextId === STATIC_CONTEXT) {
+        return inquirer.getRootInquirer() ?? parentInquirer;
+      }
+      return parentInquirer;
+    }
+    return inquirer;
+  }
+
+  private getEffectiveInquirerId(
+    dependency: InstanceWrapper | undefined,
+    resolutionContext: ResolutionContext,
+    parentInquirer: InstanceWrapper | undefined,
+  ): string | undefined {
+    const { contextId, inquirer, effectiveInquirerId } = resolutionContext;
+    if (
+      contextId === STATIC_CONTEXT &&
+      dependency?.isTransient &&
       inquirer?.isTransient &&
-      parentInquirer &&
-      contextId !== STATIC_CONTEXT
-      ? parentInquirer
-      : inquirer;
+      parentInquirer
+    ) {
+      const baseInquirerId =
+        effectiveInquirerId ?? this.getInquirerId(parentInquirer);
+      return `${baseInquirerId}:${inquirer.id}`;
+    }
+
+    const effectiveInquirer = this.getEffectiveInquirer(
+      dependency,
+      resolutionContext,
+      parentInquirer,
+    );
+    return this.getInquirerId(effectiveInquirer);
+  }
+
+  private getStaticTransientResolutionContext(
+    resolutionContext: ResolutionContext,
+    parentInquirer: InstanceWrapper | undefined,
+  ): ResolutionContext {
+    const { contextId, inquirer, effectiveInquirerId } = resolutionContext;
+    if (
+      contextId === STATIC_CONTEXT &&
+      inquirer?.isTransient &&
+      parentInquirer
+    ) {
+      const baseInquirerId =
+        effectiveInquirerId ?? this.getInquirerId(parentInquirer);
+      return this.createResolutionContext(
+        contextId,
+        inquirer,
+        `${baseInquirerId}:${inquirer.id}`,
+      );
+    }
+    return resolutionContext;
+  }
+
+  private getEffectiveResolutionContext(
+    dependency: InstanceWrapper | undefined,
+    resolutionContext: ResolutionContext,
+    parentInquirer: InstanceWrapper | undefined,
+  ): ResolutionContext {
+    return this.createResolutionContext(
+      resolutionContext.contextId,
+      this.getEffectiveInquirer(dependency, resolutionContext, parentInquirer),
+      this.getEffectiveInquirerId(
+        dependency,
+        resolutionContext,
+        parentInquirer,
+      ),
+    );
+  }
+
+  private hasDenseCtorMetadata<T>(
+    wrapper: InstanceWrapper<T>,
+    inject: InjectorDependency[] | undefined,
+    metadata: InstanceWrapper[] | undefined,
+  ): boolean {
+    if (!metadata) {
+      return false;
+    }
+
+    // The fast path requires a fully populated metadata array.
+    // While another request is still registering dependency metadata,
+    // sparse entries here would feed request-scoped factories `undefined`.
+    const expectedDepsLength = !isNil(inject)
+      ? inject.length
+      : wrapper.metatype
+        ? this.reflectConstructorParams(wrapper.metatype).length
+        : 0;
+
+    if (metadata.length !== expectedDepsLength) {
+      return false;
+    }
+
+    for (let index = 0; index < expectedDepsLength; index++) {
+      if (metadata[index] === undefined) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private resolveScopedComponentHost(
@@ -999,8 +1193,11 @@ export class Injector {
       : this.resolveComponentHost(
           item.host!,
           item,
-          contextId,
-          this.getEffectiveInquirer(item, inquirer, parentInquirer, contextId),
+          this.getEffectiveResolutionContext(
+            item,
+            this.createResolutionContext(contextId, inquirer),
+            parentInquirer,
+          ),
         );
   }
 

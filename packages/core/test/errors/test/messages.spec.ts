@@ -4,6 +4,7 @@ import {
   INVALID_MODULE_MESSAGE,
   UNDEFINED_MODULE_MESSAGE,
   UNKNOWN_EXPORT_MESSAGE,
+  USING_INVALID_CLASS_AS_A_MODULE_MESSAGE,
 } from '../../../errors/messages';
 import { Module } from '../../../injector/module';
 import { stringCleaner } from '../../utils/string.cleaner';
@@ -16,7 +17,7 @@ describe('Error Messages', () => {
     const index = 0;
     it('should display class', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?, CatService). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?, CatService). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -41,7 +42,7 @@ describe('Error Messages', () => {
     });
     it('should display the provide token', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?, MY_TOKEN). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?, MY_TOKEN). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -64,7 +65,7 @@ describe('Error Messages', () => {
     });
     it('should display the provide token as double-quoted string for string-based tokens', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?). Please make sure that the argument "FooRepository" at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?). Please make sure that the argument "FooRepository" at index [0] is available in the current module.
 
       Potential solutions:
       - If "FooRepository" is a provider, is it part of the current Module?
@@ -88,7 +89,7 @@ describe('Error Messages', () => {
     });
     it('should display the function name', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?, CatFunction). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?, CatFunction). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -111,7 +112,7 @@ describe('Error Messages', () => {
     });
     it('should use "+" if unknown dependency name', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?, +). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?, +). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -134,7 +135,7 @@ describe('Error Messages', () => {
     });
     it('should display the module name', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatService (?, MY_TOKEN). Please make sure that the argument dependency at index [0] is available in the TestModule context.
+        stringCleaner(`Nest can't resolve dependencies of the CatService (?, MY_TOKEN). Please make sure that the argument at index [0] is available in the TestModule module.
 
       Potential solutions:
       - Is TestModule a valid NestJS module?
@@ -170,7 +171,7 @@ describe('Error Messages', () => {
     });
     it('should display the symbol name of the provider', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the Symbol(CatProvider) (?). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the Symbol(CatProvider) (?). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -193,7 +194,7 @@ describe('Error Messages', () => {
     });
     it('should display the symbol dependency of the provider', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the CatProvider (?, Symbol(DogProvider)). Please make sure that the argument dependency at index [0] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the CatProvider (?, Symbol(DogProvider)). Please make sure that the argument at index [0] is available in the current module.
 
       Potential solutions:
       - If dependency is a provider, is it part of the current Module?
@@ -216,7 +217,7 @@ describe('Error Messages', () => {
     });
     it('should detect likely import type issue and provide specific guidance', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the ResourceController (ResourceService, ?). Please make sure that the argument dependency at index [1] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the ResourceController (ResourceService, ?). Please make sure that the argument at index [1] is available in the current module.
 
       Potential solutions:
       - The dependency at index [1] appears to be undefined at runtime
@@ -242,7 +243,7 @@ describe('Error Messages', () => {
     });
     it('should detect import type issue with mixed dependencies', () => {
       const expectedResult =
-        stringCleaner(`Nest can't resolve dependencies of the ResourceController (ValidService, ?, AnotherService). Please make sure that the argument dependency at index [1] is available in the current context.
+        stringCleaner(`Nest can't resolve dependencies of the ResourceController (ValidService, ?, AnotherService). Please make sure that the argument at index [1] is available in the current module.
 
       Potential solutions:
       - The dependency at index [1] appears to be undefined at runtime
@@ -264,6 +265,82 @@ describe('Error Messages', () => {
           index: 1,
           dependencies: [ValidService, Object, AnotherService], // mixed valid/Object
           name: 'SomeService',
+        }).message,
+      );
+
+      expect(actualMessage).to.equal(expectedResult);
+    });
+    it('should display class token name in argument label when name is provided', () => {
+      class UserRepository {}
+
+      const expectedResult =
+        stringCleaner(`Nest can't resolve dependencies of the UserService (?). Please make sure that the argument UserRepository at index [0] is available in the current module.
+
+      Potential solutions:
+      - If UserRepository is a provider, is it part of the current Module?
+      - If UserRepository is exported from a separate @Module, is that module imported within Module?
+      @Module({
+        imports: [ /* the Module containing UserRepository */ ]
+      })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+      `);
+
+      const actualMessage = stringCleaner(
+        new UnknownDependenciesException('UserService', {
+          index: 0,
+          dependencies: [UserRepository],
+          name: UserRepository,
+        }).message,
+      );
+
+      expect(actualMessage).to.equal(expectedResult);
+    });
+    it('should display string token name in argument label when name is provided', () => {
+      const expectedResult =
+        stringCleaner(`Nest can't resolve dependencies of the UserService (?). Please make sure that the argument "DATABASE_URL" at index [0] is available in the current module.
+
+      Potential solutions:
+      - If "DATABASE_URL" is a provider, is it part of the current Module?
+      - If "DATABASE_URL" is exported from a separate @Module, is that module imported within Module?
+      @Module({
+        imports: [ /* the Module containing "DATABASE_URL" */ ]
+      })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+      `);
+
+      const actualMessage = stringCleaner(
+        new UnknownDependenciesException('UserService', {
+          index: 0,
+          dependencies: ['DATABASE_URL'],
+          name: 'DATABASE_URL',
+        }).message,
+      );
+
+      expect(actualMessage).to.equal(expectedResult);
+    });
+    it('should display symbol token name in argument label when name is provided', () => {
+      const TOKEN = Symbol('MY_TOKEN');
+
+      const expectedResult =
+        stringCleaner(`Nest can't resolve dependencies of the UserService (?). Please make sure that the argument Symbol(MY_TOKEN) at index [0] is available in the current module.
+
+      Potential solutions:
+      - If Symbol(MY_TOKEN) is a provider, is it part of the current Module?
+      - If Symbol(MY_TOKEN) is exported from a separate @Module, is that module imported within Module?
+      @Module({
+        imports: [ /* the Module containing Symbol(MY_TOKEN) */ ]
+      })
+
+      For more common dependency resolution issues, see: https://docs.nestjs.com/faq/common-errors
+      `);
+
+      const actualMessage = stringCleaner(
+        new UnknownDependenciesException('UserService', {
+          index: 0,
+          dependencies: [TOKEN],
+          name: TOKEN,
         }).message,
       );
 
@@ -308,15 +385,116 @@ Scope [AppModule -> CatsModule]`);
   });
 
   describe('INVALID_MODULE_MESSAGE', () => {
-    it('should display the module name with the invalid index and scope', () => {
+    it('should display the received `null` value and its type', () => {
       const expectedMessage =
         stringCleaner(`Nest cannot create the CatsModule instance.
 Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`null\` is of type "null".
 
 Scope [AppModule -> CatsModule]`);
 
       const actualMessage = stringCleaner(
-        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule]),
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], null),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+
+    it('should display the received `false` value and its type', () => {
+      const expectedMessage =
+        stringCleaner(`Nest cannot create the CatsModule instance.
+Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`false\` is of type "boolean".
+
+Scope [AppModule -> CatsModule]`);
+
+      const actualMessage = stringCleaner(
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], false),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+
+    it('should display the received `0` value and its type', () => {
+      const expectedMessage =
+        stringCleaner(`Nest cannot create the CatsModule instance.
+Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`0\` is of type "number".
+
+Scope [AppModule -> CatsModule]`);
+
+      const actualMessage = stringCleaner(
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], 0),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+
+    it('should display the received empty string value and its type', () => {
+      const expectedMessage =
+        stringCleaner(`Nest cannot create the CatsModule instance.
+Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`""\` is of type "string".
+
+Scope [AppModule -> CatsModule]`);
+
+      const actualMessage = stringCleaner(
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], ''),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+  });
+
+  describe('USING_INVALID_CLASS_AS_A_MODULE_MESSAGE', () => {
+    class FooClass {}
+
+    it('should identify a class decorated with @Controller() and direct it to the "controllers" array', () => {
+      const expectedMessage =
+        stringCleaner(`"FooClass" is decorated with @Controller() and cannot appear in the "imports" array of a module. Please move "FooClass" to the "controllers" array of the importing module instead.
+
+Scope [AppModule]`);
+
+      const actualMessage = stringCleaner(
+        USING_INVALID_CLASS_AS_A_MODULE_MESSAGE(
+          FooClass,
+          [AppModule],
+          'controller',
+        ),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+
+    it('should identify a class decorated with @Injectable() and direct it to the "providers" array', () => {
+      const expectedMessage =
+        stringCleaner(`"FooClass" is decorated with @Injectable() and cannot appear in the "imports" array of a module. Please move "FooClass" to the "providers" array of the importing module instead.
+
+Scope [AppModule]`);
+
+      const actualMessage = stringCleaner(
+        USING_INVALID_CLASS_AS_A_MODULE_MESSAGE(
+          FooClass,
+          [AppModule],
+          'provider',
+        ),
+      );
+
+      expect(actualMessage).to.be.eq(expectedMessage);
+    });
+
+    it('should identify a class decorated with @Catch() and direct it to the "providers" array or @UseFilters()', () => {
+      const expectedMessage =
+        stringCleaner(`"FooClass" is decorated with @Catch() and cannot appear in the "imports" array of a module. Please move "FooClass" to the "providers" array (using the APP_FILTER token to apply it globally) or apply it via @UseFilters() instead.
+
+Scope [AppModule]`);
+
+      const actualMessage = stringCleaner(
+        USING_INVALID_CLASS_AS_A_MODULE_MESSAGE(
+          FooClass,
+          [AppModule],
+          'filter',
+        ),
       );
 
       expect(actualMessage).to.be.eq(expectedMessage);

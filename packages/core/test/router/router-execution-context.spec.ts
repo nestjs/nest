@@ -1,5 +1,6 @@
 import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception';
 import { expect } from 'chai';
+import { EventEmitter } from 'events';
 import { of } from 'rxjs';
 import * as sinon from 'sinon';
 import { PassThrough } from 'stream';
@@ -32,6 +33,21 @@ describe('RouterExecutionContext', () => {
   let interceptorsConsumer: InterceptorsConsumer;
   let adapter: AbstractHttpAdapter;
 
+  const attachSocket = <T extends PassThrough>(request: T) =>
+    Object.assign(request, {
+      socket: Object.assign(new EventEmitter(), {
+        setKeepAlive() {},
+        setNoDelay() {},
+        setTimeout() {},
+      }),
+    }) as T & {
+      socket: EventEmitter & {
+        setKeepAlive(): void;
+        setNoDelay(): void;
+        setTimeout(): void;
+      };
+    };
+
   beforeEach(() => {
     callback = {
       bind: () => ({}),
@@ -56,6 +72,31 @@ describe('RouterExecutionContext', () => {
     );
   });
   describe('create', () => {
+    it('should pass an unresolved Promise<Observable> to the SSE response handler', async () => {
+      const result = Promise.resolve(of('test'));
+      const fnHandleResponse = sinon.stub().resolves();
+
+      sinon.stub(contextCreator, 'getMetadata').returns({
+        argsLength: 0,
+        fnHandleResponse,
+        isSseHandler: true,
+        paramtypes: [],
+        getParamsMetadata: sinon.stub().returns([]),
+        httpStatusCode: 200,
+        hasCustomHeaders: false,
+        responseHeaders: [],
+      });
+      sinon.stub(contextCreator, 'createGuardsFn').returns(null as any);
+      sinon.stub(contextCreator, 'createPipesFn').returns(null as any);
+      sinon.stub(interceptorsConsumer, 'intercept').returns(result as any);
+
+      const proxy = contextCreator.create({} as any, callback, '', '', 0);
+      await proxy({}, {}, sinon.stub());
+
+      expect(fnHandleResponse.calledOnce).to.be.true;
+      expect(fnHandleResponse.firstCall.args[0]).to.equal(result);
+    });
+
     describe('when callback metadata is not undefined', () => {
       let metadata: Record<number, RouteParamMetadata>;
       let exchangeKeysForValuesSpy: sinon.SinonSpy;
@@ -438,8 +479,10 @@ describe('RouterExecutionContext', () => {
         const response = new PassThrough();
         response.write = sinon.spy();
 
-        const request = new PassThrough();
-        request.on = sinon.spy();
+        const request = attachSocket(new PassThrough());
+        request.socket.once = sinon.spy(
+          request.socket.once.bind(request.socket),
+        );
 
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
         sinon.stub(contextCreator, 'reflectSse').returns('/');
@@ -453,7 +496,7 @@ describe('RouterExecutionContext', () => {
         await handler(result, response, request);
 
         expect((response.write as any).called).to.be.true;
-        expect((request.on as any).called).to.be.true;
+        expect((request.socket.once as any).calledWith('close')).to.be.true;
       });
 
       it('should not allow a non-observable result', async () => {
@@ -490,8 +533,7 @@ describe('RouterExecutionContext', () => {
           .stub()
           .returns({ 'access-control-headers': 'some-cors-value' });
 
-        const request = new PassThrough();
-        request.on = sinon.spy();
+        const request = attachSocket(new PassThrough());
 
         sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
         sinon.stub(contextCreator, 'reflectSse').returns('/');
@@ -508,6 +550,42 @@ describe('RouterExecutionContext', () => {
           (response.writeHead as sinon.SinonSpy).calledWith(
             200,
             sinon.match.hasNested('access-control-headers', 'some-cors-value'),
+          ),
+        ).to.be.true;
+      });
+
+      it('should pass through status and headers from the wrapper response at handle time', async () => {
+        const rawResponse = new PassThrough() as HeaderStream;
+        rawResponse.write = sinon.spy();
+        rawResponse.writeHead = sinon.spy();
+        rawResponse.flushHeaders = sinon.spy();
+
+        const response = {
+          raw: rawResponse,
+          statusCode: 203,
+          getHeaders: sinon
+            .stub()
+            .returns({ 'access-control-headers': 'at-handle-time' }),
+        };
+        const result = of('test');
+
+        const request = attachSocket(new PassThrough());
+
+        sinon.stub(contextCreator, 'reflectRenderTemplate').returns(undefined!);
+        sinon.stub(contextCreator, 'reflectSse').returns('/');
+
+        const handler = contextCreator.createHandleResponseFn(
+          null!,
+          true,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        await handler(result, response as any, request);
+
+        expect(
+          (rawResponse.writeHead as sinon.SinonSpy).calledWith(
+            203,
+            sinon.match.hasNested('access-control-headers', 'at-handle-time'),
           ),
         ).to.be.true;
       });

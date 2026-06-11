@@ -339,6 +339,11 @@ export interface KafkaOptions {
     postfixId?: string;
     client?: KafkaConfig;
     consumer?: ConsumerConfig;
+    /**
+     * Options passed to KafkaJS consumer.run().
+     * Note: `partitionsConsumedConcurrently` (KafkaJS parameter) controls
+     * concurrent processing at the partition level (not topic level).
+     */
     run?: Omit<ConsumerRunConfig, 'eachBatch' | 'eachMessage'>;
     subscribe?: Omit<ConsumerSubscribeTopics, 'topics'>;
     producer?: ProducerConfig;

@@ -335,7 +335,12 @@ export class MiddlewareModule<
           res: TResponse,
           next: () => void,
         ) => {
-          if (applicationRef.getRequestMethod?.(req) === requestMethod) {
+          const actualRequestMethod = applicationRef.getRequestMethod?.(req);
+          if (
+            actualRequestMethod === requestMethod ||
+            (actualRequestMethod === RequestMethod[RequestMethod.HEAD] &&
+              requestMethod === RequestMethod[RequestMethod.GET])
+          ) {
             return proxy(req, res, next);
           }
           return next();

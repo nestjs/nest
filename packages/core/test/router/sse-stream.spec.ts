@@ -124,7 +124,18 @@ data: hello
     );
   });
 
-  it('sets headers on destination when it looks like a HTTP Response', callback => {
+  it('does not write headers eagerly in pipe()', () => {
+    const sse = new SseStream();
+    let writeHeadCalled = false;
+    const sink = new Sink(() => {
+      writeHeadCalled = true;
+    });
+    sse.pipe(sink);
+    expect(writeHeadCalled).to.equal(false);
+    expect(sse.headersCommitted).to.equal(false);
+  });
+
+  it('sets headers on first message when destination looks like a HTTP Response', callback => {
     const sse = new SseStream();
     const sink = new Sink(
       (status: number, headers: string | OutgoingHttpHeaders) => {
@@ -142,6 +153,7 @@ data: hello
       },
     );
     sse.pipe(sink);
+    sse.writeMessage({ data: 'trigger' }, noop);
   });
 
   it('sets additional headers when provided', callback => {
@@ -158,6 +170,7 @@ data: hello
     sse.pipe(sink, {
       additionalHeaders: { 'access-control-headers': 'some-cors-value' },
     });
+    sse.writeMessage({ data: 'trigger' }, noop);
   });
 
   it('sets custom status code when provided', callback => {
@@ -173,6 +186,7 @@ data: hello
     sse.pipe(sink, {
       statusCode: 404,
     });
+    sse.writeMessage({ data: 'trigger' }, noop);
   });
 
   it('defaults to 200 status code when not provided', callback => {
@@ -186,6 +200,61 @@ data: hello
     );
 
     sse.pipe(sink);
+    sse.writeMessage({ data: 'trigger' }, noop);
+  });
+
+  it('does not throw when destination is ended before first message', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+    sink.end();
+    await written(sink);
+
+    sse.writeMessage({ data: 'ignored' }, noop);
+    expect(sse.headersCommitted).to.equal(false);
+  });
+
+  it('preserves explicit id of 0 in writeMessage', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+
+    sse.writeMessage(
+      {
+        id: '0',
+        data: 'first',
+      },
+      noop,
+    );
+    sse.end();
+    await written(sink);
+
+    expect(sink.content).to.equal(
+      `
+id: 0
+data: first
+
+`,
+    );
+  });
+
+  it('serializes id of 0 in _transform', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+
+    sse.writeMessage(
+      {
+        id: '0',
+        type: 'ping',
+        data: 'hello',
+      },
+      noop,
+    );
+    sse.end();
+    await written(sink);
+
+    expect(sink.content).to.contain('id: 0\n');
   });
 
   it('allows an eventsource to connect', callback => {
@@ -193,6 +262,7 @@ data: hello
     const server = createServer((req, res) => {
       sse = new SseStream(req);
       sse.pipe(res);
+      sse.writeMessage({ data: 'hello' }, noop);
     });
 
     server.listen(() => {
@@ -204,7 +274,6 @@ data: hello
         es.close();
         server.close(callback);
       };
-      es.onopen = () => sse.writeMessage({ data: 'hello' }, noop);
       es.onerror = e =>
         callback(new Error(`Error from EventSource: ${JSON.stringify(e)}`));
     });

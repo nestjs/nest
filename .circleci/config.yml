@@ -155,9 +155,7 @@ jobs:
       - *install-deps
       - run:
           name: Prepare tests
-          command: |
-            bash ./scripts/prepare.sh
-            sleep 10
+          command: bash ./scripts/prepare.sh
       - run:
           name: List containers
           command: docker ps
@@ -209,4 +207,3 @@ workflows:
       - samples:
           requires:
             - build
-

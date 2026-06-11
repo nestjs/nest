@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { expect } from 'chai';
 import * as express from 'express';
 import { AppModule } from '../src/app.module';
-import { randomPort } from './utils';
+import { getAvailableIpv4Host, randomPort } from './utils';
 
 describe('Get URL (Express Application)', () => {
   let testModule: TestingModule;
@@ -27,8 +27,9 @@ describe('Get URL (Express Application)', () => {
   });
   it('should be able to get the IPv4 address', async () => {
     const app = testModule.createNestApplication(new ExpressAdapter(express()));
-    await app.listen(port, '127.0.0.5');
-    expect(await app.getUrl()).to.be.eql(`http://127.0.0.5:${port}`);
+    const host = await getAvailableIpv4Host();
+    await app.listen(port, host);
+    expect(await app.getUrl()).to.be.eql(`http://${host}:${port}`);
     await app.close();
   });
   it('should return 127.0.0.1 for 0.0.0.0', async () => {

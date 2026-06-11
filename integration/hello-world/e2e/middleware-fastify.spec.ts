@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Injectable,
   MiddlewareConsumer,
   Module,
   NestMiddleware,
@@ -22,6 +23,96 @@ import { AppModule } from '../src/app.module';
 
 describe('Middleware (FastifyAdapter)', () => {
   let app: NestFastifyApplication;
+
+  describe('trailing slash handling', () => {
+    @Injectable()
+    class AuthMiddleware implements NestMiddleware {
+      use(
+        req: FastifyRequest['raw'] & { headers: Record<string, unknown> },
+        res,
+        next: () => void,
+      ) {
+        if (req.headers['x-auth'] === '1') {
+          return next();
+        }
+        res.statusCode = 401;
+        res.end('unauthorized');
+      }
+    }
+
+    @Controller('users')
+    class UsersController {
+      @Get()
+      findAll() {
+        return 'users';
+      }
+
+      @Get(':id')
+      findOne(@Param('id') id: string) {
+        return `user:${id}`;
+      }
+    }
+
+    @Module({
+      controllers: [UsersController],
+    })
+    class TrailingSlashModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply(AuthMiddleware)
+          .forRoutes(
+            { path: 'users', method: RequestMethod.ALL },
+            { path: 'users/:id', method: RequestMethod.ALL },
+          );
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [TrailingSlashModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+
+      await app.init();
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('does not bypass middleware on a trailing slash variant', async () => {
+      await app
+        .inject({
+          method: 'GET',
+          url: '/users',
+        })
+        .then(response => {
+          expect(response.statusCode).to.equal(401);
+          expect(response.payload).to.equal('unauthorized');
+        });
+
+      await app
+        .inject({
+          method: 'GET',
+          url: '/users/',
+        })
+        .then(response => {
+          expect(response.statusCode).to.equal(401);
+          expect(response.payload).to.equal('unauthorized');
+        });
+
+      await app
+        .inject({
+          method: 'GET',
+          url: '/users/1',
+        })
+        .then(response => {
+          expect(response.statusCode).to.equal(401);
+          expect(response.payload).to.equal('unauthorized');
+        });
+    });
+  });
 
   describe('should return expected values depending on the route', () => {
     const INCLUDED_VALUE = 'test_included';
@@ -610,6 +701,187 @@ describe('Middleware (FastifyAdapter)', () => {
 
     afterEach(async () => {
       await app.close();
+    });
+  });
+
+  describe('should respect fastify routing options', () => {
+    const MIDDLEWARE_RETURN_VALUE = 'middleware_return';
+
+    @Controller()
+    class TestController {
+      @Get('abc/def')
+      included() {
+        return 'whatnot';
+      }
+    }
+    @Module({
+      imports: [AppModule],
+      controllers: [TestController],
+    })
+    class TestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => res.end(MIDDLEWARE_RETURN_VALUE))
+          .forRoutes({ path: 'abc/def', method: RequestMethod.GET });
+      }
+    }
+
+    describe('[ignoreTrailingSlash] attribute', () => {
+      beforeEach(async () => {
+        app = (
+          await Test.createTestingModule({
+            imports: [TestModule],
+          }).compile()
+        ).createNestApplication<NestFastifyApplication>(
+          new FastifyAdapter({
+            ignoreTrailingSlash: true,
+            // routerOptions: {
+            //   ignoreTrailingSlash: true,
+            // },
+          }),
+        );
+
+        await app.init();
+      });
+
+      it(`GET forRoutes(GET /abc/def/)`, () => {
+        return app
+          .inject({
+            method: 'GET',
+            url: '/abc/def/', // trailing slash
+          })
+          .then(({ payload }) =>
+            expect(payload).to.be.eql(MIDDLEWARE_RETURN_VALUE),
+          );
+      });
+
+      afterEach(async () => {
+        await app.close();
+      });
+    });
+
+    describe('[ignoreDuplicateSlashes] attribute', () => {
+      beforeEach(async () => {
+        app = (
+          await Test.createTestingModule({
+            imports: [TestModule],
+          }).compile()
+        ).createNestApplication<NestFastifyApplication>(
+          new FastifyAdapter({
+            routerOptions: {
+              ignoreDuplicateSlashes: true,
+            },
+          }),
+        );
+
+        await app.init();
+      });
+
+      it(`GET forRoutes(GET /abc//def)`, () => {
+        return app
+          .inject({
+            method: 'GET',
+            url: '/abc//def', // duplicate slashes
+          })
+          .then(({ payload }) =>
+            expect(payload).to.be.eql(MIDDLEWARE_RETURN_VALUE),
+          );
+      });
+
+      afterEach(async () => {
+        await app.close();
+      });
+    });
+
+    describe('[caseSensitive] attribute', () => {
+      beforeEach(async () => {
+        app = (
+          await Test.createTestingModule({
+            imports: [TestModule],
+          }).compile()
+        ).createNestApplication<NestFastifyApplication>(
+          new FastifyAdapter({
+            routerOptions: {
+              caseSensitive: true,
+            },
+          }),
+        );
+
+        await app.init();
+      });
+
+      it(`GET forRoutes(GET /ABC/DEF)`, () => {
+        return app
+          .inject({
+            method: 'GET',
+            url: '/ABC/DEF', // different case
+          })
+          .then(({ payload }) =>
+            expect(payload).to.be.eql(MIDDLEWARE_RETURN_VALUE),
+          );
+      });
+
+      afterEach(async () => {
+        await app.close();
+      });
+    });
+
+    describe('[useSemicolonDelimiter] attribute', () => {
+      beforeEach(async () => {
+        app = (
+          await Test.createTestingModule({
+            imports: [TestModule],
+          }).compile()
+        ).createNestApplication<NestFastifyApplication>(
+          new FastifyAdapter({
+            routerOptions: { useSemicolonDelimiter: true } as any,
+          }),
+        );
+
+        await app.init();
+      });
+
+      it(`GET forRoutes(GET /abc/def;foo=bar)`, () => {
+        return app
+          .inject({
+            method: 'GET',
+            url: '/abc/def;foo=bar', // semicolon delimiter
+          })
+          .then(({ payload }) =>
+            expect(payload).to.be.eql(MIDDLEWARE_RETURN_VALUE),
+          );
+      });
+
+      afterEach(async () => {
+        await app.close();
+      });
+    });
+
+    describe('HEAD auto-forwarding to GET', () => {
+      beforeEach(async () => {
+        app = (
+          await Test.createTestingModule({
+            imports: [TestModule],
+          }).compile()
+        ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+
+        await app.init();
+      });
+
+      it(`GET forRoutes(HEAD /abc/def)`, () => {
+        return app
+          .inject({
+            method: 'HEAD',
+            url: '/abc/def',
+          })
+          .then(({ payload }) =>
+            expect(payload).to.be.eql(MIDDLEWARE_RETURN_VALUE),
+          );
+      });
+
+      afterEach(async () => {
+        await app.close();
+      });
     });
   });
 });

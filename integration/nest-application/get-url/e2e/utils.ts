@@ -15,3 +15,18 @@ export async function randomPort(): Promise<number> {
     });
   });
 }
+
+export async function getAvailableIpv4Host(
+  preferredHost = '127.0.0.5',
+): Promise<string> {
+  const server = net.createServer();
+
+  return new Promise(resolve => {
+    server.once('error', () => {
+      resolve('127.0.0.1');
+    });
+    server.listen(0, preferredHost, () => {
+      server.close(() => resolve(preferredHost));
+    });
+  });
+}

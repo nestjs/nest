@@ -80,6 +80,21 @@ export class FileTypeValidator extends FileValidator<
         : errorMessage;
     }
 
+    /**
+     * If the file buffer is not available, and fallbackToMimetype is not enabled,
+     * we cannot perform magic number validation,
+     * so we return a specific error message indicating
+     * that validation could not be performed due to missing buffer.
+     */
+    if (
+      file?.mimetype &&
+      !file.buffer &&
+      !this.validationOptions?.fallbackToMimetype &&
+      !this.validationOptions?.skipMagicNumbersValidation
+    ) {
+      return `Validation failed (file buffer is not available; file type validation could not be performed; expected type is ${this.validationOptions.fileType})`;
+    }
+
     if (file?.mimetype) {
       const baseMessage = `Validation failed (current file type is ${file.mimetype}, expected type is ${this.validationOptions.fileType})`;
 

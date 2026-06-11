@@ -107,65 +107,135 @@ export class RouterResponseController {
     result: TInput | Promise<TInput>,
     response: TResponse,
     request: TRequest,
-    options?: { additionalHeaders: AdditionalHeaders },
+    options?: {
+      additionalHeaders?: AdditionalHeaders;
+      statusCode?: number;
+    },
   ) {
     // It's possible that we sent headers already so don't use a stream
     if (response.writableEnded) {
       return;
     }
 
-    const observableResult = await Promise.resolve(result);
-
-    this.assertObservable(observableResult);
-
     const stream = new SseStream(request);
+    const statusCode =
+      options?.statusCode ??
+      (response as { statusCode?: number }).statusCode ??
+      200;
 
-    // Extract custom status code from response if it was set
-    const customStatusCode = (response as any).statusCode;
-    const pipeOptions =
-      typeof customStatusCode !== 'undefined'
-        ? { ...options, statusCode: customStatusCode }
-        : options;
+    return new Promise<void>((resolve, reject) => {
+      let settled = false;
+      let subscription: { unsubscribe(): void } | undefined;
+      const disconnectSource = request.socket ?? response;
 
-    stream.pipe(response, pipeOptions);
+      const cleanup = () => disconnectSource.removeListener('close', onClose);
 
-    const subscription = observableResult
-      .pipe(
-        map((message): MessageEvent => {
-          if (isObject(message)) {
-            return message as MessageEvent;
+      const onClose = () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        cleanup();
+        subscription?.unsubscribe();
+        if (!stream.writableEnded) {
+          stream.end();
+        }
+        response.end();
+        resolve();
+      };
+
+      disconnectSource.once('close', onClose);
+
+      Promise.resolve(result)
+        .then(observableResult => {
+          if (settled) {
+            return;
           }
 
-          return { data: message as object | string };
-        }),
-        concatMap(
-          message =>
-            new Promise<void>(resolve =>
-              stream.writeMessage(message, () => resolve()),
-            ),
-        ),
-        catchError(err => {
-          const data = err instanceof Error ? err.message : err;
-          stream.writeMessage({ type: 'error', data }, writeError => {
-            if (writeError) {
-              this.logger.error(writeError);
-            }
+          this.assertObservable(observableResult);
+
+          stream.pipe(response, {
+            additionalHeaders: options?.additionalHeaders,
+            statusCode,
           });
 
-          return EMPTY;
-        }),
-      )
-      .subscribe({
-        complete: () => {
-          response.end();
-        },
-      });
+          subscription = observableResult
+            .pipe(
+              map((message): MessageEvent => {
+                if (isObject(message)) {
+                  return message as MessageEvent;
+                }
 
-    request.on('close', () => {
-      subscription.unsubscribe();
-      if (!stream.writableEnded) {
-        stream.end();
-      }
+                return { data: message as object | string };
+              }),
+              concatMap(
+                message =>
+                  new Promise<void>(resolve =>
+                    stream.writeMessage(message, () => resolve()),
+                  ),
+              ),
+              catchError(err => {
+                if (!stream.headersCommitted) {
+                  throw err;
+                }
+
+                const data = err instanceof Error ? err.message : err;
+                stream.writeMessage({ type: 'error', data }, writeError => {
+                  if (writeError) {
+                    this.logger.error(writeError);
+                  }
+                });
+
+                return EMPTY;
+              }),
+            )
+            .subscribe({
+              error: err => {
+                if (settled) {
+                  return;
+                }
+                settled = true;
+                cleanup();
+                if (!stream.writableEnded) {
+                  stream.end();
+                }
+                reject(err);
+              },
+              complete: () => {
+                if (settled) {
+                  return;
+                }
+                settled = true;
+                cleanup();
+                if (!stream.writableEnded) {
+                  stream.end();
+                }
+                resolve();
+              },
+            });
+
+          // Commit SSE headers on the next macrotask. Pipe validation errors
+          // propagate through microtasks (which complete before macrotasks),
+          // so if the lifecycle errored, `settled` is already true and we
+          // skip the write. Otherwise headers are sent immediately rather
+          // than waiting for the first Observable emission.
+          setTimeout(() => {
+            if (!settled) {
+              stream.commitHeaders();
+            }
+          }, 0);
+        })
+        .catch(err => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          cleanup();
+          if (!stream.writableEnded) {
+            stream.end();
+          }
+          reject(err);
+        });
     });
   }
 

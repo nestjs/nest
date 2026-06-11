@@ -24,7 +24,7 @@ describe('RabbitMQ transport (Fanout Exchange)', () => {
     appConsumer = consumerModule.createNestMicroservice<MicroserviceOptions>({
       transport: Transport.RMQ,
       options: {
-        urls: [`amqp://0.0.0.0:5672`],
+        urls: [`amqp://localhost:5672`],
         queue: '',
         exchange: 'test.fanout',
         exchangeType: 'fanout',

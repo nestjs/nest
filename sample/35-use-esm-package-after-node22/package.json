@@ -32,7 +32,7 @@
     "@nestjs/testing": "11.x",
     "@types/express": "5.x",
     "@types/node": "24.x",
-    "@types/supertest": "6.x",
+    "@types/supertest": "7.x",
     "@typescript-eslint/eslint-plugin": "8.x",
     "@typescript-eslint/parser": "8.x",
     "eslint": "9.x",

@@ -319,7 +319,7 @@ export class ClientKafka
     this._consumer.on(this._consumer.events.STOP, () =>
       this._status$.next(KafkaStatus.STOPPED),
     );
-    this.consumer.on(this._consumer.events.CRASH, () =>
+    this._consumer.on(this._consumer.events.CRASH, () =>
       this._status$.next(KafkaStatus.CRASHED),
     );
   }

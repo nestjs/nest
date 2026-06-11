@@ -179,21 +179,53 @@ describe('ClientRedis', () => {
         expect(callback.called).to.be.false;
       });
     });
+    describe('custom binary format (not json)', () => {
+      it('should use buffer directly without parsing it as json', async () => {
+        const clientWithBuffers = new ClientRedis({ returnBuffers: true });
+        const callback = sinon.spy();
+        const str = `${responseMessage.id}|${responseMessage.response}`;
+        const bufferMessage = Buffer.from(str);
+        sinon
+          .stub(Reflect.get(clientWithBuffers, 'deserializer'), 'deserialize')
+          .resolves({
+            ...responseMessage,
+            response: bufferMessage,
+          });
+        const subscription = clientWithBuffers.createResponseCallback();
+
+        clientWithBuffers['routingMap'].set(responseMessage.id, callback);
+        await subscription('channel', bufferMessage as any);
+
+        expect(callback.called).to.be.true;
+        expect(
+          callback.calledWith({
+            err: undefined,
+            response: bufferMessage,
+          }),
+        ).to.be.true;
+      });
+    });
   });
   describe('close', () => {
     const untypedClient = client as any;
 
     let pubClose: sinon.SinonSpy;
     let subClose: sinon.SinonSpy;
+    let callback: sinon.SinonSpy;
+    let routingMap: Map<string, Function>;
     let pub: any, sub: any;
 
     beforeEach(() => {
       pubClose = sinon.spy();
       subClose = sinon.spy();
+      callback = sinon.spy();
+      routingMap = new Map<string, Function>();
+      routingMap.set('some id', callback);
       pub = { quit: pubClose };
       sub = { quit: subClose };
       untypedClient.pubClient = pub;
       untypedClient.subClient = sub;
+      untypedClient.routingMap = routingMap;
     });
     it('should close "pub" when it is not null', async () => {
       await client.close();
@@ -212,6 +244,18 @@ describe('ClientRedis', () => {
       untypedClient.subClient = null;
       await client.close();
       expect(subClose.called).to.be.false;
+    });
+    it('should clear out the routing map', async () => {
+      await client.close();
+      expect(untypedClient.routingMap.size).to.be.eq(0);
+    });
+    it('should call pending callbacks with connection closed error', async () => {
+      await client.close();
+      expect(
+        callback.calledWith({
+          err: sinon.match({ message: 'Connection closed' }),
+        }),
+      ).to.be.true;
     });
     it('should have isManuallyClosed set to true when "end" event is handled during close', async () => {
       let endHandler: Function | undefined;
@@ -293,6 +337,27 @@ describe('ClientRedis', () => {
       client.registerEndListener(emitter as any);
       expect(callback.getCall(0).args[0]).to.be.eql(RedisEventsMap.END);
     });
+    it('should call pending callbacks when connection ends unexpectedly', () => {
+      const client = new ClientRedis({});
+      const callback = sinon.spy();
+      const emitter = {
+        on: sinon.stub().callsFake((_, fn) => fn()),
+      };
+
+      client['routingMap'].set('some id', callback);
+      client['subscriptionsCount'].set('channel', 1);
+      (client as any).isManuallyClosed = false;
+
+      client.registerEndListener(emitter as any);
+
+      expect(client['routingMap'].size).to.be.eq(0);
+      expect(client['subscriptionsCount'].size).to.be.eq(0);
+      expect(
+        callback.calledWith({
+          err: sinon.match({ message: 'Connection closed' }),
+        }),
+      ).to.be.true;
+    });
   });
   describe('registerReadyListener', () => {
     it('should bind ready event handler', () => {
@@ -302,6 +367,62 @@ describe('ClientRedis', () => {
       };
       client.registerReadyListener(emitter as any);
       expect(callback.getCall(0).args[0]).to.be.eql(RedisEventsMap.READY);
+    });
+    it('should register "message" event when returnBuffers is not set', () => {
+      const onSpy = sinon.spy();
+      const client = new ClientRedis({});
+      const untypedClient = client as any;
+      const emitter = {
+        on: onSpy,
+      };
+
+      untypedClient.wasInitialConnectionSuccessful = false;
+      untypedClient.subClient = emitter;
+
+      client.registerReadyListener(emitter as any);
+      const readyHandler = onSpy.getCall(0).args[1];
+      readyHandler();
+
+      expect(onSpy.calledTwice).to.be.true;
+      expect(onSpy.getCall(1).args[0]).to.equal('message');
+    });
+    it('should register "message" event when returnBuffers is false', () => {
+      const onSpy = sinon.spy();
+      const client = new ClientRedis({ returnBuffers: false });
+      const untypedClient = client as any;
+
+      const emitter = {
+        on: onSpy,
+      };
+
+      untypedClient.wasInitialConnectionSuccessful = false;
+      untypedClient.subClient = emitter;
+
+      client.registerReadyListener(emitter as any);
+      const readyHandler = onSpy.getCall(0).args[1];
+      readyHandler();
+
+      expect(onSpy.calledTwice).to.be.true;
+      expect(onSpy.getCall(1).args[0]).to.equal('message');
+    });
+    it('should register "messageBuffer" event when returnBuffers is true', () => {
+      const onSpy = sinon.spy();
+      const clientWithBuffers = new ClientRedis({ returnBuffers: true });
+      const untypedClientWithBuffers = clientWithBuffers as any;
+
+      const emitter = {
+        on: onSpy,
+      };
+
+      untypedClientWithBuffers.wasInitialConnectionSuccessful = false;
+      untypedClientWithBuffers.subClient = emitter;
+
+      clientWithBuffers.registerReadyListener(emitter as any);
+      const readyHandler = onSpy.getCall(0).args[1];
+      readyHandler();
+
+      expect(onSpy.calledTwice).to.be.true;
+      expect(onSpy.getCall(1).args[0]).to.equal('messageBuffer');
     });
   });
   describe('registerReconnectListener', () => {
@@ -388,6 +509,26 @@ describe('ClientRedis', () => {
       client['dispatchEvent'](msg).catch(err =>
         expect(err).to.be.instanceOf(Error),
       );
+    });
+  });
+
+  describe('createClient', () => {
+    it('should not set clientInfoTag when not provided', () => {
+      const clientWithoutTag = new ClientRedis({});
+      const redisClient = clientWithoutTag.createClient();
+
+      expect(redisClient).to.be.ok;
+      // Verify no clientInfoTag was set (opt-in only)
+      expect(redisClient.options.clientInfoTag).to.be.undefined;
+    });
+
+    it('should use clientInfoTag when provided', () => {
+      const clientWithTag = new ClientRedis({ clientInfoTag: 'my-app' });
+      const redisClient = clientWithTag.createClient();
+
+      expect(redisClient).to.be.ok;
+      // Verify the clientInfoTag was used
+      expect(redisClient.options.clientInfoTag).to.equal('my-app');
     });
   });
 });
