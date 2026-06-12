@@ -420,13 +420,15 @@ data: test
       request.socket.emit('close');
     });
 
-    it('should ignore a Promise<Observable> if socket closes before it resolves', async () => {
+    it('should subscribe and teardown a Promise<Observable> if socket closes before it resolves', async () => {
       let subscribed = false;
+      const teardown = sinon.spy();
       const result = new Promise<Observable<string>>(resolve => {
         setTimeout(() => {
           resolve(
             new Observable(() => {
               subscribed = true;
+              return teardown;
             }),
           );
         }, 10);
@@ -448,9 +450,93 @@ data: test
       await ssePromise;
       await new Promise(resolve => setTimeout(resolve, 20));
 
-      expect(subscribed).to.equal(false);
+      expect(subscribed).to.equal(true);
+      expect(teardown.calledOnce).to.equal(true);
       expect(responseEndSpy.calledOnce).to.be.true;
       expect(request.socket.listenerCount('close')).to.equal(0);
+    });
+
+    it('should tear down stream state initialized before an async SSE observable resolves', async () => {
+      let streamState = 'idle';
+
+      const result = new Promise<Observable<string>>(resolve => {
+        streamState = 'running';
+
+        setTimeout(() => {
+          resolve(
+            new Observable(() => () => {
+              streamState = 'stopped';
+            }),
+          );
+        }, 10);
+      });
+      const response = new Writable();
+      response.end = sinon.spy() as any;
+      response._write = () => {};
+
+      const request = attachSocket(new PassThrough());
+
+      const ssePromise = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+      request.socket.emit('close');
+
+      await ssePromise;
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(streamState).to.equal('stopped');
+    });
+
+    it('should not write headers or events after the socket closes before an async SSE observable resolves', async () => {
+      class SinkWithWriteHead extends Writable {
+        private readonly chunks: string[] = [];
+        writeHead = sinon.spy();
+        flushHeaders = sinon.spy();
+
+        _write(
+          chunk: any,
+          encoding: string,
+          callback: (error?: Error | null) => void,
+        ): void {
+          this.chunks.push(String(chunk));
+          callback();
+        }
+
+        get content() {
+          return this.chunks.join('');
+        }
+      }
+
+      const result = new Promise<Observable<string>>(resolve => {
+        setTimeout(() => {
+          resolve(
+            new Observable(subscriber => {
+              subscriber.next('late event');
+              subscriber.complete();
+            }),
+          );
+        }, 10);
+      });
+      const response = new SinkWithWriteHead();
+      const responseEndSpy = sinon.spy(response, 'end');
+      const request = attachSocket(new PassThrough());
+
+      const ssePromise = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+      request.socket.emit('close');
+
+      await ssePromise;
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(response.writeHead.called).to.equal(false);
+      expect(response.flushHeaders.called).to.equal(false);
+      expect(response.content).to.equal('');
+      expect(responseEndSpy.calledOnce).to.equal(true);
     });
 
     it('should close the request when observable completes', done => {
