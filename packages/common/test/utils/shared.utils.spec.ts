@@ -140,6 +140,10 @@ describe('Shared utils', () => {
       expect(normalizePath('///')).to.be.eql('/');
       expect(normalizePath('/path////path///')).to.be.eql('/path/path');
     });
+    it('should collapse duplicate slashes for paths without leading slash', () => {
+      expect(normalizePath('path//path///')).to.be.eql('/path/path');
+      expect(normalizePath('api//v1/users')).to.be.eql('/api/v1/users');
+    });
     it('should return / for empty path', () => {
       expect(normalizePath('')).to.be.eql('/');
       expect(normalizePath(null!)).to.be.eql('/');
