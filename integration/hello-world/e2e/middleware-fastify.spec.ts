@@ -24,7 +24,7 @@ import { AppModule } from '../src/app.module';
 describe('Middleware (FastifyAdapter)', () => {
   let app: NestFastifyApplication;
 
-  describe('trailing slash handling ', () => {
+  describe('trailing slash handling', () => {
     @Injectable()
     class AuthMiddleware implements NestMiddleware {
       use(
