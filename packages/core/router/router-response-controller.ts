@@ -125,21 +125,34 @@ export class RouterResponseController {
 
     return new Promise<void>((resolve, reject) => {
       let settled = false;
+      let closeRequested = false;
       let subscription: { unsubscribe(): void } | undefined;
       const disconnectSource = request.socket ?? response;
 
       const cleanup = () => disconnectSource.removeListener('close', onClose);
 
-      const onClose = () => {
-        if (settled) {
-          return;
-        }
-        settled = true;
-        cleanup();
-        subscription?.unsubscribe();
+      const endStream = () => {
         if (!stream.writableEnded) {
           stream.end();
         }
+      };
+
+      const onClose = () => {
+        if (settled || closeRequested) {
+          return;
+        }
+
+        closeRequested = true;
+
+        if (!subscription) {
+          cleanup();
+          return;
+        }
+
+        settled = true;
+        cleanup();
+        subscription?.unsubscribe();
+        endStream();
         response.end();
         resolve();
       };
@@ -153,6 +166,19 @@ export class RouterResponseController {
           }
 
           this.assertObservable(observableResult);
+
+          if (closeRequested) {
+            const cleanupSubscription = observableResult.subscribe({
+              error: () => undefined,
+            });
+            cleanupSubscription.unsubscribe();
+
+            settled = true;
+            endStream();
+            response.end();
+            resolve();
+            return;
+          }
 
           stream.pipe(response, {
             additionalHeaders: options?.additionalHeaders,
@@ -196,9 +222,7 @@ export class RouterResponseController {
                 }
                 settled = true;
                 cleanup();
-                if (!stream.writableEnded) {
-                  stream.end();
-                }
+                endStream();
                 reject(err);
               },
               complete: () => {
@@ -207,9 +231,7 @@ export class RouterResponseController {
                 }
                 settled = true;
                 cleanup();
-                if (!stream.writableEnded) {
-                  stream.end();
-                }
+                endStream();
                 resolve();
               },
             });
@@ -229,11 +251,18 @@ export class RouterResponseController {
           if (settled) {
             return;
           }
+
+          if (closeRequested) {
+            settled = true;
+            endStream();
+            response.end();
+            resolve();
+            return;
+          }
+
           settled = true;
           cleanup();
-          if (!stream.writableEnded) {
-            stream.end();
-          }
+          endStream();
           reject(err);
         });
     });

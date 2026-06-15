@@ -1,6 +1,3 @@
-import { IncomingMessage } from 'node:http';
-import { Type } from 'class-transformer';
-import { IsInt } from 'class-validator';
 import {
   Body,
   Controller,
@@ -12,6 +9,9 @@ import {
   RequestMethod,
   Sse,
 } from '@nestjs/common';
+import { Type } from 'class-transformer';
+import { IsInt } from 'class-validator';
+import { IncomingMessage } from 'node:http';
 import { interval, map, Observable, of } from 'rxjs';
 
 class SseQueryDto {
@@ -25,6 +25,8 @@ export class AppController {
   private promiseDelayedRequestsStarted = 0;
   private promiseDelayedSubscriptionsStarted = 0;
   private promiseDelayedCloseEventsObserved = 0;
+  private promiseDelayedTeardownsObserved = 0;
+  private promiseDelayedRunningStreams = 0;
   private readonly promiseDelayedResolvers: Array<() => void> = [];
 
   @Sse('sse')
@@ -64,8 +66,23 @@ export class AppController {
   ssePromiseDelayed(
     @Req() request: IncomingMessage & { raw?: IncomingMessage },
   ): Promise<Observable<MessageEvent>> {
+    return this.createPromiseDelayedSse(request);
+  }
+
+  @Sse('sse/post/promise-delayed', { method: RequestMethod.POST })
+  ssePostPromiseDelayed(
+    @Req() request: IncomingMessage & { raw?: IncomingMessage },
+    @Body() _body: { content?: string },
+  ): Promise<Observable<MessageEvent>> {
+    return this.createPromiseDelayedSse(request);
+  }
+
+  private createPromiseDelayedSse(
+    request: IncomingMessage & { raw?: IncomingMessage },
+  ): Promise<Observable<MessageEvent>> {
     this.promiseDelayedRequestsStarted += 1;
-    const rawRequest = request.raw ?? request;
+    this.promiseDelayedRunningStreams += 1;
+    const rawRequest = request.socket ?? request;
 
     rawRequest.once('close', () => {
       this.promiseDelayedCloseEventsObserved += 1;
@@ -81,7 +98,11 @@ export class AppController {
               subscriber.next({ data: { hello: 'world' } });
             }, 50);
 
-            return () => clearInterval(intervalId);
+            return () => {
+              clearInterval(intervalId);
+              this.promiseDelayedTeardownsObserved += 1;
+              this.promiseDelayedRunningStreams -= 1;
+            };
           }),
         ),
       );
@@ -103,7 +124,9 @@ export class AppController {
     return {
       closeEventsObserved: this.promiseDelayedCloseEventsObserved,
       requestsStarted: this.promiseDelayedRequestsStarted,
+      runningStreams: this.promiseDelayedRunningStreams,
       subscriptionsStarted: this.promiseDelayedSubscriptionsStarted,
+      teardownsObserved: this.promiseDelayedTeardownsObserved,
     };
   }
 }
