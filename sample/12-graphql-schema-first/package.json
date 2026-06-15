@@ -25,7 +25,7 @@
     "@nestjs/common": "11.1.27",
     "@nestjs/core": "11.1.27",
     "@nestjs/graphql": "13.4.2",
-    "@nestjs/platform-express": "11.1.26",
+    "@nestjs/platform-express": "11.1.27",
     "class-transformer": "0.5.1",
     "class-validator": "0.15.1",
     "graphql": "16.10.0",

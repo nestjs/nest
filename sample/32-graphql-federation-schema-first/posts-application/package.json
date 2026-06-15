@@ -28,7 +28,7 @@
     "@nestjs/common": "11.1.27",
     "@nestjs/core": "11.1.27",
     "@nestjs/graphql": "13.4.2",
-    "@nestjs/platform-express": "11.1.26",
+    "@nestjs/platform-express": "11.1.27",
     "graphql": "16.10.0",
     "graphql-tools": "9.0.28",
     "reflect-metadata": "0.2.2",

@@ -21,7 +21,7 @@
   "dependencies": {
     "@nestjs/common": "11.1.27",
     "@nestjs/core": "11.1.27",
-    "@nestjs/platform-express": "11.1.26",
+    "@nestjs/platform-express": "11.1.27",
     "@nestjs/platform-socket.io": "11.1.27",
     "@nestjs/websockets": "11.1.27",
     "@socket.io/redis-adapter": "8.3.0",
