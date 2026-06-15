@@ -25,7 +25,7 @@
     "@nestjs/common": "11.1.27",
     "@nestjs/core": "11.1.27",
     "@nestjs/graphql": "13.4.2",
-    "@nestjs/platform-express": "11.1.26",
+    "@nestjs/platform-express": "11.1.27",
     "@prisma/adapter-better-sqlite3": "7.8.0",
     "@prisma/client": "7.8.0",
     "class-transformer": "0.5.1",

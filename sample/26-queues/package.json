@@ -22,7 +22,7 @@
     "@nestjs/bull": "11.0.4",
     "@nestjs/common": "11.1.27",
     "@nestjs/core": "11.1.27",
-    "@nestjs/platform-express": "11.1.26",
+    "@nestjs/platform-express": "11.1.27",
     "bull": "4.16.5",
     "dotenv": "17.4.2",
     "reflect-metadata": "0.2.2",
