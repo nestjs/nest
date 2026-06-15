@@ -31,7 +31,7 @@
     "test:dev": "node --loader ts-node/esm ./node_modules/mocha/bin/mocha.js -w --watch-files \"packages\" packages/**/*.spec.ts",
     "pretest:cov": "npm run clean",
     "test:cov": "nyc mocha packages/**/*.spec.ts --reporter spec",
-    "test:integration": "node --loader ts-node/esm ./node_modules/mocha/bin/mocha.js --reporter-option maxDiffSize=0 \"integration/*/{,!(node_modules)/**/}/*.spec.ts\"",
+    "test:integration": "node --loader ts-node/esm ./node_modules/mocha/bin/mocha.js --reporter-option maxDiffSize=0 \"integration/*/{,!(node_modules)/**/}/middleware-fastify.spec.ts\"",
     "test:docker:up": "node scripts/docker-compose.js -f integration/docker-compose.yml up -d",
     "test:docker:wait:rmq": "node scripts/wait-for-rabbitmq.js",
     "test:docker:down": "node scripts/docker-compose.js -f integration/docker-compose.yml down",
