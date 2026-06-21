@@ -306,7 +306,6 @@ describe('ServerGrpc', () => {
         GrpcMethodStreamingType.NO_STREAMING,
       );
       const handlers = new Map([[testPattern, () => ({})]]);
-      console.log(handlers.entries());
       untypedServer.messageHandlers = handlers;
 
       expect(
