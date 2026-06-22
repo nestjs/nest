@@ -1,0 +1,16 @@
+---
+description: NestJS monorepo map and doc pointers
+alwaysApply: true
+---
+
+# NestJS Monorepo
+
+This is the **NestJS framework source** (`@nestjs/*` under `packages/`), not a single app.
+
+- **Build / test / samples**: [docs/DEVELOPER.md](../../docs/DEVELOPER.md)
+- **Change blast-radius before editing**: [ARCHITECTURE.md](../../ARCHITECTURE.md) cheat sheet
+- **Commits / PRs**: [CONTRIBUTING.md](../../CONTRIBUTING.md)
+
+**Do not read** (use TS source instead): `node_modules/`, `.local-node/`, `package-lock.json`, `dist/`, `packages/**/*.js`, `packages/**/*.d.ts`, `coverage/`, `.nyc_output/`.
+
+**Search before exploring**: grep or semantic search for a symbol; avoid broad directory reads.

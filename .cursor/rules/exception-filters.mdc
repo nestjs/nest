@@ -1,0 +1,44 @@
+---
+description: HttpException + ExceptionFilter conventions
+globs: packages/common/exceptions/**/*.ts,packages/common/test/exceptions/**/*.ts,packages/core/exceptions/**/*.ts,packages/core/test/exceptions/**/*.ts,packages/microservices/exceptions/**/*.ts,packages/microservices/test/exceptions/**/*.ts
+alwaysApply: false
+---
+
+# Exception Filters
+
+- Two layers: **HTTP exceptions** (`packages/common/exceptions/`, ~30 concrete classes extending
+  `HttpException`) that you *throw*, and **exception filters** (`packages/core/exceptions/`)
+  that *catch* them.
+- New HTTP exception: extend `HttpException`
+  ([`http.exception.ts`](../../packages/common/exceptions/http.exception.ts)), follow the
+  `BadRequestException` template — pass `(message, status)` to `super()`; the
+  `(objectOrError, descriptionOrOptions)` overloads are handled by `HttpException.createBody()`,
+  don't reimplement that logic in a subclass. Then export it — add
+  `export * from './<name>.exception';` to
+  [`packages/common/exceptions/index.ts`](../../packages/common/exceptions/index.ts)
+  (alphabetical order); this is the "+ index" step in `ARCHITECTURE.md`'s cheat sheet. Without
+  it the exception isn't part of the public API, and `check-conformance` won't flag the gap
+  (it exempts `index.ts`).
+- Custom filters implement `ExceptionFilter<T>`
+  ([`interfaces/exceptions/exception-filter.interface.ts`](../../packages/common/interfaces/exceptions/exception-filter.interface.ts)):
+  one method, `catch(exception: T, host: ArgumentsHost)`. The framework's catch-all is
+  `BaseExceptionFilter` (`packages/core/exceptions/base-exception-filter.ts`); request dispatch
+  goes through `ExceptionsHandler` (`exceptions-handler.ts`) →
+  `RouterExceptionFilters` (`packages/core/router/router-exception-filters.ts`).
+- Non-HTTP transports have their own variant — don't reuse `HttpException`/`ExceptionFilter` for
+  them: RPC uses `RpcException` + `BaseRpcExceptionFilter` (`packages/microservices/exceptions/`);
+  WS uses the `WsExceptionFilter` interface (`packages/common/interfaces/exceptions/`).
+- Tests mirror source: `packages/common/test/exceptions/`, `packages/core/test/exceptions/`,
+  `packages/microservices/test/exceptions/`. Exception subclass tests mostly assert
+  `getStatus()` / `getResponse()` / `message`; filter tests (e.g. `exceptions-handler.spec.ts`)
+  stub a fake `ArgumentsHost`/response object rather than booting a real app.
+- Difficulty (`ARCHITECTURE.md` §3): adding a new built-in HTTP exception is **Easy**
+  (additive); changing `HttpException`'s constructor or `createBody` is **Hard** — it's the
+  base of ~30 subclasses across `packages/common`. In practice even maintainer-authored
+  `createBody` changes have shipped without a dedicated spec (e.g. #12787) — CONTRIBUTING.md
+  still expects one for behavior changes, so add it rather than treat the historical gap as
+  precedent.
+- `BaseExceptionFilterContext` extends the shared `ContextCreator` base
+  (`packages/core/helpers/context-creator.ts`), also used by guards/interceptors/pipes
+  context-creators — see `guards.mdc`/`interceptors.mdc` if debugging filter *resolution*
+  (vs. the `catch()` call itself).

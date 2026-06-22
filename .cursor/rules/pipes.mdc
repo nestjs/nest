@@ -1,0 +1,27 @@
+---
+description: PipeTransform conventions for packages/common/pipes
+globs: packages/common/pipes/**/*.ts,packages/common/test/pipes/**/*.ts
+alwaysApply: false
+---
+
+# Pipes
+
+- Implement `PipeTransform<T, R>` ([`interfaces/features/pipe-transform.interface.ts`](../../packages/common/interfaces/features/pipe-transform.interface.ts)):
+  one method, `transform(value: T, metadata: ArgumentMetadata): R`.
+- Naming: `<name>.pipe.ts`, class suffixed `Pipe` (e.g. `ParseIntPipe`). On invalid input, throw
+  `BadRequestException` directly or via a constructor-supplied `exceptionFactory` — see
+  [`exception-filters.mdc`](exception-filters.mdc).
+- Minimal template: [`parse-int.pipe.ts`](../../packages/common/pipes/parse-int.pipe.ts).
+  Complex/configurable template: `validation.pipe.ts` (constructor options + `exceptionFactory`).
+- File-upload pipes (`pipes/file/`) implement `FileValidator`, not `PipeTransform`, directly —
+  see `pipes/file/file-validator.interface.ts`.
+- Wire the barrel export: add `export * from './<name>.pipe';` to
+  [`packages/common/pipes/index.ts`](../../packages/common/pipes/index.ts) in the existing
+  alphabetical order (as `parse-positive-int.pipe` is). `common/index.ts` re-exports `./pipes`,
+  so no second edit is needed. Without this the class compiles but isn't part of
+  `@nestjs/common`'s public API — and `check-conformance` won't flag it (it exempts `index.ts`).
+- Tests: `packages/common/test/pipes/<name>.pipe.spec.ts` (mirrors source; never colocated).
+  Style from `parse-int.pipe.spec.ts`: chai `expect`, no sinon — instantiate the pipe and call
+  `.transform(value, {} as ArgumentMetadata)` directly when metadata doesn't matter to the case.
+- Run `npm run test` + `npm run lint` before finishing; add or update the spec for any behavior
+  change (`CONTRIBUTING.md`).

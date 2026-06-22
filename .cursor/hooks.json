@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeReadFile": [
+      {
+        "command": ".cursor/hooks/guard-read.sh"
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": ".cursor/hooks/format.sh",
+        "matcher": "Write"
+      }
+    ]
+  }
+}

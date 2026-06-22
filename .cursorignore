@@ -1,0 +1,17 @@
+# Vendored / local tooling
+.local-node/
+**/node_modules/
+
+# Large lockfiles
+package-lock.json
+**/package-lock.json
+
+# Build output
+dist/
+**/dist/
+packages/**/*.js
+packages/**/*.d.ts
+
+# Test coverage
+coverage/
+.nyc_output/

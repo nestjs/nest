@@ -1,0 +1,32 @@
+---
+description: Decorator conventions for packages/common/decorators
+globs: packages/common/decorators/**/*.ts,packages/common/test/decorators/**/*.ts
+alwaysApply: false
+---
+
+# Decorators
+
+- Three folders, each a distinct concern: `decorators/core/` (DI + class decorators —
+  `@Injectable`, `@Controller`, `@Catch`, `@UseGuards`/`@UsePipes`/`@UseInterceptors`),
+  `decorators/http/` (route/param decorators — `@Header`, `@HttpCode`, `@Redirect`, route-param
+  factories), `decorators/modules/` (`@Module`, `@Global`).
+- Custom param decorators (the most common "single module change" here) go through
+  `createParamDecorator()` (`decorators/http/create-route-param-metadata.decorator.ts`), not a
+  hand-rolled `ParameterDecorator` — it registers `ROUTE_ARGS_METADATA` the same way built-ins
+  like `@Body()`/`@Param()` do, including pipe support via the `dataOrPipes` argument.
+- `@UseGuards`/`@UsePipes`/`@UseInterceptors`/`@Catch` (in `decorators/core/`) are pure metadata
+  attachers — they call `extendArrayMetadata` and don't execute anything themselves; the actual
+  `Guard`/`Pipe`/`Interceptor`/`ExceptionFilter` logic lives in `core/{guards,pipes,interceptors,exceptions}`
+  (see [`guards.mdc`](guards.mdc), [`interceptors.mdc`](interceptors.mdc),
+  [`exception-filters.mdc`](exception-filters.mdc)). Don't conflate "decorator behaves wrong"
+  with "consumer/engine behaves wrong" when triaging a bug report.
+- This is the most user-facing surface in `packages/common` (`ARCHITECTURE.md`: "VERY HIGH"
+  blast radius, 252 internal import sites) — a signature change here is breaking for the whole
+  ecosystem; adding a *new* decorator is additive/Easy.
+- Wire the barrel export into the matching **subfolder** index — `decorators/core/index.ts`,
+  `decorators/http/index.ts`, or `decorators/modules/index.ts` (the top `decorators/index.ts`
+  just re-exports those three, so don't add it there). Skip this and the decorator isn't
+  exported from `@nestjs/common`; `check-conformance` won't catch it (it exempts `index.ts`).
+- Tests mirror source under `packages/common/test/decorators/` (flat, one spec per decorator —
+  e.g. `use-pipes.decorator.spec.ts`). Most just assert the right metadata key/value was set via
+  `Reflect.getMetadata` on a decorated fixture class; no DI container or HTTP request involved.

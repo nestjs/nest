@@ -1,0 +1,34 @@
+---
+description: Guards engine conventions (no concrete Guard ships in framework source)
+globs: packages/core/guards/**/*.ts,packages/core/test/guards/**/*.ts
+alwaysApply: false
+---
+
+# Guards
+
+- **No concrete `Guard` ships in framework source** — `packages/common` and `packages/core`
+  contain zero `*.guard.ts` files. Guards are a consumer-app concept; if you're asked to "add a
+  guard," it belongs in `sample/*` or an `integration/*` test fixture (e.g.
+  `integration/scopes/src/durable/durable.guard.ts`), not `packages/`.
+- What *does* live here is the **engine** that runs guards: implement against `CanActivate`
+  ([`interfaces/features/can-activate.interface.ts`](../../packages/common/interfaces/features/can-activate.interface.ts)) —
+  `canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean>` —
+  and the two files that execute them: `guards-context-creator.ts` (resolves which guards apply,
+  global → controller → route) and `guards-consumer.ts` (calls `canActivate`, short-circuits to
+  403 on `false`).
+- `GuardsContextCreator` extends the shared `ContextCreator` base
+  (`packages/core/helpers/context-creator.ts`), also extended by `InterceptorsContextCreator`,
+  `PipesContextCreator`, and `BaseExceptionFilterContext`. A bug in the shared base ripples
+  across all four checkpoints at once (e.g. #11305 fixed durable-scope resolution in all four
+  `*-context-creator.ts` files in a single PR) — check the base class, not just the guard-specific
+  file, when debugging context-creation issues.
+- This is **high blast-radius / Hard** territory (`ARCHITECTURE.md` §3-4) — changes affect every
+  request's authorization path. Run the full unit suite (`npm run test`), not just
+  `core/test/guards`.
+- Tests (`guards-consumer.spec.ts`, `guards-context-creator.spec.ts`): no real `Guard` class
+  needed — fakes are plain objects, e.g. `{ canActivate: () => true }`, passed wherever a
+  `CanActivate` is expected. Sinon isn't needed for the happy path; reach for it only when
+  asserting call order/arguments.
+- Lifecycle position: Middleware → **Guards** → Interceptors (before) → Pipes → Handler
+  (`ARCHITECTURE.md` §2a) — guards run before any pipe/interceptor, so they must never depend on
+  transformed or validated params.

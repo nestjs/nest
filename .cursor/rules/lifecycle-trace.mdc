@@ -1,0 +1,36 @@
+---
+description: >-
+  Thread a Trace ID (this repo's GitHub issue number) through commits, PR
+  descriptions, and changelog mentions. Use when drafting a commit message,
+  a PR description, opening a discussion issue, or summarizing why a change
+  was made.
+alwaysApply: false
+---
+
+# Lifecycle Trace (Trace ID = GitHub issue number)
+
+This repo has no RFC/ADR numbering and no changelog-fragment system — don't invent one. It
+already has a lightweight join key; reuse it instead of adding new artifact types.
+
+- **Trace ID = the GitHub issue number.** It's already required in
+  `.github/PULL_REQUEST_TEMPLATE.md` (`Issue Number:` field) and in real commit history —
+  e.g. `bd36c2832 fix(common): resolve file-type path explicitly #15270`. Before drafting a
+  commit or PR for anything beyond a trivial fix, find the issue number or say plainly that none
+  exists yet — don't fabricate one and don't silently leave the template field at `N/A`.
+- **No issue yet for a major/breaking change?** Point at the `[discussion]`-prefixed issue
+  process (`CONTRIBUTING.md`) rather than skipping the link — that issue *is* this repo's Plan
+  stage.
+- **Commit format** stays the `commit-and-pr` skill's `<type>(<scope>): <subject>`; append
+  `#<issue>` when one exists (matches existing repo convention, not a new format).
+- **PR description as the missing Design record.** There's no ADR folder here, so for Hard /
+  high-blast-radius changes (`ARCHITECTURE.md` §4) the PR's "What is the new behavior?" section
+  is the only place the *why* will ever be captured — write it as a decision record, not just a
+  diff summary.
+- **Don't retrofit this repo's history.** This is forward-only discipline for new changes; it is
+  not a request to backfill issue links onto old commits or to add `proposals/`/`docs/adr/`
+  folders that nothing in this project's actual CI or review process reads.
+- **Triaging a fresh issue end-to-end?** Use the `triage-issue` skill — it produces the branch
+  name, the ticket (saved at `.cursor/triage/<issue>.md`), and the failing-test evidence this
+  rule assumes already exist before a commit/PR gets drafted. Its `verify-trace.sh`, wired in as
+  `.husky/pre-push`, is this repo's one *enforced* (not just agent-followed) checkpoint for that
+  ticket+evidence pairing — everything else in this file is agent-layer discipline only.

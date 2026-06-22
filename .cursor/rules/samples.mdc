@@ -1,0 +1,13 @@
+---
+description: Sample app conventions (not framework source)
+globs: sample/**
+alwaysApply: false
+---
+
+# Sample Apps
+
+- Each `sample/*` directory is a **standalone app** with its own `package.json`.
+- Install with `npm install --legacy-peer-deps`.
+- After changing `packages/`, run `npm run build && npm run move:samples` from repo root.
+- Do not treat samples as framework source; keep changes minimal and scoped to the sample.
+- Commit scope: `sample/#` (e.g. `fix(sample/01): …`).

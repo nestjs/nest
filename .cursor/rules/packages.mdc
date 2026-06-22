@@ -1,0 +1,14 @@
+---
+description: Rules for editing @nestjs/* framework packages
+globs: packages/**/*.ts
+alwaysApply: false
+---
+
+# Framework Packages
+
+- Check blast-radius in [ARCHITECTURE.md](../../ARCHITECTURE.md) before editing `common`, `core/injector`, or `core/router`.
+- Add or update the mirrored `*.spec.ts` under `test/` for behavior changes (specs are never
+  colocated with source — see `tests.mdc`).
+- Run `npm run test` and `npm run lint` before finishing.
+- Commit scopes: `common`, `core`, `microservices`, `express`, `fastify`, `websockets`, `testing`, `ws`, `socket.io` (plus `sample` / `release` for those commit kinds; full enum in `.commitlintrc.json`, see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
+- Avoid breaking public interfaces in `packages/common` without semver consideration.

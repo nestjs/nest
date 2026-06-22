@@ -1,0 +1,31 @@
+---
+description: NestInterceptor conventions (engine + ClassSerializerInterceptor)
+globs: packages/core/interceptors/**/*.ts,packages/core/test/interceptors/**/*.ts,packages/common/serializer/**/*.ts,packages/common/test/serializer/**/*.ts
+alwaysApply: false
+---
+
+# Interceptors
+
+- Implement `NestInterceptor<T, R>`
+  ([`interfaces/features/nest-interceptor.interface.ts`](../../packages/common/interfaces/features/nest-interceptor.interface.ts)):
+  one method, `intercept(context: ExecutionContext, next: CallHandler): Observable<R> | Promise<Observable<R>>`.
+  Call `next.handle()` to continue the chain; `map`/`tap` the returned `Observable` for "after"
+  logic.
+- Unlike guards, there's one concrete framework-shipped example:
+  `ClassSerializerInterceptor` (`packages/common/serializer/class-serializer.interceptor.ts`) —
+  use it as the template for a real interceptor, not just the bare interface.
+- Engine: `interceptors-context-creator.ts` resolves applicable interceptors (global →
+  controller → route); `interceptors-consumer.ts` runs them around the handler call (both in
+  `packages/core/interceptors/`). `InterceptorsContextCreator` extends the shared `ContextCreator`
+  base (`packages/core/helpers/context-creator.ts`) — also extended by `GuardsContextCreator`,
+  `PipesContextCreator`, and `BaseExceptionFilterContext` — so a resolution bug there can affect
+  all four checkpoints at once, not just interceptors.
+- Tests mirror source under `packages/core/test/interceptors/` and
+  `packages/common/test/serializer/`. `class-serializer.interceptor.spec.ts` is the style
+  reference: a sinon **sandbox** (`sinon.createSandbox()`) to stub `Reflector`/the external
+  `class-transformer` package, restored in `afterEach`. Plain-object fakes (as with guards) are
+  enough when you aren't stubbing an external dependency.
+- Lifecycle position: Guards → **Interceptors (before)** → Pipes → Handler →
+  **Interceptors (after)** → Exception filters (`ARCHITECTURE.md` §2a) — interceptors are the
+  only checkpoint wrapping the handler on both sides, so response-shape changes (e.g.
+  serialization) belong here, not in a pipe.

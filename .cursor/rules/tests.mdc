@@ -1,0 +1,17 @@
+---
+description: Unit and integration test conventions
+globs: packages/**/test/**/*.spec.ts,integration/**/*.spec.ts
+alwaysApply: false
+---
+
+# Tests
+
+- Stack: **mocha** + **chai** + **sinon** (`hooks/mocha-init-hook.ts` in mocha config).
+- Unit tests: `npm run test` (watch: `npm run test:dev`).
+- Lint specs: `npm run lint:spec`.
+- Integration tests live under `integration/` — use Docker; see `run-integration-tests` skill.
+- Specs live in a **parallel `packages/<pkg>/test/` tree**, never colocated in the same folder
+  as the source — e.g. `pipes/parse-int.pipe.ts` → `test/pipes/parse-int.pipe.spec.ts`.
+  Mirror the source path exactly when adding a new spec.
+- See `pipes.mdc`, `exception-filters.mdc`, `guards.mdc`, `interceptors.mdc`, `decorators.mdc`
+  for per-concept conventions and concrete test-style examples.

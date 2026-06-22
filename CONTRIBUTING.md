@@ -161,37 +161,48 @@ from the main (upstream) repository:
 
 You will need [Node.js](https://nodejs.org) version >= 20.
 
-1. After cloning the repo, run:
+See the [developer guide][dev-doc] for full local setup: installing dependencies,
+building packages, linking them into samples, running example apps, and running tests.
+
+Quick start after cloning:
 
 ```bash
-$ npm ci --legacy-peer-deps # (or yarn install)
+$ npm ci --legacy-peer-deps
+$ npm run build
+$ npm run move:samples
 ```
 
-2. In order to prepare your environment run `prepare.sh` shell script:
+To run the simplest sample app:
 
 ```bash
-$ sh scripts/prepare.sh
+$ cd sample/01-cats-app
+$ npm install --legacy-peer-deps
+$ npm run start:dev
 ```
 
-That will compile fresh packages and afterward, move them all to `sample` directories.
+For integration tests (Docker required), use `sh scripts/run-integration.sh` or see
+the developer guide — `scripts/prepare.sh` only builds packages and starts Docker
+services; it does not move packages into samples.
 
 ### <a name="common-scripts"></a>Commonly used NPM scripts
 
 ```bash
-# build all packages and move to "sample" directories
+# build all packages (copies output to root node_modules/@nestjs)
 $ npm run build
+
+# copy built @nestjs packages into sample/*/node_modules
+$ npm run move:samples
 
 # run the full unit tests suite
 $ npm run test
 
-# run integration tests
-# docker is required(!)
+# run integration tests (docker is required)
 $ sh scripts/run-integration.sh
 
 # run linter
 $ npm run lint
 
-# build all packages and put them near to their source .ts files
+# clean production build (compiled output next to source in packages/)
 $ npm run build:prod
 ```
 
@@ -324,7 +335,7 @@ changes to be accepted, the CLA must be signed. It's a quick process, we promise
 [commit-message-format]: https://docs.google.com/document/d/1QrDFcIiPjSLDn3EL15IJygNPiHORgU1_OOAqWjiDU5Y/edit#
 <!-- [individual-cla]: http://code.google.com/legal/individual-cla-v1.0.html -->
 <!-- [corporate-cla]: http://code.google.com/legal/corporate-cla-v1.0.html -->
-[dev-doc]: https://github.com/nestjs/nest/blob/master/docs/DEVELOPER.md
+[dev-doc]: docs/DEVELOPER.md
 [github]: https://github.com/nestjs/nest
 [stackoverflow]: https://stackoverflow.com/questions/tagged/nestjs
 [discord]: https://discordapp.com/invite/G7Qnnhy

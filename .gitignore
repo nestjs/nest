@@ -3,6 +3,7 @@ sample/**/package-lock.json
 
 # dependencies
 node_modules/
+.local-node/
 
 # IDE
 /.idea
