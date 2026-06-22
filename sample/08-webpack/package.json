@@ -29,7 +29,7 @@
     "eslint-plugin-prettier": "5.5.6",
     "globals": "17.6.0",
     "start-server-webpack-plugin": "2.2.5",
-    "ts-loader": "9.6.1",
+    "ts-loader": "9.6.2",
     "ts-node": "10.9.2",
     "webpack": "5.107.2",
     "webpack-cli": "7.0.3",
