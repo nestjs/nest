@@ -5,8 +5,14 @@ import {
   OnApplicationShutdown,
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-const SIGNAL = process.argv[2];
-const SIGNAL_TO_LISTEN = process.argv[3];
+const VALID_SIGNAL_RE = /^SIG[A-Z0-9]+$/;
+function validateSignal(sig: string | undefined): string | undefined {
+  if (sig === undefined || sig === 'NONE') return sig;
+  if (!VALID_SIGNAL_RE.test(sig)) throw new Error(`Invalid signal name: ${sig}`);
+  return sig;
+}
+const SIGNAL = validateSignal(process.argv[2]);
+const SIGNAL_TO_LISTEN = validateSignal(process.argv[3]);
 const USE_GRACEFUL_EXIT = process.argv[4] === 'graceful';
 
 @Injectable()
