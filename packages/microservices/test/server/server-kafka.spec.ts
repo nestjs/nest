@@ -161,7 +161,7 @@ describe('ServerKafka', () => {
         .stub(server, 'bindEvents')
         .callsFake(() => ({}) as any);
 
-      await server.listen(err => console.log(err));
+      await server.listen(() => {});
       expect(bindEventsStub.called).to.be.true;
     });
     it('should call callback', async () => {
