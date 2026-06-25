@@ -1,6 +1,10 @@
 import { Catch, Injectable } from '@nestjs/common';
+import * as chai from 'chai';
 import { expect } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
 import * as sinon from 'sinon';
+
+chai.use(chaiAsPromised);
 import { GUARDS_METADATA } from '../../common/constants';
 import { Controller } from '../../common/decorators/core/controller.decorator';
 import { UseGuards } from '../../common/decorators/core/use-guards.decorator';
@@ -406,21 +410,21 @@ describe('DependenciesScanner', () => {
     it('should throw "InvalidClassModuleException" exception when supplying a class annotated with `@Injectable()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
-      expect(scanner.insertModule(TestComponent, [])).to.be.rejectedWith(
+      return expect(scanner.insertModule(TestComponent, [])).to.be.rejectedWith(
         InvalidClassModuleException,
       );
     });
     it('should throw "InvalidClassModuleException" exception when supplying a class annotated with `@Controller()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
-      expect(scanner.insertModule(TestController, [])).to.be.rejectedWith(
-        InvalidClassModuleException,
-      );
+      return expect(
+        scanner.insertModule(TestController, []),
+      ).to.be.rejectedWith(InvalidClassModuleException);
     });
     it('should throw "InvalidClassModuleException" exception when supplying a class annotated with (only) `@Catch()` decorator', () => {
       sinon.stub(container, 'addModule').returns({} as any);
 
-      expect(
+      return expect(
         scanner.insertModule(TestExceptionFilterWithoutInjectable, []),
       ).to.be.rejectedWith(InvalidClassModuleException);
     });
