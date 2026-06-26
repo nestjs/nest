@@ -84,7 +84,7 @@ export class ListenerMetadataExplorer {
     instance: Controller,
   ): IterableIterator<ClientProperties> {
     for (const propertyKey in instance) {
-      if (isFunction(propertyKey)) {
+      if (isFunction(instance[propertyKey])) {
         continue;
       }
       const property = String(propertyKey);
