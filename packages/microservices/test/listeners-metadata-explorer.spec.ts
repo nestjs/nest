@@ -1,10 +1,7 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { MetadataScanner } from '../../core/metadata-scanner';
-import {
-  CLIENT_CONFIGURATION_METADATA,
-  CLIENT_METADATA,
-} from '../constants';
+import { CLIENT_CONFIGURATION_METADATA, CLIENT_METADATA } from '../constants';
 import { Client } from '../decorators/client.decorator';
 import { EventPattern } from '../decorators/event-pattern.decorator';
 import { MessagePattern } from '../decorators/message-pattern.decorator';
