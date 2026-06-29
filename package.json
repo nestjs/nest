@@ -115,7 +115,7 @@
     "amqp-connection-manager": "5.0.0",
     "amqplib": "2.0.1",
     "body-parser": "2.3.0",
-    "cache-manager": "7.2.8",
+    "cache-manager": "7.2.9",
     "chai": "4.5.0",
     "chai-as-promised": "7.1.2",
     "concurrently": "10.0.3",
