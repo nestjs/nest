@@ -127,7 +127,7 @@
     "eslint-plugin-prettier": "5.5.6",
     "eventsource": "4.1.0",
     "fancy-log": "2.0.0",
-    "fastify": "5.8.5",
+    "fastify": "5.9.0",
     "fastify-plugin": "6.0.0",
     "find-my-way": "9.6.0",
     "globals": "17.7.0",
