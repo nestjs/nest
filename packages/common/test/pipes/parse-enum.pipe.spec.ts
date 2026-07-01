@@ -66,4 +66,34 @@ describe('ParseEnumPipe', () => {
       }
     });
   });
+
+  describe('when enum is numeric', () => {
+    enum Status {
+      Active = 0,
+      Inactive = 1,
+    }
+    let numericTarget: ParseEnumPipe;
+
+    beforeEach(() => {
+      numericTarget = new ParseEnumPipe(Status);
+    });
+
+    it('should return numeric enum value when the numeric value is passed', async () => {
+      expect(
+        await numericTarget.transform(Status.Active as any, {} as ArgumentMetadata),
+      ).to.equal(Status.Active);
+      expect(
+        await numericTarget.transform(Status.Inactive as any, {} as ArgumentMetadata),
+      ).to.equal(Status.Inactive);
+    });
+
+    it('should throw when a reverse-mapped key name is passed instead of the value', async () => {
+      try {
+        await numericTarget.transform('Active' as any, {} as ArgumentMetadata);
+        expect.fail('expected transform to throw');
+      } catch (err) {
+        expect(err).to.be.instanceOf(HttpException);
+      }
+    });
+  });
 });
