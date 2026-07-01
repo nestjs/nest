@@ -8,8 +8,13 @@ import { expect } from 'chai';
 import { EventSource } from 'eventsource';
 import { AppModule } from '../src/app.module';
 import {
+  fetchInterceptorDelayedSseStats,
   fetchPromiseDelayedSseStats,
+  releaseInterceptorDelayedSse,
   releasePromiseDelayedSse,
+  waitForInterceptorDelayedSseClose,
+  waitForInterceptorDelayedSseRequestStart,
+  waitForInterceptorDelayedSseTeardown,
   waitForPromiseDelayedSseClose,
   waitForPromiseDelayedSseRequestStart,
   waitForPromiseDelayedSseTeardown,
@@ -271,6 +276,94 @@ describe('Sse (Fastify Application)', () => {
       await waitForPromiseDelayedSseTeardown(url);
 
       const stats = await fetchPromiseDelayedSseStats(url);
+      expect(stats.closeEventsObserved).to.equal(1);
+      expect(stats.requestsStarted).to.equal(1);
+      expect(stats.runningStreams).to.equal(0);
+      expect(stats.subscriptionsStarted).to.equal(1);
+      expect(stats.teardownsObserved).to.equal(1);
+    });
+  });
+
+  describe('Promise<Observable> disconnect handling with interceptor', () => {
+    beforeEach(async () => {
+      const moduleFixture = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      app = moduleFixture.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter({
+          forceCloseConnections: true,
+        }),
+      );
+
+      await app.listen(0);
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('should subscribe and tear down if the GET SSE client disconnects before the promise resolves', async () => {
+      const url = await app.getUrl();
+      const abortController = new AbortController();
+      const responsePromise = fetch(`${url}/sse/interceptor/promise-delayed`, {
+        headers: {
+          accept: 'text/event-stream',
+        },
+        signal: abortController.signal,
+      });
+
+      await waitForInterceptorDelayedSseRequestStart(url);
+      abortController.abort();
+
+      await responsePromise.catch(error => {
+        expect(error.name).to.equal('AbortError');
+      });
+
+      await waitForInterceptorDelayedSseClose(url);
+
+      expect(await releaseInterceptorDelayedSse(url)).to.equal(1);
+
+      await waitForInterceptorDelayedSseTeardown(url);
+
+      const stats = await fetchInterceptorDelayedSseStats(url);
+      expect(stats.closeEventsObserved).to.equal(1);
+      expect(stats.requestsStarted).to.equal(1);
+      expect(stats.runningStreams).to.equal(0);
+      expect(stats.subscriptionsStarted).to.equal(1);
+      expect(stats.teardownsObserved).to.equal(1);
+    });
+
+    it('should subscribe and tear down if the POST SSE client disconnects before the promise resolves', async () => {
+      const url = await app.getUrl();
+      const abortController = new AbortController();
+      const responsePromise = fetch(
+        `${url}/sse/post/interceptor/promise-delayed`,
+        {
+          method: 'POST',
+          headers: {
+            accept: 'text/event-stream',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({ content: 'chunk-0' }),
+          signal: abortController.signal,
+        },
+      );
+
+      await waitForInterceptorDelayedSseRequestStart(url);
+      abortController.abort();
+
+      await responsePromise.catch(error => {
+        expect(error.name).to.equal('AbortError');
+      });
+
+      await waitForInterceptorDelayedSseClose(url);
+
+      expect(await releaseInterceptorDelayedSse(url)).to.equal(1);
+
+      await waitForInterceptorDelayedSseTeardown(url);
+
+      const stats = await fetchInterceptorDelayedSseStats(url);
       expect(stats.closeEventsObserved).to.equal(1);
       expect(stats.requestsStarted).to.equal(1);
       expect(stats.runningStreams).to.equal(0);
