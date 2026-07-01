@@ -706,19 +706,12 @@ export class Injector {
       instanceWrapperRef = providers.get(name)!;
       this.addDependencyMetadata(keyOrIndex!, wrapper, instanceWrapperRef);
 
-      const inquirerId = this.getContextInquirerId(resolutionContext);
-      const instanceHost = instanceWrapperRef.getInstanceByContextId(
-        this.getContextId(resolutionContext.contextId, instanceWrapperRef),
-        inquirerId,
-      );
-      if (!instanceHost.isResolved && !instanceWrapperRef.forwardRef) {
-        /*
-         * Provider will be loaded shortly in resolveComponentHost() once we pass the current
-         * Barrier. We cannot load it here because doing so could incorrectly evaluate the
-         * staticity of the dependency tree and lead to undefined / null injection.
-         */
-        break;
-      }
+      /*
+       * Stop at the first direct export match. Continuing when the provider is
+       * already resolved would let a later import (e.g. a global forRoot module)
+       * override an explicit forFeature import for the same token.
+       */
+      break;
     }
     return instanceWrapperRef;
   }
