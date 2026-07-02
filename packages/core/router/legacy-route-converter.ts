@@ -32,33 +32,37 @@ export class LegacyRouteConverter {
       : () => {};
 
     if (normalizedRoute.endsWith('/(.*)/')) {
+      const convertedRoute = route.replace('(.*)', '{*path}');
       // Skip printing warning for the "all" wildcard.
       if (normalizedRoute !== '/(.*)/') {
-        printWarning(route);
+        printWarning(route, convertedRoute);
       }
-      return route.replace('(.*)', '{*path}');
+      return convertedRoute;
     }
 
     if (normalizedRoute.endsWith('/*/')) {
+      const convertedRoute = route.replace('*', '{*path}');
       // Skip printing warning for the "all" wildcard.
       if (normalizedRoute !== '/*/') {
-        printWarning(route);
+        printWarning(route, convertedRoute);
       }
-      return route.replace('*', '{*path}');
+      return convertedRoute;
     }
 
     if (normalizedRoute.endsWith('/+/')) {
-      printWarning(route);
-      return route.replace('/+', '/*path');
+      const convertedRoute = route.replace('/+', '/*path');
+      printWarning(route, convertedRoute);
+      return convertedRoute;
     }
 
     // When route includes any wildcard segments in the middle.
     if (normalizedRoute.includes('/*/')) {
-      printWarning(route);
       // Replace each /*/ segment with a named parameter using different name for each segment.
-      return route.replaceAll('/*/', (match, offset) => {
+      const convertedRoute = route.replaceAll('/*/', (match, offset) => {
         return `/*path${offset}/`;
       });
+      printWarning(route, convertedRoute);
+      return convertedRoute;
     }
 
     return route;
@@ -68,9 +72,12 @@ export class LegacyRouteConverter {
     this.logger.error(UNSUPPORTED_PATH_MESSAGE`${route}`);
   }
 
-  static printWarning(route: string): void {
-    this.logger.warn(
-      UNSUPPORTED_PATH_MESSAGE`${route}` + ' Attempting to auto-convert...',
-    );
+  static printWarning(route: string, convertedRoute?: string): void {
+    // Surface the auto-converted result so users can map the flagged path to a
+    // concrete fix, instead of only seeing the (often prefixed) offending path.
+    const autoConvertMessage = convertedRoute
+      ? ` Attempting to auto-convert to "${convertedRoute}"...`
+      : ' Attempting to auto-convert...';
+    this.logger.warn(UNSUPPORTED_PATH_MESSAGE`${route}` + autoConvertMessage);
   }
 }
