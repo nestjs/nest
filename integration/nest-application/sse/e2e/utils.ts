@@ -68,3 +68,76 @@ export const waitForPromiseDelayedSseTeardown = async (appUrl: string) => {
     'Timed out waiting for the delayed SSE teardown to run.',
   );
 };
+
+export interface InterceptorDelayedSseStats {
+  closeEventsObserved: number;
+  requestsStarted: number;
+  runningStreams: number;
+  subscriptionsStarted: number;
+  teardownsObserved: number;
+}
+
+export const fetchInterceptorDelayedSseStats = async (
+  appUrl: string,
+): Promise<InterceptorDelayedSseStats> => {
+  const response = await fetch(
+    `${appUrl}/sse/interceptor/promise-delayed/stats`,
+  );
+  return response.json();
+};
+
+export const releaseInterceptorDelayedSse = async (appUrl: string) => {
+  const response = await fetch(
+    `${appUrl}/sse/interceptor/promise-delayed/release`,
+    { method: 'POST' },
+  );
+  const { released } = await response.json();
+
+  return released as number;
+};
+
+const waitForInterceptorDelayedSseStat = async (
+  appUrl: string,
+  predicate: (stats: InterceptorDelayedSseStats) => boolean,
+  timeoutErrorMessage: string,
+) => {
+  const deadline = Date.now() + 2_000;
+
+  while (Date.now() < deadline) {
+    const stats = await fetchInterceptorDelayedSseStats(appUrl);
+
+    if (predicate(stats)) {
+      return;
+    }
+
+    await sleep(20);
+  }
+
+  throw new Error(timeoutErrorMessage);
+};
+
+export const waitForInterceptorDelayedSseRequestStart = async (
+  appUrl: string,
+) => {
+  await waitForInterceptorDelayedSseStat(
+    appUrl,
+    stats => stats.requestsStarted > 0,
+    'Timed out waiting for the interceptor-delayed SSE request to start.',
+  );
+};
+
+export const waitForInterceptorDelayedSseClose = async (appUrl: string) => {
+  await waitForInterceptorDelayedSseStat(
+    appUrl,
+    stats => stats.closeEventsObserved > 0,
+    'Timed out waiting for the interceptor-delayed SSE request to close.',
+  );
+};
+
+export const waitForInterceptorDelayedSseTeardown = async (appUrl: string) => {
+  await waitForInterceptorDelayedSseStat(
+    appUrl,
+    stats => stats.teardownsObserved > 0,
+    'Timed out waiting for the interceptor-delayed SSE teardown to run.',
+  );
+};
