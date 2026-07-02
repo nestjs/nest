@@ -113,6 +113,12 @@ export abstract class AbstractHttpAdapter<
     return this.instance.search(...args);
   }
 
+  public query(handler: RequestHandler);
+  public query(path: any, handler: RequestHandler);
+  public query(...args: any[]) {
+    return this.instance.query(...args);
+  }
+
   public options(handler: RequestHandler);
   public options(path: any, handler: RequestHandler);
   public options(...args: any[]) {
