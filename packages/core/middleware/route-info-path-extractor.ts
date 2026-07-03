@@ -33,16 +33,17 @@ export class RouteInfoPathExtractor {
     const versionPaths = this.extractVersionPathFrom(version);
 
     if (this.isAWildcard(path)) {
+      const wildcardPath = this.getNamedWildcardPath(path);
       const entries =
         versionPaths.length > 0
           ? versionPaths
               .map(versionPath => [
                 this.prefixPath + versionPath + '$',
-                this.prefixPath + versionPath + addLeadingSlash(path),
+                this.prefixPath + versionPath + wildcardPath,
               ])
               .flat()
           : this.prefixPath
-            ? [this.prefixPath + '$', this.prefixPath + addLeadingSlash(path)]
+            ? [this.prefixPath + '$', this.prefixPath + wildcardPath]
             : [addLeadingSlash(path)];
 
       return Array.isArray(this.excludedGlobalPrefixRoutes)
@@ -78,6 +79,14 @@ export class RouteInfoPathExtractor {
 
     const wildcardRegexp = /^\/\{.*\}.*|^\/\*.*$/;
     return wildcardRegexp.test(path);
+  }
+
+  private getNamedWildcardPath(path: string): string {
+    if (['*', '/*', '/*/', '(.*)', '/(.*)'].includes(path)) {
+      return '/{*path}';
+    }
+
+    return addLeadingSlash(path);
   }
 
   private extractNonWildcardPathsFrom({
