@@ -1,7 +1,11 @@
+import * as chai from 'chai';
 import { expect } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
 import { HttpException } from '../../exceptions';
 import { ArgumentMetadata } from '../../interfaces';
 import { ParseFloatPipe } from '../../pipes/parse-float.pipe';
+
+chai.use(chaiAsPromised);
 
 class CustomTestError extends HttpException {
   constructor() {
@@ -37,6 +41,11 @@ describe('ParseFloatPipe', () => {
       it('should throw an error', async () => {
         return expect(
           target.transform('123.123abc', {} as ArgumentMetadata),
+        ).to.be.rejectedWith(CustomTestError);
+      });
+      it('should throw an error for hex strings', async () => {
+        return expect(
+          target.transform('0xFF', {} as ArgumentMetadata),
         ).to.be.rejectedWith(CustomTestError);
       });
     });
