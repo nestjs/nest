@@ -39,6 +39,26 @@ describe('ParseFloatPipe', () => {
           target.transform('123.123abc', {} as ArgumentMetadata),
         ).to.be.rejectedWith(CustomTestError);
       });
+      it('should throw an error for hex string', async () => {
+        return expect(
+          target.transform('0xFF', {} as ArgumentMetadata),
+        ).to.be.rejectedWith(CustomTestError);
+      });
+      it('should throw an error for binary string', async () => {
+        return expect(
+          target.transform('0b101', {} as ArgumentMetadata),
+        ).to.be.rejectedWith(CustomTestError);
+      });
+      it('should throw an error for Infinity', async () => {
+        return expect(
+          target.transform('Infinity', {} as ArgumentMetadata),
+        ).to.be.rejectedWith(CustomTestError);
+      });
+      it('should throw an error for -Infinity', async () => {
+        return expect(
+          target.transform('-Infinity', {} as ArgumentMetadata),
+        ).to.be.rejectedWith(CustomTestError);
+      });
     });
   });
 });
