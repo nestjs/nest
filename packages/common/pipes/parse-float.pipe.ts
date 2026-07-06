@@ -76,7 +76,7 @@ export class ParseFloatPipe implements PipeTransform<string> {
   protected isNumeric(value: string): boolean {
     return (
       ['string', 'number'].includes(typeof value) &&
-      !isNaN(parseFloat(value)) &&
+      /^-?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(value) &&
       isFinite(value as any)
     );
   }
