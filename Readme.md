@@ -59,11 +59,11 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <table style="text-align:center;">
 <tr>
-<td><a href="https://trilon.io" target="_blank"><img src="https://nestjs.com/img/trilon.svg" width="200" valign="middle" /></a></td>
-<td><a href="https://microsoft.com/" target="_blank"><img src="https://nestjs.com/img/logos/microsoft-logo.png" width="180" valign="middle" /></a></td>
+<td><a href="https://trilon.io" target="_blank"><img src="https://nestjs.com/img/github/trilon-logo.svg" width="200" valign="middle" /></a></td>
+<td><a href="https://microsoft.com/" target="_blank"><img src="https://nestjs.com/img/github/microsoft-logo.png" width="180" valign="middle" /></a></td>
 <td><a href="https://mojam.co" target="_blank"><img src="https://images.opencollective.com/mojamco/981e9de/logo/256.png?height=256" width="80" valign="middle" /></a></td>
 <td><a href="https://valor-software.com/" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/valor-software.png" width="170" valign="middle" /></a></td>
-<td><a href="https://serpapi.com/" target="_blank"><img src="https://nestjs.com/img/logos/serpapi-logo.png" width="150" valign="middle" /></a></td>
+<td><a href="https://serpapi.com/" target="_blank"><img src="https://nestjs.com/img/github/serpapi-logo.png" width="150" valign="middle" /></a></td>
 </tr>
 </table>
 
@@ -71,14 +71,14 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <table style="text-align:center;">
 <tr>
-<td><a href="https://www.redhat.com" target="_blank"><img src="https://nestjs.com/img/logos/red-hat-logo.svg" width="200" valign="middle" /></a></td>
+<td><a href="https://www.redhat.com" target="_blank"><img src="https://nestjs.com/img/github/red-hat-logo.svg" width="200" valign="middle" /></a></td>
 <td><a href="https://github.com/Sanofi-IADC" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/sanofi.png" width="180" valign="middle" /></a></td>
-<td><a href="https://nx.dev" target="_blank"><img src="https://nestjs.com/img/logos/nx-logo.png" height="45" valign="middle" /></a></td>
-<td><a href="https://intrinsic.ventures/" target="_blank"><img src="https://nestjs.com/img/logos/intrinisic-logo.png" width="210" valign="middle" /></a></td>
-<td><a href="https://jetbrains.com/" target="_blank"><img src="https://nestjs.com/img/logos/jetbrains-logo.svg" width="90" valign="middle" /></a></td>
+<td><a href="https://nx.dev" target="_blank"><img src="https://nestjs.com/img/github/nx-logo.png" height="45" valign="middle" /></a></td>
+<td><a href="https://intrinsic.ventures/" target="_blank"><img src="https://nestjs.com/img/github/intrinisic-logo.png" width="210" valign="middle" /></a></td>
+<td><a href="https://jetbrains.com/" target="_blank"><img src="https://nestjs.com/img/github/jetbrains-logo.svg" width="90" valign="middle" /></a></td>
 </tr>
 <tr>
-<td><a href="https://snyk.co/nestjs" target="_blank"><img src="https://nestjs.com/img/logos/snyk-logo-black.png" width="185" valign="middle" /></a></td>
+<td><a href="https://snyk.co/nestjs" target="_blank"><img src="https://nestjs.com/img/github/snyk-logo-black.png" width="185" valign="middle" /></a></td>
 <td align="center"><a href="https://www.movavi.com/imovie-for-windows.html" target="_blank"><img src="https://images.opencollective.com/movavi/1fb15e5/avatar/256.png?height=256" width="80" valign="middle" /></a></td>
 </tr>
 </table>
@@ -87,14 +87,13 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <table style="text-align:center;">
 <tr>
-<td><a href="https://www.mercedes-benz.com/" target="_blank"><img src="https://nestjs.com/img/logos/mercedes-logo.png" width="100" valign="middle" /></a></td>
-<td><a href="https://handsontable.com/docs/react-data-grid/?utm_source=NestJS_GH&utm_medium=sponsorship&utm_campaign=library_sponsorship_2024" target="_blank"><img src="https://nestjs.com/img/logos/handsontable-dark-logo.svg#2" width="150" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://www.itflashcards.com/" target="_blank"><img src="https://nestjs.com/img/logos/it_flashcards-logo.png" width="170" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://arcjet.com/?ref=nestjs" target="_blank"><img src="https://nestjs.com/img/logos/arcjet-logo.svg" width="170" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://crawljobs.com" target="_blank"><img src="https://nestjs.com/img/logos/crawljobs-logo.svg" width="130" valign="middle" /></a></td>
+<td><a href="https://www.mercedes-benz.com/" target="_blank"><img src="https://nestjs.com/img/github/mercedes-logo.png" width="100" valign="middle" /></a></td>
+<td><a href="https://handsontable.com/docs/react-data-grid/?utm_source=NestJS_GH&utm_medium=sponsorship&utm_campaign=library_sponsorship_2024" target="_blank"><img src="https://nestjs.com/img/github/handsontable-dark-logo.svg#2" width="150" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://www.itflashcards.com/" target="_blank"><img src="https://nestjs.com/img/github/it_flashcards-logo.png" width="170" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://arcjet.com/?ref=nestjs" target="_blank"><img src="https://nestjs.com/img/github/arcjet-logo.svg" width="170" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://pandektes.com" target="_blank"><img src="https://nestjs.com/img/github/pandektes-logo.png" width="65" valign="middle" /></a></td>
 </tr><tr>
-<td align="center" valign="middle"><a href="https://pandektes.com" target="_blank"><img src="https://nestjs.com/img/logos/pandektes-logo.png" width="65" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://www.fintechcrafts.com/" target="_blank"><img src="https://nestjs.com/img/logos/fintechcrafts-logo.svg" width="65" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://www.fintechcrafts.com/" target="_blank"><img src="https://opencollective-production.s3.us-west-1.amazonaws.com/account-avatar/935813df-48a9-4b41-b923-7d70b5621c6b/2026-05-06%2010%2021%2033.png" width="65" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://talordata.com/?campaignid=Ya5Xpw2gmhyee6Tg&utm_source=nestjs&utm_term=nestjs" target="_blank"><img src="https://images.opencollective.com/elowen/9ccac7f/avatar/512.png" width="65" valign="middle" /></a></td>
 <td align="center" valign="middle"><a href="https://memory2.co/" target="_blank"><img src="https://images.opencollective.com/memory-squared/bbe37f5/avatar/256.png?height=50" width="65" valign="middle" /></a></td>
 </tr>
@@ -104,13 +103,12 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <table>
 <tr>
-<td align="center" valign="middle"><a href="https://mantro.net/" target="_blank"><img src="https://nestjs.com/img/logos/mantro-logo.svg" width="95" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://triplebyte.com/" target="_blank"><img src="https://nestjs.com/img/logos/triplebyte.png" width="107" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://nearpod.com/" target="_blank"><img src="https://nestjs.com/img/logos/nearpod-logo.svg" width="100" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://genuinebee.com/" target="_blank"><img src="https://nestjs.com/img/logos/genuinebee.svg" width="97" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://www.naologic.com/" target="_blank"><img src="https://nestjs.com/img/logos/naologic-logo.svg" width="125" valign="middle" /></a></td>
-<td align="center" valign="middle"><a href="https://triplecore.io" target="_blank"><img src="https://nestjs.com/img/logos/triplecore-logo.svg" width="50" valign="middle" /></a>
-<td align="center" valign="middle"><a href="https://www.hingehealth.com/" target="_blank"><img src="https://nestjs.com/img/logos/hinge-health-logo.svg" width="100" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://mantro.net/" target="_blank"><img src="https://nestjs.com/img/github/mantro-logo.svg" width="95" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://triplebyte.com/" target="_blank"><img src="https://nestjs.com/img/github/triplebyte-logo.png" width="107" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://nearpod.com/" target="_blank"><img src="https://nestjs.com/img/github/nearpod-logo.svg" width="100" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://www.naologic.com/" target="_blank"><img src="https://nestjs.com/img/github/naologic-logo.svg" width="125" valign="middle" /></a></td>
+<td align="center" valign="middle"><a href="https://triplecore.io" target="_blank"><img src="https://nestjs.com/img/github/triplecore-logo.svg" width="50" valign="middle" /></a>
+<td align="center" valign="middle"><a href="https://www.hingehealth.com/" target="_blank"><img src="https://nestjs.com/img/github/hinge-health-logo.svg" width="100" valign="middle" /></a></td>
 </tr>
 </table>
 
