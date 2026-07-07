@@ -71,15 +71,15 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <table style="text-align:center;">
 <tr>
-<td><a href="https://www.redhat.com" target="_blank"><img src="https://nestjs.com/img/github/red-hat-logo.svg" width="200" valign="middle" /></a></td>
-<td><a href="https://github.com/Sanofi-IADC" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/sanofi.png" width="180" valign="middle" /></a></td>
+<td><a href="https://www.redhat.com" target="_blank"><img src="https://nestjs.com/img/github/red-hat-logo.svg" width="150" valign="middle" /></a></td>
+<td><a href="https://github.com/Sanofi-IADC" target="_blank"><img src="https://docs.nestjs.com/assets/sponsors/sanofi.png" width="120" valign="middle" /></a></td>
 <td><a href="https://nx.dev" target="_blank"><img src="https://nestjs.com/img/github/nx-logo.png" height="45" valign="middle" /></a></td>
-<td><a href="https://intrinsic.ventures/" target="_blank"><img src="https://nestjs.com/img/github/intrinisic-logo.png" width="210" valign="middle" /></a></td>
-<td><a href="https://jetbrains.com/" target="_blank"><img src="https://nestjs.com/img/github/jetbrains-logo.svg" width="90" valign="middle" /></a></td>
+<td><a href="https://intrinsic.ventures/" target="_blank"><img src="https://nestjs.com/img/github/intrinisic-logo.png" width="150" valign="middle" /></a></td>
+<td><a href="https://jetbrains.com/" target="_blank"><img src="https://nestjs.com/img/github/jetbrains-logo.svg" width="70" valign="middle" /></a></td>
 </tr>
 <tr>
-<td><a href="https://snyk.co/nestjs" target="_blank"><img src="https://nestjs.com/img/github/snyk-logo-black.png" width="185" valign="middle" /></a></td>
-<td align="center"><a href="https://www.movavi.com/imovie-for-windows.html" target="_blank"><img src="https://images.opencollective.com/movavi/1fb15e5/avatar/256.png?height=256" width="80" valign="middle" /></a></td>
+<td><a href="https://snyk.co/nestjs" target="_blank"><img src="https://nestjs.com/img/github/snyk-logo-black.png" width="125" valign="middle" /></a></td>
+<td align="center"><a href="https://www.movavi.com/imovie-for-windows.html" target="_blank"><img src="https://images.opencollective.com/movavi/1fb15e5/avatar/256.png?height=256" width="60" valign="middle" /></a></td>
 </tr>
 </table>
 
