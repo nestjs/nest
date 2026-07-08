@@ -6,9 +6,11 @@ import {
   ForbiddenException,
   GatewayTimeoutException,
   GoneException,
+  HttpVersionNotSupportedException,
   ImATeapotException,
   InternalServerErrorException,
   MethodNotAllowedException,
+  MisdirectedException,
   NotAcceptableException,
   NotFoundException,
   NotImplementedException,
@@ -29,9 +31,11 @@ export type ErrorHttpStatusCode =
   | HttpStatus.FORBIDDEN
   | HttpStatus.GATEWAY_TIMEOUT
   | HttpStatus.GONE
+  | HttpStatus.HTTP_VERSION_NOT_SUPPORTED
   | HttpStatus.I_AM_A_TEAPOT
   | HttpStatus.INTERNAL_SERVER_ERROR
   | HttpStatus.METHOD_NOT_ALLOWED
+  | HttpStatus.MISDIRECTED
   | HttpStatus.NOT_ACCEPTABLE
   | HttpStatus.NOT_FOUND
   | HttpStatus.NOT_IMPLEMENTED
@@ -50,9 +54,11 @@ export const HttpErrorByCode: Record<ErrorHttpStatusCode, Type<unknown>> = {
   [HttpStatus.FORBIDDEN]: ForbiddenException,
   [HttpStatus.GATEWAY_TIMEOUT]: GatewayTimeoutException,
   [HttpStatus.GONE]: GoneException,
+  [HttpStatus.HTTP_VERSION_NOT_SUPPORTED]: HttpVersionNotSupportedException,
   [HttpStatus.I_AM_A_TEAPOT]: ImATeapotException,
   [HttpStatus.INTERNAL_SERVER_ERROR]: InternalServerErrorException,
   [HttpStatus.METHOD_NOT_ALLOWED]: MethodNotAllowedException,
+  [HttpStatus.MISDIRECTED]: MisdirectedException,
   [HttpStatus.NOT_ACCEPTABLE]: NotAcceptableException,
   [HttpStatus.NOT_FOUND]: NotFoundException,
   [HttpStatus.NOT_IMPLEMENTED]: NotImplementedException,

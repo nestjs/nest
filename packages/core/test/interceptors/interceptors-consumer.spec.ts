@@ -178,6 +178,53 @@ describe('InterceptorsConsumer', () => {
         ).to.be.eql(val);
       });
     });
+    describe('when the subscriber is closed before the async handler resolves', () => {
+      it('should subscribe-and-immediately-unsubscribe the producer Observable so its teardown runs', async () => {
+        const teardown = sinon.spy();
+        const subscribed = sinon.spy();
+
+        const next = () =>
+          new Promise<Observable<never>>(resolve =>
+            setTimeout(
+              () =>
+                resolve(
+                  new Observable(() => {
+                    subscribed();
+                    return teardown;
+                  }),
+                ),
+              50,
+            ),
+          );
+
+        const obs$ = consumer.transformDeferred(next);
+        const sub = obs$.subscribe({ error: () => {} });
+
+        // Unsubscribe before the 50 ms delay resolves — simulates SSE client disconnect
+        sub.unsubscribe();
+
+        // Wait long enough for the async handler to resolve and the teardown path to run
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        expect(subscribed.calledOnce).to.be.true;
+        expect(teardown.calledOnce).to.be.true;
+      });
+
+      it('should do nothing for non-Observable results (does not affect regular routes)', async () => {
+        const next = () =>
+          new Promise<string>(resolve =>
+            setTimeout(() => resolve('hello'), 50),
+          );
+
+        const obs$ = consumer.transformDeferred(next);
+        const sub = obs$.subscribe({ error: () => {} });
+        sub.unsubscribe();
+
+        // Wait for the async handler to resolve
+        await new Promise(resolve => setTimeout(resolve, 100));
+        // No assertion needed — this just verifies it doesn't throw
+      });
+    });
   });
   describe('deferred promise conversion', () => {
     it('should convert promise to observable deferred', async () => {

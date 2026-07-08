@@ -6,6 +6,7 @@ import * as sinon from 'sinon';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import { HttpStatus, RequestMethod } from '../../../common';
+import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 import { RouterResponseController } from '../../router/router-response-controller';
 import { SseStream } from '../../router/sse-stream';
 import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
@@ -537,6 +538,77 @@ data: test
       expect(response.flushHeaders.called).to.equal(false);
       expect(response.content).to.equal('');
       expect(responseEndSpy.calledOnce).to.equal(true);
+    });
+
+    it('should trigger teardown of async SSE handler Observable when client disconnects mid-await (interceptor case, issue #17190)', async () => {
+      // Simulates: interceptor doing `return next.handle()`, async SSE handler
+      // that awaits 50ms before returning the producer Observable, client
+      // disconnect during the await.
+      const interceptorsConsumer = new InterceptorsConsumer();
+      const teardown = sinon.spy();
+      let subscribed = false;
+
+      const sseHandler = () =>
+        new Promise<Observable<never>>(resolve =>
+          setTimeout(
+            () =>
+              resolve(
+                new Observable(() => {
+                  subscribed = true;
+                  return teardown;
+                }),
+              ),
+            50,
+          ),
+        );
+
+      const passthroughInterceptors = [
+        { intercept: (_ctx: any, handler: any) => handler.handle() },
+      ];
+
+      // Run through the real interceptor chain — this is what the router does
+      // before handing `result` off to `sse()`.
+      const result = await interceptorsConsumer.intercept(
+        passthroughInterceptors,
+        [],
+        { constructor: null } as any,
+        sseHandler as any,
+        sseHandler,
+      );
+
+      const response = new Writable();
+      const responseEndSpy = sinon.spy();
+      response.end = responseEndSpy as any;
+      response._write = () => {};
+
+      const request = attachSocket(new PassThrough());
+
+      const ssePromise = routerResponseController.sse(
+        result as any,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      // Wait one macrotask so all pending microtasks flush: the Promise.resolve(result).then(…)
+      // callback runs, subscription is set, the interceptor chain's async nextFn() calls resolve,
+      // and sseHandler() is invoked (starting the 50ms timer) — but the timer has NOT fired yet.
+      // This puts us squarely in the "mid-await" window that issue #17190 describes.
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Disconnect while the async handler is still awaiting
+      request.socket.emit('close');
+
+      await ssePromise;
+      // Allow the async handler's setTimeout to fire and teardown path to run
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      expect(subscribed).to.equal(true);
+      expect(teardown.calledOnce).to.equal(true);
+      // response.end() is called once explicitly in onClose, and once more by the
+      // pipe's auto-end when stream.end() fires — both are correct; we only care
+      // that it was called at least once.
+      expect(responseEndSpy.called).to.be.true;
+      expect(request.socket.listenerCount('close')).to.equal(0);
     });
 
     it('should close the request when observable completes', done => {
