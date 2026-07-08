@@ -504,6 +504,74 @@ describe('Injector', () => {
         ),
       ).to.eventually.be.eq(null);
     });
+
+    const createImportModule = (
+      id: string,
+      token: string,
+      isResolved: boolean,
+    ) => {
+      const providerWrapper = new InstanceWrapper({
+        token,
+        name: token,
+        isResolved,
+        instance: isResolved ? { id } : null,
+      });
+      return {
+        id,
+        metatype: { name: id },
+        imports: new Set(),
+        providers: new Map([[token, providerWrapper]]),
+        exports: new Set([token]),
+      };
+    };
+
+    it('should stop at the first direct export match when it is already resolved', async () => {
+      const token = 'LoggerService';
+      const featureModule = createImportModule('feature', token, true);
+      const globalModule = createImportModule('global', token, false);
+      const hostModule = {
+        id: 'host',
+        imports: new Set([featureModule, globalModule]),
+        exports: new Set(),
+        providers: new Map(),
+      };
+      const hostWrapper = new InstanceWrapper({
+        token: 'CatController',
+        name: 'CatController',
+      });
+
+      const result = await injector.lookupComponentInImports(
+        hostModule as any,
+        token,
+        hostWrapper,
+      );
+
+      expect(result).to.eq(featureModule.providers.get(token));
+    });
+
+    it('should stop at the first direct export match when only the second is resolved', async () => {
+      const token = 'LoggerService';
+      const featureModule = createImportModule('feature', token, false);
+      const globalModule = createImportModule('global', token, true);
+      const hostModule = {
+        id: 'host',
+        imports: new Set([featureModule, globalModule]),
+        exports: new Set(),
+        providers: new Map(),
+      };
+      const hostWrapper = new InstanceWrapper({
+        token: 'CatService',
+        name: 'CatService',
+      });
+
+      const result = await injector.lookupComponentInImports(
+        hostModule as any,
+        token,
+        hostWrapper,
+      );
+
+      expect(result).to.eq(featureModule.providers.get(token));
+    });
   });
 
   describe('resolveParamToken', () => {
