@@ -22,11 +22,7 @@
     "@nestjs/common": "11.1.27",
     "@nestjs/core": "11.1.27",
     "@nestjs/platform-express": "11.1.27",
-<<<<<<< HEAD
-    "@nestjs/typeorm": "11.0.2",
-=======
     "@nestjs/typeorm": "11.0.3",
->>>>>>> refs/remotes/origin/master
     "mysql2": "3.22.5",
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.3",
