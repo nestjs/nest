@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import type { OnModuleDestroy } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/internal';
 import { iterate } from 'iterare';
@@ -49,7 +50,17 @@ export async function callModuleDestroyHook(moduleRef: Module): Promise<any> {
 
   const levels = getSortedHierarchyLevels(groupedInstances, 'DESC');
   for (const level of levels) {
-    await Promise.all(callOperator(groupedInstances.get(level)!));
+    const results = await Promise.allSettled(
+      callOperator(groupedInstances.get(level)!),
+    );
+    results
+      .filter(
+        (result): result is PromiseRejectedResult =>
+          result.status === 'rejected',
+      )
+      .forEach(result =>
+        Logger.error(result.reason, (result.reason as Error)?.stack),
+      );
   }
 
   // Call the module instance itself
@@ -59,6 +70,10 @@ export async function callModuleDestroyHook(moduleRef: Module): Promise<any> {
     hasOnModuleDestroyHook(moduleClassInstance) &&
     moduleClassHost.isDependencyTreeStatic()
   ) {
-    await moduleClassInstance.onModuleDestroy();
+    try {
+      await moduleClassInstance.onModuleDestroy();
+    } catch (err) {
+      Logger.error(err, (err as Error)?.stack);
+    }
   }
 }
