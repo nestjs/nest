@@ -14,6 +14,7 @@ describe('RouterMethodFactory', () => {
     patch: () => {},
     options: () => {},
     head: () => {},
+    query: () => {},
     propfind: () => {},
     proppatch: () => {},
     mkcol: () => {},
@@ -36,6 +37,7 @@ describe('RouterMethodFactory', () => {
     expect(factory.get(target, RequestMethod.PATCH)).to.equal(target.patch);
     expect(factory.get(target, RequestMethod.OPTIONS)).to.equal(target.options);
     expect(factory.get(target, RequestMethod.HEAD)).to.equal(target.head);
+    expect(factory.get(target, RequestMethod.QUERY)).to.equal(target.query);
     expect(factory.get(target, RequestMethod.PROPFIND)).to.equal(
       target.propfind,
     );

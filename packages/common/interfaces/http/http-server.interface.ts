@@ -63,6 +63,8 @@ export interface HttpServer<
   options(path: string, handler: RequestHandler<TRequest, TResponse>): any;
   search?(handler: RequestHandler<TRequest, TResponse>): any;
   search?(path: string, handler: RequestHandler<TRequest, TResponse>): any;
+  query?(handler: RequestHandler<TRequest, TResponse>): any;
+  query?(path: string, handler: RequestHandler<TRequest, TResponse>): any;
   listen(port: number | string, callback?: () => void): any;
   listen(port: number | string, hostname: string, callback?: () => void): any;
   reply(response: any, body: any, statusCode?: number): any;

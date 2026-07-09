@@ -10,6 +10,7 @@ export const REQUEST_METHOD_MAP = {
   [RequestMethod.ALL]: 'all',
   [RequestMethod.OPTIONS]: 'options',
   [RequestMethod.HEAD]: 'head',
+  [RequestMethod.QUERY]: 'query',
   [RequestMethod.SEARCH]: 'search',
   [RequestMethod.PROPFIND]: 'propfind',
   [RequestMethod.PROPPATCH]: 'proppatch',

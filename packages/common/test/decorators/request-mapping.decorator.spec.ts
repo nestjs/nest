@@ -1,5 +1,8 @@
 import { expect } from 'chai';
-import { RequestMapping } from '../../decorators/http/request-mapping.decorator';
+import {
+  HttpQuery,
+  RequestMapping,
+} from '../../decorators/http/request-mapping.decorator';
 import { RequestMethod } from '../../enums/request-method.enum';
 
 describe('@RequestMapping', () => {
@@ -58,5 +61,46 @@ describe('@RequestMapping', () => {
 
     expect(path).to.be.eql('/');
     expect(pathUsingArray).to.be.eql('/');
+  });
+});
+
+describe('@HttpQuery', () => {
+  it('should enhance method with QUERY method metadata', () => {
+    class Test {
+      @HttpQuery('test')
+      public static test() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+
+    expect(path).to.be.eql('test');
+    expect(method).to.be.eql(RequestMethod.QUERY);
+  });
+
+  it('should set path on "/" by default', () => {
+    class Test {
+      @HttpQuery()
+      public static test() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+
+    expect(path).to.be.eql('/');
+    expect(method).to.be.eql(RequestMethod.QUERY);
+  });
+
+  it('should accept a path array', () => {
+    class Test {
+      @HttpQuery(['foo', 'bar'])
+      public static test() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+
+    expect(path).to.be.eql(['foo', 'bar']);
+    expect(method).to.be.eql(RequestMethod.QUERY);
   });
 });

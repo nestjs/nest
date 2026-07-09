@@ -7,6 +7,7 @@ export enum RequestMethod {
   ALL,
   OPTIONS,
   HEAD,
+  QUERY,
   SEARCH,
   PROPFIND,
   PROPPATCH,
