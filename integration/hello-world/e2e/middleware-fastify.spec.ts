@@ -943,4 +943,156 @@ describe('Middleware (FastifyAdapter)', () => {
       });
     });
   });
+
+  describe('should apply middleware to routes registered via Fastify plugin with prefix', () => {
+    const MIDDLEWARE_VALUE = 'middleware_applied';
+
+    @Controller()
+    class PluginPrefixController {
+      @Get('other')
+      other() {
+        return 'other_route';
+      }
+    }
+
+    @Module({
+      controllers: [PluginPrefixController],
+    })
+    class PluginPrefixModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            req.middlewareApplied = true;
+            next();
+          })
+          .forRoutes('/my-prefix');
+      }
+    }
+
+    beforeEach(async () => {
+      const fastifyAdapter = new FastifyAdapter();
+
+      app = (
+        await Test.createTestingModule({
+          imports: [PluginPrefixModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(fastifyAdapter);
+
+      // Register a Fastify plugin with a prefix (simulating third-party plugin)
+      fastifyAdapter.getInstance().register(
+        async instance => {
+          instance.get('/', async req => {
+            return (req.raw as any).middlewareApplied
+              ? MIDDLEWARE_VALUE
+              : 'no_middleware';
+          });
+          instance.get('/sub-route', async req => {
+            return (req.raw as any).middlewareApplied
+              ? MIDDLEWARE_VALUE
+              : 'no_middleware';
+          });
+        },
+        { prefix: '/my-prefix' },
+      );
+
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+    });
+
+    it(`forRoutes('/my-prefix') should match the prefix root`, () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/my-prefix',
+        })
+        .then(({ payload }) => expect(payload).to.be.eql(MIDDLEWARE_VALUE));
+    });
+
+    it(`forRoutes('/my-prefix') should match sub-routes under the prefix`, () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/my-prefix/sub-route',
+        })
+        .then(({ payload }) => expect(payload).to.be.eql(MIDDLEWARE_VALUE));
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
+
+  describe('RequestMethod.ALL should use exact matching (not prefix)', () => {
+    @Controller()
+    class AllMethodController {
+      @Get('/a')
+      getA(@Req() request: any) {
+        return {
+          middlewareApplied: !!(request.raw as any).middlewareApplied,
+        };
+      }
+
+      @Get('/a/b')
+      getAB(@Req() request: any) {
+        return {
+          middlewareApplied: !!(request.raw as any).middlewareApplied,
+        };
+      }
+    }
+
+    @Module({
+      controllers: [AllMethodController],
+    })
+    class AllMethodModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            req.middlewareApplied = true;
+            next();
+          })
+          .forRoutes({ path: '/a', method: RequestMethod.ALL });
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [AllMethodModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+    });
+
+    it(`forRoutes({ path: '/a', method: ALL }) should match /a exactly`, () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/a',
+        })
+        .then(({ payload }) =>
+          expect(JSON.parse(payload)).to.deep.equal({
+            middlewareApplied: true,
+          }),
+        );
+    });
+
+    it(`forRoutes({ path: '/a', method: ALL }) should NOT match /a/b (no prefix matching)`, () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/a/b',
+        })
+        .then(({ payload }) =>
+          expect(JSON.parse(payload)).to.deep.equal({
+            middlewareApplied: false,
+          }),
+        );
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
 });
