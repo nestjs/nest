@@ -122,7 +122,7 @@
     "conventional-changelog": "8.1.0",
     "coveralls": "3.1.1",
     "delete-empty": "3.0.0",
-    "eslint": "10.3.0",
+    "eslint": "10.7.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.6",
     "eventsource": "4.1.0",
