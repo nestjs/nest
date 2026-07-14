@@ -14,6 +14,13 @@ function toDataString(data: string | object): string {
     .join('');
 }
 
+function toCommentString(comment: string): string {
+  return comment
+    .split(/\r\n|\r|\n/)
+    .map(line => `: ${line}\n`)
+    .join('');
+}
+
 export type AdditionalHeaders = Record<
   string,
   string[] | string | number | undefined
@@ -46,6 +53,7 @@ export type HeaderStream = WritableHeaderStream & ReadHeaders;
  * - type
  * - id
  * - retry
+ * - comment
  *
  * If constructed with a HTTP Request, it will optimise the socket for streaming.
  * If this stream is piped to an HTTP Response, it will set appropriate headers.
@@ -129,13 +137,20 @@ export class SseStream extends Transform {
     const sanitize = (val: string | number) =>
       String(val).replace(/[\r\n]/g, '');
 
-    let data = message.type ? `event: ${sanitize(message.type)}\n` : '';
+    let data =
+      message.comment !== undefined && message.comment !== null
+        ? toCommentString(message.comment)
+        : '';
+    data += message.type ? `event: ${sanitize(message.type)}\n` : '';
     data +=
       message.id !== undefined && message.id !== null
         ? `id: ${sanitize(message.id)}\n`
         : '';
     data += message.retry ? `retry: ${sanitize(message.retry)}\n` : '';
-    data += message.data ? toDataString(message.data) : '';
+    data +=
+      message.data !== undefined && message.data !== null
+        ? toDataString(message.data)
+        : '';
     data += '\n';
     this.push(data);
     callback();
@@ -148,7 +163,17 @@ export class SseStream extends Transform {
     message: MessageEvent,
     cb: (error: Error | null | undefined) => void,
   ) {
-    if (message.id === undefined || message.id === null) {
+    const isCommentOnlyMessage =
+      message.comment !== undefined &&
+      message.comment !== null &&
+      message.data === undefined &&
+      message.type === undefined &&
+      message.retry === undefined;
+
+    if (
+      !isCommentOnlyMessage &&
+      (message.id === undefined || message.id === null)
+    ) {
       this.lastEventId!++;
       message.id = this.lastEventId!.toString();
     }

@@ -124,6 +124,51 @@ data: hello
     );
   });
 
+  it('writes comment-only messages without an event id', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+
+    sse.writeMessage(
+      {
+        comment: 'keep-alive',
+      },
+      noop,
+    );
+    sse.end();
+    await written(sink);
+
+    expect(sink.content).to.equal(
+      `
+: keep-alive
+
+`,
+    );
+  });
+
+  it('writes multiline comments line by line', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+
+    sse.writeMessage(
+      {
+        comment: 'line 1\nline 2',
+      },
+      noop,
+    );
+    sse.end();
+    await written(sink);
+
+    expect(sink.content).to.equal(
+      `
+: line 1
+: line 2
+
+`,
+    );
+  });
+
   it('does not write headers eagerly in pipe()', () => {
     const sse = new SseStream();
     let writeHeadCalled = false;
