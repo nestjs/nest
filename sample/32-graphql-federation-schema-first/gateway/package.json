@@ -44,7 +44,7 @@
     "@types/express": "5.0.6",
     "@types/jest": "30.0.0",
     "@types/node": "24.13.3",
-    "@types/supertest": "7.2.0",
+    "@types/supertest": "7.2.1",
     "eslint": "9.39.4",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-prettier": "5.5.6",
