@@ -108,7 +108,7 @@
     "@types/mocha": "10.0.10",
     "@types/node": "26.1.1",
     "@types/sinon": "21.0.1",
-    "@types/supertest": "7.2.0",
+    "@types/supertest": "7.2.1",
     "@types/ws": "8.18.1",
     "@typescript-eslint/eslint-plugin": "8.60.0",
     "@typescript-eslint/parser": "8.59.3",
