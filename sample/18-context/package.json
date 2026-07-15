@@ -31,7 +31,7 @@
     "@nestjs/cli": "11.0.24",
     "@nestjs/schematics": "11.1.0",
     "@types/node": "24.13.3",
-    "@types/supertest": "7.2.0",
+    "@types/supertest": "7.2.1",
     "jest": "30.4.2",
     "prettier": "3.9.5",
     "supertest": "7.2.2",
