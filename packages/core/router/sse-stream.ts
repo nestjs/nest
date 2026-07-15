@@ -1,17 +1,38 @@
 import { MessageEvent } from '@nestjs/common/interfaces';
-import { isObject } from '@nestjs/common/utils/shared.utils';
+import {
+  isNil,
+  isObject,
+  isUndefined,
+} from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage, OutgoingHttpHeaders } from 'http';
 import { Transform } from 'stream';
+
+function serializeSseLines(value: string, prefix: string): string {
+  return value
+    .split(/\r\n|\r|\n/)
+    .map(line => `${prefix}${line}\n`)
+    .join('');
+}
 
 function toDataString(data: string | object): string {
   if (isObject(data)) {
     return toDataString(JSON.stringify(data));
   }
 
-  return data
-    .split(/\r\n|\r|\n/)
-    .map(line => `data: ${line}\n`)
-    .join('');
+  return serializeSseLines(data, 'data: ');
+}
+
+function toCommentString(comment: string): string {
+  return serializeSseLines(comment, ': ');
+}
+
+function isCommentOnly(message: MessageEvent): boolean {
+  return (
+    !isNil(message.comment) &&
+    isUndefined(message.data) &&
+    isUndefined(message.type) &&
+    isUndefined(message.retry)
+  );
 }
 
 export type AdditionalHeaders = Record<
@@ -46,6 +67,7 @@ export type HeaderStream = WritableHeaderStream & ReadHeaders;
  * - type
  * - id
  * - retry
+ * - comment
  *
  * If constructed with a HTTP Request, it will optimise the socket for streaming.
  * If this stream is piped to an HTTP Response, it will set appropriate headers.
@@ -130,12 +152,10 @@ export class SseStream extends Transform {
       String(val).replace(/[\r\n]/g, '');
 
     let data = message.type ? `event: ${sanitize(message.type)}\n` : '';
-    data +=
-      message.id !== undefined && message.id !== null
-        ? `id: ${sanitize(message.id)}\n`
-        : '';
+    data += !isNil(message.id) ? `id: ${sanitize(message.id)}\n` : '';
     data += message.retry ? `retry: ${sanitize(message.retry)}\n` : '';
-    data += message.data ? toDataString(message.data) : '';
+    data += !isNil(message.comment) ? toCommentString(message.comment) : '';
+    data += !isNil(message.data) ? toDataString(message.data) : '';
     data += '\n';
     this.push(data);
     callback();
@@ -148,7 +168,7 @@ export class SseStream extends Transform {
     message: MessageEvent,
     cb: (error: Error | null | undefined) => void,
   ) {
-    if (message.id === undefined || message.id === null) {
+    if (isNil(message.id) && !isCommentOnly(message)) {
       this.lastEventId!++;
       message.id = this.lastEventId!.toString();
     }
