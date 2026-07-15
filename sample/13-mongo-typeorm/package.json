@@ -27,7 +27,7 @@
     "reflect-metadata": "0.2.2",
     "rimraf": "6.1.3",
     "rxjs": "7.8.2",
-    "typeorm": "0.3.31"
+    "typeorm": "1.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.5",
