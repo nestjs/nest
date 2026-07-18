@@ -401,9 +401,23 @@ describe('FileTypeValidator', () => {
         size: pngBuffer.length,
       };
 
-      await fileTypeValidator.isValid(requestFile);
-
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
       expect(requestFile.mimetype).to.equal('image/png');
+    });
+
+    it('should not override mimetype when overrideMimeType is disabled', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: /^image\/png$/,
+      });
+
+      const requestFile: IFile = {
+        mimetype: 'image/jpeg',
+        buffer: pngBuffer,
+        size: pngBuffer.length,
+      };
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
+      expect(requestFile.mimetype).to.equal('image/jpeg');
     });
   });
 });
