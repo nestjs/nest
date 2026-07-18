@@ -114,9 +114,12 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
         .map(route => ({
           method: route.method,
           path: route.path,
+          // No `g` flag: each regex is reused across every route below, and a
+          // global regex advances `lastIndex` on a match, so the next `test()`
+          // would resume mid-string and fail the `^` anchor. The pattern is
+          // anchored and only used with `test()`, so `g` buys nothing anyway.
           regex: new RegExp(
             '^(' + route.path.replace(regexMatchParams, wildcard) + ')$',
-            'g',
           ),
         }));
 
