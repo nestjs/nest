@@ -124,6 +124,76 @@ data: hello
     );
   });
 
+  it('only skips generated ids for comment-only messages', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+
+    sse.writeMessage({ comment: 'comment-only' }, noop);
+    sse.writeMessage({ comment: 'with-type', type: 'notice' }, noop);
+    sse.writeMessage({ comment: 'with-retry', retry: 1000 }, noop);
+    sse.writeMessage({ comment: 'with-data', data: 'hello' }, noop);
+    sse.end();
+    await written(sink);
+
+    expect(sink.content).to.equal(
+      `
+: comment-only
+
+event: notice
+id: 1
+: with-type
+
+id: 2
+retry: 1000
+: with-retry
+
+id: 3
+: with-data
+data: hello
+
+`,
+    );
+  });
+
+  it('writes empty and multiline comments', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+
+    sse.writeMessage({ comment: '' }, noop);
+    sse.writeMessage({ comment: 'first\r\nsecond\rthird\n\nfourth' }, noop);
+    sse.end();
+    await written(sink);
+
+    expect(sink.content).to.equal(
+      [
+        '',
+        ': ',
+        '',
+        ': first',
+        ': second',
+        ': third',
+        ': ',
+        ': fourth',
+        '',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('serializes empty data strings', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+
+    sse.writeMessage({ data: '' }, noop);
+    sse.end();
+    await written(sink);
+
+    expect(sink.content).to.equal(['', 'id: 1', 'data: ', '', ''].join('\n'));
+  });
+
   it('does not write headers eagerly in pipe()', () => {
     const sse = new SseStream();
     let writeHeadCalled = false;
