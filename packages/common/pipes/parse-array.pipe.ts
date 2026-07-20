@@ -16,7 +16,7 @@ const DEFAULT_ARRAY_SEPARATOR = ',';
 /**
  * @publicApi
  */
-export interface ParseArrayOptions extends Omit<
+export interface ParseArrayPipeOptions extends Omit<
   ValidationPipeOptions,
   'transform' | 'validateCustomDecorators' | 'exceptionFactory'
 > {
@@ -43,6 +43,9 @@ export interface ParseArrayOptions extends Omit<
   exceptionFactory?: (error: any) => any;
 }
 
+/** @deprecated Use `ParseArrayPipeOptions` instead. */
+export type ParseArrayOptions = ParseArrayPipeOptions;
+
 /**
  * Defines the built-in ParseArray Pipe
  *
@@ -55,7 +58,9 @@ export class ParseArrayPipe implements PipeTransform {
   protected readonly validationPipe: ValidationPipe;
   protected exceptionFactory: (error: string) => any;
 
-  constructor(@Optional() protected readonly options: ParseArrayOptions = {}) {
+  constructor(
+    @Optional() protected readonly options: ParseArrayPipeOptions = {},
+  ) {
     this.validationPipe = new ValidationPipe({
       transform: true,
       validateCustomDecorators: true,
