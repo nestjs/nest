@@ -323,7 +323,7 @@ describe('Sse (Fastify Application)', () => {
       await waitForInterceptorDelayedSseClose(url);
 
       expect(await releaseInterceptorDelayedSse(url)).to.equal(1);
-      await sleep(100);
+      await sleep(0);
 
       const stats = await fetchInterceptorDelayedSseStats(url);
       expect(stats.closeEventsObserved).to.equal(1);
@@ -359,7 +359,7 @@ describe('Sse (Fastify Application)', () => {
       await waitForInterceptorDelayedSseClose(url);
 
       expect(await releaseInterceptorDelayedSse(url)).to.equal(1);
-      await sleep(100);
+      await sleep(0);
 
       const stats = await fetchInterceptorDelayedSseStats(url);
       expect(stats.closeEventsObserved).to.equal(1);
