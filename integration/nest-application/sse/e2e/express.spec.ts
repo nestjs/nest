@@ -9,9 +9,9 @@ import {
   fetchPromiseDelayedSseStats,
   releaseInterceptorDelayedSse,
   releasePromiseDelayedSse,
+  sleep,
   waitForInterceptorDelayedSseClose,
   waitForInterceptorDelayedSseRequestStart,
-  waitForInterceptorDelayedSseTeardown,
   waitForPromiseDelayedSseClose,
   waitForPromiseDelayedSseRequestStart,
   waitForPromiseDelayedSseTeardown,
@@ -207,7 +207,7 @@ describe('Sse (Express Application)', () => {
       await app.close();
     });
 
-    it('should subscribe and tear down if the GET SSE client disconnects before the promise resolves', async () => {
+    it('should not subscribe the producer if the GET SSE client disconnects before the promise resolves', async () => {
       const url = await app.getUrl();
       const abortController = new AbortController();
       const responsePromise = fetch(`${url}/sse/promise-delayed`, {
@@ -290,7 +290,7 @@ describe('Sse (Express Application)', () => {
       await app.close();
     });
 
-    it('should subscribe and tear down if the GET SSE client disconnects before the promise resolves', async () => {
+    it('should not subscribe the producer if the GET SSE client disconnects before the promise resolves', async () => {
       const url = await app.getUrl();
       const abortController = new AbortController();
       const responsePromise = fetch(`${url}/sse/interceptor/promise-delayed`, {
@@ -310,18 +310,17 @@ describe('Sse (Express Application)', () => {
       await waitForInterceptorDelayedSseClose(url);
 
       expect(await releaseInterceptorDelayedSse(url)).to.equal(1);
-
-      await waitForInterceptorDelayedSseTeardown(url);
+      await sleep(100);
 
       const stats = await fetchInterceptorDelayedSseStats(url);
       expect(stats.closeEventsObserved).to.equal(1);
       expect(stats.requestsStarted).to.equal(1);
       expect(stats.runningStreams).to.equal(0);
-      expect(stats.subscriptionsStarted).to.equal(1);
-      expect(stats.teardownsObserved).to.equal(1);
+      expect(stats.subscriptionsStarted).to.equal(0);
+      expect(stats.teardownsObserved).to.equal(0);
     });
 
-    it('should subscribe and tear down if the POST SSE client disconnects before the promise resolves', async () => {
+    it('should not subscribe the producer if the POST SSE client disconnects before the promise resolves', async () => {
       const url = await app.getUrl();
       const abortController = new AbortController();
       const responsePromise = fetch(
@@ -347,15 +346,14 @@ describe('Sse (Express Application)', () => {
       await waitForInterceptorDelayedSseClose(url);
 
       expect(await releaseInterceptorDelayedSse(url)).to.equal(1);
-
-      await waitForInterceptorDelayedSseTeardown(url);
+      await sleep(100);
 
       const stats = await fetchInterceptorDelayedSseStats(url);
       expect(stats.closeEventsObserved).to.equal(1);
       expect(stats.requestsStarted).to.equal(1);
       expect(stats.runningStreams).to.equal(0);
-      expect(stats.subscriptionsStarted).to.equal(1);
-      expect(stats.teardownsObserved).to.equal(1);
+      expect(stats.subscriptionsStarted).to.equal(0);
+      expect(stats.teardownsObserved).to.equal(0);
     });
   });
 });
