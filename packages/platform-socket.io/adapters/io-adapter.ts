@@ -6,7 +6,7 @@ import {
 import { DISCONNECT_EVENT } from '@nestjs/websockets/constants';
 import { fromEvent, Observable } from 'rxjs';
 import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
-import { Server, ServerOptions, Socket } from 'socket.io';
+import { Namespace, Server, ServerOptions, Socket } from 'socket.io';
 
 /**
  * @publicApi
@@ -16,20 +16,20 @@ export class IoAdapter extends AbstractWsAdapter {
 
   public create(
     port: number,
-    options?: ServerOptions & { namespace?: string; server?: any },
-  ): Server {
+    options?: ServerOptions & { namespace?: string; server?: Server },
+  ): Server | Namespace {
     if (!options) {
       return this.createIOServer(port);
     }
     const { namespace, server, ...opt } = options;
-    return server && isFunction(server.of)
+    return server && namespace && isFunction(server.of)
       ? server.of(namespace)
       : namespace
         ? this.createIOServer(port, opt).of(namespace)
         : this.createIOServer(port, opt);
   }
 
-  public createIOServer(port: number, options?: any): any {
+  public createIOServer(port: number, options?: ServerOptions): Server {
     if (this.httpServer && port === 0) {
       return new Server(this.httpServer, options);
     }
