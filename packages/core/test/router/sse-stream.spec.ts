@@ -124,6 +124,32 @@ data: hello
     );
   });
 
+  it('writes retry even when the value is zero', async () => {
+    const sse = new SseStream();
+    const sink = new Sink();
+    sse.pipe(sink);
+
+    sse.writeMessage(
+      {
+        id: 'the-id',
+        retry: 0,
+        data: 'hello',
+      },
+      noop,
+    );
+    sse.end();
+    await written(sink);
+
+    expect(sink.content).to.equal(
+      `
+id: the-id
+retry: 0
+data: hello
+
+`,
+    );
+  });
+
   it('only skips generated ids for comment-only messages', async () => {
     const sse = new SseStream();
     const sink = new Sink();
