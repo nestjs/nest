@@ -685,7 +685,11 @@ export class FastifyAdapter<
       normalizedPath = normalizedPath === '/*path' ? '*path' : normalizedPath;
 
       // Normalize the path to support the prefix if it set in application
-      if (this._pathPrefix && !normalizedPath.startsWith(this._pathPrefix)) {
+      if (
+        this._pathPrefix &&
+        !normalizedPath.startsWith(this._pathPrefix) &&
+        (normalizedPath === '/' || normalizedPath === '')
+      ) {
         normalizedPath = `${this._pathPrefix}${normalizedPath}`;
         if (normalizedPath.endsWith('/')) {
           normalizedPath = `${normalizedPath}{*path}`;

@@ -763,6 +763,60 @@ describe('Middleware (FastifyAdapter)', () => {
     });
   });
 
+  describe('should run middleware on routes excluded from the global prefix', () => {
+    @Controller()
+    class ExcludedRouteController {
+      @Get('graphql')
+      graphql(@Req() req: FastifyRequest['raw']) {
+        return { success: true, pong: req?.['raw']?.headers?.ping };
+      }
+
+      @Get('data')
+      data(@Req() req: FastifyRequest['raw']) {
+        return { success: true, pong: req?.['raw']?.headers?.ping };
+      }
+    }
+
+    @Module({
+      controllers: [ExcludedRouteController],
+    })
+    class ExcludedRouteModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            req.headers['ping'] = 'pong';
+            next();
+          })
+          .forRoutes('/{*path}');
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [ExcludedRouteModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    });
+
+    it(`GET forRoutes('/{*path}') with global prefix and excluded route`, async () => {
+      app.setGlobalPrefix('/api', { exclude: ['/graphql'] });
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/graphql')
+        .expect(200, { success: true, pong: 'pong' });
+      await request(app.getHttpServer())
+        .get('/api/data')
+        .expect(200, { success: true, pong: 'pong' });
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
+
   describe('should respect fastify routing options', () => {
     const MIDDLEWARE_RETURN_VALUE = 'middleware_return';
 
