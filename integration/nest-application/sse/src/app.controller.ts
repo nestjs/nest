@@ -170,7 +170,6 @@ export class AppController {
     request: IncomingMessage & { raw?: IncomingMessage },
   ): Promise<Observable<MessageEvent>> {
     this.interceptorDelayedRequestsStarted += 1;
-    this.interceptorDelayedRunningStreams += 1;
     const rawRequest = request.socket ?? request;
 
     rawRequest.once('close', () => {
@@ -182,6 +181,7 @@ export class AppController {
         resolve(
           new Observable<MessageEvent>(subscriber => {
             this.interceptorDelayedSubscriptionsStarted += 1;
+            this.interceptorDelayedRunningStreams += 1;
 
             const intervalId = setInterval(() => {
               subscriber.next({ data: { hello: 'world' } });

@@ -540,7 +540,7 @@ data: test
       expect(responseEndSpy.calledOnce).to.equal(true);
     });
 
-    it('should trigger teardown of async SSE handler Observable when client disconnects mid-await (interceptor case, issue #17190)', async () => {
+    it('should not subscribe async SSE producer Observable when client disconnects mid-await (interceptor case, issue #17352)', async () => {
       // Simulates: interceptor doing `return next.handle()`, async SSE handler
       // that awaits 50ms before returning the producer Observable, client
       // disconnect during the await.
@@ -599,11 +599,11 @@ data: test
       request.socket.emit('close');
 
       await ssePromise;
-      // Allow the async handler's setTimeout to fire and teardown path to run
+      // Allow the async handler's setTimeout to fire
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      expect(subscribed).to.equal(true);
-      expect(teardown.calledOnce).to.equal(true);
+      expect(subscribed).to.equal(false);
+      expect(teardown.called).to.equal(false);
       // response.end() is called once explicitly in onClose, and once more by the
       // pipe's auto-end when stream.end() fires — both are correct; we only care
       // that it was called at least once.
