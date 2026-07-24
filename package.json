@@ -146,7 +146,7 @@
     "lerna": "9.0.7",
     "lerna-changelog": "2.2.0",
     "light-my-request": "6.6.0",
-    "lint-staged": "17.1.0",
+    "lint-staged": "17.2.0",
     "markdown-table": "2.0.0",
     "mocha": "11.7.6",
     "mongoose": "9.8.0",
