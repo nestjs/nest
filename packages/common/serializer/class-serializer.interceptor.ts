@@ -24,8 +24,19 @@ const REFLECTOR = 'Reflector';
 /**
  * @publicApi
  */
-export interface ClassSerializerInterceptorOptions extends ClassTransformOptions {
+export class ClassSerializerInterceptorOptions implements ClassTransformOptions {
   transformerPackage?: TransformerPackage;
+  strategy?: 'excludeAll' | 'exposeAll';
+  groups?: string[];
+  version?: number;
+  excludePrefixes?: string[];
+  ignoreDecorators?: boolean;
+  targetMaps?: any[];
+  enableCircularCheck?: boolean;
+  enableImplicitConversion?: boolean;
+  excludeExtraneousValues?: boolean;
+  exposeDefaultValues?: boolean;
+  exposeUnsetFields?: boolean;
 }
 
 /**
