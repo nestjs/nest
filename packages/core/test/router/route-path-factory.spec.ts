@@ -225,6 +225,61 @@ describe('RoutePathFactory', () => {
       ).to.deep.equal(['/ctrlPath']);
       sinon.restore();
     });
+
+    it('should return paths for each global prefix when array is provided', () => {
+      expect(
+        routePathFactory.create({
+          ctrlPath: '/ctrlPath/',
+          methodPath: '/methodPath/',
+          globalPrefix: ['api', 'v1'],
+        }),
+      ).to.deep.equal(['/api/ctrlPath/methodPath', '/v1/ctrlPath/methodPath']);
+
+      expect(
+        routePathFactory.create({
+          ctrlPath: '/ctrlPath/',
+          methodPath: '/methodPath/',
+          modulePath: '/modulePath/',
+          globalPrefix: ['/prefix1', '/prefix2'],
+        }),
+      ).to.deep.equal([
+        '/prefix1/modulePath/ctrlPath/methodPath',
+        '/prefix2/modulePath/ctrlPath/methodPath',
+      ]);
+    });
+
+    it('should handle single-element array same as string', () => {
+      const resultArray = routePathFactory.create({
+        ctrlPath: '/ctrlPath/',
+        methodPath: '/methodPath/',
+        globalPrefix: ['api'],
+      });
+
+      const resultString = routePathFactory.create({
+        ctrlPath: '/ctrlPath/',
+        methodPath: '/methodPath/',
+        globalPrefix: 'api',
+      });
+
+      expect(resultArray).to.deep.equal(resultString);
+    });
+
+    it('should combine multiple prefixes with versioning', () => {
+      expect(
+        routePathFactory.create({
+          ctrlPath: '/ctrlPath/',
+          methodPath: '/methodPath/',
+          globalPrefix: ['api', 'v1'],
+          versioningOptions: {
+            type: VersioningType.URI,
+          },
+          controllerVersion: '1.0.0',
+        }),
+      ).to.deep.equal([
+        '/api/v1.0.0/ctrlPath/methodPath',
+        '/v1/v1.0.0/ctrlPath/methodPath',
+      ]);
+    });
   });
 
   describe('isExcludedFromGlobalPrefix', () => {
