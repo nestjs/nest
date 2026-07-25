@@ -49,3 +49,12 @@ export const isNil = (val: any): val is null | undefined =>
   isUndefined(val) || val === null;
 export const isEmpty = (array: any): boolean => !(array && array.length > 0);
 export const isSymbol = (val: any): val is symbol => typeof val === 'symbol';
+
+export const truncateMiddle = (str: string, maxLength: number): string => {
+  if (!isString(str) || str.length <= maxLength || maxLength <= 3) {
+    return str;
+  }
+  const charsToShow = Math.ceil((maxLength - 3) / 2);
+  const backChars = Math.floor((maxLength - 3) / 2);
+  return `${str.slice(0, charsToShow)}...${str.slice(str.length - backChars)}`;
+};
