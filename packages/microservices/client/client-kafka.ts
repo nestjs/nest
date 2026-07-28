@@ -146,50 +146,43 @@ export class ClientKafka
     if (this.initialized) {
       return this.initialized.then(() => this._producer!);
     }
-    /* eslint-disable-next-line no-async-promise-executor */
-    this.initialized = new Promise(async (resolve, reject) => {
-      try {
-        this.client = this.createClient();
-        if (!this.producerOnlyMode) {
-          const partitionAssigners = [
-            (
-              config: ConstructorParameters<
-                typeof KafkaReplyPartitionAssigner
-              >[1],
-            ) => new KafkaReplyPartitionAssigner(this, config),
-          ];
+    this.initialized = (async () => {
+      this.client = this.createClient();
+      if (!this.producerOnlyMode) {
+        const partitionAssigners = [
+          (
+            config: ConstructorParameters<
+              typeof KafkaReplyPartitionAssigner
+            >[1],
+          ) => new KafkaReplyPartitionAssigner(this, config),
+        ];
 
-          const consumerOptions = Object.assign(
-            {
-              partitionAssigners,
-            },
-            this.options.consumer || {},
-            {
-              groupId: this.groupId,
-            },
-          );
+        const consumerOptions = Object.assign(
+          {
+            partitionAssigners,
+          },
+          this.options.consumer || {},
+          {
+            groupId: this.groupId,
+          },
+        );
 
-          this._consumer = this.client!.consumer(consumerOptions);
-          this.registerConsumerEventListeners();
+        this._consumer = this.client!.consumer(consumerOptions);
+        this.registerConsumerEventListeners();
 
-          // Set member assignments on join and rebalance
-          this._consumer.on(
-            this._consumer.events.GROUP_JOIN,
-            this.setConsumerAssignments.bind(this),
-          );
-          await this._consumer.connect();
-          await this.bindTopics();
-        }
-
-        this._producer = this.client!.producer(this.options.producer || {});
-        this.registerProducerEventListeners();
-        await this._producer.connect();
-
-        resolve();
-      } catch (err) {
-        reject(err);
+        // Set member assignments on join and rebalance
+        this._consumer.on(
+          this._consumer.events.GROUP_JOIN,
+          this.setConsumerAssignments.bind(this),
+        );
+        await this._consumer.connect();
+        await this.bindTopics();
       }
-    });
+
+      this._producer = this.client!.producer(this.options.producer || {});
+      this.registerProducerEventListeners();
+      await this._producer.connect();
+    })();
     return this.initialized.then(() => this._producer!);
   }
 
