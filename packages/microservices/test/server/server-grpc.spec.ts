@@ -901,6 +901,19 @@ describe('ServerGrpc', () => {
       expect(grpcClient.forceShutdown.called).to.be.false;
       expect(grpcClient.tryShutdown.called).to.be.true;
     });
+
+    it('should nullify grpcClient even if tryShutdown fails', async () => {
+      const grpcClient = {
+        forceShutdown: sinon.spy(),
+        tryShutdown: sinon.stub().yields(new Error('shutdown failed')),
+      };
+      untypedServer.grpcClient = grpcClient;
+      untypedServer.options.gracefulShutdown = true;
+
+      await server.close().catch(() => {});
+
+      expect(untypedServer.grpcClient).to.be.null;
+    });
   });
 
   describe('deserialize', () => {
