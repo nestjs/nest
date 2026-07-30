@@ -7,7 +7,7 @@ import {
   NestMiddleware,
   NestModule,
   Param,
-  Query,
+  QueryString,
   Req,
   RequestMethod,
 } from '@nestjs/common';
@@ -217,7 +217,7 @@ describe('Middleware (FastifyAdapter)', () => {
     @Controller(QUERY_VALUE)
     class TestQueryController {
       @Get()
-      [QUERY_VALUE](@Query('test') test: string) {
+      [QUERY_VALUE](@QueryString('test') test: string) {
         return test;
       }
     }

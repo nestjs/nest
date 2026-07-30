@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, QueryString } from '@nestjs/common';
 import {
   Client,
   ClientGrpc,
@@ -163,7 +163,7 @@ export class GrpcController {
   @Post('error')
   @HttpCode(200)
   serializeError(
-    @Query('client') query: 'custom' | 'standard' = 'standard',
+    @QueryString('client') query: 'custom' | 'standard' = 'standard',
     @Body() body: Record<string, any>,
   ): Observable<boolean> {
     const client = query === 'custom' ? this.customClient : this.client;

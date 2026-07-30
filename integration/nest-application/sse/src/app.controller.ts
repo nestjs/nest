@@ -8,7 +8,7 @@ import {
   MessageEvent,
   NestInterceptor,
   Post,
-  Query,
+  QueryString,
   Req,
   RequestMethod,
   Sse,
@@ -56,14 +56,16 @@ export class AppController {
   }
 
   @Sse('sse/validated')
-  sseWithValidatedQuery(@Query() query: SseQueryDto): Observable<MessageEvent> {
+  sseWithValidatedQuery(
+    @QueryString() query: SseQueryDto,
+  ): Observable<MessageEvent> {
     return of({ data: { limit: query.limit } });
   }
 
   @Sse('sse/burst')
   sseBurst(
-    @Query('n') n = '20',
-    @Query('size') size = '65536',
+    @QueryString('n') n = '20',
+    @QueryString('size') size = '65536',
   ): Observable<MessageEvent> {
     const count = parseInt(n, 10);
     const payload = 'X'.repeat(parseInt(size, 10));

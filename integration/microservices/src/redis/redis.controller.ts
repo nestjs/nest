@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, QueryString } from '@nestjs/common';
 import {
   Client,
   ClientProxy,
@@ -18,7 +18,10 @@ export class RedisController {
 
   @Post()
   @HttpCode(200)
-  call(@Query('command') cmd, @Body() data: number[]): Observable<number> {
+  call(
+    @QueryString('command') cmd,
+    @Body() data: number[],
+  ): Observable<number> {
     return this.client.send<number>({ cmd }, data);
   }
 

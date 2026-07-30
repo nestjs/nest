@@ -327,13 +327,16 @@ export const Headers: (property?: string) => ParameterDecorator =
 
 /**
  * Route handler parameter decorator. Extracts the `query`
- * property from the `req` object and populates the decorated
- * parameter with the value of `query`. May also apply pipes to the bound
- * query parameter.
+ * property from the `req` object (URL query string) and populates the
+ * decorated parameter with the value of `query`. May also apply pipes to the
+ * bound query parameter.
+ *
+ * Formerly named `@Query()`. That name is now reserved for the HTTP QUERY
+ * method decorator; migrate parameter bindings to `@QueryString()`.
  *
  * For example:
  * ```typescript
- * async find(@Query('user') user: string)
+ * async find(@QueryString('user') user: string)
  * ```
  *
  * @param property name of single property to extract from the `query` object
@@ -343,16 +346,19 @@ export const Headers: (property?: string) => ParameterDecorator =
  *
  * @publicApi
  */
-export function Query(): ParameterDecorator;
+export function QueryString(): ParameterDecorator;
 /**
  * Route handler parameter decorator. Extracts the `query`
- * property from the `req` object and populates the decorated
- * parameter with the value of `query`. May also apply pipes to the bound
- * query parameter.
+ * property from the `req` object (URL query string) and populates the
+ * decorated parameter with the value of `query`. May also apply pipes to the
+ * bound query parameter.
+ *
+ * Formerly named `@Query()`. That name is now reserved for the HTTP QUERY
+ * method decorator; migrate parameter bindings to `@QueryString()`.
  *
  * For example:
  * ```typescript
- * async find(@Query('user') user: string)
+ * async find(@QueryString('user') user: string)
  * ```
  *
  * @param property name of single property to extract from the `query` object
@@ -362,18 +368,21 @@ export function Query(): ParameterDecorator;
  *
  * @publicApi
  */
-export function Query(
+export function QueryString(
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator;
 /**
  * Route handler parameter decorator. Extracts the `query`
- * property from the `req` object and populates the decorated
- * parameter with the value of `query`. May also apply pipes to the bound
- * query parameter.
+ * property from the `req` object (URL query string) and populates the
+ * decorated parameter with the value of `query`. May also apply pipes to the
+ * bound query parameter.
+ *
+ * Formerly named `@Query()`. That name is now reserved for the HTTP QUERY
+ * method decorator; migrate parameter bindings to `@QueryString()`.
  *
  * For example:
  * ```typescript
- * async find(@Query('user') user: string)
+ * async find(@QueryString('user') user: string)
  * ```
  *
  * @param property name of single property to extract from the `query` object
@@ -383,19 +392,22 @@ export function Query(
  *
  * @publicApi
  */
-export function Query(
+export function QueryString(
   property: string,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator;
 /**
  * Route handler parameter decorator. Extracts the `query`
- * property from the `req` object and populates the decorated
- * parameter with the value of `query`. May also apply pipes to the bound
- * query parameter.
+ * property from the `req` object (URL query string) and populates the
+ * decorated parameter with the value of `query`. May also apply pipes to the
+ * bound query parameter.
+ *
+ * Formerly named `@Query()`. That name is now reserved for the HTTP QUERY
+ * method decorator; migrate parameter bindings to `@QueryString()`.
  *
  * For example:
  * ```typescript
- * async find(@Query('user') user: string)
+ * async find(@QueryString('user') user: string)
  * ```
  *
  * @param property name of single property to extract from the `query` object
@@ -405,7 +417,7 @@ export function Query(
  *
  * @publicApi
  */
-export function Query(
+export function QueryString(
   property?: string | (Type<PipeTransform> | PipeTransform),
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {

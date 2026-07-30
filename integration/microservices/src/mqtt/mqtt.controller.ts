@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, QueryString } from '@nestjs/common';
 import {
   Client,
   ClientProxy,
@@ -27,7 +27,7 @@ export class MqttController {
   @Post()
   @HttpCode(200)
   async call(
-    @Query('command') cmd,
+    @QueryString('command') cmd,
     @Body() data: number[],
   ): Promise<Observable<number>> {
     await this.client.connect();

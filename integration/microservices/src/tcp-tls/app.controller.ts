@@ -4,7 +4,7 @@ import {
   HttpCode,
   Inject,
   Post,
-  Query,
+  QueryString,
 } from '@nestjs/common';
 import {
   Client,
@@ -44,14 +44,17 @@ export class AppController {
 
   @Post()
   @HttpCode(200)
-  call(@Query('command') cmd, @Body() data: number[]): Observable<number> {
+  call(
+    @QueryString('command') cmd,
+    @Body() data: number[],
+  ): Observable<number> {
     return this.client.send<number>({ cmd }, data);
   }
 
   @Post('useFactory')
   @HttpCode(200)
   callWithClientUseFactory(
-    @Query('command') cmd,
+    @QueryString('command') cmd,
     @Body() data: number[],
   ): Observable<number> {
     return this.useFactoryClient.send<number>({ cmd }, data);
@@ -60,7 +63,7 @@ export class AppController {
   @Post('useClass')
   @HttpCode(200)
   callWithClientUseClass(
-    @Query('command') cmd,
+    @QueryString('command') cmd,
     @Body() data: number[],
   ): Observable<number> {
     return this.useClassClient.send<number>({ cmd }, data);
@@ -93,7 +96,7 @@ export class AppController {
   @Post('error')
   @HttpCode(200)
   serializeError(
-    @Query('client') query: 'custom' | 'standard' = 'standard',
+    @QueryString('client') query: 'custom' | 'standard' = 'standard',
     @Body() body: Record<string, any>,
   ): Observable<boolean> {
     const client = query === 'custom' ? this.customClient : this.client;

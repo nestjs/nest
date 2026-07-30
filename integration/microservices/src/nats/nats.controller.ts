@@ -1,4 +1,11 @@
-import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  QueryString,
+} from '@nestjs/common';
 import {
   ClientProxy,
   ClientProxyFactory,
@@ -33,7 +40,7 @@ export class NatsController {
   @Post()
   @HttpCode(200)
   async call(
-    @Query('command') cmd,
+    @QueryString('command') cmd,
     @Body() data: number[],
   ): Promise<Observable<number>> {
     await this.client.connect();

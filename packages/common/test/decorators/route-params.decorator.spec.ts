@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Body, HostParam, Param, Query, Search } from '../../decorators';
+import { Body, HostParam, Param, QueryString, Search } from '../../decorators';
 import { RequestMethod } from '../../enums/request-method.enum';
 import {
   All,
@@ -16,6 +16,7 @@ import {
   Copy,
   Lock,
   Unlock,
+  Query,
 } from '../../index';
 import { ROUTE_ARGS_METADATA } from '../../constants';
 import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
@@ -117,14 +118,14 @@ describe('@Post', () => {
     class Test {
       @Post()
       public static test(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
       @Post([])
       public static testUsingArray(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
@@ -375,14 +376,71 @@ describe('@Search', () => {
     class Test {
       @Search()
       public static test(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
       @Search([])
       public static testUsingArray(
-        @Query() query,
+        @QueryString() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+    expect(path).to.be.eql('/');
+    expect(pathUsingArray).to.be.eql('/');
+  });
+});
+
+describe('@Query', () => {
+  const requestPath = 'test';
+  const requestProps = {
+    path: requestPath,
+    method: RequestMethod.QUERY,
+  };
+
+  const requestPathUsingArray = ['foo', 'bar'];
+  const requestPropsUsingArray = {
+    path: requestPathUsingArray,
+    method: RequestMethod.QUERY,
+  };
+
+  it('should enhance class with expected request metadata', () => {
+    class Test {
+      @Query(requestPath)
+      public static test() {}
+
+      @Query(requestPathUsingArray)
+      public static testUsingArray() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+    const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
+
+    expect(path).to.be.eql(requestPath);
+    expect(method).to.be.eql(requestProps.method);
+    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
+    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+  });
+
+  it('should set path on "/" by default', () => {
+    class Test {
+      @Query()
+      public static test(
+        @Body() body,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+
+      @Query([])
+      public static testUsingArray(
+        @Body() body,
         @Param() params,
         @HostParam() hostParams,
       ) {}
@@ -468,14 +526,14 @@ describe('@PropFind', () => {
     class Test {
       @Propfind()
       public static test(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
       @Propfind([])
       public static testUsingArray(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
@@ -526,14 +584,14 @@ describe('@PropPatch', () => {
     class Test {
       @Proppatch()
       public static test(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
       @Proppatch([])
       public static testUsingArray(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
@@ -584,14 +642,14 @@ describe('@MkCol', () => {
     class Test {
       @Mkcol()
       public static test(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
       @Mkcol([])
       public static testUsingArray(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
@@ -642,14 +700,14 @@ describe('@Copy', () => {
     class Test {
       @Copy()
       public static test(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
       @Copy([])
       public static testUsingArray(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
@@ -700,14 +758,14 @@ describe('@Move', () => {
     class Test {
       @Move()
       public static test(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
       @Move([])
       public static testUsingArray(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
@@ -758,14 +816,14 @@ describe('@Lock', () => {
     class Test {
       @Lock()
       public static test(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
       @Lock([])
       public static testUsingArray(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
@@ -816,14 +874,14 @@ describe('@Unlock', () => {
     class Test {
       @Unlock()
       public static test(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}
 
       @Unlock([])
       public static testUsingArray(
-        @Query() query,
+        @QueryString() query,
         @Param() params,
         @HostParam() hostParams,
       ) {}

@@ -381,6 +381,10 @@ export class FastifyAdapter<
     return this.injectRouteOptions('SEARCH', ...args);
   }
 
+  public query(...args: any[]) {
+    return this.injectRouteOptions('QUERY', ...args);
+  }
+
   public propfind(...args: any[]) {
     return this.injectRouteOptions('PROPFIND', ...args);
   }

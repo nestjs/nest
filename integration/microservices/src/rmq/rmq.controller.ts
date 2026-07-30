@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, Post, Query } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, QueryString } from '@nestjs/common';
 import {
   ClientProxy,
   ClientProxyFactory,
@@ -33,7 +33,7 @@ export class RMQController {
 
   @Post()
   @HttpCode(200)
-  call(@Query('command') cmd, @Body() data: number[]) {
+  call(@QueryString('command') cmd, @Body() data: number[]) {
     return this.client.send<number>({ cmd }, data);
   }
 

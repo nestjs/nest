@@ -15,4 +15,5 @@ export enum RequestMethod {
   MOVE,
   LOCK,
   UNLOCK,
+  QUERY,
 }
