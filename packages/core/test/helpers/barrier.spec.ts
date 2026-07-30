@@ -21,7 +21,24 @@ describe('Barrier', () => {
     (<any>barrier).resolve();
   });
 
+  describe('constructor', () => {
+    it('should resolve immediately when target count is zero', async () => {
+      const zeroBarrier = new Barrier(0);
+
+      await expect(zeroBarrier.wait()).to.be.fulfilled;
+    });
+  });
+
   describe('signal', () => {
+    it('should keep the barrier resolved when signaled more times than the target count', async () => {
+      for (let i = 0; i < targetCount + 1; i++) {
+        barrier.signal();
+      }
+
+      expect(barrierResolveSpy.called).to.be.true;
+      await expect(barrier.wait()).to.be.fulfilled;
+    });
+
     it('should resolve the barrier when target count is reached', async () => {
       for (let i = 0; i < targetCount; i++) {
         barrier.signal();
