@@ -1,6 +1,10 @@
 import { Logger, LoggerService } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
 import {
+  MicroserviceMiddleware,
+  MicroserviceMiddlewareContext,
+} from '@nestjs/common/interfaces/microservices/microservice-middleware.interface';
+import {
   connectable,
   EMPTY,
   from as fromPromise,
@@ -65,11 +69,12 @@ export abstract class Server<
     transportId: Transport | symbol,
     context: BaseRpcContext,
     done: () => Promise<any>,
-  ) => done();
+  ) => this.runMiddleware({ transportId, context }, done);
   protected onProcessingEndHook: (
     transportId: Transport | symbol,
     context: BaseRpcContext,
   ) => void;
+  protected middlewares: MicroserviceMiddleware[] = [];
   protected _status$ = new ReplaySubject<Status>(1);
 
   /**
@@ -134,6 +139,54 @@ export abstract class Server<
     hook: (transportId: Transport | symbol, context: unknown) => void,
   ): void {
     this.onProcessingEndHook = hook;
+  }
+
+  /**
+   * Registers microservice middleware. Middleware runs before guards and
+   * interceptors for every message and event handler processed by this
+   * server.
+   *
+   * @param {...MicroserviceMiddleware} middleware
+   */
+  public use(...middleware: MicroserviceMiddleware[]): this {
+    this.middlewares.push(...middleware);
+    return this;
+  }
+
+  /**
+   * Runs the registered middleware chain before delegating to the provided
+   * callback. Middleware is executed in registration order; each middleware
+   * must call `next()` to continue the chain.
+   */
+  protected runMiddleware(
+    context: MicroserviceMiddlewareContext,
+    done: () => Promise<any>,
+  ): Promise<any> {
+    let index = -1;
+
+    const dispatch = (i: number): Promise<any> => {
+      if (i <= index) {
+        return Promise.reject(
+          new Error('"next()" called multiple times in a middleware function'),
+        );
+      }
+      index = i;
+
+      const middleware = this.middlewares[i];
+      if (!middleware) {
+        return done();
+      }
+      try {
+        let nextPromise: Promise<any> | undefined;
+        const next = () => (nextPromise = dispatch(i + 1));
+        const result = middleware(context, next);
+        return Promise.resolve(result).then(res => nextPromise ?? res);
+      } catch (err) {
+        return Promise.reject(err);
+      }
+    };
+
+    return dispatch(0);
   }
 
   public addHandler(

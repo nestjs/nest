@@ -134,13 +134,14 @@ describe('NestMicroservice', () => {
     expect(instance.unwrap()).to.equal('core');
   });
 
-  it('should delegate on() to server', () => {
-    const onStub = sinon.stub();
+  it('should delegate use() to server', () => {
+    const useStub = sinon.stub();
     const strategy = new (class extends Server {
       listen = sinon.spy();
       close = sinon.spy();
-      on = onStub;
+      on = sinon.stub();
       unwrap = sinon.stub();
+      use = useStub;
     })();
 
     const instance = new NestMicroservice(
@@ -150,8 +151,30 @@ describe('NestMicroservice', () => {
       mockAppConfig,
     );
 
-    const cb = () => {};
-    instance.on('test:event', cb);
-    expect(onStub.calledWith('test:event', cb)).to.be.true;
+    const middleware = () => null;
+    instance.use(middleware as any);
+    expect(useStub.calledWith(middleware)).to.be.true;
+  });
+
+  it('should warn when use() is called after the microservice is initialized', () => {
+    const loggerWarnSpy = sinon.spy();
+    const strategy = new (class extends Server {
+      listen = sinon.spy();
+      close = sinon.spy();
+      on = sinon.stub();
+      unwrap = sinon.stub();
+    })();
+
+    const instance = new NestMicroservice(
+      mockContainer,
+      { strategy },
+      mockGraphInspector,
+      mockAppConfig,
+    );
+    (instance as any).logger = { warn: loggerWarnSpy };
+    (instance as any).isInitialized = true;
+
+    instance.use(() => null as any);
+    expect(loggerWarnSpy.called).to.be.true;
   });
 });

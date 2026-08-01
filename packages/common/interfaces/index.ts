@@ -16,6 +16,7 @@ export * from './global-prefix-options.interface';
 export * from './hooks';
 export * from './http';
 export * from './injectable.interface';
+export * from './microservices/microservice-middleware.interface';
 export * from './microservices/nest-hybrid-application-options.interface';
 export * from './middleware';
 export * from './modules';

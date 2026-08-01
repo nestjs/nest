@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { AsyncLocalStorage } from 'async_hooks';
 import { expect } from 'chai';
 import { join } from 'path';
 import { ReplaySubject, Subject, throwError } from 'rxjs';
@@ -526,6 +527,71 @@ describe('ServerGrpc', () => {
 
         await result;
       });
+    });
+  });
+
+  describe('middleware', () => {
+    it('should run registered middleware before the wrapped handler for unary calls', async () => {
+      const calls: string[] = [];
+      server.use((ctx: unknown, next: () => Promise<any>) => {
+        calls.push('middleware');
+        return next();
+      });
+      const handler = () => {
+        calls.push('handler');
+        return { data: 'ok' };
+      };
+
+      await server.createUnaryServiceMethod(handler as any)(
+        { write: sinon.spy(), end: sinon.spy() } as any,
+        sinon.spy(),
+      );
+
+      expect(calls).to.deep.equal(['middleware', 'handler']);
+    });
+
+    it('should run registered middleware before the wrapped handler for streaming calls', async () => {
+      const calls: string[] = [];
+      server.use((ctx: unknown, next: () => Promise<any>) => {
+        calls.push('middleware');
+        return next();
+      });
+      const call = {
+        write: sinon.spy(() => true),
+        end: sinon.spy(),
+        on: sinon.spy(),
+        off: sinon.spy(),
+      };
+      const handler = () => {
+        calls.push('handler');
+        return { data: 'ok' };
+      };
+
+      await server.createStreamServiceMethod(handler as any)(
+        call as any,
+        sinon.spy(),
+      );
+
+      expect(calls).to.deep.equal(['middleware', 'handler']);
+    });
+
+    it('should expose AsyncLocalStorage context set in middleware to the wrapped handler', async () => {
+      const storage = new AsyncLocalStorage<Record<string, string>>();
+      server.use((ctx: unknown, next: () => Promise<any>) =>
+        storage.run({ requestId: 'test' }, () => next()),
+      );
+      let capturedStore: Record<string, string> | undefined;
+      const handler = () => {
+        capturedStore = storage.getStore();
+        return { data: 'ok' };
+      };
+
+      await server.createUnaryServiceMethod(handler as any)(
+        { write: sinon.spy(), end: sinon.spy() } as any,
+        sinon.spy(),
+      );
+
+      expect(capturedStore).to.deep.equal({ requestId: 'test' });
     });
   });
 

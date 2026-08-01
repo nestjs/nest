@@ -18,4 +18,5 @@ export * from './module';
 export * from './nest-microservice';
 export * from './record-builders';
 export * from './server';
+export * from '@nestjs/common/interfaces/microservices/microservice-middleware.interface';
 export * from './tokens';

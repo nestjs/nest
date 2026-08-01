@@ -1,7 +1,11 @@
 import { expect } from 'chai';
 import { throwError as _throw, lastValueFrom, Observable, of } from 'rxjs';
 import * as sinon from 'sinon';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
 import { Server } from '../../server/server';
+
+chai.use(chaiAsPromised);
 
 class TestServer extends Server {
   public on<
@@ -245,6 +249,153 @@ describe('Server', () => {
         expect(messageHandlersHasSpy.args[0][0]).to.be.equal(handlerRoute);
         expect(messageHandlersGetSpy.called).to.be.false;
         expect(value).to.be.null;
+      });
+    });
+  });
+
+  describe('middleware', () => {
+    let server: TestServer;
+
+    beforeEach(() => {
+      server = new TestServer();
+    });
+
+    describe('use', () => {
+      it('should register middleware functions', () => {
+        const middleware = () => null;
+        server.use(middleware as any);
+
+        expect((server as any).middlewares).to.deep.equal([middleware]);
+      });
+
+      it('should be chainable', () => {
+        expect(server.use((() => null) as any)).to.be.equal(server);
+      });
+    });
+
+    describe('runMiddleware', () => {
+      it('should run middleware in registration order around the callback', async () => {
+        const calls: string[] = [];
+        server.use(
+          async (ctx: unknown, next: () => Promise<any>) => {
+            calls.push('mw1-before');
+            await next();
+            calls.push('mw1-after');
+          },
+          async (ctx: unknown, next: () => Promise<any>) => {
+            calls.push('mw2-before');
+            await next();
+            calls.push('mw2-after');
+          },
+        );
+
+        await (server as any).runMiddleware({}, async () => calls.push('done'));
+
+        expect(calls).to.deep.equal([
+          'mw1-before',
+          'mw2-before',
+          'done',
+          'mw2-after',
+          'mw1-after',
+        ]);
+      });
+
+      it('should pass the context to each middleware', async () => {
+        const middleware = sinon.spy((ctx: any, next: any) => next());
+        server.use(middleware);
+        const context = { transportId: 'test-transport' };
+
+        await (server as any).runMiddleware(context, async () => null);
+
+        expect(middleware.called).to.be.true;
+        expect(middleware.args[0][0]).to.be.equal(context);
+      });
+
+      it('should not invoke the callback when middleware does not call next', async () => {
+        server.use(() => null as any);
+        const callback = sinon.spy();
+
+        await (server as any).runMiddleware({}, callback);
+
+        expect(callback.called).to.be.false;
+      });
+
+      it('should reject when next is called more than once', async () => {
+        server.use((ctx: any, next: any) => {
+          next();
+          return next();
+        });
+
+        await expect(
+          (server as any).runMiddleware({}, async () => null),
+        ).to.be.rejectedWith(Error);
+      });
+
+      it('should propagate synchronous middleware errors', async () => {
+        const error = new Error('test-error');
+        server.use(() => {
+          throw error;
+        });
+
+        await expect(
+          (server as any).runMiddleware({}, async () => null),
+        ).to.be.rejectedWith(error);
+      });
+
+      it('should propagate asynchronous middleware errors', async () => {
+        const error = new Error('test-error');
+        server.use(() => Promise.reject(error));
+
+        await expect(
+          (server as any).runMiddleware({}, async () => null),
+        ).to.be.rejectedWith(error);
+      });
+
+      it('should run the callback even when middleware does not return next()', async () => {
+        const calls: string[] = [];
+        server.use((ctx: unknown, next: () => Promise<any>) => {
+          calls.push('middleware');
+          void next();
+        });
+        const callback = sinon.spy(async () => calls.push('done'));
+
+        await (server as any).runMiddleware({}, callback);
+
+        expect(calls).to.deep.equal(['middleware', 'done']);
+      });
+
+      it('should propagate downstream errors even when middleware does not return next()', async () => {
+        const error = new Error('test-error');
+        server.use((ctx: unknown, next: () => Promise<any>) => {
+          void next();
+          return undefined as any;
+        });
+        server.use(() => Promise.reject(error));
+
+        await expect(
+          (server as any).runMiddleware({}, async () => null),
+        ).to.be.rejectedWith(error);
+      });
+    });
+
+    describe('default onProcessingStartHook', () => {
+      it('should run registered middleware before the event handler', async () => {
+        const calls: string[] = [];
+        server.use((ctx: unknown, next: () => Promise<any>) => {
+          calls.push('middleware');
+          return next();
+        });
+        const handler = sinon.spy(async () => 'test');
+        server.addHandler('test-pattern', handler as any, true);
+
+        await server.handleEvent(
+          'test-pattern',
+          { data: 'hello' } as any,
+          {} as any,
+        );
+
+        expect(calls).to.deep.equal(['middleware']);
+        expect(handler.called).to.be.true;
       });
     });
   });

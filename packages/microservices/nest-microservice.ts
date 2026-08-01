@@ -15,6 +15,7 @@ import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
 import { NestApplicationContext } from '@nestjs/core/nest-application-context';
+import { MicroserviceMiddleware } from '@nestjs/common/interfaces/microservices/microservice-middleware.interface';
 import { Transport } from './enums/transport.enum';
 import {
   AsyncMicroserviceOptions,
@@ -249,6 +250,22 @@ export class NestMicroservice
         ref: item,
       }),
     );
+    return this;
+  }
+
+  /**
+   * Registers microservice middleware. Middleware runs before guards and
+   * interceptors for every message and event handler.
+   *
+   * @param {...MicroserviceMiddleware} middleware
+   */
+  public use(...middleware: MicroserviceMiddleware[]): this {
+    if (this.isInitialized) {
+      this.logger.warn(
+        'Cannot apply middleware: registration must occur before initialization.',
+      );
+    }
+    this.serverInstance.use(...middleware);
     return this;
   }
 
