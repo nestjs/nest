@@ -738,4 +738,32 @@ describe('ValidationPipe', () => {
       });
     });
   });
+  describe('Issue #17398: when only ValidationPipe-specific options are provided', () => {
+    it('should return the original value when exceptionFactory is provided', async () => {
+      target = new ValidationPipe({
+        exceptionFactory: () => new Error('custom'),
+      });
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+      const result = await target.transform(testObj, metadata);
+      expect(result).to.equal(testObj);
+    });
+
+    it('should return the original value when validatorPackage is provided', async () => {
+      target = new ValidationPipe({
+        validatorPackage: require('class-validator'),
+      });
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+      const result = await target.transform(testObj, metadata);
+      expect(result).to.equal(testObj);
+    });
+
+    it('should return the original value when transformerPackage is provided', async () => {
+      target = new ValidationPipe({
+        transformerPackage: require('class-transformer'),
+      });
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+      const result = await target.transform(testObj, metadata);
+      expect(result).to.equal(testObj);
+    });
+  });
 });
