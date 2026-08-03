@@ -153,7 +153,7 @@ export class SseStream extends Transform {
 
     let data = message.type ? `event: ${sanitize(message.type)}\n` : '';
     data += !isNil(message.id) ? `id: ${sanitize(message.id)}\n` : '';
-    data += message.retry ? `retry: ${sanitize(message.retry)}\n` : '';
+    data += !isNil(message.retry) ? `retry: ${sanitize(message.retry)}\n` : '';
     data += !isNil(message.comment) ? toCommentString(message.comment) : '';
     data += !isNil(message.data) ? toDataString(message.data) : '';
     data += '\n';
