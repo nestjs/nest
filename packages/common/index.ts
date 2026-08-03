@@ -32,6 +32,7 @@ export {
   INestApplication,
   INestApplicationContext,
   INestMicroservice,
+  ITransportServer,
   InjectionToken,
   IntrospectionResult,
   MessageEvent,
