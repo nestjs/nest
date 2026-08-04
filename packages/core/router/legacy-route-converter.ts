@@ -57,10 +57,15 @@ export class LegacyRouteConverter {
 
     // When route includes any wildcard segments in the middle.
     if (normalizedRoute.includes('/*/')) {
-      // Replace each /*/ segment with a named parameter using different name for each segment.
-      const convertedRoute = route.replaceAll('/*/', (match, offset) => {
-        return `/*path${offset}/`;
-      });
+      // Replace each "*" segment with a named parameter, using a different name
+      // for each. Match "/*" with a lookahead for the following "/" so the
+      // trailing slash is not consumed. Consuming it made two adjacent "/*/*/"
+      // segments share a slash, so only the first one got converted and the
+      // second was left as an unnamed "*" that path-to-regexp still rejects.
+      const convertedRoute = route.replaceAll(
+        /\/\*(?=\/)/g,
+        (match, offset) => `/*path${offset}`,
+      );
       printWarning(route, convertedRoute);
       return convertedRoute;
     }
