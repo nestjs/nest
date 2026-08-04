@@ -39,6 +39,21 @@ describe('transformException', () => {
           BadRequestException,
         );
       });
+      it('should return "BadRequestException" for LIMIT_FIELD_NESTING', () => {
+        const err = { message: multerExceptions.LIMIT_FIELD_NESTING };
+        expect(transformException(err as any)).to.be.instanceof(
+          BadRequestException,
+        );
+      });
+      it('should append the field property to the message', () => {
+        const err = {
+          message: multerExceptions.LIMIT_FIELD_NESTING,
+          field: 'foo',
+        };
+        expect(transformException(err as any)!.message).to.equal(
+          `${multerExceptions.LIMIT_FIELD_NESTING} - foo`,
+        );
+      });
     });
     describe('and is busboy/multipart exception', () => {
       it('should return "BadRequestException"', () => {
