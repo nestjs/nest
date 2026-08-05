@@ -20,6 +20,7 @@ export function transformException(
     case multerExceptions.LIMIT_FIELD_KEY:
     case multerExceptions.LIMIT_FIELD_VALUE:
     case multerExceptions.LIMIT_FIELD_COUNT:
+    case multerExceptions.LIMIT_FIELD_NESTING:
     case multerExceptions.LIMIT_UNEXPECTED_FILE:
     case multerExceptions.LIMIT_PART_COUNT:
     case multerExceptions.MISSING_FIELD_NAME:
