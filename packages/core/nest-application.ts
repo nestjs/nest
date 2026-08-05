@@ -502,14 +502,19 @@ export class NestApplication
     return instances;
   }
 
-  private applyFunctionDecoratorIfRegistered(args: any[]): any[] {
+  private applyFunctionDecoratorIfRegistered(args: [any, any?]): [any, any?] {
     if (!this.appOptions.instrument?.instanceDecorator) {
       return args;
     }
-    return args.map(arg =>
-      isFunction(arg)
-        ? this.appOptions.instrument!.instanceDecorator(arg)
-        : arg,
-    );
+    const [firstArg, secondArg] = args;
+
+    return [
+      isFunction(firstArg)
+        ? this.appOptions.instrument.instanceDecorator(firstArg)
+        : firstArg,
+      isFunction(secondArg)
+        ? this.appOptions.instrument.instanceDecorator(secondArg)
+        : secondArg,
+    ];
   }
 }
