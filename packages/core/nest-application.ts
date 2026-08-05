@@ -263,7 +263,7 @@ export class NestApplication
   }
 
   public use(...args: [any, any?]): this {
-    this.httpAdapter.use(...args);
+    this.httpAdapter.use(...this.applyFunctionDecoratorIfRegistered(args));
     return this;
   }
 
@@ -500,5 +500,16 @@ export class NestApplication
       );
     }
     return instances;
+  }
+
+  private applyFunctionDecoratorIfRegistered(args: any[]): any[] {
+    if (!this.appOptions.instrument?.instanceDecorator) {
+      return args;
+    }
+    return args.map(arg =>
+      isFunction(arg)
+        ? this.appOptions.instrument!.instanceDecorator(arg)
+        : arg,
+    );
   }
 }
