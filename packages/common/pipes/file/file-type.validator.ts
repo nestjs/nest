@@ -56,6 +56,14 @@ export type FileTypeValidatorOptions = {
    * @default false
    */
   fallbackToMimetype?: boolean;
+
+  /**
+   * If `true`, replaces the client-provided mimetype with the mimetype
+   * detected from the file content using magic number validation.
+   *
+   * @default false
+   */
+  overrideMimeType?: boolean;
 };
 
 /**
@@ -151,6 +159,9 @@ export class FileTypeValidator extends FileValidator<
       const fileType = await fileTypeFromBuffer(file.buffer);
 
       if (fileType) {
+        if (this.validationOptions.overrideMimeType) {
+          file.mimetype = fileType.mime;
+        }
         // Match detected mime type against allowed type
         return !!fileType.mime.match(this.validationOptions.fileType);
       }

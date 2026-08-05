@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 import { NO_MESSAGE_HANDLER } from '../../constants';
 import { RedisContext } from '../../ctx-host';
@@ -51,6 +52,27 @@ describe('ServerRedis', () => {
         server.listen(callbackSpy);
         expect(callbackSpy.calledWith(error)).to.be.true;
       });
+    });
+  });
+  describe('event listeners registered before "listen"', () => {
+    it('should forward the matching client type ("sub"/"pub") to the listener', () => {
+      const subClient = new EventEmitter();
+      const pubClient = new EventEmitter();
+      const createClientStub = sinon.stub(server, 'createRedisClient');
+      createClientStub.onFirstCall().returns(subClient as any);
+      createClientStub.onSecondCall().returns(pubClient as any);
+      sinon.stub(server, 'start').callsFake((cb?: () => void) => cb?.());
+
+      const readySpy = sinon.spy();
+      server.on('ready', readySpy);
+
+      server.listen(() => {});
+
+      subClient.emit('ready');
+      pubClient.emit('ready');
+
+      expect(readySpy.firstCall.args[0]).to.be.equal('sub');
+      expect(readySpy.secondCall.args[0]).to.be.equal('pub');
     });
   });
   describe('close', () => {

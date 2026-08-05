@@ -181,6 +181,30 @@ describe('MiddlewareBuilder', () => {
             },
           ]);
         });
+
+        it('should remove every route overlapping the same parameterized one', () => {
+          // The parameterized route's regex is reused for each candidate, so a
+          // stateful (global) regex would leave `lastIndex` past the end of the
+          // previous match and let every other concrete route through. #17334
+          configProxy.forRoutes(
+            { path: 'cats/:id', method: RequestMethod.GET },
+            { path: 'cats/1', method: RequestMethod.GET },
+            { path: 'cats/2', method: RequestMethod.GET },
+            { path: 'cats/3', method: RequestMethod.GET },
+          );
+
+          expect(builder.build()).to.deep.equal([
+            {
+              middleware: [],
+              forRoutes: [
+                {
+                  method: RequestMethod.GET,
+                  path: '/cats/:id',
+                },
+              ],
+            },
+          ]);
+        });
       });
     });
   });
