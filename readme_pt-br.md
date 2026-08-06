@@ -5,7 +5,7 @@
 [circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
-  <p align="center">A progressive <a href="https://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+  <p align="center">Um framework <a href="https://nodejs.org" target="_blank">Node.js</a> progressivo para a construção de aplicações server-side eficientes e escaláveis.</p>
     <p align="center">
 <a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
 <a href="https://github.com/nestjs/nest/blob/master/LICENSE" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
@@ -21,42 +21,41 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+## Descrição
 
-Nest is a framework for building efficient, scalable <a href="https://nodejs.org" target="_blank">Node.js</a> server-side applications. It uses modern JavaScript, is built with <a href="https://www.typescriptlang.org" target="_blank">TypeScript</a> (preserves compatibility with pure JavaScript) and combines elements of OOP (Object Oriented Programming), FP (Functional Programming), and FRP (Functional Reactive Programming).
+Nest é um framework para a construção de aplicações server-side eficientes e escaláveis em <a href="https://nodejs.org" target="_blank">Node.js</a>. Ele utiliza JavaScript moderno, é construído com <a href="https://www.typescriptlang.org" target="_blank">TypeScript</a> (preservando compatibilidade com JavaScript puro) e combina elementos de OOP (Programação Orientada a Objetos), FP (Programação Funcional) e FRP (Programação Reativa Funcional).
 
-<p>Under the hood, Nest makes use of <a href="https://expressjs.com/" target="_blank">Express</a>, but also provides compatibility with a wide range of other libraries, like <a href="https://github.com/fastify/fastify" target="_blank">Fastify</a>, allowing for easy use of the myriad of third-party plugins which are available.</p>
+<p>Por baixo dos panos, o Nest utiliza o <a href="https://expressjs.com/" target="_blank">Express</a>, mas também oferece compatibilidade com uma ampla variedade de outras bibliotecas, como o <a href="https://github.com/fastify/fastify" target="_blank">Fastify</a>, permitindo o uso fácil da miríade de plugins de terceiros disponíveis.</p>
 
-## Philosophy
+## Filosofia
 
-<p>In recent years, thanks to Node.js, JavaScript has become the “lingua franca” of the web for both front-end and back-end applications, giving rise to awesome projects like <a href="https://angular.dev/" target="_blank">Angular</a>, <a href="https://react.dev/" target="_blank">React</a>, and <a href="https://vuejs.org/" target="_blank">Vue</a>, which improve developer productivity and enable the construction of fast, testable, and extensible frontend applications. However, on the server-side, while there are a lot of superb libraries, helpers, and tools for Node, none of them effectively solve the main problem - the architecture.</p>
-<p>Nest aims to provide an application architecture out of the box which allows for effortless creation of highly testable, scalable, and loosely coupled and easily maintainable applications. The architecture is heavily inspired by Angular.</p>
+<p>Nos últimos anos, graças ao Node.js, o JavaScript se tornou a “língua franca” da web tanto para aplicações front-end quanto back-end, dando origem a projetos incríveis como <a href="https://angular.dev/" target="_blank">Angular</a>, <a href="https://react.dev/" target="_blank">React</a> e <a href="https://vuejs.org/" target="_blank">Vue</a>, que melhoram a produtividade dos desenvolvedores e permitem a construção de aplicações frontend rápidas, testáveis e extensíveis. Porém, no lado do servidor, embora existam diversas bibliotecas, helpers e ferramentas excelentes para Node, nenhuma delas resolve efetivamente o principal problema - a arquitetura.</p>
+<p>O Nest tem como objetivo fornecer uma arquitetura de aplicação pronta para uso que permita a criação sem esforço de aplicações altamente testáveis, escaláveis, fracamente acopladas e facilmente mantidas. A arquitetura é fortemente inspirada no Angular.</p>
 
-## Getting started
+## Primeiros passos
 
-- To check out the [guide](https://docs.nestjs.com), visit [docs.nestjs.com](https://docs.nestjs.com). :books:
-- 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). :books:
-- [가이드](readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. :books:
-- [ガイド](readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 :books:
-- Para conferir o [guia](readme_pt-br.md) em português brasileiro, visite [docs.nestjs.com](https://docs.nestjs.com). 📚
+- Para conferir o [guia](https://docs.nestjs.com), visite [docs.nestjs.com](https://docs.nestjs.com). 📚
+- 要查看中文 [指南](readme_zh.md), 请访问 [docs.nestjs.cn](https://docs.nestjs.cn). 📚
+- [가이드](readme_kr.md) 문서는 [docs.nestjs.com](https://docs.nestjs.com)에서 확인하실 수 있습니다. 📚
+- [ガイド](readme_jp.md)は [docs.nestjs.com](https://docs.nestjs.com)でご確認ください。 📚
 
-## Questions
+## Perguntas
 
-For questions and support please use the official [Discord channel](https://discord.gg/G7Qnnhy). The issue list of this repo is **exclusively** for bug reports and feature requests.
+Para dúvidas e suporte, utilize o [canal oficial do Discord](https://discord.gg/G7Qnnhy). A lista de issues deste repositório é **exclusivamente** para relatórios de bugs e solicitações de funcionalidades.
 
 ## Issues
 
-Please make sure to read the [Issue Reporting Checklist](https://github.com/nestjs/nest/blob/master/CONTRIBUTING.md#-submitting-an-issue) before opening an issue. Issues not conforming to the guidelines may be closed immediately.
+Certifique-se de ler o [Checklist de Reporte de Issues](https://github.com/nestjs/nest/blob/master/CONTRIBUTING.md#-submitting-an-issue) antes de abrir uma issue. Issues que não estejam de acordo com as diretrizes podem ser fechadas imediatamente.
 
-## Consulting
+## Consultoria
 
-With official support, you can get expert help straight from the Nest core team. We provide dedicated technical support, migration strategies, advice on best practices (and design decisions), PR reviews, and team augmentation. Read more about [support here](https://enterprise.nestjs.com).
+Com suporte oficial, você pode obter ajuda especializada diretamente da equipe principal do Nest. Oferecemos suporte técnico dedicado, estratégias de migração, orientação sobre boas práticas (e decisões de design), revisões de PR e aumento de equipe. Leia mais sobre [suporte aqui](https://enterprise.nestjs.com).
 
-## Support
+## Apoio
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support from the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Nest é um projeto open source licenciado sob MIT. Ele pode crescer graças aos patrocinadores e ao apoio de nossos incríveis backers. Se você quiser se juntar a eles, [leia mais aqui](https://docs.nestjs.com/support).
 
-#### Principal Sponsors
+#### Patrocinadores Principais
 
 <table style="text-align:center;">
 <tr>
@@ -68,7 +67,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 </tr>
 </table>
 
-#### Gold Sponsors
+#### Patrocinadores Gold
 
 <table style="text-align:center;">
 <tr>
@@ -84,7 +83,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 </tr>
 </table>
 
-#### Silver Sponsors
+#### Patrocinadores Silver
 
 <table style="text-align:center;">
 <tr>
@@ -100,7 +99,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 </tr>
 </table>
 
-#### Sponsors
+#### Patrocinadores
 
 <table>
 <tr>
@@ -117,12 +116,12 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 
 <a href="https://opencollective.com/nest" target="_blank"><img src="https://opencollective.com/nest/backers.svg?width=1000"></a>
 
-## Stay in touch
+## Fique em contato
 
-- Author - [Kamil Myśliwiec](https://x.com/kammysliwiec)
+- Autor - [Kamil Myśliwiec](https://x.com/kammysliwiec)
 - Website - [https://nestjs.com](https://nestjs.com/)
 - X - [@nestframework](https://x.com/nestframework)
 
-## License
+## Licença
 
-Nest is [MIT licensed](LICENSE).
+O Nest é licenciado sob a licença [MIT](LICENSE).
