@@ -51,7 +51,7 @@ export class MicroservicesModule<
     );
 
     const injector = new Injector({
-      preview: container.contextOptions?.preview!,
+      preview: container.contextOptions?.preview ?? false,
       instanceDecorator:
         container.contextOptions?.instrument?.instanceDecorator,
     });

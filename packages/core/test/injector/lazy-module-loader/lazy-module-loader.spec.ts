@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Injectable, Module } from '@nestjs/common';
 import { expect } from 'chai';
 import {
   LazyModuleLoader,
@@ -74,6 +74,113 @@ describe('LazyModuleLoader', () => {
         const moduleRef = await lazyModuleLoader.load(() => ModuleC);
         const moduleRef2 = await lazyModuleLoader.load(() => ModuleC);
         expect(moduleRef).to.equal(moduleRef2);
+      });
+    });
+
+    describe('singleton sharing and repeated loading (#17428)', () => {
+      let constructionsCount = 0;
+      let globalConstructionsCount = 0;
+
+      @Injectable()
+      class SharedService {
+        constructor() {
+          constructionsCount++;
+        }
+      }
+
+      @Module({
+        providers: [SharedService],
+        exports: [SharedService],
+      })
+      class SharedModule {}
+
+      @Global()
+      @Module({
+        providers: [
+          {
+            provide: 'GlobalService',
+            useFactory: () => {
+              globalConstructionsCount++;
+              return 'global';
+            },
+          },
+        ],
+        exports: ['GlobalService'],
+      })
+      class GlobalSharedModule {}
+
+      @Injectable()
+      class Consumer {
+        constructor(readonly shared: SharedService) {}
+      }
+
+      @Module({
+        imports: [SharedModule],
+        providers: [Consumer],
+      })
+      class LazyModule {}
+
+      @Module({
+        providers: [
+          {
+            provide: 'GlobalConsumer',
+            useFactory: (globalService: any) => globalService,
+            inject: ['GlobalService'],
+          },
+        ],
+      })
+      class LazyGlobalModule {}
+
+      @Module({
+        imports: [SharedModule, GlobalSharedModule],
+      })
+      class EagerModule {}
+
+      let eagerSharedService: SharedService;
+
+      beforeEach(async () => {
+        constructionsCount = 0;
+        globalConstructionsCount = 0;
+
+        // Boot the eager graph
+        await dependenciesScanner.scan(EagerModule);
+        await instanceLoader.createInstancesOfDependencies();
+
+        const { token: sharedModuleToken } = await (
+          lazyModuleLoader as any
+        ).moduleCompiler.compile(SharedModule);
+        const sharedModuleInstance = modulesContainer.get(sharedModuleToken)!;
+        eagerSharedService =
+          sharedModuleInstance.getProviderByKey(SharedService).instance;
+      });
+
+      it('should share already-initialized singleton providers with lazily-loaded consumer', async () => {
+        const lazyModuleRef = await lazyModuleLoader.load(() => LazyModule);
+        const lazyConsumer = lazyModuleRef.get(Consumer);
+        expect(lazyConsumer.shared).to.equal(eagerSharedService);
+        expect(constructionsCount).to.equal(1);
+      });
+
+      it('should not construct the provider again on repeated load() calls', async () => {
+        await lazyModuleLoader.load(() => LazyModule);
+        expect(constructionsCount).to.equal(1);
+
+        await lazyModuleLoader.load(() => LazyModule);
+        expect(constructionsCount).to.equal(1);
+      });
+
+      it('should correctly support global modules without duplicating constructor calls', async () => {
+        const lazyGlobalRef = await lazyModuleLoader.load(
+          () => LazyGlobalModule,
+        );
+        const globalConsumer = lazyGlobalRef.get('GlobalConsumer', {
+          strict: false,
+        });
+        expect(globalConsumer).to.equal('global');
+        expect(globalConstructionsCount).to.equal(1);
+
+        await lazyModuleLoader.load(() => LazyGlobalModule);
+        expect(globalConstructionsCount).to.equal(1);
       });
     });
   });
