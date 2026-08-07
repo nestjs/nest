@@ -57,9 +57,9 @@ describe('HttpErrorByCode', () => {
   });
 
   it('should set the correct default message for HttpVersionNotSupportedException', () => {
-    const instance = new (
-      HttpErrorByCode[HttpStatus.HTTP_VERSION_NOT_SUPPORTED] as any
-    )();
+    const instance = new (HttpErrorByCode[
+      HttpStatus.HTTP_VERSION_NOT_SUPPORTED
+    ] as any)();
     expect(instance.message).to.equal('HTTP Version Not Supported');
   });
 });

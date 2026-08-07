@@ -447,7 +447,10 @@ export class DependenciesScanner {
   public isCustomProvider(
     provider: Provider,
   ): provider is
-    ClassProvider | ValueProvider | FactoryProvider | ExistingProvider {
+    | ClassProvider
+    | ValueProvider
+    | FactoryProvider
+    | ExistingProvider {
     return provider && !isNil((provider as any).provide);
   }
 
@@ -492,7 +495,8 @@ export class DependenciesScanner {
           | typeof APP_INTERCEPTOR
       ];
     const factoryOrClassProvider = newProvider as
-      FactoryProvider | ClassProvider;
+      | FactoryProvider
+      | ClassProvider;
     if (this.isRequestOrTransient(factoryOrClassProvider.scope!)) {
       return this.container.addInjectable(newProvider, token, enhancerSubtype);
     }

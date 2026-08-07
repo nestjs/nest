@@ -42,9 +42,11 @@ export class NestContainer {
 
   constructor(
     private readonly _applicationConfig:
-      ApplicationConfig | undefined = undefined,
+      | ApplicationConfig
+      | undefined = undefined,
     private readonly _contextOptions:
-      NestApplicationContextOptions | undefined = undefined,
+      | NestApplicationContextOptions
+      | undefined = undefined,
   ) {
     const moduleOpaqueKeyFactory =
       this._contextOptions?.moduleIdGeneratorAlgorithm === 'deep-hash'
