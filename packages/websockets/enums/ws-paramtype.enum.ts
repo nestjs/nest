@@ -4,4 +4,5 @@ export enum WsParamtype {
   SOCKET = RouteParamtypes.REQUEST,
   PAYLOAD = RouteParamtypes.BODY,
   ACK = RouteParamtypes.ACK,
+  PARAM = RouteParamtypes.PARAM,
 }
