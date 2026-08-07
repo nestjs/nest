@@ -120,6 +120,18 @@ export const All = createMappingDecorator(RequestMethod.ALL);
 export const Search = createMappingDecorator(RequestMethod.SEARCH);
 
 /**
+ * Route handler (method) Decorator. Routes HTTP QUERY requests to the specified path.
+ *
+ * **Note**: this is named `QueryMethod` (rather than `Query`) to avoid a name clash
+ * with the `@Query()` parameter decorator used to extract query-string params.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const QueryMethod = createMappingDecorator(RequestMethod.QUERY);
+
+/**
  * Route handler (method) Decorator. Routes Webdav PROPFIND requests to the specified path.
  *
  * @see [Routing](https://docs.nestjs.com/controllers#routing)
