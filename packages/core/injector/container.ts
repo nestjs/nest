@@ -154,7 +154,7 @@ export class NestContainer {
         },
         scope,
       ),
-      inserted: false,
+      inserted: true,
     };
   }
 
