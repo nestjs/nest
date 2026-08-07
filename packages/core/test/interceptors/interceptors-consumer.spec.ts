@@ -179,7 +179,7 @@ describe('InterceptorsConsumer', () => {
       });
     });
     describe('when the subscriber is closed before the async handler resolves', () => {
-      it('should subscribe-and-immediately-unsubscribe the producer Observable so its teardown runs', async () => {
+      it('should not subscribe the producer Observable after the consumer has unsubscribed', async () => {
         const teardown = sinon.spy();
         const subscribed = sinon.spy();
 
@@ -203,11 +203,11 @@ describe('InterceptorsConsumer', () => {
         // Unsubscribe before the 50 ms delay resolves — simulates SSE client disconnect
         sub.unsubscribe();
 
-        // Wait long enough for the async handler to resolve and the teardown path to run
+        // Wait long enough for the async handler to resolve
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        expect(subscribed.calledOnce).to.be.true;
-        expect(teardown.calledOnce).to.be.true;
+        expect(subscribed.called).to.be.false;
+        expect(teardown.called).to.be.false;
       });
 
       it('should do nothing for non-Observable results (does not affect regular routes)', async () => {

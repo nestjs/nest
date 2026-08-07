@@ -63,12 +63,8 @@ export class InterceptorsConsumer {
         .then(res => {
           if (subscriber.closed) {
             // The outer subscription was torn down (e.g. an SSE client disconnect)
-            // before the async handler resolved. Subscribe-and-immediately-unsubscribe
-            // so the producer Observable's teardown/cleanup logic still runs.
-            if (res instanceof Observable) {
-              const sub = res.subscribe({ error: () => {} });
-              sub.unsubscribe();
-            }
+            // before the async handler resolved. Do not subscribe the producer
+            // Observable after the consumer has already gone away.
             return;
           }
           const isDeferred =
