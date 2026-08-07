@@ -34,6 +34,12 @@ describe('LegacyRouteConverter', () => {
       );
     });
 
+    it('should convert adjacent wildcard segments in the middle of the path', () => {
+      expect(LegacyRouteConverter.tryConvert('/a/*/*/b')).to.equal(
+        '/a/*path2/*path4/b',
+      );
+    });
+
     it('should leave routes without legacy wildcards untouched', () => {
       expect(LegacyRouteConverter.tryConvert('/v1/users')).to.equal(
         '/v1/users',
