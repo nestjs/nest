@@ -905,8 +905,7 @@ describe('ClientKafka', () => {
       });
 
       it('should call callback', async () => {
-        /* eslint-disable-next-line no-async-promise-executor */
-        return new Promise(async resolve => {
+        return new Promise(resolve => {
           return client['publish'](readPacket, ({ err }) => resolve(err));
         }).then(err => {
           expect(err).to.be.instanceof(Error);
