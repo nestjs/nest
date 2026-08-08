@@ -178,6 +178,46 @@ describe('FileTypeValidator', () => {
       expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
     });
 
+    it('should return true when the mimetype contains regex metacharacters and matches the expected type', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/svg+xml',
+        skipMagicNumbersValidation: true,
+      });
+
+      const requestFile = {
+        mimetype: 'image/svg+xml',
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
+    });
+
+    it('should return false when the mimetype contains regex metacharacters and does not match the expected type', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/svg+xml',
+        skipMagicNumbersValidation: true,
+      });
+
+      const requestFile = {
+        mimetype: 'image/png',
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(false);
+    });
+
+    it('should return true when fallbackToMimetype is enabled and the mimetype contains regex metacharacters', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'application/ld+json',
+        fallbackToMimetype: true,
+      });
+
+      const requestFile = {
+        mimetype: 'application/ld+json',
+        buffer: Buffer.from('{}'),
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).to.equal(true);
+    });
+
     it('should return false when the file buffer does not match any known type', async () => {
       const fileTypeValidator = new FileTypeValidator({
         fileType: 'unknown/type',

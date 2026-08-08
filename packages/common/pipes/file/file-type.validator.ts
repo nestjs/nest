@@ -132,16 +132,14 @@ export class FileTypeValidator extends FileValidator<
 
     // Skip magic number validation if set
     if (this.validationOptions.skipMagicNumbersValidation) {
-      return (
-        isFileValid && !!file.mimetype.match(this.validationOptions.fileType)
-      );
+      return isFileValid && this.matchesFileType(file.mimetype);
     }
 
     if (!isFileValid) return false;
 
     if (!file.buffer) {
       if (this.validationOptions.fallbackToMimetype) {
-        return !!file.mimetype.match(this.validationOptions.fileType);
+        return this.matchesFileType(file.mimetype);
       }
       return false;
     }
@@ -163,7 +161,7 @@ export class FileTypeValidator extends FileValidator<
           file.mimetype = fileType.mime;
         }
         // Match detected mime type against allowed type
-        return !!fileType.mime.match(this.validationOptions.fileType);
+        return this.matchesFileType(fileType.mime);
       }
 
       /**
@@ -172,7 +170,7 @@ export class FileTypeValidator extends FileValidator<
        * This is useful for plain text, CSVs, or files without recognizable signatures.
        */
       if (this.validationOptions.fallbackToMimetype) {
-        return !!file.mimetype.match(this.validationOptions.fileType);
+        return this.matchesFileType(file.mimetype);
       }
       return false;
     } catch (error) {
@@ -194,9 +192,19 @@ export class FileTypeValidator extends FileValidator<
 
       // Fallback to mimetype if enabled
       if (this.validationOptions.fallbackToMimetype) {
-        return !!file.mimetype.match(this.validationOptions.fileType);
+        return this.matchesFileType(file.mimetype);
       }
       return false;
     }
+  }
+
+  private matchesFileType(mimetype: string): boolean {
+    const { fileType } = this.validationOptions;
+    // A string is coerced into a RegExp by `String#match`, so MIME types holding
+    // regex metacharacters (the `+` in `image/svg+xml`) never match themselves.
+    if (typeof fileType === 'string' && mimetype === fileType) {
+      return true;
+    }
+    return !!mimetype.match(fileType);
   }
 }
