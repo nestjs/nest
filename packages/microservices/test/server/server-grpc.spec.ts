@@ -545,6 +545,29 @@ describe('ServerGrpc', () => {
         expect(callback.called).to.be.true;
       });
 
+      it('should call the processing end hook when the handler errors', async () => {
+        const call = {
+          request: { data: [1, 2, 3] },
+          write: sinon.spy(),
+          end: sinon.spy(),
+        };
+        const callback = sinon.spy();
+        const error = new Error('handler threw');
+        const native = sinon.stub().returns(throwError(() => error));
+        let endHookArgs: unknown[] | undefined;
+
+        (server as any).onProcessingEndHook = (...args: unknown[]) => {
+          endHookArgs = args;
+        };
+
+        await server.createUnaryServiceMethod(native)(call as any, callback);
+
+        expect(callback.calledWith(error)).to.be.true;
+        expect(endHookArgs).to.not.be.undefined;
+        expect(endHookArgs![0]).to.equal(server.transportId);
+        expect(endHookArgs![1]).to.deep.equal(call.request);
+      });
+
       it('should await when a promise is return by the native', async () => {
         const call = { write: sinon.spy(), end: sinon.spy() };
         const callback = sinon.spy();

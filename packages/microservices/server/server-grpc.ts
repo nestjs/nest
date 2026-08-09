@@ -303,7 +303,10 @@ export class ServerGrpc extends Server<never, never> {
           const handler = methodHandler(call.request, call.metadata, call);
           this.transformToObservable(await handler).subscribe({
             next: async data => callback(null, await data),
-            error: (err: any) => callback(err),
+            error: (err: any) => {
+              this.onProcessingEndHook?.(this.transportId, call.request);
+              callback(err);
+            },
             complete: () => {
               this.onProcessingEndHook?.(this.transportId, call.request);
             },
