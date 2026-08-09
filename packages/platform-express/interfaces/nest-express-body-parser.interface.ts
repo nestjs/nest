@@ -1,4 +1,4 @@
-import express from 'express';
+type Express = typeof import('express');
 
 /**
  * Maps each body parser to the options object accepted by its Express factory.
@@ -9,10 +9,10 @@ import express from 'express';
  * @publicApi
  */
 export interface NestExpressBodyParserOptionsMap {
-  json: NonNullable<Parameters<typeof express.json>[0]>;
-  urlencoded: NonNullable<Parameters<typeof express.urlencoded>[0]>;
-  text: NonNullable<Parameters<typeof express.text>[0]>;
-  raw: NonNullable<Parameters<typeof express.raw>[0]>;
+  json: NonNullable<Parameters<Express['json']>[0]>;
+  urlencoded: NonNullable<Parameters<Express['urlencoded']>[0]>;
+  text: NonNullable<Parameters<Express['text']>[0]>;
+  raw: NonNullable<Parameters<Express['raw']>[0]>;
 }
 
 /**

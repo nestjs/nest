@@ -20,6 +20,7 @@ const rawBodyParser = (
 export function getBodyParserOptions<
   ParserType extends NestExpressBodyParserType,
 >(
+  parser: ParserType,
   rawBody: boolean,
   options?: NestExpressBodyParserOptionsFor<ParserType>,
 ): NestExpressBodyParserOptionsMap[ParserType] {

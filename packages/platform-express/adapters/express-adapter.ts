@@ -335,8 +335,9 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
-    const bodyParserJsonOptions = getBodyParserOptions<'json'>(rawBody!);
-    const bodyParserUrlencodedOptions = getBodyParserOptions<'urlencoded'>(
+    const bodyParserJsonOptions = getBodyParserOptions('json', rawBody!);
+    const bodyParserUrlencodedOptions = getBodyParserOptions(
+      'urlencoded',
       rawBody!,
       { extended: true },
     );
@@ -355,7 +356,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     rawBody: boolean,
     options?: NestExpressBodyParserOptionsFor<ParserType>,
   ): this {
-    const parserOptions = getBodyParserOptions<ParserType>(rawBody, options);
+    const parserOptions = getBodyParserOptions(type, rawBody, options);
     const parser = express[type](parserOptions);
 
     this.use(parser);
