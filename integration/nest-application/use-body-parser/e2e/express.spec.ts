@@ -1,6 +1,5 @@
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
-import { OptionsUrlencoded } from 'body-parser';
 import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 
@@ -64,7 +63,7 @@ describe('Body Parser (Express Application)', () => {
           rawBody: true,
           logger: false,
         })
-        .useBodyParser<OptionsUrlencoded>('urlencoded', {
+        .useBodyParser('urlencoded', {
           limit: Buffer.from(stringLimit).byteLength,
           extended: true,
         });

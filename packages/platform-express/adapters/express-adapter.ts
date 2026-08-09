@@ -16,8 +16,10 @@ import * as http from 'http';
 import * as https from 'https';
 import { pathToRegexp } from 'path-to-regexp';
 import { Duplex, Writable } from 'stream';
-import { NestExpressBodyParserOptions } from '../interfaces/nest-express-body-parser-options.interface.js';
-import { NestExpressBodyParserType } from '../interfaces/nest-express-body-parser.interface.js';
+import {
+  NestExpressBodyParserOptionsFor,
+  NestExpressBodyParserType,
+} from '../interfaces/nest-express-body-parser.interface.js';
 import { ServeStaticOptions } from '../interfaces/serve-static-options.interface.js';
 import { getBodyParserOptions } from './utils/get-body-parser-options.util.js';
 import {
@@ -333,10 +335,11 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {
-    const bodyParserJsonOptions = getBodyParserOptions(rawBody!);
-    const bodyParserUrlencodedOptions = getBodyParserOptions(rawBody!, {
-      extended: true,
-    });
+    const bodyParserJsonOptions = getBodyParserOptions<'json'>(rawBody!);
+    const bodyParserUrlencodedOptions = getBodyParserOptions<'urlencoded'>(
+      rawBody!,
+      { extended: true },
+    );
 
     const parserMiddleware = {
       jsonParser: express.json(bodyParserJsonOptions),
@@ -347,14 +350,12 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       .forEach(parserKey => this.use(parserMiddleware[parserKey]));
   }
 
-  public useBodyParser<
-    Options extends NestExpressBodyParserOptions = NestExpressBodyParserOptions,
-  >(
-    type: NestExpressBodyParserType,
+  public useBodyParser<ParserType extends NestExpressBodyParserType>(
+    type: ParserType,
     rawBody: boolean,
-    options?: Omit<Options, 'verify'>,
+    options?: NestExpressBodyParserOptionsFor<ParserType>,
   ): this {
-    const parserOptions = getBodyParserOptions<Options>(rawBody, options);
+    const parserOptions = getBodyParserOptions<ParserType>(rawBody, options);
     const parser = express[type](parserOptions);
 
     this.use(parser);
