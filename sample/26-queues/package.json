@@ -19,7 +19,7 @@
   "test:e2e": "jest --config ./e2e/jest-e2e.json --forceExit"
   },
   "dependencies": {
-    "@nestjs/bull": "11.0.4",
+    "@nestjs/bull": "11.0.5",
     "@nestjs/common": "11.1.28",
     "@nestjs/core": "11.1.28",
     "@nestjs/platform-express": "11.1.28",
