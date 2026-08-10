@@ -3,6 +3,12 @@ import type { IncomingMessage } from 'http';
 /**
  * Type alias to keep compatibility with @types/body-parser
  * @see https://github.com/DefinitelyTyped/DefinitelyTyped/blob/dcd1673c4fa18a15ea8cd8ff8af7d563bb6dc8e6/types/body-parser/index.d.ts#L48-L66#L48-L66
+ *
+ * @deprecated Prefer {@link NestExpressBodyParserOptionsFor}, which resolves the
+ * exact options type for a given parser. The catch-all index signature below
+ * makes `keyof` resolve to `string | number`, which disables excess-property
+ * checking and makes `Omit<_, 'verify'>` a no-op.
+ *
  * @publicApi
  */
 export interface NestExpressBodyParserOptions {

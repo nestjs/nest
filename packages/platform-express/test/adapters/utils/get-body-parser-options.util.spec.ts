@@ -3,39 +3,39 @@ import { getBodyParserOptions } from '../../../adapters/utils/get-body-parser-op
 describe('getBodyParserOptions', () => {
   describe('when rawBody is false', () => {
     it('should return empty options when no options provided', () => {
-      const result = getBodyParserOptions(false);
+      const result = getBodyParserOptions('json', false);
       expect(result).toEqual({});
     });
 
     it('should return provided options unchanged', () => {
       const options = { limit: '10mb', inflate: true };
-      const result = getBodyParserOptions(false, options);
+      const result = getBodyParserOptions('json', false, options);
       expect(result).toEqual(options);
     });
 
     it('should not include verify function', () => {
-      const result = getBodyParserOptions(false);
+      const result = getBodyParserOptions('json', false);
       expect(result).not.toHaveProperty('verify');
     });
   });
 
   describe('when rawBody is true', () => {
     it('should include verify function in options', () => {
-      const result = getBodyParserOptions<any>(true);
+      const result = getBodyParserOptions('json', true);
       expect(result).toHaveProperty('verify');
       expect(result.verify).toBeTypeOf('function');
     });
 
     it('should merge verify with existing options', () => {
       const options = { limit: '10mb' };
-      const result = getBodyParserOptions<any>(true, options);
+      const result = getBodyParserOptions('json', true, options);
       expect(result.limit).toBe('10mb');
       expect(result.verify).toBeTypeOf('function');
     });
 
     describe('verify function (rawBodyParser)', () => {
       it('should assign buffer to req.rawBody when buffer is a Buffer', () => {
-        const result = getBodyParserOptions<any>(true);
+        const result = getBodyParserOptions('json', true);
         const req: any = {};
         const res: any = {};
         const buffer = Buffer.from('test data');
@@ -47,7 +47,7 @@ describe('getBodyParserOptions', () => {
       });
 
       it('should not assign rawBody when buffer is not a Buffer', () => {
-        const result = getBodyParserOptions<any>(true);
+        const result = getBodyParserOptions('json', true);
         const req: any = {};
         const res: any = {};
         const notBuffer = 'not a buffer';
@@ -59,7 +59,7 @@ describe('getBodyParserOptions', () => {
       });
 
       it('should always return true', () => {
-        const result = getBodyParserOptions<any>(true);
+        const result = getBodyParserOptions('json', true);
         const req: any = {};
         const res: any = {};
 
