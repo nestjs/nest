@@ -363,8 +363,10 @@ function fastifyMiddie(
     instance[kMiddieHasMiddlewares] = false;
     instance.decorate('use', use as any);
     for (const middleware of middlewares) {
-      (instance.use as any)(...middleware);
+      instance[kMiddlewares].push(middleware as any);
+      (instance[kMiddie].use as any)(...middleware);
     }
+    instance[kMiddieHasMiddlewares] = middlewares.length > 0;
   }
 
   next();
