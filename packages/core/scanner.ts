@@ -114,6 +114,10 @@ export class DependenciesScanner {
       (await this.insertOrOverrideModule(moduleDefinition, overrides, scope)) ??
       {};
 
+    if (lazy && !moduleInserted) {
+      return [];
+    }
+
     moduleDefinition =
       this.getOverrideModuleByModule(moduleDefinition, overrides)?.newModule ??
       moduleDefinition;
