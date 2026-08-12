@@ -183,5 +183,87 @@ describe('LazyModuleLoader', () => {
         expect(globalConstructionsCount).to.equal(1);
       });
     });
+
+    describe('dynamic module imports (#17462)', () => {
+      const itemsProvider = { provide: 'ITEMS', useValue: ['a', 'b'] };
+
+      @Module({
+        providers: [itemsProvider],
+        exports: [itemsProvider],
+      })
+      class ChildProviderModule {}
+
+      @Module({})
+      class ParentRootModule {}
+
+      const parentRootModuleDefinition = {
+        module: ParentRootModule,
+        imports: [{ module: ChildProviderModule }],
+        providers: [
+          {
+            provide: 'PARENT_ITEMS',
+            useFactory: (items: string[]) => items,
+            inject: ['ITEMS'],
+          },
+        ],
+      };
+
+      it('should resolve providers exported by a dynamic import of a lazily loaded dynamic module', async () => {
+        const moduleRef = await lazyModuleLoader.load(
+          () => parentRootModuleDefinition,
+        );
+        expect(moduleRef.get('PARENT_ITEMS')).to.equal(itemsProvider.useValue);
+      });
+
+      it('should return an existing module reference on repeated load() calls', async () => {
+        const moduleRef = await lazyModuleLoader.load(
+          () => parentRootModuleDefinition,
+        );
+        const moduleRef2 = await lazyModuleLoader.load(
+          () => parentRootModuleDefinition,
+        );
+        expect(moduleRef).to.equal(moduleRef2);
+      });
+
+      it('should resolve global providers from a dynamic import of a lazily loaded dynamic module', async () => {
+        const globalProvider = { provide: 'GLOBAL_ITEMS', useValue: ['c'] };
+
+        @Global()
+        @Module({
+          providers: [globalProvider],
+          exports: [globalProvider],
+        })
+        class GlobalItemsModule {}
+
+        @Module({ imports: [GlobalItemsModule] })
+        class RootModule {}
+
+        @Module({
+          providers: [
+            {
+              provide: 'CHILD_GLOBAL_ITEMS',
+              useFactory: (items: string[]) => items,
+              inject: ['GLOBAL_ITEMS'],
+            },
+          ],
+          exports: ['CHILD_GLOBAL_ITEMS'],
+        })
+        class GlobalConsumerChildModule {}
+
+        @Module({})
+        class GlobalConsumerParentModule {}
+
+        await dependenciesScanner.scan(RootModule);
+        await instanceLoader.createInstancesOfDependencies();
+
+        const moduleRef = await lazyModuleLoader.load(() => ({
+          module: GlobalConsumerParentModule,
+          imports: [{ module: GlobalConsumerChildModule }],
+        }));
+        expect(moduleRef.get('CHILD_GLOBAL_ITEMS', { strict: false })).to.equal(
+          globalProvider.useValue,
+        );
+      });
+    });
   });
 });

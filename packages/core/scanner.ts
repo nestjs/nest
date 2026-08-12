@@ -115,7 +115,13 @@ export class DependenciesScanner {
       {};
 
     if (lazy && !moduleInserted) {
-      return [];
+      // A dynamic module's imports are registered before being scanned, so skip only instantiated modules.
+      const moduleAsProvider = moduleInstance?.getProviderByKey(
+        moduleInstance.metatype,
+      );
+      if (!moduleAsProvider || !isNil(moduleAsProvider.instance)) {
+        return [];
+      }
     }
 
     moduleDefinition =
@@ -177,7 +183,7 @@ export class DependenciesScanner {
       return registeredModuleRefs;
     }
 
-    if (lazy && moduleInserted) {
+    if (lazy) {
       this.container.bindGlobalsToImports(moduleInstance);
     }
     return [moduleInstance].concat(registeredModuleRefs);
