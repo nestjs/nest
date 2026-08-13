@@ -119,7 +119,7 @@ export class DependenciesScanner {
       const moduleAsProvider = moduleInstance?.getProviderByKey(
         moduleInstance.metatype,
       );
-      if (!moduleAsProvider || !isNil(moduleAsProvider.instance)) {
+      if (moduleAsProvider && !isNil(moduleAsProvider.instance)) {
         return [];
       }
     }
