@@ -70,6 +70,7 @@ interface ModulesScanParameters {
   ctxRegistry?: (ForwardReference | DynamicModule | Type<unknown>)[];
   overrides?: ModuleOverride[];
   lazy?: boolean;
+  lazyRegistry?: Set<string>;
 }
 
 export class DependenciesScanner {
@@ -109,12 +110,22 @@ export class DependenciesScanner {
     scope = [],
     ctxRegistry = [],
     overrides = [],
+    lazyRegistry,
   }: ModulesScanParameters): Promise<Module[]> {
+    if (lazy && !lazyRegistry) {
+      lazyRegistry = new Set(this.container.getModules().keys());
+    }
+
     const { moduleRef: moduleInstance, inserted: moduleInserted } =
       (await this.insertOrOverrideModule(moduleDefinition, overrides, scope)) ??
       {};
 
-    if (lazy && !moduleInserted) {
+    if (
+      lazy &&
+      !moduleInserted &&
+      moduleInstance &&
+      lazyRegistry?.has(moduleInstance.token)
+    ) {
       return [];
     }
 
@@ -170,6 +181,7 @@ export class DependenciesScanner {
         ctxRegistry,
         overrides,
         lazy,
+        lazyRegistry,
       });
       registeredModuleRefs = registeredModuleRefs.concat(moduleRefs);
     }
@@ -177,9 +189,14 @@ export class DependenciesScanner {
       return registeredModuleRefs;
     }
 
-    if (lazy && moduleInserted) {
+    if (lazy && (moduleInserted || !lazyRegistry?.has(moduleInstance.token))) {
       this.container.bindGlobalsToImports(moduleInstance);
     }
+
+    if (lazy && lazyRegistry && moduleInstance) {
+      lazyRegistry.add(moduleInstance.token);
+    }
+
     return [moduleInstance].concat(registeredModuleRefs);
   }
 

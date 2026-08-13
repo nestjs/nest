@@ -10,6 +10,8 @@ import { ModulesContainer } from '../modules-container';
 import { LazyModuleLoaderLoadOptions } from './lazy-module-loader-options.interface';
 
 export class LazyModuleLoader {
+  private readonly loadingPromises = new Map<string, Promise<ModuleRef>>();
+
   constructor(
     private readonly dependenciesScanner: DependenciesScanner,
     private readonly instanceLoader: InstanceLoader,
@@ -28,30 +30,47 @@ export class LazyModuleLoader {
     this.registerLoggerConfiguration(loadOpts);
 
     const moduleClassOrDynamicDefinition = await loaderFn();
-    const moduleInstances = await this.dependenciesScanner.scanForModules({
-      moduleDefinition: moduleClassOrDynamicDefinition,
-      overrides: this.moduleOverrides,
-      lazy: true,
-    });
-    if (moduleInstances.length === 0) {
-      // The module has been loaded already. In this case, we must
-      // retrieve a module reference from the existing container.
-      const { token } = await this.moduleCompiler.compile(
-        moduleClassOrDynamicDefinition,
-      );
+    const { token } = await this.moduleCompiler.compile(
+      moduleClassOrDynamicDefinition,
+    );
+
+    if (this.modulesContainer.has(token)) {
       const moduleInstance = this.modulesContainer.get(token)!;
-      return moduleInstance && this.getTargetModuleRef(moduleInstance);
+      return this.getTargetModuleRef(moduleInstance);
     }
-    const lazyModulesContainer =
-      this.createLazyModulesContainer(moduleInstances);
-    await this.dependenciesScanner.scanModulesForDependencies(
-      lazyModulesContainer,
-    );
-    await this.instanceLoader.createInstancesOfDependencies(
-      lazyModulesContainer,
-    );
-    const [targetModule] = moduleInstances;
-    return this.getTargetModuleRef(targetModule);
+
+    if (this.loadingPromises.has(token)) {
+      return this.loadingPromises.get(token)!;
+    }
+
+    const loadPromise = (async () => {
+      const moduleInstances = await this.dependenciesScanner.scanForModules({
+        moduleDefinition: moduleClassOrDynamicDefinition,
+        overrides: this.moduleOverrides,
+        lazy: true,
+      });
+      if (moduleInstances.length === 0) {
+        const moduleInstance = this.modulesContainer.get(token)!;
+        return this.getTargetModuleRef(moduleInstance);
+      }
+      const lazyModulesContainer =
+        this.createLazyModulesContainer(moduleInstances);
+      await this.dependenciesScanner.scanModulesForDependencies(
+        lazyModulesContainer,
+      );
+      await this.instanceLoader.createInstancesOfDependencies(
+        lazyModulesContainer,
+      );
+      const [targetModule] = moduleInstances;
+      return this.getTargetModuleRef(targetModule);
+    })();
+
+    this.loadingPromises.set(token, loadPromise);
+    try {
+      return await loadPromise;
+    } finally {
+      this.loadingPromises.delete(token);
+    }
   }
 
   private registerLoggerConfiguration(loadOpts?: LazyModuleLoaderLoadOptions) {
