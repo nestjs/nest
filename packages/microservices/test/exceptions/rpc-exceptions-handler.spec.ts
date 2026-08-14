@@ -1,5 +1,7 @@
 import { EMPTY, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { GrpcStatus } from '../../enums/grpc-status.enum.js';
+import { GrpcNotFoundException } from '../../exceptions/grpc-exception.js';
 import { RpcException } from '../../exceptions/rpc-exception.js';
 import { RpcExceptionsHandler } from '../../exceptions/rpc-exceptions-handler.js';
 
@@ -53,6 +55,27 @@ describe('RpcExceptionsHandler', () => {
             .pipe(
               catchError((err: any) => {
                 expect(err).toEqual({ message, status: 'error' });
+                done();
+                return EMPTY;
+              }),
+            )
+            .subscribe(() => ({}));
+        }));
+    });
+    describe('when exception is instance of GrpcException', () => {
+      it('should emit the gRPC error code and message', () =>
+        new Promise<void>(done => {
+          const stream$ = handler.handle(
+            new GrpcNotFoundException('User not found'),
+            null!,
+          );
+          stream$
+            .pipe(
+              catchError((err: any) => {
+                expect(err).toEqual({
+                  code: GrpcStatus.NOT_FOUND,
+                  message: 'User not found',
+                });
                 done();
                 return EMPTY;
               }),

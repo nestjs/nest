@@ -5,6 +5,7 @@ import {
   type RpcExceptionFilter,
 } from '@nestjs/common';
 import { Observable, throwError as _throw } from 'rxjs';
+import { GrpcException } from './grpc-exception.js';
 import { RpcException } from './rpc-exception.js';
 import { isObject } from '@nestjs/common/internal';
 import { MESSAGES } from '@nestjs/core/internal';
@@ -20,6 +21,9 @@ export class BaseRpcExceptionFilter<
 
   public catch(exception: T, host: ArgumentsHost): Observable<R> {
     const status = 'error';
+    if (exception instanceof GrpcException) {
+      return _throw(() => exception.getError());
+    }
     if (!(exception instanceof RpcException)) {
       return this.handleUnknownError(exception, status);
     }
