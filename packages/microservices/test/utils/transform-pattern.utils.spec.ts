@@ -129,10 +129,10 @@ describe('transformPatternToRoute', () => {
         Array.from({ length: 25 }, (_, i) => [`key${i}`, `value${i}`]),
       );
 
-      expect(transformPatternToRoute(deepNestedPattern)).to.be.equal(
+      expect(transformPatternToRoute(deepNestedPattern)).toBe(
         '{"a":{"b":{"c":{"d":{"e":{"f":[MAX_DEPTH_REACHED]}}}}}}',
       );
-      expect(transformPatternToRoute(tooManyKeysPattern)).to.be.equal(
+      expect(transformPatternToRoute(tooManyKeysPattern)).toBe(
         '[TOO_MANY_KEYS]',
       );
     });

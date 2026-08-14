@@ -1,4 +1,5 @@
 import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception.js';
+import { EventEmitter } from 'events';
 import { of } from 'rxjs';
 import { PassThrough } from 'stream';
 import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
@@ -34,6 +35,21 @@ describe('RouterExecutionContext', () => {
   let interceptorsConsumer: InterceptorsConsumer;
   let adapter: AbstractHttpAdapter;
 
+  const attachSocket = <T extends PassThrough>(request: T) =>
+    Object.assign(request, {
+      socket: Object.assign(new EventEmitter(), {
+        setKeepAlive() {},
+        setNoDelay() {},
+        setTimeout() {},
+      }),
+    }) as T & {
+      socket: EventEmitter & {
+        setKeepAlive(): void;
+        setNoDelay(): void;
+        setTimeout(): void;
+      };
+    };
+
   beforeEach(() => {
     callback = {
       bind: () => ({}),
@@ -58,6 +74,33 @@ describe('RouterExecutionContext', () => {
     );
   });
   describe('create', () => {
+    it('should pass an unresolved Promise<Observable> to the SSE response handler', async () => {
+      const result = Promise.resolve(of('test'));
+      const fnHandleResponse = vi.fn().mockResolvedValue(undefined);
+
+      vi.spyOn(contextCreator, 'getMetadata').mockReturnValue({
+        argsLength: 0,
+        fnHandleResponse,
+        isSseHandler: true,
+        paramtypes: [],
+        getParamsMetadata: vi.fn().mockReturnValue([]),
+        httpStatusCode: 200,
+        hasCustomHeaders: false,
+        responseHeaders: [],
+      } as any);
+      vi.spyOn(contextCreator, 'createGuardsFn').mockReturnValue(null as any);
+      vi.spyOn(contextCreator, 'createPipesFn').mockReturnValue(null as any);
+      vi.spyOn(interceptorsConsumer, 'intercept').mockReturnValue(
+        result as any,
+      );
+
+      const proxy = contextCreator.create({} as any, callback, '', '', 0);
+      await proxy({}, {}, vi.fn());
+
+      expect(fnHandleResponse).toHaveBeenCalledOnce();
+      expect(fnHandleResponse.mock.calls[0][0]).toBe(result);
+    });
+
     describe('when callback metadata is not undefined', () => {
       let metadata: Record<number, RouteParamMetadata>;
       let exchangeKeysForValuesSpy: ReturnType<typeof vi.fn>;
@@ -446,8 +489,10 @@ describe('RouterExecutionContext', () => {
         const response = new PassThrough();
         response.write = vi.fn();
 
-        const request = new PassThrough();
-        request.on = vi.fn();
+        const request = attachSocket(new PassThrough());
+        request.socket.once = vi.fn(
+          request.socket.once.bind(request.socket),
+        ) as any;
 
         vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
           undefined!,
@@ -463,7 +508,10 @@ describe('RouterExecutionContext', () => {
         await handler(result, response, request);
 
         expect(response.write).toHaveBeenCalled();
-        expect(request.on).toHaveBeenCalled();
+        expect(request.socket.once).toHaveBeenCalledWith(
+          'close',
+          expect.any(Function),
+        );
       });
 
       it('should not allow a non-observable result', async () => {
@@ -502,8 +550,7 @@ describe('RouterExecutionContext', () => {
           .fn()
           .mockReturnValue({ 'access-control-headers': 'some-cors-value' });
 
-        const request = new PassThrough();
-        request.on = vi.fn();
+        const request = attachSocket(new PassThrough());
 
         vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
           undefined!,
@@ -541,8 +588,7 @@ describe('RouterExecutionContext', () => {
         };
         const result = of('test');
 
-        const request = new PassThrough();
-        request.on = vi.fn() as any;
+        const request = attachSocket(new PassThrough());
 
         vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
           undefined!,

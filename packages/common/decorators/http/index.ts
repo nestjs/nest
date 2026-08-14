@@ -6,3 +6,4 @@ export * from './render.decorator.js';
 export * from './header.decorator.js';
 export * from './redirect.decorator.js';
 export * from './sse.decorator.js';
+export * from './sse-signal.decorator.js';

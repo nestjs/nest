@@ -64,7 +64,7 @@ describe('Middleware (run on route match)', () => {
       .get('/test')
       .expect(200)
       .then(() => {
-        expect(triggerCounter).to.be.eq(1);
+        expect(triggerCounter).toBe(1);
       });
   });
 
@@ -73,7 +73,7 @@ describe('Middleware (run on route match)', () => {
       .get('/1')
       .expect(200)
       .then(() => {
-        expect(triggerCounter).to.be.eq(1);
+        expect(triggerCounter).toBe(1);
       });
   });
 
@@ -82,7 +82,7 @@ describe('Middleware (run on route match)', () => {
       .get('/static/route')
       .expect(200)
       .then(() => {
-        expect(triggerCounter).to.be.eq(1);
+        expect(triggerCounter).toBe(1);
       });
   });
 
@@ -91,7 +91,7 @@ describe('Middleware (run on route match)', () => {
       .get('/1/abc')
       .expect(200)
       .then(() => {
-        expect(triggerCounter).to.be.eq(1);
+        expect(triggerCounter).toBe(1);
       });
   });
 

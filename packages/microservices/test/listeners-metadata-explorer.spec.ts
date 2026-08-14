@@ -1,4 +1,8 @@
 import { MetadataScanner } from '../../core/metadata-scanner.js';
+import {
+  CLIENT_CONFIGURATION_METADATA,
+  CLIENT_METADATA,
+} from '../constants.js';
 import { Client } from '../decorators/client.decorator.js';
 import { EventPattern } from '../decorators/event-pattern.decorator.js';
 import { MessagePattern } from '../decorators/message-pattern.decorator.js';
@@ -175,6 +179,32 @@ describe('ListenerMetadataExplorer', () => {
         property: 'redisClient',
         metadata: clientSecMetadata,
       });
+    });
+    it(`should skip function-valued members even if they carry client metadata`, () => {
+      class WithFnMember {
+        @Client(clientMetadata as any)
+        public client;
+      }
+      const obj = new WithFnMember();
+
+      // An enumerable, own, function-valued member (e.g. an arrow-function class
+      // field). The `isFunction` guard exists to short-circuit such members
+      // before client metadata is consulted.
+      (obj as any).fnHook = () => null;
+      Reflect.defineMetadata(CLIENT_METADATA, true, obj, 'fnHook');
+      Reflect.defineMetadata(
+        CLIENT_CONFIGURATION_METADATA,
+        clientMetadata,
+        obj,
+        'fnHook',
+      );
+
+      const properties = [...instance.scanForClientHooks(obj)].map(
+        hook => hook.property,
+      );
+
+      expect(properties).to.not.include('fnHook');
+      expect(properties).to.include('client');
     });
   });
 });

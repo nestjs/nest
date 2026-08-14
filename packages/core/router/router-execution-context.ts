@@ -10,6 +10,7 @@ import {
   type ParamData,
   type PipeTransform,
   type RequestMethod,
+  SSE_ABORT_CONTROLLER,
 } from '@nestjs/common';
 import {
   type Controller,
@@ -97,6 +98,7 @@ export class RouterExecutionContext {
     const {
       argsLength,
       fnHandleResponse,
+      isSseHandler,
       paramtypes,
       getParamsMetadata,
       httpStatusCode,
@@ -169,7 +171,15 @@ export class RouterExecutionContext {
       hasCustomHeaders &&
         this.responseController.setHeaders(res, responseHeaders);
 
-      const result = await this.interceptorsConsumer.intercept(
+      if (isSseHandler) {
+        // Attach a per-request AbortController before the handler runs so async
+        // @Sse() handlers can observe client disconnects via @SseSignal() during
+        // their setup. The controller is aborted in RouterResponseController.sse()
+        // when the underlying connection closes.
+        this.attachSseAbortSignal(req);
+      }
+
+      const resultOrDeferred = this.interceptorsConsumer.intercept(
         interceptors,
         [req, res, next],
         instance,
@@ -177,6 +187,7 @@ export class RouterExecutionContext {
         handler(args, req, res, next),
         contextType,
       );
+      const result = isSseHandler ? resultOrDeferred : await resultOrDeferred;
       await (fnHandleResponse as HandlerResponseBasicFn)(result, res, req);
     };
   }
@@ -238,6 +249,7 @@ export class RouterExecutionContext {
       isResponseHandled,
       httpRedirectResponse,
     );
+    const isSseHandler = !!this.reflectSse(callback);
 
     const httpCode = this.reflectHttpStatusCode(callback);
     const httpStatusCode =
@@ -248,6 +260,7 @@ export class RouterExecutionContext {
     const handlerMetadata: HandlerMetadata = {
       argsLength,
       fnHandleResponse,
+      isSseHandler,
       paramtypes,
       getParamsMetadata,
       httpStatusCode,
@@ -485,5 +498,22 @@ export class RouterExecutionContext {
       methodName,
     );
     return hasResponseOrNextDecorator && !isPassthroughEnabled;
+  }
+
+  private attachSseAbortSignal<TRequest>(req: TRequest): void {
+    const carrier = req as TRequest & {
+      raw?: unknown;
+      [SSE_ABORT_CONTROLLER]?: AbortController;
+    };
+    // Attach to both the framework request and its raw form (when present), since
+    // @SseSignal() reads from the execution-context request while
+    // RouterResponseController.sse() operates on the raw request.
+    if (!carrier[SSE_ABORT_CONTROLLER]) {
+      carrier[SSE_ABORT_CONTROLLER] = new AbortController();
+    }
+    if (carrier.raw && !(carrier.raw as object)[SSE_ABORT_CONTROLLER]) {
+      (carrier.raw as object)[SSE_ABORT_CONTROLLER] =
+        carrier[SSE_ABORT_CONTROLLER];
+    }
   }
 }

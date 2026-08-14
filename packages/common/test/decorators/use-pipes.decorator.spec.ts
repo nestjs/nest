@@ -37,7 +37,7 @@ describe('@UsePipes', () => {
     try {
       UsePipes('test' as any)(() => {}, 'test', {}); // with descriptor
     } catch (e) {
-      expect(e).to.be.instanceof(InvalidDecoratorItemException);
+      expect(e).toBeInstanceOf(InvalidDecoratorItemException);
     }
   });
 });

@@ -197,7 +197,7 @@ describe('ValidationPipe', () => {
               metatype: TestModelWithNested,
             });
           } catch (err) {
-            expect(err.getResponse().message).to.be.eql({
+            expect(err.getResponse().message).toEqual({
               prop: ['prop must be a string'],
               'test.prop1': ['prop1 must be a string'],
               'test.prop2': ['prop2 must be a boolean value'],
@@ -214,7 +214,7 @@ describe('ValidationPipe', () => {
               metatype: TestModelForNestedArrayValidation,
             });
           } catch (err) {
-            expect(err.getResponse().message).to.be.eql({
+            expect(err.getResponse().message).toEqual({
               prop: ['prop must be a string'],
               'test.0.prop1': ['prop1 must be a string'],
               'test.0.prop2': ['prop2 must be a boolean value'],
@@ -248,17 +248,21 @@ describe('ValidationPipe', () => {
             });
           } catch (err) {
             const message = err.getResponse().message;
-            expect(message.title).to.be.eql(['title must be a string']);
+            expect(message.title).toEqual(['title must be a string']);
             // Custom messages should be preserved without 'child.' prefix in the message itself
-            expect(message['child.name']).to.have.members([
-              'Name is required',
-              'Name must be a string',
-            ]);
+            expect(message['child.name']).toEqual(
+              expect.arrayContaining([
+                'Name is required',
+                'Name must be a string',
+              ]),
+            );
             // Verify custom messages don't have parent path prepended
-            expect(message['child.name']).to.not.include.members([
-              'child.Name is required',
-              'child.Name must be a string',
-            ]);
+            expect(message['child.name']).not.toEqual(
+              expect.arrayContaining([
+                'child.Name is required',
+                'child.Name must be a string',
+              ]),
+            );
           }
         });
       });
@@ -822,6 +826,34 @@ describe('ValidationPipe', () => {
           expect(() => target['stripProtoKeys'](testCase)).not.toThrow();
         });
       });
+    });
+  });
+  describe('Issue #17398: when only ValidationPipe-specific options are provided', () => {
+    it('should return the original value when exceptionFactory is provided', async () => {
+      target = new ValidationPipe({
+        exceptionFactory: () => new Error('custom'),
+      });
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+      const result = await target.transform(testObj, metadata);
+      expect(result).toBe(testObj);
+    });
+
+    it('should return the original value when validatorPackage is provided', async () => {
+      target = new ValidationPipe({
+        validatorPackage: require('class-validator'),
+      });
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+      const result = await target.transform(testObj, metadata);
+      expect(result).toBe(testObj);
+    });
+
+    it('should return the original value when transformerPackage is provided', async () => {
+      target = new ValidationPipe({
+        transformerPackage: require('class-transformer'),
+      });
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+      const result = await target.transform(testObj, metadata);
+      expect(result).toBe(testObj);
     });
   });
 });

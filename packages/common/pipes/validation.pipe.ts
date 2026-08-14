@@ -86,6 +86,9 @@ export class ValidationPipe implements PipeTransform {
       errorHttpStatusCode,
       expectedType,
       transformOptions,
+      exceptionFactory,
+      validatorPackage,
+      transformerPackage,
       validateCustomDecorators,
       errorFormat,
       ...validatorOptions
@@ -101,11 +104,10 @@ export class ValidationPipe implements PipeTransform {
     this.errorHttpStatusCode = errorHttpStatusCode || HttpStatus.BAD_REQUEST;
     this.expectedType = expectedType;
     this.errorFormat = errorFormat || 'list';
-    this.exceptionFactory =
-      options.exceptionFactory || this.createExceptionFactory();
+    this.exceptionFactory = exceptionFactory || this.createExceptionFactory();
 
-    classValidator = this.loadValidator(options.validatorPackage);
-    classTransformer = this.loadTransformer(options.transformerPackage);
+    classValidator = this.loadValidator(validatorPackage);
+    classTransformer = this.loadTransformer(transformerPackage);
   }
 
   protected loadValidator(

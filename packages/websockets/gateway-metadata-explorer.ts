@@ -79,7 +79,7 @@ export class GatewayMetadataExplorer {
 
   public *scanForServerHooks(instance: NestGateway): IterableIterator<string> {
     for (const propertyKey in instance) {
-      if (isFunction(propertyKey)) {
+      if (isFunction(instance[propertyKey])) {
         continue;
       }
       const property = String(propertyKey);

@@ -201,7 +201,7 @@ describe('Injector', () => {
 
       await app.close();
 
-      expect(isTreeStatic).to.equal(false);
+      expect(isTreeStatic).toBe(false);
     });
   });
 

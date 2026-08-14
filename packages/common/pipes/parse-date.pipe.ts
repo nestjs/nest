@@ -7,6 +7,9 @@ import {
 } from '../utils/http-error-by-code.util.js';
 import { isNil, isNumber, isString } from '../utils/shared.utils.js';
 
+/**
+ * @publicApi
+ */
 export interface ParseDatePipeOptions {
   /**
    * If true, the pipe will return null or undefined if the value is not provided
@@ -30,6 +33,9 @@ export interface ParseDatePipeOptions {
   exceptionFactory?: (error: string) => any;
 }
 
+/**
+ * @publicApi
+ */
 @Injectable()
 export class ParseDatePipe implements PipeTransform {
   protected exceptionFactory: (error: string) => any;

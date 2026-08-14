@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { RedisContext } from '../../ctx-host/index.js';
@@ -51,6 +52,27 @@ describe('ServerRedis', () => {
         await server.listen(callbackSpy);
         expect(callbackSpy).toHaveBeenCalledWith(error);
       });
+    });
+  });
+  describe('event listeners registered before "listen"', () => {
+    it('should forward the matching client type ("sub"/"pub") to the listener', async () => {
+      const subClient = new EventEmitter();
+      const pubClient = new EventEmitter();
+      vi.spyOn(server, 'createRedisClient')
+        .mockResolvedValueOnce(subClient as any)
+        .mockResolvedValueOnce(pubClient as any);
+      vi.spyOn(server, 'start').mockImplementation((cb?: () => void) => cb?.());
+
+      const readySpy = vi.fn();
+      server.on('ready', readySpy);
+
+      await server.listen(() => {});
+
+      subClient.emit('ready');
+      pubClient.emit('ready');
+
+      expect(readySpy.mock.calls[0][0]).toBe('sub');
+      expect(readySpy.mock.calls[1][0]).toBe('pub');
     });
   });
   describe('close', () => {
@@ -300,18 +322,18 @@ describe('ServerRedis', () => {
       const serverWithoutTag = new ServerRedis({});
       const redisClient = await serverWithoutTag.createRedisClient();
 
-      expect(redisClient).to.be.ok;
+      expect(redisClient).toBeTruthy();
       // Verify no clientInfoTag was set (opt-in only)
-      expect(redisClient.options.clientInfoTag).to.be.undefined;
+      expect(redisClient.options.clientInfoTag).toBeUndefined();
     });
 
     it('should use clientInfoTag when provided', async () => {
       const serverWithTag = new ServerRedis({ clientInfoTag: 'my-app' });
       const redisClient = await serverWithTag.createRedisClient();
 
-      expect(redisClient).to.be.ok;
+      expect(redisClient).toBeTruthy();
       // Verify the clientInfoTag was used
-      expect(redisClient.options.clientInfoTag).to.equal('my-app');
+      expect(redisClient.options.clientInfoTag).toBe('my-app');
     });
   });
 });

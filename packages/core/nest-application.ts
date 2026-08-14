@@ -350,7 +350,7 @@ export class NestApplication
   }
 
   public use(...args: [any, any?]): this {
-    this.httpAdapter.use(...args);
+    this.httpAdapter.use(...this.applyFunctionDecoratorIfRegistered(args));
     return this;
   }
 
@@ -601,6 +601,22 @@ export class NestApplication
       );
     }
     return instances;
+  }
+
+  private applyFunctionDecoratorIfRegistered(args: [any, any?]): [any, any?] {
+    if (!this.appOptions.instrument?.instanceDecorator) {
+      return args;
+    }
+    const [firstArg, secondArg] = args;
+
+    return [
+      isFunction(firstArg)
+        ? this.appOptions.instrument.instanceDecorator(firstArg)
+        : firstArg,
+      isFunction(secondArg)
+        ? this.appOptions.instrument.instanceDecorator(secondArg)
+        : secondArg,
+    ];
   }
 
   private async loadSocketModule() {

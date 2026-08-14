@@ -20,6 +20,7 @@ describe('RouterMethodFactory', () => {
     move: () => {},
     lock: () => {},
     unlock: () => {},
+    query: () => {},
     all: () => {},
   };
   beforeEach(() => {
@@ -42,6 +43,7 @@ describe('RouterMethodFactory', () => {
     expect(factory.get(target, RequestMethod.MOVE)).toBe(target.move);
     expect(factory.get(target, RequestMethod.LOCK)).toBe(target.lock);
     expect(factory.get(target, RequestMethod.UNLOCK)).toBe(target.unlock);
+    expect(factory.get(target, RequestMethod.QUERY)).toBe(target.query);
     expect(factory.get(target, -1 as any)).toBe(target.use);
   });
 });

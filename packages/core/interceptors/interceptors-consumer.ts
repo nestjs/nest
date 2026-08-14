@@ -1,7 +1,7 @@
 import type { NestInterceptor, Type } from '@nestjs/common';
 import { AsyncResource } from 'async_hooks';
-import { Observable, defer, from as fromPromise } from 'rxjs';
-import { mergeAll, switchMap } from 'rxjs/operators';
+import { Observable, defer, from } from 'rxjs';
+import { mergeAll } from 'rxjs/operators';
 import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import type { CallHandler, ContextType } from '@nestjs/common';
 import { type Controller, isEmptyArray } from '@nestjs/common/internal';
@@ -47,11 +47,39 @@ export class InterceptorsConsumer {
   }
 
   public transformDeferred(next: () => Promise<any>): Observable<any> {
-    return fromPromise(next()).pipe(
-      switchMap(res => {
-        const isDeferred = res instanceof Promise || res instanceof Observable;
-        return isDeferred ? res : Promise.resolve(res);
-      }),
-    );
+    // Call next() eagerly here — this method is invoked inside
+    // defer(AsyncResource.bind(...)), so the async context (e.g. AsyncLocalStorage)
+    // is correctly inherited. Deferring next() into the subscriber function would
+    // lose that context because the subscriber is called outside the bound scope.
+    const nextPromise = next();
+    return new Observable(subscriber => {
+      let innerSub: { unsubscribe(): void } | undefined;
+
+      nextPromise
+        .then(res => {
+          if (subscriber.closed) {
+            // The outer subscription was torn down (e.g. an SSE client disconnect)
+            // before the async handler resolved. Do not subscribe the producer
+            // Observable after the consumer has already gone away — subscribing
+            // only to unsubscribe in the same tick would start producer side
+            // effects just to immediately abort them.
+            return;
+          }
+          const isDeferred =
+            res instanceof Promise || res instanceof Observable;
+          innerSub = from(isDeferred ? res : Promise.resolve(res)).subscribe(
+            subscriber,
+          );
+        })
+        .catch(err => {
+          if (!subscriber.closed) {
+            subscriber.error(err);
+          }
+        });
+
+      return () => {
+        innerSub?.unsubscribe();
+      };
+    });
   }
 }

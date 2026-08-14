@@ -22,9 +22,9 @@ describe('FastifyAdapter', () => {
 
       const result = fastifyAdapter.mapException(error) as HttpException;
 
-      expect(result).to.be.instanceOf(HttpException);
-      expect(result.message).to.equal(error.message);
-      expect(result.getStatus()).to.equal(415);
+      expect(result).toBeInstanceOf(HttpException);
+      expect(result.message).toBe(error.message);
+      expect(result.getStatus()).toBe(415);
     });
 
     it('should return FastifyError without user status code to Internal Server Error HttpException', () => {
@@ -35,15 +35,15 @@ describe('FastifyAdapter', () => {
       const error = new FastifyErrorCls();
 
       const result = fastifyAdapter.mapException(error) as HttpException;
-      expect(result).to.be.instanceOf(HttpException);
-      expect(result.message).to.equal(error.message);
-      expect(result.getStatus()).to.equal(500);
+      expect(result).toBeInstanceOf(HttpException);
+      expect(result.message).toBe(error.message);
+      expect(result.getStatus()).toBe(500);
     });
 
     it('should return error if it is not FastifyError', () => {
       const error = new Error('Test error');
       const result = fastifyAdapter.mapException(error);
-      expect(result).to.equal(error);
+      expect(result).toBe(error);
     });
   });
 });

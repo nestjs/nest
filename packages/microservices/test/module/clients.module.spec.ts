@@ -102,7 +102,7 @@ describe('ClientsModule', () => {
         try {
           await (dynamicModule.providers![0] as any).useFactory(optionsFactory);
         } catch (e) {
-          console.log(e);
+          void e;
         }
         expect(optionsFactory.createClientOptions).toHaveBeenCalled();
       });

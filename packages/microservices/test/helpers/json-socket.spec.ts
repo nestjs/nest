@@ -33,18 +33,18 @@ describe('JsonSocket', () => {
     it('emits a single message from one complete chunk', () => {
       (jsonSocket as any).handleData(frame({ hello: 'world' }));
 
-      expect(received).to.have.lengthOf(1);
-      expect(received[0]).to.deep.equal({ hello: 'world' });
+      expect(received).toHaveLength(1);
+      expect(received[0]).toEqual({ hello: 'world' });
     });
 
     it('buffers a partial chunk and emits once complete', () => {
       const full = frame({ x: 1 });
       (jsonSocket as any).handleData(full.slice(0, 3));
-      expect(received).to.have.lengthOf(0);
+      expect(received).toHaveLength(0);
 
       (jsonSocket as any).handleData(full.slice(3));
-      expect(received).to.have.lengthOf(1);
-      expect(received[0]).to.deep.equal({ x: 1 });
+      expect(received).toHaveLength(1);
+      expect(received[0]).toEqual({ x: 1 });
     });
 
     it('emits multiple messages split across chunks', () => {
@@ -53,9 +53,9 @@ describe('JsonSocket', () => {
       (jsonSocket as any).handleData(payload.slice(0, mid));
       (jsonSocket as any).handleData(payload.slice(mid));
 
-      expect(received).to.have.lengthOf(2);
-      expect(received[0]).to.deep.equal({ a: 1 });
-      expect(received[1]).to.deep.equal({ b: 2 });
+      expect(received).toHaveLength(2);
+      expect(received[0]).toEqual({ a: 1 });
+      expect(received[1]).toEqual({ b: 2 });
     });
   });
 

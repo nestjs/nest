@@ -538,6 +538,29 @@ describe('ServerGrpc', () => {
         expect(callback).toHaveBeenCalled();
       });
 
+      it('should call the processing end hook when the handler errors', async () => {
+        const call = {
+          request: { data: [1, 2, 3] },
+          write: vi.fn(),
+          end: vi.fn(),
+        };
+        const callback = vi.fn();
+        const error = new Error('handler threw');
+        const native = vi.fn().mockReturnValue(throwError(() => error));
+        let endHookArgs: unknown[] | undefined;
+
+        (server as any).onProcessingEndHook = (...args: unknown[]) => {
+          endHookArgs = args;
+        };
+
+        await server.createUnaryServiceMethod(native)(call as any, callback);
+
+        expect(callback).toHaveBeenCalledWith(error);
+        expect(endHookArgs).not.toBeUndefined();
+        expect(endHookArgs![0]).toBe(server.transportId);
+        expect(endHookArgs![1]).toEqual(call.request);
+      });
+
       it('should await when a promise is return by the native', async () => {
         const call = { write: vi.fn(), end: vi.fn() };
         const callback = vi.fn();
@@ -883,6 +906,23 @@ describe('ServerGrpc', () => {
       await server.close();
       expect(grpcClient.forceShutdown).not.toHaveBeenCalled();
       expect(grpcClient.tryShutdown).toHaveBeenCalled();
+    });
+
+    it('should nullify grpcClient even if tryShutdown fails', async () => {
+      const grpcClient = {
+        forceShutdown: vi.fn(),
+        tryShutdown: vi
+          .fn()
+          .mockImplementation((cb: (err: Error) => void) =>
+            cb(new Error('shutdown failed')),
+          ),
+      };
+      untypedServer.grpcClient = grpcClient;
+      untypedServer.options.gracefulShutdown = true;
+
+      await server.close().catch(() => {});
+
+      expect(untypedServer.grpcClient).toBeNull();
     });
   });
 

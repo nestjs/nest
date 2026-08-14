@@ -22,7 +22,7 @@ export class MisdirectedException extends HttpException {
    *
    * By default, the JSON response body contains two properties:
    * - `statusCode`: this will be the value 421.
-   * - `message`: the string `'Bad Gateway'` by default; override this by supplying
+   * - `message`: the string `'Misdirected'` by default; override this by supplying
    * a string in the `objectOrError` parameter.
    *
    * If the parameter `objectOrError` is a string, the response body will contain an

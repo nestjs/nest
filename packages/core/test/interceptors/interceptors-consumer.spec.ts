@@ -178,6 +178,38 @@ describe('InterceptorsConsumer', () => {
         ).toEqual(val);
       });
     });
+    describe('when the subscriber is closed before the async handler resolves', () => {
+      it('should not subscribe the producer Observable after the consumer has unsubscribed', async () => {
+        const teardown = vi.fn();
+        const subscribed = vi.fn();
+
+        const next = () =>
+          new Promise<Observable<never>>(resolve =>
+            setTimeout(
+              () =>
+                resolve(
+                  new Observable(() => {
+                    subscribed();
+                    return teardown;
+                  }),
+                ),
+              50,
+            ),
+          );
+
+        const obs$ = consumer.transformDeferred(next);
+        const sub = obs$.subscribe({ error: () => {} });
+
+        // Unsubscribe before the 50 ms delay resolves — simulates SSE client disconnect
+        sub.unsubscribe();
+
+        // Wait long enough for the async handler to resolve
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        expect(subscribed).not.toHaveBeenCalled();
+        expect(teardown).not.toHaveBeenCalled();
+      });
+    });
   });
   describe('deferred promise conversion', () => {
     it('should convert promise to observable deferred', async () => {

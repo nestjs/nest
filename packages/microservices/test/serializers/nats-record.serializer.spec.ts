@@ -68,7 +68,7 @@ describe('NatsRecordSerializer', () => {
           data: { value: 'string' },
           headers: natsHeaders,
         }),
-      ).to.deep.eq({
+      ).toEqual({
         headers: natsHeaders,
         data: JSON.stringify({
           data: {

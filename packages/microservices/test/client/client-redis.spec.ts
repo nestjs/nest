@@ -206,15 +206,21 @@ describe('ClientRedis', () => {
 
     let pubClose: ReturnType<typeof vi.fn>;
     let subClose: ReturnType<typeof vi.fn>;
+    let callback: ReturnType<typeof vi.fn>;
+    let routingMap: Map<string, Function>;
     let pub: any, sub: any;
 
     beforeEach(() => {
       pubClose = vi.fn();
       subClose = vi.fn();
+      callback = vi.fn();
+      routingMap = new Map<string, Function>();
+      routingMap.set('some id', callback);
       pub = { quit: pubClose };
       sub = { quit: subClose };
       untypedClient.pubClient = pub;
       untypedClient.subClient = sub;
+      untypedClient.routingMap = routingMap;
     });
     it('should close "pub" when it is not null', async () => {
       await client.close();
@@ -233,6 +239,17 @@ describe('ClientRedis', () => {
       untypedClient.subClient = null;
       await client.close();
       expect(subClose).not.toHaveBeenCalled();
+    });
+    it('should clear out the routing map', async () => {
+      await client.close();
+      expect(untypedClient.routingMap.size).toBe(0);
+    });
+    it('should call pending callbacks with connection closed error', async () => {
+      await client.close();
+      expect(
+        callback).toHaveBeenCalledWith({
+          err: expect.objectContaining({ message: 'Connection closed' }),
+        });
     });
     it('should have isManuallyClosed set to true when "end" event is handled during close', async () => {
       let endHandler: Function | undefined;
@@ -318,6 +335,26 @@ describe('ClientRedis', () => {
       };
       client.registerEndListener(emitter as any);
       expect(callback.mock.calls[0][0]).toEqual('end');
+    });
+    it('should call pending callbacks when connection ends unexpectedly', () => {
+      const client = new ClientRedis({});
+      const callback = vi.fn();
+      const emitter = {
+        on: vi.fn().mockImplementation((_, fn) => fn()),
+      };
+
+      client['routingMap'].set('some id', callback);
+      client['subscriptionsCount'].set('channel', 1);
+      (client as any).isManuallyClosed = false;
+
+      client.registerEndListener(emitter as any);
+
+      expect(client['routingMap'].size).toBe(0);
+      expect(client['subscriptionsCount'].size).toBe(0);
+      expect(
+        callback).toHaveBeenCalledWith({
+          err: expect.objectContaining({ message: 'Connection closed' }),
+        });
     });
   });
   describe('registerReadyListener', () => {
@@ -480,18 +517,18 @@ describe('ClientRedis', () => {
       const clientWithoutTag = new ClientRedis({});
       const redisClient = await clientWithoutTag.createClient();
 
-      expect(redisClient).to.be.ok;
+      expect(redisClient).toBeTruthy();
       // Verify no clientInfoTag was set (opt-in only)
-      expect(redisClient.options.clientInfoTag).to.be.undefined;
+      expect(redisClient.options.clientInfoTag).toBeUndefined();
     });
 
     it('should use clientInfoTag when provided', async () => {
       const clientWithTag = new ClientRedis({ clientInfoTag: 'my-app' });
       const redisClient = await clientWithTag.createClient();
 
-      expect(redisClient).to.be.ok;
+      expect(redisClient).toBeTruthy();
       // Verify the clientInfoTag was used
-      expect(redisClient.options.clientInfoTag).to.equal('my-app');
+      expect(redisClient.options.clientInfoTag).toBe('my-app');
     });
   });
 });

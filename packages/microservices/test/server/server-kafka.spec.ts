@@ -159,7 +159,7 @@ describe('ServerKafka', () => {
         .spyOn(server, 'bindEvents')
         .mockImplementation(() => ({}) as any);
 
-      await server.listen(err => console.log(err));
+      await server.listen(() => {});
       expect(bindEventsStub).toHaveBeenCalled();
     });
     it('should call callback', async () => {

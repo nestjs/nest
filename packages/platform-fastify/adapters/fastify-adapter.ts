@@ -389,6 +389,10 @@ export class FastifyAdapter<
     return this.injectRouteOptions('SEARCH', ...args);
   }
 
+  public query(...args: any[]) {
+    return this.injectRouteOptions('QUERY', ...args);
+  }
+
   public propfind(...args: any[]) {
     return this.injectRouteOptions('PROPFIND', ...args);
   }
@@ -699,7 +703,11 @@ export class FastifyAdapter<
       normalizedPath = normalizedPath === '/*path' ? '*path' : normalizedPath;
 
       // Normalize the path to support the prefix if it set in application
-      if (this._pathPrefix && !normalizedPath.startsWith(this._pathPrefix)) {
+      if (
+        this._pathPrefix &&
+        !normalizedPath.startsWith(this._pathPrefix) &&
+        (normalizedPath === '/' || normalizedPath === '')
+      ) {
         normalizedPath = `${this._pathPrefix}${normalizedPath}`;
         if (normalizedPath.endsWith('/')) {
           normalizedPath = `${normalizedPath}{*path}`;
@@ -725,8 +733,13 @@ export class FastifyAdapter<
 
             pathname = this.sanitizeUrl(pathname);
 
-            if (!re.exec(pathname + '/') && normalizedPath) {
-              return next();
+            if (normalizedPath) {
+              const pathToCheck = pathname.endsWith('/')
+                ? pathname
+                : `${pathname}/`;
+              if (!re.exec(pathToCheck)) {
+                return next();
+              }
             }
             return callback(req, res, next);
           },

@@ -1,6 +1,7 @@
 export interface MessageEvent {
-  data: string | object;
+  data?: string | object;
   id?: string;
   type?: string;
   retry?: number;
+  comment?: string;
 }

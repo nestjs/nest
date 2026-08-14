@@ -242,7 +242,7 @@ describe('Transient scope', () => {
       const serviceA = app.get(ServiceA);
       const serviceB = app.get(ServiceB);
 
-      expect(serviceA.logger.instanceId).to.not.equal(
+      expect(serviceA.logger.instanceId).not.toBe(
         serviceB.logger.instanceId,
       );
     });
@@ -251,7 +251,7 @@ describe('Transient scope', () => {
       const serviceA = app.get(ServiceA);
       const serviceB = app.get(ServiceB);
 
-      expect(serviceA.logger.nested.instanceId).to.not.equal(
+      expect(serviceA.logger.nested.instanceId).not.toBe(
         serviceB.logger.nested.instanceId,
       );
     });
@@ -368,7 +368,7 @@ describe('Transient scope', () => {
       const serviceA = app.get(DeepServiceA);
       const serviceB = app.get(DeepServiceB);
 
-      expect(serviceA.chain.next.next.next.next.instanceId).to.not.equal(
+      expect(serviceA.chain.next.next.next.next.instanceId).not.toBe(
         serviceB.chain.next.next.next.next.instanceId,
       );
     });
@@ -377,23 +377,23 @@ describe('Transient scope', () => {
       const serviceA = app.get(DeepServiceA);
       const serviceB = app.get(DeepServiceB);
 
-      expect(serviceA.chain.next.next.next.next.next.instanceId).to.not.equal(
+      expect(serviceA.chain.next.next.next.next.next.instanceId).not.toBe(
         serviceB.chain.next.next.next.next.next.instanceId,
       );
-      expect(serviceA.chain.next.next.next.next.next.initialized).to.be.true;
-      expect(serviceB.chain.next.next.next.next.next.initialized).to.be.true;
+      expect(serviceA.chain.next.next.next.next.next.initialized).toBe(true);
+      expect(serviceB.chain.next.next.next.next.next.initialized).toBe(true);
     });
 
     it('should call constructors for every transient provider in the deep chain', () => {
       app.get(DeepServiceA);
       app.get(DeepServiceB);
 
-      expect(DepthOneTransient.constructorCalled).to.be.true;
-      expect(DepthTwoTransient.constructorCalled).to.be.true;
-      expect(DepthThreeTransient.constructorCalled).to.be.true;
-      expect(DepthFourTransient.constructorCalled).to.be.true;
-      expect(DepthFiveTransient.constructorCalled).to.be.true;
-      expect(DepthSixTransient.constructorCalled).to.be.true;
+      expect(DepthOneTransient.constructorCalled).toBe(true);
+      expect(DepthTwoTransient.constructorCalled).toBe(true);
+      expect(DepthThreeTransient.constructorCalled).toBe(true);
+      expect(DepthFourTransient.constructorCalled).toBe(true);
+      expect(DepthFiveTransient.constructorCalled).toBe(true);
+      expect(DepthSixTransient.constructorCalled).toBe(true);
     });
 
     afterAll(async () => {

@@ -26,8 +26,8 @@ describe('ParseDatePipe', () => {
       it('should parse zero timestamp as a valid date', () => {
         const transformedDate = target.transform(0)!;
 
-        expect(transformedDate).to.be.instanceOf(Date);
-        expect(transformedDate.getTime()).to.equal(0);
+        expect(transformedDate).toBeInstanceOf(Date);
+        expect(transformedDate.getTime()).toBe(0);
       });
 
       it('should not throw an error if the value is undefined/null and optional is true', () => {

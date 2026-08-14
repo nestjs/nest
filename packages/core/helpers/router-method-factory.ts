@@ -18,6 +18,7 @@ export const REQUEST_METHOD_MAP = {
   [RequestMethod.MOVE]: 'move',
   [RequestMethod.LOCK]: 'lock',
   [RequestMethod.UNLOCK]: 'unlock',
+  [RequestMethod.QUERY]: 'query',
 } as const satisfies Record<RequestMethod, keyof HttpServer>;
 
 export class RouterMethodFactory {

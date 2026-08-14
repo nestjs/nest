@@ -110,7 +110,7 @@ export class NestContainer {
     if (this.modules.has(token)) {
       return {
         moduleRef: this.modules.get(token)!,
-        inserted: true,
+        inserted: false,
       };
     }
 
@@ -157,7 +157,7 @@ export class NestContainer {
         },
         scope,
       ),
-      inserted: false,
+      inserted: true,
     };
   }
 

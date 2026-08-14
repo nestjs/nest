@@ -52,19 +52,19 @@ describe('ExpressAdapter', () => {
     it('should map URIError with status code to BadRequestException', () => {
       const error = new URIError();
       const result = expressAdapter.mapException(error) as BadRequestException;
-      expect(result).to.be.instanceOf(BadRequestException);
+      expect(result).toBeInstanceOf(BadRequestException);
     });
 
     it('should map SyntaxError with status code to BadRequestException', () => {
       const error = new SyntaxError();
       const result = expressAdapter.mapException(error) as BadRequestException;
-      expect(result).to.be.instanceOf(BadRequestException);
+      expect(result).toBeInstanceOf(BadRequestException);
     });
 
     it('should return error if it is not handler Error', () => {
       const error = new Error('Test error');
       const result = expressAdapter.mapException(error);
-      expect(result).to.equal(error);
+      expect(result).toBe(error);
     });
   });
 });

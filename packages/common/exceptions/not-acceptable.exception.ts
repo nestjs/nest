@@ -22,8 +22,8 @@ export class NotAcceptableException extends HttpException {
    *
    * By default, the JSON response body contains two properties:
    * - `statusCode`: this will be the value 406.
-   * - `error`: the string `'Not Acceptable'` by default; override this by supplying
-   * a string in the `error` parameter.
+   * - `message`: the string `'Not Acceptable'` by default; override this by supplying
+   * a string in the `objectOrError` parameter.
    *
    * If the parameter `objectOrError` is a string, the response body will contain an
    * additional property, `error`, with a short description of the HTTP error. To override the

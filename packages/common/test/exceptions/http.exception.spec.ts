@@ -412,14 +412,14 @@ describe('HttpException', () => {
   describe('when exception is created with a string and a description', () => {
     it('should return a response with a message, error and status code', () => {
       const exception = new HttpException('Forbidden', HttpStatus.FORBIDDEN);
-      expect(exception.getResponse()).to.deep.equal('Forbidden');
+      expect(exception.getResponse()).toEqual('Forbidden');
     });
 
     it('should return a response with a message, error, status code and description', () => {
       const exception = new HttpException('Forbidden', HttpStatus.FORBIDDEN, {
         description: 'some description',
       });
-      expect(exception.getResponse()).to.deep.equal('Forbidden');
+      expect(exception.getResponse()).toEqual('Forbidden');
     });
   });
 
@@ -431,7 +431,7 @@ describe('HttpException', () => {
         HttpStatus.BAD_REQUEST,
         { cause: error },
       );
-      expect(exception.cause).to.equal(error);
+      expect(exception.cause).toBe(error);
     });
   });
 
@@ -444,7 +444,7 @@ describe('HttpException', () => {
           errorCode: 'BAD_REQUEST_CODE',
         },
       );
-      expect(exception.errorCode).to.equal('BAD_REQUEST_CODE');
+      expect(exception.errorCode).toBe('BAD_REQUEST_CODE');
     });
 
     it('should be included in the response body when createBody is called', () => {
@@ -454,7 +454,7 @@ describe('HttpException', () => {
         400,
         'BAD_REQUEST_CODE',
       );
-      expect(body.errorCode).to.equal('BAD_REQUEST_CODE');
+      expect(body.errorCode).toBe('BAD_REQUEST_CODE');
     });
   });
 
@@ -467,7 +467,7 @@ describe('HttpException', () => {
         error: 'Bad Request',
         message: 'error',
       };
-      expect(message).to.deep.equal(response);
+      expect(message).toEqual(response);
     });
   });
 });

@@ -96,7 +96,7 @@ describe('InstanceWrapper', () => {
       });
       it('should recompute when dependencies are added after static introspection', () => {
         const wrapper = new InstanceWrapper({});
-        expect(wrapper.isDependencyTreeStatic()).to.be.true;
+        expect(wrapper.isDependencyTreeStatic()).toBe(true);
 
         wrapper.addCtorMetadata(
           0,
@@ -105,13 +105,13 @@ describe('InstanceWrapper', () => {
           }),
         );
 
-        expect(wrapper.isDependencyTreeStatic()).to.be.false;
+        expect(wrapper.isDependencyTreeStatic()).toBe(false);
       });
       it('should recompute when transitive dependencies change after static introspection', () => {
         const wrapper = new InstanceWrapper({});
         const dependency = new InstanceWrapper({});
         wrapper.addCtorMetadata(0, dependency);
-        expect(wrapper.isDependencyTreeStatic()).to.be.true;
+        expect(wrapper.isDependencyTreeStatic()).toBe(true);
 
         dependency.addCtorMetadata(
           0,
@@ -120,7 +120,7 @@ describe('InstanceWrapper', () => {
           }),
         );
 
-        expect(wrapper.isDependencyTreeStatic()).to.be.false;
+        expect(wrapper.isDependencyTreeStatic()).toBe(false);
       });
     });
     describe('when statically scoped', () => {

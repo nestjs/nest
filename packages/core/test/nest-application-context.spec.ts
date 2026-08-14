@@ -109,7 +109,7 @@ describe('NestApplicationContext', () => {
       const onModuleInitStub = vi.fn();
       const onApplicationShutdownStub = vi.fn();
 
-      // Use global setTimeout wrapped in a Promise so sinon fake timers
+      // Use global setTimeout wrapped in a Promise so fake timers
       // can intercept it (timers/promises.setTimeout is not fakeable in ESM).
       const delay = (ms: number) =>
         new Promise<void>(resolve => globalThis.setTimeout(resolve, ms));
@@ -584,15 +584,15 @@ describe('NestApplicationContext', () => {
       const modules = nestContainer.getModules();
       await instanceLoader.createInstancesOfDependencies(modules);
 
-      expect(UnusedTransient.constructorCalls).to.equal(0);
+      expect(UnusedTransient.constructorCalls).toBe(0);
 
       const appCtx = new NestApplicationContext(nestContainer, {
         snapshot: true,
       });
       const instance = await appCtx.resolve(UnusedTransient);
 
-      expect(instance).to.be.instanceOf(UnusedTransient);
-      expect(UnusedTransient.constructorCalls).to.equal(1);
+      expect(instance).toBeInstanceOf(UnusedTransient);
+      expect(UnusedTransient.constructorCalls).toBe(1);
     });
   });
 });

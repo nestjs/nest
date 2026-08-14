@@ -151,6 +151,36 @@ describe('NestApplication', () => {
       expect((noopHttpAdapter as any).init).toHaveBeenCalledOnce();
     });
   });
+  describe('use', () => {
+    it('should decorate function middleware before passing it to the http adapter', () => {
+      const useSpy = vi.fn();
+      const noopHttpAdapter = new NoopHttpAdapter({
+        use: useSpy,
+      });
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const decoratedMiddleware = vi.fn();
+      const instanceDecorator = vi.fn().mockReturnValue(decoratedMiddleware);
+
+      const instance = new NestApplication(
+        container,
+        noopHttpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        {
+          instrument: {
+            instanceDecorator,
+          },
+        },
+      );
+      const middleware = vi.fn();
+
+      instance.use('/test', middleware);
+
+      expect(instanceDecorator).toHaveBeenCalledExactlyOnceWith(middleware);
+      expect(useSpy).toHaveBeenCalledExactlyOnceWith('/test', decoratedMiddleware);
+    });
+  });
   describe('useWebSocketAdapter', () => {
     function createInstance(): NestApplication {
       const noopHttpAdapter = new NoopHttpAdapter({});

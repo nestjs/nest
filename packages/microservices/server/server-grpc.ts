@@ -298,7 +298,10 @@ export class ServerGrpc extends Server<never, never> {
           const handler = methodHandler(call.request, call.metadata, call);
           this.transformToObservable(await handler).subscribe({
             next: async data => callback(null, await data),
-            error: (err: any) => callback(err),
+            error: (err: any) => {
+              this.onProcessingEndHook?.(this.transportId, call.request);
+              callback(err);
+            },
             complete: () => {
               this.onProcessingEndHook?.(this.transportId, call.request);
             },
@@ -543,18 +546,21 @@ export class ServerGrpc extends Server<never, never> {
   public async close(): Promise<void> {
     if (this.grpcClient) {
       const graceful = this.getOptionsProp(this.options, 'gracefulShutdown');
-      if (graceful) {
-        await new Promise<void>((resolve, reject) => {
-          this.grpcClient.tryShutdown((error: Error) => {
-            if (error) reject(error);
-            else resolve();
+      try {
+        if (graceful) {
+          await new Promise<void>((resolve, reject) => {
+            this.grpcClient.tryShutdown((error: Error) => {
+              if (error) reject(error);
+              else resolve();
+            });
           });
-        });
-      } else {
-        this.grpcClient.forceShutdown();
+        } else {
+          this.grpcClient.forceShutdown();
+        }
+      } finally {
+        this.grpcClient = null;
       }
     }
-    this.grpcClient = null;
   }
 
   public deserialize(obj: any): any {

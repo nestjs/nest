@@ -293,7 +293,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display string token name in argument label when name is provided', () => {
       const expectedResult =
@@ -317,7 +317,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display symbol token name in argument label when name is provided', () => {
       const TOKEN = Symbol('MY_TOKEN');
@@ -343,7 +343,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should add documentation links to export errors', () => {
       const expectedResult =
@@ -396,7 +396,7 @@ Scope [AppModule -> CatsModule]`);
         INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], null),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
     });
 
     it('should display the received `false` value and its type', () => {
@@ -411,7 +411,7 @@ Scope [AppModule -> CatsModule]`);
         INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], false),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
     });
 
     it('should display the received `0` value and its type', () => {
@@ -426,7 +426,7 @@ Scope [AppModule -> CatsModule]`);
         INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], 0),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
     });
 
     it('should display the received empty string value and its type', () => {
@@ -441,7 +441,7 @@ Scope [AppModule -> CatsModule]`);
         INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], ''),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
     });
   });
 
@@ -462,7 +462,7 @@ Scope [AppModule]`);
         ),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
     });
 
     it('should identify a class decorated with @Injectable() and direct it to the "providers" array', () => {
@@ -479,7 +479,7 @@ Scope [AppModule]`);
         ),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
     });
 
     it('should identify a class decorated with @Catch() and direct it to the "providers" array or @UseFilters()', () => {

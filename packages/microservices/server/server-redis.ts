@@ -55,7 +55,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       this.pubClient = await this.createRedisClient();
 
       [this.subClient, this.pubClient].forEach((client, index) => {
-        const type = index === 0 ? 'pub' : 'sub';
+        const type = index === 0 ? 'sub' : 'pub';
         this.registerErrorListener(client);
         this.registerReconnectListener(client);
         this.registerReadyListener(client);

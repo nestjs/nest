@@ -4,6 +4,7 @@ import {
   Logger,
   RequestMethod,
   type MessageEvent,
+  SSE_ABORT_CONTROLLER,
 } from '@nestjs/common';
 import { IncomingMessage } from 'http';
 import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
@@ -117,96 +118,169 @@ export class RouterResponseController {
       return;
     }
 
-    const observableResult = await Promise.resolve(result);
-
-    this.assertObservable(observableResult);
-
     const stream = new SseStream(request);
-
     const statusCode =
       options?.statusCode ??
       (response as { statusCode?: number }).statusCode ??
       200;
 
-    stream.pipe(response, {
-      additionalHeaders: options?.additionalHeaders,
-      statusCode,
-    });
+    // Create a per-request AbortController and expose its signal on the request
+    // object so async @Sse() handlers can observe client disconnects (via the
+    // @SseSignal() parameter decorator) and stop/clean up in-flight setup work.
+    // The controller is reused if one was already attached upstream (e.g. when the
+    // handler is wrapped by interceptors and the signal was created earlier).
+    const abortController = this.getOrCreateAbortController(request);
 
     return new Promise<void>((resolve, reject) => {
       let settled = false;
+      let closeRequested = false;
+      let subscription: { unsubscribe(): void } | undefined;
+      const disconnectSource = request.socket ?? response;
 
-      const onClose = () => {
-        settled = true;
-        subscription.unsubscribe();
+      // Ends the request-scoped lifetime: stops listening for disconnects and
+      // aborts the signal handed to the route handler. Every terminal path of
+      // the SSE lifecycle (disconnect, completion, error) funnels through here,
+      // so a handler that ties its resources to the signal releases them once,
+      // regardless of how the stream ended. `abort()` is idempotent, so paths
+      // that already aborted on disconnect are unaffected.
+      const finalize = () => {
+        disconnectSource.removeListener('close', onClose);
+        abortController.abort();
+      };
+
+      const endStream = () => {
         if (!stream.writableEnded) {
           stream.end();
         }
+      };
+
+      const onClose = () => {
+        if (settled || closeRequested) {
+          return;
+        }
+
+        closeRequested = true;
+
+        if (!subscription) {
+          finalize();
+          return;
+        }
+
+        settled = true;
+        finalize();
+        subscription?.unsubscribe();
+        endStream();
         response.end();
         resolve();
       };
 
-      const subscription = observableResult
-        .pipe(
-          map((message): MessageEvent => {
-            if (isObject(message)) {
-              return message as MessageEvent;
-            }
+      disconnectSource.once('close', onClose);
 
-            return { data: message as object | string };
-          }),
-          concatMap(
-            message =>
-              new Promise<void>(resolve =>
-                stream.writeMessage(message, () => resolve()),
+      Promise.resolve(result)
+        .then(observableResult => {
+          if (settled) {
+            return;
+          }
+
+          this.assertObservable(observableResult);
+
+          if (closeRequested) {
+            // The client disconnected while the async handler was resolving.
+            // Do not subscribe the producer Observable after the consumer has
+            // already gone away — subscribing only to abort it in the same tick
+            // would start producer side effects just to immediately cancel them.
+            settled = true;
+            endStream();
+            response.end();
+            resolve();
+            return;
+          }
+
+          stream.pipe(response, {
+            additionalHeaders: options?.additionalHeaders,
+            statusCode,
+          });
+
+          subscription = observableResult
+            .pipe(
+              map((message): MessageEvent => {
+                if (isObject(message)) {
+                  return message as MessageEvent;
+                }
+
+                return { data: message as object | string };
+              }),
+              concatMap(
+                message =>
+                  new Promise<void>(resolve =>
+                    stream.writeMessage(message, () => resolve()),
+                  ),
               ),
-          ),
-          catchError(err => {
-            if (!stream.headersCommitted) {
-              throw err;
-            }
+              catchError(err => {
+                if (!stream.headersCommitted) {
+                  throw err;
+                }
 
-            const data = err instanceof Error ? err.message : err;
-            stream.writeMessage({ type: 'error', data }, writeError => {
-              if (writeError) {
-                this.logger.error(writeError);
-              }
+                const data = err instanceof Error ? err.message : err;
+                stream.writeMessage({ type: 'error', data }, writeError => {
+                  if (writeError) {
+                    this.logger.error(writeError);
+                  }
+                });
+
+                return EMPTY;
+              }),
+            )
+            .subscribe({
+              error: err => {
+                if (settled) {
+                  return;
+                }
+                settled = true;
+                finalize();
+                endStream();
+                reject(err);
+              },
+              complete: () => {
+                if (settled) {
+                  return;
+                }
+                settled = true;
+                finalize();
+                endStream();
+                resolve();
+              },
             });
 
-            return EMPTY;
-          }),
-        )
-        .subscribe({
-          error: err => {
-            settled = true;
-            request.removeListener('close', onClose);
-            if (!stream.writableEnded) {
-              stream.end();
+          // Commit SSE headers on the next macrotask. Pipe validation errors
+          // propagate through microtasks (which complete before macrotasks),
+          // so if the lifecycle errored, `settled` is already true and we
+          // skip the write. Otherwise headers are sent immediately rather
+          // than waiting for the first Observable emission.
+          setTimeout(() => {
+            if (!settled) {
+              stream.commitHeaders();
             }
-            reject(err);
-          },
-          complete: () => {
+          }, 0);
+        })
+        .catch(err => {
+          if (settled) {
+            return;
+          }
+
+          if (closeRequested) {
             settled = true;
-            request.removeListener('close', onClose);
-            if (!stream.writableEnded) {
-              stream.end();
-            }
+            endStream();
+            response.end();
             resolve();
-          },
+            return;
+          }
+
+          settled = true;
+          finalize();
+          endStream();
+          reject(err);
         });
-
-      // Commit SSE headers on the next macrotask. Pipe validation errors
-      // propagate through microtasks (which complete before macrotasks),
-      // so if the lifecycle errored, `settled` is already true and we
-      // skip the write. Otherwise headers are sent immediately rather
-      // than waiting for the first Observable emission.
-      setTimeout(() => {
-        if (!settled) {
-          stream.commitHeaders();
-        }
-      }, 0);
-
-      request.on('close', onClose);
     });
   }
 
@@ -216,5 +290,17 @@ export class RouterResponseController {
         'You must return an Observable stream to use Server-Sent Events (SSE).',
       );
     }
+  }
+
+  private getOrCreateAbortController(
+    request: IncomingMessage,
+  ): AbortController {
+    const carrier = request as IncomingMessage & {
+      [SSE_ABORT_CONTROLLER]?: AbortController;
+    };
+    if (!carrier[SSE_ABORT_CONTROLLER]) {
+      carrier[SSE_ABORT_CONTROLLER] = new AbortController();
+    }
+    return carrier[SSE_ABORT_CONTROLLER];
   }
 }

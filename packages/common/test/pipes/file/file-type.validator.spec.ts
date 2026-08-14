@@ -177,6 +177,46 @@ describe('FileTypeValidator', () => {
       expect(await fileTypeValidator.isValid(requestFile)).toBe(true);
     });
 
+    it('should return true when the mimetype contains regex metacharacters and matches the expected type', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/svg+xml',
+        skipMagicNumbersValidation: true,
+      });
+
+      const requestFile = {
+        mimetype: 'image/svg+xml',
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).toBe(true);
+    });
+
+    it('should return false when the mimetype contains regex metacharacters and does not match the expected type', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'image/svg+xml',
+        skipMagicNumbersValidation: true,
+      });
+
+      const requestFile = {
+        mimetype: 'image/png',
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).toBe(false);
+    });
+
+    it('should return true when fallbackToMimetype is enabled and the mimetype contains regex metacharacters', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: 'application/ld+json',
+        fallbackToMimetype: true,
+      });
+
+      const requestFile = {
+        mimetype: 'application/ld+json',
+        buffer: Buffer.from('{}'),
+      } as IFile;
+
+      expect(await fileTypeValidator.isValid(requestFile)).toBe(true);
+    });
+
     it('should return false when the file buffer does not match any known type', async () => {
       const fileTypeValidator = new FileTypeValidator({
         fileType: 'unknown/type',
@@ -322,7 +362,7 @@ describe('FileTypeValidator', () => {
         mimetype: 'image/jpeg',
       } as IFile;
 
-      expect(fileTypeValidator.buildErrorMessage(file)).to.equal(
+      expect(fileTypeValidator.buildErrorMessage(file)).toBe(
         `Validation failed (file buffer is not available; file type validation could not be performed; expected type is image/jpeg)`,
       );
     });
@@ -385,6 +425,38 @@ describe('FileTypeValidator', () => {
       expect(fileTypeValidator.buildErrorMessage(requestFile)).toBe(
         `Received file type '${actualFileType}', but expected '${expectedFileType}'.`,
       );
+    });
+  });
+  describe('overrideMimeType', () => {
+    it('should override mimetype when overrideMimeType is enabled', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: /^image\/png$/,
+        overrideMimeType: true,
+      });
+
+      const requestFile: IFile = {
+        mimetype: 'image/jpeg',
+        buffer: pngBuffer,
+        size: pngBuffer.length,
+      };
+
+      expect(await fileTypeValidator.isValid(requestFile)).toBe(true);
+      expect(requestFile.mimetype).toBe('image/png');
+    });
+
+    it('should not override mimetype when overrideMimeType is disabled', async () => {
+      const fileTypeValidator = new FileTypeValidator({
+        fileType: /^image\/png$/,
+      });
+
+      const requestFile: IFile = {
+        mimetype: 'image/jpeg',
+        buffer: pngBuffer,
+        size: pngBuffer.length,
+      };
+
+      expect(await fileTypeValidator.isValid(requestFile)).toBe(true);
+      expect(requestFile.mimetype).toBe('image/jpeg');
     });
   });
 });
