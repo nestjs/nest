@@ -114,7 +114,7 @@ export class DependenciesScanner {
       (await this.insertOrOverrideModule(moduleDefinition, overrides, scope)) ??
       {};
 
-    if (lazy && !moduleInserted) {
+    if (lazy && !moduleInserted && moduleInstance?.isInstantiated) {
       return [];
     }
 
@@ -177,7 +177,7 @@ export class DependenciesScanner {
       return registeredModuleRefs;
     }
 
-    if (lazy && moduleInserted) {
+    if (lazy) {
       this.container.bindGlobalsToImports(moduleInstance);
     }
     return [moduleInstance].concat(registeredModuleRefs);

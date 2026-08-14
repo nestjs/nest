@@ -1,4 +1,10 @@
-import { Global, Injectable, Module } from '@nestjs/common';
+import {
+  DynamicModule,
+  Global,
+  Inject,
+  Injectable,
+  Module,
+} from '@nestjs/common';
 import { expect } from 'chai';
 import {
   LazyModuleLoader,
@@ -181,6 +187,119 @@ describe('LazyModuleLoader', () => {
 
         await lazyModuleLoader.load(() => LazyGlobalModule);
         expect(globalConstructionsCount).to.equal(1);
+      });
+    });
+
+    describe('dynamic modules with pre-registered dynamic imports (#17462)', () => {
+      // The import must itself be a `DynamicModule` object: those are
+      // pre-registered by `NestContainer#addDynamicMetadata` before the lazy
+      // scan reaches them, so they look "already registered" to the scanner.
+      @Module({
+        providers: [{ provide: 'ITEMS', useValue: ['itemA', 'itemB'] }],
+        exports: ['ITEMS'],
+      })
+      class ChildProviderModule {}
+
+      @Injectable()
+      class ParentService {
+        constructor(@Inject('ITEMS') readonly items: string[]) {}
+      }
+
+      @Module({ providers: [ParentService], exports: [ParentService] })
+      class ParentRootModule {}
+
+      @Module({
+        providers: [{ provide: 'GLOBAL_DEP', useValue: 'globalDep' }],
+        exports: ['GLOBAL_DEP'],
+      })
+      @Global()
+      class GlobalDepModule {}
+
+      @Module({
+        providers: [
+          {
+            provide: 'CHILD_OUT',
+            useFactory: (dep: string) => `child(${dep})`,
+            inject: ['GLOBAL_DEP'],
+          },
+        ],
+        exports: ['CHILD_OUT'],
+      })
+      class ChildNeedsGlobalModule {}
+
+      @Injectable()
+      class GlobalHuskConsumer {
+        constructor(@Inject('CHILD_OUT') readonly childOut: string) {}
+      }
+
+      @Module({
+        providers: [GlobalHuskConsumer],
+        exports: [GlobalHuskConsumer],
+      })
+      class GlobalHuskRootModule {}
+
+      @Module({ imports: [GlobalDepModule] })
+      class AppModule {}
+
+      beforeEach(async () => {
+        await dependenciesScanner.scan(AppModule);
+        await instanceLoader.createInstancesOfDependencies();
+      });
+
+      it('should scan dynamic imports declared in the dynamic metadata', async () => {
+        // Arrange
+        const child: DynamicModule = { module: ChildProviderModule };
+        const definition: DynamicModule = {
+          module: ParentRootModule,
+          imports: [child],
+          exports: [child],
+        };
+
+        // Act
+        const moduleRef = await lazyModuleLoader.load(() => definition);
+
+        // Assert
+        expect(moduleRef.get(ParentService).items).to.deep.equal([
+          'itemA',
+          'itemB',
+        ]);
+      });
+
+      it('should keep the module resolvable on repeated load() calls', async () => {
+        // Arrange
+        const child: DynamicModule = { module: ChildProviderModule };
+        const definition: DynamicModule = {
+          module: ParentRootModule,
+          imports: [child],
+          exports: [child],
+        };
+
+        // Act
+        const first = await lazyModuleLoader.load(() => definition);
+        const second = await lazyModuleLoader.load(() => definition);
+
+        // Assert
+        expect(first).to.equal(second);
+        expect(second.get(ParentService).items).to.deep.equal([
+          'itemA',
+          'itemB',
+        ]);
+      });
+
+      it('should bind global providers into a rescanned dynamic import', async () => {
+        // Arrange
+        const definition: DynamicModule = {
+          module: GlobalHuskRootModule,
+          imports: [{ module: ChildNeedsGlobalModule }],
+        };
+
+        // Act
+        const moduleRef = await lazyModuleLoader.load(() => definition);
+
+        // Assert
+        expect(moduleRef.get(GlobalHuskConsumer).childOut).to.equal(
+          'child(globalDep)',
+        );
       });
     });
   });

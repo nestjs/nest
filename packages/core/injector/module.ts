@@ -146,6 +146,15 @@ export class Module {
     return moduleRef!.instance as NestModule;
   }
 
+  /**
+   * Modules are registered in the container before they are scanned (dynamic
+   * `imports` are pre-registered by `NestContainer#addDynamicMetadata`), so
+   * registration alone does not imply the module was ever instantiated.
+   */
+  get isInstantiated(): boolean {
+    return !isNil(this._providers.get(this._metatype)?.instance);
+  }
+
   get metatype(): Type<any> {
     return this._metatype;
   }
