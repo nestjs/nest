@@ -79,6 +79,7 @@ export class ServerGrpc extends Server<never, never> {
     grpcProtoLoaderPackage = this.loadPackageSynchronously(
       protoLoader,
       ServerGrpc.name,
+      () => createRequire(import.meta.url)(protoLoader),
     );
   }
 

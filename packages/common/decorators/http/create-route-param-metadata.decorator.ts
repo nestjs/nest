@@ -6,6 +6,7 @@ import { CustomParamFactory } from '../../interfaces/features/custom-route-param
 import { Type } from '../../interfaces/index.js';
 import { assignCustomParameterMetadata } from '../../utils/assign-custom-metadata.util.js';
 import { isFunction, isNil } from '../../utils/shared.utils.js';
+import { isParameterDecoratorOptions } from '../../utils/parameter-decorator-options.util.js';
 import { ParameterDecoratorOptions } from './route-params.decorator.js';
 
 export type ParamDecoratorEnhancer = ParameterDecorator;
@@ -51,22 +52,13 @@ export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
           isFunction(pipe.prototype.transform)) ||
           isFunction(pipe.transform));
 
-      const isParameterDecoratorOptions = (value: any): boolean =>
-        value &&
-        typeof value === 'object' &&
-        !isPipe(value) &&
-        ('schema' in value || 'pipes' in value);
-
       const hasParamData = isNil(data) || !isPipe(data);
       const paramData = hasParamData ? (data as any) : undefined;
       const paramPipes = hasParamData ? pipes : [data, ...pipes];
 
-      // Check if data itself is an options object (when used as the first and only argument)
+      // Check if data itself is an options object (when used as the first argument)
       const isDataOptions =
-        hasParamData &&
-        !isNil(data) &&
-        paramPipes.length === 0 &&
-        isParameterDecoratorOptions(data);
+        hasParamData && !isNil(data) && isParameterDecoratorOptions(data);
 
       // Check if the last pipe argument is actually an options object
       const lastPipeArg =
@@ -82,7 +74,8 @@ export function createParamDecorator<FactoryData = any, FactoryOutput = any>(
         const opts = data as unknown as ParameterDecoratorOptions;
         finalData = undefined;
         finalSchema = opts.schema;
-        finalPipes = (opts.pipes ?? []) as any[];
+        // Merge positional pipes passed after the options object
+        finalPipes = [...((opts.pipes ?? []) as any[]), ...paramPipes];
       } else if (isLastPipeOptions) {
         const opts = lastPipeArg as unknown as ParameterDecoratorOptions;
         finalData = paramData;

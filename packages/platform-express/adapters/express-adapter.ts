@@ -156,8 +156,11 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     if (prefix) {
       const router = express.Router();
       router.use(handler as any);
-      return this.use(prefix, router);
+      this.use(prefix, router);
     }
+    // Always mount the error handler at the root as well, so routes living
+    // outside the global prefix (e.g. "setGlobalPrefix" exclusions or
+    // root-mounted routes) still pass through the exception layer.
     return this.use(handler);
   }
 
@@ -178,8 +181,14 @@ export class ExpressAdapter extends AbstractHttpAdapter<
         // handler may be registered before a prefixed app's routes. Skip
         // requests whose path belongs to another app's prefix so they can
         // reach the correct route handlers further in the stack.
+        const path = req.originalUrl.split(/[?#]/)[0];
         for (const registeredPrefix of this.registeredPrefixes) {
-          if (req.originalUrl.startsWith(registeredPrefix)) {
+          // Match on full path segments only, so a prefix of "/api" does not
+          // swallow unrelated paths such as "/apiary".
+          if (
+            path === registeredPrefix ||
+            path.startsWith(`${registeredPrefix}/`)
+          ) {
             return next();
           }
         }

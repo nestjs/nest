@@ -73,9 +73,15 @@ export function loadPackageSync(
  * Ensure that `loadPackage()` has been `await`ed for the same package name
  * before calling this function (typically during `init()` or `compile()`).
  */
-export function loadPackageCached(packageName: string): any {
+export function loadPackageCached(packageName: string, context?: string): any {
   const cached = packageCache.get(packageName);
   if (!cached) {
+    if (context) {
+      // The package was not preloaded (typically because it is not
+      // installed). Fall back to a synchronous load so the user gets the
+      // actionable "package is missing" message instead of an internal error.
+      return loadPackageSync(packageName, context);
+    }
     throw new Error(
       `Package "${packageName}" has not been loaded yet. ` +
         `Ensure loadPackage("${packageName}", ...) has been awaited before calling loadPackageCached.`,

@@ -1,6 +1,6 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { concatMap } from 'rxjs/operators';
 import { Inject, Injectable, Optional } from '../decorators/core/index.js';
 import { StreamableFile } from '../file-stream/index.js';
 import {
@@ -69,7 +69,7 @@ export class StandardSchemaSerializerInterceptor implements NestInterceptor {
     return next
       .handle()
       .pipe(
-        map((res: PlainLiteralObject | Array<PlainLiteralObject>) =>
+        concatMap(async (res: PlainLiteralObject | Array<PlainLiteralObject>) =>
           this.serialize(res, schema, validateOptions),
         ),
       );

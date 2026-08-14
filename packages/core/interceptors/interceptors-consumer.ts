@@ -15,7 +15,7 @@ export class InterceptorsConsumer {
     next: () => Promise<unknown>,
     type?: TContext,
   ): Promise<unknown> {
-    if (isEmptyArray(interceptors)) {
+    if (!interceptors || isEmptyArray(interceptors)) {
       return next();
     }
     const context = this.createContext(args, instance, callback);

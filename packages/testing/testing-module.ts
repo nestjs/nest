@@ -105,7 +105,10 @@ export class TestingModule extends NestApplicationContext {
   public createNestMicroservice<T extends object>(
     options: NestMicroserviceOptions & T,
   ): INestMicroservice {
-    const { NestMicroservice } = loadPackageCached('@nestjs/microservices');
+    const { NestMicroservice } = loadPackageCached(
+      '@nestjs/microservices',
+      'TestingModule',
+    );
     this.applyLogger(options);
     return new NestMicroservice(
       this.container,
@@ -116,7 +119,10 @@ export class TestingModule extends NestApplicationContext {
   }
 
   private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
-    const { ExpressAdapter } = loadPackageCached('@nestjs/platform-express');
+    const { ExpressAdapter } = loadPackageCached(
+      '@nestjs/platform-express',
+      'TestingModule',
+    );
     return new ExpressAdapter(httpServer);
   }
 

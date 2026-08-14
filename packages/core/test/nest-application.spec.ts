@@ -178,7 +178,10 @@ describe('NestApplication', () => {
       instance.use('/test', middleware);
 
       expect(instanceDecorator).toHaveBeenCalledExactlyOnceWith(middleware);
-      expect(useSpy).toHaveBeenCalledExactlyOnceWith('/test', decoratedMiddleware);
+      expect(useSpy).toHaveBeenCalledExactlyOnceWith(
+        '/test',
+        decoratedMiddleware,
+      );
     });
   });
   describe('useWebSocketAdapter', () => {
@@ -205,10 +208,10 @@ describe('NestApplication', () => {
       expect(warnSpy).not.toHaveBeenCalled();
     });
 
-    it('should warn when called after WS module registration', () => {
+    it('should warn when called after WS module registration', async () => {
       const instance = createInstance();
       (instance as any).socketModule = { register: vi.fn() };
-      instance.registerWsModule();
+      await instance.registerWsModule();
       const warnSpy = vi.spyOn((instance as any).logger, 'warn');
 
       instance.useWebSocketAdapter({} as any);
@@ -219,9 +222,10 @@ describe('NestApplication', () => {
       );
     });
 
-    it('should still set the adapter on ApplicationConfig even when called too late', () => {
+    it('should still set the adapter on ApplicationConfig even when called too late', async () => {
       const instance = createInstance();
-      instance.registerWsModule();
+      (instance as any).socketModule = { register: vi.fn() };
+      await instance.registerWsModule();
       const adapter = { create: () => undefined } as any;
 
       instance.useWebSocketAdapter(adapter);

@@ -1,4 +1,5 @@
 import type {
+  ArgumentMetadata,
   ContextType,
   PipeTransform,
   PreRequestHook,
@@ -295,12 +296,13 @@ export class RpcContextCreator {
           data,
           metatype,
           pipes: paramPipes,
+          schema,
         } = param;
         const value = extractValue(...params);
 
         args[index] = await this.getParamValue(
           value,
-          { metatype, type, data },
+          { metatype, type, data, schema } as ArgumentMetadata,
           pipes.concat(paramPipes),
         );
       };
@@ -311,11 +313,11 @@ export class RpcContextCreator {
 
   public async getParamValue<T>(
     value: T,
-    { metatype, type, data }: { metatype: any; type: any; data: any },
+    metadata: ArgumentMetadata,
     pipes: PipeTransform[],
   ): Promise<any> {
     return isEmptyArray(pipes)
       ? value
-      : this.pipesConsumer.apply(value, { metatype, type, data }, pipes);
+      : this.pipesConsumer.apply(value, metadata, pipes);
   }
 }

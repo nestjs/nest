@@ -40,6 +40,7 @@ export class SocketModule<
   private applicationConfig: ApplicationConfig;
   private webSocketsController: WebSocketsController;
   private isAdapterInitialized: boolean;
+  private adapterInitPromise: Promise<void> | null = null;
   private httpServer: THttpServer | undefined;
   private appOptions: TAppOptions;
   private injector: Injector;
@@ -82,8 +83,12 @@ export class SocketModule<
       this.appOptions,
     );
     const modules = container.getModules();
-    modules.forEach(({ providers }, moduleName: string) =>
-      this.connectAllGateways(providers, moduleName),
+    return Promise.all(
+      iterate(modules.entries())
+        .map(([moduleName, { providers }]) =>
+          this.connectAllGateways(providers, moduleName),
+        )
+        .toArray(),
     );
   }
 
@@ -91,9 +96,12 @@ export class SocketModule<
     providers: Map<InjectionToken, InstanceWrapper<Injectable>>,
     moduleName: string,
   ) {
-    iterate(providers.values())
-      .filter(wrapper => wrapper && !wrapper.isNotMetatype)
-      .forEach(wrapper => this.connectGatewayToServer(wrapper, moduleName));
+    return Promise.all(
+      iterate(providers.values())
+        .filter(wrapper => wrapper && !wrapper.isNotMetatype)
+        .map(wrapper => this.connectGatewayToServer(wrapper, moduleName))
+        .toArray(),
+    );
   }
 
   public async connectGatewayToServer(
@@ -106,7 +114,10 @@ export class SocketModule<
       return;
     }
     if (!this.isAdapterInitialized) {
-      await this.initializeAdapter();
+      // Memoize the initialization promise so concurrent gateway connections
+      // share a single adapter instead of racing to create their own.
+      this.adapterInitPromise ??= this.initializeAdapter();
+      await this.adapterInitPromise;
     }
     this.webSocketsController.connectGatewayToServer(
       wrapper as InstanceWrapper<NestGateway>,

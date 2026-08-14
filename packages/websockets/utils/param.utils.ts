@@ -4,7 +4,11 @@ import type {
   Type,
 } from '@nestjs/common';
 import { assignMetadata } from '@nestjs/common';
-import { isNil, isString } from '@nestjs/common/internal';
+import {
+  isNil,
+  isParameterDecoratorOptions,
+  isString,
+} from '@nestjs/common/internal';
 import 'reflect-metadata';
 import { PARAM_ARGS_METADATA } from '../constants.js';
 import { WsParamtype } from '../enums/ws-paramtype.enum.js';
@@ -40,11 +44,7 @@ export const createPipesWsParamDecorator =
     const args =
       Reflect.getMetadata(PARAM_ARGS_METADATA, target.constructor, key!) || {};
 
-    const isDataOptions =
-      data &&
-      typeof data === 'object' &&
-      !('transform' in data) &&
-      ('schema' in data || 'pipes' in data);
+    const isDataOptions = isParameterDecoratorOptions(data);
 
     if (isDataOptions) {
       const opts = data as ParameterDecoratorOptions;
@@ -63,14 +63,11 @@ export const createPipesWsParamDecorator =
     const hasParamData = isNil(data) || isString(data);
     const paramData = hasParamData ? data : undefined;
 
-    const isOptions =
-      optionsOrPipe &&
-      typeof optionsOrPipe === 'object' &&
-      ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
+    const isOptions = isParameterDecoratorOptions(optionsOrPipe);
 
     let paramPipes: (Type<PipeTransform> | PipeTransform)[];
     if (isOptions) {
-      paramPipes = optionsOrPipe.pipes ?? [];
+      paramPipes = [...(optionsOrPipe.pipes ?? []), ...pipes];
     } else if (hasParamData) {
       paramPipes = [optionsOrPipe, ...pipes].filter(Boolean) as (
         | Type<PipeTransform>

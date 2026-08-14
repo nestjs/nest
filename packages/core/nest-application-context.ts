@@ -317,7 +317,7 @@ export class NestApplicationContext<
     signals: (ShutdownSignal | string)[] = [],
     options: ShutdownHooksOptions = {},
   ): this {
-    if (isEmptyArray(signals)) {
+    if (!signals || isEmptyArray(signals)) {
       signals = Object.values(ShutdownSignal);
     } else {
       // given signals array should be unique because

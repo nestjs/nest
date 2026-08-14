@@ -14,6 +14,7 @@ export { RouteParamtypes } from './enums/route-paramtypes.enum.js';
 
 // Utils
 export * from './utils/shared.utils.js';
+export * from './utils/parameter-decorator-options.util.js';
 export * from './utils/load-package.util.js';
 export * from './utils/cli-colors.util.js';
 export * from './utils/random-string-generator.util.js';

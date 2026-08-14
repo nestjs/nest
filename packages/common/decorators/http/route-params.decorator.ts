@@ -7,6 +7,7 @@ import { RouteParamtypes } from '../../enums/route-paramtypes.enum.js';
 import { PipeTransform } from '../../index.js';
 import { Type } from '../../interfaces/index.js';
 import { isNil, isString } from '../../utils/shared.utils.js';
+import { isParameterDecoratorOptions } from '../../utils/parameter-decorator-options.util.js';
 
 /**
  * The options that can be passed to a handler's parameter decorator, such as `@Query()`, `@Body()`, and others.
@@ -48,17 +49,32 @@ export function assignMetadata<TParamtype = any, TArgs = any>(
   args: TArgs,
   paramtype: TParamtype,
   index: number,
-  options: {
-    data?: ParamData;
-  } & ParameterDecoratorOptions,
+  options?: ({ data?: ParamData } & ParameterDecoratorOptions) | ParamData,
+  ...legacyPipes: (Type<PipeTransform> | PipeTransform)[]
 ) {
+  // Callers built against the pre-v12 signature
+  // `assignMetadata(args, paramtype, index, data?, ...pipes)` pass the raw
+  // `data` value (and pipes positionally); detect that shape and normalize it
+  // instead of silently misreading `data` as the options object.
+  const isOptionsObject =
+    options !== null &&
+    typeof options === 'object' &&
+    (isParameterDecoratorOptions(options) || 'data' in options) &&
+    !('transform' in options) &&
+    legacyPipes.length === 0;
+  const normalizedOptions: { data?: ParamData } & ParameterDecoratorOptions =
+    isOptionsObject
+      ? (options as { data?: ParamData } & ParameterDecoratorOptions)
+      : { data: options as ParamData, pipes: legacyPipes };
   return {
     ...args,
     [`${paramtype as string}:${index}`]: {
       index,
-      data: options.data,
-      pipes: options.pipes ?? [],
-      ...(options.schema !== undefined && { schema: options.schema }),
+      data: normalizedOptions.data,
+      pipes: normalizedOptions.pipes ?? [],
+      ...(normalizedOptions.schema !== undefined && {
+        schema: normalizedOptions.schema,
+      }),
     },
   };
 }
@@ -484,11 +500,7 @@ export function Query(
     | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
-  const isPropertyOptions =
-    property &&
-    typeof property === 'object' &&
-    !('transform' in property) &&
-    ('schema' in property || 'pipes' in property);
+  const isPropertyOptions = isParameterDecoratorOptions(property);
 
   if (isPropertyOptions) {
     return createPipesRouteParamDecorator(RouteParamtypes.QUERY)({
@@ -497,12 +509,9 @@ export function Query(
     });
   }
 
-  const isOptions =
-    optionsOrPipe &&
-    typeof optionsOrPipe === 'object' &&
-    ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
+  const isOptions = isParameterDecoratorOptions(optionsOrPipe);
   const actualPipes = isOptions
-    ? optionsOrPipe.pipes
+    ? [...(optionsOrPipe.pipes ?? []), ...pipes]
     : ([optionsOrPipe, ...pipes].filter(Boolean) as (
         | Type<PipeTransform>
         | PipeTransform
@@ -647,11 +656,7 @@ export function Body(
     | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
-  const isPropertyOptions =
-    property &&
-    typeof property === 'object' &&
-    !('transform' in property) &&
-    ('schema' in property || 'pipes' in property);
+  const isPropertyOptions = isParameterDecoratorOptions(property);
 
   if (isPropertyOptions) {
     return createPipesRouteParamDecorator(RouteParamtypes.BODY)({
@@ -660,12 +665,9 @@ export function Body(
     });
   }
 
-  const isOptions =
-    optionsOrPipe &&
-    typeof optionsOrPipe === 'object' &&
-    ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
+  const isOptions = isParameterDecoratorOptions(optionsOrPipe);
   const actualPipes = isOptions
-    ? optionsOrPipe.pipes
+    ? [...(optionsOrPipe.pipes ?? []), ...pipes]
     : ([optionsOrPipe, ...pipes].filter(Boolean) as (
         | Type<PipeTransform>
         | PipeTransform
@@ -769,12 +771,9 @@ export function RawBody(
     | PipeTransform<Buffer | undefined>
   )[]
 ): ParameterDecorator {
-  const isOptions =
-    optionsOrPipe &&
-    typeof optionsOrPipe === 'object' &&
-    ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
+  const isOptions = isParameterDecoratorOptions(optionsOrPipe);
   const actualPipes = isOptions
-    ? optionsOrPipe.pipes
+    ? [...(optionsOrPipe.pipes ?? []), ...pipes]
     : ([optionsOrPipe, ...pipes].filter(Boolean) as (
         | Type<PipeTransform>
         | PipeTransform
@@ -942,11 +941,7 @@ export function Param(
     | PipeTransform,
   ...pipes: (Type<PipeTransform> | PipeTransform)[]
 ): ParameterDecorator {
-  const isPropertyOptions =
-    property &&
-    typeof property === 'object' &&
-    !('transform' in property) &&
-    ('schema' in property || 'pipes' in property);
+  const isPropertyOptions = isParameterDecoratorOptions(property);
 
   if (isPropertyOptions) {
     return createPipesRouteParamDecorator(RouteParamtypes.PARAM)({
@@ -955,12 +950,9 @@ export function Param(
     });
   }
 
-  const isOptions =
-    optionsOrPipe &&
-    typeof optionsOrPipe === 'object' &&
-    ('schema' in optionsOrPipe || 'pipes' in optionsOrPipe);
+  const isOptions = isParameterDecoratorOptions(optionsOrPipe);
   const actualPipes = isOptions
-    ? optionsOrPipe.pipes
+    ? [...(optionsOrPipe.pipes ?? []), ...pipes]
     : ([optionsOrPipe, ...pipes].filter(Boolean) as (
         | Type<PipeTransform>
         | PipeTransform

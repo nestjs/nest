@@ -54,7 +54,11 @@ export class ClientGrpcProxy
       createRequire(import.meta.url)('@grpc/grpc-js'),
     );
 
-    grpcProtoLoaderPackage = loadPackageSync(protoLoader, ClientGrpcProxy.name);
+    grpcProtoLoaderPackage = loadPackageSync(
+      protoLoader,
+      ClientGrpcProxy.name,
+      () => createRequire(import.meta.url)(protoLoader),
+    );
 
     this.grpcClients = this.createClients();
   }

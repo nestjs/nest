@@ -171,6 +171,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
         // Clean up client instances and just recreate them when connect is called
         this.pubClient = this.subClient = null;
+        this.connectionPromise = null;
       } else {
         this.logger.error('Disconnected from Redis.');
         this.connectionPromise = Promise.reject(

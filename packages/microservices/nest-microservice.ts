@@ -111,13 +111,14 @@ export class NestMicroservice
   }
 
   public async registerModules(): Promise<any> {
+    await this.loadSocketModule();
     this.socketModule &&
-      this.socketModule.register(
+      (await this.socketModule.register(
         this.container,
         this.applicationConfig,
         this.graphInspector,
         this.appOptions,
-      );
+      ));
 
     if (!this.appOptions.preview) {
       this.microservicesModule.setupClients(this.container);

@@ -3,6 +3,7 @@ import { types } from 'util';
 import { Injectable } from '../decorators/core/index.js';
 import { Optional } from '../decorators/index.js';
 import { HttpStatus } from '../enums/http-status.enum.js';
+import type { HttpException } from '../exceptions/http.exception.js';
 import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface.js';
 import { TransformerPackage } from '../interfaces/external/transformer-package.interface.js';
 import { ValidationError } from '../interfaces/external/validation-error.interface.js';
@@ -215,8 +216,16 @@ export class ValidationPipe implements PipeTransform {
       }
       if (this.errorFormat === 'grouped') {
         const errors = this.groupValidationErrors(validationErrors);
+        // Custom (object) bodies are returned verbatim by
+        // `HttpException.createBody`, so add the standard envelope fields
+        // explicitly to match the shape of the "list" format.
+        const { message: error, statusCode } = (
+          new HttpErrorByCode[this.errorHttpStatusCode]() as HttpException
+        ).getResponse() as { message: string; statusCode: number };
         return new HttpErrorByCode[this.errorHttpStatusCode]({
           message: errors,
+          error,
+          statusCode,
         });
       }
       const errors = this.flattenValidationErrors(validationErrors);

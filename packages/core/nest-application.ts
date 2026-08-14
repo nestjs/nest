@@ -136,7 +136,7 @@ export class NestApplication
   }
 
   public async registerModules() {
-    this.registerWsModule();
+    await this.registerWsModule();
 
     if (this.microservicesModule) {
       this.microservicesModule.register(
@@ -159,11 +159,11 @@ export class NestApplication
     );
   }
 
-  public registerWsModule() {
+  public async registerWsModule() {
     if (!this.socketModule) {
       return;
     }
-    this.socketModule.register(
+    await this.socketModule.register(
       this.container,
       this.config,
       this.graphInspector,
@@ -312,7 +312,10 @@ export class NestApplication
     microserviceOptions: T,
     hybridAppOptions: NestHybridApplicationOptions = {},
   ): INestMicroservice {
-    const { NestMicroservice } = loadPackageCached('@nestjs/microservices');
+    const { NestMicroservice } = loadPackageCached(
+      '@nestjs/microservices',
+      'NestFactory',
+    );
     const { inheritAppConfig } = hybridAppOptions;
     const applicationConfig = inheritAppConfig
       ? this.config

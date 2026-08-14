@@ -88,7 +88,7 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     }
 
     if (
-      err.constructor.name === 'FastifyError' &&
+      err.constructor?.name === 'FastifyError' &&
       typeof err.code === 'string' &&
       typeof err.statusCode === 'number'
     ) {
@@ -96,11 +96,17 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     }
 
     // "http-errors" error signature
-    return (
+    if (
       typeof err.expose === 'boolean' &&
       typeof err.statusCode === 'number' &&
       err.status === err.statusCode &&
       err instanceof Error
-    );
+    ) {
+      return true;
+    }
+
+    // Plain "http error"-shaped values (e.g. objects thrown by third-party
+    // middleware) that carry a status code and a message
+    return !!(err.statusCode && err.message);
   }
 }

@@ -153,7 +153,10 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
           this.logger.log(
             `NatsStatus: type: "${status.type}", added: "${status.added}", deleted: "${status.deleted}".`,
           );
-          this.statusEventEmitter.emit(NatsEventsMap.UPDATE, undefined);
+          this.statusEventEmitter.emit(NatsEventsMap.UPDATE, {
+            added: status.added,
+            deleted: status.deleted,
+          });
           break;
 
         default: {
