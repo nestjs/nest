@@ -193,3 +193,44 @@ export const waitForSignalDelayedSseResourceCleanup = async (
     'Timed out waiting for the signal-delayed SSE resource cleanup to run.',
   );
 };
+
+export interface SignalLifetimeSseStats {
+  abortsObserved: number;
+  subscriptionsStarted: number;
+  teardownsObserved: number;
+}
+
+const waitForSignalLifetimeSseStat = async (
+  statsUrl: string,
+  predicate: (stats: SignalLifetimeSseStats) => boolean,
+  timeoutErrorMessage: string,
+) => {
+  const deadline = Date.now() + 2_000;
+
+  while (Date.now() < deadline) {
+    const response = await fetch(statsUrl);
+    const stats: SignalLifetimeSseStats = await response.json();
+
+    if (predicate(stats)) {
+      return stats;
+    }
+
+    await sleep(20);
+  }
+
+  throw new Error(timeoutErrorMessage);
+};
+
+export const waitForSignalCompletingSseAbort = (appUrl: string) =>
+  waitForSignalLifetimeSseStat(
+    `${appUrl}/sse/signal/completing/stats`,
+    stats => stats.abortsObserved > 0,
+    'Timed out waiting for the completing SSE signal to abort.',
+  );
+
+export const waitForSignalStreamingSseTeardown = (appUrl: string) =>
+  waitForSignalLifetimeSseStat(
+    `${appUrl}/sse/signal/streaming/stats`,
+    stats => stats.teardownsObserved > 0,
+    'Timed out waiting for the streaming SSE teardown to run.',
+  );

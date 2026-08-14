@@ -16,10 +16,18 @@ export const SSE_ABORT_CONTROLLER = Symbol('SSE_ABORT_CONTROLLER');
  * Route handler parameter decorator that injects the `AbortSignal` associated
  * with a Server-Sent-Events (SSE) request.
  *
- * The signal is aborted when the client disconnects. Async `@Sse()` handlers can
- * use it to stop in-flight setup work and clean up resources allocated before the
- * returned `Observable` is created — resources that would otherwise leak because
- * the producer `Observable` is never subscribed once the client has disconnected.
+ * The signal represents the lifetime of the SSE response: it is aborted once the
+ * stream terminates, whether because the client disconnected, the `Observable`
+ * completed, or it errored. Tying setup-phase resources to the signal therefore
+ * releases them exactly once on every exit path, including resources allocated
+ * before the returned `Observable` exists — which would otherwise leak, since the
+ * producer is never subscribed once the client has disconnected.
+ *
+ * Because the signal also aborts on normal completion, `signal.aborted` is only
+ * meaningful as a "did the client go away?" check *during setup*, before the
+ * `Observable` is returned; at that point the stream cannot have completed yet.
+ * Cleanup wired to the `abort` event should be idempotent, as it may run
+ * alongside the `Observable`'s own teardown.
  *
  * @example
  * ```ts

@@ -137,7 +137,16 @@ export class RouterResponseController {
       let subscription: { unsubscribe(): void } | undefined;
       const disconnectSource = request.socket ?? response;
 
-      const cleanup = () => disconnectSource.removeListener('close', onClose);
+      // Ends the request-scoped lifetime: stops listening for disconnects and
+      // aborts the signal handed to the route handler. Every terminal path of
+      // the SSE lifecycle (disconnect, completion, error) funnels through here,
+      // so a handler that ties its resources to the signal releases them once,
+      // regardless of how the stream ended. `abort()` is idempotent, so paths
+      // that already aborted on disconnect are unaffected.
+      const finalize = () => {
+        disconnectSource.removeListener('close', onClose);
+        abortController.abort();
+      };
 
       const endStream = () => {
         if (!stream.writableEnded) {
@@ -151,16 +160,14 @@ export class RouterResponseController {
         }
 
         closeRequested = true;
-        // Notify any handler observing the signal that the client disconnected.
-        abortController.abort();
 
         if (!subscription) {
-          cleanup();
+          finalize();
           return;
         }
 
         settled = true;
-        cleanup();
+        finalize();
         subscription?.unsubscribe();
         endStream();
         response.end();
@@ -230,7 +237,7 @@ export class RouterResponseController {
                   return;
                 }
                 settled = true;
-                cleanup();
+                finalize();
                 endStream();
                 reject(err);
               },
@@ -239,7 +246,7 @@ export class RouterResponseController {
                   return;
                 }
                 settled = true;
-                cleanup();
+                finalize();
                 endStream();
                 resolve();
               },
@@ -270,7 +277,7 @@ export class RouterResponseController {
           }
 
           settled = true;
-          cleanup();
+          finalize();
           endStream();
           reject(err);
         });
