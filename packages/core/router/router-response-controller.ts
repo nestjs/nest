@@ -5,6 +5,7 @@ import {
   RequestMethod,
   MessageEvent,
 } from '@nestjs/common';
+import { SSE_ABORT_CONTROLLER } from '@nestjs/common/decorators/http/sse-signal.decorator';
 import { isObject } from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage } from 'http';
 import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
@@ -123,13 +124,29 @@ export class RouterResponseController {
       (response as { statusCode?: number }).statusCode ??
       200;
 
+    // Create a per-request AbortController and expose its signal on the request
+    // object so async @Sse() handlers can observe client disconnects (via the
+    // @SseSignal() parameter decorator) and stop/clean up in-flight setup work.
+    // The controller is reused if one was already attached upstream (e.g. when the
+    // handler is wrapped by interceptors and the signal was created earlier).
+    const abortController = this.getOrCreateAbortController(request);
+
     return new Promise<void>((resolve, reject) => {
       let settled = false;
       let closeRequested = false;
       let subscription: { unsubscribe(): void } | undefined;
       const disconnectSource = request.socket ?? response;
 
-      const cleanup = () => disconnectSource.removeListener('close', onClose);
+      // Ends the request-scoped lifetime: stops listening for disconnects and
+      // aborts the signal handed to the route handler. Every terminal path of
+      // the SSE lifecycle (disconnect, completion, error) funnels through here,
+      // so a handler that ties its resources to the signal releases them once,
+      // regardless of how the stream ended. `abort()` is idempotent, so paths
+      // that already aborted on disconnect are unaffected.
+      const finalize = () => {
+        disconnectSource.removeListener('close', onClose);
+        abortController.abort();
+      };
 
       const endStream = () => {
         if (!stream.writableEnded) {
@@ -145,12 +162,12 @@ export class RouterResponseController {
         closeRequested = true;
 
         if (!subscription) {
-          cleanup();
+          finalize();
           return;
         }
 
         settled = true;
-        cleanup();
+        finalize();
         subscription?.unsubscribe();
         endStream();
         response.end();
@@ -168,11 +185,10 @@ export class RouterResponseController {
           this.assertObservable(observableResult);
 
           if (closeRequested) {
-            const cleanupSubscription = observableResult.subscribe({
-              error: () => undefined,
-            });
-            cleanupSubscription.unsubscribe();
-
+            // The client disconnected while the async handler was resolving.
+            // Do not subscribe the producer Observable after the consumer has
+            // already gone away — subscribing only to abort it in the same tick
+            // would start producer side effects just to immediately cancel them.
             settled = true;
             endStream();
             response.end();
@@ -221,7 +237,7 @@ export class RouterResponseController {
                   return;
                 }
                 settled = true;
-                cleanup();
+                finalize();
                 endStream();
                 reject(err);
               },
@@ -230,7 +246,7 @@ export class RouterResponseController {
                   return;
                 }
                 settled = true;
-                cleanup();
+                finalize();
                 endStream();
                 resolve();
               },
@@ -261,7 +277,7 @@ export class RouterResponseController {
           }
 
           settled = true;
-          cleanup();
+          finalize();
           endStream();
           reject(err);
         });
@@ -274,5 +290,17 @@ export class RouterResponseController {
         'You must return an Observable stream to use Server-Sent Events (SSE).',
       );
     }
+  }
+
+  private getOrCreateAbortController(
+    request: IncomingMessage,
+  ): AbortController {
+    const carrier = request as IncomingMessage & {
+      [SSE_ABORT_CONTROLLER]?: AbortController;
+    };
+    if (!carrier[SSE_ABORT_CONTROLLER]) {
+      carrier[SSE_ABORT_CONTROLLER] = new AbortController();
+    }
+    return carrier[SSE_ABORT_CONTROLLER];
   }
 }

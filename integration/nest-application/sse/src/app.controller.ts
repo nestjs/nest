@@ -12,12 +12,13 @@ import {
   Req,
   RequestMethod,
   Sse,
+  SseSignal,
   UseInterceptors,
 } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import { IsInt } from 'class-validator';
 import { IncomingMessage } from 'node:http';
-import { interval, map, Observable, of } from 'rxjs';
+import { EMPTY, interval, map, Observable, of } from 'rxjs';
 
 class SseQueryDto {
   @Type(() => Number)
@@ -47,6 +48,19 @@ export class AppController {
   private interceptorDelayedTeardownsObserved = 0;
   private interceptorDelayedRunningStreams = 0;
   private readonly interceptorDelayedResolvers: Array<() => void> = [];
+
+  private signalRequestsStarted = 0;
+  private signalResourcesAllocated = 0;
+  private signalResourcesCleaned = 0;
+  private signalSubscriptionsStarted = 0;
+
+  private completingSubscriptionsStarted = 0;
+  private completingAbortsObserved = 0;
+  private completingTeardownsObserved = 0;
+
+  private streamingSubscriptionsStarted = 0;
+  private streamingAbortsObserved = 0;
+  private streamingTeardownsObserved = 0;
 
   @Sse('sse')
   sse(): Observable<MessageEvent> {
@@ -103,14 +117,32 @@ export class AppController {
     this.promiseDelayedRunningStreams += 1;
     const rawRequest = request.socket ?? request;
 
+    let subscribed = false;
+    let released = false;
+    const releaseStream = () => {
+      if (released) {
+        return;
+      }
+      released = true;
+      this.promiseDelayedRunningStreams -= 1;
+    };
+
     rawRequest.once('close', () => {
       this.promiseDelayedCloseEventsObserved += 1;
+
+      // When the client disconnects before the promise resolves, the producer
+      // Observable is never subscribed, so its teardown never runs. Release the
+      // stream slot here instead — otherwise it would leak in the stats.
+      if (!subscribed) {
+        releaseStream();
+      }
     });
 
     return new Promise(resolve => {
       this.promiseDelayedResolvers.push(() =>
         resolve(
           new Observable<MessageEvent>(subscriber => {
+            subscribed = true;
             this.promiseDelayedSubscriptionsStarted += 1;
 
             const intervalId = setInterval(() => {
@@ -120,7 +152,7 @@ export class AppController {
             return () => {
               clearInterval(intervalId);
               this.promiseDelayedTeardownsObserved += 1;
-              this.promiseDelayedRunningStreams -= 1;
+              releaseStream();
             };
           }),
         ),
@@ -173,14 +205,32 @@ export class AppController {
     this.interceptorDelayedRunningStreams += 1;
     const rawRequest = request.socket ?? request;
 
+    let subscribed = false;
+    let released = false;
+    const releaseStream = () => {
+      if (released) {
+        return;
+      }
+      released = true;
+      this.interceptorDelayedRunningStreams -= 1;
+    };
+
     rawRequest.once('close', () => {
       this.interceptorDelayedCloseEventsObserved += 1;
+
+      // When the client disconnects before the promise resolves, the producer
+      // Observable is never subscribed, so its teardown never runs. Release the
+      // stream slot here instead — otherwise it would leak in the stats.
+      if (!subscribed) {
+        releaseStream();
+      }
     });
 
     return new Promise(resolve => {
       this.interceptorDelayedResolvers.push(() =>
         resolve(
           new Observable<MessageEvent>(subscriber => {
+            subscribed = true;
             this.interceptorDelayedSubscriptionsStarted += 1;
 
             const intervalId = setInterval(() => {
@@ -190,7 +240,7 @@ export class AppController {
             return () => {
               clearInterval(intervalId);
               this.interceptorDelayedTeardownsObserved += 1;
-              this.interceptorDelayedRunningStreams -= 1;
+              releaseStream();
             };
           }),
         ),
@@ -216,6 +266,127 @@ export class AppController {
       runningStreams: this.interceptorDelayedRunningStreams,
       subscriptionsStarted: this.interceptorDelayedSubscriptionsStarted,
       teardownsObserved: this.interceptorDelayedTeardownsObserved,
+    };
+  }
+
+  @UseInterceptors(PassthroughInterceptor)
+  @Sse('sse/signal/promise-delayed')
+  async sseSignalPromiseDelayed(
+    @SseSignal() signal: AbortSignal,
+  ): Promise<Observable<MessageEvent>> {
+    this.signalRequestsStarted += 1;
+
+    // Simulate an expensive async setup that allocates a resource (e.g. an LLM
+    // session, a DB cursor) before the producer Observable exists.
+    const resource = { closed: false };
+    this.signalResourcesAllocated += 1;
+
+    await new Promise(resolve => setTimeout(resolve, 80));
+
+    if (signal.aborted) {
+      // The client disconnected during setup: clean up the resource ourselves
+      // because the producer Observable below will never be subscribed.
+      resource.closed = true;
+      this.signalResourcesCleaned += 1;
+      return EMPTY;
+    }
+
+    return new Observable<MessageEvent>(subscriber => {
+      this.signalSubscriptionsStarted += 1;
+      const intervalId = setInterval(() => {
+        subscriber.next({ data: { hello: 'world' } });
+      }, 50);
+      const onAbort = () => subscriber.complete();
+      signal.addEventListener('abort', onAbort, { once: true });
+
+      return () => {
+        clearInterval(intervalId);
+        signal.removeEventListener('abort', onAbort);
+        resource.closed = true;
+        this.signalResourcesCleaned += 1;
+      };
+    });
+  }
+
+  // A stream that runs to completion without the client ever disconnecting. The
+  // signal is a request-lifetime token, so it aborts once the stream ends.
+  @Sse('sse/signal/completing')
+  sseSignalCompleting(
+    @SseSignal() signal: AbortSignal,
+  ): Observable<MessageEvent> {
+    signal.addEventListener(
+      'abort',
+      () => {
+        this.completingAbortsObserved += 1;
+      },
+      { once: true },
+    );
+
+    return new Observable<MessageEvent>(subscriber => {
+      this.completingSubscriptionsStarted += 1;
+
+      subscriber.next({ data: { chunk: 0 } });
+      subscriber.next({ data: { chunk: 1 } });
+      subscriber.complete();
+
+      return () => {
+        this.completingTeardownsObserved += 1;
+      };
+    });
+  }
+
+  @Get('sse/signal/completing/stats')
+  getSignalCompletingSseStats() {
+    return {
+      abortsObserved: this.completingAbortsObserved,
+      subscriptionsStarted: this.completingSubscriptionsStarted,
+      teardownsObserved: this.completingTeardownsObserved,
+    };
+  }
+
+  // A long-running stream that is already subscribed when the client goes away,
+  // exercising the abort listener registered from inside the producer.
+  @Sse('sse/signal/streaming')
+  sseSignalStreaming(
+    @SseSignal() signal: AbortSignal,
+  ): Observable<MessageEvent> {
+    return new Observable<MessageEvent>(subscriber => {
+      this.streamingSubscriptionsStarted += 1;
+
+      const intervalId = setInterval(() => {
+        subscriber.next({ data: { hello: 'world' } });
+      }, 50);
+
+      const onAbort = () => {
+        this.streamingAbortsObserved += 1;
+        subscriber.complete();
+      };
+      signal.addEventListener('abort', onAbort, { once: true });
+
+      return () => {
+        clearInterval(intervalId);
+        signal.removeEventListener('abort', onAbort);
+        this.streamingTeardownsObserved += 1;
+      };
+    });
+  }
+
+  @Get('sse/signal/streaming/stats')
+  getSignalStreamingSseStats() {
+    return {
+      abortsObserved: this.streamingAbortsObserved,
+      subscriptionsStarted: this.streamingSubscriptionsStarted,
+      teardownsObserved: this.streamingTeardownsObserved,
+    };
+  }
+
+  @Get('sse/signal/promise-delayed/stats')
+  getSignalDelayedSseStats() {
+    return {
+      requestsStarted: this.signalRequestsStarted,
+      resourcesAllocated: this.signalResourcesAllocated,
+      resourcesCleaned: this.signalResourcesCleaned,
+      subscriptionsStarted: this.signalSubscriptionsStarted,
     };
   }
 }
