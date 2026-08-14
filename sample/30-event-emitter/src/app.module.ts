@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { OrdersModule } from './orders/orders.module';
+import { OrdersModule } from './orders/orders.module.js';
 
 @Module({
   imports: [EventEmitterModule.forRoot(), OrdersModule],

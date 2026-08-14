@@ -1,12 +1,11 @@
 import {
-  HttpServer,
+  type HttpServer,
   HttpStatus,
   Logger,
   RequestMethod,
-  MessageEvent,
+  type MessageEvent,
+  SSE_ABORT_CONTROLLER,
 } from '@nestjs/common';
-import { SSE_ABORT_CONTROLLER } from '@nestjs/common/decorators/http/sse-signal.decorator';
-import { isObject } from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage } from 'http';
 import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
 import { catchError, concatMap, map } from 'rxjs/operators';
@@ -14,7 +13,8 @@ import {
   AdditionalHeaders,
   WritableHeaderStream,
   SseStream,
-} from './sse-stream';
+} from './sse-stream.js';
+import { isObject } from '@nestjs/common/internal';
 
 export interface CustomHeader {
   name: string;

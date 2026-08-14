@@ -1,4 +1,4 @@
-import { getDirs } from './util/task-helpers';
+import { getDirs } from './util/task-helpers.js';
 
 // All paths are related to the base dir
 export const source = 'packages';

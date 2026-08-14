@@ -17,7 +17,16 @@
     "access": "public"
   },
   "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./internal": "./internal.js",
+    "./*.js": "./*.js",
+    "./*": "./*.js"
+  },
   "dependencies": {
+    "@standard-schema/spec": "1.1.0",
     "file-type": "21.3.4",
     "iterare": "1.2.1",
     "load-esm": "1.0.3",

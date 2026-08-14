@@ -6,7 +6,6 @@ import {
   Module,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 
 @Injectable()
 class LoggerService {
@@ -92,7 +91,7 @@ describe('forRoot / forFeature resolution', () => {
     const controller = app.get(CatController);
     const service = app.get(CatService);
 
-    expect(controller.logger).to.equal(service.logger);
+    expect(controller.logger).toBe(service.logger);
   });
 
   it('should prefer the forFeature instance over the global forRoot instance for the same token', async () => {
@@ -106,8 +105,8 @@ describe('forRoot / forFeature resolution', () => {
     const controller = app.get(CatController);
     const service = app.get(CatService);
 
-    expect(controller.logger.prefix).to.equal('Cat');
-    expect(service.logger.prefix).to.equal('Cat');
+    expect(controller.logger.prefix).toBe('Cat');
+    expect(service.logger.prefix).toBe('Cat');
   });
 
   describe('when the global forRoot is imported before the feature module', () => {
@@ -122,9 +121,9 @@ describe('forRoot / forFeature resolution', () => {
       const controller = app.get(CatController);
       const service = app.get(CatService);
 
-      expect(controller.logger).to.equal(service.logger);
-      expect(controller.logger.prefix).to.equal('Cat');
-      expect(service.logger.prefix).to.equal('Cat');
+      expect(controller.logger).toBe(service.logger);
+      expect(controller.logger.prefix).toBe('Cat');
+      expect(service.logger.prefix).toBe('Cat');
     });
   });
 });

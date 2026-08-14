@@ -1,4 +1,4 @@
-import { BaseRpcContext } from './base-rpc.context';
+import { BaseRpcContext } from './base-rpc.context.js';
 
 type MqttContextArgs = [string, Record<string, any>];
 

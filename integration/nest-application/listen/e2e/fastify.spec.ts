@@ -1,8 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { FastifyAdapter } from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
-import { expect } from 'chai';
-import { AppModule } from '../src/app.module';
+import { AppModule } from '../src/app.module.js';
 
 describe('Listen (Fastify Application)', () => {
   let testModule: TestingModule;
@@ -21,26 +20,22 @@ describe('Listen (Fastify Application)', () => {
 
   it('should resolve with httpServer on success', async () => {
     const response = await app.listen(3000);
-    expect(response).to.eql(app.getHttpServer());
+    expect(response).toEqual(app.getHttpServer());
   });
 
   it('should reject if the port is not available', async () => {
     await app.listen(3000);
     const secondApp = testModule.createNestApplication(new FastifyAdapter());
-    try {
-      await secondApp.listen(3000);
-    } catch (error) {
-      expect(error.code).to.equal('EADDRINUSE');
-    }
+    await expect(secondApp.listen(3000)).rejects.toMatchObject({
+      code: 'EADDRINUSE',
+    });
 
     await secondApp.close();
   });
 
   it('should reject if there is an invalid host', async () => {
-    try {
-      await app.listen(3000, '1');
-    } catch (error) {
-      expect(error.code).to.equal('EADDRNOTAVAIL');
-    }
+    await expect(app.listen(3000, '1')).rejects.toMatchObject({
+      code: 'EADDRNOTAVAIL',
+    });
   });
 });

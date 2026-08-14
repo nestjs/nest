@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { OrderCreatedEvent } from '../events/order-created.event';
+import { OrderCreatedEvent } from '../events/order-created.event.js';
 
 @Injectable()
 export class OrderCreatedListener {

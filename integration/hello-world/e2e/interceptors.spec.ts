@@ -9,8 +9,8 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { of } from 'rxjs';
 import { map } from 'rxjs/operators';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 const RETURN_VALUE = 'test';
 

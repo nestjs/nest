@@ -1,22 +1,21 @@
-import { expect } from 'chai';
-import { TreeNode } from '../../../injector/topology-tree/tree-node';
+import { TreeNode } from '../../../injector/topology-tree/tree-node.js';
 
 describe('TreeNode', () => {
   describe('constructor', () => {
     it('should create a node with the given value', () => {
       const node = new TreeNode({ value: 'test', parent: null });
-      expect(node.value).to.equal('test');
+      expect(node.value).toBe('test');
     });
 
     it('should create a node with null parent', () => {
       const node = new TreeNode({ value: 'test', parent: null });
-      expect(node.children.size).to.equal(0);
+      expect(node.children.size).toBe(0);
     });
 
     it('should create a node with a parent', () => {
       const parent = new TreeNode({ value: 'parent', parent: null });
       const child = new TreeNode({ value: 'child', parent });
-      expect(child.value).to.equal('child');
+      expect(child.value).toBe('child');
     });
   });
 
@@ -27,8 +26,8 @@ describe('TreeNode', () => {
 
       parent.addChild(child);
 
-      expect(parent.children.has(child)).to.be.true;
-      expect(parent.children.size).to.equal(1);
+      expect(parent.children.has(child)).toBe(true);
+      expect(parent.children.size).toBe(1);
     });
 
     it('should add multiple children', () => {
@@ -39,7 +38,7 @@ describe('TreeNode', () => {
       parent.addChild(child1);
       parent.addChild(child2);
 
-      expect(parent.children.size).to.equal(2);
+      expect(parent.children.size).toBe(2);
     });
   });
 
@@ -51,8 +50,8 @@ describe('TreeNode', () => {
       parent.addChild(child);
       parent.removeChild(child);
 
-      expect(parent.children.has(child)).to.be.false;
-      expect(parent.children.size).to.equal(0);
+      expect(parent.children.has(child)).toBe(false);
+      expect(parent.children.size).toBe(0);
     });
 
     it('should do nothing when removing a non-existent child', () => {
@@ -61,7 +60,7 @@ describe('TreeNode', () => {
 
       parent.removeChild(child);
 
-      expect(parent.children.size).to.equal(0);
+      expect(parent.children.size).toBe(0);
     });
   });
 
@@ -74,8 +73,8 @@ describe('TreeNode', () => {
       oldParent.addChild(child);
       child.relink(newParent);
 
-      expect(oldParent.children.has(child)).to.be.false;
-      expect(newParent.children.has(child)).to.be.true;
+      expect(oldParent.children.has(child)).toBe(false);
+      expect(newParent.children.has(child)).toBe(true);
     });
 
     it('should work when node has no previous parent', () => {
@@ -84,20 +83,20 @@ describe('TreeNode', () => {
 
       child.relink(newParent);
 
-      expect(newParent.children.has(child)).to.be.true;
+      expect(newParent.children.has(child)).toBe(true);
     });
   });
 
   describe('getDepth', () => {
     it('should return 1 for a root node', () => {
       const root = new TreeNode({ value: 'root', parent: null });
-      expect(root.getDepth()).to.equal(1);
+      expect(root.getDepth()).toBe(1);
     });
 
     it('should return 2 for a child of root', () => {
       const root = new TreeNode({ value: 'root', parent: null });
       const child = new TreeNode({ value: 'child', parent: root });
-      expect(child.getDepth()).to.equal(2);
+      expect(child.getDepth()).toBe(2);
     });
 
     it('should return correct depth for deeply nested nodes', () => {
@@ -106,7 +105,7 @@ describe('TreeNode', () => {
       const level2 = new TreeNode({ value: 'level2', parent: level1 });
       const level3 = new TreeNode({ value: 'level3', parent: level2 });
 
-      expect(level3.getDepth()).to.equal(4);
+      expect(level3.getDepth()).toBe(4);
     });
 
     it('should return -1 when a cycle is detected', () => {
@@ -117,7 +116,7 @@ describe('TreeNode', () => {
       // Create cycle: A -> B -> C -> A
       nodeA.relink(nodeC);
 
-      expect(nodeA.getDepth()).to.equal(-1);
+      expect(nodeA.getDepth()).toBe(-1);
     });
   });
 
@@ -126,24 +125,24 @@ describe('TreeNode', () => {
       const root = new TreeNode({ value: 'root', parent: null });
       const child = new TreeNode({ value: 'child', parent: root });
 
-      expect(child.hasCycleWith('nonexistent')).to.be.false;
+      expect(child.hasCycleWith('nonexistent')).toBe(false);
     });
 
     it('should return true when the target value exists in the parent chain', () => {
       const root = new TreeNode({ value: 'root', parent: null });
       const child = new TreeNode({ value: 'child', parent: root });
 
-      expect(child.hasCycleWith('root')).to.be.true;
+      expect(child.hasCycleWith('root')).toBe(true);
     });
 
     it('should return true when checking against own value', () => {
       const node = new TreeNode({ value: 'self', parent: null });
-      expect(node.hasCycleWith('self')).to.be.true;
+      expect(node.hasCycleWith('self')).toBe(true);
     });
 
     it('should return false for root node with non-matching value', () => {
       const root = new TreeNode({ value: 'root', parent: null });
-      expect(root.hasCycleWith('other')).to.be.false;
+      expect(root.hasCycleWith('other')).toBe(false);
     });
 
     it('should return false when cycle exists but target not in chain', () => {
@@ -154,7 +153,7 @@ describe('TreeNode', () => {
       // Create cycle: A -> B -> C -> A
       nodeA.relink(nodeC);
 
-      expect(nodeA.hasCycleWith('nonexistent')).to.be.false;
+      expect(nodeA.hasCycleWith('nonexistent')).toBe(false);
     });
   });
 });

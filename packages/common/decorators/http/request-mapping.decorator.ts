@@ -1,5 +1,5 @@
-import { METHOD_METADATA, PATH_METADATA } from '../../constants';
-import { RequestMethod } from '../../enums/request-method.enum';
+import { METHOD_METADATA, PATH_METADATA } from '../../constants.js';
+import { RequestMethod } from '../../enums/request-method.enum.js';
 
 export interface RequestMappingMetadata {
   path?: string | string[];

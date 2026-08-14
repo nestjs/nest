@@ -1,7 +1,6 @@
-import { expect } from 'chai';
-import { HttpException } from '../../exceptions';
-import { ArgumentMetadata } from '../../interfaces';
-import { ParseEnumPipe } from '../../pipes/parse-enum.pipe';
+import { HttpException } from '../../exceptions/index.js';
+import { ArgumentMetadata } from '../../interfaces/index.js';
+import { ParseEnumPipe } from '../../pipes/parse-enum.pipe.js';
 
 class CustomTestError extends HttpException {
   constructor() {
@@ -23,7 +22,7 @@ describe('ParseEnumPipe', () => {
   describe('transform', () => {
     describe('when validation passes', () => {
       it('should return enum value', async () => {
-        expect(await target.transform('UP', {} as ArgumentMetadata)).to.equal(
+        expect(await target.transform('UP', {} as ArgumentMetadata)).toBe(
           Direction.Up,
         );
       });
@@ -34,14 +33,14 @@ describe('ParseEnumPipe', () => {
           undefined!,
           {} as ArgumentMetadata,
         );
-        expect(value).to.equal(undefined);
+        expect(value).toBe(undefined);
       });
     });
     describe('when validation fails', () => {
       it('should throw an error', async () => {
         return expect(
           target.transform('DOWN', {} as ArgumentMetadata),
-        ).to.be.rejectedWith(CustomTestError);
+        ).rejects.toThrow(CustomTestError);
       });
 
       it('should throw an error if enumType is wrong and optional is true', async () => {
@@ -51,7 +50,7 @@ describe('ParseEnumPipe', () => {
         });
         return expect(
           target.transform('DOWN', {} as ArgumentMetadata),
-        ).to.be.rejectedWith(CustomTestError);
+        ).rejects.toThrow(CustomTestError);
       });
     });
   });
@@ -60,7 +59,7 @@ describe('ParseEnumPipe', () => {
       try {
         new ParseEnumPipe(null);
       } catch (err) {
-        expect(err.message).to.equal(
+        expect(err.message).toBe(
           `"ParseEnumPipe" requires "enumType" argument specified (to validate input values).`,
         );
       }
@@ -84,13 +83,13 @@ describe('ParseEnumPipe', () => {
           Status.Active as any,
           {} as ArgumentMetadata,
         ),
-      ).to.equal(Status.Active);
+      ).toBe(Status.Active);
       expect(
         await numericTarget.transform(
           Status.Inactive as any,
           {} as ArgumentMetadata,
         ),
-      ).to.equal(Status.Inactive);
+      ).toBe(Status.Inactive);
     });
 
     it('should throw when a reverse-mapped key name is passed instead of the value', async () => {
@@ -98,7 +97,7 @@ describe('ParseEnumPipe', () => {
         await numericTarget.transform('Active' as any, {} as ArgumentMetadata);
         expect.fail('expected transform to throw');
       } catch (err) {
-        expect(err).to.be.instanceOf(HttpException);
+        expect(err).toBeInstanceOf(HttpException);
       }
     });
   });

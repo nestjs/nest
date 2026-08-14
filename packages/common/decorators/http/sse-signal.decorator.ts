@@ -1,5 +1,5 @@
-import { ExecutionContext } from '../../interfaces';
-import { createParamDecorator } from './create-route-param-metadata.decorator';
+import { ExecutionContext } from '../../interfaces/index.js';
+import { createParamDecorator } from './create-route-param-metadata.decorator.js';
 
 /**
  * Symbol used to carry the per-request SSE `AbortController` on the request object.

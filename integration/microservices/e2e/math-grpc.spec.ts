@@ -1,24 +1,23 @@
 import * as GRPC from '@grpc/grpc-js';
 import * as ProtoLoader from '@grpc/proto-loader';
 import { INestApplication } from '@nestjs/common';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import {
+  GrpcExceptionFilter,
+  MicroserviceOptions,
+  Transport,
+} from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
 import { fail } from 'assert';
-import { expect, use } from 'chai';
-import * as chaiAsPromised from 'chai-as-promised';
 import { join } from 'path';
-import * as sinon from 'sinon';
-import * as request from 'supertest';
-import { GrpcController } from '../src/grpc/grpc.controller';
-
-use(chaiAsPromised);
+import request from 'supertest';
+import { GrpcController } from '../src/grpc/grpc.controller.js';
 
 describe('GRPC transport', () => {
   let server;
   let app: INestApplication;
   let client: any;
 
-  before(async () => {
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       controllers: [GrpcController],
     }).compile();
@@ -26,23 +25,27 @@ describe('GRPC transport', () => {
     app = module.createNestApplication();
     server = app.getHttpAdapter().getInstance();
 
-    app.connectMicroservice<MicroserviceOptions>({
-      transport: Transport.GRPC,
-      options: {
-        package: ['math', 'math2'],
-        protoPath: [
-          join(__dirname, '../src/grpc/math.proto'),
-          join(__dirname, '../src/grpc/math2.proto'),
-        ],
+    app.useGlobalFilters(new GrpcExceptionFilter());
+    app.connectMicroservice<MicroserviceOptions>(
+      {
+        transport: Transport.GRPC,
+        options: {
+          package: ['math', 'math2'],
+          protoPath: [
+            join(import.meta.dirname, '../src/grpc/math.proto'),
+            join(import.meta.dirname, '../src/grpc/math2.proto'),
+          ],
+        },
       },
-    });
+      { inheritAppConfig: true },
+    );
 
     // Start gRPC microservice
     await app.startAllMicroservices();
     await app.init();
     // Load proto-buffers for test gRPC dispatch
     const proto = ProtoLoader.loadSync(
-      join(__dirname, '../src/grpc/math.proto'),
+      join(import.meta.dirname, '../src/grpc/math.proto'),
     ) as any;
     // Create Raw gRPC client object
     const protoGRPC = GRPC.loadPackageDefinition(proto) as any;
@@ -77,6 +80,22 @@ describe('GRPC transport', () => {
       .expect('true');
   });
 
+  it('GRPC maps GrpcException to gRPC status code', async () => {
+    const call = new Promise<void>((resolve, reject) => {
+      client.alreadyExists({}, (err: any) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+    });
+
+    await expect(call).rejects.toThrow(
+      '6 ALREADY_EXISTS: email already exists',
+    );
+  });
+
   it(`GRPC Sending and Receiving HTTP POST (multiple proto)`, async () => {
     await request(server)
       .post('/multi/sum')
@@ -93,7 +112,7 @@ describe('GRPC transport', () => {
     const callHandler = client.SumStream();
 
     callHandler.on('data', (msg: number) => {
-      expect(msg).to.eql({ result: 15 });
+      expect(msg).toEqual({ result: 15 });
       callHandler.cancel();
     });
 
@@ -115,7 +134,7 @@ describe('GRPC transport', () => {
     const callHandler = client.SumStreamPass();
 
     callHandler.on('data', (msg: number) => {
-      expect(msg).to.eql({ result: 15 });
+      expect(msg).toEqual({ result: 15 });
       callHandler.cancel();
     });
 
@@ -133,15 +152,13 @@ describe('GRPC transport', () => {
     });
   });
 
-  it(`GRPC with backpressure control`, async function () {
+  it(`GRPC with backpressure control`, async () => {
     // This test hit the gRPC server with 1000 messages, but the server
     // has to process large (> 1MB) messages, so it will definitely hit
     // issues where writing to the stream needs to be paused until a drain
     // event. Prior to this test, a bug existed where the server would
     // send the incorrect number of messages due to improper backpressure
     // handling that wrote messages more than once.
-    this.timeout(30000);
-
     const largeMessages = client.streamLargeMessages();
     // [0, 1, 2, ..., 999]
     const expectedIds = Array.from({ length: 1000 }, (_, n) => n);
@@ -151,16 +168,16 @@ describe('GRPC transport', () => {
       receivedIds.push(msg.id);
     });
 
-    expect(receivedIds).to.deep.equal(expectedIds);
-  });
+    expect(receivedIds).toEqual(expectedIds);
+  }, 30000);
 
   describe('streaming calls that error', () => {
     // We want to assert that the application does not crash when an error is encountered with an unhandledRejection
     // the best way to do that is to listen for the unhandledRejection event and fail the test if it is called
-    let processSpy: sinon.SinonSpy;
+    let processSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      processSpy = sinon.spy();
+      processSpy = vi.fn();
       process.on('unhandledRejection', processSpy);
     });
 
@@ -189,16 +206,16 @@ describe('GRPC transport', () => {
         });
       });
 
-      await expect(call).to.eventually.be.rejectedWith(
+      await expect(call).rejects.toThrow(
         '3 INVALID_ARGUMENT: dividing by 0 is not possible',
       );
 
       // if this fails the application has crashed
-      expect(processSpy.called).to.be.false;
+      expect(processSpy).not.toHaveBeenCalled();
     });
   });
 
-  after(async () => {
+  afterAll(async () => {
     await app.close();
   });
 });

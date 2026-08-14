@@ -1,19 +1,19 @@
 import { Module, Scope } from '@nestjs/common';
-import { AppV1Controller } from './app-v1.controller';
-import { AppV2Controller } from './app-v2.controller';
-import { CatsModule } from './cats/cats.module';
-import { ChatModule } from './chat/chat.module';
-import { HelloModule as CircularHelloModule } from './circular-hello/hello.module';
-import { HelloService } from './circular-hello/hello.service';
-import { InputModule } from './circular-modules/input.module';
-import { CoreModule } from './core/core.module';
-import { DatabaseModule } from './database/database.module';
-import { DogsModule } from './dogs/dogs.module';
-import { DurableModule } from './durable/durable.module';
-import { ExternalSvcModule } from './external-svc/external-svc.module';
-import { PropertiesModule } from './properties/properties.module';
-import { RequestChainModule } from './request-chain/request-chain.module';
-import { UsersModule } from './users/users.module';
+import { AppV1Controller } from './app-v1.controller.js';
+import { AppV2Controller } from './app-v2.controller.js';
+import { CatsModule } from './cats/cats.module.js';
+import { ChatModule } from './chat/chat.module.js';
+import { HelloModule as CircularHelloModule } from './circular-hello/hello.module.js';
+import { HelloService } from './circular-hello/hello.service.js';
+import { InputModule } from './circular-modules/input.module.js';
+import { CoreModule } from './core/core.module.js';
+import { DatabaseModule } from './database/database.module.js';
+import { DogsModule } from './dogs/dogs.module.js';
+import { DurableModule } from './durable/durable.module.js';
+import { ExternalSvcModule } from './external-svc/external-svc.module.js';
+import { PropertiesModule } from './properties/properties.module.js';
+import { RequestChainModule } from './request-chain/request-chain.module.js';
+import { UsersModule } from './users/users.module.js';
 
 class Meta {
   static COUNTER = 0;

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { HttpStatus } from '../../enums';
 import { HttpErrorByCode } from '../../utils/http-error-by-code.util';
 
@@ -32,14 +31,14 @@ describe('HttpErrorByCode', () => {
       HttpStatus.UNPROCESSABLE_ENTITY,
       HttpStatus.UNSUPPORTED_MEDIA_TYPE,
     ];
-    expect(entries.length).to.equal(expectedCodes.length);
+    expect(entries.length).toBe(expectedCodes.length);
   });
 
   it('should map every code to a class that extends HttpException', () => {
     for (const [, ExceptionClass] of entries) {
       const instance = new ExceptionClass();
-      expect(instance).to.have.property('getStatus');
-      expect(instance.getStatus()).to.be.a('number');
+      expect(instance).toHaveProperty('getStatus');
+      expect(typeof instance.getStatus()).toBe('number');
     }
   });
 
@@ -47,19 +46,19 @@ describe('HttpErrorByCode', () => {
     for (const [codeStr, ExceptionClass] of entries) {
       const code = Number(codeStr);
       const instance = new ExceptionClass();
-      expect(instance.getStatus()).to.equal(code);
+      expect(instance.getStatus()).toBe(code);
     }
   });
 
   it('should set the correct default message for MisdirectedException', () => {
     const instance = new (HttpErrorByCode[HttpStatus.MISDIRECTED] as any)();
-    expect(instance.message).to.equal('Misdirected');
+    expect(instance.message).toBe('Misdirected');
   });
 
   it('should set the correct default message for HttpVersionNotSupportedException', () => {
     const instance = new (HttpErrorByCode[
       HttpStatus.HTTP_VERSION_NOT_SUPPORTED
     ] as any)();
-    expect(instance.message).to.equal('HTTP Version Not Supported');
+    expect(instance.message).toBe('HTTP Version Not Supported');
   });
 });

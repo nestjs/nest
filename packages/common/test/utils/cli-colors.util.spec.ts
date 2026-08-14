@@ -1,50 +1,102 @@
-import { expect } from 'chai';
-import { clc, isColorAllowed, yellow } from '../../utils/cli-colors.util';
+import { clc, isColorAllowed, yellow } from '../../utils/cli-colors.util.js';
 
-describe('cli-colors', () => {
+describe('cli-colors.util', () => {
+  const originalEnv = process.env.NO_COLOR;
+
   afterEach(() => {
-    delete process.env.NO_COLOR;
+    if (originalEnv === undefined) {
+      delete process.env.NO_COLOR;
+    } else {
+      process.env.NO_COLOR = originalEnv;
+    }
   });
 
   describe('isColorAllowed', () => {
-    it('should return true by default', () => {
-      expect(isColorAllowed()).to.be.true;
+    it('should return true when NO_COLOR is not set', () => {
+      delete process.env.NO_COLOR;
+      expect(isColorAllowed()).toBe(true);
     });
 
     it('should return false when NO_COLOR is set', () => {
       process.env.NO_COLOR = '1';
-      expect(isColorAllowed()).to.be.false;
+      expect(isColorAllowed()).toBe(false);
+    });
+
+    it('should return true when NO_COLOR is an empty string', () => {
+      process.env.NO_COLOR = '';
+      expect(isColorAllowed()).toBe(true);
     });
   });
 
-  describe('clc', () => {
-    it('green should wrap text in ANSI green codes', () => {
-      expect(clc.green('text')).to.equal('\x1B[32mtext\x1B[39m');
+  describe('clc (color enabled)', () => {
+    beforeEach(() => {
+      delete process.env.NO_COLOR;
     });
 
-    it('bold should wrap text in ANSI bold codes', () => {
-      expect(clc.bold('text')).to.equal('\x1B[1mtext\x1B[0m');
+    it('should wrap text in bold ANSI codes', () => {
+      expect(clc.bold('hello')).toBe('\x1B[1mhello\x1B[0m');
     });
 
-    it('should return raw text for all methods when NO_COLOR is set', () => {
+    it('should wrap text in green ANSI codes', () => {
+      expect(clc.green('hello')).toBe('\x1B[32mhello\x1B[39m');
+    });
+
+    it('should wrap text in yellow ANSI codes', () => {
+      expect(clc.yellow('hello')).toBe('\x1B[33mhello\x1B[39m');
+    });
+
+    it('should wrap text in red ANSI codes', () => {
+      expect(clc.red('hello')).toBe('\x1B[31mhello\x1B[39m');
+    });
+
+    it('should wrap text in magentaBright ANSI codes', () => {
+      expect(clc.magentaBright('hello')).toBe('\x1B[95mhello\x1B[39m');
+    });
+
+    it('should wrap text in cyanBright ANSI codes', () => {
+      expect(clc.cyanBright('hello')).toBe('\x1B[96mhello\x1B[39m');
+    });
+  });
+
+  describe('clc (color disabled)', () => {
+    beforeEach(() => {
       process.env.NO_COLOR = '1';
-      const formatters = [
-        'bold',
-        'green',
-        'yellow',
-        'red',
-        'magentaBright',
-        'cyanBright',
-      ] as const;
-      formatters.forEach(key => {
-        expect(clc[key]('text')).to.equal('text');
-      });
+    });
+
+    it('should return plain text for bold', () => {
+      expect(clc.bold('hello')).toBe('hello');
+    });
+
+    it('should return plain text for green', () => {
+      expect(clc.green('hello')).toBe('hello');
+    });
+
+    it('should return plain text for yellow', () => {
+      expect(clc.yellow('hello')).toBe('hello');
+    });
+
+    it('should return plain text for red', () => {
+      expect(clc.red('hello')).toBe('hello');
+    });
+
+    it('should return plain text for magentaBright', () => {
+      expect(clc.magentaBright('hello')).toBe('hello');
+    });
+
+    it('should return plain text for cyanBright', () => {
+      expect(clc.cyanBright('hello')).toBe('hello');
     });
   });
 
-  describe('yellow', () => {
-    it('should wrap text in extended ANSI yellow codes', () => {
-      expect(yellow('text')).to.equal('\x1B[38;5;3mtext\x1B[39m');
+  describe('yellow (standalone)', () => {
+    it('should use 38;5;3 ANSI code when color is allowed', () => {
+      delete process.env.NO_COLOR;
+      expect(yellow('hello')).toBe('\x1B[38;5;3mhello\x1B[39m');
+    });
+
+    it('should return plain text when color is disabled', () => {
+      process.env.NO_COLOR = '1';
+      expect(yellow('hello')).toBe('hello');
     });
   });
 });

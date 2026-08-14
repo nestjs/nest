@@ -1,12 +1,13 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { MetadataScanner } from '../../core/metadata-scanner';
-import { CLIENT_CONFIGURATION_METADATA, CLIENT_METADATA } from '../constants';
-import { Client } from '../decorators/client.decorator';
-import { EventPattern } from '../decorators/event-pattern.decorator';
-import { MessagePattern } from '../decorators/message-pattern.decorator';
-import { Transport } from '../enums/transport.enum';
-import { ListenerMetadataExplorer } from '../listener-metadata-explorer';
+import { MetadataScanner } from '../../core/metadata-scanner.js';
+import {
+  CLIENT_CONFIGURATION_METADATA,
+  CLIENT_METADATA,
+} from '../constants.js';
+import { Client } from '../decorators/client.decorator.js';
+import { EventPattern } from '../decorators/event-pattern.decorator.js';
+import { MessagePattern } from '../decorators/message-pattern.decorator.js';
+import { Transport } from '../enums/transport.enum.js';
+import { ListenerMetadataExplorer } from '../listener-metadata-explorer.js';
 
 describe('ListenerMetadataExplorer', () => {
   const msgPattern = { pattern: 'testMsg' };
@@ -53,16 +54,17 @@ describe('ListenerMetadataExplorer', () => {
     instance = new ListenerMetadataExplorer(scanner);
   });
   describe('explore', () => {
-    let getAllMethodNames: sinon.SinonSpy;
+    let getAllMethodNames: ReturnType<typeof vi.fn>;
     beforeEach(() => {
-      getAllMethodNames = sinon.spy(scanner, 'getAllMethodNames');
+      getAllMethodNames = vi.spyOn(scanner, 'getAllMethodNames');
     });
     it(`should call "scanFromPrototype" with expected arguments`, () => {
       const obj = new Test();
       instance.explore(obj);
 
-      const { args } = getAllMethodNames.getCall(0);
-      expect(args[0]).to.be.eql(Object.getPrototypeOf(obj));
+      expect(getAllMethodNames).toHaveBeenCalledWith(
+        Object.getPrototypeOf(obj),
+      );
     });
   });
   describe('exploreMethodMetadata', () => {
@@ -76,7 +78,7 @@ describe('ListenerMetadataExplorer', () => {
         Object.getPrototypeOf(test),
         'noPattern',
       );
-      expect(metadata).to.eq(undefined);
+      expect(metadata).toBeUndefined();
     });
 
     describe('@MessagePattern', () => {
@@ -86,16 +88,18 @@ describe('ListenerMetadataExplorer', () => {
           Object.getPrototypeOf(test),
           'testMessage',
         )!;
-        expect(metadata).to.have.keys([
-          'isEventHandler',
-          'methodKey',
-          'targetCallback',
-          'patterns',
-          'transport',
-          'extras',
-        ]);
-        expect(metadata.patterns.length).to.eql(1);
-        expect(metadata.patterns[0]).to.eql(msgPattern);
+        expect(Object.keys(metadata)).toEqual(
+          expect.arrayContaining([
+            'isEventHandler',
+            'methodKey',
+            'targetCallback',
+            'patterns',
+            'transport',
+            'extras',
+          ]),
+        );
+        expect(metadata.patterns.length).toEqual(1);
+        expect(metadata.patterns[0]).toEqual(msgPattern);
       });
       it(`should return multiple patterns when more than one is declared`, () => {
         const metadata = instance.exploreMethodMetadata(
@@ -103,17 +107,19 @@ describe('ListenerMetadataExplorer', () => {
           Object.getPrototypeOf(test),
           'testMultipleMessage',
         )!;
-        expect(metadata).to.have.keys([
-          'isEventHandler',
-          'methodKey',
-          'targetCallback',
-          'patterns',
-          'transport',
-          'extras',
-        ]);
-        expect(metadata.patterns.length).to.eql(2);
-        expect(metadata.patterns[0]).to.eql(firstMultipleMsgPattern);
-        expect(metadata.patterns[1]).to.eql(secondMultipleMsgPattern);
+        expect(Object.keys(metadata)).toEqual(
+          expect.arrayContaining([
+            'isEventHandler',
+            'methodKey',
+            'targetCallback',
+            'patterns',
+            'transport',
+            'extras',
+          ]),
+        );
+        expect(metadata.patterns.length).toEqual(2);
+        expect(metadata.patterns[0]).toEqual(firstMultipleMsgPattern);
+        expect(metadata.patterns[1]).toEqual(secondMultipleMsgPattern);
       });
     });
 
@@ -124,16 +130,18 @@ describe('ListenerMetadataExplorer', () => {
           Object.getPrototypeOf(test),
           'testEvent',
         )!;
-        expect(metadata).to.have.keys([
-          'isEventHandler',
-          'methodKey',
-          'targetCallback',
-          'patterns',
-          'transport',
-          'extras',
-        ]);
-        expect(metadata.patterns.length).to.eql(1);
-        expect(metadata.patterns[0]).to.eql(evtPattern);
+        expect(Object.keys(metadata)).toEqual(
+          expect.arrayContaining([
+            'isEventHandler',
+            'methodKey',
+            'targetCallback',
+            'patterns',
+            'transport',
+            'extras',
+          ]),
+        );
+        expect(metadata.patterns.length).toEqual(1);
+        expect(metadata.patterns[0]).toEqual(evtPattern);
       });
       it(`should return multiple patterns when more than one is declared`, () => {
         const metadata = instance.exploreMethodMetadata(
@@ -141,17 +149,19 @@ describe('ListenerMetadataExplorer', () => {
           Object.getPrototypeOf(test),
           'testMultipleEvent',
         )!;
-        expect(metadata).to.have.keys([
-          'isEventHandler',
-          'methodKey',
-          'targetCallback',
-          'patterns',
-          'transport',
-          'extras',
-        ]);
-        expect(metadata.patterns.length).to.eql(2);
-        expect(metadata.patterns[0]).to.eql(firstMultipleEvtPattern);
-        expect(metadata.patterns[1]).to.eql(secondMultipleEvtPattern);
+        expect(Object.keys(metadata)).toEqual(
+          expect.arrayContaining([
+            'isEventHandler',
+            'methodKey',
+            'targetCallback',
+            'patterns',
+            'transport',
+            'extras',
+          ]),
+        );
+        expect(metadata.patterns.length).toEqual(2);
+        expect(metadata.patterns[0]).toEqual(firstMultipleEvtPattern);
+        expect(metadata.patterns[1]).toEqual(secondMultipleEvtPattern);
       });
     });
   });
@@ -160,12 +170,12 @@ describe('ListenerMetadataExplorer', () => {
       const obj = new Test();
       const hooks = [...instance.scanForClientHooks(obj)];
 
-      expect(hooks).to.have.length(2);
-      expect(hooks[0]).to.deep.eq({
+      expect(hooks).toHaveLength(2);
+      expect(hooks[0]).toEqual({
         property: 'client',
         metadata: clientMetadata,
       });
-      expect(hooks[1]).to.deep.eq({
+      expect(hooks[1]).toEqual({
         property: 'redisClient',
         metadata: clientSecMetadata,
       });

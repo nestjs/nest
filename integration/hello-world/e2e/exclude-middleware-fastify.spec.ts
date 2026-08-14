@@ -12,8 +12,8 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 const RETURN_VALUE = 'test';
 const MIDDLEWARE_VALUE = 'middleware';

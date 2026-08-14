@@ -1,24 +1,30 @@
 import { iterate } from 'iterare';
 import { types } from 'util';
-import { Optional } from '../decorators';
-import { Injectable } from '../decorators/core';
-import { HttpStatus } from '../enums/http-status.enum';
-import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface';
-import { TransformerPackage } from '../interfaces/external/transformer-package.interface';
-import { ValidationError } from '../interfaces/external/validation-error.interface';
-import { ValidatorOptions } from '../interfaces/external/validator-options.interface';
-import { ValidatorPackage } from '../interfaces/external/validator-package.interface';
+import { Injectable } from '../decorators/core/index.js';
+import { Optional } from '../decorators/index.js';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import type { HttpException } from '../exceptions/http.exception.js';
+import { ClassTransformOptions } from '../interfaces/external/class-transform-options.interface.js';
+import { TransformerPackage } from '../interfaces/external/transformer-package.interface.js';
+import { ValidationError } from '../interfaces/external/validation-error.interface.js';
+import { ValidatorOptions } from '../interfaces/external/validator-options.interface.js';
+import { ValidatorPackage } from '../interfaces/external/validator-package.interface.js';
 import {
   ArgumentMetadata,
   PipeTransform,
-} from '../interfaces/features/pipe-transform.interface';
-import { Type } from '../interfaces/type.interface';
+} from '../interfaces/features/pipe-transform.interface.js';
+import { Type } from '../interfaces/type.interface.js';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
-} from '../utils/http-error-by-code.util';
-import { loadPackage } from '../utils/load-package.util';
-import { isNil, isUndefined } from '../utils/shared.utils';
+} from '../utils/http-error-by-code.util.js';
+import { loadPackage } from '../utils/load-package.util.js';
+import { isNil, isUndefined } from '../utils/shared.utils.js';
+
+/**
+ * @publicApi
+ */
+export type ValidationErrorFormat = 'list' | 'grouped';
 
 /**
  * @publicApi
@@ -33,10 +39,22 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   expectedType?: Type<any>;
   validatorPackage?: ValidatorPackage;
   transformerPackage?: TransformerPackage;
+  /**
+   * Specifies the format of validation error messages.
+   * - 'list': Returns an array of error message strings (default). The response message is `string[]`.
+   * - 'grouped': Returns an object with property paths as keys and arrays of unmodified error messages as values.
+   *   The response message is `Record<string, string[]>`. Custom messages defined in validation decorators
+   *   (e.g., `@IsNotEmpty({ message: 'Name is required' })`) are preserved without parent path prefixes.
+   *
+   * @remarks
+   * When using 'grouped', the `message` property in the error response changes from `string[]` to `Record<string, string[]>`.
+   * If you have exception filters or interceptors that assume `message` is always an array, they will need to be updated.
+   */
+  errorFormat?: ValidationErrorFormat;
 }
 
-let classValidator: ValidatorPackage = {} as any;
-let classTransformer: TransformerPackage = {} as any;
+let classValidator: any = {} as any;
+let classTransformer: any = {} as any;
 
 /**
  * Built-in JavaScript types that should be excluded from prototype stripping
@@ -50,7 +68,7 @@ const BUILT_IN_TYPES = [Date, RegExp, Error, Map, Set, WeakMap, WeakSet];
  * @publicApi
  */
 @Injectable()
-export class ValidationPipe implements PipeTransform<any> {
+export class ValidationPipe implements PipeTransform {
   protected isTransformEnabled: boolean;
   protected isDetailedOutputDisabled?: boolean;
   protected validatorOptions: ValidatorOptions;
@@ -59,6 +77,7 @@ export class ValidationPipe implements PipeTransform<any> {
   protected expectedType: Type<any> | undefined;
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
+  protected errorFormat: ValidationErrorFormat;
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
@@ -72,6 +91,7 @@ export class ValidationPipe implements PipeTransform<any> {
       validatorPackage,
       transformerPackage,
       validateCustomDecorators,
+      errorFormat,
       ...validatorOptions
     } = options;
 
@@ -84,6 +104,7 @@ export class ValidationPipe implements PipeTransform<any> {
     this.validateCustomDecorators = validateCustomDecorators || false;
     this.errorHttpStatusCode = errorHttpStatusCode || HttpStatus.BAD_REQUEST;
     this.expectedType = expectedType;
+    this.errorFormat = errorFormat || 'list';
     this.exceptionFactory = exceptionFactory || this.createExceptionFactory();
 
     classValidator = this.loadValidator(validatorPackage);
@@ -92,27 +113,31 @@ export class ValidationPipe implements PipeTransform<any> {
 
   protected loadValidator(
     validatorPackage?: ValidatorPackage,
-  ): ValidatorPackage {
+  ): ValidatorPackage | Promise<ValidatorPackage> {
     return (
       validatorPackage ??
-      loadPackage('class-validator', 'ValidationPipe', () =>
-        require('class-validator'),
+      loadPackage(
+        'class-validator',
+        'ValidationPipe',
+        () => import('class-validator'),
       )
     );
   }
 
   protected loadTransformer(
     transformerPackage?: TransformerPackage,
-  ): TransformerPackage {
+  ): TransformerPackage | Promise<TransformerPackage> {
     return (
       transformerPackage ??
-      loadPackage('class-transformer', 'ValidationPipe', () =>
-        require('class-transformer'),
+      loadPackage(
+        'class-transformer',
+        'ValidationPipe',
+        () => import('class-transformer'),
       )
     );
   }
 
-  public async transform(value: any, metadata: ArgumentMetadata) {
+  public async transform(value: unknown, metadata: ArgumentMetadata) {
     if (this.expectedType) {
       metadata = { ...metadata, metatype: this.expectedType };
     }
@@ -123,6 +148,10 @@ export class ValidationPipe implements PipeTransform<any> {
         ? this.transformPrimitive(value, metadata)
         : value;
     }
+
+    classValidator = (await classValidator) as ValidatorPackage;
+    classTransformer = (await classTransformer) as TransformerPackage;
+
     const originalValue = value;
     value = this.toEmptyIfNil(value, metatype);
 
@@ -185,6 +214,20 @@ export class ValidationPipe implements PipeTransform<any> {
       if (this.isDetailedOutputDisabled) {
         return new HttpErrorByCode[this.errorHttpStatusCode]();
       }
+      if (this.errorFormat === 'grouped') {
+        const errors = this.groupValidationErrors(validationErrors);
+        // Custom (object) bodies are returned verbatim by
+        // `HttpException.createBody`, so add the standard envelope fields
+        // explicitly to match the shape of the "list" format.
+        const { message: error, statusCode } = (
+          new HttpErrorByCode[this.errorHttpStatusCode]() as HttpException
+        ).getResponse() as { message: string; statusCode: number };
+        return new HttpErrorByCode[this.errorHttpStatusCode]({
+          message: errors,
+          error,
+          statusCode,
+        });
+      }
       const errors = this.flattenValidationErrors(validationErrors);
       return new HttpErrorByCode[this.errorHttpStatusCode](errors);
     };
@@ -199,7 +242,7 @@ export class ValidationPipe implements PipeTransform<any> {
     return !types.some(t => metatype === t) && !isNil(metatype);
   }
 
-  protected transformPrimitive(value: any, metadata: ArgumentMetadata) {
+  protected transformPrimitive(value: unknown, metadata: ArgumentMetadata) {
     if (!metadata.data) {
       // leave top-level query/param objects unmodified
       return value;
@@ -225,7 +268,7 @@ export class ValidationPipe implements PipeTransform<any> {
         // they were not defined
         return undefined;
       }
-      return +value;
+      return +(value as any);
     }
     if (metatype === String && !isUndefined(value)) {
       return String(value);
@@ -234,7 +277,7 @@ export class ValidationPipe implements PipeTransform<any> {
   }
 
   protected toEmptyIfNil<T = any, R = T>(
-    value: T,
+    value: unknown,
     metatype: Type<unknown> | object,
   ): R | object | string {
     if (!isNil(value)) {
@@ -310,6 +353,25 @@ export class ValidationPipe implements PipeTransform<any> {
       .map(item => Object.values(item.constraints!))
       .flatten()
       .toArray();
+  }
+
+  protected groupValidationErrors(
+    validationErrors: ValidationError[],
+    parentPath?: string,
+  ): Record<string, string[]> {
+    const result: Record<string, string[]> = {};
+    for (const error of validationErrors) {
+      const path = parentPath
+        ? `${parentPath}.${error.property}`
+        : error.property;
+      if (error.constraints) {
+        result[path] = Object.values(error.constraints);
+      }
+      if (error.children && error.children.length) {
+        Object.assign(result, this.groupValidationErrors(error.children, path));
+      }
+    }
+    return result;
   }
 
   protected mapChildrenToValidationErrors(

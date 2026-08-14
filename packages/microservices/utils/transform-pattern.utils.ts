@@ -1,9 +1,5 @@
-import {
-  isNumber,
-  isObject,
-  isString,
-} from '@nestjs/common/utils/shared.utils';
-import { MsPattern } from '../interfaces';
+import { MsPattern } from '../interfaces/index.js';
+import { isObject, isString, isNumber } from '@nestjs/common/internal';
 
 const DEFAULT_MAX_DEPTH = 5;
 const DEFAULT_MAX_KEYS = 20;

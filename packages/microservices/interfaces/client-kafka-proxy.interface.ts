@@ -1,10 +1,10 @@
-import { ClientProxy } from '../client';
-import { KafkaStatus } from '../events';
+import { ClientProxy } from '../client/index.js';
+import { KafkaStatus } from '../events/index.js';
 import {
   Consumer,
   Producer,
   TopicPartitionOffsetAndMetadata,
-} from '../external/kafka.interface';
+} from '../external/kafka.interface.js';
 
 export interface ClientKafkaProxy extends Omit<
   ClientProxy<never, KafkaStatus>,

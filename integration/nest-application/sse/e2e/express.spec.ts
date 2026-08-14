@@ -1,9 +1,8 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { EventSource } from 'eventsource';
-import { AppModule } from '../src/app.module';
+import { AppModule } from '../src/app.module.js';
 import {
   fetchInterceptorDelayedSseStats,
   fetchPromiseDelayedSseStats,
@@ -19,7 +18,7 @@ import {
   waitForSignalDelayedSseRequestStart,
   waitForSignalDelayedSseResourceCleanup,
   waitForSignalStreamingSseTeardown,
-} from './utils';
+} from './utils.js';
 
 describe('Sse (Express Application)', () => {
   let app: NestExpressApplication;
@@ -58,14 +57,15 @@ describe('Sse (Express Application)', () => {
       await app.close();
     });
 
-    it('receives events from server', done => {
-      eventSource.addEventListener('message', event => {
-        expect(JSON.parse(event.data)).to.eql({
-          hello: 'world',
+    it('receives events from server', () =>
+      new Promise<void>(done => {
+        eventSource.addEventListener('message', event => {
+          expect(JSON.parse(event.data)).toEqual({
+            hello: 'world',
+          });
+          done();
         });
-        done();
-      });
-    });
+      }));
 
     it('returns a validation error status before opening the SSE stream', async () => {
       const response = await fetch(
@@ -77,8 +77,8 @@ describe('Sse (Express Application)', () => {
         },
       );
 
-      expect(response.status).to.equal(400);
-      expect(response.headers.get('content-type')).to.contain(
+      expect(response.status).toBe(400);
+      expect(response.headers.get('content-type')).toContain(
         'application/json',
       );
     });
@@ -116,14 +116,15 @@ describe('Sse (Express Application)', () => {
       eventSource.close();
     });
 
-    it('receives events from server', done => {
-      eventSource.addEventListener('message', event => {
-        expect(JSON.parse(event.data)).to.eql({
-          hello: 'world',
+    it('receives events from server', () =>
+      new Promise<void>(done => {
+        eventSource.addEventListener('message', event => {
+          expect(JSON.parse(event.data)).toEqual({
+            hello: 'world',
+          });
+          done();
         });
-        done();
-      });
-    });
+      }));
 
     it('returns a validation error status before opening the SSE stream', async () => {
       const response = await fetch(
@@ -135,8 +136,8 @@ describe('Sse (Express Application)', () => {
         },
       );
 
-      expect(response.status).to.equal(400);
-      expect(response.headers.get('content-type')).to.contain(
+      expect(response.status).toBe(400);
+      expect(response.headers.get('content-type')).toContain(
         'application/json',
       );
     });
@@ -171,7 +172,7 @@ describe('Sse (Express Application)', () => {
         .split('\n')
         .filter(line => line.startsWith('data: '));
 
-      expect(dataLines).to.have.lengthOf(n);
+      expect(dataLines).toHaveLength(n);
     });
 
     it('should stream events from POST SSE routes with a request body', async () => {
@@ -186,11 +187,11 @@ describe('Sse (Express Application)', () => {
         body: JSON.stringify({ content: 'chunk-0' }),
       });
 
-      expect(response.status).to.equal(201);
-      expect(response.headers.get('content-type')).to.contain(
+      expect(response.status).toBe(201);
+      expect(response.headers.get('content-type')).toContain(
         'text/event-stream',
       );
-      expect(await response.text()).to.contain('data: {"content":"chunk-0"}');
+      expect(await response.text()).toContain('data: {"content":"chunk-0"}');
     });
   });
 
@@ -225,22 +226,22 @@ describe('Sse (Express Application)', () => {
       abortController.abort();
 
       await responsePromise.catch(error => {
-        expect(error.name).to.equal('AbortError');
+        expect(error.name).toBe('AbortError');
       });
 
       await waitForPromiseDelayedSseClose(url);
 
-      expect(await releasePromiseDelayedSse(url)).to.equal(1);
+      expect(await releasePromiseDelayedSse(url)).toBe(1);
 
       // Allow the released promise to resolve and the deferred path to run.
       await sleep(0);
 
       const stats = await fetchPromiseDelayedSseStats(url);
-      expect(stats.closeEventsObserved).to.equal(1);
-      expect(stats.requestsStarted).to.equal(1);
-      expect(stats.runningStreams).to.equal(0);
-      expect(stats.subscriptionsStarted).to.equal(0);
-      expect(stats.teardownsObserved).to.equal(0);
+      expect(stats.closeEventsObserved).toBe(1);
+      expect(stats.requestsStarted).toBe(1);
+      expect(stats.runningStreams).toBe(0);
+      expect(stats.subscriptionsStarted).toBe(0);
+      expect(stats.teardownsObserved).toBe(0);
     });
 
     it('should not subscribe the producer if the POST SSE client disconnects before the promise resolves', async () => {
@@ -260,22 +261,22 @@ describe('Sse (Express Application)', () => {
       abortController.abort();
 
       await responsePromise.catch(error => {
-        expect(error.name).to.equal('AbortError');
+        expect(error.name).toBe('AbortError');
       });
 
       await waitForPromiseDelayedSseClose(url);
 
-      expect(await releasePromiseDelayedSse(url)).to.equal(1);
+      expect(await releasePromiseDelayedSse(url)).toBe(1);
 
       // Allow the released promise to resolve and the deferred path to run.
       await sleep(0);
 
       const stats = await fetchPromiseDelayedSseStats(url);
-      expect(stats.closeEventsObserved).to.equal(1);
-      expect(stats.requestsStarted).to.equal(1);
-      expect(stats.runningStreams).to.equal(0);
-      expect(stats.subscriptionsStarted).to.equal(0);
-      expect(stats.teardownsObserved).to.equal(0);
+      expect(stats.closeEventsObserved).toBe(1);
+      expect(stats.requestsStarted).toBe(1);
+      expect(stats.runningStreams).toBe(0);
+      expect(stats.subscriptionsStarted).toBe(0);
+      expect(stats.teardownsObserved).toBe(0);
     });
   });
 
@@ -310,22 +311,22 @@ describe('Sse (Express Application)', () => {
       abortController.abort();
 
       await responsePromise.catch(error => {
-        expect(error.name).to.equal('AbortError');
+        expect(error.name).toBe('AbortError');
       });
 
       await waitForInterceptorDelayedSseClose(url);
 
-      expect(await releaseInterceptorDelayedSse(url)).to.equal(1);
+      expect(await releaseInterceptorDelayedSse(url)).toBe(1);
 
       // Allow the released promise to resolve and the deferred path to run.
       await sleep(0);
 
       const stats = await fetchInterceptorDelayedSseStats(url);
-      expect(stats.closeEventsObserved).to.equal(1);
-      expect(stats.requestsStarted).to.equal(1);
-      expect(stats.runningStreams).to.equal(0);
-      expect(stats.subscriptionsStarted).to.equal(0);
-      expect(stats.teardownsObserved).to.equal(0);
+      expect(stats.closeEventsObserved).toBe(1);
+      expect(stats.requestsStarted).toBe(1);
+      expect(stats.runningStreams).toBe(0);
+      expect(stats.subscriptionsStarted).toBe(0);
+      expect(stats.teardownsObserved).toBe(0);
     });
 
     it('should not subscribe the producer if the POST SSE client disconnects before the promise resolves', async () => {
@@ -348,22 +349,22 @@ describe('Sse (Express Application)', () => {
       abortController.abort();
 
       await responsePromise.catch(error => {
-        expect(error.name).to.equal('AbortError');
+        expect(error.name).toBe('AbortError');
       });
 
       await waitForInterceptorDelayedSseClose(url);
 
-      expect(await releaseInterceptorDelayedSse(url)).to.equal(1);
+      expect(await releaseInterceptorDelayedSse(url)).toBe(1);
 
       // Allow the released promise to resolve and the deferred path to run.
       await sleep(0);
 
       const stats = await fetchInterceptorDelayedSseStats(url);
-      expect(stats.closeEventsObserved).to.equal(1);
-      expect(stats.requestsStarted).to.equal(1);
-      expect(stats.runningStreams).to.equal(0);
-      expect(stats.subscriptionsStarted).to.equal(0);
-      expect(stats.teardownsObserved).to.equal(0);
+      expect(stats.closeEventsObserved).toBe(1);
+      expect(stats.requestsStarted).toBe(1);
+      expect(stats.runningStreams).toBe(0);
+      expect(stats.subscriptionsStarted).toBe(0);
+      expect(stats.teardownsObserved).toBe(0);
     });
 
     it('should clean up setup-phase resources via AbortSignal when the client disconnects mid-await', async () => {
@@ -380,7 +381,7 @@ describe('Sse (Express Application)', () => {
       abortController.abort();
 
       await responsePromise.catch(error => {
-        expect(error.name).to.equal('AbortError');
+        expect(error.name).toBe('AbortError');
       });
 
       // The handler's 80ms setup completes after the disconnect; it should
@@ -389,10 +390,10 @@ describe('Sse (Express Application)', () => {
       await waitForSignalDelayedSseResourceCleanup(url);
 
       const stats = await fetchSignalDelayedSseStats(url);
-      expect(stats.requestsStarted).to.equal(1);
-      expect(stats.resourcesAllocated).to.equal(1);
-      expect(stats.resourcesCleaned).to.equal(1);
-      expect(stats.subscriptionsStarted).to.equal(0);
+      expect(stats.requestsStarted).toBe(1);
+      expect(stats.resourcesAllocated).toBe(1);
+      expect(stats.resourcesCleaned).toBe(1);
+      expect(stats.subscriptionsStarted).toBe(0);
     });
   });
   describe('SseSignal lifetime', () => {
@@ -422,15 +423,15 @@ describe('Sse (Express Application)', () => {
       });
       const body = await response.text();
 
-      expect(body).to.contain('data: {"chunk":0}');
-      expect(body).to.contain('data: {"chunk":1}');
+      expect(body).toContain('data: {"chunk":0}');
+      expect(body).toContain('data: {"chunk":1}');
 
       // The client never disconnected: the signal is a request-lifetime token,
       // so it aborts because the stream itself ended.
       const stats = await waitForSignalCompletingSseAbort(url);
-      expect(stats.subscriptionsStarted).to.equal(1);
-      expect(stats.teardownsObserved).to.equal(1);
-      expect(stats.abortsObserved).to.equal(1);
+      expect(stats.subscriptionsStarted).toBe(1);
+      expect(stats.teardownsObserved).toBe(1);
+      expect(stats.abortsObserved).toBe(1);
     });
 
     it('aborts the signal when the client disconnects after the producer is subscribed', async () => {
@@ -462,15 +463,15 @@ describe('Sse (Express Application)', () => {
         received += decoder.decode(value, { stream: true });
       }
 
-      expect(received).to.contain('data:');
+      expect(received).toContain('data:');
 
       abortController.abort();
       await reader.cancel().catch(() => undefined);
 
       const stats = await waitForSignalStreamingSseTeardown(url);
-      expect(stats.subscriptionsStarted).to.equal(1);
-      expect(stats.abortsObserved).to.equal(1);
-      expect(stats.teardownsObserved).to.equal(1);
+      expect(stats.subscriptionsStarted).toBe(1);
+      expect(stats.abortsObserved).toBe(1);
+      expect(stats.teardownsObserved).toBe(1);
     });
   });
 });

@@ -12,7 +12,6 @@ import {
   Transport,
 } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import * as net from 'net';
 
 @Controller()
@@ -80,9 +79,7 @@ describe('TCP pipelined frames – stack-overflow regression (CVE fix)', () => {
     await app.close();
   });
 
-  it('server remains responsive after receiving a 12_000-frame pipelined burst', async function () {
-    // NestJS bootstrap + processing 12_000 frames needs more than the 2 s default.
-    this.timeout(15_000);
+  it('server remains responsive after receiving a 12_000-frame pipelined burst', async () => {
     /**
      * Each `2#{}` frame is a valid JsonSocket event frame (payload `{}`, length
      * 2 characters). The server treats it as a fire-and-forget event (no `id`
@@ -102,7 +99,7 @@ describe('TCP pipelined frames – stack-overflow regression (CVE fix)', () => {
       id: 'integration-test-ping',
     });
 
-    expect(pingFrame).to.equal(`${pingPayload.length}#${pingPayload}`);
+    expect(pingFrame).toBe(`${pingPayload.length}#${pingPayload}`);
 
     await new Promise<void>((resolve, reject) => {
       let rawBuf = '';
@@ -140,11 +137,8 @@ describe('TCP pipelined frames – stack-overflow regression (CVE fix)', () => {
         if (pong) {
           clearTimeout(timeout);
           try {
-            expect(pong['response']).to.equal(
-              'pong',
-              'Expected pong response payload',
-            );
-            expect(pong['err']).to.be.undefined;
+            expect(pong['response']).toBe('pong');
+            expect(pong['err']).toBeUndefined();
             done();
           } catch (e) {
             done(e as Error);
@@ -161,5 +155,5 @@ describe('TCP pipelined frames – stack-overflow regression (CVE fix)', () => {
         socket.write(combined);
       });
     });
-  });
+  }, 15_000);
 });

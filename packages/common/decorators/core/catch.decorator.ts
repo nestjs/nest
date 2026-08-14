@@ -1,5 +1,5 @@
-import { CATCH_WATERMARK, FILTER_CATCH_EXCEPTIONS } from '../../constants';
-import { Type, Abstract } from '../../interfaces';
+import { CATCH_WATERMARK, FILTER_CATCH_EXCEPTIONS } from '../../constants.js';
+import { Type, Abstract } from '../../interfaces/index.js';
 
 /**
  * Decorator that marks a class as a Nest exception filter. An exception filter

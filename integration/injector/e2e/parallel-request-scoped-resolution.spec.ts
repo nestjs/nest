@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { REQUEST, createContextId } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
-import { expect } from 'chai';
 
 describe('Parallel request-scoped resolution', () => {
   const ASYNC_REQUEST_SCOPED = 'ASYNC_REQUEST_SCOPED';
@@ -153,8 +152,7 @@ describe('Parallel request-scoped resolution', () => {
     }).compile();
   });
 
-  it('should isolate request-scoped factory providers across overlapping context resolutions', async function () {
-    this.timeout(20000);
+  it('should isolate request-scoped factory providers across overlapping context resolutions', async () => {
     const contexts = prepareContexts(testingModule, OVERLAP_REQUEST_COUNT);
 
     const payloads = await Promise.all(
@@ -166,14 +164,13 @@ describe('Parallel request-scoped resolution', () => {
       ),
     );
 
-    expect(payloads).to.deep.equal(
+    expect(payloads).toEqual(
       contexts.map(({ request }) => ({ requestId: request.requestId })),
     );
-    expect(new Set(payloads).size).to.equal(contexts.length);
-  });
+    expect(new Set(payloads).size).toBe(contexts.length);
+  }, 20000);
 
-  it('should bubble singleton providers to request scope during overlapping context resolutions', async function () {
-    this.timeout(20000);
+  it('should bubble singleton providers to request scope during overlapping context resolutions', async () => {
     const contexts = prepareContexts(testingModule, OVERLAP_REQUEST_COUNT);
 
     const providers = await Promise.all(
@@ -182,17 +179,16 @@ describe('Parallel request-scoped resolution', () => {
       ),
     );
 
-    expect(new Set(providers).size).to.equal(contexts.length);
-    expect(providers.map(provider => provider.payload)).to.deep.equal(
+    expect(new Set(providers).size).toBe(contexts.length);
+    expect(providers.map(provider => provider.payload)).toEqual(
       contexts.map(({ request }) => ({ requestId: request.requestId })),
     );
     expect(
       providers.map(provider => provider.requestReader.request.requestId),
-    ).to.deep.equal(contexts.map(({ request }) => request.requestId));
-  });
+    ).toEqual(contexts.map(({ request }) => request.requestId));
+  }, 20000);
 
-  it('should reuse a request-scoped factory provider for overlapping resolutions in the same context', async function () {
-    this.timeout(20000);
+  it('should reuse a request-scoped factory provider for overlapping resolutions in the same context', async () => {
     const [{ contextId, request }] = prepareContexts(testingModule, 1);
 
     const providers = await Promise.all(
@@ -204,12 +200,11 @@ describe('Parallel request-scoped resolution', () => {
       ),
     );
 
-    expect(new Set(providers).size).to.equal(1);
-    expect(providers[0]).to.deep.equal({ requestId: request.requestId });
-  });
+    expect(new Set(providers).size).toBe(1);
+    expect(providers[0]).toEqual({ requestId: request.requestId });
+  }, 20000);
 
-  it('should reuse a bubbled provider for overlapping resolutions in the same context', async function () {
-    this.timeout(20000);
+  it('should reuse a bubbled provider for overlapping resolutions in the same context', async () => {
     const [{ contextId, request }] = prepareContexts(testingModule, 1);
 
     const providers = await Promise.all(
@@ -218,15 +213,14 @@ describe('Parallel request-scoped resolution', () => {
       ),
     );
 
-    expect(new Set(providers).size).to.equal(1);
-    expect(providers[0].payload).to.deep.equal({
+    expect(new Set(providers).size).toBe(1);
+    expect(providers[0].payload).toEqual({
       requestId: request.requestId,
     });
-    expect(providers[0].requestReader.request).to.equal(request);
-  });
+    expect(providers[0].requestReader.request).toBe(request);
+  }, 20000);
 
-  it('should isolate request-scoped controllers during overlapping context resolutions', async function () {
-    this.timeout(20000);
+  it('should isolate request-scoped controllers during overlapping context resolutions', async () => {
     const contexts = prepareContexts(testingModule, OVERLAP_REQUEST_COUNT);
 
     const controllers = await Promise.all(
@@ -235,12 +229,12 @@ describe('Parallel request-scoped resolution', () => {
       ),
     );
 
-    expect(new Set(controllers).size).to.equal(contexts.length);
-    expect(controllers.map(controller => controller.payload)).to.deep.equal(
+    expect(new Set(controllers).size).toBe(contexts.length);
+    expect(controllers.map(controller => controller.payload)).toEqual(
       contexts.map(({ request }) => ({ requestId: request.requestId })),
     );
     expect(
       controllers.map(controller => controller.requestReader.request.requestId),
-    ).to.deep.equal(contexts.map(({ request }) => request.requestId));
-  });
+    ).toEqual(contexts.map(({ request }) => request.requestId));
+  }, 20000);
 });

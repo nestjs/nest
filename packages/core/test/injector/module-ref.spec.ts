@@ -1,7 +1,5 @@
 import { Injectable, Scope, Type } from '@nestjs/common';
 import { RuntimeException } from '../../errors/exceptions';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { NestContainer } from '../../injector/container';
 import { ModuleRef } from '../../injector/module-ref';
 import { Module } from '../../injector/module';
@@ -65,7 +63,7 @@ describe('ModuleRef', () => {
       class StaticService {}
       container.addProvider(StaticService, module.token);
       const result = moduleRef.introspect(StaticService);
-      expect(result.scope).to.equal(Scope.DEFAULT);
+      expect(result.scope).toBe(Scope.DEFAULT);
     });
 
     it('should return Scope.REQUEST for a request-scoped provider', () => {
@@ -73,7 +71,7 @@ describe('ModuleRef', () => {
       class ReqScopedService {}
       container.addProvider(ReqScopedService, module.token);
       const result = moduleRef.introspect(ReqScopedService);
-      expect(result.scope).to.equal(Scope.REQUEST);
+      expect(result.scope).toBe(Scope.REQUEST);
     });
 
     it('should return Scope.TRANSIENT for a transient provider', () => {
@@ -81,18 +79,20 @@ describe('ModuleRef', () => {
       class TransientService {}
       container.addProvider(TransientService, module.token);
       const result = moduleRef.introspect(TransientService);
-      expect(result.scope).to.equal(Scope.TRANSIENT);
+      expect(result.scope).toBe(Scope.TRANSIENT);
     });
   });
 
   describe('registerRequestByContextId', () => {
     it('should delegate to container.registerRequestProvider', () => {
-      const stub = sinon.stub(container, 'registerRequestProvider');
+      const stub = vi
+        .spyOn(container, 'registerRequestProvider')
+        .mockImplementation(() => {});
       const request = { foo: 'bar' };
       const contextId = { id: 42 };
       moduleRef.registerRequestByContextId(request, contextId);
-      expect(stub.calledOnceWith(request, contextId)).to.be.true;
-      stub.restore();
+      expect(stub).toHaveBeenCalledExactlyOnceWith(request, contextId);
+      stub.mockRestore();
     });
   });
 
@@ -114,9 +114,9 @@ describe('ModuleRef', () => {
       }
 
       const instance = await moduleRef.create(Foo);
-      expect(instance).to.be.instanceOf(Foo);
-      expect(instance.a).to.be.instanceOf(A);
-      expect(instance.b).to.be.instanceOf(B);
+      expect(instance).toBeInstanceOf(Foo);
+      expect(instance.a).toBeInstanceOf(A);
+      expect(instance.b).toBeInstanceOf(B);
     });
 
     it('should propagate errors from dependency resolution', async () => {
@@ -131,7 +131,7 @@ describe('ModuleRef', () => {
         await moduleRef.create(MissingDep);
         expect.fail('should have thrown');
       } catch (err) {
-        expect(err).to.be.instanceOf(RuntimeException);
+        expect(err).toBeInstanceOf(RuntimeException);
       }
     });
   });
@@ -156,14 +156,14 @@ describe('ModuleRef', () => {
         container.getModules(),
       );
       const instance = moduleRef.get(MyService);
-      expect(instance).to.be.instanceOf(MyService);
+      expect(instance).toBeInstanceOf(MyService);
     });
 
     it('should throw InvalidClassScopeException for request-scoped provider', () => {
       @Injectable({ scope: Scope.REQUEST })
       class ReqService {}
       container.addProvider(ReqService, module.token);
-      expect(() => moduleRef.get(ReqService)).to.throw();
+      expect(() => moduleRef.get(ReqService)).toThrow();
     });
 
     it('should return all instances when each: true', async () => {
@@ -192,7 +192,7 @@ describe('ModuleRef', () => {
         container.getModules(),
       );
       const instances = moduleRef.get(TOKEN, { each: true });
-      expect(instances).to.have.length(3);
+      expect(instances).toHaveLength(3);
     });
   });
 
@@ -216,7 +216,7 @@ describe('ModuleRef', () => {
         container.getModules(),
       );
       const instance = await moduleRef.resolve(MyService);
-      expect(instance).to.be.instanceOf(MyService);
+      expect(instance).toBeInstanceOf(MyService);
     });
 
     it('should resolve a transient dependency, returning new instances each time', async () => {
@@ -229,9 +229,9 @@ describe('ModuleRef', () => {
       );
       const a = await moduleRef.resolve(TransientService, { id: 1 });
       const b = await moduleRef.resolve(TransientService, { id: 2 });
-      expect(a).to.be.instanceOf(TransientService);
-      expect(b).to.be.instanceOf(TransientService);
-      expect(a).not.to.equal(b);
+      expect(a).toBeInstanceOf(TransientService);
+      expect(b).toBeInstanceOf(TransientService);
+      expect(a).not.toBe(b);
     });
 
     it('should resolve a request-scoped dependency', async () => {
@@ -244,7 +244,7 @@ describe('ModuleRef', () => {
       );
       const contextId = { id: 99 };
       const instance = await moduleRef.resolve(ReqService, contextId);
-      expect(instance).to.be.instanceOf(ReqService);
+      expect(instance).toBeInstanceOf(ReqService);
     });
   });
 });

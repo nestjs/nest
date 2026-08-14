@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { fastifyMiddie } from '../../adapters/middie/fastify-middie';
 
 describe('@fastify/middie', () => {
@@ -70,8 +69,8 @@ describe('@fastify/middie', () => {
       },
     );
 
-    expect(middlewareCalls).to.equal(1);
-    expect(requestFinished).to.equal(true);
+    expect(middlewareCalls).toBe(1);
+    expect(requestFinished).toBe(true);
 
     const grandchild: any = {
       prefix: '/my-prefix/nested',
@@ -113,7 +112,7 @@ describe('@fastify/middie', () => {
       },
     );
 
-    expect(middlewareCalls).to.equal(2);
-    expect(grandchildFinished).to.equal(true);
+    expect(middlewareCalls).toBe(2);
+    expect(grandchildFinished).toBe(true);
   });
 });

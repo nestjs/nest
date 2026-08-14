@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Cross-platform wrapper that forwards arguments to whichever Docker Compose
  * implementation is available on the host:
@@ -12,7 +10,7 @@
  * falls back to V1, so npm scripts like `test:docker:up` work everywhere.
  */
 
-const { spawnSync } = require('node:child_process');
+import { spawnSync } from 'node:child_process';
 
 const forwardedArgs = process.argv.slice(2);
 const isWindows = process.platform === 'win32';

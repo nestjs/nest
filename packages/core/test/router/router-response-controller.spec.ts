@@ -1,16 +1,17 @@
-import { isNil, isObject } from '@nestjs/common/utils/shared.utils';
-import { expect } from 'chai';
+import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage, ServerResponse } from 'http';
 import { Observable, of, Subject } from 'rxjs';
-import * as sinon from 'sinon';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
-import { HttpStatus, RequestMethod } from '../../../common';
-import { SSE_ABORT_CONTROLLER } from '../../../common/decorators/http/sse-signal.decorator';
-import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
-import { RouterResponseController } from '../../router/router-response-controller';
-import { SseStream } from '../../router/sse-stream';
-import { NoopHttpAdapter } from '../utils/noop-adapter.spec';
+import {
+  HttpStatus,
+  RequestMethod,
+  SSE_ABORT_CONTROLLER,
+} from '../../../common/index.js';
+import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer.js';
+import { RouterResponseController } from '../../router/router-response-controller.js';
+import { SseStream } from '../../router/sse-stream.js';
+import { NoopHttpAdapter } from '../utils/noop-adapter.js';
 
 describe('RouterResponseController', () => {
   let adapter: NoopHttpAdapter;
@@ -23,18 +24,17 @@ describe('RouterResponseController', () => {
 
   describe('apply', () => {
     let response: {
-      send: sinon.SinonSpy;
-      status?: sinon.SinonSpy;
-      json: sinon.SinonSpy;
+      send: ReturnType<typeof vi.fn>;
+      status?: ReturnType<typeof vi.fn>;
+      json: ReturnType<typeof vi.fn>;
     };
     beforeEach(() => {
-      response = { send: sinon.spy(), json: sinon.spy(), status: sinon.spy() };
+      response = { send: vi.fn(), json: vi.fn(), status: vi.fn() };
     });
     describe('when result is', () => {
       beforeEach(() => {
-        sinon
-          .stub(adapter, 'reply')
-          .callsFake((responseRef: any, body: any, statusCode?: number) => {
+        vi.spyOn(adapter, 'reply').mockImplementation(
+          (responseRef: any, body: any, statusCode?: number) => {
             if (statusCode) {
               responseRef.status(statusCode);
             }
@@ -44,29 +44,30 @@ describe('RouterResponseController', () => {
             return isObject(body)
               ? responseRef.json(body)
               : responseRef.send(String(body));
-          });
+          },
+        );
       });
       describe('nil', () => {
         it('should call send()', async () => {
           const value = null;
           await routerResponseController.apply(value, response, 200);
-          expect(response.send.called).to.be.true;
+          expect(response.send).toHaveBeenCalled();
         });
       });
       describe('string', () => {
         it('should call send(value)', async () => {
           const value = 'string';
           await routerResponseController.apply(value, response, 200);
-          expect(response.send.called).to.be.true;
-          expect(response.send.calledWith(String(value))).to.be.true;
+          expect(response.send).toHaveBeenCalled();
+          expect(response.send).toHaveBeenCalledWith(String(value));
         });
       });
       describe('object', () => {
         it('should call json(value)', async () => {
           const value = { test: 'test' };
           await routerResponseController.apply(value, response, 200);
-          expect(response.json.called).to.be.true;
-          expect(response.json.calledWith(value)).to.be.true;
+          expect(response.json).toHaveBeenCalled();
+          expect(response.json).toHaveBeenCalledWith(value);
         });
       });
     });
@@ -81,7 +82,7 @@ describe('RouterResponseController', () => {
             await routerResponseController.transformToResult(
               Promise.resolve(value),
             ),
-          ).to.be.eq(value);
+          ).toBe(value);
         });
       });
 
@@ -92,25 +93,25 @@ describe('RouterResponseController', () => {
             await routerResponseController.transformToResult(
               of(1, 2, 3, lastValue),
             ),
-          ).to.be.eq(lastValue);
+          ).toBe(lastValue);
         });
       });
 
       describe('is an object that has the method `subscribe`', () => {
         it('should return a Promise that resolves to the input value', async () => {
           const value = { subscribe() {} };
-          expect(
-            await routerResponseController.transformToResult(value),
-          ).to.equal(value);
+          expect(await routerResponseController.transformToResult(value)).toBe(
+            value,
+          );
         });
       });
 
       describe('is an ordinary value', () => {
         it('should return a Promise that resolves to the input value', async () => {
           const value = 100;
-          expect(
-            await routerResponseController.transformToResult(value),
-          ).to.be.eq(value);
+          expect(await routerResponseController.transformToResult(value)).toBe(
+            value,
+          );
         });
       });
     });
@@ -120,7 +121,7 @@ describe('RouterResponseController', () => {
     it('should return 201 for POST', () => {
       expect(
         routerResponseController.getStatusByMethod(RequestMethod.POST),
-      ).to.be.eql(201);
+      ).toEqual(201);
     });
 
     const methods = (Object.values(RequestMethod) as unknown[]).filter(
@@ -131,7 +132,7 @@ describe('RouterResponseController', () => {
       .filter(method => method !== RequestMethod.POST)
       .forEach(method => {
         it(`should return 200 for ${RequestMethod[method]}`, () => {
-          expect(routerResponseController.getStatusByMethod(method)).to.be.eql(
+          expect(routerResponseController.getStatusByMethod(method)).toEqual(
             200,
           );
         });
@@ -140,28 +141,30 @@ describe('RouterResponseController', () => {
 
   describe('render', () => {
     beforeEach(() => {
-      sinon
-        .stub(adapter, 'render')
-        .callsFake((response, view: string, options: any) => {
+      vi.spyOn(adapter, 'render').mockImplementation(
+        (response, view: string, options: any) => {
           return response.render(view, options);
-        });
+        },
+      );
     });
     it('should call "res.render()" with expected args', async () => {
       const template = 'template';
       const value = 'test';
       const result = Promise.resolve(value);
-      const response = { render: sinon.spy() };
+      const response = { render: vi.fn() };
 
       await routerResponseController.render(result, response, template);
-      expect(response.render.calledWith(template, value)).to.be.true;
+      expect(response.render).toHaveBeenCalledWith(template, value);
     });
   });
 
   describe('setHeaders', () => {
-    let setHeaderStub: sinon.SinonStub;
+    let setHeaderStub: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      setHeaderStub = sinon.stub(adapter, 'setHeader').callsFake(() => ({}));
+      setHeaderStub = vi
+        .spyOn(adapter, 'setHeader')
+        .mockImplementation(() => ({}));
     });
 
     it('should set all custom headers', () => {
@@ -169,17 +172,19 @@ describe('RouterResponseController', () => {
       const headers = [{ name: 'test', value: 'test_value' }];
 
       routerResponseController.setHeaders(response, headers);
-      expect(
-        setHeaderStub.calledWith(response, headers[0].name, headers[0].value),
-      ).to.be.true;
+      expect(setHeaderStub).toHaveBeenCalledWith(
+        response,
+        headers[0].name,
+        headers[0].value,
+      );
     });
   });
 
   describe('status', () => {
-    let statusStub: sinon.SinonStub;
+    let statusStub: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      statusStub = sinon.stub(adapter, 'status').callsFake(() => ({}));
+      statusStub = vi.spyOn(adapter, 'status').mockImplementation(() => ({}));
     });
 
     it('should set status', () => {
@@ -187,83 +192,85 @@ describe('RouterResponseController', () => {
       const statusCode = 400;
 
       routerResponseController.setStatus(response, statusCode);
-      expect(statusStub.calledWith(response, statusCode)).to.be.true;
+      expect(statusStub).toHaveBeenCalledWith(response, statusCode);
     });
   });
 
   describe('redirect should HttpServer.redirect', () => {
     it('should transformToResult', async () => {
-      const transformToResultSpy = sinon
-        .stub(routerResponseController, 'transformToResult')
-        .returns(Promise.resolve({ statusCode: 123, url: 'redirect url' }));
+      const transformToResultSpy = vi
+        .spyOn(routerResponseController, 'transformToResult')
+        .mockReturnValue(
+          Promise.resolve({ statusCode: 123, url: 'redirect url' }),
+        );
       const result = {};
       await routerResponseController.redirect(result, null, null!);
-      expect(transformToResultSpy.firstCall.args[0]).to.be.equal(result);
+      expect(transformToResultSpy.mock.calls[0][0]).toBe(result);
     });
     it('should pass the response to redirect', async () => {
-      sinon
-        .stub(routerResponseController, 'transformToResult')
-        .returns(Promise.resolve({ statusCode: 123, url: 'redirect url' }));
-      const redirectSpy = sinon.spy(adapter, 'redirect');
+      vi.spyOn(routerResponseController, 'transformToResult').mockReturnValue(
+        Promise.resolve({ statusCode: 123, url: 'redirect url' }),
+      );
+      const redirectSpy = vi.spyOn(adapter, 'redirect');
       const response = {};
       await routerResponseController.redirect(null, response, null!);
-      expect(redirectSpy.firstCall.args[0]).to.be.equal(response);
+      expect(redirectSpy.mock.calls[0][0]).toBe(response);
     });
     describe('status code', () => {
       it('should come from the transformed result if present', async () => {
-        sinon
-          .stub(routerResponseController, 'transformToResult')
-          .returns(Promise.resolve({ statusCode: 123, url: 'redirect url' }));
-        const redirectSpy = sinon.spy(adapter, 'redirect');
+        vi.spyOn(routerResponseController, 'transformToResult').mockReturnValue(
+          Promise.resolve({ statusCode: 123, url: 'redirect url' }),
+        );
+        const redirectSpy = vi.spyOn(adapter, 'redirect');
         await routerResponseController.redirect(null, null, {
           statusCode: 999,
           url: 'not form here',
         });
-        expect(redirectSpy.firstCall.args[1]).to.be.eql(123);
+        expect(redirectSpy.mock.calls[0][1]).toEqual(123);
       });
       it('should come from the redirectResponse if not on the transformed result', async () => {
-        sinon
-          .stub(routerResponseController, 'transformToResult')
-          .returns(Promise.resolve({}));
-        const redirectSpy = sinon.spy(adapter, 'redirect');
+        vi.spyOn(routerResponseController, 'transformToResult').mockReturnValue(
+          Promise.resolve({}),
+        );
+        const redirectSpy = vi.spyOn(adapter, 'redirect');
         await routerResponseController.redirect(null, null, {
           statusCode: 123,
           url: 'redirect url',
         });
-        expect(redirectSpy.firstCall.args[1]).to.be.eql(123);
+        expect(redirectSpy.mock.calls[0][1]).toEqual(123);
       });
       it('should default to HttpStatus.FOUND', async () => {
-        sinon
-          .stub(routerResponseController, 'transformToResult')
-          .returns(Promise.resolve({}));
-        const redirectSpy = sinon.spy(adapter, 'redirect');
+        vi.spyOn(routerResponseController, 'transformToResult').mockReturnValue(
+          Promise.resolve({}),
+        );
+        const redirectSpy = vi.spyOn(adapter, 'redirect');
         await routerResponseController.redirect(null, null, {
           url: 'redirect url',
         });
-        expect(redirectSpy.firstCall.args[1]).to.be.eql(HttpStatus.FOUND);
+        expect(redirectSpy.mock.calls[0][1]).toEqual(HttpStatus.FOUND);
       });
     });
     describe('url', () => {
       it('should come from the transformed result if present', async () => {
-        sinon
-          .stub(routerResponseController, 'transformToResult')
-          .returns(Promise.resolve({ statusCode: 123, url: 'redirect url' }));
-        const redirectSpy = sinon.spy(adapter, 'redirect');
+        vi.spyOn(routerResponseController, 'transformToResult').mockReturnValue(
+          Promise.resolve({ statusCode: 123, url: 'redirect url' }),
+        );
+        const redirectSpy = vi.spyOn(adapter, 'redirect');
         await routerResponseController.redirect(null, null, {
           url: 'not from here',
         });
-        expect(redirectSpy.firstCall.args[2]).to.be.eql('redirect url');
+        expect(redirectSpy.mock.calls[0][2]).toEqual('redirect url');
       });
       it('should come from the redirectResponse if not on the transformed result', async () => {
-        sinon
-          .stub(routerResponseController, 'transformToResult')
-          .returns(Promise.resolve({}));
-        const redirectSpy = sinon.spy(adapter, 'redirect');
+        vi.spyOn(routerResponseController, 'transformToResult').mockReturnValue(
+          Promise.resolve({}),
+        );
+        const redirectSpy = vi.spyOn(adapter, 'redirect');
         await routerResponseController.redirect(null, null, {
           statusCode: 123,
           url: 'redirect url',
         });
-        expect(redirectSpy.firstCall.args[2]).to.be.eql('redirect url');
+        expect(redirectSpy.mock.calls[0][2]).toEqual('redirect url');
       });
     });
   });
@@ -291,9 +298,8 @@ describe('RouterResponseController', () => {
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
         );
-        expect.fail('should have thrown');
       } catch (e) {
-        expect(e.message).to.eql(
+        expect(e.message).toEqual(
           'You must return an Observable stream to use Server-Sent Events (SSE).',
         );
       }
@@ -332,7 +338,7 @@ describe('RouterResponseController', () => {
       );
       request.destroy();
       await written(response);
-      expect(response.content).to.eql(
+      expect(response.content).toEqual(
         `
 id: 1
 data: test
@@ -344,8 +350,8 @@ data: test
     it('should use custom status code from response', async () => {
       class SinkWithStatusCode extends Writable {
         statusCode = 404;
-        writeHead = sinon.spy();
-        flushHeaders = sinon.spy();
+        writeHead = vi.fn();
+        flushHeaders = vi.fn();
 
         _write(
           chunk: any,
@@ -365,7 +371,7 @@ data: test
         request as unknown as IncomingMessage,
       );
 
-      expect(response.writeHead.firstCall.args[0]).to.equal(404);
+      expect(response.writeHead.mock.calls[0][0]).toBe(404);
       request.destroy();
     });
 
@@ -401,7 +407,7 @@ data: test
         request as unknown as IncomingMessage,
       );
       await written(response);
-      expect(response.content).to.eql(
+      expect(response.content).toEqual(
         `
 id: 1
 data: test
@@ -410,26 +416,27 @@ data: test
       );
     });
 
-    it('should close on socket close', done => {
-      const result = of('test');
-      const response = new Writable();
-      response.end = () => done() as any;
-      response._write = () => {};
+    it('should close on socket close', () =>
+      new Promise<void>(done => {
+        const result = of('test');
+        const response = new Writable();
+        response.end = () => done() as any;
+        response._write = () => {};
 
-      const request = attachSocket(new Writable());
-      request._write = () => {};
+        const request = attachSocket(new Writable());
+        request._write = () => {};
 
-      void routerResponseController.sse(
-        result,
-        response as unknown as ServerResponse,
-        request as unknown as IncomingMessage,
-      );
-      request.socket.emit('close');
-    });
+        void routerResponseController.sse(
+          result,
+          response as unknown as ServerResponse,
+          request as unknown as IncomingMessage,
+        );
+        request.socket.emit('close');
+      }));
 
     it('should not subscribe a Promise<Observable> if socket closes before it resolves', async () => {
       let subscribed = false;
-      const teardown = sinon.spy();
+      const teardown = vi.fn();
       const result = new Promise<Observable<string>>(resolve => {
         setTimeout(() => {
           resolve(
@@ -441,7 +448,7 @@ data: test
         }, 10);
       });
       const response = new Writable();
-      const responseEndSpy = sinon.spy();
+      const responseEndSpy = vi.fn();
       response.end = responseEndSpy as any;
       response._write = () => {};
 
@@ -457,13 +464,13 @@ data: test
       await ssePromise;
       await new Promise(resolve => setTimeout(resolve, 20));
 
-      expect(subscribed).to.equal(false);
-      expect(teardown.called).to.equal(false);
+      expect(subscribed).toBe(false);
+      expect(teardown).not.toHaveBeenCalled();
       // response.end() is called once explicitly in onClose, and once more by the
       // pipe's auto-end when stream.end() fires — both are correct; we only care
       // that it was called at least once.
-      expect(responseEndSpy.called).to.be.true;
-      expect(request.socket.listenerCount('close')).to.equal(0);
+      expect(responseEndSpy).toHaveBeenCalled();
+      expect(request.socket.listenerCount('close')).toBe(0);
     });
 
     it('should not subscribe the producer when stream state was initialized before an async SSE observable resolves', async () => {
@@ -481,7 +488,7 @@ data: test
         }, 10);
       });
       const response = new Writable();
-      response.end = sinon.spy() as any;
+      response.end = vi.fn() as any;
       response._write = () => {};
 
       const request = attachSocket(new PassThrough());
@@ -498,14 +505,14 @@ data: test
 
       // The producer Observable is never subscribed, so its teardown never runs;
       // handlers that allocate resources during setup should use @SseSignal() instead.
-      expect(streamState).to.equal('running');
+      expect(streamState).toBe('running');
     });
 
     it('should not write headers or events after the socket closes before an async SSE observable resolves', async () => {
       class SinkWithWriteHead extends Writable {
         private readonly chunks: string[] = [];
-        writeHead = sinon.spy();
-        flushHeaders = sinon.spy();
+        writeHead = vi.fn();
+        flushHeaders = vi.fn();
 
         _write(
           chunk: any,
@@ -532,7 +539,7 @@ data: test
         }, 10);
       });
       const response = new SinkWithWriteHead();
-      const responseEndSpy = sinon.spy(response, 'end');
+      const responseEndSpy = vi.spyOn(response, 'end');
       const request = attachSocket(new PassThrough());
 
       const ssePromise = routerResponseController.sse(
@@ -545,14 +552,14 @@ data: test
       await ssePromise;
       await new Promise(resolve => setTimeout(resolve, 20));
 
-      expect(response.writeHead.called).to.equal(false);
-      expect(response.flushHeaders.called).to.equal(false);
-      expect(response.content).to.equal('');
+      expect(response.writeHead).not.toHaveBeenCalled();
+      expect(response.flushHeaders).not.toHaveBeenCalled();
+      expect(response.content).toBe('');
       // response.end() is called once explicitly in onClose, and once more by the
       // pipe's auto-end when stream.end() fires — both are correct; we only care
       // that it was called at least once.
-      expect(responseEndSpy.called).to.be.true;
-      expect(request.socket.listenerCount('close')).to.equal(0);
+      expect(responseEndSpy).toHaveBeenCalled();
+      expect(request.socket.listenerCount('close')).toBe(0);
     });
 
     it('should not subscribe async SSE producer Observable when client disconnects mid-await (interceptor case, issue #17352)', async () => {
@@ -560,7 +567,7 @@ data: test
       // that awaits 50ms before returning the producer Observable, client
       // disconnect during the await.
       const interceptorsConsumer = new InterceptorsConsumer();
-      const teardown = sinon.spy();
+      const teardown = vi.fn();
       let subscribed = false;
 
       const sseHandler = () =>
@@ -592,7 +599,7 @@ data: test
       );
 
       const response = new Writable();
-      const responseEndSpy = sinon.spy();
+      const responseEndSpy = vi.fn();
       response.end = responseEndSpy as any;
       response._write = () => {};
 
@@ -617,13 +624,13 @@ data: test
       // Allow the async handler's setTimeout to fire
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      expect(subscribed).to.equal(false);
-      expect(teardown.called).to.equal(false);
+      expect(subscribed).toBe(false);
+      expect(teardown).not.toHaveBeenCalled();
       // response.end() is called once explicitly in onClose, and once more by the
       // pipe's auto-end when stream.end() fires — both are correct; we only care
       // that it was called at least once.
-      expect(responseEndSpy.called).to.be.true;
-      expect(request.socket.listenerCount('close')).to.equal(0);
+      expect(responseEndSpy).toHaveBeenCalled();
+      expect(request.socket.listenerCount('close')).toBe(0);
     });
 
     it('should abort the per-request SSE AbortSignal when the client disconnects', async () => {
@@ -633,7 +640,7 @@ data: test
         }, 10);
       });
       const response = new Writable();
-      response.end = sinon.spy() as any;
+      response.end = vi.fn() as any;
       response._write = () => {};
 
       const request = attachSocket(new PassThrough());
@@ -647,29 +654,13 @@ data: test
       const signal = (request as any)[SSE_ABORT_CONTROLLER]?.signal as
         | AbortSignal
         | undefined;
-      expect(signal).to.be.instanceOf(AbortSignal);
-      expect(signal!.aborted).to.equal(false);
+      expect(signal).toBeInstanceOf(AbortSignal);
+      expect(signal!.aborted).toBe(false);
 
       request.socket.emit('close');
       await ssePromise;
 
-      expect(signal!.aborted).to.equal(true);
-    });
-
-    it('should close the request when observable completes', done => {
-      const result = of('test');
-      const response = new Writable();
-      response.end = done as any;
-      response._write = () => {};
-
-      const request = attachSocket(new Writable());
-      request._write = () => {};
-
-      void routerResponseController.sse(
-        result,
-        response as unknown as ServerResponse,
-        request as unknown as IncomingMessage,
-      );
+      expect(signal!.aborted).toBe(true);
     });
 
     it('should remove the close listener after synchronous completion', async () => {
@@ -685,7 +676,7 @@ data: test
         request as unknown as IncomingMessage,
       );
 
-      expect(request.socket.listenerCount('close')).to.equal(0);
+      expect(request.socket.listenerCount('close')).toBe(0);
     });
 
     it('should keep streaming when the request closes after body consumption', async () => {
@@ -726,7 +717,7 @@ data: test
       await ssePromise;
       await written(response);
 
-      expect(response.content).to.eql(
+      expect(response.content).toEqual(
         `
 id: 1
 data: test
@@ -735,35 +726,52 @@ data: test
       );
     });
 
-    it('should allow to intercept the response', done => {
-      const result = sinon.spy();
-      const response = new Writable();
-      response.end();
-      response._write = () => {};
+    it('should close the request when observable completes', () =>
+      new Promise<void>(done => {
+        const result = of('test');
+        const response = new Writable();
+        response.end = done as any;
+        response._write = () => {};
 
-      const request = new Writable();
-      request._write = () => {};
+        const request = new Writable();
+        request._write = () => {};
 
-      try {
         void routerResponseController.sse(
-          result as unknown as Observable<string>,
+          result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
         );
-      } catch {
-        // Whether an error is thrown or not
-        // is not relevant, so long as
-        // result is not called
-      }
+      }));
 
-      sinon.assert.notCalled(result);
-      done();
-    });
+    it('should allow to intercept the response', () =>
+      new Promise<void>(done => {
+        const result = vi.fn();
+        const response = new Writable();
+        response.end();
+        response._write = () => {};
+
+        const request = new Writable();
+        request._write = () => {};
+
+        try {
+          void routerResponseController.sse(
+            result as unknown as Observable<string>,
+            response as unknown as ServerResponse,
+            request as unknown as IncomingMessage,
+          );
+        } catch {
+          // Whether an error is thrown or not
+          // is not relevant, so long as
+          // result is not called
+        }
+
+        expect(result).not.toHaveBeenCalled();
+        done();
+      }));
 
     describe('when writing data too densely', () => {
       const DEFAULT_MAX_LISTENERS = SseStream.defaultMaxListeners;
       const MAX_LISTENERS = 1;
-      const sandbox = sinon.createSandbox();
 
       beforeEach(() => {
         // Can't access to the internal sseStream,
@@ -772,18 +780,19 @@ data: test
         SseStream.defaultMaxListeners = MAX_LISTENERS;
         process.setMaxListeners(PROCESS_MAX_LISTENERS);
 
-        const sseStream = sinon.createStubInstance(SseStream);
         const originalWrite = SseStream.prototype.write;
         // Make `.write()` always return false, so as to listen `drain` event
-        sseStream.write.callsFake(function (...args: any[]) {
+        vi.spyOn(SseStream.prototype, 'write').mockImplementation(function (
+          this: any,
+          ...args: any[]
+        ) {
           originalWrite.apply(this, args);
           return false;
         });
-        sandbox.replace(SseStream.prototype, 'write', sseStream.write);
       });
 
       afterEach(() => {
-        sandbox.restore();
+        vi.restoreAllMocks();
         SseStream.defaultMaxListeners = DEFAULT_MAX_LISTENERS;
       });
 
@@ -821,14 +830,14 @@ data: test
 
         await new Promise(resolve => process.nextTick(resolve));
 
-        expect(maxDrainListenersExceededWarning).to.equal(null);
+        expect(maxDrainListenersExceededWarning).toBe(null);
       });
     });
 
     it('should commit headers on next tick without waiting for first emission', async () => {
       class SinkWithWriteHead extends Writable {
-        writeHead = sinon.spy();
-        flushHeaders = sinon.spy();
+        writeHead = vi.fn();
+        flushHeaders = vi.fn();
 
         _write(
           chunk: any,
@@ -852,15 +861,15 @@ data: test
       // Wait for microtasks (subscription) + macrotask (setTimeout(0))
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      expect(response.writeHead.called).to.be.true;
-      expect(response.writeHead.firstCall.args[0]).to.equal(200);
+      expect(response.writeHead).toHaveBeenCalled();
+      expect(response.writeHead.mock.calls[0][0]).toBe(200);
 
       result.complete();
       request.destroy();
     });
 
-    describe('when there is an error before headers are committed', () => {
-      it('should reject the promise so the exception filter can set the status', async () => {
+    describe('when there is an error', () => {
+      it('should reject when the stream errors before headers are committed', async () => {
         const result = new Subject();
         const response = new Writable();
         response._write = () => {};
@@ -868,7 +877,7 @@ data: test
         const request = new Writable();
         request._write = () => {};
 
-        const ssePromise = routerResponseController.sse(
+        const promise = routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
@@ -876,17 +885,15 @@ data: test
 
         result.error(new Error('Some error'));
 
-        try {
-          await ssePromise;
-          expect.fail('should have rejected');
-        } catch (e) {
-          expect(e.message).to.equal('Some error');
-        }
+        await expect(promise).rejects.toThrow('Some error');
       });
-    });
 
-    describe('when there is an error after headers are committed', () => {
       it('should write the error message to the stream', async () => {
+        let resolveFirstChunk: (() => void) | undefined;
+        const firstChunkWritten = new Promise<void>(resolve => {
+          resolveFirstChunk = resolve;
+        });
+
         class Sink extends Writable {
           private readonly chunks: string[] = [];
 
@@ -896,6 +903,8 @@ data: test
             callback: (error?: Error | null) => void,
           ): void {
             this.chunks.push(chunk);
+            resolveFirstChunk?.();
+            resolveFirstChunk = undefined;
             callback();
           }
 
@@ -912,25 +921,21 @@ data: test
         const result = new Subject();
         const response = new Sink();
         const request = new PassThrough();
-        void routerResponseController.sse(
+        const promise = routerResponseController.sse(
           result,
           response as unknown as ServerResponse,
           request as unknown as IncomingMessage,
         );
 
-        // Yield so the internal `await Promise.resolve(result)` completes
-        // and the subscription is active before we emit.
-        await Promise.resolve();
-
-        result.next('first');
-        // Let the concatMap inner Promise resolve
-        await new Promise(resolve => setTimeout(resolve, 10));
+        result.next('hello');
+        await firstChunkWritten;
         result.error(new Error('Some error'));
         request.destroy();
 
+        await promise;
         await written(response);
-        expect(response.content).to.contain('event: error');
-        expect(response.content).to.contain('data: Some error');
+        expect(response.content).toContain('event: error');
+        expect(response.content).toContain('data: Some error');
       });
     });
   });

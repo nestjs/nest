@@ -11,7 +11,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { QueryMethodModule } from '../src/query-method.module';
 
 describe('QueryMethod (Fastify)', () => {
@@ -40,9 +39,9 @@ describe('QueryMethod (Fastify)', () => {
       payload: { name: 'nestjs', page: 1 },
     });
 
-    expect(response.statusCode).to.equal(HttpStatus.OK);
+    expect(response.statusCode).toBe(HttpStatus.OK);
     const json = response.json();
-    expect(json.filters).to.deep.equal({ name: 'nestjs', page: 1 });
+    expect(json.filters).toEqual({ name: 'nestjs', page: 1 });
   });
 
   it('should route QUERY /items/search to the @QueryMethod("search") handler', async () => {
@@ -52,10 +51,10 @@ describe('QueryMethod (Fastify)', () => {
       payload: { name: 'test' },
     });
 
-    expect(response.statusCode).to.equal(HttpStatus.OK);
+    expect(response.statusCode).toBe(HttpStatus.OK);
     const json = response.json();
-    expect(json.endpoint).to.equal('search');
-    expect(json.filters).to.deep.equal({ name: 'test' });
+    expect(json.endpoint).toBe('search');
+    expect(json.filters).toEqual({ name: 'test' });
   });
 
   it('should return 404 for GET /items (wrong method)', async () => {
@@ -63,6 +62,6 @@ describe('QueryMethod (Fastify)', () => {
       method: 'GET',
       url: '/items',
     });
-    expect(response.statusCode).to.equal(HttpStatus.NOT_FOUND);
+    expect(response.statusCode).toBe(HttpStatus.NOT_FOUND);
   });
 });

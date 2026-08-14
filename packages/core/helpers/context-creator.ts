@@ -1,6 +1,6 @@
-import { Controller } from '@nestjs/common/interfaces';
-import { STATIC_CONTEXT } from '../injector/constants';
-import { ContextId, InstanceWrapper } from '../injector/instance-wrapper';
+import { STATIC_CONTEXT } from '../injector/constants.js';
+import { ContextId, InstanceWrapper } from '../injector/instance-wrapper.js';
+import type { Controller } from '@nestjs/common/internal';
 
 export abstract class ContextCreator {
   public abstract createConcreteContext<T extends any[], R extends any[]>(

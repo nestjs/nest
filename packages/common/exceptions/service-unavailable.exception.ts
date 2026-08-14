@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Service Unavailable* type errors.
@@ -37,13 +37,13 @@ export class ServiceUnavailableException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Service Unavailable',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Service Unavailable', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.SERVICE_UNAVAILABLE,
       ),
       HttpStatus.SERVICE_UNAVAILABLE,

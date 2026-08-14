@@ -1,9 +1,7 @@
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
-import { OptionsUrlencoded } from 'body-parser';
-import { expect } from 'chai';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 describe('Body Parser (Express Application)', () => {
   const moduleFixture = Test.createTestingModule({
@@ -39,7 +37,7 @@ describe('Body Parser (Express Application)', () => {
         .send(stringLimit)
         .expect(201);
 
-      expect(response.body).to.eql({
+      expect(response.body).toEqual({
         raw: stringLimit,
       });
     });
@@ -65,7 +63,7 @@ describe('Body Parser (Express Application)', () => {
           rawBody: true,
           logger: false,
         })
-        .useBodyParser<OptionsUrlencoded>('urlencoded', {
+        .useBodyParser('urlencoded', {
           limit: Buffer.from(stringLimit).byteLength,
           extended: true,
         });
@@ -79,7 +77,7 @@ describe('Body Parser (Express Application)', () => {
         .send(stringLimit)
         .expect(201);
 
-      expect(response.body).to.eql({
+      expect(response.body).toEqual({
         raw: stringLimit,
       });
     });

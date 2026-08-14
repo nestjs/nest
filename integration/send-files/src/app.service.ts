@@ -4,7 +4,7 @@ import { createReadStream, readFileSync } from 'fs';
 import { join } from 'path';
 import { Observable, of } from 'rxjs';
 import { Readable } from 'stream';
-import { NonFile } from './non-file';
+import { NonFile } from './non-file.js';
 
 @Injectable()
 export class AppService {

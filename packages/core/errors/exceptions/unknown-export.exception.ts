@@ -1,5 +1,5 @@
-import { UNKNOWN_EXPORT_MESSAGE } from '../messages';
-import { RuntimeException } from './runtime.exception';
+import { UNKNOWN_EXPORT_MESSAGE } from '../messages.js';
+import { RuntimeException } from './runtime.exception.js';
 
 export class UnknownExportException extends RuntimeException {
   constructor(token: string | symbol, moduleName: string) {

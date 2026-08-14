@@ -1,13 +1,13 @@
-import { IntrospectionResult, Scope, Type } from '@nestjs/common';
-import { getClassScope } from '../helpers/get-class-scope';
-import { isDurable } from '../helpers/is-durable';
-import { AbstractInstanceResolver } from './abstract-instance-resolver';
-import { STATIC_CONTEXT } from './constants';
-import { NestContainer } from './container';
-import { Injector } from './injector';
-import { InstanceLinksHost } from './instance-links-host';
-import { ContextId, InstanceWrapper } from './instance-wrapper';
-import { Module } from './module';
+import { type IntrospectionResult, Scope, type Type } from '@nestjs/common';
+import { getClassScope } from '../helpers/get-class-scope.js';
+import { isDurable } from '../helpers/is-durable.js';
+import { AbstractInstanceResolver } from './abstract-instance-resolver.js';
+import { STATIC_CONTEXT } from './constants.js';
+import { NestContainer } from './container.js';
+import { Injector } from './injector.js';
+import { InstanceLinksHost } from './instance-links-host.js';
+import { ContextId, InstanceWrapper } from './instance-wrapper.js';
+import { Module } from './module.js';
 
 export interface ModuleRefGetOrResolveOpts {
   /**
@@ -183,8 +183,8 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
     }
 
     return new Promise<T>((resolve, reject) => {
-      const callback = async (instances: any[]) => {
-        try {
+      const loadInstance = async () => {
+        const callback = async (instances: any[]) => {
           const properties = await this.injector.resolveProperties(
             wrapper,
             moduleRef,
@@ -197,16 +197,21 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
           const instance = new type(...instances);
           this.injector.applyProperties(instance, properties);
           resolve(instance);
-        } catch (err) {
-          reject(err);
-        }
+        };
+
+        await this.injector.resolveConstructorParams<T>(
+          wrapper,
+          moduleRef,
+          undefined,
+          callback,
+          {
+            contextId: contextId ?? STATIC_CONTEXT,
+            inquirer: wrapper,
+          },
+        );
       };
-      this.injector
-        .resolveConstructorParams<T>(wrapper, moduleRef, undefined, callback, {
-          contextId: contextId ?? STATIC_CONTEXT,
-          inquirer: wrapper,
-        })
-        .catch(reject);
+
+      void loadInstance().catch(reject);
     });
   }
 }

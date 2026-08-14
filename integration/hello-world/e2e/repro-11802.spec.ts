@@ -12,7 +12,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { FastifyInstance } from 'fastify';
 
 describe('Middleware + Fastify plugin registered with a prefix (#11802 repro)', () => {
@@ -83,13 +82,13 @@ describe('Middleware + Fastify plugin registered with a prefix (#11802 repro)', 
 
   it('runs the middleware for a route registered inside the plugin', async () => {
     const response = await app.inject({ method: 'GET', url: '/queues' });
-    expect(response.statusCode).to.equal(200);
-    expect(response.payload).to.equal('plugin-root');
-    expect(middlewareHits).to.equal(1);
+    expect(response.statusCode).toBe(200);
+    expect(response.payload).toBe('plugin-root');
+    expect(middlewareHits).toBe(1);
   });
 
   it('still runs the middleware for a normal Nest route under the same prefix-like path', async () => {
     const response = await app.inject({ method: 'GET', url: '/other' });
-    expect(response.statusCode).to.equal(200);
+    expect(response.statusCode).toBe(200);
   });
 });

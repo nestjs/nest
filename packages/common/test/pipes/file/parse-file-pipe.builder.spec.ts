@@ -1,10 +1,9 @@
-import { expect } from 'chai';
 import {
+  FileTypeValidator,
   FileValidator,
   MaxFileSizeValidator,
   ParseFilePipeBuilder,
-  FileTypeValidator,
-} from '../../../pipes';
+} from '../../../pipes/index.js';
 
 describe('ParseFilePipeBuilder', () => {
   let parseFilePipeBuilder: ParseFilePipeBuilder;
@@ -17,7 +16,7 @@ describe('ParseFilePipeBuilder', () => {
     describe('when no validator was passed', () => {
       it('should return a ParseFilePipe with no validators', () => {
         const parseFilePipe = parseFilePipeBuilder.build();
-        expect(parseFilePipe.getValidators()).to.be.empty;
+        expect(parseFilePipe.getValidators()).toHaveLength(0);
       });
     });
 
@@ -30,9 +29,9 @@ describe('ParseFilePipeBuilder', () => {
           .addMaxSizeValidator(options)
           .build();
 
-        expect(parseFilePipe.getValidators()).to.deep.include(
+        expect(parseFilePipe.getValidators()).toMatchObject([
           new MaxFileSizeValidator(options),
-        );
+        ]);
       });
     });
 
@@ -45,9 +44,9 @@ describe('ParseFilePipeBuilder', () => {
           .addFileTypeValidator(options)
           .build();
 
-        expect(parseFilePipe.getValidators()).to.deep.include(
+        expect(parseFilePipe.getValidators()).toMatchObject([
           new FileTypeValidator(options),
-        );
+        ]);
       });
     });
 
@@ -71,9 +70,9 @@ describe('ParseFilePipeBuilder', () => {
           .addValidator(new TestFileValidator(options))
           .build();
 
-        expect(parseFilePipe.getValidators()).to.deep.include(
+        expect(parseFilePipe.getValidators()).toMatchObject([
           new TestFileValidator(options),
-        );
+        ]);
       });
     });
 
@@ -95,7 +94,7 @@ describe('ParseFilePipeBuilder', () => {
           .addFileTypeValidator(fileTypeValidatorOptions)
           .build();
 
-        expect(pipeWithFileTypeValidator.getValidators()).not.to.deep.equal(
+        expect(pipeWithFileTypeValidator.getValidators()).not.toEqual(
           pipeWithMaxSizeValidator.getValidators(),
         );
       });

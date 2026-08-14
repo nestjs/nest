@@ -1,11 +1,7 @@
-import { MessageEvent } from '@nestjs/common/interfaces';
-import {
-  isNil,
-  isObject,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils';
 import { IncomingMessage, OutgoingHttpHeaders } from 'http';
 import { Transform } from 'stream';
+import type { MessageEvent } from '@nestjs/common';
+import { isNil, isObject, isUndefined } from '@nestjs/common/internal';
 
 function serializeSseLines(value: string, prefix: string): string {
   return value

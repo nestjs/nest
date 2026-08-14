@@ -1,1 +1,1 @@
-export * from './reflector.service';
+export * from './reflector.service.js';

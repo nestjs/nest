@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import {
   OPTIONAL_DEPS_METADATA,
   OPTIONAL_PROPERTY_DEPS_METADATA,
@@ -17,7 +16,7 @@ describe('@Optional', () => {
 
   it('should enhance class with expected constructor params metadata', () => {
     const metadata = Reflect.getMetadata(OPTIONAL_DEPS_METADATA, Test);
-    expect(metadata).to.be.eql([1, 0]);
+    expect(metadata).toEqual([1, 0]);
   });
 
   it('should enhance class with expected property metadata', () => {
@@ -25,6 +24,6 @@ describe('@Optional', () => {
       OPTIONAL_PROPERTY_DEPS_METADATA,
       PropertyTest,
     );
-    expect(metadata).to.be.eql(['property1', 'property2']);
+    expect(metadata).toEqual(['property1', 'property2']);
   });
 });

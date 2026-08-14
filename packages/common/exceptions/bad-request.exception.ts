@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Bad Request* type errors.
@@ -37,13 +37,13 @@ export class BadRequestException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Bad Request',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Bad Request', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.BAD_REQUEST,
       ),
       HttpStatus.BAD_REQUEST,

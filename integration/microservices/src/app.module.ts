@@ -1,5 +1,5 @@
 import { Module, Injectable } from '@nestjs/common';
-import { AppController } from './app.controller';
+import { AppController } from './app.controller.js';
 import {
   ClientsModule,
   Transport,

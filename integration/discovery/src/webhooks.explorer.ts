@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner } from '@nestjs/core';
-import { Webhook, WebhookHandler } from './decorators/webhook.decorators';
+import { Webhook, WebhookHandler } from './decorators/webhook.decorators.js';
 
 @Injectable()
 export class WebhooksExplorer {

@@ -1,14 +1,13 @@
-import { expect } from 'chai';
-import { Injectable } from '../../../common';
-import { Controller } from '../../../common/decorators/core/controller.decorator';
-import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator';
-import { RequestMethod } from '../../../common/enums/request-method.enum';
-import { MiddlewareConfiguration } from '../../../common/interfaces/middleware/middleware-configuration.interface';
-import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface';
-import { NestContainer } from '../../injector';
-import { InstanceWrapper } from '../../injector/instance-wrapper';
-import { Module } from '../../injector/module';
-import { MiddlewareContainer } from '../../middleware/container';
+import { Injectable } from '../../../common/index.js';
+import { Controller } from '../../../common/decorators/core/controller.decorator.js';
+import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator.js';
+import { RequestMethod } from '../../../common/enums/request-method.enum.js';
+import { MiddlewareConfiguration } from '../../../common/interfaces/middleware/middleware-configuration.interface.js';
+import { NestMiddleware } from '../../../common/interfaces/middleware/nest-middleware.interface.js';
+import { NestContainer } from '../../injector/index.js';
+import { InstanceWrapper } from '../../injector/instance-wrapper.js';
+import { Module } from '../../injector/module.js';
+import { MiddlewareContainer } from '../../middleware/container.js';
 
 describe('MiddlewareContainer', () => {
   class ExampleModule {}
@@ -47,9 +46,7 @@ describe('MiddlewareContainer', () => {
       },
     ];
     container.insertConfig(config, 'Module');
-    expect([...container.getConfigurations().get('Module')!]).to.deep.equal(
-      config,
-    );
+    expect([...container.getConfigurations().get('Module')!]).toEqual(config);
   });
 
   it('should store expected middleware for given module', () => {
@@ -66,9 +63,9 @@ describe('MiddlewareContainer', () => {
     const collection = container.getMiddlewareCollection(key);
     const insertedMiddleware = collection.get(TestMiddleware);
 
-    expect(collection.size).to.eql(config.length);
-    expect(insertedMiddleware).to.be.instanceOf(InstanceWrapper);
-    expect(insertedMiddleware!.scope).to.be.undefined;
-    expect(insertedMiddleware!.metatype).to.be.eql(TestMiddleware);
+    expect(collection.size).toEqual(config.length);
+    expect(insertedMiddleware).toBeInstanceOf(InstanceWrapper);
+    expect(insertedMiddleware!.scope).toBeUndefined();
+    expect(insertedMiddleware!.metatype).toEqual(TestMiddleware);
   });
 });

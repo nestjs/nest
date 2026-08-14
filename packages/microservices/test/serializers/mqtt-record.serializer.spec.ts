@@ -1,6 +1,5 @@
-import { expect } from 'chai';
-import { MqttRecordBuilder } from '../../record-builders';
-import { MqttRecordSerializer } from '../../serializers/mqtt-record.serializer';
+import { MqttRecordBuilder } from '../../record-builders/index.js';
+import { MqttRecordSerializer } from '../../serializers/mqtt-record.serializer.js';
 
 describe('MqttRecordSerializer', () => {
   let instance: MqttRecordSerializer;
@@ -22,7 +21,7 @@ describe('MqttRecordSerializer', () => {
           pattern: 'pattern',
           data: mqttMessage,
         }),
-      ).to.deep.eq(
+      ).toEqual(
         JSON.stringify({
           pattern: 'pattern',
           data: { value: 'string' },
@@ -34,7 +33,7 @@ describe('MqttRecordSerializer', () => {
         pattern: 'pattern',
         data: { random: true },
       };
-      expect(instance.serialize(packet)).to.eq(JSON.stringify(packet));
+      expect(instance.serialize(packet)).toBe(JSON.stringify(packet));
     });
   });
 });

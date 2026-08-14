@@ -1,14 +1,14 @@
-import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
-import { NestContainer } from '../injector/container';
-import { InstanceWrapper } from '../injector/instance-wrapper';
-import { Module } from '../injector/module';
-import { DeterministicUuidRegistry } from './deterministic-uuid-registry';
-import { EnhancerMetadataCacheEntry } from './interfaces/enhancer-metadata-cache-entry.interface';
-import { Entrypoint } from './interfaces/entrypoint.interface';
-import { OrphanedEnhancerDefinition } from './interfaces/extras.interface';
-import { ClassNode, Node } from './interfaces/node.interface';
-import { PartialGraphHost } from './partial-graph.host';
-import { SerializedGraph } from './serialized-graph';
+import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception.js';
+import { NestContainer } from '../injector/container.js';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import { Module } from '../injector/module.js';
+import { DeterministicUuidRegistry } from './deterministic-uuid-registry.js';
+import { EnhancerMetadataCacheEntry } from './interfaces/enhancer-metadata-cache-entry.interface.js';
+import { Entrypoint } from './interfaces/entrypoint.interface.js';
+import { OrphanedEnhancerDefinition } from './interfaces/extras.interface.js';
+import { ClassNode, Node } from './interfaces/node.interface.js';
+import { PartialGraphHost } from './partial-graph.host.js';
+import { SerializedGraph } from './serialized-graph.js';
 
 export class GraphInspector {
   private readonly graph: SerializedGraph;

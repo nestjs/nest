@@ -5,18 +5,17 @@ import {
   Injectable,
   Module,
 } from '@nestjs/common';
-import { expect } from 'chai';
 import {
   LazyModuleLoader,
   ModuleRef,
   ModulesContainer,
   NestContainer,
-} from '../../../injector';
-import { Injector } from '../../../injector/injector';
-import { InstanceLoader } from '../../../injector/instance-loader';
-import { GraphInspector } from '../../../inspector/graph-inspector';
-import { MetadataScanner } from '../../../metadata-scanner';
-import { DependenciesScanner } from '../../../scanner';
+} from '../../../injector/index.js';
+import { Injector } from '../../../injector/injector.js';
+import { InstanceLoader } from '../../../injector/instance-loader.js';
+import { GraphInspector } from '../../../inspector/graph-inspector.js';
+import { MetadataScanner } from '../../../metadata-scanner.js';
+import { DependenciesScanner } from '../../../scanner.js';
 
 describe('LazyModuleLoader', () => {
   let lazyModuleLoader: LazyModuleLoader;
@@ -66,8 +65,8 @@ describe('LazyModuleLoader', () => {
     describe('when module was not loaded yet', () => {
       it('should load it and return a module reference', async () => {
         const moduleRef = await lazyModuleLoader.load(() => ModuleA);
-        expect(moduleRef).to.be.instanceOf(ModuleRef);
-        expect(moduleRef.get(bProvider.provide, { strict: false })).to.equal(
+        expect(moduleRef).toBeInstanceOf(ModuleRef);
+        expect(moduleRef.get(bProvider.provide, { strict: false })).toBe(
           bProvider.useValue,
         );
       });
@@ -79,7 +78,7 @@ describe('LazyModuleLoader', () => {
       it('should return an existing module reference', async () => {
         const moduleRef = await lazyModuleLoader.load(() => ModuleC);
         const moduleRef2 = await lazyModuleLoader.load(() => ModuleC);
-        expect(moduleRef).to.equal(moduleRef2);
+        expect(moduleRef).toBe(moduleRef2);
       });
     });
 
@@ -163,16 +162,16 @@ describe('LazyModuleLoader', () => {
       it('should share already-initialized singleton providers with lazily-loaded consumer', async () => {
         const lazyModuleRef = await lazyModuleLoader.load(() => LazyModule);
         const lazyConsumer = lazyModuleRef.get(Consumer);
-        expect(lazyConsumer.shared).to.equal(eagerSharedService);
-        expect(constructionsCount).to.equal(1);
+        expect(lazyConsumer.shared).toBe(eagerSharedService);
+        expect(constructionsCount).toBe(1);
       });
 
       it('should not construct the provider again on repeated load() calls', async () => {
         await lazyModuleLoader.load(() => LazyModule);
-        expect(constructionsCount).to.equal(1);
+        expect(constructionsCount).toBe(1);
 
         await lazyModuleLoader.load(() => LazyModule);
-        expect(constructionsCount).to.equal(1);
+        expect(constructionsCount).toBe(1);
       });
 
       it('should correctly support global modules without duplicating constructor calls', async () => {
@@ -182,11 +181,11 @@ describe('LazyModuleLoader', () => {
         const globalConsumer = lazyGlobalRef.get('GlobalConsumer', {
           strict: false,
         });
-        expect(globalConsumer).to.equal('global');
-        expect(globalConstructionsCount).to.equal(1);
+        expect(globalConsumer).toBe('global');
+        expect(globalConstructionsCount).toBe(1);
 
         await lazyModuleLoader.load(() => LazyGlobalModule);
-        expect(globalConstructionsCount).to.equal(1);
+        expect(globalConstructionsCount).toBe(1);
       });
     });
 
@@ -259,7 +258,7 @@ describe('LazyModuleLoader', () => {
         const moduleRef = await lazyModuleLoader.load(() => definition);
 
         // Assert
-        expect(moduleRef.get(ParentService).items).to.deep.equal([
+        expect(moduleRef.get(ParentService).items).toEqual([
           'itemA',
           'itemB',
         ]);
@@ -279,8 +278,8 @@ describe('LazyModuleLoader', () => {
         const second = await lazyModuleLoader.load(() => definition);
 
         // Assert
-        expect(first).to.equal(second);
-        expect(second.get(ParentService).items).to.deep.equal([
+        expect(first).toBe(second);
+        expect(second.get(ParentService).items).toEqual([
           'itemA',
           'itemB',
         ]);
@@ -297,7 +296,7 @@ describe('LazyModuleLoader', () => {
         const moduleRef = await lazyModuleLoader.load(() => definition);
 
         // Assert
-        expect(moduleRef.get(GlobalHuskConsumer).childOut).to.equal(
+        expect(moduleRef.get(GlobalHuskConsumer).childOut).toBe(
           'child(globalDep)',
         );
       });

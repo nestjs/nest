@@ -1,11 +1,11 @@
 import { INestApplication, RequestMethod } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
+import request from 'supertest';
 import {
   AppModule,
   MIDDLEWARE_PARAM_VALUE,
   MIDDLEWARE_VALUE,
-} from '../src/app.module';
+} from '../src/app.module.js';
 
 describe('Global prefix', () => {
   let server;

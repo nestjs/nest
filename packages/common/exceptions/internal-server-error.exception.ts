@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Internal Server Error* type errors.
@@ -39,13 +39,13 @@ export class InternalServerErrorException extends HttpException {
       | string
       | HttpExceptionOptions = 'Internal Server Error',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Internal Server Error', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.INTERNAL_SERVER_ERROR,
       ),
       HttpStatus.INTERNAL_SERVER_ERROR,

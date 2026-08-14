@@ -1,6 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Photo } from './photo/photo.entity';
+import { Photo } from './photo/photo.entity.js';
 
 @Module({})
 export class DatabaseModule {

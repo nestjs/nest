@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { User } from './models/user.model';
-import { UsersResolver } from './users.resolver';
-import { UsersService } from './users.service';
+import { User } from './models/user.model.js';
+import { UsersResolver } from './users.resolver.js';
+import { UsersService } from './users.service.js';
 
 const usersServiceMock = {
-  findById: jest.fn((id: number): User => {
+  findById: vi.fn((id: number): User => {
     return { id, name: 'Mocked User' };
   }),
 };

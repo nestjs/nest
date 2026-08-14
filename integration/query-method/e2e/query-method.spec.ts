@@ -8,7 +8,6 @@
 import * as http from 'http';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { QueryMethodModule } from '../src/query-method.module';
 
 function httpRequest(
@@ -72,8 +71,8 @@ describe('QueryMethod (Express)', () => {
       JSON.stringify({ name: 'nestjs', page: 1 }),
     );
 
-    expect(statusCode).to.equal(HttpStatus.OK);
-    expect(json.filters).to.deep.equal({ name: 'nestjs', page: 1 });
+    expect(statusCode).toBe(HttpStatus.OK);
+    expect(json.filters).toEqual({ name: 'nestjs', page: 1 });
   });
 
   it('should route QUERY /items/search to the @QueryMethod("search") handler', async () => {
@@ -83,13 +82,13 @@ describe('QueryMethod (Express)', () => {
       JSON.stringify({ name: 'test' }),
     );
 
-    expect(statusCode).to.equal(HttpStatus.OK);
-    expect(json.endpoint).to.equal('search');
-    expect(json.filters).to.deep.equal({ name: 'test' });
+    expect(statusCode).toBe(HttpStatus.OK);
+    expect(json.endpoint).toBe('search');
+    expect(json.filters).toEqual({ name: 'test' });
   });
 
   it('should return 404 for GET /items (wrong method)', async () => {
     const { statusCode } = await httpRequest(`${baseUrl}/items`, 'GET');
-    expect(statusCode).to.equal(HttpStatus.NOT_FOUND);
+    expect(statusCode).toBe(HttpStatus.NOT_FOUND);
   });
 });

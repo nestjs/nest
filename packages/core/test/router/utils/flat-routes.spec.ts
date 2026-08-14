@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
-import { expect } from 'chai';
-import { flattenRoutePaths } from '../../../router/utils';
+import { flattenRoutePaths } from '../../../router/utils/index.js';
 
 describe('flattenRoutePaths', () => {
   it('should flatten all route paths', () => {
@@ -127,6 +126,6 @@ describe('flattenRoutePaths', () => {
       { path: '/v3', module: AuthModule3 },
       { path: '/v3', module: CatsModule3 },
     ];
-    expect(flattenRoutePaths(routes)).to.be.eql(expectedRoutes);
+    expect(flattenRoutePaths(routes)).toEqual(expectedRoutes);
   });
 });

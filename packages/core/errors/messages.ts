@@ -1,10 +1,10 @@
 import type { DynamicModule, ForwardReference, Type } from '@nestjs/common';
-import { isNil, isSymbol } from '@nestjs/common/utils/shared.utils';
 import {
   InjectorDependency,
   InjectorDependencyContext,
-} from '../injector/injector';
-import { Module } from '../injector/module';
+} from '../injector/injector.js';
+import { Module } from '../injector/module.js';
+import { isNil, isSymbol } from '@nestjs/common/internal';
 
 /**
  * Returns the name of an instance or `undefined`
@@ -256,6 +256,30 @@ export const UNKNOWN_REQUEST_MAPPING = (metatype: Type) => {
     ? `An invalid controller has been detected. "${className}" does not have the @Controller() decorator but it is being listed in the "controllers" array of some module.`
     : `An invalid controller has been detected. Perhaps, one of your controllers is missing the @Controller() decorator.`;
 };
+
+export const ROUTE_CONFLICT_MESSAGE = (messages: string[]) =>
+  [
+    'Conflicting HTTP routes detected:',
+    ...messages.map(message => `  - ${message}`),
+    `Adjust route declarations or relax the 'routeConflictPolicy' option passed to NestFactory.create() to allow the application to start.`,
+  ].join('\n');
+
+export const DUPLICATE_ROUTE_MESSAGE = (
+  method: string,
+  path: string,
+  firstHandlerLabel: string,
+  secondHandlerLabel: string,
+) =>
+  `Duplicate route: ${method} ${path} is registered by both ${firstHandlerLabel} and ${secondHandlerLabel}.`;
+
+export const SHADOWED_ROUTE_MESSAGE = (
+  method: string,
+  shadowedPath: string,
+  shadowedHandlerLabel: string,
+  winnerPath: string,
+  winnerHandlerLabel: string,
+) =>
+  `Route ${method} ${shadowedPath} (${shadowedHandlerLabel}) is shadowed by ${method} ${winnerPath} (${winnerHandlerLabel}). The first-registered route will match all matching requests on order-sensitive adapters.`;
 
 export const INVALID_MIDDLEWARE_CONFIGURATION = `An invalid middleware configuration has been passed inside the module 'configure()' method.`;
 export const UNHANDLED_RUNTIME_EXCEPTION = `Unhandled Runtime Exception.`;

@@ -1,25 +1,30 @@
-import { expect } from 'chai';
-import { Body, HostParam, Param, Query, Search } from '../../decorators';
-import { RequestMethod } from '../../enums/request-method.enum';
+import { ROUTE_ARGS_METADATA } from '../../constants.js';
+import {
+  Body,
+  HostParam,
+  Param,
+  Query,
+  Search,
+} from '../../decorators/index.js';
+import { RequestMethod } from '../../enums/request-method.enum.js';
+import { RouteParamtypes } from '../../enums/route-paramtypes.enum.js';
 import {
   All,
+  Copy,
   Delete,
   Get,
+  Lock,
+  Mkcol,
+  Move,
   ParseIntPipe,
   Patch,
   Post,
-  Put,
   Propfind,
   Proppatch,
-  Mkcol,
-  Move,
-  Copy,
-  Lock,
-  Unlock,
+  Put,
   QueryMethod,
-} from '../../index';
-import { ROUTE_ARGS_METADATA } from '../../constants';
-import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
+  Unlock,
+} from '../../index.js';
 
 describe('@Get', () => {
   const requestPath = 'test';
@@ -53,15 +58,15 @@ describe('@Get', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(args[`${RouteParamtypes.PARAM}:0`]).to.be.eql({
+    expect(path).toEqual(requestPath);
+    expect(args[`${RouteParamtypes.PARAM}:0`]).toEqual({
       index: 0,
       data: 'id',
       pipes: [ParseIntPipe],
     });
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -76,8 +81,8 @@ describe('@Get', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -108,10 +113,10 @@ describe('@Post', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -134,8 +139,8 @@ describe('@Post', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -166,10 +171,10 @@ describe('@Delete', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -184,8 +189,8 @@ describe('@Delete', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -216,10 +221,10 @@ describe('@All', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -234,8 +239,8 @@ describe('@All', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -266,10 +271,10 @@ describe('@Put', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -284,8 +289,8 @@ describe('@Put', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -316,10 +321,10 @@ describe('@Patch', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -334,8 +339,8 @@ describe('@Patch', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -366,10 +371,10 @@ describe('@Search', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -391,8 +396,8 @@ describe('@Search', () => {
 
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -423,10 +428,10 @@ describe('@QueryMethod', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -448,8 +453,8 @@ describe('@QueryMethod', () => {
 
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -482,10 +487,10 @@ describe('Inheritance', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 });
 
@@ -516,10 +521,10 @@ describe('@PropFind', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -542,8 +547,8 @@ describe('@PropFind', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -574,10 +579,10 @@ describe('@PropPatch', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -600,8 +605,8 @@ describe('@PropPatch', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -632,10 +637,10 @@ describe('@MkCol', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -658,8 +663,8 @@ describe('@MkCol', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -690,10 +695,10 @@ describe('@Copy', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -716,8 +721,8 @@ describe('@Copy', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -748,10 +753,10 @@ describe('@Move', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -774,8 +779,8 @@ describe('@Move', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -806,10 +811,10 @@ describe('@Lock', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -832,8 +837,8 @@ describe('@Lock', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
   });
 });
 
@@ -864,10 +869,10 @@ describe('@Unlock', () => {
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
     const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
 
-    expect(path).to.be.eql(requestPath);
-    expect(method).to.be.eql(requestProps.method);
-    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
-    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+    expect(path).toEqual(requestPath);
+    expect(method).toEqual(requestProps.method);
+    expect(pathUsingArray).toEqual(requestPathUsingArray);
+    expect(methodUsingArray).toEqual(requestPropsUsingArray.method);
   });
 
   it('should set path on "/" by default', () => {
@@ -890,7 +895,200 @@ describe('@Unlock', () => {
     const path = Reflect.getMetadata('path', Test.test);
     const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
 
-    expect(path).to.be.eql('/');
-    expect(pathUsingArray).to.be.eql('/');
+    expect(path).toEqual('/');
+    expect(pathUsingArray).toEqual('/');
+  });
+});
+
+describe('@Body with ParameterDecoratorOptions', () => {
+  const mockSchema = {
+    '~standard': {
+      version: 1 as const,
+      vendor: 'test',
+      validate: (v: unknown) => ({ value: v }),
+    },
+  };
+
+  it('should enhance param with schema when options passed as the only argument', () => {
+    class Test {
+      public test(@Body({ schema: mockSchema }) body) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [],
+      schema: mockSchema,
+    });
+  });
+
+  it('should enhance param with pipes when options with pipes passed as the only argument', () => {
+    class Test {
+      public test(@Body({ schema: mockSchema, pipes: [ParseIntPipe] }) body) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [ParseIntPipe],
+      schema: mockSchema,
+    });
+  });
+
+  it('should enhance param with schema when options passed as second argument with property', () => {
+    class Test {
+      public test(@Body('role', { schema: mockSchema }) body) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key]).toEqual({
+      index: 0,
+      data: 'role',
+      pipes: [],
+      schema: mockSchema,
+    });
+  });
+
+  it('should not confuse a pipe instance with options', () => {
+    class Test {
+      public test(@Body(new ParseIntPipe()) body) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key].data).toBeUndefined();
+    expect(metadata[key].pipes).toHaveLength(1);
+    expect(metadata[key].schema).toBeUndefined();
+  });
+});
+
+describe('@Query with ParameterDecoratorOptions', () => {
+  const mockSchema = {
+    '~standard': {
+      version: 1 as const,
+      vendor: 'test',
+      validate: (v: unknown) => ({ value: v }),
+    },
+  };
+
+  it('should enhance param with schema when options passed as the only argument', () => {
+    class Test {
+      public test(@Query({ schema: mockSchema }) query) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [],
+      schema: mockSchema,
+    });
+  });
+
+  it('should enhance param with pipes when options with pipes passed as the only argument', () => {
+    class Test {
+      public test(
+        @Query({ schema: mockSchema, pipes: [ParseIntPipe] }) query,
+      ) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [ParseIntPipe],
+      schema: mockSchema,
+    });
+  });
+
+  it('should enhance param with schema when options passed as second argument with property', () => {
+    class Test {
+      public test(@Query('user', { schema: mockSchema }) user) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key]).toEqual({
+      index: 0,
+      data: 'user',
+      pipes: [],
+      schema: mockSchema,
+    });
+  });
+
+  it('should not confuse a pipe instance with options', () => {
+    class Test {
+      public test(@Query(new ParseIntPipe()) query) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key].data).toBeUndefined();
+    expect(metadata[key].pipes).toHaveLength(1);
+    expect(metadata[key].schema).toBeUndefined();
+  });
+});
+
+describe('@Param with ParameterDecoratorOptions', () => {
+  const mockSchema = {
+    '~standard': {
+      version: 1 as const,
+      vendor: 'test',
+      validate: (v: unknown) => ({ value: v }),
+    },
+  };
+
+  it('should enhance param with schema when options passed as the only argument', () => {
+    class Test {
+      public test(@Param({ schema: mockSchema }) params) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [],
+      schema: mockSchema,
+    });
+  });
+
+  it('should enhance param with pipes when options with pipes passed as the only argument', () => {
+    class Test {
+      public test(
+        @Param({ schema: mockSchema, pipes: [ParseIntPipe] }) params,
+      ) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [ParseIntPipe],
+      schema: mockSchema,
+    });
+  });
+
+  it('should enhance param with schema when options passed as second argument with property', () => {
+    class Test {
+      public test(@Param('id', { schema: mockSchema }) id) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key]).toEqual({
+      index: 0,
+      data: 'id',
+      pipes: [],
+      schema: mockSchema,
+    });
+  });
+
+  it('should not confuse a pipe instance with options', () => {
+    class Test {
+      public test(@Param(new ParseIntPipe()) params) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    const key = Object.keys(metadata)[0];
+    expect(metadata[key].data).toBeUndefined();
+    expect(metadata[key].pipes).toHaveLength(1);
+    expect(metadata[key].schema).toBeUndefined();
   });
 });

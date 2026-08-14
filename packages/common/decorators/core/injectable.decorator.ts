@@ -1,7 +1,10 @@
 import { uid } from 'uid';
-import { INJECTABLE_WATERMARK, SCOPE_OPTIONS_METADATA } from '../../constants';
-import { ScopeOptions } from '../../interfaces/scope-options.interface';
-import { Type } from '../../interfaces/type.interface';
+import {
+  INJECTABLE_WATERMARK,
+  SCOPE_OPTIONS_METADATA,
+} from '../../constants.js';
+import { ScopeOptions } from '../../interfaces/scope-options.interface.js';
+import { Type } from '../../interfaces/type.interface.js';
 
 /**
  * Defines the injection scope.

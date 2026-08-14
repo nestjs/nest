@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Post } from './models/post.model';
-import { PostsResolver } from './posts.resolver';
-import { PostsService } from './posts.service';
+import { Post } from './models/post.model.js';
+import { PostsResolver } from './posts.resolver.js';
+import { PostsService } from './posts.service.js';
 
 const mockPost: Post = {
   authorId: 1,
@@ -10,8 +10,8 @@ const mockPost: Post = {
 };
 
 const postsServiceMock = {
-  findOne: jest.fn((id: number): Post => mockPost),
-  findAll: jest.fn((): Post[] => [mockPost]),
+  findOne: vi.fn((id: number): Post => mockPost),
+  findAll: vi.fn((): Post[] => [mockPost]),
 };
 
 describe('PostsResolver', () => {

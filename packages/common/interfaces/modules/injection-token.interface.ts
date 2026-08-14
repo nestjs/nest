@@ -1,5 +1,5 @@
-import { Abstract } from '../abstract.interface';
-import { Type } from '../type.interface';
+import { Abstract } from '../abstract.interface.js';
+import { Type } from '../type.interface.js';
 
 /**
  * @publicApi

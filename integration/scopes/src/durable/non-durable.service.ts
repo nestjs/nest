@@ -1,6 +1,6 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { TenantContext } from './durable-context-id.strategy';
+import { TenantContext } from './durable-context-id.strategy.js';
 
 @Injectable()
 export class NonDurableService {

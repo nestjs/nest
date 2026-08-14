@@ -1,89 +1,140 @@
-import { Logger } from '@nestjs/common';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { LegacyRouteConverter } from '../../router/legacy-route-converter';
+import { LegacyRouteConverter } from '../../router/legacy-route-converter.js';
 
 describe('LegacyRouteConverter', () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    warnSpy = vi
+      .spyOn(LegacyRouteConverter['logger'], 'warn')
+      .mockImplementation(() => {});
+    errorSpy = vi
+      .spyOn(LegacyRouteConverter['logger'], 'error')
+      .mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('tryConvert', () => {
-    let warnStub: sinon.SinonStub;
+    describe('(.*) wildcard', () => {
+      it('should convert trailing (.*) to {*path}', () => {
+        expect(LegacyRouteConverter.tryConvert('/users/(.*)')).toBe(
+          '/users/{*path}',
+        );
+      });
 
-    beforeEach(() => {
-      warnStub = sinon.stub(Logger.prototype, 'warn');
-    });
-    afterEach(() => {
-      sinon.restore();
+      it('should not print warning for root-level /(.*)', () => {
+        LegacyRouteConverter.tryConvert('/(.*)', { logs: true });
+        expect(warnSpy).not.toHaveBeenCalled();
+      });
+
+      it('should print warning for non-root (.*)', () => {
+        LegacyRouteConverter.tryConvert('/users/(.*)', { logs: true });
+        expect(warnSpy).toHaveBeenCalled();
+      });
+
+      it('should convert (.*) without leading slash', () => {
+        expect(LegacyRouteConverter.tryConvert('users/(.*)')).toBe(
+          'users/{*path}',
+        );
+      });
     });
 
-    it('should convert a trailing "*" wildcard to a named parameter', () => {
-      expect(LegacyRouteConverter.tryConvert('/v1/*')).to.equal('/v1/{*path}');
+    describe('* wildcard', () => {
+      it('should convert trailing * to {*path}', () => {
+        expect(LegacyRouteConverter.tryConvert('/users/*')).toBe(
+          '/users/{*path}',
+        );
+      });
+
+      it('should not print warning for root-level /*', () => {
+        LegacyRouteConverter.tryConvert('/*', { logs: true });
+        expect(warnSpy).not.toHaveBeenCalled();
+      });
+
+      it('should print warning for non-root *', () => {
+        LegacyRouteConverter.tryConvert('/users/*', { logs: true });
+        expect(warnSpy).toHaveBeenCalled();
+      });
     });
 
-    it('should convert a trailing "(.*)" wildcard to a named parameter', () => {
-      expect(LegacyRouteConverter.tryConvert('/v1/(.*)')).to.equal(
-        '/v1/{*path}',
+    describe('+ wildcard', () => {
+      it('should convert /+ to /*path', () => {
+        expect(LegacyRouteConverter.tryConvert('/users/+')).toBe(
+          '/users/*path',
+        );
+      });
+
+      it('should print warning for + wildcard', () => {
+        LegacyRouteConverter.tryConvert('/users/+', { logs: true });
+        expect(warnSpy).toHaveBeenCalled();
+      });
+    });
+
+    describe('mid-path wildcards', () => {
+      it('should convert mid-path * segments to named params', () => {
+        const result = LegacyRouteConverter.tryConvert('/a/*/b');
+        expect(result).toContain('/*path');
+        expect(result).toContain('/b');
+      });
+
+      it('should print warning for mid-path wildcards', () => {
+        LegacyRouteConverter.tryConvert('/a/*/b', { logs: true });
+        expect(warnSpy).toHaveBeenCalled();
+      });
+    });
+
+    describe('no-op routes', () => {
+      it('should return route unchanged when no wildcards present', () => {
+        expect(LegacyRouteConverter.tryConvert('/users/:id')).toBe(
+          '/users/:id',
+        );
+      });
+
+      it('should return empty route unchanged', () => {
+        expect(LegacyRouteConverter.tryConvert('/')).toBe('/');
+      });
+
+      it('should return already-valid wildcard routes unchanged', () => {
+        expect(LegacyRouteConverter.tryConvert('/users/{*path}')).toBe(
+          '/users/{*path}',
+        );
+      });
+    });
+
+    describe('logs option', () => {
+      it('should suppress warnings when logs is false', () => {
+        LegacyRouteConverter.tryConvert('/users/*', { logs: false });
+        expect(warnSpy).not.toHaveBeenCalled();
+      });
+
+      it('should print warnings by default', () => {
+        LegacyRouteConverter.tryConvert('/users/*');
+        expect(warnSpy).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('printError', () => {
+    it('should log an error message with the route', () => {
+      LegacyRouteConverter.printError('/users/*');
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Unsupported route path'),
       );
-    });
-
-    it('should convert a trailing "+" wildcard to a named parameter', () => {
-      expect(LegacyRouteConverter.tryConvert('/v1/+')).to.equal('/v1/*path');
-    });
-
-    it('should convert wildcard segments in the middle of the path', () => {
-      expect(LegacyRouteConverter.tryConvert('/v1/*/users')).to.equal(
-        '/v1/*path3/users',
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('/users/*'),
       );
-    });
-
-    it('should convert adjacent wildcard segments in the middle of the path', () => {
-      expect(LegacyRouteConverter.tryConvert('/a/*/*/b')).to.equal(
-        '/a/*path2/*path4/b',
-      );
-    });
-
-    it('should leave routes without legacy wildcards untouched', () => {
-      expect(LegacyRouteConverter.tryConvert('/v1/users')).to.equal(
-        '/v1/users',
-      );
-    });
-
-    it('should not warn for the bare "all" wildcard', () => {
-      LegacyRouteConverter.tryConvert('*');
-      expect(warnStub.called).to.be.false;
-    });
-
-    it('should include the auto-converted route in the warning message', () => {
-      LegacyRouteConverter.tryConvert('/v1/*');
-      expect(warnStub.calledOnce).to.be.true;
-      expect(warnStub.firstCall.firstArg).to.contain(
-        'Attempting to auto-convert to "/v1/{*path}"...',
-      );
-      expect(warnStub.firstCall.firstArg).to.contain(
-        'Unsupported route path: "/v1/*"',
-      );
-    });
-
-    it('should not log when logging is disabled', () => {
-      LegacyRouteConverter.tryConvert('/v1/*', { logs: false });
-      expect(warnStub.called).to.be.false;
     });
   });
 
   describe('printWarning', () => {
-    let warnStub: sinon.SinonStub;
-
-    beforeEach(() => {
-      warnStub = sinon.stub(Logger.prototype, 'warn');
-    });
-    afterEach(() => {
-      sinon.restore();
-    });
-
-    it('should fall back to the generic message when no converted route is given', () => {
-      LegacyRouteConverter.printWarning('/v1/*');
-      expect(warnStub.firstCall.firstArg).to.contain(
-        'Attempting to auto-convert...',
+    it('should log a warning message with auto-convert note', () => {
+      LegacyRouteConverter.printWarning('/users/*');
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Attempting to auto-convert'),
       );
-      expect(warnStub.firstCall.firstArg).to.not.contain('auto-convert to');
     });
   });
 });

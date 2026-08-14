@@ -1,12 +1,12 @@
-import { isFunction, isNil } from '@nestjs/common/utils/shared.utils';
 import {
   AbstractWsAdapter,
-  MessageMappingProperties,
+  type MessageMappingProperties,
 } from '@nestjs/websockets';
-import { DISCONNECT_EVENT } from '@nestjs/websockets/constants';
 import { fromEvent, Observable } from 'rxjs';
 import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
 import { Server, ServerOptions, Socket } from 'socket.io';
+import { isFunction, isNil } from '@nestjs/common/internal';
+import { DISCONNECT_EVENT } from '@nestjs/websockets/internal';
 
 /**
  * @publicApi
@@ -86,6 +86,10 @@ export class IoAdapter extends AbstractWsAdapter {
       };
     }
     return { data: payload };
+  }
+
+  public bindClientDisconnect(client: Socket, callback: Function) {
+    client.once(DISCONNECT_EVENT, (reason: string) => callback(reason));
   }
 
   public async close(server: Server): Promise<void> {

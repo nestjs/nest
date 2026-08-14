@@ -1,12 +1,11 @@
-import { Logger, LoggerService } from '@nestjs/common';
-import { Controller } from '@nestjs/common/interfaces/controllers/controller.interface';
-import { Injectable } from '@nestjs/common/interfaces/injectable.interface';
-import { MODULE_INIT_MESSAGE } from '../helpers/messages';
-import { GraphInspector } from '../inspector/graph-inspector';
-import { NestContainer } from './container';
-import { Injector } from './injector';
-import { InternalCoreModule } from './internal-core-module/internal-core-module';
-import { Module } from './module';
+import { Logger, type LoggerService } from '@nestjs/common';
+import { MODULE_INIT_MESSAGE } from '../helpers/messages.js';
+import { GraphInspector } from '../inspector/graph-inspector.js';
+import { NestContainer } from './container.js';
+import { Injector } from './injector.js';
+import { InternalCoreModule } from './internal-core-module/internal-core-module.js';
+import { Module } from './module.js';
+import type { Controller, Injectable } from '@nestjs/common/internal';
 
 export class InstanceLoader<TInjector extends Injector = Injector> {
   constructor(

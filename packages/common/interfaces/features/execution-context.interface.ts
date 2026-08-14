@@ -1,5 +1,5 @@
-import { Type } from '../index';
-import { ArgumentsHost } from './arguments-host.interface';
+import { Type } from '../index.js';
+import { ArgumentsHost } from './arguments-host.interface.js';
 
 /**
  * Interface describing details about the current request pipeline.

@@ -1,6 +1,9 @@
-import { RequestMethod } from '../../enums';
-import { NestApplicationOptions } from '../../interfaces/nest-application-options.interface';
-import { VersionValue, VersioningOptions } from '../version-options.interface';
+import { RequestMethod } from '../../enums/index.js';
+import { NestApplicationOptions } from '../../interfaces/nest-application-options.interface.js';
+import {
+  VersionValue,
+  VersioningOptions,
+} from '../version-options.interface.js';
 
 export type ErrorHandler<TRequest = any, TResponse = any> = (
   error: any,
@@ -93,6 +96,7 @@ export interface HttpServer<
   getHttpServer(): any;
   initHttpServer(options: NestApplicationOptions): void;
   close(): any;
+  beforeClose?(): any;
   getType(): string;
   init?(): Promise<void>;
   applyVersionFilter(
@@ -101,4 +105,5 @@ export interface HttpServer<
     versioningOptions: VersioningOptions,
   ): (req: TRequest, res: TResponse, next: () => void) => Function;
   normalizePath?(path: string): string;
+  isRouteOrderSensitive?(): boolean;
 }

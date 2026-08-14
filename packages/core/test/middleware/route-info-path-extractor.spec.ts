@@ -1,8 +1,7 @@
 import { RequestMethod, VersioningType } from '@nestjs/common';
 import { ApplicationConfig } from '@nestjs/core';
-import { mapToExcludeRoute } from '@nestjs/core/middleware/utils';
-import { expect } from 'chai';
-import { RouteInfoPathExtractor } from './../../middleware/route-info-path-extractor';
+import { mapToExcludeRoute } from '@nestjs/core/middleware/utils.js';
+import { RouteInfoPathExtractor } from './../../middleware/route-info-path-extractor.js';
 
 describe('RouteInfoPathExtractor', () => {
   describe('extractPathsFrom', () => {
@@ -23,7 +22,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql(['/*']);
+      ).toEqual(['/*']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -31,7 +30,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/v1$', '/v1/*']);
+      ).toEqual(['/v1$', '/v1/*']);
     });
 
     it(`should return correct paths when set global prefix`, () => {
@@ -42,7 +41,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql(['/api$', '/api/*']);
+      ).toEqual(['/api$', '/api/*']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -50,7 +49,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/api/v1$', '/api/v1/*']);
+      ).toEqual(['/api/v1$', '/api/v1/*']);
     });
 
     it(`should return correct paths when set global prefix and global prefix options`, () => {
@@ -66,7 +65,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql(['/api$', '/api/*', '/foo']);
+      ).toEqual(['/api$', '/api/*', '/foo']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -74,7 +73,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/api/v1$', '/api/v1/*', '/v1/foo']);
+      ).toEqual(['/api/v1$', '/api/v1/*', '/v1/foo']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -82,7 +81,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/v1/foo']);
+      ).toEqual(['/v1/foo']);
 
       expect(
         routeInfoPathExtractor.extractPathsFrom({
@@ -90,7 +89,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/api/v1/bar']);
+      ).toEqual(['/api/v1/bar']);
     });
   });
 
@@ -112,7 +111,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql(['/*']);
+      ).toEqual(['/*']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -120,7 +119,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/v1/*']);
+      ).toEqual(['/v1/*']);
     });
 
     it(`should return correct path when set global prefix`, () => {
@@ -131,7 +130,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql(['/*']);
+      ).toEqual(['/*']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -139,7 +138,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/api/v1/*']);
+      ).toEqual(['/api/v1/*']);
     });
 
     it(`should return correct path when set global prefix and global prefix options`, () => {
@@ -155,7 +154,7 @@ describe('RouteInfoPathExtractor', () => {
           path: '*',
           method: RequestMethod.ALL,
         }),
-      ).to.eql(['/*']);
+      ).toEqual(['/*']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -163,7 +162,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/api/v1/*']);
+      ).toEqual(['/api/v1/*']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -171,7 +170,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/v1/foo']);
+      ).toEqual(['/v1/foo']);
 
       expect(
         routeInfoPathExtractor.extractPathFrom({
@@ -179,7 +178,7 @@ describe('RouteInfoPathExtractor', () => {
           method: RequestMethod.ALL,
           version: '1',
         }),
-      ).to.eql(['/api/v1/bar']);
+      ).toEqual(['/api/v1/bar']);
     });
   });
 });

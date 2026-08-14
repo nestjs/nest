@@ -1,4 +1,4 @@
-import { ArgumentsHost, IntrinsicException, Logger } from '@nestjs/common';
+import { type ArgumentsHost, IntrinsicException, Logger } from '@nestjs/common';
 
 export class ExternalExceptionFilter<T = any, R = any> {
   private static readonly logger = new Logger('ExceptionsHandler');
