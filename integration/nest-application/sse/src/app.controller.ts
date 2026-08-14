@@ -12,12 +12,13 @@ import {
   Req,
   RequestMethod,
   Sse,
+  SseSignal,
   UseInterceptors,
 } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import { IsInt } from 'class-validator';
 import { IncomingMessage } from 'node:http';
-import { interval, map, Observable, of } from 'rxjs';
+import { EMPTY, interval, map, Observable, of } from 'rxjs';
 
 class SseQueryDto {
   @Type(() => Number)
@@ -47,6 +48,11 @@ export class AppController {
   private interceptorDelayedTeardownsObserved = 0;
   private interceptorDelayedRunningStreams = 0;
   private readonly interceptorDelayedResolvers: Array<() => void> = [];
+
+  private signalRequestsStarted = 0;
+  private signalResourcesAllocated = 0;
+  private signalResourcesCleaned = 0;
+  private signalSubscriptionsStarted = 0;
 
   @Sse('sse')
   sse(): Observable<MessageEvent> {
@@ -216,6 +222,55 @@ export class AppController {
       runningStreams: this.interceptorDelayedRunningStreams,
       subscriptionsStarted: this.interceptorDelayedSubscriptionsStarted,
       teardownsObserved: this.interceptorDelayedTeardownsObserved,
+    };
+  }
+
+  @UseInterceptors(PassthroughInterceptor)
+  @Sse('sse/signal/promise-delayed')
+  async sseSignalPromiseDelayed(
+    @SseSignal() signal: AbortSignal,
+  ): Promise<Observable<MessageEvent>> {
+    this.signalRequestsStarted += 1;
+
+    // Simulate an expensive async setup that allocates a resource (e.g. an LLM
+    // session, a DB cursor) before the producer Observable exists.
+    const resource = { closed: false };
+    this.signalResourcesAllocated += 1;
+
+    await new Promise(resolve => setTimeout(resolve, 80));
+
+    if (signal.aborted) {
+      // The client disconnected during setup: clean up the resource ourselves
+      // because the producer Observable below will never be subscribed.
+      resource.closed = true;
+      this.signalResourcesCleaned += 1;
+      return EMPTY;
+    }
+
+    return new Observable<MessageEvent>(subscriber => {
+      this.signalSubscriptionsStarted += 1;
+      const intervalId = setInterval(() => {
+        subscriber.next({ data: { hello: 'world' } });
+      }, 50);
+      const onAbort = () => subscriber.complete();
+      signal.addEventListener('abort', onAbort, { once: true });
+
+      return () => {
+        clearInterval(intervalId);
+        signal.removeEventListener('abort', onAbort);
+        resource.closed = true;
+        this.signalResourcesCleaned += 1;
+      };
+    });
+  }
+
+  @Get('sse/signal/promise-delayed/stats')
+  getSignalDelayedSseStats() {
+    return {
+      requestsStarted: this.signalRequestsStarted,
+      resourcesAllocated: this.signalResourcesAllocated,
+      resourcesCleaned: this.signalResourcesCleaned,
+      subscriptionsStarted: this.signalSubscriptionsStarted,
     };
   }
 }

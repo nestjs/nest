@@ -141,3 +141,55 @@ export const waitForInterceptorDelayedSseTeardown = async (appUrl: string) => {
     'Timed out waiting for the interceptor-delayed SSE teardown to run.',
   );
 };
+
+export interface SignalDelayedSseStats {
+  requestsStarted: number;
+  resourcesAllocated: number;
+  resourcesCleaned: number;
+  subscriptionsStarted: number;
+}
+
+export const fetchSignalDelayedSseStats = async (
+  appUrl: string,
+): Promise<SignalDelayedSseStats> => {
+  const response = await fetch(`${appUrl}/sse/signal/promise-delayed/stats`);
+  return response.json();
+};
+
+const waitForSignalDelayedSseStat = async (
+  appUrl: string,
+  predicate: (stats: SignalDelayedSseStats) => boolean,
+  timeoutErrorMessage: string,
+) => {
+  const deadline = Date.now() + 2_000;
+
+  while (Date.now() < deadline) {
+    const stats = await fetchSignalDelayedSseStats(appUrl);
+
+    if (predicate(stats)) {
+      return;
+    }
+
+    await sleep(20);
+  }
+
+  throw new Error(timeoutErrorMessage);
+};
+
+export const waitForSignalDelayedSseRequestStart = async (appUrl: string) => {
+  await waitForSignalDelayedSseStat(
+    appUrl,
+    stats => stats.requestsStarted > 0,
+    'Timed out waiting for the signal-delayed SSE request to start.',
+  );
+};
+
+export const waitForSignalDelayedSseResourceCleanup = async (
+  appUrl: string,
+) => {
+  await waitForSignalDelayedSseStat(
+    appUrl,
+    stats => stats.resourcesCleaned > 0,
+    'Timed out waiting for the signal-delayed SSE resource cleanup to run.',
+  );
+};

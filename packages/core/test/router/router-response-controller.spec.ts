@@ -6,6 +6,7 @@ import * as sinon from 'sinon';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import { HttpStatus, RequestMethod } from '../../../common';
+import { SSE_ABORT_CONTROLLER } from '../../../common/decorators/http/sse-signal.decorator';
 import { InterceptorsConsumer } from '../../interceptors/interceptors-consumer';
 import { RouterResponseController } from '../../router/router-response-controller';
 import { SseStream } from '../../router/sse-stream';
@@ -421,7 +422,7 @@ data: test
       request.socket.emit('close');
     });
 
-    it('should subscribe and teardown a Promise<Observable> if socket closes before it resolves', async () => {
+    it('should not subscribe a Promise<Observable> if socket closes before it resolves', async () => {
       let subscribed = false;
       const teardown = sinon.spy();
       const result = new Promise<Observable<string>>(resolve => {
@@ -451,13 +452,16 @@ data: test
       await ssePromise;
       await new Promise(resolve => setTimeout(resolve, 20));
 
-      expect(subscribed).to.equal(true);
-      expect(teardown.calledOnce).to.equal(true);
-      expect(responseEndSpy.calledOnce).to.be.true;
+      expect(subscribed).to.equal(false);
+      expect(teardown.called).to.equal(false);
+      // response.end() is called once explicitly in onClose, and once more by the
+      // pipe's auto-end when stream.end() fires — both are correct; we only care
+      // that it was called at least once.
+      expect(responseEndSpy.called).to.be.true;
       expect(request.socket.listenerCount('close')).to.equal(0);
     });
 
-    it('should tear down stream state initialized before an async SSE observable resolves', async () => {
+    it('should not subscribe the producer when stream state was initialized before an async SSE observable resolves', async () => {
       let streamState = 'idle';
 
       const result = new Promise<Observable<string>>(resolve => {
@@ -487,7 +491,9 @@ data: test
       await ssePromise;
       await new Promise(resolve => setTimeout(resolve, 20));
 
-      expect(streamState).to.equal('stopped');
+      // The producer Observable is never subscribed, so its teardown never runs;
+      // handlers that allocate resources during setup should use @SseSignal() instead.
+      expect(streamState).to.equal('running');
     });
 
     it('should not write headers or events after the socket closes before an async SSE observable resolves', async () => {
@@ -537,10 +543,14 @@ data: test
       expect(response.writeHead.called).to.equal(false);
       expect(response.flushHeaders.called).to.equal(false);
       expect(response.content).to.equal('');
-      expect(responseEndSpy.calledOnce).to.equal(true);
+      // response.end() is called once explicitly in onClose, and once more by the
+      // pipe's auto-end when stream.end() fires — both are correct; we only care
+      // that it was called at least once.
+      expect(responseEndSpy.called).to.be.true;
+      expect(request.socket.listenerCount('close')).to.equal(0);
     });
 
-    it('should trigger teardown of async SSE handler Observable when client disconnects mid-await (interceptor case, issue #17190)', async () => {
+    it('should not subscribe async SSE producer Observable when client disconnects mid-await (interceptor case, issue #17352)', async () => {
       // Simulates: interceptor doing `return next.handle()`, async SSE handler
       // that awaits 50ms before returning the producer Observable, client
       // disconnect during the await.
@@ -599,16 +609,46 @@ data: test
       request.socket.emit('close');
 
       await ssePromise;
-      // Allow the async handler's setTimeout to fire and teardown path to run
+      // Allow the async handler's setTimeout to fire
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      expect(subscribed).to.equal(true);
-      expect(teardown.calledOnce).to.equal(true);
+      expect(subscribed).to.equal(false);
+      expect(teardown.called).to.equal(false);
       // response.end() is called once explicitly in onClose, and once more by the
       // pipe's auto-end when stream.end() fires — both are correct; we only care
       // that it was called at least once.
       expect(responseEndSpy.called).to.be.true;
       expect(request.socket.listenerCount('close')).to.equal(0);
+    });
+
+    it('should abort the per-request SSE AbortSignal when the client disconnects', async () => {
+      const result = new Promise<Observable<string>>(resolve => {
+        setTimeout(() => {
+          resolve(of('late event'));
+        }, 10);
+      });
+      const response = new Writable();
+      response.end = sinon.spy() as any;
+      response._write = () => {};
+
+      const request = attachSocket(new PassThrough());
+
+      const ssePromise = routerResponseController.sse(
+        result,
+        response as unknown as ServerResponse,
+        request as unknown as IncomingMessage,
+      );
+
+      const signal = (request as any)[SSE_ABORT_CONTROLLER]?.signal as
+        | AbortSignal
+        | undefined;
+      expect(signal).to.be.instanceOf(AbortSignal);
+      expect(signal!.aborted).to.equal(false);
+
+      request.socket.emit('close');
+      await ssePromise;
+
+      expect(signal!.aborted).to.equal(true);
     });
 
     it('should close the request when observable completes', done => {
