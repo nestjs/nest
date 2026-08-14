@@ -115,6 +115,11 @@ export class RouterResponseController {
   ) {
     // It's possible that we sent headers already so don't use a stream
     if (response.writableEnded) {
+      // The response is already gone: abort the request-scoped signal so
+      // handler cleanup wired to @SseSignal() still runs, and swallow late
+      // handler rejections that can no longer be delivered to the client.
+      this.getOrCreateAbortController(request).abort();
+      Promise.resolve(result).catch((err: unknown) => this.logger.error(err));
       return;
     }
 
