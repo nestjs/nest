@@ -16,6 +16,7 @@ import {
   Copy,
   Lock,
   Unlock,
+  QueryMethod,
 } from '../../index';
 import { ROUTE_ARGS_METADATA } from '../../constants';
 import { RouteParamtypes } from '../../enums/route-paramtypes.enum';
@@ -381,6 +382,63 @@ describe('@Search', () => {
       ) {}
 
       @Search([])
+      public static testUsingArray(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+    expect(path).to.be.eql('/');
+    expect(pathUsingArray).to.be.eql('/');
+  });
+});
+
+describe('@QueryMethod', () => {
+  const requestPath = 'test';
+  const requestProps = {
+    path: requestPath,
+    method: RequestMethod.QUERY,
+  };
+
+  const requestPathUsingArray = ['foo', 'bar'];
+  const requestPropsUsingArray = {
+    path: requestPathUsingArray,
+    method: RequestMethod.QUERY,
+  };
+
+  it('should enhance class with expected request metadata', () => {
+    class Test {
+      @QueryMethod(requestPath)
+      public static test() {}
+
+      @QueryMethod(requestPathUsingArray)
+      public static testUsingArray() {}
+    }
+
+    const path = Reflect.getMetadata('path', Test.test);
+    const method = Reflect.getMetadata('method', Test.test);
+    const pathUsingArray = Reflect.getMetadata('path', Test.testUsingArray);
+    const methodUsingArray = Reflect.getMetadata('method', Test.testUsingArray);
+
+    expect(path).to.be.eql(requestPath);
+    expect(method).to.be.eql(requestProps.method);
+    expect(pathUsingArray).to.be.eql(requestPathUsingArray);
+    expect(methodUsingArray).to.be.eql(requestPropsUsingArray.method);
+  });
+
+  it('should set path on "/" by default', () => {
+    class Test {
+      @QueryMethod()
+      public static test(
+        @Query() query,
+        @Param() params,
+        @HostParam() hostParams,
+      ) {}
+
+      @QueryMethod([])
       public static testUsingArray(
         @Query() query,
         @Param() params,

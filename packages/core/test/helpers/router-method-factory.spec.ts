@@ -21,6 +21,7 @@ describe('RouterMethodFactory', () => {
     move: () => {},
     lock: () => {},
     unlock: () => {},
+    query: () => {},
     all: () => {},
   };
   beforeEach(() => {
@@ -47,6 +48,7 @@ describe('RouterMethodFactory', () => {
     expect(factory.get(target, RequestMethod.MOVE)).to.equal(target.move);
     expect(factory.get(target, RequestMethod.LOCK)).to.equal(target.lock);
     expect(factory.get(target, RequestMethod.UNLOCK)).to.equal(target.unlock);
+    expect(factory.get(target, RequestMethod.QUERY)).to.equal(target.query);
     expect(factory.get(target, -1 as any)).to.equal(target.use);
   });
 });

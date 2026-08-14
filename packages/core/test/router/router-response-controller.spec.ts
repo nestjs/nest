@@ -116,20 +116,25 @@ describe('RouterResponseController', () => {
   });
 
   describe('getStatusByMethod', () => {
-    describe('when RequestMethod is POST', () => {
-      it('should return 201', () => {
-        expect(
-          routerResponseController.getStatusByMethod(RequestMethod.POST),
-        ).to.be.eql(201);
-      });
+    it('should return 201 for POST', () => {
+      expect(
+        routerResponseController.getStatusByMethod(RequestMethod.POST),
+      ).to.be.eql(201);
     });
-    describe('when RequestMethod is not POST', () => {
-      it('should return 200', () => {
-        expect(
-          routerResponseController.getStatusByMethod(RequestMethod.GET),
-        ).to.be.eql(200);
+
+    const methods = (Object.values(RequestMethod) as unknown[]).filter(
+      (value): value is RequestMethod => typeof value === 'number',
+    );
+
+    methods
+      .filter(method => method !== RequestMethod.POST)
+      .forEach(method => {
+        it(`should return 200 for ${RequestMethod[method]}`, () => {
+          expect(routerResponseController.getStatusByMethod(method)).to.be.eql(
+            200,
+          );
+        });
       });
-    });
   });
 
   describe('render', () => {
