@@ -325,7 +325,6 @@ changes to be accepted, the CLA must be signed. It's a quick process, we promise
 <!-- [individual-cla]: http://code.google.com/legal/individual-cla-v1.0.html -->
 <!-- [corporate-cla]: http://code.google.com/legal/corporate-cla-v1.0.html -->
 
-[dev-doc]: https://github.com/nestjs/nest/blob/master/docs/DEVELOPER.md
 [github]: https://github.com/nestjs/nest
 [stackoverflow]: https://stackoverflow.com/questions/tagged/nestjs
 [discord]: https://discordapp.com/invite/G7Qnnhy
