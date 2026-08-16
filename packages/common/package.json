@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@standard-schema/spec": "1.1.0",
-    "file-type": "21.3.4",
+    "file-type": "22.0.2",
     "iterare": "1.2.1",
     "load-esm": "1.0.3",
     "tslib": "2.8.1",
