@@ -35,7 +35,7 @@
     "@types/node": "24.10.11",
     "@types/supertest": "6.0.3",
     "oxlint": "1.58.0",
-    "prettier": "3.8.1",
+    "prettier": "3.9.6",
     "supertest": "7.2.2",
     "ts-loader": "9.5.4",
     "ts-node": "10.9.2",
