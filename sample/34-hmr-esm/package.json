@@ -46,7 +46,7 @@
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "6.0.2",
-    "vitest": "4.1.2",
+    "vitest": "4.1.10",
     "webpack": "5.105.2",
     "webpack-node-externals": "3.0.0"
   }
