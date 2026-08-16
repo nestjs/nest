@@ -49,6 +49,7 @@ import { pathToRegexp } from 'path-to-regexp';
 import {
   type VersionValue,
   loadPackage,
+  isNil,
   isString,
   isUndefined,
 } from '@nestjs/common/internal';
@@ -455,7 +456,7 @@ export class FastifyAdapter<
         )
       : response;
 
-    if (statusCode) {
+    if (!isNil(statusCode)) {
       fastifyReply.status(statusCode);
     }
     if (body instanceof StreamableFile) {

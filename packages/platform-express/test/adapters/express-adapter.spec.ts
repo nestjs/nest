@@ -48,6 +48,46 @@ describe('ExpressAdapter', () => {
     });
   });
 
+  describe('reply', () => {
+    const createResponse = () => ({
+      status: vi.fn(),
+      send: vi.fn(),
+      json: vi.fn(),
+      getHeader: vi.fn(),
+      setHeader: vi.fn(),
+    });
+
+    it('should apply the given status code', () => {
+      const response = createResponse();
+
+      expressAdapter.reply(response, { message: 'Oops' }, 404);
+
+      expect(response.status).toHaveBeenCalledWith(404);
+    });
+
+    it('should not apply any status code when it is omitted', () => {
+      const response = createResponse();
+
+      expressAdapter.reply(response, { message: 'Hello' });
+
+      expect(response.status).not.toHaveBeenCalled();
+    });
+
+    it('should apply falsy status codes instead of dropping them', () => {
+      // "0" and "NaN" are falsy, but they were still passed in. Forwarding them
+      // lets express reject the value, whereas skipping the call leaves the
+      // status that was set before the handler ran (200/201), so an error would
+      // be sent with a successful status code.
+      for (const statusCode of [0, NaN]) {
+        const response = createResponse();
+
+        expressAdapter.reply(response, { message: 'Oops' }, statusCode);
+
+        expect(response.status).toHaveBeenCalledWith(statusCode);
+      }
+    });
+  });
+
   describe('mapException', () => {
     it('should map URIError with status code to BadRequestException', () => {
       const error = new URIError();

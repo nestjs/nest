@@ -11,6 +11,45 @@ describe('FastifyAdapter', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  describe('reply', () => {
+    const createReply = () => ({
+      status: vi.fn(),
+      send: vi.fn(),
+      getHeader: vi.fn(),
+      header: vi.fn(),
+    });
+
+    it('should apply the given status code', () => {
+      const reply = createReply();
+
+      fastifyAdapter.reply(reply as any, { message: 'Oops' }, 404);
+
+      expect(reply.status).toHaveBeenCalledWith(404);
+    });
+
+    it('should not apply any status code when it is omitted', () => {
+      const reply = createReply();
+
+      fastifyAdapter.reply(reply as any, { message: 'Hello' });
+
+      expect(reply.status).not.toHaveBeenCalled();
+    });
+
+    it('should apply falsy status codes instead of dropping them', () => {
+      // "0" and "NaN" are falsy, but they were still passed in. Forwarding them
+      // lets fastify reject the value, whereas skipping the call leaves the
+      // status that was set before the handler ran (200/201), so an error would
+      // be sent with a successful status code.
+      for (const statusCode of [0, NaN]) {
+        const reply = createReply();
+
+        fastifyAdapter.reply(reply as any, { message: 'Oops' }, statusCode);
+
+        expect(reply.status).toHaveBeenCalledWith(statusCode);
+      }
+    });
+  });
+
   describe('mapException', () => {
     it('should map FastifyError with status code to HttpException', () => {
       const FastifyErrorCls = createError(
