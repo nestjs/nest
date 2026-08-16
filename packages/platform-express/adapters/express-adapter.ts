@@ -106,7 +106,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public reply(response: any, body: any, statusCode?: number) {
-    if (statusCode) {
+    if (!isNil(statusCode)) {
       response.status(statusCode);
     }
     if (isNil(body)) {
