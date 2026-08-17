@@ -118,7 +118,7 @@
     "delete-empty": "3.0.0",
     "eventsource": "4.1.1",
     "fancy-log": "2.0.0",
-    "fastify": "5.11.3",
+    "fastify": "5.12.0",
     "fastify-plugin": "6.0.0",
     "find-my-way": "9.8.0",
     "graphql": "17.0.2",
