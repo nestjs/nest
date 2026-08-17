@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Precondition Failed* type errors.
@@ -37,13 +37,13 @@ export class PreconditionFailedException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Precondition Failed',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Precondition Failed', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.PRECONDITION_FAILED,
       ),
       HttpStatus.PRECONDITION_FAILED,

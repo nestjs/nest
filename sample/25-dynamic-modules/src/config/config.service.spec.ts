@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from './config.service';
-import { CONFIG_OPTIONS } from './constants';
+import { ConfigService } from './config.service.js';
+import { CONFIG_OPTIONS } from './constants.js';
 
-jest.mock('dotenv');
-jest.mock('fs');
+vi.mock('dotenv');
+vi.mock('fs');
 
 describe('ConfigService', () => {
   let service: ConfigService;

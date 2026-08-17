@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { LazyModuleLoader } from '@nestjs/core';
-import { EagerModule } from './eager.module';
-import { GlobalModule } from './global.module';
-import { LazyModule } from './lazy.module';
+import { EagerModule } from './eager.module.js';
+import { GlobalModule } from './global.module.js';
+import { LazyModule } from './lazy.module.js';
 
 @Module({
   imports: [GlobalModule, EagerModule],

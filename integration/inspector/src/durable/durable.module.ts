@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { DurableController } from './durable.controller';
-import { DurableService } from './durable.service';
+import { DurableController } from './durable.controller.js';
+import { DurableService } from './durable.service.js';
 
 @Module({
   controllers: [DurableController],

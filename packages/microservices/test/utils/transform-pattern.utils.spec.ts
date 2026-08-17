@@ -1,11 +1,10 @@
-import { expect } from 'chai';
-import { MsPattern } from '../../interfaces';
-import { transformPatternToRoute } from '../../utils/transform-pattern.utils';
+import { MsPattern } from '../../interfaces/index.js';
+import { transformPatternToRoute } from '../../utils/transform-pattern.utils.js';
 
 function equalTest<R>(testPatterns: MsPattern[], expectedResults: R[]) {
   testPatterns.forEach((testPattern: MsPattern, index: number) => {
     const testData = transformPatternToRoute(testPattern);
-    expect(testData).to.be.equal(expectedResults[index]);
+    expect(testData).toBe(expectedResults[index]);
   });
 }
 describe('transformPatternToRoute', () => {
@@ -116,7 +115,7 @@ describe('transformPatternToRoute', () => {
       const testPatterns = [null, undefined, Symbol(213)];
 
       testPatterns.forEach((testPattern: any) => {
-        expect(transformPatternToRoute(testPattern)).to.be.eq(testPattern);
+        expect(transformPatternToRoute(testPattern)).toBe(testPattern);
       });
     });
   });
@@ -130,10 +129,10 @@ describe('transformPatternToRoute', () => {
         Array.from({ length: 25 }, (_, i) => [`key${i}`, `value${i}`]),
       );
 
-      expect(transformPatternToRoute(deepNestedPattern)).to.be.equal(
+      expect(transformPatternToRoute(deepNestedPattern)).toBe(
         '{"a":{"b":{"c":{"d":{"e":{"f":[MAX_DEPTH_REACHED]}}}}}}',
       );
-      expect(transformPatternToRoute(tooManyKeysPattern)).to.be.equal(
+      expect(transformPatternToRoute(tooManyKeysPattern)).toBe(
         '[TOO_MANY_KEYS]',
       );
     });

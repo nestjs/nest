@@ -1,2 +1,2 @@
-export * from './global.decorator';
-export * from './module.decorator';
+export * from './global.decorator.js';
+export * from './module.decorator.js';

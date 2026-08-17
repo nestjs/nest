@@ -1,5 +1,5 @@
-import { HttpServer } from '@nestjs/common';
-import { RequestMethod } from '@nestjs/common/enums/request-method.enum';
+import type { HttpServer } from '@nestjs/common';
+import { RequestMethod } from '@nestjs/common';
 
 export const REQUEST_METHOD_MAP = {
   [RequestMethod.GET]: 'get',
@@ -18,6 +18,7 @@ export const REQUEST_METHOD_MAP = {
   [RequestMethod.MOVE]: 'move',
   [RequestMethod.LOCK]: 'lock',
   [RequestMethod.UNLOCK]: 'unlock',
+  [RequestMethod.QUERY]: 'query',
 } as const satisfies Record<RequestMethod, keyof HttpServer>;
 
 export class RouterMethodFactory {

@@ -1,5 +1,6 @@
-import { Type } from '../type.interface';
-import { Paramtype } from './paramtype.interface';
+import { Type } from '../type.interface.js';
+import { Paramtype } from './paramtype.interface.js';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 export type Transform<T = any> = (value: T, metadata: ArgumentMetadata) => any;
 
@@ -10,7 +11,7 @@ export type Transform<T = any> = (value: T, metadata: ArgumentMetadata) => any;
  *
  * @publicApi
  */
-export interface ArgumentMetadata {
+export interface ArgumentMetadata<Metatype = any> {
   /**
    * Indicates whether argument is a body, query, param, or custom parameter
    */
@@ -19,12 +20,17 @@ export interface ArgumentMetadata {
    * Underlying base type (e.g., `String`) of the parameter, based on the type
    * definition in the route handler.
    */
-  readonly metatype?: Type<any> | undefined;
+  readonly metatype?: Type<Metatype> | undefined;
   /**
    * String passed as an argument to the decorator.
    * Example: `@Body('userId')` would yield `userId`
    */
   readonly data?: string | undefined;
+  /**
+   * A standard schema object.
+   * Can be used to validate the parameter's value against the schema, or to generate API.
+   */
+  readonly schema?: StandardSchemaV1;
 }
 
 /**

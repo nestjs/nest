@@ -7,8 +7,8 @@ import {
   Post,
   Request,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { Public } from './decorators/public.decorator';
+import { AuthService } from './auth.service.js';
+import { Public } from './decorators/public.decorator.js';
 
 @Controller('auth')
 export class AuthController {
@@ -22,7 +22,7 @@ export class AuthController {
   }
 
   @Get('profile')
-  getProfile(@Request() req) {
+  getProfile(@Request() req: any) {
     return req.user;
   }
 }

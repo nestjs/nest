@@ -1,12 +1,16 @@
-import { INTERCEPTORS_METADATA } from '@nestjs/common/constants';
-import { Controller, NestInterceptor, Type } from '@nestjs/common/interfaces';
-import { isEmpty, isFunction } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
-import { ApplicationConfig } from '../application-config';
-import { ContextCreator } from '../helpers/context-creator';
-import { STATIC_CONTEXT } from '../injector/constants';
-import { NestContainer } from '../injector/container';
-import { InstanceWrapper } from '../injector/instance-wrapper';
+import { ApplicationConfig } from '../application-config.js';
+import { ContextCreator } from '../helpers/context-creator.js';
+import { STATIC_CONTEXT } from '../injector/constants.js';
+import { NestContainer } from '../injector/container.js';
+import { InstanceWrapper } from '../injector/instance-wrapper.js';
+import {
+  INTERCEPTORS_METADATA,
+  type Controller,
+  isEmpty,
+  isFunction,
+} from '@nestjs/common/internal';
+import type { NestInterceptor, Type } from '@nestjs/common';
 
 export class InterceptorsContextCreator extends ContextCreator {
   private moduleContext: string;

@@ -1,6 +1,4 @@
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { Global, Inject, Injectable, Module, Scope } from '@nestjs/common';
 
 @Global()
@@ -64,11 +62,11 @@ export class Dependant {
   ) {}
 
   public checkDependencies() {
-    expect(this.transientProvider).to.be.instanceOf(TransientProvider);
-    expect(this.foreignTransientProvider).to.be.instanceOf(
+    expect(this.transientProvider).toBeInstanceOf(TransientProvider);
+    expect(this.foreignTransientProvider).toBeInstanceOf(
       ForeignTransientProvider,
     );
-    expect(this.requestProvider).to.be.instanceOf(RequestProvider);
+    expect(this.requestProvider).toBeInstanceOf(RequestProvider);
   }
 }
 
@@ -149,9 +147,9 @@ describe('Many global modules', () => {
     const moduleRef = await moduleBuilder.compile();
 
     const dependant = await moduleRef.resolve(Dependant);
-    const checkDependenciesSpy = sinon.spy(dependant, 'checkDependencies');
+    const checkDependenciesSpy = vi.spyOn(dependant, 'checkDependencies');
     dependant.checkDependencies();
 
-    expect(checkDependenciesSpy.called).to.be.true;
+    expect(checkDependenciesSpy).toHaveBeenCalled();
   });
 });

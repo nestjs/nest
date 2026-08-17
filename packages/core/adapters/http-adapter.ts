@@ -1,6 +1,10 @@
-import { HttpServer, RequestMethod, VersioningOptions } from '@nestjs/common';
-import { RequestHandler, VersionValue } from '@nestjs/common/interfaces';
-import { NestApplicationOptions } from '@nestjs/common/interfaces/nest-application-options.interface';
+import type {
+  HttpServer,
+  RequestMethod,
+  VersioningOptions,
+} from '@nestjs/common';
+import type { RequestHandler, VersionValue } from '@nestjs/common/internal';
+import type { NestApplicationOptions } from '@nestjs/common';
 
 /**
  * @publicApi
@@ -113,6 +117,12 @@ export abstract class AbstractHttpAdapter<
     return this.instance.search(...args);
   }
 
+  public query(handler: RequestHandler);
+  public query(path: any, handler: RequestHandler);
+  public query(...args: any[]) {
+    return this.instance.query(...args);
+  }
+
   public options(handler: RequestHandler);
   public options(path: any, handler: RequestHandler);
   public options(...args: any[]) {
@@ -158,6 +168,12 @@ export abstract class AbstractHttpAdapter<
   public setOnRequestHook(onRequestHook: Function): void {}
 
   public setOnResponseHook(onResponseHook: Function): void {}
+
+  public beforeClose(): void {}
+
+  public mapException(error: unknown): unknown {
+    return error;
+  }
 
   abstract close();
   abstract initHttpServer(options: NestApplicationOptions);

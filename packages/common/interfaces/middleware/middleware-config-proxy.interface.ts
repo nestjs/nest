@@ -1,6 +1,6 @@
-import { Type } from '../type.interface';
-import { RouteInfo } from './middleware-configuration.interface';
-import { MiddlewareConsumer } from './middleware-consumer.interface';
+import { Type } from '../type.interface.js';
+import { RouteInfo } from './middleware-configuration.interface.js';
+import { MiddlewareConsumer } from './middleware-consumer.interface.js';
 
 /**
  * @publicApi

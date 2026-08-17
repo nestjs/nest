@@ -1,49 +1,44 @@
+import type { ForwardReference, Type } from '@nestjs/common';
 import {
-  InjectionToken,
+  type InjectionToken,
   Logger,
-  LoggerService,
-  OptionalFactoryDependency,
+  type LoggerService,
+  type OptionalFactoryDependency,
   Scope,
 } from '@nestjs/common';
 import {
+  type Controller,
+  type Injectable,
   OPTIONAL_DEPS_METADATA,
   OPTIONAL_PROPERTY_DEPS_METADATA,
   PARAMTYPES_METADATA,
   PROPERTY_DEPS_METADATA,
   SELF_DECLARED_DEPS_METADATA,
-} from '@nestjs/common/constants';
-import {
-  Controller,
-  ForwardReference,
-  Injectable,
-  Type,
-} from '@nestjs/common/interfaces';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
-import {
+  clc,
   isFunction,
   isNil,
   isObject,
   isString,
   isSymbol,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/internal';
 import { iterate } from 'iterare';
 import { performance } from 'perf_hooks';
-import { CircularDependencyException } from '../errors/exceptions';
-import { RuntimeException } from '../errors/exceptions/runtime.exception';
-import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
-import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
-import { Barrier } from '../helpers/barrier';
-import { STATIC_CONTEXT } from './constants';
-import { INQUIRER } from './inquirer';
+import { CircularDependencyException } from '../errors/exceptions/index.js';
+import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
+import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception.js';
+import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception.js';
+import { Barrier } from '../helpers/barrier.js';
+import { STATIC_CONTEXT } from './constants.js';
+import { INQUIRER } from './inquirer/index.js';
 import {
   ContextId,
   InstancePerContext,
   InstanceWrapper,
   PropertyMetadata,
-} from './instance-wrapper';
-import { Module } from './module';
-import { SettlementSignal } from './settlement-signal';
+} from './instance-wrapper.js';
+import { Module } from './module.js';
+import { SettlementSignal } from './settlement-signal.js';
 
 /**
  * The type of an injectable dependency
@@ -182,7 +177,7 @@ export class Injector {
         wrapper,
         inquirerId,
       );
-      const callback = async (instances: unknown[]) => {
+      const callback = async (instances: unknown[], depth = 0) => {
         const properties = await this.resolveProperties(
           wrapper,
           moduleRef,
@@ -197,6 +192,8 @@ export class Injector {
           wrapper.isTransient ? localResolutionContext : resolutionContext,
         );
         this.applyProperties(instance, properties);
+
+        wrapper.hierarchyLevel = depth + 1;
         wrapper.initTime = this.getNowTimestamp() - t0;
         settlementSignal.complete();
       };
@@ -311,13 +308,16 @@ export class Injector {
     wrapper: InstanceWrapper<T>,
     moduleRef: Module,
     inject: InjectorDependency[] | undefined,
-    callback: (args: unknown[]) => void | Promise<void>,
+    callback: (args: unknown[], depth?: number) => void | Promise<void>,
     resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
     parentInquirer?: InstanceWrapper,
   ) {
     const metadata = wrapper.getCtorMetadata();
 
-    if (metadata && resolutionContext.contextId !== STATIC_CONTEXT) {
+    if (
+      resolutionContext.contextId !== STATIC_CONTEXT &&
+      this.hasDenseCtorMetadata(wrapper, inject, metadata)
+    ) {
       const deps = await this.loadCtorMetadata(
         metadata,
         resolutionContext.contextId,
@@ -334,6 +334,7 @@ export class Injector {
 
     const paramBarrier = new Barrier(dependencies.length);
     let isResolved = true;
+    let depth = 0;
     const resolveParam = async (param: unknown, index: number) => {
       try {
         if (this.isInquirer(param, parentInquirer)) {
@@ -381,6 +382,11 @@ export class Injector {
           paramWrapper,
           effectiveResolutionContext,
         );
+
+        if (paramWrapperWithInstance.hierarchyLevel > depth) {
+          depth = paramWrapperWithInstance.hierarchyLevel;
+        }
+
         const instanceHost = paramWrapperWithInstance.getInstanceByContextId(
           this.getContextId(
             effectiveResolutionContext.contextId,
@@ -408,7 +414,7 @@ export class Injector {
       }
     };
     const instances = await Promise.all(dependencies.map(resolveParam));
-    isResolved && (await callback(instances));
+    isResolved && (await callback(instances, depth));
   }
 
   public getClassDependencies<T>(
@@ -461,21 +467,21 @@ export class Injector {
     ];
   }
 
-  public reflectConstructorParams<T>(type: Type<T>): any[] {
+  public reflectConstructorParams(type: Type<unknown> | Function): any[] {
     const paramtypes = [
       ...(Reflect.getMetadata(PARAMTYPES_METADATA, type) || []),
     ];
-    const selfParams = this.reflectSelfParams<T>(type);
+    const selfParams = this.reflectSelfParams(type);
 
     selfParams.forEach(({ index, param }) => (paramtypes[index] = param));
     return Array.from(paramtypes);
   }
 
-  public reflectOptionalParams<T>(type: Type<T>): any[] {
-    return Reflect.getMetadata(OPTIONAL_DEPS_METADATA, type) || [];
+  public reflectOptionalParams(type: Type<unknown> | Function): any[] {
+    return Reflect.getOwnMetadata(OPTIONAL_DEPS_METADATA, type) || [];
   }
 
-  public reflectSelfParams<T>(type: Type<T>): any[] {
+  public reflectSelfParams(type: Type<unknown> | Function): any[] {
     return Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, type) || [];
   }
 
@@ -703,19 +709,12 @@ export class Injector {
       instanceWrapperRef = providers.get(name)!;
       this.addDependencyMetadata(keyOrIndex!, wrapper, instanceWrapperRef);
 
-      const inquirerId = this.getContextInquirerId(resolutionContext);
-      const instanceHost = instanceWrapperRef.getInstanceByContextId(
-        this.getContextId(resolutionContext.contextId, instanceWrapperRef),
-        inquirerId,
-      );
-      if (!instanceHost.isResolved && !instanceWrapperRef.forwardRef) {
-        /*
-         * Provider will be loaded shortly in resolveComponentHost() once we pass the current
-         * Barrier. We cannot load it here because doing so could incorrectly evaluate the
-         * staticity of the dependency tree and lead to undefined / null injection.
-         */
-        break;
-      }
+      /*
+       * Stop at the first direct export match. Continuing when the provider is
+       * already resolved would let a later import (e.g. a global forRoot module)
+       * override an explicit forFeature import for the same token.
+       */
+      break;
     }
     return instanceWrapperRef;
   }
@@ -836,7 +835,7 @@ export class Injector {
     properties: PropertyDependency[],
   ): void {
     if (!isObject(instance)) {
-      return undefined;
+      return;
     }
     iterate(properties)
       .filter(item => !isNil(item.instance))
@@ -1043,7 +1042,6 @@ export class Injector {
     wrapper: InstanceWrapper<Injectable>,
     resolutionContext: ResolutionContext,
   ): boolean {
-    const isSnapshotGraphCompilation = !!this.options?.snapshot;
     const isStaticContext = resolutionContext.contextId === STATIC_CONTEXT;
     const hasNoInquirer = !resolutionContext.inquirer;
     const isTopLevelStaticTransientOrRequestProvider =
@@ -1062,7 +1060,7 @@ export class Injector {
       (isTopLevelStaticTransientOrRequestProvider ||
         isStaticInquirerOutsideResolutionContext);
 
-    return !isSnapshotGraphCompilation && shouldSkipForStaticBootstrap;
+    return shouldSkipForStaticBootstrap;
   }
 
   /**
@@ -1147,6 +1145,37 @@ export class Injector {
         parentInquirer,
       ),
     );
+  }
+
+  private hasDenseCtorMetadata<T>(
+    wrapper: InstanceWrapper<T>,
+    inject: InjectorDependency[] | undefined,
+    metadata: InstanceWrapper[] | undefined,
+  ): boolean {
+    if (!metadata) {
+      return false;
+    }
+
+    // The fast path requires a fully populated metadata array.
+    // While another request is still registering dependency metadata,
+    // sparse entries here would feed request-scoped factories `undefined`.
+    const expectedDepsLength = !isNil(inject)
+      ? inject.length
+      : wrapper.metatype
+        ? this.reflectConstructorParams(wrapper.metatype).length
+        : 0;
+
+    if (metadata.length !== expectedDepsLength) {
+      return false;
+    }
+
+    for (let index = 0; index < expectedDepsLength; index++) {
+      if (metadata[index] === undefined) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private resolveScopedComponentHost(

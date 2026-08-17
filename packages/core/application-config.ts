@@ -1,14 +1,17 @@
-import {
+import type {
   CanActivate,
   ExceptionFilter,
   NestInterceptor,
   PipeTransform,
+  PreRequestHook,
+  RouteConflictPolicy,
+  RouteResolutionStrategy,
   VersioningOptions,
   WebSocketAdapter,
 } from '@nestjs/common';
-import { GlobalPrefixOptions } from '@nestjs/common/interfaces';
-import { InstanceWrapper } from './injector/instance-wrapper';
-import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface';
+import type { GlobalPrefixOptions } from '@nestjs/common/internal';
+import { InstanceWrapper } from './injector/instance-wrapper.js';
+import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface.js';
 
 export class ApplicationConfig {
   private globalPrefix = '';
@@ -17,7 +20,10 @@ export class ApplicationConfig {
   private globalFilters: Array<ExceptionFilter> = [];
   private globalInterceptors: Array<NestInterceptor> = [];
   private globalGuards: Array<CanActivate> = [];
+  private globalPreRequestHooks: Array<PreRequestHook> = [];
   private versioningOptions: VersioningOptions;
+  private routeConflictPolicy: RouteConflictPolicy | undefined;
+  private routeResolutionStrategy: RouteResolutionStrategy | undefined;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
   private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] =
     [];
@@ -135,6 +141,14 @@ export class ApplicationConfig {
     return this.globalRequestGuards;
   }
 
+  public registerPreRequestHook(...hooks: PreRequestHook[]) {
+    this.globalPreRequestHooks = this.globalPreRequestHooks.concat(hooks);
+  }
+
+  public getGlobalPreRequestHooks(): PreRequestHook[] {
+    return this.globalPreRequestHooks;
+  }
+
   public enableVersioning(options: VersioningOptions): void {
     if (Array.isArray(options.defaultVersion)) {
       // Drop duplicated versions
@@ -146,5 +160,23 @@ export class ApplicationConfig {
 
   public getVersioning(): VersioningOptions | undefined {
     return this.versioningOptions;
+  }
+
+  public setRouteConflictPolicy(policy: RouteConflictPolicy | undefined): void {
+    this.routeConflictPolicy = policy;
+  }
+
+  public getRouteConflictPolicy(): RouteConflictPolicy | undefined {
+    return this.routeConflictPolicy;
+  }
+
+  public setRouteResolutionStrategy(
+    strategy: RouteResolutionStrategy | undefined,
+  ): void {
+    this.routeResolutionStrategy = strategy;
+  }
+
+  public getRouteResolutionStrategy(): RouteResolutionStrategy | undefined {
+    return this.routeResolutionStrategy;
   }
 }

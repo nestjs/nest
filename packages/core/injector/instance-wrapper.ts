@@ -1,23 +1,29 @@
-import { Logger, LoggerService, Provider, Scope, Type } from '@nestjs/common';
-import { EnhancerSubtype } from '@nestjs/common/constants';
-import { FactoryProvider, InjectionToken } from '@nestjs/common/interfaces';
-import { clc } from '@nestjs/common/utils/cli-colors.util';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import type { FactoryProvider, InjectionToken } from '@nestjs/common';
 import {
+  Logger,
+  type LoggerService,
+  type Provider,
+  Scope,
+  type Type,
+} from '@nestjs/common';
+import {
+  type EnhancerSubtype,
+  clc,
   isNil,
   isString,
   isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+  randomStringGenerator,
+} from '@nestjs/common/internal';
 import { iterate } from 'iterare';
-import { UuidFactory } from '../inspector/uuid-factory';
-import { STATIC_CONTEXT } from './constants';
+import { UuidFactory } from '../inspector/uuid-factory.js';
+import { STATIC_CONTEXT } from './constants.js';
 import {
   isClassProvider,
   isFactoryProvider,
   isValueProvider,
-} from './helpers/provider-classifier';
-import { Module } from './module';
-import { SettlementSignal } from './settlement-signal';
+} from './helpers/provider-classifier.js';
+import { Module } from './module.js';
+import { SettlementSignal } from './settlement-signal.js';
 
 export const INSTANCE_METADATA_SYMBOL = Symbol.for('instance_metadata:cache');
 export const INSTANCE_ID_SYMBOL = Symbol.for('instance_metadata:id');
@@ -58,6 +64,11 @@ interface InstanceMetadataStore {
   enhancers?: InstanceWrapper[];
 }
 
+const dependencyTreeParents = new WeakMap<
+  InstanceWrapper,
+  Set<InstanceWrapper>
+>();
+
 export class InstanceWrapper<T = any> {
   public readonly name: any;
   public readonly token: InjectionToken;
@@ -83,6 +94,16 @@ export class InstanceWrapper<T = any> {
     | undefined;
   private isTreeStatic: boolean | undefined;
   private isTreeDurable: boolean | undefined;
+  private _hierarchyLevel = 0;
+
+  get hierarchyLevel(): number {
+    return this._hierarchyLevel;
+  }
+
+  set hierarchyLevel(level: number) {
+    this._hierarchyLevel = level;
+  }
+
   /**
    * The root inquirer reference. Present only if child instance wrapper
    * is transient and has a parent inquirer.
@@ -200,6 +221,8 @@ export class InstanceWrapper<T = any> {
       this[INSTANCE_METADATA_SYMBOL].dependencies = [];
     }
     this[INSTANCE_METADATA_SYMBOL].dependencies[index] = wrapper;
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getCtorMetadata(): InstanceWrapper[] {
@@ -214,6 +237,8 @@ export class InstanceWrapper<T = any> {
       key,
       wrapper,
     });
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getPropertiesMetadata(): PropertyMetadata[] {
@@ -225,6 +250,8 @@ export class InstanceWrapper<T = any> {
       this[INSTANCE_METADATA_SYMBOL].enhancers = [];
     }
     this[INSTANCE_METADATA_SYMBOL].enhancers.push(wrapper);
+    this.registerDependencyTreeParent(wrapper);
+    this.resetDependencyTreeState();
   }
 
   public getEnhancersMetadata(): InstanceWrapper[] {
@@ -490,6 +517,26 @@ export class InstanceWrapper<T = any> {
 
   private isNewable(): boolean {
     return isNil(this.inject) && this.metatype && this.metatype.prototype;
+  }
+
+  private registerDependencyTreeParent(wrapper: InstanceWrapper) {
+    if (wrapper instanceof InstanceWrapper) {
+      const parents = dependencyTreeParents.get(wrapper) ?? new Set();
+      parents.add(this);
+      dependencyTreeParents.set(wrapper, parents);
+    }
+  }
+
+  private resetDependencyTreeState(lookupRegistry = new Set<string>()) {
+    if (lookupRegistry.has(this[INSTANCE_ID_SYMBOL])) {
+      return;
+    }
+    lookupRegistry.add(this[INSTANCE_ID_SYMBOL]);
+    this.isTreeStatic = undefined;
+    this.isTreeDurable = undefined;
+    dependencyTreeParents
+      .get(this)
+      ?.forEach(parent => parent.resetDependencyTreeState(lookupRegistry));
   }
 
   private initialize(

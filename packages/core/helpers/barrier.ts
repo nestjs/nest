@@ -14,6 +14,10 @@ export class Barrier {
     this.promise = new Promise<void>(resolve => {
       this.resolve = resolve;
     });
+
+    if (targetCount === 0) {
+      this.resolve();
+    }
   }
 
   /**
@@ -23,7 +27,7 @@ export class Barrier {
    */
   public signal(): void {
     this.currentCount += 1;
-    if (this.currentCount === this.targetCount) {
+    if (this.currentCount >= this.targetCount) {
       this.resolve();
     }
   }

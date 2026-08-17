@@ -1,4 +1,4 @@
-import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+import type { RouteParamtypes } from '@nestjs/common/internal';
 
 export interface IRouteParamsFactory {
   exchangeKeyForValue<

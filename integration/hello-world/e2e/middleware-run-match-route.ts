@@ -7,10 +7,8 @@ import {
   NestMiddleware,
   Module,
 } from '@nestjs/common';
-import { Test } from '../../../packages/testing';
-import * as request from 'supertest';
-import { expect } from 'chai';
-
+import { Test } from '../../../packages/testing.js';
+import request from 'supertest';
 /**
  * Number of times that the middleware was executed.
  */
@@ -66,7 +64,7 @@ describe('Middleware (run on route match)', () => {
       .get('/test')
       .expect(200)
       .then(() => {
-        expect(triggerCounter).to.be.eq(1);
+        expect(triggerCounter).toBe(1);
       });
   });
 
@@ -75,7 +73,7 @@ describe('Middleware (run on route match)', () => {
       .get('/1')
       .expect(200)
       .then(() => {
-        expect(triggerCounter).to.be.eq(1);
+        expect(triggerCounter).toBe(1);
       });
   });
 
@@ -84,7 +82,7 @@ describe('Middleware (run on route match)', () => {
       .get('/static/route')
       .expect(200)
       .then(() => {
-        expect(triggerCounter).to.be.eq(1);
+        expect(triggerCounter).toBe(1);
       });
   });
 
@@ -93,7 +91,7 @@ describe('Middleware (run on route match)', () => {
       .get('/1/abc')
       .expect(200)
       .then(() => {
-        expect(triggerCounter).to.be.eq(1);
+        expect(triggerCounter).toBe(1);
       });
   });
 

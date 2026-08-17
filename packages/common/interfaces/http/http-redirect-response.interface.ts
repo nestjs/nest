@@ -1,4 +1,4 @@
-import { HttpStatus } from '../../enums';
+import { HttpStatus } from '../../enums/index.js';
 
 export interface HttpRedirectResponse {
   url: string;

@@ -1,6 +1,6 @@
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
-import { KafkaHeaders } from '../enums/kafka-headers.enum';
-import { Deserializer, IncomingResponse } from '../interfaces';
+import { KafkaHeaders } from '../enums/kafka-headers.enum.js';
+import { Deserializer, IncomingResponse } from '../interfaces/index.js';
+import { isUndefined } from '@nestjs/common/internal';
 
 /**
  * @publicApi

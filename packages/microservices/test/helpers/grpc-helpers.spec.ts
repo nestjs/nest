@@ -1,7 +1,6 @@
-import { expect } from 'chai';
-import { InvalidGrpcPackageDefinitionMissingPackageDefinitionException } from '../../errors/invalid-grpc-package-definition-missing-package-definition.exception';
-import { InvalidGrpcPackageDefinitionMutexException } from '../../errors/invalid-grpc-package-definition-mutex.exception';
-import { getGrpcPackageDefinition } from '../../helpers/grpc-helpers';
+import { InvalidGrpcPackageDefinitionMissingPackageDefinitionException } from '../../errors/invalid-grpc-package-definition-missing-package-definition.exception.js';
+import { InvalidGrpcPackageDefinitionMutexException } from '../../errors/invalid-grpc-package-definition-mutex.exception.js';
+import { getGrpcPackageDefinition } from '../../helpers/grpc-helpers.js';
 
 const grpcProtoLoaderPackage = { loadSync: (a, b) => 'withLoader' };
 
@@ -15,7 +14,7 @@ describe('getGrpcPackageDefinition', () => {
           },
           grpcProtoLoaderPackage,
         ),
-      ).to.throw(InvalidGrpcPackageDefinitionMissingPackageDefinitionException);
+      ).toThrow(InvalidGrpcPackageDefinitionMissingPackageDefinitionException);
     });
   });
 
@@ -30,7 +29,7 @@ describe('getGrpcPackageDefinition', () => {
           },
           grpcProtoLoaderPackage,
         ),
-      ).to.throw(InvalidGrpcPackageDefinitionMutexException);
+      ).toThrow(InvalidGrpcPackageDefinitionMutexException);
     });
   });
 
@@ -44,7 +43,7 @@ describe('getGrpcPackageDefinition', () => {
           },
           grpcProtoLoaderPackage,
         ),
-      ).to.not.throw(Error);
+      ).not.toThrow(Error);
     });
   });
 
@@ -58,7 +57,7 @@ describe('getGrpcPackageDefinition', () => {
           },
           grpcProtoLoaderPackage,
         ),
-      ).to.not.throw(Error);
+      ).not.toThrow(Error);
     });
   });
 });

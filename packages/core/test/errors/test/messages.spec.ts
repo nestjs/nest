@@ -1,12 +1,12 @@
-import { expect } from 'chai';
-import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception';
+import { UnknownDependenciesException } from '../../../errors/exceptions/unknown-dependencies.exception.js';
 import {
   INVALID_MODULE_MESSAGE,
   UNDEFINED_MODULE_MESSAGE,
   UNKNOWN_EXPORT_MESSAGE,
-} from '../../../errors/messages';
-import { Module } from '../../../injector/module';
-import { stringCleaner } from '../../utils/string.cleaner';
+  USING_INVALID_CLASS_AS_A_MODULE_MESSAGE,
+} from '../../../errors/messages.js';
+import { Module } from '../../../injector/module.js';
+import { stringCleaner } from '../../utils/string.cleaner.js';
 
 describe('Error Messages', () => {
   const CatsModule = { name: 'CatsModule' };
@@ -37,7 +37,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the provide token', () => {
       const expectedResult =
@@ -60,7 +60,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the provide token as double-quoted string for string-based tokens', () => {
       const expectedResult =
@@ -84,7 +84,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the function name', () => {
       const expectedResult =
@@ -107,7 +107,7 @@ describe('Error Messages', () => {
           dependencies: ['', CatFunction],
         }).message,
       );
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should use "+" if unknown dependency name', () => {
       const expectedResult =
@@ -130,7 +130,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the module name', () => {
       const expectedResult =
@@ -166,7 +166,7 @@ describe('Error Messages', () => {
         ).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the symbol name of the provider', () => {
       const expectedResult =
@@ -189,7 +189,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display the symbol dependency of the provider', () => {
       const expectedResult =
@@ -212,7 +212,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should detect likely import type issue and provide specific guidance', () => {
       const expectedResult =
@@ -238,7 +238,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should detect import type issue with mixed dependencies', () => {
       const expectedResult =
@@ -267,7 +267,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display class token name in argument label when name is provided', () => {
       class UserRepository {}
@@ -293,7 +293,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display string token name in argument label when name is provided', () => {
       const expectedResult =
@@ -317,7 +317,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should display symbol token name in argument label when name is provided', () => {
       const TOKEN = Symbol('MY_TOKEN');
@@ -343,7 +343,7 @@ describe('Error Messages', () => {
         }).message,
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
     it('should add documentation links to export errors', () => {
       const expectedResult =
@@ -359,7 +359,7 @@ describe('Error Messages', () => {
         UNKNOWN_EXPORT_MESSAGE('TestService', 'TestModule'),
       );
 
-      expect(actualMessage).to.equal(expectedResult);
+      expect(actualMessage).toBe(expectedResult);
     });
   });
 
@@ -379,23 +379,124 @@ Scope [AppModule -> CatsModule]`);
         UNDEFINED_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule]),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
     });
   });
 
   describe('INVALID_MODULE_MESSAGE', () => {
-    it('should display the module name with the invalid index and scope', () => {
+    it('should display the received `null` value and its type', () => {
       const expectedMessage =
         stringCleaner(`Nest cannot create the CatsModule instance.
 Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`null\` is of type "null".
 
 Scope [AppModule -> CatsModule]`);
 
       const actualMessage = stringCleaner(
-        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule]),
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], null),
       );
 
-      expect(actualMessage).to.be.eq(expectedMessage);
+      expect(actualMessage).toBe(expectedMessage);
+    });
+
+    it('should display the received `false` value and its type', () => {
+      const expectedMessage =
+        stringCleaner(`Nest cannot create the CatsModule instance.
+Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`false\` is of type "boolean".
+
+Scope [AppModule -> CatsModule]`);
+
+      const actualMessage = stringCleaner(
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], false),
+      );
+
+      expect(actualMessage).toBe(expectedMessage);
+    });
+
+    it('should display the received `0` value and its type', () => {
+      const expectedMessage =
+        stringCleaner(`Nest cannot create the CatsModule instance.
+Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`0\` is of type "number".
+
+Scope [AppModule -> CatsModule]`);
+
+      const actualMessage = stringCleaner(
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], 0),
+      );
+
+      expect(actualMessage).toBe(expectedMessage);
+    });
+
+    it('should display the received empty string value and its type', () => {
+      const expectedMessage =
+        stringCleaner(`Nest cannot create the CatsModule instance.
+Received an unexpected value at index [0] of the CatsModule "imports" array.
+The received value \`""\` is of type "string".
+
+Scope [AppModule -> CatsModule]`);
+
+      const actualMessage = stringCleaner(
+        INVALID_MODULE_MESSAGE(CatsModule, 0, [AppModule, CatsModule], ''),
+      );
+
+      expect(actualMessage).toBe(expectedMessage);
+    });
+  });
+
+  describe('USING_INVALID_CLASS_AS_A_MODULE_MESSAGE', () => {
+    class FooClass {}
+
+    it('should identify a class decorated with @Controller() and direct it to the "controllers" array', () => {
+      const expectedMessage =
+        stringCleaner(`"FooClass" is decorated with @Controller() and cannot appear in the "imports" array of a module. Please move "FooClass" to the "controllers" array of the importing module instead.
+
+Scope [AppModule]`);
+
+      const actualMessage = stringCleaner(
+        USING_INVALID_CLASS_AS_A_MODULE_MESSAGE(
+          FooClass,
+          [AppModule],
+          'controller',
+        ),
+      );
+
+      expect(actualMessage).toBe(expectedMessage);
+    });
+
+    it('should identify a class decorated with @Injectable() and direct it to the "providers" array', () => {
+      const expectedMessage =
+        stringCleaner(`"FooClass" is decorated with @Injectable() and cannot appear in the "imports" array of a module. Please move "FooClass" to the "providers" array of the importing module instead.
+
+Scope [AppModule]`);
+
+      const actualMessage = stringCleaner(
+        USING_INVALID_CLASS_AS_A_MODULE_MESSAGE(
+          FooClass,
+          [AppModule],
+          'provider',
+        ),
+      );
+
+      expect(actualMessage).toBe(expectedMessage);
+    });
+
+    it('should identify a class decorated with @Catch() and direct it to the "providers" array or @UseFilters()', () => {
+      const expectedMessage =
+        stringCleaner(`"FooClass" is decorated with @Catch() and cannot appear in the "imports" array of a module. Please move "FooClass" to the "providers" array (using the APP_FILTER token to apply it globally) or apply it via @UseFilters() instead.
+
+Scope [AppModule]`);
+
+      const actualMessage = stringCleaner(
+        USING_INVALID_CLASS_AS_A_MODULE_MESSAGE(
+          FooClass,
+          [AppModule],
+          'filter',
+        ),
+      );
+
+      expect(actualMessage).toBe(expectedMessage);
     });
   });
 });

@@ -1,51 +1,58 @@
-import {
-  CanActivate,
-  ForbiddenException,
-  HttpServer,
-  ParamData,
-  PipeTransform,
-  RequestMethod,
+import type {
+  ArgumentMetadata,
+  ContextType,
+  RouteParamMetadata,
 } from '@nestjs/common';
 import {
+  type CanActivate,
+  ForbiddenException,
+  type HttpServer,
+  type ParamData,
+  type PipeTransform,
+  type RequestMethod,
+  SSE_ABORT_CONTROLLER,
+} from '@nestjs/common';
+import {
+  type Controller,
   CUSTOM_ROUTE_ARGS_METADATA,
   HEADERS_METADATA,
   HTTP_CODE_METADATA,
+  isEmptyArray,
+  isString,
   REDIRECT_METADATA,
   RENDER_METADATA,
   ROUTE_ARGS_METADATA,
+  RouteParamtypes,
   SSE_METADATA,
-} from '@nestjs/common/constants';
-import { RouteParamMetadata } from '@nestjs/common/decorators';
-import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
-import { ContextType, Controller } from '@nestjs/common/interfaces';
-import { isEmpty, isString } from '@nestjs/common/utils/shared.utils';
+} from '@nestjs/common/internal';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { IncomingMessage } from 'http';
 import { Observable } from 'rxjs';
 import {
   FORBIDDEN_MESSAGE,
   GuardsConsumer,
   GuardsContextCreator,
-} from '../guards';
-import { ContextUtils } from '../helpers/context-utils';
-import { ExecutionContextHost } from '../helpers/execution-context-host';
+} from '../guards/index.js';
+import { ContextUtils } from '../helpers/context-utils.js';
+import { ExecutionContextHost } from '../helpers/execution-context-host.js';
 import {
   HandleResponseFn,
   HandlerMetadata,
   HandlerMetadataStorage,
   HandlerResponseBasicFn,
-} from '../helpers/handler-metadata-storage';
-import { STATIC_CONTEXT } from '../injector/constants';
-import { InterceptorsConsumer } from '../interceptors/interceptors-consumer';
-import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator';
-import { PipesConsumer } from '../pipes/pipes-consumer';
-import { PipesContextCreator } from '../pipes/pipes-context-creator';
-import { IRouteParamsFactory } from './interfaces/route-params-factory.interface';
+} from '../helpers/handler-metadata-storage.js';
+import { STATIC_CONTEXT } from '../injector/constants.js';
+import { InterceptorsConsumer } from '../interceptors/interceptors-consumer.js';
+import { InterceptorsContextCreator } from '../interceptors/interceptors-context-creator.js';
+import { PipesConsumer } from '../pipes/pipes-consumer.js';
+import { PipesContextCreator } from '../pipes/pipes-context-creator.js';
+import { IRouteParamsFactory } from './interfaces/route-params-factory.interface.js';
 import {
   CustomHeader,
   RedirectResponse,
   RouterResponseController,
-} from './router-response-controller';
-import { HeaderStream } from './sse-stream';
+} from './router-response-controller.js';
+import { HeaderStream } from './sse-stream.js';
 
 export interface ParamProperties {
   index: number;
@@ -57,6 +64,7 @@ export interface ParamProperties {
     res: TResponse,
     next: Function,
   ) => any;
+  schema?: StandardSchemaV1;
 }
 
 export class RouterExecutionContext {
@@ -90,6 +98,7 @@ export class RouterExecutionContext {
     const {
       argsLength,
       fnHandleResponse,
+      isSseHandler,
       paramtypes,
       getParamsMetadata,
       httpStatusCode,
@@ -162,7 +171,15 @@ export class RouterExecutionContext {
       hasCustomHeaders &&
         this.responseController.setHeaders(res, responseHeaders);
 
-      const result = await this.interceptorsConsumer.intercept(
+      if (isSseHandler) {
+        // Attach a per-request AbortController before the handler runs so async
+        // @Sse() handlers can observe client disconnects via @SseSignal() during
+        // their setup. The controller is aborted in RouterResponseController.sse()
+        // when the underlying connection closes.
+        this.attachSseAbortSignal(req);
+      }
+
+      const resultOrDeferred = this.interceptorsConsumer.intercept(
         interceptors,
         [req, res, next],
         instance,
@@ -170,6 +187,7 @@ export class RouterExecutionContext {
         handler(args, req, res, next),
         contextType,
       );
+      const result = isSseHandler ? resultOrDeferred : await resultOrDeferred;
       await (fnHandleResponse as HandlerResponseBasicFn)(result, res, req);
     };
   }
@@ -231,17 +249,18 @@ export class RouterExecutionContext {
       isResponseHandled,
       httpRedirectResponse,
     );
+    const isSseHandler = !!this.reflectSse(callback);
 
     const httpCode = this.reflectHttpStatusCode(callback);
-    const httpStatusCode = httpCode
-      ? httpCode
-      : this.responseController.getStatusByMethod(requestMethod);
+    const httpStatusCode =
+      httpCode ?? this.responseController.getStatusByMethod(requestMethod);
 
     const responseHeaders = this.reflectResponseHeaders(callback);
-    const hasCustomHeaders = !isEmpty(responseHeaders);
+    const hasCustomHeaders = !isEmptyArray(responseHeaders);
     const handlerMetadata: HandlerMetadata = {
       argsLength,
       fnHandleResponse,
+      isSseHandler,
       paramtypes,
       getParamsMetadata,
       httpStatusCode,
@@ -291,7 +310,7 @@ export class RouterExecutionContext {
     this.pipesContextCreator.setModuleContext(moduleContext);
 
     return keys.map(key => {
-      const { index, data, pipes: pipesCollection } = metadata[key];
+      const { index, data, pipes: pipesCollection, schema } = metadata[key];
       const pipes = this.pipesContextCreator.createConcreteContext(
         pipesCollection,
         contextId,
@@ -306,7 +325,14 @@ export class RouterExecutionContext {
           data,
           contextFactory!,
         );
-        return { index, extractValue: customExtractValue, type, data, pipes };
+        return {
+          index,
+          extractValue: customExtractValue,
+          type,
+          data,
+          pipes,
+          schema,
+        };
       }
       const numericType = Number(type);
       const extractValue = <TRequest, TResponse>(
@@ -319,25 +345,17 @@ export class RouterExecutionContext {
           res,
           next,
         });
-      return { index, extractValue, type: numericType, data, pipes };
+      return { index, extractValue, type: numericType, data, pipes, schema };
     });
   }
 
   public async getParamValue<T>(
     value: T,
-    {
-      metatype,
-      type,
-      data,
-    }: { metatype: unknown; type: RouteParamtypes; data: unknown },
+    metadata: ArgumentMetadata,
     pipes: PipeTransform[],
   ): Promise<unknown> {
-    if (!isEmpty(pipes)) {
-      return this.pipesConsumer.apply(
-        value,
-        { metatype, type, data } as any,
-        pipes,
-      );
+    if (!isEmptyArray(pipes)) {
+      return this.pipesConsumer.apply(value, metadata, pipes);
     }
     return value;
   }
@@ -395,13 +413,14 @@ export class RouterExecutionContext {
           data,
           metatype,
           pipes: paramPipes,
+          schema,
         } = param;
         const value = extractValue(req, res, next);
 
         args[index] = this.isPipeable(type)
           ? await this.getParamValue(
               value,
-              { metatype, type, data } as any,
+              { metatype, type, data, schema } as ArgumentMetadata,
               pipes.concat(paramPipes),
             )
           : value;
@@ -479,5 +498,22 @@ export class RouterExecutionContext {
       methodName,
     );
     return hasResponseOrNextDecorator && !isPassthroughEnabled;
+  }
+
+  private attachSseAbortSignal<TRequest>(req: TRequest): void {
+    const carrier = req as TRequest & {
+      raw?: unknown;
+      [SSE_ABORT_CONTROLLER]?: AbortController;
+    };
+    // Attach to both the framework request and its raw form (when present), since
+    // @SseSignal() reads from the execution-context request while
+    // RouterResponseController.sse() operates on the raw request.
+    if (!carrier[SSE_ABORT_CONTROLLER]) {
+      carrier[SSE_ABORT_CONTROLLER] = new AbortController();
+    }
+    if (carrier.raw && !(carrier.raw as object)[SSE_ABORT_CONTROLLER]) {
+      (carrier.raw as object)[SSE_ABORT_CONTROLLER] =
+        carrier[SSE_ABORT_CONTROLLER];
+    }
   }
 }

@@ -1,12 +1,15 @@
-import { Injectable } from '../decorators/core/injectable.decorator';
-import { HttpStatus } from '../enums/http-status.enum';
-import { PipeTransform } from '../interfaces/features/pipe-transform.interface';
+import { Injectable } from '../decorators/core/injectable.decorator.js';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { PipeTransform } from '../interfaces/features/pipe-transform.interface.js';
 import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
-} from '../utils/http-error-by-code.util';
-import { isNil } from '../utils/shared.utils';
+} from '../utils/http-error-by-code.util.js';
+import { isNil, isNumber, isString } from '../utils/shared.utils.js';
 
+/**
+ * @publicApi
+ */
 export interface ParseDatePipeOptions {
   /**
    * If true, the pipe will return null or undefined if the value is not provided
@@ -30,10 +33,11 @@ export interface ParseDatePipeOptions {
   exceptionFactory?: (error: string) => any;
 }
 
+/**
+ * @publicApi
+ */
 @Injectable()
-export class ParseDatePipe implements PipeTransform<
-  string | number | undefined | null
-> {
+export class ParseDatePipe implements PipeTransform {
   protected exceptionFactory: (error: string) => any;
 
   constructor(private readonly options: ParseDatePipeOptions = {}) {
@@ -52,9 +56,7 @@ export class ParseDatePipe implements PipeTransform<
    * @param value currently processed route argument
    * @param metadata contains metadata about the currently processed route argument
    */
-  transform(
-    value: string | number | undefined | null,
-  ): Date | null | undefined {
+  transform(value: unknown): Date | null | undefined {
     if (this.options.optional && isNil(value)) {
       return this.options.default ? this.options.default() : value;
     }
@@ -63,7 +65,10 @@ export class ParseDatePipe implements PipeTransform<
       throw this.exceptionFactory('Validation failed (no Date provided)');
     }
 
-    const transformedValue = new Date(value);
+    const transformedValue =
+      isString(value) || isNumber(value) || value instanceof Date
+        ? new Date(value)
+        : new Date(NaN);
 
     if (isNaN(transformedValue.getTime())) {
       throw this.exceptionFactory('Validation failed (invalid date format)');

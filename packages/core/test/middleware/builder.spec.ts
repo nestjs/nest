@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import {
   Controller,
   Delete,
@@ -11,14 +10,14 @@ import {
   RequestMethod,
   Version,
   VersioningType,
-} from '../../../common';
-import { MiddlewareConfigProxy } from '../../../common/interfaces';
-import { ApplicationConfig } from '../../application-config';
-import { NestContainer } from '../../injector/container';
-import { MiddlewareBuilder } from '../../middleware/builder';
-import { RouteInfoPathExtractor } from '../../middleware/route-info-path-extractor';
-import { RoutesMapper } from '../../middleware/routes-mapper';
-import { NoopHttpAdapter } from './../utils/noop-adapter.spec';
+} from '../../../common/index.js';
+import { MiddlewareConfigProxy } from '../../../common/interfaces/index.js';
+import { ApplicationConfig } from '../../application-config.js';
+import { NestContainer } from '../../injector/container.js';
+import { MiddlewareBuilder } from '../../middleware/builder.js';
+import { RouteInfoPathExtractor } from '../../middleware/route-info-path-extractor.js';
+import { RoutesMapper } from '../../middleware/routes-mapper.js';
+import { NoopHttpAdapter } from './../utils/noop-adapter.js';
 
 describe('MiddlewareBuilder', () => {
   let builder: MiddlewareBuilder;
@@ -37,7 +36,7 @@ describe('MiddlewareBuilder', () => {
     it('should return configuration proxy', () => {
       const configProxy = builder.apply([]);
       const metatype = (MiddlewareBuilder as any).ConfigProxy;
-      expect(configProxy instanceof metatype).to.be.true;
+      expect(configProxy instanceof metatype).toBe(true);
     });
 
     describe('configuration proxy', () => {
@@ -60,7 +59,7 @@ describe('MiddlewareBuilder', () => {
         it('should store configuration passed as argument', () => {
           configProxy.forRoutes(route, Test);
 
-          expect(builder.build()).to.deep.equal([
+          expect(builder.build()).toEqual([
             {
               middleware: [],
               forRoutes: [
@@ -124,7 +123,7 @@ describe('MiddlewareBuilder', () => {
         it('should remove overlapping routes', () => {
           configProxy.forRoutes(UsersController);
 
-          expect(builder.build()).to.deep.equal([
+          expect(builder.build()).toEqual([
             {
               middleware: [],
               forRoutes: [
@@ -181,6 +180,30 @@ describe('MiddlewareBuilder', () => {
             },
           ]);
         });
+
+        it('should remove every route overlapping the same parameterized one', () => {
+          // The parameterized route's regex is reused for each candidate, so a
+          // stateful (global) regex would leave `lastIndex` past the end of the
+          // previous match and let every other concrete route through. #17334
+          configProxy.forRoutes(
+            { path: 'cats/:id', method: RequestMethod.GET },
+            { path: 'cats/1', method: RequestMethod.GET },
+            { path: 'cats/2', method: RequestMethod.GET },
+            { path: 'cats/3', method: RequestMethod.GET },
+          );
+
+          expect(builder.build()).toEqual([
+            {
+              middleware: [],
+              forRoutes: [
+                {
+                  method: RequestMethod.GET,
+                  path: '/cats/:id',
+                },
+              ],
+            },
+          ]);
+        });
       });
     });
   });
@@ -190,7 +213,7 @@ describe('MiddlewareBuilder', () => {
       const path = '/test';
       const proxy: any = builder.apply().exclude(path);
 
-      expect(proxy.getExcludedRoutes()).to.be.eql([
+      expect(proxy.getExcludedRoutes()).toEqual([
         {
           path,
           method: -1,

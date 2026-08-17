@@ -1,9 +1,9 @@
 import { INestApplication, INestMicroservice } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
-import { RMQFanoutExchangeProducerController } from '../src/rmq/fanout-exchange-producer-rmq.controller';
-import { RMQFanoutExchangeConsumerController } from '../src/rmq/fanout-exchange-consumer-rmq.controller';
+import request from 'supertest';
+import { RMQFanoutExchangeProducerController } from '../src/rmq/fanout-exchange-producer-rmq.controller.js';
+import { RMQFanoutExchangeConsumerController } from '../src/rmq/fanout-exchange-consumer-rmq.controller.js';
 
 describe('RabbitMQ transport (Fanout Exchange)', () => {
   let server: any;

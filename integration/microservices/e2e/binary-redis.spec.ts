@@ -7,7 +7,6 @@ import {
   Transport,
 } from '@nestjs/microservices';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { lastValueFrom } from 'rxjs';
 import Redis from 'ioredis';
 
@@ -86,8 +85,8 @@ describe('REDIS transport', () => {
 
   it('should return a raw binary payload', async () => {
     const data = await lastValueFrom(client.send('binary', 'data'));
-    expect(Buffer.isBuffer(data)).to.be.true;
-    expect(data).to.deep.equal(Buffer.from('data-replied'));
+    expect(Buffer.isBuffer(data)).toBe(true);
+    expect(data).toEqual(Buffer.from('data-replied'));
   });
 
   it('should route concurrent raw binary replies to the matching request', async () => {
@@ -95,16 +94,16 @@ describe('REDIS transport', () => {
       lastValueFrom(client.send('binary', 'slow')),
       lastValueFrom(client.send('binary', 'fast')),
     ]);
-    expect(Buffer.isBuffer(slowResponse)).to.be.true;
-    expect(Buffer.isBuffer(fastResponse)).to.be.true;
-    expect(slowResponse).to.deep.equal(Buffer.from('slow-replied'));
-    expect(fastResponse).to.deep.equal(Buffer.from('fast-replied'));
+    expect(Buffer.isBuffer(slowResponse)).toBe(true);
+    expect(Buffer.isBuffer(fastResponse)).toBe(true);
+    expect(slowResponse).toEqual(Buffer.from('slow-replied'));
+    expect(fastResponse).toEqual(Buffer.from('fast-replied'));
   });
 
   it('should preserve non-utf8 bytes in the raw binary payload', async () => {
     const data = await lastValueFrom(client.send('binary', 'bytes'));
-    expect(Buffer.isBuffer(data)).to.be.true;
-    expect(data).to.deep.equal(Buffer.from([0, 1, 2, 3, 255]));
+    expect(Buffer.isBuffer(data)).toBe(true);
+    expect(data).toEqual(Buffer.from([0, 1, 2, 3, 255]));
   });
 
   afterEach(async () => {

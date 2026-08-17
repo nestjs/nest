@@ -1,5 +1,9 @@
-import { GATEWAY_METADATA, GATEWAY_OPTIONS, PORT_METADATA } from '../constants';
-import { GatewayMetadata } from '../interfaces';
+import {
+  GATEWAY_METADATA,
+  GATEWAY_OPTIONS,
+  PORT_METADATA,
+} from '../constants.js';
+import { GatewayMetadata } from '../interfaces/index.js';
 
 /**
  * Decorator that marks a class as a Nest gateway that enables real-time, bidirectional

@@ -1,6 +1,6 @@
-import { isObject } from '@nestjs/common/utils/shared.utils';
-import { ContextId, HostComponentInfo } from '../injector/instance-wrapper';
-import { REQUEST_CONTEXT_ID } from '../router/request/request-constants';
+import { ContextId, HostComponentInfo } from '../injector/instance-wrapper.js';
+import { REQUEST_CONTEXT_ID } from '../router/request/request-constants.js';
+import { isObject } from '@nestjs/common/internal';
 
 export function createContextId(): ContextId {
   /**

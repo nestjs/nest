@@ -13,8 +13,7 @@
         "transient": false,
         "exported": false,
         "token": "LoggingInterceptor",
-        "subtype": "interceptor",
-        "initTime": 0
+        "subtype": "interceptor"
       }
     },
     "55510001": {
@@ -30,8 +29,7 @@
         "scope": 2,
         "transient": false,
         "exported": false,
-        "token": "UsersService",
-        "initTime": 0
+        "token": "UsersService"
       }
     },
     "91819333": {
@@ -306,8 +304,7 @@
         "scope": 2,
         "transient": false,
         "exported": true,
-        "token": "HelperService",
-        "initTime": 0
+        "token": "HelperService"
       }
     },
     "941957564": {
@@ -356,8 +353,7 @@
         "scope": 2,
         "transient": false,
         "exported": false,
-        "token": "META",
-        "initTime": 0
+        "token": "META"
       }
     },
     "1010833816": {
@@ -542,7 +538,6 @@
         "transient": false,
         "exported": false,
         "token": "HelloController",
-        "initTime": 0,
         "enhancers": [
           {
             "id": "-2010060263",
@@ -676,8 +671,7 @@
         "transient": false,
         "exported": false,
         "token": "UserByIdPipe",
-        "subtype": "pipe",
-        "initTime": 0
+        "subtype": "pipe"
       }
     },
     "1919157847": {
@@ -693,8 +687,7 @@
         "scope": 2,
         "transient": false,
         "exported": true,
-        "token": "REQUEST",
-        "initTime": 0
+        "token": "REQUEST"
       }
     },
     "2018972420": {
@@ -770,8 +763,7 @@
         "scope": 1,
         "transient": true,
         "exported": true,
-        "token": "INQUIRER",
-        "initTime": 0
+        "token": "INQUIRER"
       }
     },
     "-26938366": {
@@ -1087,8 +1079,7 @@
         "scope": 0,
         "transient": false,
         "exported": false,
-        "token": "HelloModule",
-        "initTime": 0
+        "token": "HelloModule"
       }
     },
     "-1166465801": {
@@ -1136,8 +1127,7 @@
         "scope": 2,
         "transient": false,
         "exported": false,
-        "token": "HelloService",
-        "initTime": 0
+        "token": "HelloService"
       }
     },
     "-2010060263": {
@@ -1230,8 +1220,7 @@
         "scope": 2,
         "transient": false,
         "exported": false,
-        "token": "DurableService",
-        "initTime": 0
+        "token": "DurableService"
       }
     },
     "-848516688": {
@@ -1246,8 +1235,7 @@
         "static": false,
         "transient": false,
         "exported": false,
-        "token": "DurableController",
-        "initTime": 0
+        "token": "DurableController"
       }
     },
     "-1096226358": {
@@ -1541,8 +1529,7 @@
         "static": false,
         "transient": false,
         "exported": false,
-        "token": "RequestChainService",
-        "initTime": 0
+        "token": "RequestChainService"
       }
     },
     "-1927427604": {
@@ -1558,7 +1545,6 @@
         "transient": false,
         "exported": false,
         "token": "RequestChainController",
-        "initTime": 0,
         "enhancers": [
           {
             "id": "18347652",
@@ -2015,22 +2001,6 @@
       },
       "id": "1059069749"
     },
-    "1142343545": {
-      "source": "-1758187461",
-      "target": "1004276345",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "HelloModule",
-        "sourceClassName": "HelloService",
-        "targetClassName": "Meta",
-        "sourceClassToken": "HelloService",
-        "targetClassToken": "META",
-        "targetModuleName": "HelloModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "1142343545"
-    },
     "1178436405": {
       "source": "1893794611",
       "target": "55510001",
@@ -2081,22 +2051,6 @@
         "injectionType": "decorator"
       },
       "id": "1325313063"
-    },
-    "1497653915": {
-      "source": "55510001",
-      "target": "1004276345",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "HelloModule",
-        "sourceClassName": "UsersService",
-        "targetClassName": "Meta",
-        "sourceClassToken": "UsersService",
-        "targetClassToken": "META",
-        "targetModuleName": "HelloModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "1497653915"
     },
     "1615322974": {
       "source": "-1469176692",
@@ -2197,6 +2151,22 @@
       },
       "id": "-21463590"
     },
+    "-2146943494": {
+      "source": "-234035039",
+      "target": "928565345",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "RequestChainModule",
+        "sourceClassName": "RequestChainService",
+        "targetClassName": "HelperService",
+        "sourceClassToken": "RequestChainService",
+        "targetClassToken": "HelperService",
+        "targetModuleName": "HelperModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "-2146943494"
+    },
     "-2105726668": {
       "source": "-1803759743",
       "target": "1010833816",
@@ -2212,40 +2182,6 @@
         "injectionType": "property"
       },
       "id": "-2105726668"
-    },
-    "-1657371464": {
-      "source": "-1673986099",
-      "target": "1919157847",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "DurableModule",
-        "sourceClassName": "DurableService",
-        "targetClassName": "REQUEST",
-        "sourceClassToken": "DurableService",
-        "targetClassToken": "REQUEST",
-        "targetModuleName": "InternalCoreModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor",
-        "internal": true
-      },
-      "id": "-1657371464"
-    },
-    "-1303681274": {
-      "source": "928565345",
-      "target": "1919157847",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "HelperModule",
-        "sourceClassName": "HelperService",
-        "targetClassName": "REQUEST",
-        "sourceClassToken": "HelperService",
-        "targetClassToken": "REQUEST",
-        "targetModuleName": "InternalCoreModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor",
-        "internal": true
-      },
-      "id": "-1303681274"
     },
     "-831049991": {
       "source": "594986539",
@@ -2263,6 +2199,22 @@
       },
       "id": "-831049991"
     },
+    "-1816180282": {
+      "source": "-848516688",
+      "target": "-1673986099",
+      "metadata": {
+        "type": "class-to-class",
+        "sourceModuleName": "DurableModule",
+        "sourceClassName": "DurableController",
+        "targetClassName": "DurableService",
+        "sourceClassToken": "DurableController",
+        "targetClassToken": "DurableService",
+        "targetModuleName": "DurableModule",
+        "keyOrIndex": 0,
+        "injectionType": "constructor"
+      },
+      "id": "-1816180282"
+    },
     "-886102564": {
       "source": "208171089",
       "target": "671882984",
@@ -2279,22 +2231,6 @@
         "internal": true
       },
       "id": "-886102564"
-    },
-    "-2146943494": {
-      "source": "-234035039",
-      "target": "928565345",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "RequestChainModule",
-        "sourceClassName": "RequestChainService",
-        "targetClassName": "HelperService",
-        "sourceClassToken": "RequestChainService",
-        "targetClassToken": "HelperService",
-        "targetModuleName": "HelperModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "-2146943494"
     },
     "-2003045613": {
       "source": "-377928898",
@@ -2327,22 +2263,6 @@
         "injectionType": "constructor"
       },
       "id": "-881420795"
-    },
-    "-1816180282": {
-      "source": "-848516688",
-      "target": "-1673986099",
-      "metadata": {
-        "type": "class-to-class",
-        "sourceModuleName": "DurableModule",
-        "sourceClassName": "DurableController",
-        "targetClassName": "DurableService",
-        "sourceClassToken": "DurableController",
-        "targetClassToken": "DurableService",
-        "targetModuleName": "DurableModule",
-        "keyOrIndex": 0,
-        "injectionType": "constructor"
-      },
-      "id": "-1816180282"
     },
     "-180350082": {
       "source": "-1550892030",

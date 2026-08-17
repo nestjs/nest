@@ -1,4 +1,4 @@
-import { RuntimeException } from './runtime.exception';
+import { RuntimeException } from './runtime.exception.js';
 
 export class UnknownElementException extends RuntimeException {
   constructor(name?: string | symbol) {

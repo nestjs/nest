@@ -1,18 +1,14 @@
-import {
-  HttpServer,
-  MiddlewareConsumer,
-  Type,
-} from '@nestjs/common/interfaces';
-import {
-  MiddlewareConfigProxy,
-  MiddlewareConfiguration,
-  RouteInfo,
-} from '@nestjs/common/interfaces/middleware';
-import { stripEndSlash } from '@nestjs/common/utils/shared.utils';
 import { iterate } from 'iterare';
-import { RouteInfoPathExtractor } from './route-info-path-extractor';
-import { RoutesMapper } from './routes-mapper';
-import { filterMiddleware } from './utils';
+import { RouteInfoPathExtractor } from './route-info-path-extractor.js';
+import { RoutesMapper } from './routes-mapper.js';
+import { filterMiddleware } from './utils.js';
+import type { HttpServer, MiddlewareConsumer, Type } from '@nestjs/common';
+import {
+  type MiddlewareConfigProxy,
+  type MiddlewareConfiguration,
+  type RouteInfo,
+  stripEndSlash,
+} from '@nestjs/common/internal';
 
 export class MiddlewareBuilder implements MiddlewareConsumer {
   private readonly middlewareCollection = new Set<MiddlewareConfiguration>();
@@ -114,9 +110,12 @@ export class MiddlewareBuilder implements MiddlewareConsumer {
         .map(route => ({
           method: route.method,
           path: route.path,
+          // No `g` flag: each regex is reused across every route below, and a
+          // global regex advances `lastIndex` on a match, so the next `test()`
+          // would resume mid-string and fail the `^` anchor. The pattern is
+          // anchored and only used with `test()`, so `g` buys nothing anyway.
           regex: new RegExp(
             '^(' + route.path.replace(regexMatchParams, wildcard) + ')$',
-            'g',
           ),
         }));
 

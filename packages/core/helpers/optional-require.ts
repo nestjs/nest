@@ -1,6 +1,9 @@
-export function optionalRequire(packageName: string, loaderFn?: Function) {
+export async function optionalRequire(
+  packageName: string,
+  loaderFn?: Function,
+) {
   try {
-    return loaderFn ? loaderFn() : require(packageName);
+    return loaderFn ? await loaderFn() : await import(packageName);
   } catch (e) {
     return {};
   }

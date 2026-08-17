@@ -1,4 +1,4 @@
-import { ExecutionContext } from './execution-context.interface';
+import { ExecutionContext } from './execution-context.interface.js';
 
 /**
  * @publicApi

@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Injectable,
   MiddlewareConsumer,
   Module,
   NestMiddleware,
@@ -15,13 +16,161 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
-import { expect } from 'chai';
 import { FastifyRequest } from 'fastify';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 describe('Middleware (FastifyAdapter)', () => {
   let app: NestFastifyApplication;
+
+  describe('trailing slash handling', () => {
+    @Injectable()
+    class AuthMiddleware implements NestMiddleware {
+      use(
+        req: FastifyRequest['raw'] & { headers: Record<string, unknown> },
+        res,
+        next: () => void,
+      ) {
+        if (req.headers['x-auth'] === '1') {
+          return next();
+        }
+        res.statusCode = 401;
+        res.end('unauthorized');
+      }
+    }
+
+    @Controller('users')
+    class UsersController {
+      @Get()
+      findAll() {
+        return 'users';
+      }
+
+      @Get(':id')
+      findOne(@Param('id') id: string) {
+        return `user:${id}`;
+      }
+    }
+
+    describe('manual routes', () => {
+      @Module({
+        controllers: [UsersController],
+      })
+      class TrailingSlashModule implements NestModule {
+        configure(consumer: MiddlewareConsumer) {
+          consumer
+            .apply(AuthMiddleware)
+            .forRoutes(
+              { path: 'users', method: RequestMethod.ALL },
+              { path: 'users/:id', method: RequestMethod.ALL },
+            );
+        }
+      }
+
+      beforeEach(async () => {
+        app = (
+          await Test.createTestingModule({
+            imports: [TrailingSlashModule],
+          }).compile()
+        ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+
+        await app.init();
+      });
+
+      afterEach(async () => {
+        await app.close();
+      });
+
+      it('does not bypass middleware on a trailing slash variant', async () => {
+        await app
+          .inject({
+            method: 'GET',
+            url: '/users',
+          })
+          .then(response => {
+            expect(response.statusCode).toBe(401);
+            expect(response.payload).toBe('unauthorized');
+          });
+
+        await app
+          .inject({
+            method: 'GET',
+            url: '/users/',
+          })
+          .then(response => {
+            expect(response.statusCode).toBe(401);
+            expect(response.payload).toBe('unauthorized');
+          });
+
+        await app
+          .inject({
+            method: 'GET',
+            url: '/users/1',
+          })
+          .then(response => {
+            expect(response.statusCode).toBe(401);
+            expect(response.payload).toBe('unauthorized');
+          });
+      });
+    });
+
+    describe('forRoutes(UsersController)', () => {
+      @Module({
+        controllers: [UsersController],
+      })
+      class TrailingSlashModule implements NestModule {
+        configure(consumer: MiddlewareConsumer) {
+          consumer.apply(AuthMiddleware).forRoutes(UsersController);
+        }
+      }
+
+      beforeEach(async () => {
+        app = (
+          await Test.createTestingModule({
+            imports: [TrailingSlashModule],
+          }).compile()
+        ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+
+        await app.init();
+      });
+
+      afterEach(async () => {
+        await app.close();
+      });
+
+      it('does not bypass middleware on a trailing slash variant', async () => {
+        await app
+          .inject({
+            method: 'GET',
+            url: '/users',
+          })
+          .then(response => {
+            expect(response.statusCode).toBe(401);
+            expect(response.payload).toBe('unauthorized');
+          });
+
+        await app
+          .inject({
+            method: 'GET',
+            url: '/users/',
+          })
+          .then(response => {
+            expect(response.statusCode).toBe(401);
+            expect(response.payload).toBe('unauthorized');
+          });
+
+        await app
+          .inject({
+            method: 'GET',
+            url: '/users/1',
+          })
+          .then(response => {
+            expect(response.statusCode).toBe(401);
+            expect(response.payload).toBe('unauthorized');
+          });
+      });
+    });
+  });
 
   describe('should return expected values depending on the route', () => {
     const INCLUDED_VALUE = 'test_included';
@@ -117,7 +266,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/hello',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(RETURN_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(RETURN_VALUE));
     });
 
     it(`forRoutes(TestController)`, () => {
@@ -126,7 +275,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/test',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(SCOPED_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(SCOPED_VALUE));
     });
 
     it(`query?test=${QUERY_VALUE} forRoutes(query)`, () => {
@@ -138,7 +287,7 @@ describe('Middleware (FastifyAdapter)', () => {
             test: QUERY_VALUE,
           },
         })
-        .then(({ payload }) => expect(payload).to.be.eql(QUERY_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(QUERY_VALUE));
     });
 
     it(`${QUERY_VALUE}?test=${QUERY_VALUE} forRoutes(${QUERY_VALUE})`, () => {
@@ -150,7 +299,7 @@ describe('Middleware (FastifyAdapter)', () => {
             test: QUERY_VALUE,
           },
         })
-        .then(({ payload }) => expect(payload).to.be.eql(QUERY_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(QUERY_VALUE));
     });
 
     it(`forRoutes(tests/*path)`, () => {
@@ -159,7 +308,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/tests/wildcard_nested',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(WILDCARD_VALUE));
     });
 
     it(`forRoutes(express_style_wildcard/*)`, () => {
@@ -168,7 +317,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/express_style_wildcard/wildcard_nested',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(WILDCARD_VALUE));
     });
 
     it(`forRoutes(legacy_style_wildcard/*)`, () => {
@@ -177,7 +326,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/legacy_style_wildcard/wildcard_nested',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(WILDCARD_VALUE));
     });
 
     it(`forRoutes(req/url/)`, () => {
@@ -187,7 +336,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: `/req/url${reqUrl}`,
         })
-        .then(({ payload }) => expect(payload).to.be.eql(REQ_URL_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(REQ_URL_VALUE));
     });
 
     it(`GET forRoutes(POST tests/included)`, () => {
@@ -196,7 +345,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'GET',
           url: '/tests/included',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(WILDCARD_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(WILDCARD_VALUE));
     });
 
     it(`POST forRoutes(POST tests/included)`, () => {
@@ -205,7 +354,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'POST',
           url: '/tests/included',
         })
-        .then(({ payload }) => expect(payload).to.be.eql(INCLUDED_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(INCLUDED_VALUE));
     });
 
     it(`GET forRoutes(POST /tests/%69ncluded) - ensure middleware is executed correctly with encoded characters`, () => {
@@ -214,7 +363,7 @@ describe('Middleware (FastifyAdapter)', () => {
           method: 'POST',
           url: '/tests/%69ncluded', // 'i' character is encoded
         })
-        .then(({ payload }) => expect(payload).to.be.eql(INCLUDED_VALUE));
+        .then(({ payload }) => expect(payload).toEqual(INCLUDED_VALUE));
     });
 
     afterEach(async () => {
@@ -329,7 +478,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/a/b/c',
         })
         .then(({ payload }) => {
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -346,7 +495,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/a/b',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -363,7 +512,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/a',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -380,7 +529,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/similar',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -397,7 +546,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/similar/test',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -414,7 +563,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/similar/arbitrary',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               actual: 1,
@@ -494,7 +643,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/api/pong',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               pong: 'pong',
@@ -513,7 +662,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/api',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               pong: 'pong',
@@ -531,7 +680,7 @@ describe('Middleware (FastifyAdapter)', () => {
           url: '/pong',
         })
         .then(({ payload }) =>
-          expect(payload).to.be.eql(
+          expect(payload).toEqual(
             JSON.stringify({
               success: true,
               pong: 'pong',
@@ -613,6 +762,60 @@ describe('Middleware (FastifyAdapter)', () => {
     });
   });
 
+  describe('should run middleware on routes excluded from the global prefix', () => {
+    @Controller()
+    class ExcludedRouteController {
+      @Get('graphql')
+      graphql(@Req() req: FastifyRequest['raw']) {
+        return { success: true, pong: req?.['raw']?.headers?.ping };
+      }
+
+      @Get('data')
+      data(@Req() req: FastifyRequest['raw']) {
+        return { success: true, pong: req?.['raw']?.headers?.ping };
+      }
+    }
+
+    @Module({
+      controllers: [ExcludedRouteController],
+    })
+    class ExcludedRouteModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => {
+            req.headers['ping'] = 'pong';
+            next();
+          })
+          .forRoutes('/{*path}');
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [ExcludedRouteModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+    });
+
+    it(`GET forRoutes('/{*path}') with global prefix and excluded route`, async () => {
+      app.setGlobalPrefix('/api', { exclude: ['/graphql'] });
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+
+      await request(app.getHttpServer())
+        .get('/graphql')
+        .expect(200, { success: true, pong: 'pong' });
+      await request(app.getHttpServer())
+        .get('/api/data')
+        .expect(200, { success: true, pong: 'pong' });
+    });
+
+    afterEach(async () => {
+      await app.close();
+    });
+  });
+
   describe('should respect fastify routing options', () => {
     const MIDDLEWARE_RETURN_VALUE = 'middleware_return';
 
@@ -660,7 +863,7 @@ describe('Middleware (FastifyAdapter)', () => {
             url: '/abc/def/', // trailing slash
           })
           .then(({ payload }) =>
-            expect(payload).to.be.eql(MIDDLEWARE_RETURN_VALUE),
+            expect(payload).toEqual(MIDDLEWARE_RETURN_VALUE),
           );
       });
 
@@ -693,7 +896,7 @@ describe('Middleware (FastifyAdapter)', () => {
             url: '/abc//def', // duplicate slashes
           })
           .then(({ payload }) =>
-            expect(payload).to.be.eql(MIDDLEWARE_RETURN_VALUE),
+            expect(payload).toEqual(MIDDLEWARE_RETURN_VALUE),
           );
       });
 
@@ -726,7 +929,7 @@ describe('Middleware (FastifyAdapter)', () => {
             url: '/ABC/DEF', // different case
           })
           .then(({ payload }) =>
-            expect(payload).to.be.eql(MIDDLEWARE_RETURN_VALUE),
+            expect(payload).toEqual(MIDDLEWARE_RETURN_VALUE),
           );
       });
 
@@ -757,7 +960,7 @@ describe('Middleware (FastifyAdapter)', () => {
             url: '/abc/def;foo=bar', // semicolon delimiter
           })
           .then(({ payload }) =>
-            expect(payload).to.be.eql(MIDDLEWARE_RETURN_VALUE),
+            expect(payload).toEqual(MIDDLEWARE_RETURN_VALUE),
           );
       });
 
@@ -784,7 +987,7 @@ describe('Middleware (FastifyAdapter)', () => {
             url: '/abc/def',
           })
           .then(({ payload }) =>
-            expect(payload).to.be.eql(MIDDLEWARE_RETURN_VALUE),
+            expect(payload).toEqual(MIDDLEWARE_RETURN_VALUE),
           );
       });
 

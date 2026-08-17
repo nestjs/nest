@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Misdirected* type errors.
@@ -22,7 +22,7 @@ export class MisdirectedException extends HttpException {
    *
    * By default, the JSON response body contains two properties:
    * - `statusCode`: this will be the value 421.
-   * - `message`: the string `'Bad Gateway'` by default; override this by supplying
+   * - `message`: the string `'Misdirected'` by default; override this by supplying
    * a string in the `objectOrError` parameter.
    *
    * If the parameter `objectOrError` is a string, the response body will contain an
@@ -37,13 +37,13 @@ export class MisdirectedException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Misdirected',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Misdirected', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.MISDIRECTED,
       ),
       HttpStatus.MISDIRECTED,

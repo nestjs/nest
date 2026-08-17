@@ -1,4 +1,4 @@
-import { WsParamtype } from '../enums/ws-paramtype.enum';
+import { WsParamtype } from '../enums/ws-paramtype.enum.js';
 
 export const DEFAULT_CALLBACK_METADATA = {
   [`${WsParamtype.ACK}:2`]: { index: 2, data: undefined, pipes: [] },

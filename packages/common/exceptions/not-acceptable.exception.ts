@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Not Acceptable* type errors.
@@ -22,8 +22,8 @@ export class NotAcceptableException extends HttpException {
    *
    * By default, the JSON response body contains two properties:
    * - `statusCode`: this will be the value 406.
-   * - `error`: the string `'Not Acceptable'` by default; override this by supplying
-   * a string in the `error` parameter.
+   * - `message`: the string `'Not Acceptable'` by default; override this by supplying
+   * a string in the `objectOrError` parameter.
    *
    * If the parameter `objectOrError` is a string, the response body will contain an
    * additional property, `error`, with a short description of the HTTP error. To override the
@@ -37,13 +37,13 @@ export class NotAcceptableException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Not Acceptable',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Not Acceptable', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
       HttpException.createBody(
         objectOrError,
-        description!,
+        description,
         HttpStatus.NOT_ACCEPTABLE,
       ),
       HttpStatus.NOT_ACCEPTABLE,

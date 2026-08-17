@@ -1,14 +1,14 @@
 import {
   FileTypeValidator,
   FileTypeValidatorOptions,
-} from './file-type.validator';
-import { FileValidator } from './file-validator.interface';
+} from './file-type.validator.js';
+import { FileValidator } from './file-validator.interface.js';
 import {
   MaxFileSizeValidator,
   MaxFileSizeValidatorOptions,
-} from './max-file-size.validator';
-import { ParseFileOptions } from './parse-file-options.interface';
-import { ParseFilePipe } from './parse-file.pipe';
+} from './max-file-size.validator.js';
+import { ParseFileOptions } from './parse-file-options.interface.js';
+import { ParseFilePipe } from './parse-file.pipe.js';
 
 /**
  * @publicApi

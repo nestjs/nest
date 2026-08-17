@@ -1,4 +1,4 @@
-import { PARAMTYPES_METADATA } from '../../constants';
+import { PARAMTYPES_METADATA } from '../../constants.js';
 
 export function flatten<T extends Array<unknown> = any>(
   arr: T,

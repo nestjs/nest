@@ -8,6 +8,7 @@ export const multerExceptions = {
   LIMIT_FIELD_COUNT: 'Too many fields',
   LIMIT_UNEXPECTED_FILE: 'Unexpected field',
   MISSING_FIELD_NAME: 'Field name missing',
+  LIMIT_FIELD_NESTING: 'Field name nesting too deep',
 };
 
 export const busboyExceptions = {

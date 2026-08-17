@@ -1,21 +1,24 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
-import { ConsoleLogger, Logger, LoggerService, LogLevel } from '../../services';
+import {
+  ConsoleLogger,
+  Logger,
+  LoggerService,
+  LogLevel,
+} from '../../services/index.js';
 
 describe('Logger', () => {
   describe('[static methods]', () => {
     describe('when the default logger is used', () => {
-      let processStdoutWriteSpy: sinon.SinonSpy;
-      let processStderrWriteSpy: sinon.SinonSpy;
+      let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+      let processStderrWriteSpy: ReturnType<typeof vi.fn>;
 
       beforeEach(() => {
-        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
-        processStderrWriteSpy = sinon.spy(process.stderr, 'write');
+        processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
+        processStderrWriteSpy = vi.spyOn(process.stderr, 'write');
       });
 
       afterEach(() => {
-        processStdoutWriteSpy.restore();
-        processStderrWriteSpy.restore();
+        processStdoutWriteSpy.mockRestore();
+        processStderrWriteSpy.mockRestore();
       });
 
       it('should print one message to the console', () => {
@@ -24,11 +27,11 @@ describe('Logger', () => {
 
         Logger.log(message, context);
 
-        expect(processStdoutWriteSpy.calledOnce).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(message);
       });
 
       it('should print one message without context to the console', () => {
@@ -36,8 +39,8 @@ describe('Logger', () => {
 
         Logger.log(message);
 
-        expect(processStdoutWriteSpy.calledOnce).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(message);
       });
 
       it('should print multiple messages to the console', () => {
@@ -46,27 +49,21 @@ describe('Logger', () => {
 
         Logger.log(messages[0], messages[1], messages[2], context);
 
-        expect(processStdoutWriteSpy.calledThrice).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(3);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
-          messages[0],
-        );
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(messages[0]);
 
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
-          messages[1],
-        );
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain(messages[1]);
 
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.mock.calls[2][0]).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
-          messages[2],
-        );
+        expect(processStdoutWriteSpy.mock.calls[2][0]).toContain(messages[2]);
       });
 
       it('should print one error to the console with context', () => {
@@ -75,11 +72,11 @@ describe('Logger', () => {
 
         Logger.error(message, context);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(message);
       });
 
       it('should print one error to the console with stacktrace', () => {
@@ -88,12 +85,10 @@ describe('Logger', () => {
 
         Logger.error(message, stacktrace);
 
-        expect(processStderrWriteSpy.calledTwice).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.not.include(`[]`);
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
-        expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
-          stacktrace + '\n',
-        );
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStderrWriteSpy.mock.calls[0][0]).not.toContain(`[]`);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(message);
+        expect(processStderrWriteSpy.mock.calls[1][0]).toBe(stacktrace + '\n');
       });
 
       it('should print one error without context to the console', () => {
@@ -101,8 +96,8 @@ describe('Logger', () => {
 
         Logger.error(message);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(message);
       });
 
       it('should print error object without context to the console', () => {
@@ -110,8 +105,8 @@ describe('Logger', () => {
 
         Logger.error(error);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `Error: Random text here`,
         );
       });
@@ -123,12 +118,12 @@ describe('Logger', () => {
 
         Logger.error(error);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
 
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `Object(${Object.keys(error).length})`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `randomError: \x1b[33mtrue`,
         );
       });
@@ -140,19 +135,15 @@ describe('Logger', () => {
 
         Logger.error(message, stacktrace, context);
 
-        expect(processStderrWriteSpy.calledTwice).to.be.true;
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
 
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(message);
 
-        expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
-          stacktrace + '\n',
-        );
-        expect(processStderrWriteSpy.secondCall.firstArg).to.not.include(
-          context,
-        );
+        expect(processStderrWriteSpy.mock.calls[1][0]).toBe(stacktrace + '\n');
+        expect(processStderrWriteSpy.mock.calls[1][0]).not.toContain(context);
       });
 
       it('should print multiple 2 errors and one stacktrace to the console', () => {
@@ -162,42 +153,38 @@ describe('Logger', () => {
 
         Logger.error(messages[0], messages[1], stack, context);
 
-        expect(processStderrWriteSpy.calledThrice).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(3);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
-          messages[0],
-        );
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(messages[0]);
 
-        expect(processStderrWriteSpy.secondCall.firstArg).to.include(
+        expect(processStderrWriteSpy.mock.calls[1][0]).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.secondCall.firstArg).to.include(
-          messages[1],
-        );
+        expect(processStderrWriteSpy.mock.calls[1][0]).toContain(messages[1]);
 
-        expect(processStderrWriteSpy.thirdCall.firstArg).to.not.include(
+        expect(processStderrWriteSpy.mock.calls[2][0]).not.toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.thirdCall.firstArg).to.equal(stack + '\n');
+        expect(processStderrWriteSpy.mock.calls[2][0]).toBe(stack + '\n');
       });
     });
 
     describe('when the default logger is used and json mode is enabled', () => {
       const logger = new ConsoleLogger({ json: true });
 
-      let processStdoutWriteSpy: sinon.SinonSpy;
-      let processStderrWriteSpy: sinon.SinonSpy;
+      let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+      let processStderrWriteSpy: ReturnType<typeof vi.fn>;
 
       beforeEach(() => {
-        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
-        processStderrWriteSpy = sinon.spy(process.stderr, 'write');
+        processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
+        processStderrWriteSpy = vi.spyOn(process.stderr, 'write');
       });
 
       afterEach(() => {
-        processStdoutWriteSpy.restore();
-        processStderrWriteSpy.restore();
+        processStdoutWriteSpy.mockRestore();
+        processStderrWriteSpy.mockRestore();
       });
 
       it('should print error with stack as JSON to the console', () => {
@@ -206,33 +193,33 @@ describe('Logger', () => {
 
         logger.error(error.message, error.stack);
 
-        const json = JSON.parse(processStderrWriteSpy.firstCall?.firstArg);
+        const json = JSON.parse(processStderrWriteSpy.mock.calls[0]?.[0]);
 
-        expect(json.pid).to.equal(process.pid);
-        expect(json.level).to.equal('error');
-        expect(json.message).to.equal(errorMessage);
+        expect(json.pid).toBe(process.pid);
+        expect(json.level).toBe('error');
+        expect(json.message).toBe(errorMessage);
       });
       it('should log out to stdout as JSON', () => {
         const message = 'message 1';
 
         logger.log(message);
 
-        const json = JSON.parse(processStdoutWriteSpy.firstCall?.firstArg);
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0]?.[0]);
 
-        expect(json.pid).to.equal(process.pid);
-        expect(json.level).to.equal('log');
-        expect(json.message).to.equal(message);
+        expect(json.pid).toBe(process.pid);
+        expect(json.level).toBe('log');
+        expect(json.message).toBe(message);
       });
       it('should log out an error to stderr as JSON', () => {
         const message = 'message 1';
 
         logger.error(message);
 
-        const json = JSON.parse(processStderrWriteSpy.firstCall?.firstArg);
+        const json = JSON.parse(processStderrWriteSpy.mock.calls[0]?.[0]);
 
-        expect(json.pid).to.equal(process.pid);
-        expect(json.level).to.equal('error');
-        expect(json.message).to.equal(message);
+        expect(json.pid).toBe(process.pid);
+        expect(json.level).toBe('error');
+        expect(json.message).toBe(message);
       });
       it('should log Map object', () => {
         const map = new Map([
@@ -242,11 +229,11 @@ describe('Logger', () => {
 
         logger.log(map);
 
-        const json = JSON.parse(processStdoutWriteSpy.firstCall?.firstArg);
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0]?.[0]);
 
-        expect(json.pid).to.equal(process.pid);
-        expect(json.level).to.equal('log');
-        expect(json.message).to.equal(
+        expect(json.pid).toBe(process.pid);
+        expect(json.level).toBe('log');
+        expect(json.message).toBe(
           `Map(2) { 'key1' => 'value1', 'key2' => 'value2' }`,
         );
       });
@@ -255,50 +242,50 @@ describe('Logger', () => {
 
         logger.log(set);
 
-        const json = JSON.parse(processStdoutWriteSpy.firstCall?.firstArg);
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0]?.[0]);
 
-        expect(json.pid).to.equal(process.pid);
-        expect(json.level).to.equal('log');
-        expect(json.message).to.equal(`Set(2) { 'value1', 'value2' }`);
+        expect(json.pid).toBe(process.pid);
+        expect(json.level).toBe('log');
+        expect(json.message).toBe(`Set(2) { 'value1', 'value2' }`);
       });
       it('should log bigint', () => {
         const bigInt = BigInt(9007199254740991);
 
         logger.log(bigInt);
 
-        const json = JSON.parse(processStdoutWriteSpy.firstCall?.firstArg);
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0]?.[0]);
 
-        expect(json.pid).to.equal(process.pid);
-        expect(json.level).to.equal('log');
-        expect(json.message).to.equal('9007199254740991');
+        expect(json.pid).toBe(process.pid);
+        expect(json.level).toBe('log');
+        expect(json.message).toBe('9007199254740991');
       });
       it('should log symbol', () => {
         const symbol = Symbol('test');
 
         logger.log(symbol);
 
-        const json = JSON.parse(processStdoutWriteSpy.firstCall?.firstArg);
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0]?.[0]);
 
-        expect(json.pid).to.equal(process.pid);
-        expect(json.level).to.equal('log');
-        expect(json.message).to.equal('Symbol(test)');
+        expect(json.pid).toBe(process.pid);
+        expect(json.level).toBe('log');
+        expect(json.message).toBe('Symbol(test)');
       });
     });
 
     describe('when the default logger is used, json mode is enabled and compact is false (utils.inspect)', () => {
       const logger = new ConsoleLogger({ json: true, compact: false });
 
-      let processStdoutWriteSpy: sinon.SinonSpy;
-      let processStderrWriteSpy: sinon.SinonSpy;
+      let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+      let processStderrWriteSpy: ReturnType<typeof vi.fn>;
 
       beforeEach(() => {
-        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
-        processStderrWriteSpy = sinon.spy(process.stderr, 'write');
+        processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
+        processStderrWriteSpy = vi.spyOn(process.stderr, 'write');
       });
 
       afterEach(() => {
-        processStdoutWriteSpy.restore();
-        processStderrWriteSpy.restore();
+        processStdoutWriteSpy.mockRestore();
+        processStderrWriteSpy.mockRestore();
       });
 
       it('should log out to stdout as JSON (utils.inspect)', () => {
@@ -307,12 +294,12 @@ describe('Logger', () => {
         logger.log(message);
 
         const json = convertInspectToJSON(
-          processStdoutWriteSpy.firstCall?.firstArg,
+          processStdoutWriteSpy.mock.calls[0]?.[0],
         );
 
-        expect(json.pid).to.equal(process.pid);
-        expect(json.level).to.equal('log');
-        expect(json.message).to.equal(message);
+        expect(json.pid).toBe(process.pid);
+        expect(json.level).toBe('log');
+        expect(json.message).toBe(message);
       });
 
       it('should log out an error to stderr as JSON (utils.inspect)', () => {
@@ -321,21 +308,21 @@ describe('Logger', () => {
         logger.error(message);
 
         const json = convertInspectToJSON(
-          processStderrWriteSpy.firstCall?.firstArg,
+          processStderrWriteSpy.mock.calls[0]?.[0],
         );
 
-        expect(json.pid).to.equal(process.pid);
-        expect(json.level).to.equal('error');
-        expect(json.message).to.equal(message);
+        expect(json.pid).toBe(process.pid);
+        expect(json.level).toBe('error');
+        expect(json.message).toBe(message);
       });
     });
 
     describe('when logging is disabled', () => {
-      let processStdoutWriteSpy: sinon.SinonSpy;
+      let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
       let previousLoggerRef: LoggerService;
 
       beforeEach(() => {
-        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+        processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
 
         previousLoggerRef =
           Logger['localInstanceRef'] || Logger['staticInstanceRef'];
@@ -343,7 +330,7 @@ describe('Logger', () => {
       });
 
       afterEach(() => {
-        processStdoutWriteSpy.restore();
+        processStdoutWriteSpy.mockRestore();
 
         Logger.overrideLogger(previousLoggerRef);
       });
@@ -354,7 +341,7 @@ describe('Logger', () => {
 
         Logger.log(message, context);
 
-        expect(processStdoutWriteSpy.called).to.be.false;
+        expect(processStdoutWriteSpy).not.toHaveBeenCalled();
       });
     });
     describe('when custom logger is being used', () => {
@@ -381,24 +368,24 @@ describe('Logger', () => {
         const message = 'random message';
         const context = 'RandomContext';
 
-        const customLoggerLogSpy = sinon.spy(customLogger, 'log');
+        const customLoggerLogSpy = vi.spyOn(customLogger, 'log');
 
         Logger.log(message, context);
 
-        expect(customLoggerLogSpy.called).to.be.true;
-        expect(customLoggerLogSpy.calledWith(message, context)).to.be.true;
+        expect(customLoggerLogSpy).toHaveBeenCalled();
+        expect(customLoggerLogSpy).toHaveBeenCalledWith(message, context);
       });
 
       it('should call custom logger "#error()" method', () => {
         const message = 'random message';
         const context = 'RandomContext';
 
-        const customLoggerErrorSpy = sinon.spy(customLogger, 'error');
+        const customLoggerErrorSpy = vi.spyOn(customLogger, 'error');
 
         Logger.error(message, context);
 
-        expect(customLoggerErrorSpy.called).to.be.true;
-        expect(customLoggerErrorSpy.calledWith(message, context)).to.be.true;
+        expect(customLoggerErrorSpy).toHaveBeenCalled();
+        expect(customLoggerErrorSpy).toHaveBeenCalledWith(message, context);
       });
     });
   });
@@ -406,56 +393,56 @@ describe('Logger', () => {
   describe('ConsoleLogger', () => {
     it('should allow setting and resetting of context', () => {
       const logger = new ConsoleLogger();
-      expect(logger['context']).to.be.undefined;
+      expect(logger['context']).toBeUndefined();
       logger.setContext('context');
-      expect(logger['context']).to.equal('context');
+      expect(logger['context']).toBe('context');
       logger.resetContext();
-      expect(logger['context']).to.be.undefined;
+      expect(logger['context']).toBeUndefined();
 
       const loggerWithContext = new ConsoleLogger('context');
-      expect(loggerWithContext['context']).to.equal('context');
+      expect(loggerWithContext['context']).toBe('context');
       loggerWithContext.setContext('other');
-      expect(loggerWithContext['context']).to.equal('other');
+      expect(loggerWithContext['context']).toBe('other');
       loggerWithContext.resetContext();
-      expect(loggerWithContext['context']).to.equal('context');
+      expect(loggerWithContext['context']).toBe('context');
     });
 
     describe('functions for message', () => {
-      let processStdoutWriteSpy: sinon.SinonSpy;
+      let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
       const logger = new ConsoleLogger();
       const message = 'Hello World';
 
       beforeEach(() => {
-        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+        processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
       });
       afterEach(() => {
-        processStdoutWriteSpy.restore();
+        processStdoutWriteSpy.mockRestore();
       });
 
       it('works', () => {
         logger.log(() => message);
 
-        expect(processStdoutWriteSpy.calledOnce).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(message);
         // Ensure we didn't serialize the function itself.
-        expect(processStdoutWriteSpy.firstCall.firstArg).not.to.include(' => ');
-        expect(processStdoutWriteSpy.firstCall.firstArg).not.to.include(
+        expect(processStdoutWriteSpy.mock.calls[0][0]).not.toContain(' => ');
+        expect(processStdoutWriteSpy.mock.calls[0][0]).not.toContain(
           'function',
         );
-        expect(processStdoutWriteSpy.firstCall.firstArg).not.to.include(
+        expect(processStdoutWriteSpy.mock.calls[0][0]).not.toContain(
           'Function',
         );
       });
     });
 
     describe('classes for message', () => {
-      let processStdoutWriteSpy: sinon.SinonSpy;
+      let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
 
       beforeEach(() => {
-        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+        processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
       });
       afterEach(() => {
-        processStdoutWriteSpy.restore();
+        processStdoutWriteSpy.mockRestore();
       });
 
       it("should display class's name or empty for anonymous classes", () => {
@@ -470,30 +457,34 @@ describe('Logger', () => {
         }
         logger.log(Test);
 
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include('');
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(Test.name);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('');
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain(Test.name);
       });
     });
 
     describe('forceConsole option', () => {
-      let consoleLogSpy: sinon.SinonSpy;
-      let consoleErrorSpy: sinon.SinonSpy;
-      let processStdoutWriteStub: sinon.SinonStub;
-      let processStderrWriteStub: sinon.SinonStub;
+      let consoleLogSpy: ReturnType<typeof vi.fn>;
+      let consoleErrorSpy: ReturnType<typeof vi.fn>;
+      let processStdoutWriteStub: ReturnType<typeof vi.fn>;
+      let processStderrWriteStub: ReturnType<typeof vi.fn>;
 
       beforeEach(() => {
         // Stub process.stdout.write to prevent actual output and track calls
-        processStdoutWriteStub = sinon.stub(process.stdout, 'write');
-        processStderrWriteStub = sinon.stub(process.stderr, 'write');
-        consoleLogSpy = sinon.spy(console, 'log');
-        consoleErrorSpy = sinon.spy(console, 'error');
+        processStdoutWriteStub = vi
+          .spyOn(process.stdout, 'write')
+          .mockImplementation(() => ({}) as any);
+        processStderrWriteStub = vi
+          .spyOn(process.stderr, 'write')
+          .mockImplementation(() => ({}) as any);
+        consoleLogSpy = vi.spyOn(console, 'log');
+        consoleErrorSpy = vi.spyOn(console, 'error');
       });
 
       afterEach(() => {
-        processStdoutWriteStub.restore();
-        processStderrWriteStub.restore();
-        consoleLogSpy.restore();
-        consoleErrorSpy.restore();
+        processStdoutWriteStub.mockRestore();
+        processStderrWriteStub.mockRestore();
+        consoleLogSpy.mockRestore();
+        consoleErrorSpy.mockRestore();
       });
 
       it('should use console.log instead of process.stdout.write when forceConsole is true', () => {
@@ -503,8 +494,8 @@ describe('Logger', () => {
         logger.log(message);
 
         // When forceConsole is true, console.log should be called
-        expect(consoleLogSpy.called).to.be.true;
-        expect(consoleLogSpy.firstCall.firstArg).to.include(message);
+        expect(consoleLogSpy).toHaveBeenCalled();
+        expect(consoleLogSpy.mock.calls[0][0]).toContain(message);
       });
 
       it('should use console.error instead of process.stderr.write when forceConsole is true', () => {
@@ -513,8 +504,8 @@ describe('Logger', () => {
 
         logger.error(message);
 
-        expect(consoleErrorSpy.called).to.be.true;
-        expect(consoleErrorSpy.firstCall.firstArg).to.include(message);
+        expect(consoleErrorSpy).toHaveBeenCalled();
+        expect(consoleErrorSpy.mock.calls[0][0]).toContain(message);
       });
 
       it('should use console.error for stack traces when forceConsole is true', () => {
@@ -524,9 +515,9 @@ describe('Logger', () => {
 
         logger.error(message, stack);
 
-        expect(consoleErrorSpy.calledTwice).to.be.true;
-        expect(consoleErrorSpy.firstCall.firstArg).to.include(message);
-        expect(consoleErrorSpy.secondCall.firstArg).to.equal(stack);
+        expect(consoleErrorSpy).toHaveBeenCalledTimes(2);
+        expect(consoleErrorSpy.mock.calls[0][0]).toContain(message);
+        expect(consoleErrorSpy.mock.calls[1][0]).toBe(stack);
       });
 
       it('should use process.stdout.write when forceConsole is false', () => {
@@ -535,9 +526,9 @@ describe('Logger', () => {
 
         logger.log(message);
 
-        expect(processStdoutWriteStub.called).to.be.true;
-        expect(processStdoutWriteStub.firstCall.firstArg).to.include(message);
-        expect(consoleLogSpy.called).to.be.false;
+        expect(processStdoutWriteStub).toHaveBeenCalled();
+        expect(processStdoutWriteStub.mock.calls[0][0]).toContain(message);
+        expect(consoleLogSpy).not.toHaveBeenCalled();
       });
 
       it('should work with JSON mode and forceConsole', () => {
@@ -546,11 +537,11 @@ describe('Logger', () => {
 
         logger.log(message);
 
-        expect(consoleLogSpy.called).to.be.true;
+        expect(consoleLogSpy).toHaveBeenCalled();
 
-        const output = consoleLogSpy.firstCall.firstArg;
+        const output = consoleLogSpy.mock.calls[0][0];
         const json = JSON.parse(output);
-        expect(json.message).to.equal(message);
+        expect(json.message).toBe(message);
       });
     });
   });
@@ -559,17 +550,17 @@ describe('Logger', () => {
     describe('when the default logger is used', () => {
       const logger = new Logger();
 
-      let processStdoutWriteSpy: sinon.SinonSpy;
-      let processStderrWriteSpy: sinon.SinonSpy;
+      let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+      let processStderrWriteSpy: ReturnType<typeof vi.fn>;
 
       beforeEach(() => {
-        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
-        processStderrWriteSpy = sinon.spy(process.stderr, 'write');
+        processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
+        processStderrWriteSpy = vi.spyOn(process.stderr, 'write');
       });
 
       afterEach(() => {
-        processStdoutWriteSpy.restore();
-        processStderrWriteSpy.restore();
+        processStdoutWriteSpy.mockRestore();
+        processStderrWriteSpy.mockRestore();
       });
 
       it('should print one message to the console', () => {
@@ -578,11 +569,11 @@ describe('Logger', () => {
 
         logger.log(message, context);
 
-        expect(processStdoutWriteSpy.calledOnce).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(message);
       });
 
       it('should print one message without context to the console', () => {
@@ -590,8 +581,8 @@ describe('Logger', () => {
 
         logger.log(message);
 
-        expect(processStdoutWriteSpy.calledOnce).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(message);
       });
 
       it('should print multiple messages to the console', () => {
@@ -600,27 +591,21 @@ describe('Logger', () => {
 
         logger.log(messages[0], messages[1], messages[2], context);
 
-        expect(processStdoutWriteSpy.calledThrice).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(3);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
-          messages[0],
-        );
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(messages[0]);
 
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
-          messages[1],
-        );
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain(messages[1]);
 
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.mock.calls[2][0]).toContain(
           `[${context}]`,
         );
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
-          messages[2],
-        );
+        expect(processStdoutWriteSpy.mock.calls[2][0]).toContain(messages[2]);
       });
 
       it('should print one error to the console with context', () => {
@@ -629,11 +614,11 @@ describe('Logger', () => {
 
         logger.error(message, context);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(message);
       });
 
       it('should print one error to the console with stacktrace', () => {
@@ -642,12 +627,10 @@ describe('Logger', () => {
 
         logger.error(message, stacktrace);
 
-        expect(processStderrWriteSpy.calledTwice).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.not.include(`[]`);
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
-        expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
-          stacktrace + '\n',
-        );
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStderrWriteSpy.mock.calls[0][0]).not.toContain(`[]`);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(message);
+        expect(processStderrWriteSpy.mock.calls[1][0]).toBe(stacktrace + '\n');
       });
 
       it('should print one error without context to the console', () => {
@@ -655,8 +638,8 @@ describe('Logger', () => {
 
         logger.error(message);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(message);
       });
 
       it('should print one error with stacktrace and context to the console', () => {
@@ -666,16 +649,14 @@ describe('Logger', () => {
 
         logger.error(message, stacktrace, context);
 
-        expect(processStderrWriteSpy.calledTwice).to.be.true;
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
 
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(message);
 
-        expect(processStderrWriteSpy.secondCall.firstArg).to.equal(
-          stacktrace + '\n',
-        );
+        expect(processStderrWriteSpy.mock.calls[1][0]).toBe(stacktrace + '\n');
       });
 
       it('should print 2 errors and one stacktrace to the console', () => {
@@ -685,25 +666,21 @@ describe('Logger', () => {
 
         logger.error(messages[0], messages[1], stack, context);
 
-        expect(processStderrWriteSpy.calledThrice).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy).toHaveBeenCalledTimes(3);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
-          messages[0],
-        );
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(messages[0]);
 
-        expect(processStderrWriteSpy.secondCall.firstArg).to.include(
+        expect(processStderrWriteSpy.mock.calls[1][0]).toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.secondCall.firstArg).to.include(
-          messages[1],
-        );
+        expect(processStderrWriteSpy.mock.calls[1][0]).toContain(messages[1]);
 
-        expect(processStderrWriteSpy.thirdCall.firstArg).to.not.include(
+        expect(processStderrWriteSpy.mock.calls[2][0]).not.toContain(
           `[${context}]`,
         );
-        expect(processStderrWriteSpy.thirdCall.firstArg).to.equal(stack + '\n');
+        expect(processStderrWriteSpy.mock.calls[2][0]).toBe(stack + '\n');
       });
     });
 
@@ -711,17 +688,17 @@ describe('Logger', () => {
       const globalContext = 'GlobalContext';
       const logger = new Logger(globalContext, { timestamp: true });
 
-      let processStdoutWriteSpy: sinon.SinonSpy;
-      let processStderrWriteSpy: sinon.SinonSpy;
+      let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+      let processStderrWriteSpy: ReturnType<typeof vi.fn>;
 
       beforeEach(() => {
-        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
-        processStderrWriteSpy = sinon.spy(process.stderr, 'write');
+        processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
+        processStderrWriteSpy = vi.spyOn(process.stderr, 'write');
       });
 
       afterEach(() => {
-        processStdoutWriteSpy.restore();
-        processStderrWriteSpy.restore();
+        processStdoutWriteSpy.mockRestore();
+        processStderrWriteSpy.mockRestore();
       });
 
       it('should print multiple messages to the console and append global context', () => {
@@ -729,51 +706,45 @@ describe('Logger', () => {
 
         logger.log(messages[0], messages[1], messages[2]);
 
-        expect(processStdoutWriteSpy.calledThrice).to.be.true;
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(3);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
           `[${globalContext}]`,
         );
-        expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
-          messages[0],
-        );
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(messages[0]);
 
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain(
           `[${globalContext}]`,
         );
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include(
-          messages[1],
-        );
-        expect(processStdoutWriteSpy.secondCall.firstArg).to.include('ms');
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain(messages[1]);
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain('ms');
 
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
+        expect(processStdoutWriteSpy.mock.calls[2][0]).toContain(
           `[${globalContext}]`,
         );
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include(
-          messages[2],
-        );
-        expect(processStdoutWriteSpy.thirdCall.firstArg).to.include('ms');
+        expect(processStdoutWriteSpy.mock.calls[2][0]).toContain(messages[2]);
+        expect(processStdoutWriteSpy.mock.calls[2][0]).toContain('ms');
       });
       it('should log out an error to stderr but not include an undefined log', () => {
         const message = 'message 1';
 
         logger.error(message);
 
-        expect(processStderrWriteSpy.calledOnce).to.be.true;
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(
+        expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
           `[${globalContext}]`,
         );
-        expect(processStderrWriteSpy.firstCall.firstArg).to.include(message);
+        expect(processStderrWriteSpy.mock.calls[0][0]).toContain(message);
       });
     });
 
     describe('when logging is disabled', () => {
       const logger = new Logger();
 
-      let processStdoutWriteSpy: sinon.SinonSpy;
+      let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
       let previousLoggerRef: LoggerService;
 
       beforeEach(() => {
-        processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+        processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
 
         previousLoggerRef =
           Logger['localInstanceRef'] || Logger['staticInstanceRef'];
@@ -781,7 +752,7 @@ describe('Logger', () => {
       });
 
       afterEach(() => {
-        processStdoutWriteSpy.restore();
+        processStdoutWriteSpy.mockRestore();
 
         Logger.overrideLogger(previousLoggerRef);
       });
@@ -792,7 +763,7 @@ describe('Logger', () => {
 
         logger.log(message, context);
 
-        expect(processStdoutWriteSpy.called).to.be.false;
+        expect(processStdoutWriteSpy).not.toHaveBeenCalled();
       });
     });
 
@@ -823,25 +794,29 @@ describe('Logger', () => {
         it('should call custom logger "#log()" method with context as second argument', () => {
           const message = 'random log message with global context';
 
-          const customLoggerLogSpy = sinon.spy(customLogger, 'log');
+          const customLoggerLogSpy = vi.spyOn(customLogger, 'log');
 
           originalLogger.log(message);
 
-          expect(customLoggerLogSpy.called).to.be.true;
-          expect(customLoggerLogSpy.calledWith(message, globalContext)).to.be
-            .true;
+          expect(customLoggerLogSpy).toHaveBeenCalled();
+          expect(customLoggerLogSpy).toHaveBeenCalledWith(
+            message,
+            globalContext,
+          );
         });
         it('should call custom logger "#error()" method with context as third argument', () => {
           const message = 'random error message with global context';
 
-          const customLoggerErrorSpy = sinon.spy(customLogger, 'error');
+          const customLoggerErrorSpy = vi.spyOn(customLogger, 'error');
 
           originalLogger.error(message);
 
-          expect(customLoggerErrorSpy.called).to.be.true;
-          expect(
-            customLoggerErrorSpy.calledWith(message, undefined, globalContext),
-          ).to.be.true;
+          expect(customLoggerErrorSpy).toHaveBeenCalled();
+          expect(customLoggerErrorSpy).toHaveBeenCalledWith(
+            message,
+            undefined,
+            globalContext,
+          );
         });
       });
       describe('without global context', () => {
@@ -864,37 +839,40 @@ describe('Logger', () => {
           const message = 'random message';
           const context = 'RandomContext';
 
-          const customLoggerLogSpy = sinon.spy(customLogger, 'log');
+          const customLoggerLogSpy = vi.spyOn(customLogger, 'log');
 
           originalLogger.log(message, context);
 
-          expect(customLoggerLogSpy.called).to.be.true;
-          expect(customLoggerLogSpy.calledWith(message, context)).to.be.true;
+          expect(customLoggerLogSpy).toHaveBeenCalled();
+          expect(customLoggerLogSpy).toHaveBeenCalledWith(message, context);
         });
 
         it('should call custom logger "#error()" method', () => {
           const message = 'random message';
           const context = 'RandomContext';
 
-          const customLoggerErrorSpy = sinon.spy(customLogger, 'error');
+          const customLoggerErrorSpy = vi.spyOn(customLogger, 'error');
 
           originalLogger.error(message, undefined, context);
 
-          expect(customLoggerErrorSpy.called).to.be.true;
-          expect(customLoggerErrorSpy.calledWith(message, undefined, context))
-            .to.be.true;
+          expect(customLoggerErrorSpy).toHaveBeenCalled();
+          expect(customLoggerErrorSpy).toHaveBeenCalledWith(
+            message,
+            undefined,
+            context,
+          );
         });
       });
     });
   });
   describe('ConsoleLogger', () => {
-    let processStdoutWriteSpy: sinon.SinonSpy;
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      processStdoutWriteSpy = sinon.spy(process.stdout, 'write');
+      processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
     });
     afterEach(() => {
-      processStdoutWriteSpy.restore();
+      processStdoutWriteSpy.mockRestore();
     });
 
     it('should respect maxStringLength when set to 0', () => {
@@ -906,8 +884,8 @@ describe('Logger', () => {
 
       consoleLogger.log({ name: 'abcdef' });
 
-      expect(processStdoutWriteSpy.calledOnce).to.be.true;
-      expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+      expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+      expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
         "''... 6 more characters",
       );
     });
@@ -921,8 +899,8 @@ describe('Logger', () => {
 
       consoleLogger.log({ items: ['a', 'b', 'c'] });
 
-      expect(processStdoutWriteSpy.calledOnce).to.be.true;
-      expect(processStdoutWriteSpy.firstCall.firstArg).to.include(
+      expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+      expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
         '... 3 more items',
       );
     });
@@ -944,7 +922,7 @@ describe('Logger', () => {
       const consoleLogger = new CustomConsoleLogger();
       consoleLogger.debug('test');
 
-      expect(processStdoutWriteSpy.firstCall.firstArg).to.equal(`Prefix: test`);
+      expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(`Prefix: test`);
     });
 
     it('should support custom formatter and colorizer', () => {
@@ -969,12 +947,10 @@ describe('Logger', () => {
       const consoleLogger = new CustomConsoleLogger();
       consoleLogger.debug('test');
 
-      expect(processStdoutWriteSpy.firstCall.firstArg).to.equal(
-        `Prefix: ~~~test~~~`,
-      );
+      expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(`Prefix: ~~~test~~~`);
     });
 
-    it('should stringify messages', () => {
+    it('should stringify messages (plain objects extracted as params)', () => {
       class CustomConsoleLogger extends ConsoleLogger {
         protected colorize(message: string, _: LogLevel): string {
           return message;
@@ -982,10 +958,11 @@ describe('Logger', () => {
       }
 
       const consoleLogger = new CustomConsoleLogger({ colors: false });
-      const consoleLoggerSpy = sinon.spy(
-        consoleLogger,
-        'stringifyMessage' as keyof ConsoleLogger,
+      const consoleLoggerSpy = vi.spyOn(
+        consoleLogger as any,
+        'stringifyMessage',
       );
+      // { key: 'str2' } is now extracted as params, not passed through stringifyMessage
       consoleLogger.debug(
         'str1',
         { key: 'str2' },
@@ -995,26 +972,224 @@ describe('Logger', () => {
         1,
       );
 
-      expect(consoleLoggerSpy.getCall(0).returnValue).to.equal('str1');
-      expect(consoleLoggerSpy.getCall(1).returnValue).to.equal(
-        `Object(1) {
-  key: 'str2'
-}`,
-      );
-      expect(consoleLoggerSpy.getCall(2).returnValue).to.equal(
+      // stringifyMessage is called for: 'str1', ['str3'], [{ key: 'str4' }], null, 1
+      // { key: 'str2' } is extracted as params
+      expect(consoleLoggerSpy.mock.results[0].value).toBe('str1');
+      expect(consoleLoggerSpy.mock.results[1].value).toBe(
         `Array(1) [
   'str3'
 ]`,
       );
-      expect(consoleLoggerSpy.getCall(3).returnValue).to.equal(
+      expect(consoleLoggerSpy.mock.results[2].value).toBe(
         `Array(1) [
   {
     key: 'str4'
   }
 ]`,
       );
-      expect(consoleLoggerSpy.getCall(4).returnValue).to.equal('null');
-      expect(consoleLoggerSpy.getCall(5).returnValue).to.equal('1');
+      expect(consoleLoggerSpy.mock.results[3].value).toBe('null');
+      expect(consoleLoggerSpy.mock.results[4].value).toBe('1');
+    });
+  });
+
+  describe('ConsoleLogger - structured logging params', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi.spyOn(process.stdout, 'write');
+      processStderrWriteSpy = vi.spyOn(process.stderr, 'write');
+    });
+    afterEach(() => {
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+    });
+
+    describe('text mode', () => {
+      class DeterministicConsoleLogger extends ConsoleLogger {
+        protected formatPid() {
+          return '[Nest] 123  - ';
+        }
+
+        protected getTimestamp(): string {
+          return '01/01/2026, 12:00:00 AM';
+        }
+
+        protected updateAndGetTimestampDiff(): string {
+          return '';
+        }
+      }
+
+      it('should inline single plain object as params after message', () => {
+        const logger = new DeterministicConsoleLogger({ colors: false });
+        logger.log('User created', { userId: 1 });
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(
+          '[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG User created { userId: 1 }\n',
+        );
+      });
+
+      it('should merge multiple plain objects into single params', () => {
+        const logger = new DeterministicConsoleLogger({ colors: false });
+        logger.log('Request', { userId: 1 }, { reqId: 'abc' });
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(
+          "[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG Request { userId: 1, reqId: 'abc' }\n",
+        );
+      });
+
+      it('should treat plain object as first arg as message, not params', () => {
+        const logger = new ConsoleLogger({ colors: false });
+        logger.log({ randomError: true });
+
+        expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+        const output = processStdoutWriteSpy.mock.calls[0][0];
+        expect(output).toContain('Object(1)');
+        expect(output).toContain('randomError: true');
+      });
+
+      it('should keep strings as messages and extract objects as params', () => {
+        const logger = new DeterministicConsoleLogger({ colors: false });
+        logger.log('msg1', 'msg2', { meta: true }, 'Context');
+
+        // msg1 and msg2 are messages, { meta: true } is params, 'Context' is context
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toBe(
+          '[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG [Context] msg1 { meta: true }\n',
+        );
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toBe(
+          '[Nest] 123  - 01/01/2026, 12:00:00 AM     LOG [Context] msg2 { meta: true }\n',
+        );
+      });
+
+      it('should not treat arrays as params', () => {
+        const logger = new ConsoleLogger({ colors: false });
+        logger.log('msg', [1, 2, 3]);
+
+        // Array stays as a separate message, not params
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('msg');
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain('Array(3)');
+      });
+    });
+
+    describe('JSON mode', () => {
+      it('should include params under params key', () => {
+        const logger = new ConsoleLogger({ json: true });
+        logger.log('User created', { userId: 1 }, 'UserService');
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('User created');
+        expect(json.context).toBe('UserService');
+        expect(json.params).toEqual({ userId: 1 });
+      });
+
+      it('should not include params key when no objects are passed', () => {
+        const logger = new ConsoleLogger({ json: true });
+        logger.log('simple message');
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('simple message');
+        expect(json.params).toBeUndefined();
+      });
+
+      it('should include params, stack, and context for error', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const stack = 'Error: test\n    at <anonymous>:1:1';
+        logger.error('fail', { reqId: 'abc' }, stack, 'AppService');
+
+        const json = JSON.parse(processStderrWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('fail');
+        expect(json.context).toBe('AppService');
+        expect(json.stack).toBe(stack);
+        expect(json.params).toEqual({ reqId: 'abc' });
+      });
+
+      it('should keep reserved keys nested under params by default', () => {
+        const logger = new ConsoleLogger({ json: true });
+        logger.log(
+          'User created',
+          { message: 'override', level: 'debug' },
+          'UserService',
+        );
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.level).toBe('log');
+        expect(json.message).toBe('User created');
+        expect(json.context).toBe('UserService');
+        expect(json.params).toEqual({ message: 'override', level: 'debug' });
+      });
+
+      it('should flatten params to root when flattenParams is true', () => {
+        const logger = new ConsoleLogger({ json: true, flattenParams: true });
+        logger.log('User created', { userId: 1, action: 'create' }, 'Svc');
+
+        const json = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('User created');
+        expect(json.context).toBe('Svc');
+        expect(json.userId).toBe(1);
+        expect(json.action).toBe('create');
+        expect(json.params).toBeUndefined();
+      });
+
+      it('should handle error with params but no stack', () => {
+        const logger = new ConsoleLogger({ json: true });
+        logger.error('fail', { reqId: 'abc' }, 'AppService');
+
+        const json = JSON.parse(processStderrWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('fail');
+        expect(json.context).toBe('AppService');
+        expect(json.params).toEqual({ reqId: 'abc' });
+        expect(json.stack).toBeUndefined();
+      });
+
+      it('should treat trailing stack-like string as stack when params are present', () => {
+        const logger = new ConsoleLogger({ json: true });
+        const stack = 'Error: test\n    at AppService.run (app.ts:1:1)';
+        logger.error('fail', { reqId: 'abc' }, stack);
+
+        const json = JSON.parse(processStderrWriteSpy.mock.calls[0][0]);
+        expect(json.message).toBe('fail');
+        expect(json.context).toBeUndefined();
+        expect(json.params).toEqual({ reqId: 'abc' });
+        expect(json.stack).toBe(stack);
+      });
+    });
+
+    describe('structuredParams: false (legacy behavior)', () => {
+      it('should treat plain objects as separate messages in text mode', () => {
+        const logger = new ConsoleLogger({
+          colors: false,
+          structuredParams: false,
+        });
+        logger.log('User created', { userId: 1 });
+
+        // Two write calls: one for the message, one for the object
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(2);
+        expect(processStdoutWriteSpy.mock.calls[0][0]).toContain(
+          'User created',
+        );
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain('Object(1)');
+        expect(processStdoutWriteSpy.mock.calls[1][0]).toContain('userId: 1');
+      });
+
+      it('should treat plain objects as separate JSON entries', () => {
+        const logger = new ConsoleLogger({
+          json: true,
+          structuredParams: false,
+        });
+        logger.log('User created', { userId: 1 });
+
+        // Two JSON lines: one for the string, one for the object
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(2);
+        const json1 = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        const json2 = JSON.parse(processStdoutWriteSpy.mock.calls[1][0]);
+        expect(json1.message).toBe('User created');
+        expect(json1.params).toBeUndefined();
+        expect(json2.message).toEqual({ userId: 1 });
+      });
     });
   });
 });

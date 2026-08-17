@@ -1,4 +1,4 @@
-import { LogLevel } from '../logger.service';
+import { LogLevel } from '../logger.service.js';
 
 const LOG_LEVEL_VALUES: Record<LogLevel, number> = {
   verbose: 0,

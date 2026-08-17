@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "types": ["vitest/globals"],
+    "module": "commonjs",
+    "declaration": false,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "noLib": false,
+    "esModuleInterop": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "allowJs": true,
+    "strictNullChecks": true,
+    "outDir": "./dist",
+    "paths": {
+      "@nestjs/common": ["../../packages/common"],
+      "@nestjs/common/*": ["../../packages/common/*"],
+      "@nestjs/core": ["../../packages/core"],
+      "@nestjs/core/*": ["../../packages/core/*"],
+      "@nestjs/platform-express": ["../../packages/platform-express"],
+      "@nestjs/platform-express/*": ["../../packages/platform-express/*"],
+      "@nestjs/testing": ["../../packages/testing"],
+      "@nestjs/testing/*": ["../../packages/testing/*"]
+    }
+  },
+  "include": ["src/**/*", "e2e/**/*"],
+  "exclude": ["node_modules"]
+}

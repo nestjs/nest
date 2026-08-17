@@ -1,9 +1,17 @@
 {
   "name": "@nestjs/websockets",
-  "version": "11.1.21",
+  "version": "11.2.1",
   "description": "Nest - modern, fast, powerful node.js web framework (@websockets)",
   "author": "Kamil Mysliwiec",
   "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./internal": "./internal.js",
+    "./*.js": "./*.js",
+    "./*": "./*.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/nestjs/nest.git",
@@ -18,8 +26,8 @@
     "tslib": "2.8.1"
   },
   "devDependencies": {
-    "@nestjs/common": "11.1.21",
-    "@nestjs/core": "11.1.21"
+    "@nestjs/common": "11.2.1",
+    "@nestjs/core": "11.2.1"
   },
   "peerDependencies": {
     "@nestjs/common": "^11.0.0",

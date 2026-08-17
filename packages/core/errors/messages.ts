@@ -1,10 +1,10 @@
 import type { DynamicModule, ForwardReference, Type } from '@nestjs/common';
-import { isNil, isSymbol } from '@nestjs/common/utils/shared.utils';
 import {
   InjectorDependency,
   InjectorDependencyContext,
-} from '../injector/injector';
-import { Module } from '../injector/module';
+} from '../injector/injector.js';
+import { Module } from '../injector/module.js';
+import { isNil, isSymbol } from '@nestjs/common/internal';
 
 /**
  * Returns the name of an instance or `undefined`
@@ -157,11 +157,26 @@ export const INVALID_MODULE_MESSAGE = (
   parentModule: any,
   index: number,
   scope: any[],
+  receivedValue: unknown,
 ) => {
   const parentModuleName = parentModule?.name || 'module';
 
+  let formattedValue: string;
+  let receivedType: string;
+  if (receivedValue === null) {
+    formattedValue = 'null';
+    receivedType = 'null';
+  } else if (typeof receivedValue === 'string') {
+    formattedValue = `"${receivedValue}"`;
+    receivedType = 'string';
+  } else {
+    formattedValue = String(receivedValue);
+    receivedType = typeof receivedValue;
+  }
+
   return `Nest cannot create the ${parentModuleName} instance.
 Received an unexpected value at index [${index}] of the ${parentModuleName} "imports" array.
+The received value \`${formattedValue}\` is of type "${receivedType}".
 
 Scope [${stringifyScope(scope)}]`;
 };
@@ -169,11 +184,24 @@ Scope [${stringifyScope(scope)}]`;
 export const USING_INVALID_CLASS_AS_A_MODULE_MESSAGE = (
   metatypeUsedAsAModule: Type | ForwardReference,
   scope: any[],
+  classKind: 'provider' | 'controller' | 'filter',
 ) => {
   const metatypeNameQuote = `"${getInstanceName(metatypeUsedAsAModule)}"`;
 
-  return `Classes annotated with @Injectable(), @Catch(), and @Controller() decorators must not appear in the "imports" array of a module.
-Please remove ${metatypeNameQuote} (including forwarded occurrences, if any) from all of the "imports" arrays.
+  let hint: string;
+  switch (classKind) {
+    case 'controller':
+      hint = `${metatypeNameQuote} is decorated with @Controller() and cannot appear in the "imports" array of a module. Please move ${metatypeNameQuote} to the "controllers" array of the importing module instead.`;
+      break;
+    case 'provider':
+      hint = `${metatypeNameQuote} is decorated with @Injectable() and cannot appear in the "imports" array of a module. Please move ${metatypeNameQuote} to the "providers" array of the importing module instead.`;
+      break;
+    case 'filter':
+      hint = `${metatypeNameQuote} is decorated with @Catch() and cannot appear in the "imports" array of a module. Please move ${metatypeNameQuote} to the "providers" array (using the APP_FILTER token to apply it globally) or apply it via @UseFilters() instead.`;
+      break;
+  }
+
+  return `${hint}
 
 Scope [${stringifyScope(scope)}]
 `;
@@ -228,6 +256,30 @@ export const UNKNOWN_REQUEST_MAPPING = (metatype: Type) => {
     ? `An invalid controller has been detected. "${className}" does not have the @Controller() decorator but it is being listed in the "controllers" array of some module.`
     : `An invalid controller has been detected. Perhaps, one of your controllers is missing the @Controller() decorator.`;
 };
+
+export const ROUTE_CONFLICT_MESSAGE = (messages: string[]) =>
+  [
+    'Conflicting HTTP routes detected:',
+    ...messages.map(message => `  - ${message}`),
+    `Adjust route declarations or relax the 'routeConflictPolicy' option passed to NestFactory.create() to allow the application to start.`,
+  ].join('\n');
+
+export const DUPLICATE_ROUTE_MESSAGE = (
+  method: string,
+  path: string,
+  firstHandlerLabel: string,
+  secondHandlerLabel: string,
+) =>
+  `Duplicate route: ${method} ${path} is registered by both ${firstHandlerLabel} and ${secondHandlerLabel}.`;
+
+export const SHADOWED_ROUTE_MESSAGE = (
+  method: string,
+  shadowedPath: string,
+  shadowedHandlerLabel: string,
+  winnerPath: string,
+  winnerHandlerLabel: string,
+) =>
+  `Route ${method} ${shadowedPath} (${shadowedHandlerLabel}) is shadowed by ${method} ${winnerPath} (${winnerHandlerLabel}). The first-registered route will match all matching requests on order-sensitive adapters.`;
 
 export const INVALID_MIDDLEWARE_CONFIGURATION = `An invalid middleware configuration has been passed inside the module 'configure()' method.`;
 export const UNHANDLED_RUNTIME_EXCEPTION = `Unhandled Runtime Exception.`;

@@ -1,21 +1,22 @@
+import { Mocked } from 'vitest';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model, Types } from 'mongoose';
-import { CatsService } from './cats.service';
-import { CreateCatDto } from './dto/create-cat.dto';
-import { Cat } from './schemas/cat.schema';
+import { CatsService } from './cats.service.js';
+import { CreateCatDto } from './dto/create-cat.dto.js';
+import { Cat } from './schemas/cat.schema.js';
 
 const catModelMock = {
-  create: jest.fn(),
-  find: jest.fn(),
-  findOne: jest.fn(),
-  findByIdAndUpdate: jest.fn(),
-  findByIdAndDelete: jest.fn(),
+  create: vi.fn(),
+  find: vi.fn(),
+  findOne: vi.fn(),
+  findByIdAndUpdate: vi.fn(),
+  findByIdAndDelete: vi.fn(),
 };
 
 describe('CatsService', () => {
   let service: CatsService;
-  let model: jest.Mocked<Model<Cat>>;
+  let model: Mocked<Model<Cat>>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -72,7 +73,7 @@ describe('CatsService', () => {
         },
       ];
       model.find.mockReturnValueOnce({
-        exec: jest.fn().mockResolvedValueOnce(mockedCats),
+        exec: vi.fn().mockResolvedValueOnce(mockedCats),
       } as any);
 
       const result = await service.findAll();
@@ -90,7 +91,7 @@ describe('CatsService', () => {
         age: 4,
       };
       model.findOne.mockReturnValueOnce({
-        exec: jest.fn().mockResolvedValueOnce(mockedCat),
+        exec: vi.fn().mockResolvedValueOnce(mockedCat),
       } as any);
 
       const id = new Types.ObjectId().toString();
@@ -109,7 +110,7 @@ describe('CatsService', () => {
         age: 4,
       };
       model.findByIdAndUpdate.mockReturnValueOnce({
-        exec: jest.fn().mockResolvedValueOnce(mockedCat),
+        exec: vi.fn().mockResolvedValueOnce(mockedCat),
       } as any);
 
       const id = new Types.ObjectId().toString();
@@ -137,7 +138,7 @@ describe('CatsService', () => {
         age: 4,
       };
       model.findByIdAndDelete.mockReturnValueOnce({
-        exec: jest.fn().mockResolvedValueOnce(mockedCat),
+        exec: vi.fn().mockResolvedValueOnce(mockedCat),
       } as any);
 
       const id = new Types.ObjectId().toString();

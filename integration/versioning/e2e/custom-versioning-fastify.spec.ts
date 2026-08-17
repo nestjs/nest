@@ -5,8 +5,8 @@ import {
 } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { FastifyRequest } from 'fastify';
-import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module.js';
 
 describe('Custom Versioning (fastify)', () => {
   const extractor = (request: FastifyRequest): string | string[] => {
@@ -24,7 +24,7 @@ describe('Custom Versioning (fastify)', () => {
 
   // ======================================================================== //
   describe('without global default version', () => {
-    before(async () => {
+    beforeAll(async () => {
       const moduleRef = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
@@ -497,14 +497,14 @@ describe('Custom Versioning (fastify)', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });
 
   // ======================================================================== //
   describe('with the global default version: "1"', () => {
-    before(async () => {
+    beforeAll(async () => {
       const moduleRef = await Test.createTestingModule({
         imports: [AppModule],
       }).compile();
@@ -960,7 +960,7 @@ describe('Custom Versioning (fastify)', () => {
       });
     });
 
-    after(async () => {
+    afterAll(async () => {
       await app.close();
     });
   });

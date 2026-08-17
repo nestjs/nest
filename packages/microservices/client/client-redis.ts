@@ -1,13 +1,13 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { REDIS_DEFAULT_HOST, REDIS_DEFAULT_PORT } from '../constants';
+import { REDIS_DEFAULT_HOST, REDIS_DEFAULT_PORT } from '../constants.js';
 import {
   RedisEvents,
   RedisEventsMap,
   RedisStatus,
-} from '../events/redis.events';
-import { ReadPacket, RedisOptions, WritePacket } from '../interfaces';
-import { ClientProxy } from './client-proxy';
+} from '../events/redis.events.js';
+import { ReadPacket, RedisOptions, WritePacket } from '../interfaces/index.js';
+import { ClientProxy } from './client-proxy.js';
+import { Logger } from '@nestjs/common';
+import { loadPackage } from '@nestjs/common/internal';
 
 // To enable type safety for Redis. This cant be uncommented by default
 // because it would require the user to install the ioredis package even if they dont use Redis
@@ -19,9 +19,6 @@ type Redis = any;
 type RedisOutputOptions = {
   returnBuffers?: boolean;
 };
-
-let redisPackage = {} as any;
-
 /**
  * @publicApi
  */
@@ -30,7 +27,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
   protected readonly subscriptionsCount = new Map<string, number>();
   protected pubClient: Redis;
   protected subClient: Redis;
-  protected connectionPromise: Promise<any>;
+  protected connectionPromise: Promise<any> | null = null;
   protected isManuallyClosed = false;
   protected wasInitialConnectionSuccessful = false;
   protected pendingEventListeners: Array<{
@@ -43,10 +40,6 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       RedisOutputOptions,
   ) {
     super();
-
-    redisPackage = loadPackage('ioredis', ClientRedis.name, () =>
-      require('ioredis'),
-    );
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
@@ -62,18 +55,25 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
   public async close() {
     this.isManuallyClosed = true;
+    this.handleClose();
     this.pubClient && (await this.pubClient.quit());
     this.subClient && (await this.subClient.quit());
     this.pubClient = this.subClient = null;
+    this.connectionPromise = null;
     this.pendingEventListeners = [];
   }
 
-  public async connect(): Promise<any> {
-    if (this.pubClient && this.subClient) {
+  public connect(): Promise<any> {
+    if (this.connectionPromise) {
       return this.connectionPromise;
     }
-    this.pubClient = this.createClient();
-    this.subClient = this.createClient();
+    this.connectionPromise = this.handleConnection();
+    return this.connectionPromise;
+  }
+
+  private async handleConnection(): Promise<any> {
+    this.pubClient = await this.createClient();
+    this.subClient = await this.createClient();
 
     [this.pubClient, this.subClient].forEach((client, index) => {
       const type = index === 0 ? 'pub' : 'sub';
@@ -87,17 +87,18 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     });
     this.pendingEventListeners = [];
 
-    this.connectionPromise = Promise.all([
-      this.subClient.connect(),
-      this.pubClient.connect(),
-    ]);
-    await this.connectionPromise;
-    return this.connectionPromise;
+    await Promise.all([this.subClient.connect(), this.pubClient.connect()]);
   }
 
-  public createClient(): Redis {
+  public async createClient(): Promise<Redis> {
     const clientInfoTag = this.getOptionsProp(this.options, 'clientInfoTag');
-    return new redisPackage({
+    const redisPackage = await loadPackage(
+      'ioredis',
+      ClientRedis.name,
+      () => import('ioredis'),
+    );
+    const RedisClient = redisPackage.default || redisPackage;
+    return new RedisClient({
       host: REDIS_DEFAULT_HOST,
       port: REDIS_DEFAULT_PORT,
       ...this.getClientOptions(),
@@ -162,6 +163,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         return;
       }
       this._status$.next(RedisStatus.DISCONNECTED);
+      this.handleClose();
 
       if (this.getOptionsProp(this.options, 'retryAttempts') === undefined) {
         // When retryAttempts is not specified, the connection will not be re-established
@@ -169,6 +171,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
 
         // Clean up client instances and just recreate them when connect is called
         this.pubClient = this.subClient = null;
+        this.connectionPromise = null;
       } else {
         this.logger.error('Disconnected from Redis.');
         this.connectionPromise = Promise.reject(
@@ -179,6 +182,17 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         this.connectionPromise.catch(() => {});
       }
     });
+  }
+
+  public handleClose() {
+    if (this.routingMap.size > 0) {
+      const err = new Error('Connection closed');
+      for (const callback of this.routingMap.values()) {
+        callback({ err });
+      }
+      this.routingMap.clear();
+    }
+    this.subscriptionsCount.clear();
   }
 
   public getClientOptions(): Partial<RedisOptions['options']> {

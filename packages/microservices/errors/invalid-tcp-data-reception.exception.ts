@@ -1,4 +1,4 @@
-import { RuntimeException } from '@nestjs/core/errors/exceptions/runtime.exception';
+import { RuntimeException } from '@nestjs/core/internal';
 
 export class InvalidTcpDataReceptionException extends RuntimeException {
   constructor(err: string | Error) {

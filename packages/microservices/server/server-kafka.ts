@@ -1,5 +1,3 @@
-import { Logger } from '@nestjs/common/services/logger.service';
-import { isNil } from '@nestjs/common/utils/shared.utils';
 import { isObservable, lastValueFrom, Observable, ReplaySubject } from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
@@ -7,12 +5,12 @@ import {
   KAFKA_DEFAULT_GROUP,
   NO_EVENT_HANDLER,
   NO_MESSAGE_HANDLER,
-} from '../constants';
-import { KafkaContext } from '../ctx-host';
-import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer';
-import { KafkaHeaders, Transport } from '../enums';
-import { KafkaStatus } from '../events';
-import { KafkaRetriableException } from '../exceptions';
+} from '../constants.js';
+import { KafkaContext } from '../ctx-host/index.js';
+import { KafkaRequestDeserializer } from '../deserializers/kafka-request.deserializer.js';
+import { KafkaHeaders, Transport } from '../enums/index.js';
+import { KafkaStatus } from '../events/index.js';
+import { KafkaRetriableException } from '../exceptions/index.js';
 import {
   BrokersFunction,
   Consumer,
@@ -24,18 +22,19 @@ import {
   Message,
   Producer,
   RecordMetadata,
-} from '../external/kafka.interface';
-import { KafkaLogger, KafkaParser } from '../helpers';
+} from '../external/kafka.interface.js';
+import { KafkaLogger, KafkaParser } from '../helpers/index.js';
 import {
   KafkaOptions,
+  MessageHandler,
   OutgoingResponse,
   ReadPacket,
   TransportId,
-} from '../interfaces';
-import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer';
-import { Server } from './server';
-
-let kafkaPackage: any = {};
+} from '../interfaces/index.js';
+import { KafkaRequestSerializer } from '../serializers/kafka-request.serializer.js';
+import { Server } from './server.js';
+import { Logger } from '@nestjs/common';
+import { isNil } from '@nestjs/common/internal';
 
 /**
  * @publicApi
@@ -75,21 +74,46 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       (clientOptions.clientId || KAFKA_DEFAULT_CLIENT) + postfixId;
     this.groupId = (consumerOptions.groupId || KAFKA_DEFAULT_GROUP) + postfixId;
 
-    kafkaPackage = this.loadPackage('kafkajs', ServerKafka.name, () =>
-      require('kafkajs'),
-    );
-
     this.parser = new KafkaParser((options && options.parser) || undefined);
 
     this.initializeSerializer(options);
     this.initializeDeserializer(options);
   }
 
+  public addHandler(
+    pattern: any,
+    callback: MessageHandler,
+    isEventHandler = false,
+    extras: Record<string, any> = {},
+  ) {
+    if (!(pattern instanceof RegExp)) {
+      return super.addHandler(pattern, callback, isEventHandler, extras);
+    }
+
+    const messageHandlers = this.messageHandlers as Map<
+      string | RegExp,
+      MessageHandler
+    >;
+    callback.isEventHandler = isEventHandler;
+    callback.extras = extras;
+
+    if (messageHandlers.has(pattern) && isEventHandler) {
+      const headRef = messageHandlers.get(pattern)!;
+      const getTail = (handler: MessageHandler) =>
+        handler?.next ? getTail(handler.next) : handler;
+
+      const tailRef = getTail(headRef);
+      tailRef.next = callback;
+    } else {
+      messageHandlers.set(pattern, callback);
+    }
+  }
+
   public async listen(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ): Promise<void> {
     try {
-      this.client = this.createClient();
+      this.client = await this.createClient();
       await this.start(callback);
     } catch (err) {
       callback(err);
@@ -105,9 +129,10 @@ export class ServerKafka extends Server<never, KafkaStatus> {
   }
 
   public async start(callback: () => void): Promise<void> {
-    const consumerOptions = Object.assign(this.options.consumer || {}, {
+    const consumerOptions = {
+      ...(this.options.consumer || {}),
       groupId: this.groupId,
-    });
+    };
     this.consumer = this.client!.consumer(consumerOptions);
     this.producer = this.client!.producer(this.options.producer);
     this.registerConsumerEventListeners();
@@ -152,14 +177,18 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     );
   }
 
-  public createClient<T = any>(): T {
-    return new kafkaPackage.Kafka(
-      Object.assign(
-        { logCreator: KafkaLogger.bind(null, this.logger) },
-        this.options.client,
-        { clientId: this.clientId, brokers: this.brokers },
-      ) as KafkaConfig,
+  public async createClient<T = any>(): Promise<T> {
+    const kafkaPackage = await this.loadPackage(
+      'kafkajs',
+      ServerKafka.name,
+      () => import('kafkajs'),
     );
+    return new kafkaPackage.Kafka({
+      logCreator: KafkaLogger.bind(null, this.logger),
+      ...this.options.client,
+      clientId: this.clientId,
+      brokers: this.brokers,
+    } as KafkaConfig) as T;
   }
 
   public async bindEvents(consumer: Consumer) {
@@ -173,10 +202,41 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       });
     }
 
-    const consumerRunOptions = Object.assign(this.options.run || {}, {
+    const consumerRunOptions = {
+      ...(this.options.run || {}),
       eachMessage: this.getMessageHandler(),
-    });
+    };
     await consumer.run(consumerRunOptions);
+  }
+
+  public getHandlerByPattern(pattern: string): MessageHandler | null {
+    const handler = super.getHandlerByPattern(pattern);
+    if (handler) {
+      return handler;
+    }
+
+    const route = this.getRouteFromPattern(pattern);
+    const messageHandlers = this.messageHandlers as Map<
+      string | RegExp,
+      MessageHandler
+    >;
+    for (const [registeredPattern, registeredHandler] of messageHandlers) {
+      if (
+        registeredPattern instanceof RegExp &&
+        this.isPatternMatch(registeredPattern, route)
+      ) {
+        return registeredHandler;
+      }
+    }
+
+    return null;
+  }
+
+  private isPatternMatch(pattern: RegExp, route: string): boolean {
+    pattern.lastIndex = 0;
+    const isMatch = pattern.test(route);
+    pattern.lastIndex = 0;
+    return isMatch;
   }
 
   public getMessageHandler() {
@@ -314,13 +374,11 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     this.assignErrorHeader(message, outgoingMessage);
     this.assignIsDisposedHeader(message, outgoingMessage);
 
-    const replyMessage = Object.assign(
-      {
-        topic: replyTopic,
-        messages: [outgoingMessage],
-      },
-      this.options.send || {},
-    );
+    const replyMessage = {
+      topic: replyTopic,
+      messages: [outgoingMessage],
+      ...(this.options.send || {}),
+    };
     return this.producer!.send(replyMessage).finally(() => {
       this.onProcessingEndHook?.(this.transportId, context);
     });

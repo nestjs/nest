@@ -1,24 +1,22 @@
-import { expect } from 'chai';
-import * as sinon from 'sinon';
 import * as Kafka from 'kafkajs';
-import { KafkaReplyPartitionAssigner } from '../../helpers/kafka-reply-partition-assigner';
-import { ClientKafka } from '../../client/client-kafka';
+import { ClientKafka } from '../../client/client-kafka.js';
+import { KafkaReplyPartitionAssigner } from '../../helpers/kafka-reply-partition-assigner.js';
 
 describe('kafka reply partition assigner', () => {
   let cluster, topics, metadata, assigner, client;
 
-  let getConsumerAssignments: sinon.SinonSpy;
-  let getPreviousAssignment: sinon.SinonSpy;
+  let getConsumerAssignments: ReturnType<typeof vi.fn>;
+  let getPreviousAssignment: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     metadata = {};
     cluster = { findTopicPartitionMetadata: topic => metadata[topic] };
     client = new ClientKafka({});
     assigner = new KafkaReplyPartitionAssigner(client, { cluster });
     topics = ['topic-A', 'topic-B'];
 
-    getConsumerAssignments = sinon.spy(client, 'getConsumerAssignments');
-    getPreviousAssignment = sinon.spy(assigner, 'getPreviousAssignment');
+    getConsumerAssignments = vi.spyOn(client, 'getConsumerAssignments');
+    getPreviousAssignment = vi.spyOn(assigner, 'getPreviousAssignment');
 
     // reset previous assignments
     client.consumerAssignments = {};
@@ -87,7 +85,7 @@ describe('kafka reply partition assigner', () => {
 
       const assignment = await assigner.assign({ members, topics });
 
-      expect(assignment).to.deep.equal([
+      expect(assignment).toEqual([
         {
           memberId: 'member-1',
           memberAssignment: Kafka.AssignerProtocol.MemberAssignment.encode({
@@ -207,7 +205,7 @@ describe('kafka reply partition assigner', () => {
 
       const assignment = await assigner.assign({ members, topics });
 
-      expect(assignment).to.deep.equal([
+      expect(assignment).toEqual([
         {
           memberId: 'member-1',
           memberAssignment: Kafka.AssignerProtocol.MemberAssignment.encode({
@@ -257,19 +255,19 @@ describe('kafka reply partition assigner', () => {
   });
 
   describe('protocol', () => {
-    it('returns the assigner name and metadata', () => {
+    it('returns the assigner name and metadata', async () => {
       // set previous assignments
       client.consumerAssignments = {
         'topic-A': 0,
         'topic-B': 1,
       };
 
-      const protocol = assigner.protocol({ topics });
+      const protocol = await assigner.protocol({ topics });
 
-      expect(getPreviousAssignment.calledOnce).to.be.true;
-      expect(getConsumerAssignments.calledOnce).to.be.true;
+      expect(getPreviousAssignment).toHaveBeenCalledOnce();
+      expect(getConsumerAssignments).toHaveBeenCalledOnce();
 
-      expect(protocol).to.deep.equal({
+      expect(protocol).toEqual({
         name: assigner.name,
         metadata: Kafka.AssignerProtocol.MemberMetadata.encode({
           version: assigner.version,

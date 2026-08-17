@@ -1,24 +1,29 @@
 import {
-  HttpServer,
-  INestApplication,
-  INestMicroservice,
+  type HttpServer,
+  type INestApplication,
+  type INestMicroservice,
   Logger,
-  NestApplicationOptions,
-  Type,
+  type NestApplicationOptions,
+  type Type,
 } from '@nestjs/common';
-import { NestMicroserviceOptions } from '@nestjs/common/interfaces/microservices/nest-microservice-options.interface';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
-import { loadPackage } from '@nestjs/common/utils/load-package.util';
-import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import {
-  AbstractHttpAdapter,
+  type AbstractHttpAdapter,
   NestApplication,
   NestApplicationContext,
 } from '@nestjs/core';
-import { ApplicationConfig } from '@nestjs/core/application-config';
-import { NestContainer } from '@nestjs/core/injector/container';
-import { Module } from '@nestjs/core/injector/module';
-import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
+import {
+  type NestMicroserviceOptions,
+  type NestApplicationContextOptions,
+  tryLoadPackage,
+  loadPackageCached,
+  isUndefined,
+} from '@nestjs/common/internal';
+import type {
+  ApplicationConfig,
+  NestContainer,
+  GraphInspector,
+} from '@nestjs/core';
+import type { Module } from '@nestjs/core/internal';
 
 /**
  * @publicApi
@@ -37,6 +42,22 @@ export class TestingModule extends NestApplicationContext {
     super(container, options, contextModule, scope);
 
     this.graphInspector = graphInspector;
+  }
+
+  /**
+   * Pre-load optional packages so that createNestApplication,
+   * createNestMicroservice and createHttpAdapter can stay synchronous.
+   * Called from TestingModuleBuilder.compile().
+   */
+  private async preloadLazyPackages(): Promise<void> {
+    await tryLoadPackage(
+      '@nestjs/platform-express',
+      () => import('@nestjs/platform-express'),
+    );
+    await tryLoadPackage(
+      '@nestjs/microservices',
+      () => import('@nestjs/microservices'),
+    );
   }
 
   private isHttpServer(
@@ -84,10 +105,9 @@ export class TestingModule extends NestApplicationContext {
   public createNestMicroservice<T extends object>(
     options: NestMicroserviceOptions & T,
   ): INestMicroservice {
-    const { NestMicroservice } = loadPackage(
+    const { NestMicroservice } = loadPackageCached(
       '@nestjs/microservices',
       'TestingModule',
-      () => require('@nestjs/microservices'),
     );
     this.applyLogger(options);
     return new NestMicroservice(
@@ -99,10 +119,9 @@ export class TestingModule extends NestApplicationContext {
   }
 
   private createHttpAdapter<T = any>(httpServer?: T): AbstractHttpAdapter {
-    const { ExpressAdapter } = loadPackage(
+    const { ExpressAdapter } = loadPackageCached(
       '@nestjs/platform-express',
-      'NestFactory',
-      () => require('@nestjs/platform-express'),
+      'TestingModule',
     );
     return new ExpressAdapter(httpServer);
   }

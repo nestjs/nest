@@ -1,5 +1,5 @@
 import { Injectable, Scope } from '@nestjs/common';
-import { NestedTransientService } from './nested-transient.service';
+import { NestedTransientService } from './nested-transient.service.js';
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class TransientLoggerService {

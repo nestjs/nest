@@ -1,6 +1,6 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import { INQUIRER } from '@nestjs/core';
-import { RequestLogger } from './request-logger.service';
+import { RequestLogger } from './request-logger.service.js';
 
 @Injectable({ scope: Scope.REQUEST })
 export class HelloRequestService {

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Cat } from '../graphql.schema';
+import { Cat } from '../graphql.schema.js';
 
 @Injectable()
 export class CatsService {
@@ -17,7 +17,7 @@ export class CatsService {
     return this.cats;
   }
 
-  findOneById(id: number): Cat {
+  findOneById(id: number): Cat | undefined {
     return this.cats.find(cat => cat.id === id);
   }
 }

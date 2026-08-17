@@ -1,5 +1,5 @@
-import { HttpStatus } from '../enums/http-status.enum';
-import { HttpException, HttpExceptionOptions } from './http.exception';
+import { HttpStatus } from '../enums/http-status.enum.js';
+import { HttpException, HttpExceptionOptions } from './http.exception.js';
 
 /**
  * Defines an HTTP exception for *Conflict* type errors.
@@ -37,15 +37,11 @@ export class ConflictException extends HttpException {
     objectOrError?: any,
     descriptionOrOptions: string | HttpExceptionOptions = 'Conflict',
   ) {
-    const { description, httpExceptionOptions } =
+    const { description = 'Conflict', httpExceptionOptions } =
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
-      HttpException.createBody(
-        objectOrError,
-        description!,
-        HttpStatus.CONFLICT,
-      ),
+      HttpException.createBody(objectOrError, description, HttpStatus.CONFLICT),
       HttpStatus.CONFLICT,
       httpExceptionOptions,
     );

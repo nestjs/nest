@@ -1,5 +1,5 @@
-import { METHOD_METADATA, PATH_METADATA } from '../../constants';
-import { RequestMethod } from '../../enums/request-method.enum';
+import { METHOD_METADATA, PATH_METADATA } from '../../constants.js';
+import { RequestMethod } from '../../enums/request-method.enum.js';
 
 export interface RequestMappingMetadata {
   path?: string | string[];
@@ -118,6 +118,18 @@ export const All = createMappingDecorator(RequestMethod.ALL);
  * @publicApi
  */
 export const Search = createMappingDecorator(RequestMethod.SEARCH);
+
+/**
+ * Route handler (method) Decorator. Routes HTTP QUERY requests to the specified path.
+ *
+ * **Note**: this is named `QueryMethod` (rather than `Query`) to avoid a name clash
+ * with the `@Query()` parameter decorator used to extract query-string params.
+ *
+ * @see [Routing](https://docs.nestjs.com/controllers#routing)
+ *
+ * @publicApi
+ */
+export const QueryMethod = createMappingDecorator(RequestMethod.QUERY);
 
 /**
  * Route handler (method) Decorator. Routes Webdav PROPFIND requests to the specified path.

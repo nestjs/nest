@@ -2,8 +2,8 @@ import { Inject, Module } from '@nestjs/common';
 import {
   ConfigurableModuleClass,
   MODULE_OPTIONS_TOKEN,
-} from './integration.module-definition';
-import { IntegrationModuleOptions } from './interfaces/integration-module-options.interface';
+} from './integration.module-definition.js';
+import { IntegrationModuleOptions } from './interfaces/integration-module-options.interface.js';
 
 @Module({})
 export class IntegrationModule extends ConfigurableModuleClass {

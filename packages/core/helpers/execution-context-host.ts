@@ -1,11 +1,10 @@
-import { ExecutionContext } from '@nestjs/common';
-import { Type } from '@nestjs/common/interfaces';
-import {
-  ContextType,
+import type { ExecutionContext } from '@nestjs/common';
+import type { Type, ContextType } from '@nestjs/common';
+import type {
   HttpArgumentsHost,
   RpcArgumentsHost,
   WsArgumentsHost,
-} from '@nestjs/common/interfaces/features/arguments-host.interface';
+} from '@nestjs/common/internal';
 
 export class ExecutionContextHost implements ExecutionContext {
   private contextType = 'http';

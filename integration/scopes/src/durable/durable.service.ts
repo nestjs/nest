@@ -5,7 +5,7 @@ import {
   Scope,
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { TenantContext } from './durable-context-id.strategy';
+import { TenantContext } from './durable-context-id.strategy.js';
 
 @Injectable({ scope: Scope.REQUEST, durable: true })
 export class DurableService {

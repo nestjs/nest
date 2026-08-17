@@ -1,5 +1,5 @@
-import { Type } from '../type.interface';
-import { ClassTransformOptions } from './class-transform-options.interface';
+import { Type } from '../type.interface.js';
+import { ClassTransformOptions } from './class-transform-options.interface.js';
 
 export interface TransformerPackage {
   plainToInstance<T>(

@@ -1,6 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { CircularModule } from './circular.module';
-import { InputService } from './input.service';
+import { CircularModule } from './circular.module.js';
+import { InputService } from './input.service.js';
 
 @Module({
   imports: [forwardRef(() => CircularModule)],

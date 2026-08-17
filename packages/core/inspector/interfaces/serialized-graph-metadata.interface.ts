@@ -1,4 +1,4 @@
-import { InjectorDependencyContext } from '../../injector/injector';
+import { InjectorDependencyContext } from '../../injector/injector.js';
 
 export interface SerializedGraphMetadata {
   cause: {

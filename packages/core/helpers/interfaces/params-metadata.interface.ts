@@ -1,4 +1,4 @@
-import { ParamData } from '@nestjs/common';
+import type { ParamData } from '@nestjs/common';
 
 export type ParamsMetadata = Record<number, ParamMetadata>;
 export interface ParamMetadata {

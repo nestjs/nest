@@ -1,5 +1,5 @@
-import { UserEntity } from './user.entity';
-import { BusinessDto } from '../dtos/business.dto';
+import { UserEntity } from './user.entity.js';
+import { BusinessDto } from '../dtos/business.dto.js';
 
 export class BusinessEntity {
   constructor(business: BusinessDto) {

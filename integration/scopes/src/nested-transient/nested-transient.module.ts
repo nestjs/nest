@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { NestedTransientController } from './nested-transient.controller';
-import { FirstRequestService } from './first-request.service';
-import { SecondRequestService } from './second-request.service';
-import { TransientLoggerService } from './transient-logger.service';
-import { NestedTransientService } from './nested-transient.service';
+import { NestedTransientController } from './nested-transient.controller.js';
+import { FirstRequestService } from './first-request.service.js';
+import { SecondRequestService } from './second-request.service.js';
+import { TransientLoggerService } from './transient-logger.service.js';
+import { NestedTransientService } from './nested-transient.service.js';
 
 @Module({
   controllers: [NestedTransientController],
