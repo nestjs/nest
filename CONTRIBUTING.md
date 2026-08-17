@@ -267,7 +267,7 @@ The following is the list of supported scopes:
 
 - **common**: for changes made on `packages/common` directory
 - **core**: for changes made on `packages/core` directory
-- **sample**: for changes made on `packages/sample` directory
+- **sample**: for changes made on `sample` directory
 - **microservices**: for changes made on `packages/microservices` directory
 - **express**: for changes made on `packages/platform-express` directory
 - **fastify**: for changes made on `packages/platform-fastify` directory
