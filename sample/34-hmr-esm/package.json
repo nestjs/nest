@@ -42,7 +42,7 @@
     "prettier": "3.8.1",
     "run-script-webpack-plugin": "0.2.3",
     "supertest": "7.2.2",
-    "ts-loader": "9.5.4",
+    "ts-loader": "9.6.2",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "6.0.3",
