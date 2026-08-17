@@ -35,7 +35,7 @@
     "@nestjs/testing": "11.2.1",
     "@types/express": "5.0.6",
     "@types/node": "24.13.3",
-    "@types/sqlite3": "^3.1.11",
+    "@types/sqlite3": "^5.0.0",
     "@types/supertest": "7.2.1",
     "oxlint": "1.78.0",
     "prettier": "3.9.6",
