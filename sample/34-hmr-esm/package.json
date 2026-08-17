@@ -36,7 +36,7 @@
     "@nestjs/testing": "11.2.1",
     "@types/express": "5.0.6",
     "@types/node": "24.13.3",
-    "@types/supertest": "6.0.3",
+    "@types/supertest": "7.2.1",
     "@types/webpack-env": "1.18.8",
     "oxlint": "1.78.0",
     "prettier": "3.9.6",
