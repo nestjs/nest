@@ -5,7 +5,6 @@ import {
 import { fromEvent, Observable } from 'rxjs';
 import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
 import { Namespace, Server, ServerOptions, Socket } from 'socket.io';
-import { Namespace, Server, ServerOptions, Socket } from 'socket.io';
 import { isFunction, isNil } from '@nestjs/common/internal';
 import { DISCONNECT_EVENT } from '@nestjs/websockets/internal';
 
