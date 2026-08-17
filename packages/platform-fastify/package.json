@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@fastify/cors": "11.3.0",
-    "@fastify/formbody": "8.0.2",
+    "@fastify/formbody": "9.0.0",
     "fast-querystring": "1.1.2",
     "fastify": "5.11.3",
     "fastify-plugin": "6.0.0",
