@@ -121,7 +121,7 @@ export class SseStream extends Transform {
     if (this._destination.writeHead) {
       this._destination.writeHead(statusCode, {
         ...additionalHeaders,
-        // See https://github.com/dunglas/mercure/blob/master/hub/subscribe.go#L124-L130
+        // See https://github.com/dunglas/mercure/blob/main/subscribe.go#L347-L362
         'Content-Type': 'text/event-stream',
         Connection: 'keep-alive',
         // Disable cache, even for old browsers and proxies
