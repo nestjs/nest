@@ -32,7 +32,7 @@
     "@babel/runtime": "7.29.7",
     "@nestjs/testing": "11.2.1",
     "nodemon": "3.1.14",
-    "oxlint": "1.58.0",
+    "oxlint": "1.78.0",
     "prettier": "3.9.6",
     "supertest": "7.2.2",
     "vitest": "4.1.10"
