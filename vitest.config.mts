@@ -29,6 +29,21 @@ function resolveTypescriptSource(): Plugin {
 }
 
 export default defineConfig({
+  // Spec files are excluded from every tsconfig in the repo, so Oxc cannot pick
+  // up `experimentalDecorators`/`emitDecoratorMetadata` from them and would emit
+  // TC39 decorators (which reject parameter decorators). Configure them here.
+  oxc: {
+    decorator: {
+      legacy: true,
+      emitDecoratorMetadata: true,
+    },
+    assumptions: {
+      setPublicClassFields: true,
+    },
+    typescript: {
+      removeClassFieldsWithoutInitializer: true,
+    },
+  },
   test: {
     globals: true,
     root: './',
