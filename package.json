@@ -138,7 +138,7 @@
     "light-my-request": "6.6.0",
     "lint-staged": "17.3.0",
     "markdown-table": "2.0.0",
-    "mongoose": "9.9.1",
+    "mongoose": "9.9.2",
     "mqtt": "5.15.2",
     "multer": "2.2.0",
     "mysql2": "3.23.3",
