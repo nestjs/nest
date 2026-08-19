@@ -35,7 +35,7 @@
     "oxlint": "1.78.0",
     "prettier": "3.9.6",
     "supertest": "7.2.2",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11"
   },
   "type": "module"
 }
