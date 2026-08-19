@@ -20,9 +20,9 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.mts"
   },
   "dependencies": {
-    "@apollo/gateway": "2.14.3",
+    "@apollo/gateway": "2.14.4",
     "@apollo/server": "^5.0.0",
-    "@apollo/subgraph": "2.14.3",
+    "@apollo/subgraph": "2.14.4",
     "@nestjs/apollo": "13.4.4",
     "@nestjs/common": "11.2.1",
     "@nestjs/core": "11.2.1",
