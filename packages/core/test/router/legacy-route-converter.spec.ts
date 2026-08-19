@@ -1,3 +1,4 @@
+import { pathToRegexp } from 'path-to-regexp';
 import { LegacyRouteConverter } from '../../router/legacy-route-converter.js';
 
 describe('LegacyRouteConverter', () => {
@@ -83,6 +84,39 @@ describe('LegacyRouteConverter', () => {
       it('should print warning for mid-path wildcards', () => {
         LegacyRouteConverter.tryConvert('/a/*/b', { logs: true });
         expect(warnSpy).toHaveBeenCalled();
+      });
+    });
+
+    describe('routes with more than one wildcard', () => {
+      it('should convert both the mid-path and the trailing wildcard', () => {
+        expect(LegacyRouteConverter.tryConvert('/a/*/b/*')).toBe(
+          '/a/*path2/b/{*path}',
+        );
+        expect(LegacyRouteConverter.tryConvert('/a/(.*)/b/(.*)')).toBe(
+          '/a/*path2/b/{*path}',
+        );
+      });
+
+      it('should convert a mid-path (.*) segment', () => {
+        expect(LegacyRouteConverter.tryConvert('/a/(.*)/b')).toBe(
+          '/a/*path2/b',
+        );
+      });
+
+      it('should return routes that path-to-regexp accepts', () => {
+        const routes = [
+          '/a/*/b/*',
+          '/a/*/b/*/c/*',
+          '/a/(.*)/b/(.*)',
+          '/a/*/b/(.*)',
+          '/a/(.*)/b/*',
+          '/a/+/b/+',
+        ];
+
+        for (const route of routes) {
+          const convertedRoute = LegacyRouteConverter.tryConvert(route);
+          expect(() => pathToRegexp(convertedRoute)).not.toThrow();
+        }
       });
     });
 

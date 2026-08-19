@@ -31,46 +31,49 @@ export class LegacyRouteConverter {
       ? this.printWarning.bind(this)
       : () => {};
 
-    if (normalizedRoute.endsWith('/(.*)/')) {
-      const convertedRoute = route.replace('(.*)', '{*path}');
-      // Skip printing warning for the "all" wildcard.
-      if (normalizedRoute !== '/(.*)/') {
-        printWarning(route, convertedRoute);
+    // A route may carry more than one legacy wildcard, so walk its segments and
+    // convert every one of them. Converting a single occurrence left the others
+    // untouched, and path-to-regexp still rejects a route that holds one.
+    const segments = route.split('/');
+    const lastSegmentIndex =
+      segments[segments.length - 1] === ''
+        ? segments.length - 2
+        : segments.length - 1;
+
+    let converted = false;
+    let segmentStart = 0;
+    const convertedSegments = segments.map((segment, index) => {
+      // Offset of the "/" that opens this segment. Mid-path wildcards were
+      // already named after it, so reuse it and leave the parameter names of
+      // the routes that used to convert untouched.
+      const slashOffset = Math.max(segmentStart - 1, 0);
+      segmentStart += segment.length + 1;
+
+      if (segment !== '*' && segment !== '(.*)' && segment !== '+') {
+        return segment;
       }
-      return convertedRoute;
-    }
+      converted = true;
 
-    if (normalizedRoute.endsWith('/*/')) {
-      const convertedRoute = route.replace('*', '{*path}');
-      // Skip printing warning for the "all" wildcard.
-      if (normalizedRoute !== '/*/') {
-        printWarning(route, convertedRoute);
+      if (index !== lastSegmentIndex) {
+        // A wildcard in the middle matches at least one segment, and each one
+        // needs a name of its own so that two of them never collide.
+        return `*path${slashOffset}`;
       }
-      return convertedRoute;
+      // A trailing "*" or "(.*)" also matches the path without it, which the
+      // optional form "{*path}" preserves. A trailing "+" does not.
+      return segment === '+' ? '*path' : '{*path}';
+    });
+
+    if (!converted) {
+      return route;
     }
 
-    if (normalizedRoute.endsWith('/+/')) {
-      const convertedRoute = route.replace('/+', '/*path');
+    const convertedRoute = convertedSegments.join('/');
+    // Skip printing warning for the "all" wildcard.
+    if (normalizedRoute !== '/*/' && normalizedRoute !== '/(.*)/') {
       printWarning(route, convertedRoute);
-      return convertedRoute;
     }
-
-    // When route includes any wildcard segments in the middle.
-    if (normalizedRoute.includes('/*/')) {
-      // Replace each "*" segment with a named parameter, using a different name
-      // for each. Match "/*" with a lookahead for the following "/" so the
-      // trailing slash is not consumed. Consuming it made two adjacent "/*/*/"
-      // segments share a slash, so only the first one got converted and the
-      // second was left as an unnamed "*" that path-to-regexp still rejects.
-      const convertedRoute = route.replaceAll(
-        /\/\*(?=\/)/g,
-        (match, offset) => `/*path${offset}`,
-      );
-      printWarning(route, convertedRoute);
-      return convertedRoute;
-    }
-
-    return route;
+    return convertedRoute;
   }
 
   static printError(route: string): void {
