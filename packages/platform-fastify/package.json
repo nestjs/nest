@@ -28,7 +28,7 @@
     "@fastify/cors": "11.3.0",
     "@fastify/formbody": "9.0.0",
     "fast-querystring": "1.1.2",
-    "fastify": "5.12.0",
+    "fastify": "5.12.1",
     "fastify-plugin": "6.0.0",
     "find-my-way": "9.8.0",
     "light-my-request": "6.6.0",
