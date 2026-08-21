@@ -157,7 +157,7 @@
     "typeorm": "1.1.0",
     "typescript": "5.9.3",
     "typescript-eslint": "8.67.0",
-    "vite": "8.2.1",
+    "vite": "8.2.2",
     "vitest": "4.1.11",
     "ws": "8.21.3"
   },
