@@ -224,6 +224,27 @@ describe('ClientMqtt', () => {
         expect(callback).not.toHaveBeenCalled();
       });
     });
+    describe('message is not in json format', () => {
+      it('should not throw and pass the raw content to the deserializer', async () => {
+        callback = vi.fn();
+        const bufferMessage = Buffer.from(
+          `${responseMessage.id}|${responseMessage.response}`,
+        );
+        vi.spyOn(
+          Reflect.get(client, 'deserializer'),
+          'deserialize',
+        ).mockResolvedValue(responseMessage as any);
+        subscription = client.createResponseCallback();
+
+        client['routingMap'].set(responseMessage.id, callback);
+        await subscription('channel', bufferMessage);
+
+        expect(callback).toHaveBeenCalledWith({
+          err: undefined,
+          response: responseMessage.response,
+        });
+      });
+    });
   });
   describe('close', () => {
     let endSpy: ReturnType<typeof vi.fn>;
