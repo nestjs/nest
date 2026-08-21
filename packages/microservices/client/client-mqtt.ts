@@ -201,7 +201,15 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
 
   public createResponseCallback(): (channel: string, buffer: Buffer) => any {
     return async (channel: string, buffer: Buffer) => {
-      const packet = JSON.parse(buffer.toString());
+      let packet: any;
+      try {
+        packet = JSON.parse(buffer.toString());
+      } catch (err) {
+        this.logger.debug(
+          'MQTT response packet is not in json format, bypassing...',
+        );
+        packet = buffer.toString();
+      }
       const { err, response, isDisposed, id } =
         await this.deserializer.deserialize(packet);
 
