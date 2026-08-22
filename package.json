@@ -155,7 +155,7 @@
     "tsconfig-paths": "4.2.0",
     "tsx": "4.23.12",
     "typeorm": "1.1.0",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "typescript-eslint": "8.67.0",
     "vite": "8.2.2",
     "vitest": "4.1.11",
