@@ -581,7 +581,7 @@ export class Injector {
        * that eventual lazily created instance will be merged with the prototype
        * instantiated beforehand.
        */
-      instanceHost.donePromise &&
+      if (instanceHost.donePromise) {
         void instanceHost.donePromise
           .then(() =>
             this.loadProvider(instanceWrapper, moduleRef, resolutionContext),
@@ -589,6 +589,20 @@ export class Injector {
           .catch(err => {
             instanceWrapper.settlementSignal?.error(err);
           });
+      } else {
+        /**
+         * No load has ever been scheduled for this context (e.g., request-scoped
+         * providers are no longer instantiated during static bootstrap, so a fresh
+         * durable/request sub-tree host has no inherited `donePromise`).
+         * Load it now; if a circular dependency is truly in-flight, the nested
+         * lookup will find this host pending and defer through its `donePromise`.
+         */
+        await this.loadProvider(
+          instanceWrapper,
+          instanceWrapper.host ?? moduleRef,
+          resolutionContext,
+        );
+      }
     }
     if (instanceWrapper.async) {
       const host = instanceWrapper.getInstanceByContextId(
