@@ -609,7 +609,17 @@ export class FastifyAdapter<
   }
 
   public appendHeader(response: any, name: string, value: string) {
-    response.header(name, value);
+    const current = response.getHeader(name);
+    if (current === undefined) {
+      return response.header(name, value);
+    }
+    // Fastify Reply.header() already concatenates set-cookie.
+    // Re-passing the accumulated list would duplicate previous cookies.
+    if (String(name).toLowerCase() === 'set-cookie') {
+      return response.header(name, value);
+    }
+    const values = Array.isArray(current) ? current : [current];
+    return response.header(name, values.concat(value));
   }
 
   public getRequestHostname(request: TRequest): string {

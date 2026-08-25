@@ -85,4 +85,110 @@ describe('FastifyAdapter', () => {
       expect(result).toBe(error);
     });
   });
+
+  describe('appendHeader', () => {
+    it('should append to an existing header instead of overwriting it', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.appendHeader(reply, 'x-a', '1');
+        fastifyAdapter.appendHeader(reply, 'x-a', '2');
+        fastifyAdapter.reply(reply, {
+          got: fastifyAdapter.getHeader(reply, 'x-a'),
+        });
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(JSON.parse(res.body).got).toEqual(['1', '2']);
+      await fastifyAdapter.close();
+    });
+
+    it('should append after setHeader', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.setHeader(reply, 'x-a', '1');
+        fastifyAdapter.appendHeader(reply, 'x-a', '2');
+        fastifyAdapter.reply(reply, {
+          got: fastifyAdapter.getHeader(reply, 'x-a'),
+        });
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(JSON.parse(res.body).got).toEqual(['1', '2']);
+      await fastifyAdapter.close();
+    });
+
+    it('should append when header names differ only by case', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.appendHeader(reply, 'X-A', '1');
+        fastifyAdapter.appendHeader(reply, 'x-a', '2');
+        fastifyAdapter.reply(reply, {
+          got: fastifyAdapter.getHeader(reply, 'X-A'),
+        });
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(JSON.parse(res.body).got).toEqual(['1', '2']);
+      await fastifyAdapter.close();
+    });
+
+    it('should append more than two values', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.appendHeader(reply, 'x-a', '1');
+        fastifyAdapter.appendHeader(reply, 'x-a', '2');
+        fastifyAdapter.appendHeader(reply, 'x-a', '3');
+        fastifyAdapter.reply(reply, {
+          got: fastifyAdapter.getHeader(reply, 'x-a'),
+        });
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(JSON.parse(res.body).got).toEqual(['1', '2', '3']);
+      await fastifyAdapter.close();
+    });
+
+    it('should still append set-cookie values', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'a=1');
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'b=2');
+        fastifyAdapter.reply(reply, {
+          got: fastifyAdapter.getHeader(reply, 'set-cookie'),
+        });
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(JSON.parse(res.body).got).toEqual(['a=1', 'b=2']);
+      await fastifyAdapter.close();
+    });
+
+    it('should not duplicate set-cookie when appending a third value', async () => {
+      fastifyAdapter.initHttpServer();
+      fastifyAdapter.get('/p', (_req, reply) => {
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'a=1');
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'b=2');
+        fastifyAdapter.appendHeader(reply, 'set-cookie', 'c=3');
+        fastifyAdapter.reply(reply, {
+          got: fastifyAdapter.getHeader(reply, 'set-cookie'),
+        });
+      });
+
+      await fastifyAdapter.getInstance().ready();
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/p' });
+
+      expect(JSON.parse(res.body).got).toEqual(['a=1', 'b=2', 'c=3']);
+      await fastifyAdapter.close();
+    });
+  });
 });
