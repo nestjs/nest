@@ -395,15 +395,16 @@ export class Module {
   ) {
     const { useValue: value, provide: providerToken } = provider;
 
-    const instrument = this.container.contextOptions?.instrument;
+    const instanceDecorator =
+      this.container.contextOptions?.instrument?.instanceDecorator;
     collection.set(
       providerToken,
       new InstanceWrapper({
         token: providerToken,
         name: (providerToken as Function)?.name || providerToken,
         metatype: null!,
-        instance: instrument
-          ? makeSafeInstanceDecorator(instrument)(value)
+        instance: instanceDecorator
+          ? makeSafeInstanceDecorator(instanceDecorator)(value)
           : value,
         isResolved: true,
         async: value instanceof Promise,

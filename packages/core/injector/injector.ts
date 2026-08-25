@@ -18,7 +18,6 @@ import {
   Injectable,
   Type,
 } from '@nestjs/common/interfaces';
-import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import {
   isFunction,
@@ -109,13 +108,15 @@ export class Injector {
        */
       snapshot?: boolean;
       /**
-       * Instrumentation options used to decorate freshly created instances.
+       * Function to decorate a freshly created instance.
        */
-      instrument?: NestApplicationContextOptions['instrument'];
+      instanceDecorator?: (target: unknown) => unknown;
     },
   ) {
-    if (options?.instrument) {
-      this.instanceDecorator = makeSafeInstanceDecorator(options.instrument);
+    if (options?.instanceDecorator) {
+      this.instanceDecorator = makeSafeInstanceDecorator(
+        options.instanceDecorator,
+      );
     }
   }
 

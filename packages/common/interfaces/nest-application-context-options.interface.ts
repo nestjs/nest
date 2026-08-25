@@ -66,16 +66,6 @@ export class NestApplicationContextOptions {
      * @returns The decorated instance.
      */
     instanceDecorator: (instance: unknown) => unknown;
-    /**
-     * Predicate that determines whether the given instance should be excluded
-     * from instrumentation. When it returns `true`, the instance is passed
-     * through untouched and the `instanceDecorator` function is not called.
-     * Useful for providers that cannot be safely inspected or wrapped
-     * (e.g. Proxy-based providers whose traps throw on property access).
-     * @param instance The instance about to be decorated.
-     * @returns `true` to skip instrumentation for this instance.
-     */
-    skipInstrumentation?: (instance: unknown) => boolean;
   };
 
   /**

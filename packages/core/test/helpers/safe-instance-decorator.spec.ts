@@ -6,9 +6,7 @@ describe('makeSafeInstanceDecorator', () => {
   it('should return the decorated instance when the decorator succeeds', () => {
     const decorated = { decorated: true };
     const decorator = sinon.stub().returns(decorated);
-    const safeDecorator = makeSafeInstanceDecorator({
-      instanceDecorator: decorator,
-    });
+    const safeDecorator = makeSafeInstanceDecorator(decorator);
     const instance = {};
 
     expect(safeDecorator(instance)).to.equal(decorated);
@@ -17,9 +15,7 @@ describe('makeSafeInstanceDecorator', () => {
 
   it('should fall back to the original instance when the decorator throws', () => {
     const decorator = sinon.stub().throws(new Error('cannot inspect'));
-    const safeDecorator = makeSafeInstanceDecorator({
-      instanceDecorator: decorator,
-    });
+    const safeDecorator = makeSafeInstanceDecorator(decorator);
     const instance = {};
 
     expect(safeDecorator(instance)).to.equal(instance);
@@ -40,51 +36,8 @@ describe('makeSafeInstanceDecorator', () => {
       void instance.decorate;
       return instance;
     };
-    const safeDecorator = makeSafeInstanceDecorator({
-      instanceDecorator: decorator,
-    });
+    const safeDecorator = makeSafeInstanceDecorator(decorator);
 
     expect(safeDecorator(hostileProxy)).to.equal(hostileProxy);
-  });
-
-  describe('skipInstrumentation', () => {
-    it('should not call the decorator when the predicate returns true', () => {
-      const decorator = sinon.stub().returns({ decorated: true });
-      const instance = { skipMe: true };
-      const safeDecorator = makeSafeInstanceDecorator({
-        instanceDecorator: decorator,
-        skipInstrumentation: (target: any) => !!target.skipMe,
-      });
-
-      expect(safeDecorator(instance)).to.equal(instance);
-      expect(decorator.called).to.be.false;
-    });
-
-    it('should call the decorator when the predicate returns false', () => {
-      const decorated = { decorated: true };
-      const decorator = sinon.stub().returns(decorated);
-      const safeDecorator = makeSafeInstanceDecorator({
-        instanceDecorator: decorator,
-        skipInstrumentation: () => false,
-      });
-      const instance = {};
-
-      expect(safeDecorator(instance)).to.equal(decorated);
-      expect(decorator.calledOnceWithExactly(instance)).to.be.true;
-    });
-
-    it('should fall back to the original instance when the predicate throws', () => {
-      const decorator = sinon.stub().returns({ decorated: true });
-      const safeDecorator = makeSafeInstanceDecorator({
-        instanceDecorator: decorator,
-        skipInstrumentation: () => {
-          throw new Error('cannot inspect');
-        },
-      });
-      const instance = {};
-
-      expect(safeDecorator(instance)).to.equal(instance);
-      expect(decorator.called).to.be.false;
-    });
   });
 });

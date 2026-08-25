@@ -85,7 +85,7 @@ export class NestApplication
     this.registerHttpServer();
     this.injector = new Injector({
       preview: this.appOptions.preview!,
-      instrument: appOptions.instrument,
+      instanceDecorator: appOptions.instrument?.instanceDecorator,
     });
     this.middlewareModule = new MiddlewareModule();
     this.routesResolver = new RoutesResolver(
@@ -495,7 +495,9 @@ export class NestApplication
 
   private applyInstanceDecoratorIfRegistered<T>(...instances: T[]): T[] {
     if (this.appOptions.instrument?.instanceDecorator) {
-      const decorate = makeSafeInstanceDecorator(this.appOptions.instrument);
+      const decorate = makeSafeInstanceDecorator(
+        this.appOptions.instrument.instanceDecorator,
+      );
       return instances.map(instance => decorate(instance) as T);
     }
     return instances;
@@ -505,7 +507,9 @@ export class NestApplication
     if (!this.appOptions.instrument?.instanceDecorator) {
       return args;
     }
-    const decorate = makeSafeInstanceDecorator(this.appOptions.instrument);
+    const decorate = makeSafeInstanceDecorator(
+      this.appOptions.instrument.instanceDecorator,
+    );
 
     // Decorators may return a non-function value for plain middleware
     // functions; fall back to the original argument so the HTTP adapter

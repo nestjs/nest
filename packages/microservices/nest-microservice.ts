@@ -67,7 +67,7 @@ export class NestMicroservice
 
     this.injector = new Injector({
       preview: config.preview!,
-      instrument: config.instrument,
+      instanceDecorator: config.instrument?.instanceDecorator,
     });
     this.microservicesModule.register(
       container,
@@ -372,7 +372,9 @@ export class NestMicroservice
 
   private applyInstanceDecoratorIfRegistered<T>(...instances: T[]): T[] {
     if (this.appOptions.instrument?.instanceDecorator) {
-      const decorate = makeSafeInstanceDecorator(this.appOptions.instrument);
+      const decorate = makeSafeInstanceDecorator(
+        this.appOptions.instrument.instanceDecorator,
+      );
       return instances.map(instance => decorate(instance) as T);
     }
     return instances;

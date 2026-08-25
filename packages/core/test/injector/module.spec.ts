@@ -261,30 +261,6 @@ describe('Module', () => {
 
       expect(collection.get('PROXY')!.instance).to.equal(hostileProxy);
     });
-
-    it('should not decorate values excluded via "skipInstrumentation"', () => {
-      const excluded = { excluded: true };
-      const instanceDecorator = sinon.stub().returns({ decorated: true });
-      const instrumentedContainer = new NestContainer(undefined, {
-        instrument: {
-          instanceDecorator,
-          skipInstrumentation: (instance: any) => instance === excluded,
-        },
-      });
-      const instrumentedModuleRef = new Module(
-        TestModule,
-        instrumentedContainer,
-      );
-      const collection = new Map();
-
-      instrumentedModuleRef.addCustomValue(
-        { provide: 'EXCLUDED', useValue: excluded } as any,
-        collection,
-      );
-
-      expect(collection.get('EXCLUDED')!.instance).to.equal(excluded);
-      expect(instanceDecorator.called).to.be.false;
-    });
   });
 
   describe('addCustomFactory', () => {

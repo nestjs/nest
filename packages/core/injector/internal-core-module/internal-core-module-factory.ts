@@ -29,7 +29,8 @@ export class InternalCoreModuleFactory {
       });
       const injector = new Injector({
         preview: container.contextOptions?.preview ?? false,
-        instrument: container.contextOptions?.instrument,
+        instanceDecorator:
+          container.contextOptions?.instrument?.instanceDecorator,
       });
       const instanceLoader = new InstanceLoader(
         container,
