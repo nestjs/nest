@@ -202,6 +202,64 @@ describe('NestApplication', () => {
       expect(instanceDecorator.calledOnceWithExactly(middleware)).to.be.true;
       expect(useSpy.calledOnceWithExactly('/test', middleware)).to.be.true;
     });
+
+    it('should preserve arity for single-argument use() calls', () => {
+      const useSpy = sinon.stub();
+      const noopHttpAdapter = new NoopHttpAdapter({
+        use: useSpy,
+      });
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const decoratedMiddleware = sinon.stub();
+      const instanceDecorator = sinon.stub().returns(decoratedMiddleware);
+
+      const instance = new NestApplication(
+        container,
+        noopHttpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        {
+          instrument: {
+            instanceDecorator,
+          },
+        },
+      );
+      const middleware = sinon.stub();
+
+      instance.use(middleware);
+
+      // A trailing `undefined` handler would make Express 5's router throw
+      expect(useSpy.calledOnceWithExactly(decoratedMiddleware)).to.be.true;
+    });
+
+    it('should fall back to the original middleware when the decorator throws', () => {
+      const useSpy = sinon.stub();
+      const noopHttpAdapter = new NoopHttpAdapter({
+        use: useSpy,
+      });
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const instanceDecorator = sinon
+        .stub()
+        .throws(new Error('cannot inspect'));
+
+      const instance = new NestApplication(
+        container,
+        noopHttpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        {
+          instrument: {
+            instanceDecorator,
+          },
+        },
+      );
+      const middleware = sinon.stub();
+
+      instance.use('/test', middleware);
+
+      expect(useSpy.calledOnceWithExactly('/test', middleware)).to.be.true;
+    });
   });
   describe('useWebSocketAdapter', () => {
     function createInstance(): NestApplication {

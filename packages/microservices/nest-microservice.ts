@@ -11,6 +11,7 @@ import { Logger } from '@nestjs/common/services/logger.service';
 import { ApplicationConfig } from '@nestjs/core/application-config';
 import { MESSAGES } from '@nestjs/core/constants';
 import { optionalRequire } from '@nestjs/core/helpers/optional-require';
+import { makeSafeInstanceDecorator } from '@nestjs/core/helpers/safe-instance-decorator';
 import { NestContainer } from '@nestjs/core/injector/container';
 import { Injector } from '@nestjs/core/injector/injector';
 import { GraphInspector } from '@nestjs/core/inspector/graph-inspector';
@@ -66,7 +67,7 @@ export class NestMicroservice
 
     this.injector = new Injector({
       preview: config.preview!,
-      instanceDecorator: config.instrument?.instanceDecorator,
+      instrument: config.instrument,
     });
     this.microservicesModule.register(
       container,
@@ -371,10 +372,8 @@ export class NestMicroservice
 
   private applyInstanceDecoratorIfRegistered<T>(...instances: T[]): T[] {
     if (this.appOptions.instrument?.instanceDecorator) {
-      return instances.map(
-        instance =>
-          this.appOptions.instrument!.instanceDecorator(instance) as T,
-      );
+      const decorate = makeSafeInstanceDecorator(this.appOptions.instrument);
+      return instances.map(instance => decorate(instance) as T);
     }
     return instances;
   }

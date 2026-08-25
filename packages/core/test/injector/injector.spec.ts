@@ -751,6 +751,54 @@ describe('Injector', () => {
 
         expect(wrapper.instance).to.not.be.undefined;
       });
+      it('should apply the instance decorator when registered', async () => {
+        const decorated = { decorated: true };
+        const instrumentedInjector = new Injector({
+          preview: false,
+          instrument: {
+            instanceDecorator: () => decorated,
+          },
+        });
+        const wrapper = new InstanceWrapper({ metatype: TestClass });
+        await instrumentedInjector.instantiateClass([], wrapper, wrapper, {
+          contextId: STATIC_CONTEXT,
+        });
+
+        expect(wrapper.instance).to.equal(decorated);
+      });
+      it('should keep the original instance when the instance decorator throws', async () => {
+        const instrumentedInjector = new Injector({
+          preview: false,
+          instrument: {
+            instanceDecorator: () => {
+              throw new Error('cannot inspect');
+            },
+          },
+        });
+        const wrapper = new InstanceWrapper({ metatype: TestClass });
+        await instrumentedInjector.instantiateClass([], wrapper, wrapper, {
+          contextId: STATIC_CONTEXT,
+        });
+
+        expect(wrapper.instance).to.be.instanceOf(TestClass);
+      });
+      it('should not decorate instances excluded via "skipInstrumentation"', async () => {
+        const instanceDecorator = sinon.stub().returns({ decorated: true });
+        const instrumentedInjector = new Injector({
+          preview: false,
+          instrument: {
+            instanceDecorator,
+            skipInstrumentation: instance => instance instanceof TestClass,
+          },
+        });
+        const wrapper = new InstanceWrapper({ metatype: TestClass });
+        await instrumentedInjector.instantiateClass([], wrapper, wrapper, {
+          contextId: STATIC_CONTEXT,
+        });
+
+        expect(wrapper.instance).to.be.instanceOf(TestClass);
+        expect(instanceDecorator.called).to.be.false;
+      });
     });
     describe('when context is not static', () => {
       it('should not instantiate class', async () => {

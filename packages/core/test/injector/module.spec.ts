@@ -230,6 +230,61 @@ describe('Module', () => {
         ),
       ).to.be.true;
     });
+
+    it('should store the original value when the instance decorator throws', () => {
+      // Mimics nestjs-cls proxy providers whose "get" trap throws for any
+      // property access performed by the decorator at bootstrap time
+      const hostileProxy = new Proxy(
+        {},
+        {
+          get: () => {
+            throw new Error('does not exist in the CLS');
+          },
+        },
+      );
+      const instrumentedContainer = new NestContainer(undefined, {
+        instrument: {
+          instanceDecorator: (instance: any) => {
+            void instance.decorate;
+            return instance;
+          },
+        },
+      });
+      const instrumentedModuleRef = new Module(
+        TestModule,
+        instrumentedContainer,
+      );
+      const collection = new Map();
+      const proxyProvider = { provide: 'PROXY', useValue: hostileProxy };
+
+      instrumentedModuleRef.addCustomValue(proxyProvider as any, collection);
+
+      expect(collection.get('PROXY')!.instance).to.equal(hostileProxy);
+    });
+
+    it('should not decorate values excluded via "skipInstrumentation"', () => {
+      const excluded = { excluded: true };
+      const instanceDecorator = sinon.stub().returns({ decorated: true });
+      const instrumentedContainer = new NestContainer(undefined, {
+        instrument: {
+          instanceDecorator,
+          skipInstrumentation: (instance: any) => instance === excluded,
+        },
+      });
+      const instrumentedModuleRef = new Module(
+        TestModule,
+        instrumentedContainer,
+      );
+      const collection = new Map();
+
+      instrumentedModuleRef.addCustomValue(
+        { provide: 'EXCLUDED', useValue: excluded } as any,
+        collection,
+      );
+
+      expect(collection.get('EXCLUDED')!.instance).to.equal(excluded);
+      expect(instanceDecorator.called).to.be.false;
+    });
   });
 
   describe('addCustomFactory', () => {

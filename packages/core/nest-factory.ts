@@ -218,7 +218,7 @@ export class NestFactoryStatic {
     const injector = new Injector({
       preview: options.preview!,
       snapshot: options.snapshot,
-      instanceDecorator: options.instrument?.instanceDecorator,
+      instrument: options.instrument,
     });
     const instanceLoader = new InstanceLoader(
       container,

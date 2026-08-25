@@ -29,6 +29,7 @@ import { AbstractHttpAdapter } from './adapters';
 import { ApplicationConfig } from './application-config';
 import { MESSAGES } from './constants';
 import { optionalRequire } from './helpers/optional-require';
+import { makeSafeInstanceDecorator } from './helpers/safe-instance-decorator';
 import { NestContainer } from './injector/container';
 import { Injector } from './injector/injector';
 import { GraphInspector } from './inspector/graph-inspector';
@@ -84,7 +85,7 @@ export class NestApplication
     this.registerHttpServer();
     this.injector = new Injector({
       preview: this.appOptions.preview!,
-      instanceDecorator: appOptions.instrument?.instanceDecorator,
+      instrument: appOptions.instrument,
     });
     this.middlewareModule = new MiddlewareModule();
     this.routesResolver = new RoutesResolver(
@@ -494,10 +495,8 @@ export class NestApplication
 
   private applyInstanceDecoratorIfRegistered<T>(...instances: T[]): T[] {
     if (this.appOptions.instrument?.instanceDecorator) {
-      return instances.map(
-        instance =>
-          this.appOptions.instrument!.instanceDecorator(instance) as T,
-      );
+      const decorate = makeSafeInstanceDecorator(this.appOptions.instrument);
+      return instances.map(instance => decorate(instance) as T);
     }
     return instances;
   }
@@ -506,19 +505,22 @@ export class NestApplication
     if (!this.appOptions.instrument?.instanceDecorator) {
       return args;
     }
-    const [firstArg, secondArg] = args;
+    const decorate = makeSafeInstanceDecorator(this.appOptions.instrument);
 
-    // Decorators written against the pre-11.2 contract may return a
-    // non-function value for plain middleware functions; fall back to the
-    // original argument so the HTTP adapter always receives a valid handler.
+    // Decorators may return a non-function value for plain middleware
+    // functions; fall back to the original argument so the HTTP adapter
+    // always receives a valid handler.
     const decorateFunction = (arg: any) => {
       if (!isFunction(arg)) {
         return arg;
       }
-      const decorated = this.appOptions.instrument!.instanceDecorator(arg);
+      const decorated = decorate(arg);
       return isFunction(decorated) ? decorated : arg;
     };
 
-    return [decorateFunction(firstArg), decorateFunction(secondArg)];
+    // Map over the original arguments to preserve arity: appending a trailing
+    // `undefined` to a single-argument `use(fn)` call would make Express 5's
+    // router throw "argument handler must be a function".
+    return args.map(decorateFunction) as [any, any?];
   }
 }

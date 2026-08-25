@@ -52,8 +52,7 @@ export class MicroservicesModule<
 
     const injector = new Injector({
       preview: container.contextOptions?.preview ?? false,
-      instanceDecorator:
-        container.contextOptions?.instrument?.instanceDecorator,
+      instrument: container.contextOptions?.instrument,
     });
     this.listenersController = new ListenersController(
       this.clientsContainer,

@@ -42,7 +42,7 @@ export abstract class ModuleRef extends AbstractInstanceResolver {
     this.injector = new Injector({
       preview: contextOptions?.preview ?? false,
       snapshot: contextOptions?.snapshot,
-      instanceDecorator: contextOptions?.instrument?.instanceDecorator,
+      instrument: contextOptions?.instrument,
     });
   }
 

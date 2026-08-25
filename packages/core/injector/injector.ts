@@ -18,6 +18,7 @@ import {
   Injectable,
   Type,
 } from '@nestjs/common/interfaces';
+import { NestApplicationContextOptions } from '@nestjs/common/interfaces/nest-application-context-options.interface';
 import { clc } from '@nestjs/common/utils/cli-colors.util';
 import {
   isFunction,
@@ -34,6 +35,7 @@ import { RuntimeException } from '../errors/exceptions/runtime.exception';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception';
 import { Barrier } from '../helpers/barrier';
+import { makeSafeInstanceDecorator } from '../helpers/safe-instance-decorator';
 import { STATIC_CONTEXT } from './constants';
 import { INQUIRER } from './inquirer';
 import {
@@ -107,13 +109,13 @@ export class Injector {
        */
       snapshot?: boolean;
       /**
-       * Function to decorate a freshly created instance.
+       * Instrumentation options used to decorate freshly created instances.
        */
-      instanceDecorator?: (target: unknown) => unknown;
+      instrument?: NestApplicationContextOptions['instrument'];
     },
   ) {
-    if (options?.instanceDecorator) {
-      this.instanceDecorator = options.instanceDecorator;
+    if (options?.instrument) {
+      this.instanceDecorator = makeSafeInstanceDecorator(options.instrument);
     }
   }
 

@@ -35,6 +35,7 @@ import {
 import { createContextId } from '../helpers/context-id-factory';
 import { getClassScope } from '../helpers/get-class-scope';
 import { isDurable } from '../helpers/is-durable';
+import { makeSafeInstanceDecorator } from '../helpers/safe-instance-decorator';
 import { UuidFactory } from '../inspector/uuid-factory';
 import { CONTROLLER_ID_KEY } from './constants';
 import { NestContainer } from './container';
@@ -394,15 +395,16 @@ export class Module {
   ) {
     const { useValue: value, provide: providerToken } = provider;
 
-    const instanceDecorator =
-      this.container.contextOptions?.instrument?.instanceDecorator;
+    const instrument = this.container.contextOptions?.instrument;
     collection.set(
       providerToken,
       new InstanceWrapper({
         token: providerToken,
         name: (providerToken as Function)?.name || providerToken,
         metatype: null!,
-        instance: instanceDecorator ? instanceDecorator(value) : value,
+        instance: instrument
+          ? makeSafeInstanceDecorator(instrument)(value)
+          : value,
         isResolved: true,
         async: value instanceof Promise,
         host: this,
