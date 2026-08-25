@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { DurableCatsService } from './durable-forward-ref.services';
 import { DurableService } from './durable.service';
 import { NonDurableService } from './non-durable.service';
 
@@ -7,7 +8,13 @@ export class DurableController {
   constructor(
     private readonly durableService: DurableService,
     private readonly nonDurableService: NonDurableService,
+    private readonly durableCatsService: DurableCatsService,
   ) {}
+
+  @Get('forward-ref')
+  forwardRef() {
+    return this.durableCatsService.meow();
+  }
 
   @Get()
   greeting(): string {
