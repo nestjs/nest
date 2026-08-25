@@ -508,13 +508,17 @@ export class NestApplication
     }
     const [firstArg, secondArg] = args;
 
-    return [
-      isFunction(firstArg)
-        ? this.appOptions.instrument.instanceDecorator(firstArg)
-        : firstArg,
-      isFunction(secondArg)
-        ? this.appOptions.instrument.instanceDecorator(secondArg)
-        : secondArg,
-    ];
+    // Decorators written against the pre-11.2 contract may return a
+    // non-function value for plain middleware functions; fall back to the
+    // original argument so the HTTP adapter always receives a valid handler.
+    const decorateFunction = (arg: any) => {
+      if (!isFunction(arg)) {
+        return arg;
+      }
+      const decorated = this.appOptions.instrument!.instanceDecorator(arg);
+      return isFunction(decorated) ? decorated : arg;
+    };
+
+    return [decorateFunction(firstArg), decorateFunction(secondArg)];
   }
 }

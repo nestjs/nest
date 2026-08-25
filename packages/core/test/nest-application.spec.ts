@@ -174,6 +174,34 @@ describe('NestApplication', () => {
       expect(useSpy.calledOnceWithExactly('/test', decoratedMiddleware)).to.be
         .true;
     });
+
+    it('should fall back to the original middleware when the decorator returns a non-function', () => {
+      const useSpy = sinon.stub();
+      const noopHttpAdapter = new NoopHttpAdapter({
+        use: useSpy,
+      });
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const instanceDecorator = sinon.stub().returns(undefined);
+
+      const instance = new NestApplication(
+        container,
+        noopHttpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        {
+          instrument: {
+            instanceDecorator,
+          },
+        },
+      );
+      const middleware = sinon.stub();
+
+      instance.use('/test', middleware);
+
+      expect(instanceDecorator.calledOnceWithExactly(middleware)).to.be.true;
+      expect(useSpy.calledOnceWithExactly('/test', middleware)).to.be.true;
+    });
   });
   describe('useWebSocketAdapter', () => {
     function createInstance(): NestApplication {
