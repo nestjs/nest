@@ -30,6 +30,7 @@ export { HandlerMetadataStorage } from './helpers/handler-metadata-storage.js';
 export { RouterMethodFactory } from './helpers/router-method-factory.js';
 export { loadAdapter } from './helpers/load-adapter.js';
 export { optionalRequire } from './helpers/optional-require.js';
+export { makeSafeInstanceDecorator } from './helpers/safe-instance-decorator.js';
 
 // Helpers - interfaces
 export { ParamsMetadata } from './helpers/interfaces/index.js';

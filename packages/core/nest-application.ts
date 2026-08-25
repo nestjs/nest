@@ -17,6 +17,7 @@ import { AbstractHttpAdapter } from './adapters/index.js';
 import { ApplicationConfig } from './application-config.js';
 import { MESSAGES } from './constants.js';
 import { optionalRequire } from './helpers/optional-require.js';
+import { makeSafeInstanceDecorator } from './helpers/safe-instance-decorator.js';
 import { NestContainer } from './injector/container.js';
 import { Injector } from './injector/injector.js';
 import { GraphInspector } from './inspector/graph-inspector.js';
@@ -598,10 +599,10 @@ export class NestApplication
 
   private applyInstanceDecoratorIfRegistered<T>(...instances: T[]): T[] {
     if (this.appOptions.instrument?.instanceDecorator) {
-      return instances.map(
-        instance =>
-          this.appOptions.instrument!.instanceDecorator(instance) as T,
+      const decorate = makeSafeInstanceDecorator(
+        this.appOptions.instrument.instanceDecorator,
       );
+      return instances.map(instance => decorate(instance) as T);
     }
     return instances;
   }
@@ -610,20 +611,25 @@ export class NestApplication
     if (!this.appOptions.instrument?.instanceDecorator) {
       return args;
     }
-    const [firstArg, secondArg] = args;
+    const decorate = makeSafeInstanceDecorator(
+      this.appOptions.instrument.instanceDecorator,
+    );
 
-    // Decorators written against the pre-11.2 contract may return a
-    // non-function value for plain middleware functions; fall back to the
-    // original argument so the HTTP adapter always receives a valid handler.
+    // Decorators may return a non-function value for plain middleware
+    // functions; fall back to the original argument so the HTTP adapter
+    // always receives a valid handler.
     const decorateFunction = (arg: any) => {
       if (!isFunction(arg)) {
         return arg;
       }
-      const decorated = this.appOptions.instrument!.instanceDecorator(arg);
+      const decorated = decorate(arg);
       return isFunction(decorated) ? decorated : arg;
     };
 
-    return [decorateFunction(firstArg), decorateFunction(secondArg)];
+    // Map over the original arguments to preserve arity: appending a trailing
+    // `undefined` to a single-argument `use(fn)` call would make Express 5's
+    // router throw "argument handler must be a function".
+    return args.map(decorateFunction) as [any, any?];
   }
 
   private async loadSocketModule() {

@@ -29,6 +29,7 @@ import { RuntimeException } from '../errors/exceptions/runtime.exception.js';
 import { UndefinedDependencyException } from '../errors/exceptions/undefined-dependency.exception.js';
 import { UnknownDependenciesException } from '../errors/exceptions/unknown-dependencies.exception.js';
 import { Barrier } from '../helpers/barrier.js';
+import { makeSafeInstanceDecorator } from '../helpers/safe-instance-decorator.js';
 import { STATIC_CONTEXT } from './constants.js';
 import { INQUIRER } from './inquirer/index.js';
 import {
@@ -108,7 +109,9 @@ export class Injector {
     },
   ) {
     if (options?.instanceDecorator) {
-      this.instanceDecorator = options.instanceDecorator;
+      this.instanceDecorator = makeSafeInstanceDecorator(
+        options.instanceDecorator,
+      );
     }
   }
 

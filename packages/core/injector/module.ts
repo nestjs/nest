@@ -8,6 +8,7 @@ import {
 import { createContextId } from '../helpers/context-id-factory.js';
 import { getClassScope } from '../helpers/get-class-scope.js';
 import { isDurable } from '../helpers/is-durable.js';
+import { makeSafeInstanceDecorator } from '../helpers/safe-instance-decorator.js';
 import { UuidFactory } from '../inspector/uuid-factory.js';
 import { CONTROLLER_ID_KEY } from './constants.js';
 import { NestContainer } from './container.js';
@@ -127,8 +128,8 @@ export class Module {
   }
 
   get entryProviders(): Array<InstanceWrapper<Injectable>> {
-    return Array.from(this._entryProviderKeys).map(
-      token => this.providers.get(token)!,
+    return Array.from(this._entryProviderKeys).map(token =>
+      this.providers.get(token)!,
     );
   }
 
@@ -294,27 +295,18 @@ export class Module {
   public isCustomProvider(
     provider: Provider,
   ): provider is
-    | ClassProvider
-    | FactoryProvider
-    | ValueProvider
-    | ExistingProvider {
+    ClassProvider | FactoryProvider | ValueProvider | ExistingProvider {
     return !isNil(
       (
         provider as
-          | ClassProvider
-          | FactoryProvider
-          | ValueProvider
-          | ExistingProvider
+          ClassProvider | FactoryProvider | ValueProvider | ExistingProvider
       ).provide,
     );
   }
 
   public addCustomProvider(
     provider:
-      | ClassProvider
-      | FactoryProvider
-      | ValueProvider
-      | ExistingProvider,
+      ClassProvider | FactoryProvider | ValueProvider | ExistingProvider,
     collection: Map<Function | string | symbol, any>,
     enhancerSubtype?: EnhancerSubtype,
   ) {
@@ -400,7 +392,9 @@ export class Module {
         token: providerToken,
         name: (providerToken as Function)?.name || providerToken,
         metatype: null!,
-        instance: instanceDecorator ? instanceDecorator(value) : value,
+        instance: instanceDecorator
+          ? makeSafeInstanceDecorator(instanceDecorator)(value)
+          : value,
         isResolved: true,
         async: value instanceof Promise,
         host: this,
@@ -480,10 +474,7 @@ export class Module {
 
   public addCustomExportedProvider(
     provider:
-      | FactoryProvider
-      | ValueProvider
-      | ClassProvider
-      | ExistingProvider,
+      FactoryProvider | ValueProvider | ClassProvider | ExistingProvider,
   ) {
     const provide = provider.provide;
     if (isString(provide) || isSymbol(provide)) {

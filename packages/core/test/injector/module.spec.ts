@@ -211,6 +211,37 @@ describe('Module', () => {
         wrapper.getInstanceByContextId(STATIC_CONTEXT).isResolved,
       ).toBeTruthy();
     });
+
+    it('should store the original value when the instance decorator throws', () => {
+      // Mimics nestjs-cls proxy providers whose "get" trap throws for any
+      // property access performed by the decorator at bootstrap time
+      const hostileProxy = new Proxy(
+        {},
+        {
+          get: () => {
+            throw new Error('does not exist in the CLS');
+          },
+        },
+      );
+      const instrumentedContainer = new NestContainer(undefined, {
+        instrument: {
+          instanceDecorator: (instance: any) => {
+            void instance.decorate;
+            return instance;
+          },
+        },
+      });
+      const instrumentedModuleRef = new Module(
+        TestModule,
+        instrumentedContainer,
+      );
+      const collection = new Map();
+      const proxyProvider = { provide: 'PROXY', useValue: hostileProxy };
+
+      instrumentedModuleRef.addCustomValue(proxyProvider as any, collection);
+
+      expect(collection.get('PROXY')!.instance).toBe(hostileProxy);
+    });
   });
 
   describe('addCustomFactory', () => {

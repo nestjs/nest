@@ -760,6 +760,33 @@ describe('Injector', () => {
 
         expect(wrapper.instance).not.toBeUndefined();
       });
+      it('should apply the instance decorator when registered', async () => {
+        const decorated = { decorated: true };
+        const instrumentedInjector = new Injector({
+          preview: false,
+          instanceDecorator: () => decorated,
+        });
+        const wrapper = new InstanceWrapper({ metatype: TestClass });
+        await instrumentedInjector.instantiateClass([], wrapper, wrapper, {
+          contextId: STATIC_CONTEXT,
+        });
+
+        expect(wrapper.instance).toBe(decorated);
+      });
+      it('should keep the original instance when the instance decorator throws', async () => {
+        const instrumentedInjector = new Injector({
+          preview: false,
+          instanceDecorator: () => {
+            throw new Error('cannot inspect');
+          },
+        });
+        const wrapper = new InstanceWrapper({ metatype: TestClass });
+        await instrumentedInjector.instantiateClass([], wrapper, wrapper, {
+          contextId: STATIC_CONTEXT,
+        });
+
+        expect(wrapper.instance).toBeInstanceOf(TestClass);
+      });
     });
     describe('when context is not static', () => {
       it('should not instantiate class', async () => {

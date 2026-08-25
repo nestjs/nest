@@ -24,7 +24,12 @@ import {
   type GraphInspector,
   NestApplicationContext,
 } from '@nestjs/core';
-import { MESSAGES, optionalRequire, Injector } from '@nestjs/core/internal';
+import {
+  MESSAGES,
+  optionalRequire,
+  Injector,
+  makeSafeInstanceDecorator,
+} from '@nestjs/core/internal';
 
 type CompleteMicroserviceOptions = NestMicroserviceOptions &
   (MicroserviceOptions | AsyncMicroserviceOptions);
@@ -396,10 +401,10 @@ export class NestMicroservice
 
   private applyInstanceDecoratorIfRegistered<T>(...instances: T[]): T[] {
     if (this.appOptions.instrument?.instanceDecorator) {
-      return instances.map(
-        instance =>
-          this.appOptions.instrument!.instanceDecorator(instance) as T,
+      const decorate = makeSafeInstanceDecorator(
+        this.appOptions.instrument.instanceDecorator,
       );
+      return instances.map(instance => decorate(instance) as T);
     }
     return instances;
   }
