@@ -7,7 +7,12 @@ import {
   PipeTransform,
 } from '../interfaces/features/pipe-transform.interface.js';
 import { HttpErrorByCode } from '../utils/http-error-by-code.util.js';
-import { isNil, isString, isUndefined } from '../utils/shared.utils.js';
+import {
+  isNil,
+  isObject,
+  isString,
+  isUndefined,
+} from '../utils/shared.utils.js';
 import { ValidationPipe, ValidationPipeOptions } from './validation.pipe.js';
 
 const VALIDATION_ERROR_MESSAGE = 'Validation failed (parsable array expected)';
@@ -137,6 +142,12 @@ export class ParseArrayPipe implements PipeTransform {
               if (Array.isArray(response.message)) {
                 message = response.message.map(
                   (item: string) => `[${i}] ${item}`,
+                );
+              } else if (isObject(response.message)) {
+                message = Object.entries(
+                  response.message as Record<string, string[]>,
+                ).flatMap(([path, messages]) =>
+                  messages.map(item => `[${i}] ${path}: ${item}`),
                 );
               } else {
                 message = `[${i}] ${response.message}`;

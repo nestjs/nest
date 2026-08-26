@@ -215,6 +215,64 @@ describe('ParseArrayPipe', () => {
           }
         });
 
+        it('should validate each item and concat grouped errors', async () => {
+          class ArrItemWithProp {
+            @IsNumber()
+            number: number;
+          }
+          const pipe = new ParseArrayPipe({
+            items: ArrItemWithProp,
+            stopAtFirstError: false,
+            errorFormat: 'grouped',
+          });
+          try {
+            await pipe.transform(
+              [
+                { number: '1' },
+                { number: 1 },
+                { number: '3' },
+              ] as ArrItemWithProp[],
+              {} as ArgumentMetadata,
+            );
+            throw null;
+          } catch (err) {
+            expect(err).toBeInstanceOf(BadRequestException);
+            expect(err.getResponse().message).toEqual([
+              '[0] number: number must be a number conforming to the specified constraints',
+              '[2] number: number must be a number conforming to the specified constraints',
+            ]);
+          }
+        });
+
+        it('should validate each nested object and concat grouped errors', async () => {
+          class RandomObject {
+            @IsString({ message: 'Title is required' })
+            title: string;
+          }
+          class ArrItemObject {
+            @Type(() => RandomObject)
+            @ValidateNested()
+            random: RandomObject;
+          }
+          const pipe = new ParseArrayPipe({
+            items: ArrItemObject,
+            stopAtFirstError: false,
+            errorFormat: 'grouped',
+          });
+          try {
+            await pipe.transform(
+              [{ random: {} }] as any[],
+              {} as ArgumentMetadata,
+            );
+            throw null;
+          } catch (err) {
+            expect(err).toBeInstanceOf(BadRequestException);
+            expect(err.getResponse().message).toEqual([
+              '[0] random.title: Title is required',
+            ]);
+          }
+        });
+
         it('should validate each nested object and concat errors', async () => {
           class RandomObject {
             @IsDefined()
