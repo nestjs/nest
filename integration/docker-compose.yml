@@ -25,7 +25,7 @@ services:
       - "9001:9001"
     restart: always
   mysql:
-    image: mysql:9.7.2
+    image: mysql:26.7.0
     environment:
       MYSQL_ROOT_HOST: '%'
       MYSQL_ROOT_PASSWORD: root
