@@ -1,12 +1,12 @@
 {
-  "presets": ["@babel/preset-env"],
-  "plugins": [
-    ["@babel/plugin-proposal-decorators", { "legacy": true }],
+  "presets": [
     [
-      "@babel/plugin-transform-runtime",
+      "@babel/preset-env",
       {
-        "regenerator": true
+        "targets": { "node": "current" },
+        "modules": false
       }
     ]
-  ]
+  ],
+  "plugins": [["@babel/plugin-proposal-decorators", { "legacy": true }]]
 }

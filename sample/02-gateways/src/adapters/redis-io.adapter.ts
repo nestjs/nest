@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { ServerOptions } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
@@ -27,8 +30,11 @@ export class RedisIoAdapter extends IoAdapter {
   private getClientInfoTag(): string {
     try {
       // Try to get NestJS version from package.json
-      const nestVersion = require('@nestjs/common/package.json').version;
-      return `nestjs_v${nestVersion}`;
+      const entrypoint = fileURLToPath(import.meta.resolve('@nestjs/common'));
+      const { version } = JSON.parse(
+        readFileSync(join(dirname(entrypoint), 'package.json'), 'utf8'),
+      );
+      return `nestjs_v${version}`;
     } catch {
       // Fallback if version cannot be determined
       return 'nestjs';
