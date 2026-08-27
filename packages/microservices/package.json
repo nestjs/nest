@@ -35,9 +35,9 @@
   "peerDependencies": {
     "@grpc/grpc-js": "*",
     "@nats-io/transport-node": "*",
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/core": "^11.0.0",
-    "@nestjs/websockets": "^11.0.0",
+    "@nestjs/common": "^12.0.0",
+    "@nestjs/core": "^12.0.0",
+    "@nestjs/websockets": "^12.0.0",
     "amqp-connection-manager": "*",
     "amqplib": "*",
     "cache-manager": "*",
