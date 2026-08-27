@@ -74,9 +74,11 @@ export class SseStream extends Transform {
   private _destination: WritableHeaderStream | null = null;
   private _statusCode = 200;
   private _additionalHeaders: AdditionalHeaders | undefined;
+  private readonly _isHttp2: boolean;
 
   constructor(req?: IncomingMessage) {
     super({ objectMode: true });
+    this._isHttp2 = (req?.httpVersionMajor ?? 1) > 1;
     if (req && req.socket) {
       req.socket.setKeepAlive(true);
       req.socket.setNoDelay(true);
@@ -123,7 +125,9 @@ export class SseStream extends Transform {
         ...additionalHeaders,
         // See https://github.com/dunglas/mercure/blob/main/subscribe.go#L347-L362
         'Content-Type': 'text/event-stream',
-        Connection: 'keep-alive',
+        // Hop-by-hop header, forbidden in HTTP/2
+        // https://www.rfc-editor.org/rfc/rfc9113#section-8.2.2
+        ...(!this._isHttp2 && { Connection: 'keep-alive' }),
         // Disable cache, even for old browsers and proxies
         'Cache-Control':
           'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',

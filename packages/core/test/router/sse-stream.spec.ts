@@ -1,5 +1,5 @@
 import { EventSource } from 'eventsource';
-import { createServer, OutgoingHttpHeaders } from 'http';
+import { createServer, IncomingMessage, OutgoingHttpHeaders } from 'http';
 import { AddressInfo } from 'net';
 import { Writable } from 'stream';
 import { HeaderStream, SseStream } from '../../router/sse-stream.js';
@@ -238,6 +238,29 @@ data: hello
           expect(headers).toEqual({
             'Content-Type': 'text/event-stream',
             Connection: 'keep-alive',
+            'Cache-Control':
+              'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
+            Pragma: 'no-cache',
+            Expire: '0',
+            'X-Accel-Buffering': 'no',
+          });
+          callback();
+          return sink;
+        },
+      );
+      sse.pipe(sink);
+      sse.writeMessage({ data: 'trigger' }, noop);
+    }));
+
+  it('omits the Connection header when the request is served over HTTP/2', () =>
+    new Promise<void>(callback => {
+      const sse = new SseStream({
+        httpVersionMajor: 2,
+      } as unknown as IncomingMessage);
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          expect(headers).toEqual({
+            'Content-Type': 'text/event-stream',
             'Cache-Control':
               'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
             Pragma: 'no-cache',
