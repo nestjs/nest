@@ -584,7 +584,11 @@ export class Injector {
       if (instanceHost.donePromise) {
         void instanceHost.donePromise
           .then(() =>
-            this.loadProvider(instanceWrapper, moduleRef, resolutionContext),
+            this.loadProvider(
+              instanceWrapper,
+              instanceWrapper.host ?? moduleRef,
+              resolutionContext,
+            ),
           )
           .catch(err => {
             instanceWrapper.settlementSignal?.error(err);
