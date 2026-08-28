@@ -379,6 +379,38 @@ data: first
     expect(sink.content).toContain('id: 0\n');
   });
 
+  it('optimises the socket for streaming over HTTP/1.1', () => {
+    const calls: string[] = [];
+    const socket = {
+      setKeepAlive: () => calls.push('setKeepAlive'),
+      setNoDelay: () => calls.push('setNoDelay'),
+      setTimeout: () => calls.push('setTimeout'),
+    };
+
+    new SseStream({
+      httpVersionMajor: 1,
+      socket,
+    } as unknown as IncomingMessage);
+
+    expect(calls).toEqual(['setKeepAlive', 'setNoDelay', 'setTimeout']);
+  });
+
+  it('leaves the socket untouched when the request is served over HTTP/2', () => {
+    const calls: string[] = [];
+    const socket = {
+      setKeepAlive: () => calls.push('setKeepAlive'),
+      setNoDelay: () => calls.push('setNoDelay'),
+      setTimeout: () => calls.push('setTimeout'),
+    };
+
+    new SseStream({
+      httpVersionMajor: 2,
+      socket,
+    } as unknown as IncomingMessage);
+
+    expect(calls).toEqual([]);
+  });
+
   it('allows an eventsource to connect', () =>
     new Promise<void>(callback => {
       let sse: SseStream;
