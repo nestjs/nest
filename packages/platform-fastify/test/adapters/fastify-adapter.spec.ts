@@ -1,3 +1,18 @@
+/**
+ * @aci-keep
+ *
+ * ROLE(TEST): 本文件是可执行规格，生产代码是其约束对象。
+ * INPUT: 被测签名、状态、依赖、副作用与已知异常。
+ * OUTPUT: 可复现且证据闭合的断言结果。
+ * MUST: L0环境可逆、L1正向、L2边界、L3负向完备（详见脚手架命令）。
+ * MUST NOT: skip/todo、空断言、恒真断言、仅验证实现细节。
+ * ERROR: 失败必须暴露契约差异；不得捕获后忽略。
+ * TEST: 每个场景独立验证输入、状态、时间或外部契约中的至少一维。
+ * SCOPE(SPEC): BDD(Vitest)行为规格；围绕可观察行为组织场景。
+ * MUST: 使用given/when/then命名并闭合前置、动作、结果。
+ * MUST NOT: 整栈启动、真实DB、curl、跨模块实现细节。
+ */
+
 import { FastifyAdapter } from '../../adapters/fastify-adapter';
 import { createError } from '@fastify/error';
 import { HttpException } from '@nestjs/common';
