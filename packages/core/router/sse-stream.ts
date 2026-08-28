@@ -74,9 +74,11 @@ export class SseStream extends Transform {
   private _destination: WritableHeaderStream | null = null;
   private _statusCode = 200;
   private _additionalHeaders: AdditionalHeaders | undefined;
+  private _request: IncomingMessage | undefined;
 
   constructor(req?: IncomingMessage) {
     super({ objectMode: true });
+    this._request = req;
     if (req && req.socket) {
       req.socket.setKeepAlive(true);
       req.socket.setNoDelay(true);
@@ -119,11 +121,18 @@ export class SseStream extends Transform {
     const statusCode = this._statusCode ?? 200;
     const additionalHeaders = this._additionalHeaders;
     if (this._destination.writeHead) {
+      // `Connection` is a hop-by-hop header defined for HTTP/1.1 connection
+      // management. It's meaningless once a connection is multiplexed over
+      // HTTP/2 and is explicitly forbidden by RFC 7540 8.1.2.2 - sending it
+      // anyway breaks SSE behind an HTTP/2-terminating proxy/edge that
+      // passes it through (net::ERR_HTTP2_PROTOCOL_ERROR in the browser).
+      // Only include it for HTTP/1.x requests.
+      const isHttp2 = this._request?.httpVersionMajor === 2;
       this._destination.writeHead(statusCode, {
         ...additionalHeaders,
         // See https://github.com/dunglas/mercure/blob/main/subscribe.go#L347-L362
         'Content-Type': 'text/event-stream',
-        Connection: 'keep-alive',
+        ...(isHttp2 ? {} : { Connection: 'keep-alive' }),
         // Disable cache, even for old browsers and proxies
         'Cache-Control':
           'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',

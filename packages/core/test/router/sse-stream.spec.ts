@@ -252,6 +252,44 @@ data: hello
       sse.writeMessage({ data: 'trigger' }, noop);
     }));
 
+  it('omits the Connection header for HTTP/2 requests', () =>
+    new Promise<void>(callback => {
+      const req = { httpVersionMajor: 2 } as any;
+      const sse = new SseStream(req);
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          expect(headers).toEqual({
+            'Content-Type': 'text/event-stream',
+            'Cache-Control':
+              'private, no-cache, no-store, must-revalidate, max-age=0, no-transform',
+            Pragma: 'no-cache',
+            Expire: '0',
+            'X-Accel-Buffering': 'no',
+          });
+          expect(headers).not.toHaveProperty('Connection');
+          callback();
+          return sink;
+        },
+      );
+      sse.pipe(sink);
+      sse.writeMessage({ data: 'trigger' }, noop);
+    }));
+
+  it('keeps the Connection header for HTTP/1.x requests', () =>
+    new Promise<void>(callback => {
+      const req = { httpVersionMajor: 1 } as any;
+      const sse = new SseStream(req);
+      const sink = new Sink(
+        (status: number, headers: string | OutgoingHttpHeaders) => {
+          expect(headers).toHaveProperty('Connection', 'keep-alive');
+          callback();
+          return sink;
+        },
+      );
+      sse.pipe(sink);
+      sse.writeMessage({ data: 'trigger' }, noop);
+    }));
+
   it('sets additional headers when provided', () =>
     new Promise<void>(callback => {
       const sse = new SseStream();
