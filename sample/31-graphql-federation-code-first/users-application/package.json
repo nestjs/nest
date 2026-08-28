@@ -49,7 +49,7 @@
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
     "vitest": "4.1.11",
-    "webpack": "5.109.2"
+    "webpack": "5.110.1"
   },
   "type": "module"
 }
