@@ -323,7 +323,7 @@ export class Module {
   }
 
   public isCustomClass(provider: any): provider is ClassProvider {
-    return !isUndefined((provider as ClassProvider).useClass);
+    return !isNil((provider as ClassProvider).useClass);
   }
 
   public isCustomValue(provider: any): provider is ValueProvider {
@@ -334,11 +334,11 @@ export class Module {
   }
 
   public isCustomFactory(provider: any): provider is FactoryProvider {
-    return !isUndefined((provider as FactoryProvider).useFactory);
+    return !isNil((provider as FactoryProvider).useFactory);
   }
 
   public isCustomUseExisting(provider: any): provider is ExistingProvider {
-    return !isUndefined((provider as ExistingProvider).useExisting);
+    return !isNil((provider as ExistingProvider).useExisting);
   }
 
   public isDynamicModule(exported: any): exported is DynamicModule {
