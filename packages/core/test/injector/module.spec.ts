@@ -311,6 +311,44 @@ describe('Module', () => {
     });
   });
 
+  describe('isCustomClass', () => {
+    it('should return true when useClass is defined', () => {
+      expect(moduleRef.isCustomClass({ useClass: TestProvider })).toBe(true);
+    });
+    it('should return false when useClass is null', () => {
+      expect(moduleRef.isCustomClass({ useClass: null })).toBe(false);
+    });
+    it('should return false when useClass is undefined', () => {
+      expect(moduleRef.isCustomClass({})).toBe(false);
+    });
+  });
+
+  describe('isCustomFactory', () => {
+    it('should return true when useFactory is defined', () => {
+      expect(moduleRef.isCustomFactory({ useFactory: () => ({}) })).toBe(true);
+    });
+    it('should return false when useFactory is null', () => {
+      expect(moduleRef.isCustomFactory({ useFactory: null })).toBe(false);
+    });
+    it('should return false when useFactory is undefined', () => {
+      expect(moduleRef.isCustomFactory({})).toBe(false);
+    });
+  });
+
+  describe('isCustomUseExisting', () => {
+    it('should return true when useExisting is defined', () => {
+      expect(moduleRef.isCustomUseExisting({ useExisting: TestProvider })).toBe(
+        true,
+      );
+    });
+    it('should return false when useExisting is null', () => {
+      expect(moduleRef.isCustomUseExisting({ useExisting: null })).toBe(false);
+    });
+    it('should return false when useExisting is undefined', () => {
+      expect(moduleRef.isCustomUseExisting({})).toBe(false);
+    });
+  });
+
   describe('when get instance', () => {
     describe('when metatype does not exists in providers collection', () => {
       beforeEach(() => {
