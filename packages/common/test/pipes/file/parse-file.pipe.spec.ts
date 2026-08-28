@@ -25,6 +25,18 @@ class AlwaysInvalidValidator extends FileValidator {
   }
 }
 
+// Mirrors the real behavior of built-in validators (e.g. MaxFileSizeValidator,
+// FileTypeValidator), which treat a missing file as trivially valid and skip
+// their own check rather than failing.
+class SkipsValidationWhenNoFileValidator extends FileValidator {
+  isValid(file?: unknown): boolean {
+    return !file;
+  }
+  buildErrorMessage(): string {
+    return customErrorMessage;
+  }
+}
+
 describe('ParseFilePipe', () => {
   let parseFilePipe: ParseFilePipe;
   describe('transform', () => {
@@ -152,6 +164,14 @@ describe('ParseFilePipe', () => {
         );
       });
 
+      it('should throw an error if the file is null', async () => {
+        const requestFile = null;
+
+        await expect(parseFilePipe.transform(requestFile)).rejects.toThrow(
+          BadRequestException,
+        );
+      });
+
       it('should pass validation if a file is provided', async () => {
         const requestFile = {
           path: 'some-path',
@@ -159,6 +179,22 @@ describe('ParseFilePipe', () => {
 
         await expect(parseFilePipe.transform(requestFile)).resolves.toEqual(
           requestFile,
+        );
+      });
+    });
+
+    describe('when the file is null and a validator that skips missing files is registered', () => {
+      beforeEach(() => {
+        parseFilePipe = new ParseFilePipe({
+          validators: [new SkipsValidationWhenNoFileValidator({})],
+        });
+      });
+
+      it('should throw a "File is required" error instead of letting the validator silently pass', async () => {
+        const requestFile = null;
+
+        await expect(parseFilePipe.transform(requestFile)).rejects.toThrow(
+          BadRequestException,
         );
       });
     });
