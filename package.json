@@ -96,7 +96,7 @@
     "@nats-io/transport-node": "^3.0.2",
     "@nestjs/apollo": "14.0.0",
     "@nestjs/graphql": "14.0.0",
-    "@nestjs/mongoose": "11.0.4",
+    "@nestjs/mongoose": "12.0.0",
     "@nestjs/typeorm": "12.0.1",
     "@standard-schema/spec": "1.1.0",
     "@types/amqplib": "0.10.8",
