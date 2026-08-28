@@ -2,6 +2,7 @@ import { Optional, Scope } from '@nestjs/common';
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants.js';
 import { Inject } from '../../../common/decorators/core/inject.decorator.js';
 import { Injectable } from '../../../common/decorators/core/injectable.decorator.js';
+import { UndefinedDependencyException } from '../../errors/exceptions/undefined-dependency.exception.js';
 import { STATIC_CONTEXT } from '../../injector/constants.js';
 import { NestContainer } from '../../injector/container.js';
 import { Injector, PropertyDependency } from '../../injector/injector.js';
@@ -202,6 +203,28 @@ describe('Injector', () => {
           null!,
         ),
       ).rejects.toBeDefined();
+    });
+
+    it('should throw "UndefinedDependencyException" when param is undefined', async () => {
+      await expect(
+        injector.resolveSingleParam(
+          new InstanceWrapper({ name: 'Test' }),
+          undefined!,
+          { index: 0, dependencies: [] },
+          null!,
+        ),
+      ).rejects.toBeInstanceOf(UndefinedDependencyException);
+    });
+
+    it('should throw "UndefinedDependencyException" when param is null', async () => {
+      await expect(
+        injector.resolveSingleParam(
+          new InstanceWrapper({ name: 'Test' }),
+          null!,
+          { index: 0, dependencies: [] },
+          null!,
+        ),
+      ).rejects.toBeInstanceOf(UndefinedDependencyException);
     });
   });
 

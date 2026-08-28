@@ -496,7 +496,7 @@ export class Injector {
     resolutionContext: ResolutionContext = { contextId: STATIC_CONTEXT },
     keyOrIndex?: symbol | string | number,
   ) {
-    if (isUndefined(param)) {
+    if (isNil(param)) {
       this.logger.log(
         'Nest encountered an undefined dependency. This may be due to a circular import or a missing dependency declaration.',
       );
