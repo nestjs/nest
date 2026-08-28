@@ -79,7 +79,11 @@ export class SseStream extends Transform {
   constructor(req?: IncomingMessage) {
     super({ objectMode: true });
     this._isHttp2 = (req?.httpVersionMajor ?? 1) > 1;
-    if (req && req.socket) {
+    // Under HTTP/2 these calls are not request-scoped: `setTimeout` is routed
+    // to the shared `Http2Session` and the rest to the shared TCP socket, so
+    // tuning one SSE request would disable the idle timeout for every stream
+    // on that connection. See https://nodejs.org/api/http2.html#requestsocket
+    if (req && req.socket && !this._isHttp2) {
       req.socket.setKeepAlive(true);
       req.socket.setNoDelay(true);
       req.socket.setTimeout(0);
