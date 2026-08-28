@@ -27,7 +27,7 @@
     "start-server-webpack-plugin": "2.2.5",
     "vitest": "4.1.11",
     "webpack": "5.110.1",
-    "webpack-cli": "7.2.2",
+    "webpack-cli": "7.2.3",
     "webpack-node-externals": "3.0.0"
   },
   "type": "module"
