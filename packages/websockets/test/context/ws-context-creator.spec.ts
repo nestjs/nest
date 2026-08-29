@@ -10,6 +10,7 @@ import { InterceptorsConsumer } from '../../../core/interceptors/interceptors-co
 import { InterceptorsContextCreator } from '../../../core/interceptors/interceptors-context-creator.js';
 import { PipesConsumer } from '../../../core/pipes/pipes-consumer.js';
 import { PipesContextCreator } from '../../../core/pipes/pipes-context-creator.js';
+import { MESSAGE_METADATA } from '../../constants.js';
 import { ExceptionFiltersContext } from '../../context/exception-filters-context.js';
 import { WsContextCreator } from '../../context/ws-context-creator.js';
 import { WsProxy } from '../../context/ws-proxy.js';
@@ -236,5 +237,68 @@ describe('WsContextCreator', () => {
         expect(pipesFn).toBeTypeOf('function');
       });
     });
+  });
+});
+
+describe('WsContextCreator (pattern forwarding)', () => {
+  @Injectable()
+  class PatternTest {
+    handle(client: unknown, data: unknown) {
+      return of(true);
+    }
+  }
+
+  let creator: WsContextCreator;
+  let recordedArgs: unknown[];
+
+  beforeEach(() => {
+    recordedArgs = [];
+
+    const guardsConsumer = new GuardsConsumer();
+    vi.spyOn(guardsConsumer, 'tryActivate').mockImplementation(
+      async (_guards, args: any[]) => {
+        recordedArgs = [...args];
+        return true;
+      },
+    );
+
+    const guardsContextCreator = new GuardsContextCreator(new NestContainer());
+    vi.spyOn(guardsContextCreator, 'create').mockImplementation(
+      () => [{ canActivate: () => true }] as any,
+    );
+
+    creator = new WsContextCreator(
+      // the real proxy, so the pattern it appends is part of the result
+      new WsProxy(),
+      new ExceptionFiltersContext(new NestContainer() as any),
+      new PipesContextCreator(new NestContainer() as any) as any,
+      new PipesConsumer() as any,
+      guardsContextCreator as any,
+      guardsConsumer as any,
+      new InterceptorsContextCreator(new NestContainer()) as any,
+      new InterceptorsConsumer() as any,
+    );
+  });
+
+  it('appends the message pattern to the arguments exactly once', async () => {
+    const instance = new PatternTest();
+    Reflect.defineMetadata(MESSAGE_METADATA, 'myEvent', instance.handle);
+
+    const proxy = creator.create(instance, instance.handle, 'test', 'handle');
+    await proxy('client', { some: 'payload' });
+
+    expect(recordedArgs.filter(arg => arg === 'myEvent')).toHaveLength(1);
+    expect(recordedArgs[recordedArgs.length - 1]).toEqual('myEvent');
+  });
+
+  it('keeps the pattern reachable through getPattern()', async () => {
+    const instance = new PatternTest();
+    Reflect.defineMetadata(MESSAGE_METADATA, 'myEvent', instance.handle);
+
+    const proxy = creator.create(instance, instance.handle, 'test', 'handle');
+    await proxy('client', { some: 'payload' });
+
+    const host = new ExecutionContextHost(recordedArgs);
+    expect(host.switchToWs().getPattern()).toEqual('myEvent');
   });
 });
