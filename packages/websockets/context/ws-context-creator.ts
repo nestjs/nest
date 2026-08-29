@@ -121,8 +121,8 @@ export class WsContextCreator {
     const targetPattern = this.reflectCallbackPattern(callback);
     return this.wsProxy.create(
       async (...args: unknown[]) => {
-        args.push(targetPattern);
-
+        // The pattern is already appended by `WsProxy` before this callback runs,
+        // so it is the last element of `args` at this point.
         const initialArgs = this.contextUtils.createNullArray(argsLength);
         fnCanActivate && (await fnCanActivate(args));
 
