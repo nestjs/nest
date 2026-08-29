@@ -45,6 +45,7 @@ export class BadGatewayException extends HttpException {
         objectOrError,
         description,
         HttpStatus.BAD_GATEWAY,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.BAD_GATEWAY,
       httpExceptionOptions,

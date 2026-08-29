@@ -45,6 +45,7 @@ export class GatewayTimeoutException extends HttpException {
         objectOrError,
         description,
         HttpStatus.GATEWAY_TIMEOUT,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.GATEWAY_TIMEOUT,
       httpExceptionOptions,

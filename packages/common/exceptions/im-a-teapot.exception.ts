@@ -48,6 +48,7 @@ export class ImATeapotException extends HttpException {
         objectOrError,
         description,
         HttpStatus.I_AM_A_TEAPOT,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.I_AM_A_TEAPOT,
       httpExceptionOptions,

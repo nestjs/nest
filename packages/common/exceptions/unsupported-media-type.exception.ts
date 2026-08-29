@@ -47,6 +47,7 @@ export class UnsupportedMediaTypeException extends HttpException {
         objectOrError,
         description,
         HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.UNSUPPORTED_MEDIA_TYPE,
       httpExceptionOptions,

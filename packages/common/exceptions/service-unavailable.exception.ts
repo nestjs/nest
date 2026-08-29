@@ -45,6 +45,7 @@ export class ServiceUnavailableException extends HttpException {
         objectOrError,
         description,
         HttpStatus.SERVICE_UNAVAILABLE,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.SERVICE_UNAVAILABLE,
       httpExceptionOptions,
