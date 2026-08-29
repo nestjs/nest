@@ -2,6 +2,7 @@ import { Optional, Scope } from '@nestjs/common';
 import { PARAMTYPES_METADATA } from '@nestjs/common/constants.js';
 import { Inject } from '../../../common/decorators/core/inject.decorator.js';
 import { Injectable } from '../../../common/decorators/core/injectable.decorator.js';
+import { UndefinedDependencyException } from '../../errors/exceptions/undefined-dependency.exception.js';
 import { STATIC_CONTEXT } from '../../injector/constants.js';
 import { NestContainer } from '../../injector/container.js';
 import { Injector, PropertyDependency } from '../../injector/injector.js';
@@ -992,6 +993,39 @@ describe('Injector', () => {
 
       expect(dependencies).toEqual([FixtureDep1, FixtureDep2, FixtureDep2, {}]);
       expect(optionalDependenciesIds).toEqual([1]);
+    });
+
+    it('should throw "UndefinedDependencyException" instead of a raw TypeError when an inject entry is null', () => {
+      const wrapper = new InstanceWrapper({
+        name: 'TOKEN',
+        inject: [null as any],
+      });
+
+      expect(() => injector.getFactoryProviderDependencies(wrapper)).toThrow(
+        UndefinedDependencyException,
+      );
+    });
+
+    it('should throw "UndefinedDependencyException" instead of a raw TypeError when an inject entry is undefined', () => {
+      const wrapper = new InstanceWrapper({
+        name: 'TOKEN',
+        inject: [undefined as any],
+      });
+
+      expect(() => injector.getFactoryProviderDependencies(wrapper)).toThrow(
+        UndefinedDependencyException,
+      );
+    });
+
+    it('should throw "UndefinedDependencyException" when an inject entry is an object with a null token', () => {
+      const wrapper = new InstanceWrapper({
+        name: 'TOKEN',
+        inject: [{ token: null } as any],
+      });
+
+      expect(() => injector.getFactoryProviderDependencies(wrapper)).toThrow(
+        UndefinedDependencyException,
+      );
     });
   });
 
