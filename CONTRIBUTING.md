@@ -166,18 +166,30 @@ You will need [Node.js](https://nodejs.org) version >= 20.
 $ npm ci --legacy-peer-deps # (or yarn install)
 ```
 
-2. In order to prepare your environment run `prepare.sh` shell script:
+2. To run the unit tests you are ready to go:
 
 ```bash
-$ sh scripts/prepare.sh
+$ npm run test
 ```
 
-That will compile fresh packages and afterward, move them all to `sample` directories.
+The unit tests run straight from the TypeScript sources, so no build step and no Docker
+are required.
+
+3. Only if you are going to run the **integration** tests, prepare that environment with
+   the `prepare.sh` shell script:
+
+```bash
+$ bash scripts/prepare.sh
+```
+
+That will compile fresh packages into the root `node_modules/@nestjs`, then start the
+Docker containers the integration tests need and wait for RabbitMQ to accept
+connections. Docker is required for this step.
 
 ### <a name="common-scripts"></a>Commonly used NPM scripts
 
 ```bash
-# build all packages and move to "sample" directories
+# build all packages into the root node_modules/@nestjs
 $ npm run build
 
 # run the full unit tests suite
@@ -185,7 +197,7 @@ $ npm run test
 
 # run integration tests
 # docker is required(!)
-$ sh scripts/run-integration.sh
+$ bash scripts/run-integration.sh
 
 # run linter
 $ npm run lint

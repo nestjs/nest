@@ -1,5 +1,8 @@
-# 1. Build fresh packages and move them integration dit
-npm run build &>/dev/null
+#!/usr/bin/env bash
+set -eu
+
+# 1. Build fresh packages and move them to the integration directory
+npm run build
 
 # 2. Start docker containers to perform integration tests
 npm run test:docker:up
