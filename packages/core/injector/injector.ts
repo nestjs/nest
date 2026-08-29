@@ -465,7 +465,8 @@ export class Injector {
       if (isNil(token)) {
         throw new UndefinedDependencyException(wrapper.name, {
           index,
-          dependencies: wrapper.inject,
+          dependencies: (wrapper.inject ?? undefined) as
+            InjectorDependency[] | undefined,
         });
       }
       if (typeof item !== 'object') {
