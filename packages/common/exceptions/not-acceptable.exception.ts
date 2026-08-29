@@ -45,6 +45,7 @@ export class NotAcceptableException extends HttpException {
         objectOrError,
         description,
         HttpStatus.NOT_ACCEPTABLE,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.NOT_ACCEPTABLE,
       httpExceptionOptions,

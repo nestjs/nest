@@ -45,6 +45,7 @@ export class UnauthorizedException extends HttpException {
         objectOrError,
         description,
         HttpStatus.UNAUTHORIZED,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.UNAUTHORIZED,
       httpExceptionOptions,

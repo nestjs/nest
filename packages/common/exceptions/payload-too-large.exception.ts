@@ -45,6 +45,7 @@ export class PayloadTooLargeException extends HttpException {
         objectOrError,
         description,
         HttpStatus.PAYLOAD_TOO_LARGE,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.PAYLOAD_TOO_LARGE,
       httpExceptionOptions,

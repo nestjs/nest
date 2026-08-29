@@ -45,6 +45,7 @@ export class BadRequestException extends HttpException {
         objectOrError,
         description,
         HttpStatus.BAD_REQUEST,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.BAD_REQUEST,
       httpExceptionOptions,

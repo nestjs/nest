@@ -45,6 +45,7 @@ export class PreconditionFailedException extends HttpException {
         objectOrError,
         description,
         HttpStatus.PRECONDITION_FAILED,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.PRECONDITION_FAILED,
       httpExceptionOptions,

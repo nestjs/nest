@@ -45,6 +45,7 @@ export class NotFoundException extends HttpException {
         objectOrError,
         description,
         HttpStatus.NOT_FOUND,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.NOT_FOUND,
       httpExceptionOptions,

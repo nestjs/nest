@@ -45,6 +45,7 @@ export class RequestTimeoutException extends HttpException {
         objectOrError,
         description,
         HttpStatus.REQUEST_TIMEOUT,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.REQUEST_TIMEOUT,
       httpExceptionOptions,
