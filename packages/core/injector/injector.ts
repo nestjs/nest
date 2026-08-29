@@ -442,8 +442,11 @@ export class Injector {
     function isOptionalFactoryDependency(
       value: InjectionToken | OptionalFactoryDependency,
     ): value is OptionalFactoryDependency {
+      const token = (value as OptionalFactoryDependency)?.token;
+      if (isNil(token)) {
+        return false;
+      }
       return (
-        !isUndefined((value as OptionalFactoryDependency).token) &&
         !isUndefined((value as OptionalFactoryDependency).optional) &&
         !(value as any).prototype
       );
@@ -453,6 +456,18 @@ export class Injector {
       item: InjectionToken | OptionalFactoryDependency,
       index: number,
     ): InjectionToken => {
+      const isWrappedDependency =
+        !isNil(item) && typeof item === 'object' && 'token' in item;
+      const token = isWrappedDependency
+        ? (item as OptionalFactoryDependency).token
+        : item;
+
+      if (isNil(token)) {
+        throw new UndefinedDependencyException(wrapper.name, {
+          index,
+          dependencies: wrapper.inject,
+        });
+      }
       if (typeof item !== 'object') {
         return item;
       }
