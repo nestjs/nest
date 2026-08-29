@@ -243,7 +243,7 @@ describe('DiscoverableMetaHostCollection', () => {
       expect(result.has(instanceWrapper)).toBe(true);
     });
 
-    it('should not add provider when metatype is null and inject is not provided (useValue without inject)', () => {
+    it('should add provider when metatype is null and inject is not provided (useValue without inject)', () => {
       const hostContainerRef = new ModulesContainer();
       class ValueClass {}
       const metaKey = 'value-key';
@@ -262,13 +262,12 @@ describe('DiscoverableMetaHostCollection', () => {
         instanceWrapper,
       );
 
-      // When metatype is null and inject is not provided, the provider cannot be resolved
-      // because the code uses `metatype || inject` condition for performance optimization
       const result = DiscoverableMetaHostCollection.getProvidersByMetaKey(
         hostContainerRef,
         metaKey,
       );
-      expect(result.size).toBe(0);
+      expect(result.size).toBe(1);
+      expect(result.has(instanceWrapper)).toBe(true);
     });
 
     it('should use instance constructor when metatype is null but inject is provided', () => {

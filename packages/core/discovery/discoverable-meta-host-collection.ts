@@ -145,7 +145,7 @@ export class DiscoverableMetaHostCollection {
       // of `wrapper.metatype` to resolve processor's class properly.
       // But since calling `wrapper.instance` could degrade overall performance
       // we must defer it as much we can.
-      instanceWrapper.metatype || instanceWrapper.inject
+      !instanceWrapper.metatype || instanceWrapper.inject
         ? (instanceWrapper.instance?.constructor ?? instanceWrapper.metatype)
         : instanceWrapper.metatype,
     );
