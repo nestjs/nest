@@ -248,6 +248,37 @@ describe('DiscoveryService', () => {
       const providers = discoveryService.getProviders({ include: [] });
       expect(providers).toHaveLength(0);
     });
+
+    it('should discover useValue providers decorated with custom discovery decorator', () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      class TargetService {}
+
+      const module1 = new Module(class Module1 {}, modulesContainer as any);
+      const instance = new TargetService();
+      const instanceWrapper = new InstanceWrapper({
+        name: 'ValueProvider',
+        token: 'VALUE_TOKEN',
+        metatype: null as any,
+        instance,
+      });
+
+      DiscoverableMetaHostCollection.inspectProvider(
+        modulesContainer,
+        instanceWrapper,
+      );
+
+      module1.providers.set('VALUE_TOKEN', instanceWrapper);
+      modulesContainer.set('Module1', module1);
+
+      const providers = discoveryService.getProviders({
+        metadataKey: TestDecorator.KEY,
+      });
+
+      expect(providers).toHaveLength(1);
+      expect(providers).toContain(instanceWrapper);
+    });
   });
 
   describe('getControllers', () => {
