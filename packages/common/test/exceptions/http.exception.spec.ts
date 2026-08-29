@@ -456,6 +456,66 @@ describe('HttpException', () => {
       );
       expect(body.errorCode).toBe('BAD_REQUEST_CODE');
     });
+
+    it('should be included in the response body of a built-in exception', () => {
+      const builtInErrorClasses = [
+        BadGatewayException,
+        BadRequestException,
+        ConflictException,
+        ForbiddenException,
+        GatewayTimeoutException,
+        GoneException,
+        HttpVersionNotSupportedException,
+        ImATeapotException,
+        InternalServerErrorException,
+        MethodNotAllowedException,
+        MisdirectedException,
+        NotAcceptableException,
+        NotFoundException,
+        NotImplementedException,
+        PayloadTooLargeException,
+        PreconditionFailedException,
+        RequestTimeoutException,
+        ServiceUnavailableException,
+        UnauthorizedException,
+        UnprocessableEntityException,
+        UnsupportedMediaTypeException,
+      ];
+
+      builtInErrorClasses.forEach(ExceptionClass => {
+        const error = new ExceptionClass('Custom message', {
+          errorCode: 'CUSTOM_ERROR_CODE',
+        });
+
+        const response = error.getResponse() as { errorCode: string };
+
+        expect(response.errorCode).toBe('CUSTOM_ERROR_CODE');
+      });
+    });
+
+    it('should be included in the response body when no message is given', () => {
+      const error = new BadRequestException(undefined, {
+        errorCode: 'WEAK_PASSWORD',
+      });
+
+      expect(error.getResponse()).toEqual({
+        message: 'Bad Request',
+        errorCode: 'WEAK_PASSWORD',
+        statusCode: 400,
+      });
+    });
+
+    it('should not add an errorCode when the options object has none', () => {
+      const error = new BadRequestException('Custom message', {
+        description: 'Some error description',
+      });
+
+      expect(error.getResponse()).toEqual({
+        message: 'Custom message',
+        error: 'Some error description',
+        statusCode: 400,
+      });
+    });
   });
 
   describe('when exception is thrown', () => {

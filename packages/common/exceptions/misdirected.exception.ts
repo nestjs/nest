@@ -45,6 +45,7 @@ export class MisdirectedException extends HttpException {
         objectOrError,
         description,
         HttpStatus.MISDIRECTED,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.MISDIRECTED,
       httpExceptionOptions,

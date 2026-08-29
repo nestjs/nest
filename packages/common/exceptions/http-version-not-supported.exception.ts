@@ -47,6 +47,7 @@ export class HttpVersionNotSupportedException extends HttpException {
         objectOrError,
         description,
         HttpStatus.HTTP_VERSION_NOT_SUPPORTED,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.HTTP_VERSION_NOT_SUPPORTED,
       httpExceptionOptions,

@@ -45,6 +45,7 @@ export class NotImplementedException extends HttpException {
         objectOrError,
         description,
         HttpStatus.NOT_IMPLEMENTED,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.NOT_IMPLEMENTED,
       httpExceptionOptions,

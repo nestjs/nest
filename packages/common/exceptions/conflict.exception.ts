@@ -41,7 +41,12 @@ export class ConflictException extends HttpException {
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
-      HttpException.createBody(objectOrError, description, HttpStatus.CONFLICT),
+      HttpException.createBody(
+        objectOrError,
+        description,
+        HttpStatus.CONFLICT,
+        httpExceptionOptions?.errorCode,
+      ),
       HttpStatus.CONFLICT,
       httpExceptionOptions,
     );

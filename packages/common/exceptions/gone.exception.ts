@@ -41,7 +41,12 @@ export class GoneException extends HttpException {
       HttpException.extractDescriptionAndOptionsFrom(descriptionOrOptions);
 
     super(
-      HttpException.createBody(objectOrError, description, HttpStatus.GONE),
+      HttpException.createBody(
+        objectOrError,
+        description,
+        HttpStatus.GONE,
+        httpExceptionOptions?.errorCode,
+      ),
       HttpStatus.GONE,
       httpExceptionOptions,
     );

@@ -47,6 +47,7 @@ export class UnprocessableEntityException extends HttpException {
         objectOrError,
         description,
         HttpStatus.UNPROCESSABLE_ENTITY,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.UNPROCESSABLE_ENTITY,
       httpExceptionOptions,

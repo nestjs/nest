@@ -45,6 +45,7 @@ export class ForbiddenException extends HttpException {
         objectOrError,
         description,
         HttpStatus.FORBIDDEN,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.FORBIDDEN,
       httpExceptionOptions,

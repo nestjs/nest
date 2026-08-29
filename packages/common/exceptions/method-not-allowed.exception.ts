@@ -45,6 +45,7 @@ export class MethodNotAllowedException extends HttpException {
         objectOrError,
         description,
         HttpStatus.METHOD_NOT_ALLOWED,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.METHOD_NOT_ALLOWED,
       httpExceptionOptions,

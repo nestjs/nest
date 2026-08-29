@@ -47,6 +47,7 @@ export class InternalServerErrorException extends HttpException {
         objectOrError,
         description,
         HttpStatus.INTERNAL_SERVER_ERROR,
+        httpExceptionOptions?.errorCode,
       ),
       HttpStatus.INTERNAL_SERVER_ERROR,
       httpExceptionOptions,
