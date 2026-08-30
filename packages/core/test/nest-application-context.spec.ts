@@ -62,7 +62,8 @@ describe('NestApplicationContext', () => {
       applicationContext.enableShutdownHooks([signal]);
 
       const waitProcessDown = new Promise(resolve => {
-        const shutdownCleanupRef = applicationContext['shutdownCleanupRef'];
+        const shutdownCleanupRef =
+          applicationContext['shutdownCleanupRefs'].get(signal);
         const handler = () => {
           if (
             !process
@@ -98,6 +99,153 @@ describe('NestApplicationContext', () => {
       hookStub.mockRestore();
       expect(processUp).toBe(false);
       expect(promisesResolved).toBe(true);
+    });
+
+    it('should normalize signals before removing duplicates', async () => {
+      const signal = 'SIGTERM';
+      const listeners = new Set(process.listeners(signal));
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      try {
+        applicationContext.enableShutdownHooks(['sigterm', ' SIGTERM ']);
+
+        expect(process.listenerCount(signal)).toBe(listeners.size + 1);
+
+        await applicationContext.close();
+
+        expect(process.listenerCount(signal)).toBe(listeners.size);
+      } finally {
+        process.listeners(signal).forEach(listener => {
+          if (!listeners.has(listener)) {
+            process.removeListener(signal, listener);
+          }
+        });
+      }
+    });
+
+    it('should allow shutdown hooks to be enabled after close', async () => {
+      const signal = 'SIGTERM';
+      const listeners = new Set(process.listeners(signal));
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      try {
+        applicationContext.enableShutdownHooks([signal]);
+        await applicationContext.close();
+
+        applicationContext.enableShutdownHooks([signal]);
+
+        expect(process.listenerCount(signal)).toBe(listeners.size + 1);
+
+        await applicationContext.close();
+        expect(process.listenerCount(signal)).toBe(listeners.size);
+      } finally {
+        process.listeners(signal).forEach(listener => {
+          if (!listeners.has(listener)) {
+            process.removeListener(signal, listener);
+          }
+        });
+      }
+    });
+
+    it('should allow shutdown hooks to run after being re-enabled', async () => {
+      const signal = 'SIGTERM';
+      const listeners = new Set(process.listeners(signal));
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const processKillStub = vi
+        .spyOn(process, 'kill')
+        .mockImplementation(() => true);
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => undefined);
+
+      try {
+        applicationContext.enableShutdownHooks([signal]);
+        await applicationContext['shutdownCleanupRefs'].get(signal)!(signal);
+
+        applicationContext.enableShutdownHooks([signal]);
+        await applicationContext['shutdownCleanupRefs'].get(signal)!(signal);
+
+        expect(hookStub).toHaveBeenCalledTimes(2);
+        expect(processKillStub).toHaveBeenCalledTimes(2);
+      } finally {
+        hookStub.mockRestore();
+        processKillStub.mockRestore();
+        process.listeners(signal).forEach(listener => {
+          if (!listeners.has(listener)) {
+            process.removeListener(signal, listener);
+          }
+        });
+      }
+    });
+
+    it('should remove signal listeners registered by separate calls', async () => {
+      const signals = ['SIGTERM', 'SIGINT'];
+      const listeners = signals.map(
+        signal => new Set(process.listeners(signal)),
+      );
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      try {
+        applicationContext.enableShutdownHooks([signals[0]]);
+        applicationContext.enableShutdownHooks([signals[1]]);
+
+        await applicationContext.close();
+
+        signals.forEach((signal, index) => {
+          expect(process.listenerCount(signal)).toBe(listeners[index].size);
+        });
+      } finally {
+        signals.forEach((signal, index) => {
+          process.listeners(signal).forEach(listener => {
+            if (!listeners[index].has(listener)) {
+              process.removeListener(signal, listener);
+            }
+          });
+        });
+      }
+    });
+
+    it('should run shutdown hooks once across separate registrations', async () => {
+      const signals = ['SIGTERM', 'SIGINT'];
+      const existingListeners = signals.map(
+        signal => new Set(process.listeners(signal)),
+      );
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const processKillStub = vi
+        .spyOn(process, 'kill')
+        .mockImplementation(() => true);
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => undefined);
+
+      try {
+        applicationContext.enableShutdownHooks([signals[0]]);
+        applicationContext.enableShutdownHooks([signals[1]]);
+
+        const cleanupHandlers = signals.map((signal, index) =>
+          process
+            .listeners(signal)
+            .find(listener => !existingListeners[index].has(listener)),
+        );
+
+        await Promise.all([
+          cleanupHandlers[0]!(signals[0]),
+          cleanupHandlers[1]!(signals[1]),
+        ]);
+
+        expect(hookStub).toHaveBeenCalledTimes(1);
+        expect(processKillStub).toHaveBeenCalledTimes(1);
+      } finally {
+        hookStub.mockRestore();
+        processKillStub.mockRestore();
+        signals.forEach((signal, index) => {
+          process.listeners(signal).forEach(listener => {
+            if (!existingListeners[index].has(listener)) {
+              process.removeListener(signal, listener);
+            }
+          });
+        });
+      }
     });
 
     it('should defer shutdown until all init hooks are resolved', async () => {
@@ -176,7 +324,8 @@ describe('NestApplicationContext', () => {
         .spyOn(applicationContext as any, 'callShutdownHook')
         .mockImplementation(async () => undefined);
 
-      const shutdownCleanupRef = applicationContext['shutdownCleanupRef']!;
+      const shutdownCleanupRef =
+        applicationContext['shutdownCleanupRefs'].get(signal)!;
       await shutdownCleanupRef(signal);
 
       expect(processExitStub).toHaveBeenCalledWith(0);
@@ -204,7 +353,8 @@ describe('NestApplicationContext', () => {
         .spyOn(applicationContext as any, 'callShutdownHook')
         .mockImplementation(async () => undefined);
 
-      const shutdownCleanupRef = applicationContext['shutdownCleanupRef']!;
+      const shutdownCleanupRef =
+        applicationContext['shutdownCleanupRefs'].get(signal)!;
       await shutdownCleanupRef(signal);
 
       expect(processKillStub).toHaveBeenCalledWith(process.pid, signal);
