@@ -2,6 +2,7 @@ import { type INestApplicationContext, Logger } from '@nestjs/common';
 import { AbstractWsAdapter } from '@nestjs/websockets';
 import * as http from 'http';
 import { createRequire } from 'module';
+import type { Duplex } from 'stream';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
 import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
 import { loadPackageSync, isNil, normalizePath } from '@nestjs/common/internal';
@@ -25,6 +26,11 @@ type HttpServerRegistryKey = number;
 type HttpServerRegistryEntry = any;
 type WsServerRegistryKey = number;
 type WsServerRegistryEntry = any[];
+type UpgradeListener = (
+  request: http.IncomingMessage,
+  socket: Duplex,
+  head: Buffer,
+) => void;
 type WsData = string | Buffer | ArrayBuffer | Buffer[];
 type WsMessageParser = (data: WsData) => { event: string; data: any } | void;
 type WsAdapterOptions = {
@@ -45,6 +51,10 @@ export class WsAdapter extends AbstractWsAdapter {
   protected readonly wsServersRegistry = new Map<
     WsServerRegistryKey,
     WsServerRegistryEntry
+  >();
+  private readonly upgradeListenersRegistry = new Map<
+    HttpServerRegistryKey,
+    UpgradeListener
   >();
   protected messageParser: WsMessageParser = (data: WsData) => {
     return JSON.parse(data.toString());
@@ -209,9 +219,17 @@ export class WsAdapter extends AbstractWsAdapter {
       .filter(([port]) => port !== UNDERLYING_HTTP_SERVER_PORT)
       .map(([_, server]) => new Promise(resolve => server.close(resolve)));
 
+    // A server passed in by the caller outlives this adapter, so the listener
+    // added to it has to be taken off explicitly. Servers created here are
+    // closed above and take their listeners with them.
+    this.upgradeListenersRegistry.forEach((listener, port) =>
+      this.httpServersRegistry.get(port)?.off('upgrade', listener),
+    );
+
     await Promise.all(closeEventSignals);
     this.httpServersRegistry.clear();
     this.wsServersRegistry.clear();
+    this.upgradeListenersRegistry.clear();
   }
 
   public setMessageParser(parser: WsMessageParser) {
@@ -227,7 +245,7 @@ export class WsAdapter extends AbstractWsAdapter {
     }
     this.httpServersRegistry.set(port, httpServer);
 
-    httpServer.on('upgrade', (request, socket, head) => {
+    const upgradeListener: UpgradeListener = (request, socket, head) => {
       try {
         const baseUrl = 'ws://' + request.headers.host + '/';
         const pathname = new URL(request.url!, baseUrl).pathname;
@@ -249,7 +267,9 @@ export class WsAdapter extends AbstractWsAdapter {
       } catch (err) {
         socket.end(`HTTP/1.1 400\r\n${err.message}`);
       }
-    });
+    };
+    httpServer.on('upgrade', upgradeListener);
+    this.upgradeListenersRegistry.set(port, upgradeListener);
     return httpServer;
   }
 
