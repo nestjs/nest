@@ -39,6 +39,12 @@ type WsAdapterOptions = {
 
 const UNDERLYING_HTTP_SERVER_PORT = 0;
 
+// Kept out of the class so that an adapter can be compared against it to tell
+// whether the parser in use is still the built-in one.
+const defaultMessageParser: WsMessageParser = (data: WsData) => {
+  return JSON.parse(data.toString());
+};
+
 /**
  * @publicApi
  */
@@ -56,9 +62,7 @@ export class WsAdapter extends AbstractWsAdapter {
     HttpServerRegistryKey,
     UpgradeListener
   >();
-  protected messageParser: WsMessageParser = (data: WsData) => {
-    return JSON.parse(data.toString());
-  };
+  protected messageParser: WsMessageParser = defaultMessageParser;
 
   constructor(
     appOrHttpServer?: INestApplicationContext | object,
