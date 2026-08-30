@@ -177,15 +177,37 @@ export class WsAdapter extends AbstractWsAdapter {
     handlersMap: Map<string, MessageMappingProperties>,
     transform: (data: any) => Observable<any>,
   ): Observable<any> {
+    let message: ReturnType<WsMessageParser>;
     try {
-      const message = this.messageParser(buffer.data);
-      if (!message) {
-        return EMPTY;
+      message = this.messageParser(buffer.data);
+    } catch (err) {
+      // A custom parser that throws is an application bug, and swallowing it
+      // leaves no trace of it anywhere. The default parser, on the other hand,
+      // throws on client-controlled input, so reporting that one would turn a
+      // public socket into a log flood target. A custom parser that wants a
+      // frame dropped silently can return nothing, which is handled below.
+      if (this.messageParser !== defaultMessageParser) {
+        this.logger.error(err);
       }
-      const messageHandler = handlersMap.get(message.event)!;
-      const { callback } = messageHandler;
-      return transform(callback(message.data, message.event));
+      return EMPTY;
+    }
+    if (!message) {
+      return EMPTY;
+    }
+
+    const messageHandler = handlersMap.get(message.event);
+    if (!messageHandler) {
+      // An unrecognised event is an expected condition on a public socket,
+      // not an error. It used to reach the catch below as a TypeError.
+      return EMPTY;
+    }
+
+    try {
+      return transform(messageHandler.callback(message.data, message.event));
     } catch {
+      // Kept deliberately: a synchronous throw here would otherwise propagate
+      // through the mergeMap in bindMessageHandlers and tear down the client's
+      // source stream, silencing every subsequent message from that client.
       return EMPTY;
     }
   }
