@@ -20,38 +20,43 @@ export class LazyModuleLoader {
 
   public async load(
     loaderFn: () =>
-      | Promise<Type<unknown> | DynamicModule>
-      | Type<unknown>
-      | DynamicModule,
+      Promise<Type<unknown> | DynamicModule> | Type<unknown> | DynamicModule,
     loadOpts?: LazyModuleLoaderLoadOptions,
   ): Promise<ModuleRef> {
-    this.registerLoggerConfiguration(loadOpts);
+    const originalLogger = (this.instanceLoader as any).logger;
+    try {
+      this.registerLoggerConfiguration(loadOpts);
 
-    const moduleClassOrDynamicDefinition = await loaderFn();
-    const moduleInstances = await this.dependenciesScanner.scanForModules({
-      moduleDefinition: moduleClassOrDynamicDefinition,
-      overrides: this.moduleOverrides,
-      lazy: true,
-    });
-    if (moduleInstances.length === 0) {
-      // The module has been loaded already. In this case, we must
-      // retrieve a module reference from the existing container.
-      const { token } = await this.moduleCompiler.compile(
-        moduleClassOrDynamicDefinition,
+      const moduleClassOrDynamicDefinition = await loaderFn();
+      const moduleInstances = await this.dependenciesScanner.scanForModules({
+        moduleDefinition: moduleClassOrDynamicDefinition,
+        overrides: this.moduleOverrides,
+        lazy: true,
+      });
+      if (moduleInstances.length === 0) {
+        // The module has been loaded already. In this case, we must
+        // retrieve a module reference from the existing container.
+        const { token } = await this.moduleCompiler.compile(
+          moduleClassOrDynamicDefinition,
+        );
+        const moduleInstance = this.modulesContainer.get(token)!;
+        return moduleInstance && this.getTargetModuleRef(moduleInstance);
+      }
+      const lazyModulesContainer =
+        this.createLazyModulesContainer(moduleInstances);
+      await this.dependenciesScanner.scanModulesForDependencies(
+        lazyModulesContainer,
       );
-      const moduleInstance = this.modulesContainer.get(token)!;
-      return moduleInstance && this.getTargetModuleRef(moduleInstance);
+      await this.instanceLoader.createInstancesOfDependencies(
+        lazyModulesContainer,
+      );
+      const [targetModule] = moduleInstances;
+      return this.getTargetModuleRef(targetModule);
+    } finally {
+      if (loadOpts?.logger === false) {
+        this.instanceLoader.setLogger(originalLogger);
+      }
     }
-    const lazyModulesContainer =
-      this.createLazyModulesContainer(moduleInstances);
-    await this.dependenciesScanner.scanModulesForDependencies(
-      lazyModulesContainer,
-    );
-    await this.instanceLoader.createInstancesOfDependencies(
-      lazyModulesContainer,
-    );
-    const [targetModule] = moduleInstances;
-    return this.getTargetModuleRef(targetModule);
   }
 
   private registerLoggerConfiguration(loadOpts?: LazyModuleLoaderLoadOptions) {
