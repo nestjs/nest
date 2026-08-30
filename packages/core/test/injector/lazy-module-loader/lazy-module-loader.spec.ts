@@ -82,6 +82,25 @@ describe('LazyModuleLoader', () => {
       });
     });
 
+    describe('when logger option is false', () => {
+      @Module({})
+      class ModuleWithLogA {}
+
+      @Module({})
+      class ModuleWithLogB {}
+
+      it('should not permanently silence logs for subsequent load() calls', async () => {
+        const logger = instanceLoader['logger'];
+        const logSpy = vitest.spyOn(logger, 'log');
+
+        await lazyModuleLoader.load(() => ModuleWithLogA, { logger: false });
+        expect(logSpy).not.toHaveBeenCalled();
+
+        await lazyModuleLoader.load(() => ModuleWithLogB);
+        expect(logSpy).toHaveBeenCalled();
+      });
+    });
+
     describe('singleton sharing and repeated loading (#17428)', () => {
       let constructionsCount = 0;
       let globalConstructionsCount = 0;
