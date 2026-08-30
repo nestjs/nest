@@ -37,6 +37,9 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
       : {
           statusCode: exception.getStatus(),
           message: res,
+          ...(exception.errorCode !== undefined && {
+            errorCode: exception.errorCode,
+          }),
         };
 
     const response = host.getArgByIndex(1);

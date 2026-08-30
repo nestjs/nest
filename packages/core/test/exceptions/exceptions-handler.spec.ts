@@ -148,6 +148,37 @@ describe('ExceptionsHandler', () => {
         expect(statusStub).toHaveBeenCalledWith(status);
         expect(jsonStub).toHaveBeenCalledWith({ message, statusCode: status });
       });
+      it('should preserve errorCode in the response body when the response is a string', () => {
+        const status = 403;
+        const message = 'Forbidden';
+
+        handler.next(
+          new HttpException(message, status, { errorCode: 'FORBIDDEN_ERR' }),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub).toHaveBeenCalledWith(status);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: status,
+          message,
+          errorCode: 'FORBIDDEN_ERR',
+        });
+      });
+      it('should not add errorCode to the response body when it is not set', () => {
+        const status = 403;
+        const message = 'Forbidden';
+
+        handler.next(
+          new HttpException(message, status),
+          new ExecutionContextHost([0, response]),
+        );
+
+        expect(statusStub).toHaveBeenCalledWith(status);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: status,
+          message,
+        });
+      });
     });
     describe('when "invokeCustomFilters" returns true', () => {
       beforeEach(() => {
