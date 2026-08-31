@@ -80,7 +80,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     this.pendingEventListeners = [];
     this.bindEvents(this.mqttClient);
 
-    this.mqttClient.on(MqttEventsMap.CONNECT, () => callback());
+    this.mqttClient.once(MqttEventsMap.CONNECT, () => callback());
   }
 
   public bindEvents(mqttClient: MqttClient) {
