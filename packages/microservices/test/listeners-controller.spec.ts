@@ -176,6 +176,33 @@ describe('ListenersController', () => {
       instance.registerPatternHandlers(new InstanceWrapper(), serverCustom, '');
       expect(addSpyCustom).toHaveBeenCalledOnce();
     });
+    describe('reporting unhandled errors', () => {
+      const createSpy = () => vi.spyOn(rpcContextCreator, 'create');
+      const reportFlagOf = (spy: any) => spy.mock.calls.map((c: any[]) => c[7]);
+
+      beforeEach(() => {
+        vi.spyOn(metadataExplorer, 'explore').mockReturnValue(handlers as any);
+      });
+
+      it('should ask for a report only for event handlers', () => {
+        const spy = createSpy();
+
+        instance.registerPatternHandlers(new InstanceWrapper(), server, '');
+
+        // handlers[1] is the event handler; handlers[0] is a message one
+        expect(reportFlagOf(spy)[1]).toBe(true);
+      });
+
+      it('should not ask for a report when the transport propagates the error', () => {
+        const spy = createSpy();
+        const kafkaLike = { ...server, propagatesEventHandlerErrors: true };
+
+        instance.registerPatternHandlers(new InstanceWrapper(), kafkaLike, '');
+
+        expect(reportFlagOf(spy)[1]).toBe(false);
+      });
+    });
+
     it(`should call "addHandler" method of server with extras data`, () => {
       const serverHandlers = [
         {
