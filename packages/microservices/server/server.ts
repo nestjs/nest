@@ -55,6 +55,12 @@ export abstract class Server<
 
   protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger: LoggerService = new Logger(Server.name);
+  /**
+   * Whether an unreported event handler exception must be logged. A transport
+   * that awaits the event stream propagates the exception to its client
+   * library instead, which reports it there.
+   */
+  public readonly reportsEventHandlerErrors: boolean = true;
   protected serializer: ConsumerSerializer;
   protected deserializer: ConsumerDeserializer;
   protected onProcessingStartHook: (

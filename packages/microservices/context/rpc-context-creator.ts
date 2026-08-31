@@ -67,6 +67,7 @@ export class RpcContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
     defaultCallMetadata: Record<string, any> = DEFAULT_CALLBACK_METADATA,
+    isEventHandler = false,
   ): (...args: any[]) => Promise<Observable<any>> {
     const contextType: ContextType = 'rpc';
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
@@ -129,44 +130,48 @@ export class RpcContextCreator {
     const preRequestHooks =
       this.applicationConfig?.getGlobalPreRequestHooks() ?? [];
 
-    return this.rpcProxy.create(async (...args: unknown[]) => {
-      const initialArgs = this.contextUtils.createNullArray(argsLength);
+    return this.rpcProxy.create(
+      async (...args: unknown[]) => {
+        const initialArgs = this.contextUtils.createNullArray(argsLength);
 
-      const executePipeline = async () => {
-        fnCanActivate && (await fnCanActivate(args));
-        return this.interceptorsConsumer.intercept(
-          interceptors,
+        const executePipeline = async () => {
+          fnCanActivate && (await fnCanActivate(args));
+          return this.interceptorsConsumer.intercept(
+            interceptors,
+            args,
+            instance,
+            callback,
+            handler(initialArgs, args),
+            contextType,
+          ) as Promise<Observable<unknown>>;
+        };
+
+        if (preRequestHooks.length === 0) {
+          return executePipeline();
+        }
+
+        const executionContext = new ExecutionContextHost(
           args,
-          instance,
+          instance.constructor as any,
           callback,
-          handler(initialArgs, args),
-          contextType,
-        ) as Promise<Observable<unknown>>;
-      };
+        );
+        executionContext.setType(contextType);
 
-      if (preRequestHooks.length === 0) {
-        return executePipeline();
-      }
+        const pipelineObs: Observable<unknown> = defer(() =>
+          from(executePipeline()).pipe(mergeMap(obs => obs)),
+        );
 
-      const executionContext = new ExecutionContextHost(
-        args,
-        instance.constructor as any,
-        callback,
-      );
-      executionContext.setType(contextType);
+        let index = 0;
+        const next = (): Observable<unknown> => {
+          if (index >= preRequestHooks.length) return pipelineObs;
+          return preRequestHooks[index++](executionContext, next);
+        };
 
-      const pipelineObs: Observable<unknown> = defer(() =>
-        from(executePipeline()).pipe(mergeMap(obs => obs)),
-      );
-
-      let index = 0;
-      const next = (): Observable<unknown> => {
-        if (index >= preRequestHooks.length) return pipelineObs;
-        return preRequestHooks[index++](executionContext, next);
-      };
-
-      return next();
-    }, exceptionHandler);
+        return next();
+      },
+      exceptionHandler,
+      isEventHandler,
+    );
   }
 
   public reflectCallbackParamtypes(
