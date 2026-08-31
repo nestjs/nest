@@ -77,6 +77,7 @@ export class ListenersController {
       serverInstance instanceof ServerGrpc
         ? DEFAULT_GRPC_CALLBACK_METADATA
         : DEFAULT_CALLBACK_METADATA;
+    const reportsErrors = serverInstance.reportsEventHandlerErrors;
 
     patternHandlers
       .filter(
@@ -115,6 +116,7 @@ export class ListenersController {
             STATIC_CONTEXT,
             undefined,
             defaultCallMetadata,
+            isEventHandler && reportsErrors,
           );
           if (isEventHandler) {
             const eventHandler: MessageHandler = async (...args: unknown[]) => {
@@ -153,6 +155,7 @@ export class ListenersController {
           methodKey,
           defaultCallMetadata,
           isEventHandler,
+          reportsErrors,
         );
         serverInstance.addHandler(
           pattern,
@@ -234,6 +237,7 @@ export class ListenersController {
     methodKey: string,
     defaultCallMetadata: Record<string, any> = DEFAULT_CALLBACK_METADATA,
     isEventHandler = false,
+    reportsErrors = true,
   ) {
     const collection = moduleRef.controllers;
     const { instance } = wrapper;
@@ -273,6 +277,7 @@ export class ListenersController {
           contextId,
           wrapper.id,
           defaultCallMetadata,
+          isEventHandler && reportsErrors,
         );
 
         const returnValue = proxy(...args);

@@ -40,6 +40,9 @@ import { isNil } from '@nestjs/common/internal';
  * @publicApi
  */
 export class ServerKafka extends Server<never, KafkaStatus> {
+  // `handleEvent` awaits the stream, thus kafkajs receives the exception and
+  // logs it. A second report here would duplicate it.
+  public override readonly reportsEventHandlerErrors = false;
   public transportId: TransportId = Transport.KAFKA;
 
   protected logger = new Logger(ServerKafka.name);
