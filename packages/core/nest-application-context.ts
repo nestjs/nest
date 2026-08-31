@@ -5,7 +5,6 @@ import {
   type LogLevel,
   ShutdownSignal,
 } from '@nestjs/common';
-import { iterate } from 'iterare';
 import { MESSAGES } from './constants.js';
 import { UnknownModuleException } from './errors/exceptions/index.js';
 import { createContextId } from './helpers/context-id-factory.js';
@@ -49,9 +48,12 @@ export class NestApplicationContext<
   });
 
   private shouldFlushLogsOnOverride = false;
-  private readonly activeShutdownSignals = new Array<string>();
+  private readonly shutdownCleanupRefs = new Map<
+    string,
+    (signal: string) => Promise<void>
+  >();
   private readonly moduleCompiler: ModuleCompiler;
-  private shutdownCleanupRef?: (...args: unknown[]) => unknown;
+  private receivedSignal = false;
   private _instanceLinksHost: InstanceLinksHost;
   private _moduleRefsForHooksByDistance?: Array<Module>;
   private initializationPromise?: Promise<void>;
@@ -317,19 +319,20 @@ export class NestApplicationContext<
     signals: (ShutdownSignal | string)[] = [],
     options: ShutdownHooksOptions = {},
   ): this {
-    if (!signals || isEmptyArray(signals)) {
-      signals = Object.values(ShutdownSignal);
-    } else {
-      // given signals array should be unique because
-      // process shouldn't listen to the same signal more than once.
-      signals = Array.from(new Set(signals));
+    if (this.shutdownCleanupRefs.size === 0) {
+      // Start a new shutdown cycle after the previous listeners were removed.
+      this.receivedSignal = false;
     }
 
-    signals = iterate(signals)
-      .map((signal: string) => signal.toString().toUpperCase().trim())
-      // filter out the signals which is already listening to
-      .filter(signal => !this.activeShutdownSignals.includes(signal))
-      .toArray();
+    if (!signals || isEmptyArray(signals)) {
+      signals = Object.values(ShutdownSignal);
+    }
+
+    signals = Array.from(
+      new Set(
+        signals.map((signal: string) => signal.toString().toUpperCase().trim()),
+      ),
+    ).filter(signal => !this.shutdownCleanupRefs.has(signal));
 
     this.listenToShutdownSignals(signals, options);
     return this;
@@ -358,22 +361,21 @@ export class NestApplicationContext<
     signals: string[],
     options: ShutdownHooksOptions = {},
   ) {
-    let receivedSignal = false;
     const cleanup = async (signal: string) => {
       try {
-        if (receivedSignal) {
+        if (this.receivedSignal) {
           // If we receive another signal while we're waiting
           // for the server to stop, just ignore it.
           return;
         }
-        receivedSignal = true;
+        this.receivedSignal = true;
         await this.initializationPromise;
         await this.prepareClose();
         await this.callDestroyHook();
         await this.callBeforeShutdownHook(signal);
         await this.dispose();
         await this.callShutdownHook(signal);
-        signals.forEach(sig => process.removeListener(sig, cleanup));
+        this.unsubscribeFromProcessSignals();
 
         if (options.useProcessExit) {
           // Use process.exit() to ensure the 'exit' event is properly triggered.
@@ -392,10 +394,8 @@ export class NestApplicationContext<
         process.exit(1);
       }
     };
-    this.shutdownCleanupRef = cleanup as (...args: unknown[]) => unknown;
-
     signals.forEach((signal: string) => {
-      this.activeShutdownSignals.push(signal);
+      this.shutdownCleanupRefs.set(signal, cleanup);
       process.on(signal as any, cleanup);
     });
   }
@@ -404,12 +404,10 @@ export class NestApplicationContext<
    * Unsubscribes from shutdown signals (process events)
    */
   protected unsubscribeFromProcessSignals() {
-    if (!this.shutdownCleanupRef) {
-      return;
-    }
-    this.activeShutdownSignals.forEach(signal => {
-      process.removeListener(signal, this.shutdownCleanupRef!);
+    this.shutdownCleanupRefs.forEach((cleanup, signal) => {
+      process.removeListener(signal, cleanup);
     });
+    this.shutdownCleanupRefs.clear();
   }
 
   /**
