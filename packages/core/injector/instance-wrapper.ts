@@ -17,6 +17,7 @@ import {
 import { iterate } from 'iterare';
 import { UuidFactory } from '../inspector/uuid-factory.js';
 import { STATIC_CONTEXT } from './constants.js';
+import { isDebugMode } from './helpers/is-debug-mode.util.js';
 import {
   isClassProvider,
   isFactoryProvider,
@@ -90,8 +91,7 @@ export class InstanceWrapper<T = any> {
   private readonly [INSTANCE_METADATA_SYMBOL]: InstanceMetadataStore = {};
   private readonly [INSTANCE_ID_SYMBOL]: string;
   private transientMap?:
-    | Map<string, WeakMap<ContextId, InstancePerContext<T>>>
-    | undefined;
+    Map<string, WeakMap<ContextId, InstancePerContext<T>>> | undefined;
   private isTreeStatic: boolean | undefined;
   private isTreeDurable: boolean | undefined;
   private _hierarchyLevel = 0;
@@ -553,7 +553,7 @@ export class InstanceWrapper<T = any> {
   }
 
   private printIntrospectedAsRequestScoped() {
-    if (!this.isDebugMode() || this.name === 'REQUEST') {
+    if (!isDebugMode() || this.name === 'REQUEST') {
       return;
     }
     if (isString(this.name)) {
@@ -566,7 +566,7 @@ export class InstanceWrapper<T = any> {
   }
 
   private printIntrospectedAsDurable() {
-    if (!this.isDebugMode()) {
+    if (!isDebugMode()) {
       return;
     }
     if (isString(this.name)) {
@@ -576,10 +576,6 @@ export class InstanceWrapper<T = any> {
         )}${clc.magentaBright('durable')}`,
       );
     }
-  }
-
-  private isDebugMode(): boolean {
-    return !!process.env.NEST_DEBUG;
   }
 
   private generateUuid(): string {
