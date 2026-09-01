@@ -28,6 +28,10 @@ const REFLECTOR = 'Reflector';
 /**
  * @publicApi
  */
+export class ClassSerializerInterceptorOptions {
+  transformerPackage?: TransformerPackage;
+}
+
 export interface ClassSerializerInterceptorOptions extends ClassTransformOptions {
   transformerPackage?: TransformerPackage;
 }
