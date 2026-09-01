@@ -26,7 +26,7 @@ import {
   type PipesContextCreator,
   STATIC_CONTEXT,
 } from '@nestjs/core/internal';
-import { defer, from, mergeMap, Observable } from 'rxjs';
+import { defer, from, isObservable, mergeMap, Observable, of } from 'rxjs';
 import { PARAM_ARGS_METADATA } from '../constants.js';
 import { RpcException } from '../exceptions/index.js';
 import { RpcParamsFactory } from '../factories/rpc-params-factory.js';
@@ -155,8 +155,14 @@ export class RpcContextCreator {
       );
       executionContext.setType(contextType);
 
+      // With no interceptors registered, `InterceptorsConsumer#intercept`
+      // resolves to whatever the handler returned rather than to an observable,
+      // so the result has to be wrapped rather than merged. Mirrors
+      // `Server#transformToObservable`.
       const pipelineObs: Observable<unknown> = defer(() =>
-        from(executePipeline()).pipe(mergeMap(obs => obs)),
+        from(executePipeline()).pipe(
+          mergeMap(result => (isObservable(result) ? result : of(result))),
+        ),
       );
 
       let index = 0;
