@@ -1,5 +1,5 @@
 import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host.js';
-import { Observable, of } from 'rxjs';
+import { firstValueFrom, Observable, of } from 'rxjs';
 import { Injectable, UseGuards, UsePipes } from '../../../common';
 import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants';
 import { ApplicationConfig } from '../../../core/application-config';
@@ -46,6 +46,14 @@ describe('RpcContextCreator', () => {
     @UsePipes(new TestPipe())
     test(data: string) {
       return of(false);
+    }
+
+    testString(data: string) {
+      return 'plain-value';
+    }
+
+    testNumber(data: string) {
+      return 42;
     }
   }
 
@@ -274,6 +282,52 @@ describe('RpcContextCreator', () => {
         mockConfig,
       );
     }
+
+    it('should not flatten a string returned by the handler', async () => {
+      const hookFn = (_ctx: any, next: () => Observable<unknown>) => next();
+      const creator = makeCreatorWithHooks([hookFn]);
+
+      const proxy = creator.create(
+        instance,
+        instance.testString,
+        module,
+        'testString',
+      );
+      const result = await proxy('data');
+
+      await expect(firstValueFrom(result as Observable<unknown>)).resolves.toBe(
+        'plain-value',
+      );
+    });
+
+    it('should support a handler returning a non-iterable value', async () => {
+      const hookFn = (_ctx: any, next: () => Observable<unknown>) => next();
+      const creator = makeCreatorWithHooks([hookFn]);
+
+      const proxy = creator.create(
+        instance,
+        instance.testNumber,
+        module,
+        'testNumber',
+      );
+      const result = await proxy('data');
+
+      await expect(firstValueFrom(result as Observable<unknown>)).resolves.toBe(
+        42,
+      );
+    });
+
+    it('should still unwrap an observable returned by the handler', async () => {
+      const hookFn = (_ctx: any, next: () => Observable<unknown>) => next();
+      const creator = makeCreatorWithHooks([hookFn]);
+
+      const proxy = creator.create(instance, instance.test, module, 'test');
+      const result = await proxy('data');
+
+      await expect(firstValueFrom(result as Observable<unknown>)).resolves.toBe(
+        false,
+      );
+    });
 
     it('should execute preRequest hook before guards', async () => {
       const executionOrder: string[] = [];
