@@ -26,6 +26,7 @@ import {
   type CorsOptions,
   type CorsOptionsDelegate,
   type VersionValue,
+  addLeadingSlash,
   isFunction,
   isNil,
   isObject,
@@ -166,10 +167,11 @@ export class ExpressAdapter extends AbstractHttpAdapter<
 
   public setNotFoundHandler(handler: Function, prefix?: string) {
     if (prefix) {
-      this.registeredPrefixes.add(prefix);
+      const normalizedPrefix = addLeadingSlash(prefix);
+      this.registeredPrefixes.add(normalizedPrefix);
       const router = express.Router();
       router.all('*path', handler as any);
-      return this.use(prefix, router);
+      return this.use(normalizedPrefix, router);
     }
     return this.use(
       (
