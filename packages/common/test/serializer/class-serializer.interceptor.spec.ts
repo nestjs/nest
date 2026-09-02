@@ -1,7 +1,11 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { of, throwError } from 'rxjs';
-import { ClassSerializerInterceptor } from '../../serializer/class-serializer.interceptor';
+import { Test, TestingModule } from '@nestjs/testing';
+import {
+  ClassSerializerInterceptor,
+  ClassSerializerInterceptorOptions,
+} from '../../serializer/class-serializer.interceptor';
 import { ExecutionContext, CallHandler } from '../../interfaces';
 import { StreamableFile } from '../../file-stream';
 
@@ -50,6 +54,23 @@ describe('ClassSerializerInterceptor', () => {
       };
 
       interceptor = new ClassSerializerInterceptor(mockReflector, options);
+
+      expect(interceptor).to.be.instanceOf(ClassSerializerInterceptor);
+    });
+
+    it('should use options from dependency injection', async () => {
+      const options: ClassSerializerInterceptorOptions = {
+        transformerPackage: mockTransformerPackage,
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          { provide: ClassSerializerInterceptorOptions, useValue: options },
+          ClassSerializerInterceptor,
+        ],
+      }).compile();
+
+      interceptor = module.get(ClassSerializerInterceptor);
 
       expect(interceptor).to.be.instanceOf(ClassSerializerInterceptor);
     });
