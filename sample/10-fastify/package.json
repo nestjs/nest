@@ -34,7 +34,7 @@
     "@nestjs/testing": "12.0.1",
     "@types/node": "24.13.3",
     "@types/supertest": "7.2.1",
-    "oxlint": "1.80.0",
+    "oxlint": "1.81.0",
     "prettier": "3.9.6",
     "supertest": "7.2.2",
     "ts-loader": "9.6.2",
