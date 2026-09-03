@@ -38,7 +38,7 @@
     "@types/node": "24.13.3",
     "@types/supertest": "7.2.1",
     "@types/webpack-env": "1.18.8",
-    "oxlint": "1.80.0",
+    "oxlint": "1.81.0",
     "prettier": "3.9.6",
     "run-script-webpack-plugin": "0.2.3",
     "supertest": "7.2.2",
