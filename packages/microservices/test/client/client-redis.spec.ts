@@ -81,6 +81,43 @@ describe('ClientRedis', () => {
         expect(callback.mock.calls[0][0].err).toBeInstanceOf(Error);
       });
     });
+    describe('when subscribing to the response pattern fails', () => {
+      it('should call callback with the error and not publish', () => {
+        client['subscriptionsCount'].clear();
+        client['routingMap'].clear();
+        const error = new Error('Connection is closed.');
+        subscribeSpy.mockImplementation((name, fn) => fn(error));
+        const callback = vi.fn();
+
+        client['publish'](msg, callback);
+
+        expect(callback).toHaveBeenCalledWith({ err: error });
+        expect(publishSpy).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+      });
+    });
+    describe('when disposed before the subscription is confirmed', () => {
+      it('should not publish, count the subscription, nor unsubscribe', () => {
+        client['subscriptionsCount'].clear();
+        client['routingMap'].clear();
+        let confirmSubscription: () => void = () => {};
+        subscribeSpy.mockImplementation((name, fn) => {
+          confirmSubscription = () => fn();
+        });
+        const callback = vi.fn();
+
+        const dispose = client['publish'](msg, callback);
+        dispose();
+        confirmSubscription();
+
+        expect(publishSpy).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].has(`${pattern}.reply`)).toBe(
+          false,
+        );
+        expect(unsubscribeSpy).not.toHaveBeenCalled();
+      });
+    });
     describe('dispose callback', () => {
       let assignStub: ReturnType<typeof vi.fn>,
         getReplyPatternStub: ReturnType<typeof vi.fn>;
@@ -246,10 +283,9 @@ describe('ClientRedis', () => {
     });
     it('should call pending callbacks with connection closed error', async () => {
       await client.close();
-      expect(
-        callback).toHaveBeenCalledWith({
-          err: expect.objectContaining({ message: 'Connection closed' }),
-        });
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
     });
     it('should have isManuallyClosed set to true when "end" event is handled during close', async () => {
       let endHandler: Function | undefined;
@@ -351,10 +387,9 @@ describe('ClientRedis', () => {
 
       expect(client['routingMap'].size).toBe(0);
       expect(client['subscriptionsCount'].size).toBe(0);
-      expect(
-        callback).toHaveBeenCalledWith({
-          err: expect.objectContaining({ message: 'Connection closed' }),
-        });
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
     });
   });
   describe('registerReadyListener', () => {
