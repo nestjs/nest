@@ -76,11 +76,36 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
         'Validation failed (enum string is expected)',
       );
     }
+    if (this.isNumeric(value)) {
+      const enumValues = this.getEnumValues();
+      if (!enumValues.includes(value) && enumValues.includes(Number(value))) {
+        return Number(value) as T;
+      }
+    }
     return value as T;
   }
 
   protected isEnum(value: unknown): boolean {
-    const enumValues = Object.keys(this.enumType as object)
+    const enumValues = this.getEnumValues();
+    if (enumValues.includes(value)) {
+      return true;
+    }
+    if (this.isNumeric(value)) {
+      return enumValues.includes(Number(value));
+    }
+    return false;
+  }
+
+  protected isNumeric(value: unknown): boolean {
+    return (
+      ['string', 'number'].includes(typeof value) &&
+      /^-?\d+(\.\d+)?$/.test(String(value)) &&
+      isFinite(value as any)
+    );
+  }
+
+  protected getEnumValues(): any[] {
+    return Object.keys(this.enumType as object)
       .filter(key => {
         const enumValue = (this.enumType as any)[key];
         return !(
@@ -89,6 +114,5 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
         );
       })
       .map(key => (this.enumType as any)[key]);
-    return enumValues.includes(value);
   }
 }

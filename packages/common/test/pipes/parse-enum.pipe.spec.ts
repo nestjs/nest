@@ -92,6 +92,30 @@ describe('ParseEnumPipe', () => {
       ).toBe(Status.Inactive);
     });
 
+    it('should return numeric enum value when the numeric value is passed as a string', async () => {
+      expect(
+        await numericTarget.transform('0' as any, {} as ArgumentMetadata),
+      ).toBe(Status.Active);
+      expect(
+        await numericTarget.transform('1' as any, {} as ArgumentMetadata),
+      ).toBe(Status.Inactive);
+    });
+
+    it('should throw when an invalid numeric string is passed', async () => {
+      await expect(
+        numericTarget.transform('2' as any, {} as ArgumentMetadata),
+      ).rejects.toThrow(HttpException);
+    });
+
+    it('should throw when an empty or whitespace string is passed', async () => {
+      await expect(
+        numericTarget.transform('' as any, {} as ArgumentMetadata),
+      ).rejects.toThrow(HttpException);
+      await expect(
+        numericTarget.transform('   ' as any, {} as ArgumentMetadata),
+      ).rejects.toThrow(HttpException);
+    });
+
     it('should throw when a reverse-mapped key name is passed instead of the value', async () => {
       try {
         await numericTarget.transform('Active' as any, {} as ArgumentMetadata);
@@ -99,6 +123,49 @@ describe('ParseEnumPipe', () => {
       } catch (err) {
         expect(err).toBeInstanceOf(HttpException);
       }
+    });
+  });
+
+  describe('when enum is numeric with negative values', () => {
+    enum Temperature {
+      Freezing = -5,
+      Zero = 0,
+      Boiling = 100,
+    }
+    let target: ParseEnumPipe;
+
+    beforeEach(() => {
+      target = new ParseEnumPipe(Temperature);
+    });
+
+    it('should parse negative numeric string and return number', async () => {
+      expect(await target.transform('-5' as any, {} as ArgumentMetadata)).toBe(
+        Temperature.Freezing,
+      );
+      expect(await target.transform('0' as any, {} as ArgumentMetadata)).toBe(
+        Temperature.Zero,
+      );
+      expect(await target.transform('100' as any, {} as ArgumentMetadata)).toBe(
+        Temperature.Boiling,
+      );
+    });
+  });
+
+  describe('when enum has string values with digit characters', () => {
+    enum DigitString {
+      Zero = '0',
+      One = '1',
+    }
+    let target: ParseEnumPipe;
+
+    beforeEach(() => {
+      target = new ParseEnumPipe(DigitString);
+    });
+
+    it('should preserve string type and not coerce to number', async () => {
+      const result = await target.transform('0', {} as ArgumentMetadata);
+      expect(result).toBe('0');
+      expect(typeof result).toBe('string');
     });
   });
 });
