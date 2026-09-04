@@ -81,6 +81,15 @@ export class DiscoverableMetaHostCollection {
   ) {
     if (collection.has(metaKey)) {
       const wrappers = collection.get(metaKey)!;
+      // provider wrappers are re-created between registration and instantiation
+      // (the prototype phase replaces the map entry with a copy), so entries
+      // are keyed by the wrapper instance id to keep one entry per provider
+      for (const existing of wrappers) {
+        if (existing.id === instanceWrapper.id) {
+          wrappers.delete(existing);
+          break;
+        }
+      }
       wrappers.add(instanceWrapper);
     } else {
       const wrappers = new Set<InstanceWrapper>();

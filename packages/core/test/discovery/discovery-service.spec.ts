@@ -1,3 +1,5 @@
+import { Injectable, Module as NestModule } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
 import { DiscoveryService } from '../../discovery/discovery-service.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
@@ -567,5 +569,38 @@ describe('DiscoveryService', () => {
       const modules = (discoveryService as any).getModules({ include: [] });
       expect(modules).toHaveLength(0);
     });
+  });
+});
+
+describe('Discovery of providers registered via useFactory', () => {
+  it('should discover a provider decorated with a discovery decorator', async () => {
+    const TestDecorator = DiscoveryService.createDecorator();
+
+    @TestDecorator()
+    @Injectable()
+    class FactoryService {}
+
+    @NestModule({
+      providers: [
+        DiscoveryService,
+        { provide: FactoryService, useFactory: () => new FactoryService() },
+      ],
+    })
+    class AppModule {}
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    const app = moduleRef.createNestApplication();
+    await app.init();
+
+    const providers = app
+      .get(DiscoveryService)
+      .getProviders({ metadataKey: TestDecorator.KEY });
+
+    expect(providers).toHaveLength(1);
+    expect(providers[0].instance).toBeInstanceOf(FactoryService);
+
+    await app.close();
   });
 });
