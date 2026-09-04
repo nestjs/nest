@@ -16,11 +16,15 @@ export class IncomingResponseDeserializer implements ProducerDeserializer {
     if (!value) {
       return true;
     }
-    if (
+    // IncomingResponse = WritePacket & PacketId. A Nest envelope always
+    // carries `id`. A foreign payload that merely contains `response` /
+    // `err` / `isDisposed` (see nestjs/nest#17669) is not an envelope.
+    const hasPacketId = !isUndefined((value as IncomingResponse).id);
+    const looksLikeWritePacket =
       !isUndefined((value as IncomingResponse).err) ||
       !isUndefined((value as IncomingResponse).response) ||
-      !isUndefined((value as IncomingResponse).isDisposed)
-    ) {
+      !isUndefined((value as IncomingResponse).isDisposed);
+    if (hasPacketId && looksLikeWritePacket) {
       return false;
     }
     return true;
