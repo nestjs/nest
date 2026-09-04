@@ -40,6 +40,43 @@ describe('IncomingRequestDeserializer', () => {
           });
         });
       });
+      describe('when an external payload happens to include envelope keys', () => {
+        it('should map an external event that includes a data field', () => {
+          const externalEvent = {
+            type: 'alert',
+            data: {
+              severity: 'major',
+            },
+          };
+          const options = {
+            channel: 'test',
+          };
+          expect(instance.deserialize(externalEvent, options)).toEqual({
+            pattern: options.channel,
+            data: externalEvent,
+          });
+        });
+        it('should map an external event that includes a pattern field', () => {
+          const externalEvent = {
+            pattern: 'other',
+            payload: 'x',
+          };
+          const options = {
+            channel: 'test',
+          };
+          expect(instance.deserialize(externalEvent, options)).toEqual({
+            pattern: options.channel,
+            data: externalEvent,
+          });
+        });
+        it('should keep native event packets unchanged', () => {
+          const incomingEvent = {
+            pattern: 'pattern',
+            data: [],
+          };
+          expect(instance.deserialize(incomingEvent)).toBe(incomingEvent);
+        });
+      });
     });
   });
 });
