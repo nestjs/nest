@@ -2,7 +2,7 @@ import {
   AbstractWsAdapter,
   type MessageMappingProperties,
 } from '@nestjs/websockets';
-import { fromEvent, Observable } from 'rxjs';
+import { EMPTY, fromEvent, Observable } from 'rxjs';
 import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
 import { Namespace, Server, ServerOptions, Socket } from 'socket.io';
 import { isFunction, isNil } from '@nestjs/common/internal';
@@ -51,7 +51,16 @@ export class IoAdapter extends AbstractWsAdapter {
       const source$ = fromEvent(socket, message).pipe(
         mergeMap((payload: any) => {
           const { data, ack } = this.mapPayload(payload);
-          return transform(callback(data, ack)).pipe(
+          let result: Observable<any>;
+          try {
+            result = transform(callback(data, ack));
+          } catch {
+            // A synchronous throw from the handler must not error the stream,
+            // which would silence every later message for this client. This
+            // mirrors the guard kept in the ws adapter for the same failure.
+            return EMPTY;
+          }
+          return result.pipe(
             filter((response: any) => !isNil(response)),
             map((response: any) => [response, ack, isAckHandledManually]),
           );
