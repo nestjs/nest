@@ -111,7 +111,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     callback?: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
     this.server = await this.createClient();
-    let callbackCalled = false;
+    let listenCallback = callback;
     this.server!.once(RmqEventsMap.CONNECT, () => {
       if (this.channel) {
         return;
@@ -121,11 +121,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         json: false,
         setup: (channel: Channel) =>
           this.setupChannel(channel, () => {
-            if (callbackCalled) {
-              return;
-            }
-            callbackCalled = true;
-            callback?.();
+            const cb = listenCallback;
+            listenCallback = undefined;
+            cb?.();
           }),
       });
     });
@@ -164,7 +162,9 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         }
         if (++this.connectionAttempts === maxConnectionAttempts) {
           await this.close();
-          callback?.(error.err ?? new Error(CONNECTION_FAILED_MESSAGE));
+          const cb = listenCallback;
+          listenCallback = undefined;
+          cb?.(error.err ?? new Error(CONNECTION_FAILED_MESSAGE));
         }
       },
     );
