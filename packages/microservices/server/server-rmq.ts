@@ -111,6 +111,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     callback?: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
     this.server = await this.createClient();
+    let callbackCalled = false;
     this.server!.once(RmqEventsMap.CONNECT, () => {
       if (this.channel) {
         return;
@@ -118,7 +119,14 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
       this._status$.next(RmqStatus.CONNECTED);
       this.channel = this.server!.createChannel({
         json: false,
-        setup: (channel: Channel) => this.setupChannel(channel, callback!),
+        setup: (channel: Channel) =>
+          this.setupChannel(channel, () => {
+            if (callbackCalled) {
+              return;
+            }
+            callbackCalled = true;
+            callback?.();
+          }),
       });
     });
 
