@@ -125,6 +125,75 @@ describe('StandardSchemaValidationPipe', () => {
         }
       });
 
+      it('should handle object path segments with a key property', async () => {
+        const schema = createSchema(() => ({
+          issues: [
+            {
+              message: 'Invalid input: expected string, received number',
+              path: [{ key: 'address' }, { key: 'line1' }] as any,
+            },
+          ],
+        }));
+
+        try {
+          await pipe.transform({}, {
+            type: 'body',
+            schema,
+          } as ArgumentMetadata);
+        } catch (error) {
+          expect((error as HttpException).getResponse()).toEqual({
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: [
+              'address.line1: Invalid input: expected string, received number',
+            ],
+            error: 'Bad Request',
+          });
+        }
+      });
+
+      it('should handle mixed string and object path segments', async () => {
+        const schema = createSchema(() => ({
+          issues: [
+            {
+              message: 'must be a positive number',
+              path: ['items', { key: 0 }, 'price'] as any,
+            },
+          ],
+        }));
+
+        try {
+          await pipe.transform({}, {
+            type: 'body',
+            schema,
+          } as ArgumentMetadata);
+        } catch (error) {
+          expect((error as HttpException).getResponse()).toEqual({
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: ['items.0.price: must be a positive number'],
+            error: 'Bad Request',
+          });
+        }
+      });
+
+      it('should not prefix the message when the path is empty', async () => {
+        const schema = createSchema(() => ({
+          issues: [{ message: 'invalid value', path: [] }],
+        }));
+
+        try {
+          await pipe.transform({}, {
+            type: 'body',
+            schema,
+          } as ArgumentMetadata);
+        } catch (error) {
+          expect((error as HttpException).getResponse()).toEqual({
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: ['invalid value'],
+            error: 'Bad Request',
+          });
+        }
+      });
+
       it('should throw asynchronously when schema validation fails async', async () => {
         const schema = createSchema(async () => ({
           issues: [{ message: 'invalid' }],
