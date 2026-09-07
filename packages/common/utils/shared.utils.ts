@@ -13,7 +13,7 @@ export const isPlainObject = (fn: unknown): fn is object => {
     return true;
   }
   const ctor =
-    Object.prototype.hasOwnProperty.call(proto, 'constructor') &&
+    Object.hasOwn(proto, 'constructor') &&
     proto.constructor;
   return (
     typeof ctor === 'function' &&
