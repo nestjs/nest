@@ -109,7 +109,14 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
     }
 
     // Plain "http error"-shaped values (e.g. objects thrown by third-party
-    // middleware) that carry a status code and a message
-    return !!(err.statusCode && err.message);
+    // middleware) that carry a status code and a message.
+    // Real `Error` instances are deliberately excluded: SDK errors such as
+    // Elasticsearch's `ResponseError` also carry a `statusCode`, and surfacing
+    // them would leak internal failures to the client.
+    return (
+      !(err instanceof Error) &&
+      typeof err.statusCode === 'number' &&
+      !!err.message
+    );
   }
 }

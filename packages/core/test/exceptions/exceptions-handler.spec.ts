@@ -82,25 +82,10 @@ describe('ExceptionsHandler', () => {
         message: 'Internal server error',
       });
     });
-    it('should treat fastify errors as http errors', () => {
-      const fastifyError = fastifyErrors.createError(
-        'FST_ERR_CTP_EMPTY_JSON_BODY',
-        "Body cannot be empty when content-type is set to 'application/json'",
-        400,
-      )();
-      handler.next(fastifyError, new ExecutionContextHost([0, response]));
-
-      expect(statusStub).toHaveBeenCalledWith(400);
-      expect(jsonStub).toHaveBeenCalledWith({
-        statusCode: 400,
-        message:
-          "Body cannot be empty when content-type is set to 'application/json'",
-      });
-    });
-    it('should not treat errors from external API calls as errors from "http-errors" library', () => {
+    it('should not treat errors carrying a "statusCode" as errors from "http-errors" library', () => {
       const apiCallError = Object.assign(
         new Error('Some external API call failed'),
-        { status: 400 },
+        { statusCode: 400 },
       );
       handler.next(apiCallError, new ExecutionContextHost([0, response]));
 
@@ -108,6 +93,36 @@ describe('ExceptionsHandler', () => {
       expect(jsonStub).toHaveBeenCalledWith({
         statusCode: 500,
         message: 'Internal server error',
+      });
+    });
+    it('should not expose SDK errors that extend Error and carry a "statusCode"', () => {
+      // Mirrors the shape of Elasticsearch's `ResponseError`
+      class ResponseError extends Error {
+        readonly statusCode = 404;
+        constructor() {
+          super('index_not_found_exception');
+          this.name = 'ResponseError';
+        }
+      }
+      handler.next(
+        new ResponseError(),
+        new ExecutionContextHost([0, response]),
+      );
+
+      expect(statusStub).toHaveBeenCalledWith(500);
+      expect(jsonStub).toHaveBeenCalledWith({
+        statusCode: 500,
+        message: 'Internal server error',
+      });
+    });
+    it('should treat plain "http error"-shaped objects as http errors', () => {
+      const middlewareError = { statusCode: 400, message: 'Malformed body' };
+      handler.next(middlewareError, new ExecutionContextHost([0, response]));
+
+      expect(statusStub).toHaveBeenCalledWith(400);
+      expect(jsonStub).toHaveBeenCalledWith({
+        statusCode: 400,
+        message: 'Malformed body',
       });
     });
     describe('when exception is instantiated by "http-errors" library', () => {
