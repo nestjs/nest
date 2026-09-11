@@ -261,6 +261,34 @@ describe('ClientMqtt', () => {
       await client.close();
       expect(endSpy).not.toHaveBeenCalled();
     });
+
+    it('should reset connection state for a subsequent connection', async () => {
+      untypedClient.isInitialConnection = true;
+      untypedClient.subscriptionsCount.set('response/reply', 1);
+
+      await client.close();
+
+      expect(untypedClient.isInitialConnection).toBe(false);
+      expect(untypedClient.subscriptionsCount.size).toBe(0);
+    });
+
+    it('should register the response listener after close and reconnect', async () => {
+      const firstClient = { endAsync: vi.fn() };
+      const secondClient = { on: vi.fn() };
+      untypedClient.mqttClient = firstClient;
+      untypedClient.isInitialConnection = true;
+
+      await client.close();
+      client.registerConnectListener(secondClient);
+
+      const connectHandler = secondClient.on.mock.calls[0][1];
+      connectHandler();
+
+      expect(secondClient.on).toHaveBeenCalledWith(
+        'message',
+        expect.any(Function),
+      );
+    });
   });
   describe('connect', () => {
     let createClientStub: ReturnType<typeof vi.fn>;

@@ -69,6 +69,8 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     }
     this.mqttClient = null;
     this.connectionPromise = null;
+    this.isInitialConnection = false;
+    this.subscriptionsCount.clear();
     this.pendingEventListeners = [];
   }
 

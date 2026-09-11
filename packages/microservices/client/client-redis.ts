@@ -60,6 +60,8 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     this.subClient && (await this.subClient.quit());
     this.pubClient = this.subClient = null;
     this.connectionPromise = null;
+    this.isManuallyClosed = false;
+    this.wasInitialConnectionSuccessful = false;
     this.pendingEventListeners = [];
   }
 

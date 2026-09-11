@@ -281,6 +281,36 @@ describe('ClientRedis', () => {
       await client.close();
       expect(logError).not.toHaveBeenCalled();
     });
+
+    it('should reset connection state for a subsequent connection', async () => {
+      untypedClient.isManuallyClosed = false;
+      untypedClient.wasInitialConnectionSuccessful = true;
+
+      await client.close();
+
+      expect(untypedClient.isManuallyClosed).toBe(false);
+      expect(untypedClient.wasInitialConnectionSuccessful).toBe(false);
+    });
+
+    it('should register the response listener after close and reconnect', async () => {
+      const firstSubClient = { quit: vi.fn() };
+      const secondSubClient = { on: vi.fn() };
+      untypedClient.pubClient = { quit: vi.fn() };
+      untypedClient.subClient = firstSubClient;
+      untypedClient.wasInitialConnectionSuccessful = true;
+
+      await client.close();
+      untypedClient.subClient = secondSubClient;
+      client.registerReadyListener(secondSubClient);
+
+      const readyHandler = secondSubClient.on.mock.calls[0][1];
+      readyHandler();
+
+      expect(secondSubClient.on).toHaveBeenCalledWith(
+        'message',
+        expect.any(Function),
+      );
+    });
   });
   describe('connect', () => {
     let createClientSpy: ReturnType<typeof vi.fn>;
