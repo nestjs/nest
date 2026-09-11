@@ -11,6 +11,7 @@ import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util.js';
+import { isObject } from '../internal.js';
 
 /**
  * Built-in JavaScript types that should be excluded from prototype stripping
@@ -106,7 +107,11 @@ export class StandardSchemaValidationPipe implements PipeTransform {
   ): string[] {
     return issues.map(issue => {
       if (issue.path?.length) {
-        return `${issue.path.map(String).join('.')}: ${issue.message}`;
+        const stringPath = issue.path
+          .map(segment => (isObject(segment) ? segment.key : segment))
+          .join('.');
+
+        return `${stringPath}: ${issue.message}`;
       }
       return issue.message;
     });
@@ -165,8 +170,7 @@ export class StandardSchemaValidationPipe implements PipeTransform {
     options?: Record<string, unknown>,
   ): Promise<StandardSchemaV1.Result<T>> | StandardSchemaV1.Result<T> {
     return schema['~standard'].validate(value, options) as
-      | Promise<StandardSchemaV1.Result<T>>
-      | StandardSchemaV1.Result<T>;
+      Promise<StandardSchemaV1.Result<T>> | StandardSchemaV1.Result<T>;
   }
 
   /**
