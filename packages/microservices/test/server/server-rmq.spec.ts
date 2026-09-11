@@ -60,6 +60,22 @@ describe('ServerRMQ', () => {
       await server.listen(callbackSpy);
       expect(onStub.mock.calls.map(call => call[0])).toContain('connectFailed');
     });
+    it('should call the callback once when channel setup runs again', async () => {
+      setupChannelStub.mockImplementation(async (_channel, setupCallback) => {
+        setupCallback();
+        setupCallback();
+      });
+      createChannelStub.mockImplementation(({ setup }) => {
+        void setup({});
+        void setup({});
+        return {};
+      });
+
+      await server.listen(callbackSpy);
+      await new Promise(resolve => setImmediate(resolve));
+
+      expect(callbackSpy).toHaveBeenCalledOnce();
+    });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
