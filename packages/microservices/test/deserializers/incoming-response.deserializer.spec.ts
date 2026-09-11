@@ -33,6 +33,20 @@ describe('IncomingResponseDeserializer', () => {
           response: externalResponse,
         });
       });
+
+      it('should map an external payload that happens to include a response field', () => {
+        const externalResponse = {
+          uuid: 'e78be5a4-03c5-4448-bde9-c7e78f41ffe1',
+          code: 'SMF-8000-YX',
+          response: 'The service has been placed into the maintenance state.',
+          eventType: 'suspect',
+        };
+        expect(instance.deserialize(externalResponse)).toEqual({
+          id: undefined,
+          isDisposed: true,
+          response: externalResponse,
+        });
+      });
     });
   });
 });
