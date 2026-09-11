@@ -36,6 +36,27 @@ describe('ParseArrayPipe', () => {
       });
     });
 
+    describe('when empty string', () => {
+      describe('and optional disabled', () => {
+        it('should parse to a single empty item', async () => {
+          target = new ParseArrayPipe({ optional: false });
+
+          expect(
+            await target.transform('', {} as ArgumentMetadata),
+          ).toEqual(['']);
+        });
+      });
+      describe('and optional enabled', () => {
+        it('should parse to a single empty item', async () => {
+          target = new ParseArrayPipe({ optional: true });
+
+          expect(
+            await target.transform('', {} as ArgumentMetadata),
+          ).toEqual(['']);
+        });
+      });
+    });
+
     describe('when value is not parseable', () => {
       beforeEach(() => {
         target = new ParseArrayPipe();
