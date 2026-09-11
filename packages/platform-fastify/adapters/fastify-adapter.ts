@@ -214,7 +214,7 @@ export class FastifyAdapter<
 
         const acceptHeaderVersionParameter = acceptHeaderValue
           ? acceptHeaderValue.split(';')[1]
-          : '';
+          : undefined;
 
         return isUndefined(acceptHeaderVersionParameter)
           ? VERSION_NEUTRAL // No version was supplied
