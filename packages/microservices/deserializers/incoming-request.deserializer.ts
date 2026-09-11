@@ -23,8 +23,12 @@ export class IncomingRequestDeserializer implements ConsumerDeserializer {
     if (!value) {
       return true;
     }
+    // IncomingRequest = ReadPacket & PacketId. Every packet a Nest client
+    // emits carries both `pattern` and `data` (isNil guards reject anything
+    // else), so a foreign payload that merely includes one of these keys
+    // (see nestjs/nest#17669 for the response-side twin) is not a packet.
     if (
-      !isUndefined((value as IncomingRequest).pattern) ||
+      !isUndefined((value as IncomingRequest).pattern) &&
       !isUndefined((value as IncomingRequest).data)
     ) {
       return false;

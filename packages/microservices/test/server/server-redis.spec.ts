@@ -171,7 +171,7 @@ describe('ServerRedis', () => {
     });
     it(`should publish NO_MESSAGE_HANDLER if pattern not exists in messageHandlers object`, async () => {
       vi.spyOn(server, 'parseMessage').mockImplementation(
-        () => ({ id, data }) as any,
+        () => ({ id, pattern: channel, data }) as any,
       );
       await server.handleMessage(
         channel,
@@ -191,7 +191,7 @@ describe('ServerRedis', () => {
         [channel]: handler,
       });
       vi.spyOn(server, 'parseMessage').mockImplementation(
-        () => ({ id, data }) as any,
+        () => ({ id, pattern: channel, data }) as any,
       );
 
       await server.handleMessage(channel, '', null, channel);
