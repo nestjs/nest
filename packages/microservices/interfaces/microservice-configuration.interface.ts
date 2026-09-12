@@ -352,5 +352,17 @@ export interface KafkaOptions {
     deserializer?: Deserializer;
     parser?: KafkaParserConfig;
     producerOnlyMode?: boolean;
+    /**
+     * When enabled, creates a separate Kafka consumer per registered topic,
+     * allowing concurrent message processing across topics.
+     * Each consumer uses `{groupId}-{topic}` as its consumer group ID,
+     * providing independent offset tracking per topic.
+     *
+     * Note: topic name is appended as groupId suffix. Ensure topic names
+     * contain only valid Kafka consumer group ID characters (alphanumeric, '.', '_', '-').
+     *
+     * @default false
+     */
+    topicConsumers?: boolean;
   };
 }
