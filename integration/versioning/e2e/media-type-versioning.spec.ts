@@ -331,6 +331,44 @@ describe('Media Type Versioning', () => {
       });
     });
 
+    describe('GET /multiple-neutral', () => {
+      it('V1', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .set({
+            Accept: 'application/json;v=1',
+          })
+          .expect(404);
+      });
+
+      it('V2', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .set({
+            Accept: 'application/json;v=2',
+          })
+          .expect(200)
+          .expect('Multiple Versions Neutral or 2');
+      });
+
+      it('No Version', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .set({
+            Accept: 'application/json',
+          })
+          .expect(200)
+          .expect('Multiple Versions Neutral or 2');
+      });
+
+      it('No Header', () => {
+        return request(app.getHttpServer())
+          .get('/multiple-neutral')
+          .expect(200)
+          .expect('Multiple Versions Neutral or 2');
+      });
+    });
+
     afterAll(async () => {
       await app.close();
     });
