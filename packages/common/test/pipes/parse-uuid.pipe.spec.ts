@@ -78,6 +78,16 @@ describe('ParseUUIDPipe', () => {
         ).rejects.toThrow(TestException);
       });
 
+      it('should throw an error for a UUID v3 with an invalid variant', async () => {
+        target = new ParseUUIDPipe({ version: '3', exceptionFactory });
+        await expect(
+          target.transform(
+            'e8b5a51d-11c8-3310-06ab-367563f20686',
+            {} as ArgumentMetadata,
+          ),
+        ).rejects.toThrow(TestException);
+      });
+
       it('should throw an error - v4', async () => {
         target = new ParseUUIDPipe({ version: '4', exceptionFactory });
         await expect(
