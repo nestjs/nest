@@ -69,10 +69,10 @@ describe('ExceptionsHandler', () => {
           "Body cannot be empty when content-type is set to 'application/json'",
       });
     });
-    it('should not treat errors from external API calls as errors from "http-errors" library', () => {
+    it('should not treat errors from external API calls with statusCode as http errors', () => {
       const apiCallError = Object.assign(
         new Error('Some external API call failed'),
-        { status: 400 },
+        { statusCode: 400 },
       );
       handler.next(apiCallError, new ExecutionContextHost([0, response]));
 
@@ -82,32 +82,58 @@ describe('ExceptionsHandler', () => {
         message: 'Internal server error',
       });
     });
-    it('should treat fastify errors as http errors', () => {
-      const fastifyError = fastifyErrors.createError(
-        'FST_ERR_CTP_EMPTY_JSON_BODY',
-        "Body cannot be empty when content-type is set to 'application/json'",
-        400,
-      )();
-      handler.next(fastifyError, new ExecutionContextHost([0, response]));
+    it('should treat plain http-error shaped objects as http errors', () => {
+      const plainHttpError = {
+        statusCode: 400,
+        message: 'Invalid middleware payload',
+      };
+      handler.next(plainHttpError, new ExecutionContextHost([0, response]));
 
       expect(statusStub).toHaveBeenCalledWith(400);
       expect(jsonStub).toHaveBeenCalledWith({
         statusCode: 400,
-        message:
-          "Body cannot be empty when content-type is set to 'application/json'",
+        message: 'Invalid middleware payload',
       });
     });
-    it('should not treat errors from external API calls as errors from "http-errors" library', () => {
-      const apiCallError = Object.assign(
-        new Error('Some external API call failed'),
-        { status: 400 },
-      );
-      handler.next(apiCallError, new ExecutionContextHost([0, response]));
+    it('should not treat plain objects with non-4xx/5xx status codes as http errors', () => {
+      const plainObject = {
+        statusCode: 200,
+        message: 'Success payload',
+      };
+      handler.next(plainObject, new ExecutionContextHost([0, response]));
 
       expect(statusStub).toHaveBeenCalledWith(500);
       expect(jsonStub).toHaveBeenCalledWith({
         statusCode: 500,
         message: 'Internal server error',
+      });
+    });
+    it('should treat plain http-error shaped objects with the highest 5xx status code as http errors', () => {
+      const plainHttpError = {
+        statusCode: 599,
+        message: 'Upstream failure',
+      };
+      handler.next(plainHttpError, new ExecutionContextHost([0, response]));
+      expect(statusStub).toHaveBeenCalledWith(599);
+      expect(jsonStub).toHaveBeenCalledWith({
+        statusCode: 599,
+        message: 'Upstream failure',
+      });
+    });
+    [
+      { statusCode: 600, message: 'Status code above 5xx' },
+      { statusCode: 400.5, message: 'Non-integer status code' },
+      { statusCode: 400, message: '' },
+      null,
+      'Some thrown string',
+    ].forEach(value => {
+      it(`should not treat ${JSON.stringify(value)} as an http error`, () => {
+        handler.next(value, new ExecutionContextHost([0, response]));
+        expect(statusStub).toHaveBeenCalledWith(500);
+        expect(jsonStub).toHaveBeenCalledWith({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
       });
     });
     describe('when exception is instantiated by "http-errors" library', () => {
