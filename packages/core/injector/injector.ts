@@ -31,6 +31,7 @@ import { UnknownDependenciesException } from '../errors/exceptions/unknown-depen
 import { Barrier } from '../helpers/barrier.js';
 import { makeSafeInstanceDecorator } from '../helpers/safe-instance-decorator.js';
 import { STATIC_CONTEXT } from './constants.js';
+import { isDebugMode } from './helpers/is-debug-mode.util.js';
 import { INQUIRER } from './inquirer/index.js';
 import {
   ContextId,
@@ -1268,7 +1269,7 @@ export class Injector {
     token: InjectionToken,
     inquirer?: InstanceWrapper,
   ): void {
-    if (!this.isDebugMode()) {
+    if (!isDebugMode()) {
       return;
     }
     const tokenName = this.getTokenName(token);
@@ -1289,7 +1290,7 @@ export class Injector {
     token: InjectionToken,
     moduleRef: Module,
   ): void {
-    if (!this.isDebugMode()) {
+    if (!isDebugMode()) {
       return;
     }
     const tokenName = this.getTokenName(token);
@@ -1305,7 +1306,7 @@ export class Injector {
     token: InjectionToken,
     moduleRef: Module,
   ): void {
-    if (!this.isDebugMode()) {
+    if (!isDebugMode()) {
       return;
     }
     const tokenName = this.getTokenName(token);
@@ -1315,10 +1316,6 @@ export class Injector {
         ' in ',
       )}${clc.magentaBright(moduleRefName)}`,
     );
-  }
-
-  private isDebugMode(): boolean {
-    return !!process.env.NEST_DEBUG;
   }
 
   private getContextId(
