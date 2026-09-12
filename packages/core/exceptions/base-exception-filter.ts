@@ -108,8 +108,15 @@ export class BaseExceptionFilter<T = any> implements ExceptionFilter<T> {
       return true;
     }
 
-    // Plain "http error"-shaped values (e.g. objects thrown by third-party
-    // middleware) that carry a status code and a message
-    return !!(err.statusCode && err.message);
+    // Plain "http error"-shaped values (e.g. non-Error objects thrown by third-party
+    // middleware) that carry a valid HTTP status code and a message
+    return (
+      !(err instanceof Error) &&
+      typeof err.statusCode === 'number' &&
+      Number.isInteger(err.statusCode) &&
+      err.statusCode >= 400 &&
+      err.statusCode < 600 &&
+      Boolean(err.message)
+    );
   }
 }

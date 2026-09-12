@@ -97,12 +97,38 @@ describe('ExceptionsHandler', () => {
           "Body cannot be empty when content-type is set to 'application/json'",
       });
     });
-    it('should not treat errors from external API calls as errors from "http-errors" library', () => {
+    it('should not treat errors from external API calls with statusCode as http errors', () => {
       const apiCallError = Object.assign(
         new Error('Some external API call failed'),
-        { status: 400 },
+        { statusCode: 400 },
       );
       handler.next(apiCallError, new ExecutionContextHost([0, response]));
+
+      expect(statusStub).toHaveBeenCalledWith(500);
+      expect(jsonStub).toHaveBeenCalledWith({
+        statusCode: 500,
+        message: 'Internal server error',
+      });
+    });
+    it('should treat plain http-error shaped objects as http errors', () => {
+      const plainHttpError = {
+        statusCode: 400,
+        message: 'Invalid middleware payload',
+      };
+      handler.next(plainHttpError, new ExecutionContextHost([0, response]));
+
+      expect(statusStub).toHaveBeenCalledWith(400);
+      expect(jsonStub).toHaveBeenCalledWith({
+        statusCode: 400,
+        message: 'Invalid middleware payload',
+      });
+    });
+    it('should not treat plain objects with non-4xx/5xx status codes as http errors', () => {
+      const plainObject = {
+        statusCode: 200,
+        message: 'Success payload',
+      };
+      handler.next(plainObject, new ExecutionContextHost([0, response]));
 
       expect(statusStub).toHaveBeenCalledWith(500);
       expect(jsonStub).toHaveBeenCalledWith({
