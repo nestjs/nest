@@ -295,8 +295,14 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       const responseChannel = this.getReplyPattern(pattern);
       let subscriptionsCount =
         this.subscriptionsCount.get(responseChannel) || 0;
+      let isPublished = false;
+      let isTornDown = false;
 
       const publishPacket = () => {
+        if (isTornDown) {
+          return;
+        }
+        isPublished = true;
         subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
         this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
         this.routingMap.set(packet.id, callback);
@@ -307,15 +313,18 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       };
 
       if (subscriptionsCount <= 0) {
-        this.subClient.subscribe(
-          responseChannel,
-          (err: any) => !err && publishPacket(),
+        this.subClient.subscribe(responseChannel, (err: any) =>
+          err ? callback({ err }) : publishPacket(),
         );
       } else {
         publishPacket();
       }
 
       return () => {
+        isTornDown = true;
+        if (!isPublished) {
+          return;
+        }
         this.unsubscribeFromChannel(responseChannel);
         this.routingMap.delete(packet.id);
       };
