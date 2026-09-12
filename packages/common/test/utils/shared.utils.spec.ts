@@ -174,6 +174,8 @@ describe('Shared utils', () => {
       expect(normalizePath('////path/')).toEqual('/path');
       expect(normalizePath('///')).toEqual('/');
       expect(normalizePath('/path////path///')).toEqual('/path/path');
+      expect(normalizePath('path////path///')).toEqual('/path/path');
+      expect(normalizePath('path//path')).toEqual('/path/path');
     });
     it('should return / for empty path', () => {
       expect(normalizePath('')).toEqual('/');
