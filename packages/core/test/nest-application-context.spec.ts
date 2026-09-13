@@ -54,6 +54,17 @@ describe('NestApplicationContext', () => {
   }
 
   describe('listenToShutdownSignals', () => {
+    function removeListenersNotIn(
+      signal: string,
+      baseline: Set<ReturnType<typeof process.listeners>[number]>,
+    ) {
+      process.listeners(signal).forEach(listener => {
+        if (!baseline.has(listener)) {
+          process.removeListener(signal, listener);
+        }
+      });
+    }
+
     it('shutdown process should not be interrupted by another handler', async () => {
       const signal = 'SIGTERM';
       let processUp = true;
@@ -115,11 +126,26 @@ describe('NestApplicationContext', () => {
 
         expect(process.listenerCount(signal)).toBe(listeners.size);
       } finally {
-        process.listeners(signal).forEach(listener => {
-          if (!listeners.has(listener)) {
-            process.removeListener(signal, listener);
-          }
-        });
+        removeListenersNotIn(signal, listeners);
+      }
+    });
+
+    it('should remove the listener when the same signal is registered by separate calls', async () => {
+      const signal = 'SIGTERM';
+      const listeners = new Set(process.listeners(signal));
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      try {
+        applicationContext.enableShutdownHooks([signal]);
+        applicationContext.enableShutdownHooks([signal]);
+
+        expect(process.listenerCount(signal)).toBe(listeners.size + 1);
+
+        await applicationContext.close();
+
+        expect(process.listenerCount(signal)).toBe(listeners.size);
+      } finally {
+        removeListenersNotIn(signal, listeners);
       }
     });
 
@@ -130,7 +156,10 @@ describe('NestApplicationContext', () => {
 
       try {
         applicationContext.enableShutdownHooks([signal]);
+        expect(process.listenerCount(signal)).toBe(listeners.size + 1);
+
         await applicationContext.close();
+        expect(process.listenerCount(signal)).toBe(listeners.size);
 
         applicationContext.enableShutdownHooks([signal]);
 
@@ -139,11 +168,7 @@ describe('NestApplicationContext', () => {
         await applicationContext.close();
         expect(process.listenerCount(signal)).toBe(listeners.size);
       } finally {
-        process.listeners(signal).forEach(listener => {
-          if (!listeners.has(listener)) {
-            process.removeListener(signal, listener);
-          }
-        });
+        removeListenersNotIn(signal, listeners);
       }
     });
 
@@ -170,11 +195,7 @@ describe('NestApplicationContext', () => {
       } finally {
         hookStub.mockRestore();
         processKillStub.mockRestore();
-        process.listeners(signal).forEach(listener => {
-          if (!listeners.has(listener)) {
-            process.removeListener(signal, listener);
-          }
-        });
+        removeListenersNotIn(signal, listeners);
       }
     });
 
@@ -189,6 +210,10 @@ describe('NestApplicationContext', () => {
         applicationContext.enableShutdownHooks([signals[0]]);
         applicationContext.enableShutdownHooks([signals[1]]);
 
+        signals.forEach((signal, index) => {
+          expect(process.listenerCount(signal)).toBe(listeners[index].size + 1);
+        });
+
         await applicationContext.close();
 
         signals.forEach((signal, index) => {
@@ -196,18 +221,14 @@ describe('NestApplicationContext', () => {
         });
       } finally {
         signals.forEach((signal, index) => {
-          process.listeners(signal).forEach(listener => {
-            if (!listeners[index].has(listener)) {
-              process.removeListener(signal, listener);
-            }
-          });
+          removeListenersNotIn(signal, listeners[index]);
         });
       }
     });
 
     it('should run shutdown hooks once across separate registrations', async () => {
       const signals = ['SIGTERM', 'SIGINT'];
-      const existingListeners = signals.map(
+      const listeners = signals.map(
         signal => new Set(process.listeners(signal)),
       );
       const applicationContext = await testHelper(A, Scope.DEFAULT);
@@ -222,10 +243,12 @@ describe('NestApplicationContext', () => {
         applicationContext.enableShutdownHooks([signals[0]]);
         applicationContext.enableShutdownHooks([signals[1]]);
 
-        const cleanupHandlers = signals.map((signal, index) =>
-          process
-            .listeners(signal)
-            .find(listener => !existingListeners[index].has(listener)),
+        signals.forEach((signal, index) => {
+          expect(process.listenerCount(signal)).toBe(listeners[index].size + 1);
+        });
+
+        const cleanupHandlers = signals.map(signal =>
+          applicationContext['shutdownCleanupRefs'].get(signal),
         );
 
         await Promise.all([
@@ -235,15 +258,14 @@ describe('NestApplicationContext', () => {
 
         expect(hookStub).toHaveBeenCalledTimes(1);
         expect(processKillStub).toHaveBeenCalledTimes(1);
+        signals.forEach((signal, index) => {
+          expect(process.listenerCount(signal)).toBe(listeners[index].size);
+        });
       } finally {
         hookStub.mockRestore();
         processKillStub.mockRestore();
         signals.forEach((signal, index) => {
-          process.listeners(signal).forEach(listener => {
-            if (!existingListeners[index].has(listener)) {
-              process.removeListener(signal, listener);
-            }
-          });
+          removeListenersNotIn(signal, listeners[index]);
         });
       }
     });

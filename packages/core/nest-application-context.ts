@@ -310,6 +310,9 @@ export class NestApplicationContext<
    * `onApplicationShutdown` function of a provider if the
    * process receives a shutdown signal.
    *
+   * Repeated calls are idempotent per signal. Shutdown hooks can be
+   * re-enabled after the application context has been closed.
+   *
    * @param {ShutdownSignal[]} [signals=[]] The system signals it should listen to
    * @param {ShutdownHooksOptions} [options={}] Options for configuring shutdown hooks behavior
    *
@@ -319,11 +322,6 @@ export class NestApplicationContext<
     signals: (ShutdownSignal | string)[] = [],
     options: ShutdownHooksOptions = {},
   ): this {
-    if (this.shutdownCleanupRefs.size === 0) {
-      // Start a new shutdown cycle after the previous listeners were removed.
-      this.receivedSignal = false;
-    }
-
     if (!signals || isEmptyArray(signals)) {
       signals = Object.values(ShutdownSignal);
     }
@@ -408,6 +406,7 @@ export class NestApplicationContext<
       process.removeListener(signal, cleanup);
     });
     this.shutdownCleanupRefs.clear();
+    this.receivedSignal = false;
   }
 
   /**
