@@ -76,35 +76,29 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
         'Validation failed (enum string is expected)',
       );
     }
-    if (this.isNumeric(value)) {
-      const enumValues = this.getEnumValues();
-      if (!enumValues.includes(value) && enumValues.includes(Number(value))) {
-        return Number(value) as T;
-      }
-    }
-    return value as T;
+    return (this.toEnumValue(value) ?? value) as T;
   }
 
   protected isEnum(value: unknown): boolean {
-    const enumValues = this.getEnumValues();
-    if (enumValues.includes(value)) {
-      return true;
-    }
-    if (this.isNumeric(value)) {
-      return enumValues.includes(Number(value));
-    }
-    return false;
+    return this.toEnumValue(value) !== undefined;
   }
 
-  protected isNumeric(value: unknown): boolean {
-    return (
-      ['string', 'number'].includes(typeof value) &&
-      /^-?\d+(\.\d+)?$/.test(String(value)) &&
-      isFinite(value as any)
+  /**
+   * Returns the enum member that `value` refers to, or `undefined` if there is none.
+   * Numeric members also match their string representation (e.g. `'1'` for `1`),
+   * since HTTP route and query params always arrive as strings.
+   */
+  protected toEnumValue(value: unknown): string | number | undefined {
+    return this.getEnumValues().find(
+      enumValue =>
+        enumValue === value ||
+        (typeof enumValue === 'number' &&
+          typeof value === 'string' &&
+          String(enumValue) === value),
     );
   }
 
-  protected getEnumValues(): any[] {
+  protected getEnumValues(): (string | number)[] {
     return Object.keys(this.enumType as object)
       .filter(key => {
         const enumValue = (this.enumType as any)[key];

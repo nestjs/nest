@@ -1,4 +1,4 @@
-import { HttpException } from '../../exceptions/index.js';
+import { BadRequestException, HttpException } from '../../exceptions/index.js';
 import { ArgumentMetadata } from '../../interfaces/index.js';
 import { ParseEnumPipe } from '../../pipes/parse-enum.pipe.js';
 
@@ -104,16 +104,25 @@ describe('ParseEnumPipe', () => {
     it('should throw when an invalid numeric string is passed', async () => {
       await expect(
         numericTarget.transform('2' as any, {} as ArgumentMetadata),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw when an empty or whitespace string is passed', async () => {
       await expect(
         numericTarget.transform('' as any, {} as ArgumentMetadata),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(BadRequestException);
       await expect(
         numericTarget.transform('   ' as any, {} as ArgumentMetadata),
-      ).rejects.toThrow(HttpException);
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw when a looser numeric representation is passed', async () => {
+      const invalidValues = ['01', '00', '1.0', '0.0', '-0', '+1', ' 1', '1e0'];
+      for (const val of invalidValues) {
+        await expect(
+          numericTarget.transform(val as any, {} as ArgumentMetadata),
+        ).rejects.toThrow(BadRequestException);
+      }
     });
 
     it('should throw when a reverse-mapped key name is passed instead of the value', async () => {
@@ -121,7 +130,8 @@ describe('ParseEnumPipe', () => {
         await numericTarget.transform('Active' as any, {} as ArgumentMetadata);
         expect.fail('expected transform to throw');
       } catch (err) {
-        expect(err).toBeInstanceOf(HttpException);
+        expect(err).toBeInstanceOf(BadRequestException);
+        expect(err.message).toBe('Validation failed (enum string is expected)');
       }
     });
   });
@@ -148,6 +158,62 @@ describe('ParseEnumPipe', () => {
       expect(await target.transform('100' as any, {} as ArgumentMetadata)).toBe(
         Temperature.Boiling,
       );
+    });
+  });
+
+  describe('when enum has float values', () => {
+    enum Ratio {
+      Half = 0.5,
+      OneAndHalf = 1.5,
+    }
+    let target: ParseEnumPipe;
+
+    beforeEach(() => {
+      target = new ParseEnumPipe(Ratio);
+    });
+
+    it('should parse float numeric string and return number', async () => {
+      expect(await target.transform('0.5' as any, {} as ArgumentMetadata)).toBe(
+        Ratio.Half,
+      );
+      expect(await target.transform('1.5' as any, {} as ArgumentMetadata)).toBe(
+        Ratio.OneAndHalf,
+      );
+    });
+
+    it('should throw for looser float representations', async () => {
+      await expect(
+        target.transform('0.50' as any, {} as ArgumentMetadata),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('when enum has mixed string and numeric values', () => {
+    enum Mixed {
+      A = 'a',
+      One = 1,
+    }
+    let target: ParseEnumPipe;
+
+    beforeEach(() => {
+      target = new ParseEnumPipe(Mixed);
+    });
+
+    it('should parse both string member and numeric member passed as string or number', async () => {
+      expect(await target.transform('a', {} as ArgumentMetadata)).toBe(Mixed.A);
+      expect(await target.transform('1', {} as ArgumentMetadata)).toBe(
+        Mixed.One,
+      );
+      expect(await target.transform(1, {} as ArgumentMetadata)).toBe(Mixed.One);
+    });
+
+    it('should throw when invalid value is passed', async () => {
+      await expect(
+        target.transform('b' as any, {} as ArgumentMetadata),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        target.transform('01' as any, {} as ArgumentMetadata),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
