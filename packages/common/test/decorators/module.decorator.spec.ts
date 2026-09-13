@@ -31,4 +31,20 @@ describe('@Module', () => {
 
     expect(Module.bind(null, invalidProps)).toThrow(Error);
   });
+
+  it('should ignore properties inherited through the prototype chain', () => {
+    const inheritedProps = { exports: ['Inherited'] };
+    const metadata = Object.create(inheritedProps);
+    metadata.providers = ['Own'];
+
+    @Module(metadata)
+    class ModuleWithInheritedProps {}
+
+    expect(Reflect.getMetadata('providers', ModuleWithInheritedProps)).toEqual([
+      'Own',
+    ]);
+    expect(Reflect.hasMetadata('exports', ModuleWithInheritedProps)).toBe(
+      false,
+    );
+  });
 });
