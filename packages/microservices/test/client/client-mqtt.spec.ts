@@ -93,8 +93,6 @@ describe('ClientMqtt', () => {
     });
     describe('when subscribing to the response pattern fails', () => {
       it('should call callback with the error and not publish', () => {
-        client['subscriptionsCount'].clear();
-        client['routingMap'].clear();
         const error = new Error('client disconnecting');
         subscribeSpy.mockImplementation((name, fn) => fn(error));
         const callback = vi.fn();
@@ -108,8 +106,6 @@ describe('ClientMqtt', () => {
     });
     describe('when disposed before the subscription is confirmed', () => {
       it('should not publish, count the subscription, nor unsubscribe', () => {
-        client['subscriptionsCount'].clear();
-        client['routingMap'].clear();
         let confirmSubscription: () => void = () => {};
         subscribeSpy.mockImplementation((name, fn) => {
           confirmSubscription = () => fn();
@@ -126,6 +122,7 @@ describe('ClientMqtt', () => {
           false,
         );
         expect(unsubscribeSpy).not.toHaveBeenCalled();
+        expect(callback).not.toHaveBeenCalled();
       });
     });
     describe('dispose callback', () => {

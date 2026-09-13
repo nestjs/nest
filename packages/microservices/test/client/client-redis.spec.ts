@@ -116,6 +116,7 @@ describe('ClientRedis', () => {
           false,
         );
         expect(unsubscribeSpy).not.toHaveBeenCalled();
+        expect(callback).not.toHaveBeenCalled();
       });
     });
     describe('dispose callback', () => {
