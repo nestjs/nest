@@ -123,6 +123,7 @@ describe('ClientMqtt', () => {
         );
         expect(unsubscribeSpy).not.toHaveBeenCalled();
         expect(callback).not.toHaveBeenCalled();
+        expect(callback).not.toHaveBeenCalled();
       });
     });
     describe('dispose callback', () => {
