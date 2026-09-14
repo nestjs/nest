@@ -414,4 +414,18 @@ describe('StandardSchemaValidationPipe', () => {
       });
     });
   });
+
+  describe('subclass compatibility', () => {
+    it('should allow subclasses to call super.stripProtoKeys', () => {
+      class CustomPipe extends StandardSchemaValidationPipe {
+        public callSuperStripProtoKeys(value: any) {
+          super.stripProtoKeys(value);
+        }
+      }
+      const customPipe = new CustomPipe();
+      const value = { constructor: 'malicious' };
+      expect(() => customPipe.callSuperStripProtoKeys(value)).not.toThrow();
+      expect(value).not.toHaveProperty('constructor');
+    });
+  });
 });
