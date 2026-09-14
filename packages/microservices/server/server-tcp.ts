@@ -45,6 +45,13 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     event: keyof TcpEvents;
     callback: TcpEvents[keyof TcpEvents];
   }> = [];
+  /**
+   * Sockets accepted by this server that are still open. "net.Server#close"
+   * only stops the server from accepting new connections, so these are tracked
+   * separately and torn down on "close" - otherwise the process outlives the
+   * shutdown and handlers keep running on already established connections.
+   */
+  protected readonly openSockets = new Set<Socket>();
 
   constructor(private readonly options: Required<TcpOptions>['options']) {
     super();
@@ -76,10 +83,13 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     this.isManuallyTerminated = true;
 
     this.server.close();
+    this.closeOpenSockets();
     this.pendingEventListeners = [];
   }
 
   public bindHandler(socket: Socket) {
+    this.trackOpenSocket(socket);
+
     const readSocket = this.getSocketInstance(socket);
     readSocket.on('message', (msg: ReadPacket & PacketId) =>
       this.handleMessage(readSocket, msg).catch(err => this.handleError(err)),
@@ -208,6 +218,28 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       this._status$.next(TcpStatus.DISCONNECTED);
       this.handleClose();
     });
+  }
+
+  /**
+   * Keeps a reference to an accepted socket so that it can be destroyed when
+   * the server is closed, and drops it again once it closes on its own.
+   */
+  protected trackOpenSocket(socket: Socket) {
+    if (!socket) {
+      return;
+    }
+    this.openSockets.add(socket);
+    socket.on(TcpEventsMap.CLOSE, () => this.openSockets.delete(socket));
+  }
+
+  /**
+   * Destroys every socket still open. Called on shutdown so that "close" does
+   * not leave the process alive, and so that no further messages are dispatched
+   * to handlers over connections established before the shutdown.
+   */
+  protected closeOpenSockets() {
+    this.openSockets.forEach(socket => socket.destroy());
+    this.openSockets.clear();
   }
 
   protected getSocketInstance(socket: Socket): TcpSocket {
