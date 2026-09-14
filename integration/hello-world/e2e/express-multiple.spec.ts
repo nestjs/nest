@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common';
+import { ArgumentsHost, HttpException, INestApplication } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import express from 'express';
@@ -70,4 +70,62 @@ describe('Hello world (express instance with multiple applications)', () => {
   afterEach(async () => {
     await Promise.all(apps.map(app => app.close()));
   });
+});
+
+describe('Hello world (express not-found handler ownership)', () => {
+  const apps: INestApplication[] = [];
+
+  afterEach(async () => {
+    await Promise.all(apps.splice(0).map(app => app.close()));
+  });
+
+  const createApplication = async (
+    adapter: ExpressAdapter,
+    handledBy: string,
+    prefix?: string,
+  ) => {
+    const module = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    const app = module.createNestApplication(adapter);
+    apps.push(app);
+    if (prefix !== undefined) {
+      app.setGlobalPrefix(prefix);
+    }
+    app.useGlobalFilters({
+      catch(exception: HttpException, host: ArgumentsHost) {
+        host
+          .switchToHttp()
+          .getResponse()
+          .status(exception.getStatus())
+          .json({ handledBy });
+      },
+    });
+    await app.init();
+    return app;
+  };
+
+  it.each(['api', '/api'])(
+    'preserves routes and not-found ownership with prefix %s',
+    async prefix => {
+      const adapter = new ExpressAdapter();
+      await createApplication(adapter, 'root');
+      await createApplication(adapter, 'prefixed', prefix);
+      const server = adapter.getInstance();
+
+      await request(server)
+        .get('/api/hello')
+        .expect(200)
+        .expect('Hello world!');
+      await request(server).get('/hello').expect(200).expect('Hello world!');
+      await request(server)
+        .get('/api/missing')
+        .expect(404)
+        .expect({ handledBy: 'prefixed' });
+      await request(server)
+        .get('/apiary/missing')
+        .expect(404)
+        .expect({ handledBy: 'root' });
+    },
+  );
 });

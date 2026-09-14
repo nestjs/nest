@@ -10,6 +10,23 @@ describe('ExpressAdapter', () => {
     expressAdapter = new ExpressAdapter();
   });
 
+  describe('setNotFoundHandler', () => {
+    it.each(['api', '/api'])(
+      'should mount the not-found handler at /api for prefix %s',
+      prefix => {
+        const expressInstance = expressAdapter.getInstance();
+        const useSpy = vi.spyOn(expressInstance, 'use');
+
+        expressAdapter.setNotFoundHandler(vi.fn(), prefix);
+
+        expect(useSpy).toHaveBeenCalledExactlyOnceWith(
+          '/api',
+          expect.any(Function),
+        );
+      },
+    );
+  });
+
   describe('registerParserMiddleware', () => {
     it('should register the express built-in parsers for json and urlencoded payloads', () => {
       const expressInstance = express();
