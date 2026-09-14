@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { fastifyMiddie } from '../../adapters/middie/fastify-middie';
+import { fastifyMiddie } from '@fastify/middie';
 
 describe('@fastify/middie', () => {
   it('keeps inherited middleware paths stable across nested prefixes', () => {

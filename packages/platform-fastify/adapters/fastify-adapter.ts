@@ -61,7 +61,6 @@ import {
   FastifyStaticOptions,
   FastifyViewOptions,
 } from '../interfaces/external';
-import middie from './middie/fastify-middie';
 
 type FastifyAdapterBaseOptions<
   Server extends RawServerBase = RawServerDefault,
@@ -251,6 +250,9 @@ export class FastifyAdapter<
         : fastify({
             ...(instanceOrOptions as FastifyServerOptions),
             routerOptions: {
+              ...this.getTopLevelRouterOptions(
+                instanceOrOptions as FastifyServerOptions,
+              ),
               ...(instanceOrOptions as FastifyServerOptions)?.routerOptions,
               constraints: {
                 version: this.versionConstraint as any,
@@ -808,7 +810,9 @@ export class FastifyAdapter<
 
   private async registerMiddie() {
     this.isMiddieRegistered = true;
-    await this.register(middie as Parameters<TInstance['register']>[0]);
+    await this.register(
+      import('@fastify/middie') as Parameters<TInstance['register']>[0],
+    );
   }
 
   private getRequestOriginalUrl(rawRequest: TRawRequest) {
@@ -882,10 +886,44 @@ export class FastifyAdapter<
     return this.instance.route(routeToInject);
   }
 
+  /**
+   * Fastify still accepts the router options ("ignoreTrailingSlash",
+   * "caseSensitive", ...) at the top level, but "initialConfig.routerOptions"
+   * only reflects them when they are passed through "routerOptions". As the
+   * adapter always passes "routerOptions" (for the version constraint), the
+   * top-level values are folded in so that plugins relying on
+   * "initialConfig.routerOptions" (like @fastify/middie) normalize request
+   * paths exactly like the router does.
+   */
+  private getTopLevelRouterOptions(
+    options?: FastifyServerOptions,
+  ): NonNullable<FastifyServerOptions['routerOptions']> {
+    const routerOptions: Record<string, unknown> = {};
+    const routerOptionKeys = [
+      'ignoreTrailingSlash',
+      'ignoreDuplicateSlashes',
+      'caseSensitive',
+      'useSemicolonDelimiter',
+      'maxParamLength',
+      'allowUnsafeRegex',
+    ] as const;
+    for (const key of routerOptionKeys) {
+      if (options?.[key] !== undefined) {
+        routerOptions[key] = options[key];
+      }
+    }
+    return routerOptions;
+  }
+
   private sanitizeUrl(url: string): string {
     const initialConfig = this.instance.initialConfig as FastifyServerOptions;
     const routerOptions =
       initialConfig.routerOptions as Partial<FastifyServerOptions>;
+
+    // Absolute-form request targets ("GET http://host/path HTTP/1.1") must be
+    // resolved to their path before any other normalization, as the Fastify
+    // router does, so that middleware and routes always match the same path.
+    url = this.getPathFromRequestTarget(url);
 
     if (
       routerOptions.ignoreDuplicateSlashes ||
@@ -926,5 +964,31 @@ export class FastifyAdapter<
       return path.slice(0, -1);
     }
     return path;
+  }
+
+  /**
+   * Mirrors the absolute-form request target handling of "find-my-way".
+   * Returns the path of an absolute-form target ("http://host/path" -> "/path")
+   * and leaves any other request target untouched.
+   */
+  private getPathFromRequestTarget(url: string): string {
+    if (url.charCodeAt(0) === 47 /* '/' */) {
+      return url;
+    }
+    const schemeEnd = url.indexOf('://');
+    if (schemeEnd === -1) {
+      return url;
+    }
+    const scheme = url.slice(0, schemeEnd).toLowerCase();
+    if (scheme !== 'http' && scheme !== 'https') {
+      return url;
+    }
+    const authorityStart = schemeEnd + 3;
+    const pathStart = url.indexOf('/', authorityStart);
+    if (pathStart === authorityStart || !URL.canParse(url)) {
+      // Malformed target: the router rejects it before any middleware runs
+      return url;
+    }
+    return pathStart === -1 ? '/' : url.slice(pathStart);
   }
 }

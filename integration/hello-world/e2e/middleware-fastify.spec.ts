@@ -18,6 +18,7 @@ import {
 import { Test } from '@nestjs/testing';
 import { expect } from 'chai';
 import { FastifyRequest } from 'fastify';
+import { AddressInfo, connect } from 'net';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 
@@ -995,6 +996,100 @@ describe('Middleware (FastifyAdapter)', () => {
       afterEach(async () => {
         await app.close();
       });
+    });
+  });
+
+  describe('absolute-form request target', () => {
+    const MIDDLEWARE_RETURN_VALUE = 'middleware_return';
+    const HANDLER_RETURN_VALUE = 'handler_return';
+
+    @Controller('users')
+    class UsersController {
+      @Get()
+      findAll() {
+        return HANDLER_RETURN_VALUE;
+      }
+    }
+
+    @Module({
+      controllers: [UsersController],
+    })
+    class AbsoluteFormModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer
+          .apply((req, res, next) => res.end(MIDDLEWARE_RETURN_VALUE))
+          .forRoutes({ path: 'users', method: RequestMethod.GET });
+      }
+    }
+
+    let port: number;
+
+    /**
+     * "supertest" and "light-my-request" always send origin-form request
+     * targets, so the request has to be written to the socket manually.
+     */
+    const sendRawRequest = (requestTarget: string) =>
+      new Promise<{ statusCode: number; body: string }>((resolve, reject) => {
+        let response = '';
+        const socket = connect(port, '127.0.0.1', () => {
+          socket.write(
+            `GET ${requestTarget} HTTP/1.1\r\n` +
+              `Host: 127.0.0.1:${port}\r\n` +
+              `Connection: close\r\n\r\n`,
+          );
+        });
+        socket.setEncoding('utf8');
+        socket.on('data', (chunk: string) => (response += chunk));
+        socket.on('error', reject);
+        socket.on('end', () => {
+          const [head, body = ''] = response.split('\r\n\r\n');
+          resolve({ statusCode: Number(head.split(' ')[1]), body });
+        });
+      });
+
+    const createApp = async (adapter: FastifyAdapter) => {
+      app = (
+        await Test.createTestingModule({
+          imports: [AbsoluteFormModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(adapter);
+
+      await app.listen(0, '127.0.0.1');
+      port = (app.getHttpServer().address() as AddressInfo).port;
+    };
+
+    afterEach(async () => {
+      await app.close();
+    });
+
+    it('runs middleware for an origin-form request target', async () => {
+      await createApp(new FastifyAdapter());
+
+      const response = await sendRawRequest('/users');
+      expect(response.statusCode).to.equal(200);
+      expect(response.body).to.equal(MIDDLEWARE_RETURN_VALUE);
+    });
+
+    it('does not bypass middleware with an absolute-form request target', async () => {
+      await createApp(new FastifyAdapter());
+
+      const response = await sendRawRequest(`http://127.0.0.1:${port}/users`);
+      expect(response.statusCode).to.equal(200);
+      expect(response.body).to.equal(MIDDLEWARE_RETURN_VALUE);
+    });
+
+    it('does not bypass middleware with an absolute-form request target and router normalization options', async () => {
+      await createApp(
+        new FastifyAdapter({
+          ignoreDuplicateSlashes: true,
+          ignoreTrailingSlash: true,
+          caseSensitive: false,
+        }),
+      );
+
+      const response = await sendRawRequest(`HTTP://127.0.0.1:${port}//USERS/`);
+      expect(response.statusCode).to.equal(200);
+      expect(response.body).to.equal(MIDDLEWARE_RETURN_VALUE);
     });
   });
 });
