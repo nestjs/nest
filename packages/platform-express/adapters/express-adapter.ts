@@ -155,9 +155,10 @@ export class ExpressAdapter extends AbstractHttpAdapter<
 
   public setErrorHandler(handler: Function, prefix?: string) {
     if (prefix) {
+      const normalizedPrefix = this.normalizePrefix(prefix);
       const router = express.Router();
       router.use(handler as any);
-      this.use(prefix, router);
+      this.use(normalizedPrefix, router);
     }
     // Always mount the error handler at the root as well, so routes living
     // outside the global prefix (e.g. "setGlobalPrefix" exclusions or
@@ -167,7 +168,7 @@ export class ExpressAdapter extends AbstractHttpAdapter<
 
   public setNotFoundHandler(handler: Function, prefix?: string) {
     if (prefix) {
-      const normalizedPrefix = addLeadingSlash(prefix);
+      const normalizedPrefix = this.normalizePrefix(prefix);
       this.registeredPrefixes.add(normalizedPrefix);
       const router = express.Router();
       router.all('*path', handler as any);
@@ -545,6 +546,10 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       default:
         return error;
     }
+  }
+
+  private normalizePrefix(prefix: string): string {
+    return addLeadingSlash(prefix);
   }
 
   private trackOpenConnections() {

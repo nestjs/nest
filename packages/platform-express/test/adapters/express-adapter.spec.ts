@@ -10,6 +10,23 @@ describe('ExpressAdapter', () => {
     expressAdapter = new ExpressAdapter();
   });
 
+  describe('setErrorHandler', () => {
+    it.each(['api', '/api'])(
+      'should mount the error handler at /api and the root for prefix %s',
+      prefix => {
+        const expressInstance = expressAdapter.getInstance();
+        const useSpy = vi.spyOn(expressInstance, 'use');
+        const handler = vi.fn();
+
+        expressAdapter.setErrorHandler(handler, prefix);
+
+        expect(useSpy).toHaveBeenCalledTimes(2);
+        expect(useSpy).toHaveBeenCalledWith('/api', expect.any(Function));
+        expect(useSpy).toHaveBeenCalledWith(handler);
+      },
+    );
+  });
+
   describe('setNotFoundHandler', () => {
     it.each(['api', '/api'])(
       'should mount the not-found handler at /api for prefix %s',
