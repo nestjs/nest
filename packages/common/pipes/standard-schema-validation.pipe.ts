@@ -11,7 +11,7 @@ import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util.js';
-import { isObject } from '../internal.js';
+import { isObject } from '../utils/shared.utils.js';
 
 /**
  * Built-in JavaScript types that should be excluded from prototype stripping
@@ -108,7 +108,7 @@ export class StandardSchemaValidationPipe implements PipeTransform {
     return issues.map(issue => {
       if (issue.path?.length) {
         const stringPath = issue.path
-          .map(segment => (isObject(segment) ? segment.key : segment))
+          .map(segment => String(isObject(segment) ? segment.key : segment))
           .join('.');
 
         return `${stringPath}: ${issue.message}`;
