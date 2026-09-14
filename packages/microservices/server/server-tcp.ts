@@ -38,6 +38,8 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   protected readonly host: string;
   protected readonly socketClass: Type<TcpSocket>;
   protected readonly maxBufferSize?: number;
+  protected readonly incompleteMessageTimeout?: number;
+  protected readonly maxSendBufferSize?: number;
   protected isManuallyTerminated = false;
   protected retryAttemptsCount = 0;
   protected tlsOptions?: TlsOptions;
@@ -53,6 +55,11 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     this.socketClass = this.getOptionsProp(options, 'socketClass', JsonSocket);
     this.tlsOptions = this.getOptionsProp(options, 'tlsOptions');
     this.maxBufferSize = this.getOptionsProp(options, 'maxBufferSize');
+    this.incompleteMessageTimeout = this.getOptionsProp(
+      options,
+      'incompleteMessageTimeout',
+    );
+    this.maxSendBufferSize = this.getOptionsProp(options, 'maxSendBufferSize');
 
     this.init();
     this.initializeSerializer(options);
@@ -211,11 +218,18 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   }
 
   protected getSocketInstance(socket: Socket): TcpSocket {
-    // Pass maxBufferSize only if socketClass is JsonSocket
-    // For custom socket classes, users should handle maxBufferSize in their own implementation
-    if (this.maxBufferSize !== undefined && this.socketClass === JsonSocket) {
+    // Pass the framing options only if socketClass is JsonSocket
+    // For custom socket classes, users should handle them in their own implementation
+    const hasJsonSocketOptions =
+      this.maxBufferSize !== undefined ||
+      this.incompleteMessageTimeout !== undefined ||
+      this.maxSendBufferSize !== undefined;
+
+    if (hasJsonSocketOptions && this.socketClass === JsonSocket) {
       return new this.socketClass(socket, {
         maxBufferSize: this.maxBufferSize,
+        incompleteMessageTimeout: this.incompleteMessageTimeout,
+        maxSendBufferSize: this.maxSendBufferSize,
       });
     }
     return new this.socketClass(socket);
