@@ -10,6 +10,7 @@ import {
   ErrorHttpStatusCode,
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util.js';
+import { isObject } from '../utils/shared.utils.js';
 import { stripProtoKeys } from '../utils/strip-proto-keys.util.js';
 
 /**
@@ -100,7 +101,11 @@ export class StandardSchemaValidationPipe implements PipeTransform {
   ): string[] {
     return issues.map(issue => {
       if (issue.path?.length) {
-        return `${issue.path.map(String).join('.')}: ${issue.message}`;
+        const stringPath = issue.path
+          .map(segment => String(isObject(segment) ? segment.key : segment))
+          .join('.');
+
+        return `${stringPath}: ${issue.message}`;
       }
       return issue.message;
     });
