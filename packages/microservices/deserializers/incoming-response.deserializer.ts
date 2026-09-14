@@ -1,5 +1,7 @@
 import { IncomingResponse, ProducerDeserializer } from '../interfaces/index.js';
-import { isUndefined } from '@nestjs/common/internal';
+import { isPlainObject, isUndefined } from '@nestjs/common/internal';
+
+const NEST_RESPONSE_FIELDS = ['id', 'err', 'response', 'isDisposed', 'status'];
 
 /**
  * @publicApi
@@ -13,17 +15,29 @@ export class IncomingResponseDeserializer implements ProducerDeserializer {
   }
 
   isExternal(value: any): boolean {
-    if (!value) {
+    if (!isPlainObject(value)) {
       return true;
     }
-    if (
+    const keys = Object.keys(value);
+    const hasUnknownKeys = keys.some(
+      key => !NEST_RESPONSE_FIELDS.includes(key),
+    );
+    if (hasUnknownKeys) {
+      return true;
+    }
+    const hasInternalPayload =
       !isUndefined((value as IncomingResponse).err) ||
       !isUndefined((value as IncomingResponse).response) ||
-      !isUndefined((value as IncomingResponse).isDisposed)
-    ) {
-      return false;
+      !isUndefined((value as IncomingResponse).isDisposed);
+
+    if (!hasInternalPayload) {
+      return true;
     }
-    return true;
+    const hasCorrelationOrDisposal =
+      !isUndefined((value as IncomingResponse).id) ||
+      !isUndefined((value as IncomingResponse).isDisposed);
+
+    return !hasCorrelationOrDisposal;
   }
 
   mapToSchema(value: any): IncomingResponse {
