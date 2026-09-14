@@ -82,6 +82,30 @@ describe('ClientRedis', () => {
         expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
       });
     });
+    describe('when subscribing to the response pattern fails', () => {
+      beforeEach(() => {
+        client['subscriptionsCount'].clear();
+        client['pendingSubscriptions'].clear();
+        client['routingMap'].clear();
+      });
+      afterEach(() => {
+        client['subscriptionsCount'].clear();
+        client['pendingSubscriptions'].clear();
+        client['routingMap'].clear();
+      });
+
+      it('should call callback with the error and not publish', () => {
+        const error = new Error('Connection is closed.');
+        sub.subscribe = sinon.spy((name, fn) => fn(error));
+        const callback = sinon.spy();
+
+        client['publish'](msg, callback);
+
+        expect(callback.calledOnceWith({ err: error })).to.be.true;
+        expect(publishSpy.called).to.be.false;
+        expect(client['routingMap'].size).to.equal(0);
+      });
+    });
     describe('when the subscription is not confirmed yet', () => {
       let confirmations: Array<() => void>;
       const countOf = (channel: string) =>

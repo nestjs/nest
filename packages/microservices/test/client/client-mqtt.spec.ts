@@ -167,6 +167,39 @@ describe('ClientMqtt', () => {
         expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
       });
     });
+    describe('when subscribing to the response pattern fails', () => {
+      it('should call callback with the error and not publish', () => {
+        const error = new Error('client disconnecting');
+        mqttClient.subscribe = sinon.spy((name, fn) => fn(error));
+        const callback = sinon.spy();
+
+        client['publish'](msg, callback);
+
+        expect(callback.calledOnceWith({ err: error })).to.be.true;
+        expect(publishSpy.called).to.be.false;
+        expect(client['routingMap'].size).to.equal(0);
+      });
+    });
+    describe('when disposed before the subscription is confirmed', () => {
+      it('should not publish, count the subscription, nor unsubscribe', () => {
+        let confirmSubscription: () => void = () => {};
+        mqttClient.subscribe = sinon.spy((name, fn) => {
+          confirmSubscription = () => fn();
+        });
+        const callback = sinon.spy();
+
+        const dispose = client['publish'](msg, callback);
+        dispose();
+        confirmSubscription();
+
+        expect(publishSpy.called).to.be.false;
+        expect(client['routingMap'].size).to.equal(0);
+        expect(client['subscriptionsCount'].has(`${pattern}/reply`)).to.be
+          .false;
+        expect(unsubscribeSpy.called).to.be.false;
+        expect(callback.called).to.be.false;
+      });
+    });
     describe('dispose callback', () => {
       let getResponsePatternStub: sinon.SinonStub;
       let callback: sinon.SinonSpy, subscription;

@@ -351,7 +351,10 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       ) {
         this.pendingSubscriptions.add(responseChannel);
         this.subClient.subscribe(responseChannel, (err: any) => {
-          if (err || !isCounted) {
+          if (err) {
+            return callback({ err });
+          }
+          if (!isCounted) {
             // Torn down meanwhile, which gave the subscription up
             return;
           }
