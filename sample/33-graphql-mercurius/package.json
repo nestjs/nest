@@ -19,11 +19,11 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.mts"
   },
   "dependencies": {
-    "@nestjs/common": "12.0.1",
-    "@nestjs/core": "12.0.1",
+    "@nestjs/common": "12.0.2",
+    "@nestjs/core": "12.0.2",
     "@nestjs/graphql": "14.0.0",
     "@nestjs/mercurius": "14.0.0",
-    "@nestjs/platform-fastify": "12.0.1",
+    "@nestjs/platform-fastify": "12.0.2",
     "class-transformer": "0.5.1",
     "class-validator": "0.15.1",
     "graphql": "17.0.2",
@@ -34,7 +34,7 @@
   "devDependencies": {
     "@nestjs/cli": "12.0.1",
     "@nestjs/schematics": "12.0.2",
-    "@nestjs/testing": "12.0.1",
+    "@nestjs/testing": "12.0.2",
     "@types/express": "5.0.6",
     "@types/node": "24.13.4",
     "@types/supertest": "7.2.1",
