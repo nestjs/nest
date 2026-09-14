@@ -91,6 +91,41 @@ describe('ClientMqtt', () => {
         expect(callback.mock.calls[0][0].err).toBeInstanceOf(Error);
       });
     });
+    describe('when subscribing to the response pattern fails', () => {
+      it('should call callback with the error and not publish', () => {
+        const error = new Error('client disconnecting');
+        subscribeSpy.mockImplementation((name, fn) => fn(error));
+        const callback = vi.fn();
+
+        client['publish'](msg, callback);
+
+        expect(callback).toHaveBeenCalledWith({ err: error });
+        expect(publishSpy).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+      });
+    });
+    describe('when disposed before the subscription is confirmed', () => {
+      it('should not publish, count the subscription, nor unsubscribe', () => {
+        let confirmSubscription: () => void = () => {};
+        subscribeSpy.mockImplementation((name, fn) => {
+          confirmSubscription = () => fn();
+        });
+        const callback = vi.fn();
+
+        const dispose = client['publish'](msg, callback);
+        dispose();
+        confirmSubscription();
+
+        expect(publishSpy).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].has(`${pattern}/reply`)).toBe(
+          false,
+        );
+        expect(unsubscribeSpy).not.toHaveBeenCalled();
+        expect(callback).not.toHaveBeenCalled();
+        expect(callback).not.toHaveBeenCalled();
+      });
+    });
     describe('dispose callback', () => {
       let getResponsePatternStub: ReturnType<typeof vi.fn>;
       let callback: ReturnType<typeof vi.fn>, subscription;
