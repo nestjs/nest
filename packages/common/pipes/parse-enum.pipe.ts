@@ -39,6 +39,7 @@ export interface ParseEnumPipeOptions {
 @Injectable()
 export class ParseEnumPipe<T = any> implements PipeTransform<T> {
   protected exceptionFactory: (error: string) => any;
+  private cachedEnumValues?: (string | number)[];
   constructor(
     protected readonly enumType: T,
     @Optional() protected readonly options?: ParseEnumPipeOptions,
@@ -76,11 +77,36 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
         'Validation failed (enum string is expected)',
       );
     }
-    return value as T;
+    return (this.toEnumValue(value) ?? value) as T;
   }
 
   protected isEnum(value: unknown): boolean {
-    const enumValues = Object.keys(this.enumType as object)
+    return this.toEnumValue(value) !== undefined;
+  }
+
+  /**
+   * Returns the enum member that `value` refers to, or `undefined` if there is none.
+   * Numeric members also match their string representation (e.g. `'1'` for `1`),
+   * since HTTP route and query params always arrive as strings.
+   */
+  protected toEnumValue(value: unknown): string | number | undefined {
+    return this.getEnumValues().find(
+      enumValue =>
+        enumValue === value ||
+        (typeof enumValue === 'number' &&
+          typeof value === 'string' &&
+          String(enumValue) === value),
+    );
+  }
+
+  protected getEnumValues(): (string | number)[] {
+    // The enum object never changes after construction, so the values are
+    // computed once and reused on every request.
+    return (this.cachedEnumValues ??= this.computeEnumValues());
+  }
+
+  private computeEnumValues(): (string | number)[] {
+    return Object.keys(this.enumType as object)
       .filter(key => {
         const enumValue = (this.enumType as any)[key];
         return !(
@@ -89,6 +115,5 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
         );
       })
       .map(key => (this.enumType as any)[key]);
-    return enumValues.includes(value);
   }
 }
