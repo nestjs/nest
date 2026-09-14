@@ -215,6 +215,60 @@ describe('NestMicroservice', () => {
     });
   });
 
+  describe('close', () => {
+    const createInstance = () => {
+      const strategy = new (class extends Server {
+        listen = vi.fn();
+        close = vi.fn();
+        on = vi.fn();
+        unwrap = vi.fn();
+      })();
+
+      return new NestMicroservice(
+        mockContainer,
+        { strategy },
+        mockGraphInspector,
+        mockAppConfig,
+      );
+    };
+
+    it('should detach process signal listeners when the parent application already marked it as terminated', async () => {
+      const instance = createInstance();
+      const baseline = process.listenerCount('SIGTERM');
+
+      instance.enableShutdownHooks(['SIGTERM']);
+      expect(process.listenerCount('SIGTERM')).to.equal(baseline + 1);
+
+      // A hybrid application flags every connected microservice as terminated
+      // before closing it, so that the parent - and not the microservice -
+      // runs the shared lifecycle hooks.
+      instance.setIsTerminated(true);
+      await instance.close();
+
+      expect(process.listenerCount('SIGTERM')).to.equal(baseline);
+    });
+
+    it('should not run the lifecycle hooks again when already terminated', async () => {
+      const instance = createInstance();
+      const closeApplicationSpy = vi.spyOn(instance as any, 'closeApplication');
+
+      instance.setIsTerminated(true);
+      await instance.close();
+
+      expect(closeApplicationSpy).not.toHaveBeenCalled();
+    });
+
+    it('should detach process signal listeners on a regular close', async () => {
+      const instance = createInstance();
+      const baseline = process.listenerCount('SIGTERM');
+
+      instance.enableShutdownHooks(['SIGTERM']);
+      await instance.close();
+
+      expect(process.listenerCount('SIGTERM')).to.equal(baseline);
+    });
+  });
+
   it('should return the transport server instance via getTransportServer()', () => {
     const strategy = new (class extends Server {
       listen = vi.fn();
