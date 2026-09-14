@@ -39,6 +39,7 @@ export interface ParseEnumPipeOptions {
 @Injectable()
 export class ParseEnumPipe<T = any> implements PipeTransform<T> {
   protected exceptionFactory: (error: string) => any;
+  private cachedEnumValues?: (string | number)[];
   constructor(
     protected readonly enumType: T,
     @Optional() protected readonly options?: ParseEnumPipeOptions,
@@ -99,6 +100,12 @@ export class ParseEnumPipe<T = any> implements PipeTransform<T> {
   }
 
   protected getEnumValues(): (string | number)[] {
+    // The enum object never changes after construction, so the values are
+    // computed once and reused on every request.
+    return (this.cachedEnumValues ??= this.computeEnumValues());
+  }
+
+  private computeEnumValues(): (string | number)[] {
     return Object.keys(this.enumType as object)
       .filter(key => {
         const enumValue = (this.enumType as any)[key];

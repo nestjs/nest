@@ -136,6 +136,24 @@ describe('ParseEnumPipe', () => {
     });
   });
 
+  describe('memoization', () => {
+    enum Status {
+      Active = 0,
+      Inactive = 1,
+    }
+
+    it('should compute the enum values only once across transforms', async () => {
+      const target = new ParseEnumPipe(Status);
+      const computeSpy = vi.spyOn(target as any, 'computeEnumValues');
+
+      await target.transform('0' as any, {} as ArgumentMetadata);
+      await target.transform('1' as any, {} as ArgumentMetadata);
+      await target.transform(Status.Active, {} as ArgumentMetadata);
+
+      expect(computeSpy).toHaveBeenCalledOnce();
+    });
+  });
+
   describe('when enum is numeric with negative values', () => {
     enum Temperature {
       Freezing = -5,
