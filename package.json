@@ -146,7 +146,6 @@
     "oxlint": "1.83.0",
     "prettier": "^3.7.4",
     "redis": "6.2.1",
-    "reusify": "1.1.0",
     "rxjs-compat": "6.6.7",
     "socket.io-client": "4.8.3",
     "supertest": "7.2.2",
