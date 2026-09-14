@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@nestjs/cli": "12.0.0",
-    "@nestjs/schematics": "12.0.0",
+    "@nestjs/schematics": "12.0.1",
     "@types/node": "24.13.4",
     "@types/supertest": "7.2.1",
     "oxlint": "1.82.0",
