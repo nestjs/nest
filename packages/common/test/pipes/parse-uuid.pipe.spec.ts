@@ -82,6 +82,7 @@ describe('ParseUUIDPipe', () => {
         target = new ParseUUIDPipe({ version: '3', exceptionFactory });
         await expect(
           target.transform(
+            // same as `v3` but with variant nibble `0` instead of `a`
             'e8b5a51d-11c8-3310-06ab-367563f20686',
             {} as ArgumentMetadata,
           ),
