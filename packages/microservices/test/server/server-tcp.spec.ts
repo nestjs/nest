@@ -34,6 +34,12 @@ describe('ServerTCP', () => {
       server.bindHandler(null!);
       expect(socket.on.calledTwice).to.be.true;
     });
+    it('should track the accepted socket so that it can be closed on shutdown', () => {
+      const netSocket = { on: sinon.spy(), destroy: sinon.spy() };
+      server.bindHandler(netSocket as any);
+
+      expect(untypedServer.openSockets.has(netSocket)).to.be.true;
+    });
     it('should route "handleMessage" rejections to "handleError" instead of leaving them unhandled', async () => {
       const error = new Error('unexpected');
       sinon.stub(server, 'handleMessage').rejects(error);
@@ -57,6 +63,34 @@ describe('ServerTCP', () => {
     it('should close server', () => {
       server.close();
       expect(tcpServer.close.called).to.be.true;
+    });
+    it('should destroy sockets that are still open', () => {
+      const openSocket = { destroy: sinon.spy(), on: sinon.spy() };
+      untypedServer.openSockets.add(openSocket);
+
+      server.close();
+
+      expect(openSocket.destroy.called).to.be.true;
+      expect(untypedServer.openSockets.size).to.equal(0);
+    });
+  });
+  describe('trackOpenSocket', () => {
+    it('should keep a reference to an accepted socket', () => {
+      const socket = { on: sinon.spy(), destroy: sinon.spy() };
+      untypedServer.trackOpenSocket(socket);
+
+      expect(untypedServer.openSockets.has(socket)).to.be.true;
+    });
+    it('should drop the reference once the socket closes on its own', () => {
+      const socket = { on: sinon.spy(), destroy: sinon.spy() };
+      untypedServer.trackOpenSocket(socket);
+
+      const onClose = socket.on
+        .getCalls()
+        .find(call => call.args[0] === 'close')!.args[1];
+      onClose();
+
+      expect(untypedServer.openSockets.has(socket)).to.be.false;
     });
   });
   describe('listen', () => {

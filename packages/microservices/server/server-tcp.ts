@@ -38,6 +38,8 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
   protected readonly host: string;
   protected readonly socketClass: Type<TcpSocket>;
   protected readonly maxBufferSize?: number;
+  protected readonly incompleteMessageTimeout?: number;
+  protected readonly maxSendBufferSize?: number;
   protected isManuallyTerminated = false;
   protected retryAttemptsCount = 0;
   protected tlsOptions?: TlsOptions;
@@ -45,6 +47,13 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     event: keyof TcpEvents;
     callback: TcpEvents[keyof TcpEvents];
   }> = [];
+  /**
+   * Sockets accepted by this server that are still open. "net.Server#close"
+   * only stops the server from accepting new connections, so these are tracked
+   * separately and torn down on "close" - otherwise the process outlives the
+   * shutdown and handlers keep running on already established connections.
+   */
+  protected readonly openSockets = new Set<Socket>();
 
   constructor(private readonly options: Required<TcpOptions>['options']) {
     super();
@@ -53,6 +62,11 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     this.socketClass = this.getOptionsProp(options, 'socketClass', JsonSocket);
     this.tlsOptions = this.getOptionsProp(options, 'tlsOptions');
     this.maxBufferSize = this.getOptionsProp(options, 'maxBufferSize');
+    this.incompleteMessageTimeout = this.getOptionsProp(
+      options,
+      'incompleteMessageTimeout',
+    );
+    this.maxSendBufferSize = this.getOptionsProp(options, 'maxSendBufferSize');
 
     this.init();
     this.initializeSerializer(options);
@@ -76,10 +90,13 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     this.isManuallyTerminated = true;
 
     this.server.close();
+    this.closeOpenSockets();
     this.pendingEventListeners = [];
   }
 
   public bindHandler(socket: Socket) {
+    this.trackOpenSocket(socket);
+
     const readSocket = this.getSocketInstance(socket);
     readSocket.on('message', (msg: ReadPacket & PacketId) =>
       this.handleMessage(readSocket, msg).catch(err => this.handleError(err)),
@@ -210,12 +227,41 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     });
   }
 
+  /**
+   * Keeps a reference to an accepted socket so that it can be destroyed when
+   * the server is closed, and drops it again once it closes on its own.
+   */
+  protected trackOpenSocket(socket: Socket) {
+    if (!socket) {
+      return;
+    }
+    this.openSockets.add(socket);
+    socket.on(TcpEventsMap.CLOSE, () => this.openSockets.delete(socket));
+  }
+
+  /**
+   * Destroys every socket still open. Called on shutdown so that "close" does
+   * not leave the process alive, and so that no further messages are dispatched
+   * to handlers over connections established before the shutdown.
+   */
+  protected closeOpenSockets() {
+    this.openSockets.forEach(socket => socket.destroy());
+    this.openSockets.clear();
+  }
+
   protected getSocketInstance(socket: Socket): TcpSocket {
-    // Pass maxBufferSize only if socketClass is JsonSocket
-    // For custom socket classes, users should handle maxBufferSize in their own implementation
-    if (this.maxBufferSize !== undefined && this.socketClass === JsonSocket) {
+    // Pass the framing options only if socketClass is JsonSocket
+    // For custom socket classes, users should handle them in their own implementation
+    const hasJsonSocketOptions =
+      this.maxBufferSize !== undefined ||
+      this.incompleteMessageTimeout !== undefined ||
+      this.maxSendBufferSize !== undefined;
+
+    if (hasJsonSocketOptions && this.socketClass === JsonSocket) {
       return new this.socketClass(socket, {
         maxBufferSize: this.maxBufferSize,
+        incompleteMessageTimeout: this.incompleteMessageTimeout,
+        maxSendBufferSize: this.maxSendBufferSize,
       });
     }
     return new this.socketClass(socket);

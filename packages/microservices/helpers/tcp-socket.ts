@@ -55,7 +55,19 @@ export abstract class TcpSocket {
     try {
       this.handleData(data);
     } catch (e) {
-      this.socket.emit(TcpEventsMap.ERROR, e.message);
+      this.handleDataError(e);
+    }
+  }
+
+  /**
+   * Surfaces a framing error on the underlying socket and closes it.
+   * Pass "destroy" for a peer that cannot be trusted to answer a FIN.
+   */
+  protected handleDataError(e: any, { destroy = false } = {}) {
+    this.socket.emit(TcpEventsMap.ERROR, e.message);
+    if (destroy) {
+      this.socket.destroy();
+    } else {
       this.socket.end();
     }
   }

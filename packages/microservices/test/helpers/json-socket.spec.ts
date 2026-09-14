@@ -2,7 +2,9 @@ import { expect } from 'chai';
 import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 import { CorruptedPacketLengthException } from '../../errors/corrupted-packet-length.exception';
+import { IncompleteMessageTimeoutException } from '../../errors/incomplete-message-timeout.exception';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
+import { MaxSendBufferSizeExceededException } from '../../errors/max-send-buffer-size-exceeded.exception';
 import { JsonSocket } from '../../helpers/json-socket';
 
 function makeSocketStub(): any {
@@ -10,6 +12,10 @@ function makeSocketStub(): any {
   return Object.assign(emitter, {
     write: sinon.stub(),
     end: sinon.stub(),
+    pause: sinon.stub(),
+    resume: sinon.stub(),
+    destroy: sinon.stub(),
+    writableLength: 0,
     connect: sinon.stub(),
   });
 }
@@ -116,6 +122,191 @@ describe('JsonSocket', () => {
       (jsonSocket as any).handleData(frame({ ok: true }));
       expect(received).to.have.lengthOf(1);
       expect(received[0]).to.deep.equal({ ok: true });
+    });
+  });
+
+  describe('incomplete message timeout', () => {
+    let clock: sinon.SinonFakeTimers;
+
+    beforeEach(() => {
+      clock = sinon.useFakeTimers();
+    });
+    afterEach(() => {
+      clock.restore();
+    });
+
+    it('drops a connection that goes silent in the middle of a packet', () => {
+      const socket = makeSocketStub();
+      const errors: string[] = [];
+      socket.on('error', (message: string) => errors.push(message));
+      const socketUnderTest = new JsonSocket(socket, {
+        incompleteMessageTimeout: 1000,
+      });
+
+      // A packet declaring far more data than is ever sent.
+      (socketUnderTest as any).handleData('999999#partial');
+      expect(socket.destroy.called).to.be.false;
+
+      clock.tick(1000);
+
+      expect(socket.destroy.called).to.be.true;
+      expect(errors).to.have.lengthOf(1);
+      expect(errors[0]).to.equal(
+        new IncompleteMessageTimeoutException(7, 1000).message,
+      );
+    });
+
+    it('does not interrupt a slow but progressing transfer', () => {
+      const socket = makeSocketStub();
+      const socketUnderTest = new JsonSocket(socket, {
+        incompleteMessageTimeout: 1000,
+      });
+
+      (socketUnderTest as any).handleData('12#');
+      for (let i = 0; i < 5; i++) {
+        clock.tick(900);
+        (socketUnderTest as any).handleData('ab');
+      }
+
+      // 4500ms elapsed against a 1000ms timeout, but the peer kept sending.
+      expect(socket.destroy.called).to.be.false;
+    });
+
+    it('disarms the timer once the packet is complete', () => {
+      const socket = makeSocketStub();
+      const messages: unknown[] = [];
+      socket.on('message', (msg: unknown) => messages.push(msg));
+      const socketUnderTest = new JsonSocket(socket, {
+        incompleteMessageTimeout: 1000,
+      });
+
+      (socketUnderTest as any).handleData(frame({ hello: 'world' }));
+      clock.tick(10_000);
+
+      expect(messages).to.have.lengthOf(1);
+      expect(socket.destroy.called).to.be.false;
+    });
+
+    it('can be disabled with 0', () => {
+      const socket = makeSocketStub();
+      const socketUnderTest = new JsonSocket(socket, {
+        incompleteMessageTimeout: 0,
+      });
+
+      (socketUnderTest as any).handleData('999999#partial');
+      clock.tick(10_000);
+
+      expect(socket.destroy.called).to.be.false;
+    });
+  });
+
+  describe('write backpressure', () => {
+    it('pauses reading when the outgoing buffer is above the high-water mark', () => {
+      const socket = makeSocketStub();
+      socket.write.returns(false);
+      const socketUnderTest = new JsonSocket(socket);
+
+      socketUnderTest.sendMessage({ some: 'payload' });
+
+      expect(socket.pause.called).to.be.true;
+    });
+
+    it('does not pause reading while writes are flushed', () => {
+      const socket = makeSocketStub();
+      socket.write.returns(true);
+      const socketUnderTest = new JsonSocket(socket);
+
+      socketUnderTest.sendMessage({ some: 'payload' });
+
+      expect(socket.pause.called).to.be.false;
+    });
+
+    it('resumes reading once the socket drains', () => {
+      const socket = makeSocketStub();
+      socket.write.returns(false);
+      const socketUnderTest = new JsonSocket(socket);
+
+      socketUnderTest.sendMessage({ some: 'payload' });
+      socket.emit('drain');
+
+      expect(socket.resume.called).to.be.true;
+    });
+
+    it('stops turning buffered frames into responses until the socket drains', () => {
+      const socket = makeSocketStub();
+      const messages: unknown[] = [];
+      const socketUnderTest = new JsonSocket(socket);
+      // Every inbound message triggers a response that does not flush.
+      socket.write.returns(false);
+      socket.on('message', (msg: unknown) => {
+        messages.push(msg);
+        socketUnderTest.sendMessage({ re: msg });
+      });
+
+      // Three pipelined requests arriving in a single read event.
+      (socketUnderTest as any).handleData(
+        frame({ n: 1 }) + frame({ n: 2 }) + frame({ n: 3 }),
+      );
+
+      expect(messages).to.have.lengthOf(1);
+      expect(socket.pause.called).to.be.true;
+
+      socket.write.returns(true);
+      socket.emit('drain');
+
+      expect(messages).to.have.lengthOf(3);
+    });
+  });
+
+  describe('max send buffer size', () => {
+    it('drops a peer that lets responses pile up beyond the limit', () => {
+      const socket = makeSocketStub();
+      const errors: string[] = [];
+      socket.on('error', (message: string) => errors.push(message));
+      socket.write.callsFake(() => {
+        socket.writableLength = 2048;
+        return false;
+      });
+      const socketUnderTest = new JsonSocket(socket, {
+        maxSendBufferSize: 1024,
+      });
+
+      socketUnderTest.sendMessage({ some: 'payload' });
+
+      expect(socket.destroy.called).to.be.true;
+      expect(errors).to.have.lengthOf(1);
+      expect(errors[0]).to.equal(
+        new MaxSendBufferSizeExceededException(2048, 1024).message,
+      );
+    });
+
+    it('leaves a peer that stays within the limit alone', () => {
+      const socket = makeSocketStub();
+      socket.write.callsFake(() => {
+        socket.writableLength = 512;
+        return false;
+      });
+      const socketUnderTest = new JsonSocket(socket, {
+        maxSendBufferSize: 1024,
+      });
+
+      socketUnderTest.sendMessage({ some: 'payload' });
+
+      expect(socket.destroy.called).to.be.false;
+      expect(socket.pause.called).to.be.true;
+    });
+
+    it('can be disabled with 0', () => {
+      const socket = makeSocketStub();
+      socket.write.callsFake(() => {
+        socket.writableLength = 1024 * 1024 * 1024;
+        return false;
+      });
+      const socketUnderTest = new JsonSocket(socket, { maxSendBufferSize: 0 });
+
+      socketUnderTest.sendMessage({ some: 'payload' });
+
+      expect(socket.destroy.called).to.be.false;
     });
   });
 });

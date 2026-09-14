@@ -114,6 +114,22 @@ export interface TcpOptions {
      * This limit prevents memory exhaustion when receiving large TCP messages.
      */
     maxBufferSize?: number;
+    /**
+     * How long a peer may stay silent in the middle of a packet before the
+     * connection is dropped, in milliseconds (default: 30000). The timer is
+     * refreshed on every read, so a slow but progressing transfer is never
+     * interrupted; it only fires when a peer stops sending mid-packet, which
+     * would otherwise pin the partial packet in memory indefinitely.
+     * Set to 0 to disable.
+     */
+    incompleteMessageTimeout?: number;
+    /**
+     * Maximum number of response bytes that may sit queued for a single peer
+     * that is not reading them, in bytes (default: 128MB). Reading from a peer
+     * is suspended while its outgoing buffer is backed up, and the connection
+     * is dropped once this limit is passed. Set to 0 to disable.
+     */
+    maxSendBufferSize?: number;
   };
 }
 
