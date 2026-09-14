@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Injectable,
@@ -994,6 +995,78 @@ describe('Middleware (FastifyAdapter)', () => {
       afterEach(async () => {
         await app.close();
       });
+    });
+  });
+
+  describe('should handle exceptions thrown from a middleware', () => {
+    @Injectable()
+    class ThrowingMiddleware implements NestMiddleware {
+      use(
+        req: FastifyRequest['raw'] & { headers: Record<string, unknown> },
+        res,
+        next: () => void,
+      ) {
+        if (req.headers['x-throw'] === 'http-exception') {
+          throw new BadRequestException('middleware rejection');
+        }
+        if (req.headers['x-throw'] === 'unknown-error') {
+          throw new Error('middleware failure');
+        }
+        next();
+      }
+    }
+
+    @Controller('protected')
+    class ProtectedController {
+      @Get()
+      findAll() {
+        return 'protected';
+      }
+    }
+
+    @Module({
+      controllers: [ProtectedController],
+    })
+    class ThrowingMiddlewareModule implements NestModule {
+      configure(consumer: MiddlewareConsumer) {
+        consumer.apply(ThrowingMiddleware).forRoutes(ProtectedController);
+      }
+    }
+
+    beforeEach(async () => {
+      app = (
+        await Test.createTestingModule({
+          imports: [ThrowingMiddlewareModule],
+        }).compile()
+      ).createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+
+      await app.init();
+      await app.getHttpAdapter().getInstance().ready();
+    });
+
+    it('should send the HttpException response', () => {
+      return request(app.getHttpServer())
+        .get('/protected')
+        .set('x-throw', 'http-exception')
+        .expect(400, {
+          statusCode: 400,
+          message: 'middleware rejection',
+          error: 'Bad Request',
+        });
+    });
+
+    it('should send the internal server error response for unknown errors', () => {
+      return request(app.getHttpServer())
+        .get('/protected')
+        .set('x-throw', 'unknown-error')
+        .expect(500, {
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
+    afterEach(async () => {
+      await app.close();
     });
   });
 });
