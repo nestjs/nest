@@ -37,10 +37,28 @@ export class ApplicationConfig {
     this.globalPrefixes = Array.isArray(prefix) ? prefix : [prefix];
   }
 
+  /**
+   * Returns the first global prefix, or an empty string if none was set.
+   *
+   * This method predates support for multiple prefixes and keeps its
+   * `string` return type on purpose, so that existing consumers (e.g.
+   * `@nestjs/swagger`) are not broken. When several prefixes have been set,
+   * only the first one is returned; use {@link getGlobalPrefixes} to get all
+   * of them.
+   *
+   * @deprecated Use {@link getGlobalPrefixes} instead. This method will be
+   * removed in NestJS v13.
+   */
   public getGlobalPrefix(): string {
+    // Intentionally returns only the first prefix to preserve the previous
+    // `string` contract. See the JSDoc above.
     return this.globalPrefixes[0] ?? '';
   }
 
+  /**
+   * Returns every global prefix set via {@link setGlobalPrefix}, in the order
+   * they were provided. Returns an empty array if none was set.
+   */
   public getGlobalPrefixes(): string[] {
     return this.globalPrefixes;
   }
