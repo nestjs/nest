@@ -4,7 +4,14 @@ import * as http from 'http';
 import { createRequire } from 'module';
 import type { Duplex } from 'stream';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
-import { filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
+import {
+  catchError,
+  filter,
+  first,
+  mergeMap,
+  share,
+  takeUntil,
+} from 'rxjs/operators';
 import { loadPackageSync, isNil, normalizePath } from '@nestjs/common/internal';
 import {
   CLOSE_EVENT,
@@ -159,6 +166,13 @@ export class WsAdapter extends AbstractWsAdapter {
       mergeMap(data =>
         this.bindMessageHandler(data, handlersMap, transform).pipe(
           filter(result => !isNil(result)),
+          // a handler that rejects through an error filter that rethrows
+          // would error the client's stream and silence every later message;
+          // that rethrow is an app bug, so it gets logged, not dropped silently
+          catchError(err => {
+            this.logger.error(err);
+            return EMPTY;
+          }),
         ),
       ),
       takeUntil(close$),

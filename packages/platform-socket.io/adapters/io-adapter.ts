@@ -2,9 +2,18 @@ import {
   AbstractWsAdapter,
   type MessageMappingProperties,
 } from '@nestjs/websockets';
-import { fromEvent, Observable } from 'rxjs';
-import { filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
+import { defer, EMPTY, fromEvent, Observable } from 'rxjs';
+import {
+  catchError,
+  filter,
+  first,
+  map,
+  mergeMap,
+  share,
+  takeUntil,
+} from 'rxjs/operators';
 import { Namespace, Server, ServerOptions, Socket } from 'socket.io';
+import { Logger } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/internal';
 import { DISCONNECT_EVENT } from '@nestjs/websockets/internal';
 
@@ -12,6 +21,7 @@ import { DISCONNECT_EVENT } from '@nestjs/websockets/internal';
  * @publicApi
  */
 export class IoAdapter extends AbstractWsAdapter {
+  protected readonly logger = new Logger(IoAdapter.name);
   private readonly disconnectMap = new WeakMap<Socket, Observable<any>>();
 
   public create(
@@ -51,9 +61,17 @@ export class IoAdapter extends AbstractWsAdapter {
       const source$ = fromEvent(socket, message).pipe(
         mergeMap((payload: any) => {
           const { data, ack } = this.mapPayload(payload);
-          return transform(callback(data, ack)).pipe(
+          // defer turns a sync throw into an error notification and catchError
+          // stops it from tearing down this event's stream, which would silence
+          // that event for the client. A handler whose error filter rethrows is
+          // an app bug, so the failure gets logged instead of dropped silently.
+          return defer(() => transform(callback(data, ack))).pipe(
             filter((response: any) => !isNil(response)),
             map((response: any) => [response, ack, isAckHandledManually]),
+            catchError(err => {
+              this.logger.error(err);
+              return EMPTY;
+            }),
           );
         }),
         takeUntil(disconnect$),

@@ -1,6 +1,18 @@
+import { EventEmitter } from 'events';
 import { createServer } from 'http';
-import { lastValueFrom, of, toArray, type Observable } from 'rxjs';
+import {
+  config,
+  from,
+  lastValueFrom,
+  mergeAll,
+  of,
+  toArray,
+  type Observable,
+} from 'rxjs';
 import { WsAdapter } from '../adapters/ws-adapter.js';
+import { WsProxy } from '../../websockets/context/ws-proxy.js';
+import { WsExceptionsHandler } from '../../websockets/exceptions/ws-exceptions-handler.js';
+import { WebSocketsController } from '../../websockets/web-sockets-controller.js';
 
 describe('WsAdapter', () => {
   describe('bindMessageHandler', () => {
@@ -133,6 +145,78 @@ describe('WsAdapter', () => {
       );
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('bindMessageHandlers', () => {
+    const frame = (payload: unknown) => ({ data: JSON.stringify(payload) });
+
+    it('should not let a rejecting handler tear down the message stream', async () => {
+      const unhandled: unknown[] = [];
+      config.onUnhandledError = err => unhandled.push(err);
+
+      // an app-level @Catch() filter that rethrows
+      const exceptionsHandler = new WsExceptionsHandler();
+      exceptionsHandler.setCustomFilters([
+        {
+          exceptionMetatypes: [],
+          func: (exception: any) => {
+            throw exception;
+          },
+        },
+      ] as any);
+
+      const adapter = new WsAdapter();
+      const logError = vi
+        .spyOn(adapter['logger'], 'error')
+        .mockImplementation(() => undefined);
+
+      const client = new EventEmitter() as any;
+      client.readyState = 1; // OPEN_STATE
+      const replies: any[] = [];
+      client.send = (payload: string) => replies.push(JSON.parse(payload));
+
+      let calls = 0;
+      const callback = new WsProxy()
+        .create(
+          async () => {
+            if (++calls === 1) throw new Error('handler blew up');
+            return 'ok';
+          },
+          exceptionsHandler,
+          'known',
+        )
+        .bind(undefined, client);
+
+      // same transform WebSocketsController.subscribeMessages passes in
+      const realTransform = (data: any) =>
+        from(
+          WebSocketsController.prototype.pickResult.call(undefined, data),
+        ).pipe(mergeAll());
+
+      adapter.bindMessageHandlers(
+        client,
+        [
+          {
+            message: 'known',
+            methodName: 'm',
+            callback,
+            isAckHandledManually: false,
+          },
+        ],
+        realTransform,
+      );
+
+      client.emit('message', frame({ event: 'known', data: {} }));
+      await new Promise(resolve => setTimeout(resolve, 5));
+      client.emit('message', frame({ event: 'known', data: {} }));
+      await new Promise(resolve => setTimeout(resolve, 5));
+      config.onUnhandledError = null;
+
+      expect(calls).toBe(2);
+      expect(replies).toEqual(['ok']);
+      expect(unhandled).toEqual([]);
+      expect(logError).toHaveBeenCalledTimes(1);
     });
   });
 
