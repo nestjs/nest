@@ -107,7 +107,7 @@
     "@types/node": "26.4.1",
     "@types/supertest": "7.2.1",
     "@types/ws": "8.18.1",
-    "@vitest/coverage-istanbul": "4.1.11",
+    "@vitest/coverage-istanbul": "5.0.0",
     "@vitest/coverage-v8": "4.1.11",
     "amqp-connection-manager": "5.0.0",
     "amqplib": "2.0.1",
