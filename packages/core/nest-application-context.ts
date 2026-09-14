@@ -53,7 +53,7 @@ export class NestApplicationContext<
     (signal: string) => Promise<void>
   >();
   private readonly moduleCompiler: ModuleCompiler;
-  private receivedSignal = false;
+  private shutdownPromise?: Promise<void>;
   private _instanceLinksHost: InstanceLinksHost;
   private _moduleRefsForHooksByDistance?: Array<Module>;
   private initializationPromise?: Promise<void>;
@@ -268,6 +268,28 @@ export class NestApplicationContext<
    * @returns {Promise<void>}
    */
   public async close(signal?: string): Promise<void> {
+    await this.shutdown(signal);
+  }
+
+  /**
+   * Runs the shutdown sequence, at most once per cycle. Callers that arrive
+   * while a shutdown is already in flight - a process signal delivered during
+   * an explicit `close()`, or the other way round - await the very same
+   * promise instead of starting a second, concurrent teardown.
+   *
+   * @param {string} [signal] The system signal that triggered the shutdown
+   * @returns {Promise<void>}
+   */
+  protected shutdown(signal?: string): Promise<void> {
+    this.shutdownPromise ??= this.runShutdownSequence(signal).finally(() => {
+      // Let the context be shut down again once this cycle has settled,
+      // successfully or not.
+      this.shutdownPromise = undefined;
+    });
+    return this.shutdownPromise;
+  }
+
+  private async runShutdownSequence(signal?: string): Promise<void> {
     await this.initializationPromise;
     await this.prepareClose();
     await this.callDestroyHook();
@@ -361,19 +383,12 @@ export class NestApplicationContext<
   ) {
     const cleanup = async (signal: string) => {
       try {
-        if (this.receivedSignal) {
-          // If we receive another signal while we're waiting
-          // for the server to stop, just ignore it.
+        if (this.shutdownPromise) {
+          // If a shutdown is already under way - because of another signal or
+          // an explicit `close()` call - just ignore this one.
           return;
         }
-        this.receivedSignal = true;
-        await this.initializationPromise;
-        await this.prepareClose();
-        await this.callDestroyHook();
-        await this.callBeforeShutdownHook(signal);
-        await this.dispose();
-        await this.callShutdownHook(signal);
-        this.unsubscribeFromProcessSignals();
+        await this.shutdown(signal);
 
         if (options.useProcessExit) {
           // Use process.exit() to ensure the 'exit' event is properly triggered.
@@ -406,7 +421,6 @@ export class NestApplicationContext<
       process.removeListener(signal, cleanup);
     });
     this.shutdownCleanupRefs.clear();
-    this.receivedSignal = false;
   }
 
   /**

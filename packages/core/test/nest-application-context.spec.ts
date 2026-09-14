@@ -172,10 +172,96 @@ describe('NestApplicationContext', () => {
       }
     });
 
+    it('should run shutdown hooks once when a signal arrives during close', async () => {
+      const signal = 'SIGTERM';
+      const listeners = new Set(process.listeners(signal));
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const processExitStub = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => ({}) as any);
+      const processKillStub = vi
+        .spyOn(process, 'kill')
+        .mockImplementation(() => true);
+
+      let releaseDestroyHook: () => void;
+      const destroyHookCalled = new Promise<void>(resolve => {
+        releaseDestroyHook = resolve;
+      });
+      const destroyHookStub = vi
+        .spyOn(applicationContext as any, 'callDestroyHook')
+        .mockImplementation(async () => {
+          releaseDestroyHook();
+          await new Promise(resolve => setTimeout(resolve, 10));
+        });
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => undefined);
+
+      try {
+        applicationContext.enableShutdownHooks([signal]);
+        const cleanup = applicationContext['shutdownCleanupRefs'].get(signal)!;
+
+        // Start a programmatic close, then deliver a signal while the
+        // destroy hook of that close is still in flight.
+        const closing = applicationContext.close();
+        await destroyHookCalled;
+        await cleanup(signal);
+        await closing;
+
+        expect(destroyHookStub).toHaveBeenCalledTimes(1);
+        expect(hookStub).toHaveBeenCalledTimes(1);
+        expect(process.listenerCount(signal)).toBe(listeners.size);
+      } finally {
+        destroyHookStub.mockRestore();
+        hookStub.mockRestore();
+        processKillStub.mockRestore();
+        processExitStub.mockRestore();
+        removeListenersNotIn(signal, listeners);
+      }
+    });
+
+    it('should not get stuck when the shutdown sequence throws', async () => {
+      const signal = 'SIGTERM';
+      const listeners = new Set(process.listeners(signal));
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const processExitStub = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => ({}) as any);
+      const processKillStub = vi
+        .spyOn(process, 'kill')
+        .mockImplementation(() => true);
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockRejectedValueOnce(new Error('shutdown hook failed'))
+        .mockImplementation(async () => undefined);
+
+      try {
+        applicationContext.enableShutdownHooks([signal]);
+        await applicationContext['shutdownCleanupRefs'].get(signal)!(signal);
+
+        expect(processExitStub).toHaveBeenCalledWith(1);
+
+        // The failed cycle must not latch the guard: closing the context
+        // afterwards still runs the shutdown sequence.
+        await applicationContext.close();
+
+        expect(hookStub).toHaveBeenCalledTimes(2);
+        expect(process.listenerCount(signal)).toBe(listeners.size);
+      } finally {
+        hookStub.mockRestore();
+        processKillStub.mockRestore();
+        processExitStub.mockRestore();
+        removeListenersNotIn(signal, listeners);
+      }
+    });
+
     it('should allow shutdown hooks to run after being re-enabled', async () => {
       const signal = 'SIGTERM';
       const listeners = new Set(process.listeners(signal));
       const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const processExitStub = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => ({}) as any);
       const processKillStub = vi
         .spyOn(process, 'kill')
         .mockImplementation(() => true);
@@ -195,6 +281,7 @@ describe('NestApplicationContext', () => {
       } finally {
         hookStub.mockRestore();
         processKillStub.mockRestore();
+        processExitStub.mockRestore();
         removeListenersNotIn(signal, listeners);
       }
     });
@@ -232,6 +319,9 @@ describe('NestApplicationContext', () => {
         signal => new Set(process.listeners(signal)),
       );
       const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const processExitStub = vi
+        .spyOn(process, 'exit')
+        .mockImplementation(() => ({}) as any);
       const processKillStub = vi
         .spyOn(process, 'kill')
         .mockImplementation(() => true);
@@ -264,6 +354,7 @@ describe('NestApplicationContext', () => {
       } finally {
         hookStub.mockRestore();
         processKillStub.mockRestore();
+        processExitStub.mockRestore();
         signals.forEach((signal, index) => {
           removeListenersNotIn(signal, listeners[index]);
         });
