@@ -71,6 +71,96 @@ describe('ServerMqtt', () => {
 
       expect(callbackSpy).toHaveBeenCalledExactlyOnceWith();
     });
+    describe('when "maxConnectionAttempts" is configured', () => {
+      let emitter: any;
+      let endSpy: ReturnType<typeof vi.fn>;
+      let serverWithOptions: ServerMqtt;
+      let callbackSpy: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        emitter = new EventEmitter();
+        endSpy = vi.fn();
+        emitter.end = endSpy;
+        serverWithOptions = new ServerMqtt({
+          maxConnectionAttempts: 2,
+        } as any);
+        vi.spyOn(serverWithOptions, 'createMqttClient').mockImplementation(
+          () => emitter,
+        );
+        callbackSpy = vi.fn();
+      });
+
+      it('should not call the callback when the error limit is not reached', async () => {
+        await serverWithOptions.listen(callbackSpy);
+        emitter.emit('error', new Error('first failure'));
+
+        expect(callbackSpy).not.toHaveBeenCalled();
+        expect(endSpy).not.toHaveBeenCalled();
+      });
+
+      it('should close the client and report the failure once the limit is reached', async () => {
+        const error = new Error('second failure');
+
+        await serverWithOptions.listen(callbackSpy);
+        emitter.emit('error', new Error('first failure'));
+        emitter.emit('error', error);
+
+        expect(endSpy).toHaveBeenCalledOnce();
+        expect(callbackSpy).toHaveBeenCalledExactlyOnceWith(error);
+      });
+
+      it('should not call the callback twice when the connection succeeds first', async () => {
+        await serverWithOptions.listen(callbackSpy);
+        emitter.emit('connect');
+        emitter.emit('error', new Error('post-connect failure'));
+        emitter.emit('error', new Error('post-connect failure'));
+
+        expect(callbackSpy).toHaveBeenCalledExactlyOnceWith();
+      });
+
+      it('should not close the client when errors occur after a successful connection', async () => {
+        await serverWithOptions.listen(callbackSpy);
+        emitter.emit('connect');
+        emitter.emit('error', new Error('first runtime failure'));
+        emitter.emit('error', new Error('second runtime failure'));
+        emitter.emit('error', new Error('third runtime failure'));
+
+        expect(endSpy).not.toHaveBeenCalled();
+      });
+
+      it('should apply the limit again when the server is restarted', async () => {
+        await serverWithOptions.listen(callbackSpy);
+        emitter.emit('connect');
+        serverWithOptions.close();
+
+        const restartEmitter: any = new EventEmitter();
+        restartEmitter.end = vi.fn();
+        vi.spyOn(serverWithOptions, 'createMqttClient').mockImplementation(
+          () => restartEmitter,
+        );
+        const restartCallbackSpy = vi.fn();
+
+        await serverWithOptions.listen(restartCallbackSpy);
+        restartEmitter.emit('error', new Error('first failure'));
+        restartEmitter.emit('error', new Error('second failure'));
+
+        expect(restartEmitter.end).toHaveBeenCalledOnce();
+        expect(restartCallbackSpy).toHaveBeenCalledOnce();
+      });
+
+      it('should keep retrying when maxConnectionAttempts is not set', async () => {
+        const serverWithoutLimit = new ServerMqtt({} as any);
+        vi.spyOn(serverWithoutLimit, 'createMqttClient').mockImplementation(
+          () => emitter,
+        );
+
+        await serverWithoutLimit.listen(callbackSpy);
+        emitter.emit('error', new Error('failure'));
+
+        expect(callbackSpy).not.toHaveBeenCalled();
+        expect(endSpy).not.toHaveBeenCalled();
+      });
+    });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {
         const error = new Error('random error');
