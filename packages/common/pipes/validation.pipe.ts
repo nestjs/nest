@@ -1,5 +1,4 @@
 import { iterate } from 'iterare';
-import { types } from 'util';
 import { Injectable } from '../decorators/core/index.js';
 import { Optional } from '../decorators/index.js';
 import { HttpStatus } from '../enums/http-status.enum.js';
@@ -20,6 +19,7 @@ import {
 } from '../utils/http-error-by-code.util.js';
 import { loadPackage } from '../utils/load-package.util.js';
 import { isNil, isUndefined } from '../utils/shared.utils.js';
+import { stripProtoKeys } from '../utils/strip-proto-keys.util.js';
 
 /**
  * @publicApi
@@ -55,12 +55,6 @@ export interface ValidationPipeOptions extends ValidatorOptions {
 
 let classValidator: any = {} as any;
 let classTransformer: any = {} as any;
-
-/**
- * Built-in JavaScript types that should be excluded from prototype stripping
- * to avoid conflicts with test frameworks like Jest's useFakeTimers
- */
-const BUILT_IN_TYPES = [Date, RegExp, Error, Map, Set, WeakMap, WeakSet];
 
 /**
  * @see [Validation](https://docs.nestjs.com/techniques/validation)
@@ -157,7 +151,7 @@ export class ValidationPipe implements PipeTransform {
 
     const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
-    this.stripProtoKeys(value);
+    stripProtoKeys(value);
     let entity = classTransformer.plainToInstance(
       metatype,
       value,
@@ -296,44 +290,12 @@ export class ValidationPipe implements PipeTransform {
     return '';
   }
 
-  protected stripProtoKeys(value: any) {
-    if (
-      value == null ||
-      typeof value !== 'object' ||
-      types.isTypedArray(value)
-    ) {
-      return;
-    }
-
-    // Skip built-in JavaScript primitives to avoid Jest useFakeTimers conflicts
-    if (BUILT_IN_TYPES.some(type => value instanceof type)) {
-      return;
-    }
-
-    if (Array.isArray(value)) {
-      for (const v of value) {
-        this.stripProtoKeys(v);
-      }
-      return;
-    }
-
-    // Delete dangerous prototype pollution keys
-    delete value.__proto__;
-    delete value.prototype;
-
-    // Only delete constructor if it's NOT a built-in type
-    const constructorType = value?.constructor;
-    if (constructorType && !BUILT_IN_TYPES.includes(constructorType)) {
-      delete value.constructor;
-    }
-
-    for (const key in value) {
-      this.stripProtoKeys(value[key]);
-    }
-  }
-
   protected isPrimitive(value: unknown): boolean {
     return ['number', 'boolean', 'string'].includes(typeof value);
+  }
+
+  protected stripProtoKeys(value: any): void {
+    stripProtoKeys(value);
   }
 
   protected validate(

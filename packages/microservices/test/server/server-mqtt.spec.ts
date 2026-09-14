@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { MqttContext } from '../../ctx-host/index.js';
@@ -14,13 +15,16 @@ describe('ServerMqtt', () => {
   });
   describe('listen', () => {
     let onSpy: ReturnType<typeof vi.fn>;
+    let onceSpy: ReturnType<typeof vi.fn>;
     let client: any;
     let callbackSpy: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
       onSpy = vi.fn();
+      onceSpy = vi.fn();
       client = {
         on: onSpy,
+        once: onceSpy,
       };
       vi.spyOn(server, 'createMqttClient').mockImplementation(() => client);
       callbackSpy = vi.fn();
@@ -48,6 +52,24 @@ describe('ServerMqtt', () => {
     it('should bind "message" event to handler', async () => {
       await server.listen(callbackSpy);
       expect(onSpy.mock.calls[5][0]).toBe('message');
+    });
+    it('should bind the callback with "once"', async () => {
+      await server.listen(callbackSpy);
+
+      expect(onceSpy).toHaveBeenCalledWith('connect', expect.any(Function));
+    });
+    it('should run the callback once, as mqtt reconnects on the same client', async () => {
+      // A real emitter, because mqtt re-emits "connect" on the same client
+      // after every reconnect.
+      const emitter: any = new EventEmitter();
+      vi.spyOn(server, 'createMqttClient').mockImplementation(() => emitter);
+
+      await server.listen(callbackSpy);
+      emitter.emit('connect');
+      emitter.emit('connect');
+      emitter.emit('connect');
+
+      expect(callbackSpy).toHaveBeenCalledExactlyOnceWith();
     });
     describe('when "start" throws an exception', () => {
       it('should call callback with a thrown error as an argument', async () => {

@@ -35,7 +35,7 @@ import {
   RouteShorthandOptions,
   fastify,
 } from 'fastify';
-import * as Reply from 'fastify/lib/reply.js';
+import Reply from 'fastify/lib/reply.js';
 import fastifySymbols from 'fastify/lib/symbols.js';
 import * as http from 'http';
 import * as http2 from 'http2';
@@ -214,7 +214,7 @@ export class FastifyAdapter<
 
         const acceptHeaderVersionParameter = acceptHeaderValue
           ? acceptHeaderValue.split(';')[1]
-          : '';
+          : undefined;
 
         return isUndefined(acceptHeaderVersionParameter)
           ? VERSION_NEUTRAL // No version was supplied

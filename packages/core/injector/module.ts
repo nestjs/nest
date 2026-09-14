@@ -329,7 +329,7 @@ export class Module {
   public isCustomValue(provider: any): provider is ValueProvider {
     return (
       isObject(provider) &&
-      Object.prototype.hasOwnProperty.call(provider, 'useValue')
+      Object.hasOwn(provider, 'useValue')
     );
   }
 

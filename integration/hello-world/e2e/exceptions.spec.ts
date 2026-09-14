@@ -55,6 +55,16 @@ describe('Error messages', () => {
         });
     });
 
+    it(`/GET (InternalServerError when Error instance has statusCode)`, async () => {
+      return request(server)
+        .get('/error-with-status-code')
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR)
+        .expect({
+          statusCode: 500,
+          message: 'Internal server error',
+        });
+    });
+
     afterEach(async () => {
       await app.close();
     });
@@ -111,6 +121,21 @@ describe('Error messages', () => {
         .inject({
           method: 'GET',
           url: '/unexpected-error',
+        })
+        .then(({ payload, statusCode }) => {
+          expect(statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);
+          expect(JSON.parse(payload)).toEqual({
+            statusCode: 500,
+            message: 'Internal server error',
+          });
+        });
+    });
+
+    it(`/GET (InternalServerError when Error instance has statusCode)`, async () => {
+      return app
+        .inject({
+          method: 'GET',
+          url: '/error-with-status-code',
         })
         .then(({ payload, statusCode }) => {
           expect(statusCode).toBe(HttpStatus.INTERNAL_SERVER_ERROR);

@@ -18,6 +18,13 @@ export class ErrorsController {
     throw new Error();
   }
 
+  @Get('error-with-status-code')
+  errorWithStatusCode() {
+    throw Object.assign(new Error('forbidden by error instance'), {
+      statusCode: 403,
+    });
+  }
+
   throwError() {
     throw new BadRequestException({
       statusCode: 400,

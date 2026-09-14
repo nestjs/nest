@@ -82,6 +82,29 @@ describe('DiscoverableMetaHostCollection', () => {
       expect(collection.get(metaKey)!.has(instanceWrapper1)).toBe(true);
       expect(collection.get(metaKey)!.has(instanceWrapper2)).toBe(true);
     });
+
+    it('should keep one entry when a wrapper is re-inserted as a copy sharing the same instance id', () => {
+      const collection = new Map<string, Set<InstanceWrapper>>();
+      const original = new InstanceWrapper({
+        token: 'TestToken',
+        name: 'TestProvider',
+      });
+      // the prototype phase replaces the map entry with a copy that keeps
+      // the same instance id
+      const copy = new InstanceWrapper(original);
+      const metaKey = 'test-key';
+
+      DiscoverableMetaHostCollection.insertByMetaKey(
+        metaKey,
+        original,
+        collection,
+      );
+      DiscoverableMetaHostCollection.insertByMetaKey(metaKey, copy, collection);
+
+      expect(collection.get(metaKey)!.size).toBe(1);
+      expect(collection.get(metaKey)!.has(copy)).toBe(true);
+      expect(copy.id).toBe(original.id);
+    });
   });
 
   describe('getProvidersByMetaKey', () => {

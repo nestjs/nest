@@ -371,7 +371,7 @@ export class ClientGrpcProxy
 
   protected getClient(name: string): any {
     return this.grpcClients.find(client =>
-      Object.hasOwnProperty.call(client, name),
+      Object.hasOwn(client, name),
     );
   }
 

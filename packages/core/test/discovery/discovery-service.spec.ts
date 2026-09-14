@@ -1,3 +1,5 @@
+import { Injectable, Module as NestModule } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import { DiscoverableMetaHostCollection } from '../../discovery/discoverable-meta-host-collection.js';
 import { DiscoveryService } from '../../discovery/discovery-service.js';
 import { InstanceWrapper } from '../../injector/instance-wrapper.js';
@@ -566,6 +568,87 @@ describe('DiscoveryService', () => {
 
       const modules = (discoveryService as any).getModules({ include: [] });
       expect(modules).toHaveLength(0);
+    });
+  });
+
+  describe('discovery of wrappers inspected after instantiation', () => {
+    it('should discover a provider registered via useFactory with a discovery decorator', async () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      @Injectable()
+      class FactoryService {}
+
+      @NestModule({
+        providers: [
+          DiscoveryService,
+          { provide: FactoryService, useFactory: () => new FactoryService() },
+        ],
+      })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      const providers = moduleRef
+        .get(DiscoveryService)
+        .getProviders({ metadataKey: TestDecorator.KEY });
+
+      expect(providers).toHaveLength(1);
+      expect(providers[0].instance).toBeInstanceOf(FactoryService);
+    });
+
+    it('should discover a decorated useClass provider exactly once (the prototype phase replaces its wrapper with a copy)', async () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      @Injectable()
+      class ClassService {}
+
+      @NestModule({
+        providers: [DiscoveryService, ClassService],
+      })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      const providers = moduleRef
+        .get(DiscoveryService)
+        .getProviders({ metadataKey: TestDecorator.KEY });
+
+      expect(providers).toHaveLength(1);
+      expect(providers[0].instance).toBeInstanceOf(ClassService);
+    });
+
+    it('should not discover an alias wrapper in addition to the provider it points at', async () => {
+      const TestDecorator = DiscoveryService.createDecorator();
+
+      @TestDecorator()
+      @Injectable()
+      class AliasedService {}
+
+      @NestModule({
+        providers: [
+          DiscoveryService,
+          AliasedService,
+          { provide: 'ALIAS', useExisting: AliasedService },
+        ],
+      })
+      class AppModule {}
+
+      const moduleRef = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      const providers = moduleRef
+        .get(DiscoveryService)
+        .getProviders({ metadataKey: TestDecorator.KEY });
+
+      expect(providers).toHaveLength(1);
+      expect(providers[0].instance).toBeInstanceOf(AliasedService);
     });
   });
 });

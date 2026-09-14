@@ -48,7 +48,7 @@ export class HeaderInterceptor {
     const ctx = context.switchToHttp();
     const res = ctx.getResponse();
     for (const key in this.headers) {
-      if (Object.prototype.hasOwnProperty.call(this.headers, key)) {
+      if (Object.hasOwn(this.headers, key)) {
         res.header(key, this.headers[key]);
       }
     }

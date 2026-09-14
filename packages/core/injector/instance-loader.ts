@@ -1,4 +1,5 @@
 import { Logger, type LoggerService } from '@nestjs/common';
+import { DiscoverableMetaHostCollection } from '../discovery/discoverable-meta-host-collection.js';
 import { MODULE_INIT_MESSAGE } from '../helpers/messages.js';
 import { GraphInspector } from '../inspector/graph-inspector.js';
 import { NestContainer } from './container.js';
@@ -72,6 +73,14 @@ export class InstanceLoader<TInjector extends Injector = Injector> {
       wrappers.map(async item => {
         await this.injector.loadProvider(item, moduleRef);
         this.graphInspector.inspectInstanceWrapper(item, moduleRef);
+        if (!item.isAlias) {
+          // an alias wrapper is factory-shaped, so inspecting it would
+          // discover the aliased provider twice
+          DiscoverableMetaHostCollection.inspectProvider(
+            this.container.getModules(),
+            item,
+          );
+        }
       }),
     );
   }
