@@ -82,7 +82,7 @@ export class ParseArrayPipe implements PipeTransform {
    * @param metadata contains metadata about the currently processed route argument
    */
   async transform(value: unknown, metadata: ArgumentMetadata): Promise<any> {
-    if (!value && !this.options.optional) {
+    if (isNil(value) && !this.options.optional) {
       throw this.exceptionFactory(VALIDATION_ERROR_MESSAGE);
     } else if (isNil(value) && this.options.optional) {
       return value;
