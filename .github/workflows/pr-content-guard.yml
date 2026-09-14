@@ -1,0 +1,191 @@
+name: PR content guard
+
+# Flags pull requests that carry repository-poisoning malware patterns, such as
+# the PolinRider campaign: a hidden `.vscode/tasks.json` task that runs when the
+# folder is opened and executes JavaScript disguised as a font file. The point
+# is to warn maintainers before anyone checks such a branch out locally.
+#
+# Security model: `pull_request_target` always runs this file as it exists on
+# the base branch, so a pull request cannot edit the check away. The pull
+# request's code is never checked out or executed; changed files are read
+# through the REST API as data only. Keep it that way: no checkout of the head
+# ref, no package installs, and no `${{ }}` expressions in `run:` scripts.
+
+on:
+  pull_request_target: # zizmor: ignore[dangerous-triggers] -- PR content is only read as API data, see above
+
+permissions: {}
+
+concurrency:
+  group: pr-content-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    name: Scan changed files
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write # sticky comment when something is found
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Scan
+        id: scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/pr-content-guard"
+          mkdir -p "$work"
+
+          cat > "$work/lib.jq" <<'JQ'
+          # Hex prefix that a font or image with each extension must start with.
+          def signatures: {
+            woff: "^774f4646", woff2: "^774f4632",
+            ttf: "^(00010000|74727565|4f54544f)", otf: "^(4f54544f|00010000)", eot: "^.{68}4c50",
+            png: "^89504e470d0a1a0a", jpg: "^ffd8ff", jpeg: "^ffd8ff",
+            gif: "^474946383[79]61", ico: "^00000100", webp: "^52494646.{8}57454250"
+          };
+          def ext: (.filename | ascii_downcase | capture("\\.(?<e>[a-z0-9]+)$").e) // "";
+          def added: (.patch // "") | split("\n")[] | select(startswith("+")) | .[1:];
+          def removed: (.patch // "") | split("\n")[] | select(startswith("-")) | .[1:];
+          def finding($level; $rule; $detail): {$level, $rule, file: .filename, $detail};
+          JQ
+
+          # Changed files with their diffs (GitHub lists at most 3000).
+          gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files?per_page=100" --jq '.[]' |
+            jq -s '.' > "$work/files.json"
+
+          # Top-level entries of the base branch.
+          gh api "repos/$REPO/git/trees/$BASE_SHA" --jq '[.tree[].path]' > "$work/root.json"
+
+          # First 48 bytes (as hex) of every added or modified font/image, keyed by blob SHA.
+          jq -L "$work" -r 'include "lib";
+            .[] | select(.status != "removed") | ext as $e | select(signatures | has($e)) | .sha
+          ' "$work/files.json" |
+            sort -u |
+            while read -r sha; do
+              [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || continue
+              hex=$(gh api "repos/$REPO/git/blobs/$sha" --jq '.content | gsub("\\s"; "") | .[0:64]' |
+                base64 -d | od -An -tx1 -v | tr -d ' \n')
+              jq -n --arg sha "$sha" --arg hex "$hex" '{($sha): $hex}'
+            done |
+            jq -s 'add // {}' > "$work/heads.json"
+
+          cat > "$work/rules.jq" <<'JQ'
+          include "lib";
+
+          ($heads[0]) as $heads
+          | ($root[0]) as $root
+          | [
+              (if length >= 3000 then
+                {level: "error", rule: "incomplete-scan", file: "", detail: "GitHub lists at most 3000 files per pull request, so the scan is incomplete."}
+              else empty end),
+
+              (.[] | select(.status != "removed") | (
+                # Editor and devcontainer configs can run commands as soon as the folder is opened.
+                (select(.filename | test("(^|/)\\.(vscode|devcontainer|idea)/|\\.code-workspace$"))
+                  | finding("error"; "editor-autorun-config"; "Adds or changes editor/devcontainer configuration, which can run commands when the folder is opened.")),
+
+                # Un-ignoring those folders is how such configs get committed.
+                (select(.filename | test("(^|/)\\.gitignore$"))
+                  | select(any(removed; test("\\.(vscode|devcontainer|idea)|code-workspace"))
+                      or any(added; test("^\\s*!.*(\\.(vscode|devcontainer|idea)|code-workspace)")))
+                  | finding("error"; "gitignore-unignores-editor-config"; "Stops ignoring editor/devcontainer configuration.")),
+
+                # Fonts and images must start with their format's magic bytes.
+                (ext as $e | select(signatures | has($e))
+                  | select(($heads[.sha] // "") | test(signatures[$e]) | not)
+                  | finding("error"; "disguised-binary"; "Content does not match the .\($e) format (e.g. JavaScript renamed to a font).")),
+
+                # Whitespace runs push code off-screen in diff views; very long lines hide minified payloads.
+                (select(.filename | test("\\.svg$"; "i") | not)
+                  | select(any(added; test("[ \\t]{100,}") or length > 2000))
+                  | finding("error"; "hidden-code-layout"; "Adds a line with 100+ consecutive spaces/tabs or over 2000 characters.")),
+
+                # Strings from PolinRider payloads and the configs that launch them.
+                (select(.filename != ".github/workflows/pr-content-guard.yml")
+                  | ([added | match("\"runOn\"\\s*:\\s*\"folderOpen\"|allowAutomaticTasks|global\\[['\"](!|_V)['\"]\\]|_\\$_1e42|rmcej%otb%|temp_(auto|interactive)_push\\.bat|branch_structure\\.json|(^|/)config\\.bat\\b"; "g").string] | unique) as $hits
+                  | select($hits != [])
+                  | finding("error"; "malware-indicator"; "Contains known malware strings: \($hits | join(", ")).")),
+
+                # Content GitHub cannot diff (binary or too large) is not scanned line by line.
+                (select(.patch == null and (.status != "renamed" or .changes > 0))
+                  | ext as $e | select(signatures | has($e) | not)
+                  | finding("warning"; "not-scanned"; "No text diff available (binary or too large), so the content was not scanned."))
+              )),
+
+              # A new top-level directory or file is unusual for this repository.
+              ([.[] | select(.status == "added") | .filename | split("/")[0]] | unique[]
+                | select(. as $top | any($root[]; . == $top) | not)
+                | {level: "warning", rule: "new-top-level-entry", file: ., detail: "Adds a new top-level path."})
+            ]
+          | sort_by(.level != "error", .file, .rule)
+          JQ
+
+          jq -L "$work" --slurpfile heads "$work/heads.json" --slurpfile root "$work/root.json" \
+            -f "$work/rules.jq" "$work/files.json" > "$work/findings.json"
+
+          errors=$(jq '[.[] | select(.level == "error")] | length' "$work/findings.json")
+          warnings=$(jq '[.[] | select(.level == "warning")] | length' "$work/findings.json")
+          {
+            echo "errors=$errors"
+            echo "warnings=$warnings"
+          } >> "$GITHUB_OUTPUT"
+
+          # One annotation per finding; escaping keeps file names from injecting workflow commands.
+          jq -r '.[]
+            | "::\(.level) title=PR content guard (\(.rule))::\(if .file == "" then "" else .file + ": " end)\(.detail)"
+            | gsub("%"; "%25") | gsub("\r"; "%0D") | gsub("\n"; "%0A")
+          ' "$work/findings.json"
+
+          jq -r --arg head "$HEAD_SHA" '
+            def code: "`" + gsub("[`\r\n]"; "?") + "`";
+            (map(select(.level == "error")) | length) as $errors
+            | "<!-- pr-content-guard -->",
+              "### PR content guard",
+              "",
+              (if $errors > 0 then
+                "⚠️ This pull request matches patterns used by repository-poisoning malware, such as JavaScript disguised as a font and launched by `.vscode/tasks.json` when the folder is opened. **Do not check this branch out or open it in an editor** until a maintainer has reviewed the diff on GitHub."
+              elif length > 0 then "No blocking findings. Warnings for reviewers:"
+              else "No suspicious patterns found." end),
+              "",
+              (.[] | "- **\(.level)** \(.rule | code)\(if .file == "" then "" else " in " + (.file | code) end): \(.detail)"),
+              "",
+              "<sub>Scanned commit \($head[0:7]). Rules live in `.github/workflows/pr-content-guard.yml`.</sub>"
+          ' "$work/findings.json" > "$work/report.md"
+          cat "$work/report.md" >> "$GITHUB_STEP_SUMMARY"
+
+          # Clean runs only leave a log line; nothing is posted to the pull request.
+          if [[ "$errors" == "0" ]]; then
+            echo "No suspicious changes found in ${HEAD_SHA:0:7} ($(jq length "$work/files.json") files, $warnings warnings)."
+          fi
+
+      - name: Comment on pull request
+        if: steps.scan.outputs.errors != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$RUNNER_TEMP/pr-content-guard/report.md"
+          comment_id=$(gh api --paginate "repos/$REPO/issues/$PR_NUMBER/comments?per_page=100" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- pr-content-guard -->"))) | .id' |
+            tail -n 1)
+
+          # Update the earlier warning instead of adding a new comment on every push.
+          if [[ -n "$comment_id" ]]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$comment_id" -F "body=@$body" > /dev/null
+          else
+            gh api --method POST "repos/$REPO/issues/$PR_NUMBER/comments" -F "body=@$body" > /dev/null
+          fi
+
+      - name: Fail on findings
+        if: steps.scan.outputs.errors != '0'
+        shell: bash
+        run: |
+          echo "::error title=PR content guard::Suspicious changes found (see the job summary). Do not check this branch out locally until a maintainer has reviewed it."
+          exit 1
