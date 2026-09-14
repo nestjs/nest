@@ -36,4 +36,23 @@ describe('@Sse', () => {
     const metadata = Reflect.getMetadata(SSE_METADATA, Test.testUsingOptions);
     expect(metadata).toEqual(true);
   });
+
+  it('should set path on "/" by default', () => {
+    class TestWithoutPath {
+      @Sse()
+      public static test() {}
+
+      @Sse('')
+      public static testUsingEmptyPath() {}
+    }
+
+    const path = Reflect.getMetadata(PATH_METADATA, TestWithoutPath.test);
+    expect(path).toEqual('/');
+
+    const emptyPath = Reflect.getMetadata(
+      PATH_METADATA,
+      TestWithoutPath.testUsingEmptyPath,
+    );
+    expect(emptyPath).toEqual('/');
+  });
 });

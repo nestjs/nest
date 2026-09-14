@@ -37,10 +37,26 @@ describe('@UseGuards', () => {
   });
 
   it('should throw exception when object is invalid', () => {
+    let error = undefined;
     try {
-      UseGuards('test' as any)(() => {});
+      UseGuards('test' as any)({ name: 'target' } as any);
     } catch (e) {
-      expect(e).toBeInstanceOf(InvalidDecoratorItemException);
+      error = e;
     }
+    expect(error).toBeInstanceOf(InvalidDecoratorItemException);
+  });
+
+  it('should not throw exception when object is a guard instance', () => {
+    let error = undefined;
+    try {
+      UseGuards({
+        canActivate() {
+          return true;
+        },
+      })({ name: 'target' } as any);
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeUndefined();
   });
 });

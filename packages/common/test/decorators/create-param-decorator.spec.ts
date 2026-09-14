@@ -309,4 +309,31 @@ describe('createParamDecorator', () => {
       });
     });
   });
+
+  describe('when enhancers are passed', () => {
+    it('should apply each enhancer to the decorated parameter', () => {
+      const factoryFn = (data, req) => true;
+      const enhancer = vi.fn();
+      const anotherEnhancer = vi.fn();
+      const Decorator = createParamDecorator(factoryFn, [
+        enhancer,
+        anotherEnhancer,
+      ]);
+
+      class Test {
+        public test(@Decorator() param) {}
+      }
+
+      expect(enhancer).toHaveBeenCalledExactlyOnceWith(
+        Test.prototype,
+        'test',
+        0,
+      );
+      expect(anotherEnhancer).toHaveBeenCalledExactlyOnceWith(
+        Test.prototype,
+        'test',
+        0,
+      );
+    });
+  });
 });

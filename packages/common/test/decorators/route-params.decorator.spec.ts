@@ -1,10 +1,18 @@
-import { ROUTE_ARGS_METADATA } from '../../constants.js';
 import {
+  RESPONSE_PASSTHROUGH_METADATA,
+  ROUTE_ARGS_METADATA,
+} from '../../constants.js';
+import {
+  assignMetadata,
   Body,
   HostParam,
   Param,
   Query,
+  RawBody,
+  Res,
   Search,
+  UploadedFile,
+  UploadedFiles,
 } from '../../decorators/index.js';
 import { RequestMethod } from '../../enums/request-method.enum.js';
 import { RouteParamtypes } from '../../enums/route-paramtypes.enum.js';
@@ -16,6 +24,7 @@ import {
   Lock,
   Mkcol,
   Move,
+  ParseFilePipe,
   ParseIntPipe,
   Patch,
   Post,
@@ -1090,5 +1099,189 @@ describe('@Param with ParameterDecoratorOptions', () => {
     expect(metadata[key].data).toBeUndefined();
     expect(metadata[key].pipes).toHaveLength(1);
     expect(metadata[key].schema).toBeUndefined();
+  });
+});
+
+describe('@Res', () => {
+  it('should enhance param with response metadata', () => {
+    class Test {
+      public test(@Res() res) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.RESPONSE}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [],
+    });
+    expect(
+      Reflect.getMetadata(RESPONSE_PASSTHROUGH_METADATA, Test, 'test'),
+    ).toBeUndefined();
+  });
+
+  it('should enable passthrough when "passthrough" option is true', () => {
+    class Test {
+      public test(@Res({ passthrough: true }) res) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.RESPONSE}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [],
+    });
+    expect(
+      Reflect.getMetadata(RESPONSE_PASSTHROUGH_METADATA, Test, 'test'),
+    ).toBe(true);
+  });
+});
+
+describe('@UploadedFile', () => {
+  it('should enhance param with file metadata', () => {
+    class Test {
+      public test(@UploadedFile() file) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.FILE}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [],
+    });
+  });
+
+  it('should enhance param with file key and pipes', () => {
+    class Test {
+      public test(@UploadedFile('avatar', ParseFilePipe) file) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.FILE}:0`]).toEqual({
+      index: 0,
+      data: 'avatar',
+      pipes: [ParseFilePipe],
+    });
+  });
+
+  it('should not confuse a pipe passed as the first argument with a file key', () => {
+    const pipe = new ParseFilePipe();
+    class Test {
+      public test(@UploadedFile(pipe) file) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.FILE}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [pipe],
+    });
+  });
+});
+
+describe('@UploadedFiles', () => {
+  it('should enhance param with files metadata', () => {
+    class Test {
+      public test(@UploadedFiles() files) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.FILES}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [],
+    });
+  });
+
+  it('should enhance param with pipes', () => {
+    const pipe = new ParseFilePipe();
+    class Test {
+      public test(@UploadedFiles(pipe) files) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.FILES}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [pipe],
+    });
+  });
+});
+
+describe('@RawBody', () => {
+  const mockSchema = {
+    '~standard': {
+      version: 1 as const,
+      vendor: 'test',
+      validate: (v: unknown) => ({ value: v }),
+    },
+  };
+
+  it('should enhance param with raw body metadata', () => {
+    class Test {
+      public test(@RawBody() rawBody) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.RAW_BODY}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [],
+    });
+  });
+
+  it('should not confuse a pipe instance with options', () => {
+    const pipe = new ParseIntPipe();
+    class Test {
+      public test(@RawBody(pipe) rawBody) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.RAW_BODY}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [pipe],
+    });
+  });
+
+  it('should enhance param with schema when options passed as the only argument', () => {
+    class Test {
+      public test(@RawBody({ schema: mockSchema }) rawBody) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.RAW_BODY}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [],
+      schema: mockSchema,
+    });
+  });
+
+  it('should enhance param with pipes when options with pipes passed as the only argument', () => {
+    class Test {
+      public test(
+        @RawBody({ schema: mockSchema, pipes: [ParseIntPipe] }) rawBody,
+      ) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.RAW_BODY}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [ParseIntPipe],
+      schema: mockSchema,
+    });
+  });
+});
+
+describe('assignMetadata', () => {
+  describe('when called with the legacy positional signature', () => {
+    it('should use a non-object argument as data', () => {
+      expect(assignMetadata({}, RouteParamtypes.BODY, 0, 'role')).toEqual({
+        [`${RouteParamtypes.BODY}:0`]: { index: 0, data: 'role', pipes: [] },
+      });
+    });
+
+    it('should not read an object argument as options when pipes are passed positionally', () => {
+      const data = { data: 'role' };
+      expect(
+        assignMetadata({}, RouteParamtypes.BODY, 0, data, ParseIntPipe),
+      ).toEqual({
+        [`${RouteParamtypes.BODY}:0`]: {
+          index: 0,
+          data,
+          pipes: [ParseIntPipe],
+        },
+      });
+    });
   });
 });
