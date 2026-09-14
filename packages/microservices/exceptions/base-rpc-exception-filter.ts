@@ -16,7 +16,7 @@ export class BaseRpcExceptionFilter<
   T = any,
   R = any,
 > implements RpcExceptionFilter<T> {
-  private static readonly logger = new Logger('RpcExceptionsHandler');
+  protected static readonly logger = new Logger('RpcExceptionsHandler');
 
   public catch(exception: T, host: ArgumentsHost): Observable<R> {
     const status = 'error';

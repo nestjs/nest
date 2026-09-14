@@ -67,6 +67,7 @@ export class RpcContextCreator {
     contextId = STATIC_CONTEXT,
     inquirerId?: string,
     defaultCallMetadata: Record<string, any> = DEFAULT_CALLBACK_METADATA,
+    reportUnhandledErrors = false,
   ): (...args: any[]) => Promise<Observable<any>> {
     const contextType: ContextType = 'rpc';
     const { argsLength, paramtypes, getParamsMetadata } = this.getMetadata<T>(
@@ -129,7 +130,7 @@ export class RpcContextCreator {
     const preRequestHooks =
       this.applicationConfig?.getGlobalPreRequestHooks() ?? [];
 
-    return this.rpcProxy.create(async (...args: unknown[]) => {
+    const targetCallback = async (...args: unknown[]) => {
       const initialArgs = this.contextUtils.createNullArray(argsLength);
 
       const executePipeline = async () => {
@@ -171,7 +172,12 @@ export class RpcContextCreator {
       };
 
       return next();
-    }, exceptionHandler);
+    };
+    return this.rpcProxy.create(
+      targetCallback,
+      exceptionHandler,
+      reportUnhandledErrors,
+    );
   }
 
   public reflectCallbackParamtypes(

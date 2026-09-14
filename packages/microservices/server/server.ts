@@ -55,6 +55,13 @@ export abstract class Server<
 
   protected readonly messageHandlers = new Map<string, MessageHandler>();
   protected readonly logger: LoggerService = new Logger(Server.name);
+  /**
+   * Whether this transport hands an event handler failure to its client
+   * library, which then reports it. The base `handleEvent` connects the
+   * stream without subscribing, so nothing observes the failure and Nest logs
+   * it instead. `ServerKafka` awaits the stream and sets this to `true`.
+   */
+  public readonly propagatesEventHandlerErrors: boolean = false;
   protected serializer: ConsumerSerializer;
   protected deserializer: ConsumerDeserializer;
   protected onProcessingStartHook: (

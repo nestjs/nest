@@ -115,6 +115,7 @@ export class ListenersController {
             STATIC_CONTEXT,
             undefined,
             defaultCallMetadata,
+            isEventHandler && !serverInstance.propagatesEventHandlerErrors,
           );
           if (isEventHandler) {
             const eventHandler: MessageHandler = async (...args: unknown[]) => {
@@ -153,6 +154,7 @@ export class ListenersController {
           methodKey,
           defaultCallMetadata,
           isEventHandler,
+          isEventHandler && !serverInstance.propagatesEventHandlerErrors,
         );
         serverInstance.addHandler(
           pattern,
@@ -234,6 +236,7 @@ export class ListenersController {
     methodKey: string,
     defaultCallMetadata: Record<string, any> = DEFAULT_CALLBACK_METADATA,
     isEventHandler = false,
+    reportUnhandledErrors = false,
   ) {
     const collection = moduleRef.controllers;
     const { instance } = wrapper;
@@ -273,6 +276,7 @@ export class ListenersController {
           contextId,
           wrapper.id,
           defaultCallMetadata,
+          reportUnhandledErrors,
         );
 
         const returnValue = proxy(...args);

@@ -40,6 +40,9 @@ import { isNil } from '@nestjs/common/internal';
  * @publicApi
  */
 export class ServerKafka extends Server<never, KafkaStatus> {
+  // `handleEvent` awaits the stream, so the rejection reaches kafkajs, which
+  // logs it. A second report here would duplicate it.
+  public override readonly propagatesEventHandlerErrors = true;
   public transportId: TransportId = Transport.KAFKA;
 
   protected logger = new Logger(ServerKafka.name);

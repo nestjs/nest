@@ -7,6 +7,7 @@ export class RpcProxy {
   public create(
     targetCallback: (...args: unknown[]) => Promise<Observable<any>>,
     exceptionsHandler: RpcExceptionsHandler,
+    reportUnhandledErrors = false,
   ): (...args: unknown[]) => Promise<Observable<unknown>> {
     return async (...args: unknown[]) => {
       try {
@@ -15,11 +16,21 @@ export class RpcProxy {
           ? result
           : result.pipe(
               catchError(error =>
-                this.handleError(exceptionsHandler, args, error),
+                this.handleError(
+                  exceptionsHandler,
+                  args,
+                  error,
+                  reportUnhandledErrors,
+                ),
               ),
             );
       } catch (error) {
-        return this.handleError(exceptionsHandler, args, error);
+        return this.handleError(
+          exceptionsHandler,
+          args,
+          error,
+          reportUnhandledErrors,
+        );
       }
     };
   }
@@ -28,9 +39,14 @@ export class RpcProxy {
     exceptionsHandler: RpcExceptionsHandler,
     args: unknown[],
     error: T,
+    reportUnhandledErrors = false,
   ): Observable<unknown> {
     const host = new ExecutionContextHost(args);
     host.setType('rpc');
-    return exceptionsHandler.handle(error as Error, host);
+    return exceptionsHandler.handle(
+      error as Error,
+      host,
+      reportUnhandledErrors,
+    );
   }
 }
