@@ -3,7 +3,15 @@ import {
   type MessageMappingProperties,
 } from '@nestjs/websockets';
 import { defer, EMPTY, fromEvent, Observable } from 'rxjs';
-import { catchError, filter, first, map, mergeMap, share, takeUntil } from 'rxjs/operators';
+import {
+  catchError,
+  filter,
+  first,
+  map,
+  mergeMap,
+  share,
+  takeUntil,
+} from 'rxjs/operators';
 import { Namespace, Server, ServerOptions, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { isFunction, isNil } from '@nestjs/common/internal';

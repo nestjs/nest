@@ -4,7 +4,14 @@ import * as http from 'http';
 import { createRequire } from 'module';
 import type { Duplex } from 'stream';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
-import { catchError, filter, first, mergeMap, share, takeUntil } from 'rxjs/operators';
+import {
+  catchError,
+  filter,
+  first,
+  mergeMap,
+  share,
+  takeUntil,
+} from 'rxjs/operators';
 import { loadPackageSync, isNil, normalizePath } from '@nestjs/common/internal';
 import {
   CLOSE_EVENT,

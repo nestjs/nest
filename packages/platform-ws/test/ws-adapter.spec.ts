@@ -1,6 +1,14 @@
 import { EventEmitter } from 'events';
 import { createServer } from 'http';
-import { config, from, lastValueFrom, mergeAll, of, toArray, type Observable } from 'rxjs';
+import {
+  config,
+  from,
+  lastValueFrom,
+  mergeAll,
+  of,
+  toArray,
+  type Observable,
+} from 'rxjs';
 import { WsAdapter } from '../adapters/ws-adapter.js';
 import { WsProxy } from '../../websockets/context/ws-proxy.js';
 import { WsExceptionsHandler } from '../../websockets/exceptions/ws-exceptions-handler.js';
@@ -182,9 +190,9 @@ describe('WsAdapter', () => {
 
       // same transform WebSocketsController.subscribeMessages passes in
       const realTransform = (data: any) =>
-        from(WebSocketsController.prototype.pickResult.call(undefined, data)).pipe(
-          mergeAll(),
-        );
+        from(
+          WebSocketsController.prototype.pickResult.call(undefined, data),
+        ).pipe(mergeAll());
 
       adapter.bindMessageHandlers(
         client,

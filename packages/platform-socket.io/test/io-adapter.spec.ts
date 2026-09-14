@@ -141,9 +141,9 @@ describe('IoAdapter', () => {
 
       // same transform WebSocketsController.subscribeMessages passes in
       const transform = (data: any) =>
-        from(WebSocketsController.prototype.pickResult.call(undefined, data)).pipe(
-          mergeAll(),
-        );
+        from(
+          WebSocketsController.prototype.pickResult.call(undefined, data),
+        ).pipe(mergeAll());
 
       adapter.bindMessageHandlers(
         socket,
