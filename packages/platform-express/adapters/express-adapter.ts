@@ -32,6 +32,7 @@ import {
   isObject,
   isString,
   isUndefined,
+  stripEndSlash,
 } from '@nestjs/common/internal';
 import type { NestApplicationOptions } from '@nestjs/common';
 import { AbstractHttpAdapter } from '@nestjs/core';
@@ -154,8 +155,8 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public setErrorHandler(handler: Function, prefix?: string) {
-    if (prefix) {
-      const normalizedPrefix = this.normalizePrefix(prefix);
+    const normalizedPrefix = this.normalizePrefix(prefix);
+    if (normalizedPrefix) {
       const router = express.Router();
       router.use(handler as any);
       this.use(normalizedPrefix, router);
@@ -167,8 +168,8 @@ export class ExpressAdapter extends AbstractHttpAdapter<
   }
 
   public setNotFoundHandler(handler: Function, prefix?: string) {
-    if (prefix) {
-      const normalizedPrefix = this.normalizePrefix(prefix);
+    const normalizedPrefix = this.normalizePrefix(prefix);
+    if (normalizedPrefix) {
       this.registeredPrefixes.add(normalizedPrefix);
       const router = express.Router();
       router.all('*path', handler as any);
@@ -548,8 +549,8 @@ export class ExpressAdapter extends AbstractHttpAdapter<
     }
   }
 
-  private normalizePrefix(prefix: string): string {
-    return addLeadingSlash(prefix);
+  private normalizePrefix(prefix?: string): string {
+    return stripEndSlash(addLeadingSlash(prefix));
   }
 
   private trackOpenConnections() {

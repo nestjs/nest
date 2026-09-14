@@ -11,9 +11,15 @@ describe('ExpressAdapter', () => {
   });
 
   describe('setErrorHandler', () => {
-    it.each(['api', '/api'])(
-      'should mount the error handler at /api and the root for prefix %s',
-      prefix => {
+    it.each([
+      { prefix: 'api', path: '/api' },
+      { prefix: '/api', path: '/api' },
+      { prefix: 'api/', path: '/api' },
+      { prefix: '/api/', path: '/api' },
+      { prefix: 'api/v1/', path: '/api/v1' },
+    ])(
+      'should mount the error handler at $path and the root for prefix $prefix',
+      ({ prefix, path }) => {
         const expressInstance = expressAdapter.getInstance();
         const useSpy = vi.spyOn(expressInstance, 'use');
         const handler = vi.fn();
@@ -21,25 +27,54 @@ describe('ExpressAdapter', () => {
         expressAdapter.setErrorHandler(handler, prefix);
 
         expect(useSpy).toHaveBeenCalledTimes(2);
-        expect(useSpy).toHaveBeenCalledWith('/api', expect.any(Function));
+        expect(useSpy).toHaveBeenCalledWith(path, expect.any(Function));
         expect(useSpy).toHaveBeenCalledWith(handler);
+      },
+    );
+
+    it.each([undefined, '', '/'])(
+      'should mount only the root error handler for prefix %j',
+      prefix => {
+        const useSpy = vi.spyOn(expressAdapter.getInstance(), 'use');
+        const handler = vi.fn();
+
+        expressAdapter.setErrorHandler(handler, prefix);
+
+        expect(useSpy).toHaveBeenCalledExactlyOnceWith(handler);
       },
     );
   });
 
   describe('setNotFoundHandler', () => {
-    it.each(['api', '/api'])(
-      'should mount the not-found handler at /api for prefix %s',
-      prefix => {
+    it.each([
+      { prefix: 'api', path: '/api' },
+      { prefix: '/api', path: '/api' },
+      { prefix: 'api/', path: '/api' },
+      { prefix: '/api/', path: '/api' },
+      { prefix: 'api/v1/', path: '/api/v1' },
+    ])(
+      'should mount the not-found handler at $path for prefix $prefix',
+      ({ prefix, path }) => {
         const expressInstance = expressAdapter.getInstance();
         const useSpy = vi.spyOn(expressInstance, 'use');
 
         expressAdapter.setNotFoundHandler(vi.fn(), prefix);
 
         expect(useSpy).toHaveBeenCalledExactlyOnceWith(
-          '/api',
+          path,
           expect.any(Function),
         );
+      },
+    );
+
+    it.each([undefined, '', '/'])(
+      'should mount only the root not-found handler for prefix %j',
+      prefix => {
+        const useSpy = vi.spyOn(expressAdapter.getInstance(), 'use');
+
+        expressAdapter.setNotFoundHandler(vi.fn(), prefix);
+
+        expect(useSpy).toHaveBeenCalledExactlyOnceWith(expect.any(Function));
       },
     );
   });

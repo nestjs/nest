@@ -15,8 +15,16 @@ describe('Hello world (express not-found handling)', () => {
     { prefix: '/api', path: '/api/missing' },
     { prefix: 'api', path: '/api' },
     { prefix: '/api', path: '/api/' },
+    { prefix: 'api/', path: '/api/missing' },
+    { prefix: '/api/', path: '/api/missing' },
+    { prefix: 'api/', path: '/api' },
+    { prefix: '/api/', path: '/api/' },
     { prefix: 'api/v1', path: '/api/v1/missing' },
+    { prefix: 'api/v1/', path: '/api/v1/missing' },
     { prefix: undefined, path: '/missing' },
+    { prefix: '', path: '/missing' },
+    { prefix: '/', path: '/missing' },
+    { prefix: '/', path: '/' },
   ])(
     'uses the global exception filter for $path with prefix $prefix',
     async ({ prefix, path }) => {

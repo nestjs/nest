@@ -105,27 +105,39 @@ describe('Hello world (express not-found handler ownership)', () => {
     return app;
   };
 
-  it.each(['api', '/api'])(
-    'preserves routes and not-found ownership with prefix %s',
-    async prefix => {
-      const adapter = new ExpressAdapter();
-      await createApplication(adapter, 'root');
-      await createApplication(adapter, 'prefixed', prefix);
-      const server = adapter.getInstance();
+  describe.each([undefined, '', '/'])(
+    'with root application prefix %j',
+    rootPrefix => {
+      it.each(['api', '/api', 'api/', '/api/'])(
+        'preserves routes and not-found ownership with prefix %s',
+        async prefix => {
+          const adapter = new ExpressAdapter();
+          await createApplication(adapter, 'root', rootPrefix);
+          await createApplication(adapter, 'prefixed', prefix);
+          const server = adapter.getInstance();
 
-      await request(server)
-        .get('/api/hello')
-        .expect(200)
-        .expect('Hello world!');
-      await request(server).get('/hello').expect(200).expect('Hello world!');
-      await request(server)
-        .get('/api/missing')
-        .expect(404)
-        .expect({ handledBy: 'prefixed' });
-      await request(server)
-        .get('/apiary/missing')
-        .expect(404)
-        .expect({ handledBy: 'root' });
+          await request(server)
+            .get('/api/hello')
+            .expect(200)
+            .expect('Hello world!');
+          await request(server)
+            .get('/hello')
+            .expect(200)
+            .expect('Hello world!');
+          await request(server)
+            .get('/api/missing')
+            .expect(404)
+            .expect({ handledBy: 'prefixed' });
+          await request(server)
+            .get('/apiary/missing')
+            .expect(404)
+            .expect({ handledBy: 'root' });
+          await request(server)
+            .get('/')
+            .expect(404)
+            .expect({ handledBy: 'root' });
+        },
+      );
     },
   );
 });
