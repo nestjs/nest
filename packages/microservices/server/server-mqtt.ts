@@ -1,4 +1,5 @@
 import {
+  CONNECTION_FAILED_MESSAGE,
   MQTT_DEFAULT_URL,
   MQTT_SEPARATOR,
   MQTT_WILDCARD_ALL,
@@ -27,6 +28,8 @@ import { MqttRecordSerializer } from '../serializers/mqtt-record.serializer.js';
 import { Server } from './server.js';
 import { isObject, isUndefined } from '@nestjs/common/internal';
 
+const INFINITE_CONNECTION_ATTEMPTS = -1;
+
 // To enable type safety for MQTT. This cant be uncommented by default
 // because it would require the user to install the mqtt package even if they dont use MQTT
 // Otherwise, TypeScript would fail to compile the code.
@@ -41,6 +44,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   public transportId: TransportId = Transport.MQTT;
   protected readonly url: string;
   protected mqttClient: MqttClient;
+  protected connectionAttempts = 0;
   protected pendingEventListeners: Array<{
     event: keyof MqttEvents;
     callback: MqttEvents[keyof MqttEvents];
@@ -68,7 +72,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   public start(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
-    this.registerErrorListener(this.mqttClient);
+    this.registerErrorListener(this.mqttClient, callback);
     this.registerReconnectListener(this.mqttClient);
     this.registerDisconnectListener(this.mqttClient);
     this.registerCloseListener(this.mqttClient);
@@ -264,8 +268,26 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     return `${pattern}/reply`;
   }
 
-  public registerErrorListener(client: MqttClient) {
-    client.on(MqttEventsMap.ERROR, (err: unknown) => this.logger.error(err));
+  public registerErrorListener(
+    client: MqttClient,
+    callback?: (err?: unknown, ...optionalParams: unknown[]) => void,
+  ) {
+    client.on(MqttEventsMap.ERROR, (err: unknown) => {
+      this.logger.error(err);
+
+      const maxConnectionAttempts = this.getOptionsProp(
+        this.options,
+        'maxConnectionAttempts',
+        INFINITE_CONNECTION_ATTEMPTS,
+      );
+      if (maxConnectionAttempts === INFINITE_CONNECTION_ATTEMPTS) {
+        return;
+      }
+      if (++this.connectionAttempts >= maxConnectionAttempts) {
+        this.close();
+        callback?.(err ?? new Error(CONNECTION_FAILED_MESSAGE));
+      }
+    });
   }
 
   public registerReconnectListener(client: MqttClient) {

@@ -164,6 +164,13 @@ export interface MqttOptions {
       rh?: number;
     };
     userProperties?: Record<string, string | string[]>;
+    /**
+     * Maximum number of connection attempts.
+     * Applies only to the server configuration.
+     * -1 === infinite
+     * @default -1
+     */
+    maxConnectionAttempts?: number;
   };
 }
 
