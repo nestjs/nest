@@ -107,12 +107,16 @@ describe('ServerRMQ', () => {
   });
 
   describe('handleMessage', () => {
-    const createMessage = payload => ({
+    const createRawMessage = (content: string) => ({
       content: {
-        toString: () => JSON.stringify(payload),
+        toString: () => content,
       },
       properties: { correlationId: 1 },
     });
+    const createMessage = payload => createRawMessage(JSON.stringify(payload));
+    // "JSON.parse" copes with this depth but "JSON.stringify" throws a RangeError
+    const createDeeplyNestedJson = (depth: number) =>
+      '{"nested":'.repeat(depth) + '{}' + '}'.repeat(depth);
     const pattern = 'test';
     const msg = createMessage({
       pattern,
@@ -138,6 +142,22 @@ describe('ServerRMQ', () => {
       const handleEventSpy = vi.spyOn(server, 'handleEvent');
       await server.handleMessage(createMessage({ pattern: '', data: '' }), '');
       expect(handleEventSpy).toHaveBeenCalled();
+    });
+    it('should send NO_MESSAGE_HANDLER error if pattern is too deeply nested to be serialized', async () => {
+      const deeplyNestedMsg = createRawMessage(
+        `{"pattern":${createDeeplyNestedJson(100_000)},"data":"tests","id":"3"}`,
+      );
+      await server.handleMessage(deeplyNestedMsg, '');
+      expect(sendMessageStub).toHaveBeenCalledWith(
+        {
+          id: '3',
+          err: NO_MESSAGE_HANDLER,
+          status: 'error',
+        },
+        undefined,
+        1,
+        expect.any(RmqContext),
+      );
     });
     it('should send NO_MESSAGE_HANDLER error if key does not exists in handlers object', async () => {
       await server.handleMessage(msg, '');
@@ -277,6 +297,19 @@ describe('ServerRMQ', () => {
     it('should call "consumeChannel" method', async () => {
       await server.setupChannel(channel, () => null);
       expect(channel.consume).toHaveBeenCalled();
+    });
+    it('should route "handleMessage" rejections to "handleError" instead of leaving them unhandled', async () => {
+      const error = new Error('unexpected');
+      vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
+      const handleErrorSpy = vi
+        .spyOn(untypedServer, 'handleError')
+        .mockImplementation(() => undefined);
+
+      await server.setupChannel(channel, () => null);
+      const [, onMessage] = channel.consume.mock.calls[0];
+      await onMessage({});
+
+      expect(handleErrorSpy).toHaveBeenCalledWith(error);
     });
     it('should call "resolve" function', async () => {
       const resolve = vi.fn();
