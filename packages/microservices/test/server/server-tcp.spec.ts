@@ -7,6 +7,14 @@ import { TcpSocket } from '../../helpers/tcp-socket';
 import { ServerTCP } from '../../server/server-tcp';
 import { objectToMap } from './utils/object-to-map';
 
+const createDeeplyNestedObject = (depth: number) => {
+  let pattern: Record<string, unknown> = {};
+  for (let i = 0; i < depth; i++) {
+    pattern = { nested: pattern };
+  }
+  return pattern;
+};
+
 describe('ServerTCP', () => {
   let server: ServerTCP;
   let untypedServer: any;
@@ -25,6 +33,20 @@ describe('ServerTCP', () => {
     it('should bind message and error events to handler', () => {
       server.bindHandler(null!);
       expect(socket.on.calledTwice).to.be.true;
+    });
+    it('should route "handleMessage" rejections to "handleError" instead of leaving them unhandled', async () => {
+      const error = new Error('unexpected');
+      sinon.stub(server, 'handleMessage').rejects(error);
+      const handleErrorStub = sinon.stub(untypedServer, 'handleError');
+
+      socket.on.resetHistory();
+      server.bindHandler(null!);
+      const onMessage = socket.on
+        .getCalls()
+        .find(call => call.args[0] === 'message')!.args[1];
+      await onMessage({});
+
+      expect(handleErrorStub.calledWith(error)).to.be.true;
     });
   });
   describe('close', () => {
@@ -83,6 +105,29 @@ describe('ServerTCP', () => {
       });
       await server.handleMessage(socket, msg);
       expect(handler.calledOnce).to.be.true;
+    });
+    it('should send NO_MESSAGE_HANDLER error if pattern is too deeply nested to be serialized', async () => {
+      const deeplyNestedMsg = {
+        ...msg,
+        pattern: createDeeplyNestedObject(100_000),
+      };
+      await server.handleMessage(socket, deeplyNestedMsg);
+      expect(
+        socket.sendMessage.calledWith({
+          id: msg.id,
+          status: 'error',
+          err: NO_MESSAGE_HANDLER,
+        }),
+      ).to.be.true;
+    });
+    it('should call "handleEvent" if pattern is too deeply nested to be serialized and identifier is not present', async () => {
+      const handleEventStub = sinon.stub(server, 'handleEvent').resolves();
+      const deeplyNestedEvent = {
+        pattern: createDeeplyNestedObject(100_000),
+        data: 'tests',
+      };
+      await server.handleMessage(socket, deeplyNestedEvent);
+      expect(handleEventStub.calledOnce).to.be.true;
     });
   });
   describe('handleClose', () => {

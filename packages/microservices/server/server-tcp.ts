@@ -1,5 +1,5 @@
 import { Type } from '@nestjs/common';
-import { isString, isUndefined } from '@nestjs/common/utils/shared.utils';
+import { isUndefined } from '@nestjs/common/utils/shared.utils';
 import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
 import { createServer as tlsCreateServer, TlsOptions } from 'tls';
@@ -81,8 +81,8 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
 
   public bindHandler(socket: Socket) {
     const readSocket = this.getSocketInstance(socket);
-    readSocket.on('message', async (msg: ReadPacket & PacketId) =>
-      this.handleMessage(readSocket, msg),
+    readSocket.on('message', (msg: ReadPacket & PacketId) =>
+      this.handleMessage(readSocket, msg).catch(err => this.handleError(err)),
     );
     readSocket.on(TcpEventsMap.ERROR, err => {
       const invalidError = new InvalidTcpDataReceptionException(err);
@@ -92,9 +92,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
 
   public async handleMessage(socket: TcpSocket, rawMessage: unknown) {
     const packet = await this.deserializer.deserialize(rawMessage);
-    const pattern = !isString(packet.pattern)
-      ? JSON.stringify(packet.pattern)
-      : packet.pattern;
+    const pattern = this.getPatternAsString(packet.pattern);
 
     const tcpContext = new TcpContext([socket, pattern]);
     if (isUndefined((packet as IncomingRequest).id)) {

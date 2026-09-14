@@ -63,3 +63,4 @@ export const BLOCKED_RMQ_MESSAGE = (reason: string) =>
 export const UNBLOCKED_RMQ_MESSAGE = 'RMQ broker has unblocked the connection.';
 
 export const NATS_DEFAULT_GRACE_PERIOD = 10000;
+export const UNSERIALIZABLE_PATTERN = '[UNSERIALIZABLE_PATTERN]';

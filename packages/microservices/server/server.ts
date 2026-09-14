@@ -1,5 +1,6 @@
 import { Logger, LoggerService } from '@nestjs/common/services/logger.service';
 import { loadPackage } from '@nestjs/common/utils/load-package.util';
+import { isString } from '@nestjs/common/utils/shared.utils';
 import {
   connectable,
   EMPTY,
@@ -18,7 +19,7 @@ import {
   finalize,
   mergeMap,
 } from 'rxjs/operators';
-import { NO_EVENT_HANDLER } from '../constants';
+import { NO_EVENT_HANDLER, UNSERIALIZABLE_PATTERN } from '../constants';
 import { BaseRpcContext } from '../ctx-host/base-rpc.context';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer';
 import { Transport } from '../enums';
@@ -340,5 +341,26 @@ export abstract class Server<
 
   protected normalizePattern(pattern: MsPattern): string {
     return transformPatternToRoute(pattern);
+  }
+
+  /**
+   * Returns the string representation of an incoming message pattern.
+   *
+   * Patterns are client-controlled: serializing a deeply nested one makes
+   * `JSON.stringify` throw a `RangeError`, which must not escape the message
+   * handler (as an unhandled promise rejection that terminates the process).
+   *
+   * @param  {unknown} pattern - client pattern
+   * @returns string
+   */
+  protected getPatternAsString(pattern: unknown): string {
+    if (isString(pattern)) {
+      return pattern;
+    }
+    try {
+      return JSON.stringify(pattern);
+    } catch {
+      return UNSERIALIZABLE_PATTERN;
+    }
   }
 }

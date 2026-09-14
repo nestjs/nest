@@ -1,9 +1,5 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
-import {
-  isNil,
-  isString,
-  isUndefined,
-} from '@nestjs/common/utils/shared.utils';
+import { isNil, isUndefined } from '@nestjs/common/utils/shared.utils';
 import {
   BLOCKED_RMQ_MESSAGE,
   CONNECTION_FAILED_MESSAGE,
@@ -274,7 +270,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
     channel.consume(
       createdQueue,
-      (msg: Record<string, any> | null) => this.handleMessage(msg!, channel),
+      (msg: Record<string, any> | null) =>
+        this.handleMessage(msg!, channel).catch(err => this.handleError(err)),
       {
         noAck: this.noAck,
         consumerTag: this.getOptionsProp(
@@ -297,9 +294,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     const { content, properties } = message;
     const rawMessage = this.parseMessageContent(content);
     const packet = await this.deserializer.deserialize(rawMessage, properties);
-    const pattern = isString(packet.pattern)
-      ? packet.pattern
-      : JSON.stringify(packet.pattern);
+    const pattern = this.getPatternAsString(packet.pattern);
 
     const rmqContext = new RmqContext([message, channel, pattern]);
     if (isUndefined((packet as IncomingRequest).id)) {
