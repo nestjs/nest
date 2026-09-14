@@ -45,6 +45,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   protected readonly url: string;
   protected mqttClient: MqttClient;
   protected connectionAttempts = 0;
+  protected hasConnected = false;
   protected pendingEventListeners: Array<{
     event: keyof MqttEvents;
     callback: MqttEvents[keyof MqttEvents];
@@ -62,6 +63,11 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
     try {
+      // Re-arm the attempts limit so that a restarted server gets a fresh
+      // startup window.
+      this.connectionAttempts = 0;
+      this.hasConnected = false;
+
       this.mqttClient = await this.createMqttClient();
       this.start(callback);
     } catch (err) {
@@ -72,7 +78,18 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   public start(
     callback: (err?: unknown, ...optionalParams: unknown[]) => void,
   ) {
-    this.registerErrorListener(this.mqttClient, callback);
+    // The bootstrap callback must settle exactly once, no matter whether the
+    // connection succeeds or the attempts limit is exhausted first.
+    let listenCallback:
+      ((err?: unknown, ...optionalParams: unknown[]) => void) | undefined =
+      callback;
+    const settleListenCallback = (err?: unknown) => {
+      const cb = listenCallback;
+      listenCallback = undefined;
+      isUndefined(err) ? cb?.() : cb?.(err);
+    };
+
+    this.registerErrorListener(this.mqttClient, settleListenCallback);
     this.registerReconnectListener(this.mqttClient);
     this.registerDisconnectListener(this.mqttClient);
     this.registerCloseListener(this.mqttClient);
@@ -84,7 +101,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
     this.pendingEventListeners = [];
     this.bindEvents(this.mqttClient);
 
-    this.mqttClient.once(MqttEventsMap.CONNECT, () => callback());
+    this.mqttClient.once(MqttEventsMap.CONNECT, () => settleListenCallback());
   }
 
   public bindEvents(mqttClient: MqttClient) {
@@ -280,10 +297,16 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
         'maxConnectionAttempts',
         INFINITE_CONNECTION_ATTEMPTS,
       );
-      if (maxConnectionAttempts === INFINITE_CONNECTION_ATTEMPTS) {
+      // The limit bounds the initial connection only. Once the server has
+      // connected, mqtt.js reconnects indefinitely and errors are just logged,
+      // so a running microservice is never torn down by this option.
+      if (
+        maxConnectionAttempts === INFINITE_CONNECTION_ATTEMPTS ||
+        this.hasConnected
+      ) {
         return;
       }
-      if (++this.connectionAttempts >= maxConnectionAttempts) {
+      if (++this.connectionAttempts === maxConnectionAttempts) {
         this.close();
         callback?.(err ?? new Error(CONNECTION_FAILED_MESSAGE));
       }
@@ -312,6 +335,7 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
 
   public registerConnectListener(client: MqttClient) {
     client.on(MqttEventsMap.CONNECT, () => {
+      this.hasConnected = true;
       this._status$.next(MqttStatus.CONNECTED);
     });
   }

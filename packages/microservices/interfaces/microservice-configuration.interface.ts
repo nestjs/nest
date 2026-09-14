@@ -165,8 +165,10 @@ export interface MqttOptions {
     };
     userProperties?: Record<string, string | string[]>;
     /**
-     * Maximum number of connection attempts.
-     * Applies only to the server configuration.
+     * Maximum number of connection attempts before the server gives up and
+     * reports the failure to the bootstrap callback.
+     * Applies only to the server configuration, and only to the initial
+     * connection - once connected, reconnections are retried indefinitely.
      * -1 === infinite
      * @default -1
      */
