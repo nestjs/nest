@@ -1,6 +1,12 @@
 import { FastifyAdapter } from '../../adapters/fastify-adapter';
 import { createError } from '@fastify/error';
-import { HttpException } from '@nestjs/common';
+import {
+  HttpException,
+  VERSION_NEUTRAL,
+  VersioningOptions,
+  VersioningType,
+} from '@nestjs/common';
+import { FastifyReply, FastifyRequest } from 'fastify';
 
 describe('FastifyAdapter', () => {
   let fastifyAdapter: FastifyAdapter;
@@ -189,6 +195,64 @@ describe('FastifyAdapter', () => {
 
       expect(JSON.parse(res.body).got).toEqual(['a=1', 'b=2', 'c=3']);
       await fastifyAdapter.close();
+    });
+  });
+
+  describe('applyVersionFilter', () => {
+    const registerVersionNeutralRoute = (
+      type: VersioningType.MEDIA_TYPE | VersioningType.HEADER,
+    ) => {
+      fastifyAdapter.initHttpServer();
+      const handler = (_req: FastifyRequest, reply: FastifyReply) =>
+        fastifyAdapter.reply(reply, { ok: true }, 200);
+      const versioningOptions: VersioningOptions =
+        type === VersioningType.MEDIA_TYPE
+          ? { type, key: 'v=' }
+          : { type, header: 'X-API-Version' };
+      const versionedHandler = fastifyAdapter.applyVersionFilter(
+        handler,
+        [VERSION_NEUTRAL, '2'],
+        versioningOptions,
+      );
+      fastifyAdapter.get('/neutral', versionedHandler);
+    };
+
+    afterEach(async () => {
+      await fastifyAdapter.close();
+    });
+
+    it('should serve a version-neutral route when the accept header carries no version (media type versioning)', async () => {
+      registerVersionNeutralRoute(VersioningType.MEDIA_TYPE);
+      await fastifyAdapter.getInstance().ready();
+
+      const res = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/neutral',
+        headers: { accept: 'application/json' },
+      });
+      expect(res.statusCode).toBe(200);
+    });
+
+    it('should serve a version-neutral route when the accept header is absent (media type versioning)', async () => {
+      registerVersionNeutralRoute(VersioningType.MEDIA_TYPE);
+      await fastifyAdapter.getInstance().ready();
+
+      const res = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/neutral',
+      });
+      expect(res.statusCode).toBe(200);
+    });
+
+    it('should serve a version-neutral route when the version header is absent (header versioning)', async () => {
+      registerVersionNeutralRoute(VersioningType.HEADER);
+      await fastifyAdapter.getInstance().ready();
+
+      const res = await fastifyAdapter.inject({
+        method: 'GET',
+        url: '/neutral',
+      });
+      expect(res.statusCode).toBe(200);
     });
   });
 });
