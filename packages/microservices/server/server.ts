@@ -16,7 +16,7 @@ import {
   finalize,
   mergeMap,
 } from 'rxjs/operators';
-import { NO_EVENT_HANDLER } from '../constants.js';
+import { NO_EVENT_HANDLER, UNSERIALIZABLE_PATTERN } from '../constants.js';
 import { BaseRpcContext } from '../ctx-host/base-rpc.context.js';
 import { IncomingRequestDeserializer } from '../deserializers/incoming-request.deserializer.js';
 import { Transport } from '../enums/index.js';
@@ -39,7 +39,11 @@ import { ConsumerSerializer } from '../interfaces/serializer.interface.js';
 import { IdentitySerializer } from '../serializers/identity.serializer.js';
 import { transformPatternToRoute } from '../utils/index.js';
 import { ITransportServer, Logger, type LoggerService } from '@nestjs/common';
-import { loadPackage, loadPackageSync } from '@nestjs/common/internal';
+import {
+  isString,
+  loadPackage,
+  loadPackageSync,
+} from '@nestjs/common/internal';
 
 /**
  * @publicApi
@@ -355,5 +359,26 @@ export abstract class Server<
 
   protected normalizePattern(pattern: MsPattern): string {
     return transformPatternToRoute(pattern);
+  }
+
+  /**
+   * Returns the string representation of an incoming message pattern.
+   *
+   * Patterns are client-controlled: serializing a deeply nested one makes
+   * `JSON.stringify` throw a `RangeError`, which must not escape the message
+   * handler (as an unhandled promise rejection that terminates the process).
+   *
+   * @param  {unknown} pattern - client pattern
+   * @returns string
+   */
+  protected getPatternAsString(pattern: unknown): string {
+    if (isString(pattern)) {
+      return pattern;
+    }
+    try {
+      return JSON.stringify(pattern);
+    } catch {
+      return UNSERIALIZABLE_PATTERN;
+    }
   }
 }

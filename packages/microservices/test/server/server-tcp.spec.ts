@@ -5,6 +5,14 @@ import { TcpSocket } from '../../helpers/tcp-socket.js';
 import { ServerTCP } from '../../server/server-tcp.js';
 import { objectToMap } from './utils/object-to-map.js';
 
+const createDeeplyNestedObject = (depth: number) => {
+  let pattern: Record<string, unknown> = {};
+  for (let i = 0; i < depth; i++) {
+    pattern = { nested: pattern };
+  }
+  return pattern;
+};
+
 describe('ServerTCP', () => {
   let server: ServerTCP;
   let untypedServer: any;
@@ -25,6 +33,21 @@ describe('ServerTCP', () => {
     it('should bind message and error events to handler', () => {
       server.bindHandler(null!);
       expect(socket.on).toHaveBeenCalledTimes(2);
+    });
+    it('should route "handleMessage" rejections to "handleError" instead of leaving them unhandled', async () => {
+      const error = new Error('unexpected');
+      vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
+      const handleErrorSpy = vi
+        .spyOn(untypedServer, 'handleError')
+        .mockImplementation(() => undefined);
+
+      server.bindHandler(null!);
+      const [, onMessage] = socket.on.mock.calls.find(
+        ([event]) => event === 'message',
+      );
+      await onMessage({});
+
+      expect(handleErrorSpy).toHaveBeenCalledWith(error);
     });
   });
   describe('close', () => {
@@ -79,6 +102,29 @@ describe('ServerTCP', () => {
       });
       await server.handleMessage(socket, msg);
       expect(handler).toHaveBeenCalledOnce();
+    });
+    it('should send NO_MESSAGE_HANDLER error if pattern is too deeply nested to be serialized', async () => {
+      const deeplyNestedMsg = {
+        ...msg,
+        pattern: createDeeplyNestedObject(100_000),
+      };
+      await server.handleMessage(socket, deeplyNestedMsg);
+      expect(socket.sendMessage).toHaveBeenCalledWith({
+        id: msg.id,
+        status: 'error',
+        err: NO_MESSAGE_HANDLER,
+      });
+    });
+    it('should call "handleEvent" if pattern is too deeply nested to be serialized and identifier is not present', async () => {
+      const handleEventSpy = vi
+        .spyOn(server, 'handleEvent')
+        .mockImplementation(async () => undefined);
+      const deeplyNestedEvent = {
+        pattern: createDeeplyNestedObject(100_000),
+        data: 'tests',
+      };
+      await server.handleMessage(socket, deeplyNestedEvent);
+      expect(handleEventSpy).toHaveBeenCalledOnce();
     });
   });
   describe('handleClose', () => {

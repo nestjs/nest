@@ -35,7 +35,7 @@ import {
 } from '../interfaces/packet.interface.js';
 import { RmqRecordSerializer } from '../serializers/rmq-record.serializer.js';
 import { Server } from './server.js';
-import { isNil, isString, isUndefined } from '@nestjs/common/internal';
+import { isNil, isUndefined } from '@nestjs/common/internal';
 
 // To enable type safety for RMQ. This cant be uncommented by default
 // because it would require the user to install the amqplib package even if they dont use RabbitMQ
@@ -283,7 +283,8 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     await channel.prefetch(prefetchCount, isGlobalPrefetchCount);
     channel.consume(
       createdQueue,
-      (msg: Record<string, any> | null) => this.handleMessage(msg!, channel),
+      (msg: Record<string, any> | null) =>
+        this.handleMessage(msg!, channel).catch(err => this.handleError(err)),
       {
         noAck: this.noAck,
         consumerTag: this.getOptionsProp(
@@ -306,9 +307,7 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     const { content, properties } = message;
     const rawMessage = this.parseMessageContent(content);
     const packet = await this.deserializer.deserialize(rawMessage, properties);
-    const pattern = isString(packet.pattern)
-      ? packet.pattern
-      : JSON.stringify(packet.pattern);
+    const pattern = this.getPatternAsString(packet.pattern);
 
     const rmqContext = new RmqContext([message, channel, pattern]);
     if (isUndefined((packet as IncomingRequest).id)) {
