@@ -54,6 +54,30 @@ describe('FastifyAdapter', () => {
         expect(reply.status).toHaveBeenCalledWith(statusCode);
       }
     });
+
+    it('should send an empty body when the body is nil', () => {
+      // fastify serializes "null" to the four character string "null", while
+      // ExpressAdapter.reply answers with an empty body. Both adapters back the
+      // same AbstractHttpAdapter.reply contract, so a handler returning null has
+      // to produce the same response on either platform.
+      for (const body of [null, undefined]) {
+        const reply = createReply();
+
+        fastifyAdapter.reply(reply as any, body);
+
+        expect(reply.send).toHaveBeenCalledWith();
+      }
+    });
+
+    it('should still send non-nil falsy bodies untouched', () => {
+      for (const body of [false, 0, '']) {
+        const reply = createReply();
+
+        fastifyAdapter.reply(reply as any, body);
+
+        expect(reply.send).toHaveBeenCalledWith(body);
+      }
+    });
   });
 
   describe('mapException', () => {
