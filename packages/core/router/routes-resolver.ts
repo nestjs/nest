@@ -68,7 +68,7 @@ export class RoutesResolver implements Resolver {
 
   public resolve<T extends HttpServer>(
     applicationRef: T,
-    globalPrefix: string,
+    globalPrefix: string | string[],
     options: RouteResolutionOptions = {},
   ) {
     const modules = this.container.getModules();
@@ -95,7 +95,7 @@ export class RoutesResolver implements Resolver {
   public registerRouters(
     routes: Map<string | symbol | Function, InstanceWrapper<Controller>>,
     moduleName: string,
-    globalPrefix: string,
+    globalPrefix: string | string[],
     modulePath: string,
     applicationRef: HttpServer,
     options: RouteResolutionOptions = {},

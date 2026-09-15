@@ -225,6 +225,61 @@ describe('RoutePathFactory', () => {
       ).toEqual(['/ctrlPath']);
       vi.restoreAllMocks();
     });
+
+    it('should return paths for each global prefix when array is provided', () => {
+      expect(
+        routePathFactory.create({
+          ctrlPath: '/ctrlPath/',
+          methodPath: '/methodPath/',
+          globalPrefix: ['api', 'v1'],
+        }),
+      ).toEqual(['/api/ctrlPath/methodPath', '/v1/ctrlPath/methodPath']);
+
+      expect(
+        routePathFactory.create({
+          ctrlPath: '/ctrlPath/',
+          methodPath: '/methodPath/',
+          modulePath: '/modulePath/',
+          globalPrefix: ['/prefix1', '/prefix2'],
+        }),
+      ).toEqual([
+        '/prefix1/modulePath/ctrlPath/methodPath',
+        '/prefix2/modulePath/ctrlPath/methodPath',
+      ]);
+    });
+
+    it('should handle single-element array same as string', () => {
+      const resultArray = routePathFactory.create({
+        ctrlPath: '/ctrlPath/',
+        methodPath: '/methodPath/',
+        globalPrefix: ['api'],
+      });
+
+      const resultString = routePathFactory.create({
+        ctrlPath: '/ctrlPath/',
+        methodPath: '/methodPath/',
+        globalPrefix: 'api',
+      });
+
+      expect(resultArray).toEqual(resultString);
+    });
+
+    it('should combine multiple prefixes with versioning', () => {
+      expect(
+        routePathFactory.create({
+          ctrlPath: '/ctrlPath/',
+          methodPath: '/methodPath/',
+          globalPrefix: ['api', 'v1'],
+          versioningOptions: {
+            type: VersioningType.URI,
+          },
+          controllerVersion: '1.0.0',
+        }),
+      ).toEqual([
+        '/api/v1.0.0/ctrlPath/methodPath',
+        '/v1/v1.0.0/ctrlPath/methodPath',
+      ]);
+    });
   });
 
   describe('isExcludedFromGlobalPrefix', () => {
