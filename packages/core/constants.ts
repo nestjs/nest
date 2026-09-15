@@ -10,6 +10,9 @@ export const MESSAGES = {
     'app.listen() needs to be called before calling app.getUrl()',
 };
 
+export const DEFAULT_FATAL_ERROR_EXIT_CODE = 1;
+export const DEFAULT_FATAL_ERROR_SHUTDOWN_TIMEOUT = 5000;
+
 export const APP_INTERCEPTOR = 'APP_INTERCEPTOR';
 export const APP_PIPE = 'APP_PIPE';
 export const APP_GUARD = 'APP_GUARD';
