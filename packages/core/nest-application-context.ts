@@ -5,7 +5,11 @@ import {
   type LogLevel,
   ShutdownSignal,
 } from '@nestjs/common';
-import { MESSAGES } from './constants.js';
+import {
+  DEFAULT_FATAL_ERROR_EXIT_CODE,
+  DEFAULT_FATAL_ERROR_SHUTDOWN_TIMEOUT,
+  MESSAGES,
+} from './constants.js';
 import { UnknownModuleException } from './errors/exceptions/index.js';
 import { createContextId } from './helpers/context-id-factory.js';
 import {
@@ -24,7 +28,11 @@ import { ContextId } from './injector/instance-wrapper.js';
 import { Module } from './injector/module.js';
 import type { Abstract, DynamicModule, Type } from '@nestjs/common';
 import {
+  type FatalErrorShutdownOptions,
   type GetOrResolveOptions,
+  type ProcessErrorHandler,
+  type ProcessErrorHandlersOptions,
+  type ProcessErrorOrigin,
   type SelectOptions,
   type ShutdownHooksOptions,
   type NestApplicationContextOptions,
@@ -51,6 +59,10 @@ export class NestApplicationContext<
   private readonly shutdownCleanupRefs = new Map<
     string,
     (signal: string) => Promise<void>
+  >();
+  private readonly processErrorCleanupRefs = new Map<
+    ProcessErrorOrigin,
+    (error: unknown, nodeOrigin?: unknown) => void
   >();
   private readonly moduleCompiler: ModuleCompiler;
   private shutdownPromise?: Promise<void>;
@@ -297,6 +309,7 @@ export class NestApplicationContext<
     await this.dispose();
     await this.callShutdownHook(signal);
     this.unsubscribeFromProcessSignals();
+    this.unsubscribeFromProcessErrors();
   }
 
   /**
@@ -358,6 +371,112 @@ export class NestApplicationContext<
     return this;
   }
 
+  /**
+   * Enables the handling of fatal process errors. Will call the given
+   * handler when the process emits `uncaughtException` or
+   * `unhandledRejection`.
+   *
+   * Events without a handler are left untouched, since listening to them
+   * prevents Node.js from terminating the process on its own.
+   * Repeated calls are idempotent per event.
+   *
+   * @param {ProcessErrorHandlersOptions} options The handler for each event
+   *
+   * @returns {this} The Nest application context instance
+   */
+  public enableProcessErrorHandlers(
+    options: ProcessErrorHandlersOptions,
+  ): this {
+    if (options.uncaughtException) {
+      this.listenToProcessError('uncaughtException', options.uncaughtException);
+    }
+    if (options.unhandledRejection) {
+      this.listenToProcessError(
+        'unhandledRejection',
+        options.unhandledRejection,
+      );
+    }
+    return this;
+  }
+
+  /**
+   * Listens to a fatal process error by listening to
+   * process events
+   *
+   * @param {ProcessErrorOrigin} origin The process event it should listen to
+   * @param {ProcessErrorHandler} handler The handler to call with the error
+   */
+  protected listenToProcessError(
+    origin: ProcessErrorOrigin,
+    handler: ProcessErrorHandler,
+  ) {
+    if (this.processErrorCleanupRefs.has(origin)) {
+      return;
+    }
+    const listener = async (error: unknown, nodeOrigin?: unknown) => {
+      const reportedOrigin: ProcessErrorOrigin =
+        origin === 'uncaughtException' &&
+        (nodeOrigin === 'uncaughtException' ||
+          nodeOrigin === 'unhandledRejection')
+          ? nodeOrigin
+          : origin;
+      try {
+        await handler(error, {
+          origin: reportedOrigin,
+          shutdown: options =>
+            this.shutdownAfterFatalError(reportedOrigin, options),
+        });
+      } catch (err) {
+        // An error escaping the handler would either terminate the process
+        // (uncaughtException) or trigger the handler again (unhandledRejection)
+        Logger.error(err, (err as Error)?.stack, NestApplicationContext.name);
+      }
+    };
+    this.processErrorCleanupRefs.set(origin, listener);
+    process.on(origin, listener);
+  }
+
+  private async shutdownAfterFatalError(
+    origin: ProcessErrorOrigin,
+    options: FatalErrorShutdownOptions = {},
+  ): Promise<never> {
+    const {
+      exitCode = DEFAULT_FATAL_ERROR_EXIT_CODE,
+      timeout = DEFAULT_FATAL_ERROR_SHUTDOWN_TIMEOUT,
+    } = options;
+    let timeoutRef: NodeJS.Timeout | undefined;
+    try {
+      const shutdownComplete = this.shutdown(origin);
+      // setTimeout clamps a non-finite delay to 1ms, so a non-finite
+      // timeout means "no deadline", not "expire almost immediately"
+      await (Number.isFinite(timeout)
+        ? Promise.race([
+            shutdownComplete,
+            new Promise<void>(resolve => {
+              timeoutRef = setTimeout(resolve, timeout);
+            }),
+          ])
+        : shutdownComplete);
+    } catch (err) {
+      this.logShutdownError(err);
+    } finally {
+      clearTimeout(timeoutRef);
+    }
+    process.exit(exitCode);
+  }
+
+  /**
+   * Logs an error raised while running the shutdown sequence, whether
+   * triggered by a signal or by a fatal process error.
+   */
+  private logShutdownError(err: unknown) {
+    Logger.error(
+      MESSAGES.ERROR_DURING_SHUTDOWN,
+      (err as Error)?.stack,
+      NestApplicationContext.name,
+    );
+  }
+
   protected async prepareClose(): Promise<void> {
     // Nest application context has no server
     // to signal, therefore just call a noop
@@ -399,11 +518,7 @@ export class NestApplicationContext<
           process.kill(process.pid, signal);
         }
       } catch (err) {
-        Logger.error(
-          MESSAGES.ERROR_DURING_SHUTDOWN,
-          (err as Error)?.stack,
-          NestApplicationContext.name,
-        );
+        this.logShutdownError(err);
         process.exit(1);
       }
     };
@@ -421,6 +536,16 @@ export class NestApplicationContext<
       process.removeListener(signal, cleanup);
     });
     this.shutdownCleanupRefs.clear();
+  }
+
+  /**
+   * Unsubscribes from fatal process error events
+   */
+  protected unsubscribeFromProcessErrors() {
+    this.processErrorCleanupRefs.forEach((listener, event) => {
+      process.removeListener(event, listener);
+    });
+    this.processErrorCleanupRefs.clear();
   }
 
   /**
