@@ -140,7 +140,7 @@
     "markdown-table": "2.0.0",
     "mongoose": "9.10.1",
     "mqtt": "5.15.2",
-    "multer": "2.3.0",
+    "multer": "2.4.0",
     "mysql2": "3.24.4",
     "nats": "2.29.3",
     "oxlint": "1.83.0",
