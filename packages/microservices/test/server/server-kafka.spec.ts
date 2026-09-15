@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { Observable, of, throwError } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaContext } from '../../ctx-host/index.js';
 import { KafkaHeaders } from '../../enums/index.js';
@@ -480,6 +481,65 @@ describe('ServerKafka', () => {
 
       await server.handleMessage(payload);
       expect(handler).toHaveBeenCalled();
+    });
+  });
+
+  describe('handleEvent', () => {
+    const context = new KafkaContext([] as any);
+
+    function bindHandler(result: unknown) {
+      const endHook = vi.fn();
+      const untypedServer = server as any;
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      untypedServer.messageHandlers = objectToMap({
+        [topic]: Object.assign(async () => result, { isEventHandler: true }),
+      });
+      return endHook;
+    }
+
+    it('should run the end hook when the handler returns a plain value', async () => {
+      const endHook = bindHandler('plain');
+
+      await server.handleEvent(topic, { pattern: topic, data: null }, context);
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the returned stream completes', async () => {
+      const endHook = bindHandler(of('streamed'));
+
+      await server.handleEvent(topic, { pattern: topic, data: null }, context);
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the returned stream fails', async () => {
+      const endHook = bindHandler(throwError(() => new Error('failed')));
+
+      // The rejection has to travel on so that kafkajs can report it.
+      await expect(
+        server.handleEvent(topic, { pattern: topic, data: null }, context),
+      ).rejects.toThrow('failed');
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook once per event', async () => {
+      const endHook = bindHandler(
+        new Observable(subscriber => {
+          subscriber.next('first');
+          subscriber.next('second');
+          subscriber.complete();
+        }),
+      );
+
+      await server.handleEvent(topic, { pattern: topic, data: null }, context);
+
+      expect(endHook).toHaveBeenCalledOnce();
     });
   });
 
