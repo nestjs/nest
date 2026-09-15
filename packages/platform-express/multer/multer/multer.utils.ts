@@ -46,8 +46,5 @@ export function transformException(
 function isMulterExceptionCode(
   code: unknown,
 ): code is keyof typeof multerExceptions {
-  return (
-    typeof code === 'string' &&
-    Object.prototype.hasOwnProperty.call(multerExceptions, code)
-  );
+  return typeof code === 'string' && Object.hasOwn(multerExceptions, code);
 }
