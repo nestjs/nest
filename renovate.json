@@ -1,6 +1,7 @@
 {
   "extends": ["config:base", ":dependencyDashboard"],
   "labels": ["dependencies"],
+  "npmrc": "legacy-peer-deps=true",
   "packageRules": [
     {
       "matchDepTypes": ["devDependencies"],
