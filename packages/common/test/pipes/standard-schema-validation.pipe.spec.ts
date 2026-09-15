@@ -532,5 +532,22 @@ describe('StandardSchemaValidationPipe', () => {
       expect(() => customPipe.callSuperStripProtoKeys(value)).not.toThrow();
       expect(value).not.toHaveProperty('constructor');
     });
+
+    it('should invoke an overridden stripProtoKeys during transform', async () => {
+      let called = false;
+      class CustomPipe extends StandardSchemaValidationPipe {
+        protected override stripProtoKeys(value: any) {
+          called = true;
+          super.stripProtoKeys(value);
+        }
+      }
+      const customPipe = new CustomPipe();
+      const schema = createSchema(value => ({ value }));
+      await customPipe.transform({ name: 'test' }, {
+        type: 'body',
+        schema,
+      } as ArgumentMetadata);
+      expect(called).toBe(true);
+    });
   });
 });

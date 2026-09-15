@@ -740,5 +740,19 @@ describe('ValidationPipe', () => {
       expect(() => pipe.callSuperStripProtoKeys(value)).not.toThrow();
       expect(value).not.toHaveProperty('constructor');
     });
+
+    it('should invoke an overridden stripProtoKeys during transform', async () => {
+      let called = false;
+      class CustomPipe extends ValidationPipe {
+        protected override stripProtoKeys(value: any) {
+          called = true;
+          super.stripProtoKeys(value);
+        }
+      }
+      const pipe = new CustomPipe();
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+      await pipe.transform(testObj, metadata);
+      expect(called).toBe(true);
+    });
   });
 });
