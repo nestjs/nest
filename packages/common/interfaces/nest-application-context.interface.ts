@@ -2,6 +2,7 @@ import { ShutdownSignal } from '../enums/shutdown-signal.enum.js';
 import { LoggerService, LogLevel } from '../services/logger.service.js';
 import { DynamicModule } from './modules/index.js';
 import { NestApplicationContextOptions } from './nest-application-context-options.interface.js';
+import { ProcessErrorHandlersOptions } from './process-error-handlers-options.interface.js';
 import { ShutdownHooksOptions } from './shutdown-hooks-options.interface.js';
 import { Type } from './type.interface.js';
 
@@ -153,6 +154,17 @@ export interface INestApplicationContext {
     signals?: ShutdownSignal[] | string[],
     options?: ShutdownHooksOptions,
   ): this;
+
+  /**
+   * Enables the handling of fatal process errors. Will call the given
+   * handler when the process emits `uncaughtException` or
+   * `unhandledRejection`.
+   *
+   * @param {ProcessErrorHandlersOptions} options The handler for each event
+   *
+   * @returns {this} The Nest application context instance
+   */
+  enableProcessErrorHandlers(options: ProcessErrorHandlersOptions): this;
 
   /**
    * Initializes the Nest application.
