@@ -17,6 +17,7 @@ describe('ParseUUIDPipe', () => {
     const v3 = 'e8b5a51d-11c8-3310-a6ab-367563f20686';
     const v4 = '10ba038e-48da-487b-96e8-8d3b99b6d18a';
     const v5 = '630eb68f-e0fa-5ecc-887a-7c7a62614681';
+    const v7 = '017f22e2-79b0-7cc3-98c4-dc0c0c07398f';
 
     describe('when validation passes', () => {
       it('should return string if value is uuid v3, v4 or v5', async () => {
@@ -39,6 +40,11 @@ describe('ParseUUIDPipe', () => {
       it('should return string if value is uuid v5', async () => {
         target = new ParseUUIDPipe({ version: '5', exceptionFactory });
         expect(await target.transform(v5, {} as ArgumentMetadata)).toBe(v5);
+      });
+
+      it('should return string if value is uuid v7', async () => {
+        target = new ParseUUIDPipe({ version: '7', exceptionFactory });
+        expect(await target.transform(v7, {} as ArgumentMetadata)).toBe(v7);
       });
       it('should not throw an error if the value is undefined/null and optional is true', async () => {
         const target = new ParseUUIDPipe({ optional: true });
@@ -112,6 +118,33 @@ describe('ParseUUIDPipe', () => {
         ).rejects.toThrow(TestException);
         await expect(
           target.transform(v4, {} as ArgumentMetadata),
+        ).rejects.toThrow(TestException);
+      });
+
+      it('should throw an error - v7', async () => {
+        target = new ParseUUIDPipe({ version: '7', exceptionFactory });
+        await expect(
+          target.transform('123a', {} as ArgumentMetadata),
+        ).rejects.toThrow(TestException);
+        await expect(
+          target.transform(v3, {} as ArgumentMetadata),
+        ).rejects.toThrow(TestException);
+        await expect(
+          target.transform(v4, {} as ArgumentMetadata),
+        ).rejects.toThrow(TestException);
+        await expect(
+          target.transform(v5, {} as ArgumentMetadata),
+        ).rejects.toThrow(TestException);
+      });
+
+      it('should throw an error for a UUID v7 with an invalid variant', async () => {
+        target = new ParseUUIDPipe({ version: '7', exceptionFactory });
+        await expect(
+          target.transform(
+            // same as `v7` but with variant nibble `c` instead of `9`
+            '017f22e2-79b0-7cc3-c8c4-dc0c0c07398f',
+            {} as ArgumentMetadata,
+          ),
         ).rejects.toThrow(TestException);
       });
     });
