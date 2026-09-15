@@ -64,6 +64,7 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   }
 
   public async close() {
+    this.handleClose();
     if (this.mqttClient) {
       await this.mqttClient.endAsync();
     }
@@ -72,6 +73,16 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     this.isInitialConnection = false;
     this.subscriptionsCount.clear();
     this.pendingEventListeners = [];
+  }
+
+  public handleClose() {
+    if (this.routingMap.size > 0) {
+      const err = new Error('Connection closed');
+      for (const callback of this.routingMap.values()) {
+        callback({ err });
+      }
+      this.routingMap.clear();
+    }
   }
 
   public async connect(): Promise<any> {

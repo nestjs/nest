@@ -307,6 +307,18 @@ describe('ClientMqtt', () => {
       expect(untypedClient.subscriptionsCount.size).toBe(0);
     });
 
+    it('should fail pending requests with a connection closed error', async () => {
+      const callback = vi.fn();
+      untypedClient.routingMap.set('some id', callback);
+
+      await client.close();
+
+      expect(untypedClient.routingMap.size).toBe(0);
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+    });
+
     it('should register the response listener after close and reconnect', async () => {
       const firstClient = { endAsync: vi.fn() };
       const secondClient = { on: vi.fn() };

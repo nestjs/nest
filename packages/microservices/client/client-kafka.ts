@@ -126,12 +126,23 @@ export class ClientKafka
   }
 
   public async close(): Promise<void> {
+    this.handleClose();
     this._producer && (await this._producer.disconnect());
     this._consumer && (await this._consumer.disconnect());
     this._producer = null;
     this._consumer = null;
     this.initialized = null;
     this.client = null;
+  }
+
+  public handleClose() {
+    if (this.routingMap.size > 0) {
+      const err = new Error('Connection closed');
+      for (const callback of this.routingMap.values()) {
+        callback({ err });
+      }
+      this.routingMap.clear();
+    }
   }
 
   public async connect(): Promise<Producer> {
