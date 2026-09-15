@@ -289,6 +289,18 @@ describe('ClientKafka', () => {
       expect(untypedClient._producer).toBeNull();
       expect(untypedClient.client).toBeNull();
     });
+
+    it('should fail pending requests with a connection closed error', async () => {
+      const callback = vi.fn();
+      untypedClient.routingMap.set('some id', callback);
+
+      await client.close();
+
+      expect(untypedClient.routingMap.size).toBe(0);
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+    });
   });
 
   describe('registerConsumerEventListeners', () => {
