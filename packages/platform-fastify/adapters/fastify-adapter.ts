@@ -462,6 +462,9 @@ export class FastifyAdapter<
     if (!isNil(statusCode)) {
       fastifyReply.status(statusCode);
     }
+    if (isNil(body)) {
+      return fastifyReply.send();
+    }
     if (body instanceof StreamableFile) {
       const streamHeaders = body.getHeaders();
       if (
