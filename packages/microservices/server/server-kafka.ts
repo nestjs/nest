@@ -445,6 +445,8 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       if (isObservable(resultOrStream)) {
         await lastValueFrom(resultOrStream);
         this.onProcessingEndHook?.(this.transportId, context);
+      } else {
+        this.onProcessingEndHook?.(this.transportId, context);
       }
     });
   }

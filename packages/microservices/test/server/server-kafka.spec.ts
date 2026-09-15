@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaContext } from '../../ctx-host/index.js';
 import { KafkaHeaders } from '../../enums/index.js';
@@ -480,6 +481,40 @@ describe('ServerKafka', () => {
 
       await server.handleMessage(payload);
       expect(handler).toHaveBeenCalled();
+    });
+  });
+
+  describe('handleEvent', () => {
+    const context = new KafkaContext([] as any);
+
+    function bindHandler(result: unknown) {
+      const endHook = vi.fn();
+      (server as any).onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      (server as any).onProcessingEndHook = endHook;
+      (server as any).messageHandlers = objectToMap({
+        [topic]: Object.assign(async () => result, { isEventHandler: true }),
+      });
+      return endHook;
+    }
+
+    it('should run the end hook when the handler returns a plain value', async () => {
+      const endHook = bindHandler(Promise.resolve('plain'));
+
+      await server.handleEvent(topic, { pattern: topic, data: null }, context);
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the handler returns an observable', async () => {
+      const endHook = bindHandler(of('streamed'));
+
+      await server.handleEvent(topic, { pattern: topic, data: null }, context);
+
+      expect(endHook).toHaveBeenCalledOnce();
     });
   });
 
