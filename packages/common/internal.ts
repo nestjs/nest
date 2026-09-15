@@ -52,6 +52,12 @@ export type {
   GetOrResolveOptions,
   SelectOptions,
 } from './interfaces/nest-application-context.interface.js';
+export type {
+  FatalErrorShutdownOptions,
+  ProcessErrorHandler,
+  ProcessErrorHandlersOptions,
+  ProcessErrorOrigin,
+} from './interfaces/process-error-handlers-options.interface.js';
 export type { ShutdownHooksOptions } from './interfaces/shutdown-hooks-options.interface.js';
 
 // Decorators (internal)
