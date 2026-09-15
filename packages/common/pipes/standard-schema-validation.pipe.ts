@@ -124,7 +124,7 @@ export class StandardSchemaValidationPipe implements PipeTransform {
       return value;
     }
 
-    stripProtoKeys(value);
+    this.stripProtoKeys(value);
 
     const result = await this.validate<T>(value, schema, this.validateOptions);
 
