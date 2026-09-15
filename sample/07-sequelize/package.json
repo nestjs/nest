@@ -19,9 +19,9 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.mts"
   },
   "dependencies": {
-    "@nestjs/common": "12.0.2",
-    "@nestjs/core": "12.0.2",
-    "@nestjs/platform-express": "12.0.2",
+    "@nestjs/common": "12.0.3",
+    "@nestjs/core": "12.0.3",
+    "@nestjs/platform-express": "12.0.3",
     "@nestjs/sequelize": "12.0.0",
     "mysql2": "3.24.4",
     "reflect-metadata": "0.2.2",
@@ -34,7 +34,7 @@
   "devDependencies": {
     "@nestjs/cli": "12.0.1",
     "@nestjs/schematics": "12.0.2",
-    "@nestjs/testing": "12.0.2",
+    "@nestjs/testing": "12.0.3",
     "@types/express": "5.0.6",
     "@types/node": "24.13.4",
     "@types/supertest": "7.2.1",
