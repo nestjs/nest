@@ -1,4 +1,10 @@
-import { isObservable, lastValueFrom, Observable, ReplaySubject } from 'rxjs';
+import {
+  finalize,
+  isObservable,
+  lastValueFrom,
+  Observable,
+  ReplaySubject,
+} from 'rxjs';
 import {
   KAFKA_DEFAULT_BROKER,
   KAFKA_DEFAULT_CLIENT,
@@ -443,7 +449,14 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     return this.onProcessingStartHook(this.transportId, context, async () => {
       const resultOrStream = await handler(packet.data, context);
       if (isObservable(resultOrStream)) {
-        await lastValueFrom(resultOrStream);
+        await lastValueFrom(
+          resultOrStream.pipe(
+            finalize(() =>
+              this.onProcessingEndHook?.(this.transportId, context),
+            ),
+          ),
+        );
+      } else {
         this.onProcessingEndHook?.(this.transportId, context);
       }
     });
