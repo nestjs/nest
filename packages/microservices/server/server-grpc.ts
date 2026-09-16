@@ -472,6 +472,8 @@ export class ServerGrpc extends Server<never, never> {
               .indexOf('cancelled');
 
             if (isCancelledError !== -1) {
+              complete();
+              cleanup();
               call.end();
               return;
             }
@@ -481,32 +483,38 @@ export class ServerGrpc extends Server<never, never> {
           call.on('end', () => {
             complete();
             cleanup();
-
-            this.onProcessingEndHook?.(this.transportId, call.request);
           });
 
-          const handler = methodHandler(
-            subject.asObservable(),
-            call.metadata,
-            call,
-          );
-          const res = this.transformToObservable(await handler);
-          if (isResponseStream) {
-            await this.writeObservableToGrpc(res, call);
-          } else {
-            const response = await lastValueFrom(
-              res.pipe(
-                takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
-                catchError(err => {
-                  callback(err, null);
-                  return EMPTY;
-                }),
-                defaultIfEmpty(undefined),
-              ),
+          try {
+            const handler = methodHandler(
+              subject.asObservable(),
+              call.metadata,
+              call,
             );
+            const res = this.transformToObservable(await handler);
+            if (isResponseStream) {
+              await this.writeObservableToGrpc(res, call);
+            } else {
+              const response = await lastValueFrom(
+                res.pipe(
+                  takeUntil(fromEvent(call as any, CANCELLED_EVENT)),
+                  catchError(err => {
+                    callback(err, null);
+                    return EMPTY;
+                  }),
+                  defaultIfEmpty(undefined),
+                ),
+              );
 
-            if (!isUndefined(response)) {
-              callback(null, response);
+              if (!isUndefined(response)) {
+                callback(null, response);
+              }
+            }
+          } finally {
+            try {
+              this.onProcessingEndHook?.(this.transportId, call.request);
+            } catch {
+              // The end hook must not replace an error raised by the handler
             }
           }
         },

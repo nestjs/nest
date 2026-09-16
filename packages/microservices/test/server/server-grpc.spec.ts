@@ -1,6 +1,12 @@
 import { Logger } from '@nestjs/common';
 import { join } from 'path';
-import { ReplaySubject, Subject, throwError } from 'rxjs';
+import {
+  lastValueFrom,
+  ReplaySubject,
+  Subject,
+  toArray,
+  throwError,
+} from 'rxjs';
 import { InvalidGrpcPackageException } from '../../errors/invalid-grpc-package.exception.js';
 import { InvalidProtoDefinitionException } from '../../errors/invalid-proto-definition.exception.js';
 import { GrpcMethodStreamingType } from '../../index.js';
@@ -843,6 +849,136 @@ describe('ServerGrpc', () => {
           }
         });
       });
+    });
+  });
+
+  describe('createRequestStreamMethod processing end hook', () => {
+    function createStreamCallMock() {
+      const listeners: Record<string, Array<(e?: any) => void>> = {};
+      return {
+        request: { data: [] },
+        metadata: {},
+        write: vi.fn(() => true),
+        end: vi.fn(),
+        on: (event: string, cb: (e?: any) => void) => {
+          (listeners[event] ??= []).push(cb);
+        },
+        off: (event: string, cb: (e?: any) => void) => {
+          listeners[event] = (listeners[event] ?? []).filter(x => x !== cb);
+        },
+        emit: (event: string, e?: any) => {
+          for (const cb of [...(listeners[event] ?? [])]) {
+            cb(e);
+          }
+        },
+      };
+    }
+
+    function captureEndHook() {
+      let endHookArgs: unknown[] | undefined;
+      (server as any).onProcessingEndHook = (...args: unknown[]) => {
+        endHookArgs = args;
+      };
+      return () => endHookArgs;
+    }
+
+    it('should call the processing end hook when the call ends', async () => {
+      const getEndHookArgs = captureEndHook();
+      const fn = server.createRequestStreamMethod(
+        async () => ({ test: true }),
+        false,
+      );
+      const call = createStreamCallMock();
+      const result = fn(call as any, vi.fn());
+
+      call.emit('end');
+
+      await result;
+      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
+    });
+
+    it('should call the processing end hook when the client cancels the call', async () => {
+      const getEndHookArgs = captureEndHook();
+      const fn = server.createRequestStreamMethod(
+        async () => ({ test: true }),
+        false,
+      );
+      const call = createStreamCallMock();
+      const result = fn(call as any, vi.fn());
+
+      call.emit('cancelled');
+      call.emit('error', new Error('16 CANCELLED: Cancelled on client'));
+
+      await result;
+      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
+    });
+
+    it('should call the processing end hook when the call errors', async () => {
+      const getEndHookArgs = captureEndHook();
+      const fn = server.createRequestStreamMethod(
+        async () => ({ test: true }),
+        false,
+      );
+      const call = createStreamCallMock();
+      const result = fn(call as any, vi.fn());
+
+      call.emit('error', new Error('boom'));
+
+      await result;
+      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
+    });
+
+    it('should call the processing end hook when the client cancels a stream response call', async () => {
+      const getEndHookArgs = captureEndHook();
+      const subject = new Subject<string>();
+      const fn = server.createRequestStreamMethod(
+        () => Promise.resolve(subject),
+        true,
+      );
+      const call = createStreamCallMock();
+      const result = fn(call as any, vi.fn());
+
+      await new Promise(resolve => setImmediate(resolve));
+      call.emit('cancelled');
+      call.emit('error', new Error('16 CANCELLED: Cancelled on client'));
+
+      await result;
+      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
+    });
+
+    it('should settle the request stream and fire the end hook when a stream-consuming handler gets cancelled', async () => {
+      const getEndHookArgs = captureEndHook();
+      const fn = server.createRequestStreamMethod((stream: any) => {
+        stream.drainBuffer?.();
+        return lastValueFrom(stream.pipe(toArray()));
+      }, false);
+      const call = createStreamCallMock();
+      const result = fn(call as any, vi.fn());
+
+      await new Promise(resolve => setImmediate(resolve));
+      call.emit('data', 'x');
+      call.emit('cancelled');
+      call.emit('error', new Error('16 CANCELLED: Cancelled on client'));
+
+      await result;
+      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
+    });
+
+    it('should settle the request stream and fire the end hook when a stream-consuming handler finishes on call end', async () => {
+      const getEndHookArgs = captureEndHook();
+      const fn = server.createRequestStreamMethod((stream: any) => {
+        stream.drainBuffer?.();
+        return lastValueFrom(stream.pipe(toArray()));
+      }, false);
+      const call = createStreamCallMock();
+      const result = fn(call as any, vi.fn());
+
+      await new Promise(resolve => setImmediate(resolve));
+      call.emit('data', 'x');
+      call.emit('end');
+
+      await result;
+      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
     });
   });
 
