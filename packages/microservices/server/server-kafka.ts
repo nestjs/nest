@@ -447,17 +447,17 @@ export class ServerKafka extends Server<never, KafkaStatus> {
     }
 
     return this.onProcessingStartHook(this.transportId, context, async () => {
-      const resultOrStream = await handler(packet.data, context);
-      if (isObservable(resultOrStream)) {
-        await lastValueFrom(
-          resultOrStream.pipe(
-            finalize(() =>
-              this.onProcessingEndHook?.(this.transportId, context),
-            ),
-          ),
-        );
-      } else {
-        this.onProcessingEndHook?.(this.transportId, context);
+      const runEndHook = this.createProcessingEndHookRunner(context);
+      try {
+        const resultOrStream = await handler(packet.data, context);
+        if (isObservable(resultOrStream)) {
+          await lastValueFrom(resultOrStream.pipe(finalize(runEndHook)));
+        } else {
+          runEndHook();
+        }
+      } catch (err) {
+        runEndHook();
+        throw err;
       }
     });
   }

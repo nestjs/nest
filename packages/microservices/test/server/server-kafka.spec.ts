@@ -528,6 +528,30 @@ describe('ServerKafka', () => {
       expect(endHook).toHaveBeenCalledOnce();
     });
 
+    it('should run the end hook when the handler throws an error', async () => {
+      const endHook = vi.fn();
+      const untypedServer = server as any;
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      untypedServer.messageHandlers = objectToMap({
+        [topic]: Object.assign(
+          async () => {
+            throw new Error('handler failed');
+          },
+          { isEventHandler: true },
+        ),
+      });
+
+      await expect(
+        server.handleEvent(topic, { pattern: topic, data: null }, context),
+      ).rejects.toThrow('handler failed');
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
     it('should run the end hook once per event', async () => {
       const endHook = bindHandler(
         new Observable(subscriber => {
