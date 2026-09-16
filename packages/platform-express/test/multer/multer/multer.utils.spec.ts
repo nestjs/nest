@@ -3,6 +3,7 @@ import {
   HttpException,
   PayloadTooLargeException,
 } from '@nestjs/common';
+import multer from 'multer';
 import {
   busboyExceptions,
   multerExceptions,
@@ -69,6 +70,36 @@ describe('transformException', () => {
         expect(transformException(err as any)).toBeInstanceOf(
           BadRequestException,
         );
+      });
+    });
+    describe('and is an error thrown by multer', () => {
+      it('should return "BadRequestException" for LIMIT_UNEXPECTED_FILE', () => {
+        const err = new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'photo');
+        const result = transformException(err);
+        expect(result).toBeInstanceOf(BadRequestException);
+        expect(result!.message).toBe(`${err.message} - photo`);
+      });
+      it('should return "PayloadTooLargeException" for LIMIT_FILE_SIZE', () => {
+        const err = new multer.MulterError('LIMIT_FILE_SIZE', 'avatar');
+        expect(transformException(err)).toBeInstanceOf(
+          PayloadTooLargeException,
+        );
+      });
+      it('should map by code even when the message differs', () => {
+        const err = {
+          code: 'LIMIT_UNEXPECTED_FILE',
+          message: 'Some other wording',
+          field: 'photo',
+        };
+        const result = transformException(err as any);
+        expect(result).toBeInstanceOf(BadRequestException);
+        expect(result!.message).toBe('Some other wording - photo');
+      });
+      it('should behave as identity for a code that is not a multer code', () => {
+        const err = Object.assign(new Error('no such file'), {
+          code: 'ENOENT',
+        });
+        expect(transformException(err)).toBe(err);
       });
     });
     describe(`and has a 'field' property`, () => {
