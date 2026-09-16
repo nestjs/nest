@@ -1,3 +1,4 @@
+import { OPTIONAL_DEPS_METADATA } from '../../constants.js';
 import { BadRequestException } from '../../exceptions/index.js';
 import { ParseDatePipe } from '../../pipes/parse-date.pipe.js';
 
@@ -56,6 +57,23 @@ describe('ParseDatePipe', () => {
       it('should throw an error', () => {
         expect(() => target.transform('')).toThrow(BadRequestException);
       });
+    });
+  });
+
+  describe('dependency injection', () => {
+    it('should mark the options argument as optional', () => {
+      // Without this metadata the injector cannot instantiate the pipe when it
+      // is passed by class, e.g. `@Query('date', ParseDatePipe)`.
+      const metadata = Reflect.getMetadata(
+        OPTIONAL_DEPS_METADATA,
+        ParseDatePipe,
+      );
+      expect(metadata).toEqual([0]);
+    });
+
+    it('should fall back to the default options when none are injected', () => {
+      const target = new ParseDatePipe(undefined as any);
+      expect(() => target.transform('')).toThrow(BadRequestException);
     });
   });
 });

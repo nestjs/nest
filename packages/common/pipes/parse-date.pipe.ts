@@ -1,4 +1,5 @@
 import { Injectable } from '../decorators/core/injectable.decorator.js';
+import { Optional } from '../decorators/core/optional.decorator.js';
 import { HttpStatus } from '../enums/http-status.enum.js';
 import { PipeTransform } from '../interfaces/features/pipe-transform.interface.js';
 import {
@@ -40,7 +41,9 @@ export interface ParseDatePipeOptions {
 export class ParseDatePipe implements PipeTransform {
   protected exceptionFactory: (error: string) => any;
 
-  constructor(private readonly options: ParseDatePipeOptions = {}) {
+  constructor(
+    @Optional() protected readonly options: ParseDatePipeOptions = {},
+  ) {
     const { exceptionFactory, errorHttpStatusCode = HttpStatus.BAD_REQUEST } =
       options;
 
