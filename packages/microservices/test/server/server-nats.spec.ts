@@ -162,9 +162,20 @@ describe('ServerNats', () => {
       it('should call "handleMessage"', async () => {
         const handleMessageStub = vi
           .spyOn(server, 'handleMessage')
-          .mockImplementation(() => null!);
+          .mockResolvedValue(undefined as any);
         await server.getMessageHandler('')('' as any, '');
         expect(handleMessageStub).toHaveBeenCalled();
+      });
+      it('should route "handleMessage" rejections to "handleError" instead of leaving them unhandled', async () => {
+        const error = new Error('unexpected');
+        vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
+        const handleErrorSpy = vi
+          .spyOn(untypedServer, 'handleError')
+          .mockImplementation(() => undefined);
+
+        await server.getMessageHandler('')('' as any, '');
+
+        expect(handleErrorSpy).toHaveBeenCalledWith(error);
       });
     });
   });

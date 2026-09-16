@@ -129,9 +129,13 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   public getMessageHandler(pub: Redis) {
     return this.options?.wildcards
       ? (channel: string, pattern: string, buffer: string) =>
-          this.handleMessage(channel, buffer, pub, pattern)
+          this.handleMessage(channel, buffer, pub, pattern).catch(err =>
+            this.handleError(err),
+          )
       : (channel: string, buffer: string) =>
-          this.handleMessage(channel, buffer, pub, channel);
+          this.handleMessage(channel, buffer, pub, channel).catch(err =>
+            this.handleError(err),
+          );
   }
 
   public async handleMessage(
