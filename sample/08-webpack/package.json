@@ -22,7 +22,7 @@
   "devDependencies": {
     "@nestjs/cli": "12.0.1",
     "@nestjs/schematics": "12.0.2",
-    "@types/node": "24.13.4",
+    "@types/node": "24.13.5",
     "oxlint": "1.83.0",
     "start-server-webpack-plugin": "2.2.5",
     "vitest": "5.0.1",
