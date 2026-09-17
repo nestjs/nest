@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { RedisContext } from '../../ctx-host/index.js';
@@ -211,6 +212,53 @@ describe('ServerRedis', () => {
 
       await server.handleMessage(channel, '', null, channel);
       expect(handler).toHaveBeenCalledWith(data, expect.any(RedisContext));
+    });
+  });
+
+  describe('processing end hook', () => {
+    const channel = 'test';
+    const id = '3';
+    let publishSpy: ReturnType<typeof vi.fn>;
+    let endHook: ReturnType<typeof vi.fn>;
+
+    const bindHandler = (handler: () => unknown) => {
+      publishSpy = vi.fn();
+      vi.spyOn(server, 'getPublisher').mockImplementation(() => publishSpy);
+      vi.spyOn(server, 'parseMessage').mockImplementation(
+        () => ({ id, data: 'test' }) as any,
+      );
+      endHook = vi.fn();
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: (async () => handler()) as any,
+      });
+    };
+    const handleMessage = () =>
+      server.handleMessage(channel, JSON.stringify({ id }), null!, channel);
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+
+    it('should run the hook once when the response stream emits several values', async () => {
+      bindHandler(() => of('first', 'second', 'third'));
+
+      await handleMessage();
+      await flush();
+
+      expect(publishSpy).toHaveBeenCalledTimes(3);
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+    it('should run the hook when the handler rejects', async () => {
+      bindHandler(() => {
+        throw new Error('handler failed');
+      });
+
+      await expect(handleMessage()).rejects.toThrow('handler failed');
+
+      expect(endHook).toHaveBeenCalledOnce();
     });
   });
   describe('getPublisher', () => {

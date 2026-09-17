@@ -1,3 +1,4 @@
+import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER, RMQ_DEFAULT_QUEUE } from '../../constants.js';
 import { RmqContext } from '../../ctx-host/index.js';
 import { ServerRMQ } from '../../server/server-rmq.js';
@@ -224,6 +225,57 @@ describe('ServerRMQ', () => {
         1,
         expect.any(RmqContext),
       );
+    });
+  });
+
+  describe('processing end hook', () => {
+    const pattern = 'test';
+    const message = {
+      content: {
+        toString: () => JSON.stringify({ pattern, data: 'tests', id: '3' }),
+      },
+      properties: { correlationId: 1 },
+    };
+    let sendMessageSpy: ReturnType<typeof vi.fn>;
+    let endHook: ReturnType<typeof vi.fn>;
+
+    const bindHandler = (handler: () => unknown) => {
+      sendMessageSpy = vi
+        .spyOn(server, 'sendMessage')
+        .mockImplementation(() => ({}) as any) as any;
+      untypedServer.channel = { nack: vi.fn() };
+      endHook = vi.fn();
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      untypedServer.messageHandlers = objectToMap({
+        [pattern]: (async () => handler()) as any,
+      });
+    };
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+
+    it('should run the hook once when the response stream emits several values', async () => {
+      bindHandler(() => of('first', 'second', 'third'));
+
+      await server.handleMessage(message, '');
+      await flush();
+
+      expect(sendMessageSpy).toHaveBeenCalledTimes(3);
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+    it('should run the hook when the handler rejects', async () => {
+      bindHandler(() => {
+        throw new Error('handler failed');
+      });
+
+      await expect(server.handleMessage(message, '')).rejects.toThrow(
+        'handler failed',
+      );
+
+      expect(endHook).toHaveBeenCalledOnce();
     });
   });
   describe('setupChannel', () => {
