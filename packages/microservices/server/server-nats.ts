@@ -1,5 +1,6 @@
 import { isObject, isUndefined } from '@nestjs/common/internal';
 import { EventEmitter } from 'events';
+import { finalize } from 'rxjs/operators';
 import {
   NATS_DEFAULT_GRACE_PERIOD,
   NATS_DEFAULT_URL,
@@ -175,10 +176,16 @@ export class ServerNats<
       return publish(noHandlerPacket);
     }
     return this.onProcessingStartHook(this.transportId, natsCtx, async () => {
-      const response$ = this.transformToObservable(
-        await handler(message.data, natsCtx),
-      );
-      response$ && this.send(response$, publish);
+      const runEndHook = this.createProcessingEndHookRunner(natsCtx);
+      try {
+        const response$ = this.transformToObservable(
+          await handler(message.data, natsCtx),
+        );
+        response$ && this.send(response$.pipe(finalize(runEndHook)), publish);
+      } catch (err) {
+        runEndHook();
+        throw err;
+      }
     });
   }
 
@@ -189,7 +196,6 @@ export class ServerNats<
         const outgoingResponse: NatsRecord =
           this.serializer.serialize(response);
 
-        this.onProcessingEndHook?.(this.transportId, ctx);
         return natsMsg.respond(outgoingResponse.data, {
           headers: outgoingResponse.headers,
         });

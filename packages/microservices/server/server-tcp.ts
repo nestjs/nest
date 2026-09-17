@@ -1,6 +1,7 @@
 import type { Type } from '@nestjs/common';
 import * as net from 'net';
 import { Server as NetSocket, Socket } from 'net';
+import { finalize } from 'rxjs/operators';
 import { createServer as tlsCreateServer, TlsOptions } from 'tls';
 import {
   EADDRINUSE,
@@ -130,20 +131,25 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       this.transportId,
       tcpContext,
       async () => {
-        const response$ = this.transformToObservable(
-          await handler(packet.data, tcpContext),
-        );
+        const runEndHook = this.createProcessingEndHookRunner(tcpContext);
+        try {
+          const response$ = this.transformToObservable(
+            await handler(packet.data, tcpContext),
+          );
 
-        response$ &&
-          this.send(response$, data => {
-            Object.assign(data, { id: (packet as IncomingRequest).id });
-            const outgoingResponse = this.serializer.serialize(
-              data as WritePacket & PacketId,
-            );
+          response$ &&
+            this.send(response$.pipe(finalize(runEndHook)), data => {
+              Object.assign(data, { id: (packet as IncomingRequest).id });
+              const outgoingResponse = this.serializer.serialize(
+                data as WritePacket & PacketId,
+              );
 
-            this.onProcessingEndHook?.(this.transportId, tcpContext);
-            socket.sendMessage(outgoingResponse);
-          });
+              socket.sendMessage(outgoingResponse);
+            });
+        } catch (err) {
+          runEndHook();
+          throw err;
+        }
       },
     );
   }

@@ -1,3 +1,4 @@
+import { finalize } from 'rxjs/operators';
 import {
   CONNECTION_FAILED_MESSAGE,
   MQTT_DEFAULT_URL,
@@ -185,10 +186,16 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       this.transportId,
       mqttContext,
       async () => {
-        const response$ = this.transformToObservable(
-          await handler(packet.data, mqttContext),
-        );
-        response$ && this.send(response$, publish);
+        const runEndHook = this.createProcessingEndHookRunner(mqttContext);
+        try {
+          const response$ = this.transformToObservable(
+            await handler(packet.data, mqttContext),
+          );
+          response$ && this.send(response$.pipe(finalize(runEndHook)), publish);
+        } catch (err) {
+          runEndHook();
+          throw err;
+        }
       },
     );
   }
@@ -210,7 +217,6 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       const outgoingResponse: string | Buffer =
         this.serializer.serialize(response);
 
-      this.onProcessingEndHook?.(this.transportId, context);
       return client.publish(
         this.getReplyPattern(context.getTopic()),
         outgoingResponse,

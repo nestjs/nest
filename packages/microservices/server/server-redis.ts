@@ -1,3 +1,4 @@
+import { finalize } from 'rxjs/operators';
 import {
   NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_HOST,
@@ -172,10 +173,16 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       this.transportId,
       redisCtx,
       async () => {
-        const response$ = this.transformToObservable(
-          await handler(packet.data, redisCtx),
-        );
-        response$ && this.send(response$, publish);
+        const runEndHook = this.createProcessingEndHookRunner(redisCtx);
+        try {
+          const response$ = this.transformToObservable(
+            await handler(packet.data, redisCtx),
+          );
+          response$ && this.send(response$.pipe(finalize(runEndHook)), publish);
+        } catch (err) {
+          runEndHook();
+          throw err;
+        }
       },
     );
   }
@@ -185,7 +192,6 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       Object.assign(response, { id });
       const outgoingResponse = this.serializer.serialize(response);
 
-      this.onProcessingEndHook?.(this.transportId, ctx);
       return pub.publish(
         this.getReplyPattern(pattern),
         JSON.stringify(outgoingResponse),
