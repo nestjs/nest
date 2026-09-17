@@ -20,7 +20,7 @@ function httpRequest(
     const options: http.RequestOptions = {
       hostname: parsed.hostname,
       port: Number(parsed.port),
-      path: parsed.pathname,
+      path: parsed.pathname + parsed.search,
       method,
       headers: body
         ? {
@@ -90,5 +90,32 @@ describe('QueryMethod (Express)', () => {
   it('should return 404 for GET /items (wrong method)', async () => {
     const { statusCode } = await httpRequest(`${baseUrl}/items`, 'GET');
     expect(statusCode).toBe(HttpStatus.NOT_FOUND);
+  });
+
+  it('combines @Param(), @Query() and @Body() on a QUERY route, through a guard/interceptor/pipe', async () => {
+    const { statusCode, json } = await httpRequest(
+      `${baseUrl}/items/42?tenant=acme`,
+      'QUERY',
+      JSON.stringify({ name: 'nestjs' }),
+    );
+
+    expect(statusCode).toBe(HttpStatus.OK);
+    expect(json).toEqual({
+      id: '42',
+      tenant: 'ACME', // uppercased by the pipe bound to @Query()
+      filters: { name: 'nestjs' },
+      intercepted: true, // added by the interceptor
+    });
+  });
+
+  it('runs exception filters for a QUERY route', async () => {
+    const { statusCode, json } = await httpRequest(
+      `${baseUrl}/items/reject`,
+      'QUERY',
+      JSON.stringify({}),
+    );
+
+    expect(statusCode).toBe(HttpStatus.BAD_REQUEST);
+    expect(json).toEqual({ handledBy: 'RejectFilter' });
   });
 });

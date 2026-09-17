@@ -64,4 +64,31 @@ describe('QueryMethod (Fastify)', () => {
     });
     expect(response.statusCode).toBe(HttpStatus.NOT_FOUND);
   });
+
+  it('combines @Param(), @Query() and @Body() on a QUERY route, through a guard/interceptor/pipe', async () => {
+    const response = await app.inject({
+      method: 'QUERY' as any,
+      url: '/items/42?tenant=acme',
+      payload: { name: 'nestjs' },
+    });
+
+    expect(response.statusCode).toBe(HttpStatus.OK);
+    expect(response.json()).toEqual({
+      id: '42',
+      tenant: 'ACME',
+      filters: { name: 'nestjs' },
+      intercepted: true,
+    });
+  });
+
+  it('runs exception filters for a QUERY route', async () => {
+    const response = await app.inject({
+      method: 'QUERY' as any,
+      url: '/items/reject',
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(HttpStatus.BAD_REQUEST);
+    expect(response.json()).toEqual({ handledBy: 'RejectFilter' });
+  });
 });
