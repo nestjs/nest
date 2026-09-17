@@ -147,7 +147,10 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       channel: string,
       buffer: Buffer,
       originalPacket?: Record<string, any>,
-    ) => this.handleMessage(channel, buffer, pub, originalPacket);
+    ) =>
+      this.handleMessage(channel, buffer, pub, originalPacket).catch(err =>
+        this.handleError(err),
+      );
   }
 
   public async handleMessage(

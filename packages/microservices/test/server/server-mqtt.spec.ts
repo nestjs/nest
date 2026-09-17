@@ -53,6 +53,21 @@ describe('ServerMqtt', () => {
       await server.listen(callbackSpy);
       expect(onSpy.mock.calls[5][0]).toBe('message');
     });
+    it('should route "handleMessage" rejections to "handleError" instead of leaving them unhandled', async () => {
+      const error = new Error('unexpected');
+      vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
+      const handleErrorSpy = vi
+        .spyOn(untypedServer, 'handleError')
+        .mockImplementation(() => undefined);
+
+      await server.listen(callbackSpy);
+      const [, onMessage] = onSpy.mock.calls.find(
+        ([event]) => event === 'message',
+      )!;
+      await onMessage('topic', Buffer.from('{}'));
+
+      expect(handleErrorSpy).toHaveBeenCalledWith(error);
+    });
     it('should bind the callback with "once"', async () => {
       await server.listen(callbackSpy);
 
@@ -308,7 +323,7 @@ describe('ServerMqtt', () => {
       it('should call "handleMessage"', async () => {
         const handleMessageStub = vi
           .spyOn(server, 'handleMessage')
-          .mockImplementation(() => null!);
+          .mockResolvedValue(undefined as any);
         await server.getMessageHandler(untypedServer.mqttClient)(
           null!,
           null!,

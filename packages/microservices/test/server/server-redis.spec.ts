@@ -111,6 +111,21 @@ describe('ServerRedis', () => {
       server.bindEvents(sub, null);
       expect(onSpy.mock.calls[0][0]).toBe('message');
     });
+    it('should route "handleMessage" rejections to "handleError" instead of leaving them unhandled', async () => {
+      const error = new Error('unexpected');
+      vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
+      const handleErrorSpy = vi
+        .spyOn(untypedServer, 'handleError')
+        .mockImplementation(() => undefined);
+
+      server.bindEvents(sub, null);
+      const [, onMessage] = onSpy.mock.calls.find(
+        ([event]) => event === 'message',
+      )!;
+      await onMessage('channel', 'buffer');
+
+      expect(handleErrorSpy).toHaveBeenCalledWith(error);
+    });
     it('should bind "pmessage" event to handler if wildcards are enabled', () => {
       untypedServer.options = {};
       untypedServer.options.wildcards = true;
