@@ -374,7 +374,15 @@ export class ServerKafka extends Server<never, KafkaStatus> {
           }
           replayStream$.error(err);
         },
-        complete: () => replayStream$.complete(),
+        complete: () => {
+          replayStream$.complete();
+          // A stream that completes without emitting must still settle the
+          // promise, or the handler never publishes and the span never closes.
+          if (!isPromiseResolved) {
+            isPromiseResolved = true;
+            resolve();
+          }
+        },
       });
     });
   }
