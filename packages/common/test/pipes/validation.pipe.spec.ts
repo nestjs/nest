@@ -9,7 +9,10 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { HttpStatus } from '../../enums/index.js';
-import { UnprocessableEntityException } from '../../exceptions/index.js';
+import {
+  BadRequestException,
+  UnprocessableEntityException,
+} from '../../exceptions/index.js';
 import { ArgumentMetadata } from '../../interfaces/index.js';
 import { ValidationPipe } from '../../pipes/validation.pipe.js';
 
@@ -753,6 +756,54 @@ describe('ValidationPipe', () => {
       const testObj = { prop1: 'value1', prop2: 'value2' };
       await pipe.transform(testObj, metadata);
       expect(called).toBe(true);
+    });
+  });
+
+  describe('when the payload nests deeper than the call stack allows', () => {
+    // class-transformer walks the payload recursively and gives up around
+    // 2.500 levels, while still staying below the depth at which the plain
+    // object walk itself would overflow.
+    const nest = (depth: number) => {
+      const root: Record<string, any> = {};
+      let current = root;
+      for (let i = 0; i < depth; i++) {
+        current.prop1 = {};
+        current = current.prop1;
+      }
+      return root;
+    };
+
+    it('should throw a bad request instead of letting the RangeError escape', async () => {
+      const target = new ValidationPipe();
+
+      await expect(target.transform(nest(3_000), metadata)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should honour "errorHttpStatusCode" for that failure', async () => {
+      const target = new ValidationPipe({
+        errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+      });
+
+      await expect(target.transform(nest(3_000), metadata)).rejects.toThrow(
+        UnprocessableEntityException,
+      );
+    });
+
+    it('should still let unrelated RangeErrors propagate', async () => {
+      class ExplodingPipe extends ValidationPipe {
+        public override createExceptionFactory() {
+          return () => {
+            throw new RangeError('something else went wrong');
+          };
+        }
+      }
+      const target = new ExplodingPipe();
+
+      await expect(target.transform(nest(3_000), metadata)).rejects.toThrow(
+        'something else went wrong',
+      );
     });
   });
 });

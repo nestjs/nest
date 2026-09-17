@@ -152,11 +152,23 @@ export class ValidationPipe implements PipeTransform {
     const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
     this.stripProtoKeys(value);
-    let entity = classTransformer.plainToInstance(
-      metatype,
-      value,
-      this.transformOptions,
-    );
+
+    let entity: any;
+    try {
+      entity = classTransformer.plainToInstance(
+        metatype,
+        value,
+        this.transformOptions,
+      );
+    } catch (error) {
+      // "class-transformer" walks the payload recursively, so a deeply nested
+      // body exhausts the call stack and throws a RangeError. That is a client
+      // input problem and must not surface as a 500.
+      if (!this.isStackOverflowError(error)) {
+        throw error;
+      }
+      throw await this.exceptionFactory([]);
+    }
 
     const originalEntity = entity;
     const isCtorNotEqual = entity.constructor !== metatype;
@@ -296,6 +308,18 @@ export class ValidationPipe implements PipeTransform {
 
   protected stripProtoKeys(value: any): void {
     stripProtoKeys(value);
+  }
+
+  /**
+   * Tells whether the error was caused by the payload nesting deeper than the
+   * call stack allows. Only that specific failure is rethrown as a bad request;
+   * every other RangeError is a real bug and keeps propagating.
+   */
+  protected isStackOverflowError(error: unknown): boolean {
+    return (
+      error instanceof RangeError &&
+      error.message === 'Maximum call stack size exceeded'
+    );
   }
 
   protected validate(
