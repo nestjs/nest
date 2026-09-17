@@ -1,7 +1,9 @@
 import { Logger } from '@nestjs/common';
 import { join } from 'path';
+import { EventEmitter } from 'events';
 import {
   lastValueFrom,
+  of,
   ReplaySubject,
   Subject,
   toArray,
@@ -853,143 +855,238 @@ describe('ServerGrpc', () => {
   });
 
   describe('createRequestStreamMethod processing end hook', () => {
-    function createStreamCallMock() {
-      const listeners: Record<string, Array<(e?: any) => void>> = {};
-      return {
+    function createCall() {
+      return Object.assign(new EventEmitter(), {
         request: { data: [] },
         metadata: {},
+        cancelled: false,
         write: vi.fn(() => true),
         end: vi.fn(),
-        on: (event: string, cb: (e?: any) => void) => {
-          (listeners[event] ??= []).push(cb);
-        },
-        off: (event: string, cb: (e?: any) => void) => {
-          listeners[event] = (listeners[event] ?? []).filter(x => x !== cb);
-        },
-        emit: (event: string, e?: any) => {
-          for (const cb of [...(listeners[event] ?? [])]) {
-            cb(e);
-          }
-        },
-      };
+      });
     }
 
-    function captureEndHook() {
-      let endHookArgs: unknown[] | undefined;
-      (server as any).onProcessingEndHook = (...args: unknown[]) => {
-        endHookArgs = args;
-      };
-      return () => endHookArgs;
+    // What grpc-js emits on the server call: a client cancellation arrives as
+    // "end", "cancelled" and "close"; an expired deadline as "cancelled" and
+    // "close". Neither produces an "error" event.
+    function cancelCall(
+      call: ReturnType<typeof createCall>,
+      { halfClosed = true } = {},
+    ) {
+      if (halfClosed) {
+        call.emit('end');
+      }
+      call.cancelled = true;
+      call.emit('cancelled', 'cancelled');
+      call.emit('close');
     }
 
-    it('should call the processing end hook when the call ends', async () => {
-      const getEndHookArgs = captureEndHook();
-      const fn = server.createRequestStreamMethod(
-        async () => ({ test: true }),
-        false,
+    function bindEndHook() {
+      const endHook = vi.fn();
+      untypedServer.onProcessingEndHook = endHook;
+      return endHook;
+    }
+
+    const tick = () => new Promise(resolve => setImmediate(resolve));
+
+    // The shape `@GrpcStreamMethod` produces: the handler consumes the request
+    // stream and the buffer is drained once it runs.
+    const consumingHandler = (stream: any) => {
+      stream.drainBuffer?.();
+      return lastValueFrom(stream.pipe(toArray()));
+    };
+
+    // The same handler behind an async guard or interceptor: it only drains
+    // the buffer once the client may already be done.
+    const delayedConsumingHandler = async (stream: any) => {
+      await new Promise(resolve => setTimeout(resolve, 10));
+      return consumingHandler(stream);
+    };
+
+    it('should run the end hook once the handler finishes, after the call has ended', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+      const callback = vi.fn();
+
+      const result = server.createRequestStreamMethod(consumingHandler, false)(
+        call as any,
+        callback,
       );
-      const call = createStreamCallMock();
-      const result = fn(call as any, vi.fn());
-
+      await tick();
+      call.emit('data', 'x');
       call.emit('end');
-
       await result;
-      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
+
+      expect(callback).toHaveBeenCalledWith(null, ['x']);
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
     });
 
-    it('should call the processing end hook when the client cancels the call', async () => {
-      const getEndHookArgs = captureEndHook();
-      const fn = server.createRequestStreamMethod(
-        async () => ({ test: true }),
+    it('should deliver the buffered messages when the call ends before the handler drains', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+      const callback = vi.fn();
+
+      const result = server.createRequestStreamMethod(
+        delayedConsumingHandler,
         false,
-      );
-      const call = createStreamCallMock();
-      const result = fn(call as any, vi.fn());
-
-      call.emit('cancelled');
-      call.emit('error', new Error('16 CANCELLED: Cancelled on client'));
-
+      )(call as any, callback);
+      call.emit('data', 'a');
+      call.emit('data', 'b');
+      call.emit('end');
       await result;
-      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
+
+      expect(callback).toHaveBeenCalledWith(null, ['a', 'b']);
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
     });
 
-    it('should call the processing end hook when the call errors', async () => {
-      const getEndHookArgs = captureEndHook();
-      const fn = server.createRequestStreamMethod(
+    it('should settle a consuming handler and run the end hook when the client cancels', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+
+      const result = server.createRequestStreamMethod(consumingHandler, false)(
+        call as any,
+        vi.fn(),
+      );
+      await tick();
+      call.emit('data', 'x');
+      cancelCall(call);
+      await result;
+
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
+    });
+
+    it('should settle a consuming handler and run the end hook when the deadline expires', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+
+      const result = server.createRequestStreamMethod(consumingHandler, false)(
+        call as any,
+        vi.fn(),
+      );
+      await tick();
+      call.emit('data', 'x');
+      cancelCall(call, { halfClosed: false });
+      await result;
+
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
+    });
+
+    it('should settle a consuming handler when the deadline expires before it drains', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+
+      const result = server.createRequestStreamMethod(
+        delayedConsumingHandler,
+        false,
+      )(call as any, vi.fn());
+      call.emit('data', 'x');
+      cancelCall(call, { halfClosed: false });
+      await result;
+
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
+    });
+
+    it('should run the end hook when the call errors', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+
+      const result = server.createRequestStreamMethod(
         async () => ({ test: true }),
         false,
-      );
-      const call = createStreamCallMock();
-      const result = fn(call as any, vi.fn());
+      )(call as any, vi.fn());
+      call.emit('error', new Error('boom'));
+      await result;
 
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
+    });
+
+    it('should run the end hook once and pass the error on when the call errors under a consuming handler', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
+
+      const result = server.createRequestStreamMethod(consumingHandler, false)(
+        call as any,
+        vi.fn(),
+      );
+      await tick();
       call.emit('error', new Error('boom'));
 
-      await result;
-      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
+      await expect(result).rejects.toThrow('boom');
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
     });
 
-    it('should call the processing end hook when the client cancels a stream response call', async () => {
-      const getEndHookArgs = captureEndHook();
+    it('should run the end hook when the client cancels a stream response call', async () => {
+      const endHook = bindEndHook();
       const subject = new Subject<string>();
-      const fn = server.createRequestStreamMethod(
+      const call = createCall();
+
+      const result = server.createRequestStreamMethod(
         () => Promise.resolve(subject),
         true,
+      )(call as any, vi.fn());
+      await tick();
+      cancelCall(call);
+      await result;
+
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
       );
-      const call = createStreamCallMock();
-      const result = fn(call as any, vi.fn());
-
-      await new Promise(resolve => setImmediate(resolve));
-      call.emit('cancelled');
-      call.emit('error', new Error('16 CANCELLED: Cancelled on client'));
-
-      await result;
-      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
     });
 
-    it('should settle the request stream and fire the end hook when a stream-consuming handler gets cancelled', async () => {
-      const getEndHookArgs = captureEndHook();
-      const fn = server.createRequestStreamMethod((stream: any) => {
-        stream.drainBuffer?.();
-        return lastValueFrom(stream.pipe(toArray()));
-      }, false);
-      const call = createStreamCallMock();
-      const result = fn(call as any, vi.fn());
+    it('should run the end hook when a stream response starts after the client cancelled', async () => {
+      const endHook = bindEndHook();
+      const call = createCall();
 
-      await new Promise(resolve => setImmediate(resolve));
-      call.emit('data', 'x');
-      call.emit('cancelled');
-      call.emit('error', new Error('16 CANCELLED: Cancelled on client'));
-
+      const result = server.createRequestStreamMethod(async (stream: any) => {
+        await consumingHandler(stream);
+        await new Promise(resolve => setTimeout(resolve, 10));
+        return of('a', 'b', 'c');
+      }, true)(call as any, vi.fn());
+      await tick();
+      cancelCall(call);
       await result;
-      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
+
+      expect(call.write).not.toHaveBeenCalled();
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        call.request,
+      );
     });
 
-    it('should settle the request stream and fire the end hook when a stream-consuming handler finishes on call end', async () => {
-      const getEndHookArgs = captureEndHook();
-      const fn = server.createRequestStreamMethod((stream: any) => {
-        stream.drainBuffer?.();
-        return lastValueFrom(stream.pipe(toArray()));
-      }, false);
-      const call = createStreamCallMock();
-      const result = fn(call as any, vi.fn());
+    it('should let an error thrown by the end hook surface', async () => {
+      untypedServer.onProcessingEndHook = () => {
+        throw new Error('hook failed');
+      };
+      const call = createCall();
 
-      await new Promise(resolve => setImmediate(resolve));
-      call.emit('data', 'x');
+      const result = server.createRequestStreamMethod(
+        async () => ({ test: true }),
+        false,
+      )(call as any, vi.fn());
       call.emit('end');
 
-      await result;
-      expect(getEndHookArgs()).toEqual([server.transportId, call.request]);
-    });
-  });
-
-  describe('createStreamCallMethod', () => {
-    it('should pass through to "methodHandler"', async () => {
-      const handler = vi.fn();
-      const fn = server.createStreamCallMethod(handler, false);
-      const args = [1, 2, 3];
-      await fn(args as any, vi.fn());
-
-      expect(handler).toHaveBeenCalledWith(args, expect.any(Function));
+      await expect(result).rejects.toThrow('hook failed');
     });
   });
 
@@ -1075,8 +1172,8 @@ describe('ServerGrpc', () => {
         const endHook = bindHooks();
         const call = {
           ...createCall(),
-          // Fires every listener as soon as it is registered, so the "end"
-          // listener closes the span before the handler gets to reject.
+          // Fires every listener as soon as it is registered, so the call has
+          // already ended by the time the handler rejects.
           on: (event: string, listener: () => void) => {
             if (event !== CANCELLED_EVENT) {
               listener();
