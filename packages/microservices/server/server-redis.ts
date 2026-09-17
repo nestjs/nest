@@ -1,4 +1,3 @@
-import { finalize } from 'rxjs/operators';
 import {
   NO_MESSAGE_HANDLER,
   REDIS_DEFAULT_HOST,
@@ -169,21 +168,11 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
       };
       return publish(noHandlerPacket);
     }
-    return this.onProcessingStartHook?.(
-      this.transportId,
+    return this.handleRequest(
       redisCtx,
-      async () => {
-        const runEndHook = this.createProcessingEndHookRunner(redisCtx);
-        try {
-          const response$ = this.transformToObservable(
-            await handler(packet.data, redisCtx),
-          );
-          response$ && this.send(response$.pipe(finalize(runEndHook)), publish);
-        } catch (err) {
-          runEndHook();
-          throw err;
-        }
-      },
+      async () =>
+        this.transformToObservable(await handler(packet.data, redisCtx)),
+      publish,
     );
   }
 

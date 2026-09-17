@@ -310,28 +310,18 @@ export class ServerKafka extends Server<never, KafkaStatus> {
         err: NO_MESSAGE_HANDLER,
       });
     }
-    return this.onProcessingStartHook(
-      this.transportId,
+    return this.handleRequest(
       kafkaContext,
       async () => {
-        const runEndHook = this.createProcessingEndHookRunner(kafkaContext);
-        try {
-          const response$ = this.transformToObservable(
-            handler(packet.data, kafkaContext),
-          );
+        const response$ = this.transformToObservable(
+          handler(packet.data, kafkaContext),
+        );
 
-          const replayStream$ = new ReplaySubject();
-          await this.combineStreamsAndThrowIfRetriable(
-            response$,
-            replayStream$,
-          );
-
-          this.send(replayStream$.pipe(finalize(runEndHook)), publish);
-        } catch (err) {
-          runEndHook();
-          throw err;
-        }
+        const replayStream$ = new ReplaySubject();
+        await this.combineStreamsAndThrowIfRetriable(response$, replayStream$);
+        return replayStream$;
       },
+      publish,
     );
   }
 
@@ -461,18 +451,12 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       return this.logger.error(NO_EVENT_HANDLER`${pattern}`);
     }
 
-    return this.onProcessingStartHook(this.transportId, context, async () => {
-      const runEndHook = this.createProcessingEndHookRunner(context);
-      try {
-        const resultOrStream = await handler(packet.data, context);
-        if (isObservable(resultOrStream)) {
-          await lastValueFrom(resultOrStream.pipe(finalize(runEndHook)));
-        } else {
-          runEndHook();
-        }
-      } catch (err) {
+    return this.runWithProcessingHooks(context, async runEndHook => {
+      const resultOrStream = await handler(packet.data, context);
+      if (isObservable(resultOrStream)) {
+        await lastValueFrom(resultOrStream.pipe(finalize(runEndHook)));
+      } else {
         runEndHook();
-        throw err;
       }
     });
   }

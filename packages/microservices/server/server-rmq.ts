@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 import { createRequire } from 'module';
-import { finalize } from 'rxjs/operators';
 import {
   BLOCKED_RMQ_MESSAGE,
   CONNECTION_FAILED_MESSAGE,
@@ -334,30 +333,19 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         rmqContext,
       );
     }
-    return this.onProcessingStartHook(
-      this.transportId,
+    const publish = <T>(data: T) =>
+      this.sendMessage(
+        data,
+        properties.replyTo,
+        properties.correlationId,
+        rmqContext,
+      );
+
+    return this.handleRequest(
       rmqContext,
-      async () => {
-        const runEndHook = this.createProcessingEndHookRunner(rmqContext);
-        try {
-          const response$ = this.transformToObservable(
-            await handler(packet.data, rmqContext),
-          );
-
-          const publish = <T>(data: T) =>
-            this.sendMessage(
-              data,
-              properties.replyTo,
-              properties.correlationId,
-              rmqContext,
-            );
-
-          response$ && this.send(response$.pipe(finalize(runEndHook)), publish);
-        } catch (err) {
-          runEndHook();
-          throw err;
-        }
-      },
+      async () =>
+        this.transformToObservable(await handler(packet.data, rmqContext)),
+      publish,
     );
   }
 
