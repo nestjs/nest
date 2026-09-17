@@ -107,11 +107,24 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   }
 
   public async close(): Promise<void> {
+    this.handleClose();
     this.channel && (await this.channel.close());
     this.client && (await this.client.close());
     this.channel = null;
     this.client = null;
     this.pendingEventListeners = [];
+  }
+
+  public handleClose() {
+    if (this.routingMap.size > 0) {
+      const err = new Error('Connection closed');
+      for (const callback of this.routingMap.values()) {
+        callback({ err });
+      }
+      this.routingMap.clear();
+    }
+    // The listeners expect a message to parse, so they cannot carry the error.
+    this.responseEmitter?.removeAllListeners();
   }
 
   public async connect(): Promise<any> {
@@ -406,6 +419,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       delete serializedPacket.options;
 
       this.responseEmitter.on(correlationId, listener);
+      this.routingMap.set(correlationId, callback);
 
       const content = Buffer.from(JSON.stringify(serializedPacket));
       const sendOptions = {
@@ -444,7 +458,10 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
           callback({ err }),
         );
       }
-      return () => this.responseEmitter.removeListener(correlationId, listener);
+      return () => {
+        this.routingMap.delete(correlationId);
+        this.responseEmitter.removeListener(correlationId, listener);
+      };
     } catch (err) {
       callback({ err });
       return () => {};

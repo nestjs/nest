@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { EMPTY } from 'rxjs';
 import { ClientRMQ } from '../../client/client-rmq.js';
-import { ReadPacket } from '../../interfaces/index.js';
+import { ReadPacket, WritePacket } from '../../interfaces/index.js';
 import { RmqRecord } from '../../record-builders/index.js';
 
 describe('ClientRMQ', function () {
@@ -399,11 +399,22 @@ describe('ClientRMQ', function () {
     let channelCloseSpy: ReturnType<typeof vi.fn>;
     let clientCloseSpy: ReturnType<typeof vi.fn>;
     beforeEach(() => {
+      client = new ClientRMQ({});
+      untypedClient = client as any;
+
       channelCloseSpy = vi.fn();
       clientCloseSpy = vi.fn();
-      untypedClient.channel = { close: channelCloseSpy };
+      untypedClient.responseEmitter = new EventEmitter();
+      untypedClient.channel = {
+        close: channelCloseSpy,
+        sendToQueue: vi.fn(() => ({ catch: vi.fn() })),
+        publish: vi.fn(() => ({ catch: vi.fn() })),
+      };
       untypedClient.client = { close: clientCloseSpy };
     });
+
+    const publish = (callback: (packet: WritePacket) => any) =>
+      untypedClient.publish({ pattern: 'pattern', data: 'data' }, callback);
 
     it('should close channel when it is not null', async () => {
       await client.close();
@@ -413,6 +424,68 @@ describe('ClientRMQ', function () {
     it('should close client when it is not null', async () => {
       await client.close();
       expect(clientCloseSpy).toHaveBeenCalled();
+    });
+
+    it('should fail pending requests with a connection closed error', async () => {
+      const callback = vi.fn();
+      publish(callback);
+
+      await client.close();
+
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+    });
+
+    it('should fail pending requests published to an exchange', async () => {
+      untypedClient.options.wildcards = true;
+      const publishToExchange = untypedClient.channel.publish;
+      const callback = vi.fn();
+      publish(callback);
+
+      await client.close();
+
+      expect(publishToExchange).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+    });
+
+    it('should not call back a request whose teardown already ran', async () => {
+      const callback = vi.fn();
+      const teardown = publish(callback);
+
+      teardown();
+      await client.close();
+
+      expect(callback).not.toHaveBeenCalled();
+      expect(untypedClient.responseEmitter.eventNames().length).toEqual(0);
+    });
+
+    it('should leave nothing pending behind', async () => {
+      const callback = vi.fn();
+      publish(callback);
+
+      await client.close();
+      await client.close();
+
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(untypedClient.routingMap.size).toEqual(0);
+      expect(untypedClient.responseEmitter.eventNames().length).toEqual(0);
+    });
+
+    it('should fail pending requests even when closing the channel rejects', async () => {
+      untypedClient.channel.close = vi
+        .fn()
+        .mockRejectedValue(new Error('Channel closing error'));
+      const callback = vi.fn();
+      publish(callback);
+
+      await expect(client.close()).rejects.toThrow('Channel closing error');
+
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
     });
   });
   describe('dispatchEvent', () => {
