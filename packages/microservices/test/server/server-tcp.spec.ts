@@ -23,9 +23,10 @@ describe('ServerTCP', () => {
   });
 
   describe('bindHandler', () => {
-    const socket = { on: vi.fn() };
+    let socket: { on: ReturnType<typeof vi.fn> };
 
     beforeEach(() => {
+      socket = { on: vi.fn() };
       vi.spyOn(server, 'getSocketInstance' as any).mockImplementation(
         () => socket,
       );

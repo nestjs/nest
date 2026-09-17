@@ -226,24 +226,45 @@ export abstract class Server<
       return this.logger.error(NO_EVENT_HANDLER`${pattern}`);
     }
     return this.onProcessingStartHook(this.transportId!, context, async () => {
-      const resultOrStream = await handler(packet.data, context);
-      if (isObservable(resultOrStream)) {
-        const connectableSource = connectable(
-          resultOrStream.pipe(
-            finalize(() =>
-              this.onProcessingEndHook?.(this.transportId!, context),
-            ),
-          ),
-          {
-            connector: () => new Subject(),
-            resetOnDisconnect: false,
-          },
-        );
-        connectableSource.connect();
-      } else {
-        this.onProcessingEndHook?.(this.transportId!, context);
+      const runEndHook = this.createProcessingEndHookRunner(context);
+      try {
+        const resultOrStream = await handler(packet.data, context);
+        if (isObservable(resultOrStream)) {
+          const connectableSource = connectable(
+            resultOrStream.pipe(finalize(runEndHook)),
+            {
+              connector: () => new Subject(),
+              resetOnDisconnect: false,
+            },
+          );
+          connectableSource.connect();
+        } else {
+          runEndHook();
+        }
+      } catch (err) {
+        runEndHook();
+        throw err;
       }
     });
+  }
+
+  /**
+   * Returns a function that runs the processing end hook exactly once.
+   *
+   * An event handler can fail either by rejecting or by returning a stream
+   * that errors, and `ServerKafka#handleEvent` awaits that stream, so both the
+   * `finalize` teardown and the `catch` block can be reached for a single
+   * event. The hook closes a span, so it must not run twice.
+   */
+  protected createProcessingEndHookRunner(context: BaseRpcContext): () => void {
+    let isEndHookCalled = false;
+    return () => {
+      if (isEndHookCalled) {
+        return;
+      }
+      isEndHookCalled = true;
+      this.onProcessingEndHook?.(this.transportId!, context);
+    };
   }
 
   public transformToObservable<T>(

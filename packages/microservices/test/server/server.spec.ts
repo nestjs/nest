@@ -1,4 +1,5 @@
 import { throwError as _throw, lastValueFrom, Observable, of } from 'rxjs';
+import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { Server } from '../../server/server.js';
 
 class TestServer extends Server {
@@ -244,6 +245,127 @@ describe('Server', () => {
         expect(messageHandlersGetSpy).not.toHaveBeenCalled();
         expect(value).toBeNull();
       });
+    });
+  });
+
+  describe('handleEvent', () => {
+    const context = new BaseRpcContext([]);
+    const eventPattern = 'test_event';
+
+    function bindHandler(result: unknown) {
+      const endHook = vi.fn();
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      untypedServer.messageHandlers = new Map([
+        [
+          eventPattern,
+          Object.assign(async () => result, { isEventHandler: true }),
+        ],
+      ]);
+      return endHook;
+    }
+
+    it('should log an error if no event handler exists', async () => {
+      const loggerErrorSpy = vi
+        .spyOn(untypedServer.logger, 'error')
+        .mockImplementation(() => {});
+      untypedServer.messageHandlers = new Map();
+
+      await server.handleEvent(
+        'unknown_event',
+        { pattern: 'unknown_event', data: null },
+        context,
+      );
+
+      expect(loggerErrorSpy).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the handler returns a plain value', async () => {
+      const endHook = bindHandler('plain');
+
+      await server.handleEvent(
+        eventPattern,
+        { pattern: eventPattern, data: null },
+        context,
+      );
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the returned stream completes', async () => {
+      const endHook = bindHandler(of('streamed'));
+
+      await server.handleEvent(
+        eventPattern,
+        { pattern: eventPattern, data: null },
+        context,
+      );
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the returned stream fails', async () => {
+      const endHook = bindHandler(_throw(() => new Error('failed')));
+
+      await server.handleEvent(
+        eventPattern,
+        { pattern: eventPattern, data: null },
+        context,
+      );
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the handler throws an error', async () => {
+      const endHook = vi.fn();
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      untypedServer.messageHandlers = new Map([
+        [
+          eventPattern,
+          Object.assign(
+            async () => {
+              throw new Error('handler failed');
+            },
+            { isEventHandler: true },
+          ),
+        ],
+      ]);
+
+      await expect(
+        server.handleEvent(
+          eventPattern,
+          { pattern: eventPattern, data: null },
+          context,
+        ),
+      ).rejects.toThrow('handler failed');
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook once per event', async () => {
+      const endHook = bindHandler(
+        new Observable(subscriber => {
+          subscriber.next('first');
+          subscriber.next('second');
+          subscriber.complete();
+        }),
+      );
+
+      await server.handleEvent(
+        eventPattern,
+        { pattern: eventPattern, data: null },
+        context,
+      );
+
+      expect(endHook).toHaveBeenCalledOnce();
     });
   });
 });
