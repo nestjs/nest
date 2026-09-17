@@ -3,6 +3,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaContext } from '../../ctx-host/index.js';
 import { KafkaHeaders } from '../../enums/index.js';
+import { KafkaRetriableException } from '../../exceptions/index.js';
 import {
   EachMessagePayload,
   KafkaMessage,
@@ -564,6 +565,109 @@ describe('ServerKafka', () => {
       await server.handleEvent(topic, { pattern: topic, data: null }, context);
 
       expect(endHook).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('handleMessage (request-response)', () => {
+    function bindHandler(handler: (...args: any[]) => unknown) {
+      const endHook = vi.fn();
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      untypedServer.messageHandlers = objectToMap({
+        [topic]: Object.assign(handler, { isEventHandler: false }),
+      });
+      return endHook;
+    }
+
+    let producerSend: ReturnType<typeof vi.fn>;
+
+    // `Server#send` drains its queue on `process.nextTick`, so the replies are
+    // published after `handleMessage` has already resolved.
+    const flushPublishes = () => new Promise(resolve => setImmediate(resolve));
+
+    beforeEach(() => {
+      // The end hook used to live in `sendMessage`, so the real one has to run
+      // for these specs to observe how often it fires.
+      producerSend = vi.fn(async () => []);
+      untypedServer.producer = { send: producerSend };
+    });
+
+    it('should run the end hook when the handler returns a plain value', async () => {
+      const endHook = bindHandler(async () => 'plain');
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook once for a stream of several responses', async () => {
+      const endHook = bindHandler(
+        async () =>
+          new Observable(subscriber => {
+            subscriber.next('first');
+            subscriber.next('second');
+            subscriber.next('third');
+            subscriber.complete();
+          }),
+      );
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      // Three replies are published, but the span they belong to closes once.
+      expect(producerSend).toHaveBeenCalledTimes(3);
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the returned stream fails', async () => {
+      const endHook = bindHandler(async () =>
+        throwError(() => new Error('failed')),
+      );
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the handler throws an error', async () => {
+      const endHook = bindHandler(async () => {
+        throw new Error('handler failed');
+      });
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the handler throws a retriable exception', async () => {
+      const endHook = bindHandler(async () => {
+        throw new KafkaRetriableException('retry me');
+      });
+
+      // The rejection has to travel on so that kafkajs redelivers the message.
+      await expect(server.handleMessage(payload)).rejects.toThrow(
+        KafkaRetriableException,
+      );
+      await flushPublishes();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should not run the end hook when there is no message handler', async () => {
+      const endHook = bindHandler(async () => 'plain');
+      untypedServer.messageHandlers = objectToMap({});
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(endHook).not.toHaveBeenCalled();
     });
   });
 
