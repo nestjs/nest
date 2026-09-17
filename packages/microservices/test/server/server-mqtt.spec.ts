@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { MqttContext } from '../../ctx-host/index.js';
@@ -52,6 +53,21 @@ describe('ServerMqtt', () => {
     it('should bind "message" event to handler', async () => {
       await server.listen(callbackSpy);
       expect(onSpy.mock.calls[5][0]).toBe('message');
+    });
+    it('should route "handleMessage" rejections to "handleError" instead of leaving them unhandled', async () => {
+      const error = new Error('unexpected');
+      vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
+      const handleErrorSpy = vi
+        .spyOn(untypedServer, 'handleError')
+        .mockImplementation(() => undefined);
+
+      await server.listen(callbackSpy);
+      const [, onMessage] = onSpy.mock.calls.find(
+        ([event]) => event === 'message',
+      )!;
+      await onMessage('topic', Buffer.from('{}'));
+
+      expect(handleErrorSpy).toHaveBeenCalledWith(error);
     });
     it('should bind the callback with "once"', async () => {
       await server.listen(callbackSpy);
@@ -308,7 +324,7 @@ describe('ServerMqtt', () => {
       it('should call "handleMessage"', async () => {
         const handleMessageStub = vi
           .spyOn(server, 'handleMessage')
-          .mockImplementation(() => null!);
+          .mockResolvedValue(undefined as any);
         await server.getMessageHandler(untypedServer.mqttClient)(
           null!,
           null!,
@@ -364,6 +380,54 @@ describe('ServerMqtt', () => {
         null,
       );
       expect(handler).toHaveBeenCalledWith(data, expect.any(MqttContext));
+    });
+  });
+
+  describe('processing end hook', () => {
+    const channel = 'test';
+    const id = '3';
+    let publishSpy: ReturnType<typeof vi.fn>;
+    let endHook: ReturnType<typeof vi.fn>;
+
+    const bindHandler = (handler: () => unknown) => {
+      publishSpy = vi.fn();
+      vi.spyOn(server, 'getPublisher').mockImplementation(() => publishSpy);
+      endHook = vi.fn();
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: (async () => handler()) as any,
+      });
+    };
+    const handleMessage = () =>
+      server.handleMessage(
+        channel,
+        Buffer.from(JSON.stringify({ id, pattern: channel, data: 'test' })),
+        null!,
+      );
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+
+    it('should run the hook once when the response stream emits several values', async () => {
+      bindHandler(() => of('first', 'second', 'third'));
+
+      await handleMessage();
+      await flush();
+
+      expect(publishSpy).toHaveBeenCalledTimes(3);
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+    it('should run the hook when the handler rejects', async () => {
+      bindHandler(() => {
+        throw new Error('handler failed');
+      });
+
+      await expect(handleMessage()).rejects.toThrow('handler failed');
+
+      expect(endHook).toHaveBeenCalledOnce();
     });
   });
   describe('getPublisher', () => {

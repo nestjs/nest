@@ -140,7 +140,9 @@ export class ServerNats<
       if (error) {
         return this.logger.error(error);
       }
-      return this.handleMessage(channel, message);
+      return this.handleMessage(channel, message).catch(err =>
+        this.handleError(err),
+      );
     };
   }
 
@@ -172,12 +174,12 @@ export class ServerNats<
       };
       return publish(noHandlerPacket);
     }
-    return this.onProcessingStartHook(this.transportId, natsCtx, async () => {
-      const response$ = this.transformToObservable(
-        await handler(message.data, natsCtx),
-      );
-      response$ && this.send(response$, publish);
-    });
+    return this.handleRequest(
+      natsCtx,
+      async () =>
+        this.transformToObservable(await handler(message.data, natsCtx)),
+      publish,
+    );
   }
 
   public getPublisher(natsMsg: NatsMsg, id: string, ctx: NatsContext) {
@@ -187,7 +189,6 @@ export class ServerNats<
         const outgoingResponse: NatsRecord =
           this.serializer.serialize(response);
 
-        this.onProcessingEndHook?.(this.transportId, ctx);
         return natsMsg.respond(outgoingResponse.data, {
           headers: outgoingResponse.headers,
         });

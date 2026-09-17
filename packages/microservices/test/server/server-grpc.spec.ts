@@ -993,6 +993,129 @@ describe('ServerGrpc', () => {
     });
   });
 
+  describe('processing hooks', () => {
+    const error = new Error('handler rejected');
+
+    function bindHooks() {
+      const endHook = vi.fn();
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      return endHook;
+    }
+
+    const createCall = () => ({
+      request: { data: [1, 2, 3] },
+      metadata: {},
+      write: vi.fn(() => true),
+      end: vi.fn(),
+      on: vi.fn(),
+      off: vi.fn(),
+      emit: vi.fn(),
+    });
+
+    describe('createUnaryServiceMethod', () => {
+      it('should run the end hook once, with the request, when the handler completes', async () => {
+        const endHook = bindHooks();
+        const call = createCall();
+        const callback = vi.fn();
+
+        await server.createUnaryServiceMethod(async () => 'response')(
+          call as any,
+          callback,
+        );
+
+        expect(callback).toHaveBeenCalledWith(null, 'response');
+        expect(endHook).toHaveBeenCalledExactlyOnceWith(
+          server.transportId,
+          call.request,
+        );
+      });
+
+      it('should run the end hook once and pass the rejection on when the handler rejects', async () => {
+        const endHook = bindHooks();
+        const call = createCall();
+
+        await expect(
+          server.createUnaryServiceMethod(async () => {
+            throw error;
+          })(call as any, vi.fn()),
+        ).rejects.toThrow(error);
+
+        expect(endHook).toHaveBeenCalledExactlyOnceWith(
+          server.transportId,
+          call.request,
+        );
+      });
+    });
+
+    describe('createStreamServiceMethod', () => {
+      it('should run the end hook once and pass the rejection on when the handler rejects', async () => {
+        const endHook = bindHooks();
+        const call = createCall();
+
+        await expect(
+          server.createStreamServiceMethod(async () => {
+            throw error;
+          })(call as any, vi.fn()),
+        ).rejects.toThrow(error);
+
+        expect(endHook).toHaveBeenCalledExactlyOnceWith(
+          server.transportId,
+          call.request,
+        );
+      });
+    });
+
+    describe('createRequestStreamMethod', () => {
+      it('should run the end hook once when the call ends and the handler then rejects', async () => {
+        const endHook = bindHooks();
+        const call = {
+          ...createCall(),
+          // Fires every listener as soon as it is registered, so the "end"
+          // listener closes the span before the handler gets to reject.
+          on: (event: string, listener: () => void) => {
+            if (event !== CANCELLED_EVENT) {
+              listener();
+            }
+          },
+        };
+
+        await expect(
+          server.createRequestStreamMethod(async () => {
+            throw error;
+          }, false)(call as any, vi.fn()),
+        ).rejects.toThrow(error);
+
+        expect(endHook).toHaveBeenCalledExactlyOnceWith(
+          server.transportId,
+          call.request,
+        );
+      });
+    });
+
+    describe('createStreamCallMethod', () => {
+      it('should run the end hook once and pass the rejection on when the handler rejects', async () => {
+        const endHook = bindHooks();
+        const call = createCall();
+
+        await expect(
+          server.createStreamCallMethod(async () => {
+            throw error;
+          }, true)(call as any, vi.fn()),
+        ).rejects.toThrow(error);
+
+        expect(endHook).toHaveBeenCalledExactlyOnceWith(
+          server.transportId,
+          call.request,
+        );
+      });
+    });
+  });
+
   describe('loadProto', () => {
     describe('when proto is invalid', () => {
       it('should throw InvalidProtoDefinitionException', () => {

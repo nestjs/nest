@@ -1,3 +1,4 @@
+import { of } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { NatsContext } from '../../ctx-host/index.js';
@@ -162,9 +163,20 @@ describe('ServerNats', () => {
       it('should call "handleMessage"', async () => {
         const handleMessageStub = vi
           .spyOn(server, 'handleMessage')
-          .mockImplementation(() => null!);
+          .mockResolvedValue(undefined as any);
         await server.getMessageHandler('')('' as any, '');
         expect(handleMessageStub).toHaveBeenCalled();
+      });
+      it('should route "handleMessage" rejections to "handleError" instead of leaving them unhandled', async () => {
+        const error = new Error('unexpected');
+        vi.spyOn(server, 'handleMessage').mockRejectedValue(error);
+        const handleErrorSpy = vi
+          .spyOn(untypedServer, 'handleError')
+          .mockImplementation(() => undefined);
+
+        await server.getMessageHandler('')('' as any, '');
+
+        expect(handleErrorSpy).toHaveBeenCalledWith(error);
       });
     });
   });
@@ -238,6 +250,61 @@ describe('ServerNats', () => {
       };
       await server.handleMessage(channel, natsMsg);
       expect(handler).toHaveBeenCalledWith('test', natsContext);
+    });
+  });
+
+  describe('processing end hook', () => {
+    const channel = 'test';
+    const id = '3';
+    let publishSpy: ReturnType<typeof vi.fn>;
+    let endHook: ReturnType<typeof vi.fn>;
+
+    const bindHandler = (handler: () => unknown) => {
+      publishSpy = vi.fn();
+      vi.spyOn(server, 'getPublisher').mockImplementation(
+        () => publishSpy as any,
+      );
+      endHook = vi.fn();
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: (async () => handler()) as any,
+      });
+    };
+    const handleMessage = () => {
+      const data = JSON.stringify({ id, pattern: channel, data: 'test' });
+      const natsMsg: NatsMsg = {
+        data,
+        subject: channel,
+        sid: +id,
+        respond: vi.fn(),
+        json: () => JSON.parse(data),
+      };
+      return server.handleMessage(channel, natsMsg);
+    };
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+
+    it('should run the hook once when the response stream emits several values', async () => {
+      bindHandler(() => of('first', 'second', 'third'));
+
+      await handleMessage();
+      await flush();
+
+      expect(publishSpy).toHaveBeenCalledTimes(3);
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+    it('should run the hook when the handler rejects', async () => {
+      bindHandler(() => {
+        throw new Error('handler failed');
+      });
+
+      await expect(handleMessage()).rejects.toThrow('handler failed');
+
+      expect(endHook).toHaveBeenCalledOnce();
     });
   });
   describe('getPublisher', () => {

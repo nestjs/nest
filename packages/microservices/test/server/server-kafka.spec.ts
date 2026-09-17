@@ -1,8 +1,9 @@
 import { Logger } from '@nestjs/common';
-import { Observable, of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { KafkaContext } from '../../ctx-host/index.js';
 import { KafkaHeaders } from '../../enums/index.js';
+import { KafkaRetriableException } from '../../exceptions/index.js';
 import {
   EachMessagePayload,
   KafkaMessage,
@@ -484,26 +485,30 @@ describe('ServerKafka', () => {
     });
   });
 
+  function bindHandler(
+    handler: (...args: any[]) => unknown,
+    { isEventHandler }: { isEventHandler: boolean },
+  ) {
+    const endHook = vi.fn();
+    untypedServer.onProcessingStartHook = (
+      _transportId: unknown,
+      _ctx: unknown,
+      fn: () => Promise<void>,
+    ) => fn();
+    untypedServer.onProcessingEndHook = endHook;
+    untypedServer.messageHandlers = objectToMap({
+      [topic]: Object.assign(handler, { isEventHandler }),
+    });
+    return endHook;
+  }
+
   describe('handleEvent', () => {
     const context = new KafkaContext([] as any);
 
-    function bindHandler(result: unknown) {
-      const endHook = vi.fn();
-      const untypedServer = server as any;
-      untypedServer.onProcessingStartHook = (
-        _transportId: unknown,
-        _ctx: unknown,
-        fn: () => Promise<void>,
-      ) => fn();
-      untypedServer.onProcessingEndHook = endHook;
-      untypedServer.messageHandlers = objectToMap({
-        [topic]: Object.assign(async () => result, { isEventHandler: true }),
-      });
-      return endHook;
-    }
-
     it('should run the end hook when the handler returns a plain value', async () => {
-      const endHook = bindHandler('plain');
+      const endHook = bindHandler(async () => 'plain', {
+        isEventHandler: true,
+      });
 
       await server.handleEvent(topic, { pattern: topic, data: null }, context);
 
@@ -511,7 +516,9 @@ describe('ServerKafka', () => {
     });
 
     it('should run the end hook when the returned stream completes', async () => {
-      const endHook = bindHandler(of('streamed'));
+      const endHook = bindHandler(async () => of('streamed'), {
+        isEventHandler: true,
+      });
 
       await server.handleEvent(topic, { pattern: topic, data: null }, context);
 
@@ -519,7 +526,10 @@ describe('ServerKafka', () => {
     });
 
     it('should run the end hook when the returned stream fails', async () => {
-      const endHook = bindHandler(throwError(() => new Error('failed')));
+      const endHook = bindHandler(
+        async () => throwError(() => new Error('failed')),
+        { isEventHandler: true },
+      );
 
       // The rejection has to travel on so that kafkajs can report it.
       await expect(
@@ -528,17 +538,158 @@ describe('ServerKafka', () => {
       expect(endHook).toHaveBeenCalledOnce();
     });
 
-    it('should run the end hook once per event', async () => {
+    it('should run the end hook when the handler throws an error', async () => {
       const endHook = bindHandler(
-        new Observable(subscriber => {
-          subscriber.next('first');
-          subscriber.next('second');
-          subscriber.complete();
-        }),
+        async () => {
+          throw new Error('handler failed');
+        },
+        { isEventHandler: true },
       );
+
+      await expect(
+        server.handleEvent(topic, { pattern: topic, data: null }, context),
+      ).rejects.toThrow('handler failed');
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook once per event', async () => {
+      const endHook = bindHandler(async () => of('first', 'second'), {
+        isEventHandler: true,
+      });
 
       await server.handleEvent(topic, { pattern: topic, data: null }, context);
 
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('handleMessage (request-response)', () => {
+    let producerSend: ReturnType<typeof vi.fn>;
+
+    // `Server#send` drains its queue on `process.nextTick`, so the replies are
+    // published after `handleMessage` has already resolved.
+    const flushPublishes = () => new Promise(resolve => setImmediate(resolve));
+
+    beforeEach(() => {
+      // The end hook used to live in `sendMessage`, so the real one has to run
+      // for these specs to observe how often it fires.
+      producerSend = vi.fn(async () => []);
+      untypedServer.producer = { send: producerSend };
+    });
+
+    it('should run the end hook when the handler returns a plain value', async () => {
+      const endHook = bindHandler(async () => 'plain', {
+        isEventHandler: false,
+      });
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(endHook).toHaveBeenCalledOnce();
+      // The span closes once processing has settled, before the reply is
+      // produced to Kafka, in line with the other transports.
+      expect(endHook.mock.invocationCallOrder[0]).toBeLessThan(
+        producerSend.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('should run the end hook once for a stream of several responses', async () => {
+      const endHook = bindHandler(async () => of('first', 'second', 'third'), {
+        isEventHandler: false,
+      });
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      // Three replies are published, but the span they belong to closes once,
+      // before the first of them is produced.
+      expect(producerSend).toHaveBeenCalledTimes(3);
+      expect(endHook).toHaveBeenCalledOnce();
+      expect(endHook.mock.invocationCallOrder[0]).toBeLessThan(
+        producerSend.mock.invocationCallOrder[0],
+      );
+    });
+
+    it('should run the end hook when the returned stream completes without emitting', async () => {
+      const endHook = bindHandler(async () => EMPTY, {
+        isEventHandler: false,
+      });
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the returned stream fails', async () => {
+      const endHook = bindHandler(
+        async () => throwError(() => new Error('failed')),
+        { isEventHandler: false },
+      );
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the handler throws an error', async () => {
+      const endHook = bindHandler(
+        async () => {
+          throw new Error('handler failed');
+        },
+        { isEventHandler: false },
+      );
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook when the handler throws a retriable exception', async () => {
+      const endHook = bindHandler(
+        async () => {
+          throw new KafkaRetriableException('retry me');
+        },
+        { isEventHandler: false },
+      );
+
+      // The rejection has to travel on so that kafkajs redelivers the message.
+      await expect(server.handleMessage(payload)).rejects.toThrow(
+        KafkaRetriableException,
+      );
+      await flushPublishes();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should not run the end hook when there is no message handler', async () => {
+      const endHook = bindHandler(async () => 'plain', {
+        isEventHandler: false,
+      });
+      untypedServer.messageHandlers = objectToMap({});
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(endHook).not.toHaveBeenCalled();
+    });
+
+    it('should log a failed publish and still run the end hook once', async () => {
+      const error = new Error('broker down');
+      const loggerErrorSpy = vi
+        .spyOn(untypedServer.logger, 'error')
+        .mockImplementation(() => {});
+      producerSend.mockRejectedValueOnce(error);
+      const endHook = bindHandler(async () => 'plain', {
+        isEventHandler: false,
+      });
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
       expect(endHook).toHaveBeenCalledOnce();
     });
   });

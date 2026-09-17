@@ -9,7 +9,7 @@ import {
   fromEvent,
   lastValueFrom,
 } from 'rxjs';
-import { catchError, takeUntil } from 'rxjs/operators';
+import { catchError, finalize, takeUntil } from 'rxjs/operators';
 import { GRPC_DEFAULT_PROTO_LOADER, GRPC_DEFAULT_URL } from '../constants.js';
 import { GrpcMethodStreamingType } from '../decorators/index.js';
 import { Transport } from '../enums/index.js';
@@ -292,38 +292,34 @@ export class ServerGrpc extends Server<never, never> {
 
   public createUnaryServiceMethod(methodHandler: Function): Function {
     return async (call: GrpcCall, callback: Function) => {
-      return this.onProcessingStartHook(
-        this.transportId,
+      return this.runWithProcessingHooks(
         { ...call, operationId: methodHandler.name } as any,
-        async () => {
+        async runEndHook => {
           const handler = methodHandler(call.request, call.metadata, call);
-          this.transformToObservable(await handler).subscribe({
-            next: async data => callback(null, await data),
-            error: (err: any) => {
-              this.onProcessingEndHook?.(this.transportId, call.request);
-              callback(err);
-            },
-            complete: () => {
-              this.onProcessingEndHook?.(this.transportId, call.request);
-            },
-          });
+          this.transformToObservable(await handler)
+            .pipe(finalize(runEndHook))
+            .subscribe({
+              next: async data => callback(null, await data),
+              error: (err: any) => callback(err),
+            });
         },
+        call.request,
       );
     };
   }
 
   public createStreamServiceMethod(methodHandler: Function): Function {
     return async (call: GrpcCall, callback: Function) => {
-      return this.onProcessingStartHook(
-        this.transportId,
+      return this.runWithProcessingHooks(
         { ...call, operationId: methodHandler.name } as any,
-        async () => {
+        async runEndHook => {
           const handler = methodHandler(call.request, call.metadata, call);
           const result$ = this.transformToObservable(await handler);
           await this.writeObservableToGrpc(result$, call);
 
-          this.onProcessingEndHook?.(this.transportId, call.request);
+          runEndHook();
         },
+        call.request,
       );
     };
   }
@@ -455,10 +451,9 @@ export class ServerGrpc extends Server<never, never> {
       call: GrpcCall,
       callback: (err: unknown, value: unknown) => void,
     ) => {
-      return this.onProcessingStartHook(
-        this.transportId,
+      return this.runWithProcessingHooks(
         { ...call, operationId: methodHandler.name } as any,
-        async () => {
+        async runEndHook => {
           // Needs to be a Proxy in order to buffer messages that come before handler is executed
           // This could happen if handler has any async guards or interceptors registered that would delay
           // the execution.
@@ -483,6 +478,8 @@ export class ServerGrpc extends Server<never, never> {
           call.on('end', () => {
             complete();
             cleanup();
+
+            runEndHook();
           });
 
           try {
@@ -518,6 +515,7 @@ export class ServerGrpc extends Server<never, never> {
             }
           }
         },
+        call.request,
       );
     };
   }
@@ -530,10 +528,9 @@ export class ServerGrpc extends Server<never, never> {
       call: GrpcCall,
       callback: (err: unknown, value: unknown) => void,
     ) => {
-      return this.onProcessingStartHook(
-        this.transportId,
+      return this.runWithProcessingHooks(
         { ...call, operationId: methodHandler.name } as any,
-        async () => {
+        async runEndHook => {
           let handlerStream: Observable<any>;
           if (isResponseStream) {
             handlerStream = this.transformToObservable(
@@ -544,10 +541,9 @@ export class ServerGrpc extends Server<never, never> {
               await methodHandler(call, callback),
             );
           }
-          await lastValueFrom(handlerStream).finally(() => {
-            this.onProcessingEndHook?.(this.transportId, call.request);
-          });
+          await lastValueFrom(handlerStream.pipe(finalize(runEndHook)));
         },
+        call.request,
       );
     };
   }

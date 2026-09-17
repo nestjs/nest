@@ -27,21 +27,21 @@
     "rxjs": "7.8.2"
   },
   "devDependencies": {
-    "@nestjs/cli": "12.0.1",
-    "@nestjs/schematics": "12.0.2",
+    "@nestjs/cli": "12.0.3",
+    "@nestjs/schematics": "12.0.3",
     "@nestjs/testing": "12.0.3",
     "@types/express": "5.0.6",
-    "@types/node": "24.13.4",
+    "@types/node": "24.13.5",
     "@types/supertest": "7.2.1",
     "eslint-plugin-import": "2.32.0",
     "oxlint": "1.83.0",
-    "prettier": "3.9.6",
+    "prettier": "3.9.7",
     "supertest": "7.2.2",
     "ts-loader": "9.6.2",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
     "typescript": "5.9.3",
-    "vitest": "4.1.11"
+    "vitest": "5.0.1"
   },
   "type": "module"
 }

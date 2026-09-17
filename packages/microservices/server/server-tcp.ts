@@ -126,24 +126,17 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
       });
       return socket.sendMessage(noHandlerPacket);
     }
-    return this.onProcessingStartHook(
-      this.transportId,
+    return this.handleRequest(
       tcpContext,
-      async () => {
-        const response$ = this.transformToObservable(
-          await handler(packet.data, tcpContext),
+      async () =>
+        this.transformToObservable(await handler(packet.data, tcpContext)),
+      data => {
+        Object.assign(data, { id: (packet as IncomingRequest).id });
+        const outgoingResponse = this.serializer.serialize(
+          data as WritePacket & PacketId,
         );
 
-        response$ &&
-          this.send(response$, data => {
-            Object.assign(data, { id: (packet as IncomingRequest).id });
-            const outgoingResponse = this.serializer.serialize(
-              data as WritePacket & PacketId,
-            );
-
-            this.onProcessingEndHook?.(this.transportId, tcpContext);
-            socket.sendMessage(outgoingResponse);
-          });
+        socket.sendMessage(outgoingResponse);
       },
     );
   }

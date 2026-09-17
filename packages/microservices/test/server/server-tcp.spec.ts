@@ -1,4 +1,5 @@
 import { Socket as NetSocket } from 'net';
+import { of, throwError as _throw } from 'rxjs';
 import { NO_MESSAGE_HANDLER } from '../../constants.js';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { TcpSocket } from '../../helpers/tcp-socket.js';
@@ -23,9 +24,10 @@ describe('ServerTCP', () => {
   });
 
   describe('bindHandler', () => {
-    const socket = { on: vi.fn() };
+    let socket: { on: ReturnType<typeof vi.fn> };
 
     beforeEach(() => {
+      socket = { on: vi.fn() };
       vi.spyOn(server, 'getSocketInstance' as any).mockImplementation(
         () => socket,
       );
@@ -159,6 +161,67 @@ describe('ServerTCP', () => {
       };
       await server.handleMessage(socket, deeplyNestedEvent);
       expect(handleEventSpy).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('processing end hook', () => {
+    const msg = { pattern: 'test', data: 'tests', id: '3' };
+    let socket: { sendMessage: ReturnType<typeof vi.fn> };
+    let endHook: ReturnType<typeof vi.fn>;
+
+    const bindHandler = (handler: () => unknown) => {
+      endHook = vi.fn();
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      untypedServer.messageHandlers = objectToMap({
+        [msg.pattern]: (async () => handler()) as any,
+      });
+    };
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+
+    beforeEach(() => {
+      socket = { sendMessage: vi.fn() };
+    });
+
+    it('should run the hook once when the handler returns a plain value', async () => {
+      bindHandler(() => 'response');
+
+      await server.handleMessage(socket as any, msg);
+      await flush();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+    it('should run the hook once when the response stream emits several values', async () => {
+      bindHandler(() => of('first', 'second', 'third'));
+
+      await server.handleMessage(socket as any, msg);
+      await flush();
+
+      expect(socket.sendMessage).toHaveBeenCalledTimes(3);
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+    it('should run the hook once when the response stream fails', async () => {
+      bindHandler(() => _throw(() => new Error('stream failed')));
+
+      await server.handleMessage(socket as any, msg);
+      await flush();
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+    it('should run the hook when the handler rejects', async () => {
+      bindHandler(() => {
+        throw new Error('handler failed');
+      });
+
+      await expect(server.handleMessage(socket as any, msg)).rejects.toThrow(
+        'handler failed',
+      );
+
+      expect(endHook).toHaveBeenCalledOnce();
     });
   });
   describe('handleClose', () => {

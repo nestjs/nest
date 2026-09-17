@@ -147,7 +147,10 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       channel: string,
       buffer: Buffer,
       originalPacket?: Record<string, any>,
-    ) => this.handleMessage(channel, buffer, pub, originalPacket);
+    ) =>
+      this.handleMessage(channel, buffer, pub, originalPacket).catch(err =>
+        this.handleError(err),
+      );
   }
 
   public async handleMessage(
@@ -178,15 +181,11 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       };
       return publish(noHandlerPacket);
     }
-    return this.onProcessingStartHook(
-      this.transportId,
+    return this.handleRequest(
       mqttContext,
-      async () => {
-        const response$ = this.transformToObservable(
-          await handler(packet.data, mqttContext),
-        );
-        response$ && this.send(response$, publish);
-      },
+      async () =>
+        this.transformToObservable(await handler(packet.data, mqttContext)),
+      publish,
     );
   }
 
@@ -207,7 +206,6 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
       const outgoingResponse: string | Buffer =
         this.serializer.serialize(response);
 
-      this.onProcessingEndHook?.(this.transportId, context);
       return client.publish(
         this.getReplyPattern(context.getTopic()),
         outgoingResponse,

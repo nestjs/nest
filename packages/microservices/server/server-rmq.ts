@@ -333,24 +333,19 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
         rmqContext,
       );
     }
-    return this.onProcessingStartHook(
-      this.transportId,
+    const publish = <T>(data: T) =>
+      this.sendMessage(
+        data,
+        properties.replyTo,
+        properties.correlationId,
+        rmqContext,
+      );
+
+    return this.handleRequest(
       rmqContext,
-      async () => {
-        const response$ = this.transformToObservable(
-          await handler(packet.data, rmqContext),
-        );
-
-        const publish = <T>(data: T) =>
-          this.sendMessage(
-            data,
-            properties.replyTo,
-            properties.correlationId,
-            rmqContext,
-          );
-
-        response$ && this.send(response$, publish);
-      },
+      async () =>
+        this.transformToObservable(await handler(packet.data, rmqContext)),
+      publish,
     );
   }
 
@@ -382,7 +377,6 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     const buffer = Buffer.from(JSON.stringify(outgoingResponse));
     const sendOptions = { correlationId, ...options };
 
-    this.onProcessingEndHook?.(this.transportId, context);
     this.channel!.sendToQueue(replyTo, buffer, sendOptions);
   }
 
