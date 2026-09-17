@@ -22,7 +22,7 @@
     "@nestjs/common": "12.0.3",
     "@nestjs/core": "12.0.3",
     "@nestjs/platform-fastify": "12.0.3",
-    "@fastify/static": "10.1.3",
+    "@fastify/static": "10.1.4",
     "handlebars": "4.7.9",
     "@fastify/view": "12.0.0",
     "reflect-metadata": "0.2.2",
