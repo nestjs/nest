@@ -491,5 +491,17 @@ describe('ClientGrpcProxy', () => {
       expect(client.lookupPackage(root, undefined!)).toBe(root);
       expect(client.lookupPackage(root, '')).toBe(root);
     });
+
+    it('should return nested package when fully resolvable', () => {
+      const root = { a: { b: { service: {} } } };
+
+      expect(client.lookupPackage(root, 'a.b.service')).toBe(root.a.b.service);
+    });
+
+    it('should return undefined when a namespace segment is missing', () => {
+      const root = { a: { c: {} } };
+
+      expect(client.lookupPackage(root, 'a.b.c')).toBeUndefined();
+    });
   });
 });

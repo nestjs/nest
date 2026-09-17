@@ -339,6 +339,9 @@ export class ClientGrpcProxy
 
     if (packageName) {
       for (const name of packageName.split('.')) {
+        if (!pkg) {
+          break;
+        }
         pkg = pkg[name];
       }
     }
@@ -370,9 +373,7 @@ export class ClientGrpcProxy
   }
 
   protected getClient(name: string): any {
-    return this.grpcClients.find(client =>
-      Object.hasOwn(client, name),
-    );
+    return this.grpcClients.find(client => Object.hasOwn(client, name));
   }
 
   protected publish(packet: any, callback: (packet: any) => any): any {
