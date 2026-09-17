@@ -314,14 +314,23 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       this.transportId,
       kafkaContext,
       async () => {
-        const response$ = this.transformToObservable(
-          handler(packet.data, kafkaContext),
-        );
+        const runEndHook = this.createProcessingEndHookRunner(kafkaContext);
+        try {
+          const response$ = this.transformToObservable(
+            handler(packet.data, kafkaContext),
+          );
 
-        const replayStream$ = new ReplaySubject();
-        await this.combineStreamsAndThrowIfRetriable(response$, replayStream$);
+          const replayStream$ = new ReplaySubject();
+          await this.combineStreamsAndThrowIfRetriable(
+            response$,
+            replayStream$,
+          );
 
-        this.send(replayStream$, publish);
+          this.send(replayStream$.pipe(finalize(runEndHook)), publish);
+        } catch (err) {
+          runEndHook();
+          throw err;
+        }
       },
     );
   }
@@ -365,7 +374,15 @@ export class ServerKafka extends Server<never, KafkaStatus> {
           }
           replayStream$.error(err);
         },
-        complete: () => replayStream$.complete(),
+        complete: () => {
+          replayStream$.complete();
+          // A stream that completes without emitting must still settle the
+          // promise, or the handler never publishes and the span never closes.
+          if (!isPromiseResolved) {
+            isPromiseResolved = true;
+            resolve();
+          }
+        },
       });
     });
   }
@@ -388,9 +405,7 @@ export class ServerKafka extends Server<never, KafkaStatus> {
       messages: [outgoingMessage],
       ...(this.options.send || {}),
     };
-    return this.producer!.send(replyMessage).finally(() => {
-      this.onProcessingEndHook?.(this.transportId, context);
-    });
+    return this.producer!.send(replyMessage);
   }
 
   public assignIsDisposedHeader(
