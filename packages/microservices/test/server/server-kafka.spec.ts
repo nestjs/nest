@@ -675,6 +675,23 @@ describe('ServerKafka', () => {
 
       expect(endHook).not.toHaveBeenCalled();
     });
+
+    it('should log a failed publish and still run the end hook once', async () => {
+      const error = new Error('broker down');
+      const loggerErrorSpy = vi
+        .spyOn(untypedServer.logger, 'error')
+        .mockImplementation(() => {});
+      producerSend.mockRejectedValueOnce(error);
+      const endHook = bindHandler(async () => 'plain', {
+        isEventHandler: false,
+      });
+
+      await server.handleMessage(payload);
+      await flushPublishes();
+
+      expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
+      expect(endHook).toHaveBeenCalledOnce();
+    });
   });
 
   describe('sendMessage', () => {

@@ -1,4 +1,10 @@
-import { throwError as _throw, lastValueFrom, Observable, of } from 'rxjs';
+import {
+  throwError as _throw,
+  lastValueFrom,
+  Observable,
+  of,
+  Subject,
+} from 'rxjs';
 import { BaseRpcContext } from '../../ctx-host/base-rpc.context.js';
 import { Server } from '../../server/server.js';
 
@@ -143,6 +149,48 @@ describe('Server', () => {
             isDisposed: true,
           });
         });
+      });
+    });
+    describe('when respond rejects', () => {
+      const flush = () => new Promise(resolve => setImmediate(resolve));
+
+      it('should log the error and still publish the replies queued behind it', async () => {
+        const error = new Error('publish failed');
+        const loggerErrorSpy = vi
+          .spyOn(untypedServer.logger, 'error')
+          .mockImplementation(() => {});
+        sendSpy = vi
+          .fn()
+          .mockRejectedValueOnce(error)
+          .mockResolvedValue(undefined);
+
+        server.send(of('first', 'second'), sendSpy);
+        await flush();
+
+        expect(loggerErrorSpy).toHaveBeenCalledExactlyOnceWith(error);
+        expect(sendSpy).toHaveBeenCalledTimes(2);
+        expect(sendSpy).toHaveBeenLastCalledWith({
+          response: 'second',
+          isDisposed: true,
+        });
+      });
+
+      it('should keep draining replies that arrive after a failure', async () => {
+        vi.spyOn(untypedServer.logger, 'error').mockImplementation(() => {});
+        sendSpy = vi
+          .fn()
+          .mockRejectedValueOnce(new Error('publish failed'))
+          .mockResolvedValue(undefined);
+        const subject = new Subject<string>();
+
+        server.send(subject, sendSpy);
+        subject.next('first');
+        await flush();
+        subject.next('second');
+        await flush();
+
+        expect(sendSpy).toHaveBeenCalledTimes(2);
+        expect(sendSpy).toHaveBeenLastCalledWith({ response: 'second' });
       });
     });
   });
@@ -366,6 +414,125 @@ describe('Server', () => {
       );
 
       expect(endHook).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('handleRequest', () => {
+    const context = new BaseRpcContext([]);
+    const flush = () => new Promise(resolve => setImmediate(resolve));
+
+    function bindHooks() {
+      const endHook = vi.fn();
+      untypedServer.onProcessingStartHook = (
+        _transportId: unknown,
+        _ctx: unknown,
+        fn: () => Promise<void>,
+      ) => fn();
+      untypedServer.onProcessingEndHook = endHook;
+      return endHook;
+    }
+
+    it('should reply with every value and run the end hook once', async () => {
+      const endHook = bindHooks();
+      const respond = vi.fn();
+
+      await untypedServer.handleRequest(
+        context,
+        async () => of('first', 'second'),
+        respond,
+      );
+      await flush();
+
+      expect(respond).toHaveBeenCalledTimes(2);
+      expect(respond).toHaveBeenLastCalledWith({
+        response: 'second',
+        isDisposed: true,
+      });
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        context,
+      );
+    });
+
+    it('should run the end hook once when the response stream fails', async () => {
+      const endHook = bindHooks();
+      const respond = vi.fn();
+      const error = new Error('failed');
+
+      await untypedServer.handleRequest(
+        context,
+        async () => _throw(() => error),
+        respond,
+      );
+      await flush();
+
+      expect(respond).toHaveBeenCalledExactlyOnceWith({
+        err: error,
+        isDisposed: true,
+      });
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should run the end hook once and pass the rejection on when "produce" rejects', async () => {
+      const endHook = bindHooks();
+      const respond = vi.fn();
+
+      await expect(
+        untypedServer.handleRequest(
+          context,
+          async () => {
+            throw new Error('handler failed');
+          },
+          respond,
+        ),
+      ).rejects.toThrow('handler failed');
+      await flush();
+
+      expect(respond).not.toHaveBeenCalled();
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('runWithProcessingHooks', () => {
+    const context = new BaseRpcContext([]);
+
+    it('should run the end hook once when "fn" both runs it and rejects', async () => {
+      const endHook = vi.fn();
+      untypedServer.onProcessingEndHook = endHook;
+
+      await expect(
+        untypedServer.runWithProcessingHooks(
+          context,
+          async (runEndHook: () => void) => {
+            runEndHook();
+            throw new Error('late failure');
+          },
+        ),
+      ).rejects.toThrow('late failure');
+
+      expect(endHook).toHaveBeenCalledOnce();
+    });
+
+    it('should pass the start and end hook contexts separately', async () => {
+      const startHook = vi.fn(
+        (_transportId: unknown, _ctx: unknown, fn: () => Promise<void>) => fn(),
+      );
+      const endHook = vi.fn();
+      const endHookContext = new BaseRpcContext(['end']);
+      untypedServer.onProcessingStartHook = startHook;
+      untypedServer.onProcessingEndHook = endHook;
+
+      await untypedServer.runWithProcessingHooks(
+        context,
+        async (runEndHook: () => void) => runEndHook(),
+        endHookContext,
+      );
+
+      expect(startHook.mock.calls[0][1]).toBe(context);
+      expect(endHook).toHaveBeenCalledExactlyOnceWith(
+        server.transportId,
+        endHookContext,
+      );
     });
   });
 });

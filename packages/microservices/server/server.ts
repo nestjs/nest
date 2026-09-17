@@ -197,8 +197,15 @@ export abstract class Server<
         process.nextTick(async () => {
           while (dataQueue.length > 0) {
             const packet = dataQueue.shift();
-            if (packet) {
+            if (!packet) {
+              continue;
+            }
+            try {
               await respond(packet);
+            } catch (err) {
+              // A reply that cannot be published must neither surface as an
+              // unhandled rejection nor stop the replies queued behind it.
+              this.logger.error(err);
             }
           }
           isProcessing = false;
@@ -225,22 +232,59 @@ export abstract class Server<
     if (!handler) {
       return this.logger.error(NO_EVENT_HANDLER`${pattern}`);
     }
+    return this.runWithProcessingHooks(context, async runEndHook => {
+      const resultOrStream = await handler(packet.data, context);
+      if (isObservable(resultOrStream)) {
+        const connectableSource = connectable(
+          resultOrStream.pipe(finalize(runEndHook)),
+          {
+            connector: () => new Subject(),
+            resetOnDisconnect: false,
+          },
+        );
+        connectableSource.connect();
+      } else {
+        runEndHook();
+      }
+    });
+  }
+
+  /**
+   * Handles a request-response message. `produce` returns the response
+   * stream, whose values are replied through `respond`, and the processing
+   * end hook runs once that stream settles (or once `produce` rejects).
+   */
+  protected handleRequest(
+    context: BaseRpcContext,
+    produce: () => Promise<Observable<any>>,
+    respond: (data: WritePacket) => Promise<unknown> | void,
+  ) {
+    return this.runWithProcessingHooks(context, async runEndHook => {
+      const response$ = await produce();
+      this.send(response$.pipe(finalize(runEndHook)), respond);
+    });
+  }
+
+  /**
+   * Runs `fn` between the processing start and end hooks.
+   *
+   * `fn` receives a runner that closes the span exactly once and attaches it
+   * to the teardown of whatever stream it produces. If `fn` rejects before
+   * that teardown can run, the span is closed here and the rejection travels
+   * on to the transport's client library.
+   *
+   * `endHookContext` is for transports that report a different context to
+   * the end hook than to the start hook (gRPC passes the request).
+   */
+  protected runWithProcessingHooks(
+    context: BaseRpcContext,
+    fn: (runEndHook: () => void) => Promise<void>,
+    endHookContext: BaseRpcContext = context,
+  ) {
     return this.onProcessingStartHook(this.transportId!, context, async () => {
-      const runEndHook = this.createProcessingEndHookRunner(context);
+      const runEndHook = this.createProcessingEndHookRunner(endHookContext);
       try {
-        const resultOrStream = await handler(packet.data, context);
-        if (isObservable(resultOrStream)) {
-          const connectableSource = connectable(
-            resultOrStream.pipe(finalize(runEndHook)),
-            {
-              connector: () => new Subject(),
-              resetOnDisconnect: false,
-            },
-          );
-          connectableSource.connect();
-        } else {
-          runEndHook();
-        }
+        await fn(runEndHook);
       } catch (err) {
         runEndHook();
         throw err;
