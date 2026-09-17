@@ -137,7 +137,9 @@ export class ServerNats<
       if (error) {
         return this.logger.error(error);
       }
-      return this.handleMessage(channel, message);
+      return this.handleMessage(channel, message).catch(err =>
+        this.handleError(err),
+      );
     };
   }
 

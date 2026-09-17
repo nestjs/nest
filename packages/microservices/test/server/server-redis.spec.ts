@@ -143,6 +143,22 @@ describe('ServerRedis', () => {
     it(`should return function`, () => {
       expect(typeof server.getMessageHandler(null)).to.be.eql('function');
     });
+    [false, true].forEach(wildcards => {
+      it(`should route "handleMessage" rejections to "handleError" instead of leaving them unhandled (wildcards: ${wildcards})`, async () => {
+        untypedServer.options = { wildcards };
+        const error = new Error('unexpected');
+        sinon.stub(server, 'handleMessage').rejects(error);
+        const handleErrorStub = sinon.stub(untypedServer, 'handleError');
+
+        await (server.getMessageHandler(null) as Function)(
+          'channel',
+          'buffer',
+          'buffer',
+        );
+
+        expect(handleErrorStub.calledWith(error)).to.be.true;
+      });
+    });
   });
   describe('handleMessage', () => {
     let getPublisherSpy: sinon.SinonSpy;

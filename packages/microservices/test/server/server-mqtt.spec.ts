@@ -196,13 +196,25 @@ describe('ServerMqtt', () => {
       it('should call "handleMessage"', async () => {
         const handleMessageStub = sinon
           .stub(server, 'handleMessage')
-          .callsFake(() => null!);
+          .resolves();
         await server.getMessageHandler(untypedServer.mqttClient)(
           null!,
           null!,
           null!,
         );
         expect(handleMessageStub.called).to.be.true;
+      });
+      it('should route "handleMessage" rejections to "handleError" instead of leaving them unhandled', async () => {
+        const error = new Error('unexpected');
+        sinon.stub(server, 'handleMessage').rejects(error);
+        const handleErrorStub = sinon.stub(untypedServer, 'handleError');
+
+        await server.getMessageHandler(untypedServer.mqttClient)(
+          'topic',
+          Buffer.from('{}'),
+        );
+
+        expect(handleErrorStub.calledWith(error)).to.be.true;
       });
     });
   });
