@@ -6,7 +6,7 @@ import { ClientRMQ } from '../../client/client-rmq';
 import { RQM_DEFAULT_MAX_MESSAGE_SIZE } from '../../constants';
 import { MaxPacketLengthExceededException } from '../../errors/max-packet-length-exceeded.exception';
 import { MaxRmqShortStringLengthExceededException } from '../../errors/max-rmq-short-string-length-exceeded.exception';
-import { ReadPacket } from '../../interfaces';
+import { ReadPacket, WritePacket } from '../../interfaces';
 import { RmqRecord } from '../../record-builders';
 
 describe('ClientRMQ', function () {
@@ -740,11 +740,29 @@ describe('ClientRMQ', function () {
     let channelCloseSpy: sinon.SinonSpy;
     let clientCloseSpy: sinon.SinonSpy;
     beforeEach(() => {
+      client = new ClientRMQ({});
+      untypedClient = client as any;
+
       channelCloseSpy = sinon.spy();
       clientCloseSpy = sinon.spy();
-      untypedClient.channel = { close: channelCloseSpy };
+      untypedClient.responseEmitter = new EventEmitter();
+      untypedClient.channel = {
+        close: channelCloseSpy,
+        sendToQueue: sinon.stub().callsFake(() => ({ catch: sinon.spy() })),
+        publish: sinon.stub().callsFake(() => ({ catch: sinon.spy() })),
+      };
       untypedClient.client = { close: clientCloseSpy };
     });
+
+    const publish = (callback: (packet: WritePacket) => any) =>
+      untypedClient.publish({ pattern: 'pattern', data: 'data' }, callback);
+    const expectConnectionClosed = (callback: sinon.SinonSpy) => {
+      expect(callback.calledOnce).to.be.true;
+      expect(callback.firstCall.args[0]).to.have.keys('err');
+      expect(callback.firstCall.args[0].err.message).to.equal(
+        'Connection closed',
+      );
+    };
 
     it('should close channel when it is not null', async () => {
       await client.close();
@@ -754,6 +772,96 @@ describe('ClientRMQ', function () {
     it('should close client when it is not null', async () => {
       await client.close();
       expect(clientCloseSpy.called).to.be.true;
+    });
+
+    it('should fail pending requests with a connection closed error', async () => {
+      const callback = sinon.spy();
+      publish(callback);
+
+      await client.close();
+
+      expectConnectionClosed(callback);
+    });
+
+    it('should fail pending requests published to an exchange', async () => {
+      untypedClient.options.wildcards = true;
+      const publishToExchange = untypedClient.channel.publish;
+      const callback = sinon.spy();
+      publish(callback);
+
+      await client.close();
+
+      expect(publishToExchange.called).to.be.true;
+      expectConnectionClosed(callback);
+    });
+
+    it('should not call back a request whose teardown already ran', async () => {
+      const callback = sinon.spy();
+      const teardown = publish(callback);
+
+      teardown();
+      await client.close();
+
+      expect(callback.called).to.be.false;
+      expect(untypedClient.responseEmitter.eventNames()).to.have.lengthOf(0);
+    });
+
+    it('should leave nothing pending behind', async () => {
+      const callback = sinon.spy();
+      publish(callback);
+
+      await client.close();
+      await client.close();
+
+      expect(callback.calledOnce).to.be.true;
+      expect(untypedClient.routingMap.size).to.equal(0);
+      expect(untypedClient.responseEmitter.eventNames()).to.have.lengthOf(0);
+    });
+
+    it('should fail pending requests even when closing the channel rejects', async () => {
+      untypedClient.channel.close = sinon
+        .stub()
+        .rejects(new Error('Channel closing error'));
+      const callback = sinon.spy();
+      publish(callback);
+
+      let closeError: Error | undefined;
+      await client.close().catch(err => (closeError = err));
+
+      expect(closeError?.message).to.equal('Channel closing error');
+      expectConnectionClosed(callback);
+    });
+
+    it('should fail every pending request and close the channel when a callback throws', async () => {
+      sinon.stub(untypedClient.logger, 'error');
+      const throwingCallback = sinon.stub().throws(new Error('Callback error'));
+      const callback = sinon.spy();
+      publish(throwingCallback);
+      publish(callback);
+
+      await client.close();
+
+      expect(throwingCallback.calledOnce).to.be.true;
+      expectConnectionClosed(callback);
+      expect(untypedClient.routingMap.size).to.equal(0);
+      expect(untypedClient.responseEmitter.eventNames()).to.have.lengthOf(0);
+      expect(channelCloseSpy.called).to.be.true;
+    });
+
+    it('should not track a request whose publish threw synchronously', async () => {
+      untypedClient.channel.sendToQueue = () => {
+        throw new Error('Publish error');
+      };
+      const callback = sinon.spy();
+      publish(callback);
+
+      expect(untypedClient.routingMap.size).to.equal(0);
+      expect(untypedClient.responseEmitter.eventNames()).to.have.lengthOf(0);
+
+      await client.close();
+
+      expect(callback.calledOnce).to.be.true;
+      expect(callback.firstCall.args[0].err.message).to.equal('Publish error');
     });
   });
   describe('dispatchEvent', () => {

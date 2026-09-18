@@ -129,11 +129,32 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   }
 
   public async close(): Promise<void> {
+    this.handleClose();
     this.channel && (await this.channel.close());
     this.client && (await this.client.close());
     this.channel = null;
     this.client = null;
     this.pendingEventListeners = [];
+  }
+
+  public handleClose() {
+    if (this.routingMap.size > 0) {
+      const err = new Error('Connection closed');
+      const callbacks = [...this.routingMap.values()];
+      this.routingMap.clear();
+
+      for (const callback of callbacks) {
+        try {
+          callback({ err });
+        } catch (callbackErr) {
+          // A failing callback must not keep the remaining requests pending
+          // nor prevent the connection from being closed.
+          this.logger.error(callbackErr);
+        }
+      }
+    }
+    // The listeners expect a message to parse, so they cannot carry the error.
+    this.responseEmitter?.removeAllListeners();
   }
 
   public connect(): Promise<any> {
@@ -421,7 +442,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     message: ReadPacket,
     callback: (packet: WritePacket) => any,
   ): () => void {
-    let removeListener = () => {};
+    let cleanup = () => {};
     try {
       // Replies are matched by the correlation id alone, as in assignPacketId()
       const correlationId = randomUUID();
@@ -454,8 +475,11 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       delete serializedPacket.options;
 
       this.responseEmitter.on(correlationId, listener);
-      removeListener = () =>
+      this.routingMap.set(correlationId, callback);
+      cleanup = () => {
+        this.routingMap.delete(correlationId);
         this.responseEmitter.removeListener(correlationId, listener);
+      };
 
       const content = Buffer.from(JSON.stringify(serializedPacket));
       const sendOptions = {
@@ -496,9 +520,9 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
           callback({ err }),
         );
       }
-      return removeListener;
+      return cleanup;
     } catch (err) {
-      removeListener();
+      cleanup();
       callback({ err });
       return () => {};
     }
