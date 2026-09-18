@@ -58,20 +58,31 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
 
   public async close() {
     this.handleClose();
-    await this.natsClient?.close();
-    this.statusEventEmitter.removeAllListeners();
+    try {
+      await this.natsClient?.close();
+    } finally {
+      this.statusEventEmitter.removeAllListeners();
 
-    this.natsClient = null;
-    this.connectionPromise = null;
+      this.natsClient = null;
+      this.connectionPromise = null;
+    }
   }
 
   public handleClose() {
     if (this.routingMap.size > 0) {
       const err = new Error('Connection closed');
-      for (const callback of this.routingMap.values()) {
-        callback({ err });
-      }
+      const callbacks = [...this.routingMap.values()];
       this.routingMap.clear();
+
+      for (const callback of callbacks) {
+        try {
+          callback({ err });
+        } catch (callbackErr) {
+          // A failing callback must not keep the remaining requests pending
+          // nor prevent the connection from being closed.
+          this.logger.error(callbackErr);
+        }
+      }
     }
   }
 

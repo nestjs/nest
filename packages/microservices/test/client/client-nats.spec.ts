@@ -317,6 +317,27 @@ describe('ClientNats', () => {
         expect(callback).toHaveBeenCalledWith({
           err: expect.objectContaining({ message: 'Connection closed' }),
         });
+        expect(untypedClient.natsClient).toBeNull();
+        expect(untypedClient.connectionPromise).toBeNull();
+      });
+
+      it('should fail every pending request and close the client when a callback throws', async () => {
+        vi.spyOn(untypedClient.logger, 'error').mockImplementation(() => {});
+        const throwingCallback = vi.fn().mockImplementation(() => {
+          throw new Error('Callback error');
+        });
+        const callback = vi.fn();
+        publish(throwingCallback);
+        publish(callback);
+
+        await client.close();
+
+        expect(throwingCallback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith({
+          err: expect.objectContaining({ message: 'Connection closed' }),
+        });
+        expect(untypedClient.routingMap.size).toBe(0);
+        expect(natsClose).toHaveBeenCalled();
       });
     });
   });
