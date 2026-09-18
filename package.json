@@ -148,6 +148,7 @@
     "redis": "6.2.1",
     "rxjs-compat": "6.6.7",
     "socket.io-client": "4.8.3",
+    "sql.js": "^1.14.2",
     "supertest": "7.2.2",
     "ts-morph": "28.0.0",
     "ts-node": "10.9.2",

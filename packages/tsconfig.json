@@ -26,6 +26,9 @@
       "path": "./testing/tsconfig.build.json"
     },
     {
+      "path": "./transaction/tsconfig.build.json"
+    },
+    {
       "path": "./websockets/tsconfig.build.json"
     }
   ]

@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": false,
+    "noImplicitAny": false,
+    "removeComments": true,
+    "noLib": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "allowJs": true,
+    "strictNullChecks": true,
+    "outDir": "./dist",
+    "paths": {
+      "@nestjs/common": ["../../packages/common"],
+      "@nestjs/common/*": ["../../packages/common/*"],
+      "@nestjs/core": ["../../packages/core"],
+      "@nestjs/core/*": ["../../packages/core/*"],
+      "@nestjs/testing": ["../../packages/testing"],
+      "@nestjs/testing/*": ["../../packages/testing/*"],
+      "@nestjs/transaction": ["../../packages/transaction"],
+      "@nestjs/transaction/*": ["../../packages/transaction/*"]
+    }
+  },
+  "include": ["src/**/*", "e2e/**/*"],
+  "exclude": ["node_modules"]
+}
