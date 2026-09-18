@@ -54,6 +54,7 @@ export default defineConfig({
       '@nestjs/microservices': './packages/microservices',
       '@nestjs/websockets': './packages/websockets',
       '@nestjs/testing': './packages/testing',
+      '@nestjs/transaction': './packages/transaction',
       '@nestjs/platform-express': './packages/platform-express',
       '@nestjs/platform-ws': './packages/platform-ws',
       '@nestjs/platform-fastify': './packages/platform-fastify',

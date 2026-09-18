@@ -1,0 +1,34 @@
+{
+  "name": "@nestjs/transaction",
+  "version": "12.0.3",
+  "description": "Nest - modern, fast, powerful node.js web framework (@transaction)",
+  "author": "Kamil Mysliwiec",
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./*.js": "./*.js",
+    "./*": "./*.js"
+  },
+  "homepage": "https://nestjs.com",
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/nest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nestjs/nest.git",
+    "directory": "packages/transaction"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "tslib": "2.8.1"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^12.0.0"
+  },
+  "gitHead": "bcb4747f7598a9d2655c8184a6d729ebefa07fbd"
+}
