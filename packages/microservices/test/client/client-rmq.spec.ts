@@ -487,6 +487,44 @@ describe('ClientRMQ', function () {
         err: expect.objectContaining({ message: 'Connection closed' }),
       });
     });
+
+    it('should fail every pending request and close the channel when a callback throws', async () => {
+      vi.spyOn(untypedClient.logger, 'error').mockImplementation(() => {});
+      const throwingCallback = vi.fn().mockImplementation(() => {
+        throw new Error('Callback error');
+      });
+      const callback = vi.fn();
+      publish(throwingCallback);
+      publish(callback);
+
+      await client.close();
+
+      expect(throwingCallback).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+      expect(untypedClient.routingMap.size).toEqual(0);
+      expect(untypedClient.responseEmitter.eventNames().length).toEqual(0);
+      expect(channelCloseSpy).toHaveBeenCalled();
+    });
+
+    it('should not track a request whose publish threw synchronously', async () => {
+      untypedClient.channel.sendToQueue = vi.fn(() => {
+        throw new Error('Publish error');
+      });
+      const callback = vi.fn();
+      publish(callback);
+
+      expect(untypedClient.routingMap.size).toEqual(0);
+      expect(untypedClient.responseEmitter.eventNames().length).toEqual(0);
+
+      await client.close();
+
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Publish error' }),
+      });
+    });
   });
   describe('dispatchEvent', () => {
     let msg: ReadPacket;
