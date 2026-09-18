@@ -107,11 +107,32 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   }
 
   public async close(): Promise<void> {
+    this.handleClose();
     this.channel && (await this.channel.close());
     this.client && (await this.client.close());
     this.channel = null;
     this.client = null;
     this.pendingEventListeners = [];
+  }
+
+  public handleClose() {
+    if (this.routingMap.size > 0) {
+      const err = new Error('Connection closed');
+      const callbacks = [...this.routingMap.values()];
+      this.routingMap.clear();
+
+      for (const callback of callbacks) {
+        try {
+          callback({ err });
+        } catch (callbackErr) {
+          // A failing callback must not keep the remaining requests pending
+          // nor prevent the connection from being closed.
+          this.logger.error(callbackErr);
+        }
+      }
+    }
+    // The listeners expect a message to parse, so they cannot carry the error.
+    this.responseEmitter?.removeAllListeners();
   }
 
   public async connect(): Promise<any> {
@@ -352,9 +373,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   public async handleMessage(
     packet: unknown,
     options:
-      | Record<string, unknown>
-      | ((packet: WritePacket) => any)
-      | undefined,
+      Record<string, unknown> | ((packet: WritePacket) => any) | undefined,
     callback?: (packet: WritePacket) => any,
   ): Promise<void> {
     if (isFunction(options)) {
@@ -383,6 +402,7 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
     message: ReadPacket,
     callback: (packet: WritePacket) => any,
   ): () => void {
+    let cleanup = () => {};
     try {
       const correlationId = randomStringGenerator();
       const listener = ({
@@ -406,6 +426,11 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
       delete serializedPacket.options;
 
       this.responseEmitter.on(correlationId, listener);
+      this.routingMap.set(correlationId, callback);
+      cleanup = () => {
+        this.routingMap.delete(correlationId);
+        this.responseEmitter.removeListener(correlationId, listener);
+      };
 
       const content = Buffer.from(JSON.stringify(serializedPacket));
       const sendOptions = {
@@ -444,8 +469,9 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
           callback({ err }),
         );
       }
-      return () => this.responseEmitter.removeListener(correlationId, listener);
+      return cleanup;
     } catch (err) {
+      cleanup();
       callback({ err });
       return () => {};
     }
