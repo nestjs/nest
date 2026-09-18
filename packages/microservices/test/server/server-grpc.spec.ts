@@ -1359,4 +1359,25 @@ describe('ServerGrpc', () => {
       );
     });
   });
+
+  describe('lookupPackage', () => {
+    it('should return root package in case package name is not defined', () => {
+      const root = {};
+
+      expect(server.lookupPackage(root, undefined!)).toBe(root);
+      expect(server.lookupPackage(root, '')).toBe(root);
+    });
+
+    it('should return nested package when fully resolvable', () => {
+      const root = { a: { b: { service: {} } } };
+
+      expect(server.lookupPackage(root, 'a.b.service')).toBe(root.a.b.service);
+    });
+
+    it('should return undefined when a namespace segment is missing', () => {
+      const root = { a: { c: {} } };
+
+      expect(server.lookupPackage(root, 'a.b.c')).toBeUndefined();
+    });
+  });
 });

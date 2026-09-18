@@ -630,9 +630,16 @@ export class ServerGrpc extends Server<never, never> {
   public lookupPackage(root: any, packageName: string) {
     /** Reference: https://github.com/kondi/rxjs-grpc */
     let pkg = root;
-    for (const name of packageName.split(/\./)) {
-      pkg = pkg[name];
+
+    if (packageName) {
+      for (const name of packageName.split(/\./)) {
+        if (!pkg) {
+          break;
+        }
+        pkg = pkg[name];
+      }
     }
+
     return pkg;
   }
 
