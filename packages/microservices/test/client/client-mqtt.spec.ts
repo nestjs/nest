@@ -287,6 +287,9 @@ describe('ClientMqtt', () => {
       endSpy = vi.fn();
       untypedClient.mqttClient = { endAsync: endSpy };
     });
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
     it('should close "pub" when it is not null', async () => {
       await client.close();
       expect(endSpy).toHaveBeenCalled();
@@ -317,6 +320,34 @@ describe('ClientMqtt', () => {
       expect(callback).toHaveBeenCalledWith({
         err: expect.objectContaining({ message: 'Connection closed' }),
       });
+    });
+
+    it('should fail every pending request when a callback throws', async () => {
+      const loggerErrorSpy = vi
+        .spyOn(untypedClient.logger, 'error')
+        .mockImplementation(() => {});
+      const throwingCallback = vi.fn().mockImplementation(() => {
+        throw new Error('Callback error');
+      });
+      let pendingDuringFlush: number | undefined;
+      const callback = vi.fn(() => {
+        pendingDuringFlush = untypedClient.routingMap.size;
+      });
+      untypedClient.routingMap.set('some id', throwingCallback);
+      untypedClient.routingMap.set('some other id', callback);
+
+      await client.close();
+
+      expect(throwingCallback).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Callback error' }),
+      );
+      expect(pendingDuringFlush).toBe(0);
+      expect(endSpy).toHaveBeenCalled();
+      expect(untypedClient.routingMap.size).toBe(0);
     });
 
     it('should register the response listener after close and reconnect', async () => {
