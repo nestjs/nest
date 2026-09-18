@@ -38,6 +38,7 @@ export abstract class ClientProxy<
   EventsMap extends Record<never, Function> = Record<never, Function>,
   Status extends string = string,
 > {
+  protected onDispatchHook?: (packet: ReadPacket) => void;
   protected routingMap = new Map<string, Function>();
   protected serializer: ProducerSerializer;
   protected deserializer: ProducerDeserializer;
@@ -94,7 +95,7 @@ export abstract class ClientProxy<
         () =>
           new Observable((observer: Observer<TResult>) => {
             const callback = this.createObserver(observer);
-            return this.publish({ pattern, data }, callback);
+            return this.publish(this.createPacket(pattern, data), callback);
           }),
       ),
     );
@@ -115,7 +116,7 @@ export abstract class ClientProxy<
       return _throw(() => new InvalidMessageException());
     }
     const source = defer(async () => this.connect()).pipe(
-      mergeMap(() => this.dispatchEvent({ pattern, data })),
+      mergeMap(() => this.dispatchEvent(this.createPacket(pattern, data))),
     );
     const connectableSource = connectable(source, {
       connector: () => new Subject(),
@@ -123,6 +124,26 @@ export abstract class ClientProxy<
     });
     connectableSource.connect();
     return connectableSource;
+  }
+
+  /**
+   * Sets a hook that is called with every outgoing packet - requests and
+   * events alike - right before it is handed to the transport. The hook may
+   * assign `packet.metadata`; it must not replace `pattern` or `data`.
+   *
+   * The client-side counterpart of `Server#setOnProcessingStartHook`: what one
+   * side attaches here, the other reads from the RPC context, which is what
+   * lets instrumentation carry a trace id across a hop without touching the
+   * application's payloads.
+   */
+  public setOnDispatchHook(hook: (packet: ReadPacket) => void): void {
+    this.onDispatchHook = hook;
+  }
+
+  protected createPacket<TInput>(pattern: any, data: TInput): ReadPacket {
+    const packet: ReadPacket<TInput> = { pattern, data };
+    this.onDispatchHook?.(packet);
+    return packet;
   }
 
   protected abstract publish(

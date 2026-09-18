@@ -213,6 +213,21 @@ describe('ServerRedis', () => {
       await server.handleMessage(channel, '', null, channel);
       expect(handler).toHaveBeenCalledWith(data, expect.any(RedisContext));
     });
+    it('should expose the packet metadata on the context', async () => {
+      const handler = vi.fn();
+      const metadata = { traceId: 'trace-1' };
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+      vi.spyOn(server, 'parseMessage').mockImplementation(
+        () => ({ id, data, metadata }) as any,
+      );
+
+      await server.handleMessage(channel, '', null, channel);
+
+      const context: RedisContext = handler.mock.calls[0][1];
+      expect(context.getMetadata()).toEqual(metadata);
+    });
   });
 
   describe('processing end hook', () => {

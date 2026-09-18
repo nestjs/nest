@@ -111,7 +111,7 @@ export class ServerTCP extends Server<TcpEvents, TcpStatus> {
     const packet = await this.deserializer.deserialize(rawMessage);
     const pattern = this.getPatternAsString(packet.pattern);
 
-    const tcpContext = new TcpContext([socket, pattern]);
+    const tcpContext = new TcpContext([socket, pattern, packet.metadata]);
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet, tcpContext);
     }

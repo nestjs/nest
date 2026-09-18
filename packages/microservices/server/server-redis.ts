@@ -146,7 +146,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
   ) {
     const rawMessage = this.parseMessage(buffer);
     const packet = await this.deserializer.deserialize(rawMessage, { channel });
-    const redisCtx = new RedisContext([pattern]);
+    const redisCtx = new RedisContext([pattern, packet.metadata]);
 
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet, redisCtx);

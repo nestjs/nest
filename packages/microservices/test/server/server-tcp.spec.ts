@@ -139,6 +139,17 @@ describe('ServerTCP', () => {
       await server.handleMessage(socket, msg);
       expect(handler).toHaveBeenCalledOnce();
     });
+    it('should expose the packet metadata on the context', async () => {
+      const handler = vi.fn();
+      const metadata = { traceId: 'trace-1' };
+      untypedServer.messageHandlers = objectToMap({
+        [msg.pattern]: handler as any,
+      });
+      await server.handleMessage(socket, { ...msg, metadata });
+
+      const context = handler.mock.calls[0][1];
+      expect(context.getMetadata()).toEqual(metadata);
+    });
     it('should send NO_MESSAGE_HANDLER error if pattern is too deeply nested to be serialized', async () => {
       const deeplyNestedMsg = {
         ...msg,

@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { ClientProxy } from '../../client/client-proxy.js';
 import { ReadPacket } from '../../interfaces/index.js';
 
@@ -125,6 +125,60 @@ describe('ClientProxy', function () {
     it('should return Observable with error', () => {
       const err$ = client.send(null, null);
       expect(err$).toBeInstanceOf(Observable);
+    });
+  });
+
+  describe('setOnDispatchHook', () => {
+    const metadata = { traceId: 'trace-1' };
+
+    it('should let the hook attach metadata to an outgoing request', () => {
+      const publishSpy = vi.spyOn(client, 'publish');
+      client.setOnDispatchHook(packet => {
+        packet.metadata = metadata;
+      });
+
+      client.send('pattern', 'data').subscribe();
+
+      return new Promise<void>(resolve =>
+        setImmediate(() => {
+          expect(publishSpy.mock.calls[0][0]).toEqual({
+            pattern: 'pattern',
+            data: 'data',
+            metadata,
+          });
+          resolve();
+        }),
+      );
+    });
+
+    it('should let the hook attach metadata to an outgoing event', async () => {
+      const dispatchSpy = vi.spyOn(client as any, 'dispatchEvent');
+      client.setOnDispatchHook(packet => {
+        packet.metadata = metadata;
+      });
+
+      await firstValueFrom(client.emit('pattern', 'data'), {
+        defaultValue: undefined,
+      });
+
+      expect(dispatchSpy).toHaveBeenCalledWith({
+        pattern: 'pattern',
+        data: 'data',
+        metadata,
+      });
+    });
+
+    it('should send the packet unchanged when no hook is set', async () => {
+      const dispatchSpy = vi.spyOn(client as any, 'dispatchEvent');
+
+      await firstValueFrom(client.emit('pattern', 'data'), {
+        defaultValue: undefined,
+      });
+
+      expect(dispatchSpy).toHaveBeenCalledWith({
+        pattern: 'pattern',
+        data: 'data',
+      });
     });
   });
 
