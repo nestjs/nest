@@ -61,16 +61,16 @@ describe('ClientNats', () => {
       expect(publishSpy.mock.calls[0][0]).toEqual(pattern);
     });
     describe('on error', () => {
-      let assignPacketIdStub: ReturnType<typeof vi.fn>;
+      let serializeStub: ReturnType<typeof vi.fn>;
       beforeEach(() => {
-        assignPacketIdStub = vi
-          .spyOn(client, 'assignPacketId' as any)
+        serializeStub = vi
+          .spyOn(untypedClient.serializer, 'serialize')
           .mockImplementation(() => {
             throw new Error();
           });
       });
       afterEach(() => {
-        assignPacketIdStub.mockRestore();
+        serializeStub.mockRestore();
       });
 
       it('should call callback', () => {
@@ -250,6 +250,95 @@ describe('ClientNats', () => {
     it('should close "natsClient" when it is not null', async () => {
       await client.close();
       expect(natsClose).toHaveBeenCalled();
+    });
+
+    describe('pending requests', () => {
+      let unsubscribeSpy: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        client = new ClientNats({});
+        untypedClient = client as any;
+        unsubscribeSpy = vi.fn();
+        natsClose = vi.fn();
+        natsClient = {
+          close: natsClose,
+          subscribe: vi.fn().mockReturnValue({ unsubscribe: unsubscribeSpy }),
+          publish: vi.fn(),
+        };
+        untypedClient.natsClient = natsClient;
+      });
+
+      const publish = (callback: (packet: WritePacket) => any) =>
+        untypedClient.publish({ pattern: 'pattern', data: 'data' }, callback);
+
+      it('should fail pending requests with a connection closed error', async () => {
+        const callback = vi.fn();
+        publish(callback);
+
+        await client.close();
+
+        expect(untypedClient.routingMap.size).toBe(0);
+        expect(callback).toHaveBeenCalledWith({
+          err: expect.objectContaining({ message: 'Connection closed' }),
+        });
+      });
+
+      it('should not call back a request whose teardown already ran', async () => {
+        const callback = vi.fn();
+        const teardown = publish(callback);
+
+        teardown();
+        await client.close();
+
+        expect(callback).not.toHaveBeenCalled();
+        expect(untypedClient.routingMap.size).toBe(0);
+      });
+
+      it('should leave nothing pending behind on a repeated close', async () => {
+        const callback = vi.fn();
+        publish(callback);
+
+        await client.close();
+        await client.close();
+
+        expect(callback).toHaveBeenCalledTimes(1);
+        expect(untypedClient.routingMap.size).toBe(0);
+      });
+
+      it('should fail pending requests even when closing the client rejects', async () => {
+        untypedClient.natsClient.close = vi
+          .fn()
+          .mockRejectedValue(new Error('Client closing error'));
+        const callback = vi.fn();
+        publish(callback);
+
+        await expect(client.close()).rejects.toThrow('Client closing error');
+
+        expect(callback).toHaveBeenCalledWith({
+          err: expect.objectContaining({ message: 'Connection closed' }),
+        });
+        expect(untypedClient.natsClient).toBeNull();
+        expect(untypedClient.connectionPromise).toBeNull();
+      });
+
+      it('should fail every pending request and close the client when a callback throws', async () => {
+        vi.spyOn(untypedClient.logger, 'error').mockImplementation(() => {});
+        const throwingCallback = vi.fn().mockImplementation(() => {
+          throw new Error('Callback error');
+        });
+        const callback = vi.fn();
+        publish(throwingCallback);
+        publish(callback);
+
+        await client.close();
+
+        expect(throwingCallback).toHaveBeenCalledTimes(1);
+        expect(callback).toHaveBeenCalledWith({
+          err: expect.objectContaining({ message: 'Connection closed' }),
+        });
+        expect(untypedClient.routingMap.size).toBe(0);
+        expect(natsClose).toHaveBeenCalled();
+      });
     });
   });
   describe('connect', () => {

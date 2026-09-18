@@ -57,11 +57,33 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
   }
 
   public async close() {
-    await this.natsClient?.close();
-    this.statusEventEmitter.removeAllListeners();
+    this.handleClose();
+    try {
+      await this.natsClient?.close();
+    } finally {
+      this.statusEventEmitter.removeAllListeners();
 
-    this.natsClient = null;
-    this.connectionPromise = null;
+      this.natsClient = null;
+      this.connectionPromise = null;
+    }
+  }
+
+  public handleClose() {
+    if (this.routingMap.size > 0) {
+      const err = new Error('Connection closed');
+      const callbacks = [...this.routingMap.values()];
+      this.routingMap.clear();
+
+      for (const callback of callbacks) {
+        try {
+          callback({ err });
+        } catch (callbackErr) {
+          // A failing callback must not keep the remaining requests pending
+          // nor prevent the connection from being closed.
+          this.logger.error(callbackErr);
+        }
+      }
+    }
   }
 
   public async connect(): Promise<any> {
@@ -233,8 +255,16 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ): () => void {
+    const packet = this.assignPacketId(partialPacket);
+    this.routingMap.set(packet.id, callback);
+
+    const cleanup = () => this.routingMap.delete(packet.id);
+    const errorCallback = (err: unknown) => {
+      cleanup();
+      callback({ err });
+    };
+
     try {
-      const packet = this.assignPacketId(partialPacket);
       const channel = this.normalizePattern(partialPacket.pattern);
       const serializedPacket: NatsRecord = this.serializer.serialize(
         packet,
@@ -259,9 +289,12 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
         headers,
       });
 
-      return () => subscription.unsubscribe();
+      return () => {
+        cleanup();
+        subscription.unsubscribe();
+      };
     } catch (err) {
-      callback({ err });
+      errorCallback(err);
       return () => {};
     }
   }
