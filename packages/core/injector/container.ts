@@ -22,6 +22,7 @@ import {
   type EnhancerSubtype,
   GLOBAL_MODULE_METADATA,
   type Injectable,
+  isNil,
   type NestApplicationContextOptions,
 } from '@nestjs/common/internal';
 import type { Type } from '@nestjs/common';
@@ -291,6 +292,9 @@ export class NestContainer {
       throw new UnknownModuleException();
     }
     const moduleRef = this.modules.get(token)!;
+    if (isNil(toExport)) {
+      throw new CircularDependencyException(moduleRef.metatype.name);
+    }
     moduleRef.addExportedProviderOrModule(toExport);
   }
 
@@ -299,6 +303,9 @@ export class NestContainer {
       throw new UnknownModuleException();
     }
     const moduleRef = this.modules.get(token)!;
+    if (isNil(controller)) {
+      throw new CircularDependencyException(moduleRef.metatype.name);
+    }
     moduleRef.addController(controller);
 
     const controllerRef = moduleRef.controllers.get(controller)!;
