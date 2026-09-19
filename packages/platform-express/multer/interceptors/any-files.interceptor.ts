@@ -12,7 +12,10 @@ import { Observable } from 'rxjs';
 import { MULTER_MODULE_OPTIONS } from '../files.constants.js';
 import { MulterModuleOptions } from '../interfaces/index.js';
 import { MulterOptions } from '../interfaces/multer-options.interface.js';
-import { transformException } from '../multer/multer.utils.js';
+import {
+  mergeMulterOptions,
+  transformException,
+} from '../multer/multer.utils.js';
 
 type MulterInstance = any;
 
@@ -32,10 +35,7 @@ export function AnyFilesInterceptor(
       @Inject(MULTER_MODULE_OPTIONS)
       options: MulterModuleOptions = {},
     ) {
-      this.multer = (multer as any)({
-        ...options,
-        ...localOptions,
-      });
+      this.multer = (multer as any)(mergeMulterOptions(options, localOptions));
     }
 
     async intercept(

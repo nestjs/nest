@@ -4,6 +4,28 @@ import {
   PayloadTooLargeException,
 } from '@nestjs/common';
 import { multerExceptions, busboyExceptions } from './multer.constants.js';
+import { MulterModuleOptions } from '../interfaces/index.js';
+import { MulterOptions } from '../interfaces/multer-options.interface.js';
+
+/**
+ * Merges module-level (global) multer options with interceptor-level (local)
+ * options. `limits` is merged key-by-key rather than replaced outright, so
+ * that a route overriding e.g. `limits.fileSize` doesn't silently drop other
+ * global limits (such as `limits.files`) it never intended to touch.
+ */
+export function mergeMulterOptions(
+  options: MulterModuleOptions,
+  localOptions?: MulterOptions,
+): MulterModuleOptions {
+  return {
+    ...options,
+    ...localOptions,
+    limits: {
+      ...options?.limits,
+      ...localOptions?.limits,
+    },
+  };
+}
 
 // Multer may add in a 'field' property to the error
 // https://github.com/expressjs/multer/blob/aa42bea6ac7d0cb8fcb279b15a7278cda805dc63/lib/multer-error.js#L19
