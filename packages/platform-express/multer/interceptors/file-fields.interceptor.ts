@@ -15,7 +15,10 @@ import {
   MulterField,
   MulterOptions,
 } from '../interfaces/multer-options.interface.js';
-import { transformException } from '../multer/multer.utils.js';
+import {
+  mergeMulterOptions,
+  transformException,
+} from '../multer/multer.utils.js';
 
 type MulterInstance = any;
 
@@ -36,10 +39,7 @@ export function FileFieldsInterceptor(
       @Inject(MULTER_MODULE_OPTIONS)
       options: MulterModuleOptions = {},
     ) {
-      this.multer = (multer as any)({
-        ...options,
-        ...localOptions,
-      });
+      this.multer = (multer as any)(mergeMulterOptions(options, localOptions));
     }
 
     async intercept(

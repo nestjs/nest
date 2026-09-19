@@ -8,7 +8,39 @@ import {
   busboyExceptions,
   multerExceptions,
 } from '../../../multer/multer/multer.constants.js';
-import { transformException } from '../../../multer/multer/multer.utils.js';
+import {
+  mergeMulterOptions,
+  transformException,
+} from '../../../multer/multer/multer.utils.js';
+
+describe('mergeMulterOptions', () => {
+  it('should let local options override top-level global options', () => {
+    const merged = mergeMulterOptions({ dest: '/global' }, { dest: '/local' });
+    expect(merged.dest).toBe('/local');
+  });
+  it('should merge limits key-by-key instead of replacing the whole object', () => {
+    const merged = mergeMulterOptions(
+      { limits: { files: 2, fieldNameSize: 100 } },
+      { limits: { fileSize: 10 * 1024 * 1024 } },
+    );
+    expect(merged.limits).toEqual({
+      files: 2,
+      fieldNameSize: 100,
+      fileSize: 10 * 1024 * 1024,
+    });
+  });
+  it('should let local limits win on conflicting keys', () => {
+    const merged = mergeMulterOptions(
+      { limits: { fileSize: 1024 } },
+      { limits: { fileSize: 2048 } },
+    );
+    expect(merged.limits!.fileSize).toBe(2048);
+  });
+  it('should work when neither side defines limits', () => {
+    const merged = mergeMulterOptions({ dest: '/global' });
+    expect(merged.limits).toEqual({});
+  });
+});
 
 describe('transformException', () => {
   describe('if error does not exist', () => {
