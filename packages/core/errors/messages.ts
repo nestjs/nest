@@ -224,6 +224,16 @@ Potential causes:
 Scope [${stringifyScope(scope)}]`;
 };
 
+export const INVALID_PROVIDER_MESSAGE = (
+  token: InjectorDependency,
+  moduleName: string,
+) => `Nest cannot create the ${moduleName} instance.
+The provider ${getDependencyName(token, 'provider')} in the ${moduleName} "providers" array does not define a valid "useClass", "useValue", "useFactory" or "useExisting" property.
+
+Potential causes:
+- The value of "useClass", "useFactory" or "useExisting" is undefined at runtime, often because of a circular import between files. Check your import statements.
+- None of these properties is set, or the one that is set is null.`;
+
 export const UNKNOWN_EXPORT_MESSAGE = (
   token: string | symbol = 'item',
   module: string,
