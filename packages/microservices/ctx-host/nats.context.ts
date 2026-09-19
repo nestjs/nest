@@ -1,6 +1,8 @@
+import { PacketMetadata } from '../interfaces/packet.interface.js';
+
 import { BaseRpcContext } from './base-rpc.context.js';
 
-type NatsContextArgs = [string, any];
+type NatsContextArgs = [string, any, PacketMetadata?];
 
 /**
  * @publicApi
@@ -22,5 +24,12 @@ export class NatsContext extends BaseRpcContext<NatsContextArgs> {
    */
   getHeaders() {
     return this.args[1];
+  }
+
+  /**
+   * Returns the metadata the client attached to the packet, if any.
+   */
+  getMetadata(): PacketMetadata | undefined {
+    return this.args[2];
   }
 }

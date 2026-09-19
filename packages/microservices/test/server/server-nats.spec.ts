@@ -233,7 +233,7 @@ describe('ServerNats', () => {
       });
 
       const headers = {};
-      const natsContext = new NatsContext([channel, headers]);
+      const natsContext = new NatsContext([channel, headers, undefined]);
 
       const data = JSON.stringify({
         pattern: channel,
@@ -250,6 +250,32 @@ describe('ServerNats', () => {
       };
       await server.handleMessage(channel, natsMsg);
       expect(handler).toHaveBeenCalledWith('test', natsContext);
+    });
+    it('should expose the packet metadata on the context', async () => {
+      const handler = vi.fn();
+      const metadata = { traceId: 'trace-1' };
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+
+      const data = JSON.stringify({
+        pattern: channel,
+        data: 'test',
+        id,
+        metadata,
+      });
+      const natsMsg: NatsMsg = {
+        data,
+        subject: channel,
+        sid: +id,
+        respond: vi.fn(),
+        json: () => JSON.parse(data),
+      };
+
+      await server.handleMessage(channel, natsMsg);
+
+      const context: NatsContext = handler.mock.calls[0][1];
+      expect(context.getMetadata()).toEqual(metadata);
     });
   });
 
