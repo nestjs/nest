@@ -152,6 +152,7 @@ describe('ClientKafka', () => {
   let untypedClient: any;
   let callback: ReturnType<typeof vi.fn>;
   let connect: ReturnType<typeof vi.fn>;
+  let disconnect: ReturnType<typeof vi.fn>;
   let subscribe: ReturnType<typeof vi.fn>;
   let run: ReturnType<typeof vi.fn>;
   let send: ReturnType<typeof vi.fn>;
@@ -167,6 +168,7 @@ describe('ClientKafka', () => {
 
     callback = vi.fn();
     connect = vi.fn();
+    disconnect = vi.fn().mockResolvedValue(undefined);
     subscribe = vi.fn();
     run = vi.fn();
     send = vi.fn();
@@ -175,6 +177,7 @@ describe('ClientKafka', () => {
     consumerStub = vi.fn().mockImplementation(() => {
       return {
         connect,
+        disconnect,
         subscribe,
         run,
         events: {
@@ -201,6 +204,7 @@ describe('ClientKafka', () => {
     producerStub = vi.fn().mockImplementation(() => {
       return {
         connect,
+        disconnect,
         send,
         events: {
           CONNECT: 'producer.connect',
@@ -384,6 +388,34 @@ describe('ClientKafka', () => {
         expect(connect).not.toHaveBeenCalledTimes(2);
 
         expect(bindTopicsStub).not.toHaveBeenCalled();
+      });
+
+      it('should discard the partial connection when an attempt fails', async () => {
+        const error = new Error('broker unavailable');
+        // The consumer connects, then the producer fails.
+        connect.mockResolvedValueOnce(undefined).mockRejectedValueOnce(error);
+
+        await expect(client.connect()).rejects.toThrow(error);
+
+        expect(untypedClient.initialized).toBeNull();
+        expect(untypedClient._consumer).toBeNull();
+        expect(untypedClient._producer).toBeNull();
+        expect(untypedClient.client).toBeNull();
+        // Both the consumer that joined its group and the producer are torn down.
+        expect(disconnect).toHaveBeenCalledTimes(2);
+      });
+
+      it('should try again on the next call instead of caching a failed attempt', async () => {
+        const error = new Error('broker unavailable');
+        connect.mockRejectedValueOnce(error);
+
+        await expect(client.connect()).rejects.toThrow(error);
+        const connection = await client.connect();
+
+        expect(createClientStub).toHaveBeenCalledTimes(2);
+        expect(consumerStub).toHaveBeenCalledTimes(2);
+        expect(producerStub).toHaveBeenCalledOnce();
+        expect(connection).toEqual(producerStub());
       });
     });
 
