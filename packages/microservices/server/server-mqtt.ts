@@ -161,7 +161,11 @@ export class ServerMqtt extends Server<MqttEvents, MqttStatus> {
   ): Promise<any> {
     const rawPacket = this.parseMessage(buffer.toString());
     const packet = await this.deserializer.deserialize(rawPacket, { channel });
-    const mqttContext = new MqttContext([channel, originalPacket!]);
+    const mqttContext = new MqttContext([
+      channel,
+      originalPacket!,
+      packet.metadata,
+    ]);
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(channel, packet, mqttContext);
     }

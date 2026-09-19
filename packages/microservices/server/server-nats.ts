@@ -151,11 +151,15 @@ export class ServerNats<
     const rawMessage = natsMsg.data;
     const replyTo = natsMsg.reply;
 
-    const natsCtx = new NatsContext([callerSubject, natsMsg.headers]);
     const message = await this.deserializer.deserialize(natsMsg, {
       channel,
       replyTo,
     });
+    const natsCtx = new NatsContext([
+      callerSubject,
+      natsMsg.headers,
+      message.metadata,
+    ]);
     if (isUndefined((message as IncomingRequest).id)) {
       return this.handleEvent(channel, message, natsCtx);
     }

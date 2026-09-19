@@ -309,7 +309,12 @@ export class ServerRMQ extends Server<RmqEvents, RmqStatus> {
     const packet = await this.deserializer.deserialize(rawMessage, properties);
     const pattern = this.getPatternAsString(packet.pattern);
 
-    const rmqContext = new RmqContext([message, channel, pattern]);
+    const rmqContext = new RmqContext([
+      message,
+      channel,
+      pattern,
+      packet.metadata,
+    ]);
     if (isUndefined((packet as IncomingRequest).id)) {
       return this.handleEvent(pattern, packet, rmqContext);
     }

@@ -226,6 +226,21 @@ describe('ServerRMQ', () => {
         expect.any(RmqContext),
       );
     });
+    it('should expose the packet metadata on the context', async () => {
+      const handler = vi.fn();
+      const metadata = { traceId: 'trace-1' };
+      untypedServer.messageHandlers = objectToMap({
+        [pattern]: handler,
+      });
+
+      await server.handleMessage(
+        createMessage({ pattern, data: 'tests', id: '3', metadata }),
+        '',
+      );
+
+      const context: RmqContext = handler.mock.calls[0][1];
+      expect(context.getMetadata()).toEqual(metadata);
+    });
   });
 
   describe('processing end hook', () => {

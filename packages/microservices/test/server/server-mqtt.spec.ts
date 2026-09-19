@@ -381,6 +381,24 @@ describe('ServerMqtt', () => {
       );
       expect(handler).toHaveBeenCalledWith(data, expect.any(MqttContext));
     });
+    it('should expose the packet metadata on the context', async () => {
+      const handler = vi.fn();
+      const metadata = { traceId: 'trace-1' };
+      untypedServer.messageHandlers = objectToMap({
+        [channel]: handler,
+      });
+
+      await server.handleMessage(
+        channel,
+        Buffer.from(
+          JSON.stringify({ pattern: channel, data, id: '2', metadata }),
+        ),
+        null,
+      );
+
+      const context: MqttContext = handler.mock.calls[0][1];
+      expect(context.getMetadata()).toEqual(metadata);
+    });
   });
 
   describe('processing end hook', () => {

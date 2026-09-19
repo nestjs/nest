@@ -1,6 +1,8 @@
+import { PacketMetadata } from '../interfaces/packet.interface.js';
+
 import { BaseRpcContext } from './base-rpc.context.js';
 
-type MqttContextArgs = [string, Record<string, any>];
+type MqttContextArgs = [string, Record<string, any>, PacketMetadata?];
 
 /**
  * @publicApi
@@ -22,5 +24,12 @@ export class MqttContext extends BaseRpcContext<MqttContextArgs> {
    */
   getPacket() {
     return this.args[1];
+  }
+
+  /**
+   * Returns the metadata the client attached to the packet, if any.
+   */
+  getMetadata(): PacketMetadata | undefined {
+    return this.args[2];
   }
 }
