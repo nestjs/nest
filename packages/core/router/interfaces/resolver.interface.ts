@@ -5,7 +5,7 @@ import { RouteResolutionOptions } from './route-resolution-options.interface.js'
 export interface Resolver {
   resolve(
     applicationRef: HttpServer,
-    basePath: string,
+    basePath: string | string[],
     options?: RouteResolutionOptions,
   ): void;
   registerResolvedRoute(applicationRef: HttpServer, route: ResolvedRoute): void;

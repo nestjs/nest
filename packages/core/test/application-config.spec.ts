@@ -16,6 +16,25 @@ describe('ApplicationConfig', () => {
 
       expect(appConfig.getGlobalPrefix()).toEqual(path);
     });
+    it('should set global path as array', () => {
+      const paths = ['api', 'v1'];
+      appConfig.setGlobalPrefix(paths);
+
+      expect(appConfig.getGlobalPrefix()).toEqual('api');
+      expect(appConfig.getGlobalPrefixes()).toEqual(paths);
+    });
+    it('should return all prefixes via getGlobalPrefixes', () => {
+      const paths = ['prefix1', 'prefix2', 'prefix3'];
+      appConfig.setGlobalPrefix(paths);
+
+      expect(appConfig.getGlobalPrefixes()).toEqual(paths);
+    });
+    it('should convert single string to array in getGlobalPrefixes', () => {
+      const path = 'test';
+      appConfig.setGlobalPrefix(path);
+
+      expect(appConfig.getGlobalPrefixes()).toEqual([path]);
+    });
     it('should set global path options', () => {
       const options: GlobalPrefixOptions<ExcludeRouteMetadata> = {
         exclude: [
@@ -32,6 +51,9 @@ describe('ApplicationConfig', () => {
     });
     it('should has empty string as a global path by default', () => {
       expect(appConfig.getGlobalPrefix()).toEqual('');
+    });
+    it('should return empty array as global prefixes by default', () => {
+      expect(appConfig.getGlobalPrefixes()).toEqual([]);
     });
     it('should has empty string as a global path option by default', () => {
       expect(appConfig.getGlobalPrefixOptions()).toEqual({});
