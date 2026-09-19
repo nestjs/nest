@@ -1027,6 +1027,21 @@ describe('Injector', () => {
         UndefinedDependencyException,
       );
     });
+
+    it('should throw "UndefinedDependencyException" when inject is a sparse array', () => {
+      const inject: unknown[] = [];
+      inject[0] = 'A';
+      inject[2] = 'C';
+
+      const wrapper = new InstanceWrapper({
+        name: 'TOKEN',
+        inject: inject as any,
+      });
+
+      expect(() => injector.getFactoryProviderDependencies(wrapper)).toThrow(
+        UndefinedDependencyException,
+      );
+    });
   });
 
   describe('addDependencyMetadata', () => {
