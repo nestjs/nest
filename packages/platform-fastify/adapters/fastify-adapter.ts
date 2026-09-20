@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  type NestApplicationOptions,
   type RawBodyRequest,
   type RequestMethod,
   StreamableFile,
@@ -46,6 +47,7 @@ import {
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { pathToRegexp } from 'path-to-regexp';
+import { Duplex } from 'stream';
 import middie from '@fastify/middie';
 import {
   type VersionValue,
@@ -153,6 +155,7 @@ export class FastifyAdapter<
   declare protected readonly instance: TInstance;
   protected _pathPrefix?: string;
 
+  private readonly openConnections = new Set<Duplex>();
   private _isParserRegistered: boolean;
   private onRequestHook?: (
     request: TRequest,
@@ -556,6 +559,7 @@ export class FastifyAdapter<
   }
 
   public async close() {
+    this.closeOpenConnections();
     try {
       return await this.instance.close();
     } catch (err) {
@@ -567,8 +571,11 @@ export class FastifyAdapter<
     }
   }
 
-  public initHttpServer() {
+  public initHttpServer(options: NestApplicationOptions = {}) {
     this.httpServer = this.instance.server;
+    if (options?.forceCloseConnections) {
+      this.trackOpenConnections();
+    }
   }
 
   public async useStaticAssets(options: FastifyStaticOptions) {
@@ -1039,5 +1046,20 @@ export class FastifyAdapter<
       return url;
     }
     return pathStart === -1 ? '/' : url.slice(pathStart);
+  }
+
+  private trackOpenConnections() {
+    this.httpServer.on('connection', (socket: Duplex) => {
+      this.openConnections.add(socket);
+
+      socket.on('close', () => this.openConnections.delete(socket));
+    });
+  }
+
+  private closeOpenConnections() {
+    for (const socket of this.openConnections) {
+      socket.destroy();
+      this.openConnections.delete(socket);
+    }
   }
 }

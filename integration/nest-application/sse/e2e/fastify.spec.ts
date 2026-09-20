@@ -489,4 +489,50 @@ describe('Sse (Fastify Application)', () => {
       expect(stats.teardownsObserved).toBe(1);
     });
   });
+
+  describe('with NestApplicationOptions.forceCloseConnections', () => {
+    beforeEach(async () => {
+      const moduleFixture = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+
+      app = moduleFixture.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter(),
+        {
+          forceCloseConnections: true,
+        },
+      );
+      app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
+      await app.listen(0);
+      const url = await app.getUrl();
+
+      eventSource = new EventSource(url + '/sse', {
+        fetch: (input, init) =>
+          fetch(input, {
+            ...init,
+            headers: {
+              ...init?.headers,
+              connection: 'keep-alive',
+            },
+          }),
+      });
+    });
+
+    afterEach(async () => {
+      await app.close();
+
+      eventSource.close();
+    });
+
+    it('receives events from server', () =>
+      new Promise<void>(done => {
+        eventSource.addEventListener('message', event => {
+          expect(JSON.parse(event.data)).toEqual({
+            hello: 'world',
+          });
+          done();
+        });
+      }));
+  });
 });

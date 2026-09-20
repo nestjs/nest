@@ -7,6 +7,7 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
+import http from 'node:http';
 
 describe('FastifyAdapter', () => {
   let fastifyAdapter: FastifyAdapter;
@@ -253,6 +254,63 @@ describe('FastifyAdapter', () => {
         url: '/neutral',
       });
       expect(res.statusCode).toBe(200);
+    });
+  });
+
+  describe('initHttpServer forceCloseConnections', () => {
+    it('should destroy tracked sockets on close when the Nest option is set', async () => {
+      fastifyAdapter.initHttpServer({ forceCloseConnections: true });
+      const socket = {
+        destroy: vi.fn(),
+        on: vi.fn(),
+      };
+      fastifyAdapter.getHttpServer().emit('connection', socket);
+
+      await fastifyAdapter.close();
+
+      expect(socket.destroy).toHaveBeenCalled();
+    });
+
+    it('should not destroy sockets on close when the Nest option is omitted', async () => {
+      fastifyAdapter.initHttpServer();
+      const socket = {
+        destroy: vi.fn(),
+        on: vi.fn(),
+      };
+      fastifyAdapter.getHttpServer().emit('connection', socket);
+
+      await fastifyAdapter.close();
+
+      expect(socket.destroy).not.toHaveBeenCalled();
+    });
+
+    it('should let close() finish while a request is in flight', async () => {
+      fastifyAdapter.initHttpServer({ forceCloseConnections: true });
+      fastifyAdapter.get('/hold', () => new Promise(() => {}));
+
+      await new Promise<void>((resolve, reject) => {
+        fastifyAdapter.listen(0, '127.0.0.1', (err?: Error) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
+
+      const address = fastifyAdapter.getHttpServer().address();
+      const port = typeof address === 'object' && address ? address.port : 0;
+      http
+        .get({ hostname: '127.0.0.1', port, path: '/hold' })
+        .on('error', () => {});
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const winner = await Promise.race([
+        fastifyAdapter.close().then(() => 'settled' as const),
+        new Promise<'hung'>(resolve => setTimeout(() => resolve('hung'), 1500)),
+      ]);
+
+      expect(winner).toBe('settled');
     });
   });
 });
