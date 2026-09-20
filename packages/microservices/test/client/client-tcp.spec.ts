@@ -61,6 +61,16 @@ describe('ClientTCP', () => {
         expect(callback).toHaveBeenCalled();
         expect(callback.mock.calls[0][0].err).toBeInstanceOf(Error);
       });
+
+      it('should not leave the request pending', () => {
+        socket.sendMessage = () => {
+          throw new Error('Send error');
+        };
+
+        client['publish'](msg, vi.fn());
+
+        expect(client['routingMap'].size).toBe(0);
+      });
     });
   });
   describe('handleResponse', () => {
