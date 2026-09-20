@@ -33,23 +33,29 @@ describe('NestContainer', () => {
     );
   });
 
-  it('should "addController" throw "CircularDependencyException" naming the module when controller is nil', async () => {
-    const { moduleRef } = (await container.addModule(TestModule, []))!;
-    const addController = () =>
-      container.addController(undefined!, moduleRef.token);
+  it.each([undefined, null])(
+    'should "addController" throw "CircularDependencyException" naming the module when controller is %s',
+    async nilValue => {
+      const { moduleRef } = (await container.addModule(TestModule, []))!;
+      const addController = () =>
+        container.addController(nilValue!, moduleRef.token);
 
-    expect(addController).toThrow(CircularDependencyException);
-    expect(addController).toThrow('inside TestModule');
-  });
+      expect(addController).toThrow(CircularDependencyException);
+      expect(addController).toThrow('inside TestModule');
+    },
+  );
 
-  it('should "addExportedProviderOrModule" throw "CircularDependencyException" naming the module when exported item is nil', async () => {
-    const { moduleRef } = (await container.addModule(TestModule, []))!;
-    const addExport = () =>
-      container.addExportedProviderOrModule(undefined!, moduleRef.token);
+  it.each([undefined, null])(
+    'should "addExportedProviderOrModule" throw "CircularDependencyException" naming the module when exported item is %s',
+    async nilValue => {
+      const { moduleRef } = (await container.addModule(TestModule, []))!;
+      const addExport = () =>
+        container.addExportedProviderOrModule(nilValue!, moduleRef.token);
 
-    expect(addExport).toThrow(CircularDependencyException);
-    expect(addExport).toThrow('inside TestModule');
-  });
+      expect(addExport).toThrow(CircularDependencyException);
+      expect(addExport).toThrow('inside TestModule');
+    },
+  );
 
   it('should "addController" throw "UnknownModuleException" when module is not stored in collection', () => {
     expect(() => container.addController(null!, 'TestModule')).toThrow(

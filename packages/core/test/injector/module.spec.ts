@@ -81,6 +81,15 @@ describe('Module', () => {
       );
       expect(addCustomProviderSpy).toHaveBeenCalled();
     });
+
+    it('should throw when a custom injectable does not define a valid "use*" property', () => {
+      expect(() =>
+        moduleRef.addInjectable(
+          { provide: 'test', useClass: undefined } as any,
+          'guard',
+        ),
+      ).toThrow(InvalidProviderException);
+    });
   });
 
   it('should add provider', () => {
