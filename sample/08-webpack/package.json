@@ -26,7 +26,7 @@
     "oxlint": "1.83.0",
     "start-server-webpack-plugin": "2.2.5",
     "vitest": "5.0.1",
-    "webpack": "5.111.0",
+    "webpack": "5.111.1",
     "webpack-cli": "7.2.3",
     "webpack-node-externals": "3.0.0"
   },
