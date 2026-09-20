@@ -1049,10 +1049,17 @@ export class FastifyAdapter<
   }
 
   private trackOpenConnections() {
-    this.httpServer.on('connection', (socket: Duplex) => {
+    const track = (socket: Duplex) => {
+      if (this.openConnections.has(socket)) {
+        return;
+      }
       this.openConnections.add(socket);
-
       socket.on('close', () => this.openConnections.delete(socket));
+    };
+    this.httpServer.on('connection', track);
+    this.instance.addHook('onRequest', (request, _reply, done) => {
+      track(request.raw.socket);
+      done();
     });
   }
 

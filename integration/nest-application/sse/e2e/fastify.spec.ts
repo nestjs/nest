@@ -1,4 +1,5 @@
-import { ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Module, ValidationPipe } from '@nestjs/common';
+import http from 'node:http';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -534,5 +535,100 @@ describe('Sse (Fastify Application)', () => {
           done();
         });
       }));
+  });
+
+  describe('forceCloseConnections closes every listen address', () => {
+    let hits = 0;
+    let holdApp: NestFastifyApplication;
+
+    @Controller()
+    class HoldController {
+      @Get('/hold')
+      hold() {
+        hits += 1;
+        return new Promise(() => {});
+      }
+    }
+
+    @Module({ controllers: [HoldController] })
+    class HoldModule {}
+
+    beforeEach(async () => {
+      hits = 0;
+      const moduleFixture = await Test.createTestingModule({
+        imports: [HoldModule],
+      }).compile();
+
+      holdApp = moduleFixture.createNestApplication<NestFastifyApplication>(
+        new FastifyAdapter(),
+        { forceCloseConnections: true },
+      );
+      await holdApp.listen(0);
+    });
+
+    afterEach(async () => {
+      await holdApp.close();
+    });
+
+    it('destroys the in-flight socket of every Fastify bind address', async () => {
+      const addresses = holdApp.getHttpAdapter().getInstance().addresses();
+      expect(addresses.length).toBeGreaterThan(0);
+
+      const sockets: http.IncomingMessage['socket'][] = [];
+      await Promise.all(
+        addresses.map(
+          (addr: { address: string; family: string; port: number }) =>
+            new Promise<void>((resolve, reject) => {
+              const req = http.get(
+                {
+                  hostname: addr.address,
+                  port: addr.port,
+                  path: '/hold',
+                  family: addr.family === 'IPv6' ? 6 : 4,
+                },
+                () => {},
+              );
+              req.on('socket', socket => {
+                sockets.push(socket);
+                resolve();
+              });
+              req.on('error', err => {
+                if (sockets.length === 0) {
+                  reject(err);
+                } else {
+                  resolve();
+                }
+              });
+            }),
+        ),
+      );
+
+      for (let i = 0; i < 50 && hits < addresses.length; i++) {
+        await sleep(20);
+      }
+      expect(hits).toBe(addresses.length);
+
+      await holdApp.close();
+
+      await Promise.all(
+        sockets.map(socket =>
+          socket.destroyed
+            ? Promise.resolve()
+            : new Promise<void>((resolve, reject) => {
+                const timer = setTimeout(
+                  () => reject(new Error('socket was not destroyed')),
+                  1500,
+                );
+                socket.once('close', () => {
+                  clearTimeout(timer);
+                  resolve();
+                });
+              }),
+        ),
+      );
+      for (const socket of sockets) {
+        expect(socket.destroyed).toBe(true);
+      }
+    });
   });
 });
