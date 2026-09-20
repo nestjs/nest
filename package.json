@@ -152,7 +152,7 @@
     "ts-morph": "28.0.0",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
-    "tsx": "4.23.13",
+    "tsx": "4.23.15",
     "typeorm": "1.1.1",
     "typescript": "5.9.3",
     "typescript-eslint": "8.70.0",
