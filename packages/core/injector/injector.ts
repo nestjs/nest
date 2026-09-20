@@ -482,10 +482,7 @@ export class Injector {
       return item;
     };
     const inject = wrapper.inject ?? [];
-    const dependencies = Array.from(
-      { length: inject.length },
-      (_, index) => mapFactoryProviderInjectArray(inject[index], index),
-    );
+    const dependencies = Array.from(inject, mapFactoryProviderInjectArray);
     return [dependencies, optionalDependenciesIds];
   }
 
