@@ -47,6 +47,10 @@ For questions and support please use the official [Discord channel](https://disc
 
 Please make sure to read the [Issue Reporting Checklist](https://github.com/nestjs/nest/blob/master/CONTRIBUTING.md#-submitting-an-issue) before opening an issue. Issues not conforming to the guidelines may be closed immediately.
 
+## Observability
+
+[NestJS Observe](https://observe.nestjs.com) is the official observability platform for Nest applications. Install the `@nestjs/observe` SDK, pass an API key, and requests, background jobs, errors, logs, and distributed traces start streaming to a dashboard - no manual span wiring and no collector to run. Because the SDK hooks into Nest's own request lifecycle, a trace reads like a call graph of your controllers and providers instead of a bare HTTP route. Free for up to 300,000 events a month, and there is a [live demo](https://www.observe-demo.nestjs.com/dashboard) with no signup.
+
 ## Consulting
 
 With official support, you can get expert help straight from the Nest core team. We provide dedicated technical support, migration strategies, advice on best practices (and design decisions), PR reviews, and team augmentation. Read more about [support here](https://enterprise.nestjs.com).
