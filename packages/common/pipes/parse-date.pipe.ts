@@ -60,11 +60,19 @@ export class ParseDatePipe implements PipeTransform {
    * @param metadata contains metadata about the currently processed route argument
    */
   transform(value: unknown): Date | null | undefined {
-    if (this.options.optional && isNil(value)) {
-      return this.options.default ? this.options.default() : value;
-    }
-
     if (isNil(value) || value === '') {
+      // A configured default applies to every missing value, not only when
+      // `optional` is set as well. Reading it inside the `optional` branch made
+      // `{ default }` on its own a silent no-op: the pipe still rejected the
+      // request with "no Date provided" instead of using the default.
+      if (this.options.default) {
+        return this.options.default();
+      }
+
+      if (this.options.optional && isNil(value)) {
+        return value;
+      }
+
       throw this.exceptionFactory('Validation failed (no Date provided)');
     }
 

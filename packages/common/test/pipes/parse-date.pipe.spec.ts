@@ -47,6 +47,28 @@ describe('ParseDatePipe', () => {
         const value = target.transform(undefined);
         expect(value).toBe(defaultValue);
       });
+
+      it('should return the default value without requiring "optional"', () => {
+        const defaultValue = new Date();
+        const target = new ParseDatePipe({ default: () => defaultValue });
+
+        expect(target.transform(undefined)).toBe(defaultValue);
+        expect(target.transform(null)).toBe(defaultValue);
+      });
+
+      it('should return the default value for an empty string', () => {
+        const defaultValue = new Date();
+        const target = new ParseDatePipe({ default: () => defaultValue });
+
+        expect(target.transform('')).toBe(defaultValue);
+      });
+
+      it('should not fall back to the default value for an invalid value', () => {
+        const defaultValue = new Date();
+        const target = new ParseDatePipe({ default: () => defaultValue });
+
+        expect(() => target.transform('123abc')).toThrow(BadRequestException);
+      });
     });
     describe('when validation fails', () => {
       it('should throw an error', () => {
