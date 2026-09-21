@@ -69,8 +69,29 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
-    this.connectionPromise = this.handleConnection();
+    this.connectionPromise = this.handleConnection().catch(async err => {
+      // A rejected attempt must not be cached: the next `connect()` call
+      // has to try again once the server is reachable, instead of failing
+      // forever with the error of the first attempt.
+      this.connectionPromise = null;
+      await this.discardPartialConnection();
+      throw err;
+    });
     return this.connectionPromise;
+  }
+
+  /**
+   * Tears down whatever a failed connection attempt managed to create, so a
+   * pub or sub client that already connected does not stay behind when the
+   * next attempt creates new ones.
+   */
+  private async discardPartialConnection(): Promise<void> {
+    const pubClient = this.pubClient;
+    const subClient = this.subClient;
+    this.pubClient = null;
+    this.subClient = null;
+
+    await Promise.allSettled([pubClient?.quit(), subClient?.quit()]);
   }
 
   private async handleConnection(): Promise<any> {

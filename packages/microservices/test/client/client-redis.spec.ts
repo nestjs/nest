@@ -381,6 +381,94 @@ describe('ClientRedis', () => {
       expect(registerErrorListenerSpy).toHaveBeenCalledTimes(2);
     });
   });
+  describe('connect after a failed attempt', () => {
+    let failingClient: ClientRedis;
+    let untypedFailingClient: any;
+    let createClientSpy: ReturnType<typeof vi.fn>;
+    let quits: Array<ReturnType<typeof vi.fn>>;
+    let connectPlan: Array<'ok' | 'fail'>;
+    let connectError: Error;
+
+    beforeEach(() => {
+      // retryAttempts set, so the failure goes through the retries exhausted
+      // path, the one that keeps a failed attempt cached
+      failingClient = new ClientRedis({ retryAttempts: 1 });
+      untypedFailingClient = failingClient as any;
+      untypedFailingClient.connectionPromise = null;
+      quits = [];
+      connectPlan = [];
+      connectError = new Error('connection refused');
+      createClientSpy = vi
+        .spyOn(failingClient, 'createClient')
+        .mockImplementation(() => {
+          const connect = vi.fn();
+          if (connectPlan.shift() === 'fail') {
+            connect.mockRejectedValue(connectError);
+          } else {
+            connect.mockResolvedValue(undefined);
+          }
+          const quit = vi.fn().mockResolvedValue(undefined);
+          quits.push(quit);
+          return {
+            on: () => null,
+            addListener: () => null,
+            removeListener: () => null,
+            connect,
+            quit,
+          } as any;
+        });
+    });
+    afterEach(() => {
+      createClientSpy.mockRestore();
+      untypedFailingClient.connectionPromise = null;
+      untypedFailingClient.pubClient = null;
+      untypedFailingClient.subClient = null;
+    });
+
+    it('should discard the partial connection when an attempt fails', async () => {
+      // The pub client connects, the sub client fails.
+      connectPlan = ['ok', 'fail'];
+
+      await expect(failingClient.connect()).rejects.toThrow(connectError);
+
+      expect(untypedFailingClient.connectionPromise).toBeNull();
+      expect(untypedFailingClient.pubClient).toBeNull();
+      expect(untypedFailingClient.subClient).toBeNull();
+      // Both created clients are torn down, including the connected pub one.
+      expect(quits[0]).toHaveBeenCalled();
+      expect(quits[1]).toHaveBeenCalled();
+    });
+
+    it('should try again on the next call instead of caching a failed attempt', async () => {
+      connectPlan = ['ok', 'fail', 'ok', 'ok'];
+
+      await expect(failingClient.connect()).rejects.toThrow(connectError);
+      await failingClient.connect();
+
+      expect(createClientSpy).toHaveBeenCalledTimes(4);
+    });
+
+    it('should try again on the next call after the retries are exhausted', async () => {
+      // A real ioredis client against a closed port, with retryAttempts set,
+      // so the failure goes through the retries exhausted path.
+      const retryClient = new ClientRedis({
+        host: '127.0.0.1',
+        port: 59999,
+        retryAttempts: 1,
+        retryDelay: 10,
+      });
+      const retryClientSpy = vi.spyOn(retryClient, 'createClient');
+
+      await expect(retryClient.connect()).rejects.toThrow();
+
+      const secondError = await retryClient.connect().catch(err => err);
+
+      // the fresh attempt fails with the connection error again, not with
+      // the cached "connection lost" rejection
+      expect(secondError).toBeInstanceOf(Error);
+      expect(retryClientSpy).toHaveBeenCalledTimes(4);
+    }, 15000);
+  });
   describe('registerErrorListener', () => {
     it('should bind error event handler', () => {
       const callback = vi
