@@ -149,8 +149,32 @@ export class ClientKafka
     if (this.initialized) {
       return this.initialized.then(() => this._producer!);
     }
-    this.initialized = this.initializeClientAndConnections();
+    this.initialized = this.initializeClientAndConnections().catch(
+      async err => {
+        // A rejected attempt must not be cached: the next `connect()` call
+        // has to try again once the broker is reachable, instead of failing
+        // forever with the error of the first attempt.
+        this.initialized = null;
+        await this.discardPartialConnection();
+        throw err;
+      },
+    );
     return this.initialized.then(() => this._producer!);
+  }
+
+  /**
+   * Tears down whatever a failed connection attempt managed to create, so a
+   * consumer that joined its group before the producer failed does not stay
+   * behind when the next attempt creates a new one.
+   */
+  private async discardPartialConnection(): Promise<void> {
+    const consumer = this._consumer;
+    const producer = this._producer;
+    this._consumer = null;
+    this._producer = null;
+    this.client = null;
+
+    await Promise.allSettled([consumer?.disconnect(), producer?.disconnect()]);
   }
 
   private async initializeClientAndConnections(): Promise<void> {
