@@ -231,6 +231,38 @@ describe('Injector', () => {
       getCtorMetadataSpy.mockRestore();
       loadCtorMetadataSpy.mockRestore();
     });
+
+    it(
+      'should reject instead of hanging when a factory provider inject array is sparse',
+      { timeout: 500 },
+      async () => {
+        const inject: unknown[] = [];
+        inject[0] = 'A';
+        inject[2] = 'C';
+
+        const container = new NestContainer();
+        const { moduleRef } = (await container.addModule(
+          class TestModule {},
+          [],
+        ))!;
+        moduleRef.addProvider({ provide: 'A', useValue: 'a' });
+        moduleRef.addProvider({ provide: 'C', useValue: 'c' });
+
+        const wrapper = new InstanceWrapper({
+          name: 'X',
+          inject: inject as any,
+        });
+
+        await expect(
+          injector.resolveConstructorParams(
+            wrapper,
+            moduleRef,
+            inject as any,
+            () => {},
+          ),
+        ).rejects.toThrow(UndefinedDependencyException);
+      },
+    );
   });
 
   describe('loadMiddleware', () => {
@@ -1021,6 +1053,21 @@ describe('Injector', () => {
       const wrapper = new InstanceWrapper({
         name: 'TOKEN',
         inject: [{ token: null } as any],
+      });
+
+      expect(() => injector.getFactoryProviderDependencies(wrapper)).toThrow(
+        UndefinedDependencyException,
+      );
+    });
+
+    it('should throw "UndefinedDependencyException" when inject is a sparse array', () => {
+      const inject: unknown[] = [];
+      inject[0] = 'A';
+      inject[2] = 'C';
+
+      const wrapper = new InstanceWrapper({
+        name: 'TOKEN',
+        inject: inject as any,
       });
 
       expect(() => injector.getFactoryProviderDependencies(wrapper)).toThrow(

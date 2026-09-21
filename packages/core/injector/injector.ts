@@ -481,10 +481,9 @@ export class Injector {
       }
       return item;
     };
-    return [
-      wrapper.inject?.map?.(mapFactoryProviderInjectArray) as any[],
-      optionalDependenciesIds,
-    ];
+    const inject = wrapper.inject ?? [];
+    const dependencies = Array.from(inject, mapFactoryProviderInjectArray);
+    return [dependencies, optionalDependenciesIds];
   }
 
   public reflectConstructorParams(type: Type<unknown> | Function): any[] {
