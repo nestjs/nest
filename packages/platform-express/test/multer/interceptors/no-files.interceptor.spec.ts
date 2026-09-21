@@ -39,4 +39,10 @@ describe('NoFilesInterceptor', () => {
       );
     });
   });
+  it('should merge global and local limits key-by-key', () => {
+    const target = new (NoFilesInterceptor({ limits: { fileSize: 10 } }))({
+      limits: { files: 2 },
+    });
+    expect((target as any).multer.limits).toEqual({ files: 2, fileSize: 10 });
+  });
 });

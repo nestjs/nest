@@ -38,7 +38,27 @@ describe('mergeMulterOptions', () => {
   });
   it('should work when neither side defines limits', () => {
     const merged = mergeMulterOptions({ dest: '/global' });
-    expect(merged.limits).toEqual({});
+    expect(merged.limits).toBeUndefined();
+  });
+  it('should keep a global function-valued limits when the route sets none', () => {
+    const globalLimits = () => ({ fileSize: 10 });
+    const merged = mergeMulterOptions({ limits: globalLimits });
+    expect(merged.limits).toBe(globalLimits);
+  });
+  it('should let a route function-valued limits win over a global object', () => {
+    const localLimits = () => ({ fileSize: 10 });
+    const merged = mergeMulterOptions(
+      { limits: { fileSize: 1024, files: 2 } },
+      { limits: localLimits },
+    );
+    expect(merged.limits).toBe(localLimits);
+  });
+  it('should let a route object win over a global function-valued limits', () => {
+    const merged = mergeMulterOptions(
+      { limits: () => ({ fileSize: 10 }) },
+      { limits: { fileSize: 2048 } },
+    );
+    expect(merged.limits).toEqual({ fileSize: 2048 });
   });
 });
 
