@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { createServer } from 'http';
+import { AddressInfo } from 'net';
 import {
   config,
   from,
@@ -9,6 +10,8 @@ import {
   toArray,
   type Observable,
 } from 'rxjs';
+import WebSocket from 'ws';
+import { WS_PATH_PARAMS } from '../../websockets/constants.js';
 import { WsAdapter } from '../adapters/ws-adapter.js';
 import { WsProxy } from '../../websockets/context/ws-proxy.js';
 import { WsExceptionsHandler } from '../../websockets/exceptions/ws-exceptions-handler.js';
@@ -243,6 +246,165 @@ describe('WsAdapter', () => {
       }
 
       expect(httpServer.listenerCount('upgrade')).toBe(0);
+    });
+  });
+
+  describe('path matching', () => {
+    let adapter: WsAdapter;
+    let httpServer: ReturnType<typeof createServer>;
+    let port: number;
+    const sockets: WebSocket[] = [];
+
+    beforeEach(async () => {
+      httpServer = createServer();
+      adapter = new WsAdapter(httpServer);
+      vi.spyOn(adapter['logger'], 'error').mockImplementation(() => undefined);
+      await new Promise<void>(resolve => httpServer.listen(0, () => resolve()));
+      port = (httpServer.address() as AddressInfo).port;
+    });
+
+    afterEach(async () => {
+      for (const socket of sockets.splice(0)) {
+        socket.terminate();
+      }
+      await adapter.dispose();
+      await new Promise<void>((resolve, reject) =>
+        httpServer.close(err => (err ? reject(err) : resolve())),
+      );
+    });
+
+    function connect(pathname: string) {
+      return new Promise<WebSocket>((resolve, reject) => {
+        const ws = new WebSocket(`ws://127.0.0.1:${port}${pathname}`);
+        sockets.push(ws);
+        ws.once('open', () => resolve(ws));
+        ws.once('error', reject);
+      });
+    }
+
+    function expectReject(pathname: string) {
+      return new Promise<void>((resolve, reject) => {
+        const ws = new WebSocket(`ws://127.0.0.1:${port}${pathname}`);
+        sockets.push(ws);
+        ws.once('open', () =>
+          reject(new Error(`Should not connect to ${pathname}`)),
+        );
+        ws.once('error', () => resolve());
+        ws.once('unexpected-response', () => resolve());
+        ws.once('close', () => resolve());
+      });
+    }
+
+    it('should throw when compiling an invalid path-to-regexp v8 pattern', () => {
+      expect(() => adapter.create(0, { path: '/legacy/*' })).toThrow(
+        /named wildcards/,
+      );
+    });
+
+    it('should route overlapping dynamic paths by registration order', async () => {
+      const specific = adapter.create(0, { path: '/files/:id/meta' });
+      adapter.create(0, { path: '/files/*path' });
+
+      const winner = new Promise<string>(resolve => {
+        specific.once('connection', (client: any) => {
+          expect(client[WS_PATH_PARAMS]).toEqual({ id: '1' });
+          expect(client.upgradeReq).toBeUndefined();
+          resolve('specific');
+        });
+      });
+
+      await connect('/files/1/meta');
+      await expect(winner).resolves.toBe('specific');
+    });
+
+    it('should expose handshake params on the request and WS_PATH_PARAMS', async () => {
+      const server = adapter.create(0, { path: '/chat/:roomId/socket' });
+      const seen = new Promise<{ params: unknown; requestParams: unknown }>(
+        resolve => {
+          server.once('connection', (client: any, req: any) => {
+            resolve({
+              params: client[WS_PATH_PARAMS],
+              requestParams: req.params,
+            });
+          });
+        },
+      );
+
+      await connect('/chat/room-1/socket');
+      await expect(seen).resolves.toEqual({
+        params: { roomId: 'room-1' },
+        requestParams: { roomId: 'room-1' },
+      });
+    });
+
+    it('should return wildcard captures as arrays, matching HTTP @Param()', async () => {
+      const server = adapter.create(0, { path: '/files/*path' });
+      const seen = new Promise<unknown>(resolve => {
+        server.once('connection', (client: any) => {
+          resolve(client[WS_PATH_PARAMS]);
+        });
+      });
+
+      await connect('/files/a/b/c');
+      await expect(seen).resolves.toEqual({ path: ['a', 'b', 'c'] });
+    });
+
+    it('should match optional brace groups', async () => {
+      const server = adapter.create(0, { path: '/chat{/lobby}' });
+      const connections: string[] = [];
+      server.on('connection', (_client: unknown, req: { url?: string }) => {
+        connections.push(req.url!);
+      });
+
+      await connect('/chat');
+      await connect('/chat/lobby');
+      expect(connections).toEqual(['/chat', '/chat/lobby']);
+    });
+
+    it('should not match a trailing slash or a different case', async () => {
+      adapter.create(0, { path: '/chat/:roomId/socket' });
+
+      await expectReject('/chat/room-1/socket/');
+      await expectReject('/CHAT/room-1/socket');
+    });
+
+    it('should reject malformed percent-encoding with a 400', async () => {
+      adapter.create(0, { path: '/chat/:roomId/socket' });
+      await expectReject('/chat/%E0%A4%A/socket');
+    });
+
+    it('should match a dynamic path on a separate HTTP port', async () => {
+      const extraPort = await new Promise<number>((resolve, reject) => {
+        const probe = createServer();
+        probe.once('error', reject);
+        probe.listen(0, () => {
+          const { port } = probe.address() as AddressInfo;
+          probe.close(err => (err ? reject(err) : resolve(port)));
+        });
+      });
+
+      const server = adapter.create(extraPort, { path: '/dyn/:id' });
+      const extraHttp = adapter['httpServersRegistry'].get(extraPort);
+      if (extraHttp && !extraHttp.listening) {
+        await new Promise<void>((resolve, reject) => {
+          extraHttp.once('listening', () => resolve());
+          extraHttp.once('error', reject);
+        });
+      }
+
+      const seen = new Promise<unknown>(resolve => {
+        server.once('connection', (client: any) => {
+          resolve(client[WS_PATH_PARAMS]);
+        });
+      });
+
+      const ws = new WebSocket(`ws://127.0.0.1:${extraPort}/dyn/xyz`);
+      sockets.push(ws);
+      await new Promise((resolve, reject) => {
+        ws.once('open', resolve);
+        ws.once('error', reject);
+      });
+      await expect(seen).resolves.toEqual({ id: 'xyz' });
     });
   });
 });

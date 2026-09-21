@@ -1,3 +1,4 @@
+import { WS_PATH_PARAMS } from '../../constants.js';
 import { WsParamtype } from '../../enums/ws-paramtype.enum.js';
 import { WsParamsFactory } from '../../factories/ws-params-factory.js';
 
@@ -34,7 +35,7 @@ describe('WsParamsFactory', () => {
       describe(`WsParamtype.PARAM`, () => {
         it('should return all path parameters when no property is specified', () => {
           const pathParams = { roomId: '123', userId: '456' };
-          const clientWithParams = { _pathParams: pathParams };
+          const clientWithParams = { [WS_PATH_PARAMS]: pathParams };
           const argsWithParams = [clientWithParams, data];
 
           expect(
@@ -48,7 +49,7 @@ describe('WsParamsFactory', () => {
 
         it('should return specific path parameter when property is specified', () => {
           const pathParams = { roomId: '123', userId: '456' };
-          const clientWithParams = { _pathParams: pathParams };
+          const clientWithParams = { [WS_PATH_PARAMS]: pathParams };
           const argsWithParams = [clientWithParams, data];
 
           expect(
@@ -62,7 +63,7 @@ describe('WsParamsFactory', () => {
 
         it('should return undefined for non-existent parameter', () => {
           const pathParams = { roomId: '123' };
-          const clientWithParams = { _pathParams: pathParams };
+          const clientWithParams = { [WS_PATH_PARAMS]: pathParams };
           const argsWithParams = [clientWithParams, data];
 
           expect(
@@ -93,34 +94,6 @@ describe('WsParamsFactory', () => {
               argsWithoutParams,
             ),
           ).toEqual({});
-        });
-
-        it('should fallback to upgradeReq.params if _pathParams is not available', () => {
-          const pathParams = { roomId: '789' };
-          const clientWithUpgradeReq = { upgradeReq: { params: pathParams } };
-          const argsWithUpgradeReq = [clientWithUpgradeReq, data];
-
-          expect(
-            factory.exchangeKeyForValue(
-              WsParamtype.PARAM,
-              'roomId',
-              argsWithUpgradeReq,
-            ),
-          ).toEqual('789');
-        });
-
-        it('should fallback to request.params if _pathParams and upgradeReq.params are not available', () => {
-          const pathParams = { roomId: '999' };
-          const clientWithRequest = { request: { params: pathParams } };
-          const argsWithRequest = [clientWithRequest, data];
-
-          expect(
-            factory.exchangeKeyForValue(
-              WsParamtype.PARAM,
-              'roomId',
-              argsWithRequest,
-            ),
-          ).toEqual('999');
         });
       });
     });
