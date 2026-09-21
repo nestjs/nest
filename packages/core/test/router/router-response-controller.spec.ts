@@ -1,6 +1,6 @@
 import { isNil, isObject } from '@nestjs/common/utils/shared.utils.js';
 import { IncomingMessage, ServerResponse } from 'http';
-import { Observable, of, Subject } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { EventEmitter } from 'events';
 import { PassThrough, Writable } from 'stream';
 import {
@@ -114,6 +114,95 @@ describe('RouterResponseController', () => {
           );
         });
       });
+
+      describe('is Observable and the client stays connected', () => {
+        it('should resolve to the last emitted value', async () => {
+          const response = new EventEmitter() as any;
+          expect(
+            await routerResponseController.transformToResult(
+              of(1, 2, 3),
+              response,
+            ),
+          ).toBe(3);
+        });
+
+        it('should still reject when the producer errors', async () => {
+          const response = new EventEmitter() as any;
+          const error = new Error('producer failed');
+          await expect(
+            routerResponseController.transformToResult(
+              throwError(() => error),
+              response,
+            ),
+          ).rejects.toThrow(error);
+        });
+      });
+
+      describe('is Observable and the client disconnects', () => {
+        it('should unsubscribe the producer and settle quietly', async () => {
+          const response = new EventEmitter() as any;
+          let tornDown = false;
+          const producer = new Observable<number>(() => () => {
+            tornDown = true;
+          });
+
+          const result = routerResponseController.transformToResult(
+            producer,
+            response,
+          );
+          await new Promise(resolve => setImmediate(resolve));
+          response.emit('close');
+
+          await expect(result).resolves.toBeUndefined();
+          expect(tornDown).to.be.true;
+        });
+
+        it('should stop the producer on disconnect even after a value was emitted', async () => {
+          const response = new EventEmitter() as any;
+          let tornDown = false;
+          let emitted = 0;
+          const producer = new Observable<number>(subscriber => {
+            const timer = setInterval(() => subscriber.next(++emitted), 5);
+            return () => {
+              clearInterval(timer);
+              tornDown = true;
+            };
+          });
+
+          const result = routerResponseController.transformToResult(
+            producer,
+            response,
+          );
+          await new Promise(resolve => setTimeout(resolve, 30));
+          const emittedAtClose = emitted;
+          response.emit('close');
+
+          await expect(result).resolves.toBe(emittedAtClose);
+          expect(tornDown).to.be.true;
+          await new Promise(resolve => setTimeout(resolve, 30));
+          expect(emitted).toBe(emittedAtClose);
+        });
+      });
+    });
+  });
+
+  describe('isResponseClosed', () => {
+    it('should report true once the underlying socket is destroyed', () => {
+      const response = {
+        socket: { once: () => undefined, removeListener: () => undefined, destroyed: true },
+      };
+      expect(routerResponseController.isResponseClosed(response)).to.be.true;
+    });
+
+    it('should report false while the socket is alive', () => {
+      const response = {
+        socket: {
+          once: () => undefined,
+          removeListener: () => undefined,
+          destroyed: false,
+        },
+      };
+      expect(routerResponseController.isResponseClosed(response)).to.be.false;
     });
   });
 

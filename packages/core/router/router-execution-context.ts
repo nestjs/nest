@@ -477,8 +477,9 @@ export class RouterExecutionContext {
       };
     }
     return async <TResult, TResponse>(result: TResult, res: TResponse) => {
-      result = await this.responseController.transformToResult(result);
+      result = await this.responseController.transformToResult(result, res);
       !isResponseHandled &&
+        !this.responseController.isResponseClosed(res) &&
         (await this.responseController.apply(result, res, httpStatusCode));
       return res;
     };

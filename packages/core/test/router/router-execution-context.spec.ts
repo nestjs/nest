@@ -481,6 +481,32 @@ describe('RouterExecutionContext', () => {
         await handler(result, response);
         expect(adapterReplySpy).toHaveBeenCalledWith(response, 'test', 1234);
       });
+
+      it('should not reply once the client connection is gone', async () => {
+        const response = {
+          socket: {
+            once: vi.fn(),
+            removeListener: vi.fn(),
+            destroyed: true,
+          },
+        };
+
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue(undefined!);
+
+        const handler = contextCreator.createHandleResponseFn(
+          null!,
+          false,
+          undefined,
+          1234,
+        ) as HandlerResponseBasicFn;
+        const adapterReplySpy = vi.spyOn(adapter, 'reply');
+        await handler(Promise.resolve('test'), response);
+
+        expect(adapterReplySpy).not.toHaveBeenCalled();
+      });
     });
 
     describe('when "isSse" is enabled', () => {

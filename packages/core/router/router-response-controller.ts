@@ -7,8 +7,14 @@ import {
   SSE_ABORT_CONTROLLER,
 } from '@nestjs/common';
 import { IncomingMessage } from 'http';
-import { EMPTY, lastValueFrom, Observable, isObservable } from 'rxjs';
-import { catchError, concatMap, map } from 'rxjs/operators';
+import {
+  EMPTY,
+  lastValueFrom,
+  Observable,
+  isObservable,
+  Subject,
+} from 'rxjs';
+import { catchError, concatMap, map, takeUntil } from 'rxjs/operators';
 import {
   AdditionalHeaders,
   WritableHeaderStream,
@@ -44,7 +50,7 @@ export class RouterResponseController {
     response: TResponse,
     redirectResponse: RedirectResponse,
   ) {
-    const result = await this.transformToResult(resultOrDeferred);
+    const result = await this.transformToResult(resultOrDeferred, response);
     const statusCode =
       result && result.statusCode
         ? result.statusCode
@@ -60,15 +66,66 @@ export class RouterResponseController {
     response: TResponse,
     template: string,
   ) {
-    const result = await this.transformToResult(resultOrDeferred);
+    const result = await this.transformToResult(resultOrDeferred, response);
     return this.applicationRef.render(response, template, result);
   }
 
-  public async transformToResult(resultOrDeferred: any) {
-    if (isObservable(resultOrDeferred)) {
+  public async transformToResult<TResponse = any>(
+    resultOrDeferred: any,
+    response?: TResponse,
+  ) {
+    if (!isObservable(resultOrDeferred)) {
+      return resultOrDeferred;
+    }
+
+    const disconnectSource = this.getDisconnectSource(response);
+    if (!disconnectSource) {
       return lastValueFrom(resultOrDeferred);
     }
-    return resultOrDeferred;
+
+    // Tie the producer Observable to the client connection: when the client goes
+    // away before the Observable settles, the subscription is torn down instead
+    // of being left running for a response nobody will ever receive. This mirrors
+    // what `sse()` already does for Server-Sent Events.
+    let disconnected = false;
+    const disconnect$ = new Subject<void>();
+    const onClose = () => {
+      disconnected = true;
+      disconnect$.next();
+      disconnect$.complete();
+    };
+    disconnectSource.once('close', onClose);
+
+    try {
+      return await lastValueFrom(resultOrDeferred.pipe(takeUntil(disconnect$)));
+    } catch (err) {
+      // The client disconnected before the Observable emitted a value. There is
+      // nobody left to respond to, so settle quietly rather than leaking
+      // `lastValueFrom`'s EmptyError into the exception filters.
+      if (disconnected) {
+        return undefined;
+      }
+      throw err;
+    } finally {
+      disconnectSource.removeListener('close', onClose);
+    }
+  }
+
+  /**
+   * Whether the client connection behind the given response is already gone, so
+   * callers can skip writing a response nobody is waiting for.
+   */
+  public isResponseClosed<TResponse = any>(response?: TResponse): boolean {
+    const disconnectSource = this.getDisconnectSource(response);
+    return !!disconnectSource && disconnectSource.destroyed === true;
+  }
+
+  private getDisconnectSource<TResponse = any>(response?: TResponse): any {
+    const candidate =
+      (response as any)?.socket ?? (response as any)?.raw ?? response;
+    return candidate && typeof (candidate as any).once === 'function'
+      ? candidate
+      : undefined;
   }
 
   public getStatusByMethod(requestMethod: RequestMethod): number {
