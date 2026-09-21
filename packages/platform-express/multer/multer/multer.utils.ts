@@ -3,7 +3,31 @@ import {
   HttpException,
   PayloadTooLargeException,
 } from '@nestjs/common';
+import { isPlainObject } from '@nestjs/common/internal';
 import { multerExceptions, busboyExceptions } from './multer.constants.js';
+import { MulterModuleOptions } from '../interfaces/index.js';
+import { MulterOptions } from '../interfaces/multer-options.interface.js';
+
+/**
+ * Merges module-level (global) multer options with interceptor-level (local)
+ * options. `limits` is merged key-by-key rather than replaced outright, so
+ * that a route overriding e.g. `limits.fileSize` doesn't silently drop other
+ * global limits (such as `limits.files`) it never intended to touch.
+ *
+ * `limits` may also be a function of the request (multer >= 2.4.0), which
+ * can't be merged key-by-key. In that case (or when only one side defines
+ * `limits`) the local value wins outright, matching the pre-merge behaviour.
+ */
+export function mergeMulterOptions(
+  options: MulterModuleOptions = {},
+  localOptions: MulterOptions = {},
+): MulterModuleOptions {
+  const merged: MulterModuleOptions = { ...options, ...localOptions };
+  if (isPlainObject(options.limits) && isPlainObject(localOptions.limits)) {
+    merged.limits = { ...options.limits, ...localOptions.limits };
+  }
+  return merged;
+}
 
 // Multer may add in a 'field' property to the error
 // https://github.com/expressjs/multer/blob/aa42bea6ac7d0cb8fcb279b15a7278cda805dc63/lib/multer-error.js#L19
