@@ -16,3 +16,13 @@ export const ERROR_EVENT = 'error';
 
 // How many messages of a client an adapter handles at the same time
 export const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
+
+/**
+ * Key used by `WsAdapter` (`@nestjs/platform-ws`) to store handshake path
+ * params on the WebSocket client. Read this from a guard, interceptor, or
+ * `handleDisconnect`. `handleConnection(client, req)` receives the same map on
+ * `req.params`.
+ *
+ * @publicApi
+ */
+export const WS_PATH_PARAMS = Symbol('WS_PATH_PARAMS');

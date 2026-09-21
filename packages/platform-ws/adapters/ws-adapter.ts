@@ -1,5 +1,9 @@
 import { type INestApplicationContext, Logger } from '@nestjs/common';
-import { AbstractWsAdapter } from '@nestjs/websockets';
+import {
+  AbstractWsAdapter,
+  WS_PATH_PARAMS,
+  type MessageMappingProperties,
+} from '@nestjs/websockets';
 import * as http from 'http';
 import type { Duplex } from 'stream';
 import { EMPTY, fromEvent, Observable } from 'rxjs';
@@ -11,11 +15,8 @@ import {
   CONNECTION_EVENT,
   ERROR_EVENT,
 } from '@nestjs/websockets/internal';
-import type { MessageMappingProperties } from '@nestjs/websockets';
-import { pathToRegexp } from 'path-to-regexp';
+import { match } from 'path-to-regexp';
 import { mergeMapBounded } from '../utils/merge-map-bounded.util.js';
-
-type PathKey = { name: string };
 
 enum READY_STATE {
   CONNECTING_STATE = 0,
@@ -53,43 +54,6 @@ type WsAdapterOptions = {
   maxSendBufferSize?: number;
 };
 
-/**
- * Extended WebSocket server type with dynamic path matching support
- */
-interface WsServerWithPath {
-  path: string;
-  pathRegexp?: RegExp;
-  pathKeys?: PathKey[];
-  isStaticPath?: boolean;
-  handleUpgrade: (
-    request: any,
-    socket: any,
-    head: any,
-    callback: (ws: unknown) => void,
-  ) => void;
-  emit: (event: string, ...args: any[]) => void;
-}
-
-/**
- * Path matching result containing matched servers and extracted parameters
- */
-interface PathMatchResult {
-  server: WsServerWithPath;
-  params: Record<string, string>;
-}
-
-/**
- * Optimized path matcher for efficient WebSocket route resolution
- */
-interface PathMatcher {
-  staticPaths: Map<string, WsServerWithPath[]>;
-  dynamicPaths: Array<{
-    server: WsServerWithPath;
-    pathRegexp: RegExp;
-    pathKeys: PathKey[];
-  }>;
-}
-
 const UNDERLYING_HTTP_SERVER_PORT = 0;
 // How many messages of a client are handled at the same time. Kept here, like
 // mergeMapBounded(), so that this package still loads with an older
@@ -98,6 +62,10 @@ const DEFAULT_MAX_CONCURRENT_MESSAGES = 1000;
 // Reading from a client stops while more than this is queued for it
 const SEND_BUFFER_HIGH_WATER_MARK = 1024 * 1024;
 const DEFAULT_MAX_SEND_BUFFER_SIZE = 128 * 1024 * 1024;
+
+function isDynamicPath(path: string): boolean {
+  return path.includes(':') || path.includes('*') || path.includes('{');
+}
 
 // Kept out of the class so that an adapter can be compared against it to tell
 // whether the parser in use is still the built-in one.
@@ -133,10 +101,6 @@ export class WsAdapter extends AbstractWsAdapter {
   private readonly upgradeListenersRegistry = new Map<
     HttpServerRegistryKey,
     UpgradeListener
-  >();
-  protected readonly pathMatchersCache = new Map<
-    WsServerRegistryKey,
-    PathMatcher
   >();
   protected messageParser: WsMessageParser = defaultMessageParser;
   protected readonly maxConcurrentMessages: number;
@@ -419,7 +383,6 @@ export class WsAdapter extends AbstractWsAdapter {
     this.httpServersRegistry.clear();
     this.wsServersRegistry.clear();
     this.upgradeListenersRegistry.clear();
-    this.pathMatchersCache.clear();
   }
 
   public setMessageParser(parser: WsMessageParser) {
@@ -439,36 +402,28 @@ export class WsAdapter extends AbstractWsAdapter {
       try {
         const baseUrl = 'ws://' + request.headers.host + '/';
         const pathname = new URL(request.url!, baseUrl).pathname;
-        const pathMatcher = this.getOrCreatePathMatcher(port);
-        const matchResult = this.matchPath(pathname, pathMatcher);
+        const wsServersCollection = this.wsServersRegistry.get(port) || [];
 
-        let isRequestDelegated = false;
-        if (matchResult) {
-          const { server, params } = matchResult;
-
-          // Inject path parameters if any
-          if (Object.keys(params).length > 0) {
-            (request as any).params = params;
-
-            this.logger.debug(
-              `WebSocket connection matched dynamic path "${server.path}" with params:`,
-              params,
-            );
+        for (const wsServer of wsServersCollection) {
+          const matched = wsServer.matchPath
+            ? wsServer.matchPath(pathname)
+            : pathname === wsServer.path
+              ? { params: {} }
+              : undefined;
+          if (!matched) {
+            continue;
           }
 
-          server.handleUpgrade(request, socket, head, (ws: unknown) => {
-            if (Object.keys(params).length > 0) {
-              (ws as any)._pathParams = params;
-              (ws as any).upgradeReq = request;
-            }
-
-            server.emit('connection', ws, request);
+          const params = { ...matched.params };
+          (request as any).params = params;
+          wsServer.handleUpgrade(request, socket, head, (ws: unknown) => {
+            (ws as any)[WS_PATH_PARAMS] = params;
+            wsServer.emit('connection', ws, request);
           });
-          isRequestDelegated = true;
+          return;
         }
-        if (!isRequestDelegated) {
-          socket.destroy();
-        }
+
+        socket.destroy();
       } catch (err) {
         // Node hands the socket over without listeners of its own, and end()
         // only half-closes it. A client resetting the connection afterwards
@@ -484,116 +439,6 @@ export class WsAdapter extends AbstractWsAdapter {
     return httpServer;
   }
 
-  /**
-   * Get or create an optimized path matcher for the specified port
-   */
-  protected getOrCreatePathMatcher(port: number): PathMatcher {
-    let pathMatcher = this.pathMatchersCache.get(port);
-    if (!pathMatcher) {
-      const wsServersCollection = this.wsServersRegistry.get(port) || [];
-      pathMatcher = this.createPathMatcher(
-        wsServersCollection as WsServerWithPath[],
-      );
-      this.pathMatchersCache.set(port, pathMatcher);
-    }
-    return pathMatcher;
-  }
-
-  /**
-   * Create an optimized path matcher from WebSocket servers
-   */
-  protected createPathMatcher(servers: WsServerWithPath[]): PathMatcher {
-    const matcher: PathMatcher = {
-      staticPaths: new Map(),
-      dynamicPaths: [],
-    };
-
-    let staticCount = 0;
-    let dynamicCount = 0;
-
-    for (const server of servers) {
-      if (server.isStaticPath !== false) {
-        // Static path - use Map for O(1) lookup
-        const existing = matcher.staticPaths.get(server.path) || [];
-        existing.push(server);
-        matcher.staticPaths.set(server.path, existing);
-        staticCount++;
-      } else {
-        // Dynamic path - store for sequential matching
-        matcher.dynamicPaths.push({
-          server,
-          pathRegexp: server.pathRegexp!,
-          pathKeys: server.pathKeys || [],
-        });
-        dynamicCount++;
-      }
-    }
-
-    // Sort dynamic paths by complexity (simpler patterns first for better performance)
-    matcher.dynamicPaths.sort((a, b) => {
-      const aComplexity =
-        (a.pathKeys?.length || 0) + (a.server.path.split('/').length || 0);
-      const bComplexity =
-        (b.pathKeys?.length || 0) + (b.server.path.split('/').length || 0);
-      return aComplexity - bComplexity;
-    });
-
-    this.logger.log(
-      `Created optimized path matcher: ${staticCount} static paths, ${dynamicCount} dynamic paths`,
-    );
-
-    return matcher;
-  }
-
-  /**
-   * Match a pathname against the optimized path matcher
-   * Returns the first matching server and extracted parameters
-   */
-  protected matchPath(
-    pathname: string,
-    matcher: PathMatcher,
-  ): PathMatchResult | null {
-    // First try static paths (O(1) lookup)
-    const staticServers = matcher.staticPaths.get(pathname);
-    if (staticServers && staticServers.length > 0) {
-      return {
-        server: staticServers[0], // Return first matching static server
-        params: {},
-      };
-    }
-
-    // Then try dynamic paths (ordered by complexity)
-    for (const { server, pathRegexp, pathKeys } of matcher.dynamicPaths) {
-      const match = pathRegexp.exec(pathname);
-      if (match) {
-        const params: Record<string, string> = {};
-
-        // Extract path parameters
-        pathKeys.forEach((key, index) => {
-          const paramValue = match[index + 1];
-          if (paramValue !== undefined) {
-            try {
-              params[key.name] = decodeURIComponent(paramValue);
-            } catch (error) {
-              // Fallback to raw value if decoding fails
-              params[key.name] = paramValue;
-              this.logger.warn(
-                `Failed to decode path parameter "${key.name}": ${paramValue}`,
-              );
-            }
-          }
-        });
-
-        return {
-          server,
-          params,
-        };
-      }
-    }
-
-    return null;
-  }
-
   protected addWsServerToRegistry<T extends Record<'path', string> = any>(
     wsServer: T,
     port: number,
@@ -601,41 +446,24 @@ export class WsAdapter extends AbstractWsAdapter {
   ) {
     const entries = this.wsServersRegistry.get(port) ?? [];
     const normalizedPath = normalizePath(path);
+    (wsServer as any).path = normalizedPath;
 
-    // Prepare path matching
-    const wsServerWithPath = wsServer as unknown as WsServerWithPath;
-    wsServerWithPath.path = normalizedPath;
-
-    const isDynamicPath =
-      normalizedPath.includes(':') ||
-      normalizedPath.includes('*') ||
-      normalizedPath.includes('(');
-
-    if (isDynamicPath) {
+    if (isDynamicPath(normalizedPath)) {
       try {
-        const pathRegexpResult = pathToRegexp(normalizedPath);
-        wsServerWithPath.pathRegexp = pathRegexpResult.regexp;
-        wsServerWithPath.pathKeys = pathRegexpResult.keys || [];
-        wsServerWithPath.isStaticPath = false;
-
-        this.logger.log(
-          `Registered WebSocket server with dynamic path: ${normalizedPath} on port ${port}`,
+        (wsServer as any).matchPath = match(normalizedPath, {
+          sensitive: true,
+          trailing: false,
+        });
+      } catch (err) {
+        const error = new Error(
+          `Invalid WebSocket gateway path "${normalizedPath}": ${(err as Error).message}. path-to-regexp v8 requires named wildcards (e.g. "/files/*path") and brace optional groups (e.g. "/files{/id}").`,
         );
-      } catch (error) {
-        this.logger.error(
-          `Failed to compile dynamic path "${normalizedPath}": ${error.message}`,
-          error.stack,
-        );
-        wsServerWithPath.isStaticPath = true;
+        this.logger.error(error);
+        throw error;
       }
-    } else {
-      wsServerWithPath.isStaticPath = true;
     }
 
-    entries.push(wsServerWithPath);
+    entries.push(wsServer);
     this.wsServersRegistry.set(port, entries);
-
-    // Invalidate path matcher cache for this port
-    this.pathMatchersCache.delete(port);
   }
 }

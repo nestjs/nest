@@ -3,11 +3,16 @@ import { WsParamtype } from '../enums/ws-paramtype.enum.js';
 import { createPipesWsParamDecorator } from '../utils/param.utils.js';
 
 /**
- * WebSocket parameter decorator. Extracts path parameters from the WebSocket URL.
+ * WebSocket parameter decorator. Extracts path parameters from the handshake URL.
  *
- * Use this decorator to inject path parameter values from dynamic WebSocket URLs.
- * Path parameters are defined in the WebSocket gateway path configuration using
- * the same syntax as HTTP controllers (e.g., `:id`, `:userId`).
+ * Only `WsAdapter` (`@nestjs/platform-ws`) populates path parameters. Under
+ * `IoAdapter` (`@nestjs/platform-socket.io`) a named parameter resolves to
+ * `undefined`, and `@WsParam()` with no name resolves to `{}`.
+ *
+ * Path parameters use the same syntax as HTTP controllers (`:id`, `*path`,
+ * `{/optional}`). Guards, interceptors and `handleDisconnect` can read the same
+ * map from the client via `WS_PATH_PARAMS`. `handleConnection(client, req)`
+ * receives them on `req.params`.
  *
  * @example
  * ```typescript
@@ -19,7 +24,6 @@ import { createPipesWsParamDecorator } from '../utils/param.utils.js';
  *     @MessageBody() data: any,
  *     @WsParam('roomId') roomId: string,
  *   ) {
- *     // roomId is automatically extracted from the WebSocket URL
  *     console.log(`Message received in room: ${roomId}`);
  *   }
  * }
