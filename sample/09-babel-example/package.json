@@ -31,7 +31,7 @@
     "@babel/preset-env": "7.29.7",
     "@nestjs/testing": "12.0.3",
     "nodemon": "3.1.14",
-    "oxlint": "1.83.0",
+    "oxlint": "1.85.0",
     "prettier": "3.9.8",
     "supertest": "7.2.2",
     "vitest": "5.0.1"
