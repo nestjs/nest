@@ -13,24 +13,18 @@ import {
 
 export class RouteInfoPathExtractor {
   private readonly routePathFactory: RoutePathFactory;
-  private readonly prefixPaths: string[];
+  private readonly prefixPath: string;
   private readonly excludedGlobalPrefixRoutes: ExcludeRouteMetadata[];
   private readonly versioningConfig?: VersioningOptions;
 
   constructor(private readonly applicationConfig: ApplicationConfig) {
     this.routePathFactory = new RoutePathFactory(applicationConfig);
-    const prefixes = this.applicationConfig.getGlobalPrefixes();
-    this.prefixPaths =
-      prefixes.length > 0
-        ? prefixes.map(p => stripEndSlash(addLeadingSlash(p)))
-        : [''];
+    this.prefixPath = stripEndSlash(
+      addLeadingSlash(this.applicationConfig.getGlobalPrefix()),
+    );
     this.excludedGlobalPrefixRoutes =
       this.applicationConfig.getGlobalPrefixOptions().exclude!;
     this.versioningConfig = this.applicationConfig.getVersioning();
-  }
-
-  private get prefixPath(): string {
-    return this.prefixPaths[0];
   }
 
   public extractPathsFrom({ path, method, version }: RouteInfo): string[] {
@@ -39,17 +33,14 @@ export class RouteInfoPathExtractor {
     if (this.isAWildcard(path)) {
       const entries =
         versionPaths.length > 0
-          ? this.prefixPaths.flatMap(prefixPath =>
-              versionPaths.flatMap(versionPath => [
-                prefixPath + versionPath + '$',
-                prefixPath + versionPath + addLeadingSlash(path),
-              ]),
-            )
-          : this.prefixPaths[0]
-            ? this.prefixPaths.flatMap(prefixPath => [
-                prefixPath + '$',
-                prefixPath + addLeadingSlash(path),
+          ? versionPaths
+              .map(versionPath => [
+                this.prefixPath + versionPath + '$',
+                this.prefixPath + versionPath + addLeadingSlash(path),
               ])
+              .flat()
+          : this.prefixPath
+            ? [this.prefixPath + '$', this.prefixPath + addLeadingSlash(path)]
             : [addLeadingSlash(path)];
 
       return Array.isArray(this.excludedGlobalPrefixRoutes)
@@ -108,14 +99,10 @@ export class RouteInfoPathExtractor {
     }
 
     if (!versionPaths.length) {
-      return this.prefixPaths.map(
-        prefixPath => prefixPath + addLeadingSlash(path),
-      );
+      return [this.prefixPath + addLeadingSlash(path)];
     }
-    return this.prefixPaths.flatMap(prefixPath =>
-      versionPaths.map(
-        versionPath => prefixPath + versionPath + addLeadingSlash(path),
-      ),
+    return versionPaths.map(
+      versionPath => this.prefixPath + versionPath + addLeadingSlash(path),
     );
   }
 

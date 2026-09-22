@@ -221,11 +221,8 @@ export class NestApplication
   public async registerRouter() {
     await this.registerMiddleware(this.httpAdapter);
 
-    const prefixes = this.config.getGlobalPrefixes();
-    const basePaths =
-      prefixes.length > 0
-        ? prefixes.map(prefix => addLeadingSlash(prefix))
-        : [''];
+    const prefix = this.config.getGlobalPrefix();
+    const basePath = addLeadingSlash(prefix);
 
     const conflictPolicy = this.config.getRouteConflictPolicy();
     const resolutionStrategy = this.config.getRouteResolutionStrategy();
@@ -240,7 +237,7 @@ export class NestApplication
     const adapterRejectsDuplicates = !adapterIsOrderSensitive;
 
     if (!conflictPolicy && !shouldSortBySpecificity) {
-      this.routesResolver.resolve(this.httpAdapter, basePaths);
+      this.routesResolver.resolve(this.httpAdapter, basePath);
       return;
     }
 
@@ -251,7 +248,7 @@ export class NestApplication
     // from `instance.route()` and would short-circuit both the resolve
     // loop and the aggregated `RouteConflictException`.
     const resolvedRoutes: ResolvedRoute[] = [];
-    this.routesResolver.resolve(this.httpAdapter, basePaths, {
+    this.routesResolver.resolve(this.httpAdapter, basePath, {
       onRouteResolved: route => resolvedRoutes.push(route),
       deferRegistration: true,
     });
@@ -496,10 +493,7 @@ export class NestApplication
     return `${this.getProtocol()}://${host}:${address.port}`;
   }
 
-  public setGlobalPrefix(
-    prefix: string | string[],
-    options?: GlobalPrefixOptions,
-  ): this {
+  public setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this {
     this.config.setGlobalPrefix(prefix);
     if (options) {
       const exclude = options?.exclude
