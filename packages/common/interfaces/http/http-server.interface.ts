@@ -528,9 +528,9 @@ export interface HttpServer<
   enableCors(options: any): any;
   /**
    * Installs the request hook of the built-in HTTP security features
-   * (`app.enableCsrfProtection()`). The core composes the features into this
-   * one hook and owns their logic; the adapter only decides where the hook
-   * runs.
+   * (`app.enableCsrfProtection()`, `app.useSecurityHeaders()`). The core
+   * composes the features into this one hook and owns their logic; the
+   * adapter only decides where the hook runs.
    *
    * Called at most once, before `app.init()`, the first time one of the
    * features is enabled. The hook must run for every request (matched routes,

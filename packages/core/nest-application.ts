@@ -8,6 +8,7 @@ import {
   type NestHybridApplicationOptions,
   type NestInterceptor,
   type PipeTransform,
+  type SecurityHeadersOptions,
   type VersioningOptions,
   VersioningType,
   type WebSocketAdapter,
@@ -44,6 +45,7 @@ import { RouteConflictDetector } from './router/route-conflict-detector.js';
 import { RouteSpecificitySorter } from './router/route-specificity-sorter.js';
 import { CrossOriginProtection } from './security/cross-origin-protection.js';
 import { HttpSecurityHook } from './security/http-security-hook.js';
+import { resolveSecurityHeaders } from './security/security-headers.js';
 
 /**
  * @publicApi
@@ -390,6 +392,14 @@ export class NestApplication
     return this;
   }
 
+  public useSecurityHeaders(options?: SecurityHeadersOptions): this {
+    this.assertSecurityFeatureCanBeEnabled('useSecurityHeaders');
+    const headers = resolveSecurityHeaders(options);
+    this.getSecurityHook().setHeaders(headers);
+    this.enabledSecurityFeatures.add('useSecurityHeaders');
+    return this;
+  }
+
   public enableVersioning(
     options: VersioningOptions = { type: VersioningType.URI },
   ): this {
@@ -628,14 +638,17 @@ export class NestApplication
   }
 
   /**
-   * The security features share one request hook, registered with the
-   * adapter the first time one of them is enabled, i.e. at that position in
-   * the middleware chain.
+   * Both security features share one request hook, so that they run in a
+   * fixed order (headers, then the CSRF check) whichever is enabled first.
+   * It is registered with the adapter the first time either is enabled,
+   * i.e. at that position in the middleware chain.
    */
   private getSecurityHook(): HttpSecurityHook {
     if (!this.securityHook) {
       const hook = new HttpSecurityHook();
-      this.httpAdapter.registerSecurityHook!(request => hook.handle(request));
+      this.httpAdapter.registerSecurityHook!((request, response) =>
+        hook.handle(request, response),
+      );
       this.securityHook = hook;
     }
     return this.securityHook;

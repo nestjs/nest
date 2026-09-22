@@ -434,4 +434,122 @@ describe('NestApplication', () => {
       );
     });
   });
+  describe('useSecurityHeaders', () => {
+    const createApp = (adapter: any) => {
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      container.setHttpAdapter(adapter);
+      return new NestApplication(
+        container,
+        adapter,
+        applicationConfig,
+        new GraphInspector(container),
+        {},
+      );
+    };
+    const createAdapter = () => {
+      const adapter = new NoopHttpAdapter({});
+      adapter.getRequestMethod = (req: any) => req.method;
+      adapter.getRequestUrl = (req: any) => req.url;
+      return adapter;
+    };
+    const createResponse = () => {
+      const headers = new Map<string, string>([['X-Powered-By', 'Express']]);
+      return {
+        headers,
+        setHeader: (name: string, value: string) => headers.set(name, value),
+        removeHeader: (name: string) => headers.delete(name),
+      };
+    };
+
+    it('should register a security hook that writes the headers', () => {
+      const adapter = createAdapter();
+      const spy = vi
+        .spyOn(adapter, 'registerSecurityHook')
+        .mockReturnValue(undefined);
+      const app = createApp(adapter);
+
+      expect(app.useSecurityHeaders({ xFrameOptions: false })).toBe(app);
+      expect(spy).toHaveBeenCalledOnce();
+
+      const response = createResponse();
+      expect(spy.mock.calls[0][0]({ method: 'GET' }, response)).toBeUndefined();
+      expect(response.headers.has('Content-Security-Policy')).toBe(true);
+      expect(response.headers.has('X-Frame-Options')).toBe(false);
+      expect(response.headers.has('X-Powered-By')).toBe(false);
+    });
+
+    it.each([
+      ['useSecurityHeaders() first', ['headers', 'csrf']],
+      ['enableCsrfProtection() first', ['csrf', 'headers']],
+    ])(
+      'should share one hook with enableCsrfProtection(), writing the headers before a rejection (%s)',
+      (_title, order) => {
+        const adapter = createAdapter();
+        const spy = vi
+          .spyOn(adapter, 'registerSecurityHook')
+          .mockReturnValue(undefined);
+        const app = createApp(adapter);
+        for (const feature of order) {
+          feature === 'headers'
+            ? app.useSecurityHeaders()
+            : app.enableCsrfProtection();
+        }
+        expect(spy).toHaveBeenCalledOnce();
+
+        const response = createResponse();
+        const error = spy.mock.calls[0][0](
+          {
+            method: 'POST',
+            url: '/items',
+            headers: { 'sec-fetch-site': 'cross-site' },
+          },
+          response,
+        );
+        expect(error).toBeInstanceOf(Error);
+        expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+      },
+    );
+
+    it('should validate options when called, without consuming the call', () => {
+      const adapter = createAdapter();
+      const spy = vi
+        .spyOn(adapter, 'registerSecurityHook')
+        .mockReturnValue(undefined);
+      const app = createApp(adapter);
+
+      expect(() =>
+        app.useSecurityHeaders({
+          contentSecurityPolicy: { directives: { scriptSrc: "'self'; x" } },
+        }),
+      ).toThrow(/Content-Security-Policy/);
+      expect(spy).not.toHaveBeenCalled();
+      expect(() => app.useSecurityHeaders()).not.toThrow();
+      expect(spy).toHaveBeenCalledOnce();
+    });
+
+    it('should throw when called after init or twice', async () => {
+      const adapter = createAdapter();
+      vi.spyOn(adapter, 'registerSecurityHook').mockReturnValue(undefined);
+      const app = createApp(adapter);
+      app.useSecurityHeaders();
+      expect(() => app.useSecurityHeaders()).toThrow(/only be called once/);
+
+      const other = createApp(createAdapter());
+      await other.init();
+      expect(() => other.useSecurityHeaders()).toThrow(
+        /must be called before app.init\(\)/,
+      );
+    });
+
+    it('should throw when the adapter does not support it', () => {
+      const adapter = createAdapter();
+      (adapter as any).registerSecurityHook = undefined;
+      const app = createApp(adapter);
+
+      expect(() => app.useSecurityHeaders()).toThrow(
+        'Your HTTP Adapter does not support `.useSecurityHeaders()`.',
+      );
+    });
+  });
 });

@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  InternalServerErrorException,
+  MessageEvent,
+  Post,
+  Put,
+  Sse,
+  UseGuards,
+} from '@nestjs/common';
+import { Observable, of } from 'rxjs';
 import { DenyGuard } from './deny.guard.js';
 
 @Controller()
@@ -27,5 +39,22 @@ export class AppController {
   @UseGuards(DenyGuard)
   guarded() {
     return { guarded: true };
+  }
+
+  @Get('embeddable')
+  @Header('X-Frame-Options', 'DENY')
+  @Header('Cross-Origin-Resource-Policy', 'cross-origin')
+  embeddable() {
+    return { embeddable: true };
+  }
+
+  @Get('error')
+  error() {
+    throw new InternalServerErrorException();
+  }
+
+  @Sse('events')
+  events(): Observable<MessageEvent> {
+    return of({ data: 'hello' });
   }
 }
