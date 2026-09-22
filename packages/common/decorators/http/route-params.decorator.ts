@@ -1036,6 +1036,72 @@ export function HostParam(
 }
 
 /**
+ * Route handler parameter decorator. Extracts the cookies sent with the
+ * request (all of them, or a single one by name) and populates the decorated
+ * parameter with that value. May also apply pipes to the bound parameter.
+ *
+ * Works the same on every HTTP adapter, with no extra package: the `Cookie`
+ * header is parsed once per request. When a cookie middleware (such as
+ * `cookie-parser` or `@fastify/cookie`) already populated `req.cookies`, that
+ * object is used instead. Signatures are not verified here; read signed
+ * cookies with `@SignedCookies()`.
+ *
+ * For example:
+ * ```typescript
+ * findAll(@Cookies('theme') theme?: string)
+ * ```
+ *
+ * @param property name of a single cookie to extract
+ * @param pipes one or more pipes to apply to the bound parameter
+ *
+ * @see [Cookies](https://docs.nestjs.com/techniques/cookies)
+ *
+ * @publicApi
+ */
+export function Cookies(
+  property?: string | (Type<PipeTransform> | PipeTransform),
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator {
+  return createPipesRouteParamDecorator(RouteParamtypes.COOKIES)({
+    data: property,
+    pipes,
+  });
+}
+
+/**
+ * Route handler parameter decorator. Extracts the signed cookies sent with
+ * the request (all of them, or a single one by name), verified against the
+ * `cookies.secret` application option, and populates the decorated parameter
+ * with the unsigned value. A cookie whose signature does not verify resolves
+ * to `undefined` (and is left out when reading all signed cookies).
+ *
+ * Without a `cookies.secret`, falls back to `req.signedCookies` as populated
+ * by `cookie-parser`; when neither is available, resolving the parameter
+ * throws.
+ *
+ * For example:
+ * ```typescript
+ * profile(@SignedCookies('uid') userId?: string)
+ * ```
+ *
+ * @param property name of a single signed cookie to extract
+ * @param pipes one or more pipes to apply to the bound parameter
+ *
+ * @see [Cookies](https://docs.nestjs.com/techniques/cookies)
+ *
+ * @publicApi
+ */
+export function SignedCookies(
+  property?: string | (Type<PipeTransform> | PipeTransform),
+  ...pipes: (Type<PipeTransform> | PipeTransform)[]
+): ParameterDecorator {
+  return createPipesRouteParamDecorator(RouteParamtypes.SIGNED_COOKIES)({
+    data: property,
+    pipes,
+  });
+}
+
+/**
  * Route handler parameter decorator. Extracts the `Request`
  * object from the underlying platform and populates the decorated
  * parameter with the value of `Request`.

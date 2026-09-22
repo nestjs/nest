@@ -200,6 +200,72 @@ describe('ClientRedis', () => {
         expect(client['routingMap'].has(id)).toBe(false);
       });
     });
+
+    describe('when publishing throws', () => {
+      const responseChannel = `${pattern}.reply`;
+
+      beforeEach(() => {
+        client['subscriptionsCount'].clear();
+        client['routingMap'].clear();
+        publishSpy.mockImplementation(() => {
+          throw new Error('Send error');
+        });
+      });
+
+      it('should undo what the request had already set up', () => {
+        client['publish'](msg, vi.fn());
+
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+      });
+
+      it('should undo it as well when the subscription is acknowledged later', () => {
+        let acknowledge = () => {};
+        subscribeSpy.mockImplementation((_channel, done) => {
+          acknowledge = () => done();
+        });
+        const callback = vi.fn();
+
+        client['publish'](msg, callback);
+        acknowledge();
+
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+        expect(callback).toHaveBeenCalledWith({
+          err: expect.objectContaining({ message: 'Send error' }),
+        });
+      });
+
+      it('should leave the response channel subscribed', () => {
+        // A concurrent request on this pattern may still be waiting for its
+        // own subscribe reply, so the subscription is left to self-heal.
+        client['publish'](msg, vi.fn());
+
+        expect(unsubscribeSpy).not.toHaveBeenCalled();
+      });
+
+      it('should undo the bookkeeping once', () => {
+        const teardown = client['publish'](msg, vi.fn());
+
+        teardown();
+
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).toBe(0);
+        expect(unsubscribeSpy).not.toHaveBeenCalled();
+      });
+
+      it('should keep the count of the requests already using the channel', () => {
+        client['subscriptionsCount'].set(responseChannel, 1);
+
+        const teardown = client['publish'](msg, vi.fn());
+        teardown();
+
+        expect(subscribeSpy).not.toHaveBeenCalled();
+        expect(client['routingMap'].size).toBe(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).toBe(1);
+        expect(unsubscribeSpy).not.toHaveBeenCalled();
+      });
+    });
   });
   describe('createResponseCallback', () => {
     let callback: ReturnType<typeof vi.fn>, subscription; // : ReturnType<typeof client['createResponseCallback']>;

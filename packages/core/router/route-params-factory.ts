@@ -1,7 +1,16 @@
 import { IRouteParamsFactory } from './interfaces/route-params-factory.interface.js';
 import { RouteParamtypes } from '@nestjs/common/internal';
+import type { ApplicationConfig } from '../application-config.js';
+import {
+  getRequestCookie,
+  getRequestCookies,
+  getRequestSignedCookie,
+  getRequestSignedCookies,
+} from '../helpers/cookies/request-cookies.js';
 
 export class RouteParamsFactory implements IRouteParamsFactory {
+  constructor(private readonly config?: ApplicationConfig) {}
+
   public exchangeKeyForValue<
     TRequest extends Record<string, any> = any,
     TResponse = any,
@@ -40,6 +49,18 @@ export class RouteParamsFactory implements IRouteParamsFactory {
         return req.files;
       case RouteParamtypes.IP:
         return req.ip;
+      case RouteParamtypes.COOKIES:
+        return (
+          data ? getRequestCookie(req, data) : getRequestCookies(req)
+        ) as any;
+      case RouteParamtypes.SIGNED_COOKIES: {
+        const signer = this.config?.getCookieSigner();
+        return (
+          data
+            ? getRequestSignedCookie(req, data, signer)
+            : getRequestSignedCookies(req, signer)
+        ) as any;
+      }
       default:
         return null;
     }

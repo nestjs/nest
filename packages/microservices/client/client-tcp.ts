@@ -208,15 +208,19 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
     partialPacket: ReadPacket,
     callback: (packet: WritePacket) => any,
   ): () => void {
+    let cleanup = () => {};
     try {
       const packet = this.assignPacketId(partialPacket);
       const serializedPacket = this.serializer.serialize(packet);
 
       this.routingMap.set(packet.id, callback);
+      cleanup = () => this.routingMap.delete(packet.id);
+
       this.socket!.sendMessage(serializedPacket);
 
-      return () => this.routingMap.delete(packet.id);
+      return cleanup;
     } catch (err) {
+      cleanup();
       callback({ err });
       return () => {};
     }
