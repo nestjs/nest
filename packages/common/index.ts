@@ -21,6 +21,8 @@ export {
   ContentSecurityPolicyDirectiveValue,
   ContentSecurityPolicyOptions,
   ContextType,
+  CookieSerializeOptions,
+  CookiesOptions,
   CsrfProtectionOptions,
   DynamicModule,
   ExceptionFilter,
