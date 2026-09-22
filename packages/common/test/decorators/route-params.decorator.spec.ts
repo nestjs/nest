@@ -5,12 +5,14 @@ import {
 import {
   assignMetadata,
   Body,
+  Cookies,
   HostParam,
   Param,
   Query,
   RawBody,
   Res,
   Search,
+  SignedCookies,
   UploadedFile,
   UploadedFiles,
 } from '../../decorators/index.js';
@@ -1196,6 +1198,57 @@ describe('@UploadedFiles', () => {
       index: 0,
       data: undefined,
       pipes: [pipe],
+    });
+  });
+});
+
+describe('@Cookies', () => {
+  it('should enhance param with cookies metadata', () => {
+    class Test {
+      public test(@Cookies() all, @Cookies('theme', ParseIntPipe) theme) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.COOKIES}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [],
+    });
+    expect(metadata[`${RouteParamtypes.COOKIES}:1`]).toEqual({
+      index: 1,
+      data: 'theme',
+      pipes: [ParseIntPipe],
+    });
+  });
+
+  it('should not confuse a pipe passed as the first argument with a name', () => {
+    const pipe = new ParseIntPipe();
+    class Test {
+      public test(@Cookies(pipe) cookies) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.COOKIES}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [pipe],
+    });
+  });
+});
+
+describe('@SignedCookies', () => {
+  it('should enhance param with signed cookies metadata', () => {
+    class Test {
+      public test(@SignedCookies() all, @SignedCookies('uid') uid) {}
+    }
+    const metadata = Reflect.getMetadata(ROUTE_ARGS_METADATA, Test, 'test');
+    expect(metadata[`${RouteParamtypes.SIGNED_COOKIES}:0`]).toEqual({
+      index: 0,
+      data: undefined,
+      pipes: [],
+    });
+    expect(metadata[`${RouteParamtypes.SIGNED_COOKIES}:1`]).toEqual({
+      index: 1,
+      data: 'uid',
+      pipes: [],
     });
   });
 });

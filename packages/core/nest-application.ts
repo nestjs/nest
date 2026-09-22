@@ -1,5 +1,6 @@
 import {
   type CanActivate,
+  type CsrfProtectionOptions,
   type ExceptionFilter,
   type HttpServer,
   type INestApplication,
@@ -7,6 +8,7 @@ import {
   type NestHybridApplicationOptions,
   type NestInterceptor,
   type PipeTransform,
+  type SecurityHeadersOptions,
   type VersioningOptions,
   VersioningType,
   type WebSocketAdapter,
@@ -16,6 +18,7 @@ import { platform } from 'os';
 import { AbstractHttpAdapter } from './adapters/index.js';
 import { ApplicationConfig } from './application-config.js';
 import { MESSAGES } from './constants.js';
+import { CookieSigner } from './helpers/cookies/cookie-signer.js';
 import { optionalRequire } from './helpers/optional-require.js';
 import { makeSafeInstanceDecorator } from './helpers/safe-instance-decorator.js';
 import { NestContainer } from './injector/container.js';
@@ -41,6 +44,9 @@ import {
 import { ResolvedRoute } from './router/interfaces/resolved-route.interface.js';
 import { RouteConflictDetector } from './router/route-conflict-detector.js';
 import { RouteSpecificitySorter } from './router/route-specificity-sorter.js';
+import { CrossOriginProtection } from './security/cross-origin-protection.js';
+import { HttpSecurityHook } from './security/http-security-hook.js';
+import { resolveSecurityHeaders } from './security/security-headers.js';
 
 /**
  * @publicApi
@@ -63,6 +69,8 @@ export class NestApplication
   private httpServer: any;
   private isListening = false;
   private isWsModuleRegistered = false;
+  private readonly enabledSecurityFeatures = new Set<string>();
+  private securityHook?: HttpSecurityHook;
 
   constructor(
     container: NestContainer,
@@ -75,6 +83,7 @@ export class NestApplication
 
     this.config.setRouteConflictPolicy(appOptions.routeConflictPolicy);
     this.config.setRouteResolutionStrategy(appOptions.routeResolutionStrategy);
+    this.applyCookiesOptions(appOptions);
     this.selectContextModule();
     this.registerHttpServer();
     this.injector = new Injector({
@@ -185,6 +194,7 @@ export class NestApplication
       this.loadMicroservicesModule(),
     ]);
     this.applyOptions();
+    this.securityHook?.init(this.config);
     await this.httpAdapter?.init?.();
 
     const useBodyParser =
@@ -374,6 +384,22 @@ export class NestApplication
 
   public enableCors(options?: any): void {
     this.httpAdapter.enableCors(options);
+  }
+
+  public enableCsrfProtection(options?: CsrfProtectionOptions): this {
+    this.assertSecurityFeatureCanBeEnabled('enableCsrfProtection');
+    const protection = new CrossOriginProtection(this.httpAdapter, options);
+    this.getSecurityHook().setCrossOriginProtection(protection);
+    this.enabledSecurityFeatures.add('enableCsrfProtection');
+    return this;
+  }
+
+  public useSecurityHeaders(options?: SecurityHeadersOptions): this {
+    this.assertSecurityFeatureCanBeEnabled('useSecurityHeaders');
+    const headers = resolveSecurityHeaders(options);
+    this.getSecurityHook().setHeaders(headers);
+    this.enabledSecurityFeatures.add('useSecurityHeaders');
+    return this;
   }
 
   public enableVersioning(
@@ -578,6 +604,25 @@ export class NestApplication
     );
   }
 
+  /**
+   * Builds the cookie signer from the `cookies.secret` option and shares it
+   * between the route params factory (through the config), which verifies
+   * signed cookies, and the HTTP adapter, which signs them in `setCookie()`.
+   */
+  private applyCookiesOptions(appOptions: NestApplicationOptions) {
+    const secret = appOptions.cookies?.secret;
+    if (secret === undefined) {
+      return;
+    }
+    const signer = new CookieSigner(secret);
+    this.config.setCookieSigner(signer);
+    // Duck-typed: the adapter may be a custom `HttpServer` that does not
+    // extend `AbstractHttpAdapter`, or come from another copy of @nestjs/core.
+    (this.httpAdapter as Partial<AbstractHttpAdapter>).setCookieSigner?.(
+      signer,
+    );
+  }
+
   private host(): string | undefined {
     const address = this.httpServer.address();
     if (isString(address)) {
@@ -588,6 +633,46 @@ export class NestApplication
 
   private getProtocol(): 'http' | 'https' {
     return this.appOptions && this.appOptions.httpsOptions ? 'https' : 'http';
+  }
+
+  /**
+   * Request-level security features are installed as a framework middleware
+   * or hook. After `init()` it would land behind the routes (Express) or be
+   * rejected by the framework (Fastify), leaving routes silently unprotected,
+   * so they fail loudly instead. A second call is rejected as well, as it
+   * would silently replace the first configuration.
+   */
+  private assertSecurityFeatureCanBeEnabled(methodName: string) {
+    if (!this.httpAdapter.registerSecurityHook) {
+      throw new Error(
+        `Your HTTP Adapter does not support \`.${methodName}()\`.`,
+      );
+    }
+    if (this.isInitialized) {
+      throw new Error(
+        `app.${methodName}() must be called before app.init() / app.listen().`,
+      );
+    }
+    if (this.enabledSecurityFeatures.has(methodName)) {
+      throw new Error(`app.${methodName}() can only be called once.`);
+    }
+  }
+
+  /**
+   * Both security features share one request hook, so that they run in a
+   * fixed order (headers, then the CSRF check) whichever is enabled first.
+   * It is registered with the adapter the first time either is enabled,
+   * i.e. at that position in the middleware chain.
+   */
+  private getSecurityHook(): HttpSecurityHook {
+    if (!this.securityHook) {
+      const hook = new HttpSecurityHook();
+      this.httpAdapter.registerSecurityHook!((request, response) =>
+        hook.handle(request, response),
+      );
+      this.securityHook = hook;
+    }
+    return this.securityHook;
   }
 
   private async registerMiddleware(instance: any) {

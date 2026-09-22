@@ -391,6 +391,8 @@ export class RouterExecutionContext {
       type === RouteParamtypes.PARAM ||
       type === RouteParamtypes.FILE ||
       type === RouteParamtypes.FILES ||
+      type === RouteParamtypes.COOKIES ||
+      type === RouteParamtypes.SIGNED_COOKIES ||
       isString(type)
     );
   }

@@ -10,6 +10,7 @@ import type {
   WebSocketAdapter,
 } from '@nestjs/common';
 import type { GlobalPrefixOptions } from '@nestjs/common/internal';
+import type { CookieSigner } from './helpers/cookies/cookie-signer.js';
 import { InstanceWrapper } from './injector/instance-wrapper.js';
 import { ExcludeRouteMetadata } from './router/interfaces/exclude-route-metadata.interface.js';
 
@@ -24,6 +25,7 @@ export class ApplicationConfig {
   private versioningOptions: VersioningOptions;
   private routeConflictPolicy: RouteConflictPolicy | undefined;
   private routeResolutionStrategy: RouteResolutionStrategy | undefined;
+  private cookieSigner: CookieSigner | undefined;
   private readonly globalRequestPipes: InstanceWrapper<PipeTransform>[] = [];
   private readonly globalRequestFilters: InstanceWrapper<ExceptionFilter>[] =
     [];
@@ -178,5 +180,13 @@ export class ApplicationConfig {
 
   public getRouteResolutionStrategy(): RouteResolutionStrategy | undefined {
     return this.routeResolutionStrategy;
+  }
+
+  public setCookieSigner(signer: CookieSigner | undefined): void {
+    this.cookieSigner = signer;
+  }
+
+  public getCookieSigner(): CookieSigner | undefined {
+    return this.cookieSigner;
   }
 }

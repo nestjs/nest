@@ -300,18 +300,49 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
       let isPublished = false;
       let isTornDown = false;
 
+      const undoBookkeeping = () => {
+        isTornDown = true;
+        isPublished = false;
+        this.subscriptionsCount.set(
+          responseChannel,
+          (this.subscriptionsCount.get(responseChannel) || 1) - 1,
+        );
+        this.routingMap.delete(packet.id);
+      };
+
       const publishPacket = () => {
         if (isTornDown) {
           return;
         }
-        isPublished = true;
         subscriptionsCount = this.subscriptionsCount.get(responseChannel) || 0;
         this.subscriptionsCount.set(responseChannel, subscriptionsCount + 1);
         this.routingMap.set(packet.id, callback);
-        this.pubClient.publish(
-          this.getRequestPattern(pattern),
-          JSON.stringify(serializedPacket),
-        );
+        isPublished = true;
+
+        try {
+          this.pubClient.publish(
+            this.getRequestPattern(pattern),
+            JSON.stringify(serializedPacket),
+          );
+        } catch (err) {
+          // The broker can acknowledge the subscription later, so this runs
+          // outside the outer catch and has to undo its own work. Only the
+          // bookkeeping though: a concurrent request on this pattern may still
+          // be waiting for its own subscribe reply, so the broker subscription
+          // is left to self-heal, as in #17671.
+          undoBookkeeping();
+          callback({ err });
+        }
+      };
+
+      const cleanup = () => {
+        isTornDown = true;
+        if (!isPublished) {
+          return;
+        }
+        isPublished = false;
+        this.unsubscribeFromChannel(responseChannel);
+        this.routingMap.delete(packet.id);
       };
 
       if (subscriptionsCount <= 0) {
@@ -322,14 +353,7 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
         publishPacket();
       }
 
-      return () => {
-        isTornDown = true;
-        if (!isPublished) {
-          return;
-        }
-        this.unsubscribeFromChannel(responseChannel);
-        this.routingMap.delete(packet.id);
-      };
+      return cleanup;
     } catch (err) {
       callback({ err });
       return () => {};
