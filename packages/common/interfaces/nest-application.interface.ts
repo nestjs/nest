@@ -114,15 +114,11 @@ export interface INestApplication<
   /**
    * Registers a prefix for every HTTP route path.
    *
-   * @param {string | string[]} prefix The prefix for every HTTP route path (for example `/v1/api`).
-   *   Can be an array of prefixes to register multiple prefixes (for example `['api', 'v1']`).
+   * @param {string} prefix The prefix for every HTTP route path (for example `/v1/api`)
    * @param {GlobalPrefixOptions} options Global prefix options object
    * @returns {this}
    */
-  setGlobalPrefix(
-    prefix: string | string[],
-    options?: GlobalPrefixOptions,
-  ): this;
+  setGlobalPrefix(prefix: string, options?: GlobalPrefixOptions): this;
 
   /**
    * Register Ws Adapter which will be used inside Gateways.

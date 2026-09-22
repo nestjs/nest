@@ -57,27 +57,19 @@ export class RoutePathFactory {
     paths = this.appendToAllIfDefined(paths, metadata.methodPath);
 
     if (metadata.globalPrefix) {
-      const globalPrefixes = Array.isArray(metadata.globalPrefix)
-        ? metadata.globalPrefix
-        : [metadata.globalPrefix];
-
-      paths = flatten(
-        paths.map(path => {
-          if (
-            this.isExcludedFromGlobalPrefix(
-              path,
-              requestMethod,
-              versionOrVersions,
-              metadata.versioningOptions,
-            )
-          ) {
-            return [path];
-          }
-          return globalPrefixes.map(
-            prefix => stripEndSlash(prefix || '') + path,
-          );
-        }),
-      );
+      paths = paths.map(path => {
+        if (
+          this.isExcludedFromGlobalPrefix(
+            path,
+            requestMethod,
+            versionOrVersions,
+            metadata.versioningOptions,
+          )
+        ) {
+          return path;
+        }
+        return stripEndSlash(metadata.globalPrefix || '') + path;
+      });
     }
 
     return paths

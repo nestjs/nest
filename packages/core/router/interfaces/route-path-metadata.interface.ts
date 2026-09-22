@@ -14,9 +14,8 @@ export interface RoutePathMetadata {
 
   /**
    * Global route prefix specified with the "NestApplication#setGlobalPrefix" method.
-   * Can be a single prefix or an array of prefixes.
    */
-  globalPrefix?: string | string[];
+  globalPrefix?: string;
 
   /**
    * Module-level path registered through the "RouterModule".
