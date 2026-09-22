@@ -3,7 +3,11 @@ import type {
   RequestMethod,
   VersioningOptions,
 } from '@nestjs/common';
-import type { RequestHandler, VersionValue } from '@nestjs/common/internal';
+import type {
+  RequestHandler,
+  SecurityRequestHook,
+  VersionValue,
+} from '@nestjs/common/internal';
 import type { NestApplicationOptions } from '@nestjs/common';
 
 /**
@@ -18,7 +22,8 @@ import type { NestApplicationOptions } from '@nestjs/common';
  * - default implementations that delegate to the wrapped framework
  *   `instance` (`use()`, the HTTP-verb methods, `listen()`) or are inert
  *   (`init()`, `normalizePath()`, `mapException()`, `beforeClose()`, the
- *   `setOn*Hook()` setters);
+ *   `setOn*Hook()` setters), plus an Express-style, `use()`-based
+ *   `registerSecurityHook()`;
  * - storage for the native server (`httpServer`) and the framework instance
  *   (`instance`), with their accessors;
  * - the introspection hooks used by instrumentation tooling.
@@ -412,6 +417,22 @@ export abstract class AbstractHttpAdapter<
    */
   public mapException(error: unknown): unknown {
     return error;
+  }
+
+  /**
+   * Installs the request hook of the built-in HTTP security features as a
+   * global middleware (`use()`), which fits Express-like frameworks: the hook
+   * gets the request and the response, and a rejection is handed to
+   * `next(error)`, i.e. to the exception layer. Override when the framework
+   * offers an earlier request hook (the Fastify adapter uses `onRequest`).
+   *
+   * @see {@link HttpServer.registerSecurityHook}
+   */
+  public registerSecurityHook(hook: SecurityRequestHook<TRequest>): any {
+    return this.use((request: TRequest, response: any, next: Function) => {
+      const error = hook(request, response);
+      return error ? next(error) : next();
+    });
   }
 
   /**

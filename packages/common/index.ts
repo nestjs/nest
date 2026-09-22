@@ -19,6 +19,7 @@ export {
   CanActivate,
   ClassProvider,
   ContextType,
+  CsrfProtectionOptions,
   DynamicModule,
   ExceptionFilter,
   ExecutionContext,

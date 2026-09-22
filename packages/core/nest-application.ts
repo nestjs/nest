@@ -1,5 +1,6 @@
 import {
   type CanActivate,
+  type CsrfProtectionOptions,
   type ExceptionFilter,
   type HttpServer,
   type INestApplication,
@@ -41,6 +42,8 @@ import {
 import { ResolvedRoute } from './router/interfaces/resolved-route.interface.js';
 import { RouteConflictDetector } from './router/route-conflict-detector.js';
 import { RouteSpecificitySorter } from './router/route-specificity-sorter.js';
+import { CrossOriginProtection } from './security/cross-origin-protection.js';
+import { HttpSecurityHook } from './security/http-security-hook.js';
 
 /**
  * @publicApi
@@ -63,6 +66,8 @@ export class NestApplication
   private httpServer: any;
   private isListening = false;
   private isWsModuleRegistered = false;
+  private readonly enabledSecurityFeatures = new Set<string>();
+  private securityHook?: HttpSecurityHook;
 
   constructor(
     container: NestContainer,
@@ -185,6 +190,7 @@ export class NestApplication
       this.loadMicroservicesModule(),
     ]);
     this.applyOptions();
+    this.securityHook?.init(this.config);
     await this.httpAdapter?.init?.();
 
     const useBodyParser =
@@ -374,6 +380,14 @@ export class NestApplication
 
   public enableCors(options?: any): void {
     this.httpAdapter.enableCors(options);
+  }
+
+  public enableCsrfProtection(options?: CsrfProtectionOptions): this {
+    this.assertSecurityFeatureCanBeEnabled('enableCsrfProtection');
+    const protection = new CrossOriginProtection(this.httpAdapter, options);
+    this.getSecurityHook().setCrossOriginProtection(protection);
+    this.enabledSecurityFeatures.add('enableCsrfProtection');
+    return this;
   }
 
   public enableVersioning(
@@ -588,6 +602,43 @@ export class NestApplication
 
   private getProtocol(): 'http' | 'https' {
     return this.appOptions && this.appOptions.httpsOptions ? 'https' : 'http';
+  }
+
+  /**
+   * Request-level security features are installed as a framework middleware
+   * or hook. After `init()` it would land behind the routes (Express) or be
+   * rejected by the framework (Fastify), leaving routes silently unprotected,
+   * so they fail loudly instead. A second call is rejected as well, as it
+   * would silently replace the first configuration.
+   */
+  private assertSecurityFeatureCanBeEnabled(methodName: string) {
+    if (!this.httpAdapter.registerSecurityHook) {
+      throw new Error(
+        `Your HTTP Adapter does not support \`.${methodName}()\`.`,
+      );
+    }
+    if (this.isInitialized) {
+      throw new Error(
+        `app.${methodName}() must be called before app.init() / app.listen().`,
+      );
+    }
+    if (this.enabledSecurityFeatures.has(methodName)) {
+      throw new Error(`app.${methodName}() can only be called once.`);
+    }
+  }
+
+  /**
+   * The security features share one request hook, registered with the
+   * adapter the first time one of them is enabled, i.e. at that position in
+   * the middleware chain.
+   */
+  private getSecurityHook(): HttpSecurityHook {
+    if (!this.securityHook) {
+      const hook = new HttpSecurityHook();
+      this.httpAdapter.registerSecurityHook!(request => hook.handle(request));
+      this.securityHook = hook;
+    }
+    return this.securityHook;
   }
 
   private async registerMiddleware(instance: any) {

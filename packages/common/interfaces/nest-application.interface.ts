@@ -1,6 +1,7 @@
 import { CanActivate } from './features/can-activate.interface.js';
 import { NestInterceptor } from './features/nest-interceptor.interface.js';
 import { GlobalPrefixOptions } from './global-prefix-options.interface.js';
+import { CsrfProtectionOptions } from './http/csrf-protection-options.interface.js';
 import { HttpServer } from './http/http-server.interface.js';
 import {
   ExceptionFilter,
@@ -34,6 +35,26 @@ export interface INestApplication<
    * @returns {void}
    */
   enableCors(options?: any): void;
+
+  /**
+   * Enables protection against cross-site request forgery (CSRF) for every
+   * route, based on Fetch Metadata (`Sec-Fetch-Site`) with an `Origin`/`Host`
+   * fallback (the algorithm of Go's `net/http.CrossOriginProtection`).
+   *
+   * `GET`, `HEAD` and `OPTIONS` requests are always allowed. Other requests
+   * are rejected with a `ForbiddenException`, which goes through the
+   * exception filters, when the browser reports them as cross-origin.
+   * Requests carrying neither `Sec-Fetch-Site` nor `Origin` (non-browser
+   * clients) are allowed.
+   *
+   * Must be called once, before `app.init()` / `app.listen()`. The check runs
+   * before Nest middleware, body parsing, guards and handlers, but after
+   * middleware registered with `app.use()` before this call.
+   *
+   * @param {CsrfProtectionOptions} options
+   * @returns {this}
+   */
+  enableCsrfProtection(options?: CsrfProtectionOptions): this;
 
   /**
    * Enables Versioning for the application.

@@ -53,6 +53,23 @@ export type RequestHandler<TRequest = any, TResponse = any> = (
 ) => any;
 
 /**
+ * Request hook of the built-in HTTP security features, handed to
+ * {@link HttpServer.registerSecurityHook}. It receives the request and the
+ * Node.js `ServerResponse` (of which it only uses `setHeader()` and
+ * `removeHeader()`), and returns the error to hand to the exception layer
+ * when the request must be rejected.
+ *
+ * @publicApi
+ */
+export type SecurityRequestHook<TRequest = any> = (
+  request: TRequest,
+  response: {
+    setHeader(name: string, value: string): unknown;
+    removeHeader(name: string): unknown;
+  },
+) => Error | undefined;
+
+/**
  * Contract between the Nest core (`NestApplication`, the router, the
  * middleware module and the exception layer) and an HTTP platform such as
  * Express or Fastify.
@@ -509,6 +526,29 @@ export interface HttpServer<
    * for `cors: true`.
    */
   enableCors(options: any): any;
+  /**
+   * Installs the request hook of the built-in HTTP security features
+   * (`app.enableCsrfProtection()`). The core composes the features into this
+   * one hook and owns their logic; the adapter only decides where the hook
+   * runs.
+   *
+   * Called at most once, before `app.init()`, the first time one of the
+   * features is enabled. The hook must run for every request (matched routes,
+   * unmatched requests, routes outside the global prefix) before Nest
+   * middleware, guards and route handlers, and before body parsing when the
+   * platform allows it; registering a framework-level middleware or request
+   * hook at call time satisfies that on Express and Fastify. It receives the
+   * request and the Node.js `ServerResponse` (`reply.raw` on Fastify), on
+   * which it may set headers that route handlers, `@Header()` and exception
+   * filters can still override.
+   *
+   * When the hook returns an error, the adapter must not continue to the
+   * route: it hands the error to the exception layer installed through
+   * {@link HttpServer.setErrorHandler} (`next(error)` on Express,
+   * `done(error)` in a Fastify hook), so exception filters shape the
+   * response. Optional: when absent, enabling a feature throws.
+   */
+  registerSecurityHook?(hook: SecurityRequestHook<TRequest>): any;
   /**
    * Returns the native HTTP server created by
    * {@link HttpServer.initHttpServer}. It must behave like a Node.js
