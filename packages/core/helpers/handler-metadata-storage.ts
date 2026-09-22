@@ -14,6 +14,7 @@ export type HandlerResponseBasicFn = <TResult, TResponse>(
   result: TResult,
   res: TResponse,
   req?: any,
+  handlerObservable$?: Observable<unknown>,
 ) => any;
 
 export type HandleSseResponseFn = <
