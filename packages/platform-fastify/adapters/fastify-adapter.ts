@@ -48,6 +48,7 @@ import {
 import { pathToRegexp } from 'path-to-regexp';
 import middie from '@fastify/middie';
 import {
+  type SecurityRequestHook,
   type VersionValue,
   loadPackage,
   isNil,
@@ -646,6 +647,23 @@ export class FastifyAdapter<
       >[0],
       options,
     );
+  }
+
+  /**
+   * Runs the request hook of the built-in HTTP security features in an
+   * `onRequest` hook: before middie (Nest middleware), content-type parsing,
+   * guards and handlers, and also for unmatched routes. Headers set by the
+   * hook go to the Node.js response (`reply.raw`): Fastify merges them into
+   * every response it sends, errors and `404`s included, while
+   * `reply.header()` / `@Header()` values take precedence, and responses
+   * written to `reply.raw` directly (e.g. `@Sse()`) carry them too. A
+   * rejection goes to `done(error)`, i.e. to the Nest exception layer
+   * installed with `setErrorHandler()`.
+   */
+  public registerSecurityHook(hook: SecurityRequestHook<TRequest>) {
+    this.instance.addHook('onRequest', (request, reply, done) => {
+      done(hook(request as TRequest, reply.raw) as FastifyError | undefined);
+    });
   }
 
   public registerParserMiddleware(prefix?: string, rawBody?: boolean) {

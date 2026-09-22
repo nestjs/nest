@@ -44,7 +44,10 @@ export type {
   RpcArgumentsHost,
   WsArgumentsHost,
 } from './interfaces/features/arguments-host.interface.js';
-export type { RequestHandler } from './interfaces/http/http-server.interface.js';
+export type {
+  RequestHandler,
+  SecurityRequestHook,
+} from './interfaces/http/http-server.interface.js';
 export type {
   GetOrResolveOptions,
   SelectOptions,

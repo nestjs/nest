@@ -1,7 +1,9 @@
 import { CanActivate } from './features/can-activate.interface.js';
 import { NestInterceptor } from './features/nest-interceptor.interface.js';
 import { GlobalPrefixOptions } from './global-prefix-options.interface.js';
+import { CsrfProtectionOptions } from './http/csrf-protection-options.interface.js';
 import { HttpServer } from './http/http-server.interface.js';
+import { SecurityHeadersOptions } from './http/security-headers-options.interface.js';
 import {
   ExceptionFilter,
   INestMicroservice,
@@ -34,6 +36,49 @@ export interface INestApplication<
    * @returns {void}
    */
   enableCors(options?: any): void;
+
+  /**
+   * Enables protection against cross-site request forgery (CSRF) for every
+   * route, based on Fetch Metadata (`Sec-Fetch-Site`) with an `Origin`/`Host`
+   * fallback (the algorithm of Go's `net/http.CrossOriginProtection`).
+   *
+   * `GET`, `HEAD` and `OPTIONS` requests are always allowed. Other requests
+   * are rejected with a `ForbiddenException`, which goes through the
+   * exception filters, when the browser reports them as cross-origin.
+   * Requests carrying neither `Sec-Fetch-Site` nor `Origin` (non-browser
+   * clients) are allowed.
+   *
+   * Must be called once, before `app.init()` / `app.listen()`. The check runs
+   * before Nest middleware, body parsing, guards and handlers. It shares one
+   * request hook with `app.useSecurityHeaders()`, registered where the first
+   * of the two is called: middleware registered with `app.use()` before that
+   * runs before the check.
+   *
+   * @param {CsrfProtectionOptions} options
+   * @returns {this}
+   */
+  enableCsrfProtection(options?: CsrfProtectionOptions): this;
+
+  /**
+   * Sets security-related response headers on every response (routes,
+   * `404`s and errors, including rejections of `enableCsrfProtection()`):
+   * the same headers and defaults as helmet 8, including a default
+   * Content-Security-Policy, and removes `X-Powered-By`.
+   *
+   * Pass `false` for a header to leave it out, `true` for its default, or an
+   * object to configure it. Options are validated when this method is
+   * called. Route handlers and `@Header()` can still override a header per
+   * route.
+   *
+   * Must be called once, before `app.init()` / `app.listen()`. It shares one
+   * request hook with `app.enableCsrfProtection()`, registered where the
+   * first of the two is called: middleware registered with `app.use()` before
+   * that runs first, so responses it ends itself do not carry the headers.
+   *
+   * @param {SecurityHeadersOptions} options
+   * @returns {this}
+   */
+  useSecurityHeaders(options?: SecurityHeadersOptions): this;
 
   /**
    * Enables Versioning for the application.
