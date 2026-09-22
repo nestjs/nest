@@ -47,6 +47,38 @@ describe('ParseDatePipe', () => {
         const value = target.transform(undefined);
         expect(value).toBe(defaultValue);
       });
+
+      it('should return the default value without requiring "optional"', () => {
+        const defaultValue = new Date();
+        const target = new ParseDatePipe({ default: () => defaultValue });
+
+        expect(target.transform(undefined)).toBe(defaultValue);
+        expect(target.transform(null)).toBe(defaultValue);
+      });
+
+      it('should throw for an empty string even when a default value is provided', () => {
+        const defaultValue = new Date();
+        const target = new ParseDatePipe({ default: () => defaultValue });
+
+        expect(() => target.transform('')).toThrow(BadRequestException);
+      });
+
+      it('should throw for an empty string when both "optional" and a default value are provided', () => {
+        const defaultValue = new Date();
+        const target = new ParseDatePipe({
+          optional: true,
+          default: () => defaultValue,
+        });
+
+        expect(() => target.transform('')).toThrow(BadRequestException);
+      });
+
+      it('should not fall back to the default value for an invalid value', () => {
+        const defaultValue = new Date();
+        const target = new ParseDatePipe({ default: () => defaultValue });
+
+        expect(() => target.transform('123abc')).toThrow(BadRequestException);
+      });
     });
     describe('when validation fails', () => {
       it('should throw an error', () => {
@@ -55,6 +87,11 @@ describe('ParseDatePipe', () => {
     });
     describe('when empty value', () => {
       it('should throw an error', () => {
+        expect(() => target.transform('')).toThrow(BadRequestException);
+      });
+
+      it('should throw an error even when "optional" is true', () => {
+        const target = new ParseDatePipe({ optional: true });
         expect(() => target.transform('')).toThrow(BadRequestException);
       });
     });
