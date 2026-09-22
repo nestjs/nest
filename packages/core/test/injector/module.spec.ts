@@ -1,6 +1,7 @@
 import { Controller, Scope } from '@nestjs/common';
 import { Module as ModuleDecorator } from '../../../common/decorators/modules/module.decorator.js';
 import { Injectable } from '../../../common/index.js';
+import { InvalidProviderException } from '../../errors/exceptions/invalid-provider.exception.js';
 import { RuntimeException } from '../../errors/exceptions/runtime.exception.js';
 import { UnknownElementException } from '../../errors/exceptions/unknown-element.exception.js';
 import { UnknownExportException } from '../../errors/exceptions/unknown-export.exception.js';
@@ -74,8 +75,20 @@ describe('Module', () => {
     it('should call `addCustomProvider`', () => {
       const addCustomProviderSpy = vi.spyOn(moduleRef, 'addCustomProvider');
 
-      moduleRef.addInjectable({ provide: 'test' } as any, 'guard');
+      moduleRef.addInjectable(
+        { provide: 'test', useValue: 'test' } as any,
+        'guard',
+      );
       expect(addCustomProviderSpy).toHaveBeenCalled();
+    });
+
+    it('should throw when a custom injectable does not define a valid "use*" property', () => {
+      expect(() =>
+        moduleRef.addInjectable(
+          { provide: 'test', useClass: undefined } as any,
+          'guard',
+        ),
+      ).toThrow(InvalidProviderException);
     });
   });
 
@@ -156,6 +169,38 @@ describe('Module', () => {
 
     moduleRef.addCustomUseExisting(provider as any, new Map());
     expect(addCustomUseExisting).toHaveBeenCalled();
+  });
+
+  describe('when custom provider does not define a valid "useClass", "useValue", "useFactory" or "useExisting"', () => {
+    const expectInvalidProvider = (provider: object) => {
+      const addCustomProvider = () =>
+        moduleRef.addCustomProvider(provider as any, new Map());
+
+      expect(addCustomProvider).toThrow(InvalidProviderException);
+      expect(addCustomProvider).toThrow(
+        'The provider "test" in the TestModule "providers" array',
+      );
+    };
+
+    it('should throw when "useClass" is undefined', () => {
+      expectInvalidProvider({ provide: 'test', useClass: undefined });
+    });
+
+    it('should throw when "useClass" is null', () => {
+      expectInvalidProvider({ provide: 'test', useClass: null });
+    });
+
+    it('should throw when "useExisting" is undefined', () => {
+      expectInvalidProvider({ provide: 'test', useExisting: undefined });
+    });
+
+    it('should throw when "useFactory" is null', () => {
+      expectInvalidProvider({ provide: 'test', useFactory: null });
+    });
+
+    it('should throw when none of them is set', () => {
+      expectInvalidProvider({ provide: 'test' });
+    });
   });
 
   describe('addCustomClass', () => {
