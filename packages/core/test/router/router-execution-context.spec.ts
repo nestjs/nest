@@ -322,6 +322,10 @@ describe('RouterExecutionContext', () => {
         expect(contextCreator.isPipeable(RouteParamtypes.PARAM)).toBe(true);
         expect(contextCreator.isPipeable(RouteParamtypes.FILE)).toBe(true);
         expect(contextCreator.isPipeable(RouteParamtypes.FILES)).toBe(true);
+        expect(contextCreator.isPipeable(RouteParamtypes.COOKIES)).toBe(true);
+        expect(contextCreator.isPipeable(RouteParamtypes.SIGNED_COOKIES)).toBe(
+          true,
+        );
         expect(contextCreator.isPipeable('custom')).toBe(true);
       });
     });

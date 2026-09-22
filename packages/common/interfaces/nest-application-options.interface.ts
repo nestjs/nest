@@ -3,6 +3,7 @@ import {
   CorsOptionsDelegate,
 } from './external/cors-options.interface.js';
 import { HttpsOptions } from './external/https-options.interface.js';
+import { CookiesOptions } from './http/cookie-options.interface.js';
 import { NestApplicationContextOptions } from './nest-application-context-options.interface.js';
 import {
   RouteConflictPolicy,
@@ -54,4 +55,10 @@ export interface NestApplicationOptions extends NestApplicationContextOptions {
    * to `'declaration'`.
    */
   routeResolutionStrategy?: RouteResolutionStrategy;
+  /**
+   * Built-in cookie support. `secret` enables signing cookies with
+   * `setCookie(..., { signed: true })` and reading them with
+   * `@SignedCookies()`.
+   */
+  cookies?: CookiesOptions;
 }

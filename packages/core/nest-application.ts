@@ -18,6 +18,7 @@ import { platform } from 'os';
 import { AbstractHttpAdapter } from './adapters/index.js';
 import { ApplicationConfig } from './application-config.js';
 import { MESSAGES } from './constants.js';
+import { CookieSigner } from './helpers/cookies/cookie-signer.js';
 import { optionalRequire } from './helpers/optional-require.js';
 import { makeSafeInstanceDecorator } from './helpers/safe-instance-decorator.js';
 import { NestContainer } from './injector/container.js';
@@ -82,6 +83,7 @@ export class NestApplication
 
     this.config.setRouteConflictPolicy(appOptions.routeConflictPolicy);
     this.config.setRouteResolutionStrategy(appOptions.routeResolutionStrategy);
+    this.applyCookiesOptions(appOptions);
     this.selectContextModule();
     this.registerHttpServer();
     this.injector = new Injector({
@@ -599,6 +601,25 @@ export class NestApplication
     await tryLoadPackage(
       '@nestjs/microservices',
       () => import('@nestjs/microservices'),
+    );
+  }
+
+  /**
+   * Builds the cookie signer from the `cookies.secret` option and shares it
+   * between the route params factory (through the config), which verifies
+   * signed cookies, and the HTTP adapter, which signs them in `setCookie()`.
+   */
+  private applyCookiesOptions(appOptions: NestApplicationOptions) {
+    const secret = appOptions.cookies?.secret;
+    if (secret === undefined) {
+      return;
+    }
+    const signer = new CookieSigner(secret);
+    this.config.setCookieSigner(signer);
+    // Duck-typed: the adapter may be a custom `HttpServer` that does not
+    // extend `AbstractHttpAdapter`, or come from another copy of @nestjs/core.
+    (this.httpAdapter as Partial<AbstractHttpAdapter>).setCookieSigner?.(
+      signer,
     );
   }
 

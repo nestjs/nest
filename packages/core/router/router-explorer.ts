@@ -80,7 +80,7 @@ export class RouterExplorer {
   ) {
     this.pathsExplorer = new PathsExplorer(metadataScanner);
 
-    const routeParamsFactory = new RouteParamsFactory();
+    const routeParamsFactory = new RouteParamsFactory(config);
     const pipesContextCreator = new PipesContextCreator(container, config);
     const pipesConsumer = new PipesConsumer();
     const guardsContextCreator = new GuardsContextCreator(container, config);
