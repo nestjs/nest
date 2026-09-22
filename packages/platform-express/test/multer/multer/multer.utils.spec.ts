@@ -155,7 +155,7 @@ describe('transformException', () => {
       });
     });
     describe(`and has a 'field' property`, () => {
-      it('should return the field propery appended to the error message', () => {
+      it('should return the field property appended to the error message', () => {
         const err = {
           message: multerExceptions.LIMIT_UNEXPECTED_FILE,
           field: 'foo',
