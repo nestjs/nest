@@ -1005,6 +1005,75 @@ describe('Injector', () => {
       const paramtypes = Reflect.getMetadata(PARAMTYPES_METADATA, FixtureClass);
       expect(paramtypes).toEqual([FixtureDep1]);
     });
+
+    describe('when the class extends a class with @Optional() constructor parameters', () => {
+      class FixtureDep1 {}
+      class FixtureDep2 {}
+
+      @Injectable()
+      class ParentClass {
+        constructor(
+          private dep1: FixtureDep1,
+          @Optional() private dep2: FixtureDep2,
+        ) {}
+      }
+
+      it('should inherit the optional dep ids when the constructor is not redeclared', () => {
+        @Injectable()
+        class ChildClass extends ParentClass {}
+
+        @Injectable()
+        class GrandChildClass extends ChildClass {}
+
+        for (const metatype of [ChildClass, GrandChildClass]) {
+          const wrapper = new InstanceWrapper({ metatype });
+          const [dependencies, optionalDependenciesIds] =
+            injector.getClassDependencies(wrapper);
+
+          expect(dependencies).toEqual([FixtureDep1, FixtureDep2]);
+          expect(optionalDependenciesIds).toEqual([1]);
+        }
+      });
+
+      it('should use only its own optional dep ids when the constructor is redeclared', () => {
+        @Injectable()
+        class ChildClass extends ParentClass {
+          constructor(dep2: FixtureDep2, @Optional() dep1: FixtureDep1) {
+            super(dep1, dep2);
+          }
+        }
+
+        @Injectable()
+        class ChildWithoutOptionalClass extends ParentClass {
+          constructor(dep1: FixtureDep1, dep2: FixtureDep2) {
+            super(dep1, dep2);
+          }
+        }
+
+        @Injectable()
+        class ChildWithEmptyConstructorClass extends ParentClass {
+          constructor() {
+            super(new FixtureDep1(), new FixtureDep2());
+          }
+        }
+
+        expect(
+          injector.getClassDependencies(
+            new InstanceWrapper({ metatype: ChildClass }),
+          ),
+        ).toEqual([[FixtureDep2, FixtureDep1], [1]]);
+        expect(
+          injector.getClassDependencies(
+            new InstanceWrapper({ metatype: ChildWithoutOptionalClass }),
+          ),
+        ).toEqual([[FixtureDep1, FixtureDep2], []]);
+        expect(
+          injector.getClassDependencies(
+            new InstanceWrapper({ metatype: ChildWithEmptyConstructorClass }),
+          ),
+        ).toEqual([[], []]);
+      });
+    });
   });
 
   describe('getFactoryProviderDependencies', () => {

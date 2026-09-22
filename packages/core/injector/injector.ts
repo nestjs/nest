@@ -497,7 +497,32 @@ export class Injector {
   }
 
   public reflectOptionalParams(type: Type<unknown> | Function): any[] {
-    return Reflect.getOwnMetadata(OPTIONAL_DEPS_METADATA, type) || [];
+    const ctorOwner = this.getConstructorOwner(type);
+    return Reflect.getOwnMetadata(OPTIONAL_DEPS_METADATA, ctorOwner) || [];
+  }
+
+  /**
+   * Returns the class in the prototype chain that declares the constructor
+   * `type` is instantiated with. A subclass without its own constructor
+   * inherits both the parent's parameter types and its `@Optional()` flags,
+   * while a subclass that redeclares the constructor must not inherit the
+   * parent's flags, as its parameters are unrelated to the parent's.
+   */
+  private getConstructorOwner(
+    type: Type<unknown> | Function,
+  ): Type<unknown> | Function {
+    let current: Type<unknown> | Function | null = type;
+    while (isFunction(current) && current !== Function.prototype) {
+      if (
+        Reflect.hasOwnMetadata(PARAMTYPES_METADATA, current) ||
+        Reflect.hasOwnMetadata(OPTIONAL_DEPS_METADATA, current) ||
+        Reflect.hasOwnMetadata(SELF_DECLARED_DEPS_METADATA, current)
+      ) {
+        return current;
+      }
+      current = Object.getPrototypeOf(current);
+    }
+    return type;
   }
 
   public reflectSelfParams(type: Type<unknown> | Function): any[] {
