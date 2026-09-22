@@ -54,6 +54,7 @@ describe('RouterExplorer', () => {
   class ClassWithMissingControllerDecorator {}
 
   let routerBuilder: RouterExplorer;
+  let container: NestContainer;
   let injector: Injector;
   let exceptionsFilter: RouterExceptionFilters;
   let applicationConfig: ApplicationConfig;
@@ -61,7 +62,7 @@ describe('RouterExplorer', () => {
   let graphInspector: GraphInspector;
 
   beforeEach(() => {
-    const container = new NestContainer();
+    container = new NestContainer();
 
     applicationConfig = new ApplicationConfig();
     injector = new Injector();
@@ -150,6 +151,41 @@ describe('RouterExplorer', () => {
         {},
       );
       expect(bindStub).toHaveBeenCalledTimes(paths.length);
+    });
+  });
+
+  describe('applyCallbackToRouter', () => {
+    it('should register a route handler named after its controller and method', () => {
+      const get = vi.fn();
+      const router = { get };
+      const instance = new TestRoute();
+      container.setHttpAdapter({});
+      vi.spyOn(routerBuilder as any, 'createCallbackProxy').mockReturnValue(
+        () => {},
+      );
+      const instanceWrapper = {
+        id: 'test-route',
+        instance,
+        name: TestRoute.name,
+        isDependencyTreeStatic: () => true,
+      } as any;
+
+      (routerBuilder as any).applyCallbackToRouter(
+        router,
+        {
+          path: ['test'],
+          requestMethod: RequestMethod.GET,
+          targetCallback: instance.getTest,
+          methodName: 'getTest',
+        },
+        instanceWrapper,
+        '',
+        { ctrlPath: 'global' },
+        '',
+      );
+
+      expect(get).toHaveBeenCalledOnce();
+      expect(get.mock.calls[0][1].name).toBe('TestRoute.getTest');
     });
   });
 
