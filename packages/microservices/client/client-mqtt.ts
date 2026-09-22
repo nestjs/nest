@@ -78,10 +78,18 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   public handleClose() {
     if (this.routingMap.size > 0) {
       const err = new Error('Connection closed');
-      for (const callback of this.routingMap.values()) {
-        callback({ err });
-      }
+      const callbacks = [...this.routingMap.values()];
       this.routingMap.clear();
+
+      for (const callback of callbacks) {
+        try {
+          callback({ err });
+        } catch (callbackErr) {
+          // A failing callback must not keep the remaining requests pending
+          // nor prevent the connection from being closed.
+          this.logger.error(callbackErr);
+        }
+      }
     }
   }
 

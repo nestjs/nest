@@ -185,6 +185,9 @@ describe('ClientTCP', () => {
       untypedClient.routingMap = routingMap;
       client.close();
     });
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
     it('should end() socket', () => {
       expect(socket.end).toHaveBeenCalled();
     });
@@ -198,6 +201,34 @@ describe('ClientTCP', () => {
       expect(callback).toHaveBeenCalledWith({
         err: expect.objectContaining({ message: 'Connection closed' }),
       });
+    });
+    it('should fail every pending request when a callback throws', () => {
+      const loggerErrorSpy = vi
+        .spyOn(untypedClient.logger, 'error')
+        .mockImplementation(() => {});
+      const throwingCallback = vi.fn().mockImplementation(() => {
+        throw new Error('Callback error');
+      });
+      let pendingDuringFlush: number | undefined;
+      const otherCallback = vi.fn(() => {
+        pendingDuringFlush = untypedClient.routingMap.size;
+      });
+      untypedClient.routingMap = new Map<string, Function>([
+        ['some id', throwingCallback],
+        ['some other id', otherCallback],
+      ]);
+
+      client.close();
+
+      expect(throwingCallback).toHaveBeenCalledTimes(1);
+      expect(otherCallback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Callback error' }),
+      );
+      expect(pendingDuringFlush).toBe(0);
+      expect(untypedClient.routingMap.size).toBe(0);
     });
   });
   describe('registerErrorListener', () => {

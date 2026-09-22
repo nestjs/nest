@@ -327,6 +327,9 @@ describe('ClientRedis', () => {
       untypedClient.subClient = sub;
       untypedClient.routingMap = routingMap;
     });
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
     it('should close "pub" when it is not null', async () => {
       await client.close();
       expect(pubClose).toHaveBeenCalled();
@@ -354,6 +357,34 @@ describe('ClientRedis', () => {
       expect(callback).toHaveBeenCalledWith({
         err: expect.objectContaining({ message: 'Connection closed' }),
       });
+    });
+    it('should fail every pending request when a callback throws', async () => {
+      const loggerErrorSpy = vi
+        .spyOn(untypedClient.logger, 'error')
+        .mockImplementation(() => {});
+      const throwingCallback = vi.fn().mockImplementation(() => {
+        throw new Error('Callback error');
+      });
+      let pendingDuringFlush: number | undefined;
+      const otherCallback = vi.fn(() => {
+        pendingDuringFlush = untypedClient.routingMap.size;
+      });
+      routingMap.set('throwing id', throwingCallback);
+      routingMap.set('other id', otherCallback);
+
+      await client.close();
+
+      expect(throwingCallback).toHaveBeenCalledTimes(1);
+      expect(otherCallback).toHaveBeenCalledWith({
+        err: expect.objectContaining({ message: 'Connection closed' }),
+      });
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Callback error' }),
+      );
+      expect(pendingDuringFlush).toBe(0);
+      expect(pubClose).toHaveBeenCalled();
+      expect(subClose).toHaveBeenCalled();
+      expect(untypedClient.routingMap.size).toBe(0);
     });
     it('should have isManuallyClosed set to true when "end" event is handled during close', async () => {
       let endHandler: Function | undefined;
