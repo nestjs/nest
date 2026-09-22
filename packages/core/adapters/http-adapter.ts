@@ -1,4 +1,5 @@
 import type {
+  CookieSerializeOptions,
   HttpServer,
   RequestMethod,
   VersioningOptions,
@@ -9,6 +10,8 @@ import type {
   VersionValue,
 } from '@nestjs/common/internal';
 import type { NestApplicationOptions } from '@nestjs/common';
+import type { CookieSigner } from '../helpers/cookies/cookie-signer.js';
+import { serializeCookie } from '../helpers/cookies/serialize-cookie.js';
 
 /**
  * Base class for HTTP platform adapters (see `ExpressAdapter` and
@@ -26,6 +29,8 @@ import type { NestApplicationOptions } from '@nestjs/common';
  *   `registerSecurityHook()`;
  * - storage for the native server (`httpServer`) and the framework instance
  *   (`instance`), with their accessors;
+ * - `setCookie()` and `clearCookie()`, implemented once on top of
+ *   `appendHeader()`, so they behave the same on every platform;
  * - the introspection hooks used by instrumentation tooling.
  *
  * Every remaining {@link HttpServer} member is declared abstract here, even
@@ -66,6 +71,11 @@ export abstract class AbstractHttpAdapter<
    */
   protected onRouteTriggered:
     ((requestMethod: RequestMethod, path: string) => void) | undefined;
+  /**
+   * Signer built from the `cookies.secret` application option, used by
+   * {@link AbstractHttpAdapter.setCookie} for `signed` cookies.
+   */
+  protected cookieSigner: CookieSigner | undefined;
 
   /**
    * @param instance The framework application instance to delegate to (e.g.
@@ -433,6 +443,82 @@ export abstract class AbstractHttpAdapter<
       const error = hook(request, response);
       return error ? next(error) : next();
     });
+  }
+
+  /**
+   * Appends a `Set-Cookie` header through {@link AbstractHttpAdapter.appendHeader},
+   * so every cookie set during a request is sent, on every platform. The
+   * value is percent-encoded, `path` defaults to `/` and `maxAge` is in
+   * seconds (not milliseconds, unlike Express' `res.cookie()`); with
+   * `signed: true`, the value is signed with the first `cookies.secret`.
+   *
+   * Throws a `TypeError` when the name, the value or an attribute is not
+   * valid per RFC 6265 (which rules out header injection through `;`, CR or
+   * LF) or when `sameSite: 'none'` or `partitioned` is set without `secure`,
+   * and an `Error` when `signed` is set but no secret is configured.
+   *
+   * @see {@link HttpServer.setCookie}
+   */
+  public setCookie(
+    response: TResponse,
+    name: string,
+    value: string,
+    options: CookieSerializeOptions = {},
+  ) {
+    let cookieValue = value;
+    if (options.signed) {
+      if (!this.cookieSigner) {
+        throw new Error(
+          `Cannot sign cookie "${name}": no cookie secret is configured. ` +
+            'Pass "cookies: { secret }" to NestFactory.create().',
+        );
+      }
+      if (typeof value !== 'string') {
+        throw new TypeError(
+          `Invalid value for cookie "${name}": expected a string, received ${typeof value}`,
+        );
+      }
+      cookieValue = this.cookieSigner.sign(value);
+    }
+    return this.appendHeader(
+      response,
+      'Set-Cookie',
+      serializeCookie(name, cookieValue, options),
+    );
+  }
+
+  /**
+   * Appends a `Set-Cookie` header that expires the cookie immediately.
+   * `path` and `domain` must match the ones the cookie was set with; `maxAge`,
+   * `expires` and `signed` are ignored.
+   *
+   * @see {@link HttpServer.clearCookie}
+   */
+  public clearCookie(
+    response: TResponse,
+    name: string,
+    options: CookieSerializeOptions = {},
+  ) {
+    return this.appendHeader(
+      response,
+      'Set-Cookie',
+      serializeCookie(name, '', {
+        ...options,
+        maxAge: 0,
+        expires: new Date(0),
+      }),
+    );
+  }
+
+  /**
+   * Sets the signer used for `signed` cookies. Called by `NestApplication`
+   * with the signer it builds from the `cookies.secret` application option;
+   * configure that option instead of calling this method.
+   *
+   * @internal
+   */
+  public setCookieSigner(signer: CookieSigner | undefined) {
+    this.cookieSigner = signer;
   }
 
   /**

@@ -3,6 +3,7 @@ import { loadPackage } from '@nestjs/common/utils/load-package.util.js';
 import * as microservicesPackage from '@nestjs/microservices';
 import { MicroserviceOptions } from '@nestjs/microservices';
 import { ApplicationConfig } from '../application-config.js';
+import { CookieSigner } from '../helpers/cookies/cookie-signer.js';
 import { NestContainer } from '../injector/container.js';
 import { GraphInspector } from '../inspector/graph-inspector.js';
 import { NestApplication } from '../nest-application.js';
@@ -19,6 +20,58 @@ describe('NestApplication', () => {
       'NestApplication tests',
       () => microservicesPackage,
     );
+  });
+
+  describe('cookies option', () => {
+    const createApp = (cookies?: { secret?: string | string[] }) => {
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const httpAdapter = new NoopHttpAdapter({});
+      new NestApplication(
+        container,
+        httpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        { cookies },
+      );
+      return { applicationConfig, httpAdapter };
+    };
+
+    it('should share one signer between the config and the http adapter', () => {
+      const { applicationConfig, httpAdapter } = createApp({
+        secret: ['new', 'old'],
+      });
+      const signer = applicationConfig.getCookieSigner();
+      expect(signer).toBeInstanceOf(CookieSigner);
+      expect((httpAdapter as any).cookieSigner).toBe(signer);
+    });
+
+    it('should not create a signer without a secret', () => {
+      expect(createApp().applicationConfig.getCookieSigner()).toBeUndefined();
+      expect(createApp({}).applicationConfig.getCookieSigner()).toBeUndefined();
+    });
+
+    it('should reject an empty secret', () => {
+      expect(() => createApp({ secret: '' })).toThrow(TypeError);
+      expect(() => createApp({ secret: [] })).toThrow(TypeError);
+      expect(() => createApp({ secret: ['new', ''] })).toThrow(TypeError);
+    });
+
+    it('should not require the http adapter to accept a signer', () => {
+      const applicationConfig = new ApplicationConfig();
+      const container = new NestContainer(applicationConfig);
+      const httpAdapter = Object.assign(new NoopHttpAdapter({}), {
+        setCookieSigner: undefined,
+      });
+      new NestApplication(
+        container,
+        httpAdapter,
+        applicationConfig,
+        new GraphInspector(container),
+        { cookies: { secret: 'secret' } },
+      );
+      expect(applicationConfig.getCookieSigner()).toBeInstanceOf(CookieSigner);
+    });
   });
 
   describe('Hybrid Application', () => {

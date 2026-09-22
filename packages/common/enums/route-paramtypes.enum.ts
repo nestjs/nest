@@ -13,4 +13,6 @@ export enum RouteParamtypes {
   IP = 11,
   RAW_BODY = 12,
   ACK = 13,
+  COOKIES = 14,
+  SIGNED_COOKIES = 15,
 }

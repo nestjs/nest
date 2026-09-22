@@ -4,6 +4,7 @@ import {
   VersionValue,
   VersioningOptions,
 } from '../version-options.interface.js';
+import { CookieSerializeOptions } from './cookie-options.interface.js';
 
 /**
  * Shape of the error-layer callback that Nest hands to
@@ -399,6 +400,29 @@ export interface HttpServer<
    * right after {@link HttpServer.status}. Not awaited.
    */
   setHeader(response: any, name: string, value: string): any;
+  /**
+   * Appends a `Set-Cookie` header to the response, so several cookies set
+   * during the same request accumulate. Not called by the core;
+   * `AbstractHttpAdapter` implements it on top of its `appendHeader()`.
+   * Throws a `TypeError` when the name, the value or an attribute is not
+   * valid per RFC 6265. Note that `options.maxAge` is in seconds.
+   */
+  setCookie?(
+    response: TResponse,
+    name: string,
+    value: string,
+    options?: CookieSerializeOptions,
+  ): any;
+  /**
+   * Appends a `Set-Cookie` header that expires the cookie. `path` and
+   * `domain` must match the ones the cookie was set with. Not called by the
+   * core; `AbstractHttpAdapter` implements it.
+   */
+  clearCookie?(
+    response: TResponse,
+    name: string,
+    options?: CookieSerializeOptions,
+  ): any;
   /**
    * Installs the global exception layer: an {@link ErrorHandler} that
    * forwards errors to the registered exception filters. The core calls it
