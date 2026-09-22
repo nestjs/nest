@@ -762,8 +762,8 @@ export class ServerGrpc extends Server<never, never> {
 
       // Replay buffered values to the new subscriber
       setImmediate(() => {
-        const subcription = replayBuffer!.subscribe(subject);
-        subcription.unsubscribe();
+        const subscription = replayBuffer!.subscribe(subject);
+        subscription.unsubscribe();
         replayBuffer = null;
       });
     }
