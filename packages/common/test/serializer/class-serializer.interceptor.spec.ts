@@ -53,6 +53,27 @@ describe('ClassSerializerInterceptor', () => {
     });
   });
 
+  describe('multiple instances', () => {
+    it('should keep using its own transformerPackage when another interceptor is created', () => {
+      interceptor = new ClassSerializerInterceptor(mockReflector, {
+        transformerPackage: mockTransformerPackage,
+      });
+      new ClassSerializerInterceptor(mockReflector, {
+        transformerPackage: {
+          classToPlain: vi.fn(),
+          plainToInstance: vi.fn(),
+        },
+      });
+
+      const input = { id: 1 };
+      interceptor.transformToPlain(input, {});
+      expect(mockTransformerPackage.classToPlain).toHaveBeenCalledWith(
+        input,
+        {},
+      );
+    });
+  });
+
   describe('intercept', () => {
     let mockExecutionContext: ExecutionContext;
     let mockCallHandler: CallHandler;

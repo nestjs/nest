@@ -53,9 +53,6 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   errorFormat?: ValidationErrorFormat;
 }
 
-let classValidator: any = {} as any;
-let classTransformer: any = {} as any;
-
 /**
  * @see [Validation](https://docs.nestjs.com/techniques/validation)
  *
@@ -72,6 +69,8 @@ export class ValidationPipe implements PipeTransform {
   protected exceptionFactory: (errors: ValidationError[]) => any;
   protected validateCustomDecorators: boolean;
   protected errorFormat: ValidationErrorFormat;
+  protected classValidator: any;
+  protected classTransformer: any;
 
   constructor(@Optional() options?: ValidationPipeOptions) {
     options = options || {};
@@ -101,8 +100,8 @@ export class ValidationPipe implements PipeTransform {
     this.errorFormat = errorFormat || 'list';
     this.exceptionFactory = exceptionFactory || this.createExceptionFactory();
 
-    classValidator = this.loadValidator(validatorPackage);
-    classTransformer = this.loadTransformer(transformerPackage);
+    this.classValidator = this.loadValidator(validatorPackage);
+    this.classTransformer = this.loadTransformer(transformerPackage);
   }
 
   protected loadValidator(
@@ -143,8 +142,8 @@ export class ValidationPipe implements PipeTransform {
         : value;
     }
 
-    classValidator = (await classValidator) as ValidatorPackage;
-    classTransformer = (await classTransformer) as TransformerPackage;
+    this.classValidator = (await this.classValidator) as ValidatorPackage;
+    this.classTransformer = (await this.classTransformer) as TransformerPackage;
 
     const originalValue = value;
     value = this.toEmptyIfNil(value, metatype);
@@ -152,7 +151,7 @@ export class ValidationPipe implements PipeTransform {
     const isNil = value !== originalValue;
     const isPrimitive = this.isPrimitive(value);
     this.stripProtoKeys(value);
-    let entity = classTransformer.plainToInstance(
+    let entity = this.classTransformer.plainToInstance(
       metatype,
       value,
       this.transformOptions,
@@ -199,7 +198,7 @@ export class ValidationPipe implements PipeTransform {
     const shouldTransformToPlain =
       Object.keys(this.validatorOptions).length > 1;
     return shouldTransformToPlain
-      ? classTransformer.classToPlain(entity, this.transformOptions)
+      ? this.classTransformer.classToPlain(entity, this.transformOptions)
       : value;
   }
 
@@ -302,7 +301,7 @@ export class ValidationPipe implements PipeTransform {
     object: object,
     validatorOptions?: ValidatorOptions,
   ): Promise<ValidationError[]> | ValidationError[] {
-    return classValidator.validate(object, validatorOptions);
+    return this.classValidator.validate(object, validatorOptions);
   }
 
   protected flattenValidationErrors(

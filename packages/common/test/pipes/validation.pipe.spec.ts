@@ -728,6 +728,45 @@ describe('ValidationPipe', () => {
     });
   });
 
+  describe('multiple instances', () => {
+    it('should keep using its own validatorPackage when another pipe is created', async () => {
+      const validate = vi.fn().mockResolvedValue([]);
+      target = new ValidationPipe({ validatorPackage: { validate } });
+      new ValidationPipe();
+
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+      await target.transform(testObj, metadata);
+      expect(validate).toHaveBeenCalledOnce();
+    });
+
+    it('should not be affected by the validatorPackage of another pipe', async () => {
+      target = new ValidationPipe();
+      new ValidationPipe({
+        validatorPackage: {
+          validate: () => [
+            { property: 'prop1', constraints: { custom: 'from other pipe' } },
+          ],
+        },
+      });
+
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+      expect(await target.transform(testObj, metadata)).toBe(testObj);
+    });
+
+    it('should keep using its own transformerPackage when another pipe is created', async () => {
+      const classTransformer = require('class-transformer');
+      const plainToInstance = vi.fn(classTransformer.plainToInstance);
+      target = new ValidationPipe({
+        transformerPackage: { ...classTransformer, plainToInstance },
+      });
+      new ValidationPipe();
+
+      const testObj = { prop1: 'value1', prop2: 'value2' };
+      await target.transform(testObj, metadata);
+      expect(plainToInstance).toHaveBeenCalledOnce();
+    });
+  });
+
   describe('subclass compatibility', () => {
     it('should allow subclasses to call super.stripProtoKeys', () => {
       class CustomPipe extends ValidationPipe {

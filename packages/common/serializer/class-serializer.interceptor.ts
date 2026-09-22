@@ -14,8 +14,6 @@ import { isObject } from '../utils/shared.utils.js';
 import { CLASS_SERIALIZER_OPTIONS } from './class-serializer.constants.js';
 import { ClassSerializerContextOptions } from './class-serializer.interfaces.js';
 
-let classTransformer: any = {} as any;
-
 export interface PlainLiteralObject {
   [key: string]: any;
 }
@@ -37,12 +35,14 @@ export interface ClassSerializerInterceptorOptions extends ClassTransformOptions
  */
 @Injectable()
 export class ClassSerializerInterceptor implements NestInterceptor {
+  protected classTransformer: any;
+
   constructor(
     @Inject(REFLECTOR) protected readonly reflector: any,
     @Optional()
     protected readonly defaultOptions: ClassSerializerInterceptorOptions = {},
   ) {
-    classTransformer =
+    this.classTransformer =
       defaultOptions?.transformerPackage ??
       loadPackage(
         'class-transformer',
@@ -55,7 +55,7 @@ export class ClassSerializerInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Promise<Observable<any>> {
-    classTransformer = (await classTransformer) as TransformerPackage;
+    this.classTransformer = (await this.classTransformer) as TransformerPackage;
 
     const contextOptions = this.getContextOptions(context);
     const options = {
@@ -95,17 +95,17 @@ export class ClassSerializerInterceptor implements NestInterceptor {
       return plainOrClass;
     }
     if (!options.type) {
-      return classTransformer.classToPlain(plainOrClass, options);
+      return this.classTransformer.classToPlain(plainOrClass, options);
     }
     if (plainOrClass instanceof options.type) {
-      return classTransformer.classToPlain(plainOrClass, options);
+      return this.classTransformer.classToPlain(plainOrClass, options);
     }
-    const instance = classTransformer.plainToInstance(
+    const instance = this.classTransformer.plainToInstance(
       options.type,
       plainOrClass,
       options,
     );
-    return classTransformer.classToPlain(instance, options);
+    return this.classTransformer.classToPlain(instance, options);
   }
 
   protected getContextOptions(
