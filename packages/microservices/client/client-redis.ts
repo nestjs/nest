@@ -335,10 +335,21 @@ export class ClientRedis extends ClientProxy<RedisEvents, RedisStatus> {
           return;
         }
         this.routingMap.set(packet.id, callback);
-        this.pubClient.publish(
-          this.getRequestPattern(pattern),
-          JSON.stringify(serializedPacket),
-        );
+
+        try {
+          this.pubClient.publish(
+            this.getRequestPattern(pattern),
+            JSON.stringify(serializedPacket),
+          );
+        } catch (err) {
+          // The broker can acknowledge the subscription later, so this runs
+          // outside the outer catch and has to undo its own work. Only the
+          // bookkeeping though: a concurrent request on this pattern may still
+          // be waiting for its own subscribe reply, so the broker subscription
+          // is left to self-heal, as in #17671.
+          undoBookkeeping();
+          callback({ err });
+        }
       };
 
       // Requests are published on another connection than the one that

@@ -85,6 +85,16 @@ describe('ClientTCP', () => {
         expect(callback.called).to.be.true;
         expect(callback.getCall(0).args[0].err).to.be.instanceof(Error);
       });
+
+      it('should not leave the request pending', () => {
+        socket.sendMessage = () => {
+          throw new Error('Send error');
+        };
+
+        client['publish'](msg, sinon.spy());
+
+        expect(client['routingMap'].size).to.equal(0);
+      });
     });
   });
   describe('handleResponse', () => {

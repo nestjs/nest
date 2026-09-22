@@ -272,6 +272,69 @@ describe('ClientMqtt', () => {
         );
       });
     });
+
+    describe('when publishing throws', () => {
+      const responseChannel = `${pattern}/reply`;
+
+      beforeEach(() => {
+        client['subscriptionsCount'].clear();
+        client['routingMap'].clear();
+        mqttClient.publish = sinon.stub().throws(new Error('Send error'));
+      });
+
+      it('should undo what the request had already set up', () => {
+        client['publish'](msg, sinon.spy());
+
+        expect(client['routingMap'].size).to.equal(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).to.equal(0);
+      });
+
+      it('should undo it as well when the subscription is acknowledged later', () => {
+        let acknowledge = () => {};
+        mqttClient.subscribe = sinon.spy((_channel, done) => {
+          acknowledge = () => done();
+        });
+        const callback = sinon.spy();
+
+        client['publish'](msg, callback);
+        acknowledge();
+
+        expect(client['routingMap'].size).to.equal(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).to.equal(0);
+        expect(callback.calledOnce).to.be.true;
+        expect(callback.firstCall.args[0].err.message).to.equal('Send error');
+      });
+
+      it('should leave the response channel subscribed', () => {
+        // A concurrent request on this pattern may still be waiting for its
+        // own subscribe reply, so the subscription is left to self-heal.
+        client['publish'](msg, sinon.spy());
+
+        expect(unsubscribeSpy.called).to.be.false;
+      });
+
+      it('should undo the bookkeeping once', () => {
+        const teardown = client['publish'](msg, sinon.spy());
+
+        teardown();
+
+        expect(client['routingMap'].size).to.equal(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).to.equal(0);
+        expect(unsubscribeSpy.called).to.be.false;
+      });
+
+      it('should keep the count of the requests already using the channel', () => {
+        client['subscriptionsCount'].set(responseChannel, 1);
+
+        const teardown = client['publish'](msg, sinon.spy());
+        teardown();
+
+        expect(subscribeSpy.called).to.be.false;
+        expect(client['routingMap'].size).to.equal(0);
+        expect(client['subscriptionsCount'].get(responseChannel)).to.equal(1);
+        expect(unsubscribeSpy.called).to.be.false;
+      });
+    });
   });
   describe('createResponseCallback', () => {
     let callback: sinon.SinonSpy, subscription;
