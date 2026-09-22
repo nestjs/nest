@@ -18,7 +18,8 @@ export interface ParseDatePipeOptions {
    */
   optional?: boolean;
   /**
-   * Default value for the date
+   * A factory whose result is returned when the value is `null` or `undefined`,
+   * regardless of `optional`
    */
   default?: () => Date;
   /**
@@ -60,19 +61,17 @@ export class ParseDatePipe implements PipeTransform {
    * @param metadata contains metadata about the currently processed route argument
    */
   transform(value: unknown): Date | null | undefined {
-    if (isNil(value) || value === '') {
-      // A configured default applies to every missing value, not only when
-      // `optional` is set as well. Reading it inside the `optional` branch made
-      // `{ default }` on its own a silent no-op: the pipe still rejected the
-      // request with "no Date provided" instead of using the default.
+    if (isNil(value)) {
+      // `default` applies to nil values whether or not `optional` is set.
       if (this.options.default) {
         return this.options.default();
       }
-
-      if (this.options.optional && isNil(value)) {
+      if (this.options.optional) {
         return value;
       }
+    }
 
+    if (isNil(value) || value === '') {
       throw this.exceptionFactory('Validation failed (no Date provided)');
     }
 
