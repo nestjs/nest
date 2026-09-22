@@ -16,6 +16,7 @@ import {
   type NestApplicationContextOptions,
   tryLoadPackage,
   loadPackageCached,
+  isFunction,
   isUndefined,
 } from '@nestjs/common/internal';
 import type {
@@ -134,13 +135,23 @@ export class TestingModule extends NestApplicationContext {
   }
 
   private createAdapterProxy<T>(app: NestApplication, adapter: HttpServer): T {
-    return new Proxy(app, {
+    const proxy = new Proxy(app, {
       get: (receiver: Record<string, any>, prop: string) => {
         if (!(prop in receiver) && prop in adapter) {
-          return adapter[prop];
+          const value = adapter[prop];
+          if (!isFunction(value)) {
+            return value;
+          }
+          // Called on the adapter, as on applications created by NestFactory.
+          // Chainable methods keep returning the application.
+          return (...args: unknown[]) => {
+            const result = value.apply(adapter, args);
+            return result === adapter ? proxy : result;
+          };
         }
         return receiver[prop];
       },
-    }) as any as T;
+    });
+    return proxy as any as T;
   }
 }

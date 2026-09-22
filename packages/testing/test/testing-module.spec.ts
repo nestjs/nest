@@ -89,6 +89,45 @@ describe('TestingModule', () => {
       expect(app.customAdapterProp).toBe('adapter-value');
     });
 
+    it('should call adapter methods on the adapter', async () => {
+      @ModuleDecorator({})
+      class TestAppModule {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestAppModule],
+      }).compile();
+
+      const adapter = createMockAdapter({
+        setCustomState(value: string) {
+          this.customState = value;
+          return value;
+        },
+      });
+      const app: any = module.createNestApplication(adapter as any);
+
+      expect(app.setCustomState('set')).toBe('set');
+      expect((adapter as any).customState).toBe('set');
+      expect(Object.hasOwn(app, 'customState')).toBe(false);
+    });
+
+    it('should keep returning the application from chainable adapter methods', async () => {
+      @ModuleDecorator({})
+      class TestAppModule {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestAppModule],
+      }).compile();
+
+      const adapter = createMockAdapter({
+        chainable() {
+          return this;
+        },
+      });
+      const app: any = module.createNestApplication(adapter as any);
+
+      expect(app.chainable()).toBe(app);
+    });
+
     it('should apply logger options when provided', async () => {
       @ModuleDecorator({})
       class TestAppModule {}
