@@ -204,7 +204,7 @@ export class MiddlewareModule<
         throw new RuntimeException();
       }
       if (instanceWrapper.isTransient) {
-        return;
+        continue;
       }
 
       this.graphInspector.insertClassNode(
