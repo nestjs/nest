@@ -718,22 +718,31 @@ describe('ClientRedis', () => {
           realClients.push(redis);
           return redis;
         });
-      const allEnded = () =>
-        vi.waitFor(() =>
-          expect(realClients.map(redis => redis.status)).toEqual(
-            realClients.map(() => 'end'),
-          ),
+      // Once ioredis gives up on one client of the pair, the other one is
+      // disconnected. If it was waiting to reconnect, ioredis cancels the retry
+      // but leaves it in "reconnecting", so wait for the connection attempts
+      // to stop rather than for every client to reach "end".
+      const givenUp = async () => {
+        await vi.waitFor(() =>
+          expect(
+            realClients.slice(-2).some(redis => redis.status === 'end'),
+          ).toBe(true),
         );
+        const connections = acceptedConnections;
+        await new Promise(resolve => setTimeout(resolve, 100));
+        expect(acceptedConnections).toBe(connections);
+      };
 
       try {
         await expect(realClient.connect()).rejects.toThrow();
-        await allEnded();
-        // Both clients were retried before ioredis gave up on them
-        expect(acceptedConnections).toBe(6);
+        await givenUp();
+        // The client that gave up first made its initial attempt plus both
+        // retries, alongside at least the initial attempt of the other one
+        expect(acceptedConnections).toBeGreaterThanOrEqual(4);
 
         await expect(realClient.connect()).rejects.toThrow();
         expect(createClientSpy).toHaveBeenCalledTimes(4);
-        await allEnded();
+        await givenUp();
       } finally {
         await realClient.close();
         await new Promise(resolve => server.close(resolve));
