@@ -51,6 +51,7 @@ import {
   type SecurityRequestHook,
   type VersionValue,
   loadPackage,
+  tryLoadPackage,
   isNil,
   isString,
   isUndefined,
@@ -67,17 +68,44 @@ import {
   FASTIFY_ROUTE_SCHEMA_METADATA,
 } from '../constants.js';
 import {
+  FastifyMultipartOptions,
   FastifyStaticOptions,
   FastifyViewOptions,
 } from '../interfaces/external/index.js';
 import { NestFastifyBodyParserOptions } from '../interfaces/index.js';
 const { safeDecodeURI } = urlSanitizer;
 
+const MISSING_MULTIPART_PACKAGE_MESSAGE =
+  'The "@fastify/multipart" package is missing. Please, make sure to install it (npm i @fastify/multipart) ' +
+  'to use the file upload interceptors from "@nestjs/platform-fastify/multipart".';
+
+function isFastifyMultipartPlugin(plugin: unknown): boolean {
+  const fn = (plugin as { default?: unknown })?.default ?? plugin;
+  return (
+    typeof fn === 'function' &&
+    ((fn as any)[Symbol.for('plugin-meta')]?.name === '@fastify/multipart' ||
+      fn.name === 'fastifyMultipart')
+  );
+}
+
 type FastifyAdapterBaseOptions<
   Server extends RawServerBase = RawServerDefault,
   Logger extends FastifyBaseLogger = FastifyBaseLogger,
 > = FastifyServerOptions<Server, Logger> & {
   skipMiddie?: boolean;
+  /**
+   * Controls the "@fastify/multipart" plugin (an optional peer dependency),
+   * which the upload interceptors from "@nestjs/platform-fastify/multipart"
+   * require.
+   *
+   * - unset (default): the adapter registers the plugin when an upload
+   *   interceptor is used, unless it is already registered.
+   * - an object: plugin options (e.g. `limits`); the plugin is registered
+   *   when the application initializes.
+   * - `true`: the same, with the plugin defaults.
+   * - `false`: the adapter never registers the plugin.
+   */
+  multipart?: boolean | FastifyMultipartOptions;
 };
 
 type FastifyHttp2SecureOptions<
@@ -166,6 +194,9 @@ export class FastifyAdapter<
     done: (err?: Error) => void,
   ) => void | Promise<void>;
   private isMiddieRegistered: boolean;
+  private multipartMode: 'auto' | 'eager' | 'off' = 'auto';
+  private multipartOptions: FastifyMultipartOptions = {};
+  private isMultipartRequested = false;
   private pendingMiddlewares: Array<{ args: any[] }> = [];
   private versioningOptions?: VersioningOptions;
   private readonly versionConstraint = {
@@ -276,6 +307,14 @@ export class FastifyAdapter<
     if ((instanceOrOptions as FastifyAdapterBaseOptions)?.skipMiddie) {
       this.isMiddieRegistered = true;
     }
+    const multipart = (instanceOrOptions as FastifyAdapterBaseOptions)
+      ?.multipart;
+    if (multipart === false) {
+      this.multipartMode = 'off';
+    } else if (multipart) {
+      this.multipartMode = 'eager';
+      this.multipartOptions = multipart === true ? {} : { ...multipart };
+    }
 
     this.instance.addHook('onRequest', (request, reply, done) => {
       if (this.onRequestHook) {
@@ -315,6 +354,9 @@ export class FastifyAdapter<
   }
 
   public async init() {
+    if (this.multipartMode === 'eager') {
+      this.useMultipart();
+    }
     if (this.isMiddieRegistered) {
       return;
     }
@@ -545,7 +587,62 @@ export class FastifyAdapter<
       FastifyRegister<FastifyInstance<TServer, TRawRequest, TRawResponse>>
     >,
   >(plugin: TRegister['0'], opts?: TRegister['1']) {
+    if (
+      this.multipartMode !== 'off' &&
+      isFastifyMultipartPlugin(plugin) &&
+      !this.instance.hasRequestDecorator('isMultipart')
+    ) {
+      // The adapter owns the "@fastify/multipart" registration, so that the
+      // plugin is registered once whether or not the user registers it too.
+      // The user's options apply over the adapter's.
+      this.multipartOptions = { ...this.multipartOptions, ...opts };
+      this.useMultipart();
+      return this.instance;
+    }
     return (this.instance.register as any)(plugin, opts);
+  }
+
+  /**
+   * Registers the "@fastify/multipart" plugin, unless the adapter's
+   * `multipart` option is `false`, or the plugin has been registered
+   * already by the time it loads. Idempotent. Called by the upload
+   * interceptors from "@nestjs/platform-fastify/multipart".
+   *
+   * The plugin is loaded lazily, and a missing package fails the
+   * application's startup (`ready()`) with an error naming the package,
+   * rather than exiting the process.
+   */
+  public useMultipart() {
+    if (this.multipartMode === 'off' || this.isMultipartRequested) {
+      return;
+    }
+    this.isMultipartRequested = true;
+    const registerMultipart = async (instance: FastifyInstance) => {
+      // Plugins load in registration order, so one the user registered
+      // before this point has loaded by now.
+      if (instance.hasRequestDecorator('isMultipart')) {
+        return;
+      }
+      const multipart = await tryLoadPackage(
+        '@fastify/multipart',
+        () => import('@fastify/multipart'),
+      );
+      if (!multipart) {
+        throw new Error(MISSING_MULTIPART_PACKAGE_MESSAGE);
+      }
+      // Copied: the plugin writes its defaults into the options it receives.
+      const { limits, ...options } = this.multipartOptions;
+      await instance.register(multipart, {
+        ...options,
+        ...(limits && { limits: { ...limits } }),
+      });
+    };
+    // Like `fastify-plugin`: register on the root context, not a child one.
+    Object.assign(registerMultipart, {
+      [Symbol.for('skip-override')]: true,
+      [Symbol.for('fastify.display-name')]: 'nestjs-multipart',
+    });
+    this.instance.register(registerMultipart as any);
   }
 
   public inject(): LightMyRequestChain;
