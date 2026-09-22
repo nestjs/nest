@@ -27,7 +27,15 @@ import {
 } from '@nestjs/common/internal';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { IncomingMessage } from 'http';
-import { Observable } from 'rxjs';
+import {
+  EmptyError,
+  isObservable,
+  Observable,
+  of,
+  ReplaySubject,
+  Subject,
+} from 'rxjs';
+import { switchMap, takeUntil, tap } from 'rxjs/operators';
 import {
   FORBIDDEN_MESSAGE,
   GuardsConsumer,
@@ -153,10 +161,14 @@ export class RouterExecutionContext {
         req: TRequest,
         res: TResponse,
         next: Function,
+        handlerObservable$?: Subject<void>,
       ) =>
       async () => {
         fnApplyPipes && (await fnApplyPipes(args, req, res, next));
-        return callback.apply(instance, args);
+        const result = callback.apply(instance, args);
+        handlerObservable$ &&
+          this.notifyIfObservable(result, handlerObservable$);
+        return result;
       };
 
     return async <TRequest, TResponse>(
@@ -179,16 +191,27 @@ export class RouterExecutionContext {
         this.attachSseAbortSignal(req);
       }
 
+      // Interceptors always hand back an Observable, so whether the route
+      // handler itself returned one can only be observed where it runs.
+      const handlerObservable$ =
+        isSseHandler || isEmptyArray(interceptors)
+          ? undefined
+          : new ReplaySubject<void>(1);
       const resultOrDeferred = this.interceptorsConsumer.intercept(
         interceptors,
         [req, res, next],
         instance,
         callback,
-        handler(args, req, res, next),
+        handler(args, req, res, next, handlerObservable$),
         contextType,
       );
       const result = isSseHandler ? resultOrDeferred : await resultOrDeferred;
-      await (fnHandleResponse as HandlerResponseBasicFn)(result, res, req);
+      await (fnHandleResponse as HandlerResponseBasicFn)(
+        result,
+        res,
+        req,
+        handlerObservable$,
+      );
     };
   }
 
@@ -478,12 +501,75 @@ export class RouterExecutionContext {
         );
       };
     }
-    return async <TResult, TResponse>(result: TResult, res: TResponse) => {
-      result = await this.responseController.transformToResult(result);
+    return async <TResult, TResponse>(
+      result: TResult,
+      res: TResponse,
+      req?: unknown,
+      handlerObservable$?: Observable<unknown>,
+    ) => {
+      let disconnected = false;
+      if (isObservable(result)) {
+        // Only an Observable returned by the route handler itself is torn down
+        // when the client goes away. Without interceptors, `result` is that
+        // Observable; otherwise `handlerObservable$` reports it.
+        const disconnect$ = (handlerObservable$ ?? of(null)).pipe(
+          switchMap(() => this.fromClientDisconnect(req, res)),
+          tap(() => (disconnected = true)),
+        );
+        result = result.pipe(takeUntil(disconnect$)) as TResult;
+      }
+      try {
+        result = await this.responseController.transformToResult(result);
+      } catch (err) {
+        // `takeUntil` completes the stream on disconnect, so `lastValueFrom`
+        // rejects with an `EmptyError` if nothing was emitted yet. Any other
+        // error still goes to the exception filters.
+        if (!disconnected || !(err instanceof EmptyError)) {
+          throw err;
+        }
+      }
       !isResponseHandled &&
+        !disconnected &&
         (await this.responseController.apply(result, res, httpStatusCode));
       return res;
     };
+  }
+
+  private notifyIfObservable(
+    result: unknown,
+    handlerObservable$: Subject<void>,
+  ) {
+    if (isObservable(result)) {
+      handlerObservable$.next();
+    } else if (result instanceof Promise) {
+      // Only native promises are observed: calling `then()` on an arbitrary
+      // thenable (e.g. a lazy query builder) could repeat its side effects.
+      // This extra reaction leaves the handler's own promise chain untouched.
+      result.then(
+        value => isObservable(value) && handlerObservable$.next(),
+        () => undefined,
+      );
+    }
+  }
+
+  /**
+   * Emits once the client connection closes, or right away if it already has.
+   * Watches the request socket, like `RouterResponseController#sse()` does.
+   */
+  private fromClientDisconnect(req: any, res: any): Observable<void> {
+    return new Observable<void>(subscriber => {
+      const source = (req?.raw ?? req)?.socket ?? res?.raw ?? res;
+      if (typeof source?.once !== 'function') {
+        return;
+      }
+      if (source.destroyed) {
+        subscriber.next();
+        return;
+      }
+      const onClose = () => subscriber.next();
+      source.once('close', onClose);
+      return () => source.removeListener('close', onClose);
+    });
   }
 
   private isResponseHandled(

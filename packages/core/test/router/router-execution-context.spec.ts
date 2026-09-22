@@ -1,6 +1,13 @@
 import { ForbiddenException } from '@nestjs/common/exceptions/forbidden.exception.js';
 import { EventEmitter } from 'events';
-import { of } from 'rxjs';
+import {
+  lastValueFrom,
+  Observable,
+  of,
+  ReplaySubject,
+  Subject,
+  throwError,
+} from 'rxjs';
 import { PassThrough } from 'stream';
 import { CUSTOM_ROUTE_ARGS_METADATA } from '../../../common/constants.js';
 import { RouteParamtypes } from '../../../common/enums/route-paramtypes.enum.js';
@@ -99,6 +106,83 @@ describe('RouterExecutionContext', () => {
 
       expect(fnHandleResponse).toHaveBeenCalledOnce();
       expect(fnHandleResponse.mock.calls[0][0]).toBe(result);
+    });
+
+    describe('when the route has interceptors', () => {
+      const createProxy = (
+        handlerResult: unknown,
+        onHandlerObservable: () => void,
+      ) => {
+        const fnHandleResponse = vi.fn(
+          async (result, _res, _req, handlerObservable$) => {
+            handlerObservable$.subscribe(onHandlerObservable);
+            await lastValueFrom(result);
+          },
+        );
+        vi.spyOn(contextCreator, 'getMetadata').mockReturnValue({
+          argsLength: 0,
+          fnHandleResponse,
+          isSseHandler: false,
+          paramtypes: [],
+          getParamsMetadata: vi.fn().mockReturnValue([]),
+          httpStatusCode: 200,
+          hasCustomHeaders: false,
+          responseHeaders: [],
+        } as any);
+        vi.spyOn(contextCreator, 'createGuardsFn').mockReturnValue(null as any);
+        vi.spyOn(contextCreator, 'createPipesFn').mockReturnValue(null as any);
+        vi.spyOn(
+          (contextCreator as any).interceptorsContextCreator,
+          'create',
+        ).mockReturnValue([{ intercept: (_, next) => next.handle() }]);
+
+        return contextCreator.create(
+          {} as any,
+          { apply: () => handlerResult } as any,
+          '',
+          '',
+          0,
+        );
+      };
+
+      it('should report an Observable returned by the handler', async () => {
+        const onHandlerObservable = vi.fn();
+        const proxy = createProxy(of('test'), onHandlerObservable);
+
+        await proxy({}, {}, vi.fn());
+
+        expect(onHandlerObservable).toHaveBeenCalledOnce();
+      });
+
+      it('should report an Observable the handler resolves to', async () => {
+        const onHandlerObservable = vi.fn();
+        const proxy = createProxy(
+          Promise.resolve(of('test')),
+          onHandlerObservable,
+        );
+
+        await proxy({}, {}, vi.fn());
+
+        expect(onHandlerObservable).toHaveBeenCalledOnce();
+      });
+
+      it('should not report a non-Observable handler result', async () => {
+        const onHandlerObservable = vi.fn();
+        const proxy = createProxy(Promise.resolve('test'), onHandlerObservable);
+
+        await proxy({}, {}, vi.fn());
+
+        expect(onHandlerObservable).not.toHaveBeenCalled();
+      });
+
+      it('should not call "then()" on a returned thenable more than once', async () => {
+        const thenable = { then: vi.fn(resolve => resolve('test')) };
+        const proxy = createProxy(thenable, vi.fn());
+
+        await proxy({}, {}, vi.fn());
+
+        expect(thenable.then).toHaveBeenCalledOnce();
+      });
     });
 
     describe('when callback metadata is not undefined', () => {
@@ -484,6 +568,150 @@ describe('RouterExecutionContext', () => {
         const adapterReplySpy = vi.spyOn(adapter, 'reply');
         await handler(result, response);
         expect(adapterReplySpy).toHaveBeenCalledWith(response, 'test', 1234);
+      });
+    });
+
+    describe('when the client disconnects', () => {
+      let handler: HandlerResponseBasicFn;
+      let adapterReplySpy: ReturnType<typeof vi.spyOn>;
+      let request: { socket: EventEmitter & { destroyed?: boolean } };
+      const response = {};
+
+      const createProducer = () => {
+        const producer = { subscribed: false, tornDown: false };
+        const source = new Subject<string>();
+        const observable = new Observable<string>(subscriber => {
+          producer.subscribed = true;
+          const subscription = source.subscribe(subscriber);
+          return () => {
+            producer.tornDown = true;
+            subscription.unsubscribe();
+          };
+        });
+        return { producer, source, observable };
+      };
+
+      beforeEach(() => {
+        vi.spyOn(contextCreator, 'reflectRenderTemplate').mockReturnValue(
+          undefined!,
+        );
+        vi.spyOn(contextCreator, 'reflectSse').mockReturnValue(undefined!);
+        handler = contextCreator.createHandleResponseFn(
+          null!,
+          false,
+          undefined,
+          200,
+        ) as HandlerResponseBasicFn;
+        adapterReplySpy = vi.spyOn(adapter, 'reply');
+        request = { socket: new EventEmitter() };
+      });
+
+      it('should still reply to a non-Observable result', async () => {
+        request.socket.destroyed = true;
+        const expressResponse = { socket: request.socket };
+
+        await handler(Promise.resolve('test'), expressResponse, request);
+
+        expect(adapterReplySpy).toHaveBeenCalledWith(
+          expressResponse,
+          'test',
+          200,
+        );
+      });
+
+      it('should tear down an Observable returned by the handler and not reply', async () => {
+        const { producer, source, observable } = createProducer();
+
+        const pending = handler(observable, response, request);
+        source.next('partial');
+        request.socket.emit('close');
+        await pending;
+
+        expect(producer.tornDown).toBe(true);
+        expect(adapterReplySpy).not.toHaveBeenCalled();
+        expect(request.socket.listenerCount('close')).toBe(0);
+      });
+
+      it('should not subscribe an Observable returned by the handler once the client is gone', async () => {
+        const { producer, observable } = createProducer();
+        request.socket.destroyed = true;
+
+        await handler(observable, response, request);
+
+        expect(producer.subscribed).toBe(false);
+        expect(adapterReplySpy).not.toHaveBeenCalled();
+      });
+
+      it('should watch the raw request socket (e.g. Fastify)', async () => {
+        const { producer, observable } = createProducer();
+
+        const pending = handler(observable, response, { raw: request });
+        request.socket.emit('close');
+        await pending;
+
+        expect(producer.tornDown).toBe(true);
+      });
+
+      it('should reply and stop watching the socket once the Observable completes', async () => {
+        await handler(of('a', 'b'), response, request);
+
+        expect(adapterReplySpy).toHaveBeenCalledWith(response, 'b', 200);
+        expect(request.socket.listenerCount('close')).toBe(0);
+      });
+
+      it('should propagate errors emitted before the client disconnects', async () => {
+        const error = new Error('producer failed');
+
+        await expect(
+          handler(
+            throwError(() => error),
+            response,
+            request,
+          ),
+        ).rejects.toBe(error);
+      });
+
+      it('should ignore a disconnect when the handler did not return the (intercepted) Observable', async () => {
+        const { producer, source, observable } = createProducer();
+        const expressResponse = { socket: request.socket };
+
+        const pending = handler(
+          observable,
+          expressResponse,
+          request,
+          new Subject(),
+        );
+        request.socket.emit('close');
+        source.next('value');
+        source.complete();
+        await pending;
+
+        expect(adapterReplySpy).toHaveBeenCalledWith(
+          expressResponse,
+          'value',
+          200,
+        );
+      });
+
+      it('should tear down an intercepted Observable once the handler reports its own Observable', async () => {
+        const { producer, observable } = createProducer();
+        const handlerObservable$ = new ReplaySubject<void>(1);
+
+        const pending = handler(
+          observable,
+          response,
+          request,
+          handlerObservable$,
+        );
+        request.socket.emit('close');
+        expect(producer.tornDown).toBe(false);
+
+        request.socket.destroyed = true;
+        handlerObservable$.next();
+        await pending;
+
+        expect(producer.tornDown).toBe(true);
+        expect(adapterReplySpy).not.toHaveBeenCalled();
       });
     });
 
