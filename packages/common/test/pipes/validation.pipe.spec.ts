@@ -300,6 +300,157 @@ describe('ValidationPipe', () => {
             }),
           ).toBeUndefined();
         });
+        it('should reject an empty string instead of coercing to 0', async () => {
+          target = new ValidationPipe({ transform: true });
+
+          await expect(
+            target.transform('', {
+              metatype: Number,
+              data: 'test',
+              type: 'query',
+            }),
+          ).rejects.toMatchObject({
+            response: {
+              message: ['Validation failed (numeric string is expected)'],
+            },
+          });
+        });
+        it('should reject a blank string instead of coercing to 0', async () => {
+          target = new ValidationPipe({ transform: true });
+
+          await expect(
+            target.transform('  ', {
+              metatype: Number,
+              data: 'test',
+              type: 'query',
+            }),
+          ).rejects.toMatchObject({
+            response: {
+              message: ['Validation failed (numeric string is expected)'],
+            },
+          });
+        });
+        it('should reject a non-numeric string instead of returning NaN', async () => {
+          target = new ValidationPipe({ transform: true });
+
+          await expect(
+            target.transform('abc', {
+              metatype: Number,
+              data: 'test',
+              type: 'query',
+            }),
+          ).rejects.toMatchObject({
+            response: {
+              message: ['Validation failed (numeric string is expected)'],
+            },
+          });
+        });
+        it('should reject a partially numeric string instead of returning NaN', async () => {
+          target = new ValidationPipe({ transform: true });
+
+          await expect(
+            target.transform('12abc', {
+              metatype: Number,
+              data: 'test',
+              type: 'query',
+            }),
+          ).rejects.toMatchObject({
+            response: {
+              message: ['Validation failed (numeric string is expected)'],
+            },
+          });
+        });
+        it('should reject a padded string like ParseFloatPipe does', async () => {
+          target = new ValidationPipe({ transform: true });
+
+          await expect(
+            target.transform(' 12 ', {
+              metatype: Number,
+              data: 'test',
+              type: 'query',
+            }),
+          ).rejects.toMatchObject({
+            response: {
+              message: ['Validation failed (numeric string is expected)'],
+            },
+          });
+        });
+        it('should reject a radix-prefixed string like ParseFloatPipe does', async () => {
+          target = new ValidationPipe({ transform: true });
+
+          for (const value of ['0xFF', '0b101', '0o17']) {
+            await expect(
+              target.transform(value, {
+                metatype: Number,
+                data: 'test',
+                type: 'query',
+              }),
+            ).rejects.toMatchObject({
+              response: {
+                message: ['Validation failed (numeric string is expected)'],
+              },
+            });
+          }
+        });
+        it('should reject a non-finite number', async () => {
+          target = new ValidationPipe({ transform: true });
+
+          for (const value of ['Infinity', '-Infinity', '1e309']) {
+            await expect(
+              target.transform(value, {
+                metatype: Number,
+                data: 'test',
+                type: 'query',
+              }),
+            ).rejects.toMatchObject({
+              response: {
+                message: ['Validation failed (numeric string is expected)'],
+              },
+            });
+          }
+        });
+        it('should honour errorHttpStatusCode for rejected numeric input', async () => {
+          target = new ValidationPipe({
+            transform: true,
+            errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          });
+
+          await expect(
+            target.transform('abc', {
+              metatype: Number,
+              data: 'test',
+              type: 'query',
+            }),
+          ).rejects.toBeInstanceOf(UnprocessableEntityException);
+        });
+        it('should pass rejected numeric input through a custom exceptionFactory', async () => {
+          let captured: any[] = [];
+          target = new ValidationPipe({
+            transform: true,
+            exceptionFactory: errors => {
+              captured = errors;
+              return new Error('custom');
+            },
+          });
+
+          await expect(
+            target.transform('abc', {
+              metatype: Number,
+              data: 'test',
+              type: 'query',
+            }),
+          ).rejects.toThrow('custom');
+
+          expect(captured).toEqual([
+            expect.objectContaining({
+              property: 'test',
+              value: 'abc',
+              constraints: {
+                isNumber: 'Validation failed (numeric string is expected)',
+              },
+            }),
+          ]);
+        });
       });
       describe('when input is a path parameter (number)', () => {
         it('should parse to number', async () => {
@@ -313,6 +464,21 @@ describe('ValidationPipe', () => {
               type: 'param',
             }),
           ).toBe(+value);
+        });
+        it('should reject a non-numeric path parameter', async () => {
+          target = new ValidationPipe({ transform: true });
+
+          await expect(
+            target.transform('abc', {
+              metatype: Number,
+              data: 'test',
+              type: 'param',
+            }),
+          ).rejects.toMatchObject({
+            response: {
+              message: ['Validation failed (numeric string is expected)'],
+            },
+          });
         });
         it('should parse undefined to undefined', async () => {
           target = new ValidationPipe({ transform: true });

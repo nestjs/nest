@@ -18,6 +18,7 @@ import {
   HttpErrorByCode,
 } from '../utils/http-error-by-code.util.js';
 import { loadPackage } from '../utils/load-package.util.js';
+import { isNumeric } from '../utils/is-numeric.util.js';
 import { isNil, isUndefined } from '../utils/shared.utils.js';
 import { stripProtoKeys } from '../utils/strip-proto-keys.util.js';
 
@@ -262,7 +263,24 @@ export class ValidationPipe implements PipeTransform {
         // they were not defined
         return undefined;
       }
-      return +(value as any);
+      // Unary plus turns an empty string into 0 and a non-numeric string into
+      // NaN, which a JSON response then writes as null. Reject those values the
+      // same way ParseFloatPipe does, through this pipe's own error factory so
+      // errorHttpStatusCode, disableErrorMessages, errorFormat and a custom
+      // exceptionFactory keep working on this path too.
+      if (!isNumeric(value)) {
+        throw this.exceptionFactory([
+          {
+            property: metadata.data as string,
+            value,
+            constraints: {
+              isNumber: 'Validation failed (numeric string is expected)',
+            },
+            children: [],
+          },
+        ]);
+      }
+      return Number(value);
     }
     if (metatype === String && !isUndefined(value)) {
       return String(value);
