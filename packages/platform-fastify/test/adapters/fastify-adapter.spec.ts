@@ -255,4 +255,21 @@ describe('FastifyAdapter', () => {
       expect(res.statusCode).toBe(200);
     });
   });
+
+  describe('initHttpServer forceCloseConnections', () => {
+    it('should close after inject() requests and run the onClose hooks', async () => {
+      let onCloseCalled = false;
+      fastifyAdapter.initHttpServer({ forceCloseConnections: true });
+      fastifyAdapter.get('/', () => 'ok');
+      fastifyAdapter.getInstance().addHook('onClose', async () => {
+        onCloseCalled = true;
+      });
+
+      const res = await fastifyAdapter.inject({ method: 'GET', url: '/' });
+      expect(res.statusCode).toBe(200);
+
+      await fastifyAdapter.close();
+      expect(onCloseCalled).toBe(true);
+    });
+  });
 });

@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  type NestApplicationOptions,
   type RawBodyRequest,
   type RequestMethod,
   StreamableFile,
@@ -40,12 +41,14 @@ import fastifySymbols from 'fastify/lib/symbols.js';
 import * as http from 'http';
 import * as http2 from 'http2';
 import * as https from 'https';
+import * as net from 'net';
 import {
   InjectOptions,
   Chain as LightMyRequestChain,
   Response as LightMyRequestResponse,
 } from 'light-my-request';
 import { pathToRegexp } from 'path-to-regexp';
+import { Duplex } from 'stream';
 import middie from '@fastify/middie';
 import {
   type SecurityRequestHook,
@@ -182,6 +185,8 @@ export class FastifyAdapter<
   declare protected readonly instance: TInstance;
   protected _pathPrefix?: string;
 
+  private readonly openConnections = new Set<Duplex>();
+  private isClosing = false;
   private _isParserRegistered: boolean;
   private onRequestHook?: (
     request: TRequest,
@@ -654,19 +659,24 @@ export class FastifyAdapter<
   }
 
   public async close() {
+    this.isClosing = true;
     try {
-      return await this.instance.close();
-    } catch (err) {
-      // Check if server is still running
-      if (err.code !== 'ERR_SERVER_NOT_RUNNING') {
-        throw err;
-      }
-      return;
+      this.closeOpenConnections();
+    } finally {
+      await this.instance.close().catch(err => {
+        // Check if server is still running
+        if (err.code !== 'ERR_SERVER_NOT_RUNNING') {
+          throw err;
+        }
+      });
     }
   }
 
-  public initHttpServer() {
+  public initHttpServer(options: NestApplicationOptions = {}) {
     this.httpServer = this.instance.server;
+    if (options?.forceCloseConnections) {
+      this.trackOpenConnections();
+    }
   }
 
   public async useStaticAssets(options: FastifyStaticOptions) {
@@ -1154,5 +1164,39 @@ export class FastifyAdapter<
       return url;
     }
     return pathStart === -1 ? '/' : url.slice(pathStart);
+  }
+
+  private trackOpenConnections() {
+    const track = (socket: Duplex) => {
+      if (this.isClosing) {
+        // Fastify runs its `preClose` hooks before it stops accepting
+        // connections, so destroy anything that arrives in the meantime
+        socket.destroy();
+        return;
+      }
+      if (this.openConnections.has(socket)) {
+        return;
+      }
+      this.openConnections.add(socket);
+      socket.on('close', () => this.openConnections.delete(socket));
+    };
+    this.httpServer.on('connection', track);
+    // Sockets accepted by the secondary servers Fastify binds for every
+    // address `listen()` resolves to are only reachable through requests.
+    // `inject()` requests carry a mock socket, which must not be tracked.
+    this.instance.addHook('onRequest', (request, _reply, done) => {
+      const socket = request.raw.socket;
+      if (socket instanceof net.Socket) {
+        track(socket);
+      }
+      done();
+    });
+  }
+
+  private closeOpenConnections() {
+    for (const socket of this.openConnections) {
+      socket.destroy();
+      this.openConnections.delete(socket);
+    }
   }
 }
