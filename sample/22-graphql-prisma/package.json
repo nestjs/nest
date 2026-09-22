@@ -47,7 +47,7 @@
     "oxlint": "1.85.0",
     "prettier": "3.9.8",
     "prisma": "^7.0.0",
-    "supertest": "7.2.2",
+    "supertest": "7.3.0",
     "ts-loader": "9.6.2",
     "ts-morph": "28.0.0",
     "ts-node": "10.9.2",
