@@ -22,6 +22,16 @@ export class AppController {
     return this.appService.getNonFile();
   }
 
+  @Get('raw/buffer')
+  getRawBuffer(): Buffer {
+    return this.appService.getRawBuffer();
+  }
+
+  @Get('raw/uint8array')
+  getRawUint8Array(): Uint8Array {
+    return this.appService.getRawUint8Array();
+  }
+
   @Get('file/rxjs/stream')
   getRxJSFile(): Observable<StreamableFile> {
     return this.appService.getRxJSFile();
