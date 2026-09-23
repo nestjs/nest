@@ -8,12 +8,17 @@ import { multerExceptions, busboyExceptions } from './multer.constants';
 // Multer may add in a 'field' property to the error
 // https://github.com/expressjs/multer/blob/aa42bea6ac7d0cb8fcb279b15a7278cda805dc63/lib/multer-error.js#L19
 export function transformException(
-  error: (Error & { field?: string }) | undefined,
+  error: (Error & { field?: string; code?: string }) | undefined,
 ) {
   if (!error || error instanceof HttpException) {
     return error;
   }
-  switch (error.message) {
+  // Multer identifies its errors by `code`, while the messages may change
+  // between releases (e.g. "Unexpected field" became "Unexpected file field")
+  const exception = isMulterExceptionCode(error.code)
+    ? multerExceptions[error.code]
+    : error.message;
+  switch (exception) {
     case multerExceptions.LIMIT_FILE_SIZE:
       return new PayloadTooLargeException(error.message);
     case multerExceptions.LIMIT_FILE_COUNT:
@@ -36,4 +41,13 @@ export function transformException(
       return new BadRequestException(`Multipart: ${error.message}`);
   }
   return error;
+}
+
+function isMulterExceptionCode(
+  code: unknown,
+): code is keyof typeof multerExceptions {
+  return (
+    typeof code === 'string' &&
+    Object.prototype.hasOwnProperty.call(multerExceptions, code)
+  );
 }
