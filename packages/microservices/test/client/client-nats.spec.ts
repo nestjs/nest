@@ -490,6 +490,7 @@ describe('ClientNats', () => {
       await vi.waitFor(() =>
         expect(untypedClient.connectionPromise).toBeNull(),
       );
+      expect(untypedClient.natsClient).toBeNull();
 
       await client.connect();
       expect(createClientSpy).toHaveBeenCalledTimes(2);
