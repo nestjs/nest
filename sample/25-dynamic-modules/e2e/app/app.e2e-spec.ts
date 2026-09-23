@@ -1,9 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module.js';
 
-describe('AppController (e2e)', () => {
+describe('Dynamic modules (e2e)', () => {
   let app: INestApplication;
 
   beforeAll(async () => {
@@ -19,18 +19,27 @@ describe('AppController (e2e)', () => {
     await app.close();
   });
 
-  describe('GET /', () => {
-    it('should return the hello message from config', async () => {
-      const response = await request(app.getHttpServer()).get('/').expect(200);
+  it('should create users with "usr_" identifiers', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/users')
+      .send({ name: 'Kamil' })
+      .expect(201);
 
-      expect(response.text).toBe('Hello there, world!');
+    expect(response.body).toEqual({
+      id: expect.stringMatching(/^usr_[0-9a-f-]{36}$/),
+      name: 'Kamil',
     });
+  });
 
-    it('should return a string', async () => {
-      const response = await request(app.getHttpServer()).get('/').expect(200);
+  it('should create orders with "ord_" identifiers', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/orders')
+      .send({ product: 'T-shirt' })
+      .expect(201);
 
-      expect(typeof response.text).toBe('string');
-      expect(response.text.length).toBeGreaterThan(0);
+    expect(response.body).toEqual({
+      id: expect.stringMatching(/^ord_[0-9a-f-]{36}$/),
+      product: 'T-shirt',
     });
   });
 });

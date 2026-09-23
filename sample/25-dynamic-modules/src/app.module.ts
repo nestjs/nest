@@ -1,11 +1,8 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
-import { ConfigModule } from './config/config.module.js';
+import { OrdersModule } from './orders/orders.module.js';
+import { UsersModule } from './users/users.module.js';
 
 @Module({
-  imports: [ConfigModule.register({ folder: './config' })],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [UsersModule, OrdersModule],
 })
 export class AppModule {}

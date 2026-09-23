@@ -12,7 +12,8 @@
     "skipLibCheck": true,
     "moduleResolution": "nodenext",
     "types": [
-      "vitest/globals"
+      "vitest/globals",
+      "node"
     ],
     "rootDir": "./src",
     "useDefineForClassFields": false,
