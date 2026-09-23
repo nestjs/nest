@@ -20,9 +20,9 @@
   },
   "dependencies": {
     "@nestjs/cache-manager": "12.0.0",
-    "@nestjs/common": "12.0.4",
-    "@nestjs/core": "12.0.4",
-    "@nestjs/platform-express": "12.0.4",
+    "@nestjs/common": "12.1.0",
+    "@nestjs/core": "12.1.0",
+    "@nestjs/platform-express": "12.1.0",
     "cache-manager": "7.2.9",
     "class-transformer": "0.5.1",
     "class-validator": "0.15.1",
@@ -32,7 +32,7 @@
   "devDependencies": {
     "@nestjs/cli": "12.0.5",
     "@nestjs/schematics": "12.0.5",
-    "@nestjs/testing": "12.0.4",
+    "@nestjs/testing": "12.1.0",
     "@types/express": "5.0.6",
     "@types/node": "24.13.6",
     "@types/supertest": "7.2.1",
