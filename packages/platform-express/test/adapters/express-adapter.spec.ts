@@ -155,6 +155,29 @@ describe('ExpressAdapter', () => {
         expect(response.status).toHaveBeenCalledWith(statusCode);
       }
     });
+
+    it.each([
+      ['a Buffer', Buffer.from('hello')],
+      ['a Uint8Array', new Uint8Array([104, 101, 108, 108, 111])],
+      ['a DataView', new DataView(new Uint8Array([104, 101]).buffer)],
+    ])('should send %s as-is instead of serializing it to JSON', (_, body) => {
+      const response = createResponse();
+
+      expressAdapter.reply(response, body);
+
+      expect(response.send).toHaveBeenCalledWith(body);
+      expect(response.json).not.toHaveBeenCalled();
+    });
+
+    it('should still send a raw ArrayBuffer as JSON, the way express does', () => {
+      const response = createResponse();
+      const body = new Uint8Array([104, 101]).buffer;
+
+      expressAdapter.reply(response, body);
+
+      expect(response.json).toHaveBeenCalledWith(body);
+      expect(response.send).not.toHaveBeenCalled();
+    });
   });
 
   describe('mapException', () => {

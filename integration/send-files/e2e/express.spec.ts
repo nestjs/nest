@@ -50,6 +50,24 @@ describe('Express FileSend', () => {
       .expect(200)
       .expect({ value: 'Hello world' });
   });
+  it('should return a raw buffer as binary, not as a JSON dump', async () => {
+    return request(app.getHttpServer())
+      .get('/raw/buffer')
+      .expect(200)
+      .expect('Content-Type', 'application/octet-stream')
+      .expect(res => {
+        expect(res.body.toString()).toBe(readmeString);
+      });
+  });
+  it('should return a raw Uint8Array as binary, not as a JSON dump', async () => {
+    return request(app.getHttpServer())
+      .get('/raw/uint8array')
+      .expect(200)
+      .expect('Content-Type', 'application/octet-stream')
+      .expect(res => {
+        expect(res.body.toString()).toBe(readmeString);
+      });
+  });
   it('should return a file from an RxJS stream', async () => {
     return request(app.getHttpServer())
       .get('/file/rxjs/stream/')
