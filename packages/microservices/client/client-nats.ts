@@ -195,6 +195,15 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
         }
       }
     }
+    // The status iterator only completes once the client has given up: it was
+    // closed, or it exhausted `maxReconnectAttempts` and is not coming back.
+    // The promise the "disconnect" case cached is never reset in that case, so
+    // every later `connect()` call would replay the same rejection. Drop the
+    // client and the cached promise so the next call starts over.
+    if (this.natsClient === client) {
+      this.natsClient = null;
+      this.connectionPromise = null;
+    }
   }
 
   public on<
