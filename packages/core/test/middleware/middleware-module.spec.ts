@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Scope } from '@nestjs/common';
 import { RouteInfoPathExtractor } from '@nestjs/core/middleware/route-info-path-extractor.js';
 import { Controller } from '../../../common/decorators/core/controller.decorator.js';
 import { RequestMapping } from '../../../common/decorators/http/request-mapping.decorator.js';
@@ -204,6 +204,84 @@ describe('MiddlewareModule', () => {
         app,
       );
       expect(createMiddlewareFactoryStub).toHaveBeenCalledOnce();
+    });
+
+    it('should mount middleware listed after a transient one', async () => {
+      @Injectable({ scope: Scope.TRANSIENT })
+      class TransientMiddleware implements NestMiddleware {
+        public use(req, res, next) {}
+      }
+
+      @Injectable()
+      class AnotherMiddleware implements NestMiddleware {
+        public use(req, res, next) {}
+      }
+
+      const route = 'testPath';
+      const configuration = {
+        middleware: [TestMiddleware, TransientMiddleware, AnotherMiddleware],
+        forRoutes: ['test'],
+      };
+
+      const createMiddlewareFactoryStub = vi
+        .fn()
+        .mockImplementation(() => () => null);
+      const app = {
+        createMiddlewareFactory: createMiddlewareFactoryStub,
+      };
+
+      const stubContainer = new NestContainer();
+      stubContainer
+        .getModules()
+        .set('Test', new Module(TestModule, stubContainer));
+
+      const container = new MiddlewareContainer(stubContainer);
+      const moduleKey = 'Test';
+      container.insertConfig([configuration], moduleKey);
+
+      const testWrapper = new InstanceWrapper({
+        metatype: TestMiddleware,
+        instance: new TestMiddleware(),
+      });
+      const transientWrapper = new InstanceWrapper({
+        metatype: TransientMiddleware,
+        instance: new TransientMiddleware(),
+        scope: Scope.TRANSIENT,
+      });
+      const anotherWrapper = new InstanceWrapper({
+        metatype: AnotherMiddleware,
+        instance: new AnotherMiddleware(),
+      });
+      const collection = container.getMiddlewareCollection(moduleKey);
+      collection.set(TestMiddleware, testWrapper);
+      collection.set(TransientMiddleware, transientWrapper);
+      collection.set(AnotherMiddleware, anotherWrapper);
+      vi.spyOn(stubContainer, 'getModuleByKey').mockImplementation(
+        () => new Module(class {}, stubContainer),
+      );
+      middlewareModule['container'] = stubContainer;
+
+      const insertClassNodeSpy = vi.spyOn(graphInspector, 'insertClassNode');
+      const insertEntrypointDefinitionSpy = vi.spyOn(
+        graphInspector,
+        'insertEntrypointDefinition',
+      );
+
+      await middlewareModule.registerRouteMiddleware(
+        container,
+        { path: route, method: RequestMethod.ALL },
+        configuration,
+        moduleKey,
+        app,
+      );
+
+      expect(createMiddlewareFactoryStub).toHaveBeenCalledTimes(2);
+      expect(
+        insertEntrypointDefinitionSpy.mock.calls.map(([, id]) => id),
+      ).toEqual([testWrapper.id, anotherWrapper.id]);
+      expect(
+        insertClassNodeSpy.mock.calls.map(([, wrapper]) => wrapper.id),
+      ).toEqual([testWrapper.id, anotherWrapper.id]);
     });
 
     it('should insert the expected middleware definition', async () => {
