@@ -96,6 +96,27 @@ describe('transformException', () => {
         expect(result).to.be.instanceOf(BadRequestException);
         expect(result!.message).to.equal('Some other wording - photo');
       });
+      it('should return "BadRequestException" for LIMIT_FIELD_ARRAY_INDEX', () => {
+        const err = new multer.MulterError(
+          'LIMIT_FIELD_ARRAY_INDEX',
+          'tags[99]',
+        );
+        const result = transformException(err);
+        expect(result).to.be.instanceOf(BadRequestException);
+        expect(result!.message).to.equal(`${err.message} - tags[99]`);
+      });
+      it('should return "BadRequestException" for INVALID_FIELD_NAME', () => {
+        const err = new multer.MulterError('INVALID_FIELD_NAME', 'a[b]');
+        const result = transformException(err);
+        expect(result).to.be.instanceOf(BadRequestException);
+        expect(result!.message).to.equal(`${err.message} - a[b]`);
+      });
+      it('should behave as identity for STREAM_DESTROYED', () => {
+        // raised by disk storage after the stream was destroyed, not by the
+        // client, so it stays a 500
+        const err = new multer.MulterError('STREAM_DESTROYED', 'avatar');
+        expect(transformException(err)).to.equal(err);
+      });
       it('should behave as identity for a code that is not a multer code', () => {
         const err = Object.assign(new Error('no such file'), {
           code: 'ENOENT',
