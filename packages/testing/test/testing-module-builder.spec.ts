@@ -196,6 +196,40 @@ describe('TestingModuleBuilder', () => {
       expect(service).toBeInstanceOf(MockService);
     });
 
+    it('should support overriding a value provider with useClass', async () => {
+      @ModuleDecorator({
+        providers: [{ provide: 'SERVICE', useValue: 'real-service' }],
+      })
+      class TestModule {}
+
+      class MockService {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestModule],
+      })
+        .overrideProvider('SERVICE')
+        .useClass(MockService)
+        .compile();
+
+      expect(module.get('SERVICE')).toBeInstanceOf(MockService);
+    });
+
+    it('should support overriding a value provider with useFactory', async () => {
+      @ModuleDecorator({
+        providers: [{ provide: 'SERVICE', useValue: 'real-service' }],
+      })
+      class TestModule {}
+
+      const module = await Test.createTestingModule({
+        imports: [TestModule],
+      })
+        .overrideProvider('SERVICE')
+        .useFactory({ factory: () => 'mock-service' })
+        .compile();
+
+      expect(module.get('SERVICE')).toBe('mock-service');
+    });
+
     it('should use mocker for unresolved providers', async () => {
       @Injectable()
       class MissingDepClass {}

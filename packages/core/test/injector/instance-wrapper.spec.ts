@@ -1010,9 +1010,47 @@ describe('InstanceWrapper', () => {
 
         expect(wrapper.metatype).toEqual(TestClass);
       });
+
+      it('should reset a previously resolved instance in the STATIC_CONTEXT', () => {
+        const wrapper = new InstanceWrapper({
+          metatype: null,
+          instance: 'value',
+          isResolved: true,
+        });
+
+        wrapper.mergeWith({
+          useClass: TestClass,
+          provide: 'token',
+        });
+
+        const { instance, isResolved, isPending } =
+          wrapper.getInstanceByContextId(STATIC_CONTEXT);
+        expect(instance).toBeNull();
+        expect(isResolved).toBe(false);
+        expect(isPending).toBeFalsy();
+      });
     });
 
     describe('when provider is a FactoryProvider', () => {
+      it('should reset a previously resolved instance in the STATIC_CONTEXT', () => {
+        const wrapper = new InstanceWrapper({
+          metatype: null,
+          instance: 'value',
+          isResolved: true,
+        });
+
+        wrapper.mergeWith({
+          provide: 'token',
+          useFactory: () => 'factory value',
+        });
+
+        const { instance, isResolved, isPending } =
+          wrapper.getInstanceByContextId(STATIC_CONTEXT);
+        expect(instance).toBeNull();
+        expect(isResolved).toBe(false);
+        expect(isPending).toBeFalsy();
+      });
+
       describe('and it has injected dependencies', () => {
         it('should alter the instance wrapper metatype and inject attributes with the given values', () => {
           const wrapper = new InstanceWrapper();

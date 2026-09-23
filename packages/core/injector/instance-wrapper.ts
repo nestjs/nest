@@ -509,10 +509,20 @@ export class InstanceWrapper<T = any> {
     } else if (isClassProvider(provider)) {
       this.inject = null;
       this.metatype = provider.useClass;
+      this.resetStaticInstance();
     } else if (isFactoryProvider(provider)) {
       this.metatype = provider.useFactory;
       this.inject = provider.inject || [];
+      this.resetStaticInstance();
     }
+  }
+
+  private resetStaticInstance() {
+    this.setInstanceByContextId(STATIC_CONTEXT, {
+      instance: null as T,
+      isResolved: false,
+      isPending: false,
+    });
   }
 
   private isNewable(): boolean {
