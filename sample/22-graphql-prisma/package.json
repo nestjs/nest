@@ -21,10 +21,10 @@
   },
   "dependencies": {
     "@apollo/server": "5.5.1",
-    "@nestjs/apollo": "14.0.1",
+    "@nestjs/apollo": "14.0.2",
     "@nestjs/common": "12.1.0",
     "@nestjs/core": "12.1.0",
-    "@nestjs/graphql": "14.0.1",
+    "@nestjs/graphql": "14.0.2",
     "@nestjs/platform-express": "12.1.0",
     "@prisma/adapter-better-sqlite3": "7.10.0",
     "@prisma/client": "7.10.0",
