@@ -272,4 +272,25 @@ describe('FastifyAdapter', () => {
       expect(onCloseCalled).toBe(true);
     });
   });
+
+  describe('useStaticAssets / setViewEngine', () => {
+    // `NestApplication` discards what these return, so the plugin has to reach
+    // fastify before the caller's next statement — which in the documented
+    // bootstrap is `listen()`.
+    it('should register @fastify/static before returning', () => {
+      const register = vi.spyOn(fastifyAdapter.getInstance(), 'register');
+
+      fastifyAdapter.useStaticAssets({ root: import.meta.dirname });
+
+      expect(register).toHaveBeenCalledOnce();
+    });
+
+    it('should register @fastify/view before returning', () => {
+      const register = vi.spyOn(fastifyAdapter.getInstance(), 'register');
+
+      fastifyAdapter.setViewEngine({ engine: { handlebars: {} } });
+
+      expect(register).toHaveBeenCalledOnce();
+    });
+  });
 });

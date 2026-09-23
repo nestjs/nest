@@ -679,9 +679,13 @@ export class FastifyAdapter<
     }
   }
 
-  public async useStaticAssets(options: FastifyStaticOptions) {
+  // `register()` accepts a promise of a plugin, so the import is handed over
+  // unawaited on purpose. `NestApplication.useStaticAssets()` discards what
+  // this returns, so awaiting here would enqueue the plugin after the caller
+  // has already moved on to `listen()`.
+  public useStaticAssets(options: FastifyStaticOptions) {
     return this.register(
-      await loadPackage(
+      loadPackage(
         '@fastify/static',
         'FastifyAdapter.useStaticAssets()',
         () => import('@fastify/static'),
@@ -690,7 +694,8 @@ export class FastifyAdapter<
     );
   }
 
-  public async setViewEngine(options: FastifyViewOptions | string) {
+  // Handed over unawaited for the same reason as `useStaticAssets()` above.
+  public setViewEngine(options: FastifyViewOptions | string) {
     if (isString(options)) {
       new Logger('FastifyAdapter').error(
         "setViewEngine() doesn't support a string argument.",
@@ -698,7 +703,7 @@ export class FastifyAdapter<
       process.exit(1);
     }
     return this.register(
-      await loadPackage(
+      loadPackage(
         '@fastify/view',
         'FastifyAdapter.setViewEngine()',
         () => import('@fastify/view'),

@@ -1,6 +1,10 @@
 import { INestApplication } from '@nestjs/common';
-import { FastifyAdapter } from '@nestjs/platform-fastify';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { Test, TestingModule } from '@nestjs/testing';
+import { join } from 'path';
 import { AppModule } from '../src/app.module.js';
 
 describe('Listen (Fastify Application)', () => {
@@ -37,5 +41,20 @@ describe('Listen (Fastify Application)', () => {
     await expect(app.listen(3000, '1')).rejects.toMatchObject({
       code: 'EADDRNOTAVAIL',
     });
+  });
+
+  it('should serve static assets registered before listen()', async () => {
+    // `useStaticAssets()` discards what the adapter returns, so the plugin
+    // has to reach fastify before the next statement runs.
+    (app as NestFastifyApplication).useStaticAssets({
+      root: join(import.meta.dirname, '..', 'public'),
+      prefix: '/public/',
+    });
+
+    await app.listen(3000);
+
+    const response = await fetch('http://localhost:3000/public/hello.txt');
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toContain('static asset');
   });
 });
