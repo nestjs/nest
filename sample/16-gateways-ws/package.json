@@ -32,7 +32,7 @@
     "ws": "8.21.0"
   },
   "devDependencies": {
-    "@nestjs/cli": "12.0.3",
+    "@nestjs/cli": "12.0.5",
     "@nestjs/schematics": "12.0.4",
     "@nestjs/testing": "12.0.4",
     "@types/express": "5.0.6",
