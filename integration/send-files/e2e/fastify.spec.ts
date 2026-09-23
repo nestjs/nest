@@ -59,6 +59,20 @@ describe('Fastify FileSend', () => {
         expect(payload).toBe({ value: 'Hello world' });
       });
   });
+  // fastify already sends these as binary. Pinned here so the express fix has
+  // something to stay in parity with.
+  it.each(['/raw/buffer', '/raw/uint8array'])(
+    'should return %s as binary, not as a JSON dump',
+    async url => {
+      return app
+        .inject({ method: 'GET', url })
+        .then(({ headers, payload, statusCode }) => {
+          expect(statusCode).toBe(200);
+          expect(headers['content-type']).toBe('application/octet-stream');
+          expect(payload.toString()).toBe(readmeString);
+        });
+    },
+  );
   it('should return a file from an RxJS stream', async () => {
     return app
       .inject({
