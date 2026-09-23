@@ -136,5 +136,17 @@ describe('LegacyRouteConverter', () => {
         expect.stringContaining('Attempting to auto-convert'),
       );
     });
+
+    it('should recommend the same form that tryConvert produces', () => {
+      const converted = LegacyRouteConverter.tryConvert('/users/*', {
+        logs: false,
+      });
+      expect(converted).toBe('/users/{*path}');
+
+      LegacyRouteConverter.printWarning('/users/*', converted);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`you should use ${converted}`),
+      );
+    });
   });
 });
