@@ -111,6 +111,44 @@ describe('ClientRMQ', function () {
 
         expect(createClientStub).toHaveBeenCalledTimes(2);
       });
+
+      it('should not discard a newer connection when a stale attempt fails', async () => {
+        let rejectFirstAttempt!: (err: Error) => void;
+        const firstClose = vi.fn().mockResolvedValue(undefined);
+        const secondClose = vi.fn().mockResolvedValue(undefined);
+        createClientStub
+          .mockImplementationOnce(() => ({
+            addListener: () => ({}),
+            removeListener: () => ({}),
+            close: firstClose,
+          }))
+          .mockImplementationOnce(() => ({
+            addListener: () => ({}),
+            removeListener: () => ({}),
+            close: secondClose,
+          }));
+        vi.spyOn(client, 'convertConnectionToPromise')
+          .mockReturnValueOnce(
+            new Promise<void>((_, reject) => (rejectFirstAttempt = reject)),
+          )
+          .mockResolvedValueOnce(undefined);
+
+        const firstAttempt = client.connect();
+        await client.close();
+        firstClose.mockClear();
+        const secondAttempt = client.connect();
+        const secondClient = untypedClient.client;
+
+        rejectFirstAttempt(new Error('broker unavailable'));
+        await expect(firstAttempt).rejects.toThrow('broker unavailable');
+        await secondAttempt;
+
+        expect(untypedClient.client).toBe(secondClient);
+        expect(untypedClient.connectionPromise).not.toBeNull();
+        expect(secondClose).not.toHaveBeenCalled();
+        // The stale attempt still closes the manager it created.
+        expect(firstClose).toHaveBeenCalledOnce();
+      });
     });
   });
 
