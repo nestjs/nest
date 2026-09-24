@@ -153,7 +153,7 @@ export class ServerRedis extends Server<RedisEvents, RedisStatus> {
     }
     const publish = this.getPublisher(
       pub,
-      channel,
+      pattern,
       (packet as IncomingRequest).id,
       redisCtx,
     );

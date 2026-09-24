@@ -228,6 +228,30 @@ describe('ServerRedis', () => {
       const context: RedisContext = handler.mock.calls[0][1];
       expect(context.getMetadata()).toEqual(metadata);
     });
+    it('should publish the reply to the channel the request came from when wildcards are enabled', async () => {
+      // ioredis emits "pmessage" with (pattern, channel, message). With
+      // wildcards the handler is registered on the pattern ("users.*"), but
+      // the client waits for the reply on the concrete channel it published
+      // to ("users.created.reply"), so the reply must target that channel.
+      untypedServer.options.wildcards = true;
+      const handler = vi.fn();
+      untypedServer.messageHandlers = objectToMap({
+        'users.*': handler,
+      });
+      vi.spyOn(server, 'parseMessage').mockImplementation(
+        () => ({ id, data }) as any,
+      );
+
+      await server.handleMessage('users.*', '', null, 'users.created');
+
+      expect(handler).toHaveBeenCalledWith(data, expect.any(RedisContext));
+      expect(server.getPublisher).toHaveBeenCalledWith(
+        null,
+        'users.created',
+        id,
+        expect.any(RedisContext),
+      );
+    });
   });
 
   describe('processing end hook', () => {
