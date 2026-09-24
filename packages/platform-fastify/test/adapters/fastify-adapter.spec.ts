@@ -54,6 +54,35 @@ describe('FastifyAdapter', () => {
         expect(reply.status).toHaveBeenCalledWith(statusCode);
       }
     });
+
+    it('should keep a JSON content type that carries parameters', () => {
+      const reply = createReply();
+      reply.getHeader.mockReturnValue('application/json; charset=utf-8');
+
+      fastifyAdapter.reply(
+        reply as any,
+        { statusCode: 400, message: 'Oops' },
+        400,
+      );
+
+      expect(reply.header).not.toHaveBeenCalled();
+    });
+
+    it('should force a JSON content type for error bodies sent with a non-JSON content type', () => {
+      const reply = createReply();
+      reply.getHeader.mockReturnValue('text/html');
+
+      fastifyAdapter.reply(
+        reply as any,
+        { statusCode: 400, message: 'Oops' },
+        400,
+      );
+
+      expect(reply.header).toHaveBeenCalledWith(
+        'Content-Type',
+        'application/json',
+      );
+    });
   });
 
   describe('mapException', () => {

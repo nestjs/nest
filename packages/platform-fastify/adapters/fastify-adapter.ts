@@ -532,9 +532,10 @@ export class FastifyAdapter<
       }
       body = body.getStream();
     }
+    const responseContentType = fastifyReply.getHeader('Content-Type');
     if (
-      fastifyReply.getHeader('Content-Type') !== undefined &&
-      fastifyReply.getHeader('Content-Type') !== 'application/json' &&
+      typeof responseContentType === 'string' &&
+      !responseContentType.startsWith('application/json') &&
       body?.statusCode >= HttpStatus.BAD_REQUEST
     ) {
       Logger.warn(
