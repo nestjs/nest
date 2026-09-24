@@ -449,6 +449,50 @@ describe('ClientKafka', () => {
         expect(producerStub).toHaveBeenCalledOnce();
         expect(connection).toEqual(producerStub());
       });
+
+      it('should not discard a newer connection when a stale attempt fails', async () => {
+        let rejectFirstAttempt!: (err: Error) => void;
+        const firstDisconnect = vi.fn().mockResolvedValue(undefined);
+        const secondDisconnect = vi.fn().mockResolvedValue(undefined);
+        const createConsumer = consumerStub.getMockImplementation()!;
+        const createProducer = producerStub.getMockImplementation()!;
+        consumerStub
+          .mockImplementationOnce(() => ({
+            ...createConsumer(),
+            connect: () =>
+              new Promise<void>((_, reject) => (rejectFirstAttempt = reject)),
+            disconnect: firstDisconnect,
+          }))
+          .mockImplementationOnce(() => ({
+            ...createConsumer(),
+            disconnect: secondDisconnect,
+          }));
+        producerStub.mockImplementationOnce(() => ({
+          ...createProducer(),
+          disconnect: secondDisconnect,
+        }));
+
+        const firstAttempt = client.connect();
+        // Let the first attempt reach the (pending) consumer connection.
+        await new Promise(process.nextTick);
+        await client.close();
+        firstDisconnect.mockClear();
+        const secondAttempt = client.connect();
+        await secondAttempt;
+        const secondConsumer = untypedClient._consumer;
+        const secondProducer = untypedClient._producer;
+
+        rejectFirstAttempt(new Error('broker unavailable'));
+        await expect(firstAttempt).rejects.toThrow('broker unavailable');
+
+        expect(untypedClient._consumer).toBe(secondConsumer);
+        expect(untypedClient._producer).toBe(secondProducer);
+        expect(untypedClient.client).not.toBeNull();
+        expect(untypedClient.initialized).not.toBeNull();
+        expect(secondDisconnect).not.toHaveBeenCalled();
+        // The stale attempt still disconnects the consumer it created.
+        expect(firstDisconnect).toHaveBeenCalledOnce();
+      });
     });
 
     describe('producer only mode', () => {
