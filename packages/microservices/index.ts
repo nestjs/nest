@@ -9,6 +9,7 @@ import 'reflect-metadata';
 export * from './client/index.js';
 export * from './ctx-host/index.js';
 export * from './decorators/index.js';
+export * from './deserializers/index.js';
 export * from './enums/index.js';
 export * from './events/index.js';
 export * from './exceptions/index.js';
