@@ -73,6 +73,45 @@ describe('ClientRMQ', function () {
         expect(connect$Stub).not.toHaveBeenCalled();
       });
     });
+    describe('when the connection attempt fails', () => {
+      let close: ReturnType<typeof vi.fn>;
+
+      beforeEach(() => {
+        close = vi.fn().mockResolvedValue(undefined);
+        createClientStub.mockImplementation(() => ({
+          addListener: () => ({}),
+          removeListener: () => ({}),
+          close,
+        }));
+      });
+
+      it('should discard the partial connection when an attempt fails', async () => {
+        const error = new Error('broker unavailable');
+        vi.spyOn(client, 'convertConnectionToPromise').mockRejectedValueOnce(
+          error,
+        );
+
+        await expect(client.connect()).rejects.toThrow(error);
+
+        expect(untypedClient.connectionPromise).toBeNull();
+        expect(untypedClient.client).toBeNull();
+        expect(untypedClient.channel).toBeNull();
+        // The manager the failed attempt created is closed, not left retrying.
+        expect(close).toHaveBeenCalledOnce();
+      });
+
+      it('should try again on the next call instead of caching a failed attempt', async () => {
+        const error = new Error('broker unavailable');
+        vi.spyOn(client, 'convertConnectionToPromise')
+          .mockRejectedValueOnce(error)
+          .mockResolvedValueOnce(undefined);
+
+        await expect(client.connect()).rejects.toThrow(error);
+        await client.connect();
+
+        expect(createClientStub).toHaveBeenCalledTimes(2);
+      });
+    });
   });
 
   describe('createChannel', () => {

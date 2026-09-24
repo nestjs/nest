@@ -61,7 +61,7 @@ const REPLY_QUEUE = 'amq.rabbitmq.reply-to';
 export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   protected readonly logger = new Logger(ClientProxy.name);
   protected connection$: ReplaySubject<any>;
-  protected connectionPromise: Promise<void>;
+  protected connectionPromise: Promise<void> | null;
   protected client: AmqpConnectionManager | null = null;
   protected channel: ChannelWrapper | null = null;
   protected pendingEventListeners: Array<{
@@ -167,9 +167,32 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
     this.connection$ = new ReplaySubject(1);
     source$.subscribe(this.connection$);
-    this.connectionPromise = this.convertConnectionToPromise();
+    this.connectionPromise = this.convertConnectionToPromise().catch(
+      async err => {
+        // A rejected attempt must not be cached: the next `connect()` call
+        // has to try again once the broker is reachable, instead of failing
+        // forever with the error of the first attempt.
+        this.connectionPromise = null;
+        await this.discardPartialConnection();
+        throw err;
+      },
+    );
 
     return this.connectionPromise;
+  }
+
+  /**
+   * Tears down whatever a failed connection attempt managed to create, so the
+   * connection manager it spawned does not keep retrying in the background
+   * while the next attempt creates a new one.
+   */
+  private async discardPartialConnection(): Promise<void> {
+    const client = this.client;
+    const channel = this.channel;
+    this.client = null;
+    this.channel = null;
+
+    await Promise.allSettled([client?.close(), channel?.close()]);
   }
 
   public createChannel(): Promise<void> {
