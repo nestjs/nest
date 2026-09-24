@@ -437,6 +437,66 @@ describe('ClientNats', () => {
       );
     });
   });
+  describe('when the client gives up', () => {
+    let client: ClientNats;
+    let untypedClient: any;
+
+    beforeEach(() => {
+      client = new ClientNats({});
+      untypedClient = client as any;
+    });
+
+    it('should start a new connection when the status iterator completes', async () => {
+      let releaseIterator: () => void;
+      const iteratorReachedEnd = new Promise<void>(resolve => {
+        releaseIterator = resolve;
+      });
+
+      const firstClient = {
+        status: () => ({
+          async *[Symbol.asyncIterator]() {
+            yield { type: 'disconnect' };
+            await iteratorReachedEnd;
+          },
+        }),
+        close: vi.fn(),
+      };
+      const secondClient = {
+        status: () => ({
+          async *[Symbol.asyncIterator]() {
+            // stays connected
+          },
+        }),
+        close: vi.fn(),
+      };
+      const createClientSpy = vi
+        .spyOn(client, 'createClient')
+        .mockResolvedValueOnce(firstClient as any)
+        .mockResolvedValueOnce(secondClient as any);
+
+      await client.connect();
+      await vi.waitFor(async () => {
+        expect(untypedClient.connectionPromise).toBeTruthy();
+        await expect(untypedClient.connectionPromise).rejects.toBe(
+          'Error: Connection lost. Trying to reconnect...',
+        );
+      });
+
+      await expect(client.connect()).rejects.toBe(
+        'Error: Connection lost. Trying to reconnect...',
+      );
+
+      releaseIterator!();
+      await vi.waitFor(() =>
+        expect(untypedClient.connectionPromise).toBeNull(),
+      );
+      expect(untypedClient.natsClient).toBeNull();
+
+      await client.connect();
+      expect(createClientSpy).toHaveBeenCalledTimes(2);
+      createClientSpy.mockRestore();
+    });
+  });
   describe('dispatchEvent', () => {
     let msg: ReadPacket;
     let subscribeStub: ReturnType<typeof vi.fn>, natsClient: any;
