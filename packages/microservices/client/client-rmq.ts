@@ -61,7 +61,7 @@ const REPLY_QUEUE = 'amq.rabbitmq.reply-to';
 export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
   protected readonly logger = new Logger(ClientProxy.name);
   protected connection$: ReplaySubject<any>;
-  protected connectionPromise: Promise<void>;
+  protected connectionPromise: Promise<void> | null;
   protected client: AmqpConnectionManager | null = null;
   protected channel: ChannelWrapper | null = null;
   protected pendingEventListeners: Array<{
@@ -167,9 +167,40 @@ export class ClientRMQ extends ClientProxy<RmqEvents, RmqStatus> {
 
     this.connection$ = new ReplaySubject(1);
     source$.subscribe(this.connection$);
-    this.connectionPromise = this.convertConnectionToPromise();
+    const client = this.client;
+    const connectionPromise = this.convertConnectionToPromise().catch(
+      async err => {
+        // A rejected attempt must not be cached: the next `connect()` call
+        // has to try again once the broker is reachable, instead of failing
+        // forever with the error of the first attempt.
+        await this.discardPartialConnection(client, connectionPromise);
+        throw err;
+      },
+    );
+    this.connectionPromise = connectionPromise;
 
-    return this.connectionPromise;
+    return connectionPromise;
+  }
+
+  /**
+   * Tears down whatever a failed connection attempt managed to create, so the
+   * connection manager it spawned does not keep retrying in the background
+   * while the next attempt creates a new one. The client's state is only reset
+   * if no newer attempt has replaced it in the meantime (e.g., `close()`
+   * followed by `connect()` while the failed attempt was still pending).
+   */
+  private async discardPartialConnection(
+    client: AmqpConnectionManager,
+    connectionPromise: Promise<void>,
+  ): Promise<void> {
+    let channel: ChannelWrapper | null = null;
+    if (this.connectionPromise === connectionPromise) {
+      channel = this.channel;
+      this.client = null;
+      this.channel = null;
+      this.connectionPromise = null;
+    }
+    await Promise.allSettled([client.close(), channel?.close()]);
   }
 
   public createChannel(): Promise<void> {
