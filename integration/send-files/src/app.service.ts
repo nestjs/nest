@@ -25,6 +25,14 @@ export class AppService {
     return new NonFile('Hello world');
   }
 
+  getRawBuffer(): Buffer {
+    return readFileSync(join(process.cwd(), 'Readme.md'));
+  }
+
+  getRawUint8Array(): Uint8Array {
+    return new Uint8Array(this.getRawBuffer());
+  }
+
   getRxJSFile(): Observable<StreamableFile> {
     return of(this.getReadStream());
   }

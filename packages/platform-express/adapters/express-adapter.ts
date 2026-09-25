@@ -135,6 +135,14 @@ export class ExpressAdapter extends AbstractHttpAdapter<
       );
       response.setHeader('Content-Type', 'application/json');
     }
+    if (ArrayBuffer.isView(body)) {
+      // Binary payloads (Buffer, Uint8Array, ...) are objects, so `response.json()`
+      // would run them through `JSON.stringify` and serve a Buffer as
+      // `{"type":"Buffer","data":[...]}` with an `application/json` content type.
+      // `response.send()` is what bare express uses for every `ArrayBuffer` view,
+      // and it is what the fastify adapter already ends up doing.
+      return response.send(body);
+    }
     return isObject(body) ? response.json(body) : response.send(String(body));
   }
 
