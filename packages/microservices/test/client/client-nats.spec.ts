@@ -382,6 +382,57 @@ describe('ClientNats', () => {
         expect(handleStatusUpdatesSpy).not.toHaveBeenCalled();
       });
     });
+    describe('when a stale attempt fails', () => {
+      it('should keep a newer connection when a stale attempt fails', async () => {
+        client = new ClientNats({});
+        untypedClient = client as any;
+        let rejectFirstAttempt!: (err: Error) => void;
+        const firstAttempt = new Promise<never>((_, reject) => {
+          rejectFirstAttempt = reject;
+        });
+        const mockNatsClient = {
+          status: vi.fn().mockReturnValue({
+            // the connection stays alive: next() never resolves
+            [Symbol.asyncIterator]() {
+              return {
+                next: () => new Promise(() => {}),
+                [Symbol.asyncIterator]() {
+                  return this;
+                },
+              };
+            },
+          }),
+          close: vi.fn().mockResolvedValue(undefined),
+        };
+
+        const staleCreateClientSpy = vi
+          .spyOn(client, 'createClient')
+          .mockImplementationOnce(() => firstAttempt)
+          .mockImplementationOnce(() => Promise.resolve(mockNatsClient))
+          .mockImplementation(() => Promise.resolve(mockNatsClient));
+
+        const firstConnect = client.connect();
+        // Let the first attempt cache its promise before the close().
+        await new Promise(process.nextTick);
+        await client.close();
+        const liveClient = await client.connect();
+        const cachedPromise = untypedClient.connectionPromise;
+
+        rejectFirstAttempt(new Error('connection refused'));
+        await expect(firstConnect).rejects.toThrow('connection refused');
+
+        // A rejected attempt must not clear the newer attempt's cached
+        // promise, close() followed by connect() would otherwise orphan the
+        // newer live client on the next connect().
+        expect(untypedClient.connectionPromise).toBe(cachedPromise);
+        expect(untypedClient.natsClient).toBe(liveClient);
+
+        expect(await client.connect()).toBe(liveClient);
+        expect(staleCreateClientSpy).toHaveBeenCalledTimes(2);
+
+        await client.close();
+      });
+    });
   });
   describe('handleStatusUpdates', () => {
     it('should retrieve "status()" async iterator', () => {

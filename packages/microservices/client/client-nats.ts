@@ -90,9 +90,17 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
-    this.connectionPromise = this.createClient();
-    this.natsClient = await this.connectionPromise.catch(err => {
-      this.connectionPromise = null;
+    const connectionPromise = this.createClient();
+    this.connectionPromise = connectionPromise;
+    this.natsClient = await connectionPromise.catch(err => {
+      // A rejected attempt must not be cached, but a newer attempt may have
+      // replaced it in the meantime (close() followed by connect() while this
+      // attempt was still pending): only reset the shared state when the
+      // failing attempt is still the current one, as ClientRedis and
+      // ClientRMQ already do.
+      if (this.connectionPromise === connectionPromise) {
+        this.connectionPromise = null;
+      }
       throw err;
     });
 
