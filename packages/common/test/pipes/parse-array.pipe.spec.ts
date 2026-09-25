@@ -190,6 +190,39 @@ describe('ParseArrayPipe', () => {
           await target.transform('true,false', {} as ArgumentMetadata),
         ).to.deep.equal([true, false]);
       });
+      it('should reject items that are not numbers when items is Number', async () => {
+        target = new ParseArrayPipe({ items: Number });
+
+        for (const [value, index] of [
+          ['1,true', 1],
+          ['1,false', 1],
+          ['1,[2]', 1],
+          ['1, ,2', 1],
+          ['1,Infinity', 1],
+          ['1,-Infinity', 1],
+          ['1,0x10', 1],
+          ['1,0b11', 1],
+          ['1,0o17', 1],
+        ] as const) {
+          await expect(
+            target.transform(value, {} as ArgumentMetadata),
+          ).to.be.rejectedWith(`[${index}] item must be a number`);
+        }
+
+        await expect(
+          target.transform([1, true], {} as ArgumentMetadata),
+        ).to.be.rejectedWith('[1] item must be a number');
+      });
+      it('should keep parsing numeric strings when items is Number', async () => {
+        target = new ParseArrayPipe({ items: Number });
+
+        expect(
+          await target.transform(
+            '1, 2,-3.5,1e3,01,+4,.5',
+            {} as ArgumentMetadata,
+          ),
+        ).to.deep.equal([1, 2, -3.5, 1000, 1, 4, 0.5]);
+      });
       describe('when "stopAtFirstError" is explicitly turned off', () => {
         it('should validate each item and concat errors', async () => {
           class ArrItemWithProp {
