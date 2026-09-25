@@ -1,4 +1,11 @@
-import { Injectable, InjectionToken, Provider, Scope } from '@nestjs/common';
+import {
+  Injectable,
+  InjectionToken,
+  Logger,
+  Provider,
+  Scope,
+} from '@nestjs/common';
+import { MESSAGES } from '../constants.js';
 import { ContextIdFactory } from '../helpers/context-id-factory.js';
 import { NestContainer } from '../injector/container.js';
 import { Injector } from '../injector/injector.js';
@@ -856,6 +863,330 @@ describe('NestApplicationContext', () => {
 
       expect(instance).toBeInstanceOf(UnusedTransient);
       expect(UnusedTransient.constructorCalls).toBe(1);
+    });
+  });
+
+  describe('enableProcessErrorHandlers', () => {
+    function baselineOf(event: string) {
+      return new Set(process.listeners(event as any));
+    }
+
+    function restoreListeners(event: string, baseline: Set<unknown>) {
+      process.listeners(event as any).forEach(listener => {
+        if (!baseline.has(listener)) {
+          process.removeListener(event as any, listener);
+        }
+      });
+    }
+
+    it('should not subscribe to any process event when no handler is given', async () => {
+      const uncaught = process.listenerCount('uncaughtException');
+      const rejection = process.listenerCount('unhandledRejection');
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      applicationContext.enableProcessErrorHandlers({});
+
+      expect(process.listenerCount('uncaughtException')).toBe(uncaught);
+      expect(process.listenerCount('unhandledRejection')).toBe(rejection);
+    });
+
+    it('should keep the process alive when the handler does not shut it down', async () => {
+      const baseline = baselineOf('uncaughtException');
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const exitSpy = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => undefined) as any);
+      const handler = vi.fn();
+
+      try {
+        applicationContext.enableProcessErrorHandlers({
+          uncaughtException: handler,
+        });
+
+        const error = new Error('boom');
+        applicationContext['processErrorCleanupRefs'].get('uncaughtException')!(
+          error,
+        );
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(handler).toHaveBeenCalledWith(error, {
+          origin: 'uncaughtException',
+          shutdown: expect.any(Function),
+        });
+        expect(exitSpy).not.toHaveBeenCalled();
+      } finally {
+        exitSpy.mockRestore();
+        restoreListeners('uncaughtException', baseline);
+      }
+    });
+
+    it('should run the shutdown sequence and exit when the handler asks for it', async () => {
+      const baseline = baselineOf('unhandledRejection');
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const exitSpy = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => undefined) as any);
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => undefined);
+
+      try {
+        applicationContext.enableProcessErrorHandlers({
+          unhandledRejection: (_error, { shutdown }) =>
+            shutdown({ exitCode: 7 }),
+        });
+
+        applicationContext['processErrorCleanupRefs'].get(
+          'unhandledRejection',
+        )!(new Error('boom'));
+
+        await vi.waitFor(() => expect(exitSpy).toHaveBeenCalledWith(7));
+        expect(hookStub).toHaveBeenCalledWith('unhandledRejection');
+      } finally {
+        exitSpy.mockRestore();
+        hookStub.mockRestore();
+        restoreListeners('unhandledRejection', baseline);
+      }
+    });
+
+    it('should exit with code 1 by default when the handler asks to shut down', async () => {
+      const baseline = baselineOf('uncaughtException');
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const exitSpy = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => undefined) as any);
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => undefined);
+
+      try {
+        applicationContext.enableProcessErrorHandlers({
+          uncaughtException: (_error, { shutdown }) => shutdown(),
+        });
+
+        applicationContext['processErrorCleanupRefs'].get('uncaughtException')!(
+          new Error('boom'),
+        );
+
+        await vi.waitFor(() => expect(exitSpy).toHaveBeenCalledWith(1));
+      } finally {
+        exitSpy.mockRestore();
+        hookStub.mockRestore();
+        restoreListeners('uncaughtException', baseline);
+      }
+    });
+
+    it('should report the origin Node.js gives an unhandled rejection promoted to uncaughtException', async () => {
+      const baseline = baselineOf('uncaughtException');
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const handler = vi.fn();
+
+      try {
+        applicationContext.enableProcessErrorHandlers({
+          uncaughtException: handler,
+        });
+
+        // Without an `unhandledRejection` listener of its own, Node.js
+        // raises the rejection here and passes 'unhandledRejection' as the
+        // second argument, even though this listener is subscribed to
+        // 'uncaughtException'.
+        const error = new Error('dropped promise');
+        applicationContext['processErrorCleanupRefs'].get('uncaughtException')!(
+          error,
+          'unhandledRejection',
+        );
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(handler).toHaveBeenCalledWith(error, {
+          origin: 'unhandledRejection',
+          shutdown: expect.any(Function),
+        });
+      } finally {
+        restoreListeners('uncaughtException', baseline);
+      }
+    });
+
+    it('should force the exit once the deadline elapses, even if the shutdown sequence is still pending', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout'] });
+      const baseline = baselineOf('uncaughtException');
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      // Use global setTimeout wrapped in a Promise so fake timers can
+      // intercept it (timers/promises.setTimeout is not fakeable in ESM).
+      const delay = (ms: number) =>
+        new Promise<void>(resolve => globalThis.setTimeout(resolve, ms));
+
+      const exitSpy = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => undefined) as any);
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(() => delay(5000));
+
+      try {
+        applicationContext.enableProcessErrorHandlers({
+          uncaughtException: (_error, { shutdown }) =>
+            shutdown({ exitCode: 2, timeout: 1000 }),
+        });
+
+        const listener =
+          applicationContext['processErrorCleanupRefs'].get(
+            'uncaughtException',
+          )!;
+        const listenerDone = listener(new Error('boom'));
+
+        await vi.advanceTimersByTimeAsync(999);
+        expect(exitSpy).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(1);
+        await listenerDone;
+
+        expect(exitSpy).toHaveBeenCalledWith(2);
+      } finally {
+        hookStub.mockRestore();
+        exitSpy.mockRestore();
+        restoreListeners('uncaughtException', baseline);
+        vi.useRealTimers();
+      }
+    });
+
+    it('should wait for the shutdown sequence indefinitely when the timeout is not finite', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout'] });
+      const baseline = baselineOf('uncaughtException');
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      const delay = (ms: number) =>
+        new Promise<void>(resolve => globalThis.setTimeout(resolve, ms));
+
+      const exitSpy = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => undefined) as any);
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(() => delay(60 * 60 * 1000));
+
+      try {
+        applicationContext.enableProcessErrorHandlers({
+          uncaughtException: (_error, { shutdown }) =>
+            shutdown({ timeout: Infinity }),
+        });
+
+        const listener =
+          applicationContext['processErrorCleanupRefs'].get(
+            'uncaughtException',
+          )!;
+        const listenerDone = listener(new Error('boom'));
+
+        // A clamped, non-finite setTimeout would have fired within 1ms;
+        // advancing far past that proves no deadline is racing at all.
+        await vi.advanceTimersByTimeAsync(60 * 60 * 1000 - 1);
+        expect(exitSpy).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(1);
+        await listenerDone;
+
+        expect(exitSpy).toHaveBeenCalledWith(1);
+      } finally {
+        hookStub.mockRestore();
+        exitSpy.mockRestore();
+        restoreListeners('uncaughtException', baseline);
+        vi.useRealTimers();
+      }
+    });
+
+    it('should still exit when the shutdown sequence itself rejects', async () => {
+      const baseline = baselineOf('uncaughtException');
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const exitSpy = vi
+        .spyOn(process, 'exit')
+        .mockImplementation((() => undefined) as any);
+      const loggerSpy = vi
+        .spyOn(Logger, 'error')
+        .mockImplementation(() => undefined);
+      const shutdownError = new Error('callShutdownHook exploded');
+      const hookStub = vi
+        .spyOn(applicationContext as any, 'callShutdownHook')
+        .mockImplementation(async () => {
+          throw shutdownError;
+        });
+
+      try {
+        applicationContext.enableProcessErrorHandlers({
+          uncaughtException: (_error, { shutdown }) =>
+            shutdown({ exitCode: 3 }),
+        });
+
+        applicationContext['processErrorCleanupRefs'].get('uncaughtException')!(
+          new Error('boom'),
+        );
+
+        await vi.waitFor(() => expect(exitSpy).toHaveBeenCalledWith(3));
+        expect(loggerSpy).toHaveBeenCalledWith(
+          MESSAGES.ERROR_DURING_SHUTDOWN,
+          shutdownError.stack,
+          'NestApplicationContext',
+        );
+      } finally {
+        hookStub.mockRestore();
+        loggerSpy.mockRestore();
+        exitSpy.mockRestore();
+        restoreListeners('uncaughtException', baseline);
+      }
+    });
+
+    it('should log an error thrown by the handler instead of letting it escape', async () => {
+      const baseline = baselineOf('uncaughtException');
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+      const loggerSpy = vi
+        .spyOn(Logger, 'error')
+        .mockImplementation(() => undefined);
+
+      try {
+        const handlerError = new Error('the reporter is broken');
+        applicationContext.enableProcessErrorHandlers({
+          uncaughtException: () => {
+            throw handlerError;
+          },
+        });
+
+        applicationContext['processErrorCleanupRefs'].get('uncaughtException')!(
+          new Error('boom'),
+        );
+        await new Promise(resolve => setImmediate(resolve));
+
+        expect(loggerSpy).toHaveBeenCalledWith(
+          handlerError,
+          handlerError.stack,
+          'NestApplicationContext',
+        );
+      } finally {
+        loggerSpy.mockRestore();
+        restoreListeners('uncaughtException', baseline);
+      }
+    });
+
+    it('should register a single listener per event and remove it on close', async () => {
+      const baseline = baselineOf('uncaughtException');
+      const applicationContext = await testHelper(A, Scope.DEFAULT);
+
+      try {
+        applicationContext.enableProcessErrorHandlers({
+          uncaughtException: () => undefined,
+        });
+        applicationContext.enableProcessErrorHandlers({
+          uncaughtException: () => undefined,
+        });
+
+        expect(process.listenerCount('uncaughtException')).toBe(
+          baseline.size + 1,
+        );
+
+        await applicationContext.close();
+
+        expect(process.listenerCount('uncaughtException')).toBe(baseline.size);
+      } finally {
+        restoreListeners('uncaughtException', baseline);
+      }
     });
   });
 });
