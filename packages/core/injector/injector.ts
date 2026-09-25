@@ -526,7 +526,8 @@ export class Injector {
   }
 
   public reflectSelfParams(type: Type<unknown> | Function): any[] {
-    return Reflect.getMetadata(SELF_DECLARED_DEPS_METADATA, type) || [];
+    const ctorOwner = this.getConstructorOwner(type);
+    return Reflect.getOwnMetadata(SELF_DECLARED_DEPS_METADATA, ctorOwner) || [];
   }
 
   public async resolveSingleParam<T>(
