@@ -180,13 +180,33 @@ describe('WsExceptionsHandler', () => {
       });
     });
 
-    describe('when "invokeCustomFilters" returns true', () => {
-      beforeEach(() => {
-        vi.spyOn(handler, 'invokeCustomFilters').mockReturnValue(true);
-      });
+    describe('when a custom filter matches the exception', () => {
       it('should not call `emit`', () => {
-        handler.handle(new WsException(''), executionContextHost);
+        const funcSpy = vi.fn();
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: funcSpy },
+        ] as any);
+        const exception = new WsException('');
+
+        handler.handle(exception, executionContextHost);
+
+        expect(funcSpy).toHaveBeenCalledWith(exception, executionContextHost);
         expect(emitStub).not.toHaveBeenCalled();
+      });
+      it('should return the promise of an asynchronous filter', async () => {
+        const filterError = new Error('filter failed');
+        handler.setCustomFilters([
+          {
+            exceptionMetatypes: [],
+            func: async () => {
+              throw filterError;
+            },
+          },
+        ] as any);
+
+        await expect(
+          handler.handle(new WsException(''), executionContextHost),
+        ).rejects.toBe(filterError);
       });
     });
   });

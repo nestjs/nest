@@ -293,7 +293,7 @@ export class MiddlewareModule<
             this.exceptionFiltersCache.set(instance.use, exceptionsHandler);
           }
           const host = new ExecutionContextHost([req, res, next]);
-          exceptionsHandler.next(err, host);
+          await exceptionsHandler.next(err, host);
         }
       },
     );

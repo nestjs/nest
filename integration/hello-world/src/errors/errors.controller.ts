@@ -1,4 +1,11 @@
-import { BadRequestException, Controller, Get, Header } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  Header,
+  UseFilters,
+} from '@nestjs/common';
+import { RejectingFilter } from './rejecting.filter.js';
 
 @Controller()
 export class ErrorsController {
@@ -23,6 +30,12 @@ export class ErrorsController {
     throw Object.assign(new Error('forbidden by error instance'), {
       statusCode: 403,
     });
+  }
+
+  @Get('rejecting-filter')
+  @UseFilters(RejectingFilter)
+  rejectingFilter() {
+    this.throwError();
   }
 
   throwError() {

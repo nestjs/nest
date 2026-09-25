@@ -251,6 +251,20 @@ describe('RouterExplorer', () => {
         expect(nextSpy.mock.calls[0][0]).toBeInstanceOf(Error);
         expect(nextSpy.mock.calls[0][1]).toBeInstanceOf(ExecutionContextHost);
       });
+
+      it('should reject with the error of an asynchronous exception filter', async () => {
+        const filterError = new Error('filter failed');
+        nextSpy.mockRejectedValue(filterError);
+        const handler = routerBuilder.createRequestScopedHandler(
+          wrapper,
+          RequestMethod.ALL,
+          module,
+          moduleKey,
+          methodKey,
+        );
+
+        await expect(handler(null!, null, null!)).rejects.toBe(filterError);
+      });
     });
   });
 

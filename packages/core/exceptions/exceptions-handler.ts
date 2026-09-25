@@ -11,9 +11,19 @@ import type { ArgumentsHost } from '@nestjs/common';
 export class ExceptionsHandler extends BaseExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];
 
-  public next(exception: Error | HttpException, ctx: ArgumentsHost) {
-    if (this.invokeCustomFilters(exception, ctx)) {
-      return;
+  /**
+   * Returns what the matching custom filter returns, so that callers can
+   * await an asynchronous filter: its rejection then fails the request the
+   * same way a filter that throws synchronously does, instead of becoming an
+   * unhandled rejection that leaves the request without a response.
+   */
+  public next(
+    exception: Error | HttpException,
+    ctx: ArgumentsHost,
+  ): void | Promise<void> {
+    const filter = this.selectCustomFilter(exception);
+    if (filter) {
+      return filter.func(exception, ctx);
     }
     super.catch(exception, ctx);
   }
@@ -29,12 +39,17 @@ export class ExceptionsHandler extends BaseExceptionFilter {
     exception: T,
     ctx: ArgumentsHost,
   ): boolean {
-    if (isEmptyArray(this.filters)) {
-      return false;
-    }
-
-    const filter = selectExceptionFilterMetadata(this.filters, exception);
+    const filter = this.selectCustomFilter(exception);
     filter && filter.func(exception, ctx);
     return !!filter;
+  }
+
+  private selectCustomFilter<T = any>(
+    exception: T,
+  ): ExceptionFilterMetadata | undefined {
+    if (isEmptyArray(this.filters)) {
+      return undefined;
+    }
+    return selectExceptionFilterMetadata(this.filters, exception);
   }
 }

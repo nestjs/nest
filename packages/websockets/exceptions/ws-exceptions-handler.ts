@@ -14,9 +14,22 @@ import { InvalidExceptionFilterException } from '@nestjs/core/internal';
 export class WsExceptionsHandler extends BaseWsExceptionFilter {
   private filters: ExceptionFilterMetadata[] = [];
 
-  public handle(exception: Error | WsException, host: ArgumentsHost) {
+  /**
+   * Returns what the matching custom filter returns, so that callers can
+   * await an asynchronous filter: its rejection is then reported the same
+   * way as a filter that throws synchronously, instead of becoming an
+   * unhandled rejection.
+   */
+  public handle(
+    exception: Error | WsException,
+    host: ArgumentsHost,
+  ): void | Promise<void> {
+    const filter = this.selectCustomFilter(exception);
+    if (filter) {
+      return filter.func(exception, host);
+    }
     const client = host.switchToWs().getClient();
-    if (this.invokeCustomFilters(exception, host) || !client) {
+    if (!client) {
       return;
     }
     super.catch(exception, host);
@@ -33,10 +46,17 @@ export class WsExceptionsHandler extends BaseWsExceptionFilter {
     exception: T,
     args: ArgumentsHost,
   ): boolean {
-    if (isEmptyArray(this.filters)) return false;
-
-    const filter = selectExceptionFilterMetadata(this.filters, exception);
+    const filter = this.selectCustomFilter(exception);
     filter && filter.func(exception, args);
     return !!filter;
+  }
+
+  private selectCustomFilter<T = any>(
+    exception: T,
+  ): ExceptionFilterMetadata | undefined {
+    if (isEmptyArray(this.filters)) {
+      return undefined;
+    }
+    return selectExceptionFilterMetadata(this.filters, exception);
   }
 }

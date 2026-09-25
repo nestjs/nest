@@ -349,4 +349,44 @@ describe('MiddlewareModule', () => {
       );
     });
   });
+
+  describe('bindHandler', () => {
+    describe('when a request-scoped middleware cannot be resolved', () => {
+      it('should reject with the error of an asynchronous exception filter', async () => {
+        const filterError = new Error('filter failed');
+        const next = vi.fn().mockRejectedValue(filterError);
+        vi.spyOn(
+          middlewareModule['routerExceptionFilter'],
+          'create',
+        ).mockReturnValue({ next } as any);
+        vi.spyOn(middlewareModule as any, 'getContextId').mockImplementation(
+          () => {
+            throw new Error('resolution failed');
+          },
+        );
+        let handler!: (req: any, res: any, next: () => void) => Promise<void>;
+        vi.spyOn(middlewareModule as any, 'registerHandler').mockImplementation(
+          (...args: any[]) => {
+            handler = args[2];
+          },
+        );
+        const wrapper = new InstanceWrapper({
+          metatype: TestMiddleware,
+          instance: new TestMiddleware(),
+          scope: Scope.REQUEST,
+        });
+
+        await middlewareModule['bindHandler'](
+          wrapper,
+          {} as any,
+          { path: 'test', method: RequestMethod.ALL },
+          {} as any,
+          new Map(),
+        );
+
+        await expect(handler({}, {}, () => {})).rejects.toBe(filterError);
+        expect(next).toHaveBeenCalledOnce();
+      });
+    });
+  });
 });

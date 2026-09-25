@@ -1,4 +1,4 @@
-import { throwError } from 'rxjs';
+import { lastValueFrom, throwError } from 'rxjs';
 import { WsProxy } from '../../context/ws-proxy.js';
 import { WsException } from '../../errors/ws-exception.js';
 import { WsExceptionsHandler } from '../../exceptions/ws-exceptions-handler.js';
@@ -41,6 +41,28 @@ describe('WsProxy', () => {
           expect(handleSpy).toHaveBeenCalledOnce();
         },
       });
+    });
+
+    it('should reject with the error of an asynchronous exception filter', async () => {
+      const filterError = new Error('filter failed');
+      vi.spyOn(handler, 'handle').mockRejectedValue(filterError);
+      const proxy = routerProxy.create(async (client, data) => {
+        throw new WsException('test');
+      }, handler);
+
+      await expect(proxy(null, null)).rejects.toBe(filterError);
+    });
+
+    it('should error the returned observable with the error of an asynchronous exception filter', async () => {
+      const filterError = new Error('filter failed');
+      vi.spyOn(handler, 'handle').mockRejectedValue(filterError);
+      const proxy = routerProxy.create(async (client, data) => {
+        return throwError(() => new WsException('test'));
+      }, handler);
+
+      await expect(lastValueFrom(await proxy(null, null))).rejects.toBe(
+        filterError,
+      );
     });
   });
 });

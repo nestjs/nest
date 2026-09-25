@@ -415,6 +415,36 @@ describe('WebSocketsController', () => {
       expect(perContextMethod).toHaveBeenCalledWith(client, 'first');
       expect(perContextMethod).toHaveBeenCalledWith(client, 'second');
     });
+
+    it('should reject with the error of an asynchronous exception filter', async () => {
+      const filterError = new Error('filter failed');
+      const handle = vi.fn().mockRejectedValue(filterError);
+      vi.spyOn(
+        untypedInstance.exceptionFiltersContext,
+        'create',
+      ).mockReturnValue({ handle } as any);
+      vi.spyOn(injector, 'loadPerContext').mockRejectedValue(
+        new Error('resolution failed'),
+      );
+      vi.spyOn(container, 'registerRequestProvider').mockImplementation(
+        () => undefined,
+      );
+      const instanceWrapper = {
+        id: 'wrapper-id',
+        instance: { onMessage() {} },
+        isDependencyTreeDurable: () => false,
+      } as any;
+
+      const handler = instance.createRequestScopedHandler(
+        instanceWrapper,
+        { providers: new Map() } as Module,
+        'moduleKey',
+        'onMessage',
+      );
+
+      await expect(handler({}, 'data')).rejects.toBe(filterError);
+      expect(handle).toHaveBeenCalledOnce();
+    });
   });
   describe('createRequestScopedEventHandler', () => {
     it('should cleanup request-scoped context on disconnect', async () => {

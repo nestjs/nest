@@ -206,21 +206,35 @@ describe('ExceptionsHandler', () => {
         });
       });
     });
-    describe('when "invokeCustomFilters" returns true', () => {
-      beforeEach(() => {
-        vi.spyOn(handler, 'invokeCustomFilters').mockReturnValue(true);
-      });
-      it('should do nothing', () => {
-        handler.next(new Error(), {
-          ...Object.fromEntries(
-            Object.getOwnPropertyNames(ExecutionContextHost.prototype).map(
-              m => [m, vi.fn()],
-            ),
-          ),
-        } as any);
+    describe('when a custom filter matches the exception', () => {
+      it('should leave the response to the filter', () => {
+        const funcSpy = vi.fn();
+        handler.setCustomFilters([
+          { exceptionMetatypes: [], func: funcSpy },
+        ] as any);
+        const host = new ExecutionContextHost([0, response]);
+        const exception = new Error();
 
+        handler.next(exception, host);
+
+        expect(funcSpy).toHaveBeenCalledWith(exception, host);
         expect(statusStub).not.toHaveBeenCalled();
         expect(jsonStub).not.toHaveBeenCalled();
+      });
+      it('should return the promise of an asynchronous filter', async () => {
+        const filterError = new Error('filter failed');
+        handler.setCustomFilters([
+          {
+            exceptionMetatypes: [],
+            func: async () => {
+              throw filterError;
+            },
+          },
+        ] as any);
+
+        await expect(
+          handler.next(new Error(), new ExecutionContextHost([0, response])),
+        ).rejects.toBe(filterError);
       });
     });
   });

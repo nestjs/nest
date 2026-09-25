@@ -485,7 +485,7 @@ export class RouterExplorer {
           this.exceptionFiltersCache.set(instance[methodName], exceptionFilter);
         }
         const host = new ExecutionContextHost([req, res, next]);
-        exceptionFilter.next(err, host);
+        await exceptionFilter.next(err, host);
       }
     };
   }

@@ -47,6 +47,16 @@ describe('RouterProxy', () => {
         new ExecutionContextHost([null, null, null]),
       );
     });
+
+    it('should reject with the error of an asynchronous exception filter', async () => {
+      const filterError = new Error('filter failed');
+      nextStub.mockRejectedValue(filterError);
+      const proxy = routerProxy.createProxy(() => {
+        throw httpException;
+      }, handler);
+
+      await expect(proxy(null, null, null!)).rejects.toBe(filterError);
+    });
   });
 
   describe('createExceptionLayerProxy', () => {
@@ -86,6 +96,19 @@ describe('RouterProxy', () => {
         httpException,
         new ExecutionContextHost([null, null, null]),
       );
+    });
+
+    it('should reject with the error of an asynchronous exception filter', async () => {
+      const filterError = new Error('filter failed');
+      nextStub.mockRejectedValue(filterError);
+      const proxy = routerProxy.createExceptionLayerProxy(
+        (err, req, res, next) => {
+          throw httpException;
+        },
+        handler,
+      );
+
+      await expect(proxy(null, null, null, null!)).rejects.toBe(filterError);
     });
   });
 });

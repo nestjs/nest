@@ -1,5 +1,5 @@
-import { EMPTY, isObservable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { EMPTY, from, isObservable } from 'rxjs';
+import { catchError, ignoreElements } from 'rxjs/operators';
 import { WsExceptionsHandler } from '../exceptions/ws-exceptions-handler.js';
 import { ExecutionContextHost } from '@nestjs/core/internal';
 
@@ -17,12 +17,18 @@ export class WsProxy {
           ? result
           : result.pipe(
               catchError(error => {
-                this.handleError(exceptionsHandler, args, error);
-                return EMPTY;
+                const handled = this.handleError(
+                  exceptionsHandler,
+                  args,
+                  error,
+                );
+                return handled instanceof Promise
+                  ? from(handled).pipe(ignoreElements())
+                  : EMPTY;
               }),
             );
       } catch (error) {
-        this.handleError(exceptionsHandler, args, error);
+        await this.handleError(exceptionsHandler, args, error);
       }
     };
   }
@@ -31,9 +37,9 @@ export class WsProxy {
     exceptionsHandler: WsExceptionsHandler,
     args: unknown[],
     error: T,
-  ) {
+  ): void | Promise<void> {
     const host = new ExecutionContextHost(args);
     host.setType('ws');
-    exceptionsHandler.handle(error as Error, host);
+    return exceptionsHandler.handle(error as Error, host);
   }
 }

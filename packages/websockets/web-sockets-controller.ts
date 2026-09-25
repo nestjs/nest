@@ -411,7 +411,7 @@ export class WebSocketsController {
         }
         const host = new ExecutionContextHost(args);
         host.setType('ws');
-        exceptionFilter.handle(err as Error, host);
+        await exceptionFilter.handle(err as Error, host);
       }
     };
   }
