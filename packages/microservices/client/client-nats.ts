@@ -90,11 +90,30 @@ export class ClientNats extends ClientProxy<NatsEvents, NatsStatus> {
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
-    this.connectionPromise = this.createClient();
-    this.natsClient = await this.connectionPromise.catch(err => {
-      this.connectionPromise = null;
+    const connectionPromise = this.createClient();
+    this.connectionPromise = connectionPromise;
+    const natsClient = await connectionPromise.catch(err => {
+      // A rejected attempt must not be cached, but a newer attempt may have
+      // replaced it in the meantime (close() followed by connect() while this
+      // attempt was still pending): only reset the shared state when the
+      // failing attempt is still the current one, as ClientRedis, ClientRMQ
+      // and ClientKafka already do.
+      if (this.connectionPromise === connectionPromise) {
+        this.connectionPromise = null;
+      }
       throw err;
     });
+    if (this.connectionPromise !== connectionPromise) {
+      // The client was closed (and possibly reconnected) while this attempt
+      // was still pending: the connection it opened is no longer tracked by
+      // the client, so it must not replace the current one nor stay open.
+      await natsClient.close().catch(() => {});
+      if (this.connectionPromise) {
+        return this.connectionPromise;
+      }
+      throw new Error('Connection closed');
+    }
+    this.natsClient = natsClient;
 
     this._status$.next(NatsStatus.CONNECTED);
     void this.handleStatusUpdates(this.natsClient);
