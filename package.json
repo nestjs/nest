@@ -104,7 +104,7 @@
     "@types/express": "5.0.6",
     "@types/gulp": "4.0.18",
     "@types/http-errors": "2.0.5",
-    "@types/node": "26.6.2",
+    "@types/node": "26.6.3",
     "@types/supertest": "7.2.1",
     "@types/ws": "8.18.1",
     "@vitest/coverage-istanbul": "5.0.1",
