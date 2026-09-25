@@ -50,18 +50,23 @@ export default defineConfig({
     include: ['integration/**/*.spec.ts'],
     exclude: [
       '**/node_modules/**',
-      // Excluded until third-party @nestjs/* packages support ESM.
-      // CJS require() of workspace packages causes a dual-package hazard
-      // (different class instances for ModuleRef, etc.).
-      'integration/mongoose/**',
-      'integration/typeorm/**',
+      // Two copies of `graphql` load: "Cannot use GraphQLSchema from another
+      // module or realm".
       'integration/graphql-code-first/**',
-      'integration/graphql-schema-first/**',
-      // TODO: remove once these are ESM-compatible
-      // Uses @nestjs/mapped-types (CJS) — same dual-package hazard
+      // The serialized graph gains websocket entrypoints the fixture lacks.
       'integration/inspector/**',
+      // `@nestjs/core/repl/native-functions` does not resolve under `exports`.
       'integration/repl/e2e/repl.spec.ts',
     ],
+    server: {
+      deps: {
+        // Transform the @nestjs/* packages that live in node_modules so their
+        // `@nestjs/core` imports reach the same TypeScript sources as the
+        // tests; loaded natively they get the compiled `.js`, a second copy
+        // of every class (ModuleRef, HttpAdapterHost).
+        inline: [/@nestjs\/(apollo|graphql|mongoose|typeorm)/],
+      },
+    },
     testTimeout: 30_000,
     hookTimeout: 30_000,
     setupFiles: ['reflect-metadata'],
