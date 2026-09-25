@@ -405,10 +405,9 @@ describe('ClientNats', () => {
           close: vi.fn().mockResolvedValue(undefined),
         };
 
-        const staleCreateClientSpy = vi
+        const createClientSpy = vi
           .spyOn(client, 'createClient')
           .mockImplementationOnce(() => firstAttempt)
-          .mockImplementationOnce(() => Promise.resolve(mockNatsClient))
           .mockImplementation(() => Promise.resolve(mockNatsClient));
 
         const firstConnect = client.connect();
@@ -428,9 +427,74 @@ describe('ClientNats', () => {
         expect(untypedClient.natsClient).toBe(liveClient);
 
         expect(await client.connect()).toBe(liveClient);
-        expect(staleCreateClientSpy).toHaveBeenCalledTimes(2);
+        expect(createClientSpy).toHaveBeenCalledTimes(2);
 
         await client.close();
+      });
+    });
+    describe('when a stale attempt succeeds', () => {
+      const createMockNatsClient = () => ({
+        status: vi.fn().mockReturnValue({
+          // the connection stays alive: next() never resolves
+          [Symbol.asyncIterator]() {
+            return {
+              next: () => new Promise(() => {}),
+              [Symbol.asyncIterator]() {
+                return this;
+              },
+            };
+          },
+        }),
+        close: vi.fn().mockResolvedValue(undefined),
+      });
+      let resolveFirstAttempt: (natsClient: any) => void;
+      let staleNatsClient: ReturnType<typeof createMockNatsClient>;
+      let liveNatsClient: ReturnType<typeof createMockNatsClient>;
+
+      beforeEach(() => {
+        client = new ClientNats({});
+        untypedClient = client as any;
+        staleNatsClient = createMockNatsClient();
+        liveNatsClient = createMockNatsClient();
+        const firstAttempt = new Promise<any>(resolve => {
+          resolveFirstAttempt = resolve;
+        });
+        vi.spyOn(client, 'createClient')
+          .mockImplementationOnce(() => firstAttempt)
+          .mockImplementation(() => Promise.resolve(liveNatsClient as any));
+      });
+
+      it('should close the stale connection and keep the newer one', async () => {
+        const firstConnect = client.connect();
+        // Let the first attempt cache its promise before the close().
+        await new Promise(process.nextTick);
+        await client.close();
+        const liveClient = await client.connect();
+
+        resolveFirstAttempt(staleNatsClient);
+        expect(await firstConnect).toBe(liveClient);
+
+        expect(staleNatsClient.close).toHaveBeenCalled();
+        expect(liveNatsClient.close).not.toHaveBeenCalled();
+        expect(untypedClient.natsClient).toBe(liveClient);
+        expect(staleNatsClient.status).not.toHaveBeenCalled();
+
+        await client.close();
+        expect(liveNatsClient.close).toHaveBeenCalled();
+      });
+      it('should close the stale connection when the client was closed', async () => {
+        const firstConnect = client.connect();
+        // Let the first attempt cache its promise before the close().
+        await new Promise(process.nextTick);
+        await client.close();
+
+        resolveFirstAttempt(staleNatsClient);
+        await expect(firstConnect).rejects.toThrow('Connection closed');
+
+        expect(staleNatsClient.close).toHaveBeenCalled();
+        expect(staleNatsClient.status).not.toHaveBeenCalled();
+        expect(untypedClient.natsClient).toBeNull();
+        expect(untypedClient.connectionPromise).toBeNull();
       });
     });
   });
