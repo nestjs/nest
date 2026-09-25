@@ -39,6 +39,7 @@ export class SocketModule<
   private readonly socketsContainer = new SocketsContainer();
   private applicationConfig: ApplicationConfig;
   private webSocketsController: WebSocketsController;
+  private isAdapterInitialized: boolean;
   private adapterInitPromise: Promise<void> | null = null;
   private httpServer: THttpServer | undefined;
   private appOptions: TAppOptions;
@@ -112,8 +113,12 @@ export class SocketModule<
     if (!metadataKeys.includes(GATEWAY_METADATA)) {
       return;
     }
-    this.adapterInitPromise ??= this.initializeAdapter();
-    await this.adapterInitPromise;
+    if (!this.isAdapterInitialized) {
+      // Memoize the initialization promise so concurrent gateway connections
+      // share a single adapter instead of racing to create their own.
+      this.adapterInitPromise ??= this.initializeAdapter();
+      await this.adapterInitPromise;
+    }
     this.webSocketsController.connectGatewayToServer(
       wrapper as InstanceWrapper<NestGateway>,
       moduleName,
@@ -146,6 +151,7 @@ export class SocketModule<
     if (adapter) {
       (adapter as AbstractWsAdapter).forceCloseConnections =
         forceCloseConnections!;
+      this.isAdapterInitialized = true;
       return;
     }
     const { IoAdapter } = await loadAdapter(
@@ -156,6 +162,8 @@ export class SocketModule<
     const ioAdapter = new IoAdapter(this.httpServer);
     ioAdapter.forceCloseConnections = forceCloseConnections;
     this.applicationConfig.setIoAdapter(ioAdapter);
+
+    this.isAdapterInitialized = true;
   }
 
   private getContextCreator(
