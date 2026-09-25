@@ -1,10 +1,18 @@
 /**
+ * A dependency of the host of a signal, as recorded by `insertRef`.
+ */
+interface SettlementSignalRef {
+  id: string;
+  settlementSignal?: SettlementSignal;
+}
+
+/**
  * SettlementSignal is used to signal the resolution of a provider/instance.
  * Calling `complete` or `error` will resolve the promise returned by `asPromise`.
  * Can be used to detect circular dependencies.
  */
 export class SettlementSignal {
-  private readonly _refs = new Set();
+  private readonly _refs = new Map<string, SettlementSignalRef>();
   private readonly settledPromise: Promise<unknown>;
   private settleFn!: (err?: unknown) => void;
   private completed = false;
@@ -41,19 +49,38 @@ export class SettlementSignal {
   }
 
   /**
-   * Inserts a wrapper id that the host of this signal depends on.
-   * @param wrapperId Wrapper id to insert.
+   * Inserts a wrapper that the host of this signal depends on.
+   * @param ref Wrapper to insert.
    */
-  public insertRef(wrapperId: string) {
-    this._refs.add(wrapperId);
+  public insertRef(ref: SettlementSignalRef) {
+    this._refs.set(ref.id, ref);
   }
 
   /**
-   * Check if relationship is circular.
+   * Check if relationship is circular, i.e. whether the host of this signal
+   * is still waiting, directly or through other pending dependencies, on the
+   * given wrapper.
    * @param wrapperId Wrapper id to check.
    * @returns True if relationship is circular, false otherwise.
    */
   public isCycle(wrapperId: string) {
-    return !this.completed && this._refs.has(wrapperId);
+    return this.waitsOn(wrapperId, new Set());
+  }
+
+  private waitsOn(wrapperId: string, visited: Set<SettlementSignal>): boolean {
+    if (this.completed || visited.has(this)) {
+      return false;
+    }
+    visited.add(this);
+
+    for (const [refId, ref] of this._refs) {
+      if (
+        refId === wrapperId ||
+        ref.settlementSignal?.waitsOn(wrapperId, visited)
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 }

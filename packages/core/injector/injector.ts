@@ -601,9 +601,7 @@ export class Injector {
       inquirerId,
     );
     if (!instanceHost.isResolved && !instanceWrapper.forwardRef) {
-      resolutionContext.inquirer?.settlementSignal?.insertRef(
-        instanceWrapper.id,
-      );
+      resolutionContext.inquirer?.settlementSignal?.insertRef(instanceWrapper);
 
       await this.loadProvider(
         instanceWrapper,

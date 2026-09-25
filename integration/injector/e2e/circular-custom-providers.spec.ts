@@ -1,8 +1,25 @@
 import { Test } from '@nestjs/testing';
 
-import { Controller, Injectable, Module } from '@nestjs/common';
+import { Controller, Inject, Injectable, Module } from '@nestjs/common';
 
 class B {}
+
+const ALIAS = 'ALIAS';
+
+@Injectable()
+class Third {
+  constructor(@Inject(ALIAS) first: object) {}
+}
+
+@Injectable()
+class Second {
+  constructor(third: Third) {}
+}
+
+@Injectable()
+class First {
+  constructor(second: Second) {}
+}
 
 @Injectable()
 class A {
@@ -46,5 +63,39 @@ describe('Circular custom providers', () => {
     await expect(builder.compile()).rejects.toThrow(
       'A circular dependency has been detected inside "ABC"',
     );
+  });
+
+  it('should throw an exception (3 factories)', async () => {
+    const builder = Test.createTestingModule({
+      providers: [
+        { provide: 'ABC', useFactory: () => ({}), inject: ['DEF'] },
+        { provide: 'DEF', useFactory: () => ({}), inject: ['GHI'] },
+        { provide: 'GHI', useFactory: () => ({}), inject: ['ABC'] },
+      ],
+    });
+    await expect(builder.compile()).rejects.toThrow(
+      'A circular dependency has been detected inside "ABC"',
+    );
+  });
+
+  it('should throw an exception (3 classes closed by a useExisting alias)', async () => {
+    const builder = Test.createTestingModule({
+      providers: [First, Second, Third, { provide: ALIAS, useExisting: First }],
+    });
+    await expect(builder.compile()).rejects.toThrow(
+      'A circular dependency has been detected',
+    );
+  });
+
+  it('should not throw when two providers share a dependency', async () => {
+    const builder = Test.createTestingModule({
+      providers: [
+        { provide: 'TOP', useFactory: () => ({}), inject: ['LEFT', 'RIGHT'] },
+        { provide: 'LEFT', useFactory: () => ({}), inject: ['BOTTOM'] },
+        { provide: 'RIGHT', useFactory: () => ({}), inject: ['BOTTOM'] },
+        { provide: 'BOTTOM', useFactory: () => ({}) },
+      ],
+    });
+    await expect(builder.compile()).resolves.toBeDefined();
   });
 });
