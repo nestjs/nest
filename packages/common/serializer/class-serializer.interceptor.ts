@@ -28,6 +28,9 @@ export class ClassSerializerInterceptorOptions {
   transformerPackage?: TransformerPackage;
 }
 
+/**
+ * @publicApi
+ */
 export interface ClassSerializerInterceptorOptions extends ClassTransformOptions {
   transformerPackage?: TransformerPackage;
 }
