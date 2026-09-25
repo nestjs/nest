@@ -75,7 +75,7 @@
     "path-to-regexp": "8.4.2",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
-    "socket.io": "4.8.3",
+    "socket.io": "4.8.4",
     "tslib": "2.8.1",
     "uid": "2.0.2",
     "uuid": "14.0.2"
@@ -147,7 +147,7 @@
     "prettier": "^3.7.4",
     "redis": "6.2.1",
     "rxjs-compat": "6.6.7",
-    "socket.io-client": "4.8.3",
+    "socket.io-client": "4.8.4",
     "supertest": "7.3.0",
     "ts-morph": "28.0.0",
     "ts-node": "10.9.2",
