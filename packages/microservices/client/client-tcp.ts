@@ -62,7 +62,6 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
     this.pendingEventListeners.forEach(({ event, callback }) =>
       this.socket!.on(event, callback as any),
     );
-    this.pendingEventListeners = [];
 
     const source$ = this.connect$(this.socket.netSocket).pipe(
       tap(() => {
@@ -196,10 +195,11 @@ export class ClientTCP extends ClientProxy<TcpEvents, TcpStatus> {
     EventKey extends keyof TcpEvents = keyof TcpEvents,
     EventCallback extends TcpEvents[EventKey] = TcpEvents[EventKey],
   >(event: EventKey, callback: EventCallback) {
+    // Kept until `close()`, so the sockets created later (e.g., after the
+    // server dropped the connection) get it as well
+    this.pendingEventListeners.push({ event, callback });
     if (this.socket) {
       this.socket.on(event, callback as any);
-    } else {
-      this.pendingEventListeners.push({ event, callback });
     }
   }
 

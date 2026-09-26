@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import { Socket as NetSocket } from 'net';
 import { TLSSocket } from 'tls';
 import { ClientTCP } from '../../client/client-tcp.js';
@@ -344,6 +345,77 @@ describe('ClientTCP', () => {
         // Custom socket should not have maxBufferSize property
         expect(socket['maxBufferSize']).toBeUndefined();
       });
+    });
+  });
+
+  describe('on', () => {
+    let firstSocket: ReturnType<typeof createFakeSocket>;
+    let secondSocket: ReturnType<typeof createFakeSocket>;
+
+    // Forwards listeners to an event emitter that plays the net socket, so
+    // connection events can be fired by hand.
+    const createFakeSocket = () => {
+      const netSocket = new EventEmitter();
+      return {
+        netSocket,
+        on: (event: string, callback: (...args: any[]) => void) =>
+          netSocket.on(event, callback),
+        connect: vi.fn(),
+        end: vi.fn(),
+        sendMessage: vi.fn(),
+      };
+    };
+    const connectWith = async (
+      fakeSocket: ReturnType<typeof createFakeSocket>,
+    ) => {
+      const connectPromise = client.connect();
+      fakeSocket.netSocket.emit('connect');
+      await connectPromise;
+    };
+
+    beforeEach(() => {
+      firstSocket = createFakeSocket();
+      secondSocket = createFakeSocket();
+      createSocketStub
+        .mockReturnValueOnce(firstSocket as any)
+        .mockReturnValueOnce(secondSocket as any);
+    });
+
+    it('should attach a listener registered before "connect()" to the sockets of later reconnects', async () => {
+      const callback = vi.fn();
+      client.on('close', callback);
+
+      await connectWith(firstSocket);
+      firstSocket.netSocket.emit('close');
+      await connectWith(secondSocket);
+      secondSocket.netSocket.emit('close');
+
+      expect(callback).toHaveBeenCalledTimes(2);
+    });
+
+    it('should attach a listener registered after "connect()" to the sockets of later reconnects', async () => {
+      await connectWith(firstSocket);
+      const callback = vi.fn();
+      client.on('close', callback);
+
+      firstSocket.netSocket.emit('close');
+      expect(callback).toHaveBeenCalledTimes(1);
+
+      await connectWith(secondSocket);
+      secondSocket.netSocket.emit('close');
+      expect(callback).toHaveBeenCalledTimes(2);
+    });
+
+    it('should drop the listeners on "close()"', async () => {
+      const callback = vi.fn();
+      client.on('close', callback);
+
+      await connectWith(firstSocket);
+      client.close();
+      await connectWith(secondSocket);
+      secondSocket.netSocket.emit('close');
+
+      expect(callback).not.toHaveBeenCalled();
     });
   });
 });
