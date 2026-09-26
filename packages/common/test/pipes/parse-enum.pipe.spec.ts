@@ -211,6 +211,7 @@ describe('ParseEnumPipe', () => {
       A = 'a',
       One = 1,
       Alias = 'One',
+      Two = 2,
     }
     let target: ParseEnumPipe;
 
@@ -230,6 +231,12 @@ describe('ParseEnumPipe', () => {
       expect(await target.transform('One', {} as ArgumentMetadata)).toBe(
         Mixed.Alias,
       );
+    });
+
+    it('should still reject a reverse-mapped name that is not a declared value', async () => {
+      await expect(
+        target.transform('Two' as any, {} as ArgumentMetadata),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw when invalid value is passed', async () => {
