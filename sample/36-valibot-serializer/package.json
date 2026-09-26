@@ -28,7 +28,7 @@
     "valibot": "1.5.0"
   },
   "devDependencies": {
-    "@nestjs/cli": "12.0.6",
+    "@nestjs/cli": "12.0.7",
     "@nestjs/schematics": "12.0.5",
     "@nestjs/testing": "12.1.0",
     "@types/express": "5.0.6",
