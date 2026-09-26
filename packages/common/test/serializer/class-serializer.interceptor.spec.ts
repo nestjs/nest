@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as sinon from 'sinon';
-import { of, throwError } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   ClassSerializerInterceptor,
@@ -8,6 +8,7 @@ import {
 } from '../../serializer/class-serializer.interceptor';
 import { ExecutionContext, CallHandler } from '../../interfaces';
 import { StreamableFile } from '../../file-stream';
+import { loadPackage } from '../../utils/load-package.util';
 
 describe('ClassSerializerInterceptor', () => {
   let interceptor: ClassSerializerInterceptor;
@@ -32,10 +33,13 @@ describe('ClassSerializerInterceptor', () => {
 
   describe('constructor', () => {
     it('should create interceptor with default transformer package', () => {
+      sinon
+        .stub(loadPackage as any, 'loadPackage')
+        .returns(mockTransformerPackage);
       // This would normally load 'class-transformer' package
       // For testing, we pass a mock transformer package
       const options = {
-        transformerPackage: mockTransformerPackage,
+        transformerPackage: undefined,
       };
 
       interceptor = new ClassSerializerInterceptor(mockReflector, options);
@@ -73,6 +77,70 @@ describe('ClassSerializerInterceptor', () => {
       interceptor = module.get(ClassSerializerInterceptor);
 
       expect(interceptor).to.be.instanceOf(ClassSerializerInterceptor);
+
+      const mockExecutionContext = {
+        getHandler: sandbox.stub(),
+        getClass: sandbox.stub(),
+      } as any;
+      const mockCallHandler = {
+        handle: sandbox.stub(),
+      } as any;
+
+      const response = { id: 1, name: 'Test' };
+      const transformedResponse = { id: 1, name: 'Test' };
+
+      mockReflector.getAllAndOverride.returns(undefined);
+      mockTransformerPackage.classToPlain.returns(transformedResponse);
+      (mockCallHandler.handle as sinon.SinonStub).returns(of(response));
+
+      const result = await firstValueFrom(
+        interceptor.intercept(mockExecutionContext, mockCallHandler),
+      );
+
+      expect(result).to.equal(transformedResponse);
+      expect(mockTransformerPackage.classToPlain.calledOnce).to.be.true;
+    });
+
+    it('should use the default transformer package if none is provided', async () => {
+      sinon
+        .stub(loadPackage as any, 'loadPackage')
+        .returns(mockTransformerPackage);
+      const options: ClassSerializerInterceptorOptions = {
+        transformerPackage: undefined,
+      };
+
+      const module: TestingModule = await Test.createTestingModule({
+        providers: [
+          { provide: ClassSerializerInterceptorOptions, useValue: options },
+          ClassSerializerInterceptor,
+        ],
+      }).compile();
+
+      interceptor = module.get(ClassSerializerInterceptor);
+
+      expect(interceptor).to.be.instanceOf(ClassSerializerInterceptor);
+
+      const mockExecutionContext = {
+        getHandler: sandbox.stub(),
+        getClass: sandbox.stub(),
+      } as any;
+      const mockCallHandler = {
+        handle: sandbox.stub(),
+      } as any;
+
+      const response = { id: 1, name: 'Test' };
+      const transformedResponse = { id: 1, name: 'Test' };
+
+      mockReflector.getAllAndOverride.returns(undefined);
+      mockTransformerPackage.classToPlain.returns(transformedResponse);
+      (mockCallHandler.handle as sinon.SinonStub).returns(of(response));
+
+      const result = await firstValueFrom(
+        interceptor.intercept(mockExecutionContext, mockCallHandler),
+      );
+
+      expect(result).to.equal(transformedResponse);
+      expect(mockTransformerPackage.classToPlain.calledOnce).to.be.true;
     });
   });
 
