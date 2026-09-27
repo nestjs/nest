@@ -412,10 +412,13 @@ describe('ClientTCP', () => {
 
       await connectWith(firstSocket);
       client.close();
+      firstSocket.netSocket.emit('close');
+      expect(callback).toHaveBeenCalledTimes(1);
+
       await connectWith(secondSocket);
       secondSocket.netSocket.emit('close');
 
-      expect(callback).not.toHaveBeenCalled();
+      expect(callback).toHaveBeenCalledTimes(1);
     });
   });
 });
