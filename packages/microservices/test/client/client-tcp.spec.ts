@@ -330,7 +330,40 @@ describe('ClientTCP', () => {
       expect(statuses).toEqual([TcpStatus.CONNECTED, TcpStatus.DISCONNECTED]);
     });
 
+    it('should resolve a connection closed while connecting without reconnecting', async () => {
+      const connectA = client.connect();
+      client.close();
+
+      // close() clears this.socket before the pending connect() tap runs.
+      expect(untypedClient.socket).toBeNull();
+      socketA.netSocket.emit('connect');
+
+      await expect(connectA).resolves.toBeUndefined();
+      expect(socketA.end).toHaveBeenCalledTimes(1);
+      expect(socketA.netSocket.listenerCount('message')).toBe(1);
+      expect(untypedClient.socket).toBeNull();
+      expect(untypedClient.connectionPromise).toBeNull();
+      expect(createSocketStub).toHaveBeenCalledTimes(1);
+    });
+
     describe('when a newer "connect()" call replaced the socket', () => {
+      it('should connect the newer socket when the replaced one closes before it connects', async () => {
+        await connectWith(socketA);
+        client.close();
+        const connectB = client.connect();
+
+        socketA.netSocket.emit('close');
+        socketB.netSocket.emit('connect');
+
+        await expect(connectB).resolves.toBeUndefined();
+        expect(untypedClient.socket).toBe(socketB);
+        expect(untypedClient.connectionPromise).toBe(connectB);
+        expect(socketB.netSocket.listenerCount('message')).toBe(1);
+        expect(statuses).toEqual([TcpStatus.CONNECTED]);
+        expect(client.connect()).toBe(connectB);
+        expect(createSocketStub).toHaveBeenCalledTimes(2);
+      });
+
       it('should keep the newer socket when the replaced one finishes closing', async () => {
         await connectWith(socketA);
         client.close();
