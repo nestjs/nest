@@ -18,8 +18,6 @@ The application built in the [Transactional outbox](https://docs.nestjs.com/reli
 | `src/outbox-admin/` | The dead-letter routes and the outbox's stats |
 | `drizzle/` | The order API's migrations, written by drizzle-kit |
 | `analytics-service/` | The analytics microservice: its schema, migrations, inbox store and TCP consumer |
-| `src/typeorm/` | The store and the order API with TypeORM |
-| `src/prisma/`, `prisma/` | The store and the order API with Prisma |
 | `e2e/` | The tests |
 
 ### Installation
@@ -107,19 +105,6 @@ $ curl -X POST localhost:3000/orders/<order id>/cancel
 $ curl localhost:3000/admin/outbox/stats -H 'x-admin-token: s3cret'
 ```
 
-### The store with TypeORM and with Prisma
-
-`src/typeorm` and `src/prisma` keep a version of the order API for each ORM, next to the tutorial's Drizzle code: the outbox's tables, the migrations, the store, and an `OrdersService` that adds `order.placed` through the ORM's own transaction. They have no HTTP routes; the tests run them. Your application has one ORM.
-
-Their migrations apply with each ORM's own tool, on a database of its own:
-
-```bash
-$ npx tsx ./node_modules/typeorm/cli.js migration:run -d src/typeorm/data-source.ts
-$ npx prisma migrate deploy
-```
-
-Prisma generates its client into `src/prisma/generated` (`npx prisma generate`), which `npm run build` and `npm run test:e2e` do first.
-
 ### Tests
 
 `npm run test:e2e`
@@ -129,10 +114,8 @@ Prisma generates its client into `src/prisma/generated` (`npx prisma generate`),
 | `orders.e2e-spec.ts`: the order API, with the relay driven by the test | PGlite |
 | `analytics.e2e-spec.ts`: the analytics service, over TCP | PGlite |
 | `drizzle-outbox.store.e2e-spec.ts`: the store contract suites of `@nestjs/outbox/testing` | PGlite, and PostgreSQL |
-| `typeorm-outbox.store.e2e-spec.ts`, `prisma-outbox.store.e2e-spec.ts`: the same suites | PostgreSQL |
-| `orm-apps.e2e-spec.ts`: the TypeORM and Prisma versions, end to end | PostgreSQL |
 
-[PGlite](https://pglite.dev) is PostgreSQL in the test's process, so those tests need nothing else. The others need a server, where transactions really overlap, and are skipped without one. Point them at the container:
+[PGlite](https://pglite.dev) is PostgreSQL in the test's process, so those tests need nothing else. The store suites also run on a server, where transactions really overlap, and are skipped without one. Point them at the container:
 
 ```bash
 $ SQL_TEST_PG_URL=postgres://postgres:postgres@localhost:5432/postgres npm run test:e2e
