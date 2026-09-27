@@ -97,29 +97,53 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
     if (this.mqttClient) {
       return this.connectionPromise!;
     }
-    this.mqttClient = this.createClient();
-    this.registerErrorListener(this.mqttClient);
-    this.registerOfflineListener(this.mqttClient);
-    this.registerReconnectListener(this.mqttClient);
-    this.registerConnectListener(this.mqttClient);
-    this.registerDisconnectListener(this.mqttClient);
-    this.registerCloseListener(this.mqttClient);
+    const mqttClient = this.createClient();
+    this.mqttClient = mqttClient;
+    this.registerErrorListener(mqttClient);
+    this.registerOfflineListener(mqttClient);
+    this.registerReconnectListener(mqttClient);
+    this.registerConnectListener(mqttClient);
+    this.registerDisconnectListener(mqttClient);
+    this.registerCloseListener(mqttClient);
 
     this.pendingEventListeners.forEach(({ event, callback }) =>
-      this.mqttClient!.on(event, callback),
+      mqttClient.on(event, callback),
     );
     this.pendingEventListeners = [];
 
-    const connect$ = this.connect$(this.mqttClient);
-    this.connectionPromise = lastValueFrom(
-      this.mergeCloseEvent(this.mqttClient, connect$).pipe(share()),
+    const connect$ = this.connect$(mqttClient);
+    const connectionPromise = lastValueFrom(
+      this.mergeCloseEvent(mqttClient, connect$).pipe(share()),
     ).catch(err => {
       if (err instanceof EmptyError) {
         return;
       }
+      // A client that does not reconnect on its own (reconnectPeriod 0) would
+      // otherwise stay cached as the rejected attempt, so every later
+      // connect() call replays the rejection instead of trying again.
+      if (
+        this.connectionPromise === connectionPromise &&
+        mqttClient.options?.reconnectPeriod === 0
+      ) {
+        this.discardClient(mqttClient);
+      }
       throw err;
     });
-    return this.connectionPromise;
+    this.connectionPromise = connectionPromise;
+    return connectionPromise;
+  }
+
+  /**
+   * Drops `client` when it is still the current one, so the next `connect()`
+   * call starts over with a new client. Events a dropped client emits from now
+   * on are ignored.
+   */
+  private discardClient(client: MqttClient) {
+    if (client !== this.mqttClient) {
+      return;
+    }
+    this.mqttClient = null;
+    this.connectionPromise = null;
   }
 
   public mergeCloseEvent<T = any>(
@@ -182,6 +206,13 @@ export class ClientMqtt extends ClientProxy<MqttEvents, MqttStatus> {
   public registerCloseListener(client: MqttClient) {
     client.on(MqttEventsMap.CLOSE, () => {
       this._status$.next(MqttStatus.CLOSED);
+
+      // mqtt reconnects on the same client only while reconnectPeriod is set.
+      // Once it gives up, drop the client so the next connect() call starts
+      // over instead of returning the promise of a connection that is gone.
+      if (client === this.mqttClient && !client.reconnecting) {
+        this.discardClient(client);
+      }
     });
   }
 
