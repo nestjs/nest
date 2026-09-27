@@ -1,0 +1,12 @@
+services:
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: store
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./docker/create-databases.sql:/docker-entrypoint-initdb.d/create-databases.sql:ro
+    restart: always
