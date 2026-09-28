@@ -8,7 +8,12 @@ import {
   isUndefined,
 } from '../utils/shared.utils.js';
 import { LoggerService, LogLevel } from './logger.service.js';
+import {
+  getEnvLogLevels,
+  LOG_LEVEL_ENV_VAR,
+} from './utils/get-env-log-levels.util.js';
 import { isLogLevelEnabled } from './utils/is-log-level-enabled.util.js';
+import { createRedactor, Redactor } from './utils/redact.util.js';
 
 const DEFAULT_DEPTH = 5;
 /**
@@ -23,6 +28,9 @@ const MAX_ERROR_DEPTH = 5;
 export interface ConsoleLoggerOptions {
   /**
    * Enabled log levels.
+   * When not set, the levels are read from the `NEST_LOG_LEVEL` environment
+   * variable (e.g. `warn`, `>=debug` or `warn,error`) the first time the
+   * logger checks a level. Without it, every level is enabled.
    */
   logLevels?: LogLevel[];
   /**
@@ -114,6 +122,19 @@ export interface ConsoleLoggerOptions {
    * @default false
    */
   flattenParams?: boolean;
+  /**
+   * Properties to mask in logged values, as key names (`'password'`, matched
+   * at any depth) or dotted paths (`'user.password'`, matched by the last
+   * keys leading to the property, at any depth). Keys are compared
+   * case-insensitively, and array indices are skipped.
+   * Applies to structured params and to messages that are not strings
+   * (objects, arrays, errors), in text and JSON mode. String messages, the
+   * error message and the stack trace are printed as is.
+   * The logged values are not mutated: only the objects that contain a
+   * matching property are copied.
+   * Pass an object to replace the default censor (`"[REDACTED]"`).
+   */
+  redact?: string[] | { paths: string[]; censor?: string };
 }
 
 const DEFAULT_LOG_LEVELS: LogLevel[] = [
@@ -124,6 +145,12 @@ const DEFAULT_LOG_LEVELS: LogLevel[] = [
   'verbose',
   'fatal',
 ];
+
+/**
+ * The last invalid `NEST_LOG_LEVEL` value that was reported, so that loggers
+ * sharing the environment warn about it once.
+ */
+let reportedInvalidEnvLogLevel: string | undefined;
 
 const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
@@ -159,6 +186,10 @@ export class ConsoleLogger implements LoggerService {
    * The last timestamp at which the log message was printed.
    */
   protected static lastTimestampAt?: number;
+  /**
+   * Masks the properties set in the `redact` option.
+   */
+  private readonly redactor?: Redactor;
 
   constructor();
   constructor(context: string);
@@ -178,12 +209,16 @@ export class ConsoleLogger implements LoggerService {
         : [contextOrOptions?.context, contextOrOptions];
 
     opts = opts ?? {};
-    opts.logLevels ??= DEFAULT_LOG_LEVELS;
     opts.colors ??= opts.colors ?? (opts.json ? false : isColorAllowed());
     opts.prefix ??= 'Nest';
 
     this.options = opts;
     this.inspectOptions = this.getInspectOptions();
+    if (opts.redact) {
+      this.redactor = Array.isArray(opts.redact)
+        ? createRedactor(opts.redact)
+        : createRedactor(opts.redact.paths, opts.redact.censor);
+    }
 
     if (context) {
       this.context = context;
@@ -329,8 +364,37 @@ export class ConsoleLogger implements LoggerService {
   }
 
   isLevelEnabled(level: LogLevel): boolean {
+    if (this.options && !this.options.logLevels) {
+      this.options.logLevels = this.getDefaultLogLevels();
+    }
     const logLevels = this.options?.logLevels;
     return isLogLevelEnabled(level, logLevels);
+  }
+
+  /**
+   * Returns the levels used when none were passed to the constructor: the
+   * `NEST_LOG_LEVEL` environment variable if it is set, every level otherwise.
+   * Called on the first level check rather than in the constructor, so that
+   * the default logger also sees variables loaded after "@nestjs/common" was
+   * imported (for example, from a `.env` file).
+   */
+  protected getDefaultLogLevels(): LogLevel[] {
+    const envLogLevels = getEnvLogLevels();
+    if (envLogLevels !== false) {
+      return envLogLevels ?? DEFAULT_LOG_LEVELS;
+    }
+    const value = process.env[LOG_LEVEL_ENV_VAR]!;
+    if (reportedInvalidEnvLogLevel !== value) {
+      reportedInvalidEnvLogLevel = value;
+      // The default levels must be in place before this call, as "warn"
+      // checks the level again.
+      this.options.logLevels = DEFAULT_LOG_LEVELS;
+      this.warn(
+        `Invalid ${LOG_LEVEL_ENV_VAR} value "${value}". Expected a log level ("warn"), a comma-separated list ("warn,error") or a threshold (">=warn"). Every log level is enabled instead.`,
+        'ConsoleLogger',
+      );
+    }
+    return DEFAULT_LOG_LEVELS;
   }
 
   protected getTimestamp(): string {
@@ -345,6 +409,12 @@ export class ConsoleLogger implements LoggerService {
     errorStack?: unknown,
     params?: Record<string, any>,
   ) {
+    if (this.redactor) {
+      messages = messages.map(message =>
+        this.redact(this.resolveMessage(message)),
+      );
+      params = params && (this.redact(params) as Record<string, any>);
+    }
     if (this.options.json) {
       const { messages: jsonMessages, error } = this.extractJsonError(
         messages.map(message => this.resolveMessage(message)),
@@ -550,6 +620,14 @@ export class ConsoleLogger implements LoggerService {
     ancestors.delete(error);
 
     return serialized;
+  }
+
+  /**
+   * Masks the properties set in the `redact` option. Returns the value itself
+   * when the option isn't set or nothing matched.
+   */
+  protected redact(value: unknown): unknown {
+    return this.redactor ? this.redactor(value) : value;
   }
 
   protected formatPid(pid: number) {
