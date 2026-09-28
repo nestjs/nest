@@ -286,19 +286,20 @@ export class ConsoleLogger implements LoggerService {
 
   /**
    * Write a 'fatal' level log, if the configured level allows for it.
-   * Prints to `stdout` with newline.
+   * Prints to `stderr` with newline.
    */
-  fatal(message: any, context?: string): void;
-  fatal(message: any, ...optionalParams: [...any, string?]): void;
+  fatal(message: any, stackOrContext?: string): void;
+  fatal(message: any, stack?: string, context?: string): void;
+  fatal(message: any, ...optionalParams: [...any, string?, string?]): void;
   fatal(message: any, ...optionalParams: any[]) {
     if (!this.isLevelEnabled('fatal')) {
       return;
     }
-    const { messages, context, params } = this.getContextAndMessagesToPrint([
-      message,
-      ...optionalParams,
-    ]);
-    this.printMessages(messages, context, 'fatal', 'stdout', undefined, params);
+    const { messages, context, stack, params } =
+      this.getContextAndStackAndMessagesToPrint([message, ...optionalParams]);
+
+    this.printMessages(messages, context, 'fatal', 'stderr', stack, params);
+    this.printStackTrace(stack!);
   }
 
   /**

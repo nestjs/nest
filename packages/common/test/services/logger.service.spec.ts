@@ -1561,6 +1561,107 @@ describe('Logger', () => {
       });
     });
   });
+
+  describe('ConsoleLogger - fatal', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+    const stack = 'Error: boom\n    at <anonymous>:1:1';
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      processStderrWriteSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation(() => true);
+    });
+    afterEach(() => {
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+    });
+
+    it('should print to stderr', () => {
+      const logger = new ConsoleLogger({ colors: false });
+
+      logger.fatal('shutting down', 'Ctx');
+
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+      expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
+        'FATAL [Ctx] shutting down',
+      );
+    });
+
+    it('should print a stack argument like "error" does', () => {
+      const logger = new ConsoleLogger({ colors: false });
+
+      logger.fatal('shutting down', stack, 'Ctx');
+
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+      expect(processStderrWriteSpy.mock.calls[0][0]).toContain(
+        '[Ctx] shutting down',
+      );
+      expect(processStderrWriteSpy.mock.calls[1][0]).toBe(`${stack}\n`);
+    });
+
+    it('should detect a stack passed as the only optional argument', () => {
+      const logger = new ConsoleLogger({ colors: false });
+
+      logger.fatal('shutting down', stack);
+
+      expect(processStderrWriteSpy).toHaveBeenCalledTimes(2);
+      expect(processStderrWriteSpy.mock.calls[1][0]).toBe(`${stack}\n`);
+    });
+
+    it('should include the stack in JSON mode', () => {
+      const logger = new ConsoleLogger({ json: true });
+
+      logger.fatal('shutting down', stack, 'Ctx');
+
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+      const json = JSON.parse(processStderrWriteSpy.mock.calls[0][0]);
+      expect(json.level).toBe('fatal');
+      expect(json.message).toBe('shutting down');
+      expect(json.context).toBe('Ctx');
+      expect(json.stack).toBe(stack);
+    });
+
+    it('should use console.error when forceConsole is true', () => {
+      const consoleLogSpy = vi
+        .spyOn(console, 'log')
+        .mockImplementation(() => {});
+      const consoleErrorSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+      try {
+        const logger = new ConsoleLogger({ forceConsole: true });
+
+        logger.fatal('shutting down');
+
+        expect(consoleLogSpy).not.toHaveBeenCalled();
+        expect(consoleErrorSpy).toHaveBeenCalledOnce();
+      } finally {
+        consoleLogSpy.mockRestore();
+        consoleErrorSpy.mockRestore();
+      }
+    });
+
+    it('should print to stderr through "Logger"', () => {
+      Logger.fatal('static fatal');
+      new Logger('Ctx').fatal('instance fatal', stack);
+
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      expect(processStderrWriteSpy).toHaveBeenCalledTimes(3);
+      expect(processStderrWriteSpy.mock.calls[0][0]).toContain('static fatal');
+      expect(processStderrWriteSpy.mock.calls[1][0]).toContain('[Ctx]');
+      expect(processStderrWriteSpy.mock.calls[1][0]).toContain(
+        'instance fatal',
+      );
+      expect(processStderrWriteSpy.mock.calls[2][0]).toBe(`${stack}\n`);
+    });
+  });
 });
 
 function convertInspectToJSON(inspectOutput: string) {
