@@ -8,6 +8,10 @@ import {
   isUndefined,
 } from '../utils/shared.utils.js';
 import { LoggerService, LogLevel } from './logger.service.js';
+import {
+  getEnvLogLevels,
+  LOG_LEVEL_ENV_VAR,
+} from './utils/get-env-log-levels.util.js';
 import { isLogLevelEnabled } from './utils/is-log-level-enabled.util.js';
 
 const DEFAULT_DEPTH = 5;
@@ -23,6 +27,9 @@ const MAX_ERROR_DEPTH = 5;
 export interface ConsoleLoggerOptions {
   /**
    * Enabled log levels.
+   * When not set, the levels are read from the `NEST_LOG_LEVEL` environment
+   * variable (e.g. `warn`, `>=debug` or `warn,error`) the first time the
+   * logger checks a level. Without it, every level is enabled.
    */
   logLevels?: LogLevel[];
   /**
@@ -125,6 +132,12 @@ const DEFAULT_LOG_LEVELS: LogLevel[] = [
   'fatal',
 ];
 
+/**
+ * The last invalid `NEST_LOG_LEVEL` value that was reported, so that loggers
+ * sharing the environment warn about it once.
+ */
+let reportedInvalidEnvLogLevel: string | undefined;
+
 const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
   year: 'numeric',
   hour: 'numeric',
@@ -178,7 +191,6 @@ export class ConsoleLogger implements LoggerService {
         : [contextOrOptions?.context, contextOrOptions];
 
     opts = opts ?? {};
-    opts.logLevels ??= DEFAULT_LOG_LEVELS;
     opts.colors ??= opts.colors ?? (opts.json ? false : isColorAllowed());
     opts.prefix ??= 'Nest';
 
@@ -329,8 +341,37 @@ export class ConsoleLogger implements LoggerService {
   }
 
   isLevelEnabled(level: LogLevel): boolean {
+    if (this.options && !this.options.logLevels) {
+      this.options.logLevels = this.getDefaultLogLevels();
+    }
     const logLevels = this.options?.logLevels;
     return isLogLevelEnabled(level, logLevels);
+  }
+
+  /**
+   * Returns the levels used when none were passed to the constructor: the
+   * `NEST_LOG_LEVEL` environment variable if it is set, every level otherwise.
+   * Called on the first level check rather than in the constructor, so that
+   * the default logger also sees variables loaded after "@nestjs/common" was
+   * imported (for example, from a `.env` file).
+   */
+  protected getDefaultLogLevels(): LogLevel[] {
+    const envLogLevels = getEnvLogLevels();
+    if (envLogLevels !== false) {
+      return envLogLevels ?? DEFAULT_LOG_LEVELS;
+    }
+    const value = process.env[LOG_LEVEL_ENV_VAR]!;
+    if (reportedInvalidEnvLogLevel !== value) {
+      reportedInvalidEnvLogLevel = value;
+      // The default levels must be in place before this call, as "warn"
+      // checks the level again.
+      this.options.logLevels = DEFAULT_LOG_LEVELS;
+      this.warn(
+        `Invalid ${LOG_LEVEL_ENV_VAR} value "${value}". Expected a log level ("warn"), a comma-separated list ("warn,error") or a threshold (">=warn"). Every log level is enabled instead.`,
+        'ConsoleLogger',
+      );
+    }
+    return DEFAULT_LOG_LEVELS;
   }
 
   protected getTimestamp(): string {

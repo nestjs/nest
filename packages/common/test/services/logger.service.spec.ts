@@ -1772,6 +1772,174 @@ describe('Logger', () => {
       });
     });
   });
+
+  describe('NEST_LOG_LEVEL environment variable', () => {
+    let processStdoutWriteSpy: ReturnType<typeof vi.fn>;
+    let processStderrWriteSpy: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      processStdoutWriteSpy = vi
+        .spyOn(process.stdout, 'write')
+        .mockImplementation(() => true);
+      processStderrWriteSpy = vi
+        .spyOn(process.stderr, 'write')
+        .mockImplementation(() => true);
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      processStdoutWriteSpy.mockRestore();
+      processStderrWriteSpy.mockRestore();
+    });
+
+    const enabledLevels = (logger: ConsoleLogger) =>
+      (
+        ['verbose', 'debug', 'log', 'warn', 'error', 'fatal'] as LogLevel[]
+      ).filter(level => logger.isLevelEnabled(level));
+
+    it('should enable the given level and the levels above it', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', 'warn');
+
+      expect(enabledLevels(new ConsoleLogger())).toEqual([
+        'warn',
+        'error',
+        'fatal',
+      ]);
+    });
+
+    it('should accept the "filterLogLevels" formats, in any case', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', '>=DEBUG');
+      expect(enabledLevels(new ConsoleLogger())).toEqual([
+        'debug',
+        'log',
+        'warn',
+        'error',
+        'fatal',
+      ]);
+
+      vi.stubEnv('NEST_LOG_LEVEL', '>log');
+      expect(enabledLevels(new ConsoleLogger())).toEqual([
+        'warn',
+        'error',
+        'fatal',
+      ]);
+
+      vi.stubEnv('NEST_LOG_LEVEL', 'verbose, error');
+      expect(enabledLevels(new ConsoleLogger())).toEqual([
+        'verbose',
+        'error',
+        'fatal',
+      ]);
+    });
+
+    it('should disable every level for ">fatal"', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', '>fatal');
+      const logger = new ConsoleLogger();
+
+      logger.fatal('hidden');
+
+      expect(enabledLevels(logger)).toEqual([]);
+      expect(processStderrWriteSpy).not.toHaveBeenCalled();
+    });
+
+    it('should filter the output of a logger created without levels', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', 'error');
+      const logger = new ConsoleLogger('Ctx');
+
+      logger.log('hidden');
+      logger.warn('hidden');
+      logger.error('shown');
+
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+      expect(processStderrWriteSpy).toHaveBeenCalledOnce();
+      expect(processStderrWriteSpy.mock.calls[0][0]).toContain('shown');
+    });
+
+    it('should apply to "Logger" instances using the default logger', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', 'warn');
+      const logger = new Logger('Ctx');
+
+      logger.log('hidden');
+      logger.warn('shown');
+
+      expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+      expect(processStdoutWriteSpy.mock.calls[0][0]).toContain('shown');
+    });
+
+    it('should be read on the first level check, not in the constructor', () => {
+      const logger = new ConsoleLogger();
+      vi.stubEnv('NEST_LOG_LEVEL', 'error');
+
+      expect(enabledLevels(logger)).toEqual(['error', 'fatal']);
+    });
+
+    it('should be ignored when levels are passed explicitly', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', 'error');
+
+      const logger = new ConsoleLogger({ logLevels: ['log'] });
+
+      expect(logger.isLevelEnabled('log')).toBe(true);
+    });
+
+    it('should be ignored once levels are set with "setLogLevels"', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', 'error');
+      const logger = new ConsoleLogger();
+
+      logger.setLogLevels(['debug']);
+
+      expect(logger.isLevelEnabled('debug')).toBe(true);
+    });
+
+    it('should enable every level when it is empty', () => {
+      vi.stubEnv('NEST_LOG_LEVEL', ' ');
+
+      expect(enabledLevels(new ConsoleLogger())).toHaveLength(6);
+      expect(processStdoutWriteSpy).not.toHaveBeenCalled();
+    });
+
+    describe('when the value is invalid', () => {
+      it.each(['warning', 'warn,info', 'warn,', '>=info', '>=warn,error'])(
+        'should warn and enable every level for "%s"',
+        value => {
+          vi.stubEnv('NEST_LOG_LEVEL', value);
+          const logger = new ConsoleLogger('Ctx');
+
+          expect(enabledLevels(logger)).toHaveLength(6);
+          expect(processStdoutWriteSpy).toHaveBeenCalledOnce();
+          const output = processStdoutWriteSpy.mock.calls[0][0];
+          expect(output).toContain('WARN');
+          expect(output).toContain('[ConsoleLogger]');
+          expect(output).toContain(`Invalid NEST_LOG_LEVEL value "${value}"`);
+        },
+      );
+
+      it('should warn only once for the same value', () => {
+        vi.stubEnv('NEST_LOG_LEVEL', 'loud');
+
+        new ConsoleLogger().log('first');
+        new ConsoleLogger().log('second');
+        new Logger('Ctx').log('third');
+
+        const warnings = processStdoutWriteSpy.mock.calls.filter(([output]) =>
+          String(output).includes('Invalid NEST_LOG_LEVEL'),
+        );
+        expect(warnings).toHaveLength(1);
+        expect(processStdoutWriteSpy).toHaveBeenCalledTimes(4);
+      });
+
+      it('should print the warning in json mode for a json logger', () => {
+        vi.stubEnv('NEST_LOG_LEVEL', 'quiet');
+
+        new ConsoleLogger({ json: true }).log('message');
+
+        const warning = JSON.parse(processStdoutWriteSpy.mock.calls[0][0]);
+        expect(warning).toMatchObject({
+          level: 'warn',
+          context: 'ConsoleLogger',
+        });
+      });
+    });
+  });
 });
 
 function convertInspectToJSON(inspectOutput: string) {
